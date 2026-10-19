@@ -24,7 +24,7 @@ dotnet test
 dotnet run --project Area11.Desktop
 ```
 
-Expected: all projects build, **35 tests pass**, and the sign-in window opens.
+Expected: all projects build, **44 tests pass**, and the sign-in window opens.
 
 > **Blue window that says “app is running”?** That is `WPFSample` — the very first smoke test.
 > It is **not** Area11. Start `dotnet\Area11.sln` and run the **Area11.Desktop** project (or use the
