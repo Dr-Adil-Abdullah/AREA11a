@@ -55,18 +55,18 @@ public sealed class Product
     public bool Active { get; set; } = true;
 
     /// <summary>Live shelf stock in base units (sum of batches).</summary>
-    public decimal StockBase { get; set; }
+    public double StockBase { get; set; }
 
-    public decimal UnitsPerStrip => Math.Max(1, StripTablets);
+    public double UnitsPerStrip => Math.Max(1, StripTablets);
 
-    public decimal UnitsPerBox => Math.Max(1, BoxStrips) * Math.Max(1, StripTablets);
+    public double UnitsPerBox => Math.Max(1, BoxStrips) * Math.Max(1, StripTablets);
 
     public string PackLabel =>
         BoxStrips > 0 && StripTablets > 0
-            ? $"1 box = {BoxStrips} strip = {UnitsPerBox:0} {BaseUnit}"
+            ? $"1 box = {BoxStrips} strip = {UnitsPerBox:0.###} {BaseUnit}"
             : $"unit: {BaseUnit}";
 
-    public string StockLabel => $"{StockBase:0.##} {BaseUnit}";
+    public string StockLabel => $"{StockBase:0.###} {BaseUnit}";
 
     public string CostText => Money.Format(CostPaisa);
 

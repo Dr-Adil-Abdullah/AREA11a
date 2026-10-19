@@ -1,0 +1,182 @@
+<UserControl x:Class="Area11.Desktop.Views.PosView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" Margin="0,0,0,14">
+            <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                <TextBlock Text="Counter (POS)" Style="{StaticResource PageTitle}" />
+                <TextBlock Text="Nearest expiry first · box / strip / loose · cash change · round down with cost guard"
+                           Style="{StaticResource PageSubtitle}" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <TextBlock Text="{Binding CashierName, StringFormat=Cashier: {0}}"
+                           Style="{StaticResource PageSubtitle}" VerticalAlignment="Center" Margin="0,0,12,0" />
+                <Button Content="Refresh" Style="{StaticResource GhostButton}" Command="{Binding RefreshCommand}" />
+            </StackPanel>
+        </DockPanel>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.2*" />
+                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Catalog -->
+            <Border Grid.Column="0" Style="{StaticResource Card}" Padding="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0">
+                        <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="Name, salt or barcode" />
+                        <Grid Margin="0,8,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="90" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="70" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <ComboBox Grid.Column="0" ItemsSource="{Binding Units}"
+                                      SelectedItem="{Binding Unit, Mode=TwoWay}" />
+                            <TextBox Grid.Column="2" Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" />
+                            <Button Grid.Column="4" Content="Add to cart" Style="{StaticResource PrimaryButton}"
+                                    Command="{Binding AddCommand}" />
+                        </Grid>
+                        <TextBlock Text="{Binding PriceHint}" Style="{StaticResource MetricLabel}" Margin="0,0,0,8" />
+                    </StackPanel>
+
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Products}"
+                              SelectedItem="{Binding SelectedProduct, Mode=TwoWay}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Medicine" Binding="{Binding Name}" Width="2*" />
+                            <DataGridTextColumn Header="Salt" Binding="{Binding Generic}" Width="1.4*" />
+                            <DataGridTextColumn Header="Stock" Binding="{Binding StockLabel}" Width="90" />
+                            <DataGridTextColumn Header="Retail" Binding="{Binding RetailText}" Width="90" />
+                            <DataGridTextColumn Header="Rack" Binding="{Binding RackNo}" Width="70" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+
+            <!-- Cart and payment -->
+            <Border Grid.Column="2" Style="{StaticResource Card}" Padding="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <DockPanel Grid.Row="0" Margin="0,0,0,8">
+                        <TextBlock Text="Cart" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="Remove" Style="{StaticResource GhostButton}"
+                                    Command="{Binding RemoveCommand}" />
+                            <Button Content="Clear" Style="{StaticResource GhostButton}" Margin="6,0,0,0"
+                                    Command="{Binding ClearCommand}" />
+                        </StackPanel>
+                    </DockPanel>
+
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Cart}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Item" Binding="{Binding Name}" Width="2*" />
+                            <DataGridTextColumn Header="Unit" Binding="{Binding UnitLabel}" Width="60" />
+                            <DataGridTextColumn Header="Qty" Binding="{Binding QuantityText}" Width="60" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <StackPanel Grid.Row="2" Margin="0,10,0,0">
+                        <TextBlock Text="Customer" Style="{StaticResource FieldLabel}" />
+                        <ComboBox ItemsSource="{Binding Customers}" DisplayMemberPath="Name"
+                                  SelectedItem="{Binding SelectedCustomer, Mode=TwoWay}" />
+                        <TextBlock Text="{Binding CustomerHint}" Style="{StaticResource MetricLabel}" Margin="0,4,0,0" />
+
+                        <Grid Margin="0,6,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Discount %" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding DiscountPercent, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Payment" Style="{StaticResource FieldLabel}" />
+                                <ComboBox ItemsSource="{Binding PaymentMethods}"
+                                          SelectedItem="{Binding PaymentMethod, Mode=TwoWay}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Subtotal" Style="{StaticResource MetricLabel}" />
+                                <TextBlock Text="{Binding SubtotalText}" FontSize="14" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="Discount" Style="{StaticResource MetricLabel}" />
+                                <TextBlock Text="{Binding DiscountText}" FontSize="14" />
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock Text="TOTAL" Style="{StaticResource MetricLabel}" Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding TotalText}" FontSize="28" FontWeight="Bold"
+                                   Foreground="{StaticResource BrandBrush}" />
+
+                        <Grid Margin="0,6,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Cash received" Style="{StaticResource MetricLabel}" />
+                                <TextBox Text="{Binding TenderedText, UpdateSourceTrigger=PropertyChanged}"
+                                         IsEnabled="{Binding IsCash}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                <TextBlock Text="Change" Style="{StaticResource MetricLabel}" />
+                                <TextBlock Text="{Binding ChangeText}" FontSize="17" FontWeight="SemiBold" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Button Content="Complete sale  (F4)" Style="{StaticResource PrimaryButton}" Height="40"
+                                Margin="0,12,0,0" Command="{Binding CompleteCommand}" />
+
+                        <Border Background="#F8FAFC" CornerRadius="6" Padding="9" Margin="0,10,0,0">
+                            <StackPanel>
+                                <TextBlock Text="{Binding StatusMessage}" FontSize="11" TextWrapping="Wrap">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsStatusError}" Value="True">
+                                                    <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock Text="{Binding LastBill}" FontSize="12" FontWeight="SemiBold" Margin="0,5,0,0" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

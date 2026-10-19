@@ -22,6 +22,9 @@ public sealed class AppServices
         Numbering = new NumberingService(Settings);
         Products = new ProductService(Database, Audit, Log);
         Dashboard = new DashboardService(Database, Log);
+        Partners = new PartnerService(Database, Audit, Log);
+        Sales = new SaleService(Database, Audit, Numbering, Settings, Permissions, Log);
+        Purchases = new PurchaseService(Database, Audit, Numbering, Permissions, Log);
     }
 
     public Database Database { get; }
@@ -41,6 +44,12 @@ public sealed class AppServices
     public ProductService Products { get; }
 
     public DashboardService Dashboard { get; }
+
+    public PartnerService Partners { get; }
+
+    public SaleService Sales { get; }
+
+    public PurchaseService Purchases { get; }
 
     public User? CurrentUser { get; private set; }
 

@@ -26,6 +26,10 @@ dotnet run --project Area11.Desktop
 
 Expected: all projects build, **35 tests pass**, and the sign-in window opens.
 
+> **Blue window that says “app is running”?** That is `WPFSample` — the very first smoke test.
+> It is **not** Area11. Start `dotnet\Area11.sln` and run the **Area11.Desktop** project (or use the
+> command above); the new window asks for a user name and password.
+
 ## 3. First sign-in
 
 | Field | Value |
@@ -61,6 +65,11 @@ dotnet restore -v minimal
 
 ## 5. What already works in this build
 
+- **Counter (POS)**: search, box/strip/loose, live total from the same code that saves, FEFO batch
+  picking, role discount limit, round-down with cost guard, cash tendered → change, credit to the
+  customer account, negative stock allowed with a warning only.
+- **Purchases (PINV)**: supplier (or add one inline), batch number, expiry (month or date), cost and
+  retail, sample line at zero cost, supplier payable, part payment, full audit.
 - Sign-in: owner password, staff PIN, five-try lock, every attempt audited.
 - Dashboard: today's bills/sales/profit, credit, payables, low stock, negative stock, expired batches.
 - Products: list + search, create, edit (partial update), soft delete, categories and companies

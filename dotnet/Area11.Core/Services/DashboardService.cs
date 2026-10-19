@@ -77,7 +77,7 @@ WHERE active = 1 AND qty_base > 0 AND expiry_ym <> ''
                 "SELECT IFNULL(SUM(total_paisa), 0) FROM sales WHERE date(date) = date('now','localtime') AND status <> 'void';") ?? 0L);
 
             var todayProfit = Convert.ToInt64(_db.Scalar(connection, @"
-SELECT IFNULL(SUM(si.line_total_paisa - si.cost_paisa_at_sale), 0)
+SELECT IFNULL(SUM(si.line_total_paisa - si.qty_base * si.cost_paisa_at_sale), 0)
 FROM sale_items si
 JOIN sales s ON s.id = si.sale_id
 WHERE date(s.date) = date('now','localtime') AND s.status <> 'void';") ?? 0L);

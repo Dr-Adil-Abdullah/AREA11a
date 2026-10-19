@@ -26,7 +26,9 @@ dotnet/
 | Migration 015 (multiple photos) | ✅ added for the owner's photo order |
 | Core layer (Data, Models, Utils) | ✅ written |
 | Services (settings, audit, auth, permissions, numbering, products, dashboard) | ✅ written |
-| WPF shell (login, dashboard, products) | ✅ written |
+| Purchases `PINV` + batches + supplier payable | ✅ written |
+| Counter `INV`: FEFO, discount guard, round-off, cash change, credit | ✅ written |
+| WPF screens: login, dashboard, products, POS, purchases | ✅ written |
 | 35 xUnit tests | ✅ written — **must be run on Windows** |
 | Compile on Windows | ⏳ first build pending (`docs/BUILD-ON-WINDOWS.md`) |
 | Column reference for every table | ✅ [`../docs/SCHEMA-REFERENCE.md`](../docs/SCHEMA-REFERENCE.md) |

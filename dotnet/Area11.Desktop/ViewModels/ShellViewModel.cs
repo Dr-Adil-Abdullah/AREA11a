@@ -70,6 +70,16 @@ public sealed class ShellViewModel : ObservableObject
     {
         NavItems.Add(new NavItem("Dashboard", "Today at a glance", () => new DashboardViewModel(_services)));
 
+        if (_services.Permissions.Can(_user, Modules.Pos))
+        {
+            NavItems.Add(new NavItem("Counter (POS)", "Make a bill", () => new PosViewModel(_services, _user)));
+        }
+
+        if (_services.Permissions.Can(_user, Modules.Purchases))
+        {
+            NavItems.Add(new NavItem("Purchases", "Stock-in (PINV)", () => new PurchasesViewModel(_services, _user)));
+        }
+
         if (_services.Permissions.Can(_user, Modules.Products))
         {
             NavItems.Add(new NavItem("Products", "Medicines and items", () => new ProductsViewModel(_services, _user)));
