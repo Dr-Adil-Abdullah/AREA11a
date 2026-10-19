@@ -1,12 +1,15 @@
 # AREA11a
 
 Native Windows desktop rebuild of the **Area11 Smart Pharmacy & Retail POS + Inventory** system
-(C#/.NET prototype today → C#/.NET 10 target), ported from the reference web app
-(`Dr-Adil-Abdullah/Area11`, Next.js + SQLite).
+in **C# / .NET 10 / WPF**, ported from the reference web app (`Dr-Adil-Abdullah/Area11`).
+
+**Phase 1 is in progress:** the three-project solution, the exact database schema, sign-in with
+per-person permissions, the dashboard and the products screen are written and waiting for their
+first Windows build ([`docs/BUILD-ON-WINDOWS.md`](docs/BUILD-ON-WINDOWS.md)).
 
 | Path | What it is |
 |---|---|
-| `dotnet/` | **The product (in progress)** — target solution, exact original database migrations 001–014 |
+| `dotnet/` | **The product** — `Area11.sln` (Core / Desktop / Tests), 15 migrations, 35 tests |
 | `Area11.WPF/` | Working prototype from the first stage (proves the flows; replaced by `dotnet/`) |
 | `WPFSample/` | The very first smoke-test window ("app is running") |
 | `docs/` | Owner decisions, port plan, schema reference, status |
@@ -18,13 +21,14 @@ Native Windows desktop rebuild of the **Area11 Smart Pharmacy & Retail POS + Inv
 | [`docs/OWNER-DECISIONS.md`](docs/OWNER-DECISIONS.md) | Every decision of the owner with numbers (D-01…), the 6-phase plan, open questions |
 | [`docs/PORT-PLAN.md`](docs/PORT-PLAN.md) | Technical study: conflicts, module map, test map, port order `net-stage-1…14` |
 | [`docs/SCHEMA-REFERENCE.md`](docs/SCHEMA-REFERENCE.md) | Column-by-column reference of all 31 tables (generated from the real schema) |
+| [`docs/BUILD-ON-WINDOWS.md`](docs/BUILD-ON-WINDOWS.md) | How to build, run and test on Windows |
 | [`docs/WPF-STATUS.md`](docs/WPF-STATUS.md) | Urdu status of the prototype stage |
 
 ## Database — already ported
 
 `dotnet/Area11.Core/Data/Migrations/` holds the **original 13 migrations verbatim** plus
-`014_user_permissions.sql` (per-person permissions chosen by the owner in Settings → Staff).
-All 14 execute in order and produce 31 tables.
+`014_user_permissions.sql` (per-person permissions) and `015_photos.sql` (2–3 photos per product,
+supplier and customer). All 15 execute in order.
 
 ---|---|
 | `Area11.WPF/` | **The product** — Windows POS + inventory application (.NET 8, WPF, MVVM, SQLite) |

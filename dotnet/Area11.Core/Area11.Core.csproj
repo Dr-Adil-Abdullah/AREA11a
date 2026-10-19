@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Area11.Core</RootNamespace>
+    <AssemblyName>Area11.Core</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0" />
+    <PackageReference Include="Dapper" Version="2.1.89" />
+  </ItemGroup>
+
+  <!-- SQL migrations are copied next to the executable; the runner reads them from
+       AppContext.BaseDirectory/Migrations so they can be inspected and diffed. -->
+  <ItemGroup>
+    <Content Include="Data/Migrations/*.sql">
+      <Link>Migrations/%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

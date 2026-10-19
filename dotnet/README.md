@@ -6,20 +6,33 @@ It is created following the Master Specification §4.4 (`Area11.Core` / `Area11.
 
 ```
 dotnet/
-└── Area11.Core/
-    └── Data/
-        └── Migrations/        001_core … 014_user_permissions  (verbatim from the reference)
+├── Area11.sln
+├── Area11.Core/                 business logic, SQLite, no UI references
+│   ├── Data/                    Database + migration runner
+│   │   └── Migrations/          001_core … 015_photos
+│   ├── Models/                  plain DTOs
+│   ├── Services/                settings, audit, auth, permissions, numbering, products, dashboard
+│   └── Utils/                   money, passwords (PBKDF2), paths, logging, audit diff
+├── Area11.Desktop/              WPF + MVVM (login, shell, dashboard, products)
+└── Area11.Tests/                xUnit (35 cases)
 ```
 
 ## Where things stand
 
 | Item | State |
 |---|---|
-| Database migrations 001–013 | ✅ ported verbatim, executed in order, 31 tables verified |
+| Database migrations 001–013 | ✅ ported verbatim, executed in order |
 | Migration 014 (per-user permissions) | ✅ added, upgrades an existing database safely |
+| Migration 015 (multiple photos) | ✅ added for the owner's photo order |
+| Core layer (Data, Models, Utils) | ✅ written |
+| Services (settings, audit, auth, permissions, numbering, products, dashboard) | ✅ written |
+| WPF shell (login, dashboard, products) | ✅ written |
+| 35 xUnit tests | ✅ written — **must be run on Windows** |
+| Compile on Windows | ⏳ first build pending (`docs/BUILD-ON-WINDOWS.md`) |
 | Column reference for every table | ✅ [`../docs/SCHEMA-REFERENCE.md`](../docs/SCHEMA-REFERENCE.md) |
-| Core / Desktop / Tests projects (C#) | ⏳ stage 1 — starts after the owner confirms Q-01 |
+| Core / Desktop / Tests projects (C#) | ✅ three projects created and filled |
 | Owner decisions and phases | ✅ [`../docs/OWNER-DECISIONS.md`](../docs/OWNER-DECISIONS.md) |
+| How to build on Windows | ✅ [`../docs/BUILD-ON-WINDOWS.md`](../docs/BUILD-ON-WINDOWS.md) |
 | Technical plan and port order | ✅ [`../docs/PORT-PLAN.md`](../docs/PORT-PLAN.md) |
 
 ## Rules that apply inside this folder
