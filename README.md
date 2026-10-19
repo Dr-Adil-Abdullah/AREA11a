@@ -1,11 +1,32 @@
 # AREA11a
 
-WPF (C#) rewrite of the **Area11 Smart Pharmacy & Retail POS** system.
-Business logic is ported from the reference app (`Dr-Adil-Abdullah/Area11`, Next.js + SQLite); the UI
-is now a native Windows desktop application built with WPF, MVVM and a local SQLite file.
+Native Windows desktop rebuild of the **Area11 Smart Pharmacy & Retail POS + Inventory** system
+(C#/.NET prototype today → C#/.NET 10 target), ported from the reference web app
+(`Dr-Adil-Abdullah/Area11`, Next.js + SQLite).
 
-| Project | What it is |
+| Path | What it is |
 |---|---|
+| `dotnet/` | **The product (in progress)** — target solution, exact original database migrations 001–014 |
+| `Area11.WPF/` | Working prototype from the first stage (proves the flows; replaced by `dotnet/`) |
+| `WPFSample/` | The very first smoke-test window ("app is running") |
+| `docs/` | Owner decisions, port plan, schema reference, status |
+
+## Read these first
+
+| Document | Contents |
+|---|---|
+| [`docs/OWNER-DECISIONS.md`](docs/OWNER-DECISIONS.md) | Every decision of the owner with numbers (D-01…), the 6-phase plan, open questions |
+| [`docs/PORT-PLAN.md`](docs/PORT-PLAN.md) | Technical study: conflicts, module map, test map, port order `net-stage-1…14` |
+| [`docs/SCHEMA-REFERENCE.md`](docs/SCHEMA-REFERENCE.md) | Column-by-column reference of all 31 tables (generated from the real schema) |
+| [`docs/WPF-STATUS.md`](docs/WPF-STATUS.md) | Urdu status of the prototype stage |
+
+## Database — already ported
+
+`dotnet/Area11.Core/Data/Migrations/` holds the **original 13 migrations verbatim** plus
+`014_user_permissions.sql` (per-person permissions chosen by the owner in Settings → Staff).
+All 14 execute in order and produce 31 tables.
+
+---|---|
 | `Area11.WPF/` | **The product** — Windows POS + inventory application (.NET 8, WPF, MVVM, SQLite) |
 | `WPFSample/` | The first smoke-test window ("app is running"), kept as-is from the initial upload |
 

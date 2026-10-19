@@ -5,8 +5,9 @@
 > in this repository, every conflict found between the existing prototype and the Specification, the exact
 > port order, and the questions that need the owner's answer.
 >
-> **Status:** study complete · awaiting owner approval + answers to Q-01…Q-15.
+> **Status:** study complete · **database ported and verified** · architecture question pending (Q-01).
 > **Date:** 2026-10-19 · **Repo:** `Dr-Adil-Abdullah/AREA11a` (branch `arena/a8a3b2e0-area11a`)
+> **Owner's decisions live in [`OWNER-DECISIONS.md`](OWNER-DECISIONS.md)** — this file is the technical plan.
 
 ---
 
@@ -85,7 +86,23 @@ diff) is carried over into `Area11.Core`.
 
 ---
 
-## 4. Conflicts and gaps found while consolidating (owner decisions needed)
+## 4. Conflicts and gaps — status after 19 Oct 2026
+
+Resolved by the owner (see `OWNER-DECISIONS.md`):
+
+| # | Decision |
+|---|---|
+| C-02 | **Schema = original 001–013 verbatim** → done: 14 migration files in `dotnet/Area11.Core/Data/Migrations/`, all executed in order, 31 tables generated |
+| C-04 | **Cashier return → quarantine**, persistent alert until the owner writes a reason; owner/manager returns restock immediately (setting `returns.cashierRestockToShelf`, default OFF) |
+| C-05 | **Per-person permissions** edited by the owner in Settings → Staff (migration 014) |
+| C-06 | Unfinished features → **Phase 5**, documented, nothing dropped |
+| C-09 | Start clean by default |
+| C-10 | Receipt text fully editable; Urdu lines rendered as graphics |
+| C-15 | Loyalty at the very end (Phase 6) |
+
+Still open: **C-01** (architecture), **C-03** (location), **C-07/C-11** (printing + installer), **C-13** (.NET version).
+
+### Original conflict list (kept for the record)
 
 These are the issues I cannot resolve from the documents alone. Each has a recommended default in §8.
 
@@ -109,7 +126,7 @@ These are the issues I cannot resolve from the documents alone. Each has a recom
 
 ---
 
-## 5. Exact schema source (what will be ported, verbatim)
+## 5. Exact schema source — **PORTED ✅**
 
 Thirteen migrations, confirmed present in `src/lib/schema.ts`:
 
@@ -137,8 +154,17 @@ Notable original conventions that must be preserved (from `schema.ts`):
 - `settings`: `key`, `value`, `updated_at` — values are **JSON**, type preserved.
 - `payments`: `ref`, `user_id`, signed rows (purchase/supplier = out, refunds negative).
 
-The port is mechanical: each `sql` string becomes an embedded `.sql` file with the same id, applied in order
-under `BEGIN IMMEDIATE` with the `_migrations` ledger (§5.1.6).
+**Done:** each `sql` string was extracted verbatim into `dotnet/Area11.Core/Data/Migrations/<id>.sql`
+(514 lines of original SQL), plus `014_user_permissions.sql` for the owner's per-person permissions.
+All 14 were executed in order against SQLite: **31 tables, no error**. The column list of every table is
+published in [`SCHEMA-REFERENCE.md`](SCHEMA-REFERENCE.md).
+
+Two facts found while porting that the C# code must respect:
+
+1. `qty_base` is **REAL** in the original (not integer) — the Core must use `decimal`, not `int`.
+2. Names differ from the prototype: `sales.date` + `sales.user_id` + `sales.notes`,
+   `sale_items.cost_paisa_at_sale`, `batches.expiry_date` + `expiry_ym`, `shifts.status`.
+   The prototype's SQL must not be copied blindly.
 
 ---
 
@@ -184,6 +210,9 @@ Total ported tests: **55**, then new tests per module + the 22 acceptance scenar
 | `net-stage-12` | Audit viewer, backup/restore (zip + photos) | 31.16 |
 | `net-stage-13` | Excel import / bulk update | 31.13 |
 | `net-stage-14` | §33.2 gaps (as approved) + hardware test | owner sign-off |
+
+The 14 stages are grouped into the **6 owner-facing phases** of `OWNER-DECISIONS.md` §5 so a working,
+tested build can be shown after each phase (D-15).
 
 Each stage: **0 warnings → all tests green → run the app → commit → tag → update `dotnet/HANDOFF.md`**.
 
