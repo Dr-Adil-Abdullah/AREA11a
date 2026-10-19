@@ -15,6 +15,12 @@
         <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
             <views:DashboardView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:POSViewModel}">
+            <views:POSView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:PurchasesViewModel}">
+            <views:PurchasesView />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:ProductsViewModel}">
             <views:ProductsView />
         </DataTemplate>

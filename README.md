@@ -77,7 +77,7 @@ Area11.WPF/
 
 ---
 
-## Implemented in this build (foundation)
+## Implemented in this build
 
 - **Sign-in + roles** — owner password, staff name + PIN; PBKDF2-SHA256 hashes; 5-attempt lockout;
   login events written to the black box. Owner / Manager / Cashier control visible navigation.
@@ -90,14 +90,20 @@ Area11.WPF/
   payments, shifts, expenses, returns, quarantine, stock movements, stock-take, alerts, audit,
   custom fields) created by migration `001_core.sql`; WAL mode; transactional writes.
 - **Audit black box** — module, action, entity, old value → new value, never deleted.
+- **Purchases (PINV)** — supplier, batch number, expiry (month or full date), cost/retail,
+  sample/bonus lines at zero cost, immediate stock-in, supplier payable and partial payment.
+- **Counter / POS** — FEFO batch selection, Box/Strip/Unit selling, live totals computed by the
+  same service that saves the bill, discount (margin/retail base, per-role ceiling, never below
+  cost), round-down with cost guard, cash tendered → change, credit sales to a customer account,
+  negative stock allowed with warnings only (owner rule U-30).
+- **Numbering** — one counter table issues INV / PINV / RET / Q / SR / PR / ST numbers inside the
+  same transaction as the document.
 - **Local-first** — works with no internet; the SQLite file is the source of truth.
 
 ## Next modules (in the reference order)
 
-1. Purchases (`PINV-0001`) + batches/expiry + supplier ledger
-2. POS billing: FEFO batches, Box/Strip/Unit buttons, hold cart, cash tendered → change,
-   round-down with cost guard, split payment
-3. Returns: strict validation, `RET-0001`, provisional `PR-0001`, quarantine `Q-0001`
+1. Hold cart, split payment UI and the printed receipt
+2. Returns: strict validation, `RET-0001`, provisional `PR-0001`, quarantine `Q-0001`
 4. Stock write-off / stock-take (`ST-0001`)
 5. Galla / shift handover
 6. Reports (today / 7 / 30 days), alerts, backup, Excel, Supabase sync

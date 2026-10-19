@@ -55,14 +55,12 @@ public sealed class ShellViewModel : ObservableObject
     private void BuildNavigation()
     {
         NavItems.Add(new NavItem("Dashboard", "Today at a glance", () => new DashboardViewModel(_services)));
+        NavItems.Add(new NavItem("Counter (POS)", "Bill a customer", () => new POSViewModel(_services, _user)));
 
         if (_user.CanManage)
         {
+            NavItems.Add(new NavItem("Purchases", "Stock-in and supplier bills", () => new PurchasesViewModel(_services, _user.Name)));
             NavItems.Add(new NavItem("Products", "Medicines and items", () => new ProductsViewModel(_services, _user.Name)));
-        }
-
-        if (_user.CanManage)
-        {
             NavItems.Add(new NavItem("Settings", "Shop configuration", () => new SettingsViewModel(_services, _user.Name)));
         }
     }

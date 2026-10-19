@@ -29,6 +29,10 @@ public sealed class AppServices
             config.Security.LockoutSeconds);
         Products = new ProductService(Database, Logger, Audit);
         Reports = new ReportService(Database, Logger);
+        Numbering = new NumberingService(Database, Settings);
+        Partners = new PartnerService(Database, Logger, Audit);
+        Purchases = new PurchaseService(Database, Logger, Audit, Numbering);
+        Sales = new SaleService(Database, Logger, Audit, Numbering, Settings, Partners);
 
         Logger.Info("Startup complete.");
     }
@@ -48,4 +52,12 @@ public sealed class AppServices
     public ProductService Products { get; }
 
     public ReportService Reports { get; }
+
+    public NumberingService Numbering { get; }
+
+    public PartnerService Partners { get; }
+
+    public PurchaseService Purchases { get; }
+
+    public SaleService Sales { get; }
 }
