@@ -1,0 +1,118 @@
+<UserControl x:Class="Area11.WPF.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+
+            <DockPanel Margin="0,0,0,20">
+                <StackPanel DockPanel.Dock="Left">
+                    <TextBlock Text="Dashboard" Style="{StaticResource PageTitle}" />
+                    <TextBlock Text="{Binding StoreName}" Style="{StaticResource PageSubtitle}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding LastRefreshed, StringFormat='Updated {0}'}"
+                               Style="{StaticResource PageSubtitle}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,14,0" />
+                    <Button Content="Refresh"
+                            Style="{StaticResource GhostButton}"
+                            Command="{Binding RefreshCommand}" />
+                </StackPanel>
+            </DockPanel>
+
+            <UniformGrid Columns="3">
+                <Border Style="{StaticResource Card}" Margin="0,0,14,14">
+                    <StackPanel>
+                        <TextBlock Text="TODAY'S SALES" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding TodaySales}" Style="{StaticResource MetricValue}" />
+                        <TextBlock Text="Cash and credit together" Style="{StaticResource MetricHint}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Card}" Margin="0,0,14,14">
+                    <StackPanel>
+                        <TextBlock Text="BILLS TODAY" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding TodayBills}" Style="{StaticResource MetricValue}" />
+                        <TextBlock Text="Bills saved on this computer" Style="{StaticResource MetricHint}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+                    <StackPanel>
+                        <TextBlock Text="ACTIVE PRODUCTS" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding Products}" Style="{StaticResource MetricValue}" />
+                        <TextBlock Text="Medicines and retail items" Style="{StaticResource MetricHint}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Card}" Margin="0,0,14,14">
+                    <StackPanel>
+                        <TextBlock Text="LOW STOCK" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding LowStock}" Style="{StaticResource MetricValue}" />
+                        <TextBlock Text="At or below the reorder level" Style="{StaticResource MetricHint}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Card}" Margin="0,0,14,14">
+                    <StackPanel>
+                        <TextBlock Text="EXPIRING BATCHES" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding Expiring}" Style="{StaticResource MetricValue}" />
+                        <TextBlock Text="Within the expiry warning window" Style="{StaticResource MetricHint}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+                    <StackPanel>
+                        <TextBlock Text="STOCK VALUE (COST)" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding StockValue}" Style="{StaticResource MetricValue}" />
+                        <TextBlock Text="Money currently sitting on the shelf" Style="{StaticResource MetricHint}" />
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <Grid Margin="0,6,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="14" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="Foundation in this build" Style="{StaticResource SectionTitle}" />
+                        <TextBlock Text="Sign in with owner password or staff PIN, roles Owner / Manager / Cashier"
+                                   Style="{StaticResource MetricHint}" Margin="0,0,0,6" />
+                        <TextBlock Text="Product catalog with the Box = Strips = Units pack formula"
+                                   Style="{StaticResource MetricHint}" Margin="0,0,0,6" />
+                        <TextBlock Text="Categories and companies can be created from the product form"
+                                   Style="{StaticResource MetricHint}" Margin="0,0,0,6" />
+                        <TextBlock Text="SQLite database, WAL mode, transactional writes"
+                                   Style="{StaticResource MetricHint}" Margin="0,0,0,6" />
+                        <TextBlock Text="Black-box audit with old value to new value on every change"
+                                   Style="{StaticResource MetricHint}" Margin="0,0,0,6" />
+                        <TextBlock Text="All money stored as integer paisa"
+                                   Style="{StaticResource MetricHint}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2" Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="Next modules" Style="{StaticResource SectionTitle}" />
+                        <TextBlock Text="Purchases (PINV) and supplier ledger"
+                                   Style="{StaticResource MetricHint}" Margin="0,0,0,6" />
+                        <TextBlock Text="POS billing with FEFO batches and cash change"
+                                   Style="{StaticResource MetricHint}" Margin="0,0,0,6" />
+                        <TextBlock Text="Returns (RET), quarantine (Q) and stock-take (ST)"
+                                   Style="{StaticResource MetricHint}" Margin="0,0,0,6" />
+                        <TextBlock Text="Galla / shift handover and day-end"
+                                   Style="{StaticResource MetricHint}" Margin="0,0,0,6" />
+                        <TextBlock Text="Reports: today, 7 days, 30 days"
+                                   Style="{StaticResource MetricHint}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

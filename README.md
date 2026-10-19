@@ -1,24 +1,128 @@
 # AREA11a
 
-## WPFSample (Windows / WPF C# test app)
+WPF (C#) rewrite of the **Area11 Smart Pharmacy & Retail POS** system.
+Business logic is ported from the reference app (`Dr-Adil-Abdullah/Area11`, Next.js + SQLite); the UI
+is now a native Windows desktop application built with WPF, MVVM and a local SQLite file.
 
-A minimal WPF sample for Windows testing.
-When opened it shows **"PDF is Working"** — white text on a red background.
+| Project | What it is |
+|---|---|
+| `Area11.WPF/` | **The product** — Windows POS + inventory application (.NET 8, WPF, MVVM, SQLite) |
+| `WPFSample/` | The first smoke-test window ("app is running"), kept as-is from the initial upload |
 
-### Requirements
-- Windows 10/11
-- .NET 8 SDK (or later): https://dotnet.microsoft.com/download
+---
 
-### Run it
-```bash
-cd WPFSample
+## Run it
+
+Requirements: **Windows 10/11** and the **.NET 8 SDK** (https://dotnet.microsoft.com/download).
+
+```bat
+cd Area11.WPF
 dotnet run
 ```
 
-Or open `WPFSample.sln` / `WPFSample.csproj` in Visual Studio and press F5.
+Or open `Area11.WPF.sln` in Visual Studio 2022 and press **F5**.
 
-### Files
-- `WPFSample/MainWindow.xaml` — window UI (red background, white text)
-- `WPFSample/MainWindow.xaml.cs` — code-behind
-- `WPFSample/App.xaml` / `App.xaml.cs` — application entry point
-- `WPFSample/WPFSample.csproj` — project file (net8.0-windows, WPF)
+**First sign-in:** leave the user name empty and type the owner password **`area11`**.
+Change it (and staff PINs) before real use — the reference app ships the same first-run default.
+
+The database is created automatically on first launch:
+
+```
+Area11.WPF/bin/Debug/net8.0-windows/data/area11.db
+```
+
+`data/`, `bin/` and `obj/` are git-ignored — business data never goes to GitHub.
+
+---
+
+## Architecture
+
+```
+XAML View (UI only)
+        │  state flows OUT, actions flow IN
+        ▼
+ViewModel (INotifyPropertyChanged + RelayCommand)
+        │
+        ▼
+Service layer (business rules)  ── try/catch ──► LoggerService + friendly message
+        │
+        ▼
+Data layer (Microsoft.Data.Sqlite, transactions, migrations)
+        │
+        ▼
+Models + Utils (money = integer paisa, pure helpers)
+```
+
+- **Views** contain no business logic and no SQL.
+- **Services** own every rule and transaction; they never throw at the UI (`OperationResult`).
+- **ViewModels** hold screen state and commands only.
+- **Data** applies ordered `.sql` migrations once and keeps the `_migrations` ledger.
+
+### Folder structure
+
+```
+Area11.WPF/
+├── App.xaml / App.xaml.cs          startup: config → database → login → shell
+├── appsettings.json                DB path, log path, security, API/sync endpoints
+├── Models/                         User, Product, Category, Company, ProductInput, DashboardSnapshot
+├── Services/                       AppServices, AuthService, ProductService, ReportService,
+│                                   SettingsService, AuditService, LoggerService, DatabaseSeed,
+│                                   SettingsDefaults, OperationResult
+├── ViewModels/                     Login, Shell, NavItem, Dashboard, Products, Settings (+ Base/)
+├── Views/                          LoginView, ShellView, DashboardView, ProductsView, SettingsView
+├── Utils/                          MoneyHelper, FormatHelper, PasswordHasher, AppConfig
+├── Data/                           Database, DbReaderExtensions, Migrations/001_core.sql
+└── Resources/                      Styles.xaml (single reusable design system)
+```
+
+---
+
+## Implemented in this build (foundation)
+
+- **Sign-in + roles** — owner password, staff name + PIN; PBKDF2-SHA256 hashes; 5-attempt lockout;
+  login events written to the black box. Owner / Manager / Cashier control visible navigation.
+- **Product catalog** — search by name, barcode, salt, rack or room; category filter; low-stock filter;
+  create and edit products; Box → Strips → Units pack formula; cost / retail / VIP / doctor prices;
+  category and company can be created inside the product form (U-18).
+- **Settings** — ~45 editable keys, all database-backed, grouped and searchable; each change audited.
+- **Dashboard** — today's sales and bills, product count, low stock, expiring batches, stock value at cost.
+- **Database** — full reference schema (products, batches, customers, suppliers, purchases, sales,
+  payments, shifts, expenses, returns, quarantine, stock movements, stock-take, alerts, audit,
+  custom fields) created by migration `001_core.sql`; WAL mode; transactional writes.
+- **Audit black box** — module, action, entity, old value → new value, never deleted.
+- **Local-first** — works with no internet; the SQLite file is the source of truth.
+
+## Next modules (in the reference order)
+
+1. Purchases (`PINV-0001`) + batches/expiry + supplier ledger
+2. POS billing: FEFO batches, Box/Strip/Unit buttons, hold cart, cash tendered → change,
+   round-down with cost guard, split payment
+3. Returns: strict validation, `RET-0001`, provisional `PR-0001`, quarantine `Q-0001`
+4. Stock write-off / stock-take (`ST-0001`)
+5. Galla / shift handover
+6. Reports (today / 7 / 30 days), alerts, backup, Excel, Supabase sync
+
+## Reference mapping
+
+| Reference (Next.js) | WPF |
+|---|---|
+| `src/lib/sales.ts` FEFO, discount, round-off | `Services/SaleService` (next) + `Utils/MoneyHelper` |
+| `src/lib/returns.ts` | `Services/ReturnService` (next) |
+| `src/lib/settings.ts` (70 keys) | `Services/SettingsDefaults` + `SettingsService` |
+| `src/lib/audit.ts` (old → new) | `Services/AuditService` |
+| `src/lib/db.ts` migrations, `tx()` | `Data/Database.cs` + `Data/Migrations` |
+| `lib/auth` owner password / staff PIN | `Services/AuthService` + `Utils/PasswordHasher` |
+
+## Conventions
+
+- Money is **integer paisa** everywhere; formatting only at the edge (`FormatHelper`).
+- Public members PascalCase, private fields camelCase, no abbreviations in names.
+- No hard-coded secrets, URLs or paths — `appsettings.json` only.
+- No empty `try/catch`; every failure is logged and returns a friendly message.
+- Documentation explains **what** and **why**.
+
+## Notes
+
+- `Area11.WPF` targets `net8.0-windows`; it cannot be built on Linux, so the first compile should be
+  done on Windows (or a Windows CI runner).
+- Status, decisions and the remaining work are tracked in [`docs/WPF-STATUS.md`](docs/WPF-STATUS.md).
