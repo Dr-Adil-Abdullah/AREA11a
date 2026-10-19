@@ -14,7 +14,7 @@ dotnet/
 │   ├── Services/                settings, audit, auth, permissions, numbering, products, dashboard
 │   └── Utils/                   money, passwords (PBKDF2), paths, logging, audit diff
 ├── Area11.Desktop/              WPF + MVVM (login, shell, dashboard, products)
-└── Area11.Tests/                xUnit (44 cases)
+└── Area11.Tests/                xUnit (45 cases)
 ```
 
 ## Where things stand
@@ -29,7 +29,7 @@ dotnet/
 | Purchases `PINV` + batches + supplier payable | ✅ written |
 | Counter `INV`: FEFO, discount guard, round-off, cash change, credit | ✅ written |
 | WPF screens: login, dashboard, products, POS, purchases | ✅ written |
-| 44 xUnit tests | ✅ written — **must be run on Windows** |
+| 45 xUnit test cases | ✅ written — **must be run on Windows** |
 | Compile on Windows | ⏳ first build pending (`docs/BUILD-ON-WINDOWS.md`) |
 | Column reference for every table | ✅ [`../docs/SCHEMA-REFERENCE.md`](../docs/SCHEMA-REFERENCE.md) |
 | Core / Desktop / Tests projects (C#) | ✅ three projects created and filled |
@@ -43,7 +43,7 @@ dotnet/
 2. Every service method takes/returns plain DTOs and the current user (§4.4.4).
 3. Sale, stock deduction, return and shift close are single transactional calls (§4.4.5).
 4. Migrations are **append-only**: new file at the end, old files never edited (§5.1.6).
-5. Money is integer paisa; quantities are `decimal` (the original schema stores `qty_base` as REAL).
+5. Money is integer paisa (`long`); quantities are `double` - never `decimal`, which Microsoft.Data.Sqlite stores as TEXT and which breaks `SUM()`.
 
 ## Migration runner contract (implemented at stage 1)
 

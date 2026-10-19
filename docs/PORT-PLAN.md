@@ -11,6 +11,13 @@
 
 ---
 
+## 0. Where the work stands today
+
+This file is the **Step 0 study** (spec §34.2): conflicts, module map, table map, test map and
+the port order. It is still the right order to build in. For the live status - which module is
+written, which is next - read [`PROGRESS.md`](PROGRESS.md); for the owner's numbered rules read
+[`RULES-MATRIX.md`](RULES-MATRIX.md).
+
 ## 1. What was studied
 
 | Source | Size | Used for |
