@@ -1,0 +1,18 @@
+<Window x:Class="WPFSample.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="PDF Test"
+        Height="300"
+        Width="520"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid Background="Red">
+        <TextBlock Text="PDF is Working"
+                   Foreground="White"
+                   FontSize="40"
+                   FontWeight="Bold"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"/>
+    </Grid>
+
+</Window>
