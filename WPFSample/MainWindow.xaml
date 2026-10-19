@@ -6,8 +6,8 @@
         Width="520"
         WindowStartupLocation="CenterScreen">
 
-    <Grid Background="Red">
-        <TextBlock Text="PDF is Working"
+    <Grid Background="Blue">
+        <TextBlock Text="app is running"
                    Foreground="White"
                    FontSize="40"
                    FontWeight="Bold"
