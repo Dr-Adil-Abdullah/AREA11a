@@ -14,7 +14,7 @@ dotnet/
 │   ├── Services/                settings, audit, auth, permissions, numbering, products, dashboard
 │   └── Utils/                   money, passwords (PBKDF2), paths, logging, audit diff
 ├── Area11.Desktop/              WPF + MVVM (login, shell, dashboard, products)
-└── Area11.Tests/                xUnit (45 cases)
+└── Area11.Tests/                xUnit (56 cases)
 ```
 
 ## Where things stand
@@ -29,7 +29,7 @@ dotnet/
 | Purchases `PINV` + batches + supplier payable | ✅ written |
 | Counter `INV`: FEFO, discount guard, round-off, cash change, credit | ✅ written |
 | WPF screens: login, dashboard, products, POS, purchases | ✅ written |
-| 45 xUnit test cases | ✅ written — **must be run on Windows** |
+| 56 xUnit test cases | ✅ written — **must be run on Windows** |
 | Compile on Windows | ⏳ first build pending (`docs/BUILD-ON-WINDOWS.md`) |
 | Column reference for every table | ✅ [`../docs/SCHEMA-REFERENCE.md`](../docs/SCHEMA-REFERENCE.md) |
 | Core / Desktop / Tests projects (C#) | ✅ three projects created and filled |

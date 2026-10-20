@@ -45,7 +45,7 @@ features and the four phases.
 | F-13 | **Receipt render + instant ESC/POS print, 58 / 80 mm, no dialog** | ⬜ | - | - | pressing print prints (D-05, D-23) |
 | F-14 | Hold cart / bring back a held cart | ⬜ | - | - | two customers can wait at once |
 | F-15 | Split payment (cash + card/online in one bill) | ⬜ | - | - | - |
-| F-16 | **First real Windows build and test run** | ⬜ | `docs/BUILD-ON-WINDOWS.md` | - | 0 errors, 0 warnings, 45/45 tests |
+| F-16 | **First real Windows build and test run** | ⬜ | `docs/BUILD-ON-WINDOWS.md` | - | 0 errors, 0 warnings, 56/56 tests |
 | F-17 | Settings screen: shop info, discount rules, and per-person permission ticks | ⬜ | - | - | owner edits everything without a developer |
 | F-18 | Tests for purchases, partners, numbering | ⬜ | `Area11.Tests/` | - | added with F-13 |
 
@@ -104,7 +104,8 @@ features and the four phases.
 | 1 | `Expiry.StatusLabel` takes level thresholds as parameters but the switch hard-codes 90 / 180 / 365 days | `Area11.Core/Utils/Expiry.cs` | read `expiry.level*` from settings (F-29) |
 | 2 | `decimal` must never be used for quantities - Microsoft.Data.Sqlite stores it as TEXT and `SUM` breaks | everywhere | quantities are `double`; money is `long` paisa |
 | 3 | Receipt / printing does not exist yet, so a bill cannot be handed to the customer | - | F-13 |
-| 4 | The first Windows build reported CS0103 (`Path`/`Directory`) in three prototype files - fixed by explicit `using System.IO;`; the checker now blocks this class of error | all Core + prototype files | fixed 20 Oct 2026 |
+| 4 | First build: CS0103 in three prototype files. Root cause was the failed project load (a stale `Area11.WPF.sln`); explicit `using System.IO;` added everywhere as a safeguard | `prototypes/`, all Core files | fixed 20 Oct 2026 |
+| 5 | CS0121 ambiguous `Math.Round` in `SaleService.cs` line 337 - the unit multiplier was an `int`, so `long * int` stayed `long` | `Area11.Core/Utils/Calc.cs` | fixed 20 Oct 2026 - all rounding via `Calc.Round` / `Calc.RoundMoney`; raw `Math.Round` is rejected by the checker |
 
 ## Verification
 
@@ -118,7 +119,7 @@ features and the four phases.
 | Migrations 001-015 produce 31 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
 | **Compiles on Windows** | `dotnet build Area11.sln` | ⬜ **F-16** |
-| **45 tests green** | `dotnet test` | ⬜ **F-16** |
+| **56 tests green** | `dotnet test` | ⬜ **F-16** |
 
 ## Change log
 

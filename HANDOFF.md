@@ -23,7 +23,7 @@ shop computer. Talk to him in Urdu; keep code, database and UI in English.
 | What can it do today? | sign-in, products, purchases `PINV`, counter billing `INV` (FEFO, discount guard, round-off, cash change, credit), dashboard |
 | Has it ever been compiled? | **No.** No .NET SDK exists in the agent sandbox. First Windows build is task **F-16** |
 | What is the very next task? | **F-13** receipt + instant ESC/POS print; before it, F-16 (build it once on Windows) |
-| How many tests? | 45 cases (32 facts + 13 theory rows) in 6 test files - written, never executed |
+| How many tests? | 56 cases (32 facts + 13 theory rows) in 6 test files - written, never executed |
 | Database? | the **original** schema, migrations `001`-`015`, **31 business tables** (+ `_migrations` ledger), so an existing `area11.db` opens unchanged |
 | Where does data live? | `%ProgramData%\Area11\` (`area11.db`, `photos\`, `logs\`, `backups\`) |
 | Default owner login | user **Owner**, password **`area11`** (change it on day one) |
@@ -64,7 +64,7 @@ Full detail in [`docs/PROGRESS.md`](docs/PROGRESS.md). The short version:
 | Products, partners (customers/suppliers), purchases `PINV`, sales `INV`, dashboard | `Area11.Core/Services/` |
 | Money / quantity / expiry / password helpers | `Area11.Core/Utils/` |
 | WPF shell, login, dashboard, products, POS, purchases | `Area11.Desktop/` |
-| 45 test cases | `Area11.Tests/` |
+| 56 test cases | `Area11.Tests/` |
 
 **Not started (⬜)**
 
@@ -83,7 +83,7 @@ Do them one at a time; each one ends with a commit (see `AGENTS.md` §6).
 
 | # | Task | Acceptance |
 |---|---|---|
-| 1 | **F-16** first Windows build (`dotnet build Area11.sln`, `dotnet test`) | 0 errors; fix every compile error; 45/45 green |
+| 1 | **F-16** first Windows build (`dotnet build Area11.sln`, `dotnet test`) | 0 errors; fix every compile error; 56/56 green |
 | 2 | **F-13** receipt renderer + ESC/POS instant print (58/80 mm) | pressing "print" prints with no dialog; reprint from a saved bill; printer absent ⇒ bill still saves |
 | 3 | **F-17** Settings screen (store info, discount, tax, printer width) + per-person permission ticks | the owner changes a setting and the next bill obeys it |
 | 4 | **F-14 / F-15** hold cart, split payment | two held carts survive a restart; one bill with two payment rows |
@@ -170,7 +170,7 @@ Folder map:
 | `Area11.Core/Services/` | `Auth`, `Permission`, `Settings`, `Audit`, `Numbering`, `Product`, `Partner`, `Purchase`, `Sale`, `Dashboard`, `Seed` |
 | `Area11.Core/Utils/` | `Money`, `Qty`, `Expiry`, `PasswordHasher`, `ServiceResult`, `LogService`, `AuditDiff`, `AppPaths` |
 | `Area11.Desktop/` | `App`, `AppServices` (composition root), `Resources/Theme.xaml`, `ViewModels/`, `Views/` |
-| `Area11.Tests/` | `TestDatabase` (in-memory SQLite + migrations + seed), 45 cases in 6 files |
+| `Area11.Tests/` | `TestDatabase` (in-memory SQLite + migrations + seed), 56 cases in 6 files |
 | `tools/` | `check_repo.py`, `build_rules_matrix.py` |
 | `docs/` | spec, decisions, progress, rules matrix, schema reference, build guide, port plan |
 | `prototypes/` | earlier prototypes (`Area11.WPF`, `WPFSample`) - reference only, do not extend |
@@ -217,7 +217,9 @@ without it, it falls back to a brace/paren balance check and says so.
 | editing `001`-`015` migrations | existing databases never receive the change | add `016_*.sql` |
 | `INSERT OR REPLACE` on settings | loses `updated_at` and the audit trail | `INSERT ... ON CONFLICT(key) DO UPDATE` |
 | assuming the sandbox can build WPF | it is Linux, no SDK | check statically, let the owner build |
-| relying on `ImplicitUsings` for `System.IO` | the owner's first build failed with CS0103 (`Path`/`Directory` did not exist) | write the `using` explicitly; `check_repo.py` now enforces it |
+| relying on `ImplicitUsings` for `System.IO` | CS0103 (`Path`/`Directory` did not exist) | write the `using` explicitly; `check_repo.py` enforces it |
+| raw `Math.Round(value, MidpointRounding)` | CS0121 ambiguity when the argument is `int`/`long` (a unit multiplier!) | always `Calc.Round(double)` or `Calc.RoundMoney(decimal)`; the checker rejects raw `Math.Round` |
+| leaving an old `.sln` around | Visual Studio reports "The project file could not be loaded" and then CS0103 for everything | one solution at the root (`Area11.sln`); `check_repo.py` verifies every `.sln` reference exists |
 | building the wrong solution | the prototype `Area11.WPF.sln` sat in the root and produced errors in old files | one solution only: root `Area11.sln`; prototypes live in `prototypes/` |
 | adding a 4th project "for clarity" | owner decided three (D-17) | keep three |
 

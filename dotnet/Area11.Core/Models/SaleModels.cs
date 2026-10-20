@@ -1,3 +1,5 @@
+using Area11.Core.Utils;
+
 namespace Area11.Core.Models;
 
 /// <summary>One line typed at the counter: a quantity in a chosen unit.</summary>
@@ -104,5 +106,5 @@ public sealed class SaleDraftLine
 
     public long LineTotalPaisa { get; set; }
 
-    public long LineCostPaisa => (long)Math.Round(CostUnitPaisa * QtyBase, MidpointRounding.AwayFromZero);
+    public long LineCostPaisa => Calc.Round(CostUnitPaisa * QtyBase);
 }

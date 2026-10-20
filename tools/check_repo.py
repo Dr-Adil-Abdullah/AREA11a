@@ -203,6 +203,59 @@ def check_usings() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 1c. One rounding helper only (CS0121)
+# ---------------------------------------------------------------------------
+ROUNDING_ALLOWED = {"Calc.cs", "Money.cs"}
+
+
+def check_rounding() -> None:
+    """Raw Math.Round is forbidden outside the two money helpers.
+
+    Why: `Math.Round(value, MidpointRounding.AwayFromZero)` is overloaded for double and decimal,
+    so an integral argument (int/long) is a compile error CS0121 - which is exactly what the
+    owner's build hit in SaleService.cs line 337. Everything now calls Calc.Round / Calc.RoundMoney.
+    """
+    offenders = 0
+    for path in sorted(DOTNET.rglob("*.cs")):
+        if "obj" in path.parts or "bin" in path.parts:
+            continue
+        if path.name in ROUNDING_ALLOWED:
+            continue
+        text = path.read_text(encoding="utf-8-sig")
+        code = re.sub(r"//[^\n]*", "", text)
+        code = re.sub(r"/\*.*?\*/", "", code, flags=re.S)
+        if "Math.Round" in code:
+            offenders += 1
+            fail(f"{rel(path)} calls Math.Round directly - use Calc.Round (double) or "
+                 f"Calc.RoundMoney (decimal) to avoid the CS0121 ambiguity")
+
+    REPORT.append(f"Rounding: raw Math.Round allowed only in {sorted(ROUNDING_ALLOWED)}, "
+                  f"{offenders} other file(s) use it")
+
+
+# ---------------------------------------------------------------------------
+# 1d. Every solution entry points at a file that exists
+# ---------------------------------------------------------------------------
+def check_solutions() -> None:
+    """A .sln that names a missing .csproj is what Visual Studio reports as
+    "The project file could not be loaded" - the owner lost a build to this once, because an old
+    Area11.WPF.sln was still lying next to the new solution.
+    """
+    solutions = sorted(ROOT.glob("*.sln")) + sorted((ROOT / "prototypes").glob("*.sln"))
+    total = 0
+    for solution in solutions:
+        text = solution.read_text(encoding="utf-8-sig", errors="replace")
+        pattern = r'Project\("\{[^}]+\}"\)\s*=\s*"[^"]*",\s*"([^"]+)"'
+        for relative in re.findall(pattern, text):
+            project = (solution.parent / relative.replace("\\", "/")).resolve()
+            total += 1
+            if not project.exists():
+                fail(f"{rel(solution)} points at a missing project: {relative}")
+
+    REPORT.append(f"Solutions: {len(solutions)} files, {total} project references, all present")
+
+
+# ---------------------------------------------------------------------------
 # 2. XML (XAML, csproj, props)
 # ---------------------------------------------------------------------------
 def check_xml() -> None:
@@ -422,6 +475,8 @@ def main() -> int:
     print("Area11 static check\n" + "=" * 60)
     check_csharp()
     check_usings()
+    check_rounding()
+    check_solutions()
     check_xml()
     check_bindings()
     check_migrations()

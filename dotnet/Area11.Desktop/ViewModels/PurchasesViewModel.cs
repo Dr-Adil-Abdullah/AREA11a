@@ -378,7 +378,7 @@ public sealed class PurchaseLineRow
 
     public bool IsSample { get; init; }
 
-    public long LineTotalPaisa => IsSample ? 0 : (long)Math.Round(CostPaisa * QtyBase, MidpointRounding.AwayFromZero);
+    public long LineTotalPaisa => IsSample ? 0 : Calc.Round(CostPaisa * QtyBase);
 
     public string QuantityText => $"{Qty.Format(Quantity)} {Unit}";
 

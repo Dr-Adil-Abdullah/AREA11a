@@ -231,7 +231,7 @@ public sealed class PosViewModel : ObservableObject
             };
 
             var price = SelectedProduct.RetailPaisa * units;
-            return $"{Unit}: {Money.Format((long)Math.Round(price, MidpointRounding.AwayFromZero))}";
+            return $"{Unit}: {Money.Format(Calc.Round(price))}";
         }
     }
 

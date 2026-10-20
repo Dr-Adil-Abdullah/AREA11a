@@ -311,14 +311,16 @@ FROM products WHERE id = @id AND active = 1;",
                 ?? throw new ValidationException("A product in the cart no longer exists.");
 
             var unit = (lineInput.Unit ?? "base").Trim().ToLowerInvariant();
+            // double, never int: the schema stores quantities as REAL and an int here made
+            // Math.Round(long) ambiguous (CS0121) on the first Windows build.
             var unitsPerSelected = unit switch
             {
-                "box" => Math.Max(1, product.BoxStrips) * Math.Max(1, product.StripTablets),
-                "strip" => Math.Max(1, product.StripTablets),
-                _ => 1
+                "box" => (double)(Math.Max(1, product.BoxStrips) * Math.Max(1, product.StripTablets)),
+                "strip" => (double)Math.Max(1, product.StripTablets),
+                _ => 1d
             };
 
-            var qtyBase = lineInput.Quantity * unitsPerSelected;
+            var qtyBase = Calc.ToBase(lineInput.Quantity, unitsPerSelected);
 
             var tierPrice = customer?.Category?.ToLowerInvariant() switch
             {
@@ -334,9 +336,9 @@ FROM products WHERE id = @id AND active = 1;",
 
             var pricePerSelected = lineInput.UnitPricePaisa > 0
                 ? lineInput.UnitPricePaisa
-                : (long)Math.Round(tierPrice * unitsPerSelected, MidpointRounding.AwayFromZero);
+                : Calc.Round(tierPrice * unitsPerSelected);
 
-            var gross = (long)Math.Round(pricePerSelected * lineInput.Quantity, MidpointRounding.AwayFromZero);
+            var gross = Calc.Round(pricePerSelected * lineInput.Quantity);
 
             var batches = _db.Query<BatchRow>(connection, @"
 SELECT id, batch_no, qty_base, cost_paisa
@@ -370,7 +372,7 @@ ORDER BY CASE WHEN expiry_date IS NULL OR expiry_date = '' THEN 1 ELSE 0 END, ex
                     UnitSold = unit,
                     QtyEntered = lineInput.Quantity * (take / qtyBase),
                     QtyBase = take,
-                    UnitPricePaisa = (long)Math.Round((double)pricePerSelected / unitsPerSelected, MidpointRounding.AwayFromZero),
+                    UnitPricePaisa = Calc.Round((double)pricePerSelected / unitsPerSelected),
                     CostUnitPaisa = batch.CostPaisa,
                     GrossPaisa = 0
                 });
@@ -399,7 +401,7 @@ ORDER BY CASE WHEN expiry_date IS NULL OR expiry_date = '' THEN 1 ELSE 0 END, ex
                     UnitSold = unit,
                     QtyEntered = lineInput.Quantity * (remaining / qtyBase),
                     QtyBase = remaining,
-                    UnitPricePaisa = (long)Math.Round((double)pricePerSelected / unitsPerSelected, MidpointRounding.AwayFromZero),
+                    UnitPricePaisa = Calc.Round((double)pricePerSelected / unitsPerSelected),
                     CostUnitPaisa = fallback?.CostUnitPaisa ?? 0,
                     GrossPaisa = 0
                 });
@@ -417,7 +419,7 @@ ORDER BY CASE WHEN expiry_date IS NULL OR expiry_date = '' THEN 1 ELSE 0 END, ex
                 var draft = lineDrafts[index];
                 var share = index == lineDrafts.Count - 1
                     ? gross - given
-                    : (long)Math.Round(gross * (draft.QtyBase / allocated), MidpointRounding.AwayFromZero);
+                    : Calc.Round(gross * (draft.QtyBase / allocated));
 
                 draft.GrossPaisa = share;
                 given += share;
@@ -434,7 +436,7 @@ ORDER BY CASE WHEN expiry_date IS NULL OR expiry_date = '' THEN 1 ELSE 0 END, ex
         {
             var costs = line.LineCostPaisa;
             var baseForDiscount = marginMode ? Math.Max(0, line.GrossPaisa - costs) : line.GrossPaisa;
-            var discount = (long)Math.Round(baseForDiscount * input.DiscountPercent / 100m, MidpointRounding.AwayFromZero);
+            var discount = Calc.RoundMoney(baseForDiscount * input.DiscountPercent / 100m);
 
             if (blockBelowCost && line.GrossPaisa - discount < costs)
             {
@@ -452,7 +454,7 @@ ORDER BY CASE WHEN expiry_date IS NULL OR expiry_date = '' THEN 1 ELSE 0 END, ex
         var netBeforeExtras = subtotal - discountTotal;
 
         var taxPaisa = _settings.GetBool("tax.enabled")
-            ? (long)Math.Round(netBeforeExtras * _settings.GetInt("tax.percent", 0) / 100m, MidpointRounding.AwayFromZero)
+            ? Calc.RoundMoney(netBeforeExtras * _settings.GetInt("tax.percent", 0) / 100m)
             : 0L;
 
         var roundTo = Math.Max(0, _settings.GetInt("bill.roundTo", 10));
@@ -498,7 +500,7 @@ ORDER BY CASE WHEN expiry_date IS NULL OR expiry_date = '' THEN 1 ELSE 0 END, ex
                 var line = lines[index];
                 var share = index == lines.Count - 1
                     ? adjustment - given
-                    : (long)Math.Round(adjustment * (baseSum == 0 ? 1.0 / lines.Count : (double)line.LineTotalPaisa / baseSum), MidpointRounding.AwayFromZero);
+                    : Calc.Round(adjustment * (baseSum == 0 ? 1.0 / lines.Count : (double)line.LineTotalPaisa / baseSum));
 
                 line.LineTotalPaisa += share;
                 given += share;

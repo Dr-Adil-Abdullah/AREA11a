@@ -126,12 +126,12 @@ VALUES(@code, @supplierId, @invoiceNo, @date, 0, 0, 0, 0, 0, @notes, @userId, @c
             var unit = (line.Unit ?? "box").Trim().ToLowerInvariant();
             var unitsPerSelected = unit switch
             {
-                "box" => Math.Max(1, product.BoxStrips) * Math.Max(1, product.StripTablets),
-                "strip" => Math.Max(1, product.StripTablets),
-                _ => 1
+                "box" => (double)(Math.Max(1, product.BoxStrips) * Math.Max(1, product.StripTablets)),
+                "strip" => (double)Math.Max(1, product.StripTablets),
+                _ => 1d
             };
 
-            var qtyBase = line.Quantity * unitsPerSelected;
+            var qtyBase = Calc.ToBase(line.Quantity, unitsPerSelected);
 
             var batchNo = (line.BatchNo ?? string.Empty).Trim();
             if (batchNo.Length == 0)
@@ -149,7 +149,7 @@ VALUES(@code, @supplierId, @invoiceNo, @date, 0, 0, 0, 0, 0, @notes, @userId, @c
 
             var costPaisa = line.IsSample ? 0 : Math.Max(0, line.CostPaisa);
             var retailPaisa = line.RetailPaisa > 0 ? line.RetailPaisa : product.RetailPaisa;
-            var lineTotal = line.IsSample ? 0 : (long)Math.Round(costPaisa * qtyBase, MidpointRounding.AwayFromZero);
+            var lineTotal = line.IsSample ? 0 : Calc.Round(costPaisa * qtyBase);
 
             _db.Execute(connection, @"
 INSERT INTO batches(product_id, batch_no, expiry_date, expiry_ym, qty_base, cost_paisa, retail_paisa,

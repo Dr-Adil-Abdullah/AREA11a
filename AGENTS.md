@@ -105,5 +105,5 @@ commit a real shop database.
 ## 8. Current state (update this line if you finish a phase)
 
 > Phase 1 written, **not yet compiled**: schema 001-015, Core services, login/dashboard/products/
-> POS/purchases screens, 45 tests. Next: **F-16** first Windows build, then **F-13** receipt +
+> POS/purchases screens, 56 tests. Next: **F-16** first Windows build, then **F-13** receipt +
 > instant ESC/POS print. Details: `HANDOFF.md` §4 and `docs/PROGRESS.md`.

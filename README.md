@@ -27,11 +27,16 @@ Live counts are in [`docs/PROGRESS.md`](docs/PROGRESS.md) (features) and
 
 **Honest note:** the build machine used so far is Linux with no .NET SDK, so nothing in `dotnet/`
 has ever been compiled. It is checked statically (C# parses, XAML/bindings/resources valid,
-migrations execute against SQLite, 45 test cases written). The first `dotnet build` is task **F-16**.
+migrations execute against SQLite, 56 test cases written). The first `dotnet build` is task **F-16**.
 
 ---
 
 ## Build and run (Windows 10/11)
+
+**Easiest:** double-click **`START-AREA11.bat`** — it updates, builds and starts the app.
+[Urdu steps](docs/HOW-TO-RUN-URDU.md).
+
+Or manually:
 
 ```bat
 git clone https://github.com/Dr-Adil-Abdullah/AREA11a.git
