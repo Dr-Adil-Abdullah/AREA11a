@@ -45,7 +45,7 @@ features and the four phases.
 | F-13 | **Receipt render + instant ESC/POS print, 58 / 80 mm, no dialog** | ⬜ | - | - | pressing print prints (D-05, D-23) |
 | F-14 | Hold cart / bring back a held cart | ⬜ | - | - | two customers can wait at once |
 | F-15 | Split payment (cash + card/online in one bill) | ⬜ | - | - | - |
-| F-16 | **First real Windows build and test run** | ⬜ | `docs/BUILD-ON-WINDOWS.md` | - | 0 errors, 0 warnings, 56/56 tests |
+| F-16 | **First real Windows build and test run** | ✅ | `docs/BUILD-ON-WINDOWS.md` | - | **20 Oct 2026: `Build succeeded`, 0 errors** (6 NU1903 security warnings, fixed by pinning SQLitePCLRaw 2.1.12) · `dotnet test` still to be run |
 | F-17 | Settings screen: shop info, discount rules, and per-person permission ticks | ⬜ | - | - | owner edits everything without a developer |
 | F-18 | Tests for purchases, partners, numbering | ⬜ | `Area11.Tests/` | - | added with F-13 |
 
@@ -118,7 +118,7 @@ features and the four phases.
 | Every XAML binding matches its view-model | `python3 tools/check_repo.py` | ✅ |
 | Migrations 001-015 produce 31 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
-| **Compiles on Windows** | `dotnet build Area11.sln` | ⬜ **F-16** |
+| **Compiles on Windows** | `dotnet build Area11.sln` | ✅ **20 Oct 2026 — Build succeeded** |
 | **56 tests green** | `dotnet test` | ⬜ **F-16** |
 
 ## Change log
@@ -126,6 +126,7 @@ features and the four phases.
 | Date | What |
 |---|---|
 | 20 Oct 2026 | **First Windows build report:** CS0103 (`Path`/`Directory`/`File`) in `AppConfig.cs`, `Database.cs`, `LoggerService.cs` - fixed with explicit `using System.IO;`. The old `Area11.WPF.sln` was the solution being built by mistake, so it moved to `prototypes/`; the real solution is now `Area11.sln` in the root. The checker gained an explicit-usings check and a SQL-preparation check (37 statements). |
+| 20 Oct 2026 | **First successful Windows build.** `Area11.sln` compiled in 5.3 s (Core, Desktop, Tests). Six NU1903 security warnings for `SQLitePCLRaw.lib.e_sqlite3` 2.1.11 → pinned 2.1.12. Brand colour changed to green as the owner's first visual test. Added `tools/RUN-TESTS.cmd` and `docs/GIT-AND-VS-URDU.md`. |
 | 20 Oct 2026 | Added `HANDOFF.md`, `AGENTS.md`, this board, the rules matrix, the spec copy and `tools/check_repo.py` (owner's U-13). |
 | 19 Oct 2026 | Phase 1 code: schema, Core services, login, dashboard, products, purchases, POS, 44 tests. |
 | 19 Oct 2026 | Owner decisions D-17…D-23 (three projects, Windows 10, installer, four phases, photos, quarantine, printing). |

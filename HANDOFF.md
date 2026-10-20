@@ -21,9 +21,9 @@ shop computer. Talk to him in Urdu; keep code, database and UI in English.
 |---|---|
 | Where is the product? | **`dotnet/`** - `Area11.sln` with `Area11.Core`, `Area11.Desktop`, `Area11.Tests` |
 | What can it do today? | sign-in, products, purchases `PINV`, counter billing `INV` (FEFO, discount guard, round-off, cash change, credit), dashboard |
-| Has it ever been compiled? | **No.** No .NET SDK exists in the agent sandbox. First Windows build is task **F-16** |
+| Has it ever been compiled? | **Yes - 20 Oct 2026.** The owner's Windows build reported `Build succeeded` (0 errors, 6 NU1903 warnings, since fixed). Tests have still not been run |
 | What is the very next task? | **F-13** receipt + instant ESC/POS print; before it, F-16 (build it once on Windows) |
-| How many tests? | 56 cases (32 facts + 13 theory rows) in 6 test files - written, never executed |
+| How many tests? | 56 cases in 7 files - written, **never executed**; run `tools\RUN-TESTS.cmd` |
 | Database? | the **original** schema, migrations `001`-`015`, **31 business tables** (+ `_migrations` ledger), so an existing `area11.db` opens unchanged |
 | Where does data live? | `%ProgramData%\Area11\` (`area11.db`, `photos\`, `logs\`, `backups\`) |
 | Default owner login | user **Owner**, password **`area11`** (change it on day one) |
@@ -83,7 +83,7 @@ Do them one at a time; each one ends with a commit (see `AGENTS.md` §6).
 
 | # | Task | Acceptance |
 |---|---|---|
-| 1 | **F-16** first Windows build (`dotnet build Area11.sln`, `dotnet test`) | 0 errors; fix every compile error; 56/56 green |
+| 1 | **F-16 follow-up** run `tools\RUN-TESTS.cmd` on the owner's PC | 56/56 green (the build already succeeds) |
 | 2 | **F-13** receipt renderer + ESC/POS instant print (58/80 mm) | pressing "print" prints with no dialog; reprint from a saved bill; printer absent ⇒ bill still saves |
 | 3 | **F-17** Settings screen (store info, discount, tax, printer width) + per-person permission ticks | the owner changes a setting and the next bill obeys it |
 | 4 | **F-14 / F-15** hold cart, split payment | two held carts survive a restart; one bill with two payment rows |
