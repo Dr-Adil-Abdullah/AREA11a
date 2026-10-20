@@ -78,6 +78,24 @@ dotnet build -v minimal
 
 Anything not in this table: send the first error line and the file name — that is enough.
 
+### The project-load error (MSB4025) and how to prove where it comes from
+
+`MSB4025: The project file could not be loaded ... Area11.WPF\Area11.WPF.csproj` means MSBuild is
+reading an **old solution**. The prototype moved to `prototypes\Area11.WPF`, so the real solution,
+`Area11.sln` in the repository root, must be the only one opened.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\doctor.ps1        # diagnose
+powershell -ExecutionPolicy Bypass -File .\tools\doctor.ps1 -Fix   # diagnose and repair
+```
+
+The doctor lists every `.sln`, checks that each project it names really exists, reports a stale
+`.vs` folder or an old `Area11.WPF` folder, prints the git branch and commit, and (with `-Fix`)
+removes only the obsolete solution (keeping a `.bak`) and renames the old prototype folder.
+It never deletes project code and never touches `C:\ProgramData\Area11`.
+
+Manual equivalent, step by step, is in [`HOW-TO-RUN-URDU.md`](HOW-TO-RUN-URDU.md).
+
 ## 5. What already works in this build
 
 - **Sign-in** — owner password, staff PIN, five tries then a two-minute lock, every attempt audited.

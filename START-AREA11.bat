@@ -39,6 +39,25 @@ if exist "Area11.WPF.sln" (
     echo  [2/5] No stale solution file.
 )
 
+rem  Visual Studio remembers the last solution in the .vs folder; a stale one makes it
+rem  report MSB4025 about Area11.WPF.csproj even after the file is gone.
+if exist ".vs" (
+    rmdir /s /q ".vs"
+    echo  [2/5] Cleared the Visual Studio memory of the old solution ^(.vs^).
+)
+
+rem  The prototype now lives in prototypes\Area11.WPF. An old copy in the root is renamed,
+rem  never deleted, so nothing of the owner work can be lost.
+if exist "Area11.WPF" (
+    if not exist "prototypes\Area11.WPF" (
+        mkdir "prototypes" 2>nul
+        move "Area11.WPF" "prototypes\Area11.WPF" >nul
+        echo  [2/5] Moved the old prototype folder into prototypes\.
+    ) else (
+        echo  [2/5] WARNING: an extra Area11.WPF folder exists in the root - run tools\doctor.ps1 -Fix
+    )
+)
+
 rem ---- 3. update from GitHub ------------------------------------------------
 echo  [3/5] Updating the code from GitHub...
 git pull --ff-only
