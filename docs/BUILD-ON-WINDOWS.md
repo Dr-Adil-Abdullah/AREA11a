@@ -70,6 +70,7 @@ dotnet build -v minimal
 | `The project file could not be loaded ... Area11.WPF\Area11.WPF.csproj` | an old `Area11.WPF.sln` is still in the folder, so Visual Studio opens the prototype | delete `Area11.WPF.sln` and the `.vs` folder, then open the root `Area11.sln` (`START-AREA11.bat` does this automatically) |
 | `error CS0121: The call is ambiguous between Math.Round(double)` and `Math.Round(decimal)` | an `int`/`long` was passed to `Math.Round` | fixed — all money rounding goes through `Calc.Round` / `Calc.RoundMoney`; the checker now forbids raw `Math.Round` |
 | `MSB1003` / no project found | the command was run in the wrong folder | run it in the repository root (the folder that contains `Area11.sln`) |
+| `Area11.sln` is not in the folder at all | the download was interrupted, or an old copy was merged into a newer one, so old prototype files and new files sit side by side | take a fresh copy: [download the ZIP](https://github.com/Dr-Adil-Abdullah/AREA11a/archive/refs/heads/arena/a8a3b2e0-area11a.zip), extract to a **new** folder and run `START-AREA11.bat` there |
 | `NETSDK1045` / SDK not found | .NET 10 SDK missing | install it, close and reopen the terminal |
 | `NU1102` package not found | wrong package version or offline NuGet cache | send the first error line; check the internet once |
 | `Migrations folder was not found` | content files were not copied | `dotnet build` again, then check `dotnet\Area11.Desktop\bin\Debug\net10.0-windows\Migrations` |

@@ -256,6 +256,32 @@ def check_solutions() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 1e. The repository skeleton is complete
+# ---------------------------------------------------------------------------
+def check_skeleton() -> None:
+    """The files that make the project startable must all be present.
+
+    Why: one download arrived with docs, dotnet and tools but without Area11.sln, so nothing could
+    build and the symptoms looked like compiler errors. A missing skeleton file is now reported as
+    what it is.
+    """
+    required = [
+        "Area11.sln", "START-AREA11.bat", "README.md", "HANDOFF.md", "AGENTS.md",
+        "dotnet/Area11.Core/Area11.Core.csproj",
+        "dotnet/Area11.Desktop/Area11.Desktop.csproj",
+        "dotnet/Area11.Tests/Area11.Tests.csproj",
+        "tools/check_repo.py", "tools/build_rules_matrix.py", "tools/doctor.ps1",
+        "tools/CHECK-AREA11.cmd", "tools/diagnose.bat",
+        "docs/PROGRESS.md", "docs/RULES-MATRIX.md", "docs/OWNER-DECISIONS.md",
+    ]
+    missing = [name for name in required if not (ROOT / name).exists()]
+    for name in missing:
+        fail(f"the repository is incomplete - missing {name}")
+
+    REPORT.append(f"Skeleton: {len(required)} required files, {len(missing)} missing")
+
+
+# ---------------------------------------------------------------------------
 # 2. XML (XAML, csproj, props)
 # ---------------------------------------------------------------------------
 def check_xml() -> None:
@@ -477,6 +503,7 @@ def main() -> int:
     check_usings()
     check_rounding()
     check_solutions()
+    check_skeleton()
     check_xml()
     check_bindings()
     check_migrations()

@@ -33,8 +33,14 @@ migrations execute against SQLite, 56 test cases written). The first `dotnet bui
 
 ## Build and run (Windows 10/11)
 
-**Easiest:** double-click **`START-AREA11.bat`** — it updates, builds and starts the app.
-[Urdu steps](docs/HOW-TO-RUN-URDU.md).
+**Easiest:** double-click **`START-AREA11.bat`** — it checks the folder, updates, builds and starts
+the app. [Urdu steps](docs/HOW-TO-RUN-URDU.md).
+
+> **`Area11.sln` missing in your folder?** That copy is old or incomplete (the download was
+> interrupted, or an older extract was merged into it). Take a fresh copy instead of repairing it:
+> [download the ZIP](https://github.com/Dr-Adil-Abdullah/AREA11a/archive/refs/heads/arena/a8a3b2e0-area11a.zip),
+> extract to `D:\`, then run `START-AREA11.bat` inside the new folder. Shop data lives in
+> `C:\ProgramData\Area11` and is never touched.
 
 Or manually:
 
