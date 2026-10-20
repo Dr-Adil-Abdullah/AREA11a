@@ -2,10 +2,12 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- ============ Palette (the owner can change the brand colour in Settings) ============ -->
-    <!-- Brand colour. The owner asked for green as the first visual test (change here only). -->
-    <SolidColorBrush x:Key="BrandBrush" Color="#15803D" />
-    <SolidColorBrush x:Key="BrandDarkBrush" Color="#166534" />
-    <SolidColorBrush x:Key="BrandSoftBrush" Color="#F0FDF4" />
+    <!-- Brand colour - THE one place to change it in this build (owner asked for pink).
+         White text sits on these brushes in buttons and badges, so keep BrandBrush and
+         BrandDarkBrush dark enough: #DB2777 and #BE185D both pass 4.5:1 against white. -->
+    <SolidColorBrush x:Key="BrandBrush" Color="#DB2777" />
+    <SolidColorBrush x:Key="BrandDarkBrush" Color="#BE185D" />
+    <SolidColorBrush x:Key="BrandSoftBrush" Color="#FDF2F8" />
     <SolidColorBrush x:Key="CanvasBrush" Color="#F3F5F7" />
     <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF" />
     <SolidColorBrush x:Key="SidebarBrush" Color="#0F172A" />
