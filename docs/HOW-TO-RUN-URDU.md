@@ -1,6 +1,65 @@
 # Area11 چلانے کا طریقہ (آسان، اردو میں)
 
-> بس ایک فائل: ریپو کے فولڈر میں **`START-AREA11.bat`** پر ڈبل کلک کریں۔
+> ## ⚠️ پہلے یہ پڑھیں — ٹرمینل میں کمانڈ ٹائپ نہ کریں
+>
+> آپ کی پچھلی اسکرین میں جو سرخ errors آئے، وہ کوڈ کی خرابی **نہیں** تھی۔ وہ اس لیے آئے کہ:
+
+| جو ہوا | کیوں ہوا |
+|---|---|
+| `PS D:\areaa>` چلا | یہ **پرامپٹ** ہے (پتہ بتاتا ہے)، کمانڈ نہیں۔ `PS` اور `>` سمیت پورا پرامپٹ نقل کر دیا گیا تو PowerShell نے اسے کمانڈ سمجھ لیا |
+| `UpArrow`, `Ctrl+v`, `Ctrl+Enter` چلے | یہ کی بورڈ کی چابیاں ہیں، تحریر نہیں۔ سکرین شاٹ/ویڈیو سے نقل کرنے پر یہ بھی کمانڈ بن گئیں |
+| `Oops, something went wrong` | PSReadLine (پاور شیل کا ایڈیٹر) کا اندرونی نقص — بڑے پیسٹ پر ہوتا ہے |
+
+**حل:** نیچے دیے گئے **ڈبل کلک والے فائل** استعمال کریں۔ کچھ ٹائپ کرنے کی ضرورت نہیں۔
+
+---
+
+## سب سے آسان راستہ (سفارش)
+
+### 1) `D:\areaa\tools\CHECK-AREA11.cmd` پر ڈبل کلک کریں
+
+یہ خود کھڑکی کھولتا ہے، ساری جانچ کرتا ہے، اور خرابی خود درست کرتا ہے:
+- پرانا `Area11.WPF.sln` ہٹاتا ہے (پہلے `.bak` بنا کر)
+- `.vs` (Visual Studio کی یادداشت) صاف کرتا ہے
+- پرانے `Area11.WPF` فولڈر کا نام بدلتا ہے (حذف نہیں کرتا)
+- آخر میں "Press any key" پر رکتا ہے تاکہ نتیجہ پڑھ سکیں
+
+### 2) `D:\areaa\START-AREA11.bat` پر ڈبل کلک کریں
+
+یہ کوڈ اپ ڈیٹ کر کے بلڈ کرتا اور ایپ چلاتا ہے۔
+
+بس۔ ٹرمینل کھولنے کی ضرورت نہیں۔
+
+---
+
+## صرف جانچنا ہو (کچھ بدلے بغیر)
+
+`D:\areaa\tools\diagnose.bat` پر ڈبل کلک کریں۔ یہ صرف پڑھ کر بتاتا ہے:
+- کون سا فولڈر کھلا ہے
+- کتنی `.sln` فائلیں ہیں
+- ہر سولوشن کس `.csproj` کی طرف اشارہ کر رہا ہے
+- وہ پروجیکٹ موجود ہے یا نہیں
+
+نتیجہ `tools\diagnosis.txt` میں بھی محفوظ ہو جاتا ہے — وہی فائل بھیج دیں۔
+
+---
+
+## اگر ٹرمینل ہی استعمال کرنا ہو (صرف یہ تین لائنیں)
+
+ایک ایک لائن **ٹائپ کریں** (نقل نہ کریں)، ہر لائن کے بعد **Enter**:
+
+```
+cd D:\areaa
+```
+```
+dir /b
+```
+```
+dotnet build Area11.sln
+```
+
+> `PS D:\areaa>` کبھی نہ لکھیں — وہ خود نظر آتا ہے، اسے لکھنا نہیں ہوتا۔
+
 
 ## پہلی بار (صرف ایک بار)
 
@@ -63,92 +122,38 @@ SaleService.cs(337,22): error CS0121: The call is ambiguous between ...
 
 ## اگر Visual Studio میں `Area11.WPF.csproj` نہ ملنے کا ایرر آئے (MSB4025)
 
-یہ ایرر **کوڈ میں نہیں**، آپ کے کمپیوٹر پر Visual Studio کی یادداشت میں ہے۔ وہ پرانا سولوشن
-(`Area11.WPF.sln`) کھولتا رہتا ہے جو اب `prototypes\` میں منتقل ہو چکا ہے۔
+یہ ایرر **کوڈ میں نہیں** — Visual Studio کے پاس پرانا سولوشن کھلا ہے جو اب `prototypes\` میں ہے۔
 
-### سب سے آسان حل (ایک کمانڈ)
+### طریقہ 1 (سفارش): ڈبل کلک
 
-Visual Studio کا ٹرمینل کھولیں (**View → Terminal**) اور یہ چلائیں:
+`D:\areaa\tools\CHECK-AREA11.cmd` → یہ خود سب درست کر دیتا ہے۔
 
-```powershell
-powershell -ExecutionPolicy Bypass -File D:\areaa\tools\doctor.ps1
+### طریقہ 2: ٹرمینل سے (صرف اگر ٹائپ کرنا آتا ہو)
+
+پہلے `D:\areaa` پر جائیں — ایک ہی لائن:
+
+```
+cd /d D:\areaa
 ```
 
-یہ خود بتا دے گا کہ کیا غلط ہے۔ اگر اس نے کہا کہ پرانی فائلیں ملی ہیں تو مرمت کے لیے:
+پھر یہ ایک لائن (پورا راستہ دیا گیا ہے، اس لیے کسی اور فولڈر میں ہونے سے فرق نہیں پڑتا):
 
-```powershell
-powershell -ExecutionPolicy Bypass -File D:\areaa\tools\doctor.ps1 -Fix
+```
+powershell -NoProfile -ExecutionPolicy Bypass -File D:\areaa\tools\doctor.ps1 -Fix
 ```
 
-یہ پرانا `Area11.WPF.sln` ہٹاتا ہے، `.vs` فولڈر صاف کرتا ہے، اور پرانے `Area11.WPF` فولڈر کا
-نام بدل دیتا ہے — **کچھ حذف نہیں ہوتا**۔ پھر Visual Studio بند کر کے **`D:\areaa\Area11.sln`**
-کھولیں۔
+اگر پھر بھی شک ہو کہ کیا ہو رہا ہے، یہ چلائیں (صرف پڑھتا ہے، کچھ نہیں بدلتا):
 
-### ایک ایک کر کے خود دیکھنا ہو تو (کمانڈز)
-
-پہلے Visual Studio کا ٹرمینل کھولیں اور:
-
-**قدم 1 — ہم کس فولڈر میں ہیں؟**
-
-```powershell
-cd D:\areaa
-Get-Location
-Get-ChildItem -Force | Select-Object Mode, Name
+```
+D:\areaa\tools\diagnose.bat
 ```
 
-توقع: `Area11.sln`، `dotnet`، `prototypes`، `tools`، `docs`، `START-AREA11.bat`۔
+### طریقہ 3: Visual Studio میں صرف یہ کریں
 
-**قدم 2 — کتنے سولوشن فائل ہیں؟**
-
-```powershell
-Get-ChildItem -Recurse -Filter *.sln | Select-Object -ExpandProperty FullName
-```
-
-توقع: صرف دو — `D:\areaa\Area11.sln` اور `D:\areaa\prototypes\prototypes.sln`۔
-اگر `D:\areaa\Area11.WPF.sln` بھی دکھے تو **وہی پرانا مجرم ہے**۔
-
-**قدم 3 — سولوشن کس پروجیکٹ کی طرف اشارہ کر رہا ہے؟**
-
-```powershell
-Select-String -Path .\Area11.sln -Pattern 'csproj'
-```
-
-توقع: تین لائنیں — `dotnet\Area11.Core\...`، `dotnet\Area11.Desktop\...`، `dotnet\Area11.Tests\...`۔
-اگر `Area11.WPF\Area11.WPF.csproj` لکھا ہو تو آپ پرانا سولوشن کھول رہے ہیں۔
-
-**قدم 4 — پروجیکٹ فائلیں کہاں ہیں؟**
-
-```powershell
-Get-ChildItem -Recurse -Filter *.csproj | Select-Object -ExpandProperty FullName
-```
-
-توقع: `dotnet\` کے تین، اور `prototypes\` کے دو۔
-
-**قدم 5 — کوڈ کا ورژن کیا ہے؟**
-
-```powershell
-git branch --show-current
-git log --oneline -1
-git status --short
-```
-
-توقع: برانچ `arena/a8a3b2e0-area11a`، آخری commit `7a18b22` یا اس کے بعد کا۔
-اگر `git status` بہت سی فائلیں دکھائے تو پہلے بتائیں، `git pull` نہ چلائیں۔
-
-**قدم 6 — صفائی (صرف قدم 2 میں پرانی فائل ملنے پر)**
-
-```powershell
-Remove-Item .\Area11.WPF.sln -Force
-Remove-Item .\.vs -Recurse -Force
-```
-
-پھر **Visual Studio بند کریں** اور `D:\areaa\Area11.sln` دوبارہ کھولیں۔
-
-**قدم 7 — بلڈ**
-
-```powershell
-dotnet build .\Area11.sln -v minimal
-```
+1. Visual Studio **بند** کریں
+2. `D:\areaa` فولڈر میں **`.vs`** نام کا فولڈر دیکھیں — اُسے حذف کر دیں
+3. وہاں اگر **`Area11.WPF.sln`** یا **`Area11.WPF`** فولڈر ہو تو اُنہیں بھی حذف کر دیں
+4. Visual Studio دوبارہ کھولیں اور **`D:\areaa\Area11.sln`** کھولیں
 
 ### یاد رکھیں
 

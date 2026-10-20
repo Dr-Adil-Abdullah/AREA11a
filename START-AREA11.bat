@@ -77,6 +77,9 @@ if errorlevel 1 (
     echo   Copy the FIRST error line above and send it in the chat.
     echo   The line looks like:  Something.cs(12,34): error CS1234: ...
     echo.
+    echo   If the error mentions a project file that could not be loaded,
+    echo   run tools\CHECK-AREA11.cmd once and try again.
+    echo.
     pause
     exit /b 1
 )

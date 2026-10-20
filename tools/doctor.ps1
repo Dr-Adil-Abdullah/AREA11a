@@ -6,11 +6,15 @@
 # reports MSB4025 ("the project file could not be loaded") and, because no project loads, every type
 # looks undefined (CS0103).
 #
-# Run it (read-only diagnosis):
-#     powershell -ExecutionPolicy Bypass -File .\tools\doctor.ps1
+# DOUBLE-CLICK `tools\CHECK-AREA11.cmd` - that is the safe way to start it. It opens a fresh
+# window whose output stays visible. Typing the command by hand is error prone: a stray "PS D:>"
+# or a pasted keyboard shortcut is executed as a command and floods the screen with red errors.
+#
+# Run it by hand (read-only diagnosis):
+#     & "$env:USERPROFILE\...\tools\doctor.ps1"
 #
 # Run it to also repair what is safe to repair:
-#     powershell -ExecutionPolicy Bypass -File .\tools\doctor.ps1 -Fix
+#     & .\tools\doctor.ps1 -Fix
 #
 # It never touches the shop database in C:\ProgramData\Area11 and never deletes project code:
 # an old prototype folder is *renamed*, and a stale solution file is copied to *.bak first.
@@ -210,3 +214,9 @@ if ($problems.Count -eq 0) {
 Write-Host ''
 Write-Host '  Data folder (never delete): C:\ProgramData\Area11' -ForegroundColor DarkGray
 Write-Host ''
+
+# ---------------------------------------------------------------------------
+# Keep the window open, because this is normally started by a double-click.
+# ---------------------------------------------------------------------------
+Write-Host ' Press Enter to close this window...' -ForegroundColor DarkGray
+[void](Read-Host)

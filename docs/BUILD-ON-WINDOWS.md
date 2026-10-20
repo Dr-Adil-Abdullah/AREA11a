@@ -84,10 +84,10 @@ Anything not in this table: send the first error line and the file name — that
 reading an **old solution**. The prototype moved to `prototypes\Area11.WPF`, so the real solution,
 `Area11.sln` in the repository root, must be the only one opened.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\doctor.ps1        # diagnose
-powershell -ExecutionPolicy Bypass -File .\tools\doctor.ps1 -Fix   # diagnose and repair
-```
+Double-click **`tools\CHECK-AREA11.cmd`** (diagnose and repair) or **`tools\diagnose.bat`**
+(diagnose only, writes `tools\diagnosis.txt`). Both start in the right folder by themselves, so
+nothing has to be typed - typing a copied prompt such as `PS D:\areaa>` is executed as a command and
+produces a screen full of red errors.
 
 The doctor lists every `.sln`, checks that each project it names really exists, reports a stale
 `.vs` folder or an old `Area11.WPF` folder, prints the git branch and commit, and (with `-Fix`)
