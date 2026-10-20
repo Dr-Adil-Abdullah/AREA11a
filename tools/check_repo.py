@@ -437,6 +437,31 @@ def check_sql() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 4c. Package versions that were flagged by the first Windows build
+# ---------------------------------------------------------------------------
+def check_packages() -> None:
+    """NU1903 on the owner's PC: SQLitePCLRaw.lib.e_sqlite3 2.1.11 (GHSA-2m69-gcr7-jv3q).
+
+    The fix is an explicit pin, because the vulnerable version arrives transitively. This check
+    keeps the pin from being "cleaned up" by a future tidy-up.
+    """
+    core = (DOTNET / "Area11.Core/Area11.Core.csproj").read_text(encoding="utf-8")
+
+    needed = {
+        "Microsoft.Data.Sqlite": "10.0.2",
+        "SQLitePCLRaw.bundle_e_sqlite3": "2.1.12",
+    }
+    for package, version in needed.items():
+        match = re.search(rf'Include="{re.escape(package)}"\s+Version="([^"]+)"', core)
+        if match is None:
+            fail(f"Area11.Core.csproj no longer references {package}")
+        elif match.group(1) != version:
+            fail(f"{package} is {match.group(1)} - the patched pin is {version}")
+
+    REPORT.append("Packages: SQLite pinned to the patched 2.1.12")
+
+
+# ---------------------------------------------------------------------------
 # 5. Tests and settings
 # ---------------------------------------------------------------------------
 def check_tests() -> None:
@@ -508,6 +533,7 @@ def main() -> int:
     check_bindings()
     check_migrations()
     check_sql()
+    check_packages()
     check_tests()
     check_docs()
 
