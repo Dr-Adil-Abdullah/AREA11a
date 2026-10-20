@@ -29,7 +29,7 @@ dotnet run --project dotnet\Area11.Desktop
 
 - There is exactly **one solution**, `Area11.sln`, in the root of the repository. Open that.
 - `dotnet build` with no arguments finds it automatically.
-- Expected: everything builds, **56 tests pass**, and the sign-in window opens.
+- Expected: everything builds, **68 tests pass**, and the sign-in window opens.
 
 > **Seeing the old blue window that says "app is running"?** That is `prototypes/WPFSample` — the very
 > first smoke test from day one, not Area11. It sits in `prototypes\` now and is only kept as history.

@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:Area11.Desktop.ViewModels"
         xmlns:views="clr-namespace:Area11.Desktop.Views"
+        xmlns:utils="clr-namespace:Area11.Core.Utils;assembly=Area11.Core"
         Title="Area11" Height="760" Width="1240"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource CanvasBrush}">
@@ -105,6 +106,8 @@
                             <StackPanel Margin="9,0,0,0" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding UserName}" Foreground="White" FontSize="12" FontWeight="SemiBold" />
                                 <TextBlock Text="{Binding RoleText}" Foreground="#94A3B8" FontSize="10" />
+                            <TextBlock Text="{x:Static utils:BuildInfo.Label}" Foreground="#64748B"
+                                       FontSize="9" Margin="0,2,0,0" />
                             </StackPanel>
                         </StackPanel>
                     </Border>

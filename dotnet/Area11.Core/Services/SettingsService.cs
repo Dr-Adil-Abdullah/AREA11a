@@ -242,6 +242,13 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         void Flag(string key, bool value) => map[key] = value ? "true" : "false";
         void Raw(string key, string json) => map[key] = json;
 
+        // ---- Printer (D-05, D-23). An empty printer.name means "the Windows default printer". ----
+        Text("printer.name", string.Empty);
+        Number("printer.width", 58);
+        Flag("printer.autoCut", true);
+        Number("printer.copies", 1);
+        Flag("printer.autoPrint", true);
+
         // ---- Store and branding (E-02, E-03) ----
         Text("store.name", "Area11 Pharmacy");
         Text("store.address", string.Empty);
@@ -296,10 +303,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Number("loyalty.rupeesPerPoint", 100);
         Number("loyalty.vipThreshold", 500);
 
-        // ---- Printer and receipt ----
-        Text("printer.width", "both");
-        Flag("printer.autoCut", true);
-        Number("printer.copies", 1);
+        // ---- Receipt layout (the printer itself is declared once, at the top of this method) ----
         Text("receipt.datePosition", "top");
         Flag("receipt.showOriginalPrice", true);
         Flag("receipt.showDiscount", true);

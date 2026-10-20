@@ -157,6 +157,9 @@
                         <Button Content="Complete sale  (F4)" Style="{StaticResource PrimaryButton}" Height="40"
                                 Margin="0,12,0,0" Command="{Binding CompleteCommand}" />
 
+                        <Button Content="Print last bill again" Style="{StaticResource GhostButton}"
+                                Margin="0,6,0,0" Command="{Binding PrintLastCommand}" />
+
                         <Border Background="#F8FAFC" CornerRadius="6" Padding="9" Margin="0,10,0,0">
                             <StackPanel>
                                 <TextBlock Text="{Binding StatusMessage}" FontSize="11" TextWrapping="Wrap">

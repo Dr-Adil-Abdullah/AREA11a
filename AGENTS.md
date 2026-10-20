@@ -23,6 +23,13 @@ Then run the checkers (below) and pick the first ⬜ or 🟡 task from `HANDOFF.
 
 ## 2. Hard rules
 
+0. **Document every change, and change the colour with it.** Two standing orders from the owner:
+   (a) anything a future session would need to know goes into this repository - `HANDOFF.md`,
+   `docs/PROGRESS.md`, `docs/VERSIONS.md`, the doc comment above the code - so that the app can be
+   dropped at any moment and any agent can continue from the link alone;
+   (b) every code change ships with a **new brand colour** (`docs/VERSIONS.md`), because the owner
+   tells builds apart by colour on his own screen.
+
 These come from the spec (§3, §5) and from bugs already paid for. A change that breaks one of them is
 rejected even if it "works".
 
@@ -102,8 +109,23 @@ commit a real shop database.
 - Prefer a method that already exists. Reuse beats elegance (owner's R-01…R-10).
 - Keep UI text in English; keep it short enough for a 58 mm receipt.
 
+## 9. Releasing a version (the colour rule)
+
+The owner tests each build himself and keeps several copies of the folder, so every release gets a
+new colour and a version number. Nothing may be shipped without it:
+
+1. next colour from the palette in `docs/VERSIONS.md` (never repeat the previous one);
+2. set `Version`, `CodeName`, `BrandHex`, `BrandDarkHex`, `BrandSoftHex`, `ReleasedOn` in
+   `dotnet/Area11.Core/Utils/BuildInfo.cs`;
+3. paint the same three colours on `BrandBrush` / `BrandDarkBrush` / `BrandSoftBrush` in
+   `dotnet/Area11.Desktop/Resources/Theme.xaml`;
+4. add the row to `docs/VERSIONS.md`;
+5. `python3 tools/check_repo.py` - it fails if the three disagree;
+6. commit with the version in the message.
+
 ## 8. Current state (update this line if you finish a phase)
 
-> Phase 1 written, **not yet compiled**: schema 001-015, Core services, login/dashboard/products/
-> POS/purchases screens, 56 tests. Next: **F-16** first Windows build, then **F-13** receipt +
-> instant ESC/POS print. Details: `HANDOFF.md` §4 and `docs/PROGRESS.md`.
+> **v0.2.0 (Purple)** - the first Windows build passed on 20 Oct 2026. Phase 1 has the schema, Core
+> services, login/dashboard/products/POS/purchases screens and 68 test cases. The receipt and
+> instant ESC/POS printing are written and wait for their first run on a real printer; next come the
+> settings screen (F-17), the hold cart and split payment. Details: `HANDOFF.md` §4.

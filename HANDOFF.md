@@ -21,9 +21,9 @@ shop computer. Talk to him in Urdu; keep code, database and UI in English.
 |---|---|
 | Where is the product? | **`dotnet/`** - `Area11.sln` with `Area11.Core`, `Area11.Desktop`, `Area11.Tests` |
 | What can it do today? | sign-in, products, purchases `PINV`, counter billing `INV` (FEFO, discount guard, round-off, cash change, credit), dashboard |
-| Has it ever been compiled? | **Yes - 20 Oct 2026.** The owner's Windows build reported `Build succeeded` (0 errors, 6 NU1903 warnings, since fixed). Tests have still not been run |
-| What is the very next task? | **F-13** receipt + instant ESC/POS print; before it, F-16 (build it once on Windows) |
-| How many tests? | 56 cases in 7 files - written, **never executed**; run `tools\RUN-TESTS.cmd` |
+| Has it ever been compiled? | **Yes - 20 Oct 2026.** The owner's Windows build reported `Build succeeded`. Since then the code grew (receipt/printing), so the current build is unverified again |
+| What is the very next task? | run `tools\RUN-TESTS.cmd` (68 cases), then the settings screen **F-17**; the receipt (F-13) is written and needs a real printer test |
+| How many tests? | 68 cases in 8 files - written, **never executed**; run `tools\RUN-TESTS.cmd` |
 | Database? | the **original** schema, migrations `001`-`015`, **31 business tables** (+ `_migrations` ledger), so an existing `area11.db` opens unchanged |
 | Where does data live? | `%ProgramData%\Area11\` (`area11.db`, `photos\`, `logs\`, `backups\`) |
 | Default owner login | user **Owner**, password **`area11`** (change it on day one) |
@@ -64,7 +64,7 @@ Full detail in [`docs/PROGRESS.md`](docs/PROGRESS.md). The short version:
 | Products, partners (customers/suppliers), purchases `PINV`, sales `INV`, dashboard | `Area11.Core/Services/` |
 | Money / quantity / expiry / password helpers | `Area11.Core/Utils/` |
 | WPF shell, login, dashboard, products, POS, purchases | `Area11.Desktop/` |
-| 56 test cases | `Area11.Tests/` |
+| 68 test cases | `Area11.Tests/` |
 
 **Not started (⬜)**
 
@@ -83,7 +83,7 @@ Do them one at a time; each one ends with a commit (see `AGENTS.md` §6).
 
 | # | Task | Acceptance |
 |---|---|---|
-| 1 | **F-16 follow-up** run `tools\RUN-TESTS.cmd` on the owner's PC | all 56 tests pass (the build already succeeds) |
+| 1 | **F-16 follow-up** run `tools\RUN-TESTS.cmd` on the owner's PC | all 68 tests pass |
 | 2 | **F-13** receipt renderer + ESC/POS instant print (58/80 mm) | pressing "print" prints with no dialog; reprint from a saved bill; printer absent ⇒ bill still saves |
 | 3 | **F-17** Settings screen (store info, discount, tax, printer width) + per-person permission ticks | the owner changes a setting and the next bill obeys it |
 | 4 | **F-14 / F-15** hold cart, split payment | two held carts survive a restart; one bill with two payment rows |
@@ -170,10 +170,11 @@ Folder map:
 | `Area11.Core/Services/` | `Auth`, `Permission`, `Settings`, `Audit`, `Numbering`, `Product`, `Partner`, `Purchase`, `Sale`, `Dashboard`, `Seed` |
 | `Area11.Core/Utils/` | `Money`, `Qty`, `Expiry`, `PasswordHasher`, `ServiceResult`, `LogService`, `AuditDiff`, `AppPaths` |
 | `Area11.Desktop/` | `App`, `AppServices` (composition root), `Resources/Theme.xaml`, `ViewModels/`, `Views/` |
-| `Area11.Tests/` | `TestDatabase` (in-memory SQLite + migrations + seed), 56 cases in 6 files |
+| `Area11.Tests/` | `TestDatabase` (in-memory SQLite + migrations + seed), 68 cases in 8 files |
 | `tools/` | `check_repo.py`, `build_rules_matrix.py` |
 | `docs/` | spec, decisions, progress, rules matrix, schema reference, build guide, port plan |
 | `prototypes/` | earlier prototypes (`Area11.WPF`, `WPFSample`) - reference only, do not extend |
+| `docs/VERSIONS.md` | every released build, its colour and what changed - **read this to know which build the owner has** |
 
 Wiring a new screen: service → `AppServices` property → `ShellViewModel.NavItems` (permission-gated)
 → `DataTemplate` in `ShellWindow.xaml` → view + view-model.

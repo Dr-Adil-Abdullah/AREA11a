@@ -27,7 +27,8 @@ Live counts are in [`docs/PROGRESS.md`](docs/PROGRESS.md) (features) and
 
 **Honest note:** the build machine used so far is Linux with no .NET SDK, so nothing in `dotnet/`
 has ever been compiled. It is checked statically (C# parses, XAML/bindings/resources valid,
-migrations execute against SQLite, 56 test cases written). The first `dotnet build` is task **F-16**.
+migrations execute against SQLite, 68 test cases written). The Windows build succeeded on
+20 Oct 2026; see [`docs/VERSIONS.md`](docs/VERSIONS.md) for which build the owner has.
 
 ---
 

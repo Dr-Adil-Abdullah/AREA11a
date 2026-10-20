@@ -17,6 +17,10 @@ public static class Money
     public static string Format(long paisa) =>
         "Rs " + ToRupees(paisa).ToString("#,##0.##", CultureInfo.InvariantCulture);
 
+    /// <summary>"1,234.50" — for receipts and invoices: always two decimals, never a bare integer.</summary>
+    public static string Fixed(long paisa) =>
+        ToRupees(paisa).ToString("#,##0.00", CultureInfo.InvariantCulture);
+
     /// <summary>"1234.50" — for text boxes.</summary>
     public static string Edit(long paisa) =>
         ToRupees(paisa).ToString("0.##", CultureInfo.InvariantCulture);

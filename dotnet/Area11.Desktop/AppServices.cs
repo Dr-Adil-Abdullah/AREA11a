@@ -25,6 +25,8 @@ public sealed class AppServices
         Partners = new PartnerService(Database, Audit, Log);
         Sales = new SaleService(Database, Audit, Numbering, Settings, Permissions, Log);
         Purchases = new PurchaseService(Database, Audit, Numbering, Permissions, Log);
+        Receipts = new ReceiptService(Database, Settings, Log);
+        Printer = new PrinterService(Settings, Log);
     }
 
     public Database Database { get; }
@@ -50,6 +52,10 @@ public sealed class AppServices
     public SaleService Sales { get; }
 
     public PurchaseService Purchases { get; }
+
+    public ReceiptService Receipts { get; }
+
+    public PrinterService Printer { get; }
 
     public User? CurrentUser { get; private set; }
 

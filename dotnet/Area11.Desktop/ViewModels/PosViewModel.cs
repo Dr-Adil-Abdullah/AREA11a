@@ -30,6 +30,7 @@ public sealed class PosViewModel : ObservableObject
     private string _statusMessage = "Ready.";
     private bool _isStatusError;
     private string _lastBill = string.Empty;
+    private int _lastSaleId;
 
     public PosViewModel(AppServices services, User user)
     {
@@ -40,6 +41,7 @@ public sealed class PosViewModel : ObservableObject
         RemoveCommand = new RelayCommand(RemoveLast);
         ClearCommand = new RelayCommand(ClearCart);
         CompleteCommand = new RelayCommand(CompleteSale);
+        PrintLastCommand = new RelayCommand(PrintLast, () => _lastSaleId > 0);
         RefreshCommand = new RelayCommand(LoadLookups);
 
         LoadLookups();
@@ -62,6 +64,8 @@ public sealed class PosViewModel : ObservableObject
     public RelayCommand ClearCommand { get; }
 
     public RelayCommand CompleteCommand { get; }
+
+    public RelayCommand PrintLastCommand { get; }
 
     public RelayCommand RefreshCommand { get; }
 
@@ -367,6 +371,16 @@ public sealed class PosViewModel : ObservableObject
         var warnings = sale.Warnings.Count > 0 ? "  ⚠ " + string.Join(" ", sale.Warnings) : string.Empty;
         SetStatus($"Bill saved.{warnings}", sale.Warnings.Count > 0);
 
+        // Owner rules D-05 / D-23: printing is instant, with no dialog. The bill is already saved,
+        // so a printer problem is a warning on this screen - never a lost sale (Z-07).
+        _lastSaleId = sale.SaleId;
+        PrintLastCommand.RaiseCanExecuteChanged();
+
+        if (_services.Settings.GetBool("printer.autoPrint", true))
+        {
+            Print(_lastSaleId);
+        }
+
         Cart.Clear();
         TenderedText = string.Empty;
         DiscountPercent = "0";
@@ -429,6 +443,36 @@ public sealed class PosViewModel : ObservableObject
         {
             SetStatus("⚠ This bill takes stock into MINUS. It will still be saved (owner rule U-30).", true);
         }
+    }
+
+    private void PrintLast()
+    {
+        if (_lastSaleId <= 0)
+        {
+            SetStatus("There is no bill to print yet.", true);
+            return;
+        }
+
+        Print(_lastSaleId);
+    }
+
+    private void Print(int saleId)
+    {
+        var document = _services.Receipts.Build(saleId);
+        if (!document.Ok || document.Value is null)
+        {
+            SetStatus(document.Error ?? "The receipt could not be prepared.", true);
+            return;
+        }
+
+        var printed = _services.Printer.Print(document.Value);
+        if (!printed.Ok)
+        {
+            SetStatus(printed.Error ?? "The receipt could not be printed.", true);
+            return;
+        }
+
+        SetStatus($"Receipt printed ({document.Value.Width} characters wide).", false);
     }
 
     private void SetStatus(string message, bool isError)

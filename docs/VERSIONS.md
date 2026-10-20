@@ -1,0 +1,57 @@
+# VERSIONS - every build the owner received, and its colour
+
+> **Why the colour changes.** The owner tests every build on his own computer, and several copies of
+> the folder exist (downloads, extracts, clones). A colour on the sign-in screen answers one question
+> instantly: *"am I looking at the new one?"* So **every code change ships with a new colour**.
+>
+> The colour lives in exactly two places, and `tools/check_repo.py` fails if they disagree with the
+> last row of this table:
+> - `dotnet/Area11.Core/Utils/BuildInfo.cs` - `Version`, `CodeName`, `BrandHex`
+> - `dotnet/Area11.Desktop/Resources/Theme.xaml` - `BrandBrush`, `BrandDarkBrush`, `BrandSoftBrush`
+>
+> When the finished installer arrives (Phase 4), the colour stops being a version marker and becomes
+> an ordinary setting the owner can pick (rule E-02).
+
+## How to release a new version (for the agent)
+
+1. Pick the next colour from the palette below (never reuse the previous one).
+2. Set `Version`, `CodeName`, `BrandHex`, `BrandDarkHex`, `BrandSoftHex`, `ReleasedOn` in `BuildInfo.cs`.
+3. Paint the same three colours on `BrandBrush`, `BrandDarkBrush`, `BrandSoftBrush` in `Theme.xaml`.
+4. Add a row to the table at the bottom of this file - newest row **last**.
+5. Run `python3 tools/check_repo.py`; it compares all three and refuses to pass on a mismatch.
+6. Commit with the version in the message: `v0.2.0 - receipt and instant printing`.
+
+White text sits on the brand colour (buttons, badges), so a colour must stay dark enough to read:
+contrast **4.5:1 or better** against white.
+
+## Colour palette (pick in order, then start again)
+
+| Order | Name | Brand | Hover / dark | Soft tint |
+|---|---|---|---|---|
+| 1 | Teal | `#0E7490` | `#155E75` | `#ECFEFF` |
+| 2 | Green | `#15803D` | `#166534` | `#F0FDF4` |
+| 3 | Pink | `#DB2777` | `#BE185D` | `#FDF2F8` |
+| 4 | Purple | `#6D28D9` | `#5B21B6` | `#EDE9FE` |
+| 5 | Indigo | `#4338CA` | `#3730A3` | `#EEF2FF` |
+| 6 | Blue | `#1D4ED8` | `#1E40AF` | `#EFF6FF` |
+| 7 | Rose | `#BE123C` | `#9F1239` | `#FFF1F2` |
+| 8 | Amber | `#B45309` | `#92400E` | `#FFFBEB` |
+| 9 | Slate | `#334155` | `#1E293B` | `#F1F5F9` |
+| 10 | Emerald | `#047857` | `#065F46` | `#ECFDF5` |
+
+## Released versions
+
+| Version | Date | Colour | Hex | What changed |
+|---|---|---|---|---|
+| 0.1.0 | 2026-10-19 | Teal | `#0E7490` | First written code: 15 migrations, Core services, login, dashboard, products, POS, purchases, 56 tests |
+| 0.1.1 | 2026-10-20 | Green | `#15803D` | **First successful Windows build** (Core, Desktop and Tests compiled); SQLite security pin; `tools/RUN-TESTS.cmd` |
+| 0.1.2 | 2026-10-20 | Pink | `#DB2777` | Colour test confirmed by the owner; stale-solution repair tools (`CHECK-AREA11.cmd`, `doctor.ps1`) |
+| 0.2.0 | 2026-10-20 | Purple | `#6D28D9` | Receipt on paper (58 / 80 mm), instant ESC/POS printing, reprint, printer settings (F-13); version badge on the sign-in window and in the sidebar |
+
+## Notes for the next agent
+
+- **Do not** edit an old row. The table is a record, like the audit log.
+- The version marker is temporary scaffolding for the test period; it must not become a second
+  source of truth for the shop's branding. `store.name` / `brand.*` in Settings stay the real branding.
+- If a build is released without a colour change, the owner cannot tell it apart from the previous
+  one - treat that as a bug, not a shortcut.

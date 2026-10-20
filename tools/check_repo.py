@@ -321,7 +321,8 @@ def check_bindings() -> None:
 
         for raw in re.findall(r"\{Binding ([^}]+)\}", text):
             name = raw.split(",")[0].strip()
-            if not name or name.startswith(("Path=", "RelativeSource", "ElementName")):
+            # "Source=" binds to the object itself (e.g. a static label), not to a view-model property
+            if not name or name.startswith(("Path=", "RelativeSource", "ElementName", "Source=")):
                 continue
             checked += 1
             if name in ITEM_PROPERTIES:
@@ -462,6 +463,71 @@ def check_packages() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 4d. One version, one colour: BuildInfo == Theme.xaml == docs/VERSIONS.md
+# ---------------------------------------------------------------------------
+def check_version_colour() -> None:
+    """The owner identifies a build by its colour, so the three places that describe it must agree.
+
+    Why this is a hard failure: if the theme and the label disagree, the owner sees "purple" in the
+    sidebar while the app is painted pink, and he cannot tell which copy of the folder is running.
+    """
+    build_info = (DOTNET / "Area11.Core/Utils/BuildInfo.cs").read_text(encoding="utf-8")
+    theme = (DOTNET / "Area11.Desktop/Resources/Theme.xaml").read_text(encoding="utf-8")
+    versions = (ROOT / "docs/VERSIONS.md").read_text(encoding="utf-8")
+
+    version = re.search(r'Version\s*=\s*"([^"]+)"', build_info)
+    code_name = re.search(r'CodeName\s*=\s*"([^"]+)"', build_info)
+    brand = re.search(r'BrandHex\s*=\s*"([^"]+)"', build_info)
+    dark = re.search(r'BrandDarkHex\s*=\s*"([^"]+)"', build_info)
+    soft = re.search(r'BrandSoftHex\s*=\s*"([^"]+)"', build_info)
+
+    for match, label in ((version, "Version"), (code_name, "CodeName"), (brand, "BrandHex"),
+                         (dark, "BrandDarkHex"), (soft, "BrandSoftHex")):
+        if match is None:
+            fail(f"BuildInfo.cs is missing {label}")
+            return
+
+    theme_brand = re.search(r'x:Key="BrandBrush"\s+Color="([^"]+)"', theme)
+    theme_dark = re.search(r'x:Key="BrandDarkBrush"\s+Color="([^"]+)"', theme)
+    theme_soft = re.search(r'x:Key="BrandSoftBrush"\s+Color="([^"]+)"', theme)
+
+    if theme_brand is None or theme_dark is None or theme_soft is None:
+        fail("Theme.xaml is missing one of the Brand brushes")
+        return
+
+    pairs = [
+        ("BrandBrush", brand.group(1), theme_brand.group(1)),
+        ("BrandDarkBrush", dark.group(1), theme_dark.group(1)),
+        ("BrandSoftBrush", soft.group(1), theme_soft.group(1)),
+    ]
+    for name, expected, actual in pairs:
+        if expected.lower() != actual.lower():
+            fail(f"{name}: Theme.xaml says {actual} but BuildInfo.cs says {expected}")
+
+    # last row of the released-versions table
+    rows = [line for line in versions.splitlines()
+            if re.match(r"^\|\s*\d+\.\d+\.\d+\s*\|", line)]
+    if not rows:
+        fail("docs/VERSIONS.md has no released-version row")
+        return
+
+    cells = [cell.strip() for cell in rows[-1].strip().strip("|").split("|")]
+    if len(cells) < 5:
+        fail(f"the last row of docs/VERSIONS.md is incomplete: {rows[-1]}")
+        return
+
+    released_version, _, released_name, released_hex = cells[0], cells[1], cells[2], cells[3]
+    if released_version != version.group(1):
+        fail(f"docs/VERSIONS.md ends at {released_version} but BuildInfo.Version is {version.group(1)}")
+    if released_name.lower() != code_name.group(1).lower():
+        fail(f"docs/VERSIONS.md calls this build '{released_name}' but BuildInfo.CodeName is '{code_name.group(1)}'")
+    if released_hex.strip("`").lower() != brand.group(1).lower():
+        fail(f"docs/VERSIONS.md colour is {released_hex} but BuildInfo.BrandHex is {brand.group(1)}")
+
+    REPORT.append(f"Version: v{version.group(1)} ({code_name.group(1)}, {brand.group(1)}) - theme and VERSIONS.md agree")
+
+
+# ---------------------------------------------------------------------------
 # 5. Tests and settings
 # ---------------------------------------------------------------------------
 def check_tests() -> None:
@@ -534,6 +600,7 @@ def main() -> int:
     check_migrations()
     check_sql()
     check_packages()
+    check_version_colour()
     check_tests()
     check_docs()
 
