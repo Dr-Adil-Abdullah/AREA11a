@@ -67,8 +67,17 @@ public static class EscPosBuilder
     }
 
     /// <summary>ESC a n - 0 left, 1 centre, 2 right.</summary>
-    public static byte[] AlignCommand(ReceiptAlign align) =>
-        new[] { Esc, (byte)'a', align switch { ReceiptAlign.Center => (byte)1, ReceiptAlign.Right => (byte)2, _ => (byte)0 } };
+    public static byte[] AlignCommand(ReceiptAlign align)
+    {
+        var mode = align switch
+        {
+            ReceiptAlign.Center => (byte)1,
+            ReceiptAlign.Right => (byte)2,
+            _ => (byte)0
+        };
+
+        return new[] { Esc, (byte)'a', mode };
+    }
 
     /// <summary>ESC E n - emphasised on / off.</summary>
     public static byte[] BoldCommand(bool on) => new[] { Esc, (byte)'E', on ? (byte)1 : (byte)0 };
