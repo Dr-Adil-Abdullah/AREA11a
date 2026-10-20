@@ -6,7 +6,7 @@ obj/
 
 # Local database and logs (never commit business data)
 /data/
-/Area11.WPF/data/
+/prototypes/Area11.WPF/data/
 /dotnet/**/bin/
 /dotnet/**/obj/
 /publish/

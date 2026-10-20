@@ -2,11 +2,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Area11.Core", "Area11.Core\Area11.Core.csproj", "{4E2DA634-597E-5FAC-9F9E-E16FD9480F13}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Area11.Core", "dotnet\Area11.Core\Area11.Core.csproj", "{4E2DA634-597E-5FAC-9F9E-E16FD9480F13}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Area11.Desktop", "Area11.Desktop\Area11.Desktop.csproj", "{D83F7658-0C5B-5F01-B1E1-860C849C554C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Area11.Desktop", "dotnet\Area11.Desktop\Area11.Desktop.csproj", "{D83F7658-0C5B-5F01-B1E1-860C849C554C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Area11.Tests", "Area11.Tests\Area11.Tests.csproj", "{015A7AC0-05AC-54E0-BD62-CE6F8AE70952}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Area11.Tests", "dotnet\Area11.Tests\Area11.Tests.csproj", "{015A7AC0-05AC-54E0-BD62-CE6F8AE70952}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

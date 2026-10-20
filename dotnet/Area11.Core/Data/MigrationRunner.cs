@@ -1,6 +1,7 @@
 using Area11.Core.Utils;
 using Dapper;
 using Microsoft.Data.Sqlite;
+using System.IO;
 
 namespace Area11.Core.Data;
 

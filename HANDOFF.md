@@ -83,7 +83,7 @@ Do them one at a time; each one ends with a commit (see `AGENTS.md` §6).
 
 | # | Task | Acceptance |
 |---|---|---|
-| 1 | **F-16** first Windows build (`dotnet build`, `dotnet test`) | 0 errors; fix every compile error; 45/45 green |
+| 1 | **F-16** first Windows build (`dotnet build Area11.sln`, `dotnet test`) | 0 errors; fix every compile error; 45/45 green |
 | 2 | **F-13** receipt renderer + ESC/POS instant print (58/80 mm) | pressing "print" prints with no dialog; reprint from a saved bill; printer absent ⇒ bill still saves |
 | 3 | **F-17** Settings screen (store info, discount, tax, printer width) + per-person permission ticks | the owner changes a setting and the next bill obeys it |
 | 4 | **F-14 / F-15** hold cart, split payment | two held carts survive a restart; one bill with two payment rows |
@@ -127,7 +127,7 @@ Do them one at a time; each one ends with a commit (see `AGENTS.md` §6).
 | D-06 | Camera capture is not in Phase 1 |
 | D-07 | Every word on the receipt comes from settings |
 | D-08 | Loyalty is the very last feature |
-| D-09 | `Area11.WPF/` and `WPFSample/` are prototypes, kept for reference only |
+| D-09 | `prototypes/Area11.WPF/` and `prototypes/WPFSample/` are prototypes, kept for reference only |
 | D-10 | .NET 10 target; if the shop PC cannot run it, one project-file line switches to .NET 8 |
 | D-11 / D-19 | At the very end the app installs itself: desktop icon, Start menu, uninstaller, prerequisites handled |
 | D-12 | One counter first; the second counter comes in Phase 4 |
@@ -173,7 +173,7 @@ Folder map:
 | `Area11.Tests/` | `TestDatabase` (in-memory SQLite + migrations + seed), 45 cases in 6 files |
 | `tools/` | `check_repo.py`, `build_rules_matrix.py` |
 | `docs/` | spec, decisions, progress, rules matrix, schema reference, build guide, port plan |
-| `Area11.WPF/`, `WPFSample/` | earlier prototypes - reference only, do not extend |
+| `prototypes/` | earlier prototypes (`Area11.WPF`, `WPFSample`) - reference only, do not extend |
 
 Wiring a new screen: service → `AppServices` property → `ShellViewModel.NavItems` (permission-gated)
 → `DataTemplate` in `ShellWindow.xaml` → view + view-model.
@@ -183,16 +183,20 @@ Wiring a new screen: service → `AppServices` property → `ShellViewModel.NavI
 ## 8. Verify before you commit
 
 ```bash
-python3 tools/check_repo.py             # C# parse, XAML, bindings, migrations, tests, docs
+python3 tools/check_repo.py             # C#, usings, XAML, bindings, migrations, SQL, tests, docs
 python3 tools/build_rules_matrix.py --check
 ```
+
+`check_repo.py` runs 10 checks: C# syntax, **explicit usings** (the CS0103 class of error),
+XML validity, 137 XAML bindings and resources, migrations (15 files -> 31 tables, executed on
+SQLite), **every SQL statement prepared against the real schema**, test count, settings keys,
+and documentation links.
 
 On Windows (or any machine with the SDK):
 
 ```bat
-cd dotnet
-dotnet build
-dotnet test
+dotnet build Area11.sln
+dotnet test Area11.sln
 ```
 
 `tools/check_repo.py` uses `tree-sitter` when it is installed (`pip install tree-sitter tree-sitter-c-sharp`);
@@ -213,6 +217,8 @@ without it, it falls back to a brace/paren balance check and says so.
 | editing `001`-`015` migrations | existing databases never receive the change | add `016_*.sql` |
 | `INSERT OR REPLACE` on settings | loses `updated_at` and the audit trail | `INSERT ... ON CONFLICT(key) DO UPDATE` |
 | assuming the sandbox can build WPF | it is Linux, no SDK | check statically, let the owner build |
+| relying on `ImplicitUsings` for `System.IO` | the owner's first build failed with CS0103 (`Path`/`Directory` did not exist) | write the `using` explicitly; `check_repo.py` now enforces it |
+| building the wrong solution | the prototype `Area11.WPF.sln` sat in the root and produced errors in old files | one solution only: root `Area11.sln`; prototypes live in `prototypes/` |
 | adding a 4th project "for clarity" | owner decided three (D-17) | keep three |
 
 ---

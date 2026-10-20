@@ -34,15 +34,12 @@ jobs:
         run: dotnet --info
 
       - name: Restore
-        working-directory: dotnet
         run: dotnet restore Area11.sln
 
       - name: Build
-        working-directory: dotnet
         run: dotnet build Area11.sln --no-restore --configuration Release
 
       - name: Test
-        working-directory: dotnet
         run: dotnet test Area11.sln --no-build --configuration Release --logger "console;verbosity=normal"
 
       - name: Static checks

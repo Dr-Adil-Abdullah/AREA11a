@@ -35,18 +35,18 @@ migrations execute against SQLite, 45 test cases written). The first `dotnet bui
 
 ```bat
 git clone https://github.com/Dr-Adil-Abdullah/AREA11a.git
-cd AREA11a\dotnet
+cd AREA11a
 dotnet build
 dotnet test
-dotnet run --project Area11.Desktop
+dotnet run --project dotnet\Area11.Desktop
 ```
 
 Sign in as **Owner** with password **`area11`**, then change it. Data lives in
 `%ProgramData%\Area11\` (`area11.db`, `photos\`, `logs\`, `backups\`) and is never committed.
 Step-by-step help, including what to do when the build fails: [`docs/BUILD-ON-WINDOWS.md`](docs/BUILD-ON-WINDOWS.md).
 
-> The blue "app is running" window some earlier builds show is `WPFSample`, the very first smoke test —
-> it is **not** Area11. The real app is `dotnet/Area11.Desktop` (assembly name `Area11`).
+> The blue "app is running" window some earlier builds show is `prototypes/WPFSample`, the very first
+> smoke test — it is **not** Area11. The real app is `dotnet/Area11.Desktop` (assembly name `Area11`).
 
 ---
 
@@ -54,11 +54,11 @@ Step-by-step help, including what to do when the build fails: [`docs/BUILD-ON-WI
 
 | Path | What it is |
 |---|---|
-| `dotnet/` | **The product**: `Area11.sln` → `Area11.Core` (rules, SQLite) · `Area11.Desktop` (WPF) · `Area11.Tests` (xUnit) |
+| `Area11.sln` · `dotnet/` | **The product**: the solution is in the root; `Area11.Core` (rules, SQLite) · `Area11.Desktop` (WPF) · `Area11.Tests` (xUnit) |
 | `docs/` | specification, owner decisions, progress board, rules matrix, schema reference, build guide, port plan |
-| `tools/` | `check_repo.py` (static checks) · `build_rules_matrix.py` (keeps the rules matrix in sync with the spec) |
+| `tools/` | `check_repo.py` (static checks) · `build_rules_matrix.py` (keeps the rules matrix in sync with the spec) · `ci/build.yml` |
 | `HANDOFF.md` · `AGENTS.md` | the takeover manual and the working protocol |
-| `Area11.WPF/` · `WPFSample/` | earlier prototypes, kept only for reference — do not extend |
+| `prototypes/` | earlier prototypes (`Area11.WPF`, `WPFSample`), reference only — they are not the app |
 
 ## Documentation
 
@@ -96,7 +96,7 @@ when the app is updated.
 ## Checking your work
 
 ```bash
-python3 tools/check_repo.py             # C# parse, XAML, bindings, migrations, tests, docs links
+python3 tools/check_repo.py             # C#, usings, XAML, bindings, migrations, SQL, tests, docs links
 python3 tools/build_rules_matrix.py --check
 ```
 

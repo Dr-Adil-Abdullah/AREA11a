@@ -70,7 +70,7 @@ Non-negotiables taken from the Specification:
 
 ## 3. What exists today in THIS repository (and how it measures up)
 
-The earlier turns produced a working prototype in `Area11.WPF/` (single project, .NET 8, no Dapper, no MVVM
+The earlier turns produced a working prototype in `prototypes/Area11.WPF/` (single project, .NET 8, no Dapper, no MVVM
 toolkit, custom simplified schema). It proved the flow end-to-end but it **does not meet §4.3/§4.4**:
 
 | Requirement (Spec) | Prototype today | Verdict |
@@ -89,7 +89,7 @@ toolkit, custom simplified schema). It proved the flow end-to-end but it **does 
 the target solution; the logic already written (FEFO, discount, round-off with cost guard, numbering, audit
 diff) is carried over into `Area11.Core`.
 
-> Nothing in `WPFSample/` or `Area11.WPF/` is deleted until the owner answers **Q-03**.
+> Nothing in `prototypes/` is deleted; both prototypes are kept for reference.
 
 ---
 
@@ -117,7 +117,7 @@ These are the issues I cannot resolve from the documents alone. Each has a recom
 |---|---|---|
 | C-01 | Spec says .NET 10 + Dapper + CommunityToolkit + WPF-UI; prototype is .NET 8, raw ADO, hand-rolled MVVM | Whole solution layout |
 | C-02 | Spec §5.2.1: the rebuilt schema must open an existing `area11.db` unchanged | Owner's real data; must port schema verbatim |
-| C-03 | Where the new solution lives (`dotnet/` per §34.2 vs `Area11.WPF/`) and whether the prototype is replaced | Git history / folder hygiene |
+| C-03 | Where the new solution lives (root `Area11.sln` + `dotnet/` sources; prototypes moved to `prototypes/`) | settled |
 | C-04 | §35.1 cashier return → restock: U-32 says “straight to stock”, stage-16 said “quarantine until owner” | Money + stock behaviour |
 | C-05 | §35.4 audit log / net profit: Spec = owner only; original = owner+manager | Privacy of profit figures |
 | C-06 | §33.2 items marked ❌ (lifetime profit, doctor tracking, reps, multi-barcode, pack-size search, 3-tier reorder, all-time best/worst day, vendor-return cutoff, generic alternative, customer statement, collection receipt, tax report, auto-send backup, archival, multi-branch) — first release or later? | Scope / delivery time |

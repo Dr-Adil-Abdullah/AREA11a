@@ -160,6 +160,49 @@ def first_error_line(node, source: bytes) -> int:
 
 
 # ---------------------------------------------------------------------------
+# 1b. Explicit usings: the CS0103 class of error
+# ---------------------------------------------------------------------------
+NEEDED_NAMESPACES = {
+    "System.IO": ("Path", "File", "Directory", "FileInfo", "DirectoryInfo", "Stream", "FileStream",
+                  "StreamReader", "StreamWriter", "MemoryStream", "FileMode", "FileAccess",
+                  "SearchOption", "FileShare", "IOException"),
+    "System.Text": ("StringBuilder", "Encoding"),
+    "System.Text.Json": ("JsonSerializer", "JsonDocument", "JsonElement"),
+    "System.Globalization": ("CultureInfo",),
+    "System.Security.Cryptography": ("RandomNumberGenerator", "SHA256", "HMACSHA256"),
+    "Microsoft.Data.Sqlite": ("SqliteConnection", "SqliteTransaction", "SqliteCommand",
+                              "SqliteParameter", "SqliteConnectionStringBuilder"),
+    "System.Data": ("IDbConnection", "CommandType", "DbType"),
+}
+
+
+def check_usings() -> None:
+    """A file may not rely on ImplicitUsings for the namespaces above.
+
+    Why: the owner's first build failed with CS0103 ('Path'/'Directory' does not exist) because the
+    files used System.IO without importing it. Explicit usings compile on every SDK and every
+    project setting, which is what a shop computer needs.
+    """
+    files = sorted(DOTNET.rglob("*.cs")) + sorted((ROOT / "prototypes").rglob("*.cs"))
+    offenders = 0
+    for path in files:
+        if "obj" in path.parts or "bin" in path.parts:
+            continue
+        text = path.read_text(encoding="utf-8-sig")
+        body = re.sub(r"^\s*using [^\n]+$", "", text, flags=re.M)
+        # a fully qualified use (Microsoft.Data.Sqlite.SqliteConnection) already names its namespace
+        for namespace, types in NEEDED_NAMESPACES.items():
+            if f"using {namespace};" in text:
+                continue
+            if any(re.search(rf"(?<![\w.]){re.escape(name)}\s*[.(<]", body)
+                   or re.search(rf"(?<![\w.]){re.escape(name)}\s+\w", body) for name in types):
+                offenders += 1
+                fail(f"{rel(path)} uses {namespace} types without 'using {namespace};'")
+
+    REPORT.append(f"Usings: {len(files)} files, {offenders} missing imports")
+
+
+# ---------------------------------------------------------------------------
 # 2. XML (XAML, csproj, props)
 # ---------------------------------------------------------------------------
 def check_xml() -> None:
@@ -267,6 +310,54 @@ def check_migrations() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 4b. SQL in the services must be valid against the real schema
+# ---------------------------------------------------------------------------
+def check_sql() -> None:
+    """Every SQL statement written in C# is prepared against the migrated schema.
+
+    Why: a mistyped column name only shows up when the cashier presses the button. SQLite
+    resolves names while preparing a statement, so preparing them here catches the whole
+    class without running the app.
+    """
+    try:
+        import sqlite3
+    except Exception:  # noqa: BLE001
+        warn("sqlite3 is not available - SQL statements were not checked")
+        return
+
+    connection = sqlite3.connect(":memory:")
+    for path in sorted((DOTNET / "Area11.Core/Data/Migrations").glob("*.sql")):
+        connection.executescript(path.read_text(encoding="utf-8"))
+
+    verbatim = re.compile(r'@"((?:[^"]|"")*)"', re.S)
+    plain = re.compile(r'(?<![@$])"((?:[^"\\]|\\.)*)"', re.S)
+
+    total = 0
+    invalid = 0
+    sources = sorted((DOTNET / "Area11.Core/Services").glob("*.cs"))
+    sources += sorted((DOTNET / "Area11.Core/Data").glob("*.cs"))
+
+    for path in sources:
+        text = path.read_text(encoding="utf-8-sig")
+        for pattern in (verbatim, plain):
+            for match in pattern.finditer(text):
+                sql = match.group(1).replace('""', '"').strip()
+                if not re.match(r"(?i)^(SELECT|INSERT|UPDATE|DELETE|WITH)\b", sql):
+                    continue
+                total += 1
+                parameters = {name: None for name in set(re.findall(r"@(\w+)", sql))}
+                try:
+                    connection.execute("EXPLAIN " + sql, parameters)
+                except Exception as error:  # noqa: BLE001
+                    invalid += 1
+                    fail(f"invalid SQL in {rel(path)}: {error} :: "
+                         + " ".join(sql.split())[:90])
+
+    connection.close()
+    REPORT.append(f"SQL: {total} statements prepared, {invalid} invalid")
+
+
+# ---------------------------------------------------------------------------
 # 5. Tests and settings
 # ---------------------------------------------------------------------------
 def check_tests() -> None:
@@ -330,9 +421,11 @@ def main() -> int:
 
     print("Area11 static check\n" + "=" * 60)
     check_csharp()
+    check_usings()
     check_xml()
     check_bindings()
     check_migrations()
+    check_sql()
     check_tests()
     check_docs()
 

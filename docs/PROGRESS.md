@@ -30,7 +30,7 @@ features and the four phases.
 
 | ID | Feature | State | Where | Test | Done when |
 |---|---|---|---|---|---|
-| F-01 | Solution with three projects (Core / Desktop / Tests), .NET 10, MVVM | 🟡 | `dotnet/Area11.sln`, `dotnet/Directory.Build.props` | - | compiles on Windows |
+| F-01 | Solution with three projects (Core / Desktop / Tests), .NET 10, MVVM | 🟡 | `Area11.sln`, `dotnet/Directory.Build.props` | - | compiles on Windows |
 | F-02 | Exact database schema, migrations 001-015, 31 business tables | ✅ | `dotnet/Area11.Core/Data/Migrations/` | `MigrationTests` 🧪 | an old `area11.db` opens unchanged |
 | F-03 | Settings service, 71 keys, every change audited | 🟡 | `Area11.Core/Services/SettingsService.cs` | - | Settings screen (F-18) reads/writes it |
 | F-04 | Audit black box (old -> new values, never deleted) | 🟡 | `Services/AuditService.cs`, `Utils/AuditDiff.cs` | `AuditDiffTests` 🧪 | every module writes (U-27) |
@@ -104,23 +104,27 @@ features and the four phases.
 | 1 | `Expiry.StatusLabel` takes level thresholds as parameters but the switch hard-codes 90 / 180 / 365 days | `Area11.Core/Utils/Expiry.cs` | read `expiry.level*` from settings (F-29) |
 | 2 | `decimal` must never be used for quantities - Microsoft.Data.Sqlite stores it as TEXT and `SUM` breaks | everywhere | quantities are `double`; money is `long` paisa |
 | 3 | Receipt / printing does not exist yet, so a bill cannot be handed to the customer | - | F-13 |
+| 4 | The first Windows build reported CS0103 (`Path`/`Directory`) in three prototype files - fixed by explicit `using System.IO;`; the checker now blocks this class of error | all Core + prototype files | fixed 20 Oct 2026 |
 
 ## Verification
 
 | Check | How | State |
 |---|---|---|
 | C# parses (51 files) | `python3 tools/check_repo.py` | ✅ |
+| Every file imports the namespaces it uses (`System.IO` …) | `python3 tools/check_repo.py` | ✅ |
+| Every SQL statement prepares against the real schema (37) | `python3 tools/check_repo.py` | ✅ |
 | XAML / csproj / props are valid XML | `python3 tools/check_repo.py` | ✅ |
 | Every XAML binding matches its view-model | `python3 tools/check_repo.py` | ✅ |
 | Migrations 001-015 produce 31 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
-| **Compiles on Windows** | `dotnet build` | ⬜ **F-16** |
+| **Compiles on Windows** | `dotnet build Area11.sln` | ⬜ **F-16** |
 | **45 tests green** | `dotnet test` | ⬜ **F-16** |
 
 ## Change log
 
 | Date | What |
 |---|---|
+| 20 Oct 2026 | **First Windows build report:** CS0103 (`Path`/`Directory`/`File`) in `AppConfig.cs`, `Database.cs`, `LoggerService.cs` - fixed with explicit `using System.IO;`. The old `Area11.WPF.sln` was the solution being built by mistake, so it moved to `prototypes/`; the real solution is now `Area11.sln` in the root. The checker gained an explicit-usings check and a SQL-preparation check (37 statements). |
 | 20 Oct 2026 | Added `HANDOFF.md`, `AGENTS.md`, this board, the rules matrix, the spec copy and `tools/check_repo.py` (owner's U-13). |
 | 19 Oct 2026 | Phase 1 code: schema, Core services, login, dashboard, products, purchases, POS, 44 tests. |
 | 19 Oct 2026 | Owner decisions D-17…D-23 (three projects, Windows 10, installer, four phases, photos, quarantine, printing). |
