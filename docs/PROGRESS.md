@@ -46,7 +46,7 @@ features and the four phases.
 | F-14 | Hold cart / bring back a held cart (`H-0001`), stored in the database | ✅ | `Migr. 016`, `Services/HoldCartService.cs`, `Views/PosView.xaml` | `HoldCartTests` 🧪 | a parked cart survives a restart and comes back line for line |
 | F-15 | Split payment (cash + online / card / khata in one bill) | ✅ | `Services/SaleService.cs` (Plan), `Views/PosView.xaml` | `SplitPaymentTests` 🧪 | the credit part reaches the khata and never the drawer |
 | F-16 | **First real Windows build and test run** | 🟡 | `docs/BUILD-ON-WINDOWS.md` | - | 20 Oct 2026 v0.1.1 `Build succeeded`; **21 Oct 2026 Phase-2 builds: CS0509 `ReturnService.cs(504)` (v0.3.5), CS0136 `SaleService.cs(609)` (v0.3.6), CS0037/CS1061 `ReturnsViewModel.cs(152-167)` (v0.3.7)** - all three now prevented by checker rules (sealed bases, shadowing, value-type results). Core + Tests compile; Desktop is the last unknown; `dotnet test` never run |
-| F-17 | Settings screen: shop info, printing, discount rules, and per-person permission ticks | ✅ | v0.2.4 | `SettingsView` + 236 tests | owner edits everything without a developer |
+| F-17 | Settings screen: shop info, printing, discount rules, and per-person permission ticks | ✅ | v0.2.4 | `SettingsView` + 248 tests | owner edits everything without a developer |
 | F-18 | Tests for purchases, partners, numbering | ⬜ | `Area11.Tests/` | - | added with F-13 |
 
 ## Phase 2 - returns, stock and alerts
@@ -69,7 +69,7 @@ features and the four phases.
 | ID | Feature | State | Where | Test | Done when |
 |---|---|---|---|---|---|
 | F-31 | Shift / galla: open, close, variance (handover still to come with a second counter) | ✅ | `Services/ShiftService.cs`, `Views/ShiftView.xaml` | `ShiftTests` 🧪 | expected cash = float + sales - payouts; the page says exact / over / short · v0.4.0 |
-| F-32 | Expenses and owner drawings | ⬜ | - | - | they reduce the drawer, not the profit |
+| F-32 | Expenses and owner drawings | ✅ | `Services/ExpenseService.cs`, `Views/ExpensesView.xaml` | `ExpenseTests` 🧪 | they reduce the drawer, not the profit · v0.4.4 |
 | F-33 | `SR` recovery bills (old udhaar paid today) | ⬜ | - | - | - |
 | F-34 | Reports: today / 7 / 30 days, top items, dead stock, per-day, profit | ⬜ | - | - | profit uses cost-at-sale |
 | F-35 | Audit viewer + CSV export (owner; manager hidden by default) | ⬜ | - | - | - |
@@ -111,17 +111,17 @@ features and the four phases.
 
 | Check | How | State |
 |---|---|---|
-| C# parses (116 files) | `python3 tools/check_repo.py` | ✅ |
+| C# parses (121 files) | `python3 tools/check_repo.py` | ✅ |
 | Every file imports the namespaces it uses (`System.IO` …) | `python3 tools/check_repo.py` | ✅ |
-| Every SQL statement prepares against the real schema (133) | `python3 tools/check_repo.py` | ✅ |
+| Every SQL statement prepares against the real schema (142) | `python3 tools/check_repo.py` | ✅ |
 | XAML / csproj / props are valid XML | `python3 tools/check_repo.py` | ✅ |
 | Every XAML binding matches its view-model | `python3 tools/check_repo.py` | ✅ |
 | Every `new XService(...)` matches its constructor (CS7036/CS1501) | `python3 tools/check_repo.py` | ✅ |
 | Migrations 001-019 produce 33 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
 | **Compiles on Windows** | `dotnet build Area11.sln` | ✅ 20 Oct 2026 (v0.1.1); re-check after each release |
-| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.4.3 Maroon |
-| **236 tests green** | `dotnet test` | ⬜ **F-16 follow-up** (the tests have never run on the owner's PC) |
+| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.4.4 Rust |
+| **248 tests green** | `dotnet test` | ⬜ **F-16 follow-up** (the tests have never run on the owner's PC) |
 
 ## Change log
 
@@ -129,6 +129,7 @@ features and the four phases.
 |---|---|
 | 20 Oct 2026 | **First Windows build report:** CS0103 (`Path`/`Directory`/`File`) in `AppConfig.cs`, `Database.cs`, `LoggerService.cs` - fixed with explicit `using System.IO;`. The old `Area11.WPF.sln` was the solution being built by mistake, so it moved to `prototypes/`; the real solution is now `Area11.sln` in the root. The checker gained an explicit-usings check and a SQL-preparation check (37 statements). |
 | 21 Oct 2026 | **v0.3.4 Cyan - stock-take (F-27).** ST session freezes the book; count sheet with book/counted/diff/value and an only-differences pass; Apply (owner, once) corrects batches and values the difference at the frozen cost; negative stock corrected; GINTI batch for found medicine; uncounted lines warned, never zeroed. 173 tests. |
+| 21 Oct 2026 | **v0.4.4 Rust - expenses and owner drawings (F-32).** New **Expenses** page: shop costs (rent, electricity, salary, transport, tea, packing, repair, other) and what the owner took. An expense is not a purchase (no stock, no supplier account); a **cash** drawing lowers the drawer, a **goods** drawing lowers the shelf at **cost** and leaves the cash alone. The shift/galla now shows both as their own lines, so an honest expense no longer looks like a short drawer. Cash permission for expenses, owner only for drawings, nothing edited or deleted. 248 tests. |
 | 21 Oct 2026 | **v0.4.3 Maroon - build fix (Tests).** CS7036 in `AlertTests` (a test helper still built `AlertService` with four arguments) and CS0117 in `ShiftTests` (`QtyBase` on a supplier return line; the real property is `QtyEntered` + `Unit`). All three test helpers now go through `TestData.Alerts`, and a **20th checker rule** compares every service constructor call - including `=> new(...)` helpers - with its declaration, so the next change of this kind fails in the checker, not on the shop PC. 236 tests. |
 | 21 Oct 2026 | **v0.4.2 Violet - GitHub unreachable.** The owner reported **"Failed to connect to github.com port 443"**: a network fault, not the app. `tools\CHECK-NETWORK.cmd` reports DNS, port 443, the web path, `netsh winhttp` and git proxies in plain words; `docs/GITHUB-NETWORK.md` separates it from the `.git` lock fault and gives the browser-ZIP route. 236 tests. |
 | 21 Oct 2026 | **v0.4.1 Blue - repair tool for a stuck update.** `tools\FIX-UPDATE.cmd` removes the leftover `*.lock` files inside `.git` that make GitHub Desktop say **"update_ref failed for ref 'ORIG_HEAD'"**, clears the stale `ORIG_HEAD` bookmark and prints the branch, the last commit and every locally changed file. Only `.git` is touched; the shop data stays untouched. 236 tests. |

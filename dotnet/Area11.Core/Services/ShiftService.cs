@@ -9,8 +9,9 @@ namespace Area11.Core.Services;
 ///
 /// The rule that makes this service worth having: **expected cash is rebuilt from history**, never
 /// from a number the cashier typed. Opening float + cash bills + khata money received + cash a
-/// supplier handed back, minus cash refunds and money paid to suppliers. The owner counts the
-/// drawer, types the number, and the app says "exact", "over by Rs 50" or "short by Rs 120".
+/// supplier handed back, minus cash refunds, money paid to suppliers, shop expenses and cash the
+/// owner took. The owner counts the drawer, types the number, and the app says "exact", "over by
+/// Rs 50" or "short by Rs 120".
 ///
 /// What is deliberately NOT counted: card and online payments (they never entered the drawer), and
 /// credit bills (that money was never received). The supplier side counts **all** cash paid to
@@ -244,7 +245,13 @@ SELECT
   IFNULL((SELECT SUM(r.cash_refund_paisa) FROM sale_returns r
           WHERE r.date >= @from AND r.date <= @to), 0) AS cashRefundsPaisa,
   IFNULL((SELECT SUM(sr.total_paisa) FROM supplier_returns sr
-          WHERE sr.settled = 1 AND sr.date >= @from AND sr.date <= @to), 0) AS supplierCashInPaisa;",
+          WHERE sr.settled = 1 AND sr.date >= @from AND sr.date <= @to), 0) AS supplierCashInPaisa,
+  -- F-32: money the shop spent (rent, tea, a repair) and cash the owner took both left the till.
+  -- A GOODS drawing is deliberately absent: the medicine left the shelf, not the drawer.
+  IFNULL((SELECT SUM(e.amount_paisa) FROM expenses e
+          WHERE e.date >= @from AND e.date <= @to), 0) AS expensesPaisa,
+  IFNULL((SELECT SUM(d.amount_paisa) FROM owner_drawings d
+          WHERE d.type = 'cash' AND d.date >= @from AND d.date <= @to), 0) AS drawingsPaisa;",
             new { from, to });
 
         shift.CashSalesPaisa = drawer?.CashSalesPaisa ?? 0;
@@ -252,8 +259,11 @@ SELECT
         shift.SupplierCashOutPaisa = drawer?.SupplierCashOutPaisa ?? 0;
         shift.CashRefundsPaisa = drawer?.CashRefundsPaisa ?? 0;
         shift.SupplierCashInPaisa = drawer?.SupplierCashInPaisa ?? 0;
+        shift.ExpensesPaisa = drawer?.ExpensesPaisa ?? 0;
+        shift.DrawingsPaisa = drawer?.DrawingsPaisa ?? 0;
 
         shift.ExpectedPaisa = shift.OpeningFloatPaisa + shift.CashSalesPaisa + shift.CashCollectionsPaisa
-                              + shift.SupplierCashInPaisa - shift.CashRefundsPaisa - shift.SupplierCashOutPaisa;
+                              + shift.SupplierCashInPaisa - shift.CashRefundsPaisa - shift.SupplierCashOutPaisa
+                              - shift.ExpensesPaisa - shift.DrawingsPaisa;
     }
 }

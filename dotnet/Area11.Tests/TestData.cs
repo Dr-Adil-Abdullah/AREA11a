@@ -88,6 +88,11 @@ VALUES(@name, 'GSK', '042-1112233', @opening, @opening, 1, '2026-01-01 09:00:00'
         new(test.Database, test.Settings, test.Audit,
             new PermissionService(test.Database, test.Log, test.Audit), test.Log);
 
+    /// <summary>Expenses and owner drawings (F-32). One factory: a constructor change is fixed here once.</summary>
+    public static ExpenseService CashOut(TestDatabase test) =>
+        new(test.Database, test.Audit, test.Settings,
+            new PermissionService(test.Database, test.Log, test.Audit), test.Log);
+
     public static SaleService Sales(TestDatabase test)
     {
         var permissions = new PermissionService(test.Database, test.Log, test.Audit);

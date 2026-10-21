@@ -27,6 +27,8 @@ public sealed class ShiftViewModel : ObservableObject
     private string _supplierInText = "Rs 0";
     private string _supplierOutText = "Rs 0";
     private string _refundsText = "Rs 0";
+    private string _expensesText = "Rs 0";
+    private string _drawingsText = "Rs 0";
     private string _expectedText = "Rs 0";
     private string _openFloatText = string.Empty;
     private string _actualText = string.Empty;
@@ -115,6 +117,18 @@ public sealed class ShiftViewModel : ObservableObject
         private set => SetProperty(ref _refundsText, value);
     }
 
+    public string ExpensesText
+    {
+        get => _expensesText;
+        private set => SetProperty(ref _expensesText, value);
+    }
+
+    public string DrawingsText
+    {
+        get => _drawingsText;
+        private set => SetProperty(ref _drawingsText, value);
+    }
+
     public string ExpectedText
     {
         get => _expectedText;
@@ -166,6 +180,8 @@ public sealed class ShiftViewModel : ObservableObject
             SupplierInText = "Rs 0";
             SupplierOutText = "Rs 0";
             RefundsText = "Rs 0";
+            ExpensesText = "Rs 0";
+            DrawingsText = "Rs 0";
             ExpectedText = "Rs 0";
         }
         else
@@ -177,6 +193,8 @@ public sealed class ShiftViewModel : ObservableObject
             SupplierInText = current.SupplierInLabel;
             SupplierOutText = current.SupplierOutLabel;
             RefundsText = current.RefundsLabel;
+            ExpensesText = current.ExpensesLabel;
+            DrawingsText = current.DrawingsLabel;
             ExpectedText = current.ExpectedLabel;
         }
 

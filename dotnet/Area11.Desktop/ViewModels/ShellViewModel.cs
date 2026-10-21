@@ -145,6 +145,7 @@ public sealed class ShellViewModel : ObservableObject
         if (_services.Permissions.Can(_user, Modules.Cash))
         {
             NavItems.Add(new NavItem("Shift (galla)", "Open and close the drawer", () => new ShiftViewModel(_services, _user)));
+            NavItems.Add(new NavItem("Expenses", "Money out, owner drawings", () => new ExpensesViewModel(_services, _user)));
         }
 
         if (_services.Permissions.Can(_user, Modules.Customers))

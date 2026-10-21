@@ -130,6 +130,6 @@ tests through the public service methods and a real bill in `TestDatabase`.
 ## 8. Current state (update this line if you finish a phase)
 
 > **v0.4.2 (Violet)** - an unreachable GitHub has its own checker (`tools\CHECK-NETWORK.cmd`) and a ZIP fallback (`docs/GITHUB-NETWORK.md`); the last confirmed Windows build was v0.1.1 on 20 Oct 2026. Phase 1 has the schema, Core
-> services, login/dashboard/products/POS/purchases screens and 236 test cases. The receipt and
+> services, login/dashboard/products/POS/purchases screens and 248 test cases. The receipt and
 > instant ESC/POS printing are written and wait for their first run on a real printer; next come the
 > settings screen (F-17), the hold cart and split payment. Details: `HANDOFF.md` §4.

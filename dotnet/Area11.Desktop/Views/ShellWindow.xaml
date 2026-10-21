@@ -48,6 +48,9 @@
         <DataTemplate DataType="{x:Type vm:ShiftViewModel}">
             <views:ShiftView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ExpensesViewModel}">
+            <views:ExpensesView />
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>

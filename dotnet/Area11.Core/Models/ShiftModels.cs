@@ -9,7 +9,7 @@ namespace Area11.Core.Models;
 ///   in  : the float the drawer started with, cash bills, khata money received, cash a supplier
 ///         handed back for goods;
 ///   out : cash refunds to customers, money paid to suppliers (including the amount paid at the
-///         moment of a purchase).
+///         moment of a purchase), **shop expenses** and **cash the owner took** (F-32).
 ///
 /// Cards and online money are **not** here: they never entered the drawer.
 /// </summary>
@@ -36,6 +36,12 @@ public sealed class ShiftMoney
 
     public long CashRefundsPaisa { get; set; }
 
+    /// <summary>Rent, electricity, tea, a repair - money that left the till (F-32).</summary>
+    public long ExpensesPaisa { get; set; }
+
+    /// <summary>Cash the owner took for himself. A goods drawing is NOT here: no money moved.</summary>
+    public long DrawingsPaisa { get; set; }
+
     /// <summary>What the drawer should hold: float + everything in - everything out.</summary>
     public long ExpectedPaisa { get; set; }
 
@@ -56,7 +62,7 @@ public sealed class ShiftMoney
     public long MoneyInPaisa =>
         OpeningFloatPaisa + CashSalesPaisa + CashCollectionsPaisa + SupplierCashInPaisa;
 
-    public long MoneyOutPaisa => CashRefundsPaisa + SupplierCashOutPaisa;
+    public long MoneyOutPaisa => CashRefundsPaisa + SupplierCashOutPaisa + ExpensesPaisa + DrawingsPaisa;
 
     public string OpenedLabel => OpenedAt.Length >= 16 ? OpenedAt[..16] : OpenedAt;
 
@@ -71,6 +77,10 @@ public sealed class ShiftMoney
     public string SupplierOutLabel => Money.Format(SupplierCashOutPaisa);
 
     public string RefundsLabel => Money.Format(CashRefundsPaisa);
+
+    public string ExpensesLabel => Money.Format(ExpensesPaisa);
+
+    public string DrawingsLabel => Money.Format(DrawingsPaisa);
 
     public string ExpectedLabel => Money.Format(ExpectedPaisa);
 
