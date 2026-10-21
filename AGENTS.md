@@ -129,7 +129,7 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.3.11 (Wine)** - the khata page can now correct a customer and his credit limit; the last confirmed Windows build was v0.1.1 on 20 Oct 2026. Phase 1 has the schema, Core
-> services, login/dashboard/products/POS/purchases screens and 218 test cases. The receipt and
+> **v0.3.12 (Cocoa)** - the alert board now carries the supplier-return cutoff; the last confirmed Windows build was v0.1.1 on 20 Oct 2026. Phase 1 has the schema, Core
+> services, login/dashboard/products/POS/purchases screens and 225 test cases. The receipt and
 > instant ESC/POS printing are written and wait for their first run on a real printer; next come the
 > settings screen (F-17), the hold cart and split payment. Details: `HANDOFF.md` §4.

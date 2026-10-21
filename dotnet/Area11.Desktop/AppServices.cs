@@ -31,7 +31,7 @@ public sealed class AppServices
         Returns = new ReturnService(Database, Audit, Numbering, Settings, Permissions, Log);
         Quarantine = new QuarantineService(Database, Audit, Permissions, Log);
         ReturnReceipts = new ReturnReceiptService(Database, Settings, Log);
-        Alert = new AlertService(Database, Audit, Permissions, Log);
+        Alert = new AlertService(Database, Settings, Audit, Permissions, Log);
         Provisional = new ProvisionalReturnService(Database, Audit, Numbering, Permissions, Log);
         Stock = new StockService(Database, Audit, Settings, Permissions, Log);
         StockTake = new StockTakeService(Database, Audit, Numbering, Permissions, Log);

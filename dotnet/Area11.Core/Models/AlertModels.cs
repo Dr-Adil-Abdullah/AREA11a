@@ -9,7 +9,7 @@ public sealed class AlertItem
     /// <summary>Stable key: `negstock:12` or `quarantine:7`. The dismissal table uses it.</summary>
     public string Key { get; set; } = string.Empty;
 
-    /// <summary>negstock | quarantine</summary>
+    /// <summary>negstock | quarantine | provisional | provisional_linked | supplier_cutoff</summary>
     public string Type { get; set; } = "negstock";
 
     public int EntityId { get; set; }
@@ -33,7 +33,9 @@ public sealed class AlertItem
     /// <summary>Red = money or stock is wrong right now. Amber = waiting for the owner's word.</summary>
     public bool IsCritical => Type == "negstock" || Type == "provisional";
 
-    public bool IsAmber => Type == "provisional_linked";
+    /// <summary>Amber = nothing is wrong yet, but a decision has a deadline (a bill to confirm, a
+    /// supplier who will stop accepting the goods). Red stays for money or stock that is wrong now.</summary>
+    public bool IsAmber => Type is "provisional_linked" or "supplier_cutoff";
 
     public string TypeLabel => Type switch
     {
@@ -41,6 +43,7 @@ public sealed class AlertItem
         "quarantine" => "In quarantine",
         "provisional" => "No bill - refund paid",
         "provisional_linked" => "Bill attached - confirm",
+        "supplier_cutoff" => "Return to supplier",
         _ => Type
     };
 }
@@ -59,6 +62,8 @@ public sealed class AlertReport
     public int ProvisionalCount => Live.Count(alert => alert.Type == "provisional");
 
     public int LinkedCount => Live.Count(alert => alert.Type == "provisional_linked");
+
+    public int CutoffCount => Live.Count(alert => alert.Type == "supplier_cutoff");
 
     public int LiveCount => Live.Count;
 
@@ -97,6 +102,13 @@ public sealed class AlertReport
             if (LinkedCount > 0)
             {
                 parts.Add($"{LinkedCount} bill(s) attached - your confirmation pending");
+            }
+
+            // Last, because it is a deadline and not a fault: the goods are fine today, but after
+            // the cutoff the supplier may refuse them.
+            if (CutoffCount > 0)
+            {
+                parts.Add($"{CutoffCount} batch(es) near the supplier return cutoff");
             }
 
             return "⚠ " + string.Join(" · ", parts) + " · See now";

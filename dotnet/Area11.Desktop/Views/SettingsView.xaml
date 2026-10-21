@@ -235,6 +235,27 @@
                                 <TextBlock Text="{Binding ExpirySummary}" Style="{StaticResource FieldHint}" Margin="0,6,0,0" />
                                 <TextBlock Text="The bands only colour the warning - a bill is never refused. A batch that is already past its date is always EXPIRED, whatever these numbers say."
                                            Style="{StaticResource FieldHint}" />
+
+                                <Separator Margin="0,14,0,10" />
+
+                                <TextBlock Text="Supplier returns (days before expiry)" Style="{StaticResource FieldLabel}" />
+                                <TextBlock Text="A supplier takes goods back only until a cutoff. The alert board reminds you from the day you enter here until that cutoff, so the goods can still go back."
+                                           Style="{StaticResource FieldHint}" />
+
+                                <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                    <StackPanel Width="200">
+                                        <TextBlock Text="Start reminding" Style="{StaticResource FieldLabel}" />
+                                        <TextBox Text="{Binding SupplierAlertText, UpdateSourceTrigger=PropertyChanged}"
+                                                 Width="100" HorizontalAlignment="Left" />
+                                    </StackPanel>
+                                    <StackPanel Width="200" Margin="8,0,0,0">
+                                        <TextBlock Text="Last return day (cutoff)" Style="{StaticResource FieldLabel}" />
+                                        <TextBox Text="{Binding SupplierCutoffText, UpdateSourceTrigger=PropertyChanged}"
+                                                 Width="100" HorizontalAlignment="Left" />
+                                    </StackPanel>
+                                </StackPanel>
+                                <TextBlock Text="Example: 180 and 90 means a batch 120 days from expiry is on the alert board, and the supplier must receive it before it is 90 days from expiry."
+                                           Style="{StaticResource FieldHint}" />
                             </StackPanel>
                         </Border>
 

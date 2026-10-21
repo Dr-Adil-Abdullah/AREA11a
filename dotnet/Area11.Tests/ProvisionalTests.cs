@@ -191,7 +191,7 @@ public sealed class ProvisionalTests
         var sale = TestData.Sales(test).Create(TestData.Cart(product), TestData.Owner);
         var rush = TestData.Provisionals(test).Create(TestData.RushReturn(product), TestData.Owner);
 
-        var alerts = new AlertService(test.Database, test.Audit,
+        var alerts = new AlertService(test.Database, test.Settings, test.Audit,
             new PermissionService(test.Database, test.Log, test.Audit), test.Log);
 
         var report = alerts.Report();

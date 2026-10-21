@@ -5,9 +5,12 @@ using Area11.Core.Utils;
 namespace Area11.Core.Services;
 
 /// <summary>
-/// The alert board (Spec 16, U-31, U-34). Two sources today:
+/// The alert board (Spec 16, U-31, U-34, 15.2.1). Four sources today:
 ///   • a medicine whose stock is MINUS - somebody sold what the shelf did not have;
-///   • goods sitting in quarantine, waiting for a decision.
+///   • goods sitting in quarantine, waiting for a decision;
+///   • a no-bill return that is still missing its bill;
+///   • a batch inside the **supplier return window**: the supplier will take it back only until a
+///     cutoff (three months before expiry by default), so the shop must act now or keep it (§9.3.6).
 ///
 /// The owner's rule: **an alert ends only when the owner writes a reason.** So an alert is never
 /// deleted - it is *ended*, with the reason, the name and the time kept forever, and the owner can
@@ -24,17 +27,21 @@ public sealed class AlertService
     public const string TypeQuarantine = "quarantine";
     public const string TypeProvisional = "provisional";
     public const string TypeProvisionalLinked = "provisional_linked";
+    public const string TypeSupplierCutoff = "supplier_cutoff";
 
     private const int MinimumReasonLength = 3;
 
     private readonly Database _db;
+    private readonly SettingsService _settings;
     private readonly AuditService _audit;
     private readonly PermissionService _permissions;
     private readonly LogService _log;
 
-    public AlertService(Database db, AuditService audit, PermissionService permissions, LogService log)
+    public AlertService(Database db, SettingsService settings, AuditService audit,
+        PermissionService permissions, LogService log)
     {
         _db = db;
+        _settings = settings;
         _audit = audit;
         _permissions = permissions;
         _log = log;
@@ -75,6 +82,27 @@ FROM provisional_returns q
 WHERE q.status IN ('pending', 'linked')
 ORDER BY q.id DESC;"));
 
+            // The supplier-return window (15.2.1, §9.3.6): goods may go back only until the cutoff,
+            // so a batch that is inside the window is a reminder with a date on it. The two numbers
+            // are settings because every supplier's policy is different.
+            var cutoffDays = _settings.GetInt("supplier.returnCutoffDays", 90);
+            var alertDays = _settings.GetInt("supplier.returnAlertDays", 180);
+
+            if (cutoffDays > 0 && alertDays > cutoffDays)
+            {
+                problems.AddRange(_db.Query<ProblemRow>(connection, @"
+SELECT b.id AS entityId, p.name || ' - ' || b.batch_no AS name, b.qty_base AS qty,
+       b.expiry_date AS date, 'supplier_cutoff' AS type,
+       CAST(julianday(b.expiry_date) - julianday(date('now','localtime')) AS INTEGER) AS daysLeft
+FROM batches b
+JOIN products p ON p.id = b.product_id
+WHERE p.active = 1 AND b.active = 1 AND b.qty_base > 0
+  AND IFNULL(b.expiry_date, '') <> ''
+  AND julianday(b.expiry_date) - julianday(date('now','localtime')) BETWEEN @cutoff AND @alert
+ORDER BY b.expiry_date ASC, p.name COLLATE NOCASE;",
+                    new { cutoff = cutoffDays, alert = alertDays }));
+            }
+
             var dismissals = _db.Query<DismissalRow>(connection, @"
 SELECT alert_key AS alertKey, alert_type AS alertType, entity_id AS entityId,
        reason, user_name AS userName, created_at AS createdAt
@@ -94,7 +122,7 @@ FROM alert_dismissals;")
                     Type = kind,
                     EntityId = problem.EntityId,
                     Title = string.IsNullOrWhiteSpace(problem.Name) ? "(unknown medicine)" : problem.Name!,
-                    Detail = DetailOf(problem, kind)
+                    Detail = DetailOf(problem, kind, cutoffDays)
                 };
 
                 if (dismissals.TryGetValue(key, out var dismissal) && !MovedSince(problem.LastChange, dismissal.CreatedAt))
@@ -288,6 +316,9 @@ ORDER BY created_at DESC, id DESC;");
 SELECT s.name_snapshot FROM sale_returns r
 LEFT JOIN sale_items s ON s.id = r.sale_item_id
 WHERE r.id = @id;", new { id }) ?? string.Empty,
+            TypeSupplierCutoff => _db.QuerySingle<string>(connection, @"
+SELECT p.name || ' - ' || b.batch_no FROM batches b
+JOIN products p ON p.id = b.product_id WHERE b.id = @id;", new { id }) ?? string.Empty,
             TypeProvisional or TypeProvisionalLinked => _db.QuerySingle<string>(connection,
                 "SELECT 'No-bill return ' || code FROM provisional_returns WHERE id = @id;", new { id }) ?? string.Empty,
             _ => string.Empty
@@ -308,6 +339,7 @@ WHERE r.id = @id;", new { id }) ?? string.Empty,
             TypeQuarantine => (TypeQuarantine, entityId),
             TypeProvisional => (TypeProvisional, entityId),
             TypeProvisionalLinked => (TypeProvisionalLinked, entityId),
+            TypeSupplierCutoff => (TypeSupplierCutoff, entityId),
             _ => (null, 0)
         };
     }
@@ -319,6 +351,13 @@ WHERE r.id = @id;", new { id }) ?? string.Empty,
     /// </summary>
     private static string KindOf(ProblemRow problem)
     {
+        // A query that knows its own kind says so; the older lists are still read from their fields
+        // because a no-bill return's colour depends on its status.
+        if (!string.IsNullOrWhiteSpace(problem.Type))
+        {
+            return problem.Type!;
+        }
+
         if (!string.IsNullOrWhiteSpace(problem.Status))
         {
             return string.Equals(problem.Status, "linked", StringComparison.OrdinalIgnoreCase)
@@ -329,8 +368,12 @@ WHERE r.id = @id;", new { id }) ?? string.Empty,
         return string.IsNullOrWhiteSpace(problem.QCode) ? TypeNegativeStock : TypeQuarantine;
     }
 
-    private static string DetailOf(ProblemRow problem, string kind) => kind switch
+    private static string DetailOf(ProblemRow problem, string kind, int cutoffDays) => kind switch
     {
+        TypeSupplierCutoff =>
+            Qty.Format(problem.Qty) + " expiring " + ShortDate(problem.Date) + " (" + problem.DaysLeft +
+            " days) - send it back by " + LastReturnDay(problem.Date, cutoffDays) +
+            ", after that the supplier may refuse it",
         TypeQuarantine =>
             Qty.Format(problem.Qty) + " in quarantine since " + ShortDate(problem.LastChange) +
             " - decide: back in stock, damaged, or sold",
@@ -341,6 +384,20 @@ WHERE r.id = @id;", new { id }) ?? string.Empty,
             "bill " + (problem.QCode ?? string.Empty) + " attached - confirm it is the right bill, then end this alert",
         _ => "stock " + Qty.Format(problem.Qty) + " - fix by a stock count or a purchase"
     };
+
+    /// <summary>The last day the supplier still takes this batch back: expiry minus the cutoff.</summary>
+    private static string LastReturnDay(string? expiryDate, int cutoffDays)
+    {
+        if (string.IsNullOrWhiteSpace(expiryDate) ||
+            !DateTime.TryParse(expiryDate, System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out var date))
+        {
+            return "the cutoff";
+        }
+
+        return date.AddDays(-cutoffDays).ToString("yyyy-MM-dd",
+            System.Globalization.CultureInfo.InvariantCulture);
+    }
 
     /// <summary>Did the situation move after the owner ended it? Then the episode is a new one.</summary>
     private static bool MovedSince(string? lastChange, string? dismissedAt) =>
@@ -368,6 +425,12 @@ WHERE r.id = @id;", new { id }) ?? string.Empty,
         public string? Status { get; set; }
 
         public long RefundPaisa { get; set; }
+
+        /// <summary>Set only by a query that already knows its kind (the supplier cutoff).</summary>
+        public string? Type { get; set; }
+
+        /// <summary>Days until expiry - only the supplier-cutoff query fills it.</summary>
+        public int DaysLeft { get; set; }
     }
 
     private sealed class DismissalRow

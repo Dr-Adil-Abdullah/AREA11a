@@ -50,6 +50,9 @@ public sealed class SettingsViewModel : ObservableObject
     private string _expiry3Text = "90";
     private string _expirySummary = string.Empty;
 
+    private string _supplierCutoffText = "90";
+    private string _supplierAlertText = "180";
+
     private User? _selectedUser;
     private string _newStaffName = string.Empty;
     private string _newStaffPin = string.Empty;
@@ -243,6 +246,20 @@ public sealed class SettingsViewModel : ObservableObject
         set => SetProperty(ref _expiry3Text, value);
     }
 
+    /// <summary>The last day the supplier takes goods back, counted backwards from the expiry date.</summary>
+    public string SupplierCutoffText
+    {
+        get => _supplierCutoffText;
+        set => SetProperty(ref _supplierCutoffText, value);
+    }
+
+    /// <summary>How many days before expiry the alert board starts reminding the owner.</summary>
+    public string SupplierAlertText
+    {
+        get => _supplierAlertText;
+        set => SetProperty(ref _supplierAlertText, value);
+    }
+
     /// <summary>The saved bands in one sentence, so the owner can check the meaning of the numbers.</summary>
     public string ExpirySummary
     {
@@ -333,6 +350,9 @@ public sealed class SettingsViewModel : ObservableObject
         Expiry2Text = bands.Level2Days.ToString(CultureInfo.InvariantCulture);
         Expiry3Text = bands.Level3Days.ToString(CultureInfo.InvariantCulture);
         ExpirySummary = bands.Summary;
+
+        SupplierCutoffText = settings.GetLong("supplier.returnCutoffDays", 90).ToString(CultureInfo.InvariantCulture);
+        SupplierAlertText = settings.GetLong("supplier.returnAlertDays", 180).ToString(CultureInfo.InvariantCulture);
     }
 
     /// <summary>
@@ -448,6 +468,19 @@ public sealed class SettingsViewModel : ObservableObject
             return;
         }
 
+        if (!int.TryParse(SupplierCutoffText.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var cutoffDays)
+            || !int.TryParse(SupplierAlertText.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var alertDays))
+        {
+            SetStatus("The supplier return window must be whole days, for example 180 and 90.", true);
+            return;
+        }
+
+        if (cutoffDays < 1 || alertDays <= cutoffDays)
+        {
+            SetStatus("The reminder must start earlier than the supplier's cutoff - for example 180 and 90 days.", true);
+            return;
+        }
+
         if (StoreName.Trim().Length == 0)
         {
             SetStatus("The shop name cannot be empty — it is printed on every receipt.", true);
@@ -478,7 +511,9 @@ public sealed class SettingsViewModel : ObservableObject
             ["expiry.levels"] = _services.Settings.ExpiryBands
                 .WithDays(expiry1, expiry2, expiry3)
                 .Bands
-                .ToList()
+                .ToList(),
+            ["supplier.returnCutoffDays"] = cutoffDays,
+            ["supplier.returnAlertDays"] = alertDays
         };
 
         var result = _services.Settings.SetMany(values, _user);

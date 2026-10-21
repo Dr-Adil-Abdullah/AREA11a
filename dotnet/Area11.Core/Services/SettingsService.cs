@@ -286,6 +286,29 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
                     : "A cashier cannot be allowed a bigger discount than a manager.";
             }
 
+            case "supplier.returnCutoffDays":
+            case "supplier.returnAlertDays":
+            {
+                // Two numbers that only make sense together: the reminder must start before the
+                // supplier's last day, otherwise the alert can never appear.
+                if (number is null or < 1 or > 3650)
+                {
+                    return "The supplier return window is a number of days between 1 and 3650.";
+                }
+
+                var cutoff = key == "supplier.returnCutoffDays"
+                    ? number.Value
+                    : Other("supplier.returnCutoffDays", 90);
+
+                var alert = key == "supplier.returnAlertDays"
+                    ? number.Value
+                    : Other("supplier.returnAlertDays", 180);
+
+                return alert > cutoff
+                    ? null
+                    : "The reminder must start earlier than the supplier's cutoff (for example 180 and 90 days).";
+            }
+
             case "tax.percent":
                 return number is >= 0 and <= 100 ? null : "The tax rate must be between 0 and 100 percent.";
 
@@ -420,6 +443,11 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
             "[{\"level\":1,\"days\":365,\"color\":\"blue\",\"label\":\"Level 1 - 1 year\"}," +
             "{\"level\":2,\"days\":180,\"color\":\"yellow\",\"label\":\"Level 2 - 6 months\"}," +
             "{\"level\":3,\"days\":90,\"color\":\"red\",\"label\":\"Level 3 - 3 months\"}]");
+        // Supplier returns (15.2.1, §9.3.6): goods go back only until the cutoff, and the board
+        // starts reminding this many days before expiry.
+        Number("supplier.returnCutoffDays", 90);
+        Number("supplier.returnAlertDays", 180);
+
         Flag("reorder.enabled", true);
 
         // ---- Loyalty (off until the last phase) ----
