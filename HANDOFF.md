@@ -24,7 +24,7 @@ shop computer. Talk to him in Urdu; keep code, database and UI in English.
 | Has it ever been compiled? | **Yes - 20 Oct 2026.** The owner's Windows build reported `Build succeeded`. Since then the code grew (receipt/printing), so the current build is unverified again |
 | What is the very next task? | **build + `tools\RUN-TESTS.cmd` (173 cases)** on the owner's PC; press **Write-off**, clear a few expired strips and look at the loss at cost and the history line. After that: stock-take `ST`, then Phase 3 ledgers/reports/backup. |
 | How many tests? | 173 cases in 17 files - written, **never executed on the owner's PC**; run `tools\RUN-TESTS.cmd` |
-| Database? | the **original** schema, migrations `001`-`015`, **31 business tables** (+ `_migrations` ledger), so an existing `area11.db` opens unchanged |
+| Database? | the **original** schema, migrations `001`-`019`, **33 business tables** (+ `_migrations` ledger), so an existing `area11.db` opens unchanged |
 | Where does data live? | `%ProgramData%\Area11\` (`area11.db`, `photos\`, `logs\`, `backups\`) |
 | Default owner login | user **Owner**, password **`area11`** (change it on day one) |
 
@@ -59,7 +59,7 @@ Full detail in [`docs/PROGRESS.md`](docs/PROGRESS.md). The short version:
 
 | Area | Files |
 |---|---|
-| Schema 001-015 (31 business tables, WAL, migrations under `BEGIN IMMEDIATE`) | `Area11.Core/Data/` |
+| Schema 001-019 (33 business tables, WAL, migrations under `BEGIN IMMEDIATE`) | `Area11.Core/Data/` |
 | Settings (75 keys), audit black box, auth + lockout, permissions, numbering, hold carts | `Area11.Core/Services/` |
 | Products, partners, purchases `PINV`, sales `INV`, **returns `RET` + quarantine `Q`**, dashboard | `Area11.Core/Services/` |
 | Money / quantity / expiry / password helpers | `Area11.Core/Utils/` |
@@ -191,7 +191,7 @@ python3 tools/build_rules_matrix.py --check
 ```
 
 `check_repo.py` runs 10 checks: C# syntax, **explicit usings** (the CS0103 class of error),
-XML validity, 137 XAML bindings and resources, migrations (15 files -> 31 tables, executed on
+XML validity, 399 XAML bindings and resources, migrations (19 files -> 33 tables, executed on
 SQLite), **every SQL statement prepared against the real schema**, test count, settings keys,
 and documentation links.
 

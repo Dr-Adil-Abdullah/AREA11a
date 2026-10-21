@@ -198,6 +198,9 @@ public sealed class StockTakeTests
     {
         using var test = new TestDatabase();
 
+        // The shop must have something real to count, otherwise a session cannot even open.
+        TestData.AddProduct(test, name: "Panadol 500mg", batchQty: 10);
+
         // A medicine the shop sells but never received: no batch at all.
         var product = test.Database.Tx(connection =>
         {

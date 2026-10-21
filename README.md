@@ -91,7 +91,8 @@ Step-by-step help, including what to do when the build fails: [`docs/BUILD-ON-WI
 
 `dotnet/Area11.Core/Data/Migrations/` holds the **original 13 migrations verbatim**, plus
 `014_user_permissions.sql` (per-person permissions) and `015_photos.sql` (several photos per product,
-supplier and customer). They create **31 business tables** (plus the `_migrations` ledger) and run
+supplier and customer), then Phase 2's `016`-`019` (held carts, return detail, no-bill detail, stock-take
+detail). They create **33 business tables** (plus the `_migrations` ledger) and run
 append-only inside `BEGIN IMMEDIATE`, so an existing `area11.db` opens unchanged and no data is lost
 when the app is updated.
 
