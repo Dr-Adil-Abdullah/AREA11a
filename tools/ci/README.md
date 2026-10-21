@@ -1,6 +1,6 @@
 # Continuous build
 
-`build.yml` compiles the solution and runs the 100 test cases on a **Windows** runner, so the whole team
+`build.yml` compiles the solution and runs the 122 test cases on a **Windows** runner, so the whole team
 sees whether the code really builds without touching the shop computer.
 
 It is not active yet because the agent's GitHub App token may not create workflow files.

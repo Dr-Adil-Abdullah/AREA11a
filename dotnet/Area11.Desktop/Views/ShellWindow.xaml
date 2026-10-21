@@ -24,6 +24,9 @@
         <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
             <views:SettingsView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ReturnsViewModel}">
+            <views:ReturnsView />
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>

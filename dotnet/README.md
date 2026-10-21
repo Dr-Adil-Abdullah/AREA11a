@@ -14,7 +14,7 @@ dotnet/
 │   ├── Services/                settings, audit, auth, permissions, numbering, products, dashboard
 │   └── Utils/                   money, passwords (PBKDF2), paths, logging, audit diff
 ├── Area11.Desktop/              WPF + MVVM (login, shell, dashboard, products)
-└── Area11.Tests/                xUnit (100 cases)
+└── Area11.Tests/                xUnit (122 cases)
 ```
 
 ## Where things stand

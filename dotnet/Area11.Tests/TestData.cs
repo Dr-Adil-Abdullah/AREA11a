@@ -69,6 +69,35 @@ VALUES(@name, '0300-1234567', 'normal', @limit, 0, 0, 1, @at);",
             permissions, sales ?? Sales(test), test.Log);
     }
 
+    public static ReturnService Returns(TestDatabase test) =>
+        new(test.Database, test.Audit, new NumberingService(test.Settings), test.Settings,
+            new PermissionService(test.Database, test.Log, test.Audit), test.Log);
+
+    public static QuarantineService Quarantine(TestDatabase test) =>
+        new(test.Database, test.Audit, new PermissionService(test.Database, test.Log, test.Audit), test.Log);
+
+    public static ReturnReceiptService ReturnReceipts(TestDatabase test) =>
+        new(test.Database, test.Settings, test.Log);
+
+    /// <summary>The only line of a one-line bill, ready to be returned in full.</summary>
+    public static ReturnInput Return(SaleResult sale, double qtyBase, bool restock = true, string reason = "changed mind")
+    {
+        var itemId = SaleItemIdOf(sale);
+
+        return new ReturnInput
+        {
+            SaleId = sale.SaleId,
+            Reason = reason,
+            Restock = restock,
+            Lines = new List<ReturnLineInput> { new() { SaleItemId = itemId, QtyBase = qtyBase } }
+        };
+    }
+
+    /// <summary>Reads the single sale-item id of a one-line bill (the tests never guess ids).</summary>
+    public static int SaleItemIdOf(SaleResult sale) => sale.SaleItemIds.Count > 0
+        ? sale.SaleItemIds[0]
+        : throw new InvalidOperationException("The sale has no lines.");
+
     /// <summary>One row of the `payments` table, for the split-payment assertions.</summary>
     public sealed class PaymentDbRow
     {

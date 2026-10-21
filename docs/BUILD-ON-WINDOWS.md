@@ -29,7 +29,7 @@ dotnet run --project dotnet\Area11.Desktop
 
 - There is exactly **one solution**, `Area11.sln`, in the root of the repository. Open that.
 - `dotnet build` with no arguments finds it automatically.
-- Expected: everything builds, **100 tests pass**, and the sign-in window opens.
+- Expected: everything builds, **122 tests pass**, and the sign-in window opens.
 
 > **Seeing the old blue window that says "app is running"?** That is `prototypes/WPFSample` — the very
 > first smoke test from day one, not Area11. It sits in `prototypes\` now and is only kept as history.
@@ -132,9 +132,25 @@ Manual equivalent, step by step, is in [`HOW-TO-RUN-URDU.md`](HOW-TO-RUN-URDU.md
   the change is calculated from the cash part only. A credit part needs a customer and goes on the
   khata; it is never counted as money in the drawer (D-27).
 
+## 5d. Returns and quarantine (v0.3.0)
+
+1. **Returns** in the left menu → type the bill number (e.g. `INV-0001`) → **Find bill**.
+2. Each line shows what was sold, what already came back, what can still come back, and the refund
+   for the whole remainder. Type the quantity coming back on the lines that apply (in tablets).
+3. Choose the **reason**, write a **note** if you want, and pick where the goods go:
+   **back on the shelf now** (default) or **quarantine, decide later**.
+4. Press **Take the return**. The app saves `RET-0001`, prints the return receipt (if automatic
+   printing is on) and shows the amount that left the drawer and the amount taken off the khata.
+5. **Quarantine** tab: every waiting item has three buttons - **Back in stock**, **Damaged /
+   expired** (needs a note), **Sold on**. A decision is final and stays in the history.
+
+Why the refund can never be too large: it is capped by what that bill actually collected, and the
+khata is reduced before any cash leaves the drawer (U-28, 15.2.1).
+
 ## 6. What comes next (still Phase 1)
 
-Phase 1 is finished. Phase 2 next: returns `RET`, quarantine and alerts.
+Phase 1 is finished and Phase 2 has started (returns + quarantine). Next inside Phase 2: the alert
+centre, no-bill returns `PR`, write-off and stock-take `ST`.
 
 Already written and waiting for one real walk-through by the owner: the receipt with **instant
 ESC/POS printing** (58 / 80 mm) and the **Settings** screen (shop, printing, sales rules, staff).

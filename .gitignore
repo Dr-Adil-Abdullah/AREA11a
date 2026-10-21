@@ -18,3 +18,6 @@ obj/
 # OS files
 Thumbs.db
 .DS_Store
+# Python cache from the repo checker
+__pycache__/
+*.pyc

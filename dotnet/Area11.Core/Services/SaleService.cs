@@ -163,6 +163,7 @@ VALUES(@code, @date, @customerId, @userId, @subtotal, @discount, @tax,
             });
 
         var saleId = (int)_db.NextId(connection);
+        var saleItemIds = new List<int>();
 
         foreach (var line in computed.Lines)
         {
@@ -185,6 +186,8 @@ VALUES(@saleId, @productId, @batchId, @name, @qtyBase, @unitSold, @qtyEntered,
                     lineTotal = line.LineTotalPaisa,
                     costUnit = line.CostUnitPaisa
                 });
+
+            saleItemIds.Add((int)_db.NextId(connection));
 
             if (line.BatchId is not null)
             {
@@ -252,6 +255,7 @@ VALUES(@at, @method, @amount, @saleId, @customerId, @userId, @note);",
             PaidPaisa = paid,
             DuePaisa = due,
             ChangePaisa = change,
+            SaleItemIds = saleItemIds,
             Warnings = computed.Warnings
         }, computed.Warnings.ToArray());
     }

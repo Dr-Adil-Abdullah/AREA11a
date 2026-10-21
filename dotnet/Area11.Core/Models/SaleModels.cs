@@ -100,6 +100,9 @@ public sealed class SaleResult
 
     public long ChangePaisa { get; init; }
 
+    /// <summary>The `sale_items.id` of every line, in cart order - a return points at these.</summary>
+    public List<int> SaleItemIds { get; init; } = new();
+
     public List<string> Warnings { get; init; } = new();
 }
 

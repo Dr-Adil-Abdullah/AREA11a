@@ -46,18 +46,18 @@ features and the four phases.
 | F-14 | Hold cart / bring back a held cart (`H-0001`), stored in the database | ✅ | `Migr. 016`, `Services/HoldCartService.cs`, `Views/PosView.xaml` | `HoldCartTests` 🧪 | a parked cart survives a restart and comes back line for line |
 | F-15 | Split payment (cash + online / card / khata in one bill) | ✅ | `Services/SaleService.cs` (Plan), `Views/PosView.xaml` | `SplitPaymentTests` 🧪 | the credit part reaches the khata and never the drawer |
 | F-16 | **First real Windows build and test run** | ✅ | `docs/BUILD-ON-WINDOWS.md` | - | **20 Oct 2026: `Build succeeded`, 0 errors** (6 NU1903 security warnings, fixed by pinning SQLitePCLRaw 2.1.12) · `dotnet test` still to be run |
-| F-17 | Settings screen: shop info, printing, discount rules, and per-person permission ticks | ✅ | v0.2.4 | `SettingsView` + 100 tests | owner edits everything without a developer |
+| F-17 | Settings screen: shop info, printing, discount rules, and per-person permission ticks | ✅ | v0.2.4 | `SettingsView` + 122 tests | owner edits everything without a developer |
 | F-18 | Tests for purchases, partners, numbering | ⬜ | `Area11.Tests/` | - | added with F-13 |
 
 ## Phase 2 - returns, stock and alerts
 
 | ID | Feature | State | Where | Test | Done when |
 |---|---|---|---|---|---|
-| F-20 | Bill search / lost-bill lookup | ⬜ | - | - | find a bill by number, phone or item |
-| F-21 | Return `RET` against the original bill, strict limits | ⬜ | - | - | cannot refund more than was sold (U-28) |
+| F-20 | Bill lookup for a return (by printed number) | 🟡 | `Services/ReturnService.FindSale` | `ReturnTests` 🧪 | search by phone / medicine / date (F-20 full) still to come |
+| F-21 | Return `RET` against the original bill, strict limits, **printed return receipt** | ✅ | `Migr. 017`, `Services/ReturnService.cs`, `Services/ReturnReceiptService.cs`, `Views/ReturnsView.xaml` | `ReturnTests` 🧪 | cannot refund more than was sold or collected (U-28, U-35) |
 | F-22 | Provisional return `PR` (customer has no bill yet) | ⬜ | - | - | links to a bill later |
-| F-23 | Quarantine `Q` with permanent number + disposition by owner **or manager** (D-22) | ⬜ | - | - | goods never restock without a decision |
-| F-24 | Alert centre: negative stock, rush return; dismiss **owner only, with a reason** | ⬜ | - | - | alert returns until dismissed (U-31) |
+| F-23 | Quarantine `Q` with permanent number + disposition by owner **or manager** (D-22) | ✅ | `Services/QuarantineService.cs`, `Views/ReturnsView.xaml` | `QuarantineTests` 🧪 | goods never restock without a decision; history kept forever |
+| F-24 | Alert centre: negative stock, rush return; dismiss **owner only, with a reason** | ⬜ **next** | `Migr. 011` (table ready) | - | alert returns until dismissed (U-31) |
 | F-25 | Stock write-off / breakage | ⬜ | - | - | audited, stock corrected |
 | F-26 | Stock-take `ST` session: open, count, apply | ⬜ | - | - | differences become movements |
 | F-27 | Customer ledger: payments, statement, stars | ⬜ | - | - | balance always equals the sum of movements |
@@ -120,15 +120,16 @@ features and the four phases.
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
 | **Compiles on Windows** | `dotnet build Area11.sln` | ✅ 20 Oct 2026 (v0.1.1); re-check after each release |
 | Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.2.4 Slate |
-| **100 tests green** | `dotnet test` | ⬜ **F-16 follow-up** (the tests have never run on the owner's PC) |
+| **122 tests green** | `dotnet test` | ⬜ **F-16 follow-up** (the tests have never run on the owner's PC) |
 
 ## Change log
 
 | Date | What |
 |---|---|
 | 20 Oct 2026 | **First Windows build report:** CS0103 (`Path`/`Directory`/`File`) in `AppConfig.cs`, `Database.cs`, `LoggerService.cs` - fixed with explicit `using System.IO;`. The old `Area11.WPF.sln` was the solution being built by mistake, so it moved to `prototypes/`; the real solution is now `Area11.sln` in the root. The checker gained an explicit-usings check and a SQL-preparation check (37 statements). |
-| 20 Oct 2026 | **v0.2.5 Fuchsia**: **hold cart** (F-14) and **split payment** (F-15). A parked cart lives in the database (`H-0001`), so it survives a restart, and comes back line for line. A split bill writes one `payments` row per method that received money; the credit part goes to `due_paisa` and the customer's balance, never to the drawer. Receipt prints each part. 100 tests. |
-| 20 Oct 2026 | **v0.2.4 Slate**: the Settings screen (F-17). Printing is chosen there (58/80 mm, automatic or manual), the shop name/address/phone/footer are editable, discount limits and tax are editable, and staff get one checkbox per module. Settings are saved as one transaction and refused if a value would break the shop (100 tests). |
+| 21 Oct 2026 | **v0.3.0 Olive - Phase 2 begins.** Returns: find the bill by number, type what came back, refund capped by what that bill actually collected, khata reduced before cash, goods to the same batch or to quarantine with a `Q-` number, three quarantine decisions (stock / damaged / sold) and a printed `RET-` receipt. 122 tests. |
+| 20 Oct 2026 | **v0.2.5 Fuchsia**: **hold cart** (F-14) and **split payment** (F-15). A parked cart lives in the database (`H-0001`), so it survives a restart, and comes back line for line. A split bill writes one `payments` row per method that received money; the credit part goes to `due_paisa` and the customer's balance, never to the drawer. Receipt prints each part. 122 tests. |
+| 20 Oct 2026 | **v0.2.4 Slate**: the Settings screen (F-17). Printing is chosen there (58/80 mm, automatic or manual), the shop name/address/phone/footer are editable, discount limits and tax are editable, and staff get one checkbox per module. Settings are saved as one transaction and refused if a value would break the shop (122 tests). |
 | 20 Oct 2026 | **v0.2.3 Rose**: no more ZIP-per-change. `START-AREA11.bat` prints the git branch it is building and refuses to continue on `main` (that is the trap when cloning with GitHub Desktop); the Urdu guide gained a "which tool" table and GitHub Desktop steps. |
 | 20 Oct 2026 | **v0.2.2 Blue - build fix.** The receipt tests named an internal type (`ReceiptService.SaleRow`), which the compiler rejects (`CS0122`); they now write a real bill into the test database and read it back through the public `ReceiptService.Build`. New checker rule: no test may name an internal type. |
 | 20 Oct 2026 | **v0.2.1 Indigo**: printing became a *setting* - automatic after a sale or manual with the button (`printer.autoPrint`, switchable on the POS screen until the Settings screen exists). Both paper widths stay selectable. |

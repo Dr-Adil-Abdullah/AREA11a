@@ -33,6 +33,9 @@ ITEM_PROPERTIES = {
     "MarginLabel", "UnitLabel", "QuantityText", "BatchNo", "Expiry", "ProductName", "Category",
     "Company", "Photo", "Phone", "BalanceText", "Stars", "CategoryLabel", "ActiveLabel",
     "Label", "Allowed", "CanEdit", "RoleLabel",
+    "SoldLabel", "ReturnedLabel", "RemainingLabel", "MoneyLabel", "QtyText", "CanReturn",
+    "QCode", "ProductName", "QuantityLabel", "ReasonLabel", "DateLabel", "DispositionLabel",
+    "DisposedAt", "DisposedBy",
 }
 
 VIEW_MODEL_OF = {
@@ -43,6 +46,7 @@ VIEW_MODEL_OF = {
     "PosView.xaml": "PosViewModel",
     "PurchasesView.xaml": "PurchasesViewModel",
     "SettingsView.xaml": "SettingsViewModel",
+    "ReturnsView.xaml": "ReturnsViewModel",
 }
 
 
