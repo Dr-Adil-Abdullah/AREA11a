@@ -29,6 +29,7 @@ public sealed class AppServices
         Returns = new ReturnService(Database, Audit, Numbering, Settings, Permissions, Log);
         Quarantine = new QuarantineService(Database, Audit, Permissions, Log);
         ReturnReceipts = new ReturnReceiptService(Database, Settings, Log);
+        Alert = new AlertService(Database, Audit, Permissions, Log);
         Receipts = new ReceiptService(Database, Settings, Log);
         Printer = new PrinterService(Settings, Log);
     }
@@ -64,6 +65,8 @@ public sealed class AppServices
     public QuarantineService Quarantine { get; }
 
     public ReturnReceiptService ReturnReceipts { get; }
+
+    public AlertService Alert { get; }
 
     public ReceiptService Receipts { get; }
 

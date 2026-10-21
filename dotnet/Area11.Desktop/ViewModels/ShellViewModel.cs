@@ -18,6 +18,9 @@ public sealed class ShellViewModel : ObservableObject
     private string _storeName = string.Empty;
     private string _appName = string.Empty;
     private SettingsViewModel? _settingsPage;
+    private string _alertText = string.Empty;
+    private bool _alertHiddenForSession;
+    private bool _hasAlertBar;
 
     public ShellViewModel(AppServices services, User user)
     {
@@ -28,8 +31,11 @@ public sealed class ShellViewModel : ObservableObject
         AppName = services.Settings.GetString("brand.appName");
 
         LogoutCommand = new RelayCommand(Logout);
+        HideAlertBarCommand = new RelayCommand(HideAlertBar);
+        OpenAlertsCommand = new RelayCommand(OpenAlerts);
 
         BuildNavigation();
+        RefreshAlerts();
         SelectedNav = NavItems.FirstOrDefault();
     }
 
@@ -38,6 +44,23 @@ public sealed class ShellViewModel : ObservableObject
     public ObservableCollection<NavItem> NavItems { get; } = new();
 
     public RelayCommand LogoutCommand { get; }
+
+    public RelayCommand HideAlertBarCommand { get; }
+
+    public RelayCommand OpenAlertsCommand { get; }
+
+    /// <summary>The sentence in the red bar, or empty when nothing needs attention.</summary>
+    public string AlertText
+    {
+        get => _alertText;
+        private set => SetProperty(ref _alertText, value);
+    }
+
+    public bool HasAlertBar
+    {
+        get => _hasAlertBar;
+        private set => SetProperty(ref _hasAlertBar, value);
+    }
 
     public string StoreName
     {
@@ -64,10 +87,15 @@ public sealed class ShellViewModel : ObservableObject
         get => _selectedNav;
         set
         {
-            if (SetProperty(ref _selectedNav, value))
+            if (!SetProperty(ref _selectedNav, value))
             {
-                CurrentViewModel = value?.Resolve();
+                return;
             }
+
+            CurrentViewModel = value?.Resolve();
+
+            // Move around the app and the bar refreshes itself; no timer, no background thread.
+            RefreshAlerts();
         }
     }
 
@@ -80,6 +108,8 @@ public sealed class ShellViewModel : ObservableObject
     private void BuildNavigation()
     {
         NavItems.Add(new NavItem("Dashboard", "Today at a glance", () => new DashboardViewModel(_services)));
+        NavItems.Add(new NavItem("Alerts", "Minus stock, quarantine",
+            () => new AlertsViewModel(_services, _user, RefreshAlerts)));
 
         if (_services.Permissions.Can(_user, Modules.Pos))
         {
@@ -120,6 +150,33 @@ public sealed class ShellViewModel : ObservableObject
 
         _settingsPage.Refresh();
         return _settingsPage;
+    }
+
+    /// <summary>
+    /// Reads the alert board for the top bar. Called when the page changes and after the owner ends
+    /// an alert, so the bar never shows a problem that was just dealt with.
+    /// </summary>
+    private void RefreshAlerts()
+    {
+        var report = _services.Alert.Report();
+
+        AlertText = report.BarText;
+        HasAlertBar = report.HasLive && !_alertHiddenForSession;
+    }
+
+    private void HideAlertBar()
+    {
+        _alertHiddenForSession = true;
+        HasAlertBar = false;
+    }
+
+    private void OpenAlerts()
+    {
+        var page = NavItems.FirstOrDefault(item => item.Title == "Alerts");
+        if (page is not null)
+        {
+            SelectedNav = page;
+        }
     }
 
     private void RefreshHeader()

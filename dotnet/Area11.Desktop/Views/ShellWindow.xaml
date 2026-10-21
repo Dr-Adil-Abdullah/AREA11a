@@ -27,6 +27,9 @@
         <DataTemplate DataType="{x:Type vm:ReturnsViewModel}">
             <views:ReturnsView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:AlertsViewModel}">
+            <views:AlertsView />
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>
@@ -128,7 +131,31 @@
             </Grid>
         </Border>
 
-        <!-- Page -->
-        <ContentControl Grid.Column="1" Content="{Binding CurrentViewModel}" Margin="22" />
+        <!-- Page. Row 0 is the global alert bar: it sits above every page (Spec 16.2.1). -->
+        <Grid Grid.Column="1" Margin="22">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Background="{StaticResource DangerBrush}" CornerRadius="8" Padding="12,8"
+                    Margin="0,0,0,10"
+                    Visibility="{Binding HasAlertBar, Converter={StaticResource BoolToVis}}">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Content="Hide for this session"
+                            Style="{StaticResource GhostButton}" Foreground="White" BorderBrush="#FCA5A5"
+                            FontSize="11" Padding="9,4" Command="{Binding HideAlertBarCommand}" />
+
+                    <Button DockPanel.Dock="Right" Content="See now" Foreground="White" FontWeight="SemiBold"
+                            Background="Transparent" BorderThickness="0" FontSize="12" Padding="9,4"
+                            Cursor="Hand" Command="{Binding OpenAlertsCommand}" Margin="0,0,6,0" />
+
+                    <TextBlock Text="{Binding AlertText}" Foreground="White" FontWeight="SemiBold"
+                               FontSize="12.5" VerticalAlignment="Center" TextWrapping="Wrap" />
+                </DockPanel>
+            </Border>
+
+            <ContentControl Grid.Row="1" Content="{Binding CurrentViewModel}" />
+        </Grid>
     </Grid>
 </Window>

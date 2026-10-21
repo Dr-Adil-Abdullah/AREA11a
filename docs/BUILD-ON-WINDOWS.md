@@ -29,7 +29,7 @@ dotnet run --project dotnet\Area11.Desktop
 
 - There is exactly **one solution**, `Area11.sln`, in the root of the repository. Open that.
 - `dotnet build` with no arguments finds it automatically.
-- Expected: everything builds, **122 tests pass**, and the sign-in window opens.
+- Expected: everything builds, **131 tests pass**, and the sign-in window opens.
 
 > **Seeing the old blue window that says "app is running"?** That is `prototypes/WPFSample` — the very
 > first smoke test from day one, not Area11. It sits in `prototypes\` now and is only kept as history.
@@ -147,10 +147,22 @@ Manual equivalent, step by step, is in [`HOW-TO-RUN-URDU.md`](HOW-TO-RUN-URDU.md
 Why the refund can never be too large: it is capped by what that bill actually collected, and the
 khata is reduced before any cash leaves the drawer (U-28, 15.2.1).
 
+## 5e. Alerts (v0.3.1)
+
+- A **red bar** sits above every page while something is wrong: minus stock, or goods waiting in
+  quarantine. **See now** opens the Alerts page; **Hide for this session** hides the bar until the
+  next sign-in (the alert itself stays).
+- **Alerts** page: the list of live problems. Pick one, write a **reason** (3+ characters), press
+  **End this alert**. Only the owner sees that box - everybody else is told that the owner must do it.
+- Ended alerts stay in the lower list for ever, with reason, name and time. **Bring this alert back**
+  restores one if the reason was wrong (also recorded).
+- An ended alert **re-opens by itself** when that medicine moves again, so one reason cannot silence
+  a repeat problem.
+
 ## 6. What comes next (still Phase 1)
 
-Phase 1 is finished and Phase 2 has started (returns + quarantine). Next inside Phase 2: the alert
-centre, no-bill returns `PR`, write-off and stock-take `ST`.
+Phase 1 is finished; Phase 2 has returns, quarantine and the alert board. Next inside Phase 2:
+no-bill returns `PR`, write-off and stock-take `ST`.
 
 Already written and waiting for one real walk-through by the owner: the receipt with **instant
 ESC/POS printing** (58 / 80 mm) and the **Settings** screen (shop, printing, sales rules, staff).

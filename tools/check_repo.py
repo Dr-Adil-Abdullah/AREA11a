@@ -36,6 +36,7 @@ ITEM_PROPERTIES = {
     "SoldLabel", "ReturnedLabel", "RemainingLabel", "MoneyLabel", "QtyText", "CanReturn",
     "QCode", "ProductName", "QuantityLabel", "ReasonLabel", "DateLabel", "DispositionLabel",
     "DisposedAt", "DisposedBy",
+    "TypeLabel", "Detail", "Reason", "EndedAt",
 }
 
 VIEW_MODEL_OF = {
@@ -47,6 +48,7 @@ VIEW_MODEL_OF = {
     "PurchasesView.xaml": "PurchasesViewModel",
     "SettingsView.xaml": "SettingsViewModel",
     "ReturnsView.xaml": "ReturnsViewModel",
+    "AlertsView.xaml": "AlertsViewModel",
 }
 
 
