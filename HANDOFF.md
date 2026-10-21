@@ -22,7 +22,7 @@ shop computer. Talk to him in Urdu; keep code, database and UI in English.
 | Where is the product? | **`dotnet/`** - `Area11.sln` with `Area11.Core`, `Area11.Desktop`, `Area11.Tests` |
 | What can it do today? | sign-in, products, purchases `PINV`, counter billing `INV` (FEFO, discount guard, round-off, cash change, credit), dashboard |
 | Has it ever been compiled? | **Yes - 20 Oct 2026.** The owner's Windows build reported `Build succeeded`. Since then the code grew (receipt/printing), so the current build is unverified again |
-| What is the very next task? | **build + `tools\RUN-TESTS.cmd` (173 cases)** on the owner's PC; press **Write-off**, clear a few expired strips and look at the loss at cost and the history line. After that: stock-take `ST`, then Phase 3 ledgers/reports/backup. |
+| What is the very next task? | **build + `tools\RUN-TESTS.cmd` (173 cases)** on the owner's PC; press **Stock-take**, open `ST-0001`, count one row, then Apply and check that the batch moved. After that: customers (Phase 2 tail), then Phase 3 ledgers/reports/backup. |
 | How many tests? | 173 cases in 17 files - written, **never executed on the owner's PC**; run `tools\RUN-TESTS.cmd` |
 | Database? | the **original** schema, migrations `001`-`019`, **33 business tables** (+ `_migrations` ledger), so an existing `area11.db` opens unchanged |
 | Where does data live? | `%ProgramData%\Area11\` (`area11.db`, `photos\`, `logs\`, `backups\`) |
