@@ -35,6 +35,7 @@ public sealed class AppServices
         Provisional = new ProvisionalReturnService(Database, Audit, Numbering, Permissions, Log);
         Stock = new StockService(Database, Audit, Settings, Permissions, Log);
         StockTake = new StockTakeService(Database, Audit, Numbering, Permissions, Log);
+        Shifts = new ShiftService(Database, Audit, Permissions, Log);
         ProvisionalReceipts = new ProvisionalReceiptService(Provisional, Settings, Log);
         Receipts = new ReceiptService(Database, Settings, Log);
         Printer = new PrinterService(Settings, Log);
@@ -83,6 +84,8 @@ public sealed class AppServices
     public StockService Stock { get; }
 
     public StockTakeService StockTake { get; }
+
+    public ShiftService Shifts { get; }
 
     public ProvisionalReceiptService ProvisionalReceipts { get; }
 

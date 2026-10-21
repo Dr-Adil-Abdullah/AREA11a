@@ -24,28 +24,11 @@ public sealed class SupplierLedgerTests
         new(test.Database, test.Audit, new NumberingService(test.Settings), test.Settings,
             new PermissionService(test.Database, test.Log, test.Audit), test.Log);
 
-    private static PurchaseService Purchases(TestDatabase test) =>
-        new(test.Database, test.Audit, new NumberingService(test.Settings),
-            new PermissionService(test.Database, test.Log, test.Audit), test.Log);
-
-    private static int AddSupplier(TestDatabase test, string name = "GSK Depot", long openingPaisa = 0)
-    {
-        return test.Database.Tx(connection =>
-        {
-            test.Database.Execute(connection, @"
-INSERT INTO suppliers(name, agency, phone, opening_balance_paisa, balance_paisa, active, created_at)
-VALUES(@name, 'GSK', '042-1112233', @opening, @opening, 1, '2026-01-01 09:00:00');",
-                new { name, opening = openingPaisa });
-
-            return (int)test.Database.NextId(connection);
-        });
-    }
-
     /// <summary>Buys <paramref name="boxes"/> boxes (1 box = 20 tablets) at Rs 200 a tablet.</summary>
     private static PurchaseResult Buy(
         TestDatabase test, int supplierId, int productId, double boxes = 2, long paidPaisa = 0)
     {
-        var purchase = Purchases(test).Create(new PurchaseInput
+        var purchase = TestData.Purchases(test).Create(new PurchaseInput
         {
             SupplierId = supplierId,
             SupplierInvoiceNo = "INV-77",
@@ -95,7 +78,7 @@ VALUES(@name, 'GSK', '042-1112233', @opening, @opening, 1, '2026-01-01 09:00:00'
     {
         using var test = new TestDatabase();
         var product = TestData.AddProduct(test, costPaisa: 20000, retailPaisa: 30000, batchQty: 0);
-        var supplier = AddSupplier(test);
+        var supplier = TestData.AddSupplier(test);
 
         Buy(test, supplier, product, boxes: 2);      // 2 x 20 tablets x Rs 200 = Rs 8,000
 
@@ -117,7 +100,7 @@ VALUES(@name, 'GSK', '042-1112233', @opening, @opening, 1, '2026-01-01 09:00:00'
     {
         using var test = new TestDatabase();
         var product = TestData.AddProduct(test, batchQty: 0);
-        var supplier = AddSupplier(test);
+        var supplier = TestData.AddSupplier(test);
 
         Buy(test, supplier, product, boxes: 2, paidPaisa: 300000);   // Rs 3,000 paid of Rs 8,000
 
@@ -140,7 +123,7 @@ VALUES(@name, 'GSK', '042-1112233', @opening, @opening, 1, '2026-01-01 09:00:00'
     {
         using var test = new TestDatabase();
         var product = TestData.AddProduct(test, batchQty: 0);
-        var supplier = AddSupplier(test);
+        var supplier = TestData.AddSupplier(test);
 
         Buy(test, supplier, product);
 
@@ -166,7 +149,7 @@ WHERE supplier_id = @id AND purchase_id IS NULL AND amount_paisa = 300000;", new
     {
         using var test = new TestDatabase();
         var product = TestData.AddProduct(test, batchQty: 0);
-        var supplier = AddSupplier(test);
+        var supplier = TestData.AddSupplier(test);
 
         Buy(test, supplier, product);   // Rs 8,000 owed
 
@@ -181,7 +164,7 @@ WHERE supplier_id = @id AND purchase_id IS NULL AND amount_paisa = 300000;", new
     public void PayingASettledSupplier_IsRefused()
     {
         using var test = new TestDatabase();
-        var supplier = AddSupplier(test);
+        var supplier = TestData.AddSupplier(test);
 
         var paid = Ledger(test).Pay(TestData.Owner, supplier, 10000, "cash", null);
 
@@ -194,7 +177,7 @@ WHERE supplier_id = @id AND purchase_id IS NULL AND amount_paisa = 300000;", new
     {
         using var test = new TestDatabase();
         var product = TestData.AddProduct(test, batchQty: 0);
-        var supplier = AddSupplier(test);
+        var supplier = TestData.AddSupplier(test);
 
         Buy(test, supplier, product);                       // 40 tablets, Rs 8,000 owed
         var batch = NewestBatch(test, product);
@@ -238,7 +221,7 @@ SELECT qty_base FROM stock_movements WHERE ref_code = 'SR-0001' ORDER BY id DESC
     {
         using var test = new TestDatabase();
         var product = TestData.AddProduct(test, batchQty: 0);
-        var supplier = AddSupplier(test);
+        var supplier = TestData.AddSupplier(test);
 
         Buy(test, supplier, product);
         var batch = NewestBatch(test, product);
@@ -271,8 +254,8 @@ SELECT qty_base FROM stock_movements WHERE ref_code = 'SR-0001' ORDER BY id DESC
     {
         using var test = new TestDatabase();
         var product = TestData.AddProduct(test, batchQty: 0);
-        var seller = AddSupplier(test, "GSK Depot");
-        var other = AddSupplier(test, "Highnoon Labs");
+        var seller = TestData.AddSupplier(test, "GSK Depot");
+        var other = TestData.AddSupplier(test, "Highnoon Labs");
 
         Buy(test, seller, product);
         var batch = NewestBatch(test, product);   // received from GSK
@@ -301,7 +284,7 @@ SELECT qty_base FROM stock_movements WHERE ref_code = 'SR-0001' ORDER BY id DESC
     {
         using var test = new TestDatabase();
         var product = TestData.AddProduct(test, batchQty: 0);
-        var supplier = AddSupplier(test);
+        var supplier = TestData.AddSupplier(test);
 
         Buy(test, supplier, product);
         var batch = NewestBatch(test, product);
@@ -339,7 +322,7 @@ SELECT qty_base FROM stock_movements WHERE ref_code = 'SR-0001' ORDER BY id DESC
     {
         using var test = new TestDatabase();
         var product = TestData.AddProduct(test, batchQty: 0);
-        var supplier = AddSupplier(test, openingPaisa: 500000);
+        var supplier = TestData.AddSupplier(test, openingPaisa: 500000);
 
         Buy(test, supplier, product);
 
@@ -358,7 +341,7 @@ SELECT qty_base FROM stock_movements WHERE ref_code = 'SR-0001' ORDER BY id DESC
     {
         using var test = new TestDatabase();
         var product = TestData.AddProduct(test, batchQty: 0);
-        var supplier = AddSupplier(test);
+        var supplier = TestData.AddSupplier(test);
 
         Buy(test, supplier, product);
         var batch = NewestBatch(test, product);
@@ -389,7 +372,7 @@ SELECT qty_base FROM stock_movements WHERE ref_code = 'SR-0001' ORDER BY id DESC
     {
         using var test = new TestDatabase();
         var product = TestData.AddProduct(test, batchQty: 0);
-        var supplier = AddSupplier(test);
+        var supplier = TestData.AddSupplier(test);
 
         Buy(test, supplier, product);   // expires 2027-06 - not expired
 
@@ -417,7 +400,7 @@ VALUES(@productId, 'OLD-1', '2025-01-31', '2025-01', 12, 20000, 30000, 0, @suppl
     {
         using var test = new TestDatabase();
         var product = TestData.AddProduct(test, batchQty: 0);
-        var supplier = AddSupplier(test);
+        var supplier = TestData.AddSupplier(test);
 
         Buy(test, supplier, product, paidPaisa: 100000);
 

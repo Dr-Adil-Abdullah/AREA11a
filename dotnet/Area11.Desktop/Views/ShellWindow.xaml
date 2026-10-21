@@ -45,6 +45,9 @@
         <DataTemplate DataType="{x:Type vm:SuppliersViewModel}">
             <views:SuppliersView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ShiftViewModel}">
+            <views:ShiftView />
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>

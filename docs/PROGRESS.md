@@ -46,7 +46,7 @@ features and the four phases.
 | F-14 | Hold cart / bring back a held cart (`H-0001`), stored in the database | ✅ | `Migr. 016`, `Services/HoldCartService.cs`, `Views/PosView.xaml` | `HoldCartTests` 🧪 | a parked cart survives a restart and comes back line for line |
 | F-15 | Split payment (cash + online / card / khata in one bill) | ✅ | `Services/SaleService.cs` (Plan), `Views/PosView.xaml` | `SplitPaymentTests` 🧪 | the credit part reaches the khata and never the drawer |
 | F-16 | **First real Windows build and test run** | 🟡 | `docs/BUILD-ON-WINDOWS.md` | - | 20 Oct 2026 v0.1.1 `Build succeeded`; **21 Oct 2026 Phase-2 builds: CS0509 `ReturnService.cs(504)` (v0.3.5), CS0136 `SaleService.cs(609)` (v0.3.6), CS0037/CS1061 `ReturnsViewModel.cs(152-167)` (v0.3.7)** - all three now prevented by checker rules (sealed bases, shadowing, value-type results). Core + Tests compile; Desktop is the last unknown; `dotnet test` never run |
-| F-17 | Settings screen: shop info, printing, discount rules, and per-person permission ticks | ✅ | v0.2.4 | `SettingsView` + 225 tests | owner edits everything without a developer |
+| F-17 | Settings screen: shop info, printing, discount rules, and per-person permission ticks | ✅ | v0.2.4 | `SettingsView` + 236 tests | owner edits everything without a developer |
 | F-18 | Tests for purchases, partners, numbering | ⬜ | `Area11.Tests/` | - | added with F-13 |
 
 ## Phase 2 - returns, stock and alerts
@@ -68,7 +68,7 @@ features and the four phases.
 
 | ID | Feature | State | Where | Test | Done when |
 |---|---|---|---|---|---|
-| F-31 | Shift / galla: open, close, handover, variance | ⬜ | - | - | expected cash = float + sales - payouts |
+| F-31 | Shift / galla: open, close, variance (handover still to come with a second counter) | ✅ | `Services/ShiftService.cs`, `Views/ShiftView.xaml` | `ShiftTests` 🧪 | expected cash = float + sales - payouts; the page says exact / over / short · v0.4.0 |
 | F-32 | Expenses and owner drawings | ⬜ | - | - | they reduce the drawer, not the profit |
 | F-33 | `SR` recovery bills (old udhaar paid today) | ⬜ | - | - | - |
 | F-34 | Reports: today / 7 / 30 days, top items, dead stock, per-day, profit | ⬜ | - | - | profit uses cost-at-sale |
@@ -111,16 +111,16 @@ features and the four phases.
 
 | Check | How | State |
 |---|---|---|
-| C# parses (111 files) | `python3 tools/check_repo.py` | ✅ |
+| C# parses (116 files) | `python3 tools/check_repo.py` | ✅ |
 | Every file imports the namespaces it uses (`System.IO` …) | `python3 tools/check_repo.py` | ✅ |
-| Every SQL statement prepares against the real schema (128) | `python3 tools/check_repo.py` | ✅ |
+| Every SQL statement prepares against the real schema (133) | `python3 tools/check_repo.py` | ✅ |
 | XAML / csproj / props are valid XML | `python3 tools/check_repo.py` | ✅ |
 | Every XAML binding matches its view-model | `python3 tools/check_repo.py` | ✅ |
 | Migrations 001-019 produce 33 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
 | **Compiles on Windows** | `dotnet build Area11.sln` | ✅ 20 Oct 2026 (v0.1.1); re-check after each release |
-| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.3.12 Cocoa |
-| **225 tests green** | `dotnet test` | ⬜ **F-16 follow-up** (the tests have never run on the owner's PC) |
+| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.4.0 Pink |
+| **236 tests green** | `dotnet test` | ⬜ **F-16 follow-up** (the tests have never run on the owner's PC) |
 
 ## Change log
 
@@ -128,6 +128,7 @@ features and the four phases.
 |---|---|
 | 20 Oct 2026 | **First Windows build report:** CS0103 (`Path`/`Directory`/`File`) in `AppConfig.cs`, `Database.cs`, `LoggerService.cs` - fixed with explicit `using System.IO;`. The old `Area11.WPF.sln` was the solution being built by mistake, so it moved to `prototypes/`; the real solution is now `Area11.sln` in the root. The checker gained an explicit-usings check and a SQL-preparation check (37 statements). |
 | 21 Oct 2026 | **v0.3.4 Cyan - stock-take (F-27).** ST session freezes the book; count sheet with book/counted/diff/value and an only-differences pass; Apply (owner, once) corrects batches and values the difference at the frozen cost; negative stock corrected; GINTI batch for found medicine; uncounted lines warned, never zeroed. 173 tests. |
+| 21 Oct 2026 | **v0.4.0 Pink - shift / galla (F-31).** Open the drawer with a float; the expected cash is rebuilt from cash bills, khata collections, supplier cash, refunds and supplier payments; closing says exact / over / short and is refused twice; a peer cannot close somebody else's shift; the `cash` permission guards the page; every closed shift stays in the history. 236 tests. |
 | 21 Oct 2026 | **v0.3.12 Cocoa - supplier-return cutoff (§9.3.6).** Batches from 180 days down to the 90-day cutoff appear on the alert board as **Return to supplier** (amber, not red: nothing is wrong yet), with quantity, expiry and the **last day the supplier will accept it**; the two numbers are settings and a reminder that starts after the cutoff is refused; the owner ends an alert with a reason as before; the top bar counts them. 225 tests. |
 | 21 Oct 2026 | **v0.3.11 Wine - correct a customer and his limit (F-11).** Edit panel on the khata page: name, phone, category, credit limit; the udhaar is never editable and the page still says **Books match**; a limit that really changes needs the owner or a manager and a refusal changes nothing; a limit below the udhaar or a shared phone is saved **with a warning**; 0 means no limit; old → new in the black box. 218 tests. |
 | 21 Oct 2026 | **v0.3.10 Ink - expiry levels from settings (F-29).** The three bands used to be three numbers inside `Expiry.StatusLabel`; it now honours the numbers it is given, and every screen hands it the owner's `expiry.levels`. Three boxes on the Settings tab (default 365 / 180 / 90), a guard that refuses two equal bands, a repair path for broken JSON, and a dashboard window that follows Level 3. 210 tests. |

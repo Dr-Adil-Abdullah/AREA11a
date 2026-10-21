@@ -62,6 +62,24 @@ VALUES(@name, @phone, 'normal', @limit, 0, 0, 1, @at);",
         });
     }
 
+    /// <summary>A supplier with an optional opening payable - the same row the purchase screen creates.</summary>
+    public static int AddSupplier(TestDatabase test, string name = "GSK Depot", long openingPaisa = 0)
+    {
+        return test.Database.Tx(connection =>
+        {
+            test.Database.Execute(connection, @"
+INSERT INTO suppliers(name, agency, phone, opening_balance_paisa, balance_paisa, active, created_at)
+VALUES(@name, 'GSK', '042-1112233', @opening, @opening, 1, '2026-01-01 09:00:00');",
+                new { name, opening = openingPaisa });
+
+            return (int)test.Database.NextId(connection);
+        });
+    }
+
+    public static PurchaseService Purchases(TestDatabase test) =>
+        new(test.Database, test.Audit, new NumberingService(test.Settings),
+            new PermissionService(test.Database, test.Log, test.Audit), test.Log);
+
     public static SaleService Sales(TestDatabase test)
     {
         var permissions = new PermissionService(test.Database, test.Log, test.Audit);

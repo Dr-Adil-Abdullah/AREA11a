@@ -60,6 +60,7 @@ VIEW_MODEL_OF = {
     "StockTakeView.xaml": "StockTakeViewModel",
     "CustomersView.xaml": "CustomersViewModel",
     "SuppliersView.xaml": "SuppliersViewModel",
+    "ShiftView.xaml": "ShiftViewModel",
 }
 
 

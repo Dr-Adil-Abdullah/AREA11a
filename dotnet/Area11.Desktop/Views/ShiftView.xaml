@@ -1,0 +1,180 @@
+<UserControl x:Class="Area11.Desktop.Views.ShiftView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" Margin="0,0,0,10">
+            <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                <TextBlock Text="Shift (galla)" Style="{StaticResource PageTitle}" />
+                <TextBlock Text="Open the drawer with your float, work the day, count the cash and close it."
+                           Style="{StaticResource PageSubtitle}" />
+            </StackPanel>
+
+            <Button DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center"
+                    Content="Refresh" Style="{StaticResource GhostButton}" Command="{Binding RefreshCommand}" />
+        </DockPanel>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="400" />
+                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- ============================ the drawer ============================ -->
+            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+
+                    <Border Style="{StaticResource Card}" Padding="16"
+                            Visibility="{Binding IsBlocked, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="You can look at the shift history, but opening and closing the drawer needs the Cash / shifts permission."
+                                   TextWrapping="Wrap" Foreground="{StaticResource WarningBrush}" />
+                    </Border>
+
+                    <Border Style="{StaticResource Card}" Padding="16"
+                            Visibility="{Binding CanWork, Converter={StaticResource BoolToVis}}">
+                        <StackPanel>
+                            <TextBlock Text="The drawer" Style="{StaticResource SectionTitle}" />
+                            <TextBlock Text="{Binding HeaderText}" Style="{StaticResource FieldHint}" />
+
+                            <!-- an open shift: the six lines, then the count -->
+                            <StackPanel Visibility="{Binding HasShift, Converter={StaticResource BoolToVis}}">
+                                <Grid Margin="0,12,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0" Text="Opening float" Foreground="{StaticResource MutedBrush}" />
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding FloatText}" HorizontalAlignment="Right" />
+
+                                    <TextBlock Grid.Row="1" Text="Cash bills" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0" />
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding CashSalesText}" HorizontalAlignment="Right" Margin="0,4,0,0" />
+
+                                    <TextBlock Grid.Row="2" Text="Khata money received" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0" />
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CollectionsText}" HorizontalAlignment="Right" Margin="0,4,0,0" />
+
+                                    <TextBlock Grid.Row="3" Text="Cash from a supplier" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0" />
+                                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SupplierInText}" HorizontalAlignment="Right" Margin="0,4,0,0" />
+
+                                    <TextBlock Grid.Row="4" Text="Refunds to customers" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0" />
+                                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding RefundsText}" HorizontalAlignment="Right" Margin="0,4,0,0" />
+
+                                    <TextBlock Grid.Row="5" Text="Paid to suppliers" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0" />
+                                    <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SupplierOutText}" HorizontalAlignment="Right" Margin="0,4,0,0" />
+                                </Grid>
+
+                                <Separator Margin="0,10,0,8" />
+
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Left" Text="Expected in the drawer"
+                                               FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding ExpectedText}"
+                                               Style="{StaticResource MetricValue}" FontSize="20"
+                                               HorizontalAlignment="Right" />
+                                </DockPanel>
+                                <TextBlock Text="Rebuilt from the bills, collections, refunds and supplier money - never typed by hand."
+                                           Style="{StaticResource FieldHint}" />
+
+                                <TextBlock Text="Counted cash (Rs)" Style="{StaticResource FieldLabel}" Margin="0,12,0,0" />
+                                <TextBox Text="{Binding ActualText, UpdateSourceTrigger=PropertyChanged}" Width="200"
+                                         HorizontalAlignment="Left" />
+
+                                <TextBlock Text="Note (optional - what was different, if anything)"
+                                           Style="{StaticResource FieldLabel}" Margin="0,8,0,0" />
+                                <TextBox Text="{Binding NoteText, UpdateSourceTrigger=PropertyChanged}" />
+
+                                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                    <Button Content="Close the shift" Style="{StaticResource PrimaryButton}"
+                                            Command="{Binding CloseCommand}" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- no shift: the float that opens it -->
+                            <StackPanel Visibility="{Binding NoShift, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="Cash you start with (Rs)" Style="{StaticResource FieldLabel}" Margin="0,14,0,0" />
+                                <TextBox Text="{Binding OpenFloatText, UpdateSourceTrigger=PropertyChanged}" Width="200"
+                                         HorizontalAlignment="Left" />
+                                <TextBlock Text="This is the change you keep in the drawer before the first bill."
+                                           Style="{StaticResource FieldHint}" />
+
+                                <TextBlock Text="Note (optional)" Style="{StaticResource FieldLabel}" Margin="0,8,0,0" />
+                                <TextBox Text="{Binding NoteText, UpdateSourceTrigger=PropertyChanged}" />
+
+                                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                    <Button Content="Open the shift" Style="{StaticResource PrimaryButton}"
+                                            Command="{Binding OpenCommand}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="{StaticResource WarningSoftBrush}" CornerRadius="8" Padding="12" Margin="0,12,0,0">
+                        <TextBlock TextWrapping="Wrap" FontSize="11.5" Foreground="{StaticResource WarningBrush}"
+                                   Text="Cards and online payments are not in this number - they never entered the drawer. A credit bill is not either: that money has not been received yet." />
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- ============================ the record ============================ -->
+            <Border Grid.Column="2" Style="{StaticResource Card}" Padding="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Margin="0,0,0,8">
+                        <TextBlock Text="Shift history" Style="{StaticResource SectionTitle}" />
+                        <TextBlock Text="Every closed day with the cash it should have held and the cash it did hold."
+                                   Style="{StaticResource FieldHint}" />
+                    </StackPanel>
+
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding History}" IsReadOnly="True"
+                              AutoGenerateColumns="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Opened" Binding="{Binding OpenedLabel}" Width="115" />
+                            <DataGridTextColumn Header="By" Binding="{Binding OpenedBy}" Width="*" />
+                            <DataGridTextColumn Header="Float" Binding="{Binding FloatLabel}" Width="95" />
+                            <DataGridTextColumn Header="Expected" Binding="{Binding ExpectedLabel}" Width="105" />
+                            <DataGridTextColumn Header="Counted" Binding="{Binding ActualLabel}" Width="105" />
+                            <DataGridTextColumn Header="Difference" Binding="{Binding DifferenceLabel}" Width="140" />
+                            <DataGridTextColumn Header="State" Binding="{Binding StatusLabel}" Width="70" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource LineBrush}"
+                BorderThickness="1" CornerRadius="8" Padding="12,8" Margin="0,10,0,0">
+            <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="FontSize" Value="12" />
+                        <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsStatusError}" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </Border>
+    </Grid>
+</UserControl>
