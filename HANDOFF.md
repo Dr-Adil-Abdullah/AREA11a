@@ -20,11 +20,11 @@ shop computer. Talk to him in Urdu; keep code, database and UI in English.
 | Question | Answer |
 |---|---|
 | Where is the product? | **`dotnet/`** - `Area11.sln` with `Area11.Core`, `Area11.Desktop`, `Area11.Tests` |
-| What can it do today? | sign-in, products, purchases `PINV`, counter billing `INV` (FEFO, discount guard, round-off, cash change, credit, hold, split), returns `RET` / `Q` / `PR`, write-off, stock-take `ST`, alerts, settings, **customer khata (`PAY-`) with a statement** |
+| What can it do today? | sign-in, products, purchases `PINV`, counter billing `INV` (FEFO, discount guard, round-off, cash change, credit, hold, split), returns `RET` / `Q` / `PR`, write-off, stock-take `ST`, alerts, settings, customer khata (`PAY-`), **supplier ledger and supplier return `SR-`** |
 | Has it ever been compiled? | **Yes - 20 Oct 2026.** The owner's Windows build reported `Build succeeded`. Since then the code grew (receipt/printing), so the current build is unverified again |
-| What is the very next task? | **build + `tools\RUN-TESTS.cmd` (188 cases)** on the owner's PC; press **Customers**, pick a customer, receive part of the udhaar and check that the page turns green with **"Books match"**. After that: supplier returns `SR` and the supplier ledger (F-28), then Phase 3. |
-| How many tests? | **188 cases in 18 files** - written, **never executed on the owner's PC**; run `tools\RUN-TESTS.cmd` |
-| Did it build? | **Core, Tests and Desktop are all expected to compile at v0.3.7** - the three failures (CS0509, CS0136, CS0037/CS1061) are fixed and each one became a checker rule. v0.3.7 has not been confirmed by the owner yet; v0.3.8 adds the customer khata on top of it. The 188 tests have still **never run** |
+| What is the very next task? | **build + `tools\RUN-TESTS.cmd` (201 cases)** on the owner's PC; press **Suppliers**, pick one, pay part of the payable and send one expired batch back (`SR-0001`) - both pages must stay green with **"Books match"**. After that: expiry levels from settings (F-29), then Phase 3 (galla/shift, reports, backup). |
+| How many tests? | **201 cases in 19 files** - written, **never executed on the owner's PC**; run `tools\RUN-TESTS.cmd` |
+| Did it build? | **Core, Tests and Desktop are all expected to compile at v0.3.7** - the three failures (CS0509, CS0136, CS0037/CS1061) are fixed and each one became a checker rule. v0.3.7 has not been confirmed by the owner yet; v0.3.8 added the customer khata and v0.3.9 the supplier ledger on top of it. The 201 tests have still **never run** |
 | Database? | the **original** schema, migrations `001`-`019`, **33 business tables** (+ `_migrations` ledger), so an existing `area11.db` opens unchanged |
 | Where does data live? | `%ProgramData%\Area11\` (`area11.db`, `photos\`, `logs\`, `backups\`) |
 | Default owner login | user **Owner**, password **`area11`** (change it on day one) |
@@ -64,18 +64,19 @@ Full detail in [`docs/PROGRESS.md`](docs/PROGRESS.md). The short version:
 | Settings (75 keys), audit black box, auth + lockout, permissions, numbering, hold carts | `Area11.Core/Services/` |
 | Products, partners, purchases `PINV`, sales `INV`, **returns `RET` + quarantine `Q`**, dashboard | `Area11.Core/Services/` |
 | Money / quantity / expiry / password helpers | `Area11.Core/Utils/` |
-| WPF shell (+ global alert bar), login, dashboard, products, POS (hold + split), purchases, settings, returns & quarantine, alerts, no-bill returns (PR), write-off, stock-take, **customers / khata + statement** | `Area11.Desktop/` |
-| 188 test cases | `Area11.Tests/` |
+| WPF shell (+ global alert bar), login, dashboard, products, POS (hold + split), purchases, settings, returns & quarantine, alerts, no-bill returns (PR), write-off, stock-take, customers / khata + statement, **suppliers / payable + `SR` tray** | `Area11.Desktop/` |
+| 201 test cases | `Area11.Tests/` |
 
 **Written but never tested on the shop PC (🟡)**
 
 1. Receipt + instant printing (F-13) - needs one real print
 2. Settings screen (F-17) - needs one walk-through by the owner
 3. Customer khata (F-27) - needs one real collection at the counter and one printed statement
+4. Supplier ledger + `SR` return (F-28) - needs one real payment and one real return to the company
 
 **Not started (⬜)**
 
-1. The rest of Phase 2: supplier returns `SR` and the supplier ledger (next), expiry levels from settings
+1. The rest of Phase 2: expiry levels from settings (next)
 3. Phase 3: shifts/galla, expenses, `SR`, reports, audit viewer, backup, Excel, reorder/WhatsApp
 6. Phase 4: loyalty, photos/camera, custom fields, second counter, hardware test, **installer**
 
@@ -87,9 +88,8 @@ Do them one at a time; each one ends with a commit (see `AGENTS.md` §6).
 
 | # | Task | Acceptance |
 |---|---|---|
-| 1 | **F-16 follow-up** run `tools\RUN-TESTS.cmd` on the owner's PC | all 188 tests pass |
-| 2 | **F-28** supplier return `SR` + supplier ledger (`SR-nnnn`, credit note, payable = purchases - payments) | the supplier's page always equals his purchases minus what was paid |
-| 3 | **F-29** expiry thresholds from settings (fixes Known bug #1) | changing `expiry.level3Days` moves the colour band |
+| 1 | **F-16 follow-up** run `tools\RUN-TESTS.cmd` on the owner's PC | all 201 tests pass |
+| 2 | **F-29** expiry thresholds from settings (fixes Known bug #1) | changing `expiry.level3Days` moves the colour band |
 | 4 | Phase 3: shift/galla + handover, expenses, owner's draw, reports, audit viewer, `SR`, backup ZIP, Excel | see `docs/PROGRESS.md` |
 | 5 | Phase 4: §33.2 gaps, loyalty screen, camera, second counter, hardware test, **installer** | see `docs/OWNER-DECISIONS.md` §5 |
 
@@ -194,7 +194,7 @@ python3 tools/build_rules_matrix.py --check
 `check_repo.py` runs 19 checks: C# syntax, **explicit usings** (the CS0103 class of error),
 sealed bases (the CS0509 class of error), local shadowing (the CS0136 class of error),
 value-type `ServiceResult` use (the CS0037/CS1061 class of error), XML validity,
-**441 XAML bindings and resources** - a row binding is checked against the real properties of
+**508 XAML bindings and resources** - a row binding is checked against the real properties of
 `Area11.Core/Models`, so a mistyped column name fails here instead of printing an empty column -
 migrations (19 files -> 33 tables, executed on SQLite), **every SQL statement prepared against the
 real schema**, test count, settings keys, and documentation links.

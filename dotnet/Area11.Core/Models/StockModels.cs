@@ -24,6 +24,10 @@ public sealed class BatchRow
 
     public string ValueLabel => Area11.Core.Utils.Money.Format(ValuePaisa);
 
+    /// <summary>"B-1 - 2027-06-30 - 40 tablet (Rs 800)" - one line in a batch drop-down.</summary>
+    public string PickLabel => BatchNo + " - " + (string.IsNullOrWhiteSpace(ExpiryDate) ? "no date" : ExpiryDate!)
+                               + " - " + QtyLabel + " (" + ValueLabel + ")";
+
     /// <summary>EXPIRED / Level 3 / OK - the same words the Products screen uses.</summary>
     public string ExpiryLabel => Area11.Core.Utils.Expiry.StatusLabel(ExpiryDate, 365, 180, 90);
 

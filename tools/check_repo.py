@@ -59,6 +59,7 @@ VIEW_MODEL_OF = {
     "WriteOffView.xaml": "WriteOffViewModel",
     "StockTakeView.xaml": "StockTakeViewModel",
     "CustomersView.xaml": "CustomersViewModel",
+    "SuppliersView.xaml": "SuppliersViewModel",
 }
 
 
