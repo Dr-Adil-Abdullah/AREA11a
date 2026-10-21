@@ -237,9 +237,16 @@ public sealed class SettingsViewModel : ObservableObject
         }
     }
 
-    public string SelectedUserCaption => _selectedUser is null
-        ? "Select a person to see their permissions."
-        : $"{_selectedUser.Name} — {_selectedUser.RoleLabel}";
+    public string SelectedUserCaption
+    {
+        get
+        {
+            var person = _selectedUser;
+            return person is null
+                ? "Select a person to see their permissions."
+                : $"{person.Name} — {person.RoleLabel}";
+        }
+    }
 
     /// <summary>The owner account always has everything, so its boxes are shown ticked and locked.</summary>
     public bool CanChangeSelectedUser => _selectedUser is { IsOwner: false } && CanManageStaff;
