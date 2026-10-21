@@ -1,0 +1,90 @@
+using Area11.Core.Models;
+using Area11.Core.Services;
+using Area11.Core.Utils;
+
+namespace Area11.Tests;
+
+/// <summary>
+/// Shared test data: one medicine with one batch, a customer, and the services wired exactly as
+/// AppServices wires them. Keeping it here means a change in a service constructor breaks in one
+/// place instead of in every test file.
+/// </summary>
+internal static class TestData
+{
+    public static readonly User Owner = new() { Id = 1, Name = "Owner", Role = "owner" };
+
+    /// <summary>Adds a medicine that has stock sitting on one batch (expiry far away).</summary>
+    public static int AddProduct(
+        TestDatabase test,
+        long costPaisa = 20000,
+        long retailPaisa = 30000,
+        double batchQty = 100,
+        string name = "Panadol 500mg")
+    {
+        return test.Database.Tx(connection =>
+        {
+            test.Database.Execute(connection, @"
+INSERT INTO products(name, base_unit, box_strips, strip_tablets, cost_paisa, retail_paisa,
+                     vip_paisa, doctor_paisa, reorder_level, active, created_at, updated_at)
+VALUES(@name, 'tablet', 2, 10, @cost, @retail, 0, 0, 10, 1, @at, @at);",
+                new { name, cost = costPaisa, retail = retailPaisa, at = Clock.Now() });
+
+            var productId = (int)test.Database.NextId(connection);
+
+            test.Database.Execute(connection, @"
+INSERT INTO batches(product_id, batch_no, expiry_date, expiry_ym, qty_base, cost_paisa, retail_paisa,
+                    is_sample, active, created_at)
+VALUES(@productId, 'B-1', '2027-06-30', '2027-06', @qty, @cost, @retail, 0, 1, @at);",
+                new { productId, qty = batchQty, cost = costPaisa, retail = retailPaisa, at = Clock.Now() });
+
+            return productId;
+        });
+    }
+
+    /// <summary>Adds a customer. A limit of 0 means "no limit" (see SaleService.EnforceCreditLimit).</summary>
+    public static int AddCustomer(TestDatabase test, string name = "Ali Raza", long limitPaisa = 0)
+    {
+        return test.Database.Tx(connection =>
+        {
+            test.Database.Execute(connection, @"
+INSERT INTO customers(name, phone, category, credit_limit_paisa, balance_paisa, loyalty_points, active, created_at)
+VALUES(@name, '0300-1234567', 'normal', @limit, 0, 0, 1, @at);",
+                new { name, limit = limitPaisa, at = Clock.Now() });
+
+            return (int)test.Database.NextId(connection);
+        });
+    }
+
+    public static SaleService Sales(TestDatabase test)
+    {
+        var permissions = new PermissionService(test.Database, test.Log, test.Audit);
+        return new SaleService(test.Database, test.Audit, new NumberingService(test.Settings),
+            test.Settings, permissions, test.Log);
+    }
+
+    public static HoldCartService Holds(TestDatabase test, SaleService? sales = null)
+    {
+        var permissions = new PermissionService(test.Database, test.Log, test.Audit);
+        return new HoldCartService(test.Database, test.Audit, new NumberingService(test.Settings),
+            permissions, sales ?? Sales(test), test.Log);
+    }
+
+    /// <summary>One row of the `payments` table, for the split-payment assertions.</summary>
+    public sealed class PaymentDbRow
+    {
+        public string Method { get; set; } = string.Empty;
+
+        public long AmountPaisa { get; set; }
+    }
+
+    /// <summary>One line, one unit, no discount - the plainest possible bill.</summary>
+    public static SaleInput Cart(int productId, int qty = 1, string method = "cash", int? customerId = null) => new()
+    {
+        CustomerId = customerId,
+        PaymentMethod = method,
+        Lines = new List<SaleLineInput>
+        {
+            new() { ProductId = productId, Unit = "base", Quantity = qty }
+        }
+    };
+}

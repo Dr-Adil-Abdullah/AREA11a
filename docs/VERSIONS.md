@@ -61,3 +61,4 @@ contrast **4.5:1 or better** against white.
   source of truth for the shop's branding. `store.name` / `brand.*` in Settings stay the real branding.
 - If a build is released without a colour change, the owner cannot tell it apart from the previous
   one - treat that as a bug, not a shortcut.
+| 0.2.5 | 2026-10-20 | Fuchsia | `#A21CAF` | **Hold cart (F-14)** - park a bill in the database, serve the next customer, bring it back; **split payment (F-15)** - cash + online/card/khata on one bill, with the credit part on the khata and never in the drawer. Receipt prints each part. |

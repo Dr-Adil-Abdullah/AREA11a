@@ -70,7 +70,13 @@ FROM sale_items WHERE sale_id = @id ORDER BY id;", new { id = saleId });
                 : _db.QuerySingle<string>(connection,
                     "SELECT name FROM customers WHERE id = @id;", new { id = sale.CustomerId }) ?? "Walk-in";
 
-            return ServiceResult<ReceiptDocument>.Success(Compose(sale, items, cashier, customer));
+            // One row per method that actually received money (split payment, Spec 13.3). Credit is
+            // deliberately absent: it is not money in the drawer, it is the khata.
+            var payments = _db.Query<PaymentRow>(connection, @"
+SELECT method, amount_paisa FROM payments
+WHERE sale_id = @id AND method <> 'credit' ORDER BY id;", new { id = saleId });
+
+            return ServiceResult<ReceiptDocument>.Success(Compose(sale, items, payments, cashier, customer));
         }
         catch (Exception exception)
         {
@@ -79,8 +85,16 @@ FROM sale_items WHERE sale_id = @id ORDER BY id;", new { id = saleId });
         }
     }
 
-    /// <summary>Pure layout - no database - so the tests can pin the shape of the paper.</summary>
-    internal ReceiptDocument Compose(SaleRow sale, List<ItemRow> items, string cashier, string customer)
+    /// <summary>
+    /// Pure layout - no database - so the tests can pin the shape of the paper. `payments` holds one
+    /// row per method that received money; it is empty for a credit bill, which prints "On credit".
+    /// </summary>
+    internal ReceiptDocument Compose(
+        SaleRow sale,
+        List<ItemRow> items,
+        List<PaymentRow> payments,
+        string cashier,
+        string customer)
     {
         var width = PaperWidth;
         var document = new ReceiptDocument
@@ -155,23 +169,26 @@ FROM sale_items WHERE sale_id = @id ORDER BY id;", new { id = saleId });
 
         Pair("TOTAL", Money.Fixed(sale.TotalPaisa), bold: true);
 
-        if (string.Equals(sale.PaymentMethod, "credit", StringComparison.OrdinalIgnoreCase))
+        if (payments.Count > 0)
         {
-            Pair("On credit", Money.Fixed(sale.DuePaisa));
-            Pair("Balance due", Money.Fixed(sale.DuePaisa));
-        }
-        else
-        {
-            Pair("Cash", Money.Fixed(sale.PaidPaisa));
+            foreach (var part in payments)
+            {
+                Pair(MethodLabel(part.Method), Money.Fixed(part.AmountPaisa));
+            }
+
             if (sale.ChangePaisa > 0)
             {
                 Pair("Change", Money.Fixed(sale.ChangePaisa), bold: true);
             }
+        }
+        else if (string.Equals(sale.PaymentMethod, "credit", StringComparison.OrdinalIgnoreCase))
+        {
+            Pair("On credit", Money.Fixed(sale.DuePaisa));
+        }
 
-            if (sale.DuePaisa > 0)
-            {
-                Pair("Still due", Money.Fixed(sale.DuePaisa));
-            }
+        if (sale.DuePaisa > 0)
+        {
+            Pair("Still due", Money.Fixed(sale.DuePaisa));
         }
 
         if (!dateOnTop)
@@ -236,6 +253,24 @@ FROM sale_items WHERE sale_id = @id ORDER BY id;", new { id = saleId });
 
     private static string FirstNonEmpty(params string?[] values) =>
         values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))?.Trim() ?? string.Empty;
+
+    /// <summary>"cash" -> "Cash": the paper says a word a customer understands.</summary>
+    private static string MethodLabel(string? method) => (method ?? string.Empty).Trim().ToLowerInvariant() switch
+    {
+        "cash" => "Cash",
+        "online" => "Online",
+        "card" => "Card",
+        "credit" => "On credit",
+        "loyalty" => "Points",
+        _ => "Paid"
+    };
+
+    internal sealed class PaymentRow
+    {
+        public string Method { get; set; } = "cash";
+
+        public long AmountPaisa { get; set; }
+    }
 
     internal sealed class SaleRow
     {

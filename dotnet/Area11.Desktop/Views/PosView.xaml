@@ -96,7 +96,8 @@
                         </DataGrid.Columns>
                     </DataGrid>
 
-                    <StackPanel Grid.Row="2" Margin="0,10,0,0">
+                    <ScrollViewer Grid.Row="2" Margin="0,10,0,0" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
                         <TextBlock Text="Customer" Style="{StaticResource FieldLabel}" />
                         <ComboBox ItemsSource="{Binding Customers}" DisplayMemberPath="Name"
                                   SelectedItem="{Binding SelectedCustomer, Mode=TwoWay}" />
@@ -118,6 +119,49 @@
                                           SelectedItem="{Binding PaymentMethod, Mode=TwoWay}" />
                             </StackPanel>
                         </Grid>
+
+                        <Border Background="{StaticResource BrandSoftBrush}" CornerRadius="6" Padding="9"
+                                Margin="0,6,0,0"
+                                Visibility="{Binding IsSplit, Converter={StaticResource BoolToVis}}">
+                            <StackPanel>
+                                <TextBlock Text="Split payment - the rest of the bill is cash"
+                                           Style="{StaticResource FieldHint}" Margin="0,0,0,6" />
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Paid by" Style="{StaticResource FieldLabel}" />
+                                        <ComboBox ItemsSource="{Binding SplitMethods}"
+                                                  SelectedItem="{Binding SecondMethod, Mode=TwoWay}" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="Amount (Rs)" Style="{StaticResource FieldLabel}" />
+                                        <TextBox Text="{Binding SecondAmountText, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Grid Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Cash part" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Text="{Binding CashPartText}" FontSize="13" FontWeight="SemiBold" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="On credit (khata)" Style="{StaticResource MetricLabel}" />
+                                        <TextBlock Text="{Binding CreditPartText}" FontSize="13" FontWeight="SemiBold" />
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
 
                         <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
@@ -146,7 +190,7 @@
                             <StackPanel Grid.Column="0">
                                 <TextBlock Text="Cash received" Style="{StaticResource MetricLabel}" />
                                 <TextBox Text="{Binding TenderedText, UpdateSourceTrigger=PropertyChanged}"
-                                         IsEnabled="{Binding IsCash}" />
+                                         IsEnabled="{Binding IsCashOrSplit}" />
                             </StackPanel>
                             <StackPanel Grid.Column="1" Margin="8,0,0,0">
                                 <TextBlock Text="Change" Style="{StaticResource MetricLabel}" />
@@ -161,6 +205,10 @@
 
                         <Button Content="Complete sale  (F4)" Style="{StaticResource PrimaryButton}" Height="40"
                                 Margin="0,12,0,0" Command="{Binding CompleteCommand}" />
+
+                        <Button Content="Park this cart for later" Style="{StaticResource GhostButton}"
+                                Margin="0,6,0,0" Command="{Binding HoldCommand}"
+                                ToolTip="Nothing is sold. The cart is kept in the database until you bring it back." />
 
                         <Button Content="Print last bill again" Style="{StaticResource GhostButton}"
                                 Margin="0,6,0,0" Command="{Binding PrintLastCommand}" />
@@ -182,7 +230,54 @@
                                 <TextBlock Text="{Binding LastBill}" FontSize="12" FontWeight="SemiBold" Margin="0,5,0,0" />
                             </StackPanel>
                         </Border>
+
+                        <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="8"
+                                Padding="10" Margin="0,10,0,0">
+                            <StackPanel>
+                                <DockPanel>
+                                    <TextBlock Text="Parked carts" Style="{StaticResource SectionTitle}"
+                                               VerticalAlignment="Center" />
+                                    <Button DockPanel.Dock="Right" Content="Refresh" HorizontalAlignment="Right"
+                                            Style="{StaticResource GhostButton}" FontSize="11" Padding="8,4"
+                                            Command="{Binding RefreshHeldCommand}" />
+                                </DockPanel>
+
+                                <TextBlock Text="{Binding HeldCartsCaption}" Style="{StaticResource FieldHint}" />
+
+                                <ItemsControl ItemsSource="{Binding HeldCarts}" Margin="0,6,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="#F8FAFC" CornerRadius="6" Padding="8" Margin="0,0,0,6">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Code}" FontSize="12" FontWeight="SemiBold" />
+                                                        <TextBlock Text="{Binding TotalLabel}" FontSize="12" />
+                                                        <TextBlock Text="{Binding CustomerLabel}" Style="{StaticResource FieldHint}" Margin="0,1,0,0" />
+                                                        <TextBlock Text="{Binding ItemsLabel}" Style="{StaticResource FieldHint}" Margin="0,1,0,0" />
+                                                        <TextBlock Text="{Binding WhenLabel}" Style="{StaticResource FieldHint}" Margin="0,1,0,0" />
+                                                    </StackPanel>
+
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                        <Button Content="Bring back" Style="{StaticResource GhostButton}"
+                                                                FontSize="11" Padding="8,4" Command="{Binding ResumeCommand}" />
+                                                        <Button Content="Throw away" Style="{StaticResource GhostButton}"
+                                                                FontSize="11" Padding="8,4" Margin="0,4,0,0"
+                                                                Command="{Binding DiscardCommand}" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
+                    </ScrollViewer>
                 </Grid>
             </Border>
         </Grid>

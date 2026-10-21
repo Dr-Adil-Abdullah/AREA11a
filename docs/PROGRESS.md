@@ -32,7 +32,7 @@ features and the four phases.
 |---|---|---|---|---|---|
 | F-01 | Solution with three projects (Core / Desktop / Tests), .NET 10, MVVM | 🟡 | `Area11.sln`, `dotnet/Directory.Build.props` | - | compiles on Windows |
 | F-02 | Exact database schema, migrations 001-015, 31 business tables | ✅ | `dotnet/Area11.Core/Data/Migrations/` | `MigrationTests` 🧪 | an old `area11.db` opens unchanged |
-| F-03 | Settings service, 73 keys, every change audited, saved in one transaction | ✅ | `Area11.Core/Services/SettingsService.cs` | `SettingsTests` 🧪 | bad values are refused before they reach the database |
+| F-03 | Settings service, 75 keys, every change audited, saved in one transaction | ✅ | `Area11.Core/Services/SettingsService.cs` | `SettingsTests` 🧪 | bad values are refused before they reach the database |
 | F-04 | Audit black box (old -> new values, never deleted) | 🟡 | `Services/AuditService.cs`, `Utils/AuditDiff.cs` | `AuditDiffTests` 🧪 | every module writes (U-27) |
 | F-05 | Sign-in: owner password, staff PIN, 5 tries -> 2 minute lock | 🟡 | `Services/AuthService.cs`, `Utils/PasswordHasher.cs` | `PasswordHasherTests` 🧪 | owner signs in on Windows |
 | F-06 | Per-person permissions stored in the database | ✅ | `Migr. 014`, `Services/PermissionService.cs`, `Views/SettingsView.xaml` | `PermissionTests` 🧪 | the owner ticks/unticks in Settings; every change is audited |
@@ -43,10 +43,10 @@ features and the four phases.
 | F-11 | Customers: quick create at the counter, credit limit | 🟡 | `Services/PartnerService.cs` | - | a credit bill lands on the customer's account |
 | F-12 | Dashboard: today's sales, low stock, expiry, stock value | 🟡 | `Services/DashboardService.cs`, `Views/DashboardView.xaml` | - | numbers match a manual count |
 | F-13 | **Receipt render + instant ESC/POS print, 58 / 80 mm, auto or manual (D-26)** | 🟡 | `Services/ReceiptService.cs`, `Services/EscPosBuilder.cs`, `Services/PrinterService.cs`, `Views/PosView.xaml` | `ReceiptTests` 🧪 | needs one real print on the shop printer |
-| F-14 | Hold cart / bring back a held cart | ⬜ | - | - | two customers can wait at once |
-| F-15 | Split payment (cash + card/online in one bill) | ⬜ | - | - | - |
+| F-14 | Hold cart / bring back a held cart (`H-0001`), stored in the database | ✅ | `Migr. 016`, `Services/HoldCartService.cs`, `Views/PosView.xaml` | `HoldCartTests` 🧪 | a parked cart survives a restart and comes back line for line |
+| F-15 | Split payment (cash + online / card / khata in one bill) | ✅ | `Services/SaleService.cs` (Plan), `Views/PosView.xaml` | `SplitPaymentTests` 🧪 | the credit part reaches the khata and never the drawer |
 | F-16 | **First real Windows build and test run** | ✅ | `docs/BUILD-ON-WINDOWS.md` | - | **20 Oct 2026: `Build succeeded`, 0 errors** (6 NU1903 security warnings, fixed by pinning SQLitePCLRaw 2.1.12) · `dotnet test` still to be run |
-| F-17 | Settings screen: shop info, printing, discount rules, and per-person permission ticks | ✅ | v0.2.4 | `SettingsView` + 82 tests | owner edits everything without a developer |
+| F-17 | Settings screen: shop info, printing, discount rules, and per-person permission ticks | ✅ | v0.2.4 | `SettingsView` + 100 tests | owner edits everything without a developer |
 | F-18 | Tests for purchases, partners, numbering | ⬜ | `Area11.Tests/` | - | added with F-13 |
 
 ## Phase 2 - returns, stock and alerts
@@ -120,14 +120,15 @@ features and the four phases.
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
 | **Compiles on Windows** | `dotnet build Area11.sln` | ✅ 20 Oct 2026 (v0.1.1); re-check after each release |
 | Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.2.4 Slate |
-| **82 tests green** | `dotnet test` | ⬜ **F-16 follow-up** (the tests have never run on the owner's PC) |
+| **100 tests green** | `dotnet test` | ⬜ **F-16 follow-up** (the tests have never run on the owner's PC) |
 
 ## Change log
 
 | Date | What |
 |---|---|
 | 20 Oct 2026 | **First Windows build report:** CS0103 (`Path`/`Directory`/`File`) in `AppConfig.cs`, `Database.cs`, `LoggerService.cs` - fixed with explicit `using System.IO;`. The old `Area11.WPF.sln` was the solution being built by mistake, so it moved to `prototypes/`; the real solution is now `Area11.sln` in the root. The checker gained an explicit-usings check and a SQL-preparation check (37 statements). |
-| 20 Oct 2026 | **v0.2.4 Slate**: the Settings screen (F-17). Printing is chosen there (58/80 mm, automatic or manual), the shop name/address/phone/footer are editable, discount limits and tax are editable, and staff get one checkbox per module. Settings are saved as one transaction and refused if a value would break the shop (82 tests). |
+| 20 Oct 2026 | **v0.2.5 Fuchsia**: **hold cart** (F-14) and **split payment** (F-15). A parked cart lives in the database (`H-0001`), so it survives a restart, and comes back line for line. A split bill writes one `payments` row per method that received money; the credit part goes to `due_paisa` and the customer's balance, never to the drawer. Receipt prints each part. 100 tests. |
+| 20 Oct 2026 | **v0.2.4 Slate**: the Settings screen (F-17). Printing is chosen there (58/80 mm, automatic or manual), the shop name/address/phone/footer are editable, discount limits and tax are editable, and staff get one checkbox per module. Settings are saved as one transaction and refused if a value would break the shop (100 tests). |
 | 20 Oct 2026 | **v0.2.3 Rose**: no more ZIP-per-change. `START-AREA11.bat` prints the git branch it is building and refuses to continue on `main` (that is the trap when cloning with GitHub Desktop); the Urdu guide gained a "which tool" table and GitHub Desktop steps. |
 | 20 Oct 2026 | **v0.2.2 Blue - build fix.** The receipt tests named an internal type (`ReceiptService.SaleRow`), which the compiler rejects (`CS0122`); they now write a real bill into the test database and read it back through the public `ReceiptService.Build`. New checker rule: no test may name an internal type. |
 | 20 Oct 2026 | **v0.2.1 Indigo**: printing became a *setting* - automatic after a sale or manual with the button (`printer.autoPrint`, switchable on the POS screen until the Settings screen exists). Both paper widths stay selectable. |

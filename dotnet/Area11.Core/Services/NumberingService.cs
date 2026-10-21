@@ -19,7 +19,8 @@ public sealed class NumberingService
             ["provisional"] = ("bill.provisionalPrefix", "bill.nextProvisionalNo"),
             ["supplierReturn"] = ("bill.supplierReturnPrefix", "bill.nextSupplierReturnNo"),
             ["stockTake"] = ("bill.stockTakePrefix", "bill.nextStockTakeNo"),
-            ["quarantine"] = ("bill.quarantinePrefix", "bill.nextQuarantineNo")
+            ["quarantine"] = ("bill.quarantinePrefix", "bill.nextQuarantineNo"),
+            ["hold"] = ("bill.holdPrefix", "bill.nextHoldNo")
         };
 
     private readonly SettingsService _settings;

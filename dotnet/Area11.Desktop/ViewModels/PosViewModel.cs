@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using Area11.Core.Models;
 using Area11.Core.Utils;
 
@@ -22,11 +23,15 @@ public sealed class PosViewModel : ObservableObject
     private string _discountPercent = "0";
     private string _paymentMethod = "cash";
     private string _tenderedText = string.Empty;
+    private string _secondMethod = "online";
+    private string _secondAmountText = string.Empty;
 
     private string _subtotalText = "Rs 0";
     private string _discountText = "Rs 0";
     private string _totalText = "Rs 0";
     private string _changeText = "Rs 0";
+    private string _cashPartText = "Rs 0";
+    private string _creditPartText = "Rs 0";
     private string _statusMessage = "Ready.";
     private bool _isStatusError;
     private string _lastBill = string.Empty;
@@ -44,10 +49,13 @@ public sealed class PosViewModel : ObservableObject
         CompleteCommand = new RelayCommand(CompleteSale);
         PrintLastCommand = new RelayCommand(PrintLast, () => _lastSaleId > 0);
         RefreshCommand = new RelayCommand(LoadLookups);
+        HoldCommand = new RelayCommand(HoldCart);
+        RefreshHeldCommand = new RelayCommand(LoadHeldCarts);
 
         _autoPrint = _services.Settings.GetBool("printer.autoPrint", true);
 
         LoadLookups();
+        LoadHeldCarts();
     }
 
     public ObservableCollection<Product> Products { get; } = new();
@@ -58,7 +66,12 @@ public sealed class PosViewModel : ObservableObject
 
     public ObservableCollection<string> Units { get; } = new() { "base", "strip", "box" };
 
-    public ObservableCollection<string> PaymentMethods { get; } = new() { "cash", "credit" };
+    public ObservableCollection<string> PaymentMethods { get; } = new() { "cash", "credit", "split" };
+
+    /// <summary>The second half of a split payment. Cash is the rest of the bill, so it is not here.</summary>
+    public ObservableCollection<string> SplitMethods { get; } = new() { "online", "card", "credit" };
+
+    public ObservableCollection<HeldCartRow> HeldCarts { get; } = new();
 
     public RelayCommand AddCommand { get; }
 
@@ -71,6 +84,10 @@ public sealed class PosViewModel : ObservableObject
     public RelayCommand PrintLastCommand { get; }
 
     public RelayCommand RefreshCommand { get; }
+
+    public RelayCommand HoldCommand { get; }
+
+    public RelayCommand RefreshHeldCommand { get; }
 
     public string CashierName => _user.Name;
 
@@ -153,15 +170,49 @@ public sealed class PosViewModel : ObservableObject
         get => _paymentMethod;
         set
         {
-            if (SetProperty(ref _paymentMethod, value))
+            if (!SetProperty(ref _paymentMethod, value))
             {
-                OnPropertyChanged(nameof(IsCash));
+                return;
+            }
+
+            OnPropertyChanged(nameof(IsCash));
+            OnPropertyChanged(nameof(IsSplit));
+            OnPropertyChanged(nameof(IsCashOrSplit));
+            Recalculate();
+        }
+    }
+
+    public bool IsCash => string.Equals(PaymentMethod, "cash", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Part cash, part online / card / khata (Spec 13.3).</summary>
+    public bool IsSplit => string.Equals(PaymentMethod, "split", StringComparison.OrdinalIgnoreCase);
+
+    public bool IsCashOrSplit => IsCash || IsSplit;
+
+    /// <summary>The second half of a split bill: what it is paid by, and how much of the bill it covers.</summary>
+    public string SecondMethod
+    {
+        get => _secondMethod;
+        set
+        {
+            if (SetProperty(ref _secondMethod, value))
+            {
                 Recalculate();
             }
         }
     }
 
-    public bool IsCash => string.Equals(PaymentMethod, "cash", StringComparison.OrdinalIgnoreCase);
+    public string SecondAmountText
+    {
+        get => _secondAmountText;
+        set
+        {
+            if (SetProperty(ref _secondAmountText, value))
+            {
+                Recalculate();
+            }
+        }
+    }
 
     /// <summary>
     /// Auto or manual printing - the owner asked for this to be a setting, not a hard-coded
@@ -220,6 +271,24 @@ public sealed class PosViewModel : ObservableObject
         get => _changeText;
         private set => SetProperty(ref _changeText, value);
     }
+
+    /// <summary>How much of a split bill is cash (the rest is the second method).</summary>
+    public string CashPartText
+    {
+        get => _cashPartText;
+        private set => SetProperty(ref _cashPartText, value);
+    }
+
+    /// <summary>How much of a split bill goes on the customer's khata.</summary>
+    public string CreditPartText
+    {
+        get => _creditPartText;
+        private set => SetProperty(ref _creditPartText, value);
+    }
+
+    public string HeldCartsCaption => HeldCarts.Count == 0
+        ? "No parked carts. Parked carts survive a restart."
+        : $"{HeldCarts.Count} parked cart(s) - press 'Bring back' to serve that customer again.";
 
     public string StatusMessage
     {
@@ -408,18 +477,31 @@ public sealed class PosViewModel : ObservableObject
 
         Cart.Clear();
         TenderedText = string.Empty;
+        SecondAmountText = string.Empty;
         DiscountPercent = "0";
         LoadLookups();
     }
 
     private SaleInput BuildInput()
     {
-        decimal.TryParse(DiscountPercent, out var percent);
+        decimal.TryParse(DiscountPercent, NumberStyles.Number, CultureInfo.InvariantCulture, out var percent);
 
         var tendered = 0L;
-        if (IsCash && Money.TryParse(TenderedText, out var rupees) && rupees > 0)
+        if (IsCashOrSplit && Money.TryParse(TenderedText, out var rupees) && rupees > 0)
         {
             tendered = Money.ToPaisa(rupees);
+        }
+
+        // Split: the cashier types only the second half. Core folds the difference into cash and
+        // refuses the bill if the parts add up to more than the total (Spec 13.3.2).
+        var payments = new List<SalePaymentInput>();
+        if (IsSplit && Money.TryParse(SecondAmountText, out var secondRupees) && secondRupees > 0)
+        {
+            payments.Add(new SalePaymentInput
+            {
+                Method = SecondMethod,
+                AmountPaisa = Money.ToPaisa(secondRupees)
+            });
         }
 
         return new SaleInput
@@ -427,6 +509,7 @@ public sealed class PosViewModel : ObservableObject
             CustomerId = SelectedCustomer is { Id: > 0 } ? SelectedCustomer.Id : null,
             DiscountPercent = percent,
             PaymentMethod = PaymentMethod,
+            Payments = payments,
             TenderedPaisa = tendered,
             Lines = Cart.Select(line => new SaleLineInput
             {
@@ -445,6 +528,8 @@ public sealed class PosViewModel : ObservableObject
             DiscountText = "Rs 0";
             TotalText = "Rs 0";
             ChangeText = "Rs 0";
+            CashPartText = "Rs 0";
+            CreditPartText = "Rs 0";
             return;
         }
 
@@ -463,6 +548,8 @@ public sealed class PosViewModel : ObservableObject
         DiscountText = Money.Format(quote.Value.DiscountPaisa);
         TotalText = Money.Format(quote.Value.TotalPaisa);
         ChangeText = Money.Format(quote.Value.ChangePaisa);
+        CashPartText = Money.Format(quote.Value.CashPartPaisa);
+        CreditPartText = Money.Format(quote.Value.CreditPartPaisa);
 
         if (quote.Value.GoesNegative)
         {
@@ -500,6 +587,113 @@ public sealed class PosViewModel : ObservableObject
         SetStatus($"Receipt printed ({document.Value.Width} characters wide).", false);
     }
 
+    // ------------------------------ Held carts ------------------------------
+
+    /// <summary>Parks the cart so the next customer can be served (Spec 8.5.1). Nothing is sold.</summary>
+    private void HoldCart()
+    {
+        if (Cart.Count == 0)
+        {
+            SetStatus("The cart is empty - there is nothing to park.", true);
+            return;
+        }
+
+        var result = _services.Holds.Hold(BuildInput(), _user);
+        if (!result.Ok || string.IsNullOrEmpty(result.Value))
+        {
+            SetStatus(result.Error ?? "The cart could not be parked.", true);
+            return;
+        }
+
+        var code = result.Value;
+        Cart.Clear();
+        TenderedText = string.Empty;
+        SecondAmountText = string.Empty;
+        DiscountPercent = "0";
+        Recalculate();
+        LoadHeldCarts();
+        SetStatus($"{code} parked. The counter is free for the next customer.", false);
+    }
+
+    private void LoadHeldCarts()
+    {
+        var result = _services.Holds.List(_user);
+
+        HeldCarts.Clear();
+
+        if (result.Ok && result.Value is not null)
+        {
+            foreach (var summary in result.Value)
+            {
+                HeldCarts.Add(new HeldCartRow(summary, ResumeHeld, DiscardHeld));
+            }
+        }
+        else if (result.Error is not null)
+        {
+            SetStatus(result.Error, true);
+        }
+
+        OnPropertyChanged(nameof(HeldCartsCaption));
+    }
+
+    private void ResumeHeld(HeldCartRow row)
+    {
+        if (Cart.Count > 0)
+        {
+            SetStatus("The current cart is not empty. Complete it or park it first.", true);
+            return;
+        }
+
+        var result = _services.Holds.Resume(_user, row.Id);
+        if (!result.Ok || result.Value is null)
+        {
+            SetStatus(result.Error ?? "The cart could not be brought back.", true);
+            LoadHeldCarts();
+            return;
+        }
+
+        var cart = result.Value;
+
+        foreach (var line in cart.Lines)
+        {
+            Cart.Add(new PosCartLine
+            {
+                ProductId = line.ProductId,
+                Name = line.Name,
+                Unit = line.Unit,
+                Quantity = line.Quantity
+            });
+        }
+
+        DiscountPercent = cart.DiscountPercent.ToString("0.##", CultureInfo.InvariantCulture);
+
+        // A parked customer may have been switched off since. Fall back to the walk-in line rather
+        // than binding the bill to somebody the shop no longer serves.
+        var walkIn = Customers.Count > 0 ? Customers[0] : null;
+        var parkedCustomer = cart.CustomerId is int customerId
+            ? Customers.FirstOrDefault(person => person.Id == customerId)
+            : null;
+
+        SelectedCustomer = parkedCustomer ?? walkIn;
+
+        Recalculate();
+        LoadHeldCarts();
+        SetStatus($"{cart.Code} is back on the counter ({cart.Lines.Count} line(s)).", false);
+    }
+
+    private void DiscardHeld(HeldCartRow row)
+    {
+        var result = _services.Holds.Discard(_user, row.Id);
+        if (!result.Ok)
+        {
+            SetStatus(result.Error ?? "The parked cart could not be thrown away.", true);
+            return;
+        }
+
+        LoadHeldCarts();
+        SetStatus($"{row.Code} thrown away - nothing was sold.", false);
+    }
+
     private void SetStatus(string message, bool isError)
     {
         StatusMessage = message;
@@ -533,4 +727,40 @@ public sealed class PosCartLine : ObservableObject
     public string QuantityText => Qty.Format(Quantity);
 
     public string UnitLabel => Unit;
+}
+
+/// <summary>
+/// One row of the "parked carts" list. It owns its two buttons so the DataTemplate stays dumb; the
+/// real work is in PosViewModel, because a row must not talk to a service on its own.
+/// </summary>
+public sealed class HeldCartRow
+{
+    public HeldCartRow(HeldCartSummary summary, Action<HeldCartRow> resume, Action<HeldCartRow> discard)
+    {
+        Id = summary.Id;
+        Code = summary.Code;
+        TotalLabel = summary.TotalLabel;
+        ItemsLabel = summary.ItemsLabel;
+        WhenLabel = summary.WhenLabel;
+        CustomerLabel = summary.CustomerLabel;
+
+        ResumeCommand = new RelayCommand(() => resume(this));
+        DiscardCommand = new RelayCommand(() => discard(this));
+    }
+
+    public int Id { get; }
+
+    public string Code { get; }
+
+    public string TotalLabel { get; }
+
+    public string ItemsLabel { get; }
+
+    public string WhenLabel { get; }
+
+    public string CustomerLabel { get; }
+
+    public RelayCommand ResumeCommand { get; }
+
+    public RelayCommand DiscardCommand { get; }
 }

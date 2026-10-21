@@ -29,7 +29,7 @@ dotnet run --project dotnet\Area11.Desktop
 
 - There is exactly **one solution**, `Area11.sln`, in the root of the repository. Open that.
 - `dotnet build` with no arguments finds it automatically.
-- Expected: everything builds, **82 tests pass**, and the sign-in window opens.
+- Expected: everything builds, **100 tests pass**, and the sign-in window opens.
 
 > **Seeing the old blue window that says "app is running"?** That is `prototypes/WPFSample` — the very
 > first smoke test from day one, not Area11. It sits in `prototypes\` now and is only kept as history.
@@ -122,9 +122,19 @@ Manual equivalent, step by step, is in [`HOW-TO-RUN-URDU.md`](HOW-TO-RUN-URDU.md
 - A missing or switched-off printer never loses a bill: the sale is saved first, then the print is
   attempted, and a red message says what happened.
 
+## 5c. Hold a cart, and split a payment (v0.2.5)
+
+- **Park this cart for later** keeps an unfinished bill in the database and frees the counter. The
+  parked cart gets a code (`H-0001`) and appears under **Parked carts** with its total. **Bring
+  back** puts every line and quantity on the counter exactly as it was; **Throw away** discards it.
+  A parked cart is not a sale: no INV number, no money, no stock movement.
+- **Payment: split** takes a second amount (online / card / khata). The rest of the bill is cash, and
+  the change is calculated from the cash part only. A credit part needs a customer and goes on the
+  khata; it is never counted as money in the drawer (D-27).
+
 ## 6. What comes next (still Phase 1)
 
-The hold cart and split payment. Then Phase 2: returns, quarantine and alerts.
+Phase 1 is finished. Phase 2 next: returns `RET`, quarantine and alerts.
 
 Already written and waiting for one real walk-through by the owner: the receipt with **instant
 ESC/POS printing** (58 / 80 mm) and the **Settings** screen (shop, printing, sales rules, staff).

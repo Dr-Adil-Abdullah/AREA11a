@@ -8,8 +8,10 @@ using Microsoft.Data.Sqlite;
 namespace Area11.Core.Services;
 
 /// <summary>
-/// The 70 reference settings plus the two additions agreed with the owner
-/// (returns.cashierRestockToShelf, and the permission defaults live in code).
+/// The 75 settings of the shop: the 70 from the reference app, the five printer keys (D-23),
+/// the two cart/hold numbering keys, the return-restock flag, and the permission defaults.
+/// A key that is not in <see cref="Defaults"/> cannot be written - a typo becomes an error, not a
+/// silent second setting.
 /// Values are stored as JSON so a string stays a string, a number stays a number and a
 /// list stays a list (Spec 6.1). Every change is audited with old → new.
 /// </summary>
@@ -373,6 +375,8 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Number("bill.nextSupplierReturnNo", 1);
         Text("bill.stockTakePrefix", "ST-");
         Number("bill.nextStockTakeNo", 1);
+        Text("bill.holdPrefix", "H-");
+        Number("bill.nextHoldNo", 1);
         Text("bill.roundMode", "down10");
         Number("bill.roundTo", 10);
 

@@ -45,10 +45,12 @@ public sealed class SaleService
             using var connection = _db.Open();
             var computed = Compute(connection, input, user);
 
+            var split = Plan(input, computed.TotalPaisa);
+
             var change = 0L;
-            if (IsCash(input) && input.TenderedPaisa > 0)
+            if (split.CashPartPaisa > 0 && input.TenderedPaisa > split.CashPartPaisa)
             {
-                change = Math.Max(0, input.TenderedPaisa - computed.TotalPaisa);
+                change = input.TenderedPaisa - split.CashPartPaisa;
             }
 
             return ServiceResult<SaleQuote>.Success(new SaleQuote
@@ -59,6 +61,8 @@ public sealed class SaleService
                 RoundPaisa = computed.RoundPaisa,
                 TotalPaisa = computed.TotalPaisa,
                 ChangePaisa = change,
+                CashPartPaisa = split.CashPartPaisa,
+                CreditPartPaisa = split.CreditPartPaisa,
                 Units = computed.Lines.Sum(line => line.QtyBase),
                 GoesNegative = computed.WentNegative,
                 Warnings = computed.Warnings
@@ -102,41 +106,27 @@ public sealed class SaleService
     {
         var computed = Compute(connection, input, user);
         var stamp = Clock.Now();
-        var method = NormalizeMethod(input.PaymentMethod);
 
         var customer = ResolveCustomer(connection, input.CustomerId);
+        var plan = Plan(input, computed.TotalPaisa);
 
-        long paid;
-        long due;
-        long tendered = 0;
-        long change = 0;
-        string status;
-
-        if (method == "credit")
+        if (plan.IsCredit && customer is null)
         {
-            if (customer is null)
-            {
-                throw new ValidationException("Credit needs a selected customer.");
-            }
-
-            paid = 0;
-            due = computed.TotalPaisa;
-            status = "credit";
+            throw new ValidationException("Credit needs a selected customer.");
         }
-        else
+
+        var method = plan.Method;
+        var paid = plan.PaidPaisa;
+        var due = plan.CreditPartPaisa;
+        if (plan.CashPartPaisa > 0 && input.TenderedPaisa > 0 && input.TenderedPaisa < plan.CashPartPaisa)
         {
-            tendered = input.TenderedPaisa > 0 ? input.TenderedPaisa : computed.TotalPaisa;
-            if (tendered < computed.TotalPaisa)
-            {
-                throw new ValidationException(
-                    $"Cash received ({Money.Format(tendered)}) is less than the bill ({Money.Format(computed.TotalPaisa)}).");
-            }
-
-            change = tendered - computed.TotalPaisa;
-            paid = computed.TotalPaisa;
-            due = 0;
-            status = "paid";
+            throw new ValidationException(
+                $"Cash received ({Money.Format(input.TenderedPaisa)}) is less than the cash part " +
+                $"of the bill ({Money.Format(plan.CashPartPaisa)}).");
         }
+
+        var change = plan.ChangePaisa(input.TenderedPaisa);
+        var status = plan.Status;
 
         if (due > 0 && customer is not null)
         {
@@ -217,7 +207,7 @@ VALUES(@productId, @batchId, 'sale', @qty, @note, @userId, @at);",
                 });
         }
 
-        if (paid > 0)
+        foreach (var part in plan.Received)
         {
             _db.Execute(connection, @"
 INSERT INTO payments(date, method, amount_paisa, sale_id, customer_id, user_id, note)
@@ -225,8 +215,8 @@ VALUES(@at, @method, @amount, @saleId, @customerId, @userId, @note);",
                 new
                 {
                     at = stamp,
-                    method,
-                    amount = paid,
+                    method = part.Method,
+                    amount = part.AmountPaisa,
                     saleId,
                     customerId = input.CustomerId is > 0 ? input.CustomerId.Value : (int?)null,
                     userId = user.Id,
@@ -555,8 +545,151 @@ FROM customers WHERE id = @id AND active = 1;",
         }
     }
 
-    private static bool IsCash(SaleInput input) =>
-        string.Equals(NormalizeMethod(input.PaymentMethod), "cash", StringComparison.Ordinal);
+    /// <summary>
+    /// Works out who paid what — the single set of rules for cash, credit and split (Spec 13.3).
+    /// Both the on-screen quote and the saved bill go through this method, so the change the cashier
+    /// reads is the change that is stored.
+    ///
+    /// The rules, in the order they are applied:
+    ///   1. Rows with an amount of zero are ignored.
+    ///   2. A negative amount is a mistake, never a refund (refunds are RET, not a bill).
+    ///   3. Rows of the same method are added together.
+    ///   4. If the parts add up to more than the bill, the bill is refused.
+    ///   5. If they add up to less, the difference is folded into CASH (Spec 13.3.2). It is never
+    ///      folded into the credit row: "half cash, half khata" must stay half and half, otherwise
+    ///      the customer's debt would grow by money the cashier just took.
+    ///   6. Credit is never a `payments` row — it is money the shop has NOT received, so it lives in
+    ///      `due_paisa` and the customer's balance. Writing it as a payment would inflate the drawer.
+    /// </summary>
+    private static PaymentPlan Plan(SaleInput input, long totalPaisa)
+    {
+        var rows = (input.Payments ?? new List<SalePaymentInput>())
+            .Where(part => part is not null && part.AmountPaisa != 0)
+            .ToList();
+
+        if (rows.Count == 0)
+        {
+            var single = NormalizeMethod(input.PaymentMethod);
+
+            if (single == "credit")
+            {
+                return new PaymentPlan
+                {
+                    Method = "credit",
+                    CreditPartPaisa = totalPaisa,
+                    Status = "credit"
+                };
+            }
+
+            return new PaymentPlan
+            {
+                Method = single,
+                CashPartPaisa = single == "cash" ? totalPaisa : 0,
+                Received = new List<SalePaymentInput>
+                {
+                    new() { Method = single, AmountPaisa = totalPaisa }
+                },
+                Status = "paid"
+            };
+        }
+
+        var merged = new Dictionary<string, long>(StringComparer.Ordinal);
+
+        foreach (var row in rows)
+        {
+            if (row.AmountPaisa < 0)
+            {
+                throw new ValidationException("A payment amount cannot be negative.");
+            }
+
+            var method = NormalizeMethod(row.Method);
+            merged[method] = merged.TryGetValue(method, out var existing) ? existing + row.AmountPaisa : row.AmountPaisa;
+        }
+
+        var credit = merged.TryGetValue("credit", out var creditAmount) ? creditAmount : 0L;
+        var cash = merged.TryGetValue("cash", out var cashAmount) ? cashAmount : 0L;
+        var received = merged
+            .Where(pair => pair.Key != "credit" && pair.Value > 0)
+            .Select(pair => new SalePaymentInput { Method = pair.Key, AmountPaisa = pair.Value })
+            .ToList();
+
+        var receivedTotal = received.Sum(part => part.AmountPaisa);
+
+        if (receivedTotal + credit > totalPaisa)
+        {
+            throw new ValidationException(
+                $"The payment parts add up to {Money.Format(receivedTotal + credit)}, " +
+                $"which is more than the bill ({Money.Format(totalPaisa)}).");
+        }
+
+        var shortfall = totalPaisa - receivedTotal - credit;
+
+        if (shortfall > 0)
+        {
+            cash += shortfall;
+            var cashRow = received.FirstOrDefault(part => part.Method == "cash");
+
+            if (cashRow is null)
+            {
+                received.Add(new SalePaymentInput { Method = "cash", AmountPaisa = shortfall });
+            }
+            else
+            {
+                cashRow.AmountPaisa += shortfall;
+            }
+        }
+
+        if (cash > 0 && received.All(part => part.Method != "cash"))
+        {
+            received.Add(new SalePaymentInput { Method = "cash", AmountPaisa = cash });
+        }
+
+        string method;
+        if (credit > 0 && received.Count == 0)
+        {
+            method = "credit";
+        }
+        else if (credit > 0 || received.Count > 1)
+        {
+            method = "split";
+        }
+        else
+        {
+            method = received.Count == 1 ? received[0].Method : "cash";
+        }
+
+        return new PaymentPlan
+        {
+            Method = method,
+            CashPartPaisa = cash,
+            CreditPartPaisa = credit,
+            Received = received,
+            Status = credit <= 0 ? "paid" : received.Count > 0 ? "partial" : "credit"
+        };
+    }
+
+    /// <summary>The result of <see cref="Plan"/>: what the receipt shows and what the drawer gets.</summary>
+    private sealed class PaymentPlan
+    {
+        public string Method { get; init; } = "cash";
+
+        /// <summary>Rows that really put money in the till (cash / online / card).</summary>
+        public List<SalePaymentInput> Received { get; init; } = new();
+
+        public long CashPartPaisa { get; set; }
+
+        public long CreditPartPaisa { get; set; }
+
+        public string Status { get; init; } = "paid";
+
+        /// <summary>What the shop actually received today (never includes credit).</summary>
+        public long PaidPaisa => Received.Sum(part => part.AmountPaisa);
+
+        public bool IsCredit => CreditPartPaisa > 0;
+
+        public long ChangePaisa(long tendered) =>
+            CashPartPaisa > 0 && tendered > CashPartPaisa ? tendered - CashPartPaisa : 0;
+    }
 
     private static string NormalizeMethod(string? method)
     {
