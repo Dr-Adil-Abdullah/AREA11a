@@ -49,6 +49,12 @@ public sealed class CustomersViewModel : ObservableObject
     private string _lastBillText = "-";
     private CustomerSummary? _selected;
 
+    private bool _isEditing;
+    private string _editName = string.Empty;
+    private string _editPhone = string.Empty;
+    private string _editCategory = "Normal";
+    private string _editLimitText = string.Empty;
+
     public CustomersViewModel(AppServices services, User user, Action? onChanged = null)
     {
         _services = services;
@@ -58,6 +64,9 @@ public sealed class CustomersViewModel : ObservableObject
         RefreshCommand = new RelayCommand(Load);
         CollectCommand = new RelayCommand(Collect);
         StatementCommand = new RelayCommand(PrintStatement);
+        EditCommand = new RelayCommand(BeginEdit);
+        SaveEditCommand = new RelayCommand(SaveEdit);
+        CancelEditCommand = new RelayCommand(CancelEdit);
 
         Load();
     }
@@ -73,6 +82,18 @@ public sealed class CustomersViewModel : ObservableObject
     public RelayCommand CollectCommand { get; }
 
     public RelayCommand StatementCommand { get; }
+
+    public RelayCommand EditCommand { get; }
+
+    public RelayCommand SaveEditCommand { get; }
+
+    public RelayCommand CancelEditCommand { get; }
+
+    /// <summary>The three words the products table uses for rates - shown as typed, stored in lower case.</summary>
+    public IReadOnlyList<string> Categories { get; } = new[] { "Normal", "VIP", "Doctor" };
+
+    /// <summary>The limit is money: only the owner or a manager may change it (F-11).</summary>
+    public bool CanEditLimit => _user.CanManage;
 
     public bool CanCollect => _services.Permissions.Can(_user, Modules.Customers);
 
@@ -129,7 +150,52 @@ public sealed class CustomersViewModel : ObservableObject
     public bool HasCustomer
     {
         get => _hasCustomer;
-        private set => SetProperty(ref _hasCustomer, value);
+        private set
+        {
+            if (SetProperty(ref _hasCustomer, value))
+            {
+                OnPropertyChanged(nameof(IsViewing));
+            }
+        }
+    }
+
+    /// <summary>True while the correction form is open; the khata book steps aside for it.</summary>
+    public bool IsEditing
+    {
+        get => _isEditing;
+        private set
+        {
+            if (SetProperty(ref _isEditing, value))
+            {
+                OnPropertyChanged(nameof(IsViewing));
+            }
+        }
+    }
+
+    public bool IsViewing => _hasCustomer && !_isEditing;
+
+    public string EditName
+    {
+        get => _editName;
+        set => SetProperty(ref _editName, value);
+    }
+
+    public string EditPhone
+    {
+        get => _editPhone;
+        set => SetProperty(ref _editPhone, value);
+    }
+
+    public string EditCategory
+    {
+        get => _editCategory;
+        set => SetProperty(ref _editCategory, value);
+    }
+
+    public string EditLimitText
+    {
+        get => _editLimitText;
+        set => SetProperty(ref _editLimitText, value);
     }
 
     public bool BooksMatch
@@ -269,6 +335,7 @@ public sealed class CustomersViewModel : ObservableObject
     private void ShowCustomer()
     {
         Lines.Clear();
+        IsEditing = false;
 
         if (Selected is null)
         {
@@ -374,6 +441,84 @@ public sealed class CustomersViewModel : ObservableObject
         SetStatus(printed.Ok
             ? "Statement for " + Selected.Name + " sent to the printer."
             : "The printer did not answer: " + printed.Error, !printed.Ok);
+    }
+
+    // ---------------------------- correcting a customer ----------------------------
+
+    private void BeginEdit()
+    {
+        if (Selected is null)
+        {
+            SetStatus("Pick a customer first.", true);
+            return;
+        }
+
+        EditName = Selected.Name;
+        EditPhone = Selected.Phone ?? string.Empty;
+        EditCategory = Selected.CategoryLabel;
+        EditLimitText = Money.Edit(Selected.CreditLimitPaisa);
+        IsEditing = true;
+
+        SetStatus("Correct the name, phone, category or limit, then press Save.", false);
+    }
+
+    private void CancelEdit()
+    {
+        IsEditing = false;
+        SetStatus("Nothing was changed.", false);
+    }
+
+    private void SaveEdit()
+    {
+        if (Selected is null)
+        {
+            IsEditing = false;
+            SetStatus("Pick a customer first.", true);
+            return;
+        }
+
+        // A cashier's form does not send a limit at all: null means "leave the money alone".
+        long? limit = null;
+
+        if (CanEditLimit)
+        {
+            if (!Money.TryParse(EditLimitText, out var rupees) || rupees < 0)
+            {
+                SetStatus("The credit limit must be a number, for example 5000. Use 0 for no limit.", true);
+                return;
+            }
+
+            limit = Money.ToPaisa(rupees);
+        }
+
+        var edit = new CustomerEditInput
+        {
+            Id = Selected.Id,
+            Name = EditName,
+            Phone = EditPhone,
+            Category = EditCategory,
+            CreditLimitPaisa = limit
+        };
+
+        var result = _services.Partners.UpdateCustomer(_user, edit);
+
+        if (!result.Ok || result.Value is null)
+        {
+            SetStatus(result.Error ?? "The customer could not be saved.", true);
+            return;
+        }
+
+        var saved = result.Value;
+        IsEditing = false;
+
+        Load();
+        ShowCustomer();
+        _onChanged?.Invoke();
+
+        var message = "Saved: " + saved.Name
+                      + (saved.LimitChanged ? ", limit " + saved.LimitLabel : string.Empty) + ".";
+
+        SetStatus(saved.HasWarning ? message + " " + saved.WarningText : message, false);
     }
 
     private void SetStatus(string message, bool isError)

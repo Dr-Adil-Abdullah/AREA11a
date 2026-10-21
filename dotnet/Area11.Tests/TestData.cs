@@ -41,15 +41,22 @@ VALUES(@productId, 'B-1', '2027-06-30', '2027-06', @qty, @cost, @retail, 0, 1, @
         });
     }
 
-    /// <summary>Adds a customer. A limit of 0 means "no limit" (see SaleService.EnforceCreditLimit).</summary>
-    public static int AddCustomer(TestDatabase test, string name = "Ali Raza", long limitPaisa = 0)
+    /// <summary>
+    /// Adds a customer. A limit of 0 means "no limit" (see SaleService.EnforceCreditLimit).
+    /// The phone is a parameter because the khata screen searches by it, and F-11 tests a shared one.
+    /// </summary>
+    public static int AddCustomer(
+        TestDatabase test,
+        string name = "Ali Raza",
+        long limitPaisa = 0,
+        string? phone = "0300-1234567")
     {
         return test.Database.Tx(connection =>
         {
             test.Database.Execute(connection, @"
 INSERT INTO customers(name, phone, category, credit_limit_paisa, balance_paisa, loyalty_points, active, created_at)
-VALUES(@name, '0300-1234567', 'normal', @limit, 0, 0, 1, @at);",
-                new { name, limit = limitPaisa, at = Clock.Now() });
+VALUES(@name, @phone, 'normal', @limit, 0, 0, 1, @at);",
+                new { name, phone, limit = limitPaisa, at = Clock.Now() });
 
             return (int)test.Database.NextId(connection);
         });
