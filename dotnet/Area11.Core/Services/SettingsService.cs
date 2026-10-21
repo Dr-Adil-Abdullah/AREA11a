@@ -158,55 +158,152 @@ public sealed class SettingsService
     }
 
     /// <summary>Owner-visible change: old → new is written into the black box.</summary>
-    public ServiceResult Set(string key, object? value, User? actor)
-    {
-        if (!Defaults.ContainsKey(key))
-        {
-            return ServiceResult.Fail($"Unknown setting '{key}'.");
-        }
+    public ServiceResult Set(string key, object? value, User? actor) =>
+        SetMany(new Dictionary<string, object?> { [key] = value }, actor);
 
-        var json = JsonSerializer.Serialize(value);
+    /// <summary>
+    /// Saves several settings as ONE transaction: either every value is stored or none is.
+    /// The Settings screen edits a dozen fields at once, and half a page of saved values would be
+    /// worse than a refusal (the paper width could change while the copy count does not).
+    /// </summary>
+    public ServiceResult SetMany(IReadOnlyDictionary<string, object?> values, User? actor)
+    {
+        foreach (var pair in values)
+        {
+            if (!Defaults.ContainsKey(pair.Key))
+            {
+                return ServiceResult.Fail($"Unknown setting '{pair.Key}'.");
+            }
+
+            var refusal = Guard(pair.Key, pair.Value, values);
+            if (refusal is not null)
+            {
+                return ServiceResult.Fail(refusal);
+            }
+        }
 
         try
         {
             _db.Tx(connection =>
             {
-                var old = _db.Scalar(connection, "SELECT value FROM settings WHERE key = @key;", new { key })?.ToString();
+                foreach (var pair in values)
+                {
+                    var json = JsonSerializer.Serialize(pair.Value);
 
-                _db.Execute(connection, @"
+                    var old = _db.Scalar(connection,
+                        "SELECT value FROM settings WHERE key = @key;", new { key = pair.Key })?.ToString();
+
+                    _db.Execute(connection, @"
 INSERT INTO settings(key, value, updated_at) VALUES(@key, @value, @at)
 ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at;",
-                    new { key, value = json, at = Clock.Now() });
+                        new { key = pair.Key, value = json, at = Clock.Now() });
 
-                _audit.Record(connection, actor, "Settings", "settings_change", "settings", key, old, json);
+                    _audit.Record(connection, actor, "Settings", "settings_change", "settings", pair.Key, old, json);
+                }
             });
 
             lock (_gate)
             {
-                _cache[key] = json;
+                foreach (var pair in values)
+                {
+                    _cache[pair.Key] = JsonSerializer.Serialize(pair.Value);
+                }
             }
 
             return ServiceResult.Success();
         }
         catch (Exception exception)
         {
-            _log.Error($"Setting '{key}' could not be saved.", exception);
-            return ServiceResult.Fail("The setting could not be saved.");
+            _log.Error($"Settings could not be saved ({string.Join(", ", values.Keys)}).", exception);
+            return ServiceResult.Fail("The settings could not be saved.");
         }
     }
 
-    public ServiceResult SetMany(IReadOnlyDictionary<string, object?> values, User? actor)
+    /// <summary>
+    /// The few keys where a wrong number breaks the shop. The screen is not the only doorway into
+    /// this service, so the rule lives here (D-26: a printed receipt cannot be un-printed).
+    /// </summary>
+    private string? Guard(string key, object? value, IReadOnlyDictionary<string, object?> incoming)
     {
-        foreach (var pair in values)
+        double Other(string otherKey, double fallback)
         {
-            var result = Set(pair.Key, pair.Value, actor);
-            if (!result.Ok)
+            if (incoming.TryGetValue(otherKey, out var provided) && ToNumber(provided) is { } providedNumber)
             {
-                return result;
+                return providedNumber;
             }
+
+            return GetDouble(otherKey, fallback);
         }
 
-        return ServiceResult.Success();
+        var number = ToNumber(value);
+
+        switch (key)
+        {
+            case "printer.width":
+                return number is 58 or 80 ? null : "The paper width must be 58 or 80 mm.";
+
+            case "printer.copies":
+                return number is >= 1 and <= 3 ? null : "The number of copies must be 1, 2 or 3.";
+
+            case "discount.maxPercentCashier":
+            case "discount.maxPercentManager":
+            {
+                if (number is null or < 0 or > 100)
+                {
+                    return "A discount limit is a percentage between 0 and 100.";
+                }
+
+                var cashier = key == "discount.maxPercentCashier" ? number.Value : Other("discount.maxPercentCashier", 5);
+                var manager = key == "discount.maxPercentManager" ? number.Value : Other("discount.maxPercentManager", 20);
+
+                return cashier <= manager
+                    ? null
+                    : "A cashier cannot be allowed a bigger discount than a manager.";
+            }
+
+            case "tax.percent":
+                return number is >= 0 and <= 100 ? null : "The tax rate must be between 0 and 100 percent.";
+
+            case "security.pinLength":
+                return number is >= 3 and <= 8 ? null : "The PIN length must be between 3 and 8 digits.";
+
+            case "bill.numberPadding":
+                return number is >= 1 and <= 8 ? null : "The bill number needs 1 to 8 digits.";
+
+            case "bill.roundTo":
+                return number is >= 0 and <= 1000 ? null : "The round-off step must be between 0 and 1000 paisa.";
+
+            default:
+                return null;
+        }
+    }
+
+    private static double? ToNumber(object? value)
+    {
+        switch (value)
+        {
+            case null:
+                return null;
+            case bool:
+                return null;
+            case double d:
+                return d;
+            case float f:
+                return f;
+            case decimal m:
+                return (double)m;
+            case int i:
+                return i;
+            case long l:
+                return l;
+            case short sh:
+                return sh;
+        }
+
+        return double.TryParse(Convert.ToString(value, CultureInfo.InvariantCulture),
+            NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
+            ? parsed
+            : null;
     }
 
     /// <summary>

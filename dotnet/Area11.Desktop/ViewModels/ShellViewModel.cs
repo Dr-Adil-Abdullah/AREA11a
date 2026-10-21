@@ -15,6 +15,9 @@ public sealed class ShellViewModel : ObservableObject
     private readonly User _user;
     private NavItem? _selectedNav;
     private ObservableObject? _currentViewModel;
+    private string _storeName = string.Empty;
+    private string _appName = string.Empty;
+    private SettingsViewModel? _settingsPage;
 
     public ShellViewModel(AppServices services, User user)
     {
@@ -36,9 +39,17 @@ public sealed class ShellViewModel : ObservableObject
 
     public RelayCommand LogoutCommand { get; }
 
-    public string StoreName { get; }
+    public string StoreName
+    {
+        get => _storeName;
+        private set => SetProperty(ref _storeName, value);
+    }
 
-    public string AppName { get; }
+    public string AppName
+    {
+        get => _appName;
+        private set => SetProperty(ref _appName, value);
+    }
 
     public string UserName => _user.Name;
 
@@ -84,6 +95,32 @@ public sealed class ShellViewModel : ObservableObject
         {
             NavItems.Add(new NavItem("Products", "Medicines and items", () => new ProductsViewModel(_services, _user)));
         }
+
+        if (_services.Permissions.Can(_user, Modules.Settings))
+        {
+            NavItems.Add(new NavItem("Settings", "Shop, printing, staff", CreateSettingsPage));
+        }
+    }
+
+    /// <summary>
+    /// One Settings page for the whole session: it keeps the staff selection and raises Saved, so a
+    /// new shop name appears in the sidebar the moment the owner presses Save.
+    /// </summary>
+    private ObservableObject CreateSettingsPage()
+    {
+        if (_settingsPage is null)
+        {
+            _settingsPage = new SettingsViewModel(_services, _user, RefreshHeader);
+        }
+
+        _settingsPage.Refresh();
+        return _settingsPage;
+    }
+
+    private void RefreshHeader()
+    {
+        StoreName = _services.Settings.GetString("store.name");
+        AppName = _services.Settings.GetString("brand.appName");
     }
 
     private void Logout()

@@ -22,8 +22,8 @@ shop computer. Talk to him in Urdu; keep code, database and UI in English.
 | Where is the product? | **`dotnet/`** - `Area11.sln` with `Area11.Core`, `Area11.Desktop`, `Area11.Tests` |
 | What can it do today? | sign-in, products, purchases `PINV`, counter billing `INV` (FEFO, discount guard, round-off, cash change, credit), dashboard |
 | Has it ever been compiled? | **Yes - 20 Oct 2026.** The owner's Windows build reported `Build succeeded`. Since then the code grew (receipt/printing), so the current build is unverified again |
-| What is the very next task? | **build + `tools\RUN-TESTS.cmd` (68 cases)** on the owner's PC - the test project has never compiled yet; then the settings screen **F-17** |
-| How many tests? | 68 cases in 8 files - written, **never executed**; run `tools\RUN-TESTS.cmd` |
+| What is the very next task? | **build + `tools\RUN-TESTS.cmd` (82 cases)** on the owner's PC, then use the new **Settings** page: set the shop name, choose 58 or 80 mm, and pick automatic or manual printing. Next feature after that: hold cart / split payment. |
+| How many tests? | 82 cases in 9 files - written, **never executed on the owner's PC**; run `tools\RUN-TESTS.cmd` |
 | Database? | the **original** schema, migrations `001`-`015`, **31 business tables** (+ `_migrations` ledger), so an existing `area11.db` opens unchanged |
 | Where does data live? | `%ProgramData%\Area11\` (`area11.db`, `photos\`, `logs\`, `backups\`) |
 | Default owner login | user **Owner**, password **`area11`** (change it on day one) |
@@ -55,24 +55,27 @@ Reference web app (behaviour source, **never modify it**): `git clone https://gi
 
 Full detail in [`docs/PROGRESS.md`](docs/PROGRESS.md). The short version:
 
-**Written (🟡, never compiled)**
+**Written**
 
 | Area | Files |
 |---|---|
 | Schema 001-015 (31 business tables, WAL, migrations under `BEGIN IMMEDIATE`) | `Area11.Core/Data/` |
-| Settings (71 keys), audit black box, auth + lockout, permissions, numbering | `Area11.Core/Services/` |
+| Settings (73 keys), audit black box, auth + lockout, permissions, numbering | `Area11.Core/Services/` |
 | Products, partners (customers/suppliers), purchases `PINV`, sales `INV`, dashboard | `Area11.Core/Services/` |
 | Money / quantity / expiry / password helpers | `Area11.Core/Utils/` |
-| WPF shell, login, dashboard, products, POS, purchases | `Area11.Desktop/` |
-| 68 test cases | `Area11.Tests/` |
+| WPF shell, login, dashboard, products, POS, purchases, **settings** | `Area11.Desktop/` |
+| 82 test cases | `Area11.Tests/` |
+
+**Written but never tested on the shop PC (🟡)**
+
+1. Receipt + instant printing (F-13) - needs one real print
+2. Settings screen (F-17) - needs one walk-through by the owner
 
 **Not started (⬜)**
 
-1. Receipt + instant printing (F-13) ← **next**
-2. Hold cart, split payment (F-14, F-15)
-3. Settings screen with per-person permission ticks (F-17)
-4. Whole of Phase 2: returns `RET`, provisional `PR`, quarantine `Q`, alert centre, write-off, stock-take `ST`, ledgers, expiry levels from settings
-5. Phase 3: shifts/galla, expenses, `SR`, reports, audit viewer, backup, Excel, reorder/WhatsApp
+1. Hold cart, split payment (F-14, F-15) ← **next**
+2. Whole of Phase 2: returns `RET`, provisional `PR`, quarantine `Q`, alert centre, write-off, stock-take `ST`, ledgers, expiry levels from settings
+3. Phase 3: shifts/galla, expenses, `SR`, reports, audit viewer, backup, Excel, reorder/WhatsApp
 6. Phase 4: loyalty, photos/camera, custom fields, second counter, hardware test, **installer**
 
 ---
@@ -83,7 +86,7 @@ Do them one at a time; each one ends with a commit (see `AGENTS.md` §6).
 
 | # | Task | Acceptance |
 |---|---|---|
-| 1 | **F-16 follow-up** run `tools\RUN-TESTS.cmd` on the owner's PC | all 68 tests pass |
+| 1 | **F-16 follow-up** run `tools\RUN-TESTS.cmd` on the owner's PC | all 82 tests pass |
 | 2 | **F-13** receipt renderer + ESC/POS instant print (58/80 mm) | pressing "print" prints with no dialog; reprint from a saved bill; printer absent ⇒ bill still saves |
 | 3 | **F-17** Settings screen (store info, discount, tax, printer width) + per-person permission ticks | the owner changes a setting and the next bill obeys it |
 | 4 | **F-14 / F-15** hold cart, split payment | two held carts survive a restart; one bill with two payment rows |
@@ -170,11 +173,11 @@ Folder map:
 | `Area11.Core/Services/` | `Auth`, `Permission`, `Settings`, `Audit`, `Numbering`, `Product`, `Partner`, `Purchase`, `Sale`, `Dashboard`, `Seed` |
 | `Area11.Core/Utils/` | `Money`, `Qty`, `Expiry`, `PasswordHasher`, `ServiceResult`, `LogService`, `AuditDiff`, `AppPaths` |
 | `Area11.Desktop/` | `App`, `AppServices` (composition root), `Resources/Theme.xaml`, `ViewModels/`, `Views/` |
-| `Area11.Tests/` | `TestDatabase` (in-memory SQLite + migrations + seed), 68 cases in 8 files |
+| `Area11.Tests/` | `TestDatabase` (in-memory SQLite + migrations + seed), 82 cases in 9 files |
 | `tools/` | `check_repo.py`, `build_rules_matrix.py` |
 | `docs/` | spec, decisions, progress, rules matrix, schema reference, build guide, port plan |
 | `prototypes/` | earlier prototypes (`Area11.WPF`, `WPFSample`) - reference only, do not extend |
-| `docs/VERSIONS.md` | every released build, its colour and what changed - **read this to know which build the owner has** (latest: v0.2.3 Rose) |
+| `docs/VERSIONS.md` | every released build, its colour and what changed - **read this to know which build the owner has** (latest: v0.2.4 Slate) |
 
 Wiring a new screen: service → `AppServices` property → `ShellViewModel.NavItems` (permission-gated)
 → `DataTemplate` in `ShellWindow.xaml` → view + view-model.

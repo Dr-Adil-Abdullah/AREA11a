@@ -6,9 +6,9 @@
          docs/VERSIONS.md). The owner tests every build on his own PC and finds the new one by its
          colour, so a code change is always shipped with a new colour. White text sits on these
          brushes - keep the shade at 4.5:1 or better against white. -->
-    <SolidColorBrush x:Key="BrandBrush" Color="#E11D48" />
-    <SolidColorBrush x:Key="BrandDarkBrush" Color="#BE123C" />
-    <SolidColorBrush x:Key="BrandSoftBrush" Color="#FFF1F2" />
+    <SolidColorBrush x:Key="BrandBrush" Color="#334155" />
+    <SolidColorBrush x:Key="BrandDarkBrush" Color="#1E293B" />
+    <SolidColorBrush x:Key="BrandSoftBrush" Color="#F1F5F9" />
     <SolidColorBrush x:Key="CanvasBrush" Color="#F3F5F7" />
     <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF" />
     <SolidColorBrush x:Key="SidebarBrush" Color="#0F172A" />
@@ -177,4 +177,61 @@
         <Setter Property="ColumnHeaderHeight" Value="32" />
     </Style>
 
+
+    <!-- ============ Tabs (Settings) ============ -->
+    <Style TargetType="TabControl">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0,12,0,0" />
+    </Style>
+
+    <Style TargetType="TabItem">
+        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="Padding" Value="15,7" />
+        <Setter Property="Margin" Value="0,0,6,0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabItem">
+                    <Border x:Name="Chip" Background="Transparent" CornerRadius="7"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter ContentSource="Header" RecognizesAccessKey="True"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Chip" Property="Background" Value="#F1F5F9" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Chip" Property="Background" Value="{StaticResource BrandSoftBrush}" />
+                            <Setter Property="Foreground" Value="{StaticResource BrandDarkBrush}" />
+                            <Setter Property="FontWeight" Value="SemiBold" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- A white panel that groups related fields inside a tab. -->
+    <Style x:Key="SettingsGroup" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="16" />
+        <Setter Property="Margin" Value="0,0,0,12" />
+    </Style>
+
+    <!-- Small grey sentence under a field: why this value matters. -->
+    <Style x:Key="FieldHint" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="10.5" />
+        <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Margin" Value="0,4,0,0" />
+    </Style>
+
+    <!-- The panel state is stored as a bool; WPF needs a converter to hide/show a block. -->
+    <BooleanToVisibilityConverter x:Key="BoolToVis" />
 </ResourceDictionary>

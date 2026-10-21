@@ -17,7 +17,7 @@ Ported from the original Next.js + SQLite web app (`Dr-Adil-Abdullah/Area11`) us
 
 | Phase | Contents | State |
 |---|---|---|
-| **1** | Foundation, database, sign-in, products, purchases `PINV`, counter `INV`, receipt & instant print | 🟡 written, **not yet compiled** — receipt/print outstanding |
+| **1** | Foundation, database, sign-in, products, purchases `PINV`, counter `INV`, receipt & instant print, settings screen | ✅ written and compiled; receipt/print and settings need one real walk-through |
 | **2** | Returns `RET` / provisional `PR` / quarantine `Q`, alert centre, write-off, stock-take `ST`, ledgers | ⬜ not started |
 | **3** | Shift & galla, expenses, `SR` recovery, reports, audit viewer, backup, Excel, reorder/WhatsApp | ⬜ not started |
 | **4** | Loyalty, photos & camera, custom fields, second counter, hardware test, **self-installing installer** | ⬜ not started |
@@ -27,7 +27,7 @@ Live counts are in [`docs/PROGRESS.md`](docs/PROGRESS.md) (features) and
 
 **Honest note:** the build machine used so far is Linux with no .NET SDK, so nothing in `dotnet/`
 has ever been compiled. It is checked statically (C# parses, XAML/bindings/resources valid,
-migrations execute against SQLite, 68 test cases written). The Windows build succeeded on
+migrations execute against SQLite, 82 test cases written). The Windows build succeeded on
 20 Oct 2026; see [`docs/VERSIONS.md`](docs/VERSIONS.md) for which build the owner has.
 
 ---

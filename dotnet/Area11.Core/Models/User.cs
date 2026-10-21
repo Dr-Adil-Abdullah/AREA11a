@@ -55,5 +55,8 @@ public sealed class User
 
     public string RoleLabel => UserRoles.Label(Kind);
 
+    /// <summary>Shown in the staff list, so a switched-off account is obvious at a glance.</summary>
+    public string ActiveLabel => Active ? "On" : "Off";
+
     public override string ToString() => $"{Name} ({RoleLabel})";
 }

@@ -29,7 +29,7 @@ dotnet run --project dotnet\Area11.Desktop
 
 - There is exactly **one solution**, `Area11.sln`, in the root of the repository. Open that.
 - `dotnet build` with no arguments finds it automatically.
-- Expected: everything builds, **68 tests pass**, and the sign-in window opens.
+- Expected: everything builds, **82 tests pass**, and the sign-in window opens.
 
 > **Seeing the old blue window that says "app is running"?** That is `prototypes/WPFSample` — the very
 > first smoke test from day one, not Area11. It sits in `prototypes\` now and is only kept as history.
@@ -114,9 +114,9 @@ Manual equivalent, step by step, is in [`HOW-TO-RUN-URDU.md`](HOW-TO-RUN-URDU.md
 
 ## 5b. Printing (D-05, D-23, D-26)
 
-- On the counter screen, tick **"Print the receipt automatically"** to print at the moment a bill is
-  saved; leave it empty for manual printing with **"Print last bill again"**. The choice is stored in
-  the setting `printer.autoPrint`, so it survives a restart.
+- The choice now lives on the **Settings → Printing** page: **"Print the receipt automatically after
+  each sale"**. The same switch is on the counter screen. Off = manual, with **"Print last bill again"**.
+  The value is stored in `printer.autoPrint`, so it survives a restart.
 - Paper width comes from `printer.width`: **58** = 32 characters per line, **80** = 48. Default 58.
 - The printer name comes from `printer.name`; empty means "the Windows default printer".
 - A missing or switched-off printer never loses a bill: the sale is saved first, then the print is
@@ -124,7 +124,9 @@ Manual equivalent, step by step, is in [`HOW-TO-RUN-URDU.md`](HOW-TO-RUN-URDU.md
 
 ## 6. What comes next (still Phase 1)
 
-The printed receipt with **instant ESC/POS printing** (58 / 80 mm), the hold cart, split payment, and
-the Settings screen with per-person permission ticks. Then Phase 2: returns, quarantine and alerts.
+The hold cart and split payment. Then Phase 2: returns, quarantine and alerts.
+
+Already written and waiting for one real walk-through by the owner: the receipt with **instant
+ESC/POS printing** (58 / 80 mm) and the **Settings** screen (shop, printing, sales rules, staff).
 
 Full list with IDs: [`PROGRESS.md`](PROGRESS.md).

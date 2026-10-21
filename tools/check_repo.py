@@ -32,6 +32,7 @@ ITEM_PROPERTIES = {
     "Title", "Subtitle", "Name", "Generic", "RackNo", "StockLabel", "RetailText", "CostText",
     "MarginLabel", "UnitLabel", "QuantityText", "BatchNo", "Expiry", "ProductName", "Category",
     "Company", "Photo", "Phone", "BalanceText", "Stars", "CategoryLabel", "ActiveLabel",
+    "Label", "Allowed", "CanEdit", "RoleLabel",
 }
 
 VIEW_MODEL_OF = {
@@ -41,6 +42,7 @@ VIEW_MODEL_OF = {
     "ProductsView.xaml": "ProductsViewModel",
     "PosView.xaml": "PosViewModel",
     "PurchasesView.xaml": "PurchasesViewModel",
+    "SettingsView.xaml": "SettingsViewModel",
 }
 
 

@@ -34,10 +34,10 @@ contrast **4.5:1 or better** against white.
 | 4 | Purple | `#6D28D9` | `#5B21B6` | `#EDE9FE` |
 | 5 | Indigo | `#4338CA` | `#3730A3` | `#EEF2FF` |
 | 6 | Blue | `#1D4ED8` | `#1E40AF` | `#EFF6FF` |
-| 7 | Rose | `#BE123C` | `#9F1239` | `#FFF1F2` |
-| 8 | Amber | `#B45309` | `#92400E` | `#FFFBEB` |
+| 7 | Rose | `#E11D48` | `#BE123C` | `#FFF1F2` |
+| 8 | ~~Amber~~ | `#B45309` | `#92400E` | `#FFFBEB` | *skipped - already the warning colour* |
 | 9 | Slate | `#334155` | `#1E293B` | `#F1F5F9` |
-| 10 | Emerald | `#047857` | `#065F46` | `#ECFDF5` |
+| 10 | ~~Emerald~~ | `#047857` | `#065F46` | `#ECFDF5` | *skipped - already the success colour* |
 
 ## Released versions
 
@@ -47,14 +47,17 @@ contrast **4.5:1 or better** against white.
 | 0.1.1 | 2026-10-20 | Green | `#15803D` | **First successful Windows build** (Core, Desktop and Tests compiled); SQLite security pin; `tools/RUN-TESTS.cmd` |
 | 0.1.2 | 2026-10-20 | Pink | `#DB2777` | Colour test confirmed by the owner; stale-solution repair tools (`CHECK-AREA11.cmd`, `doctor.ps1`) |
 | 0.2.0 | 2026-10-20 | Purple | `#6D28D9` | Receipt on paper (58 / 80 mm), instant ESC/POS printing, reprint, printer settings (F-13); version badge on the sign-in window and in the sidebar |
+| 0.2.1 | 2026-10-20 | Indigo | `#4338CA` | Owner decided printing is a **setting**: automatic after each sale or manual button. Both paper widths (58 / 80 mm) stay selectable. |
+| 0.2.2 | 2026-10-20 | Blue | `#1D4ED8` | **Fix:** the receipt tests reached for an internal type (`CS0122`) and stopped the build. They now go through the public `ReceiptService.Build` against a real bill in the database; the checker refuses any test that names an internal type. |
+| 0.2.3 | 2026-10-20 | Rose | `#E11D48` | Owner asked whether he must download a ZIP every time. `START-AREA11.bat` names the branch it is building and stops with instructions if the folder sits on `main`; the Urdu guide explains GitHub Desktop / Visual Studio / VS Code cloning; Windows line endings restored in four helper scripts. |
+| 0.2.4 | 2026-10-20 | Slate | `#334155` | **Settings screen (F-17)**: shop details, printing (58/80 mm, automatic or manual), discount limits, tax, negative stock, staff list, one checkbox per permission, add-a-person form. Settings saves are now one transaction and are refused if a value would break the shop. |
 
 ## Notes for the next agent
 
 - **Do not** edit an old row. The table is a record, like the audit log.
+- **Amber `#B45309` and Emerald `#047857` are skipped** on purpose: they are already the colours of
+  the warning and success messages, and a brand colour must never mean two different things.
 - The version marker is temporary scaffolding for the test period; it must not become a second
   source of truth for the shop's branding. `store.name` / `brand.*` in Settings stay the real branding.
 - If a build is released without a colour change, the owner cannot tell it apart from the previous
   one - treat that as a bug, not a shortcut.
-| 0.2.1 | 2026-10-20 | Indigo | `#4338CA` | Owner decided printing is a **setting**: automatic after each sale or manual button. Both paper widths (58 / 80 mm) stay selectable. |
-| 0.2.2 | 2026-10-20 | Blue | `#1D4ED8` | **Fix:** the receipt tests reached for an internal type (`CS0122`) and stopped the build. They now go through the public `ReceiptService.Build` against a real bill in the database; the checker refuses any test that names an internal type. |
-| 0.2.3 | 2026-10-20 | Rose | `#E11D48` | Owner asked whether he must download a ZIP every time. `START-AREA11.bat` now names the branch it is building and stops with instructions if the folder sits on `main`; `docs/GIT-AND-VS-URDU.md` explains GitHub Desktop / Visual Studio / VS Code cloning. |
