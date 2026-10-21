@@ -136,23 +136,3 @@ public sealed class StockTakeResult
 
     public List<string> Warnings { get; init; } = new();
 }
-
-/// <summary>What the screen needs for one line at a time: book, counted, difference, value.</summary>
-public sealed class StockTakeSummary
-{
-    public int TotalLines { get; set; }
-
-    public int CountedLines { get; set; }
-
-    public int DiffCount { get; set; }
-
-    public long ShortPaisa { get; set; }
-
-    public long ExtraPaisa { get; set; }
-
-    public string ShortLabel => Money.Format(ShortPaisa);
-
-    public string ExtraLabel => Money.Format(ExtraPaisa);
-
-    public string ProgressLabel => CountedLines + " of " + TotalLines + " counted · " + DiffCount + " with a difference";
-}

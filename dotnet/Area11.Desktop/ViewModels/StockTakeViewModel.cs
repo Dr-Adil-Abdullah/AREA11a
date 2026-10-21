@@ -210,13 +210,15 @@ public sealed class StockTakeViewModel : ObservableObject
             return;
         }
 
-        foreach (var line in _services.StockTake.Sheet(_session.Id, DifferencesOnly))
+        var sessionId = _session.Id;
+
+        foreach (var line in _services.StockTake.Sheet(sessionId, DifferencesOnly))
         {
             Lines.Add(line);
         }
 
         // The service has the freshest totals; re-read the session so the labels move with the count.
-        _session = _services.StockTake.History().FirstOrDefault(row => row.Id == _session.Id) ?? _session;
+        _session = _services.StockTake.History().FirstOrDefault(row => row.Id == sessionId) ?? _session;
 
         SelectedLine = Lines.FirstOrDefault(line => !line.IsCounted)
             ?? Lines.FirstOrDefault(line => line.Id == SelectedLine?.Id)
