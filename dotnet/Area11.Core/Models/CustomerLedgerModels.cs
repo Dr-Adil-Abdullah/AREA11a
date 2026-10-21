@@ -32,6 +32,9 @@ public sealed class LedgerLine
 
     public string DateLabel => string.IsNullOrWhiteSpace(Date) || Date.Length < 16 ? Date : Date[..16];
 
+    /// <summary>"10-21 10:05" - the date without the year, so a movement fits on one 58 mm line.</summary>
+    public string SlipDate => DateLabel.Length >= 11 ? DateLabel[5..] : DateLabel;
+
     public string KindLabel => Kind switch
     {
         "collection" => "Money received",

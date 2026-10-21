@@ -60,11 +60,11 @@ public sealed class CustomerLedgerTests
 
         Assert.True(page.Ok, page.Error);
         Assert.Equal(90000L, page.Value!.StoredPaisa);      // 3 x Rs 300
-        Assert.Equal(90000L, page.Value.ExpectedPaisa);
-        Assert.True(page.Value.BooksMatch);
-        Assert.Single(page.Value.Lines);
-        Assert.Equal("bill", page.Value.Lines[0].Kind);
-        Assert.Equal(90000L, page.Value.Lines[0].RunningPaisa);
+        Assert.Equal(90000L, page.Value!.ExpectedPaisa);
+        Assert.True(page.Value!.BooksMatch);
+        Assert.Single(page.Value!.Lines);
+        Assert.Equal("bill", page.Value!.Lines[0].Kind);
+        Assert.Equal(90000L, page.Value!.Lines[0].RunningPaisa);
     }
 
     [Fact]
@@ -80,7 +80,7 @@ public sealed class CustomerLedgerTests
 
         Assert.True(collected.Ok, collected.Error);
         Assert.Equal(50000L, collected.Value!.NewBalancePaisa);
-        Assert.StartsWith("PAY-", collected.Value.Code);
+        Assert.StartsWith("PAY-", collected.Value!.Code);
         Assert.Equal(50000L, StoredBalance(test, customer));
 
         // Exactly one payment row, and it is a collection: no sale, no purchase.
@@ -94,9 +94,9 @@ WHERE customer_id = @id AND sale_id IS NULL AND purchase_id IS NULL AND amount_p
         var page = Ledger(test).Page(customer);
         Assert.True(page.Ok, page.Error);
         Assert.True(page.Value!.BooksMatch);
-        Assert.Equal(2, page.Value.Lines.Count);
-        Assert.Equal(40000L, page.Value.Lines[1].RunningPaisa);
-        Assert.Equal("collection", page.Value.Lines[1].Kind);
+        Assert.Equal(2, page.Value!.Lines.Count);
+        Assert.Equal(40000L, page.Value!.Lines[1].RunningPaisa);
+        Assert.Equal("collection", page.Value!.Lines[1].Kind);
     }
 
     [Fact]
@@ -166,10 +166,10 @@ WHERE customer_id = @id AND sale_id IS NULL AND purchase_id IS NULL AND amount_p
 
         Assert.True(page.Ok, page.Error);
         Assert.Equal(20000L, page.Value!.ExpectedPaisa);
-        Assert.Equal(20000L, page.Value.StoredPaisa);
-        Assert.True(page.Value.BooksMatch, page.Value.BooksLabel);
-        Assert.Equal(3, page.Value.Lines.Count);
-        Assert.Equal(20000L, page.Value.Lines[2].RunningPaisa);
+        Assert.Equal(20000L, page.Value!.StoredPaisa);
+        Assert.True(page.Value!.BooksMatch, page.Value!.BooksLabel);
+        Assert.Equal(3, page.Value!.Lines.Count);
+        Assert.Equal(20000L, page.Value!.Lines[2].RunningPaisa);
     }
 
     [Fact]
@@ -195,7 +195,7 @@ WHERE customer_id = @id AND sale_id IS NULL AND purchase_id IS NULL AND amount_p
 
         Assert.True(page.Ok, page.Error);
         Assert.Equal(0L, page.Value!.ExpectedPaisa);
-        Assert.True(page.Value.BooksMatch, page.Value.BooksLabel);
+        Assert.True(page.Value!.BooksMatch, page.Value!.BooksLabel);
     }
 
     [Fact]
@@ -238,9 +238,9 @@ WHERE customer_id = @id AND sale_id IS NULL AND purchase_id IS NULL AND amount_p
         CreditBill(test, product, customer, 1);
 
         // A real account, then an explicit "no" for this one module - a stored row beats the role.
-        test.Database.Tx(connection =>
+        test.Database.Tx(c =>
         {
-            test.Database.Execute(connection,
+            test.Database.Execute(c,
                 "INSERT INTO users(name, role, active, created_at) VALUES('Cashier', 'cashier', 1, '2026-01-01 09:00:00');");
             return 0;
         });

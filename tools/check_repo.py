@@ -58,6 +58,7 @@ VIEW_MODEL_OF = {
     "ProvisionalView.xaml": "ProvisionalViewModel",
     "WriteOffView.xaml": "WriteOffViewModel",
     "StockTakeView.xaml": "StockTakeViewModel",
+    "CustomersView.xaml": "CustomersViewModel",
 }
 
 
@@ -717,6 +718,14 @@ def check_bindings() -> None:
     theme = (ROOT / "dotnet/Area11.Desktop/Resources/Theme.xaml").read_text(encoding="utf-8")
     resources = set(re.findall(r'x:Key="([^"]+)"', theme))
 
+    # Rows inside a DataGrid / ListBox bind to a *model*, not to the page's view-model. Reading the
+    # model files makes those bindings checkable instead of ticking a hand-kept allow-list: a typo
+    # in a column ("BalanceTxt") now fails here rather than printing an empty column in the shop.
+    model_properties: set[str] = set()
+    for model in sorted((DOTNET / "Area11.Core/Models").glob("*.cs")):
+        model_properties |= set(re.findall(
+            r"public\s+[\w<>?\[\], .]+\s+(\w+)\s*(?:\{|=>)", model.read_text(encoding="utf-8-sig")))
+
     problems = 0
     checked = 0
     for view_name, vm_name in VIEW_MODEL_OF.items():
@@ -738,7 +747,7 @@ def check_bindings() -> None:
             if not name or name.startswith(("Path=", "RelativeSource", "ElementName", "Source=")):
                 continue
             checked += 1
-            if name in ITEM_PROPERTIES:
+            if name in ITEM_PROPERTIES or name in model_properties:
                 continue
             if name not in properties:
                 problems += 1

@@ -301,7 +301,7 @@ VALUES(@at, @method, @amount, @customerId, @userId, @note);",
                 ? "+" + Money.Fixed(line.DebitPaisa)
                 : line.CreditPaisa > 0 ? "-" + Money.Fixed(line.CreditPaisa) : "-";
 
-            Pair(line.DateLabel, amount + "  = " + Money.Fixed(line.RunningPaisa));
+            Pair(line.SlipDate, amount + "  = " + Money.Fixed(line.RunningPaisa));
             Add("  " + ReceiptService.Fit(line.Code + " " + line.Description, width - 2));
         }
 

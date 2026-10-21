@@ -192,7 +192,10 @@ python3 tools/build_rules_matrix.py --check
 ```
 
 `check_repo.py` runs 19 checks: C# syntax, **explicit usings** (the CS0103 class of error),
-sealed bases (the CS0509 class of error), XML validity, 399 XAML bindings and resources,
+sealed bases (the CS0509 class of error), local shadowing (the CS0136 class of error),
+value-type `ServiceResult` use (the CS0037/CS1061 class of error), XML validity,
+**441 XAML bindings and resources** - a row binding is checked against the real properties of
+`Area11.Core/Models`, so a mistyped column name fails here instead of printing an empty column -
 migrations (19 files -> 33 tables, executed on SQLite), **every SQL statement prepared against the
 real schema**, test count, settings keys, and documentation links.
 
