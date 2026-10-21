@@ -190,6 +190,7 @@ public sealed class AlertRow
         EndedBy = alert.EndedBy ?? string.Empty;
         EndedAt = alert.EndedAt ?? string.Empty;
         IsCritical = alert.IsCritical;
+        IsAmber = alert.IsAmber;
     }
 
     public string Key { get; }
@@ -211,4 +212,6 @@ public sealed class AlertRow
     public string EndedAt { get; }
 
     public bool IsCritical { get; }
+
+    public bool IsAmber { get; }
 }

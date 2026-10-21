@@ -22,8 +22,8 @@ shop computer. Talk to him in Urdu; keep code, database and UI in English.
 | Where is the product? | **`dotnet/`** - `Area11.sln` with `Area11.Core`, `Area11.Desktop`, `Area11.Tests` |
 | What can it do today? | sign-in, products, purchases `PINV`, counter billing `INV` (FEFO, discount guard, round-off, cash change, credit), dashboard |
 | Has it ever been compiled? | **Yes - 20 Oct 2026.** The owner's Windows build reported `Build succeeded`. Since then the code grew (receipt/printing), so the current build is unverified again |
-| What is the very next task? | **build + `tools\RUN-TESTS.cmd` (131 cases)** on the owner's PC; sell more than the shelf holds to see the red bar, then end that alert in **Alerts** with a reason. After that: no-bill returns `PR`, write-off, stock-take `ST`. |
-| How many tests? | 131 cases in 14 files - written, **never executed on the owner's PC**; run `tools\RUN-TESTS.cmd` |
+| What is the very next task? | **build + `tools\RUN-TESTS.cmd` (145 cases)** on the owner's PC; take a no-bill return (**No bill (PR)** → add a medicine → save) and check the `PR-0001` slip. After that: write-off, stock-take `ST`, then Phase 3 ledgers/reports/backup. |
+| How many tests? | 145 cases in 15 files - written, **never executed on the owner's PC**; run `tools\RUN-TESTS.cmd` |
 | Database? | the **original** schema, migrations `001`-`015`, **31 business tables** (+ `_migrations` ledger), so an existing `area11.db` opens unchanged |
 | Where does data live? | `%ProgramData%\Area11\` (`area11.db`, `photos\`, `logs\`, `backups\`) |
 | Default owner login | user **Owner**, password **`area11`** (change it on day one) |
@@ -63,8 +63,8 @@ Full detail in [`docs/PROGRESS.md`](docs/PROGRESS.md). The short version:
 | Settings (75 keys), audit black box, auth + lockout, permissions, numbering, hold carts | `Area11.Core/Services/` |
 | Products, partners, purchases `PINV`, sales `INV`, **returns `RET` + quarantine `Q`**, dashboard | `Area11.Core/Services/` |
 | Money / quantity / expiry / password helpers | `Area11.Core/Utils/` |
-| WPF shell (+ global alert bar), login, dashboard, products, POS (hold + split), purchases, settings, returns & quarantine, **alerts** | `Area11.Desktop/` |
-| 131 test cases | `Area11.Tests/` |
+| WPF shell (+ global alert bar), login, dashboard, products, POS (hold + split), purchases, settings, returns & quarantine, alerts, **no-bill returns (PR)** | `Area11.Desktop/` |
+| 145 test cases | `Area11.Tests/` |
 
 **Written but never tested on the shop PC (🟡)**
 
@@ -73,7 +73,7 @@ Full detail in [`docs/PROGRESS.md`](docs/PROGRESS.md). The short version:
 
 **Not started (⬜)**
 
-1. The rest of Phase 2: no-bill returns `PR` (next), write-off, stock-take `ST`, ledgers, expiry levels from settings
+1. The rest of Phase 2: write-off (next), stock-take `ST`, suppliers returns `SR`, ledgers, expiry levels from settings
 3. Phase 3: shifts/galla, expenses, `SR`, reports, audit viewer, backup, Excel, reorder/WhatsApp
 6. Phase 4: loyalty, photos/camera, custom fields, second counter, hardware test, **installer**
 
@@ -85,7 +85,7 @@ Do them one at a time; each one ends with a commit (see `AGENTS.md` §6).
 
 | # | Task | Acceptance |
 |---|---|---|
-| 1 | **F-16 follow-up** run `tools\RUN-TESTS.cmd` on the owner's PC | all 131 tests pass |
+| 1 | **F-16 follow-up** run `tools\RUN-TESTS.cmd` on the owner's PC | all 145 tests pass |
 | 2 | **F-13** receipt renderer + ESC/POS instant print (58/80 mm) | pressing "print" prints with no dialog; reprint from a saved bill; printer absent ⇒ bill still saves |
 | 3 | **F-17** Settings screen (store info, discount, tax, printer width) + per-person permission ticks | the owner changes a setting and the next bill obeys it |
 | 4 | **F-14 / F-15** hold cart, split payment | two held carts survive a restart; one bill with two payment rows |
@@ -172,11 +172,11 @@ Folder map:
 | `Area11.Core/Services/` | `Auth`, `Permission`, `Settings`, `Audit`, `Numbering`, `Product`, `Partner`, `Purchase`, `Sale`, `Dashboard`, `Seed` |
 | `Area11.Core/Utils/` | `Money`, `Qty`, `Expiry`, `PasswordHasher`, `ServiceResult`, `LogService`, `AuditDiff`, `AppPaths` |
 | `Area11.Desktop/` | `App`, `AppServices` (composition root), `Resources/Theme.xaml`, `ViewModels/`, `Views/` |
-| `Area11.Tests/` | `TestDatabase` (in-memory SQLite + migrations + seed), 131 cases in 14 files |
+| `Area11.Tests/` | `TestDatabase` (in-memory SQLite + migrations + seed), 145 cases in 15 files |
 | `tools/` | `check_repo.py`, `build_rules_matrix.py` |
 | `docs/` | spec, decisions, progress, rules matrix, schema reference, build guide, port plan |
 | `prototypes/` | earlier prototypes (`Area11.WPF`, `WPFSample`) - reference only, do not extend |
-| `docs/VERSIONS.md` | every released build, its colour and what changed - **read this to know which build the owner has** (latest: v0.3.1 Bronze) |
+| `docs/VERSIONS.md` | every released build, its colour and what changed - **read this to know which build the owner has** (latest: v0.3.2 Plum) |
 
 Wiring a new screen: service → `AppServices` property → `ShellViewModel.NavItems` (permission-gated)
 → `DataTemplate` in `ShellWindow.xaml` → view + view-model.

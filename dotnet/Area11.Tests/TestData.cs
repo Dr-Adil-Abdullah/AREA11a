@@ -79,6 +79,32 @@ VALUES(@name, '0300-1234567', 'normal', @limit, 0, 0, 1, @at);",
     public static ReturnReceiptService ReturnReceipts(TestDatabase test) =>
         new(test.Database, test.Settings, test.Log);
 
+    public static ProvisionalReturnService Provisionals(TestDatabase test) =>
+        new(test.Database, test.Audit, new NumberingService(test.Settings),
+            new PermissionService(test.Database, test.Log, test.Audit), test.Log);
+
+    public static ProvisionalReceiptService ProvisionalReceipts(TestDatabase test) =>
+        new(Provisionals(test), test.Settings, test.Log);
+
+    /// <summary>One-medicine no-bill return, quantity in the unit the customer used.</summary>
+    public static ProvisionalInput RushReturn(
+        int productId,
+        double qty = 1,
+        string unit = "box",
+        long refundPaisa = 60000,
+        string? name = "Ali Raza",
+        string? phone = "0300-1234567") => new()
+    {
+        CustomerName = name,
+        Phone = phone,
+        RefundPaisa = refundPaisa,
+        Reason = "changed mind",
+        Lines = new List<ProvisionalLineInput>
+        {
+            new() { ProductId = productId, QtyEntered = qty, Unit = unit }
+        }
+    };
+
     /// <summary>The only line of a one-line bill, ready to be returned in full.</summary>
     public static ReturnInput Return(SaleResult sale, double qtyBase, bool restock = true, string reason = "changed mind")
     {

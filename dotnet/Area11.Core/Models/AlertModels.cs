@@ -30,12 +30,17 @@ public sealed class AlertItem
     /// <summary>How many are in that state, when several rows were folded into one alert.</summary>
     public int Count { get; set; } = 1;
 
-    public bool IsCritical => Type == "negstock";
+    /// <summary>Red = money or stock is wrong right now. Amber = waiting for the owner's word.</summary>
+    public bool IsCritical => Type == "negstock" || Type == "provisional";
+
+    public bool IsAmber => Type == "provisional_linked";
 
     public string TypeLabel => Type switch
     {
         "negstock" => "Stock is MINUS",
         "quarantine" => "In quarantine",
+        "provisional" => "No bill - refund paid",
+        "provisional_linked" => "Bill attached - confirm",
         _ => Type
     };
 }
@@ -50,6 +55,10 @@ public sealed class AlertReport
     public int NegativeCount => Live.Count(alert => alert.Type == "negstock");
 
     public int QuarantineCount => Live.Count(alert => alert.Type == "quarantine");
+
+    public int ProvisionalCount => Live.Count(alert => alert.Type == "provisional");
+
+    public int LinkedCount => Live.Count(alert => alert.Type == "provisional_linked");
 
     public int LiveCount => Live.Count;
 
@@ -78,6 +87,16 @@ public sealed class AlertReport
             if (QuarantineCount > 0)
             {
                 parts.Add($"{QuarantineCount} item(s) in quarantine");
+            }
+
+            if (ProvisionalCount > 0)
+            {
+                parts.Add($"{ProvisionalCount} no-bill refund(s) missing the bill");
+            }
+
+            if (LinkedCount > 0)
+            {
+                parts.Add($"{LinkedCount} bill(s) attached - your confirmation pending");
             }
 
             return "⚠ " + string.Join(" · ", parts) + " · See now";

@@ -29,7 +29,7 @@ dotnet run --project dotnet\Area11.Desktop
 
 - There is exactly **one solution**, `Area11.sln`, in the root of the repository. Open that.
 - `dotnet build` with no arguments finds it automatically.
-- Expected: everything builds, **131 tests pass**, and the sign-in window opens.
+- Expected: everything builds, **145 tests pass**, and the sign-in window opens.
 
 > **Seeing the old blue window that says "app is running"?** That is `prototypes/WPFSample` — the very
 > first smoke test from day one, not Area11. It sits in `prototypes\` now and is only kept as history.
@@ -159,10 +159,25 @@ khata is reduced before any cash leaves the drawer (U-28, 15.2.1).
 - An ended alert **re-opens by itself** when that medicine moves again, so one reason cannot silence
   a repeat problem.
 
+## 5f. No-bill (rush) returns `PR-` (v0.3.2)
+
+- **No bill (PR)** in the left menu. Search the medicine, set the quantity and the unit (box / strip /
+  unit), press **Add this item**. Add as many lines as came back.
+- Type the **money you paid back**, the customer's name and phone (the phone is how the bill is found
+  later), pick a reason, press **Save and give the slip**. The goods are on the shelf immediately and
+  the slip carries a permanent `PR-0001` number.
+- The entry stays **red - bill MISSING** in the right-hand list, and the red bar on every page counts it.
+- When the paper bill turns up: pick the entry, type `INV-0001` (or **Find bills** by phone, name,
+  medicine or date) and press **Attach this bill**. **Stock is not added a second time.**
+- The alert turns **amber** - *bill attached, owner's confirmation pending* - until the **owner**
+  writes a reason in **Alerts** and ends it.
+- Typed the entry twice? **Cancel this entry and take the stock back** - a reason is compulsory and
+  the stock that was added goes back out of the same batch.
+
 ## 6. What comes next (still Phase 1)
 
-Phase 1 is finished; Phase 2 has returns, quarantine and the alert board. Next inside Phase 2:
-no-bill returns `PR`, write-off and stock-take `ST`.
+Phase 1 is finished; Phase 2 has returns, quarantine, the alert board and no-bill `PR` returns.
+Next inside Phase 2: write-off and stock-take `ST`.
 
 Already written and waiting for one real walk-through by the owner: the receipt with **instant
 ESC/POS printing** (58 / 80 mm) and the **Settings** screen (shop, printing, sales rules, staff).

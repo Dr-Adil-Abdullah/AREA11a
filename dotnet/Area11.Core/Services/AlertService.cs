@@ -22,6 +22,8 @@ public sealed class AlertService
 {
     public const string TypeNegativeStock = "negstock";
     public const string TypeQuarantine = "quarantine";
+    public const string TypeProvisional = "provisional";
+    public const string TypeProvisionalLinked = "provisional_linked";
 
     private const int MinimumReasonLength = 3;
 
@@ -66,6 +68,13 @@ LEFT JOIN sale_items s ON s.id = r.sale_item_id
 WHERE r.disposition = 'quarantine'
 ORDER BY r.created_at DESC;"));
 
+            problems.AddRange(_db.Query<ProblemRow>(connection, @"
+SELECT q.id AS entityId, 'No-bill return ' || q.code AS name, 0 AS qty, q.created_at AS lastChange,
+       q.code AS qcode, q.date AS date, q.status AS status, q.refund_paisa AS refundPaisa
+FROM provisional_returns q
+WHERE q.status IN ('pending', 'linked')
+ORDER BY q.id DESC;"));
+
             var dismissals = _db.Query<DismissalRow>(connection, @"
 SELECT alert_key AS alertKey, alert_type AS alertType, entity_id AS entityId,
        reason, user_name AS userName, created_at AS createdAt
@@ -76,18 +85,16 @@ FROM alert_dismissals;")
 
             foreach (var problem in problems)
             {
-                var isQuarantine = !string.IsNullOrWhiteSpace(problem.QCode);
-                var key = $"{(isQuarantine ? TypeQuarantine : TypeNegativeStock)}:{problem.EntityId}";
+                var kind = KindOf(problem);
+                var key = kind + ":" + problem.EntityId.ToString();
 
                 var alert = new AlertItem
                 {
                     Key = key,
-                    Type = isQuarantine ? TypeQuarantine : TypeNegativeStock,
+                    Type = kind,
                     EntityId = problem.EntityId,
                     Title = string.IsNullOrWhiteSpace(problem.Name) ? "(unknown medicine)" : problem.Name!,
-                    Detail = isQuarantine
-                        ? $"{Qty.Format(problem.Qty)} in quarantine since {ShortDate(problem.LastChange)} - decide: back in stock, damaged, or sold"
-                        : $"stock {Qty.Format(problem.Qty)} - fix by a stock count or a purchase"
+                    Detail = DetailOf(problem, kind)
                 };
 
                 if (dismissals.TryGetValue(key, out var dismissal) && !MovedSince(problem.LastChange, dismissal.CreatedAt))
@@ -281,6 +288,8 @@ ORDER BY created_at DESC, id DESC;");
 SELECT s.name_snapshot FROM sale_returns r
 LEFT JOIN sale_items s ON s.id = r.sale_item_id
 WHERE r.id = @id;", new { id }) ?? string.Empty,
+            TypeProvisional or TypeProvisionalLinked => _db.QuerySingle<string>(connection,
+                "SELECT 'No-bill return ' || code FROM provisional_returns WHERE id = @id;", new { id }) ?? string.Empty,
             _ => string.Empty
         };
     }
@@ -297,9 +306,41 @@ WHERE r.id = @id;", new { id }) ?? string.Empty,
         {
             TypeNegativeStock => (TypeNegativeStock, entityId),
             TypeQuarantine => (TypeQuarantine, entityId),
+            TypeProvisional => (TypeProvisional, entityId),
+            TypeProvisionalLinked => (TypeProvisionalLinked, entityId),
             _ => (null, 0)
         };
     }
+
+    /// <summary>
+    /// Which of the three lists a row belongs to. A medicine with minus stock is red. Goods in
+    /// quarantine need a decision. A no-bill return blinks red until the bill is attached and turns
+    /// amber afterwards, because from then on it waits for the owner, not for the cashier (15.5.4).
+    /// </summary>
+    private static string KindOf(ProblemRow problem)
+    {
+        if (!string.IsNullOrWhiteSpace(problem.Status))
+        {
+            return string.Equals(problem.Status, "linked", StringComparison.OrdinalIgnoreCase)
+                ? TypeProvisionalLinked
+                : TypeProvisional;
+        }
+
+        return string.IsNullOrWhiteSpace(problem.QCode) ? TypeNegativeStock : TypeQuarantine;
+    }
+
+    private static string DetailOf(ProblemRow problem, string kind) => kind switch
+    {
+        TypeQuarantine =>
+            Qty.Format(problem.Qty) + " in quarantine since " + ShortDate(problem.LastChange) +
+            " - decide: back in stock, damaged, or sold",
+        TypeProvisional =>
+            Money.Format(problem.RefundPaisa) + " refunded on " + ShortDate(problem.Date) +
+            " with no bill - attach the bill",
+        TypeProvisionalLinked =>
+            "bill " + (problem.QCode ?? string.Empty) + " attached - confirm it is the right bill, then end this alert",
+        _ => "stock " + Qty.Format(problem.Qty) + " - fix by a stock count or a purchase"
+    };
 
     /// <summary>Did the situation move after the owner ended it? Then the episode is a new one.</summary>
     private static bool MovedSince(string? lastChange, string? dismissedAt) =>
@@ -323,6 +364,10 @@ WHERE r.id = @id;", new { id }) ?? string.Empty,
         public string? QCode { get; set; }
 
         public string? Date { get; set; }
+
+        public string? Status { get; set; }
+
+        public long RefundPaisa { get; set; }
     }
 
     private sealed class DismissalRow

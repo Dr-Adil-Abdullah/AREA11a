@@ -84,7 +84,7 @@ public sealed class AlertTests
         {
             var refused = Alerts(test).Dismiss(person, key, "counted the shelf, it is fine");
             Assert.False(refused.Ok);
-            Assert.Contains("owner", refused.Error);
+            Assert.Contains("owner", refused.Error ?? string.Empty);
         }
 
         Assert.True(Alerts(test).Report().HasLive);

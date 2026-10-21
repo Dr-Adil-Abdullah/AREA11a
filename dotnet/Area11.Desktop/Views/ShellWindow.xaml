@@ -30,6 +30,9 @@
         <DataTemplate DataType="{x:Type vm:AlertsViewModel}">
             <views:AlertsView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ProvisionalViewModel}">
+            <views:ProvisionalView />
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>

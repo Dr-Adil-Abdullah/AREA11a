@@ -42,6 +42,19 @@
 
                     <DataGrid Grid.Row="1" ItemsSource="{Binding Live}"
                               SelectedItem="{Binding Selected, Mode=TwoWay}">
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow">
+                                <Style.Triggers>
+                                    <!-- Red: money or stock is wrong now. Amber: waiting for the owner. -->
+                                    <DataTrigger Binding="{Binding IsCritical}" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource DangerSoftBrush}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsAmber}" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource WarningSoftBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.RowStyle>
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Kind" Binding="{Binding TypeLabel}" Width="130" />
                             <DataGridTextColumn Header="Item" Binding="{Binding Title}" Width="2*" />

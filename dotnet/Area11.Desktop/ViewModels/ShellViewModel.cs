@@ -129,6 +129,7 @@ public sealed class ShellViewModel : ObservableObject
         if (_services.Permissions.Can(_user, Modules.Returns))
         {
             NavItems.Add(new NavItem("Returns", "Money back, quarantine", () => new ReturnsViewModel(_services, _user)));
+            NavItems.Add(new NavItem("No bill (PR)", "Rush return, bill later", () => new ProvisionalViewModel(_services, _user)));
         }
 
         if (_services.Permissions.Can(_user, Modules.Settings))

@@ -37,6 +37,8 @@ ITEM_PROPERTIES = {
     "QCode", "ProductName", "QuantityLabel", "ReasonLabel", "DateLabel", "DispositionLabel",
     "DisposedAt", "DisposedBy",
     "TypeLabel", "Detail", "Reason", "EndedAt",
+    "StockLabel", "PackLabel", "Name", "Quantity", "Unit", "CustomerLabel", "RefundText",
+    "Code", "DateLabel", "TotalText", "ItemsLabel", "StatusLabel",
 }
 
 VIEW_MODEL_OF = {
@@ -49,6 +51,7 @@ VIEW_MODEL_OF = {
     "SettingsView.xaml": "SettingsViewModel",
     "ReturnsView.xaml": "ReturnsViewModel",
     "AlertsView.xaml": "AlertsViewModel",
+    "ProvisionalView.xaml": "ProvisionalViewModel",
 }
 
 
