@@ -332,6 +332,65 @@ def check_internal_access() -> None:
     REPORT.append(f"Accessibility: {len(internal_types)} internal types in Core, {offenders} used by tests")
 
 
+def check_sealed_bases() -> None:
+    """A class that derives from a sealed type is a compile error (CS0509).
+
+    Why: `ReturnLineOption` was sealed while `ReturnService.ItemRow` derived from it to add the
+    batch id. Not one of the other checks can see it, and it stopped the first real build of Phase 2
+    on the shop PC. The rule here is simple: if a base class is declared `sealed`, nothing may derive
+    from it. A base whose name is declared more than once (two namespaces) is skipped rather than
+    guessed.
+    """
+    declarations: dict[str, list[tuple[bool, pathlib.Path]]] = {}
+    sources: dict[pathlib.Path, str] = {}
+
+    for path in sorted(DOTNET.rglob("*.cs")):
+        if any(part in {"obj", "bin"} for part in path.parts):
+            continue
+
+        text = path.read_text(encoding="utf-8-sig")
+        sources[path] = text
+
+        for match in re.finditer(
+                r"(?m)^\s*(?:public|internal|private|protected|file)?\s*"
+                r"(?:(?:sealed|abstract|static|partial|unsafe|new)\s+)*"
+                r"(?:class|record)\s+(\w+)\s*(?:<[^>{}()]*>)?\s*(?::\s*([^\n{]+?))?\s*(?:where\b[^\n{]*)?\s*\{",
+                text):
+            name = match.group(1)
+            sealed = bool(re.search(r"\bsealed\b", match.group(0).split(name)[0]))
+            declarations.setdefault(name, []).append((sealed, path))
+
+    if not declarations:
+        REPORT.append("Sealed bases: no classes found")
+        return
+
+    sealed_types = {name for name, rows in declarations.items()
+                    if len(rows) == 1 and rows[0][0]}
+    ambiguous = {name for name, rows in declarations.items() if len(rows) > 1}
+
+    checked = 0
+    for path, text in sources.items():
+        for match in re.finditer(
+                r"(?m)^\s*(?:public|internal|private|protected|file)?\s*"
+                r"(?:(?:sealed|abstract|static|partial|unsafe|new)\s+)*"
+                r"(?:class|record)\s+(\w+)\s*(?:<[^>{}()]*>)?\s*:\s*([^\n{]+?)\s*(?:where\b[^\n{]*)?\s*\{",
+                text):
+            name = match.group(1)
+            base = match.group(2).split(",")[0].strip()
+            base = re.sub(r"<.*", "", base).strip()
+
+            if not base or base == name or base in ambiguous:
+                continue
+
+            checked += 1
+            if base in sealed_types:
+                line = text[:match.start()].count("\n") + 1
+                fail(f"{rel(path)}:{line}: '{name}' derives from the sealed type '{base}' (CS0509)")
+
+    REPORT.append(f"Sealed bases: {checked} derivations checked, "
+                  f"{len(sealed_types)} sealed types")
+
+
 # ---------------------------------------------------------------------------
 # 2. XML (XAML, csproj, props)
 # ---------------------------------------------------------------------------
@@ -647,6 +706,7 @@ def main() -> int:
     check_solutions()
     check_skeleton()
     check_internal_access()
+    check_sealed_bases()
     check_xml()
     check_bindings()
     check_migrations()

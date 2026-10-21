@@ -31,7 +31,14 @@ public sealed class ReturnInput
 /// One bill line as the return screen shows it: what was sold, what already came back, what is
 /// still returnable, and what a full return of the remainder would refund.
 /// </summary>
-public sealed class ReturnLineOption
+/// <remarks>
+/// Deliberately NOT sealed. <c>ReturnService.ItemRow</c> derives from it to add the batch id that
+/// the refund planner needs, and the screen still receives it as a plain option. Sealing it broke
+/// the first real build with CS0509 ("cannot derive from sealed type") - a compile error the static
+/// checker cannot see, so <c>tools/check_repo.py</c> now refuses any class that derives from a
+/// sealed one.
+/// </remarks>
+public class ReturnLineOption
 {
     public int SaleItemId { get; set; }
 
