@@ -123,6 +123,10 @@ new colour and a version number. Nothing may be shipped without it:
 5. `python3 tools/check_repo.py` - it fails if the three disagree;
 6. commit with the version in the message.
 
+**Tests may only use public code.** `check_repo.py` fails if a test names an `internal` type: the
+sandbox cannot compile, so a CS0122 would otherwise reach the owner's PC (it did, in v0.2.1). Write
+tests through the public service methods and a real bill in `TestDatabase`.
+
 ## 8. Current state (update this line if you finish a phase)
 
 > **v0.2.0 (Purple)** - the first Windows build passed on 20 Oct 2026. Phase 1 has the schema, Core

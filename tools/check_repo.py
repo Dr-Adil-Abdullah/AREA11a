@@ -282,6 +282,40 @@ def check_skeleton() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 1f. Tests may only touch public code
+# ---------------------------------------------------------------------------
+def check_internal_access() -> None:
+    """A test that names an internal type is a compile error waiting for the owner (CS0122).
+
+    Why: the receipt tests reached for `ReceiptService.SaleRow`, which is internal, and the build
+    broke on the shop PC. The fix was to test through the public doorway; this check keeps the next
+    test from making the same mistake, because the sandbox cannot compile.
+    """
+    internal_types: set[str] = set()
+    for path in (DOTNET / "Area11.Core").rglob("*.cs"):
+        text = path.read_text(encoding="utf-8-sig")
+        internal_types.update(re.findall(
+            r"\binternal\s+(?:sealed\s+|static\s+|abstract\s+|partial\s+)*(?:class|record|struct|enum)\s+(\w+)",
+            text))
+
+    if not internal_types:
+        REPORT.append("Accessibility: no internal types in Core")
+        return
+
+    offenders = 0
+    for path in sorted((DOTNET / "Area11.Tests").glob("*.cs")):
+        text = path.read_text(encoding="utf-8-sig")
+        code = re.sub(r"//[^\n]*", "", text)
+        for name in sorted(internal_types):
+            if re.search(rf"\b{re.escape(name)}\b", code):
+                offenders += 1
+                fail(f"{rel(path)} uses the internal type '{name}' - a test may only use public "
+                     f"members (CS0122), or Core must expose it deliberately")
+
+    REPORT.append(f"Accessibility: {len(internal_types)} internal types in Core, {offenders} used by tests")
+
+
+# ---------------------------------------------------------------------------
 # 2. XML (XAML, csproj, props)
 # ---------------------------------------------------------------------------
 def check_xml() -> None:
@@ -595,6 +629,7 @@ def main() -> int:
     check_rounding()
     check_solutions()
     check_skeleton()
+    check_internal_access()
     check_xml()
     check_bindings()
     check_migrations()
