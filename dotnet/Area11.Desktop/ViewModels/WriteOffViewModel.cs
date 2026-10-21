@@ -6,7 +6,7 @@ using Area11.Core.Utils;
 namespace Area11.Desktop.ViewModels;
 
 /// <summary>
-/// Write-off / count correction (F-26, Spec 19.1, U-30).
+/// Write-off / count correction (F-25, Spec 19.1, U-30).
 ///
 /// The owner stands in front of the shelf. He searches the medicine, picks the batch (or lets the
 /// oldest expiry be chosen), says how many and why, and sees the loss **at cost** before saving.

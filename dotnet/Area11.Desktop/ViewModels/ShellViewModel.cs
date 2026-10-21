@@ -137,6 +137,11 @@ public sealed class ShellViewModel : ObservableObject
             NavItems.Add(new NavItem("Write-off", "Expired, broken, lost", () => new WriteOffViewModel(_services, _user)));
         }
 
+        if (_services.Permissions.Can(_user, Modules.StockTake))
+        {
+            NavItems.Add(new NavItem("Stock-take", "Count the shelves", () => new StockTakeViewModel(_services, _user)));
+        }
+
         if (_services.Permissions.Can(_user, Modules.Settings))
         {
             NavItems.Add(new NavItem("Settings", "Shop, printing, staff", CreateSettingsPage));

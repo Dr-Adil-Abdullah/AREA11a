@@ -41,6 +41,8 @@ ITEM_PROPERTIES = {
     "Code", "DateLabel", "TotalText", "ItemsLabel", "StatusLabel",
     "BatchNo", "ExpiryDate", "ExpiryLabel", "ValueLabel", "QtyLabel", "SignedQtyLabel",
     "ReasonLabel", "ProductName", "DateLabel", "UserName",
+    "BookLabel", "CountedLabel", "DiffLabel", "WhereLabel", "CountedByLabel",
+    "ShortLabel", "ExtraLabel", "ProgressLabel", "StatusLabel", "SessionCaption",
 }
 
 VIEW_MODEL_OF = {
@@ -55,6 +57,7 @@ VIEW_MODEL_OF = {
     "AlertsView.xaml": "AlertsViewModel",
     "ProvisionalView.xaml": "ProvisionalViewModel",
     "WriteOffView.xaml": "WriteOffViewModel",
+    "StockTakeView.xaml": "StockTakeViewModel",
 }
 
 

@@ -29,7 +29,7 @@ dotnet run --project dotnet\Area11.Desktop
 
 - There is exactly **one solution**, `Area11.sln`, in the root of the repository. Open that.
 - `dotnet build` with no arguments finds it automatically.
-- Expected: everything builds, **157 tests pass**, and the sign-in window opens.
+- Expected: everything builds, **173 tests pass**, and the sign-in window opens.
 
 > **Seeing the old blue window that says "app is running"?** That is `prototypes/WPFSample` — the very
 > first smoke test from day one, not Area11. It sits in `prototypes\` now and is only kept as history.
@@ -189,10 +189,26 @@ khata is reduced before any cash leaves the drawer (U-28, 15.2.1).
   edited or deleted** - a mistake is corrected by a second entry with its own reason.
 - The header shows **written off today**, already net of count-found-more entries.
 
+## 5h. Stock-take `ST-` (v0.3.4)
+
+- **Stock-take** in the left menu (owner/manager can count; only the owner can apply).
+- **Open ST session** freezes the book as it is at that moment - one row per live batch, so two
+  batches of the same medicine are two rows. Leave **Room** empty for the whole shop.
+- Walk the shelves: pick a row, type **Counted quantity**, choose the unit, **Save this count**. The
+  grid shows **Book / Counted / Diff / Value** and who counted it. **Only rows with a difference**
+  gives the second pass.
+- **Apply this stock-take** (owner only, once): every counted batch is set to the count, an `adjust`
+  movement is written per line, and the shortage/excess is valued **at the cost frozen when the
+  session opened**. A batch that had gone minus is corrected to the count.
+- Medicine found on the shelf but never received: search it under **Found on the shelf**, add it,
+  count it - at Apply it gets a `GINTI-ST-0001` batch.
+- A row you never counted **keeps its book stock** and is named in the warning; it is never treated
+  as zero. **Cancel this stock-take** needs a reason and changes no stock.
+
 ## 6. What comes next (still Phase 1)
 
-Phase 1 is finished; Phase 2 has returns, quarantine, the alert board, no-bill `PR` returns and
-write-off. Next inside Phase 2: stock-take `ST`.
+Phase 1 is finished; Phase 2 has returns, quarantine, the alert board, no-bill `PR` returns,
+write-off and the stock-take. Next inside Phase 2: customers, then the Phase 3 ledgers/reports/backup.
 
 Already written and waiting for one real walk-through by the owner: the receipt with **instant
 ESC/POS printing** (58 / 80 mm) and the **Settings** screen (shop, printing, sales rules, staff).

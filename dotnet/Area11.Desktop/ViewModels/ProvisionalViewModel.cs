@@ -6,7 +6,7 @@ using Area11.Core.Utils;
 namespace Area11.Desktop.ViewModels;
 
 /// <summary>
-/// No-bill (rush) returns, `PR-nnnn` (F-25, 15.5, U-33).
+/// No-bill (rush) returns, `PR-nnnn` (F-22, 15.5, U-33).
 ///
 /// Left: the counter. Search a medicine, add what came back, type the money that was handed over
 /// and save - the goods go on the shelf and the customer leaves with a slip.

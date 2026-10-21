@@ -46,7 +46,7 @@ features and the four phases.
 | F-14 | Hold cart / bring back a held cart (`H-0001`), stored in the database | ✅ | `Migr. 016`, `Services/HoldCartService.cs`, `Views/PosView.xaml` | `HoldCartTests` 🧪 | a parked cart survives a restart and comes back line for line |
 | F-15 | Split payment (cash + online / card / khata in one bill) | ✅ | `Services/SaleService.cs` (Plan), `Views/PosView.xaml` | `SplitPaymentTests` 🧪 | the credit part reaches the khata and never the drawer |
 | F-16 | **First real Windows build and test run** | ✅ | `docs/BUILD-ON-WINDOWS.md` | - | **20 Oct 2026: `Build succeeded`, 0 errors** (6 NU1903 security warnings, fixed by pinning SQLitePCLRaw 2.1.12) · `dotnet test` still to be run |
-| F-17 | Settings screen: shop info, printing, discount rules, and per-person permission ticks | ✅ | v0.2.4 | `SettingsView` + 157 tests | owner edits everything without a developer |
+| F-17 | Settings screen: shop info, printing, discount rules, and per-person permission ticks | ✅ | v0.2.4 | `SettingsView` + 173 tests | owner edits everything without a developer |
 | F-18 | Tests for purchases, partners, numbering | ⬜ | `Area11.Tests/` | - | added with F-13 |
 
 ## Phase 2 - returns, stock and alerts
@@ -55,17 +55,14 @@ features and the four phases.
 |---|---|---|---|---|---|
 | F-20 | Bill lookup for a return (by printed number) | 🟡 | `Services/ReturnService.FindSale` | `ReturnTests` 🧪 | search by phone / medicine / date (F-20 full) still to come |
 | F-21 | Return `RET` against the original bill, strict limits, **printed return receipt** | ✅ | `Migr. 017`, `Services/ReturnService.cs`, `Services/ReturnReceiptService.cs`, `Views/ReturnsView.xaml` | `ReturnTests` 🧪 | cannot refund more than was sold or collected (U-28, U-35) |
-| F-22 | Provisional return `PR` (customer has no bill yet) | ⬜ | - | - | links to a bill later |
 | F-23 | Quarantine `Q` with permanent number + disposition by owner **or manager** (D-22) | ✅ | `Services/QuarantineService.cs`, `Views/ReturnsView.xaml` | `QuarantineTests` 🧪 | goods never restock without a decision; history kept forever |
-| F-26 | Write-off / count correction: expired, broken, lost, count short/extra, **valued at cost**, never blocks (U-30) | ✅ | `Services/StockService.cs`, `Views/WriteOffView.xaml` | `StockTests` 🧪 | removing more than the book says must warn, never refuse (U-30) |
-| F-25 | No-bill (rush) return `PR-nnnn`: refund at once, stock on the shelf, bill attached later, cancel with reason | ✅ | `Services/ProvisionalReturnService.cs`, `Services/ProvisionalReceiptService.cs`, `Views/ProvisionalView.xaml` | `ProvisionalTests` 🧪 | a refund without a bill can never be checked - the number is permanent and the badge does not stop (U-33) |
-| F-24 | Alert centre: minus stock + quarantine, red bar on every page, dismiss **owner only, with a reason**, restore | ✅ | `Services/AlertService.cs`, `Views/AlertsView.xaml`, `Views/ShellWindow.xaml` | `AlertTests` 🧪 | an alert ends only by the owner with a written reason (U-31) |
-| F-25 | Stock write-off / breakage | ⬜ | - | - | audited, stock corrected |
-| F-26 | Stock-take `ST` session: open, count, apply | ⬜ | - | - | differences become movements |
+| F-22 | Provisional (no-bill) return `PR-nnnn`: refund at once, stock on the shelf, bill attached later, cancel with reason | ✅ | `Services/ProvisionalReturnService.cs`, `Services/ProvisionalReceiptService.cs`, `Views/ProvisionalView.xaml` | `ProvisionalTests` 🧪 | a refund without a bill can never be checked - the number is permanent and the badge does not stop (U-33) |
+| F-25 | Stock write-off / breakage: expired, broken, lost, count short/extra, **valued at cost**, never blocks (U-30) | ✅ | `Services/StockService.cs`, `Views/WriteOffView.xaml` | `StockTests` 🧪 | removing more than the book says must warn, never refuse (U-30) |
+| F-26 | Stock-take `ST-nnnn`: frozen book, count sheet (book/counted/diff/value), apply once (owner), frozen cost, GINTI batch for found stock | ✅ | `Services/StockTakeService.cs`, `Views/StockTakeView.xaml` | `StockTakeTests` 🧪 | the count is evidence; the book must follow it, not the other way round (19.2) |
 | F-27 | Customer ledger: payments, statement, stars | ⬜ | - | - | balance always equals the sum of movements |
 | F-28 | Supplier ledger + supplier return (credit note) | ⬜ | - | - | payable always equals purchases - payments |
 | F-29 | Expiry levels read from settings (E-07) | ⬜ | `Utils/Expiry.cs` | - | change the threshold, the colour changes |
-| F-30 | Return receipt (permanent number, original bill, reason) | ⬜ | - | - | - |
+| F-30 | Return receipt (permanent number, original bill, reason) | ✅ | `Services/ReturnReceiptService.cs` | `ReturnTests` 🧪 | the paper says stock or quarantine for every line |
 
 ## Phase 3 - ledgers, reports, backup
 
@@ -129,6 +126,7 @@ features and the four phases.
 | Date | What |
 |---|---|
 | 20 Oct 2026 | **First Windows build report:** CS0103 (`Path`/`Directory`/`File`) in `AppConfig.cs`, `Database.cs`, `LoggerService.cs` - fixed with explicit `using System.IO;`. The old `Area11.WPF.sln` was the solution being built by mistake, so it moved to `prototypes/`; the real solution is now `Area11.sln` in the root. The checker gained an explicit-usings check and a SQL-preparation check (37 statements). |
+| 21 Oct 2026 | **v0.3.4 Cyan - stock-take (F-27).** ST session freezes the book; count sheet with book/counted/diff/value and an only-differences pass; Apply (owner, once) corrects batches and values the difference at the frozen cost; negative stock corrected; GINTI batch for found medicine; uncounted lines warned, never zeroed. 173 tests. |
 | 21 Oct 2026 | **v0.3.3 Navy - write-off (F-26).** Expired/broken/lost/count corrections valued at purchase cost, stock ledger + own history, black box; over-writing allowed with a big red MINUS warning; count-found-more adds stock back. 157 tests. |
 | 21 Oct 2026 | **v0.3.2 Plum - no-bill returns (F-25).** `PR-nnnn` with stock on the shelf at once, red badge until the bill is attached, amber afterwards; attaching never adds stock twice; cancel needs a reason and reverses the stock; slip says the bill is missing; smart lookup by medicine/phone/name/date. 145 tests. |
 | 21 Oct 2026 | **v0.3.1 Bronze - alert board (F-24).** Red bar on every page; Alerts page; owner-only dismissal with a 3+ character reason kept for ever; restore; an ended alert re-opens when the medicine moves again. 131 tests. |

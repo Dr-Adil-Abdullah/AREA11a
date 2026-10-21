@@ -1,0 +1,199 @@
+<UserControl x:Class="Area11.Desktop.Views.StockTakeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" Margin="0,0,0,10">
+            <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                <TextBlock Text="Stock-take" Style="{StaticResource PageTitle}" />
+                <TextBlock Text="The shop has closed. Open a session, count what is on the shelf, and apply once - the books follow the count."
+                           Style="{StaticResource PageSubtitle}" />
+            </StackPanel>
+
+            <Button DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center"
+                    Content="Refresh" Style="{StaticResource GhostButton}" Command="{Binding RefreshCommand}" />
+        </DockPanel>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.55*" />
+                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- ================================ the sheet ================================ -->
+            <Border Grid.Column="0" Style="{StaticResource Card}" Padding="14">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0">
+                        <TextBlock Text="{Binding SessionCaption}" Style="{StaticResource SectionTitle}" />
+                        <TextBlock Text="{Binding SummaryCaption}" Style="{StaticResource FieldHint}" />
+                    </StackPanel>
+
+                    <DockPanel Grid.Row="1" Margin="0,8,0,8">
+                        <CheckBox DockPanel.Dock="Left" Content="Only rows with a difference"
+                                  IsChecked="{Binding DifferencesOnly, Mode=TwoWay}" VerticalAlignment="Center" />
+                    </DockPanel>
+
+                    <DataGrid Grid.Row="2" ItemsSource="{Binding Lines}"
+                              SelectedItem="{Binding SelectedLine, Mode=TwoWay}" IsReadOnly="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Medicine" Binding="{Binding ProductName}" Width="2*" />
+                            <DataGridTextColumn Header="Batch" Binding="{Binding WhereLabel}" Width="1.3*" />
+                            <DataGridTextColumn Header="Book" Binding="{Binding BookLabel}" Width="75" />
+                            <DataGridTextColumn Header="Counted" Binding="{Binding CountedLabel}" Width="80" />
+                            <DataGridTextColumn Header="Diff" Binding="{Binding DiffLabel}" Width="75" />
+                            <DataGridTextColumn Header="Value" Binding="{Binding ValueLabel}" Width="95" />
+                            <DataGridTextColumn Header="By" Binding="{Binding CountedByLabel}" Width="135" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+
+            <!-- ============================== the right side ============================== -->
+            <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <!-- count one row -->
+                    <Border Style="{StaticResource Card}" Padding="14" Margin="0,0,0,12">
+                        <StackPanel>
+                            <TextBlock Text="Count this row" Style="{StaticResource SectionTitle}" />
+                            <TextBlock Text="{Binding SelectedCaption}" Style="{StaticResource FieldHint}" />
+
+                            <Grid Margin="0,4,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="10" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Counted quantity" Style="{StaticResource FieldLabel}" />
+                                    <TextBox Text="{Binding QtyText, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="What you can hold in your hand. 0 means the shelf is empty." />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Unit" Style="{StaticResource FieldLabel}" />
+                                    <ComboBox ItemsSource="{Binding Units}" SelectedItem="{Binding Unit, Mode=TwoWay}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Text="Note (optional)" Style="{StaticResource FieldLabel}" />
+                            <TextBox Text="{Binding LineNote, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <Button Content="Save this count" Style="{StaticResource PrimaryButton}"
+                                    Margin="0,10,0,0" Command="{Binding CountCommand}" />
+                            <Button Content="Clear this count" Style="{StaticResource GhostButton}"
+                                    Margin="0,6,0,0" Command="{Binding ClearCommand}" />
+                            <TextBlock Text="{Binding CountedAtLabel}" Style="{StaticResource FieldHint}" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- found on the shelf -->
+                    <Border Style="{StaticResource Card}" Padding="14" Margin="0,0,0,12">
+                        <StackPanel>
+                            <TextBlock Text="Found on the shelf, not in the book" Style="{StaticResource SectionTitle}" />
+                            <TextBlock Text="A medicine the shop never received gets its own GINTI batch when you apply."
+                                       Style="{StaticResource FieldHint}" />
+
+                            <DockPanel Margin="0,4,0,0">
+                                <Button DockPanel.Dock="Right" Content="Search" Style="{StaticResource GhostButton}"
+                                        Margin="6,0,0,0" Command="{Binding FoundSearchCommand}" />
+                                <TextBox Text="{Binding FoundText, UpdateSourceTrigger=PropertyChanged}" />
+                            </DockPanel>
+
+                            <ListBox ItemsSource="{Binding Found}" Height="90" Margin="0,6,0,0"
+                                     DisplayMemberPath="Name"
+                                     SelectedItem="{Binding FoundProduct, Mode=TwoWay}" />
+
+                            <Button Content="Add the selected medicine" Style="{StaticResource GhostButton}"
+                                    HorizontalAlignment="Left" Margin="0,6,0,0" Command="{Binding AddFoundCommand}" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- open / apply / cancel -->
+                    <Border Style="{StaticResource Card}" Padding="14" Margin="0,0,0,12">
+                        <StackPanel>
+                            <TextBlock Text="Open a new stock-take" Style="{StaticResource SectionTitle}" />
+
+                            <TextBlock Text="Room (leave empty for the whole shop)" Style="{StaticResource FieldLabel}" />
+                            <TextBox Text="{Binding Room, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <TextBlock Text="Note (optional)" Style="{StaticResource FieldLabel}" />
+                            <TextBox Text="{Binding OpenNote, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <Button Content="Open ST session" Style="{StaticResource PrimaryButton}"
+                                    Margin="0,10,0,0" Command="{Binding OpenCommand}" />
+
+                            <StackPanel Visibility="{Binding IsOwner, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="Apply the count" Style="{StaticResource SectionTitle}" Margin="0,12,0,0" />
+                                <TextBlock Text="Every counted batch is set to what you counted; shortage and excess are valued at the frozen cost. This can be done once."
+                                           Style="{StaticResource FieldHint}" />
+                                <Button Content="Apply this stock-take" Style="{StaticResource PrimaryButton}"
+                                        Margin="0,8,0,0" Command="{Binding ApplyCommand}" />
+                            </StackPanel>
+
+                            <StackPanel Visibility="{Binding IsNotOwner, Converter={StaticResource BoolToVis}}">
+                                <Border Background="{StaticResource WarningSoftBrush}" CornerRadius="8" Padding="10" Margin="0,8,0,0">
+                                    <TextBlock Text="Only the owner can apply a stock-take. A manager can count and can cancel."
+                                               FontSize="11.5" TextWrapping="Wrap" Foreground="{StaticResource WarningBrush}" />
+                                </Border>
+                            </StackPanel>
+
+                            <StackPanel Visibility="{Binding CanManage, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="Cancel (reason compulsory)" Style="{StaticResource SectionTitle}" Margin="0,12,0,0" />
+                                <TextBox Text="{Binding CancelReason, UpdateSourceTrigger=PropertyChanged}" />
+                                <Button Content="Cancel this stock-take" Style="{StaticResource GhostButton}"
+                                        HorizontalAlignment="Left" Margin="0,6,0,0" Command="{Binding CancelCommand}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- history -->
+                    <Border Style="{StaticResource Card}" Padding="14">
+                        <StackPanel>
+                            <TextBlock Text="Earlier counts" Style="{StaticResource SectionTitle}" />
+                            <DataGrid ItemsSource="{Binding History}" Height="150" IsReadOnly="True">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="No." Binding="{Binding Code}" Width="85" />
+                                    <DataGridTextColumn Header="State" Binding="{Binding StatusLabel}" Width="80" />
+                                    <DataGridTextColumn Header="Short" Binding="{Binding ShortLabel}" Width="90" />
+                                    <DataGridTextColumn Header="Extra" Binding="{Binding ExtraLabel}" Width="90" />
+                                    <DataGridTextColumn Header="Progress" Binding="{Binding ProgressLabel}" Width="*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+        <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource LineBrush}"
+                BorderThickness="1" CornerRadius="8" Padding="12,8" Margin="0,10,0,0">
+            <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="FontSize" Value="12" />
+                        <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsStatusError}" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </Border>
+    </Grid>
+</UserControl>
