@@ -42,7 +42,7 @@ features and the four phases.
 | F-10 | Counter `INV`: FEFO, box/strip/unit, discount guard, round-off, cash change, credit | 🟡 | `Services/SaleService.cs`, `Views/PosView.xaml` | `SaleTests` 🧪 | one real bill prints |
 | F-11 | Customers: quick create at the counter, credit limit | 🟡 | `Services/PartnerService.cs` | - | a credit bill lands on the customer's account |
 | F-12 | Dashboard: today's sales, low stock, expiry, stock value | 🟡 | `Services/DashboardService.cs`, `Views/DashboardView.xaml` | - | numbers match a manual count |
-| F-13 | **Receipt render + instant ESC/POS print, 58 / 80 mm, no dialog** | 🟡 | `Services/ReceiptService.cs`, `Services/EscPosBuilder.cs`, `Services/PrinterService.cs`, `Views/PosView.xaml` | `ReceiptTests` 🧪 | needs one real print on the shop printer |
+| F-13 | **Receipt render + instant ESC/POS print, 58 / 80 mm, auto or manual (D-26)** | 🟡 | `Services/ReceiptService.cs`, `Services/EscPosBuilder.cs`, `Services/PrinterService.cs`, `Views/PosView.xaml` | `ReceiptTests` 🧪 | needs one real print on the shop printer |
 | F-14 | Hold cart / bring back a held cart | ⬜ | - | - | two customers can wait at once |
 | F-15 | Split payment (cash + card/online in one bill) | ⬜ | - | - | - |
 | F-16 | **First real Windows build and test run** | ✅ | `docs/BUILD-ON-WINDOWS.md` | - | **20 Oct 2026: `Build succeeded`, 0 errors** (6 NU1903 security warnings, fixed by pinning SQLitePCLRaw 2.1.12) · `dotnet test` still to be run |
@@ -127,6 +127,7 @@ features and the four phases.
 | Date | What |
 |---|---|
 | 20 Oct 2026 | **First Windows build report:** CS0103 (`Path`/`Directory`/`File`) in `AppConfig.cs`, `Database.cs`, `LoggerService.cs` - fixed with explicit `using System.IO;`. The old `Area11.WPF.sln` was the solution being built by mistake, so it moved to `prototypes/`; the real solution is now `Area11.sln` in the root. The checker gained an explicit-usings check and a SQL-preparation check (37 statements). |
+| 20 Oct 2026 | **v0.2.1 Indigo**: printing became a *setting* - automatic after a sale or manual with the button (`printer.autoPrint`, switchable on the POS screen until the Settings screen exists). Both paper widths stay selectable. |
 | 20 Oct 2026 | **v0.2.0 Purple**: receipt on paper (32 / 48 characters), instant ESC/POS printing with cut and copies, reprint button, `printer.*` settings, version badge on the sign-in window and sidebar, 12 new receipt tests. The colour of every build is now recorded in `docs/VERSIONS.md` and enforced by the checker. |
 | 20 Oct 2026 | **First successful Windows build.** `Area11.sln` compiled in 5.3 s (Core, Desktop, Tests). Six NU1903 security warnings for `SQLitePCLRaw.lib.e_sqlite3` 2.1.11 → pinned 2.1.12. Brand colour changed to green, then to **pink** (`#DB2777`) at the owner's request - all colour keys live in `Resources/Theme.xaml`. Added `tools/RUN-TESTS.cmd` and `docs/GIT-AND-VS-URDU.md`. |
 | 20 Oct 2026 | Added `HANDOFF.md`, `AGENTS.md`, this board, the rules matrix, the spec copy and `tools/check_repo.py` (owner's U-13). |

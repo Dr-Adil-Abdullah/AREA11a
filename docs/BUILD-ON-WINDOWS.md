@@ -112,6 +112,16 @@ Manual equivalent, step by step, is in [`HOW-TO-RUN-URDU.md`](HOW-TO-RUN-URDU.md
 - **Black box** — every login, product change and price change with old → new values.
 - **Database** — the exact 15-migration schema, including the owner's `photos` table.
 
+## 5b. Printing (D-05, D-23, D-26)
+
+- On the counter screen, tick **"Print the receipt automatically"** to print at the moment a bill is
+  saved; leave it empty for manual printing with **"Print last bill again"**. The choice is stored in
+  the setting `printer.autoPrint`, so it survives a restart.
+- Paper width comes from `printer.width`: **58** = 32 characters per line, **80** = 48. Default 58.
+- The printer name comes from `printer.name`; empty means "the Windows default printer".
+- A missing or switched-off printer never loses a bill: the sale is saved first, then the print is
+  attempted, and a red message says what happened.
+
 ## 6. What comes next (still Phase 1)
 
 The printed receipt with **instant ESC/POS printing** (58 / 80 mm), the hold cart, split payment, and

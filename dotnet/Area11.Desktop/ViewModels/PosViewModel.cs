@@ -31,6 +31,7 @@ public sealed class PosViewModel : ObservableObject
     private bool _isStatusError;
     private string _lastBill = string.Empty;
     private int _lastSaleId;
+    private bool _autoPrint;
 
     public PosViewModel(AppServices services, User user)
     {
@@ -43,6 +44,8 @@ public sealed class PosViewModel : ObservableObject
         CompleteCommand = new RelayCommand(CompleteSale);
         PrintLastCommand = new RelayCommand(PrintLast, () => _lastSaleId > 0);
         RefreshCommand = new RelayCommand(LoadLookups);
+
+        _autoPrint = _services.Settings.GetBool("printer.autoPrint", true);
 
         LoadLookups();
     }
@@ -159,6 +162,28 @@ public sealed class PosViewModel : ObservableObject
     }
 
     public bool IsCash => string.Equals(PaymentMethod, "cash", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Auto or manual printing - the owner asked for this to be a setting, not a hard-coded
+    /// behaviour (D-26). It is stored in `printer.autoPrint`, so the choice survives a restart and
+    /// will appear on the Settings screen (F-17) without any further work.
+    /// </summary>
+    public bool AutoPrint
+    {
+        get => _autoPrint;
+        set
+        {
+            if (!SetProperty(ref _autoPrint, value))
+            {
+                return;
+            }
+
+            var saved = _services.Settings.Set("printer.autoPrint", value, _user);
+            SetStatus(saved.Ok
+                ? (value ? "The receipt will print by itself after each sale." : "Printing is manual now.")
+                : (saved.Error ?? "The setting could not be saved."), !saved.Ok);
+        }
+    }
 
     public string TenderedText
     {
@@ -376,7 +401,7 @@ public sealed class PosViewModel : ObservableObject
         _lastSaleId = sale.SaleId;
         PrintLastCommand.RaiseCanExecuteChanged();
 
-        if (_services.Settings.GetBool("printer.autoPrint", true))
+        if (AutoPrint)
         {
             Print(_lastSaleId);
         }

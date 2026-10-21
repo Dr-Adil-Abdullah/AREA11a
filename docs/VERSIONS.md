@@ -55,3 +55,4 @@ contrast **4.5:1 or better** against white.
   source of truth for the shop's branding. `store.name` / `brand.*` in Settings stay the real branding.
 - If a build is released without a colour change, the owner cannot tell it apart from the previous
   one - treat that as a bug, not a shortcut.
+| 0.2.1 | 2026-10-20 | Indigo | `#4338CA` | Owner decided printing is a **setting**: automatic after each sale or manual button. Both paper widths (58 / 80 mm) stay selectable. |
