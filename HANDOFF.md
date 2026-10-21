@@ -191,9 +191,10 @@ python3 tools/check_repo.py             # C#, usings, XAML, bindings, migrations
 python3 tools/build_rules_matrix.py --check
 ```
 
-`check_repo.py` runs 19 checks: C# syntax, **explicit usings** (the CS0103 class of error),
+`check_repo.py` runs 20 checks: C# syntax, **explicit usings** (the CS0103 class of error),
 sealed bases (the CS0509 class of error), local shadowing (the CS0136 class of error),
-value-type `ServiceResult` use (the CS0037/CS1061 class of error), XML validity,
+value-type `ServiceResult` use (the CS0037/CS1061 class of error), **constructor arity** (the CS7036/CS1501
+class of error - every `new XService(...)` and every `=> new(...)` helper), XML validity,
 **508 XAML bindings and resources** - a row binding is checked against the real properties of
 `Area11.Core/Models`, so a mistyped column name fails here instead of printing an empty column -
 migrations (19 files -> 33 tables, executed on SQLite), **every SQL statement prepared against the
@@ -230,7 +231,7 @@ without it, it falls back to a brace/paren balance check and says so.
 | building the wrong solution | the prototype `Area11.WPF.sln` sat in the root and produced errors in old files | one solution only: root `Area11.sln`; prototypes live in `prototypes/` |
 | adding a 4th project "for clarity" | owner decided three (D-17) | keep three |
 | deriving from a `sealed` model | **CS0509** - stopped the first Phase-2 build at `ReturnService.cs(504)` (`ItemRow : ReturnLineOption`) | leave the model unsealed (it is a transport type) or compose instead of inherit; `check_repo.py` now refuses any class deriving from a sealed one |
-| trusting the sandbox checker for arity | it cannot see CS7036 (wrong number of arguments); the Windows build is the only proof | keep service constructors and view-model calls in one style, and build early |
+| trusting the sandbox checker for arity | it could not see CS7036 (wrong number of arguments) until v0.4.3; that is how `AlertTests` kept the old 4-argument `AlertService` and stopped the owner's build | **fixed**: `check_repo.py` now compares every `new XService(...)` and `=> new(...)` helper with its declaration; test helpers go through `TestData` factories, never a copy-pasted `new` |
 | reusing a local name in a nested block | **CS0136** - `SaleService.Plan` used `method` inside the payment loop and again 40 lines later; stopped the second Phase-2 build | give nested locals a specific name (`rowMethod`); `check_repo.py` now walks every member and refuses equal or nested declarations (CS0136/CS0128) |
 | GitHub unreachable (`Failed to connect ... port 443`) | the update never starts; the code and the repository are fine | run `tools\CHECK-NETWORK.cmd` (DNS / port 443 / proxy), then `docs/GITHUB-NETWORK.md`; the branch ZIP + `START-AREA11.bat` always works without git |
 | an interrupted pull leaves a lock in `.git` | GitHub Desktop stops with **"update_ref failed for ref 'ORIG_HEAD'"** (or "Unable to create ...index.lock") and never fetches | close Visual Studio / VS Code / GitHub Desktop and run `tools\FIX-UPDATE.cmd` - it deletes only `*.lock` inside `.git` and shows what else is in the way |

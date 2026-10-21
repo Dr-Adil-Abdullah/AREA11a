@@ -178,9 +178,11 @@ WHERE product_id = @productId;",
         Assert.True(before.Ok, before.Error);
         Assert.Equal(1, before.Value!.ExpiringSoon);
 
-        // A 45-day nearest band leaves the same batch outside the window.
+        // A one-day nearest band leaves the same batch outside the window. The dashboard compares
+        // calendar MONTHS (it is a reminder, not a count), so the test uses the extreme that is true
+        // on every day of the year: a batch 75 days away is always at least two months ahead.
         test.Settings.SetMany(
-            new Dictionary<string, object?> { ["expiry.levels"] = Bands(400, 120, 45) },
+            new Dictionary<string, object?> { ["expiry.levels"] = Bands(400, 120, 1) },
             TestData.Owner);
 
         var after = Dashboard(test).GetSnapshot();

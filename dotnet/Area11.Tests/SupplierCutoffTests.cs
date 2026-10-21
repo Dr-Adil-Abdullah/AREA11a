@@ -14,9 +14,7 @@ namespace Area11.Tests;
 /// </summary>
 public sealed class SupplierCutoffTests
 {
-    private static AlertService Alerts(TestDatabase test) =>
-        new(test.Database, test.Settings, test.Audit,
-            new PermissionService(test.Database, test.Log, test.Audit), test.Log);
+    private static AlertService Alerts(TestDatabase test) => TestData.Alerts(test);
 
     private static string InDays(int days) =>
         DateTime.Today.AddDays(days).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
@@ -112,7 +110,7 @@ UPDATE batches SET expiry_date = @date, expiry_ym = @ym WHERE product_id = @prod
         var after = Alerts(test).Report();
 
         Assert.DoesNotContain(after.Live, alert => alert.Key == key);
-        var ended = Assert.Single(after.Ended.Where(alert => alert.Key == key));
+        var ended = Assert.Single(after.Ended, alert => alert.Key == key);
         Assert.Contains("Panadol", ended.Title);
         Assert.Equal("we will sell it before the cutoff", ended.Reason);
     }

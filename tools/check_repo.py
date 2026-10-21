@@ -698,6 +698,181 @@ def check_result_values() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 1f. Constructor arity (CS7036 / CS1501)
+# ---------------------------------------------------------------------------
+def _split_arguments(text: str) -> list[str]:
+    """Split "a, b(c, d), e" at the top-level commas only.
+
+    Brackets of every kind are tracked, including generic angle brackets, so
+    `IReadOnlyDictionary<string, object?>` stays ONE argument. Strings and chars are skipped.
+    """
+    parts: list[str] = []
+    depth = 0
+    current: list[str] = []
+    quote = ""
+
+    for index, ch in enumerate(text):
+        previous = text[index - 1] if index else ""
+
+        if quote:
+            current.append(ch)
+            if ch == quote and previous != "\\":
+                quote = ""
+            continue
+
+        if ch in "\"'":
+            quote = ch
+            current.append(ch)
+            continue
+
+        if ch in "([{<":
+            depth += 1
+        elif ch in ")]}>":
+            depth -= 1
+        elif ch == "," and depth == 0:
+            parts.append("".join(current))
+            current = []
+            continue
+
+        current.append(ch)
+
+    tail = "".join(current)
+    if tail.strip():
+        parts.append(tail)
+
+    return parts
+
+
+def _class_bodies(masked: str) -> dict[str, tuple[int, str]]:
+    """Class name -> (offset of the body's first character, the text inside the braces)."""
+    bodies: dict[str, str] = {}
+    open_to_close: dict[int, int] = {}
+    stack: list[int] = []
+
+    for index, ch in enumerate(masked):
+        if ch == "{":
+            stack.append(index)
+        elif ch == "}" and stack:
+            open_to_close[stack.pop()] = index
+
+    for match in re.finditer(r"\bclass\s+(\w+)", masked):
+        brace = masked.find("{", match.end())
+
+        # Skip the base list / where-clause: the body is the first brace after the header.
+        if brace < 0 or brace not in open_to_close:
+            continue
+
+        bodies[match.group(1)] = (brace + 1, masked[brace + 1:open_to_close[brace]])
+
+    return bodies
+
+
+def check_constructor_arity() -> None:
+    """Every `new XService(...)` must pass as many arguments as XService takes.
+
+    Why: a service constructor gained SettingsService in v0.3.10 and a test file that built its own
+    instance was missed; the owner's build then stopped with CS7036. The sandbox cannot compile, so
+    this walks the two things the compiler would check - the declaration and every call.
+    """
+    required: dict[str, tuple[int, int]] = {}
+    calls_checked = 0
+
+    for path in (DOTNET / "Area11.Core").rglob("*.cs"):
+        original = path.read_text(encoding="utf-8-sig")
+        masked = mask_csharp_noise(original)
+
+        for name, (class_start, body) in _class_bodies(masked).items():
+            match = re.search(r"public\s+" + re.escape(name) + r"\s*\(", body)
+            if not match:
+                continue
+
+            depth = 0
+            end = len(body)
+            for index in range(match.end() - 1, len(body)):
+                if body[index] == "(":
+                    depth += 1
+                elif body[index] == ")":
+                    depth -= 1
+                    if depth == 0:
+                        end = index
+                        break
+
+            params = _split_arguments(original[class_start + match.end():class_start + end])
+            optional = sum(1 for param in params if "=" in param)
+            variadic = any(param.strip().startswith("params ") for param in params)
+            required[name] = (len(params) - optional, len(params) if not variadic else 10_000)
+
+    if not required:
+        return
+
+    for path in DOTNET.rglob("*.cs"):
+        original = path.read_text(encoding="utf-8-sig")
+        masked = mask_csharp_noise(original)
+
+        for match in re.finditer(r"\bnew\s+(\w+)\s*\(", masked):
+            name = match.group(1)
+            if name not in required:
+                continue
+
+            depth = 0
+            end = len(masked)
+            for index in range(match.end() - 1, len(masked)):
+                if masked[index] == "(":
+                    depth += 1
+                elif masked[index] == ")":
+                    depth -= 1
+                    if depth == 0:
+                        end = index
+                        break
+
+            args = _split_arguments(original[match.end():end])
+            given = len([arg for arg in args if arg.strip()])
+            least, most = required[name]
+            calls_checked += 1
+
+            if given < least or given > most:
+                line = masked[:match.start()].count("\n") + 1
+                fail(f"{rel(path)}:{line}: `new {name}(...)` passes {given} argument(s) but "
+                     f"`{name}` takes {least}" + ("" if least == most else f"-{most}") + " (CS7036/CS1501)")
+
+    # Target-typed new: `private static AlertService Alerts(...) => new(...)` names no type at the
+    # call, so the return type of the helper is the type being built. This is exactly how the test
+    # helpers are written, and it is the shape that broke the v0.4.3 build.
+    for path in DOTNET.rglob("*.cs"):
+        original = path.read_text(encoding="utf-8-sig")
+
+        for match in re.finditer(
+                r"(?:public|private|internal)\s+static\s+(\w+Service)\s+\w+\s*\([^()]*\)\s*=>\s*new\s*\(",
+                original):
+            name = match.group(1)
+            if name not in required:
+                continue
+
+            depth = 0
+            end = len(original)
+            for index in range(match.end() - 1, len(original)):
+                if original[index] == "(":
+                    depth += 1
+                elif original[index] == ")":
+                    depth -= 1
+                    if depth == 0:
+                        end = index
+                        break
+
+            given = len([arg for arg in _split_arguments(original[match.end():end]) if arg.strip()])
+            least, most = required[name]
+            calls_checked += 1
+
+            if given < least or given > most:
+                line = original[:match.start()].count("\n") + 1
+                fail(f"{rel(path)}:{line}: a `=> new(...)` helper returning `{name}` passes {given} "
+                     f"argument(s) but `{name}` takes {least}" + ("" if least == most else f"-{most}")
+                     + " (CS7036/CS1501)")
+
+    REPORT.append(f"Constructors: {calls_checked} call(s) match their declaration")
+
+
+# ---------------------------------------------------------------------------
 # 2. XML (XAML, csproj, props)
 # ---------------------------------------------------------------------------
 def check_xml() -> None:
@@ -1025,6 +1200,7 @@ def main() -> int:
     check_sealed_bases()
     check_shadowing()
     check_result_values()
+    check_constructor_arity()
     check_xml()
     check_bindings()
     check_migrations()

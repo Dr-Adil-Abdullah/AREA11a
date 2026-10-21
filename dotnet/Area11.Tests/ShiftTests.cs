@@ -191,16 +191,23 @@ INSERT INTO users(name, role, active, created_at) VALUES('Cashier', 'cashier', 1
             Reason = SupplierLedgerService.ReasonOverstock,
             CashReceived = true,
             Note = "cash back",
-            Lines = new List<SupplierReturnLineInput> { new() { BatchId = batchId, QtyBase = 20 } }
+            Lines = new List<SupplierReturnLineInput>
+            {
+                // The line needs the medicine as well as the batch: the batch alone cannot name a
+                // product if the row was deleted, and the service checks both.
+                new() { ProductId = product, BatchId = batchId, QtyEntered = 20, Unit = "base" }
+            }
         });
 
         Assert.True(returned.Ok, returned.Error);
 
         var shift = Shifts(test).Current()!;
 
-        Assert.Equal(200000L, shift.SupplierCashOutPaisa);
-        Assert.Equal(400000L, shift.SupplierCashInPaisa);
-        Assert.Equal(200000L, shift.ExpectedPaisa);            // 400 in - 200 out
+        Assert.Equal(200000L, shift.SupplierCashOutPaisa);     // Rs 2,000 paid to the supplier
+        Assert.Equal(400000L, shift.SupplierCashInPaisa);      // Rs 4,000 came back for the goods
+
+        // Rs 900 cash bill + Rs 400 khata + Rs 4,000 in, minus Rs 300 refund and Rs 2,000 out.
+        Assert.Equal(300000L, shift.ExpectedPaisa);
     }
 
     [Fact]

@@ -11,8 +11,7 @@ namespace Area11.Tests;
 /// </summary>
 public sealed class AlertTests
 {
-    private static AlertService Alerts(TestDatabase test) =>
-        new(test.Database, test.Audit, new PermissionService(test.Database, test.Log, test.Audit), test.Log);
+    private static AlertService Alerts(TestDatabase test) => TestData.Alerts(test);
 
     /// <summary>Sells more than the shelf holds, so the stock really goes negative.</summary>
     private static int GoNegative(TestDatabase test, string name = "Panadol 500mg")

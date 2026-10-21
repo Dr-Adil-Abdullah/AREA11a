@@ -116,10 +116,11 @@ features and the four phases.
 | Every SQL statement prepares against the real schema (133) | `python3 tools/check_repo.py` | ✅ |
 | XAML / csproj / props are valid XML | `python3 tools/check_repo.py` | ✅ |
 | Every XAML binding matches its view-model | `python3 tools/check_repo.py` | ✅ |
+| Every `new XService(...)` matches its constructor (CS7036/CS1501) | `python3 tools/check_repo.py` | ✅ |
 | Migrations 001-019 produce 33 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
 | **Compiles on Windows** | `dotnet build Area11.sln` | ✅ 20 Oct 2026 (v0.1.1); re-check after each release |
-| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.4.2 Violet |
+| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.4.3 Maroon |
 | **236 tests green** | `dotnet test` | ⬜ **F-16 follow-up** (the tests have never run on the owner's PC) |
 
 ## Change log
@@ -128,6 +129,7 @@ features and the four phases.
 |---|---|
 | 20 Oct 2026 | **First Windows build report:** CS0103 (`Path`/`Directory`/`File`) in `AppConfig.cs`, `Database.cs`, `LoggerService.cs` - fixed with explicit `using System.IO;`. The old `Area11.WPF.sln` was the solution being built by mistake, so it moved to `prototypes/`; the real solution is now `Area11.sln` in the root. The checker gained an explicit-usings check and a SQL-preparation check (37 statements). |
 | 21 Oct 2026 | **v0.3.4 Cyan - stock-take (F-27).** ST session freezes the book; count sheet with book/counted/diff/value and an only-differences pass; Apply (owner, once) corrects batches and values the difference at the frozen cost; negative stock corrected; GINTI batch for found medicine; uncounted lines warned, never zeroed. 173 tests. |
+| 21 Oct 2026 | **v0.4.3 Maroon - build fix (Tests).** CS7036 in `AlertTests` (a test helper still built `AlertService` with four arguments) and CS0117 in `ShiftTests` (`QtyBase` on a supplier return line; the real property is `QtyEntered` + `Unit`). All three test helpers now go through `TestData.Alerts`, and a **20th checker rule** compares every service constructor call - including `=> new(...)` helpers - with its declaration, so the next change of this kind fails in the checker, not on the shop PC. 236 tests. |
 | 21 Oct 2026 | **v0.4.2 Violet - GitHub unreachable.** The owner reported **"Failed to connect to github.com port 443"**: a network fault, not the app. `tools\CHECK-NETWORK.cmd` reports DNS, port 443, the web path, `netsh winhttp` and git proxies in plain words; `docs/GITHUB-NETWORK.md` separates it from the `.git` lock fault and gives the browser-ZIP route. 236 tests. |
 | 21 Oct 2026 | **v0.4.1 Blue - repair tool for a stuck update.** `tools\FIX-UPDATE.cmd` removes the leftover `*.lock` files inside `.git` that make GitHub Desktop say **"update_ref failed for ref 'ORIG_HEAD'"**, clears the stale `ORIG_HEAD` bookmark and prints the branch, the last commit and every locally changed file. Only `.git` is touched; the shop data stays untouched. 236 tests. |
 | 21 Oct 2026 | **v0.4.0 Pink - shift / galla (F-31).** Open the drawer with a float; the expected cash is rebuilt from cash bills, khata collections, supplier cash, refunds and supplier payments; closing says exact / over / short and is refused twice; a peer cannot close somebody else's shift; the `cash` permission guards the page; every closed shift stays in the history. 236 tests. |

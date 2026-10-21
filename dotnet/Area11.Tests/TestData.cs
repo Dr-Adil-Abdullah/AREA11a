@@ -80,6 +80,14 @@ VALUES(@name, 'GSK', '042-1112233', @opening, @opening, 1, '2026-01-01 09:00:00'
         new(test.Database, test.Audit, new NumberingService(test.Settings),
             new PermissionService(test.Database, test.Log, test.Audit), test.Log);
 
+    /// <summary>
+    /// The alert board. One factory, so a service constructor that gains a dependency is fixed here
+    /// and not in three test files (CS7036 at v0.4.3 came from exactly that copy-paste).
+    /// </summary>
+    public static AlertService Alerts(TestDatabase test) =>
+        new(test.Database, test.Settings, test.Audit,
+            new PermissionService(test.Database, test.Log, test.Audit), test.Log);
+
     public static SaleService Sales(TestDatabase test)
     {
         var permissions = new PermissionService(test.Database, test.Log, test.Audit);
