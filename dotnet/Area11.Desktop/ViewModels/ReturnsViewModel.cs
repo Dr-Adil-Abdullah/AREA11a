@@ -149,14 +149,19 @@ public sealed class ReturnsViewModel : ObservableObject
     {
         var found = _services.Returns.FindSale(BillCode);
 
-        if (!found.Ok || found.Value is null)
+        // `ServiceResult<int>.Value` is a plain `int`, not `int?`: the `T?` in the model is only a
+        // nullable annotation, and a value type stays non-nullable. So the answer is checked with
+        // `Ok` and `<= 0`, never with `is null` (that was CS0037 and stopped the first Desktop build).
+        if (!found.Ok || found.Value <= 0)
         {
             ResetBill();
             SetStatus(found.Error ?? "That bill was not found.", true);
             return;
         }
 
-        var lines = _services.Returns.Lines(found.Value.Value);
+        var saleId = found.Value;
+
+        var lines = _services.Returns.Lines(saleId);
         if (!lines.Ok || lines.Value is null)
         {
             ResetBill();
@@ -164,7 +169,7 @@ public sealed class ReturnsViewModel : ObservableObject
             return;
         }
 
-        _saleId = found.Value.Value;
+        _saleId = saleId;
         Lines.Clear();
 
         foreach (var line in lines.Value)

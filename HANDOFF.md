@@ -24,7 +24,7 @@ shop computer. Talk to him in Urdu; keep code, database and UI in English.
 | Has it ever been compiled? | **Yes - 20 Oct 2026.** The owner's Windows build reported `Build succeeded`. Since then the code grew (receipt/printing), so the current build is unverified again |
 | What is the very next task? | **build + `tools\RUN-TESTS.cmd` (173 cases)** on the owner's PC; press **Stock-take**, open `ST-0001`, count one row, then Apply and check that the batch moved. After that: customers (Phase 2 tail), then Phase 3 ledgers/reports/backup. |
 | How many tests? | 173 cases in 17 files - written, **never executed on the owner's PC**; run `tools\RUN-TESTS.cmd` |
-| Did it build? | **Not yet.** Core stopped twice: CS0509 at `ReturnService.cs(504)` (fixed in v0.3.5) and CS0136 at `SaleService.cs(609)` (fixed in v0.3.6). Both classes of error are now checker rules. Desktop and Tests have **still never been compiled**, and the 173 tests have never run |
+| Did it build? | **Core and Tests compile** (v0.3.6). Desktop stopped at `ReturnsViewModel.cs` CS0037/CS1061 (fixed in v0.3.7) - three compile errors, one root cause, now a checker rule. All three build failures so far became permanent checks; the 173 tests have still **never run** |
 | Database? | the **original** schema, migrations `001`-`019`, **33 business tables** (+ `_migrations` ledger), so an existing `area11.db` opens unchanged |
 | Where does data live? | `%ProgramData%\Area11\` (`area11.db`, `photos\`, `logs\`, `backups\`) |
 | Default owner login | user **Owner**, password **`area11`** (change it on day one) |
@@ -191,7 +191,7 @@ python3 tools/check_repo.py             # C#, usings, XAML, bindings, migrations
 python3 tools/build_rules_matrix.py --check
 ```
 
-`check_repo.py` runs 18 checks: C# syntax, **explicit usings** (the CS0103 class of error),
+`check_repo.py` runs 19 checks: C# syntax, **explicit usings** (the CS0103 class of error),
 sealed bases (the CS0509 class of error), XML validity, 399 XAML bindings and resources,
 migrations (19 files -> 33 tables, executed on SQLite), **every SQL statement prepared against the
 real schema**, test count, settings keys, and documentation links.
@@ -229,6 +229,7 @@ without it, it falls back to a brace/paren balance check and says so.
 | deriving from a `sealed` model | **CS0509** - stopped the first Phase-2 build at `ReturnService.cs(504)` (`ItemRow : ReturnLineOption`) | leave the model unsealed (it is a transport type) or compose instead of inherit; `check_repo.py` now refuses any class deriving from a sealed one |
 | trusting the sandbox checker for arity | it cannot see CS7036 (wrong number of arguments); the Windows build is the only proof | keep service constructors and view-model calls in one style, and build early |
 | reusing a local name in a nested block | **CS0136** - `SaleService.Plan` used `method` inside the payment loop and again 40 lines later; stopped the second Phase-2 build | give nested locals a specific name (`rowMethod`); `check_repo.py` now walks every member and refuses equal or nested declarations (CS0136/CS0128) |
+| treating `ServiceResult<int>.Value` as nullable | **CS0037 / CS1061** - `T?` on an unconstrained parameter is an annotation only; with `T = int` the property is `int` | check `Ok` and the number (`> 0`), never `is null`; `check_repo.py` follows `var x = _services.Svc.Method(...)` per member and refuses `x.Value is null` / `x.Value.Value` for value-type results |
 
 ---
 

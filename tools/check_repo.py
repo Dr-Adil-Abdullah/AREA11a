@@ -568,6 +568,132 @@ def _inside_parameter_list(body: str, offset: int) -> bool:
     return False
 
 
+_VALUE_RESULTS = {"int", "long", "double", "bool", "decimal", "float", "short", "byte"}
+
+
+def check_result_values() -> None:
+    """`ServiceResult<int>.Value` is a plain `int` - `T?` on an unconstrained parameter is only a
+    nullable annotation, not `Nullable<T>`.
+
+    Why: `ReturnsViewModel.Find` wrote `found.Value is null` and `found.Value.Value`. The Desktop
+    build stopped with CS0037 and two CS1061 - the only project not compiled until then, because
+    Core and Tests had always failed first.
+
+    How: the checker learns which service each `_services.<Property>` is (from `AppServices`), which
+    methods return `ServiceResult<value type>`, follows `var x = _services.Svc.Method(...)`, and then
+    refuses `x.Value is null`, `x.Value.Value` and the comparisons on that result. A method name that
+    is ambiguous inside one service (several overloads) is skipped rather than guessed.
+    """
+    # 1. _services.<Prop> -> service type
+    app = DOTNET / "Area11.Desktop" / "AppServices.cs"
+    if not app.exists():
+        REPORT.append("Result values: AppServices.cs not found")
+        return
+
+    app_text = mask_csharp_noise(app.read_text(encoding="utf-8-sig"))
+    properties = {name: service for service, name in
+                  re.findall(r"public\s+(\w+Service)\s+(\w+)\s*\{\s*get;", app_text)}
+
+    # 2. service type -> method -> set of ServiceResult<T> answers
+    service_methods: dict[str, dict[str, set[str]]] = {}
+
+    for path in (DOTNET / "Area11.Core").rglob("*.cs"):
+        masked = mask_csharp_noise(path.read_text(encoding="utf-8-sig"))
+        class_name = re.search(r"\bclass\s+(\w+)", masked)
+        if not class_name:
+            continue
+
+        methods = service_methods.setdefault(class_name.group(1), {})
+
+        for match in re.finditer(
+                r"public\s+(?:static\s+|async\s+)?ServiceResult<([\w<>, ?]+)>\s+(\w+)\s*\(",
+                masked):
+            methods.setdefault(match.group(2), set()).add(match.group(1).strip())
+
+        for match in re.finditer(
+                r"public\s+(?:static\s+|async\s+)?ServiceResult(?!<)\s+(\w+)\s*\(", masked):
+            methods.setdefault(match.group(1), set()).add("void")
+
+    # 3. follow `var x = _services.<Prop>.<Method>(` and `var x = TestData.<Helper>(test).<Method>(`
+    testdata = DOTNET / "Area11.Tests" / "TestData.cs"
+    helpers: dict[str, str] = {}
+    if testdata.exists():
+        helpers_text = mask_csharp_noise(testdata.read_text(encoding="utf-8-sig"))
+        for match in re.finditer(r"public\s+static\s+(\w+Service)\s+(\w+)\s*\(", helpers_text):
+            helpers[match.group(2)] = match.group(1)
+
+    checked = 0
+
+    for folder in ("Area11.Desktop", "Area11.Tests"):
+        for path in sorted((DOTNET / folder).rglob("*.cs")):
+            masked = mask_csharp_noise(path.read_text(encoding="utf-8-sig"))
+
+            brace_match: dict[int, int] = {}
+            open_braces: list[int] = []
+            for index, char in enumerate(masked):
+                if char == "{":
+                    open_braces.append(index)
+                elif char == "}" and open_braces:
+                    brace_match[open_braces.pop()] = index
+
+            # One member at a time: `result` is a different type in every method of a view-model, so
+            # the variable name alone is not enough to know what `.Value` means.
+            for member in _MEMBER_RE.finditer(masked):
+                body_start = member.end() - 1
+                body_end = brace_match.get(body_start)
+                if body_end is None:
+                    continue
+
+                body = masked[body_start:body_end]
+                kinds: dict[str, str] = {}
+
+                for match in re.finditer(
+                        r"var\s+(\w+)\s*=\s*(_services\.(\w+)\.(\w+)\s*\(|"
+                        r"TestData\.(\w+)\([^()]*\)\.(\w+)\s*\()",
+                        body):
+                    variable = match.group(1)
+
+                    if match.group(3):
+                        service = properties.get(match.group(3))
+                        method = match.group(4)
+                    else:
+                        service = helpers.get(match.group(5))
+                        method = match.group(6)
+
+                    if service is None:
+                        continue
+
+                    answers = service_methods.get(service, {}).get(method)
+                    if not answers or len(answers) != 1:
+                        continue
+
+                    answer = next(iter(answers))
+                    kinds[variable] = "value" if answer in _VALUE_RESULTS else "reference"
+
+                for variable, kind in kinds.items():
+                    pattern = r"\b" + re.escape(variable) + r"\.Value\b(?:\.Value|\s+(?:is|==|!=))"
+
+                    for match in re.finditer(pattern, body):
+                        line = masked[:body_start + match.start()].count("\n") + 1
+                        tail = body[match.start():match.start() + 80].replace(" ", "")
+
+                        if ".Value.Value" in tail:
+                            checked += 1
+                            fail(f"{rel(path)}:{line}: '{variable}.Value.Value' - "
+                                 f"ServiceResult.Value is the value itself, never another result "
+                                 f"(use '{variable}.Value')")
+                            continue
+
+                        if kind != "value":
+                            continue
+
+                        checked += 1
+                        fail(f"{rel(path)}:{line}: '{variable}.Value' is a value type and can never "
+                             f"be null (CS0037) - check '{variable}.Ok' and the number instead")
+
+    REPORT.append(f"Result values: {checked} misuse(s) of a value-type ServiceResult")
+
+
 # ---------------------------------------------------------------------------
 # 2. XML (XAML, csproj, props)
 # ---------------------------------------------------------------------------
@@ -885,6 +1011,7 @@ def main() -> int:
     check_internal_access()
     check_sealed_bases()
     check_shadowing()
+    check_result_values()
     check_xml()
     check_bindings()
     check_migrations()
