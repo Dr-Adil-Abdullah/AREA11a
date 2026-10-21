@@ -267,6 +267,36 @@ SELECT qty_base FROM stock_movements WHERE ref_code = 'SR-0001' ORDER BY id DESC
     }
 
     [Fact]
+    public void ABatchFromAnotherSupplier_IsReturned_ButTheOwnerIsWarned()
+    {
+        using var test = new TestDatabase();
+        var product = TestData.AddProduct(test, batchQty: 0);
+        var seller = AddSupplier(test, "GSK Depot");
+        var other = AddSupplier(test, "Highnoon Labs");
+
+        Buy(test, seller, product);
+        var batch = NewestBatch(test, product);   // received from GSK
+
+        var result = Ledger(test).Return(TestData.Owner, new SupplierReturnInput
+        {
+            SupplierId = other,                   // ... but sent back to Highnoon
+            Reason = SupplierLedgerService.ReasonOverstock,
+            Lines = new List<SupplierReturnLineInput>
+            {
+                new() { ProductId = product, BatchId = batch, QtyEntered = 5, Unit = "unit" }
+            }
+        });
+
+        Assert.True(result.Ok, result.Error);
+        Assert.Contains(result.Value!.Warnings, w => w.Contains("another supplier", StringComparison.OrdinalIgnoreCase));
+
+        // The shop's choice is obeyed: the credit goes on Highnoon, and GSK still owes nothing less.
+        Assert.Equal(-100000L, StoredPayable(test, other));      // 5 x Rs 200, in the shop's favour
+        Assert.Equal(800000L, StoredPayable(test, seller));
+        Assert.Equal(35d, BatchQty(test, batch));
+    }
+
+    [Fact]
     public void CashFromTheSupplier_LeavesThePayableAlone()
     {
         using var test = new TestDatabase();

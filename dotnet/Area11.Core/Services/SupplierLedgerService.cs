@@ -405,7 +405,6 @@ SELECT id, name, balance_paisa AS payablePaisa FROM suppliers WHERE id = @id AND
 
         var warnings = new List<string>();
         var stamp = Clock.Now();
-        var code = _numbering.Take(connection, "supplierReturn");
 
         var planned = new List<PlannedReturnLine>();
         var seen = new HashSet<int>();
@@ -430,11 +429,20 @@ FROM products WHERE id = @id AND active = 1;", new { id = wanted.ProductId })
 
             var batch = _db.QuerySingle<BatchDbRow>(connection, @"
 SELECT id, product_id AS productId, batch_no AS batchNo, qty_base AS qtyBase,
-       cost_paisa AS costPaisa, expiry_date AS expiryDate
+       cost_paisa AS costPaisa, expiry_date AS expiryDate, supplier_id AS supplierId
 FROM batches WHERE id = @id AND product_id = @productId AND active = 1;",
                 new { id = wanted.BatchId, productId = product.Id })
                 ?? throw new ValidationException(
                     product.Name + ": that batch is not on the shelf any more. Refresh the list.");
+
+            // A batch normally goes back to the company that sold it. When it did not come from this
+            // supplier, the credit note would land on the wrong account - say so, but do not stop
+            // the shop (the owner may be settling an old arrangement).
+            if (batch.SupplierId is int batchSupplier && batchSupplier != input.SupplierId)
+            {
+                warnings.Add(product.Name + " (" + batch.BatchNo + ") was received from another supplier. "
+                    + "The credit note will still be put on " + supplier.Name + " - check that this is right.");
+            }
 
             var qtyBase = Calc.ToBase(wanted.QtyEntered,
                 Packs.PerUnit(product.BoxStrips, product.StripTablets, wanted.Unit));
@@ -472,6 +480,10 @@ FROM batches WHERE id = @id AND product_id = @productId AND active = 1;",
         }
 
         var totalPaisa = planned.Sum(line => line.LineTotalPaisa);
+
+        // The number is taken only once every line has passed its checks, so a refused form does not
+        // burn an SR number.
+        var code = _numbering.Take(connection, "supplierReturn");
 
         _db.Execute(connection, @"
 INSERT INTO supplier_returns(code, date, supplier_id, purchase_id, reason, note, total_paisa, settled,
@@ -700,6 +712,8 @@ FROM suppliers s
         public long CostPaisa { get; set; }
 
         public string? ExpiryDate { get; set; }
+
+        public int? SupplierId { get; set; }
     }
 
     private sealed class PlannedReturnLine

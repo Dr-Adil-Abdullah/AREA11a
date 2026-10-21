@@ -22,9 +22,9 @@ shop computer. Talk to him in Urdu; keep code, database and UI in English.
 | Where is the product? | **`dotnet/`** - `Area11.sln` with `Area11.Core`, `Area11.Desktop`, `Area11.Tests` |
 | What can it do today? | sign-in, products, purchases `PINV`, counter billing `INV` (FEFO, discount guard, round-off, cash change, credit, hold, split), returns `RET` / `Q` / `PR`, write-off, stock-take `ST`, alerts, settings, customer khata (`PAY-`), **supplier ledger and supplier return `SR-`** |
 | Has it ever been compiled? | **Yes - 20 Oct 2026.** The owner's Windows build reported `Build succeeded`. Since then the code grew (receipt/printing), so the current build is unverified again |
-| What is the very next task? | **build + `tools\RUN-TESTS.cmd` (201 cases)** on the owner's PC; press **Suppliers**, pick one, pay part of the payable and send one expired batch back (`SR-0001`) - both pages must stay green with **"Books match"**. After that: expiry levels from settings (F-29), then Phase 3 (galla/shift, reports, backup). |
-| How many tests? | **201 cases in 19 files** - written, **never executed on the owner's PC**; run `tools\RUN-TESTS.cmd` |
-| Did it build? | **Core, Tests and Desktop are all expected to compile at v0.3.7** - the three failures (CS0509, CS0136, CS0037/CS1061) are fixed and each one became a checker rule. v0.3.7 has not been confirmed by the owner yet; v0.3.8 added the customer khata and v0.3.9 the supplier ledger on top of it. The 201 tests have still **never run** |
+| What is the very next task? | **build + `tools\RUN-TESTS.cmd` (202 cases)** on the owner's PC; press **Suppliers**, pick one, pay part of the payable and send one expired batch back (`SR-0001`) - both pages must stay green with **"Books match"**. After that: expiry levels from settings (F-29), then Phase 3 (galla/shift, reports, backup). |
+| How many tests? | **202 cases in 19 files** - written, **never executed on the owner's PC**; run `tools\RUN-TESTS.cmd` |
+| Did it build? | **Core, Tests and Desktop are all expected to compile at v0.3.7** - the three failures (CS0509, CS0136, CS0037/CS1061) are fixed and each one became a checker rule. v0.3.7 has not been confirmed by the owner yet; v0.3.8 added the customer khata and v0.3.9 the supplier ledger on top of it. The 202 tests have still **never run** |
 | Database? | the **original** schema, migrations `001`-`019`, **33 business tables** (+ `_migrations` ledger), so an existing `area11.db` opens unchanged |
 | Where does data live? | `%ProgramData%\Area11\` (`area11.db`, `photos\`, `logs\`, `backups\`) |
 | Default owner login | user **Owner**, password **`area11`** (change it on day one) |
@@ -65,7 +65,7 @@ Full detail in [`docs/PROGRESS.md`](docs/PROGRESS.md). The short version:
 | Products, partners, purchases `PINV`, sales `INV`, **returns `RET` + quarantine `Q`**, dashboard | `Area11.Core/Services/` |
 | Money / quantity / expiry / password helpers | `Area11.Core/Utils/` |
 | WPF shell (+ global alert bar), login, dashboard, products, POS (hold + split), purchases, settings, returns & quarantine, alerts, no-bill returns (PR), write-off, stock-take, customers / khata + statement, **suppliers / payable + `SR` tray** | `Area11.Desktop/` |
-| 201 test cases | `Area11.Tests/` |
+| 202 test cases | `Area11.Tests/` |
 
 **Written but never tested on the shop PC (🟡)**
 
@@ -88,7 +88,7 @@ Do them one at a time; each one ends with a commit (see `AGENTS.md` §6).
 
 | # | Task | Acceptance |
 |---|---|---|
-| 1 | **F-16 follow-up** run `tools\RUN-TESTS.cmd` on the owner's PC | all 201 tests pass |
+| 1 | **F-16 follow-up** run `tools\RUN-TESTS.cmd` on the owner's PC | all 202 tests pass |
 | 2 | **F-29** expiry thresholds from settings (fixes Known bug #1) | changing `expiry.level3Days` moves the colour band |
 | 4 | Phase 3: shift/galla + handover, expenses, owner's draw, reports, audit viewer, `SR`, backup ZIP, Excel | see `docs/PROGRESS.md` |
 | 5 | Phase 4: §33.2 gaps, loyalty screen, camera, second counter, hardware test, **installer** | see `docs/OWNER-DECISIONS.md` §5 |
