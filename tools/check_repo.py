@@ -39,6 +39,8 @@ ITEM_PROPERTIES = {
     "TypeLabel", "Detail", "Reason", "EndedAt",
     "StockLabel", "PackLabel", "Name", "Quantity", "Unit", "CustomerLabel", "RefundText",
     "Code", "DateLabel", "TotalText", "ItemsLabel", "StatusLabel",
+    "BatchNo", "ExpiryDate", "ExpiryLabel", "ValueLabel", "QtyLabel", "SignedQtyLabel",
+    "ReasonLabel", "ProductName", "DateLabel", "UserName",
 }
 
 VIEW_MODEL_OF = {
@@ -52,6 +54,7 @@ VIEW_MODEL_OF = {
     "ReturnsView.xaml": "ReturnsViewModel",
     "AlertsView.xaml": "AlertsViewModel",
     "ProvisionalView.xaml": "ProvisionalViewModel",
+    "WriteOffView.xaml": "WriteOffViewModel",
 }
 
 

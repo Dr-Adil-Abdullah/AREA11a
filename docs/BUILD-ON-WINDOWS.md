@@ -29,7 +29,7 @@ dotnet run --project dotnet\Area11.Desktop
 
 - There is exactly **one solution**, `Area11.sln`, in the root of the repository. Open that.
 - `dotnet build` with no arguments finds it automatically.
-- Expected: everything builds, **145 tests pass**, and the sign-in window opens.
+- Expected: everything builds, **157 tests pass**, and the sign-in window opens.
 
 > **Seeing the old blue window that says "app is running"?** That is `prototypes/WPFSample` — the very
 > first smoke test from day one, not Area11. It sits in `prototypes\` now and is only kept as history.
@@ -174,10 +174,25 @@ khata is reduced before any cash leaves the drawer (U-28, 15.2.1).
 - Typed the entry twice? **Cancel this entry and take the stock back** - a reason is compulsory and
   the stock that was added goes back out of the same batch.
 
+## 5g. Write-off (v0.3.3)
+
+- **Write-off** in the left menu (owner/manager): search the medicine, pick the batch (the oldest
+  expiry is chosen for you), type the quantity and the unit, choose the reason - **Expired, Broken /
+  dropped, Lost, Count was less, Count was more, Other** - and press **Write this off**.
+- The big number under the form is the **loss at purchase cost**, not the selling price. The line
+  under it shows the batch quantity before and after.
+- If you write off more than the book says, a **red box** appears - *"This will make the stock
+  MINUS"* - and the entry still saves (U-30). The red bar on every page remembers it until a stock
+  count fixes the number.
+- **Count was more** is the opposite entry: it puts the missing stock back and warns you that it adds.
+- The right-hand list is the history: batch, quantity, loss, reason and the person. **Nothing can be
+  edited or deleted** - a mistake is corrected by a second entry with its own reason.
+- The header shows **written off today**, already net of count-found-more entries.
+
 ## 6. What comes next (still Phase 1)
 
-Phase 1 is finished; Phase 2 has returns, quarantine, the alert board and no-bill `PR` returns.
-Next inside Phase 2: write-off and stock-take `ST`.
+Phase 1 is finished; Phase 2 has returns, quarantine, the alert board, no-bill `PR` returns and
+write-off. Next inside Phase 2: stock-take `ST`.
 
 Already written and waiting for one real walk-through by the owner: the receipt with **instant
 ESC/POS printing** (58 / 80 mm) and the **Settings** screen (shop, printing, sales rules, staff).
