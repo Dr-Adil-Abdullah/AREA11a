@@ -967,7 +967,9 @@ def check_tests() -> None:
                   f"= {cases} cases in {len(files)} files")
 
     settings = (DOTNET / "Area11.Core/Services/SettingsService.cs").read_text(encoding="utf-8")
-    keys = re.findall(r'(?:Text|Number|Flag|Raw)\("([a-zA-Z0-9_.]+)"', settings)
+    # The lookbehind matters: "GetRaw(" ends in "Raw(", and without it every reader of a setting
+    # looks like a second declaration of it.
+    keys = re.findall(r'(?<![A-Za-z0-9_])(?:Text|Number|Flag|Raw)\("([a-zA-Z0-9_.]+)"', settings)
     if len(keys) != len(set(keys)):
         duplicated = sorted({k for k in keys if keys.count(k) > 1})
         fail(f"duplicate settings keys: {duplicated}")

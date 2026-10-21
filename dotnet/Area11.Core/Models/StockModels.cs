@@ -28,8 +28,18 @@ public sealed class BatchRow
     public string PickLabel => BatchNo + " - " + (string.IsNullOrWhiteSpace(ExpiryDate) ? "no date" : ExpiryDate!)
                                + " - " + QtyLabel + " (" + ValueLabel + ")";
 
-    /// <summary>EXPIRED / Level 3 / OK - the same words the Products screen uses.</summary>
-    public string ExpiryLabel => Area11.Core.Utils.Expiry.StatusLabel(ExpiryDate, 365, 180, 90);
+    /// <summary>
+    /// The owner's three bands, handed in by the service that loaded the row (F-29). The default is
+    /// 365 / 180 / 90, so a screen that forgets to set it still shows the shipped scale - never a
+    /// wrong band, only the original one.
+    /// </summary>
+    public ExpiryLevels Levels { get; set; } = ExpiryLevels.Default;
+
+    /// <summary>EXPIRED / Level 3 / OK - worded with the bands from Settings.</summary>
+    public string ExpiryLabel => Levels.LabelFor(ExpiryDate);
+
+    /// <summary>expired / level3 / level2 / level1 / ok - for the colour triggers on screen.</summary>
+    public string ExpiryTone => Area11.Core.Utils.Expiry.Tone(Levels.KindFor(ExpiryDate));
 
     public bool IsExpired => ExpiryLabel == "EXPIRED";
 }

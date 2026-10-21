@@ -45,6 +45,11 @@ public sealed class SettingsViewModel : ObservableObject
     private string _taxPercentText = "0";
     private bool _allowNegativeStock;
 
+    private string _expiry1Text = "365";
+    private string _expiry2Text = "180";
+    private string _expiry3Text = "90";
+    private string _expirySummary = string.Empty;
+
     private User? _selectedUser;
     private string _newStaffName = string.Empty;
     private string _newStaffPin = string.Empty;
@@ -219,6 +224,32 @@ public sealed class SettingsViewModel : ObservableObject
         set => SetProperty(ref _allowNegativeStock, value);
     }
 
+    /// <summary>Level 1 is the farthest band (default a year), Level 3 the nearest (three months).</summary>
+    public string Expiry1Text
+    {
+        get => _expiry1Text;
+        set => SetProperty(ref _expiry1Text, value);
+    }
+
+    public string Expiry2Text
+    {
+        get => _expiry2Text;
+        set => SetProperty(ref _expiry2Text, value);
+    }
+
+    public string Expiry3Text
+    {
+        get => _expiry3Text;
+        set => SetProperty(ref _expiry3Text, value);
+    }
+
+    /// <summary>The saved bands in one sentence, so the owner can check the meaning of the numbers.</summary>
+    public string ExpirySummary
+    {
+        get => _expirySummary;
+        private set => SetProperty(ref _expirySummary, value);
+    }
+
     // ------------------------------ Staff -------------------------------
 
     public User? SelectedUser
@@ -296,6 +327,12 @@ public sealed class SettingsViewModel : ObservableObject
         TaxEnabled = settings.GetBool("tax.enabled");
         TaxPercentText = Text(settings.GetDouble("tax.percent"));
         AllowNegativeStock = settings.GetBool("stock.allowNegative", true);
+
+        var bands = settings.ExpiryBands;
+        Expiry1Text = bands.Level1Days.ToString(CultureInfo.InvariantCulture);
+        Expiry2Text = bands.Level2Days.ToString(CultureInfo.InvariantCulture);
+        Expiry3Text = bands.Level3Days.ToString(CultureInfo.InvariantCulture);
+        ExpirySummary = bands.Summary;
     }
 
     /// <summary>
@@ -396,6 +433,21 @@ public sealed class SettingsViewModel : ObservableObject
             return;
         }
 
+        if (!int.TryParse(Expiry1Text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var expiry1)
+            || !int.TryParse(Expiry2Text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var expiry2)
+            || !int.TryParse(Expiry3Text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var expiry3))
+        {
+            SetStatus("The expiry levels must be whole days, for example 365, 180, 90.", true);
+            return;
+        }
+
+        if (!ExpiryLevels.IsOrdered(expiry1, expiry2, expiry3))
+        {
+            SetStatus("Level 3 must be the smallest number of days, then Level 2, then Level 1 - all different.",
+                true);
+            return;
+        }
+
         if (StoreName.Trim().Length == 0)
         {
             SetStatus("The shop name cannot be empty — it is printed on every receipt.", true);
@@ -422,7 +474,11 @@ public sealed class SettingsViewModel : ObservableObject
             ["discount.blockBelowCost"] = BlockBelowCost,
             ["tax.enabled"] = TaxEnabled,
             ["tax.percent"] = taxPercent,
-            ["stock.allowNegative"] = AllowNegativeStock
+            ["stock.allowNegative"] = AllowNegativeStock,
+            ["expiry.levels"] = _services.Settings.ExpiryBands
+                .WithDays(expiry1, expiry2, expiry3)
+                .Bands
+                .ToList()
         };
 
         var result = _services.Settings.SetMany(values, _user);
@@ -432,6 +488,10 @@ public sealed class SettingsViewModel : ObservableObject
             SetStatus(result.Error ?? "The settings could not be saved.", true);
             return;
         }
+
+        // The summary line is rebuilt from what was just stored, so the owner sees the meaning of
+        // the three numbers he typed without leaving the page.
+        ExpirySummary = _services.Settings.ExpiryBands.Summary;
 
         _onSaved?.Invoke();
         SetStatus($"Saved. Paper {paper.Width} mm, printing " +

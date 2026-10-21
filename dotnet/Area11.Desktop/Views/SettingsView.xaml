@@ -207,6 +207,34 @@
                                           Margin="0,10,0,0" />
                                 <TextBlock Text="Recommended: a counter must never refuse a sale because the computer's count is wrong. The shortage shows on the stock report."
                                            Style="{StaticResource FieldHint}" />
+
+                                <Separator Margin="0,14,0,10" />
+
+                                <TextBlock Text="Expiry alert levels (days)" Style="{StaticResource FieldLabel}" />
+                                <TextBlock Text="Level 1 is the farthest warning, Level 3 the nearest. Level 3 also sets the &quot;expiring soon&quot; card on the dashboard."
+                                           Style="{StaticResource FieldHint}" />
+
+                                <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                    <StackPanel Width="120">
+                                        <TextBlock Text="Level 1" Style="{StaticResource FieldLabel}" />
+                                        <TextBox Text="{Binding Expiry1Text, UpdateSourceTrigger=PropertyChanged}"
+                                                 Width="100" HorizontalAlignment="Left" />
+                                    </StackPanel>
+                                    <StackPanel Width="120" Margin="8,0,0,0">
+                                        <TextBlock Text="Level 2" Style="{StaticResource FieldLabel}" />
+                                        <TextBox Text="{Binding Expiry2Text, UpdateSourceTrigger=PropertyChanged}"
+                                                 Width="100" HorizontalAlignment="Left" />
+                                    </StackPanel>
+                                    <StackPanel Width="120" Margin="8,0,0,0">
+                                        <TextBlock Text="Level 3" Style="{StaticResource FieldLabel}" />
+                                        <TextBox Text="{Binding Expiry3Text, UpdateSourceTrigger=PropertyChanged}"
+                                                 Width="100" HorizontalAlignment="Left" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <TextBlock Text="{Binding ExpirySummary}" Style="{StaticResource FieldHint}" Margin="0,6,0,0" />
+                                <TextBlock Text="The bands only colour the warning - a bill is never refused. A batch that is already past its date is always EXPIRED, whatever these numbers say."
+                                           Style="{StaticResource FieldHint}" />
                             </StackPanel>
                         </Border>
 

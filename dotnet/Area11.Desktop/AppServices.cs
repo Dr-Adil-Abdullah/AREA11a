@@ -21,7 +21,7 @@ public sealed class AppServices
         Permissions = new PermissionService(Database, Log, Audit);
         Numbering = new NumberingService(Settings);
         Products = new ProductService(Database, Audit, Log);
-        Dashboard = new DashboardService(Database, Log);
+        Dashboard = new DashboardService(Database, Settings, Log);
         Partners = new PartnerService(Database, Audit, Log);
         Ledger = new CustomerLedgerService(Database, Audit, Settings, Permissions, Log);
         SupplierLedger = new SupplierLedgerService(Database, Audit, Numbering, Settings, Permissions, Log);

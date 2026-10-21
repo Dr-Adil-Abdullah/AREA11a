@@ -32,11 +32,13 @@ public sealed class DashboardSnapshot
 public sealed class DashboardService
 {
     private readonly Database _db;
+    private readonly SettingsService _settings;
     private readonly LogService _log;
 
-    public DashboardService(Database db, LogService log)
+    public DashboardService(Database db, SettingsService settings, LogService log)
     {
         _db = db;
+        _settings = settings;
         _log = log;
     }
 
@@ -59,11 +61,15 @@ SELECT COUNT(1) FROM products p
 WHERE p.active = 1
   AND IFNULL((SELECT SUM(b.qty_base) FROM batches b WHERE b.product_id = p.id AND b.active = 1), 0) < 0;") ?? 0);
 
+            // "Expiring soon" is the owner's nearest band (Level 3), not a hard-coded three months
+            // (F-29): change the band in Settings and this card follows on the next refresh.
+            var window = "+" + _settings.ExpiryBands.Level3Days + " days";
+
             var expiring = Convert.ToInt32(_db.Scalar(connection, @"
 SELECT COUNT(1) FROM batches
 WHERE active = 1 AND qty_base > 0 AND expiry_ym <> ''
   AND expiry_ym >= strftime('%Y-%m', 'now', 'localtime')
-  AND expiry_ym <= strftime('%Y-%m', 'now', 'localtime', '+3 months');") ?? 0);
+  AND expiry_ym <= strftime('%Y-%m', 'now', 'localtime', @window);", new { window }) ?? 0);
 
             var expired = Convert.ToInt32(_db.Scalar(connection, @"
 SELECT COUNT(1) FROM batches

@@ -73,6 +73,15 @@ WHERE b.product_id = @productId AND b.active = 1
 ORDER BY (b.expiry_date IS NULL OR b.expiry_date = '') ASC, b.expiry_date ASC, b.id ASC;",
                 new { productId });
 
+            // The bands come from Settings, not from the code (F-29): change the days and the label
+            // on this screen changes with the next refresh.
+            var levels = _settings.ExpiryBands;
+
+            foreach (var row in rows)
+            {
+                row.Levels = levels;
+            }
+
             return ServiceResult<List<BatchRow>>.Success(rows);
         }
         catch (Exception exception)

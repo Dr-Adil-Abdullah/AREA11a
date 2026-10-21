@@ -46,7 +46,7 @@ features and the four phases.
 | F-14 | Hold cart / bring back a held cart (`H-0001`), stored in the database | ✅ | `Migr. 016`, `Services/HoldCartService.cs`, `Views/PosView.xaml` | `HoldCartTests` 🧪 | a parked cart survives a restart and comes back line for line |
 | F-15 | Split payment (cash + online / card / khata in one bill) | ✅ | `Services/SaleService.cs` (Plan), `Views/PosView.xaml` | `SplitPaymentTests` 🧪 | the credit part reaches the khata and never the drawer |
 | F-16 | **First real Windows build and test run** | 🟡 | `docs/BUILD-ON-WINDOWS.md` | - | 20 Oct 2026 v0.1.1 `Build succeeded`; **21 Oct 2026 Phase-2 builds: CS0509 `ReturnService.cs(504)` (v0.3.5), CS0136 `SaleService.cs(609)` (v0.3.6), CS0037/CS1061 `ReturnsViewModel.cs(152-167)` (v0.3.7)** - all three now prevented by checker rules (sealed bases, shadowing, value-type results). Core + Tests compile; Desktop is the last unknown; `dotnet test` never run |
-| F-17 | Settings screen: shop info, printing, discount rules, and per-person permission ticks | ✅ | v0.2.4 | `SettingsView` + 202 tests | owner edits everything without a developer |
+| F-17 | Settings screen: shop info, printing, discount rules, and per-person permission ticks | ✅ | v0.2.4 | `SettingsView` + 210 tests | owner edits everything without a developer |
 | F-18 | Tests for purchases, partners, numbering | ⬜ | `Area11.Tests/` | - | added with F-13 |
 
 ## Phase 2 - returns, stock and alerts
@@ -61,7 +61,7 @@ features and the four phases.
 | F-26 | Stock-take `ST-nnnn`: frozen book, count sheet (book/counted/diff/value), apply once (owner), frozen cost, GINTI batch for found stock | ✅ | `Services/StockTakeService.cs`, `Views/StockTakeView.xaml` | `StockTakeTests` 🧪 | the count is evidence; the book must follow it, not the other way round (19.2) |
 | F-27 | Customer khata: list + page, money received (`PAY-`), running balance, statement, stars | ✅ | `Services/CustomerLedgerService.cs`, `Views/CustomersView.xaml` | `CustomerLedgerTests` 🧪 | balance always equals the sum of movements ("books match"), and money received is refused above the udhaar |
 | F-28 | Supplier ledger + supplier return `SR-nnnn` (credit note or cash) | ✅ | `Services/SupplierLedgerService.cs`, `Views/SuppliersView.xaml` | `SupplierLedgerTests` 🧪 | payable always equals opening + purchases - payments - credit notes ("books match") |
-| F-29 | Expiry levels read from settings (E-07) | ⬜ | `Utils/Expiry.cs` | - | change the threshold, the colour changes |
+| F-29 | Expiry levels read from settings (E-07) | ✅ | `Utils/Expiry.cs` + `Models/ExpiryLevels.cs` + 3 boxes on the Settings tab | v0.3.10 | change the threshold, the colour changes |
 | F-30 | Return receipt (permanent number, original bill, reason) | ✅ | `Services/ReturnReceiptService.cs` | `ReturnTests` 🧪 | the paper says stock or quarantine for every line |
 
 ## Phase 3 - ledgers, reports, backup
@@ -100,7 +100,7 @@ features and the four phases.
 
 | # | Problem | Where | Fix |
 |---|---|---|---|
-| 1 | `Expiry.StatusLabel` takes level thresholds as parameters but the switch hard-codes 90 / 180 / 365 days | `Area11.Core/Utils/Expiry.cs` | read `expiry.level*` from settings (F-29) |
+| 1 | ~~`Expiry.StatusLabel` takes level thresholds as parameters but the switch hard-codes 90 / 180 / 365 days~~ | `Area11.Core/Utils/Expiry.cs` | **fixed v0.3.10** - the bands are read from `expiry.levels` (F-29) |
 | 2 | `decimal` must never be used for quantities - Microsoft.Data.Sqlite stores it as TEXT and `SUM` breaks | everywhere | quantities are `double`; money is `long` paisa |
 | 3 | Receipt / printing does not exist yet, so a bill cannot be handed to the customer | - | F-13 |
 | 4 | First build: CS0103 in three prototype files. Root cause was the failed project load (a stale `Area11.WPF.sln`); explicit `using System.IO;` added everywhere as a safeguard | `prototypes/`, all Core files | fixed 20 Oct 2026 |
@@ -110,16 +110,16 @@ features and the four phases.
 
 | Check | How | State |
 |---|---|---|
-| C# parses (95 files) | `python3 tools/check_repo.py` | ✅ |
+| C# parses (108 files) | `python3 tools/check_repo.py` | ✅ |
 | Every file imports the namespaces it uses (`System.IO` …) | `python3 tools/check_repo.py` | ✅ |
-| Every SQL statement prepares against the real schema (102) | `python3 tools/check_repo.py` | ✅ |
+| Every SQL statement prepares against the real schema (123) | `python3 tools/check_repo.py` | ✅ |
 | XAML / csproj / props are valid XML | `python3 tools/check_repo.py` | ✅ |
 | Every XAML binding matches its view-model | `python3 tools/check_repo.py` | ✅ |
 | Migrations 001-019 produce 33 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
 | **Compiles on Windows** | `dotnet build Area11.sln` | ✅ 20 Oct 2026 (v0.1.1); re-check after each release |
-| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.3.4 Cyan |
-| **202 tests green** | `dotnet test` | ⬜ **F-16 follow-up** (the tests have never run on the owner's PC) |
+| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.3.10 Ink |
+| **210 tests green** | `dotnet test` | ⬜ **F-16 follow-up** (the tests have never run on the owner's PC) |
 
 ## Change log
 
@@ -127,6 +127,7 @@ features and the four phases.
 |---|---|
 | 20 Oct 2026 | **First Windows build report:** CS0103 (`Path`/`Directory`/`File`) in `AppConfig.cs`, `Database.cs`, `LoggerService.cs` - fixed with explicit `using System.IO;`. The old `Area11.WPF.sln` was the solution being built by mistake, so it moved to `prototypes/`; the real solution is now `Area11.sln` in the root. The checker gained an explicit-usings check and a SQL-preparation check (37 statements). |
 | 21 Oct 2026 | **v0.3.4 Cyan - stock-take (F-27).** ST session freezes the book; count sheet with book/counted/diff/value and an only-differences pass; Apply (owner, once) corrects batches and values the difference at the frozen cost; negative stock corrected; GINTI batch for found medicine; uncounted lines warned, never zeroed. 173 tests. |
+| 21 Oct 2026 | **v0.3.10 Ink - expiry levels from settings (F-29).** The three bands used to be three numbers inside `Expiry.StatusLabel`; it now honours the numbers it is given, and every screen hands it the owner's `expiry.levels`. Three boxes on the Settings tab (default 365 / 180 / 90), a guard that refuses two equal bands, a repair path for broken JSON, and a dashboard window that follows Level 3. 210 tests. |
 | 21 Oct 2026 | **v0.3.9 Tangerine - supplier ledger + `SR` (F-28).** Supplier list and page: payable rebuilt from opening + purchases - payments - credit notes, with every movement and a running balance; **Books match** in green or the difference in red. Pay a supplier (over-payment refused, purchase-linked money counted once). Return goods `SR-nnnn` with a credit note, or cash from the supplier; stock leaves the batch, negative allowed with a warning (U-30); expired batches go back with one click; statement on 58/80 mm. 202 tests. |
 | 21 Oct 2026 | **v0.3.8 Teal - customer khata (F-27).** Customer list (search, only-with-udhaar) and a page per customer: udhaar, limit, stars, bills, lifetime, profit, returns; every movement with a running balance; money received as `PAY-nnnn` (over-payment refused, no advance); statement on 58/80 mm; loyalty points wired but off by default. **Books match** is the promise: the balance is rebuilt from history and the difference shown in red. 188 tests. |
 | 21 Oct 2026 | **v0.3.3 Navy - write-off (F-26).** Expired/broken/lost/count corrections valued at purchase cost, stock ledger + own history, black box; over-writing allowed with a big red MINUS warning; count-found-more adds stock back. 157 tests. |

@@ -135,6 +135,12 @@ public sealed class SettingsService
             ? value
             : fallback;
 
+    /// <summary>
+    /// The owner's three expiry bands, read fresh from `expiry.levels` (F-29). A broken value is
+    /// repaired by <see cref="ExpiryLevels.Read"/> instead of crashing a screen.
+    /// </summary>
+    public ExpiryLevels ExpiryBands => ExpiryLevels.Read(GetRaw("expiry.levels"));
+
     public bool GetBool(string key, bool fallback = false)
     {
         var raw = GetRaw(key);
@@ -243,6 +249,23 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         {
             case "printer.width":
                 return number is 58 or 80 ? null : "The paper width must be 58 or 80 mm.";
+
+            case "expiry.levels":
+            {
+                // The screen sends the three bands as objects, so they are stored exactly like the
+                // shipped default (an array of level/days/color/label). Older or hand-edited text
+                // still arrives as a JSON string, so both shapes are checked.
+                var bands = value switch
+                {
+                    string json => ExpiryLevels.ParseBands(json),
+                    IEnumerable<ExpiryBand> list => list.ToList(),
+                    _ => new List<ExpiryBand>()
+                };
+
+                return ExpiryLevels.IsDistinct(bands)
+                    ? null
+                    : "The three expiry levels must be three different numbers of days, all above zero.";
+            }
 
             case "printer.copies":
                 return number is >= 1 and <= 3 ? null : "The number of copies must be 1, 2 or 3.";
