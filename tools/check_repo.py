@@ -124,8 +124,11 @@ def strip_csharp_noise(text: str) -> str:
             continue
 
         if ch == "/" and i + 1 < length and text[i + 1] == "*":
+            start = i
             i = text.find("*/", i + 2)
             i = length if i == -1 else i + 2
+            # Keep the line count identical, so reported line numbers match the real file.
+            out.append("\n" * text.count("\n", start, i))
             continue
 
         if ch == '"':
@@ -164,6 +167,72 @@ def strip_csharp_noise(text: str) -> str:
         i += 1
 
     return "".join(out)
+
+
+def mask_csharp_noise(text: str) -> str:
+    """Blank out comments and string literals but keep every offset and newline in place.
+
+    Why a second masker: `strip_csharp_noise` shortens the text, so a reported offset no longer maps
+    to the line the owner sees in the build output. This version replaces the removed characters
+    with spaces (newlines kept), so `text.count("\n", 0, offset)` is the true line number.
+    """
+    chars = list(text)
+    length = len(text)
+    i = 0
+
+    def blank(start: int, end: int) -> None:
+        for position in range(start, min(end, length)):
+            if chars[position] != "\n":
+                chars[position] = " "
+
+    while i < length:
+        ch = text[i]
+
+        if ch == "/" and i + 1 < length and text[i + 1] == "/":
+            end = text.find("\n", i)
+            end = length if end == -1 else end
+            blank(i, end)
+            i = end
+            continue
+
+        if ch == "/" and i + 1 < length and text[i + 1] == "*":
+            end = text.find("*/", i + 2)
+            end = length if end == -1 else end + 2
+            blank(i, end)
+            i = end
+            continue
+
+        if ch == '"':
+            end = i + 1
+            while end < length:
+                if text[end] == "\\":
+                    end += 2
+                    continue
+                if text[end] == '"':
+                    end += 1
+                    break
+                end += 1
+            blank(i, end)
+            i = end
+            continue
+
+        if ch == "'":
+            end = i + 1
+            while end < length:
+                if text[end] == "\\":
+                    end += 2
+                    continue
+                if text[end] == "'":
+                    end += 1
+                    break
+                end += 1
+            blank(i, end)
+            i = end
+            continue
+
+        i += 1
+
+    return "".join(chars)
 
 
 def first_error_line(node, source: bytes) -> int:
@@ -389,6 +458,114 @@ def check_sealed_bases() -> None:
 
     REPORT.append(f"Sealed bases: {checked} derivations checked, "
                   f"{len(sealed_types)} sealed types")
+
+
+_MEMBER_RE = re.compile(
+    r"(?m)^[ \t]*(?:public|private|protected|internal|file)[^\n;{}]*\([^;{}]*\)[ \t\r\n]*"
+    r"(?:where[^\n{]*)?\{")
+
+_LOCAL_TYPES = (
+    r"(?:var|string|double|long|int|bool|decimal|char|byte|float|short|object"
+    r"|List<[^<>;]+>|Dictionary<[^<>;]+>|IReadOnlyList<[^<>;]+>"
+    r"|ServiceResult(?:<[^<>;]*>)?"
+    r"|ReturnInput|SaleInput|WriteOffInput|ProvisionalInput|ReturnQuote)"
+)
+_LOCAL_RE = re.compile(_LOCAL_TYPES + r"\s+(\w+)\s*(?:=[^=]|;|,)")
+
+
+def check_shadowing() -> None:
+    """A nested local may not reuse a name declared by an enclosing scope (CS0136), and two locals
+    in the same scope may not share a name (CS0128).
+
+    Why: `SaleService.Plan` declared `var method` inside the payment loop and `string method` later
+    in the same method. C# refuses it whichever comes first, and it stopped the owner's build at
+    `SaleService.cs(609)` - the second compile error in a row that no other check could see.
+
+    How: each member body is walked once. Every local declaration records the chain of `{` blocks
+    that enclose it; two declarations clash when their chains are equal or one is a prefix of the
+    other (siblings are legal). Declarations inside a parameter list are ignored - two local
+    functions may each have a parameter called `bold` - except `foreach (var x in ...)`, whose
+    variable really does belong to the block.
+    """
+    conflicts = 0
+    members = 0
+
+    for path in sorted(DOTNET.rglob("*.cs")):
+        if any(part in {"obj", "bin", "Migrations"} for part in path.parts):
+            continue
+
+        masked = mask_csharp_noise(path.read_text(encoding="utf-8-sig"))
+
+        brace_match: dict[int, int] = {}
+        open_braces: list[int] = []
+        for index, char in enumerate(masked):
+            if char == "{":
+                open_braces.append(index)
+            elif char == "}" and open_braces:
+                brace_match[open_braces.pop()] = index
+
+        for member in _MEMBER_RE.finditer(masked):
+            body_start = member.end() - 1
+            body_end = brace_match.get(body_start)
+            if body_end is None:
+                continue
+
+            members += 1
+            body = masked[body_start:body_end]
+
+            declarations: dict[str, list[tuple[tuple[int, ...], int]]] = {}
+
+            def enclosing_blocks(offset: int) -> tuple[int, ...]:
+                return tuple(sorted(
+                    brace for brace, close in brace_match.items()
+                    if body_start < brace < body_start + offset < close))
+
+            for decl in _LOCAL_RE.finditer(body):
+                if _inside_parameter_list(body, decl.start()):
+                    continue
+
+                name = decl.group(1)
+                declarations.setdefault(name, []).append(
+                    (enclosing_blocks(decl.start()), body_start + decl.start()))
+
+            for name, rows in declarations.items():
+                for first in range(len(rows)):
+                    for second in range(first + 1, len(rows)):
+                        chain_one, offset_one = rows[first]
+                        chain_two, offset_two = rows[second]
+
+                        nested = (chain_one == chain_two
+                                  or chain_one == chain_two[:len(chain_one)]
+                                  or chain_two == chain_one[:len(chain_two)])
+
+                        if not nested:
+                            continue
+
+                        conflicts += 1
+                        line_one = masked[:offset_one].count("\n") + 1
+                        line_two = masked[:offset_two].count("\n") + 1
+                        fail(f"{rel(path)}: '{name}' is declared twice in overlapping scopes "
+                             f"(lines {line_one} and {line_two}) - CS0136/CS0128")
+
+    REPORT.append(f"Shadowing: {members} members checked, {conflicts} name clash(es)")
+
+
+def _inside_parameter_list(body: str, offset: int) -> bool:
+    """True when the position sits inside `(...)` that is not a `foreach`/`using` header."""
+    depth = 0
+    index = offset - 1
+    while index >= 0:
+        char = body[index]
+        if char == ")":
+            depth += 1
+        elif char == "(":
+            if depth == 0:
+                head = body[max(0, index - 40):index].rstrip().split()
+                word = head[-1] if head else ""
+                return word not in {"foreach", "using"}
+            depth -= 1
+        index -= 1
+    return False
 
 
 # ---------------------------------------------------------------------------
@@ -707,6 +884,7 @@ def main() -> int:
     check_skeleton()
     check_internal_access()
     check_sealed_bases()
+    check_shadowing()
     check_xml()
     check_bindings()
     check_migrations()

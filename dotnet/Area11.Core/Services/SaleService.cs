@@ -606,8 +606,10 @@ FROM customers WHERE id = @id AND active = 1;",
                 throw new ValidationException("A payment amount cannot be negative.");
             }
 
-            var method = NormalizeMethod(row.Method);
-            merged[method] = merged.TryGetValue(method, out var existing) ? existing + row.AmountPaisa : row.AmountPaisa;
+            // Not `method`: the bill-level method is declared further down in this same member, and
+            // C# forbids a nested local from reusing a name the enclosing scope declares (CS0136).
+            var rowMethod = NormalizeMethod(row.Method);
+            merged[rowMethod] = merged.TryGetValue(rowMethod, out var existing) ? existing + row.AmountPaisa : row.AmountPaisa;
         }
 
         var credit = merged.TryGetValue("credit", out var creditAmount) ? creditAmount : 0L;
