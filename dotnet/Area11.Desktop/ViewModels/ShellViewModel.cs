@@ -151,6 +151,7 @@ public sealed class ShellViewModel : ObservableObject
         if (_services.Permissions.Can(_user, Modules.Customers))
         {
             NavItems.Add(new NavItem("Customers", "Khata, money received", () => new CustomersViewModel(_services, _user, RefreshAlerts)));
+            NavItems.Add(new NavItem("Udhaar recovery", "Old money, ageing, slip", () => new RecoveryViewModel(_services, _user)));
         }
 
         if (_services.Permissions.Can(_user, Modules.Suppliers))

@@ -93,6 +93,16 @@ VALUES(@name, 'GSK', '042-1112233', @opening, @opening, 1, '2026-01-01 09:00:00'
         new(test.Database, test.Audit, test.Settings,
             new PermissionService(test.Database, test.Log, test.Audit), test.Log);
 
+    /// <summary>The khata book (F-27). One factory: Collect is used by several test files.</summary>
+    public static CustomerLedgerService Ledger(TestDatabase test) =>
+        new(test.Database, test.Audit, test.Settings,
+            new PermissionService(test.Database, test.Log, test.Audit), test.Log);
+
+    /// <summary>Old udhaar ageing and the recovery slip (F-33). One factory, one constructor change.</summary>
+    public static RecoveryService Recovery(TestDatabase test) =>
+        new(test.Database, test.Audit, test.Settings,
+            new PermissionService(test.Database, test.Log, test.Audit), test.Log);
+
     public static SaleService Sales(TestDatabase test)
     {
         var permissions = new PermissionService(test.Database, test.Log, test.Audit);

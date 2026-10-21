@@ -20,11 +20,11 @@ shop computer. Talk to him in Urdu; keep code, database and UI in English.
 | Question | Answer |
 |---|---|
 | Where is the product? | **`dotnet/`** - `Area11.sln` with `Area11.Core`, `Area11.Desktop`, `Area11.Tests` |
-| What can it do today? | sign-in, products, purchases `PINV`, counter billing `INV` (FEFO, discount guard, round-off, cash change, credit, hold, split), returns `RET` / `Q` / `PR`, write-off, stock-take `ST`, alerts, settings, customer khata (`PAY-`), **supplier ledger and supplier return `SR-`**, expiry bands from Settings, customer edit and credit limit, supplier-return cutoff, **shift / galla**, **expenses and owner drawings** |
+| What can it do today? | sign-in, products, purchases `PINV`, counter billing `INV` (FEFO, discount guard, round-off, cash change, credit, hold, split), returns `RET` / `Q` / `PR`, write-off, stock-take `ST`, alerts, settings, customer khata (`PAY-`), **supplier ledger and supplier return `SR-`**, expiry bands from Settings, customer edit and credit limit, supplier-return cutoff, **shift / galla**, **expenses and owner drawings**, **udhaar recovery** |
 | Has it ever been compiled? | **Yes - 20 Oct 2026.** The owner's Windows build reported `Build succeeded`. Since then the code grew (receipt/printing), so the current build is unverified again |
-| What is the very next task? | **build + `tools\RUN-TESTS.cmd` (248 cases)** on the owner's PC; press **Suppliers**, pick one, pay part of the payable and send one expired batch back (`SR-0001`) - both pages must stay green with **"Books match"**. After that: **Phase 3** (galla/shift, reports, backup) F-29 expiry levels (v0.3.10), F-11 customer edit (v0.3.11), the supplier-return cutoff (v0.3.12), the shift/galla (v0.4.0) and expenses/drawings (v0.4.4) have landed. |
-| How many tests? | **248 cases in 19 files** - written, **never executed on the owner's PC**; run `tools\RUN-TESTS.cmd` |
-| Did it build? | **Core, Tests and Desktop are all expected to compile at v0.3.7** - the three failures (CS0509, CS0136, CS0037/CS1061) are fixed and each one became a checker rule. v0.3.7 has not been confirmed by the owner yet; v0.3.8 added the customer khata, v0.3.9 the supplier ledger, v0.3.10 the expiry bands, v0.3.11 the customer edit, v0.3.12 the supplier-return cutoff, v0.4.0 the shift/galla and v0.4.4 expenses/drawings on top of it. The 248 tests have still **never run** |
+| What is the very next task? | **build + `tools\RUN-TESTS.cmd` (270 cases)** on the owner's PC; press **Suppliers**, pick one, pay part of the payable and send one expired batch back (`SR-0001`) - both pages must stay green with **"Books match"**. After that: **Phase 3** (galla/shift, reports, backup) F-29 expiry levels (v0.3.10), F-11 customer edit (v0.3.11), the supplier-return cutoff (v0.3.12), the shift/galla (v0.4.0) and expenses/drawings (v0.4.4) and udhaar recovery (v0.4.5) have landed. |
+| How many tests? | **270 cases in 19 files** - written, **never executed on the owner's PC**; run `tools\RUN-TESTS.cmd` |
+| Did it build? | **Core, Tests and Desktop are all expected to compile at v0.3.7** - the three failures (CS0509, CS0136, CS0037/CS1061) are fixed and each one became a checker rule. v0.3.7 has not been confirmed by the owner yet; v0.3.8 added the customer khata, v0.3.9 the supplier ledger, v0.3.10 the expiry bands, v0.3.11 the customer edit, v0.3.12 the supplier-return cutoff, v0.4.0 the shift/galla, v0.4.4 expenses/drawings and v0.4.5 udhaar recovery on top of it. The 270 tests have still **never run** |
 | Database? | the **original** schema, migrations `001`-`019`, **33 business tables** (+ `_migrations` ledger), so an existing `area11.db` opens unchanged |
 | Where does data live? | `%ProgramData%\Area11\` (`area11.db`, `photos\`, `logs\`, `backups\`) |
 | Default owner login | user **Owner**, password **`area11`** (change it on day one) |
@@ -65,7 +65,7 @@ Full detail in [`docs/PROGRESS.md`](docs/PROGRESS.md). The short version:
 | Products, partners, purchases `PINV`, sales `INV`, **returns `RET` + quarantine `Q`**, dashboard | `Area11.Core/Services/` |
 | Money / quantity / expiry / password helpers | `Area11.Core/Utils/` |
 | WPF shell (+ global alert bar), login, dashboard, products, POS (hold + split), purchases, settings, returns & quarantine, alerts, no-bill returns (PR), write-off, stock-take, customers / khata + statement, **suppliers / payable + `SR` tray** | `Area11.Desktop/` |
-| 248 test cases | `Area11.Tests/` |
+| 270 test cases | `Area11.Tests/` |
 
 **Written but never tested on the shop PC (🟡)**
 
@@ -88,7 +88,7 @@ Do them one at a time; each one ends with a commit (see `AGENTS.md` §6).
 
 | # | Task | Acceptance |
 |---|---|---|
-| 1 | **F-16 follow-up** run `tools\RUN-TESTS.cmd` on the owner's PC, then open **Settings → Stock**, type `200 / 120 / 45` and press Save | all 248 tests pass, and the batch list on Write-off changes from Level 3 to Level 2 for a batch 75 days away |
+| 1 | **F-16 follow-up** run `tools\RUN-TESTS.cmd` on the owner's PC, then open **Settings → Stock**, type `200 / 120 / 45` and press Save | all 270 tests pass, and the batch list on Write-off changes from Level 3 to Level 2 for a batch 75 days away |
 | 2 | **F-34** reports: today / 7 / 30 days, top items, dead stock, per-day, profit (profit uses cost-at-sale) | the owner can read the day without a calculator |
 | 3 | Phase 3: shift/galla + handover, expenses, owner's draw, reports, audit viewer, `SR`, backup ZIP, Excel | see `docs/PROGRESS.md` |
 | 4 | Phase 4: §33.2 gaps, loyalty screen, camera, second counter, hardware test, **installer** | see `docs/OWNER-DECISIONS.md` §5 |

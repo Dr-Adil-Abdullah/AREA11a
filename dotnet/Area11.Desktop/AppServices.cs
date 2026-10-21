@@ -37,6 +37,7 @@ public sealed class AppServices
         StockTake = new StockTakeService(Database, Audit, Numbering, Permissions, Log);
         Shifts = new ShiftService(Database, Audit, Permissions, Log);
         CashOut = new ExpenseService(Database, Audit, Settings, Permissions, Log);
+        Recovery = new RecoveryService(Database, Audit, Settings, Permissions, Log);
         ProvisionalReceipts = new ProvisionalReceiptService(Provisional, Settings, Log);
         Receipts = new ReceiptService(Database, Settings, Log);
         Printer = new PrinterService(Settings, Log);
@@ -89,6 +90,8 @@ public sealed class AppServices
     public ShiftService Shifts { get; }
 
     public ExpenseService CashOut { get; }
+
+    public RecoveryService Recovery { get; }
 
     public ProvisionalReceiptService ProvisionalReceipts { get; }
 
