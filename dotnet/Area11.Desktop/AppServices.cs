@@ -23,6 +23,7 @@ public sealed class AppServices
         Products = new ProductService(Database, Audit, Log);
         Dashboard = new DashboardService(Database, Log);
         Partners = new PartnerService(Database, Audit, Log);
+        Ledger = new CustomerLedgerService(Database, Audit, Settings, Permissions, Log);
         Sales = new SaleService(Database, Audit, Numbering, Settings, Permissions, Log);
         Purchases = new PurchaseService(Database, Audit, Numbering, Permissions, Log);
         Holds = new HoldCartService(Database, Audit, Numbering, Permissions, Sales, Log);
@@ -57,6 +58,8 @@ public sealed class AppServices
     public DashboardService Dashboard { get; }
 
     public PartnerService Partners { get; }
+
+    public CustomerLedgerService Ledger { get; }
 
     public SaleService Sales { get; }
 

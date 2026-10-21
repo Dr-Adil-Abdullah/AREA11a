@@ -40,13 +40,13 @@ features and the four phases.
 | F-08 | Products: search, create, edit, box/strip/unit packing, prices, rack | 🟡 | `Services/ProductService.cs`, `Views/ProductsView.xaml` | - | owner adds a medicine with a batch |
 | F-09 | Purchases `PINV`: supplier, batch, expiry, sample lines, payable | 🟡 | `Services/PurchaseService.cs`, `Views/PurchasesView.xaml` | - | one real delivery enters stock |
 | F-10 | Counter `INV`: FEFO, box/strip/unit, discount guard, round-off, cash change, credit | 🟡 | `Services/SaleService.cs`, `Views/PosView.xaml` | `SaleTests` 🧪 | one real bill prints |
-| F-11 | Customers: quick create at the counter, credit limit | 🟡 | `Services/PartnerService.cs` | - | a credit bill lands on the customer's account |
+| F-11 | Customers: quick create at the counter, credit limit | 🟡 | `Services/PartnerService.cs` | - | a credit bill lands on the customer's account (done); editing a customer and his limit from the khata page still to come |
 | F-12 | Dashboard: today's sales, low stock, expiry, stock value | 🟡 | `Services/DashboardService.cs`, `Views/DashboardView.xaml` | - | numbers match a manual count |
 | F-13 | **Receipt render + instant ESC/POS print, 58 / 80 mm, auto or manual (D-26)** | 🟡 | `Services/ReceiptService.cs`, `Services/EscPosBuilder.cs`, `Services/PrinterService.cs`, `Views/PosView.xaml` | `ReceiptTests` 🧪 | needs one real print on the shop printer |
 | F-14 | Hold cart / bring back a held cart (`H-0001`), stored in the database | ✅ | `Migr. 016`, `Services/HoldCartService.cs`, `Views/PosView.xaml` | `HoldCartTests` 🧪 | a parked cart survives a restart and comes back line for line |
 | F-15 | Split payment (cash + online / card / khata in one bill) | ✅ | `Services/SaleService.cs` (Plan), `Views/PosView.xaml` | `SplitPaymentTests` 🧪 | the credit part reaches the khata and never the drawer |
 | F-16 | **First real Windows build and test run** | 🟡 | `docs/BUILD-ON-WINDOWS.md` | - | 20 Oct 2026 v0.1.1 `Build succeeded`; **21 Oct 2026 Phase-2 builds: CS0509 `ReturnService.cs(504)` (v0.3.5), CS0136 `SaleService.cs(609)` (v0.3.6), CS0037/CS1061 `ReturnsViewModel.cs(152-167)` (v0.3.7)** - all three now prevented by checker rules (sealed bases, shadowing, value-type results). Core + Tests compile; Desktop is the last unknown; `dotnet test` never run |
-| F-17 | Settings screen: shop info, printing, discount rules, and per-person permission ticks | ✅ | v0.2.4 | `SettingsView` + 173 tests | owner edits everything without a developer |
+| F-17 | Settings screen: shop info, printing, discount rules, and per-person permission ticks | ✅ | v0.2.4 | `SettingsView` + 188 tests | owner edits everything without a developer |
 | F-18 | Tests for purchases, partners, numbering | ⬜ | `Area11.Tests/` | - | added with F-13 |
 
 ## Phase 2 - returns, stock and alerts
@@ -59,7 +59,7 @@ features and the four phases.
 | F-22 | Provisional (no-bill) return `PR-nnnn`: refund at once, stock on the shelf, bill attached later, cancel with reason | ✅ | `Services/ProvisionalReturnService.cs`, `Services/ProvisionalReceiptService.cs`, `Views/ProvisionalView.xaml` | `ProvisionalTests` 🧪 | a refund without a bill can never be checked - the number is permanent and the badge does not stop (U-33) |
 | F-25 | Stock write-off / breakage: expired, broken, lost, count short/extra, **valued at cost**, never blocks (U-30) | ✅ | `Services/StockService.cs`, `Views/WriteOffView.xaml` | `StockTests` 🧪 | removing more than the book says must warn, never refuse (U-30) |
 | F-26 | Stock-take `ST-nnnn`: frozen book, count sheet (book/counted/diff/value), apply once (owner), frozen cost, GINTI batch for found stock | ✅ | `Services/StockTakeService.cs`, `Views/StockTakeView.xaml` | `StockTakeTests` 🧪 | the count is evidence; the book must follow it, not the other way round (19.2) |
-| F-27 | Customer ledger: payments, statement, stars | ⬜ | - | - | balance always equals the sum of movements |
+| F-27 | Customer khata: list + page, money received (`PAY-`), running balance, statement, stars | ✅ | `Services/CustomerLedgerService.cs`, `Views/CustomersView.xaml` | `CustomerLedgerTests` 🧪 | balance always equals the sum of movements ("books match"), and money received is refused above the udhaar |
 | F-28 | Supplier ledger + supplier return (credit note) | ⬜ | - | - | payable always equals purchases - payments |
 | F-29 | Expiry levels read from settings (E-07) | ⬜ | `Utils/Expiry.cs` | - | change the threshold, the colour changes |
 | F-30 | Return receipt (permanent number, original bill, reason) | ✅ | `Services/ReturnReceiptService.cs` | `ReturnTests` 🧪 | the paper says stock or quarantine for every line |
@@ -119,7 +119,7 @@ features and the four phases.
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
 | **Compiles on Windows** | `dotnet build Area11.sln` | ✅ 20 Oct 2026 (v0.1.1); re-check after each release |
 | Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.3.4 Cyan |
-| **173 tests green** | `dotnet test` | ⬜ **F-16 follow-up** (the tests have never run on the owner's PC) |
+| **188 tests green** | `dotnet test` | ⬜ **F-16 follow-up** (the tests have never run on the owner's PC) |
 
 ## Change log
 
@@ -127,6 +127,7 @@ features and the four phases.
 |---|---|
 | 20 Oct 2026 | **First Windows build report:** CS0103 (`Path`/`Directory`/`File`) in `AppConfig.cs`, `Database.cs`, `LoggerService.cs` - fixed with explicit `using System.IO;`. The old `Area11.WPF.sln` was the solution being built by mistake, so it moved to `prototypes/`; the real solution is now `Area11.sln` in the root. The checker gained an explicit-usings check and a SQL-preparation check (37 statements). |
 | 21 Oct 2026 | **v0.3.4 Cyan - stock-take (F-27).** ST session freezes the book; count sheet with book/counted/diff/value and an only-differences pass; Apply (owner, once) corrects batches and values the difference at the frozen cost; negative stock corrected; GINTI batch for found medicine; uncounted lines warned, never zeroed. 173 tests. |
+| 21 Oct 2026 | **v0.3.8 Teal - customer khata (F-27).** Customer list (search, only-with-udhaar) and a page per customer: udhaar, limit, stars, bills, lifetime, profit, returns; every movement with a running balance; money received as `PAY-nnnn` (over-payment refused, no advance); statement on 58/80 mm; loyalty points wired but off by default. **Books match** is the promise: the balance is rebuilt from history and the difference shown in red. 188 tests. |
 | 21 Oct 2026 | **v0.3.3 Navy - write-off (F-26).** Expired/broken/lost/count corrections valued at purchase cost, stock ledger + own history, black box; over-writing allowed with a big red MINUS warning; count-found-more adds stock back. 157 tests. |
 | 21 Oct 2026 | **v0.3.2 Plum - no-bill returns (F-25).** `PR-nnnn` with stock on the shelf at once, red badge until the bill is attached, amber afterwards; attaching never adds stock twice; cancel needs a reason and reverses the stock; slip says the bill is missing; smart lookup by medicine/phone/name/date. 145 tests. |
 | 21 Oct 2026 | **v0.3.1 Bronze - alert board (F-24).** Red bar on every page; Alerts page; owner-only dismissal with a 3+ character reason kept for ever; restore; an ended alert re-opens when the medicine moves again. 131 tests. |

@@ -234,6 +234,16 @@ VALUES(@at, @method, @amount, @saleId, @customerId, @userId, @note);",
                 new { amount = due, id = customer.Id });
         }
 
+        // Loyalty is OFF by default (Q-06). When the owner switches it on, the bill earns points and
+        // the points can promote a Normal customer to VIP - inside this same transaction, so a
+        // rolled-back bill grants nothing.
+        if (customer is not null && _settings.GetBool("loyalty.enabled", false))
+        {
+            CustomerLedgerService.AwardPoints(_db, connection, _settings, user, customer.Id,
+                CustomerLedgerService.PointsFor(computed.TotalPaisa, _settings.GetInt("loyalty.rupeesPerPoint", 100)),
+                _audit);
+        }
+
         _audit.Record(connection, user, "POS", "sale_create", "sales", saleId.ToString(),
             newValue: $"{{\"code\":\"{code}\",\"total\":{computed.TotalPaisa},\"discount\":{computed.DiscountPaisa},\"round\":{computed.RoundPaisa},\"method\":\"{method}\"}}");
 

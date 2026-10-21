@@ -20,11 +20,11 @@ shop computer. Talk to him in Urdu; keep code, database and UI in English.
 | Question | Answer |
 |---|---|
 | Where is the product? | **`dotnet/`** - `Area11.sln` with `Area11.Core`, `Area11.Desktop`, `Area11.Tests` |
-| What can it do today? | sign-in, products, purchases `PINV`, counter billing `INV` (FEFO, discount guard, round-off, cash change, credit), dashboard |
+| What can it do today? | sign-in, products, purchases `PINV`, counter billing `INV` (FEFO, discount guard, round-off, cash change, credit, hold, split), returns `RET` / `Q` / `PR`, write-off, stock-take `ST`, alerts, settings, **customer khata (`PAY-`) with a statement** |
 | Has it ever been compiled? | **Yes - 20 Oct 2026.** The owner's Windows build reported `Build succeeded`. Since then the code grew (receipt/printing), so the current build is unverified again |
-| What is the very next task? | **build + `tools\RUN-TESTS.cmd` (173 cases)** on the owner's PC; press **Stock-take**, open `ST-0001`, count one row, then Apply and check that the batch moved. After that: customers (Phase 2 tail), then Phase 3 ledgers/reports/backup. |
-| How many tests? | 173 cases in 17 files - written, **never executed on the owner's PC**; run `tools\RUN-TESTS.cmd` |
-| Did it build? | **Core and Tests compile** (v0.3.6). Desktop stopped at `ReturnsViewModel.cs` CS0037/CS1061 (fixed in v0.3.7) - three compile errors, one root cause, now a checker rule. All three build failures so far became permanent checks; the 173 tests have still **never run** |
+| What is the very next task? | **build + `tools\RUN-TESTS.cmd` (188 cases)** on the owner's PC; press **Customers**, pick a customer, receive part of the udhaar and check that the page turns green with **"Books match"**. After that: supplier returns `SR` and the supplier ledger (F-28), then Phase 3. |
+| How many tests? | **188 cases in 18 files** - written, **never executed on the owner's PC**; run `tools\RUN-TESTS.cmd` |
+| Did it build? | **Core, Tests and Desktop are all expected to compile at v0.3.7** - the three failures (CS0509, CS0136, CS0037/CS1061) are fixed and each one became a checker rule. v0.3.7 has not been confirmed by the owner yet; v0.3.8 adds the customer khata on top of it. The 188 tests have still **never run** |
 | Database? | the **original** schema, migrations `001`-`019`, **33 business tables** (+ `_migrations` ledger), so an existing `area11.db` opens unchanged |
 | Where does data live? | `%ProgramData%\Area11\` (`area11.db`, `photos\`, `logs\`, `backups\`) |
 | Default owner login | user **Owner**, password **`area11`** (change it on day one) |
@@ -64,17 +64,18 @@ Full detail in [`docs/PROGRESS.md`](docs/PROGRESS.md). The short version:
 | Settings (75 keys), audit black box, auth + lockout, permissions, numbering, hold carts | `Area11.Core/Services/` |
 | Products, partners, purchases `PINV`, sales `INV`, **returns `RET` + quarantine `Q`**, dashboard | `Area11.Core/Services/` |
 | Money / quantity / expiry / password helpers | `Area11.Core/Utils/` |
-| WPF shell (+ global alert bar), login, dashboard, products, POS (hold + split), purchases, settings, returns & quarantine, alerts, no-bill returns (PR), write-off, **stock-take** | `Area11.Desktop/` |
-| 173 test cases | `Area11.Tests/` |
+| WPF shell (+ global alert bar), login, dashboard, products, POS (hold + split), purchases, settings, returns & quarantine, alerts, no-bill returns (PR), write-off, stock-take, **customers / khata + statement** | `Area11.Desktop/` |
+| 188 test cases | `Area11.Tests/` |
 
 **Written but never tested on the shop PC (🟡)**
 
 1. Receipt + instant printing (F-13) - needs one real print
 2. Settings screen (F-17) - needs one walk-through by the owner
+3. Customer khata (F-27) - needs one real collection at the counter and one printed statement
 
 **Not started (⬜)**
 
-1. The rest of Phase 2: customers (next), supplier returns `SR`, ledgers, expiry levels from settings
+1. The rest of Phase 2: supplier returns `SR` and the supplier ledger (next), expiry levels from settings
 3. Phase 3: shifts/galla, expenses, `SR`, reports, audit viewer, backup, Excel, reorder/WhatsApp
 6. Phase 4: loyalty, photos/camera, custom fields, second counter, hardware test, **installer**
 
@@ -86,12 +87,11 @@ Do them one at a time; each one ends with a commit (see `AGENTS.md` §6).
 
 | # | Task | Acceptance |
 |---|---|---|
-| 1 | **F-16 follow-up** run `tools\RUN-TESTS.cmd` on the owner's PC | all 173 tests pass |
-| 2 | **F-13** receipt renderer + ESC/POS instant print (58/80 mm) | pressing "print" prints with no dialog; reprint from a saved bill; printer absent ⇒ bill still saves |
-| 3 | **F-17** Settings screen (store info, discount, tax, printer width) + per-person permission ticks | the owner changes a setting and the next bill obeys it |
-| 4 | **F-14 / F-15** hold cart, split payment | two held carts survive a restart; one bill with two payment rows |
-| 5 | **F-29** expiry thresholds from settings (fixes Known bug #1) | changing `expiry.level3Days` moves the colour band |
-| 6 | Phase 2 (F-20…F-30), in that order | see `docs/PROGRESS.md` |
+| 1 | **F-16 follow-up** run `tools\RUN-TESTS.cmd` on the owner's PC | all 188 tests pass |
+| 2 | **F-28** supplier return `SR` + supplier ledger (`SR-nnnn`, credit note, payable = purchases - payments) | the supplier's page always equals his purchases minus what was paid |
+| 3 | **F-29** expiry thresholds from settings (fixes Known bug #1) | changing `expiry.level3Days` moves the colour band |
+| 4 | Phase 3: shift/galla + handover, expenses, owner's draw, reports, audit viewer, `SR`, backup ZIP, Excel | see `docs/PROGRESS.md` |
+| 5 | Phase 4: §33.2 gaps, loyalty screen, camera, second counter, hardware test, **installer** | see `docs/OWNER-DECISIONS.md` §5 |
 
 ---
 

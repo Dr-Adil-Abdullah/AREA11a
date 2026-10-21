@@ -254,6 +254,14 @@ VALUES(@date, @saleId, @itemId, @productId, @batchId, @qtyBase, @refund,
                 details: $"{code}: {Money.Format(plan.CreditPaisa)} taken off the khata.");
         }
 
+        // A refund must not buy free points (13.6): take back what this money earned. Done for any
+        // bill of a known customer, whether the refund went on the khata or into the hand.
+        if (plan.Sale.CustomerId is int loyaltyCustomer && _settings.GetBool("loyalty.enabled", false))
+        {
+            CustomerLedgerService.ReversePoints(_db, connection, _settings, loyaltyCustomer,
+                plan.RefundPaisa, _settings.GetInt("loyalty.rupeesPerPoint", 100));
+        }
+
         var qList = quarantineCodes.Count == 0 ? "none" : string.Join(" ", quarantineCodes);
         var mode = input.Restock ? "restock" : "quarantine";
 
@@ -281,6 +289,7 @@ VALUES(@date, @saleId, @itemId, @productId, @batchId, @qtyBase, @refund,
             _db.Execute(connection,
                 "UPDATE batches SET qty_base = qty_base + @qty WHERE id = @id;",
                 new { qty = line.QtyBase, id = batchId });
+
         }
         else
         {
