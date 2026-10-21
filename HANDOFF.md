@@ -174,7 +174,7 @@ Folder map:
 | `tools/` | `check_repo.py`, `build_rules_matrix.py` |
 | `docs/` | spec, decisions, progress, rules matrix, schema reference, build guide, port plan |
 | `prototypes/` | earlier prototypes (`Area11.WPF`, `WPFSample`) - reference only, do not extend |
-| `docs/VERSIONS.md` | every released build, its colour and what changed - **read this to know which build the owner has** (latest: v0.2.2 Blue) |
+| `docs/VERSIONS.md` | every released build, its colour and what changed - **read this to know which build the owner has** (latest: v0.2.3 Rose) |
 
 Wiring a new screen: service → `AppServices` property → `ShellViewModel.NavItems` (permission-gated)
 → `DataTemplate` in `ShellWindow.xaml` → view + view-model.

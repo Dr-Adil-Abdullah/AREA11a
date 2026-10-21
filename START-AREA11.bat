@@ -100,7 +100,38 @@ if not exist ".git" (
     goto :build
 )
 
-echo  [4/5] Updating the code from GitHub...
+where git >nul 2>nul
+if errorlevel 1 (
+    echo  [4/5] The git command is not available - using the code already here.
+    echo        To update: GitHub Desktop -^> "Fetch origin" then "Pull origin", then run this file again.
+    goto :build
+)
+
+rem  All the work lives on ONE branch. A clone made with GitHub Desktop or Visual Studio
+rem  starts on "main", where the new code is not - so say it plainly instead of quietly
+rem  building an old version.
+set "BRANCH="
+for /f "delims=" %%b in ('git rev-parse --abbrev-ref HEAD 2^>nul') do set "BRANCH=%%b"
+
+if not "%BRANCH%"=="arena/a8a3b2e0-area11a" (
+    echo.
+    echo  [X]  This folder is on the branch "%BRANCH%", but the new code is on
+    echo       "arena/a8a3b2e0-area11a".
+    echo.
+    echo       Fix it in one step:
+    echo         GitHub Desktop - click "Current Branch" at the top, pick
+    echo                          "arena/a8a3b2e0-area11a", then "Fetch origin"
+    echo                          and "Pull origin".
+    echo         Visual Studio  - the branch list is in the bottom right corner.
+    echo         VS Code        - click the branch name in the bottom left corner.
+    echo.
+    echo       Your shop data is safe: C:\ProgramData\Area11 is never touched.
+    echo.
+    pause
+    exit /b 1
+)
+
+echo  [4/5] Updating the code from GitHub ^(branch %BRANCH%^)...
 git pull --ff-only
 if errorlevel 1 (
     echo.

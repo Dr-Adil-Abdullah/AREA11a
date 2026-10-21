@@ -57,3 +57,4 @@ contrast **4.5:1 or better** against white.
   one - treat that as a bug, not a shortcut.
 | 0.2.1 | 2026-10-20 | Indigo | `#4338CA` | Owner decided printing is a **setting**: automatic after each sale or manual button. Both paper widths (58 / 80 mm) stay selectable. |
 | 0.2.2 | 2026-10-20 | Blue | `#1D4ED8` | **Fix:** the receipt tests reached for an internal type (`CS0122`) and stopped the build. They now go through the public `ReceiptService.Build` against a real bill in the database; the checker refuses any test that names an internal type. |
+| 0.2.3 | 2026-10-20 | Rose | `#E11D48` | Owner asked whether he must download a ZIP every time. `START-AREA11.bat` now names the branch it is building and stops with instructions if the folder sits on `main`; `docs/GIT-AND-VS-URDU.md` explains GitHub Desktop / Visual Studio / VS Code cloning. |

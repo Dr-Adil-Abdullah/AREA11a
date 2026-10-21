@@ -1,7 +1,7 @@
 @echo off
 rem ============================================================================
 rem  Area11 - run the tests (double-click this file)
-rem  Expected: "Passed! - Failed: 0, Passed: 56"
+rem  Expected: "Passed! - Failed: 0, Passed: 68"
 rem ============================================================================
 title Area11 - tests
 cd /d "%~dp0.."
@@ -32,7 +32,7 @@ dotnet test Area11.sln -v minimal
 
 echo.
 echo  ----------------------------------------------------------
-echo   Look for the line:  Passed!  - Failed: 0, Passed: 56
+echo   Look for the line:  Passed!  - Failed: 0, Passed: 68
 echo   If any test failed, send the screen in the chat.
 echo  ----------------------------------------------------------
 pause
