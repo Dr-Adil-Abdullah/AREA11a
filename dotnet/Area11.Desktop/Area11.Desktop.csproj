@@ -9,6 +9,9 @@
     <!-- Program.Main wraps the generated WPF startup in a try/catch, so a failure before the first
          window still writes a crash report instead of closing silently. -->
     <StartupObject>Area11.Desktop.Program</StartupObject>
+    <!-- The picture on the desktop, in the taskbar and in Program Files (F-47). Regenerate it with
+         `python3 tools/make_icon.py` after a colour change - it reads BuildInfo.BrandHex. -->
+    <ApplicationIcon>Resources\area11.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>

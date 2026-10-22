@@ -35,8 +35,9 @@ The program does three things to keep this honest:
    into a confirmation. The page now says the database uses the rollback journal, and `shop.ini`
    records the folder.
 4. Restart Area11 on this PC.
-5. Double-click **`tools\SHARE-AREA11.cmd`** (it asks for Administrator). It prints the address the
-   second counter needs:
+5. Double-click **`SHARE-AREA11.cmd`** (it asks for Administrator). It is in `tools\` in the
+   repository and in `C:\Program Files\Area11` after an install, so it is on the shop PC either way.
+   It prints the address the second counter needs:
 
    ```
    \\THIS-PC\Area11

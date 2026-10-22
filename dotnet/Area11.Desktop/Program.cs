@@ -1,3 +1,5 @@
+using Area11.Core.Services;
+
 namespace Area11.Desktop;
 
 /// <summary>
@@ -12,8 +14,16 @@ namespace Area11.Desktop;
 public static class Program
 {
     [STAThread]
-    public static int Main()
+    public static int Main(string[] args)
     {
+        // F-47: the installer asks this same program what this PC needs, before any window opens.
+        // The answer is a plain-text report and an exit code: 0 = go, 2 = a line says STOP,
+        // 3 = the report could not be written. See tools\install\install.ps1.
+        if (args.Length > 0 && string.Equals(args[0], "--install-check", StringComparison.OrdinalIgnoreCase))
+        {
+            return InstallService.RunCheck(args);
+        }
+
         try
         {
             var app = new App();

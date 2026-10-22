@@ -7,7 +7,9 @@
     <Deterministic>true</Deterministic>
     <Product>Area11</Product>
     <Company>Area11</Company>
-    <Version>0.1.0</Version>
+    <!-- Must equal BuildInfo.Version: Windows shows this number in the exe's properties and the
+         installer writes it into Add/Remove Programs. `tools/check_repo.py` fails if they differ. -->
+    <Version>0.19.0</Version>
     <NeutralLanguage>en</NeutralLanguage>
     <!-- Zero-warning quality gate (Spec 4.5.1). Kept as warning-as-info during the first
          compile on the shop PC; the gate is switched on once the solution builds clean. -->

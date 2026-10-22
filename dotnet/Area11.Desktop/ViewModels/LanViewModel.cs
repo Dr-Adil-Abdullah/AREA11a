@@ -231,8 +231,9 @@ public sealed class LanViewModel : ObservableObject
 
         Load();
         SetStatus(
-            "Done. Restart Area11 on this PC, then double-click tools\\SHARE-AREA11.cmd - it shares the folder " +
-            "shown above and prints the address for the second PC (\\\\" + Environment.MachineName + "\\Area11). " +
+            "Done. Restart Area11 on this PC, then double-click SHARE-AREA11.cmd - it is in the Area11 " +
+            "program folder (C:\\Program Files\\Area11) and in tools\\ in the repository. It shares the " +
+            "folder shown above and prints the address for the second PC (\\\\" + Environment.MachineName + "\\Area11). " +
             "On the second PC open this page, write that address and press Join.", false);
     }
 

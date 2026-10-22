@@ -129,20 +129,18 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.18.1 (Copper `#A65A2E`)** - Phases 1, 2 and 3 are written (shift/galla, expenses,
-> udhaar recovery, reports, black box, backup & restore, Excel / CSV, reorder + WhatsApp, and the
-> stock-minus registry with its monthly review). Phase 4 has started: **loyalty works from the
-> screen**, **photos** exist for medicines, customers and suppliers (copied into the shop's folder,
-> **put away instead of deleted**), the owner can make **his own fields** - text, number,
-> amount, date, list, yes/no or photo - which appear on the form at once and keep every answer when
-> switched off, a medicine carries **several barcodes, one per pack** (migration **022**, table
-> `product_barcodes`) with the counter's search box scanning on **Enter**, and the shop now knows
-> **who brought the sale** (migration **023**): a company keeps its **medical rep** and visit day, a
-> bill can name the **doctor** whose prescription it was, and the owner sees each doctor's and each
-> customer's **lifetime profit** - a manager sees a dash, never the number, and the **second counter** now opens the **same database over the shop's own share** (D-62): one press on the main PC turns WAL off and shares the folder, the second PC joins it by name, the change waits for a restart, and a second PC that cannot reach the file **stops instead of inventing an empty shop**, and the month's **tax report**, the **`PAY-` money-received slip** and the customer's **monthly statement** are printed from the bills themselves (D-63). The screen was rebuilt the way the owner asked (D-50): a 176 px menu in five groups,
-> one **bell** with a count badge instead of the red strip across every page, **two kinds of alert**
-> (a reminder anybody may put away, a money or stock problem that is owner-only with a written
-> reason), one **customers & suppliers** page with three tabs, and the **new customer** form that had
-> never been built. The last confirmed Windows build is v0.4.8; the owner runs
-> `tools\RUN-TESTS.cmd` (479 cases). **Next: Phase 4** - the printer test and the installer.
+> **v0.19.0 (Fern `#2F5D3A`)** - all four phases are written: Phase 1-3 in full (billing, returns,
+> purchase, khata, supplier ledger, shift/galla, expenses, reports, black box, backup & restore,
+> Excel / CSV, reorder + WhatsApp, stock-minus registry), and Phase 4 has **9 of its 12 features**:
+> loyalty from the screen, photos for medicines / customers / suppliers (copied into the shop's
+> folder, **put away instead of deleted**), the owner's **own fields**, **several barcodes per
+> medicine** (migration 022), **medical reps + doctors + lifetime profit** (migration 023), the
+> **second counter** over the shop's own share (D-62), the **tax report + `PAY-` slip + monthly
+> statement** (D-63) and now the **installer** (F-47, D-64): a self-contained build, one double-click,
+> desktop and Start-menu icons, an *Add or remove programs* entry with a real uninstaller, and a shop
+> folder (`C:\\ProgramData\\Area11`) that **no update and no uninstall ever touches**.
+>
+> The last confirmed Windows build is v0.4.8; everything from v0.6.2 on is proved only by
+> `tools/check_repo.py` until the owner runs `START-AREA11.bat` and `tools\\RUN-TESTS.cmd`
+> (**503 cases**). **Next:** the printer / scanner test (F-46), then Supabase sync (F-48).
 > Details: `HANDOFF.md` §4.

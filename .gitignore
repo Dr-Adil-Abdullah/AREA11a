@@ -10,6 +10,8 @@ obj/
 /dotnet/**/bin/
 /dotnet/**/obj/
 /publish/
+# The installer build output (tools\MAKE-INSTALLER.cmd) - self-contained program, never committed
+/dist/
 *.db
 *.db-shm
 *.db-wal
