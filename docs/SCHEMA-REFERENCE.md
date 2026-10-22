@@ -83,7 +83,7 @@ Indexes: `idx_batches_product`, `idx_batches_expiry`
 | `active` | INTEGER | yes | `1` |
 | `created_at` | TEXT | yes | `datetime('now','localtime')` |
 
-## `companies`  (5 columns)
+## `companies`  (8 columns)
 
 | Column | Type | Not null | Default |
 |---|---|---|---|
@@ -92,6 +92,11 @@ Indexes: `idx_batches_product`, `idx_batches_expiry`
 | `phone` | TEXT |  |  |
 | `notes` | TEXT |  |  |
 | `active` | INTEGER | yes | `1` |
+| `rep_name` | TEXT |  |  |
+| `rep_phone` | TEXT |  |  |
+| `visit_day` | INTEGER |  |  |
+
+`visit_day` is 1 = Monday ... 7 = Sunday; NULL = no fixed day (migration 023, F-44).
 
 ## `custom_fields`  (9 columns)
 
@@ -384,7 +389,7 @@ FK: `batch_id` → `batches.id` · `product_id` → `products.id` · `sale_item_
 
 Indexes: `idx_returns_sale`, `idx_returns_date`, `idx_returns_code`, `idx_returns_qcode`, `idx_returns_disposition`
 
-## `sales`  (17 columns)
+## `sales`  (18 columns)
 
 | Column | Type | Not null | Default |
 |---|---|---|---|
@@ -405,10 +410,14 @@ Indexes: `idx_returns_sale`, `idx_returns_date`, `idx_returns_code`, `idx_return
 | `notes` | TEXT |  |  |
 | `created_at` | TEXT | yes | `datetime('now','localtime')` |
 | `change_paisa` | INTEGER | yes | `0` |
+| `doctor_id` | INTEGER |  |  |
 
-FK: `customer_id` → `customers.id`
+FK: `customer_id` → `customers.id` · `doctor_id` → `customers.id`
 
-Indexes: `idx_sales_date`, `idx_sales_customer`, `idx_sales_status`
+Indexes: `idx_sales_date`, `idx_sales_customer`, `idx_sales_status`, `idx_sales_doctor`
+
+`doctor_id` is the customer (category `doctor`) whose prescription the bill was sold on
+(migration 023, F-44). NULL on most bills.
 
 ## `settings`  (3 columns)
 

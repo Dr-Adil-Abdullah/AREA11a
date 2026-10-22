@@ -170,7 +170,7 @@ STATUS: dict[str, tuple[str, str, str]] = {
     "M-03": ("WIP", "Phase 1: purchases + POS written; receipt/print next", "-"),
     "M-04": ("TODO", "Phase 2: returns, quarantine, alerts, write-off, stock-take", "-"),
     "M-05": ("WIP", "Phase 3 written: ledgers, reports, backup, Excel, reorder/WhatsApp, stock-minus; the free/sample stock list remains", "-"),
-    "M-06": ("WIP", "Phase 4: loyalty (D-57), photos (D-58), own fields (D-59) and several barcodes (D-60) done; medical rep, LAN counter and the installer remain", "-"),
+    "M-06": ("WIP", "Phase 4: loyalty (D-57), photos (D-58), own fields (D-59), several barcodes (D-60) and reps/doctors/lifetime profit (D-61) done; LAN counter and the installer remain", "-"),
     "M-07": ("TODO", "Phase 3/4: audit viewer, stock-take, backup, sync", "-"),
     "M-08": ("DONE", "settings and data-driven from the first migration", "-"),
 }

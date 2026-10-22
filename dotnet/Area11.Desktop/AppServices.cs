@@ -50,6 +50,7 @@ public sealed class AppServices
         Photos = new PhotoService(Database, Audit, Permissions, Log);
         CustomFields = new CustomFieldService(Database, Audit, Permissions, Log);
         Barcodes = new BarcodeService(Database, Audit, Permissions, Log);
+        Reps = new RepService(Database, Audit, Permissions, Log);
     }
 
     public Database Database { get; }
@@ -123,6 +124,9 @@ public sealed class AppServices
     public CustomFieldService CustomFields { get; }
 
     public BarcodeService Barcodes { get; }
+
+    /// <summary>Medical reps, doctors and lifetime profit (F-44).</summary>
+    public RepService Reps { get; }
 
     public ImportService Import { get; }
 

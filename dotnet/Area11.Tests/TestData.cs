@@ -49,14 +49,15 @@ VALUES(@productId, 'B-1', '2027-06-30', '2027-06', @qty, @cost, @retail, 0, 1, @
         TestDatabase test,
         string name = "Ali Raza",
         long limitPaisa = 0,
-        string? phone = "0300-1234567")
+        string? phone = "0300-1234567",
+        string category = "normal")
     {
         return test.Database.Tx(connection =>
         {
             test.Database.Execute(connection, @"
 INSERT INTO customers(name, phone, category, credit_limit_paisa, balance_paisa, loyalty_points, active, created_at)
-VALUES(@name, @phone, 'normal', @limit, 0, 0, 1, @at);",
-                new { name, phone, limit = limitPaisa, at = Clock.Now() });
+VALUES(@name, @phone, @category, @limit, 0, 0, 1, @at);",
+                new { name, phone, category, limit = limitPaisa, at = Clock.Now() });
 
             return (int)test.Database.NextId(connection);
         });
@@ -219,9 +220,11 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, @role, 1, @at);"
 
     /// <summary>One line, one unit, no discount - the plainest possible bill.</summary>
     public static SaleInput Cart(
-        int productId, int qty = 1, string method = "cash", int? customerId = null, int redeemPoints = 0) => new()
+        int productId, int qty = 1, string method = "cash", int? customerId = null, int redeemPoints = 0,
+        int? doctorId = null) => new()
     {
         CustomerId = customerId,
+        DoctorId = doctorId,
         PaymentMethod = method,
         RedeemPoints = redeemPoints,
         Lines = new List<SaleLineInput>

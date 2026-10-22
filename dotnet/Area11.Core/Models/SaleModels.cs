@@ -29,6 +29,12 @@ public sealed class SaleInput
 {
     public int? CustomerId { get; set; }
 
+    /// <summary>
+    /// The doctor whose prescription this bill was sold on (F-44, Spec 17.7). Must be an active
+    /// customer with category 'doctor'; null / 0 = no prescription, which is most bills.
+    /// </summary>
+    public int? DoctorId { get; set; }
+
     public List<SaleLineInput> Lines { get; set; } = new();
 
     public decimal DiscountPercent { get; set; }

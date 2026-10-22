@@ -92,6 +92,9 @@
         <DataTemplate DataType="{x:Type vm:CustomFieldsViewModel}">
             <views:CustomFieldsView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:DoctorsViewModel}">
+            <views:DoctorsView />
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>

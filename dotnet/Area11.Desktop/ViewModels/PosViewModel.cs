@@ -24,6 +24,7 @@ public sealed class PosViewModel : ObservableObject
     private string _unit = "strip";
     private string _quantity = "1";
     private Customer? _selectedCustomer;
+    private Customer? _selectedDoctor;
     private string _redeemPointsText = string.Empty;
     private string _pointsUsedText = string.Empty;
     private bool _hasPointsUsed;
@@ -71,6 +72,9 @@ public sealed class PosViewModel : ObservableObject
     public ObservableCollection<PosCartLine> Cart { get; } = new();
 
     public ObservableCollection<Customer> Customers { get; } = new();
+
+    /// <summary>The doctors a bill may name (F-44); the first row is "(no prescription)".</summary>
+    public ObservableCollection<Customer> Doctors { get; } = new();
 
     public ObservableCollection<string> Units { get; } = new() { "base", "strip", "box" };
 
@@ -168,6 +172,26 @@ public sealed class PosViewModel : ObservableObject
             }
         }
     }
+
+    /// <summary>
+    /// On whose prescription this bill is being sold (F-44). Optional and reset with each bill, so a
+    /// doctor never follows the next customer by accident.
+    /// </summary>
+    public Customer? SelectedDoctor
+    {
+        get => _selectedDoctor;
+        set
+        {
+            if (SetProperty(ref _selectedDoctor, value))
+            {
+                OnPropertyChanged(nameof(DoctorHint));
+            }
+        }
+    }
+
+    public string DoctorHint => SelectedDoctor is { Id: > 0 }
+        ? "Saved on this bill: " + SelectedDoctor.Name
+        : "No prescription - most bills.";
 
     public string DiscountPercent
     {
@@ -410,6 +434,21 @@ public sealed class PosViewModel : ObservableObject
         }
 
         SelectedCustomer = Customers[0];
+
+        // The doctors come from the same customer list - one phone book, one rate tier (Spec 17.1).
+        Doctors.Clear();
+        Doctors.Add(new Customer { Id = 0, Name = "(no prescription)", Category = "normal" });
+
+        foreach (var customer in Customers)
+        {
+            if (string.Equals(customer.Category, "doctor", StringComparison.OrdinalIgnoreCase))
+            {
+                Doctors.Add(customer);
+            }
+        }
+
+        SelectedDoctor = Doctors[0];
+
         FilterProducts();
         Recalculate();
     }
@@ -642,6 +681,7 @@ public sealed class PosViewModel : ObservableObject
         return new SaleInput
         {
             CustomerId = SelectedCustomer is { Id: > 0 } ? SelectedCustomer.Id : null,
+            DoctorId = SelectedDoctor is { Id: > 0 } ? SelectedDoctor.Id : null,
             DiscountPercent = percent,
             PaymentMethod = PaymentMethod,
             Payments = payments,

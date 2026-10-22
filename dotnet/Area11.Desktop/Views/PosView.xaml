@@ -110,6 +110,13 @@
                                   SelectedItem="{Binding SelectedCustomer, Mode=TwoWay}" />
                         <TextBlock Text="{Binding CustomerHint}" Style="{StaticResource MetricLabel}" Margin="0,4,0,0" />
 
+                        <TextBlock Text="Doctor (prescription, optional)" Style="{StaticResource FieldLabel}" Margin="0,8,0,0" />
+                        <ComboBox ItemsSource="{Binding Doctors}" DisplayMemberPath="Name"
+                                  SelectedItem="{Binding SelectedDoctor, Mode=TwoWay}"
+                                  ToolTip="Which doctor wrote the prescription. A doctor is a customer with the category Doctor." />
+                        <TextBlock Text="{Binding DoctorHint}" Style="{StaticResource FieldHint}"
+                                   TextWrapping="Wrap" />
+
                         <!-- loyalty points, only for a customer who has some (F-40) -->
                         <StackPanel Margin="0,6,0,0"
                                     Visibility="{Binding CanRedeem, Converter={StaticResource BoolToVis}}">

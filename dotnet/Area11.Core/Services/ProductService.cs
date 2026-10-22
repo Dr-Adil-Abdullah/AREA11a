@@ -393,8 +393,10 @@ VALUES
         try
         {
             using var connection = _db.Open();
-            var rows = _db.Query<Company>(connection,
-                "SELECT id, name, phone, notes, active FROM companies WHERE active = 1 ORDER BY name COLLATE NOCASE;");
+            var rows = _db.Query<Company>(connection, @"
+SELECT id, name, phone, notes, rep_name AS repName, rep_phone AS repPhone,
+       visit_day AS visitDay, active
+FROM companies WHERE active = 1 ORDER BY name COLLATE NOCASE;");
             return ServiceResult<List<Company>>.Success(rows);
         }
         catch (Exception exception)

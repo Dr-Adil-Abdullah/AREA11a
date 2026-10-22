@@ -110,6 +110,7 @@ public sealed class SaleService
         var stamp = Clock.Now();
 
         var customer = ResolveCustomer(connection, input.CustomerId);
+        var doctor = ResolveDoctor(connection, input.DoctorId);
         var plan = Plan(input, computed.TotalPaisa);
 
         if (plan.IsCredit && customer is null)
@@ -138,17 +139,18 @@ public sealed class SaleService
         var code = _numbering.Take(connection, "sale");
 
         _db.Execute(connection, @"
-INSERT INTO sales(code, date, customer_id, user_id, subtotal_paisa, discount_paisa, tax_paisa,
-                  round_off_paisa, total_paisa, paid_paisa, due_paisa, status, payment_method,
-                  notes, created_at, change_paisa)
-VALUES(@code, @date, @customerId, @userId, @subtotal, @discount, @tax,
-       @roundOff, @total, @paid, @due, @status, @method,
-       @notes, @createdAt, @change);",
+INSERT INTO sales(code, date, customer_id, doctor_id, user_id, subtotal_paisa, discount_paisa,
+                  tax_paisa, round_off_paisa, total_paisa, paid_paisa, due_paisa, status,
+                  payment_method, notes, created_at, change_paisa)
+VALUES(@code, @date, @customerId, @doctorId, @userId, @subtotal, @discount,
+       @tax, @roundOff, @total, @paid, @due, @status,
+       @method, @notes, @createdAt, @change);",
             new
             {
                 code,
                 date = stamp,
                 customerId = input.CustomerId is > 0 ? input.CustomerId.Value : (int?)null,
+                doctorId = doctor?.Id,
                 userId = user.Id,
                 subtotal = computed.SubtotalPaisa,
                 discount = computed.DiscountPaisa,
@@ -580,6 +582,26 @@ SELECT id, name, phone, category, credit_limit_paisa, balance_paisa, loyalty_poi
 FROM customers WHERE id = @id AND active = 1;",
             new { id = customerId.Value })
             ?? throw new ValidationException("The selected customer no longer exists.");
+    }
+
+    /// <summary>
+    /// The doctor on this bill (F-44). A bill may name one, but only a real doctor: a typo that
+    /// pointed a prescription at a normal customer would quietly change what the doctor report says.
+    /// </summary>
+    private Customer? ResolveDoctor(SqliteConnection connection, int? doctorId)
+    {
+        if (doctorId is not > 0)
+        {
+            return null;
+        }
+
+        return _db.QuerySingle<Customer>(connection, @"
+SELECT id, name, phone, category, credit_limit_paisa, balance_paisa, loyalty_points, active
+FROM customers
+WHERE id = @id AND active = 1 AND LOWER(IFNULL(category, '')) = 'doctor';",
+            new { id = doctorId.Value })
+            ?? throw new ValidationException(
+                "The selected doctor is not on the doctor list any more. Pick him again, or clear the doctor.");
     }
 
     private void EnforceCreditLimit(Customer customer, long newCredit, User user)

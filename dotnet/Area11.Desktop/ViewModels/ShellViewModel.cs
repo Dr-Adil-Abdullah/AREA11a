@@ -273,14 +273,25 @@ public sealed class ShellViewModel : ObservableObject
         }
 
         // ---- PEOPLE: one entry, three tabs - the owner's grouping (D-50) ----
-        if (canCustomers || canSuppliers)
+        if (canCustomers || canSuppliers || canProducts)
         {
             AddGroup("people", "CUSTOMERS & SUPPLIERS");
 
-            // The tabs each person may open are decided by PartnersViewModel from the same two
-            // permissions, so the menu and the page can never disagree.
-            AddPage("people", "Customers & suppliers", "Khata, udhaar recovery, payables",
-                () => new PartnersViewModel(_services, _user, RefreshAlerts));
+            if (canCustomers || canSuppliers)
+            {
+                // The tabs each person may open are decided by PartnersViewModel from the same two
+                // permissions, so the menu and the page can never disagree.
+                AddPage("people", "Customers & suppliers", "Khata, udhaar recovery, payables",
+                    () => new PartnersViewModel(_services, _user, RefreshAlerts));
+            }
+
+            // Reps need the products permission, the doctors need customers; each block of the page
+            // hides itself when its own permission is missing (F-44).
+            if (canProducts || canCustomers)
+            {
+                AddPage("people", "Doctors & reps", "Prescriptions, reps and lifetime profit",
+                    () => new DoctorsViewModel(_services, _user));
+            }
         }
 
         // ---- MONEY: the drawer and what it must explain ----

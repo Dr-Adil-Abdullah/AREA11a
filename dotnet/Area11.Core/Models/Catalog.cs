@@ -25,6 +25,14 @@ public sealed class Company
 
     public string? Notes { get; set; }
 
+    /// <summary>The company's medical rep (F-44, Spec 8.3.3) - the man who comes on the visit day.</summary>
+    public string? RepName { get; set; }
+
+    public string? RepPhone { get; set; }
+
+    /// <summary>1 = Monday ... 7 = Sunday; null = no fixed day.</summary>
+    public int? VisitDay { get; set; }
+
     public bool Active { get; set; } = true;
 
     public override string ToString() => Name;
