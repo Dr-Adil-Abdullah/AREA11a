@@ -71,7 +71,10 @@ public sealed class AuditViewerTests
         Assert.Equal("Owner", settings.WhoLabel);
         Assert.Equal("settings change", settings.ActionLabel);
         Assert.Equal("Old Shop  →  Al-Shifa Pharmacy", settings.ChangeLabel);
-        Assert.Equal("settings", settings.Module);
+        // Exactly what was written: the black box never normalises a word. The drop-downs depend on
+        // that too (they list the stored "POS" / "Settings" and filter by exact text), and an export
+        // that lower-cased a module would no longer be the history the shop ran.
+        Assert.Equal("Settings", settings.Module);
         Assert.NotEmpty(settings.At);
     }
 
