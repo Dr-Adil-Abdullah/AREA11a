@@ -61,7 +61,7 @@ public sealed class AuditViewerTests
         var page = Viewer(test).Read(new AuditFilter(), TestData.Owner);
 
         Assert.True(page.Ok, page.Error);
-        Assert.Equal(2, page.Total);
+        Assert.Equal(2, page.Value!.Total);
 
         // Newest first: the sale was written last, so it is the first line.
         Assert.Equal("sale_created", page.Value!.Rows[0].Action);
@@ -192,7 +192,7 @@ public sealed class AuditViewerTests
         // The desktop button is disabled when there is nothing to save; the service still answers a
         // valid page, so the rule is tested where it is decided.
         Assert.True(page.IsEmpty);
-        Assert.Equal(0, page.Rows.Count);
+        Assert.Empty(page.Rows);
     }
 
     // ------------------------------------------------------------------ helpers

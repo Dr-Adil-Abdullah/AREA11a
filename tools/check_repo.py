@@ -293,6 +293,70 @@ def check_usings() -> None:
                 offenders += 1
                 fail(f"{rel(path)} uses {namespace} types without 'using {namespace};'")
 
+    # ---- second pass: the project's own namespaces ----
+    # CS0103 does not care that a type is "ours". `AuditViewModel` used `AuditHistoryService` (in
+    # Area11.Core.Services) with no `using Area11.Core.Services;` and the Desktop project stopped at
+    # v0.6.0 - the checker had only ever known about System.IO and friends.
+    #
+    # Visibility rules used here, so there are no false alarms:
+    #   • a type in the file's OWN namespace needs no using;
+    #   • a type in an ENCLOSING namespace is visible too (Area11.Desktop.AppServices from
+    #     Area11.Desktop.ViewModels), so a namespace that is a prefix of the file's namespace is fine;
+    #   • a type declared in the same PROJECT is skipped - a same-named class in our own assembly
+    #     wins over the Core one, so mentioning it is not an error;
+    #   • comments and strings are masked first, so "produced by SaleService.Quote" in a doc comment
+    #     is prose, not a missing using.
+    declared_ns: dict[str, str] = {}       # type -> namespace
+    project_of: dict[str, str] = {}        # type -> project folder
+
+    for path in sorted(DOTNET.rglob("*.cs")):
+        if "obj" in path.parts or "bin" in path.parts:
+            continue
+
+        masked_text = mask_csharp_noise(path.read_text(encoding="utf-8-sig"))
+        namespace = re.search(r"namespace\s+([\w.]+)\s*[;{]", masked_text)
+
+        if namespace is None:
+            continue
+
+        project = path.relative_to(DOTNET).parts[0]
+
+        for name in re.findall(r"\b(?:class|record|enum|interface|struct)\s+(\w+)", masked_text):
+            declared_ns.setdefault(name, namespace.group(1))
+            project_of.setdefault(name, project)
+
+    for path in files:
+        if "obj" in path.parts or "bin" in path.parts or DOTNET not in path.parents:
+            continue
+
+        text = path.read_text(encoding="utf-8-sig")
+        masked_text = mask_csharp_noise(text)
+        namespace_match = re.search(r"namespace\s+([\w.]+)\s*[;{]", masked_text)
+
+        if namespace_match is None:
+            continue
+
+        own_ns = namespace_match.group(1)
+        project = path.relative_to(DOTNET).parts[0]
+
+        for name, type_ns in declared_ns.items():
+            if project_of.get(name) == project:
+                continue
+
+            if own_ns == type_ns or own_ns.startswith(type_ns + "."):
+                continue
+
+            if f"using {type_ns};" in text:
+                continue
+
+            mention = re.search(rf"(?<![\w.]){re.escape(name)}\s*[.(<]", masked_text)
+
+            if mention:
+                offenders += 1
+                line = masked_text[:mention.start()].count("\n") + 1
+                fail(f"{rel(path)}:{line}: uses '{name}' from {type_ns} without "
+                     f"'using {type_ns};' (CS0103)")
+
     REPORT.append(f"Usings: {len(files)} files, {offenders} missing imports")
 
 
@@ -622,7 +686,11 @@ def check_result_values() -> None:
                 r"public\s+(?:static\s+|async\s+)?ServiceResult(?!<)\s+(\w+)\s*\(", masked):
             methods.setdefault(match.group(1), set()).add("void")
 
-    # 3. follow `var x = _services.<Prop>.<Method>(` and `var x = TestData.<Helper>(test).<Method>(`
+    # 3. the members of every model class. A `ServiceResult<AuditPage>` is NOT an `AuditPage`:
+    #    `page.Total` compiles to CS1061, which is exactly how the first build of v0.6.0 stopped.
+    model_members = _model_folder_properties()
+
+    # 4. follow `var x = _services.<Prop>.<Method>(` and `var x = TestData.<Helper>(test).<Method>(`
     testdata = DOTNET / "Area11.Tests" / "TestData.cs"
     helpers: dict[str, str] = {}
     if testdata.exists():
@@ -644,6 +712,12 @@ def check_result_values() -> None:
                 elif char == "}" and open_braces:
                     brace_match[open_braces.pop()] = index
 
+            # A test file has its own one-line helpers ("Viewer(test) => TestData.AuditHistory(test)").
+            # They answer a service just like TestData does, so the same follow-the-call applies.
+            local_helpers = dict(helpers)
+            local_helpers.update({name: service for service, name in re.findall(
+                r"static\s+(\w+Service)\s+(\w+)\s*\(", masked)})
+
             # One member at a time: `result` is a different type in every method of a view-model, so
             # the variable name alone is not enough to know what `.Value` means.
             for member in _MEMBER_RE.finditer(masked):
@@ -654,10 +728,11 @@ def check_result_values() -> None:
 
                 body = masked[body_start:body_end]
                 kinds: dict[str, str] = {}
+                shapes: dict[str, str] = {}
 
                 for match in re.finditer(
                         r"var\s+(\w+)\s*=\s*(_services\.(\w+)\.(\w+)\s*\(|"
-                        r"TestData\.(\w+)\([^()]*\)\.(\w+)\s*\()",
+                        r"(?:TestData\.)?(\w+)\([^()]*\)\.(\w+)\s*\()",
                         body):
                     variable = match.group(1)
 
@@ -665,10 +740,28 @@ def check_result_values() -> None:
                         service = properties.get(match.group(3))
                         method = match.group(4)
                     else:
-                        service = helpers.get(match.group(5))
+                        service = local_helpers.get(match.group(5))
                         method = match.group(6)
 
                     if service is None:
+                        continue
+
+                    # `var page = Svc.Read(...).Value!` names the PAYLOAD, not the envelope - the
+                    # member access below is then perfectly legal and must not be reported. The call
+                    # may carry arguments (`Build(ReportRange.Today, owner).Value!`), so skip to the
+                    # bracket that closes the call before looking for `.Value`.
+                    depth = 0
+                    cursor = match.end() - 1
+                    while cursor < len(body):
+                        if body[cursor] == "(":
+                            depth += 1
+                        elif body[cursor] == ")":
+                            depth -= 1
+                            if depth == 0:
+                                break
+                        cursor += 1
+
+                    if re.match(r"\s*\.Value\b", body[cursor + 1:cursor + 30]):
                         continue
 
                     answers = service_methods.get(service, {}).get(method)
@@ -677,6 +770,7 @@ def check_result_values() -> None:
 
                     answer = next(iter(answers))
                     kinds[variable] = "value" if answer in _VALUE_RESULTS else "reference"
+                    shapes[variable] = answer
 
                 for variable, kind in kinds.items():
                     pattern = r"\b" + re.escape(variable) + r"\.Value\b(?:\.Value|\s+(?:is|==|!=))"
@@ -698,6 +792,24 @@ def check_result_values() -> None:
                         checked += 1
                         fail(f"{rel(path)}:{line}: '{variable}.Value' is a value type and can never "
                              f"be null (CS0037) - check '{variable}.Ok' and the number instead")
+
+                # The other half of the same mistake: `ServiceResult<AuditPage>` is not an
+                # `AuditPage`. Reading `page.Total` or `page.Rows` off the envelope is CS1061, and it
+                # is easy to write because the two names sit one keystroke apart.
+                for variable, shape in shapes.items():
+                    members = model_members.get(shape)
+                    if not members:
+                        continue
+
+                    for match in re.finditer(r"\b" + re.escape(variable) + r"\.(\w+)", body):
+                        if match.group(1) not in members:
+                            continue
+
+                        line = masked[:body_start + match.start()].count("\n") + 1
+                        checked += 1
+                        fail(f"{rel(path)}:{line}: '{variable}.{match.group(1)}' reads a member of "
+                             f"'{shape}' off the ServiceResult itself (CS1061) - use "
+                             f"'{variable}.Value!.{match.group(1)}' after checking Ok")
 
     REPORT.append(f"Result values: {checked} misuse(s) of a value-type ServiceResult")
 

@@ -34,6 +34,10 @@ public sealed class PartnersViewModel : ObservableObject
         {
             Suppliers = new SuppliersViewModel(services, user, onChanged);
         }
+
+        // Open the first tab this person may actually see. A hidden TabItem still holds its index,
+        // so a page that starts on index 0 would open blank for a supplier-only account.
+        _selectedTab = Customers is not null ? 0 : HasSuppliers ? 2 : 0;
     }
 
     public CustomersViewModel? Customers { get; }

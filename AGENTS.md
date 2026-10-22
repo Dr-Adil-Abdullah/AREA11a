@@ -129,7 +129,7 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.6.0 (Peacock `#0E7490`)** - Phases 1 and 2 are written, and Phase 3 has five of its eight
+> **v0.6.1 (Chestnut `#78350F`)** - Phases 1 and 2 are written, and Phase 3 has five of its eight
 > features (shift/galla, expenses, udhaar recovery, reports, black box). The screen was rebuilt the
 > way the owner asked (D-50): a 176 px menu in five groups, one **bell** with a count badge instead of
 > the red strip across every page, **two kinds of alert** (a reminder anybody may put away, a money

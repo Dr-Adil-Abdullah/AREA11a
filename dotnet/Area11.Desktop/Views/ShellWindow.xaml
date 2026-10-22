@@ -117,15 +117,18 @@
                                 Visibility="{Binding HasBellAlerts, Converter={StaticResource BoolToVis}}">
                             <Border.Style>
                                 <Style TargetType="Border">
-                                    <Setter Property="Background" Value="{StaticResource WarningBrush}" />
+                                    <!-- Light fills with dark figures: the badge sits on the dark top
+                                         bar (and on the brand colour while the panel is open), so a
+                                         dark red or amber chip would disappear into either one. -->
+                                    <Setter Property="Background" Value="#FCD34D" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding HasSeriousAlerts}" Value="True">
-                                            <Setter Property="Background" Value="{StaticResource DangerBrush}" />
+                                            <Setter Property="Background" Value="#FCA5A5" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </Border.Style>
-                            <TextBlock Text="{Binding BellBadgeText}" Foreground="White" FontSize="9"
+                            <TextBlock Text="{Binding BellBadgeText}" Foreground="#111827" FontSize="9"
                                        FontWeight="Bold" HorizontalAlignment="Center"
                                        VerticalAlignment="Center" />
                         </Border>

@@ -113,23 +113,25 @@ features and the four phases.
 | Check | How | State |
 |---|---|---|
 | C# parses (143 files) | `python3 tools/check_repo.py` | ✅ |
-| Every file imports the namespaces it uses (`System.IO` …) | `python3 tools/check_repo.py` | ✅ |
+| Every file imports the namespaces it uses (`System.IO` … **and every type this repo declares**) | `python3 tools/check_repo.py` | ✅ |
 | Every SQL statement prepares against the real schema (168) | `python3 tools/check_repo.py` | ✅ |
 | XAML / csproj / props are valid XML | `python3 tools/check_repo.py` | ✅ |
 | Every XAML binding matches its view-model | `python3 tools/check_repo.py` | ✅ |
 | Every `StaticResource` key exists, in **every** XAML file | `python3 tools/check_repo.py` | ✅ |
 | Every column a query maps has a property on its model | `python3 tools/check_repo.py` | ✅ (22nd check) |
+| No member of a model is read off its `ServiceResult` envelope (CS1061) | `python3 tools/check_repo.py` | ✅ new in v0.6.1 |
 | Every `new XService(...)` matches its constructor (CS7036/CS1501) | `python3 tools/check_repo.py` | ✅ |
 | Migrations 001-019 produce 33 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
 | **Compiles on Windows** | `dotnet build Area11.sln` | ✅ 20 Oct 2026 (v0.1.1); re-check after each release |
-| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.6.0 Peacock |
+| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.6.1 Chestnut |
 | **321 tests green** | `dotnet test` (or `tools\RUN-TESTS.cmd`) | 🟡 **third run**: 282 of 283 in **26.7 s**; the failure was a Dapper column alias, fixed in v0.4.10 (and now impossible: 22nd check). v0.5.0 added 10 black-box tests, v0.6.0 adds 28 for the two alert kinds and the customer form - **fourth run pending** |
 
 ## Change log
 
 | Date | What |
 |---|---|
+| 22 Oct 2026 | **v0.6.1 Chestnut - the first build of the new screen, and its two errors.** `AuditViewModel` used `AuditHistoryService` without `using Area11.Core.Services;` (CS0103) and `AuditViewerTests` read `page.Total` off the `ServiceResult<AuditPage>` instead of its `Value` (CS1061). Both are now **checker rules**: every type this repository declares is mapped to its namespace and a mention without the import fails with a line number; and a `var` that holds a `ServiceResult` may not be read as if it were the model inside. Proved by breaking the code on purpose. Also fixed: a supplier-only account opened the merged people page on a hidden tab (blank screen), plus two build warnings. 321 tests. |
 | 22 Oct 2026 | **v0.6.0 Peacock - the screen the owner asked for (D-50).** The sidebar is 176 px and one line per page under five headings; the red strip across every page is gone. A **bell with a count badge** now sits opposite the logo: **red** when the owner must act, **amber** for housekeeping. It opens a panel split into **Needs the owner** and **Reminders**, and "Full board" opens the old page for the reason and the history. **Two kinds of alert, and the line is drawn in the service:** a reminder (open drawer from an earlier day, a bill waiting for a confirmation) can be put away by **anybody with one click**; `DismissLight` **refuses every other key**, so a cashier can never silence minus stock. Two new serious sources: **shelves at or below their reorder level** (all folded into one line, lowest first) and **batches already expired**, valued at cost. The shop name opens **Settings -> Shop**, the person's name opens **Settings -> Staff**. **Customers, suppliers and udhaar recovery are one menu entry** with three tabs. And the honest answer: adding a customer had **never been built** - the service existed and no screen called it. It is built now, with a phone number that may belong to only one khata. 28 new tests. 321 tests. |
 | 20 Oct 2026 | **First Windows build report:** CS0103 (`Path`/`Directory`/`File`) in `AppConfig.cs`, `Database.cs`, `LoggerService.cs` - fixed with explicit `using System.IO;`. The old `Area11.WPF.sln` was the solution being built by mistake, so it moved to `prototypes/`; the real solution is now `Area11.sln` in the root. The checker gained an explicit-usings check and a SQL-preparation check (37 statements). |
 | 21 Oct 2026 | **v0.3.4 Cyan - stock-take (F-27).** ST session freezes the book; count sheet with book/counted/diff/value and an only-differences pass; Apply (owner, once) corrects batches and values the difference at the frozen cost; negative stock corrected; GINTI batch for found medicine; uncounted lines warned, never zeroed. 173 tests. |

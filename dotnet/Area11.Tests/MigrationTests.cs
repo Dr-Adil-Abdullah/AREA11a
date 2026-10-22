@@ -18,7 +18,9 @@ public sealed class MigrationTests
         // The expected number is the number of .sql files, so adding a migration never breaks this
         // test and never needs a number typed by hand (15 was hard-coded here and went stale).
         var files = Directory.GetFiles(TestDatabase.MigrationsFolder, "*.sql")
-            .Select(Path.GetFileNameWithoutExtension)
+            // GetFileNameWithoutExtension is annotated `string?`; a path that exists always has a
+            // name, so the empty string keeps the list non-nullable and the build warning-free.
+            .Select(path => Path.GetFileNameWithoutExtension(path) ?? string.Empty)
             .OrderBy(name => name, StringComparer.Ordinal)
             .ToList();
 
