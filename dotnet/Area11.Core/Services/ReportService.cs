@@ -324,7 +324,7 @@ SELECT sold.productId AS productId,
        IFNULL(p.name, 'Item #' || sold.productId) AS name,
        CAST(sold.qty - IFNULL(came.qty, 0) AS INTEGER) AS qty,
        CAST(sold.sales - IFNULL(came.refunds, 0) AS INTEGER) AS sales,
-       CAST((sold.sales - sold.cost) - (IFNULL(came.refunds, 0) - IFNULL(came.restockCost, 0)) AS INTEGER) AS profit
+       CAST((sold.sales - sold.cost) - (IFNULL(came.refunds, 0) - IFNULL(came.restockCost, 0)) AS INTEGER) AS profitPaisa
 FROM sold
 LEFT JOIN came ON came.productId = sold.productId
 LEFT JOIN products p ON p.id = sold.productId
@@ -332,7 +332,7 @@ LEFT JOIN products p ON p.id = sold.productId
 
         const string byQuantity = soldAndCameBack + "ORDER BY qty DESC, sales DESC LIMIT @top;";
 
-        const string byProfitSql = soldAndCameBack + "ORDER BY profit DESC, sales DESC LIMIT @top;";
+        const string byProfitSql = soldAndCameBack + "ORDER BY profitPaisa DESC, sales DESC LIMIT @top;";
 
         var rows = _db.Query<ItemRow>(connection, byProfit ? byProfitSql : byQuantity,
             new { from = period.FromStamp, until = period.UntilStamp, top = TopCount });

@@ -1076,6 +1076,282 @@ def check_sql() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 4d. Every column Dapper is asked to read must have a home on the model
+# ---------------------------------------------------------------------------
+#: Words that follow AS inside a CAST(... AS INTEGER) and are not column aliases.
+SQL_TYPE_WORDS = {"INTEGER", "REAL", "TEXT", "NUMERIC", "BLOB", "INT", "BOOLEAN"}
+
+#: Columns selected on purpose with no property: they only make ORDER BY repeatable.
+#: ExpenseService.List selects `sortKind` to keep expenses before drawings inside one second;
+#: Dapper drops it, which is exactly what the comment there says.
+ALIASES_WITHOUT_PROPERTY = {"sortKind"}
+
+
+def _mask(sql: str):
+    """A same-length copy with strings and comments blanked, plus the bracket depth of each char.
+
+    Same length matters: every later position must still point at the same place in the original
+    text, otherwise the projection slices drift.
+    """
+    chars = list(sql)
+    depth = 0
+    depths = [0] * len(sql)
+    i = 0
+
+    while i < len(sql):
+        char = sql[i]
+
+        if char == "'":
+            end = sql.find("'", i + 1)
+            end = len(sql) - 1 if end == -1 else end
+            for k in range(i, end + 1):
+                chars[k] = " "
+            i = end + 1
+            continue
+
+        if sql.startswith("--", i):
+            end = sql.find("\n", i)
+            end = len(sql) if end == -1 else end
+            for k in range(i, end):
+                chars[k] = " "
+            i = end
+            continue
+
+        if char == "(":
+            depth += 1
+        elif char == ")":
+            depth = max(0, depth - 1)
+
+        depths[i] = depth
+        i += 1
+
+    return chars, depths
+
+
+def _top_level_spans(sql: str):
+    """The SELECT ... FROM projections at bracket depth 0 - the ones Dapper maps."""
+    chars, depths = _mask(sql)
+
+    starts = []
+    for i in range(len(sql) - 6):
+        if depths[i] == 0 and "".join(chars[i:i + 6]).upper() == "SELECT" \
+                and (i == 0 or not chars[i - 1].isalnum()):
+            starts.append(i)
+
+    spans = []
+    for start in starts:
+        for i in range(start + 6, len(sql) - 4):
+            if depths[i] == 0 and "".join(chars[i:i + 4]).upper() == "FROM" \
+                    and not chars[i - 1].isalnum():
+                spans.append(sql[start + 6:i])
+                break
+
+    return spans
+
+
+def _alias_of(item: str) -> str | None:
+    """The name Dapper will look for: the AS alias, or the last part of a plain column."""
+    text = item.strip()
+    chars, _ = _mask(text)
+
+    if not text or not "".join(chars).strip():
+        return None
+    if text.startswith("*") or text.endswith("*") or text[0] in "?@'":
+        return None
+    if text[:1].isdigit():
+        return None
+
+    chars, depths = _mask(text)
+    alias = None
+
+    for i in range(len(text) - 2):
+        if depths[i] == 0 and "".join(chars[i:i + 2]).upper() == "AS" \
+                and (i == 0 or chars[i - 1].isspace()) and text[i + 2:i + 3] == " ":
+            word = text[i + 3:].strip().split()[0].strip('"')
+            alias = word
+
+    if alias:
+        if alias.startswith("'") or alias.upper() in SQL_TYPE_WORDS:
+            return None
+        return alias
+
+    column = text.split()[-1].strip('"')
+    return column.split(".")[-1] if column else None
+
+
+PROPERTY_RE = re.compile(r"public\s+[\w<>?\[\], .]+?\s+(\w+)\s*(?:\{|=>)")
+
+
+def _classes_in(text: str) -> dict:
+    """class name -> its own property names, for ONE file.
+
+    Per file matters: five files have a private `ItemRow` and three a `SaleRow`. Merging them by
+    name would let one class lend a property to another and hide the very mistake this checks for.
+    """
+    headers = [(match.start(), match.group(1)) for match in re.finditer(r"class\s+(\w+)", text)]
+    found = {}
+
+    for index, (position, name) in enumerate(headers):
+        end = headers[index + 1][0] if index + 1 < len(headers) else len(text)
+        found.setdefault(name, set()).update(PROPERTY_RE.findall(text[position:end]))
+
+    return found
+
+
+def _base_of(text: str, name: str) -> str:
+    match = re.search(rf"class\s+{re.escape(name)}\s*:\s*([\w.]+)", text)
+    return (match.group(1) if match else "").split(".")[-1]
+
+
+def _model_folder_properties() -> dict:
+    """The shared models in Core/Models - the base classes a row class may inherit from."""
+    found = {}
+
+    for path in (DOTNET / "Area11.Core/Models").glob("*.cs"):
+        for name, props in _classes_in(path.read_text(encoding="utf-8-sig")).items():
+            found.setdefault(name, set()).update(props)
+
+    return found
+
+
+def _normalise(word: str) -> str:
+    return word.replace("_", "").lower()
+
+
+def _split_top(expr: str, separator: str):
+    """Split an expression on a separator that sits outside brackets and strings."""
+    chars, depths = _mask(expr)
+    parts = []
+    start = 0
+
+    for index in range(len(expr)):
+        if chars[index] == separator and depths[index] == 0:
+            parts.append(expr[start:index])
+            start = index + 1
+
+    parts.append(expr[start:])
+    return parts
+
+
+def _const_sqls(text: str) -> dict:
+    """name -> the SQL a `const string` holds, with `a + "suffix"` resolved.
+
+    Why: a query written as a constant is otherwise invisible to this check - the report query
+    that lost its profit column lived in a `const string`, and an inline-only scan would have
+    declared the file clean.
+    """
+    raw = {}
+    for match in re.finditer(r"const\s+string\s+(\w+)\s*=\s*(.+?);", text, re.S):
+        raw[match.group(1)] = match.group(2).strip()
+
+    def resolve(expression: str, seen: set) -> str:
+        built = ""
+
+        for part in _split_top(expression, "+"):
+            piece = part.strip()
+
+            if piece.startswith('@"') and piece.endswith('"'):
+                built += piece[2:-1].replace('""', '"')
+            elif piece.startswith('"') and piece.endswith('"'):
+                built += piece[1:-1].replace('\\"', '"')
+            elif piece in raw and piece not in seen:
+                built += resolve(raw[piece], seen | {piece})
+            elif piece in raw:
+                built += " "
+
+        return built
+
+    return {name: resolve(expression, {name}) for name, expression in raw.items()}
+
+
+def check_column_mapping() -> None:
+    """A column with no property is DROPPED by Dapper, and the field silently stays 0.
+
+    Why this exists: the reports page shipped a query that named its profit column `profit`
+    while the row class called the property `ProfitPaisa`. Dapper matched nothing, wrote 0, and
+    the page showed a profit of zero for a profitable day - no exception, no log line. The
+    compiler cannot see it and SQLite accepts it, so it is checked here: every column of a
+    top-level SELECT must resolve to a property of the class it is being read into.
+    """
+    models = _model_folder_properties()
+
+    # Two shapes: SQL written inline, and SQL held in a `const string` (or a ternary of two of
+    # them). Both are checked, because a query written as a constant is still a query.
+    inline = re.compile(
+        r"Query(?:Single)?<\s*([\w.]+)\s*>\(\s*\w+\s*,\s*@\"((?:[^\"]|\"\")*)\"", re.S)
+    named = re.compile(
+        r"Query(?:Single)?<\s*([\w.]+)\s*>\(\s*\w+\s*,\s*([^;]{1,200}?)\)\s*[;\n]", re.S)
+
+    checked = 0
+    problems = 0
+
+    for path in sorted((DOTNET / "Area11.Core/Services").glob("*.cs")):
+        text = path.read_text(encoding="utf-8-sig")
+        local = _classes_in(text)
+
+        consts = _const_sqls(text)
+
+        queries = [(match.group(1), match.group(2).replace('""', '"'), True)
+                   for match in inline.finditer(text)]
+
+        for match in named.finditer(text):
+            argument = match.group(2)
+
+            for name in re.findall(r"\b(\w+)\b", argument):
+                if name in consts:
+                    queries.append((match.group(1), consts[name], False))
+
+        for model_name, sql, from_literal in queries:
+            if not from_literal and not sql.strip():
+                continue
+
+            model = model_name.split(".")[-1]
+
+            names = set(local.get(model, set()))
+            base = _base_of(text, model)
+
+            while base:
+                names |= local.get(base, set())
+                names |= models.get(base, set())
+                base = _base_of(text, base) if base in local else ""
+
+            if not names:
+                names = set(models.get(model, set()))
+
+            if not names:
+                continue
+
+            homes = {_normalise(name) for name in names}
+
+            for span in _top_level_spans(sql):
+                # Split on the mask, not on the raw text: a comma inside 'Returned, cash
+                # received: ' is part of a word, not the end of a column.
+                chars, depths = _mask(span)
+                items = []
+                start = 0
+
+                for index in range(len(span)):
+                    if chars[index] == "," and depths[index] == 0:
+                        items.append(span[start:index])
+                        start = index + 1
+
+                items.append(span[start:])
+
+                for one in items:
+                    alias = _alias_of(one)
+                    if alias is None or alias.startswith("@"):
+                        continue
+                    checked += 1
+                    if _normalise(alias) in homes or alias in ALIASES_WITHOUT_PROPERTY:
+                        continue
+                    problems += 1
+                    fail(f"{rel(path)}: column '{alias}' has no property on {model} "
+                         f"(Dapper drops it and the field stays 0)")
+
+    REPORT.append(f"Column mapping: {checked} selected column(s) checked against their model")
+
+
+# ---------------------------------------------------------------------------
 # 4c. Package versions that were flagged by the first Windows build
 # ---------------------------------------------------------------------------
 def check_packages() -> None:
@@ -1245,6 +1521,7 @@ def main() -> int:
     check_bindings()
     check_migrations()
     check_sql()
+    check_column_mapping()
     check_packages()
     check_version_colour()
     check_tests()

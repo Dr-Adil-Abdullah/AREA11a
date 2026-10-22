@@ -112,8 +112,13 @@ public sealed class ReportTests
         Assert.Equal(9000L, row.ProfitPaisa);
 
         // The two lists agree on the money, and the item profit adds up to the total profit.
+        // (This is the assertion that caught the column named `profit` while the property was
+        // `ProfitPaisa`: Dapper mapped nothing, the row said 0, and the page showed no profit.)
         Assert.Equal(row.ProfitPaisa, report.TopByProfit[0].ProfitPaisa);
+        Assert.Equal(row.SalesPaisa, report.TopByProfit[0].SalesPaisa);
+        Assert.Equal(row.QtyBase, report.TopByProfit[0].QtyBase);
         Assert.Equal(report.Totals.ProfitPaisa, report.TopByQty.Sum(item => item.ProfitPaisa));
+        Assert.Equal(report.Totals.ProfitPaisa, report.TopByProfit.Sum(item => item.ProfitPaisa));
     }
 
     // ------------------------------------------------------------------ the per-day sheet
