@@ -21,7 +21,12 @@ public sealed class Database
         DefaultTypeMap.MatchNamesWithUnderscores = true;
     }
 
-    public Database(string? filePath = null)
+    /// <param name="filePath">The database file; the shop's own file when null.</param>
+    /// <param name="pooling">
+    /// True for the application (a bill must not wait for a connection). False for the tests: a
+    /// pooled handle keeps the file open on Windows, so a throw-away database could never be deleted.
+    /// </param>
+    public Database(string? filePath = null, bool pooling = true)
     {
         FilePath = string.IsNullOrWhiteSpace(filePath) ? AppPaths.DatabaseFile : filePath;
 
@@ -36,7 +41,7 @@ public sealed class Database
             DataSource = FilePath,
             Mode = SqliteOpenMode.ReadWriteCreate,
             Cache = SqliteCacheMode.Default,
-            Pooling = true,
+            Pooling = pooling,
             ForeignKeys = true
         }.ToString();
     }
@@ -48,9 +53,30 @@ public sealed class Database
         var connection = new SqliteConnection(_connectionString);
         connection.Open();
 
-        using var command = connection.CreateCommand();
-        command.CommandText = "PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;";
-        command.ExecuteNonQuery();
+        // busy_timeout FIRST: if the file is momentarily busy (another copy of the shop program,
+        // antivirus scanning the folder) the next statement waits instead of failing. Then WAL is
+        // best effort - after the first start the database already IS in WAL, and a checkpoint that
+        // cannot run right now must not stop a bill from being saved.
+        using (var settings = connection.CreateCommand())
+        {
+            settings.CommandText = "PRAGMA busy_timeout=5000;";
+            settings.ExecuteNonQuery();
+        }
+
+        using (var journal = connection.CreateCommand())
+        {
+            journal.CommandText = "PRAGMA journal_mode=WAL;";
+
+            try
+            {
+                journal.ExecuteNonQuery();
+            }
+            catch (SqliteException)
+            {
+                // Busy or read-only for a moment. The mode is remembered in the file; the next open
+                // sets it again, and every write below is still safe in the current mode.
+            }
+        }
 
         return connection;
     }

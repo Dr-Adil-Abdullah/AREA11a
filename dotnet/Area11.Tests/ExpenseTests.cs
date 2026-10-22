@@ -24,18 +24,6 @@ public sealed class ExpenseTests
 
     private static readonly User Cashier = new() { Id = 2, Name = "Cashier", Role = "cashier" };
 
-    private static int AddUser(TestDatabase test, string role)
-    {
-        return test.Database.Tx(connection =>
-        {
-            test.Database.Execute(connection, @"
-INSERT INTO users(name, role, active, created_at) VALUES(@role, @role, 1, @at);",
-                new { role, at = Clock.Now() });
-
-            return (int)test.Database.NextId(connection);
-        });
-    }
-
     private static double StockOf(TestDatabase test, int productId)
     {
         using var connection = test.Database.Open();
@@ -121,8 +109,7 @@ SELECT category AS category, title AS title, amount_paisa AS amountPaisa FROM ex
     {
         using var test = new TestDatabase();
 
-        var cashierId = AddUser(test, "cashier");
-        var cashier = new User { Id = cashierId, Name = "Cashier", Role = "cashier" };
+        var cashier = TestData.Cashier(test);
 
         var refused = TestData.CashOut(test).AddExpense(cashier, Rent());
 

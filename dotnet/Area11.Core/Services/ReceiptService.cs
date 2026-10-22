@@ -175,15 +175,18 @@ WHERE sale_id = @id AND method <> 'credit' ORDER BY id;", new { id = saleId });
             {
                 Pair(MethodLabel(part.Method), Money.Fixed(part.AmountPaisa));
             }
-
-            if (sale.ChangePaisa > 0)
-            {
-                Pair("Change", Money.Fixed(sale.ChangePaisa), bold: true);
-            }
         }
         else if (string.Equals(sale.PaymentMethod, "credit", StringComparison.OrdinalIgnoreCase))
         {
             Pair("On credit", Money.Fixed(sale.DuePaisa));
+        }
+
+        // The change belongs to the SALE, not to the payment rows: an older bill (or one written by
+        // the reference application) carries change_paisa with no `payments` row, and the customer
+        // must still read what he got back.
+        if (sale.ChangePaisa > 0)
+        {
+            Pair("Change", Money.Fixed(sale.ChangePaisa), bold: true);
         }
 
         if (sale.DuePaisa > 0)

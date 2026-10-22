@@ -61,25 +61,29 @@ public sealed class CustomerLedgerService
 
             using var connection = _db.Open();
 
+            // Every sum is CAST to INTEGER: `qty_base` is REAL (a strip can be half a box), so SUM
+            // returns a floating point number, and a floating paisa must never reach a rupee field.
+            // The search pattern is a parameter named `pattern`, not one named `like` - a keyword is
+            // a poor name for a value, and one reader once mistook it for the operator.
             var rows = _db.Query<CustomerSummary>(connection, @"
 SELECT c.id AS id, c.name AS name, c.phone AS phone, c.category AS category,
        c.credit_limit_paisa AS creditLimitPaisa, c.balance_paisa AS balancePaisa,
        c.loyalty_points AS loyaltyPoints, IFNULL(c.stars, 1) AS stars,
        (SELECT COUNT(1) FROM sales s WHERE s.customer_id = c.id AND s.status IN ('paid','partial','credit')) AS billsCount,
-       IFNULL((SELECT SUM(s.total_paisa) FROM sales s
-               WHERE s.customer_id = c.id AND s.status IN ('paid','partial','credit')), 0) AS lifetimePaisa,
-       IFNULL((SELECT SUM(si.line_total_paisa - si.qty_base * si.cost_paisa_at_sale)
+       CAST(IFNULL((SELECT SUM(s.total_paisa) FROM sales s
+               WHERE s.customer_id = c.id AND s.status IN ('paid','partial','credit')), 0) AS INTEGER) AS lifetimePaisa,
+       CAST(IFNULL((SELECT SUM(si.line_total_paisa - si.qty_base * si.cost_paisa_at_sale)
                FROM sale_items si JOIN sales s ON s.id = si.sale_id
-               WHERE s.customer_id = c.id AND s.status IN ('paid','partial','credit')), 0) AS profitPaisa,
-       IFNULL((SELECT SUM(r.refund_paisa) FROM sale_returns r
-               JOIN sales rs ON rs.id = r.sale_id WHERE rs.customer_id = c.id), 0) AS returnsPaisa,
+               WHERE s.customer_id = c.id AND s.status IN ('paid','partial','credit')), 0) AS INTEGER) AS profitPaisa,
+       CAST(IFNULL((SELECT SUM(r.refund_paisa) FROM sale_returns r
+               JOIN sales rs ON rs.id = r.sale_id WHERE rs.customer_id = c.id), 0) AS INTEGER) AS returnsPaisa,
        (SELECT MAX(s.date) FROM sales s WHERE s.customer_id = c.id) AS lastBillDate
 FROM customers c
 WHERE c.active = 1
-  AND (@term = '' OR c.name LIKE @like OR IFNULL(c.phone, '') LIKE @like)
+  AND (@term = '' OR c.name LIKE @pattern OR IFNULL(c.phone, '') LIKE @pattern)
   AND (@onlyCredit = 0 OR c.balance_paisa > 0)
 ORDER BY c.balance_paisa DESC, c.name COLLATE NOCASE;",
-                new { term, like = "%" + term + "%", onlyCredit = onlyCredit ? 1 : 0 });
+                new { term, pattern = "%" + term + "%", onlyCredit = onlyCredit ? 1 : 0 });
 
             foreach (var row in rows)
             {
@@ -91,7 +95,11 @@ ORDER BY c.balance_paisa DESC, c.name COLLATE NOCASE;",
         catch (Exception exception)
         {
             _log.Error("The customer list could not be loaded.", exception);
-            return ServiceResult<List<CustomerSummary>>.Fail("The customers could not be loaded.");
+
+            // The technical reason is shown, not hidden: "database is locked" tells the owner to close
+            // the second copy of Area11, while a bare "could not be loaded" tells him nothing.
+            return ServiceResult<List<CustomerSummary>>.Fail(
+                "The customers could not be loaded. (" + exception.GetType().Name + ": " + exception.Message + ")");
         }
     }
 
@@ -107,13 +115,13 @@ SELECT c.id AS id, c.name AS name, c.phone AS phone, c.category AS category,
        c.credit_limit_paisa AS creditLimitPaisa, c.balance_paisa AS balancePaisa,
        c.loyalty_points AS loyaltyPoints, IFNULL(c.stars, 1) AS stars,
        (SELECT COUNT(1) FROM sales s WHERE s.customer_id = c.id AND s.status IN ('paid','partial','credit')) AS billsCount,
-       IFNULL((SELECT SUM(s.total_paisa) FROM sales s
-               WHERE s.customer_id = c.id AND s.status IN ('paid','partial','credit')), 0) AS lifetimePaisa,
-       IFNULL((SELECT SUM(si.line_total_paisa - si.qty_base * si.cost_paisa_at_sale)
+       CAST(IFNULL((SELECT SUM(s.total_paisa) FROM sales s
+               WHERE s.customer_id = c.id AND s.status IN ('paid','partial','credit')), 0) AS INTEGER) AS lifetimePaisa,
+       CAST(IFNULL((SELECT SUM(si.line_total_paisa - si.qty_base * si.cost_paisa_at_sale)
                FROM sale_items si JOIN sales s ON s.id = si.sale_id
-               WHERE s.customer_id = c.id AND s.status IN ('paid','partial','credit')), 0) AS profitPaisa,
-       IFNULL((SELECT SUM(r.refund_paisa) FROM sale_returns r
-               JOIN sales rs ON rs.id = r.sale_id WHERE rs.customer_id = c.id), 0) AS returnsPaisa,
+               WHERE s.customer_id = c.id AND s.status IN ('paid','partial','credit')), 0) AS INTEGER) AS profitPaisa,
+       CAST(IFNULL((SELECT SUM(r.refund_paisa) FROM sale_returns r
+               JOIN sales rs ON rs.id = r.sale_id WHERE rs.customer_id = c.id), 0) AS INTEGER) AS returnsPaisa,
        (SELECT MAX(s.date) FROM sales s WHERE s.customer_id = c.id) AS lastBillDate
 FROM customers c WHERE c.id = @id;", new { id = customerId });
 
@@ -156,7 +164,9 @@ FROM customers c WHERE c.id = @id;", new { id = customerId });
         catch (Exception exception)
         {
             _log.Error("The page of customer " + customerId + " could not be loaded.", exception);
-            return ServiceResult<CustomerPage>.Fail("The customer's account could not be loaded.");
+            return ServiceResult<CustomerPage>.Fail(
+                "The customer's account could not be loaded. (" + exception.GetType().Name + ": "
+                + exception.Message + ")");
         }
     }
 

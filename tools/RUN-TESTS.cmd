@@ -1,7 +1,7 @@
 @echo off
 rem ============================================================================
 rem  Area11 - run the tests (double-click this file)
-rem  Expected: "Passed! - Failed: 0, Passed: 173"
+rem  Expected: "Passed! - Failed: 0" - every test green, no number to remember.
 rem ============================================================================
 title Area11 - tests
 cd /d "%~dp0.."
@@ -14,7 +14,7 @@ echo.
 
 if not exist "Area11.sln" (
     echo  [X] Area11.sln not found here: %CD%
-    echo      Run START-AREA11.bat from the folder that contains Area11.sln.
+    echo      Run this file from the folder that contains Area11.sln.
     echo.
     pause
     exit /b 1
@@ -28,11 +28,14 @@ if errorlevel 1 (
     exit /b 1
 )
 
-dotnet test Area11.sln -v minimal
+rem Only Core and the tests are built here: the window program is not needed to test the shop
+rem rules, and leaving it out keeps the run short even when the Desktop project is mid-edit.
+dotnet test "dotnet\Area11.Tests\Area11.Tests.csproj" -v minimal
 
 echo.
 echo  ----------------------------------------------------------
-echo   Look for the line:  Passed!  - Failed: 0, Passed: 173
-echo   If any test failed, send the screen in the chat.
+echo   Look for:  Passed!  - Failed: 0
+echo   The number of tests grows with every version, so only
+echo   "Failed: 0" matters. If anything failed, send the screen.
 echo  ----------------------------------------------------------
 pause

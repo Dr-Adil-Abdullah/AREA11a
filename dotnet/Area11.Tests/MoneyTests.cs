@@ -22,7 +22,16 @@ public sealed class MoneyTests
     [Fact]
     public void RoundDown_NeverRoundsUp()
     {
-        Assert.Equal(54900, Money.RoundDownWithCostGuard(54999, 0, 10));
+        // The step is TEN RUPEES (the shop's round-off), so 549.99 becomes 540.00 - not 549.00,
+        // and certainly never 550.00. Getting this wrong in either direction changes the bill.
+        Assert.Equal(54000, Money.RoundDownWithCostGuard(54999, 0, 10));
+        Assert.Equal(54000, Money.RoundDownWithCostGuard(54000, 0, 10));
+
+        // …and it is never bigger than the amount it was given.
+        for (var paisa = 1L; paisa <= 200000L; paisa += 137)
+        {
+            Assert.True(Money.RoundDownWithCostGuard(paisa, 0, 10) <= paisa);
+        }
     }
 
     [Fact]

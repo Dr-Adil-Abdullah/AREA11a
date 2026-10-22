@@ -203,11 +203,14 @@ INSERT INTO users(name, role, active, created_at) VALUES('Cashier', 'cashier', 1
 
         var shift = Shifts(test).Current()!;
 
+        // This shift has no float, no cash bill and no khata collection: only the two supplier
+        // movements exist, so the drawer holds exactly Rs 4,000 in minus Rs 2,000 out.
         Assert.Equal(200000L, shift.SupplierCashOutPaisa);     // Rs 2,000 paid to the supplier
         Assert.Equal(400000L, shift.SupplierCashInPaisa);      // Rs 4,000 came back for the goods
-
-        // Rs 900 cash bill + Rs 400 khata + Rs 4,000 in, minus Rs 300 refund and Rs 2,000 out.
-        Assert.Equal(300000L, shift.ExpectedPaisa);
+        Assert.Equal(0L, shift.CashSalesPaisa);
+        Assert.Equal(0L, shift.ExpensesPaisa);
+        Assert.Equal(0L, shift.DrawingsPaisa);
+        Assert.Equal(200000L, shift.ExpectedPaisa);
     }
 
     [Fact]

@@ -1,11 +1,12 @@
 using Area11.Core.Services;
+using System.IO;
 using Xunit;
 
 namespace Area11.Tests;
 
 /// <summary>
 /// The schema port is the highest-risk piece (an existing area11.db must open unchanged), so it
-/// gets its own tests: all 14 migrations, the ledger, the settings seed and the first login.
+/// gets its own tests: every migration, the ledger, the settings seed and the first login.
 /// </summary>
 public sealed class MigrationTests
 {
@@ -14,11 +15,20 @@ public sealed class MigrationTests
     {
         using var test = new TestDatabase();
 
-        using var connection = test.Database.Open();
-        var count = Convert.ToInt64(
-            test.Database.Scalar(connection, "SELECT COUNT(1) FROM _migrations;") ?? 0L);
+        // The expected number is the number of .sql files, so adding a migration never breaks this
+        // test and never needs a number typed by hand (15 was hard-coded here and went stale).
+        var files = Directory.GetFiles(TestDatabase.MigrationsFolder, "*.sql")
+            .Select(Path.GetFileNameWithoutExtension)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToList();
 
-        Assert.Equal(15L, count);
+        using var connection = test.Database.Open();
+        var recorded = test.Database.Query<string>(connection, "SELECT id FROM _migrations;")
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToList();
+
+        Assert.Equal(files, recorded);
+        Assert.Equal(files.Count, recorded.Distinct().Count());
     }
 
     [Fact]

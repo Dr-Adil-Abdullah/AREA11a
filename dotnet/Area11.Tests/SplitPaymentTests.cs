@@ -150,16 +150,50 @@ public sealed class SplitPaymentTests
         var customer = TestData.AddCustomer(test, limitPaisa: 5000);
         var sales = TestData.Sales(test);
 
+        // Two settings decide this: the block must be ON (it ships OFF) and the person must not be
+        // the owner (spec 13.4.2 always allows the owner), so the limit is tested from the counter.
+        test.Settings.Set("credit.blockOverLimit", true, null);
+        var cashier = TestData.Cashier(test);
+
         var tooMuch = Split(product, ("cash", 20000), ("credit", 10000));
         tooMuch.CustomerId = customer;
-        Assert.False(sales.Create(tooMuch, TestData.Owner).Ok);
+        var refused = sales.Create(tooMuch, cashier);
 
+        Assert.False(refused.Ok);
+        Assert.Contains("credit limit", refused.Error ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+
+        // The cash part is not credit: Rs 25,000 cash and Rs 5,000 khata fit a Rs 5,000 limit.
         var fits = Split(product, ("cash", 25000), ("credit", 5000));
         fits.CustomerId = customer;
-        var ok = sales.Create(fits, TestData.Owner);
+        var ok = sales.Create(fits, cashier);
 
         Assert.True(ok.Ok, ok.Error);
         Assert.Equal(5000L, ok.Value!.DuePaisa);
+    }
+
+    [Fact]
+    public void TheOwner_MayCrossTheLimit_AndTheManagerOnlyWhenTheSettingAllows()
+    {
+        using var test = new TestDatabase();
+        var product = TestData.AddProduct(test);
+        var customer = TestData.AddCustomer(test, limitPaisa: 5000);
+        var sales = TestData.Sales(test);
+
+        var over = Split(product, ("cash", 20000), ("credit", 10000));
+        over.CustomerId = customer;
+
+        test.Settings.Set("credit.blockOverLimit", true, null);
+
+        // Owner: always allowed (spec 13.4.2), and it is written down in the black box by the sale.
+        var byOwner = sales.Create(over, TestData.Owner);
+        Assert.True(byOwner.Ok, byOwner.Error);
+        Assert.Equal(10000L, byOwner.Value!.DuePaisa);
+
+        // A second bill for the same customer from the cashier is refused on top of that khata.
+        var cashier = TestData.Cashier(test);
+        var again = Split(product, ("cash", 20000), ("credit", 10000));
+        again.CustomerId = customer;
+        Assert.False(sales.Create(again, cashier).Ok);
     }
 
     [Fact]

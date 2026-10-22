@@ -105,7 +105,7 @@ ORDER BY s.customer_id, s.date, s.id;");
         // credit part. A payment written at the till against a sale is already inside due_paisa,
         // so counting it here would subtract the same rupee twice.
         var credits = _db.Query<CreditRow>(connection, @"
-SELECT customerId, id, date, amountPaisa FROM (
+SELECT customerId, id, date, amountPaisa, kind FROM (
     SELECT p.customer_id AS customerId, p.id AS id, p.date AS date, p.amount_paisa AS amountPaisa,
            'collection' AS kind
     FROM payments p
@@ -291,19 +291,19 @@ WHERE s.customer_id = @id AND s.status IN ('paid', 'partial', 'credit') AND s.du
 ORDER BY s.date, s.id;", new { id = payment.CustomerId });
 
             var credits = _db.Query<CreditRow>(connection, @"
-SELECT customerId, id, date, amountPaisa FROM (
-    SELECT p.customer_id AS customerId, p.id AS id, p.date AS date, p.amount_paisa AS amountPaisa,
-           'collection' AS kind
-    FROM payments p
-    WHERE p.customer_id = @id AND p.sale_id IS NULL AND p.purchase_id IS NULL
-    UNION ALL
-    SELECT s.customer_id AS customerId, r.id AS id, r.date AS date, r.credit_reduced_paisa AS amountPaisa,
-           'return' AS kind
-    FROM sale_returns r
-    JOIN sales s ON s.id = r.sale_id
-    WHERE s.customer_id = @id AND r.credit_reduced_paisa > 0
-)
-ORDER BY date, id;", new { id = payment.CustomerId });
+SELECT customerId, id, date, amountPaisa, kind FROM (
+        SELECT p.customer_id AS customerId, p.id AS id, p.date AS date, p.amount_paisa AS amountPaisa,
+               'collection' AS kind
+        FROM payments p
+        WHERE p.customer_id = @id AND p.sale_id IS NULL AND p.purchase_id IS NULL
+        UNION ALL
+        SELECT s.customer_id AS customerId, r.id AS id, r.date AS date, r.credit_reduced_paisa AS amountPaisa,
+               'return' AS kind
+        FROM sale_returns r
+        JOIN sales s ON s.id = r.sale_id
+        WHERE s.customer_id = @id AND r.credit_reduced_paisa > 0
+    )
+    ORDER BY date, id;", new { id = payment.CustomerId });
 
             var open = bills.Select(bill => new OpenBill
             {

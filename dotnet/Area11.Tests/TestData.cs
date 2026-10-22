@@ -76,6 +76,27 @@ VALUES(@name, 'GSK', '042-1112233', @opening, @opening, 1, '2026-01-01 09:00:00'
         });
     }
 
+    /// <summary>
+    /// Adds a real person (the row, not just an object) and returns the signed-in user. The row is
+    /// needed because `sales.user_id` is a foreign key: a made-up id would fail the insert.
+    /// </summary>
+    public static User AddUser(TestDatabase test, string role)
+    {
+        var id = test.Database.Tx(connection =>
+        {
+            test.Database.Execute(connection, @"
+INSERT INTO users(name, role, active, created_at) VALUES(@name, @role, 1, @at);",
+                new { name = char.ToUpperInvariant(role[0]) + role[1..], role, at = Clock.Now() });
+
+            return (int)test.Database.NextId(connection);
+        });
+
+        return new User { Id = id, Name = char.ToUpperInvariant(role[0]) + role[1..], Role = role };
+    }
+
+    /// <summary>A cashier: makes bills, cannot take money out of the shop.</summary>
+    public static User Cashier(TestDatabase test) => AddUser(test, "cashier");
+
     public static PurchaseService Purchases(TestDatabase test) =>
         new(test.Database, test.Audit, new NumberingService(test.Settings),
             new PermissionService(test.Database, test.Log, test.Audit), test.Log);

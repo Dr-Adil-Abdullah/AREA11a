@@ -95,7 +95,9 @@ WHERE customer_id = @id AND sale_id IS NULL AND purchase_id IS NULL AND amount_p
         Assert.True(page.Ok, page.Error);
         Assert.True(page.Value!.BooksMatch);
         Assert.Equal(2, page.Value!.Lines.Count);
-        Assert.Equal(40000L, page.Value!.Lines[1].RunningPaisa);
+
+        // The bill was Rs 900 and Rs 400 came in, so the running balance after the collection is 500.
+        Assert.Equal(50000L, page.Value!.Lines[1].RunningPaisa);
         Assert.Equal("collection", page.Value!.Lines[1].Kind);
     }
 
@@ -312,7 +314,7 @@ INSERT INTO user_permissions(user_id, module_key, allowed) VALUES(@id, 'customer
 
         // The promotion is in the black box, so the owner can see who changed the customer.
         var promoted = test.Database.QuerySingle<int>(connection,
-            "SELECT COUNT(1) FROM audit_log WHERE action = 'vip_promoted';");
+            "SELECT COUNT(1) FROM audit_logs WHERE action = 'vip_promoted';");
         Assert.Equal(1, promoted);
     }
 

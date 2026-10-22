@@ -121,8 +121,8 @@ features and the four phases.
 | Migrations 001-019 produce 33 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
 | **Compiles on Windows** | `dotnet build Area11.sln` | ✅ 20 Oct 2026 (v0.1.1); re-check after each release |
-| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.4.6 Graphite |
-| **270 tests green** | `dotnet test` | ⬜ **F-16 follow-up** (the tests have never run on the owner's PC) |
+| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.4.7 Aubergine |
+| **271 tests green** | `dotnet test` (or `tools\RUN-TESTS.cmd`) | 🟡 **first real run 21 Oct 2026**: 259 of 270 passed; the 11 failures are fixed in v0.4.7 and are **waiting for the owner's second run** |
 
 ## Change log
 
@@ -156,3 +156,4 @@ features and the four phases.
 | 20 Oct 2026 | Added `HANDOFF.md`, `AGENTS.md`, this board, the rules matrix, the spec copy and `tools/check_repo.py` (owner's U-13). |
 | 19 Oct 2026 | Phase 1 code: schema, Core services, login, dashboard, products, purchases, POS, 44 tests. |
 | 19 Oct 2026 | Owner decisions D-17…D-23 (three projects, Windows 10, installer, four phases, photos, quarantine, printing). |
+| 21 Oct 2026 | **v0.4.7 Aubergine - the first test run, and all 11 failures answered.** The owner ran `tools\RUN-TESTS.cmd`: **259 of 270 passed in 305 s**. Three were real faults. (a) The recovery slip could never find its own payment: the outer `SELECT` of the `UNION` left out `kind`, so `Slip` answered "That collection is not in the customer's history" - and one test died with a `NullReferenceException` instead. (b) A bill with no `payments` row printed no "Change" line, so an imported bill showed the customer paying more than the total. (c) `Database.Open` asked SQLite to switch to WAL **before** it set `busy_timeout`, so one momentary lock (antivirus, a second copy) failed the whole query; the wait is set first, the WAL switch is best-effort, and a failed customer list now names the exception instead of hiding it. The other eight were the tests' own mistakes and were corrected, not the code: a hard-coded "15 migrations" (there are 19 - the test now reads the folder), a round-down test using a Rs 10 step but expecting a Rs 1 answer, `audit_log` instead of `audit_logs`, a credit-limit test run as the **owner** (Spec 13.4.2 always allows him) with `credit.blockOverLimit` left off, a running balance of 40,000 where the arithmetic says 50,000, and a shift expecting 300,000 from a comment that described a different day (the drawer holds 200,000). **Speed:** the 19 migrations ran once per test (305 s); `TestDatabase` now migrates one schema per run, copies it per test, and deletes the copies. `tools\RUN-TESTS.cmd` prints no test count any more - only "Failed: 0" - and builds the tests alone. 271 tests. |
