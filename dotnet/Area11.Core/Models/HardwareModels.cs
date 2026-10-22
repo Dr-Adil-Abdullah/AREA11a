@@ -47,6 +47,12 @@ public sealed class HardwareReport
 
     public string PrinterName { get; set; } = string.Empty;
 
+    /// <summary>The printer Windows itself would use, empty when it has none (the code-6 state).</summary>
+    public string DefaultPrinter { get; set; } = string.Empty;
+
+    /// <summary>Every printer Windows lists on this PC, so the name can be picked and not typed.</summary>
+    public List<string> InstalledPrinters { get; } = new();
+
     public int Copies { get; set; } = 1;
 
     public bool AutoCut { get; set; } = true;
@@ -77,8 +83,12 @@ public sealed class HardwareReport
         WidthMm.ToString(CultureInfo.InvariantCulture) + " mm - "
         + Columns.ToString(CultureInfo.InvariantCulture) + " characters";
 
-    public string PrinterLabel =>
-        string.IsNullOrWhiteSpace(PrinterName) ? "Windows default printer" : PrinterName.Trim();
+    public string PrinterLabel => PrinterName.Trim().Length > 0
+        ? PrinterName.Trim()
+        : DefaultPrinter.Length > 0 ? "Windows default - " + DefaultPrinter : "no printer chosen";
+
+    /// <summary>What the page says when Windows lists nothing at all (a driver is missing).</summary>
+    public bool HasPrinters => InstalledPrinters.Count > 0;
 
     public string ProgressLabel =>
         PassedCount.ToString(CultureInfo.InvariantCulture) + " of "

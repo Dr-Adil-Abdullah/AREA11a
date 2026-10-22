@@ -129,26 +129,31 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.22.0 (Harbour `#3B5C7F`)** - all four phases are written: Phase 1-3 in full (billing, returns,
+> **v0.22.1 (Cinnabar `#A63A2B`)** - all four phases are written: Phase 1-3 in full (billing, returns,
 > purchase, khata, supplier ledger, shift/galla, expenses, reports, black box, backup & restore,
-> Excel / CSV, reorder + WhatsApp, stock-minus registry), and Phase 4 has **9 of its 12 features**:
+> Excel / CSV, reorder + WhatsApp, stock-minus registry), and Phase 4 has **all 12 of its features**:
 > loyalty from the screen, photos for medicines / customers / suppliers (copied into the shop's
 > folder, **put away instead of deleted**), the owner's **own fields**, **several barcodes per
 > medicine** (migration 022), **medical reps + doctors + lifetime profit** (migration 023), the
 > **second counter** over the shop's own share (D-62), the **tax report + `PAY-` slip + monthly
-> statement** (D-63), the **installer** (F-47, D-64), the **printer & scanner test** (F-46, D-65) and
-> **cloud sync** (F-48, D-66) and the **bills page** (F-52, D-67): find any bill by number, customer
-> or date, open its lines and returns, and print it again with the same builder that printed it - the
-> paper is previewed first and every reprint is one line in the black box.
+> statement** (D-63), the **installer** (F-47, D-64), the **printer & scanner test** (F-46, D-65),
+> **cloud sync** (F-48, D-66) and the **bills page** (F-52, D-67) - 12 of 12, with the printer
+> repair of v0.22.1 keeping the hardware test honest.
 >
 > The last confirmed Windows build is v0.4.8; everything from v0.6.2 on is proved only by
 > `tools/check_repo.py` until the owner runs `START-AREA11.bat` and `tools\\RUN-TESTS.cmd`
-> (**553 cases**).
+> (**559 cases**).
 >
-> **v0.22.0 adds the bills page (F-52).** SYSTEM -> *Cloud sync* pushes the shop's own data to a Supabase
+> **v0.22.1 fixes the printer (code 6) and the two red tests.** SYSTEM -> *Printer & scanner* lists
+> every printer Windows knows and saves the choice at once; an empty name now resolves the default
+> printer by name instead of opening the print server, and each Windows code is explained.
+>
+> **v0.21.0 added cloud sync (F-48).** SYSTEM -> *Cloud sync* pushes the shop's own data to a Supabase
 > mirror (lists whole, money for the last 90 days, no photos). *See what the cloud has* reads the
 > copy and writes **nothing**; *Bring the cloud data here* needs a tick, takes a **backup**, writes
 > every row in **one transaction**, never deletes, and ignores tables or columns this database does
-> **Next:** the misspelt-medicine search (F-50), and the owner's own run of the printer slip at the
-> shop (F-46).
+> not have.
+>
+> **Next:** the misspelt-medicine search (F-50), the sample shop (F-53), and the owner's own run of
+> the printer slip on the shop's paper (F-46).
 > Details: `HANDOFF.md` §4.

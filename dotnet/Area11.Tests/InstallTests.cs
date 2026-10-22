@@ -64,8 +64,13 @@ public sealed class InstallTests
         var facts = ReadyPc();
         var plan = InstallService.Plan(facts);
 
-        var desktop = plan.Shortcuts.Single(shortcut => shortcut.Name == InstallService.DesktopShortcutName);
-        var start = plan.Shortcuts.Single(shortcut => shortcut.Name == InstallService.StartMenuShortcutName);
+        // Two shortcuts are both called "Area11" - the one on the public desktop and the one in the
+        // Start menu - so the folder is what tells them apart. (v0.22.1: this test asked for Single on
+        // the name alone and failed the moment the Start menu shortcut joined it in v0.19.0.)
+        var desktop = plan.Shortcuts.Single(shortcut =>
+            shortcut.Name == InstallService.DesktopShortcutName && shortcut.Folder == facts.DesktopFolder);
+        var start = plan.Shortcuts.Single(shortcut =>
+            shortcut.Name == InstallService.StartMenuShortcutName && shortcut.Folder == facts.StartMenuFolder);
         var uninstall = plan.Shortcuts.Single(shortcut => shortcut.Name == InstallService.UninstallShortcutName);
 
         Assert.Equal(@"C:\Users\Public\Desktop", desktop.Folder);
@@ -265,7 +270,11 @@ public sealed class InstallTests
         var check = Check(InstallService.Inspect(ReadyPc()), "data");
 
         Assert.Equal(InstallState.Ready, check.State);
-        Assert.Contains("never", check.Action);
+
+        // The promise in the owner's own words: nothing is deleted. The sentence says "ever" rather
+        // than "never", and v0.22.1 pins the words that are actually shown.
+        Assert.Contains("Nothing is deleted", check.Action);
+        Assert.Contains("uninstaller", check.Action);
     }
 
     // ============================== the switch the script uses ==============================

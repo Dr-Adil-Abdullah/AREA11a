@@ -235,6 +235,65 @@ public sealed class HardwareTests
         Assert.Equal(80, reloaded.WidthMm);
     }
 
+    // ============================== the printer that would not print ==============================
+
+    [Fact]
+    public void CodeSixSaysThatNoPrinterWasChosenAndWhereToChooseOne()
+    {
+        // The owner's first printer error was "refused by Windows (code 6)". The cause was in Area11:
+        // OpenPrinter(NULL) opens the print SERVER, and the job then fails on that handle.
+        var sentence = PrinterService.Explain(6);
+
+        Assert.Contains("code 6", sentence);
+        Assert.Contains("Printer & scanner", sentence);
+        Assert.Contains("default printer", sentence);
+    }
+
+    [Fact]
+    public void APrinterNameThatDoesNotExistIsNamedInTheAnswer()
+    {
+        Assert.Contains("1801", PrinterService.Explain(1801));
+        Assert.Contains("name", PrinterService.Explain(1801));
+    }
+
+    [Fact]
+    public void AnUnknownPrinterCodeIsStillReportedWithItsNumber()
+    {
+        Assert.Contains("4242", PrinterService.Explain(4242));
+    }
+
+    [Fact]
+    public void ThePrinterListIsAlwaysAListAndNeverNull()
+    {
+        // On a PC without a driver this is empty; the page then says the driver is missing. The point
+        // of the test is that asking Windows never throws and never returns null.
+        Assert.NotNull(PrinterService.InstalledPrinters());
+        Assert.NotNull(PrinterService.DefaultPrinterName());
+    }
+
+    [Fact]
+    public void OnlyTheSettingsPersonChoosesThePrinter()
+    {
+        using var test = new TestDatabase();
+
+        var refused = Hardware(test).ChoosePrinter(TestData.Cashier(test), string.Empty);
+
+        Assert.False(refused.Ok);
+        Assert.Contains("settings", refused.Error!);
+    }
+
+    [Fact]
+    public void ChoosingTheWindowsDefaultStoresAnEmptyNameAndSaysWhatWindowsWillUse()
+    {
+        using var test = new TestDatabase();
+
+        var chosen = Hardware(test).ChoosePrinter(TestData.Owner, "   ");
+
+        Assert.True(chosen.Ok, chosen.Error);
+        Assert.Equal(string.Empty, test.Settings.GetString("printer.name"));
+        Assert.False(string.IsNullOrWhiteSpace(chosen.Value));
+    }
+
     // ============================== helpers ==============================
 
     /// <summary>One factory, so a constructor that gains a dependency is fixed here and not in every test.</summary>

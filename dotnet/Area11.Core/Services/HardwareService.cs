@@ -250,6 +250,49 @@ public sealed class HardwareService
         };
     }
 
+    /// <summary>
+    /// Picks the receipt printer by its Windows name (empty means "whatever Windows calls the default").
+    /// Why a list and not a text box: the first printer defect was code 6 - no printer chosen, no
+    /// default, and a name only the owner could have guessed.
+    /// </summary>
+    public ServiceResult<string> ChoosePrinter(User? user, string? name)
+    {
+        if (!_permissions.Can(user, Modules.Settings))
+        {
+            return ServiceResult<string>.Fail(
+                "Only a person who may change the settings can choose the printer.");
+        }
+
+        var wanted = (name ?? string.Empty).Trim();
+
+        if (wanted.Length > 0)
+        {
+            var installed = PrinterService.InstalledPrinters();
+
+            if (installed.Count > 0 && !installed.Contains(wanted, StringComparer.OrdinalIgnoreCase))
+            {
+                return ServiceResult<string>.Fail(
+                    "Windows has no printer called \"" + wanted + "\". Choose a name from the list.");
+            }
+        }
+
+        var saved = _settings.Set("printer.name", wanted, user);
+
+        if (!saved.Ok)
+        {
+            return ServiceResult<string>.Fail(saved.Error ?? "The printer could not be saved.");
+        }
+
+        // The same words the page shows after a reload: the chosen name, or what Windows resolved.
+        var label = wanted.Length > 0
+            ? wanted
+            : PrinterService.DefaultPrinterName() is { Length: > 0 } fallback
+                ? "Windows default - " + fallback
+                : "no printer chosen";
+
+        return ServiceResult<string>.Success(label);
+    }
+
     private HardwareReport Build()
     {
         var widthMm = WidthMm;
@@ -259,10 +302,12 @@ public sealed class HardwareService
             WidthMm = widthMm,
             Columns = ReceiptService.ColumnsForMillimetres(widthMm),
             PrinterName = _settings.GetString("printer.name"),
+            DefaultPrinter = PrinterService.DefaultPrinterName(),
             Copies = Math.Clamp(_settings.GetInt("printer.copies", 1), 1, 3),
             AutoCut = _settings.GetBool("printer.autoCut", true)
         };
 
+        report.InstalledPrinters.AddRange(PrinterService.InstalledPrinters());
         report.Checks.AddRange(ChecksFor(report));
 
         return report;

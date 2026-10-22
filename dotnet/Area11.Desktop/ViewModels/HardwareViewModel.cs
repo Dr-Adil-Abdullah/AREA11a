@@ -19,6 +19,9 @@ public sealed class HardwareViewModel : ObservableObject
     private readonly User _user;
 
     private string _printerText = "Windows default printer";
+    private string _printerChoice = DefaultChoice;
+    private string _printerHint = string.Empty;
+    private bool _loadingPrinters;
     private string _paperText = "58 mm";
     private string _copiesText = "1 copy";
     private string _progressText = "0 of 6 passed";
@@ -40,6 +43,7 @@ public sealed class HardwareViewModel : ObservableObject
         _user = user;
 
         PrintCommand = new RelayCommand(Print);
+        OpenWindowsPrintersCommand = new RelayCommand(OpenWindowsPrinters);
         ScanCommand = new RelayCommand(Scan);
         SaveCommand = new RelayCommand(Save);
         RefreshCommand = new RelayCommand(Load);
@@ -51,7 +55,16 @@ public sealed class HardwareViewModel : ObservableObject
 
     public ObservableCollection<HardwareScanRow> Scans { get; } = new();
 
+    /// <summary>The first line of the printer list; it means "let Windows choose" (printer.name empty).</summary>
+    public const string DefaultChoice = "(whatever Windows calls the default)";
+
+    /// <summary>Every printer Windows lists, with <see cref="DefaultChoice"/> first.</summary>
+    public ObservableCollection<string> Printers { get; } = new();
+
     public RelayCommand PrintCommand { get; }
+
+    /// <summary>Opens the Windows list of printers, where a missing driver is installed.</summary>
+    public RelayCommand OpenWindowsPrintersCommand { get; }
 
     public RelayCommand ScanCommand { get; }
 
@@ -65,6 +78,43 @@ public sealed class HardwareViewModel : ObservableObject
     {
         get => _printerText;
         private set => SetProperty(ref _printerText, value);
+    }
+
+    /// <summary>
+    /// The chosen printer, written the moment it changes. The first entry means the Windows default -
+    /// which is why the list shows what Windows actually resolved that to, in parentheses.
+    /// </summary>
+    public string PrinterChoice
+    {
+        get => _printerChoice;
+        set
+        {
+            if (!SetProperty(ref _printerChoice, value) || _loadingPrinters)
+            {
+                return;
+            }
+
+            var wanted = value == DefaultChoice ? string.Empty : value;
+            var saved = _services.Hardware.ChoosePrinter(_user, wanted);
+
+            SetStatus(
+                saved.Ok
+                    ? "This counter now prints on " + (wanted.Length == 0 ? "the Windows default printer" : wanted)
+                      + ". Press Print test slip."
+                    : saved.Error ?? "The printer could not be chosen.",
+                !saved.Ok);
+
+            if (saved.Ok && saved.Value is not null)
+            {
+                PrinterText = saved.Value;
+            }
+        }
+    }
+
+    public string PrinterHintText
+    {
+        get => _printerHint;
+        private set => SetProperty(ref _printerHint, value);
     }
 
     public string PaperText
@@ -175,6 +225,34 @@ public sealed class HardwareViewModel : ObservableObject
 
         var report = loaded.Value;
 
+        _loadingPrinters = true;
+        Printers.Clear();
+        Printers.Add(DefaultChoice);
+
+        foreach (var printer in report.InstalledPrinters)
+        {
+            Printers.Add(printer);
+        }
+
+        _printerChoice = report.PrinterName.Trim().Length == 0
+            ? DefaultChoice
+            : report.PrinterName.Trim();
+
+        if (!Printers.Contains(_printerChoice))
+        {
+            // The saved name is not on this PC any more: show it, so the choice is not quietly changed.
+            Printers.Add(_printerChoice);
+        }
+
+        _loadingPrinters = false;
+        OnPropertyChanged(nameof(PrinterChoice));
+
+        PrinterHintText = report.InstalledPrinters.Count == 0
+            ? "Windows lists no printer at all - install the printer's driver first (Open Windows printers)."
+            : report.DefaultPrinter.Length == 0
+                ? "Windows has no default printer. Pick your receipt printer here, then print the slip."
+                : "Tick a printer here and it is saved at once - no need to open Settings.";
+
         PrinterText = report.PrinterLabel;
         PaperText = report.WidthLabel;
         CopiesText = report.Copies.ToString(CultureInfo.InvariantCulture)
@@ -204,6 +282,21 @@ public sealed class HardwareViewModel : ObservableObject
     {
         ProgressText = Rows.Count(row => row.Passed).ToString(CultureInfo.InvariantCulture)
                        + " of " + Rows.Count + " passed";
+    }
+
+    private void OpenWindowsPrinters()
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(
+                new System.Diagnostics.ProcessStartInfo("control.exe", "printers") { UseShellExecute = true });
+
+            SetStatus("Windows opened its printer list. When you come back, press Refresh.", false);
+        }
+        catch (Exception exception)
+        {
+            SetStatus("Windows' printer list could not be opened: " + exception.Message, true);
+        }
     }
 
     private void Print()
