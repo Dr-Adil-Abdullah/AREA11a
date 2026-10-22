@@ -54,6 +54,11 @@ public sealed class SettingsViewModel : ObservableObject
     private string _supplierCutoffText = "90";
     private string _supplierAlertText = "180";
 
+    private bool _loyaltyEnabled;
+    private string _loyaltyPerPointText = "100";
+    private string _loyaltyVipText = "500";
+    private string _loyaltySummary = string.Empty;
+
     private int _selectedTabIndex;
     private User? _selectedUser;
     private string _newStaffName = string.Empty;
@@ -272,11 +277,75 @@ public sealed class SettingsViewModel : ObservableObject
         set => SetProperty(ref _supplierAlertText, value);
     }
 
+    // ------------------------------ Loyalty -------------------------------
+
+    /// <summary>Off by default (Q-06): the owner decides whether the shop gives points at all.</summary>
+    public bool LoyaltyEnabled
+    {
+        get => _loyaltyEnabled;
+        set
+        {
+            if (SetProperty(ref _loyaltyEnabled, value))
+            {
+                RaiseLoyaltySummary();
+            }
+        }
+    }
+
+    /// <summary>Rupees the customer must spend to earn one point.</summary>
+    public string LoyaltyPerPointText
+    {
+        get => _loyaltyPerPointText;
+        set
+        {
+            if (SetProperty(ref _loyaltyPerPointText, value))
+            {
+                RaiseLoyaltySummary();
+            }
+        }
+    }
+
+    /// <summary>Points at which a Normal customer becomes VIP (the fifth star).</summary>
+    public string LoyaltyVipText
+    {
+        get => _loyaltyVipText;
+        set
+        {
+            if (SetProperty(ref _loyaltyVipText, value))
+            {
+                RaiseLoyaltySummary();
+            }
+        }
+    }
+
+    /// <summary>"1 point per Rs 100 · 5 stars at 500 points" - the rule in one line.</summary>
+    public string LoyaltySummary
+    {
+        get => _loyaltySummary;
+        private set => SetProperty(ref _loyaltySummary, value);
+    }
+
     /// <summary>The saved bands in one sentence, so the owner can check the meaning of the numbers.</summary>
     public string ExpirySummary
     {
         get => _expirySummary;
         private set => SetProperty(ref _expirySummary, value);
+    }
+
+    /// <summary>Rebuilds the one-line rule without touching the database, so a typo never blocks typing.</summary>
+    private void RaiseLoyaltySummary()
+    {
+        var per = int.TryParse(LoyaltyPerPointText.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) && value > 0
+            ? value
+            : 100;
+
+        var vip = int.TryParse(LoyaltyVipText.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var points) && points > 0
+            ? points
+            : 500;
+
+        LoyaltySummary = (LoyaltyEnabled ? "Points are ON. " : "Points are OFF. ")
+            + "1 point per Rs " + per + " spent; " + vip + " points = 5 stars = VIP. "
+            + "One point is worth Rs 1 when the customer spends it.";
     }
 
     // ------------------------------ Staff -------------------------------
@@ -366,6 +435,11 @@ public sealed class SettingsViewModel : ObservableObject
 
         SupplierCutoffText = settings.GetLong("supplier.returnCutoffDays", 90).ToString(CultureInfo.InvariantCulture);
         SupplierAlertText = settings.GetLong("supplier.returnAlertDays", 180).ToString(CultureInfo.InvariantCulture);
+
+        LoyaltyEnabled = settings.GetBool("loyalty.enabled", false);
+        LoyaltyPerPointText = settings.GetLong("loyalty.rupeesPerPoint", 100).ToString(CultureInfo.InvariantCulture);
+        LoyaltyVipText = settings.GetLong("loyalty.vipThreshold", 500).ToString(CultureInfo.InvariantCulture);
+        RaiseLoyaltySummary();
     }
 
     /// <summary>
@@ -514,6 +588,20 @@ public sealed class SettingsViewModel : ObservableObject
             return;
         }
 
+        if (!int.TryParse(LoyaltyPerPointText.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var perPoint)
+            || perPoint < 1)
+        {
+            SetStatus("The loyalty rate must be whole rupees, at least 1.", true);
+            return;
+        }
+
+        if (!int.TryParse(LoyaltyVipText.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var vipPoints)
+            || vipPoints < 5)
+        {
+            SetStatus("The VIP number must be at least 5 points (one per star).", true);
+            return;
+        }
+
         if (StoreName.Trim().Length == 0)
         {
             SetStatus("The shop name cannot be empty — it is printed on every receipt.", true);
@@ -547,7 +635,10 @@ public sealed class SettingsViewModel : ObservableObject
                 .Bands
                 .ToList(),
             ["supplier.returnCutoffDays"] = cutoffDays,
-            ["supplier.returnAlertDays"] = alertDays
+            ["supplier.returnAlertDays"] = alertDays,
+            ["loyalty.enabled"] = LoyaltyEnabled,
+            ["loyalty.rupeesPerPoint"] = perPoint,
+            ["loyalty.vipThreshold"] = vipPoints
         };
 
         var result = _services.Settings.SetMany(values, _user);
@@ -561,6 +652,7 @@ public sealed class SettingsViewModel : ObservableObject
         // The summary line is rebuilt from what was just stored, so the owner sees the meaning of
         // the three numbers he typed without leaving the page.
         ExpirySummary = _services.Settings.ExpiryBands.Summary;
+        RaiseLoyaltySummary();
 
         _onSaved?.Invoke();
         SetStatus($"Saved. Paper {paper.Width} mm, printing " +

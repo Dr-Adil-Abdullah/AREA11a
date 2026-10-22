@@ -198,6 +198,36 @@
 
                         <Border Style="{StaticResource SettingsGroup}">
                             <StackPanel>
+                                <TextBlock Text="Loyalty points" Style="{StaticResource SectionTitle}" />
+                                <TextBlock Text="Off by default. When it is on, a customer earns points on every bill and can spend them at the counter - 1 point is always Rs 1."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+
+                                <CheckBox Content="Give loyalty points"
+                                          IsChecked="{Binding LoyaltyEnabled, Mode=TwoWay}"
+                                          Margin="0,10,0,0" />
+
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <StackPanel Width="190">
+                                        <TextBlock Text="Rupees spent for 1 point" Style="{StaticResource FieldLabel}" />
+                                        <TextBox Text="{Binding LoyaltyPerPointText, UpdateSourceTrigger=PropertyChanged}"
+                                                 Width="100" HorizontalAlignment="Left" />
+                                    </StackPanel>
+                                    <StackPanel Width="210" Margin="8,0,0,0">
+                                        <TextBlock Text="Points that make a customer VIP" Style="{StaticResource FieldLabel}" />
+                                        <TextBox Text="{Binding LoyaltyVipText, UpdateSourceTrigger=PropertyChanged}"
+                                                 Width="100" HorizontalAlignment="Left" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <TextBlock Text="{Binding LoyaltySummary}" Style="{StaticResource FieldHint}"
+                                           TextWrapping="Wrap" Margin="0,6,0,0" />
+                                <TextBlock Text="A customer only earns on the money the bill really costs him, never on the part that went on the khata. Points never expire and are never deleted."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel>
                                 <TextBlock Text="Tax" Style="{StaticResource SectionTitle}" />
 
                                 <CheckBox Content="Charge sales tax on bills"

@@ -218,10 +218,12 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, @role, 1, @at);"
     }
 
     /// <summary>One line, one unit, no discount - the plainest possible bill.</summary>
-    public static SaleInput Cart(int productId, int qty = 1, string method = "cash", int? customerId = null) => new()
+    public static SaleInput Cart(
+        int productId, int qty = 1, string method = "cash", int? customerId = null, int redeemPoints = 0) => new()
     {
         CustomerId = customerId,
         PaymentMethod = method,
+        RedeemPoints = redeemPoints,
         Lines = new List<SaleLineInput>
         {
             new() { ProductId = productId, Unit = "base", Quantity = qty }

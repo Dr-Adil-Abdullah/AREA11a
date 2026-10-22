@@ -103,6 +103,16 @@
                                   SelectedItem="{Binding SelectedCustomer, Mode=TwoWay}" />
                         <TextBlock Text="{Binding CustomerHint}" Style="{StaticResource MetricLabel}" Margin="0,4,0,0" />
 
+                        <!-- loyalty points, only for a customer who has some (F-40) -->
+                        <StackPanel Margin="0,6,0,0"
+                                    Visibility="{Binding CanRedeem, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="Points to use (1 point = Rs 1)" Style="{StaticResource FieldLabel}" />
+                            <TextBox Text="{Binding RedeemPointsText, UpdateSourceTrigger=PropertyChanged}"
+                                     ToolTip="Leave empty to pay the full bill." />
+                            <TextBlock Text="{Binding RedeemHint}" Style="{StaticResource FieldHint}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+
                         <Grid Margin="0,6,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -181,6 +191,10 @@
                         <TextBlock Text="TOTAL" Style="{StaticResource MetricLabel}" Margin="0,8,0,0" />
                         <TextBlock Text="{Binding TotalText}" FontSize="28" FontWeight="Bold"
                                    Foreground="{StaticResource BrandBrush}" />
+
+                        <TextBlock Text="{Binding PointsUsedText}" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{StaticResource SuccessBrush}"
+                                   Visibility="{Binding HasPointsUsed, Converter={StaticResource BoolToVis}}" />
 
                         <Grid Margin="0,6,0,0">
                             <Grid.ColumnDefinitions>

@@ -409,8 +409,10 @@ public sealed class CustomersViewModel : ObservableObject
         PhoneText = Selected.PhoneLabel;
         CategoryText = Selected.CategoryLabel;
         LimitText = Selected.LimitText;
-        StarsText = Selected.StarsLabel;
-        PointsText = Selected.LoyaltyPoints.ToString();
+        // The stars with the word behind them ("***** VIP"), and the points in money the customer can
+        // actually spend - the two things the cashier says out loud (F-40).
+        StarsText = Selected.StarsLabel + " " + Selected.TitleLabel;
+        PointsText = Selected.PointsLabel;
         BillsText = Selected.BillsCount.ToString();
         LifetimeText = Selected.LifetimeText;
         ProfitText = Selected.ProfitText;

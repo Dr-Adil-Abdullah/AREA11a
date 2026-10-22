@@ -47,6 +47,13 @@ public sealed class SaleInput
     /// <summary>Cash handed over by the customer; change is what is left after the cash part.</summary>
     public long TenderedPaisa { get; set; }
 
+    /// <summary>
+    /// Loyalty points the customer wants to spend on this bill (F-40). 1 point = Rs 1; the Core caps
+    /// the request by his balance, by the bill and (when the below-cost lock is on) by the cost of
+    /// the goods - it never refuses at the till.
+    /// </summary>
+    public int RedeemPoints { get; set; }
+
     public string? Notes { get; set; }
 }
 
@@ -70,6 +77,12 @@ public sealed class SaleQuote
 
     /// <summary>The part that goes on the customer's khata.</summary>
     public long CreditPartPaisa { get; init; }
+
+    /// <summary>Points actually spent on this bill (after the caps).</summary>
+    public int RedeemPoints { get; init; }
+
+    /// <summary>What those points took off the bill, in paisa.</summary>
+    public long RedeemPaisa { get; init; }
 
     public double Units { get; init; }
 

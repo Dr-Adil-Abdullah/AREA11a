@@ -129,9 +129,10 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.11.0 (Blackberry `#4A044E`)** - Phases 1, 2 and 3 are written (shift/galla, expenses,
+> **v0.12.0 (Mocha `#6B4F3A`)** - Phases 1, 2 and 3 are written (shift/galla, expenses,
 > udhaar recovery, reports, black box, backup & restore, Excel / CSV, reorder + WhatsApp, and the
-> stock-minus registry with its monthly review). The screen was rebuilt the way the owner asked (D-50): a
+> stock-minus registry with its monthly review). Phase 4 has started: **loyalty now works from the
+> screen**, both earning and spending at the counter. The screen was rebuilt the way the owner asked (D-50): a
 > 176 px menu in five groups, one **bell** with a count badge instead of the red strip across
 > every page, **two kinds of alert** (a reminder anybody may put away, a money or stock problem
 > that is owner-only with a written reason), one **customers & suppliers** page with three tabs,

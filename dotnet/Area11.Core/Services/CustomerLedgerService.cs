@@ -88,7 +88,7 @@ ORDER BY c.balance_paisa DESC, c.name COLLATE NOCASE;",
 
             foreach (var row in rows)
             {
-                row.Stars = StarsFor(row.LoyaltyPoints);
+                row.Stars = StarsFor(row.LoyaltyPoints, _settings.GetInt("loyalty.vipThreshold", 500));
             }
 
             return ServiceResult<List<CustomerSummary>>.Success(rows);
@@ -132,7 +132,7 @@ FROM customers c WHERE c.id = @id;", new { id = customerId });
                 return ServiceResult<CustomerPage>.Fail("That customer was not found.");
             }
 
-            summary.Stars = StarsFor(summary.LoyaltyPoints);
+            summary.Stars = StarsFor(summary.LoyaltyPoints, _settings.GetInt("loyalty.vipThreshold", 500));
 
             var movements = ReadMovements(connection, customerId);
 
@@ -365,14 +365,8 @@ VALUES(@at, @method, @amount, @customerId, @userId, @note);",
     /// Stars 1-5 from points: the fifth step is reached exactly at `loyalty.vipThreshold`, so the
     /// number in Settings is the only place the owner has to change.
     /// </summary>
-    public static int StarsFor(int points, int vipThreshold = 500)
-    {
-        var threshold = vipThreshold <= 0 ? 500 : vipThreshold;
-        var step = Math.Max(1, threshold / MaxStars);
-        var stars = 1 + Math.Max(0, points) / step;
-
-        return Math.Clamp(stars, 1, MaxStars);
-    }
+    public static int StarsFor(int points, int vipThreshold = 500) =>
+        Loyalty.StarsFor(points, vipThreshold);
 
     /// <summary>
     /// Points earned by a bill. Integer paisa divided by the rupee value of one point, so no money

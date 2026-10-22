@@ -93,6 +93,14 @@ public sealed class CustomerSummary
 
     public string StarsLabel => new string('*', Math.Clamp(Stars, 1, 5)) + new string('.', 5 - Math.Clamp(Stars, 1, 5));
 
+    /// <summary>"VIP", "Very good", "Good", "Regular", "New" - the word behind the stars (F-40).</summary>
+    public string TitleLabel => Loyalty.Title(Stars);
+
+    /// <summary>"320 points = Rs 320" and the whole sentence the counter needs.</summary>
+    public string PointsLabel => LoyaltyPoints <= 0
+        ? "no points yet"
+        : LoyaltyPoints + " point(s) - " + Loyalty.ValueText(LoyaltyPoints) + " to spend";
+
     public string CategoryLabel => (Category ?? "normal").ToLowerInvariant() switch
     {
         "vip" => "VIP",

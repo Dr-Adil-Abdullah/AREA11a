@@ -23,8 +23,8 @@ this file tracks the owner's numbered rules.
 
 - rules in the specification: **116**
 - ✅ done: **48**
-- 🟡 written / partial: **27**
-- ⬜ not started: **21**
+- 🟡 written / partial: **28**
+- ⬜ not started: **20**
 - 🔁 standing rules: **20**
 
 ## U - the owner's rules
@@ -202,7 +202,7 @@ The original's five phases, mapped to this rebuild's four.
 | **M-03** | Phase 1 (Core Lifeline): auto PINV stock-in + batch + expiry + supplier account; packing formula + [Box][Strip][Tablet] buttons; counter billing with barcode/search, FIFO, auto INV, discount, downward round-off; thermal receipt 58/80 + auto print + hold/park cart + cash/credit; role switcher + sales history screen. | 🟡 written / partial | Phase 1: purchases + POS written; receipt/print next | - | - |
 | **M-04** | Phase 2 — returns + smart bill lookup + provisional-return alert + float/shift/closing + owner drawing + expenses + below-cost lock. | ⬜ not started | Phase 2: returns, quarantine, alerts, write-off, stock-take | - | Phase 2 |
 | **M-05** | Phase 3 — supplier ledger + return credit note + 3-level expiry + 3-level reorder + WhatsApp web order + sample stock. | 🟡 written / partial | Phase 3 written: ledgers, reports, backup, Excel, reorder/WhatsApp, stock-minus; the free/sample stock list remains | - | Phase 3 |
-| **M-06** | Phase 4 — customer/credit limit/loyalty stars + multi-tier rates + split payment + custom fields/categories. | ⬜ not started | Phase 4: loyalty, custom fields, split payment | - | Phase 4 |
+| **M-06** | Phase 4 — customer/credit limit/loyalty stars + multi-tier rates + split payment + custom fields/categories. | 🟡 written / partial | Phase 4: loyalty done (D-57); photos/camera, custom fields and multi-barcode remain | - | Phase 4 |
 | **M-07** | Phase 5 — black-box audit + multi-dimensional search/rack number + breakage + analytics/P&L + online-offline sync + backup. | ⬜ not started | Phase 3/4: audit viewer, stock-take, backup, sync | - | Phase 3 |
 | **M-08** | Rule: the E and S principles apply from day one — not later. | ✅ done | settings and data-driven from the first migration | - | - |
 

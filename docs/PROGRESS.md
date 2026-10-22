@@ -83,7 +83,7 @@ features and the four phases.
 
 | ID | Feature | State | Where | Test | Done when |
 |---|---|---|---|---|---|
-| F-40 | Loyalty: X profit -> Y points -> Z stars -> title | ⬜ | - | - | switched off by default |
+| F-40 | Loyalty: rupees spent -> points -> 1-5 stars -> a title. Points **spent** at the counter (1 point = Rs 1), negative `loyalty` row, caps, settings on screen | ✅ | `Models/LoyaltyModels.cs`, `Services/SaleService.cs` (Compute/Save), `Services/ReceiptService.cs`, `Views/PosView.xaml`, `ViewModels/SettingsViewModel.cs`, `Views/SettingsView.xaml`, khata page | `LoyaltyTests` 🧪 | off by default; when on, a bill earns points, a customer spends them without the lines losing a rupee, and 5 stars make him VIP |
 | F-41 | Photos: 2-3 per product, supplier and customer, camera capture (D-21) | ⬜ | `Migr. 015` `photos` table | - | files in `data/photos`, DB holds names |
 | F-42 | Custom fields (text / number / amount / photo) | ⬜ | - | - | appear in the form automatically |
 | F-43 | Several barcodes per product (per pack size) | ⬜ | - | - | - |
@@ -112,9 +112,9 @@ features and the four phases.
 
 | Check | How | State |
 |---|---|---|
-| C# parses (166 files) | `python3 tools/check_repo.py` | ✅ |
+| C# parses (168 files) | `python3 tools/check_repo.py` | ✅ |
 | Every file imports the namespaces it uses (`System.IO` … **and every type this repo declares**) | `python3 tools/check_repo.py` | ✅ |
-| Every SQL statement prepares against the real schema (186) | `python3 tools/check_repo.py` | ✅ |
+| Every SQL statement prepares against the real schema (187) | `python3 tools/check_repo.py` | ✅ |
 | XAML / csproj / props are valid XML | `python3 tools/check_repo.py` | ✅ |
 | Every XAML binding matches its view-model | `python3 tools/check_repo.py` | ✅ |
 | Every `StaticResource` key exists, in **every** XAML file | `python3 tools/check_repo.py` | ✅ |
@@ -124,13 +124,14 @@ features and the four phases.
 | Migrations 001-020 produce 33 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
 | **Compiles on Windows** | `dotnet build Area11.sln` | ✅ 20 Oct 2026 (v0.1.1); re-check after each release |
-| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.11.0 Blackberry |
-| **386 tests green** | `dotnet test` (or `tools\RUN-TESTS.cmd`) | 🟡 **fourth run (v0.6.1): 320 of 321 in 27.5 s** - the only failure was a test that expected the black box to lower-case a module name; corrected in v0.6.2. **Runs five to ten (v0.6.2 321, v0.7.0 327, v0.8.0 342, v0.9.0 360, v0.10.0 375, v0.11.0 386) are pending** |
+| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.12.0 Mocha |
+| **400 tests green** | `dotnet test` (or `tools\RUN-TESTS.cmd`) | 🟡 **fourth run (v0.6.1): 320 of 321 in 27.5 s** - the only failure was a test that expected the black box to lower-case a module name; corrected in v0.6.2. **Runs five to eleven (v0.6.2 321, v0.7.0 327, v0.8.0 342, v0.9.0 360, v0.10.0 375, v0.11.0 386, v0.12.0 400) are pending** |
 
 ## Change log
 
 | Date | What |
 |---|---|
+| 22 Oct 2026 | **v0.12.0 Mocha - loyalty at the counter (F-40).** Points were written but half-reachable: the switch existed only in the database and a customer could never spend a point. Now the owner turns loyalty on in **Settings -> Sales rules**, sets the rupee rate and the VIP number there, and the counter shows a **points box** for the one customer who owns them. **1 point = Rs 1**; the rebate is applied before the lines are spread, so the printed lines still add up to the printed total (Spec 11.4); the spent points are a **negative `loyalty` payment row** (Spec 13.6.1: 5 points = -500 paisa) and the receipt says **"Points used"** - the drawer is never credited with money it never held. A redemption is **capped, never refused**: by the balance, by the bill in whole rupees and - with the below-cost lock on - by the cost of the goods, with a warning that names the real number. The khata page shows the stars **and their title** ("***** VIP") and what the points are worth. Off by default (Q-06). Phase 4 has started. 14 new test cases. 400 tests. |
 | 22 Oct 2026 | **v0.11.0 Blackberry - the stock-minus registry and the monthly review (F-39).** A new page under STOCK lists every medicine whose shelf is below zero: the stock, the value at cost, **how long** it has been minus and **why** - the movement that took the running balance below zero, replayed from the stock book (`sold INV-0001`, `stock-take correction`, `sent back to the supplier`). A shelf that came back above zero and went minus again starts a **new episode**, so last month's note never makes this month's problem look seen. The owner writes what he found (three letters at least) and presses **Mark reviewed**: one permanent line in the black box with his name and the stock at that moment. **A review changes no stock** (D-56) - a minus is corrected by a stock-take, a return or a write-off, and the page says so out loud. Phase 3 is complete. 11 new test cases. 386 tests. |
 | 22 Oct 2026 | **v0.10.0 Petrol - the reorder pad and the WhatsApp order (F-38).** One page under STOCK says what is running out and writes the message that orders it. The three bands - out of stock, at the minimum, within half of it again - are read from the **one** minimum each medicine already carries, so no second scale can drift (D-55). The suggestion fills the shelf to twice the minimum and the owner can type any quantity. The supplier is **whoever sold that medicine last**; a medicine never bought says "no supplier yet" rather than guessing, and ticking two agents closes the send button. The text is plain English, one numbered line per medicine, quantities written the way a supplier reads them (**1 box + 1 strip + 5 tablet**), with an optional note. **Copy** and **Open WhatsApp** use a free `wa.me` link - a `0300-1234567` mobile becomes `923001234567`, and no number still opens WhatsApp to pick a contact. Saving a minimum moves that one column only and writes old -> new in the black box; the permission is `reorder` (owner and manager, never the cashier). 15 new test cases. 375 tests. |
 | 22 Oct 2026 | **v0.9.0 Rosewood - Excel / CSV import, export and a bulk price change (F-37).** A file is read and shown line by line and **nothing is written** until Import is pressed; **one bad line stops the whole file**. A duplicate is skipped, never overwritten, so importing the same file twice adds nothing. Opening stock becomes a **real batch with an expiry and an `import` movement**. **Migration 020** gives customers the `opening_balance_paisa` that suppliers already had, so imported **udhaar** is the first line of the khata and the running total starts there - "Books match" is true on day one. Export writes medicines/customers/suppliers as UTF-8 CSV. Prices change by percent or rupees, previewed first, and every row that would sell below cost is refused. Files are CSV by decision (D-53): no new package in the shop's build. 18 new tests. 360 tests. |

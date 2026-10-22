@@ -20,6 +20,9 @@ public sealed class PosViewModel : ObservableObject
     private string _unit = "strip";
     private string _quantity = "1";
     private Customer? _selectedCustomer;
+    private string _redeemPointsText = string.Empty;
+    private string _pointsUsedText = string.Empty;
+    private bool _hasPointsUsed;
     private string _discountPercent = "0";
     private string _paymentMethod = "cash";
     private string _tenderedText = string.Empty;
@@ -147,7 +150,12 @@ public sealed class PosViewModel : ObservableObject
         {
             if (SetProperty(ref _selectedCustomer, value))
             {
+                // Points belong to the person, so a new customer starts with an empty box - otherwise
+                // the second customer in the queue would pay with the first one's loyalty.
+                RedeemPointsText = string.Empty;
                 OnPropertyChanged(nameof(CustomerHint));
+                OnPropertyChanged(nameof(CanRedeem));
+                OnPropertyChanged(nameof(RedeemHint));
                 Recalculate();
             }
         }
@@ -311,6 +319,44 @@ public sealed class PosViewModel : ObservableObject
     public string CustomerHint => SelectedCustomer is null || SelectedCustomer.Id == 0
         ? "Cash customer"
         : $"{SelectedCustomer.Category} · balance {Money.Format(SelectedCustomer.BalancePaisa)}";
+
+    /// <summary>
+    /// True when the points box is worth showing: loyalty is switched on in Settings and **this**
+    /// customer has points. A walk-in customer has no khata and therefore no points.
+    /// </summary>
+    public bool CanRedeem => _services.Settings.GetBool("loyalty.enabled", false)
+        && SelectedCustomer is { Id: > 0, LoyaltyPoints: > 0 };
+
+    public string RedeemHint => CanRedeem && SelectedCustomer is not null
+        ? SelectedCustomer.LoyaltyPoints + " point(s) available = "
+          + Loyalty.ValueText(SelectedCustomer.LoyaltyPoints) + " off this bill"
+        : string.Empty;
+
+    /// <summary>How many points the cashier wants to spend; the Core caps it (never refuses).</summary>
+    public string RedeemPointsText
+    {
+        get => _redeemPointsText;
+        set
+        {
+            if (SetProperty(ref _redeemPointsText, value))
+            {
+                Recalculate();
+            }
+        }
+    }
+
+    /// <summary>"Points used -Rs 5" once the bill knows how many were really accepted.</summary>
+    public string PointsUsedText
+    {
+        get => _pointsUsedText;
+        private set => SetProperty(ref _pointsUsedText, value);
+    }
+
+    public bool HasPointsUsed
+    {
+        get => _hasPointsUsed;
+        private set => SetProperty(ref _hasPointsUsed, value);
+    }
 
     public string PriceHint
     {
@@ -504,12 +550,22 @@ public sealed class PosViewModel : ObservableObject
             });
         }
 
+        // A whole number of points, never more than the customer has; the Core caps again, so a
+        // typed 9999 cannot spend more than the khata owns.
+        var redeem = 0;
+        if (CanRedeem && int.TryParse((RedeemPointsText ?? string.Empty).Trim(), NumberStyles.Integer,
+                CultureInfo.InvariantCulture, out var typed))
+        {
+            redeem = Math.Max(0, Math.Min(typed, SelectedCustomer?.LoyaltyPoints ?? 0));
+        }
+
         return new SaleInput
         {
             CustomerId = SelectedCustomer is { Id: > 0 } ? SelectedCustomer.Id : null,
             DiscountPercent = percent,
             PaymentMethod = PaymentMethod,
             Payments = payments,
+            RedeemPoints = redeem,
             TenderedPaisa = tendered,
             Lines = Cart.Select(line => new SaleLineInput
             {
@@ -530,6 +586,8 @@ public sealed class PosViewModel : ObservableObject
             ChangeText = "Rs 0";
             CashPartText = "Rs 0";
             CreditPartText = "Rs 0";
+            PointsUsedText = string.Empty;
+            HasPointsUsed = false;
             return;
         }
 
@@ -547,6 +605,11 @@ public sealed class PosViewModel : ObservableObject
         SubtotalText = Money.Format(quote.Value.SubtotalPaisa);
         DiscountText = Money.Format(quote.Value.DiscountPaisa);
         TotalText = Money.Format(quote.Value.TotalPaisa);
+
+        HasPointsUsed = quote.Value.RedeemPoints > 0;
+        PointsUsedText = HasPointsUsed
+            ? quote.Value.RedeemPoints + " point(s): -" + Money.Format(quote.Value.RedeemPaisa)
+            : string.Empty;
         ChangeText = Money.Format(quote.Value.ChangePaisa);
         CashPartText = Money.Format(quote.Value.CashPartPaisa);
         CreditPartText = Money.Format(quote.Value.CreditPartPaisa);

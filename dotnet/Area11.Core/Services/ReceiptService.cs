@@ -173,6 +173,14 @@ WHERE sale_id = @id AND method <> 'credit' ORDER BY id;", new { id = saleId });
         {
             foreach (var part in payments)
             {
+                // Points spent are stored as a negative row (Spec 13.6.1). On paper the customer reads
+                // "Points used 5.00", never a minus sign he would think is a refund.
+                if (string.Equals(part.Method, "loyalty", StringComparison.OrdinalIgnoreCase))
+                {
+                    Pair("Points used", Money.Fixed(Math.Abs(part.AmountPaisa)));
+                    continue;
+                }
+
                 Pair(MethodLabel(part.Method), Money.Fixed(part.AmountPaisa));
             }
         }

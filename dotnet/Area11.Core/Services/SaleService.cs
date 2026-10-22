@@ -63,6 +63,8 @@ public sealed class SaleService
                 ChangePaisa = change,
                 CashPartPaisa = split.CashPartPaisa,
                 CreditPartPaisa = split.CreditPartPaisa,
+                RedeemPoints = computed.RedeemPoints,
+                RedeemPaisa = computed.RedeemPaisa,
                 Units = computed.Lines.Sum(line => line.QtyBase),
                 GoesNegative = computed.WentNegative,
                 Warnings = computed.Warnings
@@ -164,6 +166,35 @@ VALUES(@code, @date, @customerId, @userId, @subtotal, @discount, @tax,
 
         var saleId = (int)_db.NextId(connection);
         var saleItemIds = new List<int>();
+
+        // Points spent are written as a NEGATIVE `loyalty` row (Spec 13.6.1: 5 points = -500 paisa),
+        // not as money received: the drawer never held that rupee, and the receipt prints it as
+        // "Points used". It is inserted before the paid rows so the paper reads in the order the
+        // customer paid: points first, then cash.
+        if (computed.RedeemPoints > 0 && customer is not null)
+        {
+            _db.Execute(connection, @"
+INSERT INTO payments(date, method, amount_paisa, sale_id, customer_id, user_id, note)
+VALUES(@at, 'loyalty', @amount, @saleId, @customerId, @userId, @note);",
+                new
+                {
+                    at = stamp,
+                    amount = -computed.RedeemPaisa,
+                    saleId,
+                    customerId = customer.Id,
+                    userId = user.Id,
+                    note = $"{computed.RedeemPoints} point(s) used on {code}"
+                });
+
+            _db.Execute(connection,
+                "UPDATE customers SET loyalty_points = MAX(0, loyalty_points - @points) WHERE id = @id;",
+                new { points = computed.RedeemPoints, id = customer.Id });
+
+            _audit.Record(connection, user, "POS", "points_redeemed", "sales", saleId.ToString(),
+                oldValue: customer.LoyaltyPoints.ToString(),
+                newValue: (customer.LoyaltyPoints - computed.RedeemPoints).ToString(),
+                details: computed.RedeemPoints + " point(s) = " + Money.Format(computed.RedeemPaisa));
+        }
 
         foreach (var line in computed.Lines)
         {
@@ -471,8 +502,24 @@ ORDER BY CASE WHEN expiry_date IS NULL OR expiry_date = '' THEN 1 ELSE 0 END, ex
 
         var roundPaisa = totalPaisa - preRound;
 
-        // Spread tax and round-off over the lines so their sum is exactly the printed total.
-        Spread(lines, taxPaisa + roundPaisa, totalPaisa);
+        // Loyalty points spent at the counter (F-40, Spec 13.6.1): 1 point = Rs 1 off the bill. It is
+        // applied BEFORE the lines are spread, so the printed lines still add up to the printed total
+        // (Spec 11.4) and no report can show a rupee that the customer never paid.
+        (int Points, long Paisa) redeem = customer is not null && _settings.GetBool("loyalty.enabled", false)
+            ? Loyalty.Redeem(input.RedeemPoints, customer.LoyaltyPoints, totalPaisa, costTotal, blockBelowCost)
+            : (0, 0L);
+
+        if (redeem.Points > 0 && input.RedeemPoints > redeem.Points)
+        {
+            warnings.Add(
+                $"Only {redeem.Points} point(s) could be used ({Money.Format(redeem.Paisa)}); " +
+                $"the customer asked for {input.RedeemPoints}.");
+        }
+
+        totalPaisa -= redeem.Paisa;
+
+        // Spread tax, round-off and the points rebate over the lines so their sum is the total.
+        Spread(lines, taxPaisa + roundPaisa - redeem.Paisa, totalPaisa);
 
         return new ComputedSale
         {
@@ -482,6 +529,8 @@ ORDER BY CASE WHEN expiry_date IS NULL OR expiry_date = '' THEN 1 ELSE 0 END, ex
             TaxPaisa = taxPaisa,
             RoundPaisa = roundPaisa,
             TotalPaisa = totalPaisa,
+            RedeemPoints = redeem.Points,
+            RedeemPaisa = redeem.Paisa,
             Warnings = warnings,
             WentNegative = wentNegative
         };
@@ -756,6 +805,10 @@ FROM customers WHERE id = @id AND active = 1;",
         public long RoundPaisa { get; init; }
 
         public long TotalPaisa { get; init; }
+
+        public int RedeemPoints { get; init; }
+
+        public long RedeemPaisa { get; init; }
 
         public List<string> Warnings { get; init; } = new();
 
