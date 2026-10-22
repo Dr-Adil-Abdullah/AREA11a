@@ -14,9 +14,20 @@ public static class AppPaths
 
     public static string DataRoot => RootLazy.Value;
 
-    public static string DatabaseFile => Path.Combine(DataRoot, "area11.db");
+    /// <summary>
+    /// Where this counter keeps the shop's database. A second counter points at the main PC's shared
+    /// folder through `shop.ini`, so the whole shop reads one file (F-45).
+    /// </summary>
+    public static string DatabaseFolder =>
+        ShopConfig.Current.DataFolder is { Length: > 0 } folder ? folder : DataRoot;
 
-    public static string PhotosFolder => EnsureFolder("photos");
+    public static string DatabaseFile => Path.Combine(DatabaseFolder, "area11.db");
+
+    /// <summary>
+    /// Photos sit **beside the database** (U-19 stores only the file name), so both counters see the
+    /// same pictures and a backup of one folder keeps them together.
+    /// </summary>
+    public static string PhotosFolder => EnsureUnder(DatabaseFolder, "photos");
 
     public static string LogsFolder => EnsureFolder("logs");
 
@@ -24,9 +35,11 @@ public static class AppPaths
 
     public static string ExportsFolder => EnsureFolder("exports");
 
-    private static string EnsureFolder(string name)
+    private static string EnsureFolder(string name) => EnsureUnder(DataRoot, name);
+
+    private static string EnsureUnder(string root, string name)
     {
-        var path = Path.Combine(DataRoot, name);
+        var path = Path.Combine(root, name);
         Directory.CreateDirectory(path);
         return path;
     }

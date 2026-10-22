@@ -41,6 +41,7 @@ public static class CrashReporter
         {
             MessageBox.Show(
                 "Area11 hit a problem " + area + ".\n\n"
+                + (string.IsNullOrWhiteSpace(note) ? string.Empty : note + "\n\n")
                 + (exception?.GetType().Name ?? "Exception") + ": " + message
                 + (string.IsNullOrWhiteSpace(file)
                     ? "\n\nThe details could not be written to a file."

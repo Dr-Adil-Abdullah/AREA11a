@@ -58,7 +58,7 @@ STATUS: dict[str, tuple[str, str, str]] = {
     "U-15": ("DUTY", "Phase 1 includes credit sales because the shop needs them", "-"),
     "U-16": ("DONE", "AGENTS.md is the single entry point", "-"),
     "U-18": ("WIP", "`ProductService.AddCategory/AddCompany`, inline supplier in Purchases", "-"),
-    "U-19": ("DONE", "`PhotoService`: the file lives in `data/photos`, the database keeps only the name; migration 021 adds the put-away flag", "PhotoTests"),
+    "U-19": ("DONE", "`PhotoService`: the file lives in `photos` **beside the database** (shared folder = both counters see it), the database keeps only the name; migration 021 adds the put-away flag", "PhotoTests"),
     "U-20": ("DONE", "SaleService + `discount.mode`", "SaleTests.RetailDiscount_*"),
     "U-21": ("DONE", "`products.room` + photos of the medicine, the customer and the supplier (F-41)", "PhotoTests"),
     "U-22": ("WIP", "`ProductService.Search` only; filters/groups TODO", "-"),
@@ -170,7 +170,7 @@ STATUS: dict[str, tuple[str, str, str]] = {
     "M-03": ("WIP", "Phase 1: purchases + POS written; receipt/print next", "-"),
     "M-04": ("TODO", "Phase 2: returns, quarantine, alerts, write-off, stock-take", "-"),
     "M-05": ("WIP", "Phase 3 written: ledgers, reports, backup, Excel, reorder/WhatsApp, stock-minus; the free/sample stock list remains", "-"),
-    "M-06": ("WIP", "Phase 4: loyalty (D-57), photos (D-58), own fields (D-59), several barcodes (D-60) and reps/doctors/lifetime profit (D-61) done; LAN counter and the installer remain", "-"),
+    "M-06": ("WIP", "Phase 4: loyalty (D-57), photos (D-58), own fields (D-59), several barcodes (D-60), reps/doctors/lifetime profit (D-61) and the LAN second counter (D-62) done; the hardware test and the installer remain", "-"),
     "M-07": ("TODO", "Phase 3/4: audit viewer, stock-take, backup, sync", "-"),
     "M-08": ("DONE", "settings and data-driven from the first migration", "-"),
 }

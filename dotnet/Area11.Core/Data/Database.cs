@@ -40,11 +40,28 @@ public sealed class Database
         _durable = durable;
 
         FilePath = string.IsNullOrWhiteSpace(filePath) ? AppPaths.DatabaseFile : filePath;
+        // The mode is read here too: a main counter keeps the rollback journal on its OWN disk,
+        // because the second counter opens that same file over the network (F-45).
+        Plan = StoragePlan.For(FilePath, ShopConfig.Current.Mode);
 
-        var folder = Path.GetDirectoryName(FilePath);
-        if (!string.IsNullOrWhiteSpace(folder))
+        // A second counter must never invent an empty shop. If the shared file is not there, stop
+        // with a sentence that names the path - creating a fresh database on the second PC would
+        // look like "the shop lost everything" (F-45).
+        if (Plan.IsNetwork && !File.Exists(FilePath))
         {
-            Directory.CreateDirectory(folder);
+            throw new InvalidOperationException(
+                "The shop's database was not found on the network at " + FilePath + Environment.NewLine +
+                "Check that the main counter's PC is switched on, that its Area11 folder is shared, " +
+                "and that this PC can open it in File Explorer. Nothing was created on this PC.");
+        }
+
+        if (!Plan.IsNetwork)
+        {
+            var folder = Path.GetDirectoryName(FilePath);
+            if (!string.IsNullOrWhiteSpace(folder))
+            {
+                Directory.CreateDirectory(folder);
+            }
         }
 
         _connectionString = new SqliteConnectionStringBuilder
@@ -58,6 +75,9 @@ public sealed class Database
     }
 
     public string FilePath { get; }
+
+    /// <summary>WAL on a local disk, rollback journal over the LAN - see <see cref="StoragePlan"/>.</summary>
+    public StoragePlan Plan { get; }
 
     public SqliteConnection Open()
     {
@@ -73,18 +93,22 @@ public sealed class Database
         using (var settings = connection.CreateCommand())
         {
             settings.CommandText = _durable
-                ? "PRAGMA busy_timeout=5000;"
+                ? "PRAGMA busy_timeout=" + Plan.BusyTimeoutMs + ";"
+                  + (Plan.SynchronousFull ? " PRAGMA synchronous=FULL;" : string.Empty)
                 : "PRAGMA busy_timeout=5000; PRAGMA journal_mode=MEMORY; PRAGMA synchronous=OFF;";
 
             settings.ExecuteNonQuery();
         }
 
-        // WAL is a property of the FILE, so it is asked for once per run, not on every one of the
-        // dozens of connections a bill opens. Until it succeeds the next open tries again.
+        // The journal mode is a property of the FILE, so it is asked for once per run, not on every
+        // one of the dozens of connections a bill opens. Until it succeeds the next open tries again.
+        //
+        // WAL on a shared folder is not asked for at all: its `-shm` file is memory that two PCs
+        // cannot share, and a dropped cable would leave a file SQLite cannot repair (F-45).
         if (_durable && Interlocked.CompareExchange(ref _journalReady, 1, 0) == 0)
         {
             using var journal = connection.CreateCommand();
-            journal.CommandText = "PRAGMA journal_mode=WAL;";
+            journal.CommandText = Plan.UseWal ? "PRAGMA journal_mode=WAL;" : "PRAGMA journal_mode=DELETE;";
 
             try
             {

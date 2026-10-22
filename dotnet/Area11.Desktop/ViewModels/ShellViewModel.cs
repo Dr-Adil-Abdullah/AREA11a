@@ -214,6 +214,9 @@ public sealed class ShellViewModel : ObservableObject
         var canImport = permissions.Can(_user, Modules.Import);
         var canSettings = CanOpenSettings;
 
+        // Moving the shop's database changes every counter at once, so only the owner sees it (F-45).
+        var canLan = _user.IsOwner;
+
         NavItems.Add(new NavItem("Dashboard", "Today at a glance", () => new DashboardViewModel(_services)));
 
         // ---- SELL: the counter and what comes back from it ----
@@ -312,7 +315,7 @@ public sealed class ShellViewModel : ObservableObject
         }
 
         // ---- SYSTEM: the shop's own settings, its memory and its safety net ----
-        if (canAudit || canBackup || canImport || canSettings)
+        if (canAudit || canBackup || canImport || canSettings || canLan)
         {
             AddGroup("system", "SYSTEM");
 
@@ -334,6 +337,12 @@ public sealed class ShellViewModel : ObservableObject
                 // it is the first thing to open after an update and the first thing to open after
                 // a bad day, and both happen more often than a change of printer paper.
                 AddPage("system", "Backup & restore", "ZIP of database + photos", CreateBackupPage);
+            }
+
+            if (canLan)
+            {
+                AddPage("system", "Second counter (LAN)", "Two PCs, one database",
+                    () => new LanViewModel(_services, _user));
             }
 
             if (canSettings)

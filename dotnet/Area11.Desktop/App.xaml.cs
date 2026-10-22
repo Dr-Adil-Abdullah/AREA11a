@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Threading;
 using Area11.Core.Models;
+using Area11.Core.Utils;
 using Area11.Desktop.ViewModels;
 using Area11.Desktop.Views;
 
@@ -28,7 +29,15 @@ public partial class App : Application
         }
         catch (Exception exception)
         {
-            CrashReporter.Report("starting the application", exception, "The login window could not be opened.");
+            // A second counter that cannot reach the main PC must say so in the shop's own words
+            // instead of a bare stack-trace box (F-45): switch the main PC on first.
+            var note = ShopConfig.Current.Mode == ShopMode.Second
+                ? "This PC is the second counter and could not open the main counter's database. "
+                  + "Switch the main PC on, make sure its Area11 folder is shared, then start Area11 here again. "
+                  + "Nothing on this PC was changed."
+                : "The login window could not be opened.";
+
+            CrashReporter.Report("starting the application", exception, note);
             Shutdown(1);
         }
     }

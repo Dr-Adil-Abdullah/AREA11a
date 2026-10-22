@@ -75,6 +75,7 @@ VIEW_MODEL_OF = {
     "CustomFieldsEditorView.xaml": "CustomFieldsEditorViewModel",
     "BarcodeWindow.xaml": "BarcodeListViewModel",
     "DoctorsView.xaml": "DoctorsViewModel",
+    "LanView.xaml": "LanViewModel",
 }
 
 

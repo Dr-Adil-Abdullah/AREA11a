@@ -14,6 +14,10 @@ public sealed class AppServices
     private AppServices()
     {
         Log = new LogService();
+
+        // Read before the database is opened: on a second counter this file is the only thing that
+        // knows where the shop's database even is (F-45).
+        Config = ShopConfig.Current;
         Database = new Database();
         Audit = new AuditService(Database, Log);
         Settings = new SettingsService(Database, Audit, Log);
@@ -51,9 +55,16 @@ public sealed class AppServices
         CustomFields = new CustomFieldService(Database, Audit, Permissions, Log);
         Barcodes = new BarcodeService(Database, Audit, Permissions, Log);
         Reps = new RepService(Database, Audit, Permissions, Log);
+        Lan = new LanService(Database, Audit, Log, Config);
     }
 
     public Database Database { get; }
+
+    /// <summary>The one line that decides where this PC keeps the shop's database (F-45).</summary>
+    public ShopConfig Config { get; }
+
+    /// <summary>The second counter: prepare the main PC, join from the other one.</summary>
+    public LanService Lan { get; }
 
     public LogService Log { get; }
 

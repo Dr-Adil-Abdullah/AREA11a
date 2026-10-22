@@ -95,6 +95,9 @@
         <DataTemplate DataType="{x:Type vm:DoctorsViewModel}">
             <views:DoctorsView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:LanViewModel}">
+            <views:LanView />
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>
