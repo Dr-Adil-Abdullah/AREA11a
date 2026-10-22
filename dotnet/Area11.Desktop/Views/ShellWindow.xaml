@@ -54,6 +54,9 @@
         <DataTemplate DataType="{x:Type vm:RecoveryViewModel}">
             <views:RecoveryView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ReportsViewModel}">
+            <views:ReportsView />
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>

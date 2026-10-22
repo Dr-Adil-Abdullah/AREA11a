@@ -63,6 +63,7 @@ VIEW_MODEL_OF = {
     "ShiftView.xaml": "ShiftViewModel",
     "ExpensesView.xaml": "ExpensesViewModel",
     "RecoveryView.xaml": "RecoveryViewModel",
+    "ReportsView.xaml": "ReportsViewModel",
 }
 
 

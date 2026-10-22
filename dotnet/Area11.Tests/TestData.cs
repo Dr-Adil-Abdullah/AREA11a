@@ -119,6 +119,10 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, @role, 1, @at);"
         new(test.Database, test.Audit, test.Settings,
             new PermissionService(test.Database, test.Log, test.Audit), test.Log);
 
+    /// <summary>Reports (F-34). One factory, so a constructor change breaks in one place.</summary>
+    public static ReportService Reports(TestDatabase test) =>
+        new(test.Database, new PermissionService(test.Database, test.Log, test.Audit), test.Log);
+
     /// <summary>Old udhaar ageing and the recovery slip (F-33). One factory, one constructor change.</summary>
     public static RecoveryService Recovery(TestDatabase test) =>
         new(test.Database, test.Audit, test.Settings,
