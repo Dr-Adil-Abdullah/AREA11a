@@ -30,14 +30,13 @@ public sealed class ReceiptService
     }
 
     /// <summary>Paper width in characters: 32 for 58 mm, 48 for 80 mm.</summary>
-    public int PaperWidth
-    {
-        get
-        {
-            var millimetres = _settings.GetInt("printer.width", 58);
-            return millimetres >= 80 ? 48 : 32;
-        }
-    }
+    public int PaperWidth => ColumnsForMillimetres(_settings.GetInt("printer.width", 58));
+
+    /// <summary>
+    /// The one place that turns millimetres into characters. The receipt and the hardware test slip
+    /// must agree, or the slip would prove a width the bills do not use (F-46).
+    /// </summary>
+    public static int ColumnsForMillimetres(int millimetres) => millimetres >= 80 ? 48 : 32;
 
     /// <summary>Builds the receipt of one sale. A missing sale is an error, never an empty paper.</summary>
     public ServiceResult<ReceiptDocument> Build(int saleId)

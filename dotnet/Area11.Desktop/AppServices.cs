@@ -56,6 +56,7 @@ public sealed class AppServices
         CustomFields = new CustomFieldService(Database, Audit, Permissions, Log);
         Barcodes = new BarcodeService(Database, Audit, Permissions, Log);
         Reps = new RepService(Database, Audit, Permissions, Log);
+        Hardware = new HardwareService(Settings, Audit, Permissions, Log);
         Lan = new LanService(Database, Audit, Log, Config);
     }
 
@@ -119,6 +120,9 @@ public sealed class AppServices
 
     /// <summary>The month's tax for the accountant (F-49).</summary>
     public TaxService Tax { get; }
+
+    /// <summary>The printer and scanner test the owner runs on his own PC (F-46).</summary>
+    public HardwareService Hardware { get; }
 
     public AuditHistoryService AuditHistory { get; }
 

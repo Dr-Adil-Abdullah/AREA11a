@@ -86,6 +86,22 @@ whatever printer Windows has. A USB barcode scanner needs no driver at all - it 
 
 ---
 
+## Test the printer and the scanner (F-46)
+
+After the first install, open **SYSTEM -> Printer & scanner** once and let the owner do this:
+
+1. **Print test slip** - it goes to the printer chosen in Settings, at the paper width in Settings.
+   The ruler on the slip must fill the line: **32 characters on 58 mm paper, 48 on 80 mm**. A missing
+   last digit means the width is wrong, not that the printer is broken.
+2. **Scan a box** in the scanner box. A USB scanner types the code and presses Enter by itself; the
+   page answers with the medicine and the pack. A code the shop does not have is still recorded - the
+   test is about the scanner, not about the medicine.
+3. Tick the six boxes and press **Save the result**. A tick that is missing needs one line of
+   explanation. The answer is kept with the date, the person and the paper width, and one line
+   appears in the black box (`hardware_test`).
+
+Changing the paper width later marks the old ticks stale - print the slip and tick it again.
+
 ## Updating
 
 1. On the build PC: pull the code and run `tools\MAKE-INSTALLER.cmd` again (the colour of the version

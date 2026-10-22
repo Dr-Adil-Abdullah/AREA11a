@@ -77,6 +77,7 @@ VIEW_MODEL_OF = {
     "DoctorsView.xaml": "DoctorsViewModel",
     "LanView.xaml": "LanViewModel",
     "TaxView.xaml": "TaxViewModel",
+    "HardwareView.xaml": "HardwareViewModel",
 }
 
 

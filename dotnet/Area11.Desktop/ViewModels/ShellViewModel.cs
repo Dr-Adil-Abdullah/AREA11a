@@ -351,6 +351,12 @@ public sealed class ShellViewModel : ObservableObject
                 // The owner's own questions sit beside Settings: both are his, both are about how the
                 // shop's forms look, and neither is a day-to-day page (F-42).
                 AddPage("system", "Own fields", "Your own questions", () => new CustomFieldsViewModel(_services, _user));
+
+                // The printer and the scanner are tested on the shop's own paper, once, by the owner
+                // (F-46) - so the page that proves it sits next to the page that configures it.
+                AddPage("system", "Printer & scanner", "Test it on this PC",
+                    () => new HardwareViewModel(_services, _user));
+
                 AddPage("system", "Settings", "Shop, printing, staff", CreateSettingsPage);
             }
         }

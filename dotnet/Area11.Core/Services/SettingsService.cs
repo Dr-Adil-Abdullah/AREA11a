@@ -449,6 +449,14 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Number("printer.copies", 1);
         Flag("printer.autoPrint", true);
 
+        // The hardware test (F-46): the owner's ticks, the date, the person and the paper width they
+        // belong to. Five plain settings, so a shop that upgrades reads the same words a new shop does.
+        Text("hardware.testedAt", string.Empty);
+        Text("hardware.testedBy", string.Empty);
+        Text("hardware.note", string.Empty);
+        Number("hardware.testedWidth", 0);
+        Text("hardware.passed", string.Empty);
+
         // ---- Store and branding (E-02, E-03) ----
         Text("store.name", "Area11 Pharmacy");
         Text("store.address", string.Empty);
