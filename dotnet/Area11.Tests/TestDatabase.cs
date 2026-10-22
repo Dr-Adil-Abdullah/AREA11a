@@ -31,7 +31,7 @@ public sealed class TestDatabase : IDisposable
         var file = Path.Combine(_folder, "area11.db");
         File.Copy(TemplateDatabase(), file);
 
-        Database = new Database(file, pooling: false);
+        Database = new Database(file, pooling: false, durable: false);
         Log = new LogService(Path.Combine(_folder, "logs"));
         Audit = new AuditService(Database, Log);
 
@@ -98,7 +98,7 @@ public sealed class TestDatabase : IDisposable
 
             var path = Path.Combine(folder, "template.db");
 
-            var database = new Database(path, pooling: false);
+            var database = new Database(path, pooling: false, durable: false);
             var log = new LogService(Path.Combine(folder, "logs"));
             new MigrationRunner(database, log).ApplyPending(FindMigrationsFolder());
 

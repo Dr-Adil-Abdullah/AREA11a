@@ -288,23 +288,33 @@ SELECT type AS type, qty_base AS qtyBase FROM stock_movements WHERE product_id =
 
         Assert.Equal(3, rows.Count);
 
-        // All three were saved inside the same second, so the order is the documented one:
-        // expenses first, then drawings, newest id first inside each group. The point of the test
-        // is that the order is the same on every read - not which group wins.
-        Assert.Equal(new[] { "expense", "drawing_goods", "drawing_cash" }, rows.Select(row => row.Kind));
+        // The screen shows the newest entry first, so the three rows are NOT guaranteed to share a
+        // second: on a slow machine each save lands in its own second and the drawings come first.
+        // That is why this test checks the RULE the query promises - newest first, expenses before
+        // drawings inside one second, newest id first in each group - and not a snapshot of one
+        // machine's clock. The rule is what makes the order the same on every read.
+        var promised = rows
+            .OrderByDescending(row => row.Date, StringComparer.Ordinal)
+            .ThenBy(row => row.IsDrawing ? 1 : 0)
+            .ThenByDescending(row => row.Id)
+            .Select(row => row.Kind);
+
+        Assert.Equal(promised, rows.Select(row => row.Kind));
         Assert.Equal(rows.Select(row => row.Kind), TestData.CashOut(test).List().Select(row => row.Kind));
 
-        var expense = rows[0];
+        // Found by KIND, not by position: the labels are what the owner reads, and they must be
+        // attached to the right entry wherever it lands in the list.
+        var expense = Assert.Single(rows, row => row.Kind == "expense");
         Assert.Equal("Rent", expense.KindLabel);
         Assert.Equal("Rs 1,200", expense.CashLabel);
         Assert.Equal("Owner", expense.WhoLabel);
 
-        var goods = rows[1];
+        var goods = Assert.Single(rows, row => row.Kind == "drawing_goods");
         Assert.False(goods.TookCash);
         Assert.Equal("stock only", goods.CashLabel);
         Assert.Contains("Panadol", goods.DetailLabel);
 
-        var cashDrawing = rows[2];
+        var cashDrawing = Assert.Single(rows, row => row.Kind == "drawing_cash");
         Assert.True(cashDrawing.TookCash);
         Assert.Equal("Rs 300", cashDrawing.CashLabel);
         Assert.Equal("Owner took cash", cashDrawing.KindLabel);

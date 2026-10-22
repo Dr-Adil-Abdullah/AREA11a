@@ -2,6 +2,7 @@ using Area11.Core.Utils;
 using Dapper;
 using Microsoft.Data.Sqlite;
 using System.IO;
+using System.Threading;
 
 namespace Area11.Core.Data;
 
@@ -13,6 +14,8 @@ namespace Area11.Core.Data;
 public sealed class Database
 {
     private readonly string _connectionString;
+    private readonly bool _durable;
+    private int _journalReady;
     private SqliteTransaction? _transaction;
 
     static Database()
@@ -26,8 +29,16 @@ public sealed class Database
     /// True for the application (a bill must not wait for a connection). False for the tests: a
     /// pooled handle keeps the file open on Windows, so a throw-away database could never be deleted.
     /// </param>
-    public Database(string? filePath = null, bool pooling = true)
+    /// <param name="durable">
+    /// True for the shop: WAL plus a sync on every commit, so a power cut cannot lose a bill. False
+    /// for the tests, where the file is deleted at the end anyway: journal in memory and no sync.
+    /// The schema, the SQL and the transactions are identical - only the safety against a power cut
+    /// is dropped, and that is what made a 271-test run take five minutes on the shop PC.
+    /// </param>
+    public Database(string? filePath = null, bool pooling = true, bool durable = true)
     {
+        _durable = durable;
+
         FilePath = string.IsNullOrWhiteSpace(filePath) ? AppPaths.DatabaseFile : filePath;
 
         var folder = Path.GetDirectoryName(FilePath);
@@ -54,17 +65,25 @@ public sealed class Database
         connection.Open();
 
         // busy_timeout FIRST: if the file is momentarily busy (another copy of the shop program,
-        // antivirus scanning the folder) the next statement waits instead of failing. Then WAL is
-        // best effort - after the first start the database already IS in WAL, and a checkpoint that
-        // cannot run right now must not stop a bill from being saved.
+        // antivirus scanning the folder) the next statement waits instead of failing.
+        //
+        // A throw-away test file gets MEMORY + OFF on every connection: those two are per-connection
+        // settings, and they stop SQLite creating and deleting a -wal / -shm / -journal file around
+        // every single query - which is exactly what made a run of 271 tests sit for five minutes.
         using (var settings = connection.CreateCommand())
         {
-            settings.CommandText = "PRAGMA busy_timeout=5000;";
+            settings.CommandText = _durable
+                ? "PRAGMA busy_timeout=5000;"
+                : "PRAGMA busy_timeout=5000; PRAGMA journal_mode=MEMORY; PRAGMA synchronous=OFF;";
+
             settings.ExecuteNonQuery();
         }
 
-        using (var journal = connection.CreateCommand())
+        // WAL is a property of the FILE, so it is asked for once per run, not on every one of the
+        // dozens of connections a bill opens. Until it succeeds the next open tries again.
+        if (_durable && Interlocked.CompareExchange(ref _journalReady, 1, 0) == 0)
         {
+            using var journal = connection.CreateCommand();
             journal.CommandText = "PRAGMA journal_mode=WAL;";
 
             try
@@ -73,8 +92,9 @@ public sealed class Database
             }
             catch (SqliteException)
             {
-                // Busy or read-only for a moment. The mode is remembered in the file; the next open
-                // sets it again, and every write below is still safe in the current mode.
+                // Busy or read-only for a moment; the file keeps its current mode, every write is
+                // still safe, and the next open asks again.
+                Interlocked.Exchange(ref _journalReady, 0);
             }
         }
 
