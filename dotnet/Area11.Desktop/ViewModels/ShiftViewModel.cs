@@ -19,7 +19,6 @@ public sealed class ShiftViewModel : ObservableObject
     private readonly User _user;
 
     private bool _hasShift;
-    private bool _canWork;
     private string _headerText = "The drawer is closed.";
     private string _floatText = "Rs 0";
     private string _cashSalesText = "Rs 0";

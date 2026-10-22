@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Threading;
 using Area11.Core.Models;
 using Area11.Desktop.ViewModels;
 using Area11.Desktop.Views;
@@ -15,6 +16,11 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // A WinExe has no console, so an exception that escapes would vanish. Both hooks write a
+        // crash file and print the same text on the console the batch file is watching.
+        DispatcherUnhandledException += OnDispatcherException;
+        AppDomain.CurrentDomain.UnhandledException += OnDomainException;
+
         try
         {
             _services = AppServices.Create();
@@ -22,13 +28,22 @@ public partial class App : Application
         }
         catch (Exception exception)
         {
-            MessageBox.Show(
-                "Area11 could not start.\n\n" + exception.Message +
-                "\n\nThe details were written to the log folder.",
-                "Area11", MessageBoxButton.OK, MessageBoxImage.Error);
-
+            CrashReporter.Report("starting the application", exception, "The login window could not be opened.");
             Shutdown(1);
         }
+    }
+
+    private void OnDispatcherException(object sender, DispatcherUnhandledExceptionEventArgs e)
+    {
+        CrashReporter.Report("working in the application", e.Exception, "The window that was open has a problem.");
+
+        // The app keeps running: the shops must never lose the till because the dashboard failed.
+        e.Handled = true;
+    }
+
+    private void OnDomainException(object sender, UnhandledExceptionEventArgs e)
+    {
+        CrashReporter.Report("an unrecoverable error", e.ExceptionObject as Exception);
     }
 
     private void ShowLogin()

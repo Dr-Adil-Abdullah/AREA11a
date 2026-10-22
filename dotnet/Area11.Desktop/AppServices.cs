@@ -108,6 +108,9 @@ public sealed class AppServices
     {
         var services = new AppServices();
 
+        // First line in the log: if the next start dies, the file shows how far it got.
+        services.Log.Info($"Starting Area11 v{BuildInfo.Version} ({BuildInfo.CodeName}) as {Environment.UserName}.");
+
         var migrations = new MigrationRunner(services.Database, services.Log);
         var applied = migrations.ApplyPending();
         services.Log.Info($"Database ready at {services.Database.FilePath} ({applied} migration(s) applied).");

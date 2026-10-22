@@ -165,11 +165,44 @@ echo   Sign in with the user name left EMPTY and the password: area11
 echo.
 dotnet run --project "dotnet\Area11.Desktop" --no-build
 
-if errorlevel 1 (
-    echo.
-    echo  Area11 stopped with an error. Send the first red line above.
-)
+if errorlevel 1 goto 
+
+   :crashed
+set "LOGDIR=%ProgramData%\Area11\logs"
+set "CRASHFILE="
+for /f "delims=" %%f in ('dir /b /o-d "%LOGDIR%\crash-*.txt" 2^>nul') do if not defined CRASHFILE set "CRASHFILE=%LOGDIR%\%%f"
 
 echo.
-echo  Area11 has closed.
+echo  ===========================================================
+echo   AREA11 STOPPED WITH AN ERROR
+echo  ===========================================================
+if defined CRASHFILE goto :showcrash
+goto :showlog
+
+:showcrash
+echo   Report: %CRASHFILE%
+echo.
+type "%CRASHFILE%"
+goto :done
+
+:showlog
+echo   No crash report was written, so the program closed without an
+echo   exception of its own. The end of the newest log is shown instead:
+echo.
+set "LOGFILE="
+for /f "delims=" %%f in ('dir /b /o-d "%LOGDIR%\*.log" 2^>nul') do if not defined LOGFILE set "LOGFILE=%LOGDIR%\%%f"
+if not defined LOGFILE goto :nofiles
+echo   %LOGFILE%
+echo.
+powershell -NoProfile -Command "Get-Content -LiteralPath '%LOGFILE%' -Tail 40"
+goto :done
+
+:nofiles
+echo   The folder %LOGDIR% has no files at all.
+
+:done
+echo.
+echo   Copy EVERYTHING above this line and send it in the chat.
+echo   Your shop data is untouched: C:\ProgramData\Area11 was only read.
 pause
+exit /b 1

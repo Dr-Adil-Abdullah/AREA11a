@@ -23,10 +23,15 @@ public sealed class MigrationRunner
 
     public int ApplyPending(string? migrationsFolder = null)
     {
-        var folder = migrationsFolder ?? Path.Combine(AppContext.BaseDirectory, "Migrations");
-        if (!Directory.Exists(folder))
+        var folder = migrationsFolder ?? FindMigrationsFolder();
+
+        if (folder is null)
         {
-            throw new DirectoryNotFoundException($"Migrations folder was not found: {folder}");
+            // Name every place that was tried. "Migrations folder was not found: <one path>" left the
+            // owner with nothing to check; this message says exactly which folders were searched.
+            throw new DirectoryNotFoundException(
+                "The SQL migration files were not found. Searched:" + Environment.NewLine +
+                string.Join(Environment.NewLine, CandidateFolders().Select(path => "  " + path)));
         }
 
         var files = Directory.GetFiles(folder, "*.sql")
@@ -83,6 +88,42 @@ public sealed class MigrationRunner
         }
 
         return applied;
+    }
+
+    /// <summary>
+    /// The folder that holds the .sql files: next to the program first, then the source tree (which
+    /// is where `dotnet run` lives during development). Null when neither exists.
+    /// </summary>
+    private static string? FindMigrationsFolder() =>
+        CandidateFolders().FirstOrDefault(Directory.Exists);
+
+    private static IEnumerable<string> CandidateFolders()
+    {
+        yield return Path.Combine(AppContext.BaseDirectory, "Migrations");
+
+        // A `dotnet run` from the repository: walk up until the source folder is in reach. This
+        // costs nothing on the shop PC (the loop ends after a few steps) and it means a missing
+        // copy step can never stop the owner again.
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+
+        for (var step = 0; step < 8 && directory is not null; step++)
+        {
+            var candidate = Path.Combine(directory.FullName, "Area11.Core", "Data", "Migrations");
+
+            if (Directory.Exists(candidate))
+            {
+                yield return candidate;
+            }
+
+            candidate = Path.Combine(directory.FullName, "dotnet", "Area11.Core", "Data", "Migrations");
+
+            if (Directory.Exists(candidate))
+            {
+                yield return candidate;
+            }
+
+            directory = directory.Parent;
+        }
     }
 
     private static bool IsApplied(SqliteConnection connection, SqliteTransaction? transaction, string id) =>

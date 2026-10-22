@@ -111,16 +111,17 @@ features and the four phases.
 
 | Check | How | State |
 |---|---|---|
-| C# parses (126 files) | `python3 tools/check_repo.py` | ✅ |
+| C# parses (129 files) | `python3 tools/check_repo.py` | ✅ |
 | Every file imports the namespaces it uses (`System.IO` …) | `python3 tools/check_repo.py` | ✅ |
 | Every SQL statement prepares against the real schema (148) | `python3 tools/check_repo.py` | ✅ |
 | XAML / csproj / props are valid XML | `python3 tools/check_repo.py` | ✅ |
 | Every XAML binding matches its view-model | `python3 tools/check_repo.py` | ✅ |
+| Every `StaticResource` key exists, in **every** XAML file | `python3 tools/check_repo.py` | ✅ |
 | Every `new XService(...)` matches its constructor (CS7036/CS1501) | `python3 tools/check_repo.py` | ✅ |
 | Migrations 001-019 produce 33 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
 | **Compiles on Windows** | `dotnet build Area11.sln` | ✅ 20 Oct 2026 (v0.1.1); re-check after each release |
-| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.4.5 Orchid |
+| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.4.6 Graphite |
 | **270 tests green** | `dotnet test` | ⬜ **F-16 follow-up** (the tests have never run on the owner's PC) |
 
 ## Change log
@@ -129,6 +130,7 @@ features and the four phases.
 |---|---|
 | 20 Oct 2026 | **First Windows build report:** CS0103 (`Path`/`Directory`/`File`) in `AppConfig.cs`, `Database.cs`, `LoggerService.cs` - fixed with explicit `using System.IO;`. The old `Area11.WPF.sln` was the solution being built by mistake, so it moved to `prototypes/`; the real solution is now `Area11.sln` in the root. The checker gained an explicit-usings check and a SQL-preparation check (37 statements). |
 | 21 Oct 2026 | **v0.3.4 Cyan - stock-take (F-27).** ST session freezes the book; count sheet with book/counted/diff/value and an only-differences pass; Apply (owner, once) corrects batches and values the difference at the frozen cost; negative stock corrected; GINTI batch for found medicine; uncounted lines warned, never zeroed. 173 tests. |
+| 21 Oct 2026 | **v0.4.6 Graphite - the program explains its own failure.** The first clean build of all three projects started and closed before the login window: a WinExe prints nothing, so "Area11 stopped with an error" was the only evidence. Now a custom `Main` wraps the WPF startup, every crash writes `logs\crash-<stamp>.txt` with the stack trace, the batch prints that file by itself, and `tools\SHOW-LOG.cmd` shows it on demand. The migration runner searches for its SQL files and names every folder tried; the Desktop project copies `Migrations` itself. 21st checker rule: every `StaticResource` key in every XAML. 270 tests. |
 | 21 Oct 2026 | **v0.4.5 Orchid - old udhaar recovery (F-33).** Every customer who owes money, sorted by the oldest debt, with a real FIFO ageing in four columns. A payment or a khata-reducing return knocks the oldest bill off first, so the "90+" column is money that has truly been owed three months. The columns must add up to the stored khata or the row turns red. Receiving money prints a **recovery slip** with the permanent `PAY-nnnn` number, built from history so a reprint never changes. The roadmap said `SR`; Spec 5.1.12 reserves `SR-` for supplier returns, so the slip uses `PAY-` (D-43). 270 tests. |
 | 21 Oct 2026 | **v0.4.4 Rust - expenses and owner drawings (F-32).** New **Expenses** page: shop costs (rent, electricity, salary, transport, tea, packing, repair, other) and what the owner took. An expense is not a purchase (no stock, no supplier account); a **cash** drawing lowers the drawer, a **goods** drawing lowers the shelf at **cost** and leaves the cash alone. The shift/galla now shows both as their own lines, so an honest expense no longer looks like a short drawer. Cash permission for expenses, owner only for drawings, nothing edited or deleted. 248 tests. |
 | 21 Oct 2026 | **v0.4.3 Maroon - build fix (Tests).** CS7036 in `AlertTests` (a test helper still built `AlertService` with four arguments) and CS0117 in `ShiftTests` (`QtyBase` on a supplier return line; the real property is `QtyEntered` + `Unit`). All three test helpers now go through `TestData.Alerts`, and a **20th checker rule** compares every service constructor call - including `=> new(...)` helpers - with its declaration, so the next change of this kind fails in the checker, not on the shop PC. 236 tests. |

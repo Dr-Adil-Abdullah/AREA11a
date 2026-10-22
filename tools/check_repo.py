@@ -875,6 +875,46 @@ def check_constructor_arity() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 1g. Resource keys (the XamlParseException class of error)
+# ---------------------------------------------------------------------------
+def check_resources() -> None:
+    """Every {StaticResource X} / {DynamicResource X} must be declared as x:Key="X".
+
+    This replaces the earlier per-view resource check: that one only looked at the views listed in
+    VIEW_MODEL_OF, so LoginWindow and ShellWindow were never examined, and it reported no line.
+
+    Why: a missing key does not fail the build. It throws a XamlParseException the moment the window
+    is created - on the shop PC, after the build looked clean - and the app closes before the login
+    screen. Every key lives in Theme.xaml, so comparing the two lists settles it here.
+    """
+    theme = DOTNET / "Area11.Desktop" / "Resources" / "Theme.xaml"
+
+    if not theme.exists():
+        return
+
+    declared = set(re.findall(r'x:Key="([^"]+)"', theme.read_text(encoding="utf-8-sig")))
+    checked = 0
+
+    for path in (DOTNET / "Area11.Desktop").rglob("*.xaml"):
+        text = path.read_text(encoding="utf-8-sig")
+        local = set(re.findall(r'x:Key="([^"]+)"', text))
+
+        for match in re.finditer(r"\{(?:StaticResource|DynamicResource)\s+([\w.]+)\s*\}", text):
+            key = match.group(1)
+
+            # System keys (for example {x:Static ...} forms) never reach this pattern; anything here
+            # must be declared by us.
+            checked += 1
+
+            if key not in declared and key not in local:
+                line = text[:match.start()].count("\n") + 1
+                fail(f"{rel(path)}:{line}: {match.group(0)} is not declared in Theme.xaml "
+                     f"(XamlParseException when the window opens)")
+
+    REPORT.append(f"Resources: {checked} StaticResource/DynamicResource key(s) all declared")
+
+
+# ---------------------------------------------------------------------------
 # 2. XML (XAML, csproj, props)
 # ---------------------------------------------------------------------------
 def check_xml() -> None:
@@ -891,11 +931,11 @@ def check_xml() -> None:
 
 
 # ---------------------------------------------------------------------------
-# 3. XAML bindings and resources
+# 3. XAML bindings
 # ---------------------------------------------------------------------------
 def check_bindings() -> None:
-    theme = (ROOT / "dotnet/Area11.Desktop/Resources/Theme.xaml").read_text(encoding="utf-8")
-    resources = set(re.findall(r'x:Key="([^"]+)"', theme))
+    # Resource keys are checked for every .xaml by check_resources(); this function only checks the
+    # bindings of the pages that have a view-model.
 
     # Rows inside a DataGrid / ListBox bind to a *model*, not to the page's view-model. Reading the
     # model files makes those bindings checkable instead of ticking a hand-kept allow-list: a typo
@@ -932,10 +972,6 @@ def check_bindings() -> None:
                 problems += 1
                 fail(view_name + ": binding {" + "Binding " + name + "} not found in " + vm_name)
 
-        for key in re.findall(r"\{StaticResource ([^}]+)\}", text):
-            if key not in resources:
-                problems += 1
-                fail(f"{view_name}: missing resource '{key}' in Theme.xaml")
 
     REPORT.append(f"XAML bindings: {checked} checked, {problems} problems")
 
@@ -1203,6 +1239,7 @@ def main() -> int:
     check_shadowing()
     check_result_values()
     check_constructor_arity()
+    check_resources()
     check_xml()
     check_bindings()
     check_migrations()
