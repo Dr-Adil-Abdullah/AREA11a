@@ -5,12 +5,22 @@ using Area11.Core.Utils;
 namespace Area11.Core.Services;
 
 /// <summary>
-/// The alert board (Spec 16, U-31, U-34, 15.2.1). Four sources today:
+/// The alert board (Spec 16, U-31, U-34, 15.2.1, D-50). Six sources today:
 ///   • a medicine whose stock is MINUS - somebody sold what the shelf did not have;
 ///   • goods sitting in quarantine, waiting for a decision;
 ///   • a no-bill return that is still missing its bill;
 ///   • a batch inside the **supplier return window**: the supplier will take it back only until a
-///     cutoff (three months before expiry by default), so the shop must act now or keep it (§9.3.6).
+///     cutoff (three months before expiry by default), so the shop must act now or keep it (§9.3.6);
+///   • a shelf at or below its reorder level - folded into ONE line, not one line per medicine;
+///   • a batch already **expired** and still on the shelf - also one folded line;
+///   • a drawer left open from an earlier day (a reminder, not a problem).
+///
+/// **Two kinds (D-50).** A *problem* - money or stock that is wrong now - is ended only by the
+/// owner, with a written reason (the rule this service was built around). A *reminder* - the open
+/// drawer, a bill that only needs a confirming word - may be put away by anybody with one click,
+/// because it blocks nobody and hides no money. The classification lives in
+/// <see cref="AlertItem.IsReminderType"/> so the model, the service and the screen cannot disagree,
+/// and <see cref="DismissLight"/> refuses any key that is not a reminder.
 ///
 /// The owner's rule: **an alert ends only when the owner writes a reason.** So an alert is never
 /// deleted - it is *ended*, with the reason, the name and the time kept forever, and the owner can
@@ -28,6 +38,15 @@ public sealed class AlertService
     public const string TypeProvisional = "provisional";
     public const string TypeProvisionalLinked = "provisional_linked";
     public const string TypeSupplierCutoff = "supplier_cutoff";
+
+    /// <summary>A reminder: the drawer of an earlier day was never closed (light).</summary>
+    public const string TypeShiftOpen = "shift_open";
+
+    /// <summary>A shelf at or below its reorder level, folded into ONE alert (serious).</summary>
+    public const string TypeLowStock = "lowstock";
+
+    /// <summary>Batches already past their expiry date that are still on the shelf (serious).</summary>
+    public const string TypeExpired = "expired";
 
     private const int MinimumReasonLength = 3;
 
@@ -103,6 +122,74 @@ ORDER BY b.expiry_date ASC, p.name COLLATE NOCASE;",
                     new { cutoff = cutoffDays, alert = alertDays }));
             }
 
+            // ---- a shelf running out: ONE line for all of them (serious) ----
+            var lowStock = _db.Query<ProblemRow>(connection, @"
+SELECT p.id AS entityId, p.name AS name,
+       IFNULL((SELECT SUM(b.qty_base) FROM batches b WHERE b.product_id = p.id AND b.active = 1), 0) AS qty
+FROM products p
+WHERE p.active = 1
+  AND IFNULL((SELECT SUM(b.qty_base) FROM batches b WHERE b.product_id = p.id AND b.active = 1), 0) >= 0
+  AND IFNULL((SELECT SUM(b.qty_base) FROM batches b WHERE b.product_id = p.id AND b.active = 1), 0) <= p.reorder_level
+ORDER BY qty ASC, p.name COLLATE NOCASE;");
+
+            if (lowStock.Count > 0)
+            {
+                // A review of 200 medicines below their level would be useless on a phone screen, so
+                // the line names the first three and counts the rest.
+                var names = string.Join(", ", lowStock.Take(3).Select(row => row.Name).Where(name => !string.IsNullOrWhiteSpace(name)));
+
+                problems.Add(new ProblemRow
+                {
+                    EntityId = lowStock.Count,                 // the count IS the key, see below
+                    Count = lowStock.Count,
+                    Type = TypeLowStock,
+                    Title = lowStock.Count + (lowStock.Count == 1 ? " medicine is" : " medicines are")
+                            + " below the reorder level",
+                    Detail = (names.Length > 0 ? "lowest first: " + names : string.Empty)
+                             + (lowStock.Count > 3 ? " and " + (lowStock.Count - 3) + " more" : string.Empty)
+                             + " - buy them before the shelf is empty"
+                });
+            }
+
+            // ---- goods already past their date and still on the shelf (serious) ----
+            var expired = _db.Query<ProblemRow>(connection, @"
+SELECT b.id AS entityId, p.name || ' - ' || b.batch_no AS name, b.qty_base AS qty,
+       b.expiry_date AS date, CAST(b.qty_base * b.cost_paisa AS INTEGER) AS refundPaisa
+FROM batches b
+JOIN products p ON p.id = b.product_id
+WHERE p.active = 1 AND b.active = 1 AND b.qty_base > 0
+  AND IFNULL(b.expiry_date, '') <> ''
+  AND b.expiry_date < date('now','localtime')
+ORDER BY b.expiry_date ASC, p.name COLLATE NOCASE;");
+
+            if (expired.Count > 0)
+            {
+                var money = expired.Sum(row => row.RefundPaisa);
+                var names = string.Join(", ", expired.Take(3).Select(row => row.Name).Where(name => !string.IsNullOrWhiteSpace(name)));
+
+                problems.Add(new ProblemRow
+                {
+                    EntityId = expired.Count,
+                    Count = expired.Count,
+                    Type = TypeExpired,
+                    Title = expired.Count + (expired.Count == 1 ? " batch has" : " batches have")
+                            + " expired - " + Money.Format(money) + " at cost",
+                    Detail = (names.Length > 0 ? names : string.Empty)
+                             + (expired.Count > 3 ? " and " + (expired.Count - 3) + " more" : string.Empty)
+                             + " - write them off or send them back"
+                });
+            }
+
+            // ---- a drawer left open from an earlier day (a reminder) ----
+            problems.AddRange(_db.Query<ProblemRow>(connection, @"
+SELECT s.id AS entityId, IFNULL(u.name, 'someone') AS name, s.opened_at AS lastChange,
+       s.opened_at AS date, 'shift_open' AS type
+FROM shifts s
+LEFT JOIN users u ON u.id = s.user_id
+WHERE s.status = 'open'
+  AND substr(s.opened_at, 1, 10) < date('now','localtime')
+ORDER BY s.opened_at ASC;"));
+
             var dismissals = _db.Query<DismissalRow>(connection, @"
 SELECT alert_key AS alertKey, alert_type AS alertType, entity_id AS entityId,
        reason, user_name AS userName, created_at AS createdAt
@@ -121,8 +208,17 @@ FROM alert_dismissals;")
                     Key = key,
                     Type = kind,
                     EntityId = problem.EntityId,
-                    Title = string.IsNullOrWhiteSpace(problem.Name) ? "(unknown medicine)" : problem.Name!,
-                    Detail = DetailOf(problem, kind, cutoffDays)
+                    Title = !string.IsNullOrWhiteSpace(problem.Title)
+                        ? problem.Title!
+                        : string.IsNullOrWhiteSpace(problem.Name) ? "(unknown medicine)" : problem.Name!,
+                    Detail = !string.IsNullOrWhiteSpace(problem.Detail)
+                        ? problem.Detail!
+                        : DetailOf(problem, kind, cutoffDays),
+
+                    // A folded line must keep its own number: the title says "2 medicines", and a row
+                    // that says Count = 1 while the title says 2 is the kind of small lie that makes
+                    // the operator stop trusting the screen.
+                    Count = problem.Count
                 };
 
                 if (dismissals.TryGetValue(key, out var dismissal) && !MovedSince(problem.LastChange, dismissal.CreatedAt))
@@ -209,6 +305,79 @@ ON CONFLICT(alert_key) DO UPDATE SET
         {
             _log.Error($"Alert {cleanKey} could not be ended.", exception);
             return ServiceResult.Fail("The alert could not be ended.");
+        }
+    }
+
+    /// <summary>
+    /// Puts a **reminder** away - the light door (D-50). Any signed-in person may do it, with no
+    /// reason typed, because a reminder blocks nobody: the drawer is still open on the Shift page and
+    /// the bill is still attached; only the sentence in the bell disappears.
+    ///
+    /// It refuses any key that is **not** a reminder. That guard is the whole safety of this method:
+    /// without it, the light door would became a way for a cashier to silence "stock is minus".
+    /// The row goes into the same `alert_dismissals` table, so the history shows who put it away.
+    /// </summary>
+    public ServiceResult DismissLight(User? user, string? key)
+    {
+        if (user is null)
+        {
+            return ServiceResult.Fail("Sign in first.");
+        }
+
+        var cleanKey = (key ?? string.Empty).Trim();
+        if (cleanKey.Length == 0)
+        {
+            return ServiceResult.Fail("There is no reminder selected.");
+        }
+
+        var (type, entityId) = SplitKey(cleanKey);
+        if (type is null)
+        {
+            return ServiceResult.Fail("That alert key is not recognised.");
+        }
+
+        if (!AlertItem.IsReminderType(type))
+        {
+            return ServiceResult.Fail(
+                "That is not a reminder - only the owner can end it, and only with a written reason.");
+        }
+
+        try
+        {
+            _db.Tx(connection =>
+            {
+                _db.Execute(connection, @"
+INSERT INTO alert_dismissals(alert_key, alert_type, entity_id, reason, user_id, user_name, created_at)
+VALUES(@key, @type, @entityId, @reason, @userId, @userName, @at)
+ON CONFLICT(alert_key) DO UPDATE SET
+    reason = excluded.reason,
+    user_id = excluded.user_id,
+    user_name = excluded.user_name,
+    created_at = excluded.created_at;",
+                    new
+                    {
+                        key = cleanKey,
+                        type,
+                        entityId,
+
+                        // The reason column is NOT NULL, and it should say plainly that nobody wrote
+                        // one: this is a "seen it" tick, not a decision about money.
+                        reason = "seen by " + user.Name,
+                        userId = user.Id,
+                        userName = user.Name,
+                        at = Clock.Now()
+                    });
+
+                _audit.Record(connection, user, "Alerts", "alert_seen", "alert_dismissals", cleanKey,
+                    oldValue: "active", newValue: "reminder closed");
+            });
+
+            return ServiceResult.Success();
+        }
+        catch (Exception exception)
+        {
+            _log.Error($"Reminder {cleanKey} could not be closed.", exception);
+            return ServiceResult.Fail("The reminder could not be closed.");
         }
     }
 
@@ -340,6 +509,9 @@ JOIN products p ON p.id = b.product_id WHERE b.id = @id;", new { id }) ?? string
             TypeProvisional => (TypeProvisional, entityId),
             TypeProvisionalLinked => (TypeProvisionalLinked, entityId),
             TypeSupplierCutoff => (TypeSupplierCutoff, entityId),
+            TypeShiftOpen => (TypeShiftOpen, entityId),
+            TypeLowStock => (TypeLowStock, entityId),
+            TypeExpired => (TypeExpired, entityId),
             _ => (null, 0)
         };
     }
@@ -382,6 +554,9 @@ JOIN products p ON p.id = b.product_id WHERE b.id = @id;", new { id }) ?? string
             " with no bill - attach the bill",
         TypeProvisionalLinked =>
             "bill " + (problem.QCode ?? string.Empty) + " attached - confirm it is the right bill, then end this alert",
+        TypeShiftOpen =>
+            "opened " + ShortDate(problem.Date) + " by " + (problem.Name ?? "someone") +
+            " - count the drawer and close it on the Shift (galla) page",
         _ => "stock " + Qty.Format(problem.Qty) + " - fix by a stock count or a purchase"
     };
 
@@ -431,6 +606,15 @@ JOIN products p ON p.id = b.product_id WHERE b.id = @id;", new { id }) ?? string
 
         /// <summary>Days until expiry - only the supplier-cutoff query fills it.</summary>
         public int DaysLeft { get; set; }
+
+        /// <summary>Set by a folded alert (a shelf running out, batches expired): its own headline.</summary>
+        public string? Title { get; set; }
+
+        /// <summary>Set by a folded alert: the sentence under the headline.</summary>
+        public string? Detail { get; set; }
+
+        /// <summary>How many rows were folded into this one line (1 for a single row).</summary>
+        public int Count { get; set; } = 1;
     }
 
     private sealed class DismissalRow

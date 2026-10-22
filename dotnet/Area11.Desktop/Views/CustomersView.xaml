@@ -40,6 +40,13 @@
                              ToolTip="Name or phone. Leave empty and press Refresh for everybody." />
 
                     <DockPanel Grid.Row="1" Margin="0,8,0,8">
+                        <!-- The form the owner asked for (D-50): adding a customer needed one button
+                             and one card, and every rule stays in PartnerService. -->
+                        <Button DockPanel.Dock="Right" Content="+ New" FontSize="11" Padding="9,4"
+                                Style="{StaticResource PrimaryButton}"
+                                Command="{Binding AddNewCommand}"
+                                IsEnabled="{Binding CanOpenAddForm}"
+                                ToolTip="Add a customer who is not in the book yet" />
                         <CheckBox Content="Only with udhaar" IsChecked="{Binding OnlyCredit, Mode=TwoWay}"
                                   VerticalAlignment="Center" />
                     </DockPanel>
@@ -275,6 +282,37 @@
                                     Command="{Binding SaveEditCommand}" />
                             <Button Content="Cancel" Style="{StaticResource GhostButton}" Margin="8,0,0,0"
                                     Command="{Binding CancelEditCommand}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- new customer card (D-50) -->
+                <Border Style="{StaticResource Card}" Padding="18"
+                        VerticalAlignment="Top"
+                        Visibility="{Binding IsAdding, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <TextBlock Text="New customer" Style="{StaticResource SectionTitle}" />
+                        <TextBlock Text="The khata starts at zero. Nothing is owed until the first bill on credit."
+                                   Style="{StaticResource FieldHint}" />
+
+                        <TextBlock Text="Name" Style="{StaticResource FieldLabel}" Margin="0,12,0,0" />
+                        <TextBox Text="{Binding NewName, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock Text="Phone (optional)" Style="{StaticResource FieldLabel}" Margin="0,10,0,0" />
+                        <TextBox Text="{Binding NewPhone, UpdateSourceTrigger=PropertyChanged}" Width="240"
+                                 HorizontalAlignment="Left" />
+                        <TextBlock Text="A phone number can belong to only one customer: two rows with the same number split one family's udhaar."
+                                   Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+
+                        <TextBlock Text="Category" Style="{StaticResource FieldLabel}" Margin="0,10,0,0" />
+                        <ComboBox ItemsSource="{Binding Categories}" Width="200" HorizontalAlignment="Left"
+                                  SelectedItem="{Binding NewCategory, Mode=TwoWay}" />
+
+                        <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                            <Button Content="Add customer" Style="{StaticResource PrimaryButton}"
+                                    Command="{Binding SaveNewCommand}" />
+                            <Button Content="Cancel" Style="{StaticResource GhostButton}" Margin="8,0,0,0"
+                                    Command="{Binding CancelNewCommand}" />
                         </StackPanel>
                     </StackPanel>
                 </Border>

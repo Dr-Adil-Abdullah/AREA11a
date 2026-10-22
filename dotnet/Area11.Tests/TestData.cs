@@ -127,6 +127,10 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, @role, 1, @at);"
     public static AuditHistoryService AuditHistory(TestDatabase test) =>
         new(test.Database, new PermissionService(test.Database, test.Log, test.Audit), test.Log);
 
+    /// <summary>Customers and suppliers (D-50 added the "new customer" form, so the service is used).</summary>
+    public static PartnerService Partners(TestDatabase test) =>
+        new(test.Database, test.Audit, test.Log);
+
     /// <summary>Permissions, for the tests that grant one person an extra module.</summary>
     public static PermissionService Permissions(TestDatabase test) =>
         new(test.Database, test.Log, test.Audit);

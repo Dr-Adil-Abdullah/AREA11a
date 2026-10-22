@@ -18,17 +18,20 @@ Ported from the original Next.js + SQLite web app (`Dr-Adil-Abdullah/Area11`) us
 | Phase | Contents | State |
 |---|---|---|
 | **1** | Foundation, database, sign-in, products, purchases `PINV`, counter `INV`, receipt & instant print, settings screen, **hold cart, split payment** | ✅ written and compiled; needs one real walk-through by the owner |
-| **2** | Returns `RET` / provisional `PR` / quarantine `Q`, alert centre, write-off, stock-take `ST`, ledgers | ⬜ not started — **next** |
-| **3** | Shift & galla, expenses, `SR` recovery, reports, audit viewer, backup, Excel, reorder/WhatsApp | ⬜ not started |
+| **2** | Returns `RET` / provisional `PR` / quarantine `Q`, alert centre, write-off, stock-take `ST`, khata and supplier ledgers | ✅ written (v0.3.0 - v0.3.12) |
+| **3** | Shift & galla, expenses, udhaar recovery, reports, black box, **backup ZIP**, Excel, reorder/WhatsApp | 🟡 five of eight (v0.4.0 - v0.6.0); **backup ZIP (F-36) is next** |
 | **4** | Loyalty, photos & camera, custom fields, second counter, hardware test, **self-installing installer** | ⬜ not started |
 
 Live counts are in [`docs/PROGRESS.md`](docs/PROGRESS.md) (features) and
 [`docs/RULES-MATRIX.md`](docs/RULES-MATRIX.md) (the owner's 116 numbered rules).
 
-**Honest note:** the build machine used so far is Linux with no .NET SDK, so nothing in `dotnet/`
-has ever been compiled. It is checked statically (C# parses, XAML/bindings/resources valid,
-migrations execute against SQLite, 173 test cases written). The Windows build succeeded on
-20 Oct 2026; see [`docs/VERSIONS.md`](docs/VERSIONS.md) for which build the owner has.
+**Honest note:** the agent's build machine is Linux with no .NET SDK, so nothing in `dotnet/` is
+compiled there. Every change is checked statically (C# parses, explicit usings, XAML, resources,
+every binding against its view model, every SQL statement against the real schema, every mapped
+column against its model, migrations executed on SQLite) and **321 test cases** are written for the
+Windows run. The Windows build has succeeded up to v0.4.8, and the owner's own runs compiled Core
+and Tests; the newest releases are tested by him with `tools\RUN-TESTS.cmd`. See
+[`docs/VERSIONS.md`](docs/VERSIONS.md) for which build he has.
 
 ---
 

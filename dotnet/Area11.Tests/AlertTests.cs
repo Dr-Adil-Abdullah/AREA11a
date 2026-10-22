@@ -33,8 +33,11 @@ public sealed class AlertTests
 
         Assert.True(report.HasLive);
         Assert.Equal(1, report.NegativeCount);
-        Assert.Contains("Stock is MINUS", report.BarText);
-        Assert.Contains("See now", report.BarText);
+        Assert.Contains("Stock is MINUS", report.SummaryText);
+
+        // The old red bar ended with "See now"; the bar is gone (D-50) and the sentence must stand
+        // alone - a headline, not a button.
+        Assert.DoesNotContain("See now", report.SummaryText);
         Assert.Equal("negstock", report.Live[0].Type);
     }
 
@@ -54,7 +57,7 @@ public sealed class AlertTests
         var report = Alerts(test).Report();
 
         Assert.Equal(1, report.QuarantineCount);
-        Assert.Contains("quarantine", report.BarText);
+        Assert.Contains("quarantine", report.SummaryText);
     }
 
     [Fact]
@@ -66,7 +69,7 @@ public sealed class AlertTests
         var report = Alerts(test).Report();
 
         Assert.False(report.HasLive);
-        Assert.Equal(string.Empty, report.BarText);
+        Assert.Equal(string.Empty, report.SummaryText);
     }
 
     [Fact]

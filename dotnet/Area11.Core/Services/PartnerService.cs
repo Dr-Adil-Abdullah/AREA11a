@@ -56,8 +56,31 @@ ORDER BY name COLLATE NOCASE;",
             type = "normal";
         }
 
+        var cleanPhone = string.IsNullOrWhiteSpace(phone) ? null : phone.Trim();
+
         try
         {
+            // A phone number is how the shop finds a person's khata. Two rows with the same number
+            // split one family's debt in two, and at the counter nobody can tell which row to
+            // collect from - so the second one is refused and the cashier is sent to the first
+            // (D-50). Leaving the phone empty is always allowed.
+            if (cleanPhone is not null)
+            {
+                using var look = _db.Open();
+                var owner = _db.QuerySingle<string>(look, @"
+SELECT name FROM customers
+WHERE active = 1 AND IFNULL(phone, '') = @phone
+LIMIT 1;",
+                    new { phone = cleanPhone });
+
+                if (!string.IsNullOrEmpty(owner))
+                {
+                    return ServiceResult<int>.Fail(
+                        "That phone number already belongs to " + owner
+                        + ". Open that customer to put the sale on their khata, or leave the phone empty.");
+                }
+            }
+
             var id = _db.Tx(connection =>
             {
                 _db.Execute(connection, @"
@@ -66,7 +89,7 @@ VALUES(@name, @phone, @category, 0, 0, 0, 1, 1, @at);",
                     new
                     {
                         name = clean,
-                        phone = string.IsNullOrWhiteSpace(phone) ? null : phone.Trim(),
+                        phone = cleanPhone,
                         category = type,
                         at = Clock.Now()
                     });

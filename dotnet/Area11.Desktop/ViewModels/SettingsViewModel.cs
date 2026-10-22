@@ -53,6 +53,7 @@ public sealed class SettingsViewModel : ObservableObject
     private string _supplierCutoffText = "90";
     private string _supplierAlertText = "180";
 
+    private int _selectedTabIndex;
     private User? _selectedUser;
     private string _newStaffName = string.Empty;
     private string _newStaffPin = string.Empty;
@@ -359,6 +360,26 @@ public sealed class SettingsViewModel : ObservableObject
     /// Called every time the page is opened, so a value changed elsewhere (the printing switch on
     /// the counter screen writes the same key) is shown here too.
     /// </summary>
+    /// <summary>
+    /// Which tab is open: 0 Shop, 1 Printing, 2 Sales rules, 3 Staff &amp; permissions.
+    /// Bound two-way, so the shop name in the sidebar can open Shop and a person's name can open the
+    /// staff tab (D-50) - the two questions the owner actually clicks.
+    /// </summary>
+    public int SelectedTabIndex
+    {
+        get => _selectedTabIndex;
+        set => SetProperty(ref _selectedTabIndex, Math.Clamp(value, 0, 3));
+    }
+
+    /// <summary>
+    /// Opens a tab by number (the frame's top-bar buttons call this).
+    ///
+    /// It does **not** reload the page: the menu already refreshes Settings whenever it is opened, and
+    /// reloading here would throw away half-typed values when somebody clicks their own name while
+    /// already on this page. Moving a TabControl must never cost the operator their work.
+    /// </summary>
+    public void ShowTab(int index) => SelectedTabIndex = index;
+
     public void Refresh()
     {
         Load();

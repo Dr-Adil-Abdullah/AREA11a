@@ -5,8 +5,9 @@ using Area11.Core.Services;
 namespace Area11.Desktop.ViewModels;
 
 /// <summary>
-/// The alert board (F-24). Two lists:
-///   • live alerts - what is wrong right now (minus stock, goods in quarantine);
+/// The alert board (F-24, reshaped by D-50). Two lists:
+///   • live alerts - what is wrong right now, each row marked **Reminder** (anybody may put it away
+///     with one click) or **Owner only** (money or stock is wrong; the owner writes the reason);
 ///   • ended alerts - every reason the owner ever wrote, with a button to bring one back.
 ///
 /// Only the owner sees the reason box and the buttons: everybody else is told, in plain words, that
@@ -36,6 +37,7 @@ public sealed class AlertsViewModel : ObservableObject
 
         RefreshCommand = new RelayCommand(Load);
         DismissCommand = new RelayCommand(Dismiss);
+        DismissLightCommand = new RelayCommand(DismissLight);
         RestoreCommand = new RelayCommand(Restore);
 
         Load();
@@ -48,6 +50,9 @@ public sealed class AlertsViewModel : ObservableObject
     public RelayCommand RefreshCommand { get; }
 
     public RelayCommand DismissCommand { get; }
+
+    /// <summary>Puts a reminder away - no reason, any signed-in person (D-50).</summary>
+    public RelayCommand DismissLightCommand { get; }
 
     public RelayCommand RestoreCommand { get; }
 
@@ -71,13 +76,19 @@ public sealed class AlertsViewModel : ObservableObject
             if (SetProperty(ref _selected, value))
             {
                 OnPropertyChanged(nameof(SelectedCaption));
+                OnPropertyChanged(nameof(CanPutAway));
             }
         }
     }
 
     public string SelectedCaption => _selected is null
-        ? "Pick the alert above, write the reason, then press End this alert."
-        : $"{_selected.TypeLabel}: {_selected.Title}";
+        ? "Pick an alert above. A reminder can be put away by anyone; anything else needs the owner and a reason."
+        : _selected.IsLight
+            ? $"{_selected.TypeLabel}: {_selected.Title} - a reminder, so anybody may put it away."
+            : $"{_selected.TypeLabel}: {_selected.Title}";
+
+    /// <summary>True when the picked row is a reminder, so "Put away" is the right button for it.</summary>
+    public bool CanPutAway => _selected is { IsLight: true, IsEnded: false };
 
     public string StatusText
     {
@@ -109,9 +120,10 @@ public sealed class AlertsViewModel : ObservableObject
 
         Selected = Live.FirstOrDefault();
 
+        // The sentence comes from the model, so the board and the bell can never word it differently.
         SummaryText = report.LiveCount == 0
             ? "Nothing needs attention. Ended alerts stay on record below."
-            : $"{report.NegativeCount} medicine(s) with minus stock · {report.QuarantineCount} item(s) in quarantine.";
+            : report.SummaryText + $" ({report.SeriousCount} for the owner, {report.LightCount} reminder(s))";
 
         OnPropertyChanged(nameof(SummaryText));
         OnPropertyChanged(nameof(SelectedCaption));
@@ -144,6 +156,33 @@ public sealed class AlertsViewModel : ObservableObject
         Load();
         _onChanged?.Invoke();
         SetStatus($"{caption} - ended. Your reason is on record.", false);
+    }
+
+    /// <summary>
+    /// The light door. It is on the board as well as in the bell, because a cashier who opens the
+    /// board should not be sent away to find the bell for a reminder. The service still decides:
+    /// a serious key is refused here exactly as it is there.
+    /// </summary>
+    private void DismissLight()
+    {
+        if (Selected is null)
+        {
+            SetStatus("Pick the reminder you want to put away.", true);
+            return;
+        }
+
+        var caption = $"{Selected.TypeLabel}: {Selected.Title}";
+        var result = _services.Alert.DismissLight(_user, Selected.Key);
+
+        if (!result.Ok)
+        {
+            SetStatus(result.Error ?? "The reminder could not be closed.", true);
+            return;
+        }
+
+        Load();
+        _onChanged?.Invoke();
+        SetStatus($"{caption} - put away. The problem itself is unchanged.", false);
     }
 
     private void Restore()
@@ -191,6 +230,7 @@ public sealed class AlertRow
         EndedAt = alert.EndedAt ?? string.Empty;
         IsCritical = alert.IsCritical;
         IsAmber = alert.IsAmber;
+        IsLight = alert.IsLight;
     }
 
     public string Key { get; }
@@ -214,4 +254,10 @@ public sealed class AlertRow
     public bool IsCritical { get; }
 
     public bool IsAmber { get; }
+
+    /// <summary>True = a reminder (anybody may close it). False = only the owner ends it.</summary>
+    public bool IsLight { get; }
+
+    /// <summary>The word in the Kind column: who is allowed to touch it.</summary>
+    public string KindLabel => IsLight ? "Reminder" : "Owner only";
 }

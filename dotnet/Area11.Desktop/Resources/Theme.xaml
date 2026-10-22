@@ -6,13 +6,13 @@
          docs/VERSIONS.md). The owner tests every build on his own PC and finds the new one by its
          colour, so a code change is always shipped with a new colour. White text sits on these
          brushes - keep the shade at 4.5:1 or better against white. -->
-    <SolidColorBrush x:Key="BrandBrush" Color="#2A2F8F" />
-    <SolidColorBrush x:Key="BrandDarkBrush" Color="#1F2469" />
-    <SolidColorBrush x:Key="BrandSoftBrush" Color="#EDEEFA" />
+    <SolidColorBrush x:Key="BrandBrush" Color="#0E7490" />
+    <SolidColorBrush x:Key="BrandDarkBrush" Color="#155E75" />
+    <SolidColorBrush x:Key="BrandSoftBrush" Color="#E7F6FA" />
     <SolidColorBrush x:Key="CanvasBrush" Color="#F3F5F7" />
     <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF" />
     <SolidColorBrush x:Key="SidebarBrush" Color="#0F172A" />
-    <SolidColorBrush x:Key="SidebarItemBrush" Color="#78350F" />
+    <SolidColorBrush x:Key="SidebarItemBrush" Color="#1E293B" />
     <SolidColorBrush x:Key="TextBrush" Color="#111827" />
     <SolidColorBrush x:Key="MutedBrush" Color="#6B7280" />
     <SolidColorBrush x:Key="LineBrush" Color="#E5E7EB" />
@@ -122,6 +122,68 @@
                 <Setter Property="Background" Value="#F8FAFC" />
             </Trigger>
         </Style.Triggers>
+    </Style>
+
+    <!-- The shop name at the top of the sidebar: it LOOKS like text, it BEHAVES like a button
+         (D-50 - clicking it opens the shop settings). Same for the person's name at the bottom. -->
+    <Style x:Key="SidebarBrandButton" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border Background="{TemplateBinding Background}" CornerRadius="7"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource SidebarItemBrush}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- The bell. A toggle, because it opens and closes the same small panel. -->
+    <Style x:Key="BellButton" TargetType="ToggleButton">
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Width" Value="34" />
+        <Setter Property="Height" Value="30" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="BellSurface" Background="{TemplateBinding Background}" CornerRadius="7"
+                            Padding="0">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="BellSurface" Property="Background"
+                                    Value="{StaticResource SidebarItemBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="BellSurface" Property="Background"
+                                    Value="{StaticResource BrandBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- The small capital heading that groups menu rows ("SELL", "CUSTOMERS & SUPPLIERS"). -->
+    <Style x:Key="SidebarGroupHeader" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="#64748B" />
+        <Setter Property="FontSize" Value="9.5" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Margin" Value="10,12,0,4" />
     </Style>
 
     <!-- ============ Inputs ============ -->

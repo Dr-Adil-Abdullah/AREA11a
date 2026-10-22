@@ -162,6 +162,6 @@ UPDATE batches SET expiry_date = @date, expiry_ym = @ym WHERE product_id = @prod
         var report = Alerts(test).Report();
 
         Assert.Equal(2, report.CutoffCount);
-        Assert.Contains("supplier return cutoff", report.BarText);
+        Assert.Contains("supplier return cutoff", report.SummaryText);
     }
 }

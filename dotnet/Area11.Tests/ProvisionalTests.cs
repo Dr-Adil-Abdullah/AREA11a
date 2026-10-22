@@ -195,14 +195,14 @@ public sealed class ProvisionalTests
 
         var report = alerts.Report();
         Assert.Equal(1, report.ProvisionalCount);
-        Assert.Contains("missing the bill", report.BarText);
+        Assert.Contains("missing the bill", report.SummaryText);
 
         Assert.True(TestData.Provisionals(test).Link(rush.Value!.Id, sale.Value!.Code, TestData.Owner).Ok);
 
         var afterLink = alerts.Report();
         Assert.Equal(0, afterLink.ProvisionalCount);
         Assert.Equal(1, afterLink.LinkedCount);
-        Assert.Contains("confirmation pending", afterLink.BarText);
+        Assert.Contains("confirmation pending", afterLink.SummaryText);
 
         // Even after the bill is attached the alert stays until the owner writes a reason (15.5.4).
         Assert.True(afterLink.HasLive);

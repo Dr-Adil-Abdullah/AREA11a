@@ -73,6 +73,7 @@ features and the four phases.
 | F-33 | Udhaar recovery: ageing (0-30 / 31-60 / 61-90 / 90+), oldest first, `PAY-nnnn` recovery slip | ✅ | `Services/RecoveryService.cs`, `Views/RecoveryView.xaml` | `RecoveryTests` 🧪 | the four columns add up to the khata, and a payment knocks the oldest bill off first · v0.4.5 |
 | F-34 | Reports: today / 7 / 30 days / this month, KPI cards, per-day chart, top 10 by quantity and by profit, category split, dead stock, best and worst day | ✅ | `Services/ReportService.cs`, `Views/ReportsView.xaml` | `ReportTests` 🧪 (12) | profit uses cost-at-sale and the return rule of Spec 15.6 · v0.4.9 |
 | F-35 | Audit viewer + CSV export (owner; manager hidden by default) | ✅ | `Services/AuditHistoryService.cs`, `Views/AuditView.xaml` | `AuditViewerTests` 🧪 (10) | search + module/action filters + date window, no edit or delete, CSV is exactly what is on screen · v0.5.0 |
+| UI | **Owner's screen overhaul (D-50)**: 176 px sidebar grouped in five headings, one bell with a count badge, red bar removed, two alert kinds (anyone closes a reminder; only the owner ends a problem), low-stock and expired alerts, customers + suppliers + recovery as one page, and the **new customer** form that never existed | ✅ | `Views/ShellWindow.xaml`, `ViewModels/PartnersViewModel.cs`, `Views/CustomersView.xaml` | `AlertKindTests` 🧪 (13), `CustomerCreateTests` 🧪 (8) | a reminder is one click for anybody; a money problem is owner-only; one people page · v0.6.0 |
 | F-36 | Backup: ZIP of database + photos, daily automatic, restore | ⬜ | - | - | restore on a clean PC |
 | F-37 | Excel import / export / bulk price update | ⬜ | - | - | 1 000 rows in one go |
 | F-38 | Reorder levels + WhatsApp order text | ⬜ | - | - | - |
@@ -111,9 +112,9 @@ features and the four phases.
 
 | Check | How | State |
 |---|---|---|
-| C# parses (129 files) | `python3 tools/check_repo.py` | ✅ |
+| C# parses (143 files) | `python3 tools/check_repo.py` | ✅ |
 | Every file imports the namespaces it uses (`System.IO` …) | `python3 tools/check_repo.py` | ✅ |
-| Every SQL statement prepares against the real schema (148) | `python3 tools/check_repo.py` | ✅ |
+| Every SQL statement prepares against the real schema (168) | `python3 tools/check_repo.py` | ✅ |
 | XAML / csproj / props are valid XML | `python3 tools/check_repo.py` | ✅ |
 | Every XAML binding matches its view-model | `python3 tools/check_repo.py` | ✅ |
 | Every `StaticResource` key exists, in **every** XAML file | `python3 tools/check_repo.py` | ✅ |
@@ -122,13 +123,14 @@ features and the four phases.
 | Migrations 001-019 produce 33 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
 | **Compiles on Windows** | `dotnet build Area11.sln` | ✅ 20 Oct 2026 (v0.1.1); re-check after each release |
-| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.5.0 Ultramarine |
-| **293 tests green** | `dotnet test` (or `tools\RUN-TESTS.cmd`) | 🟡 **third run**: 282 of 283 in **26.7 s**; the failure was a Dapper column alias, fixed in v0.4.10 (and now impossible: 22nd check), plus 10 black-box tests in v0.5.0 - **fourth run pending** |
+| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.6.0 Peacock |
+| **321 tests green** | `dotnet test` (or `tools\RUN-TESTS.cmd`) | 🟡 **third run**: 282 of 283 in **26.7 s**; the failure was a Dapper column alias, fixed in v0.4.10 (and now impossible: 22nd check). v0.5.0 added 10 black-box tests, v0.6.0 adds 28 for the two alert kinds and the customer form - **fourth run pending** |
 
 ## Change log
 
 | Date | What |
 |---|---|
+| 22 Oct 2026 | **v0.6.0 Peacock - the screen the owner asked for (D-50).** The sidebar is 176 px and one line per page under five headings; the red strip across every page is gone. A **bell with a count badge** now sits opposite the logo: **red** when the owner must act, **amber** for housekeeping. It opens a panel split into **Needs the owner** and **Reminders**, and "Full board" opens the old page for the reason and the history. **Two kinds of alert, and the line is drawn in the service:** a reminder (open drawer from an earlier day, a bill waiting for a confirmation) can be put away by **anybody with one click**; `DismissLight` **refuses every other key**, so a cashier can never silence minus stock. Two new serious sources: **shelves at or below their reorder level** (all folded into one line, lowest first) and **batches already expired**, valued at cost. The shop name opens **Settings -> Shop**, the person's name opens **Settings -> Staff**. **Customers, suppliers and udhaar recovery are one menu entry** with three tabs. And the honest answer: adding a customer had **never been built** - the service existed and no screen called it. It is built now, with a phone number that may belong to only one khata. 28 new tests. 321 tests. |
 | 20 Oct 2026 | **First Windows build report:** CS0103 (`Path`/`Directory`/`File`) in `AppConfig.cs`, `Database.cs`, `LoggerService.cs` - fixed with explicit `using System.IO;`. The old `Area11.WPF.sln` was the solution being built by mistake, so it moved to `prototypes/`; the real solution is now `Area11.sln` in the root. The checker gained an explicit-usings check and a SQL-preparation check (37 statements). |
 | 21 Oct 2026 | **v0.3.4 Cyan - stock-take (F-27).** ST session freezes the book; count sheet with book/counted/diff/value and an only-differences pass; Apply (owner, once) corrects batches and values the difference at the frozen cost; negative stock corrected; GINTI batch for found medicine; uncounted lines warned, never zeroed. 173 tests. |
 | 21 Oct 2026 | **v0.4.6 Graphite - the program explains its own failure.** The first clean build of all three projects started and closed before the login window: a WinExe prints nothing, so "Area11 stopped with an error" was the only evidence. Now a custom `Main` wraps the WPF startup, every crash writes `logs\crash-<stamp>.txt` with the stack trace, the batch prints that file by itself, and `tools\SHOW-LOG.cmd` shows it on demand. The migration runner searches for its SQL files and names every folder tried; the Desktop project copies `Migrations` itself. 21st checker rule: every `StaticResource` key in every XAML; the batch runs the built exe directly. 270 tests. |

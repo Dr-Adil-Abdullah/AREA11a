@@ -63,6 +63,7 @@ VIEW_MODEL_OF = {
     "ShiftView.xaml": "ShiftViewModel",
     "ExpensesView.xaml": "ExpensesViewModel",
     "RecoveryView.xaml": "RecoveryViewModel",
+    "PartnersView.xaml": "PartnersViewModel",
     "ReportsView.xaml": "ReportsViewModel",
     "AuditView.xaml": "AuditViewModel",
 }
@@ -947,6 +948,20 @@ def check_bindings() -> None:
         model_properties |= set(re.findall(
             r"public\s+[\w<>?\[\], .]+\s+(\w+)\s*(?:\{|=>)", model.read_text(encoding="utf-8-sig")))
 
+    # Row classes live in the view-model files as well (NavItem for the menu, AlertRow for the bell).
+    # Their public properties belong in the same pool as the models above: a template's DataContext
+    # is the row, so `{Binding IsHeader}` is legal even though ShellViewModel has no such property.
+    # Without this the checker would demand a hand-kept name list - and a hand-kept list is exactly
+    # what let a wrong column name through in v0.4.9.
+    for vm_file in sorted((DOTNET / "Area11.Desktop/ViewModels").glob("*.cs")):
+        vm_text = vm_file.read_text(encoding="utf-8-sig")
+
+        declares_row = any(name.endswith("Row") or name == "NavItem"
+                           for name in re.findall(r"public\s+(?:sealed\s+)?class\s+(\w+)", vm_text))
+        if declares_row:
+            model_properties |= set(re.findall(
+                r"public\s+[\w<>?\[\], .]+\s+(\w+)\s*(?:\{|=>)", vm_text))
+
     problems = 0
     checked = 0
     for view_name, vm_name in VIEW_MODEL_OF.items():
@@ -967,6 +982,11 @@ def check_bindings() -> None:
             # "Source=" binds to the object itself (e.g. a static label), not to a view-model property
             if not name or name.startswith(("Path=", "RelativeSource", "ElementName", "Source=")):
                 continue
+
+            # `{Binding DataContext.X, RelativeSource=...ItemsControl}` reaches the page's own
+            # view-model through the ancestor's DataContext, so X is a page property, not a row one.
+            if name.startswith("DataContext."):
+                name = name[len("DataContext."):]
             checked += 1
             if name in ITEM_PROPERTIES or name in model_properties:
                 continue

@@ -129,7 +129,11 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.4.2 (Violet)** - an unreachable GitHub has its own checker (`tools\CHECK-NETWORK.cmd`) and a ZIP fallback (`docs/GITHUB-NETWORK.md`); the last confirmed Windows build was v0.1.1 on 20 Oct 2026. Phase 1 has the schema, Core
-> services, login/dashboard/products/POS/purchases screens and 270 test cases. The receipt and
-> instant ESC/POS printing are written and wait for their first run on a real printer; next come the
-> settings screen (F-17), the hold cart and split payment. Details: `HANDOFF.md` §4.
+> **v0.6.0 (Peacock `#0E7490`)** - Phases 1 and 2 are written, and Phase 3 has five of its eight
+> features (shift/galla, expenses, udhaar recovery, reports, black box). The screen was rebuilt the
+> way the owner asked (D-50): a 176 px menu in five groups, one **bell** with a count badge instead of
+> the red strip across every page, **two kinds of alert** (a reminder anybody may put away, a money
+> or stock problem that is owner-only with a written reason), one **customers & suppliers** page with
+> three tabs, and the **new customer** form that had never been built. The last confirmed Windows
+> build is v0.4.8; the owner runs `tools\RUN-TESTS.cmd` (321 cases). **Next: F-36 backup ZIP**
+> (database + photos, daily automatic, restore on a clean PC), then Phase 4. Details: `HANDOFF.md` §4.

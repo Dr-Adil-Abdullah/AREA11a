@@ -22,7 +22,7 @@
                     Command="{Binding SaveCommand}" />
         </DockPanel>
 
-        <TabControl Grid.Row="1">
+        <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
 
             <!-- ============================ 1. SHOP ============================ -->
             <TabItem Header="Shop">

@@ -49,6 +49,11 @@ public sealed class CustomersViewModel : ObservableObject
     private string _lastBillText = "-";
     private CustomerSummary? _selected;
 
+    private bool _isAdding;
+    private string _newName = string.Empty;
+    private string _newPhone = string.Empty;
+    private string _newCategory = "Normal";
+
     private bool _isEditing;
     private string _editName = string.Empty;
     private string _editPhone = string.Empty;
@@ -67,6 +72,9 @@ public sealed class CustomersViewModel : ObservableObject
         EditCommand = new RelayCommand(BeginEdit);
         SaveEditCommand = new RelayCommand(SaveEdit);
         CancelEditCommand = new RelayCommand(CancelEdit);
+        AddNewCommand = new RelayCommand(BeginAdd);
+        SaveNewCommand = new RelayCommand(SaveNew);
+        CancelNewCommand = new RelayCommand(CancelAdd);
 
         Load();
     }
@@ -88,6 +96,13 @@ public sealed class CustomersViewModel : ObservableObject
     public RelayCommand SaveEditCommand { get; }
 
     public RelayCommand CancelEditCommand { get; }
+
+    /// <summary>Opens the "new customer" card - the form the owner asked for (D-50).</summary>
+    public RelayCommand AddNewCommand { get; }
+
+    public RelayCommand SaveNewCommand { get; }
+
+    public RelayCommand CancelNewCommand { get; }
 
     /// <summary>The three words the products table uses for rates - shown as typed, stored in lower case.</summary>
     public IReadOnlyList<string> Categories { get; } = new[] { "Normal", "VIP", "Doctor" };
@@ -159,6 +174,26 @@ public sealed class CustomersViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// True while the "new customer" card is open. Adding and correcting never show together, so a
+    /// half-typed correction can never be saved as a new person by mistake.
+    /// </summary>
+    public bool IsAdding
+    {
+        get => _isAdding;
+        private set
+        {
+            if (SetProperty(ref _isAdding, value))
+            {
+                OnPropertyChanged(nameof(IsViewing));
+                OnPropertyChanged(nameof(CanOpenAddForm));
+            }
+        }
+    }
+
+    /// <summary>The "+ New" button is dead while a card is already open - one card at a time.</summary>
+    public bool CanOpenAddForm => !_isAdding && !_isEditing;
+
     /// <summary>True while the correction form is open; the khata book steps aside for it.</summary>
     public bool IsEditing
     {
@@ -168,11 +203,15 @@ public sealed class CustomersViewModel : ObservableObject
             if (SetProperty(ref _isEditing, value))
             {
                 OnPropertyChanged(nameof(IsViewing));
+                OnPropertyChanged(nameof(CanOpenAddForm));
             }
         }
     }
 
-    public bool IsViewing => _hasCustomer && !_isEditing;
+    public bool IsViewing => _hasCustomer && !_isEditing && !_isAdding;
+
+    /// <summary>No card is open: the page shows the khata book and the history.</summary>
+    public bool IsBrowsing => !_isAdding && !_isEditing;
 
     public string EditName
     {
@@ -300,6 +339,26 @@ public sealed class CustomersViewModel : ObservableObject
     {
         get => _isStatusError;
         private set => SetProperty(ref _isStatusError, value);
+    }
+
+    // ----------------------------- the new customer card ------------------------------
+
+    public string NewName
+    {
+        get => _newName;
+        set => SetProperty(ref _newName, value);
+    }
+
+    public string NewPhone
+    {
+        get => _newPhone;
+        set => SetProperty(ref _newPhone, value);
+    }
+
+    public string NewCategory
+    {
+        get => _newCategory;
+        set => SetProperty(ref _newCategory, value);
     }
 
     public void Load()
@@ -443,6 +502,72 @@ public sealed class CustomersViewModel : ObservableObject
             : "The printer did not answer: " + printed.Error, !printed.Ok);
     }
 
+    // ---------------------------- adding a customer ----------------------------
+
+    /// <summary>
+    /// Opens the blank card. The search box is left alone: the cashier may have typed "Ali" to check
+    /// that the person really is new before pressing the button.
+    /// </summary>
+    private void BeginAdd()
+    {
+        if (!CanCollect)
+        {
+            SetStatus("You are not allowed to add customers.", true);
+            return;
+        }
+
+        NewName = string.Empty;
+        NewPhone = string.Empty;
+        NewCategory = "Normal";
+        IsEditing = false;
+        IsAdding = true;
+
+        SetStatus("Type the name (and the phone, if they give it) and press Add customer.", false);
+    }
+
+    private void CancelAdd()
+    {
+        IsAdding = false;
+        SetStatus("No customer was added.", false);
+    }
+
+    /// <summary>
+    /// Creates the customer and puts them on the page with an empty khata. Every rule - the name
+    /// length, the category word, the "this phone already belongs to someone" guard - lives in
+    /// PartnerService, so the counter page and this page can never refuse differently.
+    /// </summary>
+    private void SaveNew()
+    {
+        if (!CanCollect)
+        {
+            SetStatus("You are not allowed to add customers.", true);
+            return;
+        }
+
+        var result = _services.Partners.CreateCustomer(_user, NewName, NewPhone, NewCategory);
+
+        if (!result.Ok)
+        {
+            SetStatus(result.Error ?? "The customer could not be saved.", true);
+            return;
+        }
+
+        var newId = result.Value;
+
+        IsAdding = false;
+
+        // Clear the filter, or the new person could be created and then hidden by the search text.
+        SearchText = string.Empty;
+        OnlyCredit = false;
+        Load();
+
+        Selected = Customers.FirstOrDefault(row => row.Id == newId) ?? Selected;
+        ShowCustomer();
+        _onChanged?.Invoke();
+
+        SetStatus("Added: " + NameText + ". The khata starts at zero.", false);
+    }
+
     // ---------------------------- correcting a customer ----------------------------
 
     private void BeginEdit()
@@ -453,6 +578,7 @@ public sealed class CustomersViewModel : ObservableObject
             return;
         }
 
+        IsAdding = false;
         EditName = Selected.Name;
         EditPhone = Selected.Phone ?? string.Empty;
         EditCategory = Selected.CategoryLabel;
