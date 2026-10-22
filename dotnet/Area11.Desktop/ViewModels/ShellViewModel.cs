@@ -164,6 +164,11 @@ public sealed class ShellViewModel : ObservableObject
             NavItems.Add(new NavItem("Reports", "Day, week, dead stock", () => new ReportsViewModel(_services, _user)));
         }
 
+        if (_services.Permissions.Can(_user, Modules.Audit))
+        {
+            NavItems.Add(new NavItem("Black box", "Every change, who made it", () => new AuditViewModel(_services, _user)));
+        }
+
         if (_services.Permissions.Can(_user, Modules.Settings))
         {
             NavItems.Add(new NavItem("Settings", "Shop, printing, staff", CreateSettingsPage));

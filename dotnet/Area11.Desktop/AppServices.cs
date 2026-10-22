@@ -39,6 +39,7 @@ public sealed class AppServices
         CashOut = new ExpenseService(Database, Audit, Settings, Permissions, Log);
         Recovery = new RecoveryService(Database, Audit, Settings, Permissions, Log);
         Reports = new ReportService(Database, Permissions, Log);
+        AuditHistory = new AuditHistoryService(Database, Permissions, Log);
         ProvisionalReceipts = new ProvisionalReceiptService(Provisional, Settings, Log);
         Receipts = new ReceiptService(Database, Settings, Log);
         Printer = new PrinterService(Settings, Log);
@@ -95,6 +96,8 @@ public sealed class AppServices
     public RecoveryService Recovery { get; }
 
     public ReportService Reports { get; }
+
+    public AuditHistoryService AuditHistory { get; }
 
     public ProvisionalReceiptService ProvisionalReceipts { get; }
 

@@ -123,6 +123,14 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, @role, 1, @at);"
     public static ReportService Reports(TestDatabase test) =>
         new(test.Database, new PermissionService(test.Database, test.Log, test.Audit), test.Log);
 
+    /// <summary>The reading side of the black box (F-35). One factory, one constructor change.</summary>
+    public static AuditHistoryService AuditHistory(TestDatabase test) =>
+        new(test.Database, new PermissionService(test.Database, test.Log, test.Audit), test.Log);
+
+    /// <summary>Permissions, for the tests that grant one person an extra module.</summary>
+    public static PermissionService Permissions(TestDatabase test) =>
+        new(test.Database, test.Log, test.Audit);
+
     /// <summary>Old udhaar ageing and the recovery slip (F-33). One factory, one constructor change.</summary>
     public static RecoveryService Recovery(TestDatabase test) =>
         new(test.Database, test.Audit, test.Settings,
