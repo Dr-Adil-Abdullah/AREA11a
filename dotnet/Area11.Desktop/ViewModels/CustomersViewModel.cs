@@ -29,6 +29,11 @@ public sealed class CustomersViewModel : ObservableObject
     private string _amountText = string.Empty;
     private string _method = "cash";
     private string _note = string.Empty;
+
+    // The month box starts at the month we are in: the commonest statement is "this month".
+    private string _statementMonth = Clock.MonthKey();
+    private int _lastPaymentId;
+    private bool _canPrintReceipt;
     private string _statusText = "Search a customer, or tick 'Only with udhaar' to see who owes money.";
     private bool _isStatusError;
     private bool _onlyCredit;
@@ -72,6 +77,8 @@ public sealed class CustomersViewModel : ObservableObject
         Editor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Customer);
         CollectCommand = new RelayCommand(Collect);
         StatementCommand = new RelayCommand(PrintStatement);
+        MonthStatementCommand = new RelayCommand(PrintMonthStatement);
+        ReceiptCommand = new RelayCommand(PrintReceipt);
         EditCommand = new RelayCommand(BeginEdit);
         SaveEditCommand = new RelayCommand(SaveEdit);
         CancelEditCommand = new RelayCommand(CancelEdit);
@@ -99,6 +106,11 @@ public sealed class CustomersViewModel : ObservableObject
     public RelayCommand CollectCommand { get; }
 
     public RelayCommand StatementCommand { get; }
+
+    public RelayCommand MonthStatementCommand { get; }
+
+    /// <summary>Prints the slip of the money received most recently on this page (F-49).</summary>
+    public RelayCommand ReceiptCommand { get; }
 
     public RelayCommand EditCommand { get; }
 
@@ -157,6 +169,26 @@ public sealed class CustomersViewModel : ObservableObject
     {
         get => _note;
         set => SetProperty(ref _note, value);
+    }
+
+    /// <summary>The month for the monthly statement, `2026-10`. Empty means every movement.</summary>
+    public string StatementMonth
+    {
+        get => _statementMonth;
+        set => SetProperty(ref _statementMonth, value);
+    }
+
+    /// <summary>The last collection on this page - what the Receipt button prints.</summary>
+    public int LastPaymentId
+    {
+        get => _lastPaymentId;
+        private set => SetProperty(ref _lastPaymentId, value);
+    }
+
+    public bool CanPrintReceipt
+    {
+        get => _canPrintReceipt;
+        private set => SetProperty(ref _canPrintReceipt, value);
     }
 
     public CustomerSummary? Selected
@@ -498,8 +530,15 @@ public sealed class CustomersViewModel : ObservableObject
         ShowCustomer();
         _onChanged?.Invoke();
 
+        LastPaymentId = collection.PaymentId;
+        CanPrintReceipt = true;
+
+        (bool Ok, string Message) printed = _services.Settings.GetBool("printer.autoPrint", true)
+            ? PrintPaymentReceipt(collection.PaymentId)
+            : (true, "Press Receipt for the paper.");
+
         SetStatus(name + ": " + Money.Format(collection.AmountPaisa) + " received (" + collection.Code
-                  + "). Khata now " + Money.Format(collection.NewBalancePaisa) + ".", false);
+                  + "). Khata now " + Money.Format(collection.NewBalancePaisa) + ". " + printed.Message, !printed.Ok);
     }
 
     private void PrintStatement()
@@ -524,6 +563,63 @@ public sealed class CustomersViewModel : ObservableObject
         SetStatus(printed.Ok
             ? "Statement for " + Selected.Name + " sent to the printer."
             : "The printer did not answer: " + printed.Error, !printed.Ok);
+    }
+
+    /// <summary>The month's statement (F-49): one month between an opening and a closing balance.</summary>
+    private void PrintMonthStatement()
+    {
+        if (Selected is null)
+        {
+            SetStatus("Pick a customer first.", true);
+            return;
+        }
+
+        var statement = _services.Ledger.Statement(Selected.Id, StatementMonth);
+
+        if (!statement.Ok || statement.Value is null)
+        {
+            SetStatus(statement.Error ?? "The monthly statement could not be prepared.", true);
+            return;
+        }
+
+        var printed = _services.Printer.Print(statement.Value);
+
+        SetStatus(printed.Ok
+            ? "Monthly statement for " + Selected.Name + " (" + StatementMonth.Trim() + ") sent to the printer."
+            : "The printer did not answer: " + printed.Error, !printed.Ok);
+    }
+
+    /// <summary>Prints the slip of the last collection on this page.</summary>
+    private void PrintReceipt()
+    {
+        if (Selected is null || LastPaymentId <= 0)
+        {
+            SetStatus("Receive money first - the receipt belongs to a collection.", true);
+            return;
+        }
+
+        var printed = PrintPaymentReceipt(LastPaymentId);
+        SetStatus(printed.Message, !printed.Ok);
+    }
+
+    /// <summary>
+    /// Builds and prints the PAY slip. A failure is a sentence, never an exception: the money has
+    /// already been saved, and the cashier must still see that it was.
+    /// </summary>
+    private (bool Ok, string Message) PrintPaymentReceipt(int paymentId)
+    {
+        var receipt = _services.Ledger.PaymentReceipt(_user, paymentId);
+
+        if (!receipt.Ok || receipt.Value is null)
+        {
+            return (false, "The receipt could not be built: " + (receipt.Error ?? "no reason given"));
+        }
+
+        var printed = _services.Printer.Print(receipt.Value);
+
+        return printed.Ok
+            ? (true, "Receipt printed.")
+            : (false, "The receipt did not print: " + (printed.Error ?? "the printer did not answer"));
     }
 
     // ---------------------------- adding a customer ----------------------------

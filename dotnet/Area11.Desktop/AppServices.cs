@@ -43,6 +43,7 @@ public sealed class AppServices
         CashOut = new ExpenseService(Database, Audit, Settings, Permissions, Log);
         Recovery = new RecoveryService(Database, Audit, Settings, Permissions, Log);
         Reports = new ReportService(Database, Permissions, Log);
+        Tax = new TaxService(Database, Settings, Permissions, Log);
         AuditHistory = new AuditHistoryService(Database, Permissions, Log);
         ProvisionalReceipts = new ProvisionalReceiptService(Provisional, Settings, Log);
         Receipts = new ReceiptService(Database, Settings, Log);
@@ -115,6 +116,9 @@ public sealed class AppServices
     public RecoveryService Recovery { get; }
 
     public ReportService Reports { get; }
+
+    /// <summary>The month's tax for the accountant (F-49).</summary>
+    public TaxService Tax { get; }
 
     public AuditHistoryService AuditHistory { get; }
 

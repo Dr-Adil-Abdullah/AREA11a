@@ -191,7 +191,7 @@
                     <!-- receive money -->
                     <StackPanel Grid.Row="2" Margin="0,12,0,0">
                         <Border Style="{StaticResource Card}" Padding="14" Visibility="{Binding CanCollect, Converter={StaticResource BoolToVis}}">
-                            <Grid>
+                            <StackPanel><Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="10" />
@@ -225,6 +225,27 @@
                                             Command="{Binding StatementCommand}" />
                                 </StackPanel>
                             </Grid>
+                                <!-- the paper: the month's statement and the slip of the last collection (F-49) -->
+                                <Grid Margin="0,10,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0" Text="Month" Style="{StaticResource FieldLabel}"
+                                               VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBox Grid.Column="1" Width="110"
+                                             Text="{Binding StatementMonth, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="For the monthly statement: 2026-10. Empty prints every movement." />
+                                    <Button Grid.Column="2" Content="Month statement" Style="{StaticResource GhostButton}"
+                                            Command="{Binding MonthStatementCommand}" Margin="8,0,0,0" />
+                                    <Button Grid.Column="4" Content="Receipt (last collection)" Style="{StaticResource GhostButton}"
+                                            Command="{Binding ReceiptCommand}" IsEnabled="{Binding CanPrintReceipt}" />
+                                </Grid>
+                        </StackPanel>
                         </Border>
 
                         <Border Background="{StaticResource WarningSoftBrush}" CornerRadius="8" Padding="12"

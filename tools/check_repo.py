@@ -76,6 +76,7 @@ VIEW_MODEL_OF = {
     "BarcodeWindow.xaml": "BarcodeListViewModel",
     "DoctorsView.xaml": "DoctorsViewModel",
     "LanView.xaml": "LanViewModel",
+    "TaxView.xaml": "TaxViewModel",
 }
 
 

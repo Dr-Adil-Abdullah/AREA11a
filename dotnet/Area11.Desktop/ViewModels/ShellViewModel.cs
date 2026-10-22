@@ -311,6 +311,7 @@ public sealed class ShellViewModel : ObservableObject
             if (canReports)
             {
                 AddPage("money", "Reports", "Day, week, dead stock", () => new ReportsViewModel(_services, _user));
+                AddPage("money", "Tax report", "The month for the accountant", () => new TaxViewModel(_services, _user));
             }
         }
 

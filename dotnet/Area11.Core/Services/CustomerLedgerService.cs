@@ -289,8 +289,27 @@ VALUES(@at, @method, @amount, @customerId, @userId, @note);",
     /// The paper the customer takes home: every movement and the closing balance. Printed by the same
     /// 58 / 80 mm pipeline as every other slip, so the shop needs no second printer.
     /// </summary>
-    public ServiceResult<ReceiptDocument> Statement(int customerId)
+    public ServiceResult<ReceiptDocument> Statement(int customerId) => Statement(customerId, null);
+
+    /// <summary>
+    /// The month's paper (F-49): the movements of **one month** between an opening and a closing
+    /// balance. `month` is written `2026-10`; empty or null keeps the old behaviour - every movement.
+    ///
+    /// The opening balance is the running balance of the last line **before** the month (or the
+    /// carried balance when there is none), so the paper needs no stored snapshot and can never drift
+    /// from the khata. Profit is deliberately absent: the customer's copy is not the owner's report
+    /// (F-44 puts lifetime profit behind the owner's permission).
+    /// </summary>
+    public ServiceResult<ReceiptDocument> Statement(int customerId, string? month)
     {
+        var cleanMonth = NormalizeMonth(month);
+
+        if (!string.IsNullOrWhiteSpace(month) && cleanMonth is null)
+        {
+            return ServiceResult<ReceiptDocument>.Fail(
+                "Write the month as 2026-10 (four-digit year, a dash, two-digit month). Nothing was printed.");
+        }
+
         var page = Page(customerId);
 
         if (!page.Ok || page.Value is null)
@@ -301,9 +320,32 @@ VALUES(@at, @method, @amount, @customerId, @userId, @note);",
         var data = page.Value;
         var width = _settings.GetInt("printer.width", 58) >= 80 ? 48 : 32;
 
+        var openingBalance = data.Summary.OpeningPaisa;
+        var shown = data.Lines;
+
+        if (cleanMonth is not null)
+        {
+            var earlier = data.Lines
+                .Where(line => line.Date.Length >= 7 && string.CompareOrdinal(line.Date, cleanMonth) < 0)
+                .ToList();
+
+            openingBalance = earlier.Count == 0 ? data.Summary.OpeningPaisa : earlier[^1].RunningPaisa;
+
+            shown = data.Lines
+                .Where(line => line.Date.StartsWith(cleanMonth, StringComparison.Ordinal))
+                .ToList();
+        }
+
+        var closingBalance = shown.Count == 0 ? openingBalance : shown[^1].RunningPaisa;
+        var monthTitle = cleanMonth is null
+            ? string.Empty
+            : new DateTime(int.Parse(cleanMonth[..4], CultureInfo.InvariantCulture),
+                int.Parse(cleanMonth[5..], CultureInfo.InvariantCulture), 1)
+                .ToString("MMMM yyyy", CultureInfo.InvariantCulture);
+
         var document = new ReceiptDocument
         {
-            Title = "Statement " + data.Summary.Name,
+            Title = cleanMonth is null ? "Statement " + data.Summary.Name : "Statement " + monthTitle,
             Width = width,
             AutoCut = _settings.GetBool("printer.autoCut", true),
             Copies = 1
@@ -318,14 +360,25 @@ VALUES(@at, @method, @amount, @customerId, @userId, @note);",
         var shop = _settings.GetString("store.name");
         Add(string.IsNullOrWhiteSpace(shop) ? "Area11" : shop, ReceiptAlign.Center, bold: true);
         document.Lines.Add(ReceiptLine.Sep(width));
-        Add("CUSTOMER STATEMENT", ReceiptAlign.Center, bold: true, big: true);
+        Add(cleanMonth is null ? "CUSTOMER STATEMENT" : "MONTHLY STATEMENT", ReceiptAlign.Center, bold: true, big: true);
 
         Add(data.Summary.Name, bold: true);
         Pair(data.Summary.PhoneLabel, data.Summary.CategoryLabel);
         Pair("Bills: " + data.Summary.BillsCount, "Stars: " + data.Summary.StarsLabel);
+
+        if (cleanMonth is not null)
+        {
+            Pair("MONTH", monthTitle);
+        }
+
         document.Lines.Add(ReceiptLine.Sep(width));
 
-        foreach (var line in data.Lines)
+        if (cleanMonth is not null)
+        {
+            Pair("OPENING BALANCE", Money.Fixed(openingBalance), bold: true);
+        }
+
+        foreach (var line in shown)
         {
             var amount = line.DebitPaisa > 0
                 ? "+" + Money.Fixed(line.DebitPaisa)
@@ -336,9 +389,21 @@ VALUES(@at, @method, @amount, @customerId, @userId, @note);",
         }
 
         document.Lines.Add(ReceiptLine.Sep(width));
-        Pair("TOTAL UDHAAR", Money.Fixed(data.StoredPaisa), bold: true);
-        Pair("Lifetime purchases", Money.Fixed(data.Summary.LifetimePaisa));
-        Pair("Lifetime profit", Money.Fixed(data.Summary.ProfitPaisa));
+
+        if (cleanMonth is null)
+        {
+            Pair("TOTAL UDHAAR", Money.Fixed(data.StoredPaisa), bold: true);
+            Pair("Lifetime purchases", Money.Fixed(data.Summary.LifetimePaisa));
+        }
+        else
+        {
+            Pair("CLOSING BALANCE", Money.Fixed(closingBalance), bold: true);
+
+            if (closingBalance != data.StoredPaisa)
+            {
+                Pair("Khata today", Money.Fixed(data.StoredPaisa));
+            }
+        }
 
         if (!data.BooksMatch)
         {
@@ -357,6 +422,156 @@ VALUES(@at, @method, @amount, @customerId, @userId, @note);",
         }
 
         return ServiceResult<ReceiptDocument>.Success(document);
+    }
+
+    /// <summary>
+    /// The slip for money received (F-49, Spec 13.5 / 14.2): `PAY-nnnn`, who paid, how, and - the two
+    /// numbers the customer checks - the udhaar before and after **this** receipt.
+    ///
+    /// The "after" figure is replayed from the ledger at this payment's place in history, never taken
+    /// from today's stored balance: a receipt reprinted next month must still show what it showed on
+    /// the day. The "before" figure is that plus the amount received, because a collection moves the
+    /// khata by exactly its own amount.
+    /// </summary>
+    public ServiceResult<ReceiptDocument> PaymentReceipt(User? user, int paymentId)
+    {
+        if (!_permissions.Can(user, Modules.Customers))
+        {
+            return ServiceResult<ReceiptDocument>.Fail("You do not have permission to print customer receipts.");
+        }
+
+        try
+        {
+            using var connection = _db.Open();
+
+            var payment = _db.QuerySingle<PaymentRow>(connection, @"
+SELECT p.id AS id, p.date AS date, p.method AS method, p.amount_paisa AS amountPaisa,
+       p.customer_id AS customerId, p.note AS note, c.name AS customerName, c.phone AS customerPhone,
+       IFNULL(c.opening_balance_paisa, 0) AS openingPaisa, c.balance_paisa AS balancePaisa
+FROM payments p
+JOIN customers c ON c.id = p.customer_id
+WHERE p.id = @id AND p.sale_id IS NULL AND p.purchase_id IS NULL;", new { id = paymentId });
+
+            if (payment is null || payment.CustomerId <= 0)
+            {
+                return ServiceResult<ReceiptDocument>.Fail(
+                    "That receipt was not found. Only money received on the khata has a PAY- receipt.");
+            }
+
+            var code = "PAY-" + payment.Id.ToString("D4", CultureInfo.InvariantCulture);
+            var balanceAfter = BalanceAt(connection, payment.CustomerId, payment.OpeningPaisa, code)
+                               ?? payment.BalancePaisa;
+            var balanceBefore = balanceAfter + payment.AmountPaisa;
+
+            var width = _settings.GetInt("printer.width", 58) >= 80 ? 48 : 32;
+            var document = new ReceiptDocument
+            {
+                Title = "Receipt " + code,
+                Width = width,
+                AutoCut = _settings.GetBool("printer.autoCut", true),
+                Copies = Math.Clamp(_settings.GetInt("printer.copies", 1), 1, 3)
+            };
+
+            void Add(string text, ReceiptAlign align = ReceiptAlign.Left, bool bold = false, bool big = false) =>
+                document.Lines.Add(new ReceiptLine(ReceiptService.Fit(text, width), align, bold, big));
+
+            void Pair(string left, string right, bool bold = false) =>
+                document.Lines.Add(new ReceiptLine(ReceiptService.TwoColumns(left, right, width), ReceiptAlign.Left, bold));
+
+            var shop = _settings.GetString("store.name");
+            Add(string.IsNullOrWhiteSpace(shop) ? "Area11" : shop, ReceiptAlign.Center, bold: true);
+            Add("MONEY RECEIVED", ReceiptAlign.Center, bold: true, big: true);
+            document.Lines.Add(ReceiptLine.Sep(width));
+
+            Pair("Receipt", code, bold: true);
+            Pair("Date", (payment.Date ?? string.Empty).Length >= 16
+                ? payment.Date![..16]
+                : payment.Date ?? string.Empty);
+
+            Add(payment.CustomerName, bold: true);
+
+            if (!string.IsNullOrWhiteSpace(payment.CustomerPhone))
+            {
+                Add(payment.CustomerPhone!);
+            }
+
+            document.Lines.Add(ReceiptLine.Sep(width));
+            Pair("Udhaar before", Money.Fixed(balanceBefore));
+            Pair("Received now (" + (payment.Method ?? "cash") + ")", Money.Fixed(payment.AmountPaisa), bold: true);
+            Pair("Udhaar after", Money.Fixed(balanceAfter), bold: true);
+
+            if (!string.IsNullOrWhiteSpace(payment.Note))
+            {
+                document.Lines.Add(ReceiptLine.Sep(width));
+                Add("Note: " + payment.Note!.Trim());
+            }
+
+            document.Lines.Add(ReceiptLine.Sep(width));
+            Add("Received by: " + (user?.Name ?? "the shop"));
+            Add("Signature: ______________");
+            document.Lines.Add(ReceiptLine.Sep(width));
+
+            var footer = _settings.GetString("store.footerNote");
+            if (!string.IsNullOrWhiteSpace(footer))
+            {
+                Add(footer, ReceiptAlign.Center);
+            }
+
+            return ServiceResult<ReceiptDocument>.Success(document);
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The receipt for payment " + paymentId + " could not be prepared.", exception);
+            return ServiceResult<ReceiptDocument>.Fail("The receipt could not be prepared. " + exception.Message);
+        }
+    }
+
+    /// <summary>The balance right after a movement with this code, replayed from the ledger.</summary>
+    private long? BalanceAt(SqliteConnection connection, int customerId, long openingPaisa, string code)
+    {
+        var running = openingPaisa;
+
+        foreach (var movement in ReadMovements(connection, customerId))
+        {
+            running += movement.DebitPaisa;
+            running -= movement.CreditPaisa;
+
+            if (running < 0 && movement.Kind == "return")
+            {
+                running = 0;
+            }
+
+            if (string.Equals(movement.Code, code, StringComparison.Ordinal))
+            {
+                return running;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>`2026-10` or null; anything else is refused rather than guessed.</summary>
+    private static string? NormalizeMonth(string? month)
+    {
+        var clean = (month ?? string.Empty).Trim();
+
+        if (clean.Length == 0)
+        {
+            return null;
+        }
+
+        if (clean.Length != 7 || clean[4] != '-')
+        {
+            return null;
+        }
+
+        if (!int.TryParse(clean[..4], NumberStyles.None, CultureInfo.InvariantCulture, out var year)
+            || !int.TryParse(clean[5..], NumberStyles.None, CultureInfo.InvariantCulture, out var monthNumber))
+        {
+            return null;
+        }
+
+        return year is < 2000 or > 2100 || monthNumber is < 1 or > 12 ? null : clean;
     }
 
     // ------------------------------------------------------------------ loyalty
@@ -541,6 +756,29 @@ ORDER BY r.date, r.id;", new { id = customerId });
         public int Id { get; set; }
 
         public string Name { get; set; } = string.Empty;
+
+        public long BalancePaisa { get; set; }
+    }
+
+    private sealed class PaymentRow
+    {
+        public int Id { get; set; }
+
+        public string? Date { get; set; }
+
+        public string? Method { get; set; }
+
+        public long AmountPaisa { get; set; }
+
+        public int CustomerId { get; set; }
+
+        public string? Note { get; set; }
+
+        public string CustomerName { get; set; } = string.Empty;
+
+        public string? CustomerPhone { get; set; }
+
+        public long OpeningPaisa { get; set; }
 
         public long BalancePaisa { get; set; }
     }
