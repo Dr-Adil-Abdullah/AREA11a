@@ -129,7 +129,7 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.18.0 (Brass `#8A6A2B`)** - Phases 1, 2 and 3 are written (shift/galla, expenses,
+> **v0.18.1 (Copper `#A65A2E`)** - Phases 1, 2 and 3 are written (shift/galla, expenses,
 > udhaar recovery, reports, black box, backup & restore, Excel / CSV, reorder + WhatsApp, and the
 > stock-minus registry with its monthly review). Phase 4 has started: **loyalty works from the
 > screen**, **photos** exist for medicines, customers and suppliers (copied into the shop's folder,

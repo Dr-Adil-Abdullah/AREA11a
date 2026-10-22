@@ -289,6 +289,12 @@ public sealed class BackupTests
         test.Database.Tx(connection => Convert.ToInt64(
             test.Database.Scalar(connection, "SELECT COUNT(1) FROM products;") ?? 0L));
 
+    /// <summary>How many rows carry this id - 1 means that medicine survived the restore.</summary>
+    private static long CountProducts(TestDatabase test, int productId) =>
+        test.Database.Tx(connection => Convert.ToInt64(
+            test.Database.Scalar(connection, "SELECT COUNT(1) FROM products WHERE id = @id;",
+                new { id = productId }) ?? 0L));
+
     private static string? NameOf(TestDatabase test, int productId) =>
         test.Database.Tx(connection => test.Database.Scalar(connection,
             "SELECT name FROM products WHERE id = @id;", new { id = productId })?.ToString());

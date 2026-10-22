@@ -1,4 +1,5 @@
 using Area11.Core.Models;
+using Area11.Core.Services;
 using Xunit;
 
 namespace Area11.Tests;
@@ -69,7 +70,7 @@ public sealed class MenuStateTests
         Assert.NotNull(result.Error);
 
         // Refused means refused: the key was not created behind our back, and nothing was logged.
-        Assert.DoesNotContain("menu.madeUpKey", test.Settings.KnownKeys);
+        Assert.DoesNotContain("menu.madeUpKey", SettingsService.KnownKeys);
         Assert.Equal(0L, Rows(test, "settings_change"));
     }
 
@@ -80,8 +81,8 @@ public sealed class MenuStateTests
 
         // Settings → Save refuses an unknown key, so both keys must already be in the defaults -
         // otherwise the owner's tick fails on a screen that otherwise saves fine.
-        Assert.Contains("menu.pinnedOpen", test.Settings.KnownKeys);
-        Assert.Contains("menu.collapsedGroups", test.Settings.KnownKeys);
+        Assert.Contains("menu.pinnedOpen", SettingsService.KnownKeys);
+        Assert.Contains("menu.collapsedGroups", SettingsService.KnownKeys);
 
         var saved = test.Settings.SetMany(
             new Dictionary<string, object?>

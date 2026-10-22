@@ -42,7 +42,7 @@ public sealed class PhotoGalleryViewModel : ObservableObject
         Entity = PhotoEntity.Clean(entity);
         EntityId = entityId;
         Title = title;
-        Subtitle = PhotoEntity.LabelFor(Entity) + " · " + PhotoEntity.CountLabel(0);
+        Subtitle = PhotoEntity.LabelFor(Entity) + " · " + PhotoItem.CountLabel(0);
 
         AddCommand = new RelayCommand(Add);
         TakePhotoCommand = new RelayCommand(TakePhoto);
@@ -460,6 +460,9 @@ public sealed class PhotoRow
     }
 
     public PhotoItem Item { get; }
+
+    /// <summary>True while the photo is on the shelf; false for one the owner put away.</summary>
+    public bool IsActive => Item.IsActive;
 
     public BitmapImage? Thumbnail { get; }
 
