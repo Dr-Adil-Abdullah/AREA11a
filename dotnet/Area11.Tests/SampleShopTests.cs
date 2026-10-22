@@ -43,6 +43,7 @@ public sealed class SampleShopTests
         Assert.Equal(2, Count(test, "custom_fields"));
         Assert.Equal(2, Count(test, "custom_values"));
         Assert.Equal(1, Count(test, "held_carts"));
+        Assert.Equal(2, Count(test, "product_barcodes"));
         Assert.True(Count(test, "payments") >= 10);
         Assert.True(Count(test, "stock_movements") > 40);
     }

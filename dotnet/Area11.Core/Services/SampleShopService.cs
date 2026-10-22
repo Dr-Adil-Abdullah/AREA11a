@@ -436,7 +436,7 @@ public sealed class SampleShopService
                 "There are already " + products + " medicines in this shop. That is a real shop, not a new one.");
         }
 
-        report.Steps.Add(Products.Length + " medicines across 7 categories, with 2 brands of batch each - "
+        report.Steps.Add(Products.Length + " medicines across 7 categories, with one or two batches each - "
                          + "healthy, near expiry, one expired and one sold out.");
         report.Steps.Add(Companies.Length + " companies with the medical rep's name, phone and visit day.");
         report.Steps.Add(Suppliers.Length + " suppliers with an agency and a balance to pay.");
@@ -447,7 +447,7 @@ public sealed class SampleShopService
         report.Steps.Add("1 supplier return (SR) for goods near expiry, and 1 no-bill return (PR).");
         report.Steps.Add("3 expenses, 2 owner drawings and 1 closed shift with the drawer counted.");
         report.Steps.Add("1 applied stock-take (ST) that found a shortfall and an extra strip.");
-        report.Steps.Add("2 own fields with answers, 1 held cart, and 1 barcode per pack on one medicine.");
+        report.Steps.Add("2 own fields with answers, 1 held cart, and a strip code and a box code on Panadol.");
         report.Steps.Add("Alerts that a real shop would have: near expiry, expired, out of stock, khata due.");
 
         return report;
@@ -477,6 +477,7 @@ public sealed class SampleShopService
         WriteStockTake(connection, at, userId, products, batches);
         WriteSupplierReturn(connection, at, userId, products, batches, purchases);
         WriteProvisional(connection, at, userId, products, batches);
+        WritePackBarcodes(connection, at, products);
         WriteCustomFields(connection, at, products, customers);
         WriteHeldCart(connection, at, userId, products);
 
@@ -1073,8 +1074,8 @@ VALUES(@code, @date, 'applied', '', NULL, @note, 2, 2, @short, @extra, @userId, 
                 code,
                 date = Day(3),
                 note = "Sample stock-take - two shelves",
-                @short = 2500L,
-                extra = 2000L,
+                @short = 1800L, // one tablet short at cost
+                extra = 1500L, // one ORS sachet extra at cost
                 userId,
                 appliedAt = Day(3) + " 20:00:00",
                 at
@@ -1201,6 +1202,34 @@ VALUES(@provisionalId, @productId, @qty, @at, @batchId, @qty, 'base');",
                 at,
                 batchId = batches[productIndex][0]
             });
+    }
+
+    /// <summary>
+    /// One medicine with a code per pack (F-43): the counter must add a strip when the strip is
+    /// scanned and a box when the box is scanned - the sample shows that rule without a manual.
+    /// </summary>
+    private void WritePackBarcodes(SqliteConnection connection, string at, List<int> products)
+    {
+        var codes = new[]
+        {
+            (Barcode: "8964000111504", Pack: "strip"),
+            (Barcode: "8964000111511", Pack: "box")
+        };
+
+        foreach (var code in codes)
+        {
+            _db.Execute(connection, @"
+INSERT INTO product_barcodes(product_id, barcode, pack, note, active, created_at)
+VALUES(@productId, @barcode, @pack, @note, 1, @at);",
+                new
+                {
+                    productId = products[0],
+                    barcode = code.Barcode,
+                    pack = code.Pack,
+                    note = "Sample pack code",
+                    at
+                });
+        }
     }
 
     private void WriteCustomFields(SqliteConnection connection, string at, List<int> products, List<int> customers)
