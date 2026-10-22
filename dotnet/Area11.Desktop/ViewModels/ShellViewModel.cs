@@ -210,6 +210,7 @@ public sealed class ShellViewModel : ObservableObject
         var canReports = permissions.Can(_user, Modules.Reports);
         var canAudit = permissions.Can(_user, Modules.Audit);
         var canBackup = permissions.Can(_user, Modules.Backup);
+        var canImport = permissions.Can(_user, Modules.Import);
         var canSettings = CanOpenSettings;
 
         NavItems.Add(new NavItem("Dashboard", "Today at a glance", () => new DashboardViewModel(_services)));
@@ -286,13 +287,20 @@ public sealed class ShellViewModel : ObservableObject
         }
 
         // ---- SYSTEM: the shop's own settings, its memory and its safety net ----
-        if (canAudit || canBackup || canSettings)
+        if (canAudit || canBackup || canImport || canSettings)
         {
             AddGroup("system", "SYSTEM");
 
             if (canAudit)
             {
                 AddPage("system", "Black box", "Every change, who made it", () => new AuditViewModel(_services, _user));
+            }
+
+            if (canImport)
+            {
+                // Import sits above backup: a new shop needs it on day one, before it needs a copy.
+                AddPage("system", "Excel / CSV", "Import, export, prices",
+                    () => new ImportExportViewModel(_services, _user));
             }
 
             if (canBackup)

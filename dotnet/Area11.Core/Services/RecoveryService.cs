@@ -87,7 +87,7 @@ public sealed class RecoveryService
     {
         var customers = _db.Query<CustomerRow>(connection, @"
 SELECT c.id AS customerId, c.name AS name, c.phone AS phone, c.category AS category,
-       c.balance_paisa AS balancePaisa
+       c.balance_paisa AS balancePaisa, IFNULL(c.opening_balance_paisa, 0) AS openingPaisa
 FROM customers c
 WHERE c.active = 1 AND c.balance_paisa > 0
 ORDER BY c.name COLLATE NOCASE;");
@@ -155,6 +155,7 @@ ORDER BY customerId, date, id;");
                 Phone = customer.Phone,
                 Category = customer.Category,
                 BalancePaisa = customer.BalancePaisa,
+                OpeningPaisa = customer.OpeningPaisa,
                 LastPaymentDate = hisCredits
                     .Where(credit => credit.Kind == "collection")
                     .Select(credit => credit.Date)
@@ -507,6 +508,8 @@ SELECT customerId, id, date, amountPaisa, kind FROM (
         public string? Category { get; set; }
 
         public long BalancePaisa { get; set; }
+
+        public long OpeningPaisa { get; set; }
     }
 
     private sealed class BillRow

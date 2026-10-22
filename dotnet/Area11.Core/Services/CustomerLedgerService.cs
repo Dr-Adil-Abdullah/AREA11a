@@ -68,6 +68,7 @@ public sealed class CustomerLedgerService
             var rows = _db.Query<CustomerSummary>(connection, @"
 SELECT c.id AS id, c.name AS name, c.phone AS phone, c.category AS category,
        c.credit_limit_paisa AS creditLimitPaisa, c.balance_paisa AS balancePaisa,
+       IFNULL(c.opening_balance_paisa, 0) AS openingPaisa,
        c.loyalty_points AS loyaltyPoints, IFNULL(c.stars, 1) AS stars,
        (SELECT COUNT(1) FROM sales s WHERE s.customer_id = c.id AND s.status IN ('paid','partial','credit')) AS billsCount,
        CAST(IFNULL((SELECT SUM(s.total_paisa) FROM sales s
@@ -113,6 +114,7 @@ ORDER BY c.balance_paisa DESC, c.name COLLATE NOCASE;",
             var summary = _db.QuerySingle<CustomerSummary>(connection, @"
 SELECT c.id AS id, c.name AS name, c.phone AS phone, c.category AS category,
        c.credit_limit_paisa AS creditLimitPaisa, c.balance_paisa AS balancePaisa,
+       IFNULL(c.opening_balance_paisa, 0) AS openingPaisa,
        c.loyalty_points AS loyaltyPoints, IFNULL(c.stars, 1) AS stars,
        (SELECT COUNT(1) FROM sales s WHERE s.customer_id = c.id AND s.status IN ('paid','partial','credit')) AS billsCount,
        CAST(IFNULL((SELECT SUM(s.total_paisa) FROM sales s
@@ -140,7 +142,25 @@ FROM customers c WHERE c.id = @id;", new { id = customerId });
                 StoredPaisa = summary.BalancePaisa
             };
 
-            var running = 0L;
+            // The khata does not begin at the first bill: a shop that moved to Area11 brought its
+            // udhaar with it (F-37, migration 020). This line is that carried balance, and it is
+            // counted - the same way the supplier page counts its opening - so the running total
+            // and "Books match" stay true from the first day.
+            var running = summary.OpeningPaisa;
+
+            if (summary.OpeningPaisa != 0)
+            {
+                page.Lines.Add(new LedgerLine
+                {
+                    Date = string.Empty,
+                    Kind = "opening",
+                    Code = "OPEN",
+                    Description = "Udhaar carried into Area11",
+                    DebitPaisa = summary.OpeningPaisa > 0 ? summary.OpeningPaisa : 0,
+                    CreditPaisa = summary.OpeningPaisa < 0 ? -summary.OpeningPaisa : 0,
+                    RunningPaisa = running
+                });
+            }
 
             foreach (var movement in movements)
             {

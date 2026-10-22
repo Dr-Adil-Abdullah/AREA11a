@@ -98,10 +98,20 @@ public sealed class RecoveryRow
     public long BucketsTotalPaisa => Bucket0Paisa + Bucket1Paisa + Bucket2Paisa + Bucket3Paisa;
 
     /// <summary>
-    /// True when the aged rupees add up to the stored khata. A false value is shown in red: it means
-    /// the customer's balance and his history disagree, and somebody must look before money is taken.
+    /// Udhaar the customer already owed when the shop moved to Area11 (F-37, migration 020). It is
+    /// part of what he owes, but it has no bill date - so it is **not** aged into a column. Pretending
+    /// it is 90 days old would be a guess; pretending it is fresh would hide it.
     /// </summary>
-    public bool BooksMatch => BucketsTotalPaisa == BalancePaisa;
+    public long OpeningPaisa { get; set; }
+
+    public bool HasOpening => OpeningPaisa > 0;
+
+    /// <summary>
+    /// True when the aged rupees **plus the carried-in udhaar** add up to the stored khata. A false
+    /// value is shown in red: it means the customer's balance and his history disagree, and somebody
+    /// must look before money is taken.
+    /// </summary>
+    public bool BooksMatch => BucketsTotalPaisa + OpeningPaisa == BalancePaisa;
 
     public string BalanceText => Money.Format(BalancePaisa);
 
@@ -132,6 +142,9 @@ public sealed class RecoveryRow
         ? "never paid"
         : LastPaymentDate!.Length >= 10 ? LastPaymentDate![..10] : LastPaymentDate!;
 
+    /// <summary>"Carried in" is said in words, because a rupee with no date must not look like a bill.</summary>
+    public string OpeningLabel => HasOpening ? "carried in " + Money.Format(OpeningPaisa) : string.Empty;
+
     public string Summary => Name + " - " + BalanceText + " (" + AgeLabel + " old)";
 }
 
@@ -159,7 +172,12 @@ public sealed class RecoveryReport
     public long BucketsTotalPaisa => Bucket0Paisa + Bucket1Paisa + Bucket2Paisa + Bucket3Paisa;
 
     /// <summary>True when every customer's aged rupees add up to his stored khata.</summary>
-    public bool BooksMatch => MismatchCount == 0 && BucketsTotalPaisa == TotalPaisa;
+    /// <summary>The carried-in udhaar of every customer, added up - shown beside the buckets.</summary>
+    public long OpeningTotalPaisa => Rows.Sum(row => row.OpeningPaisa);
+
+    public string OpeningTotalText => Money.Format(OpeningTotalPaisa);
+
+    public bool BooksMatch => MismatchCount == 0 && BucketsTotalPaisa + OpeningTotalPaisa == TotalPaisa;
 
     public string TotalText => Money.Format(TotalPaisa);
 

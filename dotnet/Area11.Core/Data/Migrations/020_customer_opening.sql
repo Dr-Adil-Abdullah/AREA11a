@@ -1,0 +1,22 @@
+-- ============================================================================
+-- 020 - CUSTOMER OPENING BALANCE  (v0.9.0, Phase 3, F-37)
+--
+-- A shop moving to Area11 already has a paper khata: twenty customers, each
+-- owed some money. Until now the only way to bring that udhaar across was to
+-- type a bill that never happened - which would put a fake sale in the day's
+-- takings and a fake profit in the reports.
+--
+-- `suppliers` has had opening_balance_paisa from the first migration, and the
+-- supplier khata shows it as the first line ("Balance carried into Area11").
+-- Customers simply never had the column, so this migration gives them the
+-- same one, and the customer khata page gets the same first line.
+--
+-- The rule that keeps the book honest: the opening is part of the maths, not a
+-- note next to it. The page starts its running total at the opening, exactly
+-- like the supplier page does, so "Books match" still means what it says.
+--
+-- Existing databases are fine: the column arrives with a default of 0, and
+-- every customer already stored keeps a balance of exactly what is owed.
+-- ============================================================================
+
+ALTER TABLE customers ADD COLUMN opening_balance_paisa INTEGER NOT NULL DEFAULT 0;

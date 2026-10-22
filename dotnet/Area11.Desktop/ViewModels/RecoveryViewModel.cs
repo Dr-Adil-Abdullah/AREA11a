@@ -36,6 +36,8 @@ public sealed class RecoveryViewModel : ObservableObject
     private string _bucket3Text = "Rs 0";
     private string _countText = "0 customers owe money";
     private bool _booksMatch = true;
+    private string _openingText = string.Empty;
+    private bool _hasOpeningTotal;
     private string _booksLabel = string.Empty;
 
     private string _customerText = "Pick a customer from the list.";
@@ -198,6 +200,20 @@ public sealed class RecoveryViewModel : ObservableObject
         private set => SetProperty(ref _booksMatch, value);
     }
 
+    /// <summary>"carried in Rs ..." - udhaar the shop already had before Area11 (F-37).</summary>
+    public string OpeningText
+    {
+        get => _openingText;
+        private set => SetProperty(ref _openingText, value);
+    }
+
+    /// <summary>True only when somebody actually has carried-in udhaar, so the line stays hidden.</summary>
+    public bool HasOpeningTotal
+    {
+        get => _hasOpeningTotal;
+        private set => SetProperty(ref _hasOpeningTotal, value);
+    }
+
     public string BooksLabel
     {
         get => _booksLabel;
@@ -278,8 +294,10 @@ public sealed class RecoveryViewModel : ObservableObject
         Bucket3Text = data.Bucket3Text;
         CountText = data.CountText;
         BooksMatch = data.BooksMatch;
+        HasOpeningTotal = data.OpeningTotalPaisa > 0;
+        OpeningText = "of which carried in: " + data.OpeningTotalText;
         BooksLabel = data.BooksMatch
-            ? "Books match: every rupee of udhaar is in one of the four age columns."
+            ? "Books match: every rupee of udhaar is either in one of the four age columns or carried in from the old register."
             : "CHECK THE BOOKS: " + data.MismatchCount
               + " customer(s) owe a balance that their own history cannot explain.";
 
@@ -295,7 +313,10 @@ public sealed class RecoveryViewModel : ObservableObject
 
         foreach (var row in _all)
         {
-            if (OnlyOverdue && row.OverduePaisa <= 0)
+            // Carried-in udhaar has no bill date, so it sits outside the age columns - but it is old
+            // money all the same. Hiding it behind "over two months" would quietly drop a customer
+            // the owner is chasing, so the opening alone is enough to keep the row.
+            if (OnlyOverdue && row.OverduePaisa <= 0 && !row.HasOpening)
             {
                 continue;
             }

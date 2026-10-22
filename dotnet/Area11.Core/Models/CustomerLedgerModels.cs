@@ -37,6 +37,7 @@ public sealed class LedgerLine
 
     public string KindLabel => Kind switch
     {
+        "opening" => "Opening balance",
         "collection" => "Money received",
         "return" => "Return (khata)",
         "cash_bill" => "Bill (cash)",
@@ -56,6 +57,13 @@ public sealed class CustomerSummary
     public string? Category { get; set; }
 
     public long CreditLimitPaisa { get; set; }
+
+    /// <summary>
+    /// What the customer already owed when the shop moved to Area11 (F-37). It is part of the khata,
+    /// not a note beside it: the page starts its running total here, or "Books match" would be a lie
+    /// on the first day.
+    /// </summary>
+    public long OpeningPaisa { get; set; }
 
     public long BalancePaisa { get; set; }
 

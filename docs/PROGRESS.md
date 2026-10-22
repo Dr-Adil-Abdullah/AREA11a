@@ -31,8 +31,8 @@ features and the four phases.
 | ID | Feature | State | Where | Test | Done when |
 |---|---|---|---|---|---|
 | F-01 | Solution with three projects (Core / Desktop / Tests), .NET 10, MVVM | 🟡 | `Area11.sln`, `dotnet/Directory.Build.props` | - | compiles on Windows |
-| F-02 | Exact database schema, migrations 001-019, 33 business tables | ✅ | `dotnet/Area11.Core/Data/Migrations/` | `MigrationTests` 🧪 | an old `area11.db` opens unchanged |
-| F-03 | Settings service, 79 keys, every change audited, saved in one transaction | ✅ | `Area11.Core/Services/SettingsService.cs` | `SettingsTests` 🧪 | bad values are refused before they reach the database |
+| F-02 | Exact database schema, migrations 001-020, 33 business tables | ✅ | `dotnet/Area11.Core/Data/Migrations/` | `MigrationTests` 🧪 | an old `area11.db` opens unchanged |
+| F-03 | Settings service, 81 keys, every change audited, saved in one transaction | ✅ | `Area11.Core/Services/SettingsService.cs` | `SettingsTests` 🧪 | bad values are refused before they reach the database |
 | F-04 | Audit black box (old -> new values, never deleted) | 🟡 | `Services/AuditService.cs`, `Utils/AuditDiff.cs` | `AuditDiffTests` 🧪 | every module writes (U-27) |
 | F-05 | Sign-in: owner password, staff PIN, 5 tries -> 2 minute lock | 🟡 | `Services/AuthService.cs`, `Utils/PasswordHasher.cs` | `PasswordHasherTests` 🧪 | owner signs in on Windows |
 | F-06 | Per-person permissions stored in the database | ✅ | `Migr. 014`, `Services/PermissionService.cs`, `Views/SettingsView.xaml` | `PermissionTests` 🧪 | the owner ticks/unticks in Settings; every change is audited |
@@ -75,7 +75,7 @@ features and the four phases.
 | F-35 | Audit viewer + CSV export (owner; manager hidden by default) | ✅ | `Services/AuditHistoryService.cs`, `Views/AuditView.xaml` | `AuditViewerTests` 🧪 (10) | search + module/action filters + date window, no edit or delete, CSV is exactly what is on screen · v0.5.0 |
 | UI | **Owner's screen overhaul (D-50)**: 176 px sidebar grouped in five headings, one bell with a count badge, red bar removed, two alert kinds (anyone closes a reminder; only the owner ends a problem), low-stock and expired alerts, customers + suppliers + recovery as one page, and the **new customer** form that never existed | ✅ | `Views/ShellWindow.xaml`, `ViewModels/PartnersViewModel.cs`, `Views/CustomersView.xaml` | `AlertKindTests` 🧪 (13), `CustomerCreateTests` 🧪 (8) | a reminder is one click for anybody; a money problem is owner-only; one people page · v0.6.0 |
 | F-36 | Backup: ZIP of database + photos, daily automatic, restore, safety copy before the swap | ✅ | `Services/BackupService.cs`, `ViewModels/BackupViewModel.cs`, `Views/BackupView.xaml` | `BackupTests` 🧪 | restore on a clean PC |
-| F-37 | Excel import / export / bulk price update | ⬜ | - | - | 1 000 rows in one go |
+| F-37 | Import / export / bulk price change: preview first, one transaction, opening stock as a real batch, opening udhaar as the first khata line | ✅ | `Services/ImportService.cs`, `ViewModels/ImportExportViewModel.cs`, `Views/ImportExportView.xaml`, `Models/CsvReader.cs`, `Data/Migrations/020_customer_opening.sql` | `ImportTests` 🧪 | a 1,000-line file imports with a preview, and importing it twice adds nothing |
 | F-38 | Reorder levels + WhatsApp order text | ⬜ | - | - | - |
 | F-39 | Stock-minus registry (monthly review) | ⬜ | - | - | - |
 
@@ -112,25 +112,26 @@ features and the four phases.
 
 | Check | How | State |
 |---|---|---|
-| C# parses (143 files) | `python3 tools/check_repo.py` | ✅ |
+| C# parses (156 files) | `python3 tools/check_repo.py` | ✅ |
 | Every file imports the namespaces it uses (`System.IO` … **and every type this repo declares**) | `python3 tools/check_repo.py` | ✅ |
-| Every SQL statement prepares against the real schema (168) | `python3 tools/check_repo.py` | ✅ |
+| Every SQL statement prepares against the real schema (179) | `python3 tools/check_repo.py` | ✅ |
 | XAML / csproj / props are valid XML | `python3 tools/check_repo.py` | ✅ |
 | Every XAML binding matches its view-model | `python3 tools/check_repo.py` | ✅ |
 | Every `StaticResource` key exists, in **every** XAML file | `python3 tools/check_repo.py` | ✅ |
 | Every column a query maps has a property on its model | `python3 tools/check_repo.py` | ✅ (22nd check) |
 | No member of a model is read off its `ServiceResult` envelope (CS1061) | `python3 tools/check_repo.py` | ✅ new in v0.6.1 |
 | Every `new XService(...)` matches its constructor (CS7036/CS1501) | `python3 tools/check_repo.py` | ✅ |
-| Migrations 001-019 produce 33 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
+| Migrations 001-020 produce 33 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
 | **Compiles on Windows** | `dotnet build Area11.sln` | ✅ 20 Oct 2026 (v0.1.1); re-check after each release |
-| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.8.0 Violet |
-| **342 tests green** | `dotnet test` (or `tools\RUN-TESTS.cmd`) | 🟡 **fourth run (v0.6.1): 320 of 321 in 27.5 s** - the only failure was a test that expected the black box to lower-case a module name; corrected in v0.6.2. **Runs five (v0.6.2, 321), six (v0.7.0, 327) and seven (v0.8.0, 342) are pending** |
+| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.9.0 Rosewood |
+| **360 tests green** | `dotnet test` (or `tools\RUN-TESTS.cmd`) | 🟡 **fourth run (v0.6.1): 320 of 321 in 27.5 s** - the only failure was a test that expected the black box to lower-case a module name; corrected in v0.6.2. **Runs five to eight (v0.6.2 321, v0.7.0 327, v0.8.0 342, v0.9.0 360) are pending** |
 
 ## Change log
 
 | Date | What |
 |---|---|
+| 22 Oct 2026 | **v0.9.0 Rosewood - Excel / CSV import, export and a bulk price change (F-37).** A file is read and shown line by line and **nothing is written** until Import is pressed; **one bad line stops the whole file**. A duplicate is skipped, never overwritten, so importing the same file twice adds nothing. Opening stock becomes a **real batch with an expiry and an `import` movement**. **Migration 020** gives customers the `opening_balance_paisa` that suppliers already had, so imported **udhaar** is the first line of the khata and the running total starts there - "Books match" is true on day one. Export writes medicines/customers/suppliers as UTF-8 CSV. Prices change by percent or rupees, previewed first, and every row that would sell below cost is refused. Files are CSV by decision (D-53): no new package in the shop's build. 18 new tests. 360 tests. |
 | 22 Oct 2026 | **v0.8.0 Violet - backup and restore (F-36), one zip for the whole shop.** The database copy is taken by **SQLite itself** (`VACUUM INTO`) while people keep billing; the zip holds `area11.db`, `photos/...` and a readable manifest. **Automatic backup** every N hours at the first sign-in of the day, keeping the last N - and **only the program's own files are trimmed**: the owner's own backups are never deleted. **Restore** checks the file first (`quick_check` + products/sales/_migrations), writes **`area11-before-restore-<stamp>.db`** before touching anything, deletes the old `-wal`/`-shm` sidecars (a stale WAL would replay into the restored file), and then the program **starts itself again**: open pages hold numbers from a file that no longer exists. `.db` files restore too, so an older backup still works. Owner-only by default. 15 new test cases (11 facts + 4 guard rows). 342 tests. |
 | 22 Oct 2026 | **v0.7.0 Cobalt - the frame the owner drew (D-51), and a menu that folds.** The bar across the top is **46 px** and holds three things only: **Area11 small** on the left, the **shop name in the centre** (a click opens Settings -> Shop), and the **bell beside it** with the count badge (a click opens the alerts **page**; the sliding panel is gone). The **signed-in person moved into the left bar** - photo, name, role - and their menu has **My settings** and **Sign out**. Every heading now **folds** its pages; the fold is remembered for the next start, and a page that disappears into a fold **stays on the screen**. Settings -> Shop gained **"Keep every group open"**. A fold is saved through the new **quiet door** `SettingsService.SetUiOnly`: stored, survives a restart, writes **no audit line** (ten folds a day would bury a real change). Six new tests. 327 tests. |
 | 22 Oct 2026 | **v0.6.2 Magenta - 320 of 321, and the failure was the test.** The first real run of the new screen (v0.6.1) passed 320 cases in 27.5 s; the one failure, `AuditViewerTests.EveryLine_CarriesWhoWhatWhenAndTheChange`, expected the module as `settings` while the row (and the drop-downs in the same file) say `Settings`. A black box that renames a word is not a black box, and the module filter matches the stored text exactly - so the expectation was corrected, not the page. No Core or Desktop code changed. 321 tests. |

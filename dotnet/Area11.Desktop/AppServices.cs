@@ -44,6 +44,7 @@ public sealed class AppServices
         Receipts = new ReceiptService(Database, Settings, Log);
         Printer = new PrinterService(Settings, Log);
         Backup = new BackupService(Database, Settings, Audit, Permissions, Log);
+        Import = new ImportService(Database, Audit, Permissions, Log);
     }
 
     public Database Database { get; }
@@ -107,6 +108,8 @@ public sealed class AppServices
     public PrinterService Printer { get; }
 
     public BackupService Backup { get; }
+
+    public ImportService Import { get; }
 
     public User? CurrentUser { get; private set; }
 
