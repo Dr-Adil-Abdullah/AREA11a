@@ -354,12 +354,15 @@ function Install-Area11 {
     Write-Host '  Sign in with the user name EMPTY and the password: area11'
     Write-Host ''
 
+    # Start it through Explorer, never from this window: this window is elevated (Administrator),
+    # and a shop program must NOT run as Administrator - it would create files the cashier's
+    # account may then not be able to write. Explorer starts it as the person who is signed in.
     if ($Start) {
-        Start-Process -FilePath $installedExe
+        Start-Process -FilePath 'explorer.exe' -ArgumentList ('"' + $installedExe + '"')
     } elseif (-not $Quiet) {
         $answer = Read-Host '  Start Area11 now? (Y/n)'
         if ($answer -notmatch '^(n|no)$') {
-            Start-Process -FilePath $installedExe
+            Start-Process -FilePath 'explorer.exe' -ArgumentList ('"' + $installedExe + '"')
         }
     }
 }
