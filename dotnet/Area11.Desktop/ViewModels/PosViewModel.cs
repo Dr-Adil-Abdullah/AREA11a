@@ -15,6 +15,10 @@ public sealed class PosViewModel : ObservableObject
     private readonly User _user;
     private readonly List<Product> _catalog = new();
 
+    // Every live barcode of every medicine, grouped by product, so one keystroke filters without a
+    // database call (the scanner types a whole code in a few milliseconds).
+    private readonly Dictionary<int, List<string>> _codesByProduct = new();
+
     private string _searchText = string.Empty;
     private Product? _selectedProduct;
     private string _unit = "strip";
@@ -47,6 +51,7 @@ public sealed class PosViewModel : ObservableObject
         _user = user;
 
         AddCommand = new RelayCommand(AddToCart);
+        ScanCommand = new RelayCommand(ScanBarcode);
         RemoveCommand = new RelayCommand(RemoveLast);
         ClearCommand = new RelayCommand(ClearCart);
         CompleteCommand = new RelayCommand(CompleteSale);
@@ -77,6 +82,9 @@ public sealed class PosViewModel : ObservableObject
     public ObservableCollection<HeldCartRow> HeldCarts { get; } = new();
 
     public RelayCommand AddCommand { get; }
+
+    /// <summary>A scan (or Enter after typing a code): find the pack, add one of it (F-43).</summary>
+    public RelayCommand ScanCommand { get; }
 
     public RelayCommand RemoveCommand { get; }
 
@@ -388,6 +396,8 @@ public sealed class PosViewModel : ObservableObject
             _catalog.AddRange(products.Value);
         }
 
+        LoadBarcodeMap();
+
         var customers = _services.Partners.GetCustomers();
         Customers.Clear();
         Customers.Add(new Customer { Id = 0, Name = "Walk-in customer", Category = "normal" });
@@ -411,10 +421,14 @@ public sealed class PosViewModel : ObservableObject
 
         foreach (var product in _catalog)
         {
+            var codeMatches = _codesByProduct.TryGetValue(product.Id, out var codes)
+                              && codes.Any(code => code.Contains(term, StringComparison.OrdinalIgnoreCase));
+
             if (term.Length == 0
                 || product.Name.Contains(term, StringComparison.OrdinalIgnoreCase)
                 || (product.Generic ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase)
-                || (product.Barcode ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase))
+                || (product.Barcode ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase)
+                || codeMatches)
             {
                 Products.Add(product);
             }
@@ -423,6 +437,72 @@ public sealed class PosViewModel : ObservableObject
         if (SelectedProduct is null || !Products.Contains(SelectedProduct))
         {
             SelectedProduct = Products.FirstOrDefault();
+        }
+    }
+
+    /// <summary>
+    /// A USB scanner types the code and presses Enter (R-09) - this is the Enter. The barcode says
+    /// which pack was scanned, so a box code adds a box and a strip code adds a strip; the cashier
+    /// does not have to remember which button to press after the beep.
+    /// </summary>
+    private void ScanBarcode()
+    {
+        var code = SearchText.Trim();
+
+        if (code.Length == 0)
+        {
+            return;
+        }
+
+        var found = _services.Barcodes.Find(_user, code);
+
+        if (!found.Ok || found.Value is null)
+        {
+            SetStatus(found.Error ?? "That barcode is not in the shop.", true);
+            return;
+        }
+
+        var match = found.Value;
+        var product = _catalog.FirstOrDefault(item => item.Id == match.ProductId);
+
+        if (product is null)
+        {
+            SetStatus("The medicine of this barcode is not in the active list any more.", true);
+            return;
+        }
+
+        // Clearing the search first re-filters the list; setting the product after it stops the
+        // filter from selecting somebody else at the last moment.
+        SearchText = string.Empty;
+        SelectedProduct = product;
+        Unit = match.Pack is BarcodePack.Box or BarcodePack.Strip ? match.Pack : "base";
+        Quantity = "1";
+
+        AddToCart();
+        SetStatus(match.Caption + " added.", false);
+    }
+
+    /// <summary>All live codes once, so the filter and the scan never disagree.</summary>
+    private void LoadBarcodeMap()
+    {
+        _codesByProduct.Clear();
+
+        var all = _services.Barcodes.All(_user);
+
+        if (!all.Ok || all.Value is null)
+        {
+            return;
+        }
+
+        foreach (var match in all.Value)
+        {
+            if (!_codesByProduct.TryGetValue(match.ProductId, out var codes))
+            {
+                codes = new List<string>();
+                _codesByProduct[match.ProductId] = codes;
+            }
+
+            codes.Add(match.Barcode);
         }
     }
 

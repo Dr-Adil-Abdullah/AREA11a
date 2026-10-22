@@ -1,10 +1,11 @@
 # SCHEMA REFERENCE — exact columns of the rebuilt database
 
 > Generated from the reference `src/lib/schema.ts` (migrations 001–013, verbatim) plus
-> Area11 migration 014 (per-user permissions). Verified by running all 14 files against
-> SQLite in order. This is the authority for every SQL statement in `Area11.Core`.
+> Area11 migrations 014–022 (per-user permissions, photos, own fields, several barcodes).
+> Verified by running all 22 files against SQLite in order. This is the authority for every SQL
+> statement in `Area11.Core`.
 
-**31 tables** · 14 migrations
+**34 tables** · 22 migrations
 
 ## `_migrations`  (2 columns)
 
@@ -188,6 +189,41 @@ Indexes: `idx_expenses_date`
 FK: `supplier_id` → `suppliers.id` · `customer_id` → `customers.id` · `purchase_id` → `purchases.id` · `sale_id` → `sales.id`
 
 Indexes: `idx_payments_date`
+
+## `photos`  (7 columns)
+
+| Column | Type | Not null | Default |
+|---|---|---|---|
+| `id` | INTEGER |  |  |
+| `entity` | TEXT | yes |  |
+| `entity_id` | INTEGER | yes |  |
+| `file_name` | TEXT | yes |  |
+| `sort_order` | INTEGER | yes | `0` |
+| `created_at` | TEXT | yes | `datetime('now','localtime')` |
+| `active` | INTEGER | yes | `1` |
+
+Only `file_name` lives here (rule U-19); the picture itself sits in `%ProgramData%\Area11\photos`.
+`active = 0` is a **put-away** photo (D-00b) - the row and the file stay.
+
+Indexes: `idx_photos_entity`
+
+## `product_barcodes`  (7 columns)
+
+| Column | Type | Not null | Default |
+|---|---|---|---|
+| `id` | INTEGER |  |  |
+| `product_id` | INTEGER | yes |  |
+| `barcode` | TEXT | yes |  |
+| `pack` | TEXT | yes | `'base'` |
+| `note` | TEXT |  |  |
+| `active` | INTEGER | yes | `1` |
+| `created_at` | TEXT | yes | `datetime('now','localtime')` |
+
+`pack` is one of `base` / `strip` / `box` - the same three words the cart uses. Migration 022
+copies the old single `products.barcode` into this table (`INSERT OR IGNORE`); that column is kept
+and is still read as one more code.
+
+Indexes: `idx_pb_code` (UNIQUE, **partial**: `WHERE active = 1`), `idx_pb_product`
 
 ## `products`  (23 columns)
 

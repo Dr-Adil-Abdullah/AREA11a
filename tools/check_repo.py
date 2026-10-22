@@ -73,6 +73,7 @@ VIEW_MODEL_OF = {
     "PhotoGalleryWindow.xaml": "PhotoGalleryViewModel",
     "CustomFieldsView.xaml": "CustomFieldsViewModel",
     "CustomFieldsEditorView.xaml": "CustomFieldsEditorViewModel",
+    "BarcodeWindow.xaml": "BarcodeListViewModel",
 }
 
 

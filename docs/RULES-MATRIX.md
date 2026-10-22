@@ -22,8 +22,8 @@ this file tracks the owner's numbered rules.
 ## Summary
 
 - rules in the specification: **116**
-- ✅ done: **52**
-- 🟡 written / partial: **27**
+- ✅ done: **53**
+- 🟡 written / partial: **26**
 - ⬜ not started: **17**
 - 🔁 standing rules: **20**
 
@@ -83,7 +83,7 @@ What to reuse and what was decided about libraries.
 | **R-06** | Review of pharmacy repositories (original study): pharma-suite (audit log/RBAC/invoice), Pharmtech-POS (shift/reorder), a Next.js dashboard (UI); the rest (PHP/desktop) light/incomplete. | ✅ done | `docs/PORT-PLAN.md` section 1 | - | - |
 | **R-07** | Decision: do not fork a whole repository — because the owner-specific parts exist in none (Box→Strip→Tablet, margin discount, downward round-off, owner drawings, black box, Urdu). | ✅ done | D-17: three projects of our own, no forked repository | - | - |
 | **R-08** | Yes, libraries are used — 70–80 % of code saved. | ✅ done | Dapper, Microsoft.Data.Sqlite, xUnit, ClosedXML (planned) | - | - |
-| **R-09** | USB barcode gun = zero code (it types like a keyboard). | 🟡 written / partial | barcode gun works as a keyboard; focus handling TODO | - | - |
+| **R-09** | USB barcode gun = zero code (it types like a keyboard). | ✅ done | the gun types the code and presses Enter; Enter in the POS search box scans it (`PosViewModel.ScanCommand`), one code per pack (D-60) | - | - |
 | **R-10** | Whatever is used is recorded in the rules file for reference. | ✅ done | `docs/PORT-PLAN.md` + this matrix | - | - |
 
 ## E - everything is editable
@@ -202,7 +202,7 @@ The original's five phases, mapped to this rebuild's four.
 | **M-03** | Phase 1 (Core Lifeline): auto PINV stock-in + batch + expiry + supplier account; packing formula + [Box][Strip][Tablet] buttons; counter billing with barcode/search, FIFO, auto INV, discount, downward round-off; thermal receipt 58/80 + auto print + hold/park cart + cash/credit; role switcher + sales history screen. | 🟡 written / partial | Phase 1: purchases + POS written; receipt/print next | - | - |
 | **M-04** | Phase 2 — returns + smart bill lookup + provisional-return alert + float/shift/closing + owner drawing + expenses + below-cost lock. | ⬜ not started | Phase 2: returns, quarantine, alerts, write-off, stock-take | - | Phase 2 |
 | **M-05** | Phase 3 — supplier ledger + return credit note + 3-level expiry + 3-level reorder + WhatsApp web order + sample stock. | 🟡 written / partial | Phase 3 written: ledgers, reports, backup, Excel, reorder/WhatsApp, stock-minus; the free/sample stock list remains | - | Phase 3 |
-| **M-06** | Phase 4 — customer/credit limit/loyalty stars + multi-tier rates + split payment + custom fields/categories. | 🟡 written / partial | Phase 4: loyalty (D-57), photos (D-58) and own fields (D-59) done; medical rep, multi-barcode, LAN counter and the installer remain | - | Phase 4 |
+| **M-06** | Phase 4 — customer/credit limit/loyalty stars + multi-tier rates + split payment + custom fields/categories. | 🟡 written / partial | Phase 4: loyalty (D-57), photos (D-58), own fields (D-59) and several barcodes (D-60) done; medical rep, LAN counter and the installer remain | - | Phase 4 |
 | **M-07** | Phase 5 — black-box audit + multi-dimensional search/rack number + breakage + analytics/P&L + online-offline sync + backup. | ⬜ not started | Phase 3/4: audit viewer, stock-take, backup, sync | - | Phase 3 |
 | **M-08** | Rule: the E and S principles apply from day one — not later. | ✅ done | settings and data-driven from the first migration | - | - |
 

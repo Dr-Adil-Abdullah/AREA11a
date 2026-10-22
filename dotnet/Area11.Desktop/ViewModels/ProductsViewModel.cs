@@ -51,6 +51,7 @@ public sealed class ProductsViewModel : ObservableObject
         AddCategoryCommand = new RelayCommand(AddCategory);
         AddCompanyCommand = new RelayCommand(AddCompany);
         PhotosCommand = new RelayCommand(OpenPhotos);
+        BarcodesCommand = new RelayCommand(OpenBarcodes);
 
         Editor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Product);
 
@@ -78,6 +79,9 @@ public sealed class ProductsViewModel : ObservableObject
 
     /// <summary>The photo gallery of the selected medicine (F-41).</summary>
     public RelayCommand PhotosCommand { get; }
+
+    /// <summary>The several printed codes of this medicine (F-43). Needs a saved product.</summary>
+    public RelayCommand BarcodesCommand { get; }
 
     /// <summary>The owner's own questions for a medicine (F-42) - drawn only if he made any.</summary>
     public CustomFieldsEditorViewModel Editor { get; }
@@ -389,6 +393,18 @@ public sealed class ProductsViewModel : ObservableObject
         Load();
         NewProduct();
         SetStatus(message, false);
+    }
+
+    /// <summary>The barcode list of the medicine on the form. A new, unsaved medicine has no id yet.</summary>
+    private void OpenBarcodes()
+    {
+        if (SelectedProduct is null || SelectedProduct.Id <= 0)
+        {
+            SetStatus("Save the medicine first, then add its barcodes.", true);
+            return;
+        }
+
+        BarcodeWindowDoor.Show(_services, _user, SelectedProduct.Id, SelectedProduct.Name);
     }
 
     /// <summary>Photo gallery for the medicine on the form. A new, unsaved medicine has no id yet.</summary>

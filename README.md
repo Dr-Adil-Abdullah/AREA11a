@@ -20,7 +20,7 @@ Ported from the original Next.js + SQLite web app (`Dr-Adil-Abdullah/Area11`) us
 | **1** | Foundation, database, sign-in, products, purchases `PINV`, counter `INV`, receipt & instant print, settings screen, **hold cart, split payment** | ✅ written and compiled; needs one real walk-through by the owner |
 | **2** | Returns `RET` / provisional `PR` / quarantine `Q`, alert centre, write-off, stock-take `ST`, khata and supplier ledgers | ✅ written (v0.3.0 - v0.3.12) |
 | **3** | Shift & galla, expenses, udhaar recovery, reports, black box, **backup ZIP**, **Excel / CSV import+export**, **reorder + WhatsApp order**, **stock-minus registry** | ✅ written (v0.4.0 - v0.11.0); **Phase 4 is next** |
-| **4** | **Loyalty** ✅ (v0.12.0), **photos & camera** ✅ (v0.13.0), **own fields** ✅ (v0.14.0), several barcodes, second counter, hardware test, **self-installing installer** | 🟡 started (v0.12.0) |
+| **4** | **Loyalty** ✅ (v0.12.0), **photos & camera** ✅ (v0.13.0), **own fields** ✅ (v0.14.0), **several barcodes** ✅ (v0.15.0), medical rep, second counter, hardware test, **self-installing installer** | 🟡 started (v0.12.0) |
 
 Live counts are in [`docs/PROGRESS.md`](docs/PROGRESS.md) (features) and
 [`docs/RULES-MATRIX.md`](docs/RULES-MATRIX.md) (the owner's 116 numbered rules).
@@ -28,7 +28,7 @@ Live counts are in [`docs/PROGRESS.md`](docs/PROGRESS.md) (features) and
 **Honest note:** the agent's build machine is Linux with no .NET SDK, so nothing in `dotnet/` is
 compiled there. Every change is checked statically (C# parses, explicit usings, XAML, resources,
 every binding against its view model, every SQL statement against the real schema, every mapped
-column against its model, migrations executed on SQLite) and **422 test cases** are written for the
+column against its model, migrations executed on SQLite) and **434 test cases** are written for the
 Windows run. The Windows build has succeeded up to v0.4.8, and the owner's own runs compiled Core
 and Tests; the newest releases are tested by him with `tools\RUN-TESTS.cmd`. See
 [`docs/VERSIONS.md`](docs/VERSIONS.md) for which build he has.

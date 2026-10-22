@@ -129,16 +129,18 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.14.0 (Brick `#B91C1C`)** - Phases 1, 2 and 3 are written (shift/galla, expenses,
+> **v0.15.0 (Nightshade `#2E1065`)** - Phases 1, 2 and 3 are written (shift/galla, expenses,
 > udhaar recovery, reports, black box, backup & restore, Excel / CSV, reorder + WhatsApp, and the
 > stock-minus registry with its monthly review). Phase 4 has started: **loyalty works from the
 > screen**, **photos** exist for medicines, customers and suppliers (copied into the shop's folder,
-> **put away instead of deleted**), and the owner can now make **his own fields** - text, number,
+> **put away instead of deleted**), the owner can make **his own fields** - text, number,
 > amount, date, list, yes/no or photo - which appear on the form at once and keep every answer when
-> switched off. The screen was rebuilt the way the owner asked (D-50): a 176 px menu in five groups,
+> switched off, and a medicine now carries **several barcodes, one per pack** (migration **022**,
+> table `product_barcodes`): the counter's search box takes a scan on **Enter** and adds **one of the
+> pack that code belongs to**. The screen was rebuilt the way the owner asked (D-50): a 176 px menu in five groups,
 > one **bell** with a count badge instead of the red strip across every page, **two kinds of alert**
 > (a reminder anybody may put away, a money or stock problem that is owner-only with a written
 > reason), one **customers & suppliers** page with three tabs, and the **new customer** form that had
 > never been built. The last confirmed Windows build is v0.4.8; the owner runs
-> `tools\RUN-TESTS.cmd` (422 cases). **Next: Phase 4** - several barcodes, the medical rep, the
-> second counter, the printer test and the installer. Details: `HANDOFF.md` §4.
+> `tools\RUN-TESTS.cmd` (434 cases). **Next: Phase 4** - the medical rep, the second counter, the
+> printer test and the installer. Details: `HANDOFF.md` §4.

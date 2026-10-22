@@ -51,7 +51,9 @@ LEFT JOIN companies co ON co.id = p.company_id
             var products = _db.Query<Product>(connection, SelectSql + @"
 WHERE p.active = 1
   AND (@term = '' OR p.name LIKE @like OR IFNULL(p.generic, '') LIKE @like
-       OR IFNULL(p.barcode, '') LIKE @like OR IFNULL(p.rack_no, '') LIKE @like)
+       OR IFNULL(p.barcode, '') LIKE @like OR IFNULL(p.rack_no, '') LIKE @like
+       OR EXISTS (SELECT 1 FROM product_barcodes pb
+                  WHERE pb.product_id = p.id AND pb.active = 1 AND pb.barcode LIKE @like))
   AND (@categoryId IS NULL OR p.category_id = @categoryId)
   AND (@companyId IS NULL OR p.company_id = @companyId)
   AND (@lowStock = 0 OR

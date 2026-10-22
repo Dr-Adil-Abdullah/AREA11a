@@ -193,6 +193,12 @@
                                 Command="{Binding PhotosCommand}"
                                 ToolTip="Two or three pictures: the box, the strip, the rack. Nothing is deleted - a wrong one is put away." />
 
+                        <Button Content="Barcodes of this medicine…"
+                                Style="{StaticResource GhostButton}"
+                                Margin="0,8,0,0"
+                                Command="{Binding BarcodesCommand}"
+                                ToolTip="One code per pack: the strip, the box, a carton. A box code adds a box at the counter." />
+
                         <Button Content="Remove selected (history kept)"
                                 Style="{StaticResource GhostButton}"
                                 Margin="0,8,0,0"

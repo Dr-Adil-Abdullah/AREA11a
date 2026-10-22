@@ -86,7 +86,7 @@ STATUS: dict[str, tuple[str, str, str]] = {
     "R-06": ("DONE", "`docs/PORT-PLAN.md` section 1", "-"),
     "R-07": ("DONE", "D-17: three projects of our own, no forked repository", "-"),
     "R-08": ("DONE", "Dapper, Microsoft.Data.Sqlite, xUnit, ClosedXML (planned)", "-"),
-    "R-09": ("WIP", "barcode gun works as a keyboard; focus handling TODO", "-"),
+    "R-09": ("DONE", "the gun types the code and presses Enter; Enter in the POS search box scans it (`PosViewModel.ScanCommand`), one code per pack (D-60)", "-"),
     "R-10": ("DONE", "`docs/PORT-PLAN.md` + this matrix", "-"),
 
     # ---- E: everything editable ------------------------------------------
@@ -170,7 +170,7 @@ STATUS: dict[str, tuple[str, str, str]] = {
     "M-03": ("WIP", "Phase 1: purchases + POS written; receipt/print next", "-"),
     "M-04": ("TODO", "Phase 2: returns, quarantine, alerts, write-off, stock-take", "-"),
     "M-05": ("WIP", "Phase 3 written: ledgers, reports, backup, Excel, reorder/WhatsApp, stock-minus; the free/sample stock list remains", "-"),
-    "M-06": ("WIP", "Phase 4: loyalty (D-57), photos (D-58) and own fields (D-59) done; medical rep, multi-barcode, LAN counter and the installer remain", "-"),
+    "M-06": ("WIP", "Phase 4: loyalty (D-57), photos (D-58), own fields (D-59) and several barcodes (D-60) done; medical rep, LAN counter and the installer remain", "-"),
     "M-07": ("TODO", "Phase 3/4: audit viewer, stock-take, backup, sync", "-"),
     "M-08": ("DONE", "settings and data-driven from the first migration", "-"),
 }

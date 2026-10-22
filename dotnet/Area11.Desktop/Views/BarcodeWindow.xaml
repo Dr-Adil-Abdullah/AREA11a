@@ -1,0 +1,141 @@
+<Window x:Class="Area11.Desktop.Views.BarcodeWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Barcodes - Area11" Height="600" Width="780" MinHeight="520" MinWidth="720"
+        WindowStartupLocation="CenterOwner" Background="{StaticResource CanvasBrush}">
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- ================================ the heading ================================ -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+            <TextBlock Text="{Binding Title}" Style="{StaticResource PageTitle}" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding Subtitle}" Style="{StaticResource PageSubtitle}" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <!-- ================================ the two frames ================================ -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="300" />
+            </Grid.ColumnDefinitions>
+
+            <!-- the codes of this medicine -->
+            <Border Grid.Column="0" Style="{StaticResource Card}" Padding="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <DockPanel Grid.Row="0" Margin="0,0,0,8">
+                        <TextBlock DockPanel.Dock="Left" Text="{Binding CountText}" FontWeight="SemiBold"
+                                   VerticalAlignment="Center" />
+                    </DockPanel>
+
+                    <ListBox Grid.Row="1" ItemsSource="{Binding Rows}"
+                             SelectedItem="{Binding Selected, Mode=TwoWay}"
+                             BorderBrush="{StaticResource LineBrush}"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="8" Margin="0,0,0,4" CornerRadius="6"
+                                        Background="{StaticResource CanvasBrush}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="{Binding Code}" FontSize="12.5" FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding NoteLabel}" Style="{StaticResource FieldHint}" />
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                                            <TextBlock Text="{Binding PackLabel}" FontSize="11" FontWeight="SemiBold"
+                                                       HorizontalAlignment="Right" />
+                                            <TextBlock Text="{Binding StateLabel}" Style="{StaticResource FieldHint}"
+                                                       HorizontalAlignment="Right" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <TextBlock Grid.Row="1" Text="No barcodes yet. Scan the code printed on the box on the right."
+                               FontSize="12" Foreground="{StaticResource MutedBrush}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap"
+                               IsHitTestVisible="False"
+                               Visibility="{Binding HasNoCodes, Converter={StaticResource BoolToVis}}" />
+
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0">
+                        <Button Content="Put away" Style="{StaticResource GhostButton}" Margin="0,0,6,0"
+                                Command="{Binding PutAwayCommand}" IsEnabled="{Binding CanPutAway}" />
+                        <Button Content="Bring back" Style="{StaticResource GhostButton}" Margin="0,0,6,0"
+                                Command="{Binding RestoreCommand}" IsEnabled="{Binding CanRestore}" />
+                        <Button Content="{Binding HiddenToggleLabel}" Style="{StaticResource GhostButton}"
+                                Command="{Binding ShowHiddenCommand}" />
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="3" Text="Only the owner or a manager can change barcodes."
+                               Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,8,0,0"
+                               Visibility="{Binding IsReadOnly, Converter={StaticResource BoolToVis}}" />
+                </Grid>
+            </Border>
+
+            <!-- the new code -->
+            <Border Grid.Column="2" Style="{StaticResource Card}" Padding="14">
+                <StackPanel>
+                    <TextBlock Text="Add a barcode" Style="{StaticResource SectionTitle}" />
+
+                    <TextBlock Text="Code (scan it here, or type the digits)" Style="{StaticResource FieldLabel}"
+                               Margin="0,10,0,0" />
+                    <TextBox Text="{Binding CodeText, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBlock Text="Printed on" Style="{StaticResource FieldLabel}" Margin="0,10,0,0" />
+                    <ComboBox ItemsSource="{Binding Packs}" DisplayMemberPath="Label"
+                              SelectedItem="{Binding SelectedPack, Mode=TwoWay}" />
+
+                    <TextBlock Text="Note (optional)" Style="{StaticResource FieldLabel}" Margin="0,10,0,0" />
+                    <TextBox Text="{Binding NoteText, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <Button Content="Add this barcode" Style="{StaticResource PrimaryButton}" Height="38"
+                            Margin="0,14,0,0" Command="{Binding AddCommand}" IsEnabled="{Binding CanEdit}" />
+
+                    <Border Background="{StaticResource BrandSoftBrush}" CornerRadius="8" Padding="10" Margin="0,14,0,0">
+                        <StackPanel>
+                            <TextBlock Text="How a scanner works" Style="{StaticResource FieldLabel}" />
+                            <TextBlock Text="The gun types the code and presses Enter. At the counter it lands in the search box, and one beep adds one of the pack this code belongs to."
+                                       Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,0,0,0" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- ================================ the footer ================================ -->
+        <TextBlock Grid.Row="2" Text="{Binding StatusText}" TextWrapping="Wrap" FontSize="11.5"
+                   Margin="0,10,0,0">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsStatusError}" Value="True">
+                            <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                            <Setter Property="FontWeight" Value="Bold" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+    </Grid>
+</Window>

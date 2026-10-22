@@ -49,6 +49,7 @@ public sealed class AppServices
         StockMinus = new StockMinusService(Database, Audit, Permissions, Log);
         Photos = new PhotoService(Database, Audit, Permissions, Log);
         CustomFields = new CustomFieldService(Database, Audit, Permissions, Log);
+        Barcodes = new BarcodeService(Database, Audit, Permissions, Log);
     }
 
     public Database Database { get; }
@@ -120,6 +121,8 @@ public sealed class AppServices
     public PhotoService Photos { get; }
 
     public CustomFieldService CustomFields { get; }
+
+    public BarcodeService Barcodes { get; }
 
     public ImportService Import { get; }
 

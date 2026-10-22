@@ -38,7 +38,14 @@
 
                     <StackPanel Grid.Row="0">
                         <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                 ToolTip="Name, salt or barcode" />
+                                 ToolTip="Name, salt or barcode. A scanner types the code and presses Enter by itself.">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding ScanCommand}" />
+                            </TextBox.InputBindings>
+                        </TextBox>
+
+                        <TextBlock Text="Scan a barcode and press Enter - one of the pack it belongs to is added."
+                                   Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,2,0,0" />
                         <Grid Margin="0,8,0,10">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="90" />
