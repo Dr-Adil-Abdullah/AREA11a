@@ -65,10 +65,19 @@ public sealed class RepTests
         Assert.Equal(2L, Rows(test, "SELECT COUNT(1) FROM audit_logs WHERE action = 'company_rep_update';"));
 
         using var connection = test.Database.Open();
-        var oldValue = test.Database.Scalar(connection,
+
+        // The NEWEST line is the one that keeps the old rep explainable: it was written when the
+        // name was cleared, so its old_value is the man who lost the agency.
+        var newest = test.Database.Scalar(connection,
+            "SELECT old_value FROM audit_logs WHERE action = 'company_rep_update' ORDER BY id DESC LIMIT 1;");
+
+        Assert.Contains("Imran", newest?.ToString());
+
+        // The first line says the company had no rep before Imran - the other half of the story.
+        var first = test.Database.Scalar(connection,
             "SELECT old_value FROM audit_logs WHERE action = 'company_rep_update' ORDER BY id LIMIT 1;");
 
-        Assert.Contains("Imran", oldValue?.ToString());
+        Assert.Contains("(no rep)", first?.ToString());
     }
 
     [Fact]

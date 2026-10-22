@@ -125,6 +125,13 @@ SELECT CAST(IFNULL(SUM(refund_paisa), 0) AS INTEGER) FROM sale_returns WHERE dat
             report.TaxTotalLabel,
             report.GrossLabel));
 
+        if (report.HasRoundOff)
+        {
+            text.AppendLine();
+            text.AppendLine("Round-off down on the bills (Z-03): " + report.RoundOffLabel
+                + " - the total is not exactly sales before tax plus tax.");
+        }
+
         if (report.RefundPaisa > 0)
         {
             text.AppendLine();

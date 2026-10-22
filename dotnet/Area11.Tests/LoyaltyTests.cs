@@ -178,11 +178,20 @@ public sealed class LoyaltyTests
     public void TheBillNeverGoesBelowZero()
     {
         using var test = new TestDatabase();
-        var product = TestData.AddProduct(test, retailPaisa: 30000, batchQty: 100);
+        // Rs 45.50, and the below-cost lock is OFF: the only cap left is the bill itself, which
+        // gives whole rupees away (Spec 13.6.1) - at most 45 points on a bill of 45.50.
+        var product = TestData.AddProduct(test, costPaisa: 1000, retailPaisa: 4550, batchQty: 100);
         var customer = TestData.AddCustomer(test);
 
         EnableLoyalty(test, perRupeePoint: 100);
         Give(test, customer, points: 900);
+
+        Assert.True(test.Settings.Set("discount.blockBelowCost", false, TestData.Owner).Ok);
+
+        // The bill is rounded down to Rs 10 by default, which would hide the case this test is
+        // about: switch the rounding off so the bill keeps its 50 paisa.
+        Assert.True(test.Settings.Set("bill.roundMode", "none", TestData.Owner).Ok);
+        test.Settings.Reload();
 
         var sale = TestData.Sales(test).Create(
             TestData.Cart(product, qty: 1, method: "cash", customerId: customer, redeemPoints: 900),
@@ -190,10 +199,10 @@ public sealed class LoyaltyTests
 
         Assert.True(sale.Ok, sale.Error);
 
-        // A Rs 300 bill can spend at most 300 points, however many the customer owns.
-        Assert.Equal(0L, sale.Value!.TotalPaisa);
+        // 45 points = Rs 45 off, and 50 paisa is left on the bill - never a minus bill.
+        Assert.Equal(50L, sale.Value!.TotalPaisa);
         Assert.True(sale.Value.TotalPaisa >= 0);
-        Assert.Equal(600, Points(test, customer));
+        Assert.Equal(855, Points(test, customer));      // 900 - 45, and 50 paisa earns nothing
     }
 
     [Fact]

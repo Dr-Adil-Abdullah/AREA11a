@@ -29,6 +29,8 @@ public sealed class TaxViewModel : ObservableObject
     private string _grossText = "Rs 0";
     private string _refundText = "Rs 0";
     private bool _hasRefunds;
+    private string _roundOffText = string.Empty;
+    private bool _hasRoundOff;
     private string _statusText = string.Empty;
     private bool _isStatusError;
 
@@ -111,6 +113,23 @@ public sealed class TaxViewModel : ObservableObject
         private set => SetProperty(ref _hasRefunds, value);
     }
 
+    /// <summary>
+    /// "Round-off down on the bills (Z-03): Rs -3 ..." - shown so the three numbers on the screen
+    /// add up for an accountant: every bill is rounded down to the shop's step, so the total is not
+    /// exactly sales-before-tax plus tax.
+    /// </summary>
+    public string RoundOffText
+    {
+        get => _roundOffText;
+        private set => SetProperty(ref _roundOffText, value);
+    }
+
+    public bool HasRoundOff
+    {
+        get => _hasRoundOff;
+        private set => SetProperty(ref _hasRoundOff, value);
+    }
+
     public string StatusText
     {
         get => _statusText;
@@ -138,6 +157,8 @@ public sealed class TaxViewModel : ObservableObject
             GrossText = "Rs 0";
             RefundText = "Rs 0";
             HasRefunds = false;
+            RoundOffText = string.Empty;
+            HasRoundOff = false;
             SetStatus(report.Error ?? "The tax report could not be built.", true);
             return;
         }
@@ -152,6 +173,12 @@ public sealed class TaxViewModel : ObservableObject
         GrossText = value.GrossLabel;
         RefundText = value.RefundLabel;
         HasRefunds = value.RefundPaisa > 0;
+        HasRoundOff = value.HasRoundOff;
+        RoundOffText = value.HasRoundOff
+            ? "Round-off down on the bills (Z-03): " + value.RoundOffLabel +
+              ". Every bill is rounded down to the shop's step, so the total is not exactly " +
+              "sales before tax plus tax - the difference is the customer's gain, not a missing rupee."
+            : string.Empty;
 
         foreach (var row in value.Rows)
         {

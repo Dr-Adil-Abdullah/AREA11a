@@ -230,7 +230,14 @@ public sealed class ImportTests
         var row = report.Value!.Rows.Single(entry => entry.Name == "Ali Raza");
         Assert.True(row.BooksMatch);
         Assert.Equal(500000L, row.OpeningPaisa);
-        Assert.Equal(500000L, row.BucketsTotalPaisa);
+        Assert.True(row.HasOpening);
+
+        // The four age columns stay empty on purpose - carried-in money has no bill date to age -
+        // and the row's own maths (aged + carried in = stored khata) is what keeps the page honest.
+        Assert.Equal(0L, row.BucketsTotalPaisa);
+        Assert.Equal(0L, row.OverduePaisa);
+        Assert.Equal(500000L, row.BalancePaisa);
+        Assert.Equal(500000L, report.Value.OpeningTotalPaisa);
         Assert.True(report.Value.BooksMatch);
     }
 

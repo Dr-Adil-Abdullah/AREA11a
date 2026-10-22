@@ -129,7 +129,7 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.19.0 (Fern `#2F5D3A`)** - all four phases are written: Phase 1-3 in full (billing, returns,
+> **v0.19.1 (Sangria `#8A1C4B`)** - all four phases are written: Phase 1-3 in full (billing, returns,
 > purchase, khata, supplier ledger, shift/galla, expenses, reports, black box, backup & restore,
 > Excel / CSV, reorder + WhatsApp, stock-minus registry), and Phase 4 has **9 of its 12 features**:
 > loyalty from the screen, photos for medicines / customers / suppliers (copied into the shop's
@@ -142,5 +142,11 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >
 > The last confirmed Windows build is v0.4.8; everything from v0.6.2 on is proved only by
 > `tools/check_repo.py` until the owner runs `START-AREA11.bat` and `tools\\RUN-TESTS.cmd`
-> (**503 cases**). **Next:** the printer / scanner test (F-46), then Supabase sync (F-48).
+> (**505 cases**).
+>
+> **v0.19.1 repairs the six red tests of the owner's v0.18.0 run.** All six were tests that remembered
+> an older rule - the program was right (details in `docs/VERSIONS.md`, row 0.19.1). The failure also
+> exposed one real gap, now closed: the tax page prints the bill **round-off** beside its three
+> headline numbers, so sales-before-tax + tax and the total on the bills agree for an accountant.
+> **Next:** the printer / scanner test (F-46), then Supabase sync (F-48).
 > Details: `HANDOFF.md` §4.

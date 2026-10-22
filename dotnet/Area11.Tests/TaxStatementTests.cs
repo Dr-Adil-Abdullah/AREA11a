@@ -42,7 +42,12 @@ public sealed class TaxStatementTests
         Assert.Equal(2, value.Bills);
         Assert.Equal(90000L, value.NetPaisa);
         Assert.Equal(15300L, value.TaxPaisa);
-        Assert.Equal(105300L, value.GrossPaisa);
+
+        // Every bill is rounded DOWN to the shop's step, Rs 10 (Spec 11.3.2 / Z-03): Rs 351 and
+        // Rs 702 become Rs 350 and Rs 700, so the month really took Rs 1,050 - not 1,053.
+        Assert.Equal(105000L, value.GrossPaisa);
+        Assert.Equal(-300L, value.RoundOffPaisa);
+        Assert.True(value.HasRoundOff);
 
         Assert.Equal(cash.TaxPaisa + credit.TaxPaisa, value.TaxPaisa);
         Assert.Single(value.Rows);
@@ -114,7 +119,25 @@ public sealed class TaxStatementTests
         Assert.Contains("Tax report - " + report.MonthLabel, text);
         Assert.Contains("Date\tBills\tSales before tax\tTax\tTotal", text);
         Assert.Contains("TOTAL", text);
-        Assert.Contains(Money.Fixed(report.TaxPaisa), text);
+        Assert.Contains(Money.Format(report.TaxPaisa), text);
+    }
+
+    [Fact]
+    public void TheRoundOffIsWrittenDownSoTheMonthAddsUp()
+    {
+        using var test = new TestDatabase();
+        EnableTax(test, "GST", 17);
+
+        var product = TestData.AddProduct(test, retailPaisa: 30000, batchQty: 100);
+        MakeBill(test, product, qty: 2);
+
+        var report = Tax(test).Report(TestData.Owner, DateTime.Now.Year, DateTime.Now.Month).Value!;
+        var text = TaxService.ToText(report);
+
+        // Rs 702 on the bill, Rs 700 taken: the Rs 2 is the round-off, and it is on the paper.
+        Assert.Equal(-200L, report.RoundOffPaisa);
+        Assert.Contains("Round-off down on the bills (Z-03): " + report.RoundOffLabel, text);
+        Assert.Equal(report.GrossPaisa, report.NetPaisa + report.TaxPaisa + report.RoundOffPaisa);
     }
 
     // ============================== the monthly statement ==============================

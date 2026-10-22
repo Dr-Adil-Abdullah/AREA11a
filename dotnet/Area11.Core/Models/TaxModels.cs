@@ -83,6 +83,19 @@ public sealed class TaxReport
 
     public string RefundLabel => Money.Format(RefundPaisa);
 
+    /// <summary>
+    /// What the round-off took off the month (Spec 11.3.2, Z-03 / Z-11): every bill is rounded
+    /// **down** to the shop's step (Rs 10 unless Settings says otherwise), so
+    /// `total - (sales before tax + tax)` is normally a few rupees negative. It is shown instead of
+    /// hidden, because an accountant adding the two columns will otherwise ask where the difference
+    /// went.
+    /// </summary>
+    public long RoundOffPaisa => GrossPaisa - (NetPaisa + TaxPaisa);
+
+    public bool HasRoundOff => RoundOffPaisa != 0;
+
+    public string RoundOffLabel => Money.Format(RoundOffPaisa);
+
     /// <summary>The one sentence the owner reads before showing the page to an accountant.</summary>
     public string SettingLabel => TaxEnabled
         ? TaxLabel + " " + PercentLabel + " - switched on in Settings"

@@ -97,6 +97,25 @@ public sealed class StockMinusTests
         Assert.Equal("sold INV-0001", StockMinusCause.Describe(row.SinceType, row.SinceRefCode));
         Assert.Contains("sold INV-0001", row.CauseLabel);
         Assert.Equal("17 day(s)", row.DaysLabel);
+
+        // "old" is the colour of a month, not a fortnight: the row is still "fresh" at 17 days.
+        Assert.Equal("fresh", row.Tone);
+    }
+
+    [Fact]
+    public void AMonthOfMinusIsMarkedOld()
+    {
+        using var test = new TestDatabase();
+
+        var product = TestData.AddProduct(test, batchQty: -4, name: "Panadol 500mg");
+        Move(test, product, -4, DaysAgo(31), "sale", "INV-0002");
+
+        var report = Registry(test).Report(TestData.Owner);
+        Assert.True(report.Ok, report.Error);
+
+        var row = Assert.Single(report.Value!.Rows);
+
+        Assert.Equal(31, row.DaysNegative);
         Assert.Equal("old", row.Tone);
     }
 
