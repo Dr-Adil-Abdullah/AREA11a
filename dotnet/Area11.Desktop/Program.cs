@@ -1,6 +1,3 @@
-using System.Windows;
-using Area11.Core.Utils;
-
 namespace Area11.Desktop;
 
 /// <summary>

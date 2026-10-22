@@ -163,11 +163,29 @@ echo  Starting Area11...
 echo.
 echo   Sign in with the user name left EMPTY and the password: area11
 echo.
-dotnet run --project "dotnet\Area11.Desktop" --no-build
+rem  Run the program that was just built, not `dotnet run`: one less moving part, and a batch file
+rem  waits for it, so the message below always belongs to THIS run.
+set "APPEXE=%CD%\dotnet\Area11.Desktop\bin\Debug\net10.0-windows\Area11.exe"
 
-if errorlevel 1 goto 
+if exist "%APPEXE%" (
+    "%APPEXE%"
+) else (
+    echo  The program file was not found, using dotnet run instead.
+    dotnet run --project "dotnet\Area11.Desktop" --no-build
+)
 
-   :crashed
+if errorlevel 1 goto :crashed
+
+echo.
+echo  Area11 has closed.
+pause
+exit /b 0
+
+rem ---- 6. what went wrong? -------------------------------------------------
+rem  A Windows program has no console of its own, so the exception text does not
+rem  always reach this window. The app now writes every crash to a file; print the
+rem  newest one, because that file is the only thing needed to fix the problem.
+:crashed
 set "LOGDIR=%ProgramData%\Area11\logs"
 set "CRASHFILE="
 for /f "delims=" %%f in ('dir /b /o-d "%LOGDIR%\crash-*.txt" 2^>nul') do if not defined CRASHFILE set "CRASHFILE=%LOGDIR%\%%f"
