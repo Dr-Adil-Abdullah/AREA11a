@@ -77,6 +77,9 @@
         <DataTemplate DataType="{x:Type vm:AuditViewModel}">
             <views:AuditView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:BackupViewModel}">
+            <views:BackupView />
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>

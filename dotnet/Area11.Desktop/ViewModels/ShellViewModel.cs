@@ -60,6 +60,10 @@ public sealed class ShellViewModel : ObservableObject
 
         BuildNavigation();
         RefreshAlerts();
+
+        // The first sign-in of the day makes the daily copy if it is switched on. It never throws
+        // and never blocks the till: a failed backup is a line in the log and a note on the page.
+        _services.Backup.RunAutomaticIfDue();
         SelectedNav = NavItems.FirstOrDefault(item => item.IsPage);
     }
 
@@ -205,6 +209,7 @@ public sealed class ShellViewModel : ObservableObject
         var canCash = permissions.Can(_user, Modules.Cash);
         var canReports = permissions.Can(_user, Modules.Reports);
         var canAudit = permissions.Can(_user, Modules.Audit);
+        var canBackup = permissions.Can(_user, Modules.Backup);
         var canSettings = CanOpenSettings;
 
         NavItems.Add(new NavItem("Dashboard", "Today at a glance", () => new DashboardViewModel(_services)));
@@ -280,14 +285,22 @@ public sealed class ShellViewModel : ObservableObject
             }
         }
 
-        // ---- SYSTEM: the shop's own settings and its memory ----
-        if (canAudit || canSettings)
+        // ---- SYSTEM: the shop's own settings, its memory and its safety net ----
+        if (canAudit || canBackup || canSettings)
         {
             AddGroup("system", "SYSTEM");
 
             if (canAudit)
             {
                 AddPage("system", "Black box", "Every change, who made it", () => new AuditViewModel(_services, _user));
+            }
+
+            if (canBackup)
+            {
+                // The one page that can bring a dead shop back. It sits above Settings on purpose:
+                // it is the first thing to open after an update and the first thing to open after
+                // a bad day, and both happen more often than a change of printer paper.
+                AddPage("system", "Backup & restore", "ZIP of database + photos", CreateBackupPage);
             }
 
             if (canSettings)
@@ -407,6 +420,13 @@ public sealed class ShellViewModel : ObservableObject
         _settingsPage.Refresh();
         return _settingsPage;
     }
+
+    /// <summary>
+    /// The backup page. A restore replaces the database file, so the whole program is started again
+    /// afterwards - one of these pages would otherwise keep showing numbers from a file that is gone.
+    /// </summary>
+    private ObservableObject CreateBackupPage() =>
+        new BackupViewModel(_services, _user, AppRestart.Restart);
 
     /// <summary>
     /// Opens Settings on a tab: 0 = Shop (the shop name was clicked), 3 = Staff &amp; permissions

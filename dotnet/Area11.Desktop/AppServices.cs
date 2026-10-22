@@ -43,6 +43,7 @@ public sealed class AppServices
         ProvisionalReceipts = new ProvisionalReceiptService(Provisional, Settings, Log);
         Receipts = new ReceiptService(Database, Settings, Log);
         Printer = new PrinterService(Settings, Log);
+        Backup = new BackupService(Database, Settings, Audit, Permissions, Log);
     }
 
     public Database Database { get; }
@@ -104,6 +105,8 @@ public sealed class AppServices
     public ReceiptService Receipts { get; }
 
     public PrinterService Printer { get; }
+
+    public BackupService Backup { get; }
 
     public User? CurrentUser { get; private set; }
 

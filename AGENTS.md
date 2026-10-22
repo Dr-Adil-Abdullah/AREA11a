@@ -129,11 +129,11 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.7.0 (Cobalt `#1D4ED8`)** - Phases 1 and 2 are written, and Phase 3 has five of its eight
+> **v0.8.0 (Violet `#6D28D9`)** - Phases 1 and 2 are written, and Phase 3 has five of its eight
 > features (shift/galla, expenses, udhaar recovery, reports, black box). The screen was rebuilt the
 > way the owner asked (D-50): a 176 px menu in five groups, one **bell** with a count badge instead of
 > the red strip across every page, **two kinds of alert** (a reminder anybody may put away, a money
 > or stock problem that is owner-only with a written reason), one **customers & suppliers** page with
 > three tabs, and the **new customer** form that had never been built. The last confirmed Windows
-> build is v0.4.8; the owner runs `tools\RUN-TESTS.cmd` (327 cases). **Next: F-36 backup ZIP**
+> build is v0.4.8; the owner runs `tools\RUN-TESTS.cmd` (342 cases). **Next: F-37 Excel import**
 > (database + photos, daily automatic, restore on a clean PC), then Phase 4. Details: `HANDOFF.md` §4.

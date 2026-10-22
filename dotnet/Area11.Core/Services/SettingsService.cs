@@ -364,6 +364,18 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
             case "bill.roundTo":
                 return number is >= 0 and <= 1000 ? null : "The round-off step must be between 0 and 1000 paisa.";
 
+            // Backup (F-36): a zero-hour interval would make a zip on every sign-in, and keeping zero
+            // backups would delete today's file. Both are refused here, not only hidden on the page.
+            case "backup.everyHours":
+                return number is >= 1 and <= 720
+                    ? null
+                    : "The automatic backup interval must be between 1 and 720 hours (30 days).";
+
+            case "backup.keep":
+                return number is >= 1 and <= 500
+                    ? null
+                    : "Keep between 1 and 500 automatic backups.";
+
             default:
                 return null;
         }
@@ -528,10 +540,14 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Number("security.sessionHours", 12);
         Flag("security.requireLogin", true);
 
-        // ---- Backup ----
+        // ---- Backup (F-36) ----
         Flag("backup.autoEnabled", false);
         Number("backup.everyHours", 24);
         Number("backup.keep", 7);
+        // Bookkeeping for the daily backup: when it last ran and which file it made. Kept out of the
+        // black box (written with SetUiOnly) - the backup itself writes its own audit line.
+        Text("backup.lastRunAt", string.Empty);
+        Text("backup.lastFile", string.Empty);
 
         // ---- Cloud sync (later phase) ----
         Flag("sync.enabled", false);
