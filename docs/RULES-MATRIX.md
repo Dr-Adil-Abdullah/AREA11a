@@ -23,8 +23,8 @@ this file tracks the owner's numbered rules.
 
 - rules in the specification: **116**
 - ✅ done: **48**
-- 🟡 written / partial: **25**
-- ⬜ not started: **23**
+- 🟡 written / partial: **27**
+- ⬜ not started: **21**
 - 🔁 standing rules: **20**
 
 ## U - the owner's rules
@@ -184,7 +184,7 @@ What the original used, and what the rebuild uses instead.
 | **T-06** | Forms: react-hook-form + Zod (automatic validation). | 🟡 written / partial | validation inside services; form-level messages TODO | - | - |
 | **T-07** | Search: Fuse.js (even a wrongly spelled medicine is found). | ⬜ not started | fuzzy search (Phase 4) | - | Phase 4 |
 | **T-08** | Print: node-thermal-printer / ESC-POS (58/80 mm) + react-to-print (A4). | ⬜ not started | Phase 1 - ESC/POS instant print | - | Phase 1 |
-| **T-09** | WhatsApp: free wa.me link — no paid API (Spec §11.2.5). | ⬜ not started | Phase 3 - wa.me link | - | Phase 3 |
+| **T-09** | WhatsApp: free wa.me link — no paid API (Spec §11.2.5). | 🟡 written / partial | Reorder pad: free wa.me link with the order text (F-38) | - | Phase 3 |
 | **T-10** | Excel: SheetJS (import old data / export reports). | ⬜ not started | Phase 3 - ClosedXML | - | Phase 3 |
 | **T-11** | Live preview: dev server (0.0.0.0). | 🔁 standing rule | desktop app | - | - |
 | **T-12** | Return/go-back: Git + tags (no new engine to write). | ✅ done | git tags | - | - |
@@ -201,7 +201,7 @@ The original's five phases, mapped to this rebuild's four.
 | **M-02** | Stone 0.5 — Next.js + database + live preview running + settings skeleton (E + S from day one). | ✅ done | schema + settings + audit + login running | - | - |
 | **M-03** | Phase 1 (Core Lifeline): auto PINV stock-in + batch + expiry + supplier account; packing formula + [Box][Strip][Tablet] buttons; counter billing with barcode/search, FIFO, auto INV, discount, downward round-off; thermal receipt 58/80 + auto print + hold/park cart + cash/credit; role switcher + sales history screen. | 🟡 written / partial | Phase 1: purchases + POS written; receipt/print next | - | - |
 | **M-04** | Phase 2 — returns + smart bill lookup + provisional-return alert + float/shift/closing + owner drawing + expenses + below-cost lock. | ⬜ not started | Phase 2: returns, quarantine, alerts, write-off, stock-take | - | Phase 2 |
-| **M-05** | Phase 3 — supplier ledger + return credit note + 3-level expiry + 3-level reorder + WhatsApp web order + sample stock. | ⬜ not started | Phase 3: ledgers, reports, backup, reorder/WhatsApp | - | Phase 3 |
+| **M-05** | Phase 3 — supplier ledger + return credit note + 3-level expiry + 3-level reorder + WhatsApp web order + sample stock. | 🟡 written / partial | Phase 3: ledgers, reports, backup, Excel, reorder/WhatsApp done; stock-minus registry (F-39) next | - | Phase 3 |
 | **M-06** | Phase 4 — customer/credit limit/loyalty stars + multi-tier rates + split payment + custom fields/categories. | ⬜ not started | Phase 4: loyalty, custom fields, split payment | - | Phase 4 |
 | **M-07** | Phase 5 — black-box audit + multi-dimensional search/rack number + breakage + analytics/P&L + online-offline sync + backup. | ⬜ not started | Phase 3/4: audit viewer, stock-take, backup, sync | - | Phase 3 |
 | **M-08** | Rule: the E and S principles apply from day one — not later. | ✅ done | settings and data-driven from the first migration | - | - |

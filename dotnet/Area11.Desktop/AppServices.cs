@@ -45,6 +45,7 @@ public sealed class AppServices
         Printer = new PrinterService(Settings, Log);
         Backup = new BackupService(Database, Settings, Audit, Permissions, Log);
         Import = new ImportService(Database, Audit, Permissions, Log);
+        Reorder = new ReorderService(Database, Audit, Settings, Permissions, Log);
     }
 
     public Database Database { get; }
@@ -108,6 +109,8 @@ public sealed class AppServices
     public PrinterService Printer { get; }
 
     public BackupService Backup { get; }
+
+    public ReorderService Reorder { get; }
 
     public ImportService Import { get; }
 

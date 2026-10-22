@@ -19,7 +19,7 @@ Ported from the original Next.js + SQLite web app (`Dr-Adil-Abdullah/Area11`) us
 |---|---|---|
 | **1** | Foundation, database, sign-in, products, purchases `PINV`, counter `INV`, receipt & instant print, settings screen, **hold cart, split payment** | ✅ written and compiled; needs one real walk-through by the owner |
 | **2** | Returns `RET` / provisional `PR` / quarantine `Q`, alert centre, write-off, stock-take `ST`, khata and supplier ledgers | ✅ written (v0.3.0 - v0.3.12) |
-| **3** | Shift & galla, expenses, udhaar recovery, reports, black box, **backup ZIP**, **Excel / CSV import+export**, reorder/WhatsApp | 🟡 seven of eight (v0.4.0 - v0.9.0); **reorder + WhatsApp (F-38) is next** |
+| **3** | Shift & galla, expenses, udhaar recovery, reports, black box, **backup ZIP**, **Excel / CSV import+export**, **reorder + WhatsApp order** | 🟡 eight of nine (v0.4.0 - v0.10.0); **Phase 4 is next** |
 | **4** | Loyalty, photos & camera, custom fields, second counter, hardware test, **self-installing installer** | ⬜ not started |
 
 Live counts are in [`docs/PROGRESS.md`](docs/PROGRESS.md) (features) and
@@ -28,7 +28,7 @@ Live counts are in [`docs/PROGRESS.md`](docs/PROGRESS.md) (features) and
 **Honest note:** the agent's build machine is Linux with no .NET SDK, so nothing in `dotnet/` is
 compiled there. Every change is checked statically (C# parses, explicit usings, XAML, resources,
 every binding against its view model, every SQL statement against the real schema, every mapped
-column against its model, migrations executed on SQLite) and **360 test cases** are written for the
+column against its model, migrations executed on SQLite) and **375 test cases** are written for the
 Windows run. The Windows build has succeeded up to v0.4.8, and the owner's own runs compiled Core
 and Tests; the newest releases are tested by him with `tools\RUN-TESTS.cmd`. See
 [`docs/VERSIONS.md`](docs/VERSIONS.md) for which build he has.

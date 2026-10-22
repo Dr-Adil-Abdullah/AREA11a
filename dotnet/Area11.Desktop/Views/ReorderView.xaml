@@ -1,0 +1,234 @@
+<UserControl x:Class="Area11.Desktop.Views.ReorderView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- ================================ the heading ================================ -->
+        <DockPanel Grid.Row="0" Margin="0,0,0,10">
+            <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                <TextBlock Text="Reorder pad" Style="{StaticResource PageTitle}" />
+                <TextBlock Text="What is running out, and the WhatsApp message that orders it - one supplier per message."
+                           Style="{StaticResource PageSubtitle}" />
+            </StackPanel>
+
+            <Button DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center"
+                    Content="Refresh" Style="{StaticResource GhostButton}" Command="{Binding RefreshCommand}" />
+        </DockPanel>
+
+        <!-- ================================ banners ================================ -->
+        <StackPanel Grid.Row="1">
+            <Border Style="{StaticResource Card}" Padding="14" Margin="0,0,0,10"
+                    Visibility="{Binding IsSwitchedOff, Converter={StaticResource BoolToVis}}">
+                <TextBlock Text="The reorder list is switched off in Settings. Switch it on there to see what is running out."
+                           TextWrapping="Wrap" Foreground="{StaticResource WarningBrush}" />
+            </Border>
+
+            <Border Background="{StaticResource WarningSoftBrush}" CornerRadius="6" Padding="14,10" Margin="0,0,0,10"
+                    Visibility="{Binding HasMixedSuppliers, Converter={StaticResource BoolToVis}}">
+                <TextBlock Text="The ticked medicines belong to more than one supplier. Tick one supplier at a time - a message that mixes two agents cannot be acted on."
+                           TextWrapping="Wrap" Foreground="{StaticResource WarningBrush}" FontWeight="SemiBold" />
+            </Border>
+        </StackPanel>
+
+        <!-- ================================ the page ================================ -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="380" />
+            </Grid.ColumnDefinitions>
+
+            <!-- ============================== the list ============================== -->
+            <Border Grid.Column="0" Style="{StaticResource Card}" Padding="14">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <DockPanel Grid.Row="0" Margin="0,0,0,8">
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Content="Tick all" Style="{StaticResource GhostButton}" Margin="0,0,8,0"
+                                    Command="{Binding TickAllCommand}" />
+                            <Button Content="Untick all" Style="{StaticResource GhostButton}"
+                                    Command="{Binding UntickAllCommand}" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Supplier" VerticalAlignment="Center" Margin="0,0,8,0"
+                                       Foreground="{StaticResource MutedBrush}" />
+                            <ComboBox Width="170" ItemsSource="{Binding Suppliers}" DisplayMemberPath="Name"
+                                      SelectedItem="{Binding Supplier, Mode=TwoWay}" />
+
+                            <TextBlock Text="Show" VerticalAlignment="Center" Margin="14,0,8,0"
+                                       Foreground="{StaticResource MutedBrush}" />
+                            <ComboBox Width="130" ItemsSource="{Binding TierOptions}"
+                                      SelectedItem="{Binding Tier, Mode=TwoWay}" />
+
+                            <TextBlock Text="Find" VerticalAlignment="Center" Margin="14,0,8,0"
+                                       Foreground="{StaticResource MutedBrush}" />
+                            <TextBox Width="150" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     ToolTip="Medicine or salt" />
+                        </StackPanel>
+                    </DockPanel>
+
+                    <DockPanel Grid.Row="1" Margin="0,0,0,8">
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding ShownText}" Style="{StaticResource FieldHint}"
+                                   VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding SummaryText}" FontSize="12" TextWrapping="Wrap"
+                                   VerticalAlignment="Center" MaxWidth="520" HorizontalAlignment="Left" />
+                    </DockPanel>
+
+                    <Grid Grid.Row="2">
+                        <DataGrid ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected, Mode=TwoWay}"
+                                  IsReadOnly="True" AutoGenerateColumns="False" HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal">
+                            <DataGrid.RowStyle>
+                                <Style TargetType="DataGridRow">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Tone}" Value="low">
+                                            <Setter Property="Background" Value="{StaticResource BrandSoftBrush}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Tone}" Value="critical">
+                                            <Setter Property="Background" Value="{StaticResource WarningSoftBrush}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Tone}" Value="out">
+                                            <Setter Property="Background" Value="{StaticResource DangerSoftBrush}" />
+                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.RowStyle>
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="" Width="38">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                      HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTextColumn Header="Medicine" Binding="{Binding NameLabel}" Width="1.7*" />
+                                <DataGridTextColumn Header="Stock" Binding="{Binding StockText}" Width="90" />
+                                <DataGridTextColumn Header="Minimum" Binding="{Binding LevelText}" Width="95" />
+
+                                <DataGridTemplateColumn Header="Order" Width="80">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding OrderQtyText, UpdateSourceTrigger=PropertyChanged}"
+                                                     BorderThickness="0" Background="Transparent" Padding="0"
+                                                     VerticalAlignment="Center" ToolTip="How much to ask for, in the base unit" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTextColumn Header="Supplier" Binding="{Binding SupplierLabel}" Width="140" />
+                                <DataGridTextColumn Header="State" Binding="{Binding TierLabel}" Width="115" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <TextBlock Text="Nothing matches this filter. Widen it, or check that the reorder list is switched on in Settings."
+                                   TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   FontSize="12" Foreground="{StaticResource MutedBrush}" MaxWidth="360"
+                                   Visibility="{Binding HasNoRows, Converter={StaticResource BoolToVis}}" />
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <!-- ============================ the right side ============================ -->
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- the minimum of the chosen medicine -->
+                <Border Grid.Row="0" Style="{StaticResource Card}" Padding="14" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="Minimum quantity" Style="{StaticResource SectionTitle}" />
+                        <TextBlock Text="{Binding SelectedName}" FontSize="13" FontWeight="SemiBold"
+                                   TextWrapping="Wrap" Margin="0,6,0,0" />
+                        <TextBlock Text="{Binding SelectedHint}" Style="{StaticResource FieldHint}"
+                                   TextWrapping="Wrap" Margin="0,4,0,0" />
+
+                        <TextBlock Text="Keep at least" Style="{StaticResource FieldLabel}" Margin="0,12,0,0" />
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Content="Save minimum" Style="{StaticResource PrimaryButton}"
+                                    Margin="8,0,0,0" Command="{Binding SaveLevelCommand}" />
+                            <TextBox Text="{Binding LevelText, UpdateSourceTrigger=PropertyChanged}" Width="110"
+                                     HorizontalAlignment="Left" />
+                        </DockPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- the WhatsApp order -->
+                <Border Grid.Row="1" Style="{StaticResource Card}" Padding="14">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="WhatsApp order" Style="{StaticResource SectionTitle}" />
+
+                        <StackPanel Grid.Row="1" Margin="0,8,0,0">
+                            <TextBlock Text="Supplier mobile" Style="{StaticResource FieldHint}" />
+                            <TextBox Text="{Binding PhoneText, UpdateSourceTrigger=PropertyChanged}"
+                                     ToolTip="0300-1234567 is turned into 923001234567; leave it empty to pick a contact in WhatsApp" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="2" Margin="0,8,0,8">
+                            <TextBlock Text="Your note (optional)" Style="{StaticResource FieldHint}" />
+                            <TextBox Text="{Binding NoteText, UpdateSourceTrigger=PropertyChanged}" Height="46"
+                                     AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                        </StackPanel>
+
+                        <TextBox Grid.Row="3" Text="{Binding OrderText, Mode=OneWay}" IsReadOnly="True"
+                                 AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                                 FontFamily="Consolas" FontSize="12" Background="{StaticResource CanvasBrush}"
+                                 BorderBrush="{StaticResource LineBrush}" Padding="8" />
+
+                        <StackPanel Grid.Row="4" Margin="0,10,0,0">
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="Copy text" Style="{StaticResource GhostButton}" Margin="0,0,8,0"
+                                        Command="{Binding CopyCommand}" />
+                                <Button Content="Open WhatsApp" Style="{StaticResource PrimaryButton}"
+                                        Command="{Binding OpenWhatsAppCommand}" IsEnabled="{Binding CanSend}" />
+                            </StackPanel>
+
+                            <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap" FontSize="11.5" Margin="0,8,0,0">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsStatusError}" Value="True">
+                                                <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                                                <Setter Property="FontWeight" Value="Bold" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <!-- ================================ the footer line ================================ -->
+        <TextBlock Grid.Row="3" Margin="0,8,0,0" Style="{StaticResource FieldHint}" TextWrapping="Wrap"
+                   Text="The supplier is the one who sold the medicine last time. A minimum belongs to the medicine, so changing it here changes no rate, no cost and no pack." />
+    </Grid>
+</UserControl>

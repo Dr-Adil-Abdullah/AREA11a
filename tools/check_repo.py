@@ -68,6 +68,7 @@ VIEW_MODEL_OF = {
     "AuditView.xaml": "AuditViewModel",
     "BackupView.xaml": "BackupViewModel",
     "ImportExportView.xaml": "ImportExportViewModel",
+    "ReorderView.xaml": "ReorderViewModel",
 }
 
 

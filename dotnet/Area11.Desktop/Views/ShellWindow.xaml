@@ -83,6 +83,9 @@
         <DataTemplate DataType="{x:Type vm:ImportExportViewModel}">
             <views:ImportExportView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ReorderViewModel}">
+            <views:ReorderView />
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>

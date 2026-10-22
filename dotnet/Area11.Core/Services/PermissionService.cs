@@ -16,6 +16,7 @@ public static class Modules
     public const string Suppliers = "suppliers";
     public const string Stock = "stock";
     public const string StockTake = "stocktake";
+    public const string Reorder = "reorder";
     public const string Cash = "cash";
     public const string Reports = "reports";
     public const string Profit = "profit";
@@ -28,7 +29,7 @@ public static class Modules
 
     public static readonly string[] All =
     {
-        Pos, Sales, Returns, Customers, Products, Purchases, Suppliers, Stock, StockTake,
+        Pos, Sales, Returns, Customers, Products, Purchases, Suppliers, Stock, StockTake, Reorder,
         Cash, Reports, Profit, Audit, Import, Backup, Settings, Staff, Sync
     };
 
@@ -43,6 +44,7 @@ public static class Modules
         Suppliers => "Suppliers",
         Stock => "Stock write-off",
         StockTake => "Stock-take",
+        Reorder => "Reorder pad",
         Cash => "Cash / shifts",
         Reports => "Reports",
         Profit => "Net profit",

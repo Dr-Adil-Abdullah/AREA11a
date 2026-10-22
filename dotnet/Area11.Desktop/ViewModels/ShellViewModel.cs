@@ -204,6 +204,7 @@ public sealed class ShellViewModel : ObservableObject
         var canPurchase = permissions.Can(_user, Modules.Purchases);
         var canWriteOff = permissions.Can(_user, Modules.Stock);
         var canCount = permissions.Can(_user, Modules.StockTake);
+        var canReorder = permissions.Can(_user, Modules.Reorder);
         var canCustomers = permissions.Can(_user, Modules.Customers);
         var canSuppliers = permissions.Can(_user, Modules.Suppliers);
         var canCash = permissions.Can(_user, Modules.Cash);
@@ -233,13 +234,21 @@ public sealed class ShellViewModel : ObservableObject
         }
 
         // ---- STOCK: what is on the shelf and how it got there ----
-        if (canProducts || canPurchase || canWriteOff || canCount)
+        if (canProducts || canPurchase || canWriteOff || canCount || canReorder)
         {
             AddGroup("stock", "STOCK");
 
             if (canProducts)
             {
                 AddPage("stock", "Products", "Medicines and items", () => new ProductsViewModel(_services, _user));
+            }
+
+            if (canReorder)
+            {
+                // Right under Products: the owner opens this page when he notices a shelf is thin,
+                // and the answer he wants is the message to the supplier.
+                AddPage("stock", "Reorder pad", "What is running out, WhatsApp text",
+                    () => new ReorderViewModel(_services, _user));
             }
 
             if (canPurchase)
