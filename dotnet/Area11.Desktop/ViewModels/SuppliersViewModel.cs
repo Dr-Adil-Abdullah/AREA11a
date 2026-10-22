@@ -65,6 +65,7 @@ public sealed class SuppliersViewModel : ObservableObject
         _onChanged = onChanged;
 
         RefreshCommand = new RelayCommand(Load);
+        PhotosCommand = new RelayCommand(OpenPhotos);
         PayCommand = new RelayCommand(Pay);
         StatementCommand = new RelayCommand(PrintStatement);
         ProductSearchCommand = new RelayCommand(SearchProducts);
@@ -96,6 +97,9 @@ public sealed class SuppliersViewModel : ObservableObject
     public IReadOnlyList<string> Methods { get; } = SupplierLedgerService.PaymentMethods;
 
     public RelayCommand RefreshCommand { get; }
+
+    /// <summary>The photo gallery of the supplier on the page (F-41, D-21) - the licence, the card.</summary>
+    public RelayCommand PhotosCommand { get; }
 
     public RelayCommand PayCommand { get; }
 
@@ -756,6 +760,18 @@ public sealed class SuppliersViewModel : ObservableObject
         // The list hands back fresh objects, so Selected may not raise a change event; the page is
         // refreshed directly to be certain the new payable is on screen.
         ShowSupplier();
+    }
+
+    /// <summary>Opens the photo window for the supplier whose account is on the screen.</summary>
+    private void OpenPhotos()
+    {
+        if (Selected is null)
+        {
+            SetStatus("Choose a supplier first.", true);
+            return;
+        }
+
+        PhotoWindow.Show(_services, _user, PhotoEntity.Supplier, Selected.Id, Selected.Name);
     }
 
     private void SetStatus(string message, bool isError)

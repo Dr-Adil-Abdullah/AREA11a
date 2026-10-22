@@ -186,6 +186,12 @@
                                 Margin="0,16,0,0"
                                 Command="{Binding SaveCommand}" />
 
+                        <Button Content="Photos of this medicine…"
+                                Style="{StaticResource GhostButton}"
+                                Margin="0,8,0,0"
+                                Command="{Binding PhotosCommand}"
+                                ToolTip="Two or three pictures: the box, the strip, the rack. Nothing is deleted - a wrong one is put away." />
+
                         <Button Content="Remove selected (history kept)"
                                 Style="{StaticResource GhostButton}"
                                 Margin="0,8,0,0"

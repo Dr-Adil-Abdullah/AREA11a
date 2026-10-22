@@ -129,14 +129,15 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.12.0 (Mocha `#6B4F3A`)** - Phases 1, 2 and 3 are written (shift/galla, expenses,
+> **v0.13.0 (Deep Sea `#0C4A6E`)** - Phases 1, 2 and 3 are written (shift/galla, expenses,
 > udhaar recovery, reports, black box, backup & restore, Excel / CSV, reorder + WhatsApp, and the
-> stock-minus registry with its monthly review). Phase 4 has started: **loyalty now works from the
-> screen**, both earning and spending at the counter. The screen was rebuilt the way the owner asked (D-50): a
-> 176 px menu in five groups, one **bell** with a count badge instead of the red strip across
-> every page, **two kinds of alert** (a reminder anybody may put away, a money or stock problem
-> that is owner-only with a written reason), one **customers & suppliers** page with three tabs,
-> and the **new customer** form that had never been built. The last confirmed Windows build is
-> v0.4.8; the owner runs `tools\RUN-TESTS.cmd` (386 cases). **Next: Phase 4** - the Spec 33.2
-> gaps, loyalty, the camera, the second counter, the printer test and the installer. Details:
-> `HANDOFF.md` §4.
+> stock-minus registry with its monthly review). Phase 4 has started: **loyalty works from the
+> screen**, and **photos** now exist for medicines, customers and suppliers - copied into the shop's
+> folder, six per record, **put away instead of deleted** (migration 021), with the Windows Camera
+> app for capture. The screen was rebuilt the way the owner asked (D-50): a 176 px menu in five
+> groups, one **bell** with a count badge instead of the red strip across every page, **two kinds of
+> alert** (a reminder anybody may put away, a money or stock problem that is owner-only with a
+> written reason), one **customers & suppliers** page with three tabs, and the **new customer** form
+> that had never been built. The last confirmed Windows build is v0.4.8; the owner runs
+> `tools\RUN-TESTS.cmd` (410 cases). **Next: Phase 4** - custom fields, several barcodes, the
+> medical rep, the second counter, the printer test and the installer. Details: `HANDOFF.md` §4.

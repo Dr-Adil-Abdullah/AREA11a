@@ -47,6 +47,7 @@ public sealed class AppServices
         Import = new ImportService(Database, Audit, Permissions, Log);
         Reorder = new ReorderService(Database, Audit, Settings, Permissions, Log);
         StockMinus = new StockMinusService(Database, Audit, Permissions, Log);
+        Photos = new PhotoService(Database, Audit, Permissions, Log);
     }
 
     public Database Database { get; }
@@ -114,6 +115,8 @@ public sealed class AppServices
     public ReorderService Reorder { get; }
 
     public StockMinusService StockMinus { get; }
+
+    public PhotoService Photos { get; }
 
     public ImportService Import { get; }
 

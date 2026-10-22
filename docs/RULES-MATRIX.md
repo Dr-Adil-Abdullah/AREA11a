@@ -22,9 +22,9 @@ this file tracks the owner's numbered rules.
 ## Summary
 
 - rules in the specification: **116**
-- ✅ done: **48**
-- 🟡 written / partial: **28**
-- ⬜ not started: **20**
+- ✅ done: **50**
+- 🟡 written / partial: **27**
+- ⬜ not started: **19**
 - 🔁 standing rules: **20**
 
 ## U - the owner's rules
@@ -50,9 +50,9 @@ Product, process and the owner's direct orders.
 | **U-15** | Bring the necessary forward: a feature that belongs to a later phase but without which the shop cannot work (returns, credit collection, backup, day-end) is done earlier. | 🔁 standing rule | Phase 1 includes credit sales because the shop needs them | - | - |
 | **U-16** | The next work is given to a new/full agent with only the repository link; the questions (Q-01…Q-19) are already settled and must not be asked again. | ✅ done | AGENTS.md is the single entry point | - | - |
 | **U-18** | Category/company etc. are created where they are chosen: wherever a drop-down exists there is "＋ New" — no need to leave to another page. (5 Oct 2026) | 🟡 written / partial | `ProductService.AddCategory/AddCompany`, inline supplier in Purchases | - | - |
-| **U-19** | Photos live in a folder (data/photos/), the database stores only the file name — keeps the database light. (5 Oct 2026) | ⬜ not started | migration 015 + `photos` table ready; PhotoService missing | - | Phase 4 |
+| **U-19** | Photos live in a folder (data/photos/), the database stores only the file name — keeps the database light. (5 Oct 2026) | ✅ done | `PhotoService`: the file lives in `data/photos`, the database keeps only the name; migration 021 adds the put-away flag | PhotoTests | Phase 4 |
 | **U-20** | The basis of discount is chosen by the owner: on profit or on retail — both are built, switchable in Settings. (5 Oct 2026) | ✅ done | SaleService + `discount.mode` | SaleTests.RetailDiscount_* | - |
-| **U-21** | Medicine room/almari + camera photo: each medicine carries "where it is kept" and a photo — both. (5 Oct 2026) | 🟡 written / partial | `products.room` exists; photo capture missing | - | - |
+| **U-21** | Medicine room/almari + camera photo: each medicine carries "where it is kept" and a photo — both. (5 Oct 2026) | ✅ done | `products.room` + photos of the medicine, the customer and the supplier (F-41) | PhotoTests | - |
 | **U-22** | Filter + sort in the three big lists: medicines, customers, bills — and in the medicine list grouping (category/company/room) that can be expanded/collapsed. (5 Oct 2026) | 🟡 written / partial | `ProductService.Search` only; filters/groups TODO | - | - |
 | **U-23** | Git updated with every change: whenever the chat is closed, code + documents must both be on GitHub; "no work should be such that it cannot be updated". (5 Oct 2026) | ✅ done | every change pushed | - | - |
 | **U-24** | Remaining work one by one: finish the app first, after each item update git, and keep a readable done/remaining list inside the files. (5 Oct 2026) | ✅ done | docs/PROGRESS.md is the readable done/remaining list | - | - |
@@ -202,7 +202,7 @@ The original's five phases, mapped to this rebuild's four.
 | **M-03** | Phase 1 (Core Lifeline): auto PINV stock-in + batch + expiry + supplier account; packing formula + [Box][Strip][Tablet] buttons; counter billing with barcode/search, FIFO, auto INV, discount, downward round-off; thermal receipt 58/80 + auto print + hold/park cart + cash/credit; role switcher + sales history screen. | 🟡 written / partial | Phase 1: purchases + POS written; receipt/print next | - | - |
 | **M-04** | Phase 2 — returns + smart bill lookup + provisional-return alert + float/shift/closing + owner drawing + expenses + below-cost lock. | ⬜ not started | Phase 2: returns, quarantine, alerts, write-off, stock-take | - | Phase 2 |
 | **M-05** | Phase 3 — supplier ledger + return credit note + 3-level expiry + 3-level reorder + WhatsApp web order + sample stock. | 🟡 written / partial | Phase 3 written: ledgers, reports, backup, Excel, reorder/WhatsApp, stock-minus; the free/sample stock list remains | - | Phase 3 |
-| **M-06** | Phase 4 — customer/credit limit/loyalty stars + multi-tier rates + split payment + custom fields/categories. | 🟡 written / partial | Phase 4: loyalty done (D-57); photos/camera, custom fields and multi-barcode remain | - | Phase 4 |
+| **M-06** | Phase 4 — customer/credit limit/loyalty stars + multi-tier rates + split payment + custom fields/categories. | 🟡 written / partial | Phase 4: loyalty (D-57) and photos/camera (D-58) done; custom fields, medical rep and multi-barcode remain | - | Phase 4 |
 | **M-07** | Phase 5 — black-box audit + multi-dimensional search/rack number + breakage + analytics/P&L + online-offline sync + backup. | ⬜ not started | Phase 3/4: audit viewer, stock-take, backup, sync | - | Phase 3 |
 | **M-08** | Rule: the E and S principles apply from day one — not later. | ✅ done | settings and data-driven from the first migration | - | - |
 

@@ -70,6 +70,7 @@ VIEW_MODEL_OF = {
     "ImportExportView.xaml": "ImportExportViewModel",
     "ReorderView.xaml": "ReorderViewModel",
     "StockMinusView.xaml": "StockMinusViewModel",
+    "PhotoGalleryWindow.xaml": "PhotoGalleryViewModel",
 }
 
 

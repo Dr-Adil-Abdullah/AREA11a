@@ -50,6 +50,7 @@ public sealed class ProductsViewModel : ObservableObject
         RefreshCommand = new RelayCommand(Load);
         AddCategoryCommand = new RelayCommand(AddCategory);
         AddCompanyCommand = new RelayCommand(AddCompany);
+        PhotosCommand = new RelayCommand(OpenPhotos);
 
         LoadLookups();
         Load();
@@ -72,6 +73,9 @@ public sealed class ProductsViewModel : ObservableObject
     public RelayCommand RefreshCommand { get; }
 
     public RelayCommand AddCategoryCommand { get; }
+
+    /// <summary>The photo gallery of the selected medicine (F-41).</summary>
+    public RelayCommand PhotosCommand { get; }
 
     public RelayCommand AddCompanyCommand { get; }
 
@@ -369,6 +373,18 @@ public sealed class ProductsViewModel : ObservableObject
         Load();
         NewProduct();
         SetStatus(message, false);
+    }
+
+    /// <summary>Photo gallery for the medicine on the form. A new, unsaved medicine has no id yet.</summary>
+    private void OpenPhotos()
+    {
+        if (SelectedProduct is null || SelectedProduct.Id <= 0)
+        {
+            SetStatus("Save the medicine first, then add its photos.", true);
+            return;
+        }
+
+        PhotoWindow.Show(_services, _user, PhotoEntity.Product, SelectedProduct.Id, SelectedProduct.Name);
     }
 
     private void DeactivateSelected()

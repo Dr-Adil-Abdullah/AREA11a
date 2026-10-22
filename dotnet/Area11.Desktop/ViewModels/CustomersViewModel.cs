@@ -67,6 +67,7 @@ public sealed class CustomersViewModel : ObservableObject
         _onChanged = onChanged;
 
         RefreshCommand = new RelayCommand(Load);
+        PhotosCommand = new RelayCommand(OpenPhotos);
         CollectCommand = new RelayCommand(Collect);
         StatementCommand = new RelayCommand(PrintStatement);
         EditCommand = new RelayCommand(BeginEdit);
@@ -86,6 +87,9 @@ public sealed class CustomersViewModel : ObservableObject
     public IReadOnlyList<string> Methods { get; } = CustomerLedgerService.CollectionMethods;
 
     public RelayCommand RefreshCommand { get; }
+
+    /// <summary>The photo gallery of the customer on the page (F-41, D-21).</summary>
+    public RelayCommand PhotosCommand { get; }
 
     public RelayCommand CollectCommand { get; }
 
@@ -439,6 +443,18 @@ public sealed class CustomersViewModel : ObservableObject
         BalanceText = Money.Format(data.StoredPaisa);
         BooksMatch = data.BooksMatch;
         BooksLabel = data.BooksLabel;
+    }
+
+    /// <summary>Opens the photo window for the customer whose khata is on the screen.</summary>
+    private void OpenPhotos()
+    {
+        if (Selected is null)
+        {
+            SetStatus("Choose a customer first.", true);
+            return;
+        }
+
+        PhotoWindow.Show(_services, _user, PhotoEntity.Customer, Selected.Id, Selected.Name);
     }
 
     private void Collect()
