@@ -77,7 +77,7 @@ features and the four phases.
 | F-36 | Backup: ZIP of database + photos, daily automatic, restore, safety copy before the swap | ✅ | `Services/BackupService.cs`, `ViewModels/BackupViewModel.cs`, `Views/BackupView.xaml` | `BackupTests` 🧪 | restore on a clean PC |
 | F-37 | Import / export / bulk price change: preview first, one transaction, opening stock as a real batch, opening udhaar as the first khata line | ✅ | `Services/ImportService.cs`, `ViewModels/ImportExportViewModel.cs`, `Views/ImportExportView.xaml`, `Models/CsvReader.cs`, `Data/Migrations/020_customer_opening.sql` | `ImportTests` 🧪 | a 1,000-line file imports with a preview, and importing it twice adds nothing |
 | F-38 | Reorder levels + WhatsApp order text: three bands from one minimum, suggestion, last supplier, one supplier per message, free `wa.me` link | ✅ | `Services/ReorderService.cs`, `Models/ReorderModels.cs`, `ViewModels/ReorderViewModel.cs`, `Views/ReorderView.xaml` | `ReorderTests` 🧪 | the pad names the last supplier, the message is one supplier, and a `03xx` mobile becomes a working `wa.me` link |
-| F-39 | Stock-minus registry (monthly review) | ⬜ | - | - | - |
+| F-39 | Stock-minus registry: every shelf below zero, the movement that took it there, value at cost, and the owner's monthly review (a black-box note, never a stock change) | ✅ | `Services/StockMinusService.cs`, `Models/StockMinusModels.cs`, `ViewModels/StockMinusViewModel.cs`, `Views/StockMinusView.xaml` | `StockMinusTests` 🧪 | a shelf that came back and went minus again starts a new episode, and a review from last month does not count |
 
 ## Phase 4 - everything else
 
@@ -112,9 +112,9 @@ features and the four phases.
 
 | Check | How | State |
 |---|---|---|
-| C# parses (161 files) | `python3 tools/check_repo.py` | ✅ |
+| C# parses (166 files) | `python3 tools/check_repo.py` | ✅ |
 | Every file imports the namespaces it uses (`System.IO` … **and every type this repo declares**) | `python3 tools/check_repo.py` | ✅ |
-| Every SQL statement prepares against the real schema (182) | `python3 tools/check_repo.py` | ✅ |
+| Every SQL statement prepares against the real schema (186) | `python3 tools/check_repo.py` | ✅ |
 | XAML / csproj / props are valid XML | `python3 tools/check_repo.py` | ✅ |
 | Every XAML binding matches its view-model | `python3 tools/check_repo.py` | ✅ |
 | Every `StaticResource` key exists, in **every** XAML file | `python3 tools/check_repo.py` | ✅ |
@@ -124,13 +124,14 @@ features and the four phases.
 | Migrations 001-020 produce 33 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
 | **Compiles on Windows** | `dotnet build Area11.sln` | ✅ 20 Oct 2026 (v0.1.1); re-check after each release |
-| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.10.0 Petrol |
-| **375 tests green** | `dotnet test` (or `tools\RUN-TESTS.cmd`) | 🟡 **fourth run (v0.6.1): 320 of 321 in 27.5 s** - the only failure was a test that expected the black box to lower-case a module name; corrected in v0.6.2. **Runs five to nine (v0.6.2 321, v0.7.0 327, v0.8.0 342, v0.9.0 360, v0.10.0 375) are pending** |
+| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.11.0 Blackberry |
+| **386 tests green** | `dotnet test` (or `tools\RUN-TESTS.cmd`) | 🟡 **fourth run (v0.6.1): 320 of 321 in 27.5 s** - the only failure was a test that expected the black box to lower-case a module name; corrected in v0.6.2. **Runs five to ten (v0.6.2 321, v0.7.0 327, v0.8.0 342, v0.9.0 360, v0.10.0 375, v0.11.0 386) are pending** |
 
 ## Change log
 
 | Date | What |
 |---|---|
+| 22 Oct 2026 | **v0.11.0 Blackberry - the stock-minus registry and the monthly review (F-39).** A new page under STOCK lists every medicine whose shelf is below zero: the stock, the value at cost, **how long** it has been minus and **why** - the movement that took the running balance below zero, replayed from the stock book (`sold INV-0001`, `stock-take correction`, `sent back to the supplier`). A shelf that came back above zero and went minus again starts a **new episode**, so last month's note never makes this month's problem look seen. The owner writes what he found (three letters at least) and presses **Mark reviewed**: one permanent line in the black box with his name and the stock at that moment. **A review changes no stock** (D-56) - a minus is corrected by a stock-take, a return or a write-off, and the page says so out loud. Phase 3 is complete. 11 new test cases. 386 tests. |
 | 22 Oct 2026 | **v0.10.0 Petrol - the reorder pad and the WhatsApp order (F-38).** One page under STOCK says what is running out and writes the message that orders it. The three bands - out of stock, at the minimum, within half of it again - are read from the **one** minimum each medicine already carries, so no second scale can drift (D-55). The suggestion fills the shelf to twice the minimum and the owner can type any quantity. The supplier is **whoever sold that medicine last**; a medicine never bought says "no supplier yet" rather than guessing, and ticking two agents closes the send button. The text is plain English, one numbered line per medicine, quantities written the way a supplier reads them (**1 box + 1 strip + 5 tablet**), with an optional note. **Copy** and **Open WhatsApp** use a free `wa.me` link - a `0300-1234567` mobile becomes `923001234567`, and no number still opens WhatsApp to pick a contact. Saving a minimum moves that one column only and writes old -> new in the black box; the permission is `reorder` (owner and manager, never the cashier). 15 new test cases. 375 tests. |
 | 22 Oct 2026 | **v0.9.0 Rosewood - Excel / CSV import, export and a bulk price change (F-37).** A file is read and shown line by line and **nothing is written** until Import is pressed; **one bad line stops the whole file**. A duplicate is skipped, never overwritten, so importing the same file twice adds nothing. Opening stock becomes a **real batch with an expiry and an `import` movement**. **Migration 020** gives customers the `opening_balance_paisa` that suppliers already had, so imported **udhaar** is the first line of the khata and the running total starts there - "Books match" is true on day one. Export writes medicines/customers/suppliers as UTF-8 CSV. Prices change by percent or rupees, previewed first, and every row that would sell below cost is refused. Files are CSV by decision (D-53): no new package in the shop's build. 18 new tests. 360 tests. |
 | 22 Oct 2026 | **v0.8.0 Violet - backup and restore (F-36), one zip for the whole shop.** The database copy is taken by **SQLite itself** (`VACUUM INTO`) while people keep billing; the zip holds `area11.db`, `photos/...` and a readable manifest. **Automatic backup** every N hours at the first sign-in of the day, keeping the last N - and **only the program's own files are trimmed**: the owner's own backups are never deleted. **Restore** checks the file first (`quick_check` + products/sales/_migrations), writes **`area11-before-restore-<stamp>.db`** before touching anything, deletes the old `-wal`/`-shm` sidecars (a stale WAL would replay into the restored file), and then the program **starts itself again**: open pages hold numbers from a file that no longer exists. `.db` files restore too, so an older backup still works. Owner-only by default. 15 new test cases (11 facts + 4 guard rows). 342 tests. |

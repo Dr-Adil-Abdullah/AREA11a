@@ -259,6 +259,11 @@ public sealed class ShellViewModel : ObservableObject
             if (canWriteOff)
             {
                 AddPage("stock", "Write-off", "Expired, broken, lost", () => new WriteOffViewModel(_services, _user));
+
+                // The other side of the same coin: the shelves that are below zero and the owner's
+                // monthly look at them (F-39).
+                AddPage("stock", "Stock minus", "Below zero, monthly review",
+                    () => new StockMinusViewModel(_services, _user));
             }
 
             if (canCount)
