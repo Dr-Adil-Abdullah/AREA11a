@@ -222,6 +222,9 @@ public sealed class ShellViewModel : ObservableObject
         // the owner grants one person at a time (F-48, D-66).
         var canSync = _services.Cloud.CanSync(_user);
 
+        // Sample data writes demo money into every page, so it is the owner's alone (F-53, D-69).
+        var canSample = _services.SampleShop.CanSeed(_user);
+
         NavItems.Add(new NavItem("Dashboard", "Today at a glance", () => new DashboardViewModel(_services)));
 
         // ---- SELL: the counter and what comes back from it ----
@@ -328,7 +331,7 @@ public sealed class ShellViewModel : ObservableObject
         }
 
         // ---- SYSTEM: the shop's own settings, its memory and its safety net ----
-        if (canAudit || canBackup || canImport || canSettings || canLan || canSync)
+        if (canAudit || canBackup || canImport || canSettings || canLan || canSync || canSample)
         {
             AddGroup("system", "SYSTEM");
 
@@ -377,6 +380,14 @@ public sealed class ShellViewModel : ObservableObject
                     () => new HardwareViewModel(_services, _user));
 
                 AddPage("system", "Settings", "Shop, printing, staff", CreateSettingsPage);
+            }
+
+            if (canSample)
+            {
+                // Last in SYSTEM and named for what it is: the page a brand-new shop opens once, and
+                // then never needs again.
+                AddPage("system", "Sample shop", "Demo data for a new shop",
+                    () => new SampleShopViewModel(_services, _user));
             }
         }
 

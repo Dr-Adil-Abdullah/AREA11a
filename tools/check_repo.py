@@ -80,6 +80,7 @@ VIEW_MODEL_OF = {
     "HardwareView.xaml": "HardwareViewModel",
     "CloudSyncView.xaml": "CloudSyncViewModel",
     "SaleHistoryView.xaml": "SaleHistoryViewModel",
+    "SampleShopView.xaml": "SampleShopViewModel",
 }
 
 

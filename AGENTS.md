@@ -129,7 +129,7 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.22.1 (Cinnabar `#A63A2B`)** - all four phases are written: Phase 1-3 in full (billing, returns,
+> **v0.23.0 (Basil `#2F6B4F`)** - all four phases are written: Phase 1-3 in full (billing, returns,
 > purchase, khata, supplier ledger, shift/galla, expenses, reports, black box, backup & restore,
 > Excel / CSV, reorder + WhatsApp, stock-minus registry), and Phase 4 has **all 12 of its features**:
 > loyalty from the screen, photos for medicines / customers / suppliers (copied into the shop's
@@ -142,7 +142,11 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >
 > The last confirmed Windows build is v0.4.8; everything from v0.6.2 on is proved only by
 > `tools/check_repo.py` until the owner runs `START-AREA11.bat` and `tools\\RUN-TESTS.cmd`
-> (**559 cases**).
+> (**577 cases**).
+>
+> **v0.23.0 adds the sample shop (F-53).** SYSTEM -> *Sample shop* fills a new database with 20 medicines,
+> 12 companies, 4 suppliers, 8 customers, 4 purchases, 12 bills, 2 returns, khata, expenses, a shift, a
+> stock-take and a held cart in ONE transaction - refusing any shop that already has a bill.
 >
 > **v0.22.1 fixes the printer (code 6) and the two red tests.** SYSTEM -> *Printer & scanner* lists
 > every printer Windows knows and saves the choice at once; an empty name now resolves the default

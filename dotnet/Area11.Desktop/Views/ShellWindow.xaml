@@ -110,6 +110,9 @@
         <DataTemplate DataType="{x:Type vm:SaleHistoryViewModel}">
             <views:SaleHistoryView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:SampleShopViewModel}">
+            <views:SampleShopView />
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>
