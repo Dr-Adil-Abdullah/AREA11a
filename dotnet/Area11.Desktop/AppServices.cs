@@ -57,6 +57,9 @@ public sealed class AppServices
         Barcodes = new BarcodeService(Database, Audit, Permissions, Log);
         Reps = new RepService(Database, Audit, Permissions, Log);
         Hardware = new HardwareService(Settings, Audit, Permissions, Log);
+        // The one service that talks to the internet. Its rules are in Core; the wire is a
+        // replaceable piece so every test runs without a network (F-48).
+        Cloud = new SyncService(Database, Settings, Audit, Permissions, Log, Backup, new SupabaseTransport());
         Lan = new LanService(Database, Audit, Log, Config);
     }
 
@@ -123,6 +126,9 @@ public sealed class AppServices
 
     /// <summary>The printer and scanner test the owner runs on his own PC (F-46).</summary>
     public HardwareService Hardware { get; }
+
+    /// <summary>The Supabase mirror: push, look, bring (F-48).</summary>
+    public SyncService Cloud { get; }
 
     public AuditHistoryService AuditHistory { get; }
 

@@ -79,7 +79,10 @@ public sealed class PermissionService
     public static bool RoleDefault(UserRole role, string module) => role switch
     {
         UserRole.Owner => true,
-        UserRole.Manager => module is not (Modules.Profit or Modules.Audit or Modules.Backup or Modules.Staff),
+        // Cloud sync moves the whole shop out of the building, so a manager does not get it by
+        // default - the owner ticks it for one person on purpose (F-48, D-66).
+        UserRole.Manager => module is not (Modules.Profit or Modules.Audit or Modules.Backup
+            or Modules.Staff or Modules.Sync),
         UserRole.Salesman => module is Modules.Pos or Modules.Sales or Modules.Returns
             or Modules.Customers or Modules.Products,
         _ => module is Modules.Pos or Modules.Returns or Modules.Customers

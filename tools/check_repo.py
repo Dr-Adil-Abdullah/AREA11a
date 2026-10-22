@@ -78,6 +78,7 @@ VIEW_MODEL_OF = {
     "LanView.xaml": "LanViewModel",
     "TaxView.xaml": "TaxViewModel",
     "HardwareView.xaml": "HardwareViewModel",
+    "CloudSyncView.xaml": "CloudSyncViewModel",
 }
 
 

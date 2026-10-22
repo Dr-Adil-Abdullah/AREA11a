@@ -84,4 +84,11 @@ public static class Clock
     public static string Today() => DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
     public static string MonthKey() => DateTime.Now.ToString("yyyy-MM", CultureInfo.InvariantCulture);
+
+    /// <summary>
+    /// The date <paramref name="days"/> days ago, as SQLite stores it - the cut for the 90 days of bills
+    /// that travel to the cloud (F-48, Spec 25.5). Date only, so the first day is included whole.
+    /// </summary>
+    public static string DateDaysAgo(int days) =>
+        DateTime.Now.AddDays(-Math.Abs(days)).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 }

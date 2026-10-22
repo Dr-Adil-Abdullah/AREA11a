@@ -61,6 +61,12 @@ https://github.com/Dr-Adil-Abdullah/AREA11a/archive/refs/heads/arena/a8a3b2e0-ar
 
 ---
 
+## کلاؤڈ سنک (اختیاری)
+
+اگر آپ گھر سے دکان کے نمبر دیکھنا چاہیں تو **SYSTEM → Cloud sync** — پہلے
+[CLOUD-SYNC.md](CLOUD-SYNC.md) کے چار قدم (Supabase میں ایک SQL، پھر URL اور key)۔ روزمرہ میں صرف
+**Push**؛ "Bring" صرف نئی مشین پر پرانا ڈیٹا لانے کے لیے۔
+
 ## اگر آپ Git سے اپ ڈیٹ کرنا چاہیں (ایتھر ڈویلپر کے لیے)
 
 پہلے Visual Studio **بند** کریں، پھر `D:\areaa` میں `.vs`، `Area11.WPF`، `WPFSample` اور

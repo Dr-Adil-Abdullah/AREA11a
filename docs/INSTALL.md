@@ -102,6 +102,14 @@ After the first install, open **SYSTEM -> Printer & scanner** once and let the o
 
 Changing the paper width later marks the old ticks stale - print the slip and tick it again.
 
+## Cloud sync (optional, F-48)
+
+The shop works without it. If the owner wants a copy he can look at from home, follow
+[`CLOUD-SYNC.md`](CLOUD-SYNC.md): one SQL block in a free Supabase project, four settings in
+Area11, then **SYSTEM -> Cloud sync**. **Push** only reads this computer; **See what the cloud
+has** writes nothing at all; **Bring the cloud data here** needs a tick and takes a backup first,
+and it never deletes a row this computer already has.
+
 ## Updating
 
 1. On the build PC: pull the code and run `tools\MAKE-INSTALLER.cmd` again (the colour of the version

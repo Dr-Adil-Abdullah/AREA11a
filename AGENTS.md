@@ -129,24 +129,25 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.20.0 (Pebble `#57534E`)** - all four phases are written: Phase 1-3 in full (billing, returns,
+> **v0.21.0 (Ochre `#8F6400`)** - all four phases are written: Phase 1-3 in full (billing, returns,
 > purchase, khata, supplier ledger, shift/galla, expenses, reports, black box, backup & restore,
 > Excel / CSV, reorder + WhatsApp, stock-minus registry), and Phase 4 has **9 of its 12 features**:
 > loyalty from the screen, photos for medicines / customers / suppliers (copied into the shop's
 > folder, **put away instead of deleted**), the owner's **own fields**, **several barcodes per
 > medicine** (migration 022), **medical reps + doctors + lifetime profit** (migration 023), the
 > **second counter** over the shop's own share (D-62), the **tax report + `PAY-` slip + monthly
-> statement** (D-63) and now the **installer** (F-47, D-64): a self-contained build, one double-click,
-> desktop and Start-menu icons, an *Add or remove programs* entry with a real uninstaller, and a shop
-> folder (`C:\\ProgramData\\Area11`) that **no update and no uninstall ever touches**.
+> statement** (D-63), the **installer** (F-47, D-64), the **printer & scanner test** (F-46, D-65) and
+> now **cloud sync** (F-48, D-66): a push to Supabase, a preview that writes nothing, and a pull that
+> takes a backup first, writes one transaction and never deletes a row.
 >
 > The last confirmed Windows build is v0.4.8; everything from v0.6.2 on is proved only by
 > `tools/check_repo.py` until the owner runs `START-AREA11.bat` and `tools\\RUN-TESTS.cmd`
-> (**519 cases**).
+> (**539 cases**).
 >
-> **v0.20.0 adds the hardware test (F-46).** SYSTEM -> *Printer & scanner* prints a slip whose ruler
-> fills the line exactly (32 characters on 58 mm, 48 on 80 mm), proves a USB scan through the
-> counter's own `BarcodeService.Find`, and keeps the owner's six ticks with the date, the person and
-> the paper width; a missing tick needs one line of reason, and changing the paper marks the old
-> ticks stale. **Next:** Supabase sync (F-48), then the misspelt-medicine search (F-50).
+> **v0.21.0 adds cloud sync (F-48).** SYSTEM -> *Cloud sync* pushes the shop's own data to a Supabase
+> mirror (lists whole, money for the last 90 days, no photos). *See what the cloud has* reads the
+> copy and writes **nothing**; *Bring the cloud data here* needs a tick, takes a **backup**, writes
+> every row in **one transaction**, never deletes, and ignores tables or columns this database does
+> not have. Managers do not get the permission by default. **Next:** the misspelt-medicine search
+> (F-50), and the owner's own run of the printer slip at the shop (F-46).
 > Details: `HANDOFF.md` §4.

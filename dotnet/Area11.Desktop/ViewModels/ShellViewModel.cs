@@ -217,6 +217,10 @@ public sealed class ShellViewModel : ObservableObject
         // Moving the shop's database changes every counter at once, so only the owner sees it (F-45).
         var canLan = _user.IsOwner;
 
+        // Cloud sync copies the whole shop out of the building: it follows the Sync permission, which
+        // the owner grants one person at a time (F-48, D-66).
+        var canSync = _services.Cloud.CanSync(_user);
+
         NavItems.Add(new NavItem("Dashboard", "Today at a glance", () => new DashboardViewModel(_services)));
 
         // ---- SELL: the counter and what comes back from it ----
@@ -316,7 +320,7 @@ public sealed class ShellViewModel : ObservableObject
         }
 
         // ---- SYSTEM: the shop's own settings, its memory and its safety net ----
-        if (canAudit || canBackup || canImport || canSettings || canLan)
+        if (canAudit || canBackup || canImport || canSettings || canLan || canSync)
         {
             AddGroup("system", "SYSTEM");
 
@@ -344,6 +348,13 @@ public sealed class ShellViewModel : ObservableObject
             {
                 AddPage("system", "Second counter (LAN)", "Two PCs, one database",
                     () => new LanViewModel(_services, _user));
+            }
+
+            if (canSync)
+            {
+                // Beside the second counter: both are about the shop's data leaving this PC, and both
+                // are the owner's decision alone (F-48).
+                AddPage("system", "Cloud sync", "A copy at home", () => new CloudSyncViewModel(_services, _user));
             }
 
             if (canSettings)
