@@ -107,6 +107,9 @@
         <DataTemplate DataType="{x:Type vm:CloudSyncViewModel}">
             <views:CloudSyncView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:SaleHistoryViewModel}">
+            <views:SaleHistoryView />
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>

@@ -129,7 +129,7 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.21.0 (Ochre `#8F6400`)** - all four phases are written: Phase 1-3 in full (billing, returns,
+> **v0.22.0 (Harbour `#3B5C7F`)** - all four phases are written: Phase 1-3 in full (billing, returns,
 > purchase, khata, supplier ledger, shift/galla, expenses, reports, black box, backup & restore,
 > Excel / CSV, reorder + WhatsApp, stock-minus registry), and Phase 4 has **9 of its 12 features**:
 > loyalty from the screen, photos for medicines / customers / suppliers (copied into the shop's
@@ -137,17 +137,18 @@ tests through the public service methods and a real bill in `TestDatabase`.
 > medicine** (migration 022), **medical reps + doctors + lifetime profit** (migration 023), the
 > **second counter** over the shop's own share (D-62), the **tax report + `PAY-` slip + monthly
 > statement** (D-63), the **installer** (F-47, D-64), the **printer & scanner test** (F-46, D-65) and
-> now **cloud sync** (F-48, D-66): a push to Supabase, a preview that writes nothing, and a pull that
-> takes a backup first, writes one transaction and never deletes a row.
+> **cloud sync** (F-48, D-66) and the **bills page** (F-52, D-67): find any bill by number, customer
+> or date, open its lines and returns, and print it again with the same builder that printed it - the
+> paper is previewed first and every reprint is one line in the black box.
 >
 > The last confirmed Windows build is v0.4.8; everything from v0.6.2 on is proved only by
 > `tools/check_repo.py` until the owner runs `START-AREA11.bat` and `tools\\RUN-TESTS.cmd`
-> (**539 cases**).
+> (**553 cases**).
 >
-> **v0.21.0 adds cloud sync (F-48).** SYSTEM -> *Cloud sync* pushes the shop's own data to a Supabase
+> **v0.22.0 adds the bills page (F-52).** SYSTEM -> *Cloud sync* pushes the shop's own data to a Supabase
 > mirror (lists whole, money for the last 90 days, no photos). *See what the cloud has* reads the
 > copy and writes **nothing**; *Bring the cloud data here* needs a tick, takes a **backup**, writes
 > every row in **one transaction**, never deletes, and ignores tables or columns this database does
-> not have. Managers do not get the permission by default. **Next:** the misspelt-medicine search
-> (F-50), and the owner's own run of the printer slip at the shop (F-46).
+> **Next:** the misspelt-medicine search (F-50), and the owner's own run of the printer slip at the
+> shop (F-46).
 > Details: `HANDOFF.md` §4.

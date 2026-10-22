@@ -199,6 +199,7 @@ public sealed class ShellViewModel : ObservableObject
         var permissions = _services.Permissions;
 
         var canSell = permissions.Can(_user, Modules.Pos);
+        var canBills = permissions.Can(_user, Modules.Sales);
         var canReturn = permissions.Can(_user, Modules.Returns);
         var canProducts = permissions.Can(_user, Modules.Products);
         var canPurchase = permissions.Can(_user, Modules.Purchases);
@@ -224,13 +225,20 @@ public sealed class ShellViewModel : ObservableObject
         NavItems.Add(new NavItem("Dashboard", "Today at a glance", () => new DashboardViewModel(_services)));
 
         // ---- SELL: the counter and what comes back from it ----
-        if (canSell || canReturn)
+        if (canSell || canReturn || canBills)
         {
             AddGroup("sell", "SELL");
 
             if (canSell)
             {
                 AddPage("sell", "Counter (POS)", "Make a bill", () => new PosViewModel(_services, _user));
+            }
+
+            if (canBills)
+            {
+                // Beside the counter: the same bills, seen after the customer has gone home - and the
+                // only place a copy can be printed (F-52).
+                AddPage("sell", "Bills", "Find one, print it again", () => new SaleHistoryViewModel(_services, _user));
             }
 
             if (canReturn)

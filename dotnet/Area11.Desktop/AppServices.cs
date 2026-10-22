@@ -60,6 +60,8 @@ public sealed class AppServices
         // The one service that talks to the internet. Its rules are in Core; the wire is a
         // replaceable piece so every test runs without a network (F-48).
         Cloud = new SyncService(Database, Settings, Audit, Permissions, Log, Backup, new SupabaseTransport());
+        // The bill history and its reprint: the same ReceiptService that printed the original (F-52).
+        History = new SaleHistoryService(Database, Receipts, ReturnReceipts, Audit, Permissions, Log);
         Lan = new LanService(Database, Audit, Log, Config);
     }
 
@@ -129,6 +131,9 @@ public sealed class AppServices
 
     /// <summary>The Supabase mirror: push, look, bring (F-48).</summary>
     public SyncService Cloud { get; }
+
+    /// <summary>Find any bill and print it again (F-52).</summary>
+    public SaleHistoryService History { get; }
 
     public AuditHistoryService AuditHistory { get; }
 
