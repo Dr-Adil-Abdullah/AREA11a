@@ -30,6 +30,7 @@ public sealed class SettingsViewModel : ObservableObject
     private string _storePhone = string.Empty;
     private string _footerNote = string.Empty;
     private string _appName = string.Empty;
+    private bool _menuPinnedOpen;
 
     private string _printerName = string.Empty;
     private PaperOption? _selectedPaper;
@@ -143,6 +144,16 @@ public sealed class SettingsViewModel : ObservableObject
     {
         get => _footerNote;
         set => SetProperty(ref _footerNote, value);
+    }
+
+    /// <summary>
+    /// The owner's tick (D-51): every menu group stays open and the headings stop folding. A cashier
+    /// who keeps the whole menu in use sets this once and never thinks about it again.
+    /// </summary>
+    public bool MenuPinnedOpen
+    {
+        get => _menuPinnedOpen;
+        set => SetProperty(ref _menuPinnedOpen, value);
     }
 
     public string AppName
@@ -329,6 +340,7 @@ public sealed class SettingsViewModel : ObservableObject
         StorePhone = settings.GetString("store.phone");
         FooterNote = settings.GetString("store.footerNote");
         AppName = settings.GetString("brand.appName");
+        MenuPinnedOpen = settings.GetBool("menu.pinnedOpen");
 
         PrinterName = settings.GetString("printer.name");
         AutoPrint = settings.GetBool("printer.autoPrint", true);
@@ -515,6 +527,7 @@ public sealed class SettingsViewModel : ObservableObject
             ["store.phone"] = StorePhone.Trim(),
             ["store.footerNote"] = FooterNote.Trim(),
             ["brand.appName"] = AppName.Trim().Length == 0 ? "Area11" : AppName.Trim(),
+            ["menu.pinnedOpen"] = MenuPinnedOpen,
 
             ["printer.name"] = PrinterName.Trim(),
             ["printer.width"] = paper.Width,

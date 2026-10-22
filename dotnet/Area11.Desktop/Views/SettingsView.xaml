@@ -69,6 +69,20 @@
 
                         <Border Style="{StaticResource SettingsGroup}">
                             <StackPanel>
+                                <TextBlock Text="Left menu" Style="{StaticResource SectionTitle}" />
+                                <TextBlock Text="Each heading in the left bar (SELL, STOCK ...) can be folded with one click."
+                                           Style="{StaticResource FieldHint}" />
+
+                                <CheckBox Content="Keep every group open (no folding)"
+                                          IsChecked="{Binding MenuPinnedOpen, Mode=TwoWay}"
+                                          Margin="0,10,0,0" />
+                                <TextBlock Text="Tick this and the headings stop folding; every page is always on the screen. Leave it off and each group comes back the way you left it."
+                                           Style="{StaticResource FieldHint}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel>
                                 <TextBlock Text="Receipt content" Style="{StaticResource SectionTitle}" />
 
                                 <CheckBox Content="Show the discount line on the receipt"

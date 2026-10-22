@@ -6,36 +6,40 @@ using Area11.Core.Services;
 namespace Area11.Desktop.ViewModels;
 
 /// <summary>
-/// The window frame: menu on the left, current page on the right.
+/// The window frame (D-51): a **46-pixel bar across the top** and a 176-pixel menu on the left.
 ///
-/// The shape the owner asked for (D-50):
-///   • the menu is **short** - one line per page, grouped under small headings, and **Customers and
-///     Suppliers are one entry** with three tabs because they are the two sides of the same book;
-///   • the **bell at the top** is the only alert light now. It shows how many alerts are live and
-///     opens them in a small panel: what needs the owner, and what anybody may put away;
-///   • clicking the **shop name** opens Settings; clicking the **person's name** opens the staff
-///     settings (who may do what), because that is where a person's question is answered.
+/// The bar carries exactly three things, because the owner counted the cost of every extra pixel:
+///   • **Area11, small**, top left - a mark, not a title; a click goes back to the Dashboard;
+///   • the **shop name in the centre** - a click opens Settings, Shop tab;
+///   • the **bell beside it** - the live count and the only door to the alerts page.
+///
+/// Everything else moved down into the left bar: the **signed-in person** (photo, name, role) at the
+/// bottom with their own menu (settings, sign out), and the menu itself, grouped under five headings.
+/// Each heading is a fold: one click puts its pages away and the choice is remembered next morning.
 ///
 /// The menu is built from the permissions of the signed-in person, but hiding a menu is never the
 /// security - every service checks the permission again (Spec 7.2.5).
+///
+/// Folding hides rows; it never removes a page, a permission or the page already on the screen.
 /// </summary>
 public sealed class ShellViewModel : ObservableObject
 {
     private readonly AppServices _services;
     private readonly User _user;
+    private readonly List<NavGroup> _groups = new();
+
     private NavItem? _selectedNav;
     private ObservableObject? _currentViewModel;
     private string _storeName = string.Empty;
     private string _appName = string.Empty;
     private SettingsViewModel? _settingsPage;
     private AlertsViewModel? _alertsPage;
-    private bool _alertsOpen;
+    private bool _isShowingAlerts;
+    private bool _userMenuOpen;
+    private bool _menuPinned;
     private bool _hasBellAlerts;
     private string _bellBadgeText = string.Empty;
     private string _bellSummaryText = "Nothing needs attention.";
-    private bool _hasSerious;
-    private bool _hasLight;
-    private bool _hasNoAlerts = true;
 
     public ShellViewModel(AppServices services, User user)
     {
@@ -48,9 +52,11 @@ public sealed class ShellViewModel : ObservableObject
         LogoutCommand = new RelayCommand(Logout);
         OpenSettingsCommand = new RelayCommand(() => ShowSettings(0));
         OpenOwnerSettingsCommand = new RelayCommand(() => ShowSettings(3));
-        OpenAlertsBoardCommand = new RelayCommand(OpenAlertsBoard);
-        CloseAlertsCommand = new RelayCommand(() => AlertsOpen = false);
-        DismissLightCommand = new RelayCommand<AlertItem>(CloseReminder);
+        OpenAlertsCommand = new RelayCommand(ShowAlerts);
+        GoHomeCommand = new RelayCommand(GoHome);
+        ToggleGroupCommand = new RelayCommand<NavItem>(ToggleGroup);
+        OpenUserMenuCommand = new RelayCommand(() => UserMenuOpen = true);
+        CloseUserMenuCommand = new RelayCommand(() => UserMenuOpen = false);
 
         BuildNavigation();
         RefreshAlerts();
@@ -61,41 +67,40 @@ public sealed class ShellViewModel : ObservableObject
 
     public ObservableCollection<NavItem> NavItems { get; } = new();
 
-    /// <summary>What the bell panel shows under "Needs the owner".</summary>
-    public ObservableCollection<AlertItem> SeriousAlerts { get; } = new();
-
-    /// <summary>What the bell panel shows under "Anyone can close this".</summary>
-    public ObservableCollection<AlertItem> LightAlerts { get; } = new();
-
     public RelayCommand LogoutCommand { get; }
 
     public RelayCommand OpenSettingsCommand { get; }
 
     public RelayCommand OpenOwnerSettingsCommand { get; }
 
-    public RelayCommand OpenAlertsBoardCommand { get; }
+    /// <summary>The bell: it opens the alerts PAGE, not a side panel (D-51).</summary>
+    public RelayCommand OpenAlertsCommand { get; }
 
-    public RelayCommand CloseAlertsCommand { get; }
+    /// <summary>The small logo: back to the dashboard from anywhere.</summary>
+    public RelayCommand GoHomeCommand { get; }
 
-    /// <summary>Takes the clicked reminder as its parameter.</summary>
-    public ICommand DismissLightCommand { get; }
+    /// <summary>Takes the clicked heading as its parameter and puts its pages away or back.</summary>
+    public ICommand ToggleGroupCommand { get; }
 
-    /// <summary>The bell panel is open. Setting it true re-reads the board first, so it is never stale.</summary>
-    public bool AlertsOpen
+    public RelayCommand OpenUserMenuCommand { get; }
+
+    public RelayCommand CloseUserMenuCommand { get; }
+
+    /// <summary>True while the alerts page is on the screen; it lights the bell up.</summary>
+    public bool IsShowingAlerts
     {
-        get => _alertsOpen;
-        set
-        {
-            if (value)
-            {
-                RefreshAlerts();
-            }
-
-            SetProperty(ref _alertsOpen, value);
-        }
+        get => _isShowingAlerts;
+        private set => SetProperty(ref _isShowingAlerts, value);
     }
 
-    /// <summary>True = draw the red badge on the bell.</summary>
+    /// <summary>True while the small "me" menu (settings / sign out) is open.</summary>
+    public bool UserMenuOpen
+    {
+        get => _userMenuOpen;
+        set => SetProperty(ref _userMenuOpen, value);
+    }
+
+    /// <summary>True = draw the count badge on the bell.</summary>
     public bool HasBellAlerts
     {
         get => _hasBellAlerts;
@@ -114,25 +119,6 @@ public sealed class ShellViewModel : ObservableObject
     {
         get => _bellSummaryText;
         private set => SetProperty(ref _bellSummaryText, value);
-    }
-
-    public bool HasSeriousAlerts
-    {
-        get => _hasSerious;
-        private set => SetProperty(ref _hasSerious, value);
-    }
-
-    public bool HasLightAlerts
-    {
-        get => _hasLight;
-        private set => SetProperty(ref _hasLight, value);
-    }
-
-    /// <summary>Drives the "Nothing needs attention" line, so the panel is never just empty air.</summary>
-    public bool HasNoAlerts
-    {
-        get => _hasNoAlerts;
-        private set => SetProperty(ref _hasNoAlerts, value);
     }
 
     public string StoreName
@@ -155,12 +141,24 @@ public sealed class ShellViewModel : ObservableObject
         ? "A"
         : _user.Name.Trim()[..1].ToUpperInvariant();
 
+    /// <summary>
+    /// True when this person may open Settings at all - the shop's page or the staff page. The two
+    /// entries that lead there are disabled otherwise, so nobody is offered a click that does
+    /// nothing.
+    /// </summary>
+    public bool CanOpenSettings =>
+        _services.Permissions.Can(_user, Modules.Settings)
+        || _services.Permissions.Can(_user, Modules.Staff);
+
+    /// <summary>False while the owner has ticked "keep every group open" in Settings (D-51).</summary>
+    public bool CanFoldMenu => !_menuPinned;
+
     public NavItem? SelectedNav
     {
         get => _selectedNav;
         set
         {
-            // A heading is not a page: clicking near it must not blank the screen.
+            // A heading is not a page: its row toggles the fold instead of opening anything.
             if (value is { IsHeader: true })
             {
                 return;
@@ -171,6 +169,7 @@ public sealed class ShellViewModel : ObservableObject
                 return;
             }
 
+            IsShowingAlerts = false;
             CurrentViewModel = value?.Resolve();
 
             // Move around the app and the bell refreshes itself; no timer, no background thread.
@@ -213,98 +212,190 @@ public sealed class ShellViewModel : ObservableObject
         // ---- SELL: the counter and what comes back from it ----
         if (canSell || canReturn)
         {
-            AddGroup("SELL");
-        }
+            AddGroup("sell", "SELL");
 
-        if (canSell)
-        {
-            NavItems.Add(new NavItem("Counter (POS)", "Make a bill", () => new PosViewModel(_services, _user)));
-        }
+            if (canSell)
+            {
+                AddPage("sell", "Counter (POS)", "Make a bill", () => new PosViewModel(_services, _user));
+            }
 
-        if (canReturn)
-        {
-            NavItems.Add(new NavItem("Returns", "Money back, quarantine", () => new ReturnsViewModel(_services, _user)));
-            NavItems.Add(new NavItem("No bill (PR)", "Rush return, bill later", () => new ProvisionalViewModel(_services, _user)));
+            if (canReturn)
+            {
+                AddPage("sell", "Returns", "Money back, quarantine", () => new ReturnsViewModel(_services, _user));
+                AddPage("sell", "No bill (PR)", "Rush return, bill later", () => new ProvisionalViewModel(_services, _user));
+            }
         }
 
         // ---- STOCK: what is on the shelf and how it got there ----
         if (canProducts || canPurchase || canWriteOff || canCount)
         {
-            AddGroup("STOCK");
-        }
+            AddGroup("stock", "STOCK");
 
-        if (canProducts)
-        {
-            NavItems.Add(new NavItem("Products", "Medicines and items", () => new ProductsViewModel(_services, _user)));
-        }
+            if (canProducts)
+            {
+                AddPage("stock", "Products", "Medicines and items", () => new ProductsViewModel(_services, _user));
+            }
 
-        if (canPurchase)
-        {
-            NavItems.Add(new NavItem("Purchases", "Stock-in (PINV)", () => new PurchasesViewModel(_services, _user)));
-        }
+            if (canPurchase)
+            {
+                AddPage("stock", "Purchases", "Stock-in (PINV)", () => new PurchasesViewModel(_services, _user));
+            }
 
-        if (canWriteOff)
-        {
-            NavItems.Add(new NavItem("Write-off", "Expired, broken, lost", () => new WriteOffViewModel(_services, _user)));
-        }
+            if (canWriteOff)
+            {
+                AddPage("stock", "Write-off", "Expired, broken, lost", () => new WriteOffViewModel(_services, _user));
+            }
 
-        if (canCount)
-        {
-            NavItems.Add(new NavItem("Stock-take", "Count the shelves", () => new StockTakeViewModel(_services, _user)));
+            if (canCount)
+            {
+                AddPage("stock", "Stock-take", "Count the shelves", () => new StockTakeViewModel(_services, _user));
+            }
         }
 
         // ---- PEOPLE: one entry, three tabs - the owner's grouping (D-50) ----
         if (canCustomers || canSuppliers)
         {
-            AddGroup("CUSTOMERS & SUPPLIERS");
+            AddGroup("people", "CUSTOMERS & SUPPLIERS");
 
             // The tabs each person may open are decided by PartnersViewModel from the same two
             // permissions, so the menu and the page can never disagree.
-            NavItems.Add(new NavItem("Customers & suppliers",
-                "Khata, udhaar recovery, payables",
-                () => new PartnersViewModel(_services, _user, RefreshAlerts)));
+            AddPage("people", "Customers & suppliers", "Khata, udhaar recovery, payables",
+                () => new PartnersViewModel(_services, _user, RefreshAlerts));
         }
 
         // ---- MONEY: the drawer and what it must explain ----
         if (canCash || canReports)
         {
-            AddGroup("MONEY");
-        }
+            AddGroup("money", "MONEY");
 
-        if (canCash)
-        {
-            NavItems.Add(new NavItem("Shift (galla)", "Open and close the drawer", () => new ShiftViewModel(_services, _user)));
-            NavItems.Add(new NavItem("Expenses", "Money out, owner drawings", () => new ExpensesViewModel(_services, _user)));
-        }
+            if (canCash)
+            {
+                AddPage("money", "Shift (galla)", "Open and close the drawer", () => new ShiftViewModel(_services, _user));
+                AddPage("money", "Expenses", "Money out, owner drawings", () => new ExpensesViewModel(_services, _user));
+            }
 
-        if (canReports)
-        {
-            NavItems.Add(new NavItem("Reports", "Day, week, dead stock", () => new ReportsViewModel(_services, _user)));
+            if (canReports)
+            {
+                AddPage("money", "Reports", "Day, week, dead stock", () => new ReportsViewModel(_services, _user));
+            }
         }
 
         // ---- SYSTEM: the shop's own settings and its memory ----
         if (canAudit || canSettings)
         {
-            AddGroup("SYSTEM");
+            AddGroup("system", "SYSTEM");
+
+            if (canAudit)
+            {
+                AddPage("system", "Black box", "Every change, who made it", () => new AuditViewModel(_services, _user));
+            }
+
+            if (canSettings)
+            {
+                AddPage("system", "Settings", "Shop, printing, staff", CreateSettingsPage);
+            }
         }
 
-        if (canAudit)
-        {
-            NavItems.Add(new NavItem("Black box", "Every change, who made it", () => new AuditViewModel(_services, _user)));
-        }
+        ApplyMenuState();
+    }
 
-        if (canSettings)
+    /// <summary>
+    /// Reads what the menu should look like: either the owner's tick says "always open", or each
+    /// group comes back the way it was left. The state lives in the settings table, so it survives a
+    /// restart - and a cashier's fold on the till never travels to the owner's laptop.
+    /// </summary>
+    private void ApplyMenuState()
+    {
+        _menuPinned = _services.Settings.GetBool("menu.pinnedOpen");
+
+        var folded = _menuPinned
+            ? new List<string>()
+            : _services.Settings.GetList<string>("menu.collapsedGroups");
+
+        foreach (var group in _groups)
         {
-            NavItems.Add(new NavItem("Settings", "Shop, printing, staff", CreateSettingsPage));
+            SetCollapsed(group, folded.Contains(group.Key, StringComparer.Ordinal));
         }
     }
 
-    /// <summary>Adds a heading. A heading is only worth drawing if at least one page follows it.</summary>
-    private void AddGroup(string title) => NavItems.Add(NavItem.Header(title));
+    /// <summary>Adds a foldable heading. It is only created when a page follows it (see BuildNavigation).</summary>
+    private void AddGroup(string key, string title)
+    {
+        var header = NavItem.Header(title);
+        header.GroupKey = key;
+
+        _groups.Add(new NavGroup(key, header));
+        NavItems.Add(header);
+    }
+
+    /// <summary>Adds one page under an existing heading.</summary>
+    private void AddPage(string key, string title, string subtitle, Func<ObservableObject> resolve)
+    {
+        var page = new NavItem(title, subtitle, resolve) { GroupKey = key };
+        var group = _groups.First(item => item.Key == key);
+
+        group.Pages.Add(page);
+        NavItems.Add(page);
+    }
+
+    /// <summary>
+    /// Opens or closes a heading. The rows are hidden, not removed: rebuilding the list would drop
+    /// the selected row (and with it the page the operator is reading).
+    ///
+    /// A page that disappears into a fold stays where it is - the operator asked to tidy the menu,
+    /// not to be thrown off the screen.
+    /// </summary>
+    private void ToggleGroup(NavItem? header)
+    {
+        if (header is null || !header.IsHeader)
+        {
+            return;
+        }
+
+        var group = _groups.FirstOrDefault(item => item.Key == header.GroupKey);
+
+        // The owner's tick wins over a stray click: with "keep every group open" the headings are
+        // furniture, not buttons.
+        if (group is null || _menuPinned)
+        {
+            return;
+        }
+
+        SetCollapsed(group, !header.IsCollapsed);
+        SaveMenuState();
+    }
+
+    /// <summary>
+    /// Remembers the folds. It goes in by the quiet door (<c>SetUiOnly</c>): folding the menu is not a
+    /// business change, and it must not fill the black box.
+    /// </summary>
+    private void SaveMenuState()
+    {
+        var folded = _groups.Where(group => group.Header.IsCollapsed)
+            .Select(group => group.Key)
+            .ToList();
+
+        _services.Settings.SetUiOnly("menu.collapsedGroups", folded);
+    }
+
+    private static void SetCollapsed(NavGroup group, bool collapsed)
+    {
+        group.Header.IsCollapsed = collapsed;
+
+        foreach (var page in group.Pages)
+        {
+            page.IsVisible = !collapsed;
+        }
+    }
+
+    private void GoHome()
+    {
+        SelectedNav = NavItems.FirstOrDefault(item => item.IsPage && item.GroupKey.Length == 0);
+    }
 
     /// <summary>
     /// One Settings page for the whole session: it keeps the staff selection and raises Saved, so a
-    /// new shop name appears in the sidebar the moment the owner presses Save.
+    /// new shop name appears in the menu the moment the owner presses Save.
     /// </summary>
     private ObservableObject CreateSettingsPage()
     {
@@ -318,21 +409,14 @@ public sealed class ShellViewModel : ObservableObject
     }
 
     /// <summary>
-    /// True when this person may open Settings at all - the shop's page or the staff page. The two
-    /// buttons in the top bar are disabled otherwise, so a cashier is never offered a click that
-    /// does nothing (the shop name still tells them which shop they are in).
-    /// </summary>
-    public bool CanOpenSettings =>
-        _services.Permissions.Can(_user, Modules.Settings)
-        || _services.Permissions.Can(_user, Modules.Staff);
-
-    /// <summary>
     /// Opens Settings on a tab: 0 = Shop (the shop name was clicked), 3 = Staff &amp; permissions
     /// (the person's name was clicked). The page is created on the way, because the menu row may not
     /// have been opened yet in this session.
     /// </summary>
     private void ShowSettings(int tab)
     {
+        UserMenuOpen = false;
+
         if (!CanOpenSettings)
         {
             return;
@@ -345,44 +429,35 @@ public sealed class ShellViewModel : ObservableObject
             return;
         }
 
-        // SelectedNav resolves the page (creating the view model if needed), then ShowTab moves the
-        // TabControl. Doing it in this order keeps the two steps independent of the click order.
+        // If the SYSTEM group was folded away, the Settings row is hidden - open the group first, or
+        // the selection would point at a row the operator cannot see.
+        var group = _groups.FirstOrDefault(item => item.Key == page.GroupKey);
+
+        if (group is not null && group.Header.IsCollapsed)
+        {
+            SetCollapsed(group, false);
+        }
+
         SelectedNav = page;
         _settingsPage?.ShowTab(tab);
     }
 
-    /// <summary>The bell's "open the full board" button. The board is not in the menu any more.</summary>
-    private void OpenAlertsBoard()
+    /// <summary>
+    /// The bell. Alerts are an ordinary page now (D-51): nothing slides in over the work, and the
+    /// owner can read the reason, the history and the two kinds side by side.
+    /// </summary>
+    private void ShowAlerts()
     {
-        AlertsOpen = false;
-
-        _alertsPage ??= new AlertsViewModel(_services, _user, RefreshAlerts);
-
-        // The board is asked for by name, so it must be current: an owner who ended an alert on the
-        // Shift page and then opens the board must not see the old list.
-        _alertsPage.Load();
-
-        // No menu row is selected while the board is open from the bell, so the list clears itself.
-        SetProperty(ref _selectedNav, null, nameof(SelectedNav));
-        CurrentViewModel = _alertsPage;
-    }
-
-    /// <summary>Closes one reminder from the bell. Any signed-in person may do this (D-50).</summary>
-    private void CloseReminder(AlertItem? reminder)
-    {
-        if (reminder is null)
-        {
-            return;
-        }
-
-        var closed = _services.Alert.DismissLight(_user, reminder.Key);
-
+        UserMenuOpen = false;
         RefreshAlerts();
 
-        if (!closed.Ok)
-        {
-            BellSummaryText = closed.Error ?? "The reminder could not be closed.";
-        }
+        _alertsPage ??= new AlertsViewModel(_services, _user, RefreshAlerts);
+        _alertsPage.Load();
+
+        // No menu row belongs to this page, so the list clears itself (the bell stays lit).
+        SetProperty(ref _selectedNav, null, nameof(SelectedNav));
+        CurrentViewModel = _alertsPage;
+        IsShowingAlerts = true;
     }
 
     /// <summary>
@@ -394,27 +469,8 @@ public sealed class ShellViewModel : ObservableObject
     {
         var report = _services.Alert.Report();
 
-        SeriousAlerts.Clear();
-        LightAlerts.Clear();
-
-        foreach (var alert in report.Serious)
-        {
-            SeriousAlerts.Add(alert);
-        }
-
-        foreach (var alert in report.Light)
-        {
-            LightAlerts.Add(alert);
-        }
-
-        HasSeriousAlerts = SeriousAlerts.Count > 0;
-        HasLightAlerts = LightAlerts.Count > 0;
-        HasNoAlerts = !report.HasLive;
         HasBellAlerts = report.HasLive;
         BellBadgeText = report.LiveCount > 9 ? "9+" : report.LiveCount.ToString();
-
-        // The bell's tooltip. CloseReminder may overwrite it with a refusal message afterwards, and
-        // the next refresh puts the sentence back.
         BellSummaryText = report.BellText;
     }
 
@@ -422,12 +478,35 @@ public sealed class ShellViewModel : ObservableObject
     {
         StoreName = _services.Settings.GetString("store.name");
         AppName = _services.Settings.GetString("brand.appName");
+
+        // The owner may have just ticked (or unticked) "keep every group open" on the Settings page
+        // he was taken to by clicking the shop name. Apply it here, or the fold would keep working
+        // until the next restart.
+        ApplyMenuState();
+        OnPropertyChanged(nameof(CanFoldMenu));
     }
 
     private void Logout()
     {
+        UserMenuOpen = false;
         _services.Auth.Logout(_user);
         _services.SignOut();
         LoggedOut?.Invoke();
+    }
+
+    /// <summary>One foldable group of menu rows: the heading that opens and closes it, and its pages.</summary>
+    private sealed class NavGroup
+    {
+        public NavGroup(string key, NavItem header)
+        {
+            Key = key;
+            Header = header;
+        }
+
+        public string Key { get; }
+
+        public NavItem Header { get; }
+
+        public List<NavItem> Pages { get; } = new();
     }
 }

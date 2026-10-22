@@ -165,6 +165,49 @@ public sealed class SettingsService
         }
     }
 
+    /// <summary>
+    /// A **screen preference** (which menu groups are folded) is stored like any other setting, but it
+    /// is deliberately **not** written into the black box: it changes nothing about money or stock,
+    /// and a shop that folds and unfolds the menu all day would push the real changes off the page.
+    ///
+    /// The key must still exist in <see cref="Defaults"/> - an unknown key is a bug in the caller,
+    /// not a preference, and is refused rather than written.
+    /// </summary>
+    public ServiceResult SetUiOnly(string key, object? value)
+    {
+        if (!Defaults.ContainsKey(key))
+        {
+            return ServiceResult.Fail($"Unknown setting '{key}'.");
+        }
+
+        try
+        {
+            var json = JsonSerializer.Serialize(value);
+
+            // A block-bodied lambda on purpose: it can only mean "no result", so the call cannot be
+            // read either way by the compiler or by the next reader.
+            _db.Tx(connection =>
+            {
+                _db.Execute(connection, @"
+INSERT INTO settings(key, value, updated_at) VALUES(@key, @value, @at)
+ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at;",
+                    new { key, value = json, at = Clock.Now() });
+            });
+
+            lock (_gate)
+            {
+                _cache[key] = json;
+            }
+
+            return ServiceResult.Success();
+        }
+        catch (Exception exception)
+        {
+            _log.Error($"The preference '{key}' could not be saved.", exception);
+            return ServiceResult.Fail("The preference could not be saved.");
+        }
+    }
+
     /// <summary>Owner-visible change: old → new is written into the black box.</summary>
     public ServiceResult Set(string key, object? value, User? actor) =>
         SetMany(new Dictionary<string, object?> { [key] = value }, actor);
@@ -498,6 +541,14 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Text("sync.shopId", "shop-1");
         Text("sync.status", "not_configured");
         Text("sync.lastSyncAt", string.Empty);
+
+        // ---- Menu (D-51) ----
+        // The folded groups, by key ("stock", "money" ...). A menu fold is a preference, not a
+        // business fact, so it is stored beside the settings but kept out of the black box (see
+        // SetUiOnly below) - a busy day must not bury a real change under a hundred menu clicks.
+        Raw("menu.collapsedGroups", "[]");
+        // The owner's tick: keep every group open and take the folding away altogether.
+        Flag("menu.pinnedOpen", false);
 
         // ---- Owner ----
         Text("owner.name", "Owner");
