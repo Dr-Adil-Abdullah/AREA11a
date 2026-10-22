@@ -48,6 +48,7 @@ public sealed class AppServices
         Reorder = new ReorderService(Database, Audit, Settings, Permissions, Log);
         StockMinus = new StockMinusService(Database, Audit, Permissions, Log);
         Photos = new PhotoService(Database, Audit, Permissions, Log);
+        CustomFields = new CustomFieldService(Database, Audit, Permissions, Log);
     }
 
     public Database Database { get; }
@@ -117,6 +118,8 @@ public sealed class AppServices
     public StockMinusService StockMinus { get; }
 
     public PhotoService Photos { get; }
+
+    public CustomFieldService CustomFields { get; }
 
     public ImportService Import { get; }
 

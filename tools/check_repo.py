@@ -71,6 +71,8 @@ VIEW_MODEL_OF = {
     "ReorderView.xaml": "ReorderViewModel",
     "StockMinusView.xaml": "StockMinusViewModel",
     "PhotoGalleryWindow.xaml": "PhotoGalleryViewModel",
+    "CustomFieldsView.xaml": "CustomFieldsViewModel",
+    "CustomFieldsEditorView.xaml": "CustomFieldsEditorViewModel",
 }
 
 

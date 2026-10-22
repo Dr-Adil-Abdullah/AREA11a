@@ -52,6 +52,8 @@ public sealed class ProductsViewModel : ObservableObject
         AddCompanyCommand = new RelayCommand(AddCompany);
         PhotosCommand = new RelayCommand(OpenPhotos);
 
+        Editor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Product);
+
         LoadLookups();
         Load();
     }
@@ -77,6 +79,9 @@ public sealed class ProductsViewModel : ObservableObject
     /// <summary>The photo gallery of the selected medicine (F-41).</summary>
     public RelayCommand PhotosCommand { get; }
 
+    /// <summary>The owner's own questions for a medicine (F-42) - drawn only if he made any.</summary>
+    public CustomFieldsEditorViewModel Editor { get; }
+
     public RelayCommand AddCompanyCommand { get; }
 
     public string HeaderText => _editingId is null ? "New product" : "Editing product";
@@ -98,9 +103,19 @@ public sealed class ProductsViewModel : ObservableObject
         get => _selectedProduct;
         set
         {
-            if (SetProperty(ref _selectedProduct, value) && value is not null)
+            if (!SetProperty(ref _selectedProduct, value))
+            {
+                return;
+            }
+
+            if (value is not null)
             {
                 LoadForm(value);
+                Editor.Load(value.Id);
+            }
+            else
+            {
+                Editor.Load(0);
             }
         }
     }
@@ -271,6 +286,7 @@ public sealed class ProductsViewModel : ObservableObject
         _editingId = null;
         _selectedProduct = null;
         OnPropertyChanged(nameof(SelectedProduct));
+        Editor.Load(0);
 
         Name = string.Empty;
         Generic = string.Empty;

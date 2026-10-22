@@ -89,6 +89,9 @@
         <DataTemplate DataType="{x:Type vm:StockMinusViewModel}">
             <views:StockMinusView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:CustomFieldsViewModel}">
+            <views:CustomFieldsView />
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>

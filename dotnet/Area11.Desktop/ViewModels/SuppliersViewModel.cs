@@ -66,6 +66,8 @@ public sealed class SuppliersViewModel : ObservableObject
 
         RefreshCommand = new RelayCommand(Load);
         PhotosCommand = new RelayCommand(OpenPhotos);
+
+        Editor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Supplier);
         PayCommand = new RelayCommand(Pay);
         StatementCommand = new RelayCommand(PrintStatement);
         ProductSearchCommand = new RelayCommand(SearchProducts);
@@ -100,6 +102,9 @@ public sealed class SuppliersViewModel : ObservableObject
 
     /// <summary>The photo gallery of the supplier on the page (F-41, D-21) - the licence, the card.</summary>
     public RelayCommand PhotosCommand { get; }
+
+    /// <summary>The owner's own questions for a supplier (F-42) - drawn only if he made any.</summary>
+    public CustomFieldsEditorViewModel Editor { get; }
 
     public RelayCommand PayCommand { get; }
 
@@ -418,6 +423,7 @@ public sealed class SuppliersViewModel : ObservableObject
     private void ShowSupplier()
     {
         Movements.Clear();
+        Editor.Load(Selected?.Id ?? 0);
 
         if (Selected is null)
         {

@@ -68,6 +68,8 @@ public sealed class CustomersViewModel : ObservableObject
 
         RefreshCommand = new RelayCommand(Load);
         PhotosCommand = new RelayCommand(OpenPhotos);
+
+        Editor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Customer);
         CollectCommand = new RelayCommand(Collect);
         StatementCommand = new RelayCommand(PrintStatement);
         EditCommand = new RelayCommand(BeginEdit);
@@ -90,6 +92,9 @@ public sealed class CustomersViewModel : ObservableObject
 
     /// <summary>The photo gallery of the customer on the page (F-41, D-21).</summary>
     public RelayCommand PhotosCommand { get; }
+
+    /// <summary>The owner's own questions for a customer (F-42) - drawn only if he made any.</summary>
+    public CustomFieldsEditorViewModel Editor { get; }
 
     public RelayCommand CollectCommand { get; }
 
@@ -399,6 +404,7 @@ public sealed class CustomersViewModel : ObservableObject
     {
         Lines.Clear();
         IsEditing = false;
+        Editor.Load(Selected?.Id ?? 0);
 
         if (Selected is null)
         {

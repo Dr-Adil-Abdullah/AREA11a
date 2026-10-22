@@ -22,9 +22,9 @@ this file tracks the owner's numbered rules.
 ## Summary
 
 - rules in the specification: **116**
-- ✅ done: **50**
+- ✅ done: **52**
 - 🟡 written / partial: **27**
-- ⬜ not started: **19**
+- ⬜ not started: **17**
 - 🔁 standing rules: **20**
 
 ## U - the owner's rules
@@ -96,7 +96,7 @@ Nothing hard-coded; every label, price and rule from settings.
 | **E-02** | Branding: app name, logo, colour/theme — changeable from Settings. | 🟡 written / partial | settings keys `brand.name` etc.; branding UI TODO | - | - |
 | **E-03** | Shop information: name, address, phone, terms — printed on the receipt. | ⬜ not started | Phase 1 receipt (`store.*` keys already present) | - | Phase 1 |
 | **E-04** | Categories: create, change, delete, order (unlimited + sub-categories). | 🟡 written / partial | categories list/create; edit/delete/order TODO | - | - |
-| **E-05** | Custom fields: owner makes them — text / number / amount / photo (Spec §2.2). | ⬜ not started | Phase 4 - custom fields | - | Phase 4 |
+| **E-05** | Custom fields: owner makes them — text / number / amount / photo (Spec §2.2). | ✅ done | `CustomFieldService` + SYSTEM → Own fields (F-42): text, number, amount, date, list, yes/no, photo | CustomFieldTests | Phase 4 |
 | **E-06** | Unit and packing: per product 1 Box = X Strips = Y Tablets — changeable later. | ✅ done | `products.box_strips` / `strip_tablets` | SaleTests (unit multiplier) | - |
 | **E-07** | Expiry levels: days + colour from settings (levels 1/2/3). | 🟡 written / partial | `Utils/Expiry.cs`; threshold parameters still hard-coded (known bug) | - | Phase 2 |
 | **E-08** | Rates and discount: kinds of rate, method of discount (margin/retail), limit — all from settings. | ✅ done | `discount.mode`, `discount.maxPercent*`, tier prices | SaleTests.*Discount* | - |
@@ -116,7 +116,7 @@ One source of truth: a change on screen is a change in the database.
 | **S-01** | Create a category on the front end → it is created in the database automatically. | ✅ done | `ProductService.AddCategory/AddCompany` | - | - |
 | **S-02** | No separate developer work — the user can create/change himself. | 🟡 written / partial | products/suppliers inline create; categories/companies pending | - | - |
 | **S-03** | UI and data are always consistent (one source of truth). | ✅ done | one `Compute()` drives both Quote and Create | SaleTests.BillTotal_* | - |
-| **S-04** | A new custom field → appears in the form automatically. | ⬜ not started | Phase 4 | - | - |
+| **S-04** | A new custom field → appears in the form automatically. | ✅ done | a new field appears on the form at once - the panel is built from the database (F-42) | CustomFieldTests | - |
 | **S-05** | Change a name/term → changes everywhere automatically. | ⬜ not started | Phase 4 | - | - |
 | **S-06** | Database structure (schema) changes happen by automatic migration — no data lost. | ✅ done | `Data/MigrationRunner.cs`, append-only | MigrationTests.* | - |
 | **S-07** | Settings are stored in the database (not only in the browser/local UI) — so identical on every counter/device. | ✅ done | `settings` table | - | - |
@@ -202,7 +202,7 @@ The original's five phases, mapped to this rebuild's four.
 | **M-03** | Phase 1 (Core Lifeline): auto PINV stock-in + batch + expiry + supplier account; packing formula + [Box][Strip][Tablet] buttons; counter billing with barcode/search, FIFO, auto INV, discount, downward round-off; thermal receipt 58/80 + auto print + hold/park cart + cash/credit; role switcher + sales history screen. | 🟡 written / partial | Phase 1: purchases + POS written; receipt/print next | - | - |
 | **M-04** | Phase 2 — returns + smart bill lookup + provisional-return alert + float/shift/closing + owner drawing + expenses + below-cost lock. | ⬜ not started | Phase 2: returns, quarantine, alerts, write-off, stock-take | - | Phase 2 |
 | **M-05** | Phase 3 — supplier ledger + return credit note + 3-level expiry + 3-level reorder + WhatsApp web order + sample stock. | 🟡 written / partial | Phase 3 written: ledgers, reports, backup, Excel, reorder/WhatsApp, stock-minus; the free/sample stock list remains | - | Phase 3 |
-| **M-06** | Phase 4 — customer/credit limit/loyalty stars + multi-tier rates + split payment + custom fields/categories. | 🟡 written / partial | Phase 4: loyalty (D-57) and photos/camera (D-58) done; custom fields, medical rep and multi-barcode remain | - | Phase 4 |
+| **M-06** | Phase 4 — customer/credit limit/loyalty stars + multi-tier rates + split payment + custom fields/categories. | 🟡 written / partial | Phase 4: loyalty (D-57), photos (D-58) and own fields (D-59) done; medical rep, multi-barcode, LAN counter and the installer remain | - | Phase 4 |
 | **M-07** | Phase 5 — black-box audit + multi-dimensional search/rack number + breakage + analytics/P&L + online-offline sync + backup. | ⬜ not started | Phase 3/4: audit viewer, stock-take, backup, sync | - | Phase 3 |
 | **M-08** | Rule: the E and S principles apply from day one — not later. | ✅ done | settings and data-driven from the first migration | - | - |
 

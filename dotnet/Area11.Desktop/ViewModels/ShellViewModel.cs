@@ -327,6 +327,9 @@ public sealed class ShellViewModel : ObservableObject
 
             if (canSettings)
             {
+                // The owner's own questions sit beside Settings: both are his, both are about how the
+                // shop's forms look, and neither is a day-to-day page (F-42).
+                AddPage("system", "Own fields", "Your own questions", () => new CustomFieldsViewModel(_services, _user));
                 AddPage("system", "Settings", "Shop, printing, staff", CreateSettingsPage);
             }
         }
