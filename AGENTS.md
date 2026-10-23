@@ -129,6 +129,17 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
+> **v0.29.5 (Sapphire `#1B4B8F`) - the demo shop keeps a black box too, and a count found it, not a page.**
+>
+> * **When a page looks empty in the demo, count the tables the sample writes.** 28 of 34 were written;
+>   `audit_logs` was one of the six that were not, so the Black-box page held a single line in a demo that
+>   exists to prove the pages work. The trail is now ~900 lines over ten modules.
+> * **Copy the module and action names from the services that really write them.** The page's two
+>   drop-downs are built from the values already in the table, so an invented vocabulary gives filters
+>   that filter nothing - worse than an empty page, because it looks like it works.
+> * **The SQL rule reads every string literal.** A details string beginning with the word *with* was
+>   prepared as a `WITH` query and reported as *incomplete input*; the sentence was rewritten.
+>
 > **v0.29.4 (Saffron `#8A6508`) - a gate for method names on services, so CS1061 stops reaching the shop PC.**
 >
 > * **`_services.Prop.Method(` and `_field.Method(` are now resolved** against the real classes (rule 1i).

@@ -809,11 +809,62 @@ SELECT DISTINCT reason FROM stock_adjustments ORDER BY reason;");
         Assert.Contains("bills", details);
     }
 
+    // ============================== the black box ==============================
+
+    [Fact]
+    public void TheSampleShopAlsoFillsTheBlackBox()
+    {
+        using var test = new TestDatabase();
+        var seeded = Sample(test).Seed(TestData.Owner);
+
+        Assert.True(seeded.Ok, seeded.Error);
+
+        // What the owner sees on the Black-box page. Before v0.29.5 the sample wrote its two and a
+        // half months with raw SQL, so the shop's own audit writer never saw one of those rows: the
+        // page held a single line - "filled the shop with sample data" - in a demo that exists to
+        // prove the pages work. An audit page with one line in it is the "demo data is missing"
+        // complaint wearing a different coat, and it was found by counting the tables the sample
+        // writes rather than by opening the page.
+        var audit = Rows(test, "SELECT COUNT(1) FROM audit_logs WHERE action <> 'sample_shop';");
+        Assert.True(audit >= 600, "audit rows: " + audit);
+
+        // Exactly one sale_create per bill: the sample may invent a shop, never a history beside it.
+        Assert.Equal(Count(test, "sales"),
+            Rows(test, "SELECT COUNT(1) FROM audit_logs WHERE action = 'sale_create';"));
+
+        // Every drawer that was closed left its closing line.
+        Assert.Equal(Rows(test, "SELECT COUNT(1) FROM shifts WHERE IFNULL(closed_at, '') <> '';"),
+            Rows(test, "SELECT COUNT(1) FROM audit_logs WHERE action = 'shift_close';"));
+
+        // The module filter is built from the values in the table, so this count IS the length of that
+        // drop-down. Ten services write into the sample; eight is the least a convincing shop needs.
+        var modules = Rows(test,
+            "SELECT COUNT(DISTINCT IFNULL(module, '')) FROM audit_logs WHERE IFNULL(module, '') <> '';");
+        Assert.True(modules >= 8, "modules: " + modules);
+
+        // A price change keeps both numbers, or the page shows a change with nothing to compare.
+        Assert.Equal(5L, Rows(test, "SELECT COUNT(1) FROM audit_logs "
+            + "WHERE action = 'price_change' AND old_value IS NOT NULL AND new_value IS NOT NULL;"));
+
+        // The story starts two and a half months back and ends today, so the page's date window has
+        // something at both ends: the shelves were named over sixty days ago, and the last drawer is
+        // still open.
+        Assert.True(Rows(test, "SELECT COUNT(1) FROM audit_logs WHERE at <= date('now', 'localtime', '-60 day');") >= 1);
+        Assert.True(Rows(test, "SELECT COUNT(1) FROM audit_logs WHERE at >= date('now', 'localtime', '-1 day');") >= 1);
+    }
+
     // ============================== helpers ==============================
 
     private static SampleShopService Sample(TestDatabase test) =>
         new(test.Database, test.Settings, test.Audit,
             new PermissionService(test.Database, test.Log, test.Audit), test.Log);
+
+    private static long Rows(TestDatabase test, string sql)
+    {
+        using var connection = test.Database.Open();
+
+        return Convert.ToInt64(test.Database.Scalar(connection, sql) ?? 0L);
+    }
 
     private static long Count(TestDatabase test, string table)
     {

@@ -691,6 +691,9 @@ public sealed class SampleShopService
                          + "(one still waiting for the company's word), two no-bill returns and two held carts.");
         report.Steps.Add("Two own fields with answers, four pack barcodes, and the alerts a real shop lives with: "
                          + "expired, near expiry, out of stock and khata due.");
+        report.Steps.Add("The black box is kept too: one line for every bill, delivery, return, drawer, expense, "
+                         + "price change and sign-in of the " + HistoryDays + " days, in the same words the counter "
+                         + "writes, so the owner can search and filter a real history instead of one line.");
 
         return report;
     }
@@ -1050,6 +1053,7 @@ VALUES(@name, @generic, @brand, @barcode, @company, @category, @rack, @pack,
             WriteHeldCarts();
             WriteBalances();
             AdvanceCounters();
+            WriteAuditTrail();
 
             return new Counts
             {
@@ -2758,6 +2762,462 @@ WHERE id > 0;");
             {
                 _settings.WriteCounter(_connection, counter.Key, counter.Value);
             }
+        }
+
+        // ---------------------------------------------------------------- the shop's own black box
+
+        /// <summary>
+        /// The black box (F-04, Spec 22): one line for every action the sample shop really took.
+        ///
+        /// Why it is written here instead of by `AuditService` at each step: the sample fills two and a
+        /// half months with raw SQL, so the shop's audit writer never sees those rows. The demo's
+        /// Black-box page would then hold exactly ONE line - "filled the shop with sample data" - while
+        /// the same page in a used shop holds thousands. A page that looks empty reads as a broken
+        /// feature, which is the very complaint the sample shop exists to answer; so the sample keeps
+        /// the same book the counter keeps.
+        ///
+        /// The module and action names are copied from the services that write them in a real shop
+        /// (`POS`/`sale_create`, `Cash`/`shift_close`, `Inventory`/`price_change` ...) and never
+        /// invented, because the page's two drop-downs are built from the values already in the table:
+        /// a private vocabulary would give the demo filters that filter nothing.
+        ///
+        /// What it does not do: nothing is written at the moment of the action - every line is read back
+        /// from the tables just filled - so this method must stay the last thing a run does.
+        /// </summary>
+        private void WriteAuditTrail()
+        {
+            var lines = new List<TrailLine>();
+            var setup = 0;
+
+            // ---- the shop being set up: shelves, companies, the first stock list, its people.
+            // Companies carry no created_at, so the setup is dated on the first morning of the story:
+            // the shelves existed before the first delivery, and a shop that sold before it was built
+            // would be a lie the black box can do without.
+            foreach (var row in _db.Query<SetupRow>(_connection,
+                "SELECT id AS id, name AS name FROM categories ORDER BY id;"))
+            {
+                lines.Add(Trail("Inventory", "category_create", "categories", row.Id, null,
+                    row.Name, "The shelf \"" + row.Name + "\" was named.", Setup(++setup)));
+            }
+
+            foreach (var row in _db.Query<SetupRow>(_connection,
+                "SELECT id AS id, name AS name FROM companies ORDER BY id;"))
+            {
+                lines.Add(Trail("Inventory", "company_create", "companies", row.Id, null, row.Name,
+                    "Company " + row.Name + " was added.", Setup(++setup)));
+            }
+
+            foreach (var row in _db.Query<SetupRow>(_connection,
+                "SELECT id AS id, name AS name FROM suppliers ORDER BY id;"))
+            {
+                lines.Add(Trail("Suppliers", "create", "suppliers", row.Id, null, row.Name,
+                    row.Name + " - a supplier the shop pays on account.", Setup(++setup)));
+            }
+
+            foreach (var row in _db.Query<SetupRow>(_connection,
+                "SELECT id AS id, name AS name, IFNULL(category, 'normal') AS text FROM customers ORDER BY id;"))
+            {
+                lines.Add(Trail("Customers", "create", "customers", row.Id, null,
+                    "{\"name\":\"" + row.Name + "\",\"category\":\"" + row.Text + "\"}",
+                    row.Name + " (" + row.Text + ")", Setup(++setup)));
+            }
+
+            var products = _db.Query<SetupRow>(_connection,
+                "SELECT id AS id, name AS name, IFNULL(retail_paisa, 0) AS amount FROM products ORDER BY id;");
+
+            foreach (var row in products)
+            {
+                lines.Add(Trail("Inventory", "product_create", "products", row.Id, null,
+                    "{\"name\":\"" + row.Name + "\",\"retailPaisa\":" + Paisa(row.Amount) + "}",
+                    row.Name + " - on the shelf at " + Money.Format(row.Amount) + ".", Setup(++setup)));
+            }
+
+            // ---- every bill at the counter, the same shape `SaleService` writes
+            foreach (var row in _db.Query<BillRow>(_connection, @"
+SELECT s.date AS at, s.id AS id, IFNULL(s.code, '') AS code, IFNULL(s.total_paisa, 0) AS total,
+       IFNULL(s.paid_paisa, 0) AS paid, IFNULL(s.discount_paisa, 0) AS discount,
+       IFNULL(s.round_off_paisa, 0) AS roundOff, IFNULL(s.payment_method, '') AS method,
+       IFNULL(s.status, '') AS status
+FROM sales s ORDER BY s.date, s.id;"))
+            {
+                lines.Add(Trail("POS", "sale_create", "sales", row.Id, null,
+                    "{\"code\":\"" + row.Code + "\",\"total\":" + Paisa(row.Total)
+                    + ",\"discount\":" + Paisa(row.Discount) + ",\"round\":" + Paisa(row.RoundOff)
+                    + ",\"method\":\"" + row.Method + "\"}",
+                    row.Status == "paid"
+                        ? null
+                        : row.Status + " - " + Money.Format(row.Paid) + " at the counter",
+                    StampOf(row.At)));
+            }
+
+            // ---- deliveries, and the money handed to the supplier with them
+            foreach (var row in _db.Query<PurchaseRow>(_connection, @"
+SELECT p.date AS at, p.id AS id, IFNULL(p.code, '') AS code, IFNULL(p.total_paisa, 0) AS total,
+       IFNULL(p.paid_paisa, 0) AS paid, IFNULL(s.name, '') AS supplier,
+       (SELECT COUNT(1) FROM purchase_items i WHERE i.purchase_id = p.id) AS lines
+FROM purchases p LEFT JOIN suppliers s ON s.id = p.supplier_id
+ORDER BY p.date, p.id;"))
+            {
+                lines.Add(Trail("Purchases", "purchase_create", "purchases", row.Id, null,
+                    "{\"code\":\"" + row.Code + "\",\"supplier\":\"" + row.Supplier + "\",\"total\":" + Paisa(row.Total)
+                    + ",\"paid\":" + Paisa(row.Paid) + ",\"lines\":" + Paisa(row.Lines) + "}",
+                    row.Supplier + " - " + Paisa(row.Lines) + " line(s), " + Money.Format(row.Total)
+                    + (row.Paid < row.Total ? ", " + Money.Format(row.Total - row.Paid) + " on account" : ", paid"),
+                    StampOf(row.At)));
+
+                if (row.Paid > 0)
+                {
+                    lines.Add(Trail("Suppliers", "supplier_pay", "suppliers", null, null,
+                        Money.Format(row.Paid),
+                        "cash " + Money.Format(row.Paid) + " - paid to " + row.Supplier + " (" + row.Code + ")",
+                        StampOf(row.At)));
+                }
+            }
+
+            // ---- papers that came back
+            foreach (var row in _db.Query<ReturnRow>(_connection, @"
+SELECT r.date AS at, r.id AS id, IFNULL(s.code, '') AS saleCode, IFNULL(p.name, '') AS product,
+       IFNULL(r.reason, '') AS reason, IFNULL(r.refund_paisa, 0) AS refund, IFNULL(r.qty_base, 0) AS qty,
+       CASE WHEN IFNULL(r.restock, 0) = 1 THEN 'restock' ELSE 'quarantine' END AS mode
+FROM sale_returns r LEFT JOIN sales s ON s.id = r.sale_id LEFT JOIN products p ON p.id = r.product_id
+ORDER BY r.date, r.id;"))
+            {
+                lines.Add(Trail("Returns", "return_create", "sale_returns", row.Id, null,
+                    "against " + row.SaleCode + ": " + row.Product + ", refund " + Money.Format(row.Refund),
+                    Qty.Format(row.Qty) + " back (" + row.Reason + ", " + row.Mode + ")",
+                    StampOf(row.At)));
+            }
+
+            // ---- what was thrown away, and why
+            foreach (var row in _db.Query<WriteOffRow>(_connection, @"
+SELECT a.date AS at, a.id AS id, IFNULL(p.name, '') AS product, IFNULL(a.qty_base, 0) AS qty,
+       IFNULL(a.value_paisa, 0) AS value, IFNULL(a.reason, '') AS reason
+FROM stock_adjustments a LEFT JOIN products p ON p.id = a.product_id
+WHERE IFNULL(a.direction, '') = 'out'
+ORDER BY a.date, a.id;"))
+            {
+                lines.Add(Trail("Stock", "writeoff", "stock_adjustments", row.Id, null,
+                    "-" + Qty.Format(row.Qty) + " (" + row.Reason + ", " + Money.Format(row.Value) + ")",
+                    row.Product + " taken off the shelf: " + row.Reason + ".", StampOf(row.At)));
+            }
+
+            // ---- the two stock-takes: counted by hand, then posted to the shelves
+            foreach (var row in _db.Query<StockTakeRow>(_connection, @"
+SELECT IFNULL(applied_at, date) AS at, id AS id, IFNULL(code, '') AS code,
+       IFNULL(items_count, 0) AS items, IFNULL(diff_count, 0) AS differences,
+       IFNULL(short_paisa, 0) AS short, IFNULL(extra_paisa, 0) AS extra, IFNULL(status, '') AS status
+FROM stock_takes ORDER BY date, id;"))
+            {
+                if (!string.Equals(row.Status, "applied", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                lines.Add(Trail("StockTake", "stock_take_open", "stock_takes", row.Code, null, "open",
+                    "Counted " + Paisa(row.Items) + " shelf(s) by hand.", StampOf(row.At)));
+                lines.Add(Trail("StockTake", "stock_take_apply", "stock_takes", row.Code, "open",
+                    "applied: " + Paisa(row.Differences) + " difference(s), short " + Money.Format(row.Short)
+                    + ", extra " + Money.Format(row.Extra),
+                    "Stock-take " + row.Code + " was posted to the shelves.", StampOf(row.At)));
+            }
+
+            // ---- the drawer, opened every morning and counted every night
+            foreach (var row in _db.Query<ShiftRow>(_connection, @"
+SELECT opened_at AS at, id AS id, IFNULL(closed_at, '') AS closedAt,
+       IFNULL(opening_float_paisa, 0) AS float, IFNULL(difference_paisa, 0) AS difference,
+       IFNULL(status, '') AS status
+FROM shifts ORDER BY opened_at, id;"))
+            {
+                // The owner signs in before he opens the drawer - that is the order at the counter.
+                lines.Add(Trail("Auth", "login", "users", _user.Id, null, null,
+                    "Signed in for the day.", StampOf(row.At)));
+                lines.Add(Trail("Cash", "shift_open", "shifts", row.Id, null, Money.Format(row.Float),
+                    "Drawer opened with " + Money.Format(row.Float) + " in it.", StampOf(row.At)));
+
+                if (string.IsNullOrWhiteSpace(row.ClosedAt))
+                {
+                    continue;
+                }
+
+                lines.Add(Trail("Cash", "shift_close", "shifts", row.Id, "open", "closed",
+                    row.Difference == 0
+                        ? "The drawer matched to the rupee."
+                        : "The drawer was " + (row.Difference > 0 ? "over " : "short ")
+                          + Money.Format(Math.Abs(row.Difference)) + ".",
+                    StampOf(row.ClosedAt)));
+            }
+
+            // ---- rent, salaries, the electricity bill, the chai
+            foreach (var row in _db.Query<ExpenseRow>(_connection, @"
+SELECT date AS at, id AS id, IFNULL(title, '') AS title, IFNULL(category, '') AS category,
+       IFNULL(amount_paisa, 0) AS amount
+FROM expenses ORDER BY date, id;"))
+            {
+                lines.Add(Trail("Cash", "expense", "expenses", row.Id, null,
+                    Money.Format(row.Amount) + " (" + row.Category + ": " + row.Title + ")", row.Title,
+                    StampOf(row.At)));
+            }
+
+            // ---- money the owner took out, and goods he took home
+            foreach (var row in _db.Query<DrawingRow>(_connection, @"
+SELECT date AS at, id AS id, IFNULL(type, 'cash') AS type, IFNULL(note, '') AS note,
+       IFNULL(amount_paisa, 0) AS amount
+FROM owner_drawings ORDER BY date, id;"))
+            {
+                var goods = string.Equals(row.Type, "goods", StringComparison.OrdinalIgnoreCase);
+
+                lines.Add(Trail("Cash", goods ? "owner_drawing_goods" : "owner_drawing", "owner_drawings", row.Id,
+                    null, Money.Format(row.Amount) + " (" + row.Type + ")",
+                    goods ? "Goods taken home: " + row.Note : "Cash taken out: " + row.Note,
+                    StampOf(row.At)));
+            }
+
+            // ---- the expired strip sent back to the company
+            foreach (var row in _db.Query<SupplierReturnRow>(_connection, @"
+SELECT date AS at, id AS id, IFNULL(code, '') AS code, IFNULL(reason, '') AS reason,
+       IFNULL(total_paisa, 0) AS total
+FROM supplier_returns ORDER BY date, id;"))
+            {
+                lines.Add(Trail("Suppliers", "supplier_return", "supplier_returns", row.Id, null,
+                    row.Code + " " + Money.Format(row.Total) + ", " + row.Reason,
+                    row.Code + " sent back (" + row.Reason + "), credit note.", StampOf(row.At)));
+            }
+
+            // ---- five prices the owner raised in the second month
+            foreach (var row in products.Where(product => product.Amount > 3000).Take(5))
+            {
+                lines.Add(Trail("Inventory", "price_change", "products", row.Id,
+                    Paisa(row.Amount - 1000), Paisa(row.Amount),
+                    row.Name + " went up by " + Money.Format(1000) + " to " + Money.Format(row.Amount) + ".",
+                    Stamp(30, 11, 5 + (row.Id % 40))));
+            }
+
+            // One insert per line, in time order, so the black box reads downwards like a diary even
+            // before the page sorts it. Around nine hundred lines - nothing beside the two and a half
+            // months of bills this run has just written.
+            foreach (var line in lines.OrderBy(line => line.At, StringComparer.Ordinal))
+            {
+                _db.Execute(_connection, @"
+INSERT INTO audit_logs(at, user_id, user_name, action, module, entity, entity_id, old_value, new_value, details)
+VALUES(@at, @userId, @userName, @action, @module, @entity, @entityId, @oldValue, @newValue, @details);",
+                    new
+                    {
+                        at = line.At,
+                        userId = _user.Id,
+                        userName = _user.Name,
+                        action = line.Action,
+                        module = line.Module,
+                        entity = line.Entity,
+                        entityId = line.EntityId,
+                        oldValue = line.OldValue,
+                        newValue = line.NewValue,
+                        details = line.Details
+                    });
+            }
+        }
+
+        /// <summary>One line of the black box, in the shape `audit_logs` stores it.</summary>
+        private static TrailLine Trail(string module, string action, string entity, object? entityId,
+            string? oldValue, string? newValue, string? details, string at) => new()
+        {
+            Module = module,
+            Action = action,
+            Entity = entity,
+            EntityId = entityId is null ? null : Convert.ToString(entityId, CultureInfo.InvariantCulture),
+            OldValue = oldValue,
+            NewValue = newValue,
+            Details = details,
+            At = at
+        };
+
+        /// <summary>
+        /// The shop being set up, one minute apart on the first morning of the story. One stamp for a
+        /// hundred rows would say the shelves were named in the same second, which is not a shop.
+        /// </summary>
+        private static string Setup(int index) => Stamp(HistoryDays, 8 + index / 45, index % 45);
+
+        /// <summary>A date-only stamp is widened to a time: the black box compares text and sorts on it.</summary>
+        private static string StampOf(string value) => value.Length == 10 ? value + " 10:00:00" : value;
+
+        private static string Paisa(long value) => value.ToString(CultureInfo.InvariantCulture);
+
+        /// <summary>One line waiting to be inserted into `audit_logs`.</summary>
+        private sealed class TrailLine
+        {
+            public string At { get; set; } = string.Empty;
+
+            public string Module { get; set; } = string.Empty;
+
+            public string Action { get; set; } = string.Empty;
+
+            public string Entity { get; set; } = string.Empty;
+
+            public string? EntityId { get; set; }
+
+            public string? OldValue { get; set; }
+
+            public string? NewValue { get; set; }
+
+            public string? Details { get; set; }
+        }
+
+        // The rows the trail is read back from. One class per table rather than one wide class with
+        // borrowed fields: `discount = short_paisa` would compile and would teach the next reader
+        // something false about the shop.
+        private sealed class SetupRow
+        {
+            public int Id { get; set; }
+
+            public string Name { get; set; } = string.Empty;
+
+            public string Text { get; set; } = string.Empty;
+
+            public long Amount { get; set; }
+        }
+
+        private sealed class BillRow
+        {
+            public string At { get; set; } = string.Empty;
+
+            public int Id { get; set; }
+
+            public string Code { get; set; } = string.Empty;
+
+            public long Total { get; set; }
+
+            public long Paid { get; set; }
+
+            public long Discount { get; set; }
+
+            public long RoundOff { get; set; }
+
+            public string Method { get; set; } = string.Empty;
+
+            public string Status { get; set; } = string.Empty;
+        }
+
+        private sealed class PurchaseRow
+        {
+            public string At { get; set; } = string.Empty;
+
+            public int Id { get; set; }
+
+            public string Code { get; set; } = string.Empty;
+
+            public long Total { get; set; }
+
+            public long Paid { get; set; }
+
+            public string Supplier { get; set; } = string.Empty;
+
+            public long Lines { get; set; }
+        }
+
+        private sealed class ReturnRow
+        {
+            public string At { get; set; } = string.Empty;
+
+            public int Id { get; set; }
+
+            public string SaleCode { get; set; } = string.Empty;
+
+            public string Product { get; set; } = string.Empty;
+
+            public string Reason { get; set; } = string.Empty;
+
+            public long Refund { get; set; }
+
+            public double Qty { get; set; }
+
+            public string Mode { get; set; } = string.Empty;
+        }
+
+        private sealed class WriteOffRow
+        {
+            public string At { get; set; } = string.Empty;
+
+            public int Id { get; set; }
+
+            public string Product { get; set; } = string.Empty;
+
+            public double Qty { get; set; }
+
+            public long Value { get; set; }
+
+            public string Reason { get; set; } = string.Empty;
+        }
+
+        private sealed class StockTakeRow
+        {
+            public string At { get; set; } = string.Empty;
+
+            public int Id { get; set; }
+
+            public string Code { get; set; } = string.Empty;
+
+            public long Items { get; set; }
+
+            public long Differences { get; set; }
+
+            public long Short { get; set; }
+
+            public long Extra { get; set; }
+
+            public string Status { get; set; } = string.Empty;
+        }
+
+        private sealed class ShiftRow
+        {
+            public string At { get; set; } = string.Empty;
+
+            public int Id { get; set; }
+
+            public string ClosedAt { get; set; } = string.Empty;
+
+            public long Float { get; set; }
+
+            public long Difference { get; set; }
+
+            public string Status { get; set; } = string.Empty;
+        }
+
+        private sealed class ExpenseRow
+        {
+            public string At { get; set; } = string.Empty;
+
+            public int Id { get; set; }
+
+            public string Title { get; set; } = string.Empty;
+
+            public string Category { get; set; } = string.Empty;
+
+            public long Amount { get; set; }
+        }
+
+        private sealed class DrawingRow
+        {
+            public string At { get; set; } = string.Empty;
+
+            public int Id { get; set; }
+
+            public string Type { get; set; } = string.Empty;
+
+            public string Note { get; set; } = string.Empty;
+
+            public long Amount { get; set; }
+        }
+
+        private sealed class SupplierReturnRow
+        {
+            public string At { get; set; } = string.Empty;
+
+            public int Id { get; set; }
+
+            public string Code { get; set; } = string.Empty;
+
+            public string Reason { get; set; } = string.Empty;
+
+            public long Total { get; set; }
         }
 
         // ---------------------------------------------------------------- small helpers
