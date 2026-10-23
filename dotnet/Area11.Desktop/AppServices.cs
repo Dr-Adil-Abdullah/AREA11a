@@ -35,6 +35,8 @@ public sealed class AppServices
         Returns = new ReturnService(Database, Audit, Numbering, Settings, Permissions, Log);
         Quarantine = new QuarantineService(Database, Audit, Permissions, Log);
         ReturnReceipts = new ReturnReceiptService(Database, Settings, Log);
+        // The paper two people sign when the drawer changes hands (F-55).
+        HandoverSlips = new HandoverSlipService(Settings);
         Alert = new AlertService(Database, Settings, Audit, Permissions, Log);
         Provisional = new ProvisionalReturnService(Database, Audit, Numbering, Permissions, Log);
         Stock = new StockService(Database, Audit, Settings, Permissions, Log);
@@ -147,6 +149,9 @@ public sealed class AppServices
     public ReceiptService Receipts { get; }
 
     public PrinterService Printer { get; }
+
+    /// <summary>The handover slip - the same receipt object as the sale receipt, printed the same way.</summary>
+    public HandoverSlipService HandoverSlips { get; }
 
     public BackupService Backup { get; }
 

@@ -55,6 +55,36 @@ public sealed class ShiftMoney
 
     public string? Note { get; set; }
 
+    /// <summary>The person this drawer was handed to (migration 009). Null when it was simply closed.</summary>
+    public string? HandedToName { get; set; }
+
+    /// <summary>The shift this one was opened from - the other half of a handover (migration 009).</summary>
+    public int? OpenedFromShiftId { get; set; }
+
+    /// <summary>True when this shift ended by changing hands rather than by closing the shop.</summary>
+    public bool WasHandedOver => !string.IsNullOrWhiteSpace(HandedToName);
+
+    /// <summary>"Handed to Bilal" / "Came from drawer 12" - the two halves of the chain, in words.</summary>
+    public string HandoverLabel
+    {
+        get
+        {
+            var parts = new List<string>();
+
+            if (WasHandedOver)
+            {
+                parts.Add("handed to " + HandedToName!.Trim());
+            }
+
+            if (OpenedFromShiftId is int from)
+            {
+                parts.Add("came from drawer " + from);
+            }
+
+            return parts.Count == 0 ? "-" : string.Join(", ", parts);
+        }
+    }
+
     public bool IsOpen => Status == "open";
 
     public string StatusLabel => IsOpen ? "Open" : "Closed";

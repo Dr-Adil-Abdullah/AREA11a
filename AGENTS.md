@@ -129,6 +129,32 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
+> **v0.30.6 (Damson `#70266E`) - the drawer changes hands, and the board stops lying to itself.**
+>
+> * **A gap can live inside a ✅ row.** F-31 has been marked done since v0.4.0 and said, in the same
+>   cell, *"handover still to come with a second counter"*. Twenty-six versions went by and nobody
+>   read that clause again, because the tick answered the question before anyone asked it. **When a
+>   row is marked done, its own text must not contain a promise.** The search for this release was
+>   `still to come` / `not built` / `not yet` across the docs - and the only real hit was the one
+>   feature the schema had reserved three columns for since migration 009.
+> * **A handover is one transaction, not two.** Closing the drawer and opening the next one in
+>   separate steps can leave the money closed and unwritten, or reopened with a typed float that
+>   quietly erases the difference. Here the **counted figure is the next float**, written by the same
+>   transaction that closes the first shift.
+> * **The difference belongs to the shift that produced it.** If the first cashier was Rs 50 short,
+>   that shortfall is booked against him, and the person taking over starts clean at the counted
+>   figure. Opening the next shift at the *expected* figure would move the loss into the next
+>   person's day - and it would never be seen again.
+> * **One second can hold both a bill and a handover.** A SQLite stamp here has no fraction. So the
+>   closing window is `[opened, at)` and the new one is `[at, now]`: a bill in the handover second
+>   belongs to the new shift and to nobody twice. With `<=` on both sides the same bill is counted
+>   on each side of the change (money invented) or on neither (money lost). This was decided by
+>   running the two windows against a real database, not by reading the SQL.
+> * **`_` is part of a name.** The checker split the select list at the word `FROM` and therefore
+>   read the column `opened_from_shift_id` as the keyword `FROM`, then reported four healthy queries
+>   as broken. A gate that fails on good code is worse than no gate: it teaches the owner that red
+>   can be ignored.
+>
 > **v0.30.5 (Sable `#2E2118`) - read the C# with a real grammar, and resolve every static name.**
 >
 > * **Brace counting is not a syntax check.** It says the `{` and `}` match; it says nothing about a

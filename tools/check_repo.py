@@ -1909,17 +1909,26 @@ def _top_level_spans(sql: str):
     """The SELECT ... FROM projections at bracket depth 0 - the ones Dapper maps."""
     chars, depths = _mask(sql)
 
+    def _is_name_char(char: str) -> bool:
+        """`_` belongs to a name: `opened_from_shift_id` is a column, not the FROM keyword.
+
+        v0.30.6: this rule read `... s.opened_from_shift_id AS openedFromShiftId` as if the
+        select list ended at `opened_`, so four healthy queries were reported as columns with no
+        property. A gate that fails on good code teaches the owner to ignore the gate.
+        """
+        return char.isalnum() or char == "_"
+
     starts = []
     for i in range(len(sql) - 6):
         if depths[i] == 0 and "".join(chars[i:i + 6]).upper() == "SELECT" \
-                and (i == 0 or not chars[i - 1].isalnum()):
+                and (i == 0 or not _is_name_char(chars[i - 1])):
             starts.append(i)
 
     spans = []
     for start in starts:
         for i in range(start + 6, len(sql) - 4):
             if depths[i] == 0 and "".join(chars[i:i + 4]).upper() == "FROM" \
-                    and not chars[i - 1].isalnum():
+                    and not _is_name_char(chars[i - 1]):
                 spans.append(sql[start + 6:i])
                 break
 

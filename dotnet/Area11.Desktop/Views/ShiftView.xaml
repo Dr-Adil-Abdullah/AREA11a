@@ -110,6 +110,33 @@
                                     <Button Content="Close the shift" Style="{StaticResource PrimaryButton}"
                                             Command="{Binding CloseCommand}" />
                                 </StackPanel>
+
+                                <Separator Margin="0,14,0,10" />
+
+                                <!-- F-55: the drawer changing hands - count it, name the next person, print the slip -->
+                                <TextBlock Text="Hand the drawer to the next person" Style="{StaticResource SectionTitle}" />
+                                <TextBlock Text="Count the cash, choose who is taking it and hand over. The counted money becomes the next shift's float, the difference stays on this shift, and a slip with both signatures goes to the printer."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+
+                                <TextBlock Text="Who is taking the drawer" Style="{StaticResource FieldLabel}" Margin="0,10,0,0" />
+                                <ComboBox ItemsSource="{Binding NextPeople}" SelectedItem="{Binding SelectedPerson}"
+                                          DisplayMemberPath="Name" Width="240" HorizontalAlignment="Left" />
+                                <TextBlock Text="Only staff who are switched on and allowed to work the till are listed. Add or switch on a person on the Staff page first."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+
+                                <TextBlock Text="Counted cash (Rs)" Style="{StaticResource FieldLabel}" Margin="0,8,0,0" />
+                                <TextBox Text="{Binding HandoverCashText, UpdateSourceTrigger=PropertyChanged}" Width="200"
+                                         HorizontalAlignment="Left" />
+                                <TextBlock Text="This is what is actually in the drawer - it becomes the next opening float. The note above is saved with the handover."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+
+                                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                    <Button Content="Hand over and print the slip" Style="{StaticResource PrimaryButton}"
+                                            Command="{Binding HandoverCommand}" IsEnabled="{Binding CanHandover}" />
+                                    <Button Content="Print the slip again" Style="{StaticResource GhostButton}" Margin="8,0,0,0"
+                                            Command="{Binding PrintSlipCommand}"
+                                            Visibility="{Binding HasLastHandover, Converter={StaticResource BoolToVis}}" />
+                                </StackPanel>
                             </StackPanel>
 
                             <!-- no shift: the float that opens it -->
@@ -148,7 +175,7 @@
 
                     <StackPanel Grid.Row="0" Margin="0,0,0,8">
                         <TextBlock Text="Shift history" Style="{StaticResource SectionTitle}" />
-                        <TextBlock Text="Every closed day with the cash it should have held and the cash it did hold."
+                        <TextBlock Text="Every closed day with the cash it should have held, the cash it did hold, and who it was handed to."
                                    Style="{StaticResource FieldHint}" />
                     </StackPanel>
 
@@ -162,6 +189,7 @@
                             <DataGridTextColumn Header="Counted" Binding="{Binding ActualLabel}" Width="105" />
                             <DataGridTextColumn Header="Difference" Binding="{Binding DifferenceLabel}" Width="140" />
                             <DataGridTextColumn Header="State" Binding="{Binding StatusLabel}" Width="70" />
+                            <DataGridTextColumn Header="Handover" Binding="{Binding HandoverLabel}" Width="180" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>

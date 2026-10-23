@@ -34,6 +34,9 @@ public sealed class ShiftViewModel : ObservableObject
     private string _noteText = string.Empty;
     private string _statusText = "Open the drawer with the cash you start with.";
     private bool _isStatusError;
+    private User? _selectedPerson;
+    private string _handoverCashText = string.Empty;
+    private ShiftHandover? _lastHandover;
 
     public ShiftViewModel(AppServices services, User user)
     {
@@ -42,6 +45,8 @@ public sealed class ShiftViewModel : ObservableObject
 
         OpenCommand = new RelayCommand(OpenShift);
         CloseCommand = new RelayCommand(CloseShift);
+        HandoverCommand = new RelayCommand(HandOver);
+        PrintSlipCommand = new RelayCommand(PrintSlip);
         RefreshCommand = new RelayCommand(Load);
 
         Load();
@@ -49,9 +54,18 @@ public sealed class ShiftViewModel : ObservableObject
 
     public ObservableCollection<ShiftMoney> History { get; } = new();
 
+    /// <summary>Everybody who could take the drawer - the signed-in person is not in this list.</summary>
+    public ObservableCollection<User> NextPeople { get; } = new();
+
     public RelayCommand OpenCommand { get; }
 
     public RelayCommand CloseCommand { get; }
+
+    /// <summary>Count the drawer, choose the next person, and print the slip (F-55).</summary>
+    public RelayCommand HandoverCommand { get; }
+
+    /// <summary>Print the last handover slip again - the paper gets lost, the record does not.</summary>
+    public RelayCommand PrintSlipCommand { get; }
 
     public RelayCommand RefreshCommand { get; }
 
@@ -68,11 +82,30 @@ public sealed class ShiftViewModel : ObservableObject
             if (SetProperty(ref _hasShift, value))
             {
                 OnPropertyChanged(nameof(NoShift));
+                OnPropertyChanged(nameof(CanHandover));
             }
         }
     }
 
     public bool NoShift => !_hasShift;
+
+    /// <summary>The handover card is only useful while a drawer is open.</summary>
+    public bool CanHandover => _hasShift && CanWork;
+
+    public User? SelectedPerson
+    {
+        get => _selectedPerson;
+        set => SetProperty(ref _selectedPerson, value);
+    }
+
+    /// <summary>What the first person counted - the same number the next shift starts with.</summary>
+    public string HandoverCashText
+    {
+        get => _handoverCashText;
+        set => SetProperty(ref _handoverCashText, value);
+    }
+
+    public bool HasLastHandover => _lastHandover is not null;
 
     public string HeaderText
     {
@@ -197,12 +230,97 @@ public sealed class ShiftViewModel : ObservableObject
             ExpectedText = current.ExpectedLabel;
         }
 
+        LoadPeople();
+
         History.Clear();
 
         foreach (var row in _services.Shifts.History())
         {
             History.Add(row);
         }
+    }
+
+    /// <summary>
+    /// The next person must be on the staff list, switched on, and somebody else. The service
+    /// refuses an inactive account or one without the cash permission; this list only shows the
+    /// people who could actually take the drawer, so the page cannot offer a choice that fails.
+    /// </summary>
+    private void LoadPeople()
+    {
+        var keeper = SelectedPerson?.Id;
+        var people = _services.Auth.ListUsers();
+
+        NextPeople.Clear();
+
+        if (people.Ok && people.Value is not null)
+        {
+            foreach (var person in people.Value)
+            {
+                if (person.Active && person.Id != _user.Id)
+                {
+                    NextPeople.Add(person);
+                }
+            }
+        }
+
+        SelectedPerson = NextPeople.FirstOrDefault(person => person.Id == keeper) ?? NextPeople.FirstOrDefault();
+    }
+
+    private void HandOver()
+    {
+        if (SelectedPerson is null)
+        {
+            SetStatus("Choose who is taking the drawer.", true);
+            return;
+        }
+
+        if (!Money.TryParse(HandoverCashText, out var rupees) || rupees < 0)
+        {
+            SetStatus("Count the drawer and type the total cash, for example 12450.", true);
+            return;
+        }
+
+        var result = _services.Shifts.Handover(_user, SelectedPerson, Money.ToPaisa(rupees), NoteText);
+
+        if (!result.Ok || result.Value is null)
+        {
+            SetStatus(result.Error ?? "The shift could not be handed over.", true);
+            return;
+        }
+
+        var handover = result.Value;
+
+        _lastHandover = handover;
+        OnPropertyChanged(nameof(HasLastHandover));
+        HandoverCashText = string.Empty;
+        NoteText = string.Empty;
+        Load();
+
+        // The money has already moved, so a printer that is off must not look like a failed
+        // handover: the sentence says both things separately.
+        var printed = _services.Printer.Print(_services.HandoverSlips.Build(handover));
+
+        SetStatus(printed.Ok
+                ? handover.Sentence + " The slip has gone to the printer - both signatures go on it."
+                : handover.Sentence + " The slip could not be printed (" + printed.Error
+                  + "). The handover is recorded; use Print the slip again.",
+            !printed.Ok);
+    }
+
+    private void PrintSlip()
+    {
+        if (_lastHandover is null)
+        {
+            SetStatus("Hand the drawer over first - there is no slip to print yet.", true);
+            return;
+        }
+
+        var printed = _services.Printer.Print(_services.HandoverSlips.Build(_lastHandover));
+
+        SetStatus(printed.Ok
+                ? "The handover slip has gone to the printer again."
+                : "The slip could not be printed: " + printed.Error,
+            !printed.Ok);
     }
 
     private void OpenShift()

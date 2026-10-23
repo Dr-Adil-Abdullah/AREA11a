@@ -189,6 +189,167 @@ WHERE id = @id;",
         }
     }
 
+    /// <summary>
+    /// Hands the drawer from one person to the next (Spec 14.4 / 18.2, F-55). One transaction does
+    /// three things that must never be separated: it counts and closes the first shift, it writes
+    /// who gave it to whom, and it opens the next shift **with the counted money as its float**.
+    ///
+    /// Why the counted number and not the expected one: the next person did not cause the
+    /// difference and must not be asked to explain it. The shortfall (or the extra) is booked
+    /// against the shift that produced it, and the new shift starts clean with what is actually in
+    /// the drawer. If this used the expected figure instead, every handover would hide a gap and
+    /// the day's total would drift by it for ever.
+    ///
+    /// The new person must be on the staff list, active, and allowed to work the till - handing a
+    /// drawer to somebody who cannot open it leaves the money in nobody's name.
+    /// </summary>
+    public ServiceResult<ShiftHandover> Handover(User user, User next, long countedPaisa, string? note)
+    {
+        ArgumentNullException.ThrowIfNull(user);
+        ArgumentNullException.ThrowIfNull(next);
+
+        if (!_permissions.Can(user, Modules.Cash))
+        {
+            return ServiceResult<ShiftHandover>.Fail("You do not have permission to hand over the till.");
+        }
+
+        if (next.Id == user.Id)
+        {
+            return ServiceResult<ShiftHandover>.Fail(
+                "That is the same person. Choose who is taking the drawer.");
+        }
+
+        if (next.Id <= 0 || string.IsNullOrWhiteSpace(next.Name))
+        {
+            return ServiceResult<ShiftHandover>.Fail("Choose the person who is taking the drawer.");
+        }
+
+        if (!next.Active)
+        {
+            return ServiceResult<ShiftHandover>.Fail(next.Name + " is switched off and cannot take the drawer.");
+        }
+
+        if (!_permissions.Can(next, Modules.Cash))
+        {
+            return ServiceResult<ShiftHandover>.Fail(
+                next.Name + " cannot work the till (no Cash / shifts permission).");
+        }
+
+        if (countedPaisa < 0)
+        {
+            return ServiceResult<ShiftHandover>.Fail("The counted cash cannot be negative.");
+        }
+
+        var cleanNote = string.IsNullOrWhiteSpace(note) ? null : note!.Trim();
+
+        try
+        {
+            return _db.Tx(connection =>
+            {
+                var shift = ReadOpen(connection);
+
+                if (shift is null)
+                {
+                    return ServiceResult<ShiftHandover>.Fail("There is no open shift to hand over.");
+                }
+
+                // The same rule as closing: the person who opened the drawer, or somebody senior.
+                if (shift.UserId != user.Id && !user.CanManage)
+                {
+                    return ServiceResult<ShiftHandover>.Fail(
+                        "Only the person who opened this shift, or the owner or a manager, can hand it over.");
+                }
+
+                var at = Clock.Now();
+                FillDrawer(connection, shift, shift.OpenedAt, at, beforeTheHandover: true);
+
+                shift.ActualPaisa = countedPaisa;
+                shift.DifferencePaisa = countedPaisa - shift.ExpectedPaisa;
+                shift.Status = "closed";
+                shift.HandedToName = next.Name.Trim();
+
+                _db.Execute(connection, @"
+UPDATE shifts
+SET closed_at = @at, expected_paisa = @expected, actual_paisa = @actual,
+    difference_paisa = @difference, status = 'closed', note = IFNULL(@note, note),
+    handed_to_user_id = @nextId, handed_to_name = @nextName
+WHERE id = @id;",
+                    new
+                    {
+                        at,
+                        expected = shift.ExpectedPaisa,
+                        actual = countedPaisa,
+                        difference = shift.DifferencePaisa,
+                        note = cleanNote,
+                        nextId = next.Id,
+                        nextName = next.Name.Trim(),
+                        id = shift.Id
+                    });
+
+                _db.Execute(connection, @"
+INSERT INTO shifts(user_id, opened_at, opening_float_paisa, status, note, opened_from_shift_id)
+VALUES(@userId, @at, @openingFloat, 'open', @note, @fromId);",
+                    new
+                    {
+                        userId = next.Id,
+                        at,
+                        openingFloat = countedPaisa,
+                        note = "Handover from " + user.Name.Trim(),
+                        fromId = shift.Id
+                    });
+
+                var nextShiftId = (int)_db.NextId(connection);
+
+                _audit.RecordChange(connection, user, "Cash", "shift_handover", "shifts", shift.Id.ToString(),
+                    new { Status = "open" },
+                    new
+                    {
+                        Status = "closed",
+                        Expected = shift.ExpectedPaisa,
+                        Actual = countedPaisa,
+                        Difference = shift.DifferencePaisa,
+                        GivenTo = next.Name.Trim()
+                    },
+                    cleanNote);
+
+                _audit.Record(connection, user, "Cash", "shift_open", "shifts", nextShiftId.ToString(),
+                    newValue: Money.Format(countedPaisa) + " from drawer " + shift.Id);
+
+                var closedShift = ReadShift(connection, shift.Id) ?? shift;
+
+                // The stored row keeps the expected/actual/difference, but the six lines that
+                // explain *how* that expected figure was reached are not columns - they are read
+                // from the history. The slip prints them, so the closed shift is filled again
+                // with the same half-open window it was closed with. Without this the slip would
+                // hand the next person a piece of paper full of zeros.
+                FillDrawer(connection, closedShift, closedShift.OpenedAt, at, beforeTheHandover: true);
+
+                var openedShift = ReadShift(connection, nextShiftId);
+
+                if (openedShift is null)
+                {
+                    return ServiceResult<ShiftHandover>.Fail("The next shift could not be opened.");
+                }
+
+                FillDrawer(connection, openedShift, openedShift.OpenedAt, at);
+
+                return ServiceResult<ShiftHandover>.Success(new ShiftHandover
+                {
+                    From = closedShift,
+                    To = openedShift,
+                    GivenBy = user.Name.Trim(),
+                    GivenTo = next.Name.Trim(),
+                    GivenAt = at
+                });
+            });
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The shift could not be handed over.", exception);
+            return ServiceResult<ShiftHandover>.Fail("The shift could not be handed over. Nothing was changed.");
+        }
+    }
+
     /// <summary>The last shifts, newest first - the day-by-day record of the drawer.</summary>
     public List<ShiftMoney> History(int limit = 60)
     {
@@ -200,7 +361,8 @@ WHERE id = @id;",
 SELECT s.id AS id, s.opened_at AS openedAt, IFNULL(u.name, '') AS openedBy,
        s.opening_float_paisa AS openingFloatPaisa, IFNULL(s.expected_paisa, 0) AS expectedPaisa,
        s.actual_paisa AS actualPaisa, s.difference_paisa AS differencePaisa,
-       s.status AS status, s.note AS note
+       s.status AS status, s.note AS note, s.handed_to_name AS handedToName,
+       s.opened_from_shift_id AS openedFromShiftId
 FROM shifts s
 LEFT JOIN users u ON u.id = s.user_id
 ORDER BY s.id DESC
@@ -218,20 +380,43 @@ LIMIT @limit;",
         _db.QuerySingle<ShiftMoney>(connection, @"
 SELECT s.id AS id, s.user_id AS userId, s.opened_at AS openedAt, IFNULL(u.name, '') AS openedBy,
        s.opening_float_paisa AS openingFloatPaisa, IFNULL(s.expected_paisa, 0) AS expectedPaisa,
-       s.status AS status, s.note AS note
+       s.status AS status, s.note AS note, s.handed_to_name AS handedToName,
+       s.opened_from_shift_id AS openedFromShiftId
 FROM shifts s
 LEFT JOIN users u ON u.id = s.user_id
 WHERE s.status = 'open'
 ORDER BY s.id DESC
 LIMIT 1;");
 
+    /// <summary>One shift by its number, open or closed - the handover reads both halves this way.</summary>
+    private ShiftMoney? ReadShift(Microsoft.Data.Sqlite.SqliteConnection connection, int id) =>
+        _db.QuerySingle<ShiftMoney>(connection, @"
+SELECT s.id AS id, s.user_id AS userId, s.opened_at AS openedAt, IFNULL(u.name, '') AS openedBy,
+       s.opening_float_paisa AS openingFloatPaisa, IFNULL(s.expected_paisa, 0) AS expectedPaisa,
+       s.actual_paisa AS actualPaisa, s.difference_paisa AS differencePaisa,
+       s.status AS status, s.note AS note, s.handed_to_name AS handedToName,
+       s.opened_from_shift_id AS openedFromShiftId
+FROM shifts s
+LEFT JOIN users u ON u.id = s.user_id
+WHERE s.id = @id;", new { id });
+
     /// <summary>
     /// Fills the six money lines from the history between two timestamps. Every line is its own
     /// sub-select so one empty table can never hide another line.
     /// </summary>
-    private void FillDrawer(Microsoft.Data.Sqlite.SqliteConnection connection, ShiftMoney shift, string from, string to)
+    private void FillDrawer(
+        Microsoft.Data.Sqlite.SqliteConnection connection,
+        ShiftMoney shift,
+        string from,
+        string to,
+        bool beforeTheHandover = false)
     {
-        var drawer = _db.QuerySingle<ShiftMoney>(connection, @"
+        // A handover and a bill can land in the same second, because a stamp is only accurate to
+        // the second. On a handover the closing shift's window is [open, at) and the new shift's is
+        // [at, now], so a bill in that one second belongs to the new shift and to nobody twice.
+        // Without this, a handover in the same second as a sale either counts the sale on both
+        // sides of the change or on neither - and both of those are wrong money.
+        var sql = @"
 SELECT
   IFNULL((SELECT SUM(p.amount_paisa) FROM payments p
           WHERE p.method = 'cash' AND p.sale_id IS NOT NULL
@@ -251,8 +436,11 @@ SELECT
   IFNULL((SELECT SUM(e.amount_paisa) FROM expenses e
           WHERE e.date >= @from AND e.date <= @to), 0) AS expensesPaisa,
   IFNULL((SELECT SUM(d.amount_paisa) FROM owner_drawings d
-          WHERE d.type = 'cash' AND d.date >= @from AND d.date <= @to), 0) AS drawingsPaisa;",
-            new { from, to });
+          WHERE d.type = 'cash' AND d.date >= @from AND d.date <= @to), 0) AS drawingsPaisa;";
+
+        sql = sql.Replace("<= @to", beforeTheHandover ? "< @to" : "<= @to", StringComparison.Ordinal);
+
+        var drawer = _db.QuerySingle<ShiftMoney>(connection, sql, new { from, to });
 
         shift.CashSalesPaisa = drawer?.CashSalesPaisa ?? 0;
         shift.CashCollectionsPaisa = drawer?.CashCollectionsPaisa ?? 0;
