@@ -1434,6 +1434,12 @@ def check_migrations() -> None:
 # ---------------------------------------------------------------------------
 # 4b. SQL in the services must be valid against the real schema
 # ---------------------------------------------------------------------------
+#: A statement that ends on one of these is a piece of a statement pasted together in C#, not one.
+FRAGMENT_END = re.compile(
+    r"(?:[=,(]|\b(?:FROM|WHERE|AND|OR|JOIN|INTO|SET|VALUES|ORDER\s+BY|GROUP\s+BY|LIMIT|OFFSET|LIKE|IN))\s*$",
+    re.I)
+
+
 def check_sql() -> None:
     """Every SQL statement written in C# is prepared against the migrated schema.
 
@@ -1451,21 +1457,60 @@ def check_sql() -> None:
     for path in sorted((DOTNET / "Area11.Core/Data/Migrations").glob("*.sql")):
         connection.executescript(path.read_text(encoding="utf-8"))
 
+    # The ledger is created by MigrationRunner, not by a migration file; a test that counts it is
+    # asking a true question, so the model of the schema has to carry it too.
+    connection.execute("CREATE TABLE IF NOT EXISTS _migrations (id TEXT PRIMARY KEY, "
+                       "applied_at TEXT NOT NULL DEFAULT (datetime('now','localtime')));")
+
     verbatim = re.compile(r'@"((?:[^"]|"")*)"', re.S)
     plain = re.compile(r'(?<![@$])"((?:[^"\\]|\\.)*)"', re.S)
 
+    # Interpolated strings are not SQL that can be prepared - the {holes} are C# expressions - but they
+    # must be BLANKED before the plain scan, not merely skipped: their closing quote otherwise pairs
+    # with the next string's opening quote, and every statement after that point is read as prose and
+    # silently ignored. That is exactly how `INSERT INTO companies(name, created_at)` - a column that
+    # does not exist - reached the owner's PC in v0.29.5 while this rule reported the tree clean.
+    interpolated = re.compile(r'\$@"(?:[^"]|"")*"|\$"(?:[^"\\]|\\.)*"', re.S)
+
     total = 0
     invalid = 0
+    fragments = 0
     sources = sorted((DOTNET / "Area11.Core/Services").glob("*.cs"))
     sources += sorted((DOTNET / "Area11.Core/Data").glob("*.cs"))
 
+    # The tests too. v0.29.5 shipped a test that typed `INSERT INTO companies(name, created_at)` -
+    # a column that does not exist - and it reached the owner's PC because this rule only read the
+    # services. A test that cannot run is worse than no test: it hides the feature it was written
+    # to prove behind a red line the owner reads as a fault in the program.
+    sources += sorted((DOTNET / "Area11.Tests").glob("*.cs"))
+
     for path in sources:
         text = path.read_text(encoding="utf-8-sig")
-        for pattern in (verbatim, plain):
-            for match in pattern.finditer(text):
+
+        # Both masks are for the PLAIN scan: a verbatim or interpolated literal ends in a quote that
+        # would otherwise open the next plain string, and from there every statement in the file is
+        # read off by one. Verbatim literals are still scanned for their own SQL - just from a copy
+        # where the interpolated ones are already gone.
+        without_interpolated = interpolated.sub('""', text)
+        without_verbatim = verbatim.sub('""', without_interpolated)
+
+        for pattern, subject in ((verbatim, without_interpolated), (plain, without_verbatim)):
+            for match in pattern.finditer(subject):
                 sql = match.group(1).replace('""', '"').strip()
-                if not re.match(r"(?i)^(SELECT|INSERT|UPDATE|DELETE|WITH)\b", sql):
+
+                # The keywords are matched in UPPER CASE on purpose. Every statement in this repository
+                # is written in upper case, so a lower-case "with" is prose, not SQL - and prose is what
+                # a search term in a test looks like ("with, comma", 'with "quote"').
+                if not re.match(r"^(SELECT|INSERT|UPDATE|DELETE|WITH)\b", sql):
                     continue
+
+                # A statement built by pasting a variable is not a statement: "SELECT COUNT(1) FROM "
+                # ends in a word that cannot end SQL. Preparing the half would report a fault in the
+                # test rather than a fault in the shop, and a checker that cries wolf is turned off.
+                if FRAGMENT_END.search(sql):
+                    fragments += 1
+                    continue
+
                 total += 1
                 parameters = {name: None for name in set(re.findall(r"@(\w+)", sql))}
                 try:
@@ -1476,7 +1521,8 @@ def check_sql() -> None:
                          + " ".join(sql.split())[:90])
 
     connection.close()
-    REPORT.append(f"SQL: {total} statements prepared, {invalid} invalid")
+    REPORT.append(f"SQL: {total} statements prepared, {invalid} invalid"
+                  + (f", {fragments} fragment(s) skipped" if fragments else ""))
 
 
 # ---------------------------------------------------------------------------

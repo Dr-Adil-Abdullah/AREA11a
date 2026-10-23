@@ -129,6 +129,23 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
+> **v0.29.6 (Grape `#6D28D9`) - the SQL gate was reading half the SQL, and two of my tests were wrong.**
+>
+> * **A literal's closing quote is not the next literal's opening.** The plain-string scan treated the
+>   closing `"` of a verbatim or interpolated string as the start of the next one, so from the first
+>   `$@"..."` in a file onwards every following pair was read off by one and its SQL was silently
+>   treated as prose. Nothing reported it; the count was simply low. Interpolated literals are now
+>   blanked before the plain pass and verbatim ones before both - **327 statements became 711**.
+> * **The tests are inside the SQL gate.** A test that throws in its first line reports a *program*
+>   fault to the owner, and `INSERT INTO companies(name, created_at)` (no such column) sat in
+>   `SampleShopTests` from v0.29.1 to v0.29.5 without ever running.
+> * **A statement built by pasting a variable is a fragment, not a statement.** Ones ending on `FROM`,
+>   `=`, `(` or a comma are counted and skipped instead of being prepared and reported as faults.
+> * **Known blind spot, written down rather than left to be discovered:** the column-mapping rule (851
+>   columns) still reads only `Area11.Core`; a test's own row class is not compared with its query.
+> * **When a page gains a line, look for the test that counts the lines.** `Assert.Equal(13,
+>   report.Steps.Count)` was the only thing v0.29.5 broke by adding a step.
+>
 > **v0.29.5 (Sapphire `#1B4B8F`) - the demo shop keeps a black box too, and a count found it, not a page.**
 >
 > * **When a page looks empty in the demo, count the tables the sample writes.** 28 of 34 were written;

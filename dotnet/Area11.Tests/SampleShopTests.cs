@@ -96,7 +96,7 @@ public sealed class SampleShopTests
 
         // Every promise the page made is a row: no step may be quietly dropped.
         Assert.True(report.CanSeed);
-        Assert.Equal(13, report.Steps.Count);
+        Assert.Equal(14, report.Steps.Count);
         Assert.Contains("44 medicines", string.Join(" ", report.Steps));
         Assert.Contains("14 shelves", string.Join(" ", report.Steps));
     }
@@ -179,8 +179,7 @@ WHERE c.parent_id IS NOT NULL
         using (var connection = test.Database.Open())
         {
             test.Database.Execute(connection,
-                "INSERT INTO companies(name, created_at) VALUES('My own company', @at);",
-                new { at = Clock.Now() });
+                "INSERT INTO companies(name) VALUES('My own company');");
         }
 
         var sample = Sample(test);

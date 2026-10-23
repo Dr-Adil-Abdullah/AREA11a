@@ -6,9 +6,9 @@
          docs/VERSIONS.md). The owner tests every build on his own PC and finds the new one by its
          colour, so a code change is always shipped with a new colour. White text sits on these
          brushes - keep the shade at 4.5:1 or better against white. -->
-    <SolidColorBrush x:Key="BrandBrush" Color="#1B4B8F" />
-    <SolidColorBrush x:Key="BrandDarkBrush" Color="#143A6E" />
-    <SolidColorBrush x:Key="BrandSoftBrush" Color="#E7EDF7" />
+    <SolidColorBrush x:Key="BrandBrush" Color="#6D28D9" />
+    <SolidColorBrush x:Key="BrandDarkBrush" Color="#5720A8" />
+    <SolidColorBrush x:Key="BrandSoftBrush" Color="#EFE8FB" />
     <SolidColorBrush x:Key="CanvasBrush" Color="#F3F5F7" />
     <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF" />
     <SolidColorBrush x:Key="SidebarBrush" Color="#0F172A" />
