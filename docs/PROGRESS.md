@@ -37,7 +37,7 @@ features and the four phases.
 > v0.29.0 moved **F-12 (the dashboard)** to ✅ after giving it 20 tests; the mock database used for
 > them was rebuilt from all 23 migrations and every SQL statement was run on it before shipping.
 
-## Where we stand (v0.30.2)
+## Where we stand (v0.30.3)
 
 | Question | Number | What it means |
 |---|---|---|
@@ -165,7 +165,7 @@ the moment the owner does the thing once and says it worked.** The demo shop was
 | **Compiles on Windows** | `dotnet build Area11.sln` | ✅ 20 Oct 2026 (v0.1.1); re-check after each release |
 | Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.28.0 Pine |
 | **Printer prints (owner's code 6)** | SYSTEM -> *Printer & scanner*, pick the printer, **Print test slip** | 🟡 v0.22.1 fixes the cause (the program opened the print server, not the default printer) - the owner's next slip is the proof |
-| **686 tests green** | `dotnet test` (or `tools\RUN-TESTS.cmd`) | 🟡 **fourth run (v0.6.1): 320 of 321 in 27.5 s.** Runs five to fifteen were never reported. **Run 16 (v0.18.0): 479 total, 6 failed, 473 passed** - all six were tests written from an older rule (the program was right) and every one is repaired in v0.19.1; see the 0.19.1 row in `docs/VERSIONS.md`. Runs 17+ are waiting on the owner's machine: v0.19.0 503, v0.19.1 505, v0.20.0 519, v0.21.0 539, v0.22.0 553, v0.22.1 559, v0.23.0 577, v0.24.0 593, v0.25.0 629, v0.26.0/0.26.1 641, v0.27.0 654, v0.28.0 666, v0.29.0 686, v0.29.1 689, **v0.29.2 695** |
+| **659 tests green** | `dotnet test` (or `tools\RUN-TESTS.cmd`) | 🟡 **fourth run (v0.6.1): 320 of 321 in 27.5 s.** Runs five to fifteen were never reported. **Run 16 (v0.18.0): 479 total, 6 failed, 473 passed** - all six were tests written from an older rule (the program was right) and every one is repaired in v0.19.1; see the 0.19.1 row in `docs/VERSIONS.md`. Runs 17+ are waiting on the owner's machine: v0.19.0 503, v0.19.1 505, v0.20.0 519, v0.21.0 539, v0.22.0 553, v0.22.1 559, v0.23.0 577, v0.24.0 593, v0.25.0 629, v0.26.0/0.26.1 641, v0.27.0 654, v0.28.0 666, v0.29.0 686, v0.29.1 689, **v0.29.2 695** |
 
 ## Change log
 

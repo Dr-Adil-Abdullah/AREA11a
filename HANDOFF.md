@@ -30,7 +30,7 @@ shop computer. Talk to him in Urdu; keep code, database and UI in English.
 | Default owner login | user **Owner**, password **`area11`** (change it on day one) |
 | How does the owner report a fault? | **`tools\SEND-REPORT.cmd`** (v0.30.3, D-78) writes one text file with the build, `dotnet --info`, the git state, the project files, the shop folder (names/sizes/dates - no rows), the whole newest crash report and the last build/test output. `START-AREA11.bat` keeps `build.log` + `build-errors.txt` and prints only the error lines; `tools\RUN-TESTS.cmd` keeps `test.log` and prints only the result, the failed names and the compile errors |
 
-Status in one line: **all four phases are written - 42 of 51 features done, 686 test cases waiting for the owner's Windows run; the shop PC has not yet shown the sign-in window, and the installer (F-47) is ready to be tried for the first time.**
+Status in one line: **all four phases are written - 43 of 51 features done and 8 that only the shop PC can prove; 659 test cases pass on the owner's machine for Core + Tests (run 22: 696 of 696, and the 37 that left with the demo shop in v0.30.2 are the only difference) - but the WPF project itself has still never been compiled, so the sign-in window remains the one thing unproven, and the installer (F-47) has never been run.**
 
 ---
 
@@ -75,7 +75,7 @@ Full detail in [`docs/PROGRESS.md`](docs/PROGRESS.md). The short version:
 | **Cloud sync** (push, preview, bring with a backup; never deletes a row) | `Area11.Core/Services/SyncService.cs`, `Area11.Core/Services/CloudTransport.cs`, `Area11.Desktop/Views/CloudSyncView.xaml` |
 | **Dashboard** (F-12): the home screen's eleven numbers, each equal to the page it summarises - profit by the report's rule, expiry by day, hidden from staff without the profit permission | `Area11.Core/Services/DashboardService.cs`, `Desktop/ViewModels/DashboardViewModel.cs`, `Area11.Tests/DashboardTests.cs` |
 | **No demo, ever** (D-77): the sample shop that filled a new database with two and a half months of invented bills was **deleted on the owner's word** in v0.30.2 - `SampleShopService`, its page, `DEMO-AREA11.cmd` and the `--demo` switch are gone, and no flag or button can invent a row | `Area11.Core/Utils/AppPaths.cs` (one data root), `Area11.Core/Utils/BuildInfo.cs` (one title) |
-| 686 test cases | `Area11.Tests/` |
+| 659 test cases | `Area11.Tests/` |
 
 **Written but never tested on the shop PC (🟡)**
 
