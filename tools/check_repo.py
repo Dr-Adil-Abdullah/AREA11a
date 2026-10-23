@@ -1532,6 +1532,159 @@ def check_packages() -> None:
 # ---------------------------------------------------------------------------
 # 4d. One version, one colour: BuildInfo == Theme.xaml == docs/VERSIONS.md
 # ---------------------------------------------------------------------------
+# `public int Id { get; }`, `public List<Row> Rows { get; } = new();` and the same with `init;` -
+# only the first two are getter-only. The trailing `;?` matters: an initialised property ends in `;`,
+# and without it the pattern silently matched nothing (which is how this check first missed its bug).
+_READONLY_PROP_RE = re.compile(
+    r"(?m)^[ \t]*(?:public|private|protected|internal)[^\n;{}]*?\b(\w+)\s*\{\s*get;\s*\}"
+    r"\s*(?:=[^;\n]*)?;?$")
+
+_INITIALIZER_RE = re.compile(r"\bnew\s+([\w.]+)\s*(?:\([^()]*\))?\s*\{")
+
+_ASSIGN_RE = re.compile(r"(?<![\w.])(\w+)\s*=\s*(?!=)")
+
+
+def check_readonly_members() -> None:
+    """An object initializer may not assign a property that only has a getter (CS0200).
+
+    Why: `SaleSample.Lines { get; } = new();` was assigned in `new SaleSample { Lines = lines }`.
+    Nothing else in this checker could see it - the C# parser is happy, the SQL is right, the XAML
+    binds - and it stopped the owner's first build of v0.26.0 on his own PC. A getter-only property
+    is legal and often right; assigning it outside the constructor is the compile error.
+
+    How: every type whose name is declared once in the repository gets the set of its getter-only
+    properties; then every `new Type { ... }` block is read, nested braces are dropped, and each
+    `Name =` inside is checked against that set. A type declared twice is skipped rather than guessed.
+    """
+    declarations: dict[str, set[str]] = {}
+    duplicates: set[str] = set()
+    sources: dict[pathlib.Path, str] = {}
+
+    for path in sorted(DOTNET.rglob("*.cs")):
+        if any(part in {"obj", "bin"} for part in path.parts):
+            continue
+
+        text = path.read_text(encoding="utf-8-sig")
+        sources[path] = text
+
+        for match in re.finditer(r"(?m)^[ \t]*(?:public|private|protected|internal|file)?[^\n;{}]*?"
+                                 r"\b(?:class|record|struct)\s+(\w+)", text):
+            name = match.group(1)
+            block = text[match.start():match.start() + 20000]
+            opened = block.find("{")
+            if opened < 0:
+                continue
+
+            depth = 0
+            end = len(block)
+            for index in range(opened, len(block)):
+                if block[index] == "{":
+                    depth += 1
+                elif block[index] == "}":
+                    depth -= 1
+                    if depth == 0:
+                        end = index
+                        break
+
+            readonly = {prop.group(1) for prop in _READONLY_PROP_RE.finditer(block[opened:end])}
+
+            if name in declarations:
+                duplicates.add(name)
+            declarations[name] = declarations.get(name, set()) | readonly
+
+    checked = 0
+    initializers = 0
+
+    for name in duplicates:
+        declarations.pop(name, None)
+
+    for path, text in sources.items():
+        for match in _INITIALIZER_RE.finditer(text):
+            type_name = match.group(1).split(".")[-1].split("<")[0]
+            readonly = declarations.get(type_name)
+
+            if not readonly:
+                continue
+
+            start = match.end() - 1
+            depth = 0
+            end = None
+
+            for index in range(start, min(len(text), start + 20000)):
+                if text[index] == "{":
+                    depth += 1
+                elif text[index] == "}":
+                    depth -= 1
+                    if depth == 0:
+                        end = index
+                        break
+
+            if end is None:
+                continue
+
+            initializers += 1
+
+            # Only the assignments that belong to THIS initializer count. A nested `new Y { ... }`
+            # has its own properties, so everything inside an inner brace pair - and inside a string -
+            # is blanked out, character for character, to keep the line numbers exact.
+            body = text[start:end]
+            flat = []
+            depth = 0
+            index = 0
+
+            while index < len(body):
+                character = body[index]
+
+                if character == '"':
+                    flat.append(" ")
+                    index += 1
+
+                    while index < len(body):
+                        if body[index] == "\\":
+                            flat.append("  ")
+                            index += 2
+                            continue
+
+                        if body[index] == '"':
+                            flat.append(" ")
+                            index += 1
+                            break
+
+                        flat.append(" ")
+                        index += 1
+
+                    continue
+
+                if character == "{":
+                    depth += 1
+                    flat.append(" ")
+                elif character == "}":
+                    depth -= 1
+                    flat.append(" ")
+                else:
+                    flat.append(character if depth <= 1 else " ")
+
+                index += 1
+
+            flat = "".join(flat)
+
+            for assignment in _ASSIGN_RE.finditer(flat):
+                prop = assignment.group(1)
+
+                if prop not in readonly:
+                    continue
+
+                line = text[:start + assignment.start()].count("\n") + 1
+                fail(f"{rel(path)}:{line}: '{prop}' of '{type_name}' is getter-only, so an object "
+                     f"initializer cannot set it (CS0200) - give it `init;` or set it in the "
+                     f"constructor")
+
+            checked += 1
+
+    REPORT.append(f"Read-only members: {checked} object initializers checked against "
+                  f"{len(declarations)} types")
+
+
 def check_version_colour() -> None:
     """The owner identifies a build by its colour, so the three places that describe it must agree.
 
@@ -1765,6 +1918,7 @@ def main() -> int:
     check_shadowing()
     check_result_values()
     check_constructor_arity()
+    check_readonly_members()
     check_resources()
     check_xml()
     check_bindings()

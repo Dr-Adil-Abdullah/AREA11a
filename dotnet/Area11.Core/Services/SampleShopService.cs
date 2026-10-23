@@ -1320,7 +1320,7 @@ VALUES(@cartId, @productId, @name, 'base', 10, @price, 2);",
 
         public long Due { get; init; }
 
-        public List<SaleLineSample> Lines { get; } = new();
+        public List<SaleLineSample> Lines { get; init; } = new();
     }
 
     private sealed class SaleLineSample
