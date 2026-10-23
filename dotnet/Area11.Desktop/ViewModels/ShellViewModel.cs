@@ -65,7 +65,30 @@ public sealed class ShellViewModel : ObservableObject
         // The first sign-in of the day makes the daily copy if it is switched on. It never throws
         // and never blocks the till: a failed backup is a line in the log and a note on the page.
         _services.Backup.RunAutomaticIfDue();
+
+        // The demo opens on the page that fills it (D-76). The owner asked for "a button that loads
+        // demo data"; making him hunt for that button in SYSTEM is how the first try went wrong, so
+        // in the demo shop the Sample-shop page is the first thing on the screen, with its group
+        // already open. In the real shop nothing changes.
         SelectedNav = NavItems.FirstOrDefault(item => item.IsPage);
+
+        if (DemoShop.IsOn)
+        {
+            var sample = NavItems.FirstOrDefault(item =>
+                item.IsPage && string.Equals(item.Title, "Sample shop", StringComparison.Ordinal));
+
+            if (sample is not null && sample.GroupKey.Length > 0)
+            {
+                var group = _groups.FirstOrDefault(item => item.Key == sample.GroupKey);
+
+                if (group is not null)
+                {
+                    SetCollapsed(group, false);
+                }
+
+                SelectedNav = sample;
+            }
+        }
     }
 
     public event Action? LoggedOut;

@@ -1122,6 +1122,89 @@ def check_resources() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 1h. x:Static members (the other XamlParseException class of error)
+# ---------------------------------------------------------------------------
+def check_x_static() -> None:
+    """Every `{x:Static prefix:Type.Member}` must exist as a member of that type.
+
+    Why this rule exists: XAML is parsed when the **window is created**, not when the project is
+    built. A misspelt member (`BuildInfo.WindowTitel`) therefore builds cleanly and then throws a
+    XamlParseException on the shop PC, and the program closes before the login window - the very
+    failure that is hardest for the owner to report. `check_resources` covers {StaticResource};
+    this covers {x:Static}, which until now was in no check at all.
+
+    Resolution: the `xmlns:` map in the same file gives the namespace (and the assembly), the
+    assembly gives the project folder, and the member must be `const` / `static` / `readonly` or a
+    property (`Name =>` / `Name {`) inside the class that carries that name.
+    """
+    desktop = DOTNET / "Area11.Desktop"
+    if not desktop.exists():
+        return
+
+    checked = 0
+
+    for path in desktop.rglob("*.xaml"):
+        text = path.read_text(encoding="utf-8-sig")
+
+        prefixes = {}
+        for match in re.finditer(
+                r'xmlns:(\w+)="clr-namespace:([^";]+)(?:;assembly=([^"]+))?"', text):
+            prefixes[match.group(1)] = (match.group(2), match.group(3) or "Area11.Desktop")
+
+        for match in re.finditer(r"\{x:Static\s+(\w+):(\w+)\.(\w+)\s*\}", text):
+            prefix, type_name, member = match.group(1), match.group(2), match.group(3)
+
+            if prefix not in prefixes:
+                continue
+
+            namespace, assembly = prefixes[prefix]
+
+            folder = {
+                "Area11.Core": DOTNET / "Area11.Core",
+                "Area11.Desktop": desktop
+            }.get(assembly)
+
+            if folder is None:
+                continue                      # a framework assembly: not ours to check
+
+            checked += 1
+            line = text[:match.start()].count("\n") + 1
+            found_type = False
+            found_member = False
+
+            for source in folder.rglob("*.cs"):
+                body = source.read_text(encoding="utf-8-sig")
+
+                if not re.search(r"\bnamespace\s+" + re.escape(namespace) + r"\b", body):
+                    continue
+
+                type_match = re.search(
+                    r"\b(?:class|record|struct|enum)\s+" + re.escape(type_name) + r"\b", body)
+                if type_match is None:
+                    continue
+
+                found_type = True
+                rest = body[type_match.start():]
+
+                if (re.search(r"\b(?:const|static|readonly)\b[^\n;{]*\b"
+                              + re.escape(member) + r"\b", rest)
+                        or re.search(r"\b" + re.escape(member) + r"\b\s*(?:=>|=|\{)", rest)):
+                    found_member = True
+                    break
+
+            if not found_type:
+                fail(f"{rel(path)}:{line}: {{x:Static {prefix}:{type_name}.{member}}} names "
+                     f"`{type_name}`, which is not declared in `{namespace}` "
+                     f"(XamlParseException when the window opens)")
+            elif not found_member:
+                fail(f"{rel(path)}:{line}: {{x:Static {prefix}:{type_name}.{member}}} names "
+                     f"`{type_name}.{member}`, but `{type_name}` has no such const/static member "
+                     f"(XamlParseException when the window opens)")
+
+    REPORT.append(f"x:Static: {checked} member reference(s) resolve against the code")
+
+
+# ---------------------------------------------------------------------------
 # 2. XML (XAML, csproj, props)
 # ---------------------------------------------------------------------------
 def check_xml() -> None:
@@ -1992,6 +2075,7 @@ def main() -> int:
     check_constructor_arity()
     check_readonly_members()
     check_resources()
+    check_x_static()
     check_xml()
     check_bindings()
     check_migrations()

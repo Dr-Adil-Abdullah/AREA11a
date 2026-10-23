@@ -4,11 +4,15 @@ rem  Area11 - the DEMO shop
 rem  Double-click this file to look at Area11 filled with two and a half months
 rem  of an invented pharmacy (D-74, D-76).
 rem
-rem  It builds the same program and opens it with --demo, which keeps EVERYTHING
-rem  under C:\ProgramData\Area11\demo:
+rem  It updates the code, builds it and opens it with --demo, which keeps
+rem  EVERYTHING under C:\ProgramData\Area11\demo:
 rem      demo\area11.db, demo\photos, demo\logs
 rem  The shop's own database in C:\ProgramData\Area11\area11.db is never opened,
 rem  never written and never migrated by this file.
+rem
+rem  Why it updates and builds first: an OLD build does not know --demo and would
+rem  simply start the real shop. That is the one mistake this file must not allow,
+rem  so it never runs a program it has not just built from the current code.
 rem
 rem  When the app is finished, deleting the demo is: close this window, then
 rem  delete the folder C:\ProgramData\Area11\demo and this file. Nothing else.
@@ -28,24 +32,57 @@ if not exist "Area11.sln" goto :incomplete
 where dotnet >nul 2>nul
 if errorlevel 1 goto :nodotnet
 
-set "APPEXE=%CD%\dotnet\Area11.Desktop\bin\Debug\net10.0-windows\Area11.exe"
+rem ---- 1. update the code ----------------------------------------------------
+rem  Only a clone can update. A downloaded ZIP keeps the code it came with.
+if not exist ".git" (
+    echo  [1/3] This copy was downloaded as a file - using the code already here.
+    goto :build
+)
 
-rem ---- build if the program is missing or the source is newer ------------------
-rem  A full build every time would make the demo slow to open; building only when
-rem  the program file is missing keeps the double-click fast and still safe.
-if exist "%APPEXE%" goto :run
+where git >nul 2>nul
+if errorlevel 1 (
+    echo  [1/3] git is not available - using the code already here.
+    goto :build
+)
 
-echo  [1/2] Building the program once...
+set "BRANCH="
+for /f "delims=" %%b in ('git rev-parse --abbrev-ref HEAD 2^>nul') do set "BRANCH=%%b"
+
+if not "%BRANCH%"=="arena/a8a3b2e0-area11a" (
+    echo.
+    echo  [X]  This folder is on the branch "%BRANCH%".
+    echo       The demo lives on "arena/a8a3b2e0-area11a".
+    echo.
+    echo       GitHub Desktop - click "Current Branch" at the top, pick
+    echo                        "arena/a8a3b2e0-area11a", then "Pull origin".
+    echo.
+    pause
+    exit /b 1
+)
+
+echo  [1/3] Updating the code from GitHub ^(branch %BRANCH%^)...
+git pull --ff-only
+if errorlevel 1 echo        Could not update - continuing with the code already here.
+
+rem ---- 2. build -------------------------------------------------------------
+:build
+echo  [2/3] Building...  ^(a few seconds when nothing changed^)
 dotnet build Area11.sln -v minimal
 if errorlevel 1 goto :buildfailed
-goto :run
 
-rem ---- run the demo ------------------------------------------------------------
-:run
-echo  [2/2] Opening the demo shop...
+rem ---- 3. run the demo -------------------------------------------------------
+set "APPEXE=%CD%\dotnet\Area11.Desktop\bin\Debug\net10.0-windows\Area11.exe"
+
+if not exist "%APPEXE%" goto :noexe
+
+echo  [3/3] Opening the demo shop...
+echo.
+echo    The window title MUST say:  Area11 - DEMO SHOP (invented data)
+echo    If it says only "Area11", CLOSE IT AT ONCE and tell me - it is an old build.
 echo.
 echo    Sign in with the user name left EMPTY and the password: area11
-echo    Then open:  SYSTEM  ->  Sample shop  ->  tick the box  ->  Fill this shop
+echo    The Sample-shop page opens by itself: tick the box, then press
+echo                         Fill this shop with the sample shop
 echo.
 echo    Nothing you do here reaches your real shop.
 echo.
@@ -86,6 +123,15 @@ echo   BUILD FAILED
 echo  ==========================================================
 echo   Copy the FIRST error line above and send it in the chat.
 echo   The line looks like:  Something.cs^(12,34^): error CS1234: ...
+echo.
+pause
+exit /b 1
+
+:noexe
+echo.
+echo  The program file was not found after the build:
+echo    %APPEXE%
+echo  Send that line and the build output above.
 echo.
 pause
 exit /b 1

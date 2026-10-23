@@ -129,6 +129,17 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
+> **v0.29.3 (Cerulean `#14607A`) - a gate for XAML, and one limit of the checker written down.**
+>
+> * **`{x:Static}` is parsed at window creation, so it needs a gate like `{StaticResource}`.** A misspelt
+>   member builds cleanly and throws before the sign-in window. `check_repo.py` now resolves prefix →
+>   namespace → class → member against the source; prove any new gate by breaking it on purpose first.
+> * **What the checker cannot see:** method names on services. `Backup.AutomaticIfDue()` (the real name
+>   is `RunAutomaticIfDue`) would fail `dotnet build` and no rule here would warn. When you add a call to
+>   a service, **grep the method name in the service file** - that is what caught this one.
+> * **Failures before the first window must land in `crash-*.txt`.** Anything done in `Program.Main`
+>   goes inside the try, including the demo switch, or the owner gets a window-less silent exit.
+>
 > **v0.29.2 (Petrol `#1F4E5A`) - the demo is a separate shop, and the tests learned three rules.**
 > `DEMO-AREA11.cmd` starts the program with `--demo`: everything (database, photos, logs, backups)
 > moves to `%ProgramData%\Area11\demo`, `shop.ini` is ignored, LAN and cloud sync are hidden, and the
