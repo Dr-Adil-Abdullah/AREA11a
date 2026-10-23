@@ -118,6 +118,14 @@ WHERE sale_id = @id AND method <> 'credit' ORDER BY id;", new { id = saleId });
         Add(shopName, ReceiptAlign.Center, bold: true);
         AddIfPresent(_settings.GetString("store.address"), ReceiptAlign.Center);
         AddIfPresent(_settings.GetString("store.phone"), ReceiptAlign.Center);
+
+        // The demo shop prints real paper, and a slip that looks like a bill is kept like a bill
+        // (D-76). One bold line at the top is the difference between a demo and an invented debt.
+        if (DemoShop.IsOn)
+        {
+            Add("DEMO - NOT A REAL BILL", ReceiptAlign.Center, bold: true);
+        }
+
         document.Lines.Add(ReceiptLine.Sep(width));
 
         var dateText = FormatDate(sale.Date);

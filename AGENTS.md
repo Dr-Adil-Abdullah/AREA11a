@@ -129,6 +129,21 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
+> **v0.29.2 (Petrol `#1F4E5A`) - the demo is a separate shop, and the tests learned three rules.**
+> `DEMO-AREA11.cmd` starts the program with `--demo`: everything (database, photos, logs, backups)
+> moves to `%ProgramData%\Area11\demo`, `shop.ini` is ignored, LAN and cloud sync are hidden, and the
+> title says DEMO. Deleting the demo is deleting one folder - that is the only way a demo can be
+> removed without touching a single real bill (D-76). Three more lessons from the owner's PC, all of
+> them my own tests being wrong about the shop:
+>
+> * **`discount.mode` ships as `margin`** (Spec 11.2.1). 10 % off a 600 bill whose goods cost 400 is
+>   20, not 60. Never write a discount expectation without naming the method and the margin.
+> * **Sales stay gross; profit nets the returns** (21.2 vs 21.6). The Reports page keeps *sales* and
+>   *refunds* as two cards. If the home screen netted them, one day would show two different numbers.
+> * **`SetMany` must receive typed values.** For `expiry.levels` the caller passes `List<ExpiryBand>`;
+>   a string is serialised into a *quoted string*, the parse fails, and the shop falls back to
+>   365/180/90 in silence. The service now normalises that key, and a test proves both doorways.
+>
 > **v0.29.1 (Indigo `#3F3D8C`) - the sample shop never worked, and a "green" mirror hid it.**
 > The owner ran the suite for the first time on a machine with a real SQLite engine: **666 cases, 28
 > failed**, every one of the 28 downstream of a single sentence - `UNIQUE constraint failed:

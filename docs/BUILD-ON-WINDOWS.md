@@ -29,7 +29,21 @@ dotnet run --project dotnet\Area11.Desktop
 
 - There is exactly **one solution**, `Area11.sln`, in the root of the repository. Open that.
 - `dotnet build` with no arguments finds it automatically.
-- Expected: everything builds, **173 tests pass**, and the sign-in window opens.
+- Expected: everything builds, **695 tests pass**, and the sign-in window opens.
+
+### 2b. The demo shop — `DEMO-AREA11.cmd` (D-76)
+
+Double-click **`DEMO-AREA11.cmd`** in the repository root to look at Area11 filled with two and a half
+months of an invented pharmacy. It starts the same program with `--demo`, which keeps **everything**
+under `C:\ProgramData\Area11\demo` — database, photos, logs, backups — so the shop's own
+`C:\ProgramData\Area11\area11.db` is never opened, written or migrated. The window title says
+**DEMO SHOP (invented data)**, and the LAN and cloud-sync pages are hidden there.
+
+Inside the demo: sign in (user name empty, password `area11`) → **SYSTEM → Sample shop** → tick the box →
+**Fill this shop with the sample shop**.
+
+To remove the demo later: close it, delete `C:\ProgramData\Area11\demo`, delete `DEMO-AREA11.cmd`.
+No real bill can be affected, because no real bill was ever in that folder.
 
 > **Seeing the old blue window that says "app is running"?** That is `prototypes/WPFSample` — the very
 > first smoke test from day one, not Area11. It sits in `prototypes\` now and is only kept as history.

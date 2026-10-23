@@ -12,14 +12,31 @@ public static class AppPaths
 {
     private static readonly Lazy<string> RootLazy = new(ResolveRoot, LazyThreadSafetyMode.ExecutionAndPublication);
 
-    public static string DataRoot => RootLazy.Value;
+    /// <summary>
+    /// The real shop's folder, whatever this run is. Only the demo switch asks for it directly.
+    /// </summary>
+    public static string RealDataRoot => RootLazy.Value;
+
+    /// <summary>
+    /// Everything this run owns. Normally the shop's folder; when the program was started with
+    /// `--demo` it is the demo's own folder instead (D-76), so not one file of the real shop is
+    /// opened - database, photos, logs and backups all move together.
+    /// </summary>
+    public static string DataRoot =>
+        DemoShop.DataFolder is { Length: > 0 } folder ? folder : RootLazy.Value;
 
     /// <summary>
     /// Where this counter keeps the shop's database. A second counter points at the main PC's shared
     /// folder through `shop.ini`, so the whole shop reads one file (F-45).
+    ///
+    /// The demo deliberately ignores `shop.ini`: a demo that pointed at the second counter's shared
+    /// folder would write invented bills into the shop's real database - the one mistake this whole
+    /// switch exists to make impossible.
     /// </summary>
     public static string DatabaseFolder =>
-        ShopConfig.Current.DataFolder is { Length: > 0 } folder ? folder : DataRoot;
+        DemoShop.IsOn
+            ? DataRoot
+            : ShopConfig.Current.DataFolder is { Length: > 0 } folder ? folder : DataRoot;
 
     public static string DatabaseFile => Path.Combine(DatabaseFolder, "area11.db");
 

@@ -1,4 +1,5 @@
 using Area11.Core.Services;
+using Area11.Core.Utils;
 
 namespace Area11.Desktop;
 
@@ -22,6 +23,15 @@ public static class Program
         if (args.Length > 0 && string.Equals(args[0], "--install-check", StringComparison.OrdinalIgnoreCase))
         {
             return InstallService.RunCheck(args);
+        }
+
+        // D-76: `Area11.exe --demo` runs the DEMO shop, in its own folder, so the owner can look at
+        // two and a half months of invented bills without one invented rupee ever reaching his own
+        // database. It must be decided BEFORE the first window, because every path below (database,
+        // photos, logs, backups) reads AppPaths.DataRoot - and that is now the demo's folder.
+        if (DemoShop.WantsDemo(args))
+        {
+            DemoShop.TurnOn(AppPaths.RealDataRoot);
         }
 
         try

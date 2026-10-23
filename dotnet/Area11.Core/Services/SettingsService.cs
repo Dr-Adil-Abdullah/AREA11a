@@ -239,7 +239,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
             {
                 foreach (var pair in values)
                 {
-                    var json = JsonSerializer.Serialize(pair.Value);
+                    var json = Serialise(pair.Key, pair.Value);
 
                     var old = _db.Scalar(connection,
                         "SELECT value FROM settings WHERE key = @key;", new { key = pair.Key })?.ToString();
@@ -257,7 +257,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
             {
                 foreach (var pair in values)
                 {
-                    _cache[pair.Key] = JsonSerializer.Serialize(pair.Value);
+                    _cache[pair.Key] = Serialise(pair.Key, pair.Value);
                 }
             }
 
@@ -299,6 +299,36 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Turns what a caller handed to <see cref="SetMany"/> into the text the settings row keeps.
+    ///
+    /// Why every key is not simply serialised: `expiry.levels` is a JSON **array**, and `Guard`
+    /// deliberately accepts it both as three objects (the Settings page) and as JSON text (an import,
+    /// a hand-edited file, an older test). Serialising the text turned it into a *quoted string*
+    /// (`"[\{...\}]"`), `ExpiryLevels.Read` could not parse that, and the shop silently went back to
+    /// 365 / 180 / 90 - the owner's PC reported it as "expected 0, got 1" on the home screen.
+    /// A quiet fallback to a default is the worst kind of bug: nothing looks broken.
+    /// </summary>
+    private static string Serialise(string key, object? value)
+    {
+        if (key == "expiry.levels")
+        {
+            var bands = value switch
+            {
+                string text => ExpiryLevels.ParseBands(text),
+                IEnumerable<ExpiryBand> list => list.ToList(),
+                _ => null
+            };
+
+            if (bands is not null && bands.Count > 0)
+            {
+                return JsonSerializer.Serialize(bands, Json.WriterOptions);
+            }
+        }
+
+        return JsonSerializer.Serialize(value);
     }
 
     /// <summary>

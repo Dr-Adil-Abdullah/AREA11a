@@ -19,24 +19,31 @@ namespace Area11.Core.Utils;
 public static class BuildInfo
 {
     /// <summary>Version shown in the window title and on the sign-in screen.</summary>
-    public const string Version = "0.29.1";
+    public const string Version = "0.29.2";
 
     /// <summary>The colour of this version, in one word - also the name of the release.</summary>
-    public const string CodeName = "Indigo";
+    public const string CodeName = "Petrol";
 
     /// <summary>The exact brand colour of this version (must equal BrandBrush in Theme.xaml).</summary>
-    public const string BrandHex = "#3F3D8C";
+    public const string BrandHex = "#1F4E5A";
 
     /// <summary>Hover / pressed shade of the same colour.</summary>
-    public const string BrandDarkHex = "#2E2C6B";
+    public const string BrandDarkHex = "#173B45";
 
     /// <summary>Very light tint used for stripes and badges.</summary>
-    public const string BrandSoftHex = "#ECEBF7";
+    public const string BrandSoftHex = "#E8F1F3";
 
     public const string ReleasedOn = "2026-10-22";
 
     /// <summary>"v0.2.0 · Purple" - the label the owner looks for.</summary>
     public static string Label => $"v{Version} · {CodeName}";
+
+    /// <summary>
+    /// The window title. In the demo shop it says so, in words, on every window (D-76): the one
+    /// mistake a demo can make is being mistaken for the shop's own books.
+    /// </summary>
+    public static string WindowTitle =>
+        DemoShop.IsOn ? "Area11 - DEMO SHOP (invented data)" : "Area11";
 
     /// <summary>Full label for tooltips: version, colour and date.</summary>
     public static string FullLabel => $"{Label} ({ReleasedOn})";

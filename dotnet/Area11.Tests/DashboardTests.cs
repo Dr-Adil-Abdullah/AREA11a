@@ -183,11 +183,29 @@ VALUES('INV-9002', @at, @userId, 400000, 0, 0, 0, 400000, 0, 0, 'hold', 'cash', 
 
         var snapshot = Snapshot(test);
 
-        // Rs 600 less 10 % = Rs 540; the shop paid Rs 400 for the goods, so the day earned Rs 140 -
-        // not Rs 200. A dashboard that ignored the discount would overstate the owner's profit.
-        Assert.Equal(54000L, sale.Value!.TotalPaisa);
-        Assert.Equal(54000L, snapshot.TodaySalesPaisa);
-        Assert.Equal(14000L, snapshot.TodayProfitPaisa);
+        // The shop discounts its **margin**, not its price (Spec 11.2.1, `discount.mode` = margin by
+        // default): two strips bring Rs 600, they cost Rs 400, so the margin is Rs 200 - and 10 % of
+        // Rs 200 is Rs 20, leaving Rs 580. The example in the spec is the same rule one tablet at a
+        // time: cost 200, retail 300, 10 % off = 290.
+        //
+        // The first version of this test expected Rs 540, because it assumed the retail method. The
+        // owner's PC said 58000 and was right; the expectation, not the bill, was wrong.
+        Assert.Equal(58000L, sale.Value!.TotalPaisa);
+        Assert.Equal(58000L, snapshot.TodaySalesPaisa);
+
+        // Rs 580 in, Rs 400 of goods out: the day earned Rs 180, not the Rs 200 it would have earned
+        // without the discount. A dashboard that ignored the discount would overstate the profit.
+        Assert.Equal(18000L, snapshot.TodayProfitPaisa);
+
+        // The other method is built too, and must not be silently mixed up with this one.
+        test.Settings.SetMany(
+            new Dictionary<string, object?> { ["discount.mode"] = "retail" },
+            TestData.Owner);
+
+        var retail = TestData.Sales(test).Create(cart, TestData.Owner);
+
+        Assert.True(retail.Ok, retail.Error);
+        Assert.Equal(54000L, retail.Value!.TotalPaisa);
     }
 
     [Fact]
@@ -211,8 +229,14 @@ VALUES('INV-9002', @at, @userId, 400000, 0, 0, 0, 400000, 0, 0, 'hold', 'cash', 
 
         // One tablet came back: Rs 300 refunded and Rs 200 of cost back on the shelf, so the day's
         // profit drops from Rs 300 to Rs 200 - and the bill itself is never edited.
+        //
+        // The sales figure stays at Rs 900 on purpose. The Reports page shows **sales** and
+        // **refunds** as two separate cards (Spec 21.2) and only the profit line nets them (21.6);
+        // the home screen has to say the same thing as the page it summarises, or the owner reads
+        // two different numbers for one day. The first version of this test expected Rs 600 here and
+        // was wrong - the bill was never edited, so it cannot be Rs 600.
         Assert.Equal(1, after.TodayBills);
-        Assert.Equal(60000L, after.TodaySalesPaisa);
+        Assert.Equal(90000L, after.TodaySalesPaisa);
         Assert.Equal(20000L, after.TodayProfitPaisa);
     }
 
@@ -423,11 +447,22 @@ INSERT INTO user_permissions(user_id, module_key, allowed) VALUES(@id, 'pos', 0)
         Assert.Equal(0, Snapshot(test).ExpiringSoon);
     }
 
-    /// <summary>Three bands, nearest last - the shape the Settings page stores.</summary>
-    private static string Bands(int level1, int level2, int level3) =>
-        "[{\"days\":" + level1 + ",\"color\":\"blue\",\"label\":\"\"},"
-        + "{\"days\":" + level2 + ",\"color\":\"amber\",\"label\":\"\"},"
-        + "{\"days\":" + level3 + ",\"color\":\"red\",\"label\":\"\"}]";
+    /// <summary>
+    /// Three bands, nearest last - the shape the Settings page really saves.
+    ///
+    /// Why objects and not the JSON text: `SettingsService.SetMany` serialises whatever it is given,
+    /// so a string arrives in the database as a *quoted* string (`"[\{...\}]"`) instead of an array,
+    /// `ExpiryLevels.Read` cannot parse it and falls back to 365 / 180 / 90. The first version of
+    /// this helper handed over the text, the band never moved, and the owner's PC reported it as
+    /// "expected 0, got 1".
+    /// </summary>
+    private static List<ExpiryBand> Bands(int level1, int level2, int level3) => new()
+    {
+        new() { Level = 1, Days = level1, Color = "blue", Label = "" },
+        new() { Level = 2, Days = level2, Color = "amber", Label = "" },
+        new() { Level = 3, Days = level3, Color = "red", Label = "" }
+    };
+
 
     // ============================== the books ==============================
 

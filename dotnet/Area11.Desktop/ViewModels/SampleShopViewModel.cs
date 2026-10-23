@@ -1,4 +1,5 @@
 using Area11.Core.Models;
+using Area11.Core.Utils;
 
 namespace Area11.Desktop.ViewModels;
 
@@ -77,6 +78,28 @@ public sealed class SampleShopViewModel : ObservableObject
         get => _hasProblem;
         private set => SetProperty(ref _hasProblem, value);
     }
+
+    /// <summary>
+    /// True while the program runs as the demo shop (`--demo`, D-76). The page turns this into a
+    /// banner, because the one thing a demo must never do is look like the shop's own books.
+    /// </summary>
+    public bool IsDemo => DemoShop.IsOn;
+
+    /// <summary>The same question the other way round, for the hint that only the real shop needs.</summary>
+    public bool IsRealShop => !DemoShop.IsOn;
+
+    public string DemoBanner =>
+        "DEMO SHOP - nothing on any page is real. It is a separate database in "
+        + (DemoShop.DataFolder ?? string.Empty)
+        + " and your own shop's database has not been touched. When the app is finished it is enough to "
+        + "close this window and delete that folder: no real bill can be affected.";
+
+    /// <summary>
+    /// Shown in the real shop: where the demo lives and how to open it without mixing anything.
+    /// </summary>
+    public string DemoHint =>
+        "To try the demo without writing anything into this shop, close Area11 and double-click "
+        + "DEMO-AREA11.cmd - it opens a separate demo shop with its own database.";
 
     /// <summary>True when the database itself allows it (the tick is a separate question).</summary>
     public bool CanSeed

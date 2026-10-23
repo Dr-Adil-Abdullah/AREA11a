@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Area11.Core.Models;
 using Area11.Core.Services;
+using Area11.Core.Utils;
 
 namespace Area11.Desktop.ViewModels;
 
@@ -355,13 +356,17 @@ public sealed class ShellViewModel : ObservableObject
                 AddPage("system", "Backup & restore", "ZIP of database + photos", CreateBackupPage);
             }
 
-            if (canLan)
+            // The demo shop never talks to another PC or to the cloud (D-76). Both pages send the
+            // shop's data somewhere real: the second counter would point the demo at a shared folder,
+            // and cloud sync would upload invented bills to the owner's own Supabase table. Hidden is
+            // better than refused here - a page that exists but cannot be used invites a question.
+            if (canLan && !DemoShop.IsOn)
             {
                 AddPage("system", "Second counter (LAN)", "Two PCs, one database",
                     () => new LanViewModel(_services, _user));
             }
 
-            if (canSync)
+            if (canSync && !DemoShop.IsOn)
             {
                 // Beside the second counter: both are about the shop's data leaving this PC, and both
                 // are the owner's decision alone (F-48).

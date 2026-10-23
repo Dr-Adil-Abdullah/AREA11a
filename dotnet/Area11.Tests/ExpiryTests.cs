@@ -147,6 +147,42 @@ WHERE product_id = @productId;",
     }
 
     [Fact]
+    public void BandsHandedOverAsJsonText_AreStoredAsAnArrayNotAsAQuotedString()
+    {
+        using var test = new TestDatabase();
+
+        // Two doorways into the same setting: the Settings page sends three objects, an import or an
+        // old test sends the JSON text. Both must end up in the row as an ARRAY. Serialising the text
+        // turned it into "[\{...\}]" (a string, not a list), ExpiryLevels.Read could not parse it and
+        // the shop fell back to 365 / 180 / 90 without saying a word - the owner's PC found it as
+        // "expected 0, got 1" on the home screen.
+        var text = "[{\"days\":400,\"color\":\"blue\",\"label\":\"\"},"
+                   + "{\"days\":120,\"color\":\"amber\",\"label\":\"\"},"
+                   + "{\"days\":1,\"color\":\"red\",\"label\":\"\"}]";
+
+        var saved = test.Settings.SetMany(
+            new Dictionary<string, object?> { ["expiry.levels"] = text },
+            TestData.Owner);
+
+        Assert.True(saved.Ok, saved.Error);
+
+        using (var connection = test.Database.Open())
+        {
+            var stored = test.Database.Scalar(connection,
+                "SELECT value FROM settings WHERE key = 'expiry.levels';")?.ToString() ?? string.Empty;
+
+            Assert.StartsWith("[", stored);
+            Assert.DoesNotContain("\\\"days\\\"", stored);
+        }
+
+        var levels = test.Settings.ExpiryBands;
+
+        Assert.Equal(400, levels.Level1Days);
+        Assert.Equal(120, levels.Level2Days);
+        Assert.Equal(1, levels.Level3Days);
+    }
+
+    [Fact]
     public void TheBatchLabel_FollowsTheSavedBands()
     {
         using var test = new TestDatabase();

@@ -4,7 +4,7 @@
         xmlns:vm="clr-namespace:Area11.Desktop.ViewModels"
         xmlns:views="clr-namespace:Area11.Desktop.Views"
         xmlns:utils="clr-namespace:Area11.Core.Utils;assembly=Area11.Core"
-        Title="Area11" Height="760" Width="1240"
+        Title="{x:Static utils:BuildInfo.WindowTitle}" Height="760" Width="1240"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource CanvasBrush}">
 
