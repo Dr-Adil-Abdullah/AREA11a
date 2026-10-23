@@ -3070,6 +3070,107 @@ def check_crash_report_honesty() -> None:
 
 
 # ---------------------------------------------------------------------------
+def check_report_tool() -> None:
+    """The tool that collects the evidence must not become part of the fault.
+
+    Why: on 23 Oct 2026 the owner ran `tools\\SEND-REPORT.cmd` and the console printed
+
+        Test-Path : Cannot bind argument to parameter 'LiteralPath' because it is null.
+        + if (Test-Path -LiteralPath $logsFolder)
+
+    in the middle of a report that otherwise worked. v0.31.1 had moved the crash section and taken
+    its local `$logsFolder` with it, so the log section further down asked about `$null`. Two
+    lessons, both gates:
+
+      * **a holder is computed in one place.** Every `$variable` handed to a path parameter must be
+        assigned earlier in the same script - a name that is never assigned is `$null`, and
+        PowerShell only finds out at the call;
+      * **a fault in the tool is invisible in the file.** The report said nothing about its own
+        error, so the owner would have sent a document with a silent gap. The script now writes
+        every error it raised into the report itself, and this check insists that section exists.
+
+    It also keeps the desktop's silent-binding watch honest: a listener must be attached **before**
+    `InitializeComponent`, or the theme's own bindings are not covered, and the crash report must
+    name the file, or the owner will never know a second file exists.
+    """
+    script = ROOT / "tools/support-report.ps1"
+
+    if not script.exists():
+        fail("tools/support-report.ps1 is missing - the one-file report does not exist")
+        return
+
+    text = script.read_text(encoding="utf-8", errors="replace")
+    lines = text.splitlines()
+    problems = 0
+
+    for number, line in enumerate(lines, 1):
+        for name in re.findall(r"-(?:LiteralPath|Path)\s+\$(\w+)", line):
+            if name in ("PSCommandPath", "PSScriptRoot", "env", "true", "false", "null"):
+                continue
+
+            assigned = False
+
+            for earlier in lines[:number - 1]:
+                if re.search(r"\$" + re.escape(name) + r"\s*(=|\+=)", earlier) or \
+                   re.search(r"param\s*\([^)]*\$" + re.escape(name) + r"\b", earlier) or \
+                   re.search(r"^\s*function\s+[\w-]+\s*\([^)]*\$" + re.escape(name) + r"\b",
+                             earlier, re.I) or \
+                   re.search(r"foreach\s*\(\s*\$" + re.escape(name) + r"\b", earlier) or \
+                   re.search(r"\bfor\s*\([^)]*\$" + re.escape(name) + r"\s*=", earlier):
+                    assigned = True
+                    break
+
+            if not assigned:
+                problems += 1
+                fail(f"tools/support-report.ps1:{number}: $${name} is used as a path but is never "
+                     f"assigned before this line - PowerShell passes $null and the console shows "
+                     f"a red 'Cannot bind argument' (the 23 Oct report fault)")
+
+    if "ERRORS RAISED BY THIS REPORT ITSELF" not in text:
+        fail("tools/support-report.ps1 does not write its own errors into the report - a gap in "
+             "the tool would read like a healthy machine")
+
+    if '"ERRORS RAISED BY THIS REPORT ITSELF"' not in text and "Section \"ERRORS RAISED BY THIS REPORT ITSELF\"" not in text:
+        fail("the self-error section is not a section of the report")
+
+    watch = DOTNET / "Area11.Core/Utils/BindingWatch.cs"
+    program = DOTNET / "Area11.Desktop/Program.cs"
+
+    if not watch.exists():
+        fail("BindingWatch is missing - WPF's silent binding faults leave no trace for the owner")
+
+    if not program.exists():
+        fail("Area11.Desktop/Program.cs is missing")
+
+    if watch.exists() and program.exists():
+        program_text = program.read_text(encoding="utf-8", errors="replace")
+
+        # Compare with the CALL that builds the window (`app.InitializeComponent()`), not the bare
+        # name: the sentence explaining the rule mentions the method too, and a check that cannot
+        # tell a comment from code fails on its own documentation.
+        attach = program_text.find("BindingWatchInstall.Install();")
+        draw = program_text.find("app.InitializeComponent();")
+
+        if attach < 0:
+            fail("Program.cs never installs the binding watch - a wrong property name on a page "
+                 "would still leave an empty box and no evidence")
+
+        elif draw >= 0 and attach > draw:
+            fail("Program.cs installs the binding watch AFTER InitializeComponent - the theme's "
+                 "own bindings would not be covered")
+
+        crash = DOTNET / "Area11.Core/Utils/CrashLog.cs"
+
+        if crash.exists() and "Bindings :" not in crash.read_text(encoding="utf-8", errors="replace"):
+            fail("the crash report does not name the binding-errors file - the two are read "
+                 "together and the owner would not know the second file exists")
+
+    REPORT.append(f"Report tool: every $-path is assigned before use, the report carries its own "
+                  f"errors ({problems} problem(s)), and the binding watch is installed before the "
+                  f"first window")
+
+
+# ---------------------------------------------------------------------------
 def check_docs() -> None:
     docs = [ROOT / "README.md", ROOT / "HANDOFF.md", ROOT / "AGENTS.md", ROOT / "dotnet/README.md"]
     docs += sorted((ROOT / "docs").glob("*.md"))
@@ -3560,6 +3661,7 @@ def main() -> int:
     check_shift_report_gate()
     check_binding_modes()
     check_crash_report_honesty()
+    check_report_tool()
     check_csharp_grammar()
 
     if not quiet:

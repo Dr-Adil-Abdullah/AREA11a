@@ -49,7 +49,7 @@ function Capture([string]$exe, [string[]]$arguments) {
 
 # The first N lines of a text file, with a note when it was cut.
 function Add-FileText([string]$path, [string]$label, [int]$maxLines) {
-    if (-not (Test-Path -LiteralPath $path)) {
+    if ([string]::IsNullOrWhiteSpace($path) -or -not (Test-Path -LiteralPath $path)) {
         $lines.Add($label + ": (not there)")
         return
     }
@@ -160,6 +160,14 @@ if ([string]::IsNullOrEmpty($data)) {
 $shop = Join-Path $data "Area11"
 $db = Join-Path $shop "area11.db"
 
+#  The logs folder is worked out ONCE, here, before anything uses it.
+#  Why: v0.31.1 moved the crash section and took its local `$logsFolder` with it, so the log
+#  section below asked Test-Path about $null - the owner's console showed a red
+#  "Cannot bind argument to parameter 'LiteralPath' because it is null" on top of a report that
+#  otherwise worked. A holder that is computed in two places will always end up computed in
+#  neither, so it is computed in one.
+$logsFolder = Join-Path $shop "logs"
+
 if (-not (Test-Path -LiteralPath $shop)) {
     $lines.Add("C:\ProgramData\Area11 does not exist yet - the program was never started on this PC.")
 }
@@ -193,7 +201,7 @@ else {
         $lines.Add("area11.db        : NOT THERE (a brand-new shop - it is created at the first sign-in)")
     }
 
-    $logs = Join-Path $shop "logs"
+    $logs = $logsFolder
 
     if (Test-Path -LiteralPath $logs) {
         $lines.Add("")
@@ -216,7 +224,7 @@ Section "THE CRASH REPORTS ON THIS PC (newest first - the DATE decides which one
 #  its date and version, and only the newest is quoted in full. Two folders are read,
 #  because the program writes into %TEMP%\Area11 when the shop folder is not writable
 #  (a second counter whose share is switched off).
-$crashFolders = @((Join-Path $shop "logs"), (Join-Path $env:TEMP "Area11"))
+$crashFolders = @($logsFolder, (Join-Path $env:TEMP "Area11"))
 $crashes = @()
 
 foreach ($folder in $crashFolders) {
@@ -250,7 +258,7 @@ Section "THE END OF THE NEWEST LOG"
 
 $logFile = $null
 
-if (Test-Path -LiteralPath $logsFolder) {
+if ((-not [string]::IsNullOrEmpty($logsFolder)) -and (Test-Path -LiteralPath $logsFolder)) {
     $logFile = Get-ChildItem -LiteralPath $logsFolder -Filter "*.log" -File -ErrorAction SilentlyContinue |
         Sort-Object LastWriteTime -Descending |
         Select-Object -First 1
@@ -297,6 +305,42 @@ if (-not (Test-Path -LiteralPath $testLog)) {
 }
 else {
     Add-FileText $testLog "test.log" 40
+}
+
+# -----------------------------------------------------------------------------
+Section "ERRORS RAISED BY THIS REPORT ITSELF"
+
+#  Why this section exists: on 23 Oct 2026 the report tool printed
+#
+#      Cannot bind argument to parameter 'LiteralPath' because it is null.
+#
+#  on the console while writing a perfectly readable file. A fault in the tool is not in the
+#  report, so the owner cannot see it when he sends the file - and a report with a silent gap
+#  reads like a healthy machine. Every error this script raises is now written into the file.
+
+$selfErrors = @($Error | Where-Object {
+        $null -ne $_ -and $null -ne $_.InvocationInfo -and
+        $_.InvocationInfo.ScriptName -eq $PSCommandPath
+    })
+
+if ($selfErrors.Count -eq 0) {
+    $lines.Add("None - every step of this report ran.")
+}
+else {
+    $lines.Add("This report hit " + $selfErrors.Count + " problem(s) of its own (NOT the shop's):")
+    $lines.Add("")
+
+    $shown = 0
+
+    foreach ($one in $selfErrors) {
+        if ($shown -ge 5) {
+            $lines.Add("  ... and " + ($selfErrors.Count - 5) + " more.")
+            break
+        }
+
+        $lines.Add("  line " + $one.InvocationInfo.ScriptLineNumber + ": " + $one.Exception.Message)
+        $shown++
+    }
 }
 
 # -----------------------------------------------------------------------------

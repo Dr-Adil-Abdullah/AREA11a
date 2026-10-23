@@ -25,6 +25,12 @@ public static class Program
             return InstallService.RunCheck(args);
         }
 
+        // Before the first window: WPF writes a binding fault to the debug output and carries on
+        // with an empty box. Nothing on a shop PC can see that stream, so the page just "has no
+        // data" - this sends every one of those lines to %TEMP%\Area11\binding-errors.txt, where
+        // the owner can send it. Installed before InitializeComponent so Theme.xaml is covered too.
+        BindingWatchInstall.Install();
+
         try
         {
             var app = new App();

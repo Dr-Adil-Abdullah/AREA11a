@@ -115,6 +115,7 @@ public static class CrashLog
             "When     : " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
             "Version  : " + BuildInfo.Version + " (" + BuildInfo.CodeName + ")",
             "Area     : " + area,
+            "Bindings : " + BindingLine(),
             "Computer : " + Environment.MachineName,
             "Windows  : " + Environment.OSVersion.VersionString,
             ".NET     : " + Environment.Version,
@@ -151,6 +152,29 @@ public static class CrashLog
         }
 
         return string.Join(Environment.NewLine, lines);
+    }
+
+    /// <summary>
+    /// How many silent binding complaints are on file, and where - one line in the crash report.
+    ///
+    /// Why in the crash report: the two are read together. A window that died is often the loud
+    /// end of the same fault that was filling this file, and the owner should not have to guess
+    /// that a second file exists.
+    /// </summary>
+    private static string BindingLine()
+    {
+        try
+        {
+            var path = BindingWatch.FilePath;
+            var count = BindingWatch.CountIn(path);
+
+            return count == 0 ? "none" : count + " on file - " + path;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
+                                              or NotSupportedException or ArgumentException)
+        {
+            return "(could not be read)";
+        }
     }
 
     private static string SafeBaseDirectory()

@@ -129,6 +129,29 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
+> **v0.31.2 (Bistre `#584204`) - the evidence tool broke, and the quiet bindings now leave a file.**
+>
+> * **A tool that fails while collecting evidence must say so IN the evidence.** `SEND-REPORT.cmd`
+>   printed a red `Cannot bind argument to parameter 'LiteralPath' because it is null` and then wrote
+>   a clean-looking report: the owner would have sent a document with a silent gap. Every error the
+>   script raises is now a section of the report - a fault in the tool is not in the shop, but it is
+>   in the file.
+> * **A holder computed in two places ends up computed in neither.** v0.31.1 moved the crash
+>   section and took its local `$logsFolder` with it; the log section 40 lines below still used it.
+>   Path holders are now computed once, before anything uses them, and gate #39 fails if any
+>   `$variable` reaches a path parameter without being assigned earlier.
+> * **The quiet half of the same fault.** A binding to a property that does not exist never throws -
+>   WPF writes one line to the debug output, which no shop PC shows, and leaves an empty box. The
+>   loud half (TwoWay to a read-only label) killed the window on 22 Oct; the quiet half is what the
+>   owner reports as "the page has no data". `BindingWatch` now keeps those lines, timestamped, in
+>   `%TEMP%\Area11\binding-errors.txt` - never the shop folder, which can be the second counter's
+>   share - clipped to 600 characters, rotated past 200 KB so the **first** complaint is never the
+>   one lost, and it can never throw. The crash report names the file, because the two are read
+>   together.
+> * **Install a diagnostic before the thing it watches.** The listener is attached before
+>   `InitializeComponent`, so Theme.xaml's own bindings are covered - gate #39 fails if the call
+>   moves below it.
+>
 > **v0.31.1 (Boysenberry `#8A0A6C`) - the first time the window ran, and why 171 bindings could only crash.**
 >
 > * **`Run.Text` and every `DataGrid...Column.Binding` are TwoWay by default.** The framework
@@ -512,7 +535,7 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >
 > The last confirmed Windows build is v0.4.8; everything from v0.6.2 on is proved only by
 > `tools/check_repo.py` until the owner runs `START-AREA11.bat` and `tools\\RUN-TESTS.cmd`
-> (**697 cases**).
+> (**704 cases**).
 >
 > **The checker learned two things from this version.** `DashboardService` used `User` with no
 > `using Area11.Core.Models;` and the gate stayed quiet: its mention patterns wanted `.`, `(` or
