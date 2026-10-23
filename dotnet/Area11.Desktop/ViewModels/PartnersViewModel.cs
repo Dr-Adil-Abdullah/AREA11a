@@ -1,10 +1,11 @@
 using Area11.Core.Models;
 using Area11.Core.Services;
+using Area11.Core.Utils;
 
 namespace Area11.Desktop.ViewModels;
 
-// empty-page: none - a container whose three tabs carry their own sentences, and the page
-// always draws the tab strip, so there is nothing blank here to explain.
+// empty-page: delegated - the sentence belongs to the open tab (Customers, Udhaar recovery or
+// Suppliers), so this container does not carry words of its own; see SelectedEmptyHint below.
 /// <summary>
 /// One place for the people the shop owes or is owed by (D-50).
 ///
@@ -18,7 +19,7 @@ namespace Area11.Desktop.ViewModels;
 /// The sub-pages are the same view models as before, unchanged. Only their address moved, so a fix in
 /// the khata still reaches every place the khata is opened.
 /// </summary>
-public sealed class PartnersViewModel : ObservableObject
+public sealed class PartnersViewModel : ObservableObject, IEmptyPage
 {
     private int _selectedTab;
 
@@ -40,6 +41,16 @@ public sealed class PartnersViewModel : ObservableObject
         // Open the first tab this person may actually see. A hidden TabItem still holds its index,
         // so a page that starts on index 0 would open blank for a supplier-only account.
         _selectedTab = Customers is not null ? 0 : HasSuppliers ? 2 : 0;
+
+        // The card under this page belongs to the tab that is open, so this page re-reads it when a
+        // tab changes and when that tab changes anything of its own (D-89).
+        foreach (var child in new[] { (object?)Customers, Recovery, Suppliers })
+        {
+            if (child is System.ComponentModel.INotifyPropertyChanged watched)
+            {
+                watched.PropertyChanged += (_, _) => OnPropertyChanged(nameof(SelectedEmptyHint));
+            }
+        }
     }
 
     public CustomersViewModel? Customers { get; }
@@ -61,6 +72,29 @@ public sealed class PartnersViewModel : ObservableObject
     public int SelectedTab
     {
         get => _selectedTab;
-        set => SetProperty(ref _selectedTab, Math.Clamp(value, 0, 2));
+        set
+        {
+            if (SetProperty(ref _selectedTab, Math.Clamp(value, 0, 2)))
+            {
+                OnPropertyChanged(nameof(SelectedEmptyHint));
+            }
+        }
     }
+
+    /// <summary>
+    /// Why the open tab is empty, in that tab's own words, or null when it has rows (v0.33.0, D-89).
+    ///
+    /// Asked of the tab, not copied here: the container does not know what a khata is, and a copy
+    /// would be the second place to edit the day a tab changes. A tab this person may not see is
+    /// not "empty" - it is not there at all, so it answers nothing.
+    /// </summary>
+    public EmptyHint? EmptyHint => SelectedEmptyHint;
+
+    public EmptyHint? SelectedEmptyHint => SelectedTab switch
+    {
+        0 => Customers?.EmptyHint,
+        1 => Recovery?.EmptyHint,
+        2 => Suppliers?.EmptyHint,
+        _ => null
+    };
 }

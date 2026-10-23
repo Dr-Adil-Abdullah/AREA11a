@@ -78,8 +78,14 @@ public static class EmptyPage
             "No shelf is below zero. This page fills when a sale takes stock the shop never received.",
         ["Stock-take"] =
             "A count appears here after you save a stock-take on this page.",
-        ["Customers & suppliers"] =
-            "No customer or supplier yet. Add the first one with the button on this page.",
+        ["Customers"] =
+            "No customer yet. Add the first one with 'New customer' - the khata needs a name to "
+            + "hang on.",
+        ["Udhaar recovery"] =
+            "Nobody owes the shop money. A customer appears here after a bill left on the khata.",
+        ["Suppliers"] =
+            "No supplier yet. Add the company that delivers the stock, then its page shows what the "
+            + "shop owes it.",
         ["Doctors & reps"] =
             "No doctor or rep yet. Mark a customer as Doctor, or write a company's rep on its card.",
         ["Shift (galla)"] =

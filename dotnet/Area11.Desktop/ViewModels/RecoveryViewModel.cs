@@ -16,8 +16,14 @@ namespace Area11.Desktop.ViewModels;
 /// over-payment and writes the permanent `PAY-nnnn` number, and the slip is rebuilt from history so
 /// a reprint months later says the same numbers.
 /// </summary>
-public sealed class RecoveryViewModel : ObservableObject
-{
+public sealed class RecoveryViewModel : ObservableObject, IEmptyPage
+{    /// <summary>
+    /// Why this tab has nothing on it, in the shop's words (v0.33.0, D-89). **Null when it has
+    /// rows** - the container page shows whichever tab is open.
+    /// </summary>
+    public EmptyHint? EmptyHint => EmptyPage.When(Rows.Count == 0, "Udhaar recovery");
+
+
     private readonly AppServices _services;
     private readonly User _user;
 

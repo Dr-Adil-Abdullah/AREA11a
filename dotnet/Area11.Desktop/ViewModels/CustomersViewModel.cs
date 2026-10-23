@@ -27,7 +27,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
     /// </summary>
     public EmptyHint? EmptyHint => EmptyPage.When(
         Customers.Count == 0,
-        "Customers & suppliers",
+        "Customers",
         searched: SearchText.Trim().Length > 0);
 
     private readonly AppServices _services;

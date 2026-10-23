@@ -3,6 +3,9 @@ using Area11.Core.Models;
 using Area11.Core.Services;
 using Area11.Core.Utils;
 
+// empty-page: none - this is a dialog opened from a record card, not a page of the window
+// frame, so no card of the frame is drawn for it; its own list says "no field yet".
+
 namespace Area11.Desktop.ViewModels;
 
 /// <summary>

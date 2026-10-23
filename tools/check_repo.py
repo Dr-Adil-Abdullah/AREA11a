@@ -3361,7 +3361,16 @@ def check_empty_page() -> None:
 
     # Every page the menu can open is built with `new SomethingViewModel(` inside the shell. Each one
     # must implement IEmptyPage, or its empty state is silent.
-    built = sorted(set(re.findall(r"new ([A-Za-z]+ViewModel)\(", shell_text)))
+    built = set(re.findall(r"new ([A-Za-z]+ViewModel)\(", shell_text))
+
+    # Pages built inside another page count too: Customers, Udhaar recovery and Suppliers are made
+    # by the container in Partners, and an empty tab needs its sentence exactly as much as an empty
+    # page does.
+    for path in (DOTNET / "Area11.Desktop/ViewModels").glob("*ViewModel.cs"):
+        built |= set(re.findall(r"new ([A-Za-z]+ViewModel)\(",
+                                path.read_text(encoding="utf-8", errors="replace")))
+
+    built = sorted(built)
 
     if len(built) < 20:
         fail(f"only {len(built)} page(s) found in the shell's menu - the check reads the wrong file?")
@@ -3381,7 +3390,7 @@ def check_empty_page() -> None:
             # A page may say, in writing, that it has no empty state to explain - a container whose
             # tabs carry their own sentences, or the fault card itself. The reason is mandatory and
             # has to be a real sentence: an exemption without a reason is how a page goes silent.
-            said_none = re.search(r"// empty-page: none - (.{20,})", text)
+            said_none = re.search(r"// empty-page: (?:none|delegated) - (.{20,})", text)
 
             if said_none is None:
                 missing.append(view_model)
@@ -3389,7 +3398,7 @@ def check_empty_page() -> None:
     if missing:
         fail("these pages say nothing when they are empty: " + ", ".join(missing) +
              " - a blank grid with no sentence reads as lost data (or write "
-             "`// empty-page: none - <why>` on the page)")
+             "`// empty-page: none - <why>` or `// empty-page: delegated - <why>` on the page)")
 
     problems = []
 
@@ -3398,7 +3407,7 @@ def check_empty_page() -> None:
             encoding="utf-8", errors="replace")
 
         # The pages that wrote down why they have no empty state are already answered above.
-        if re.search(r"// empty-page: none - (.{20,})", text):
+        if re.search(r"// empty-page: (?:none|delegated) - (.{20,})", text):
             continue
 
         call = re.search(r"public EmptyHint\? EmptyHint =>\s*EmptyPage\.When\((.*?)\);", text, re.S)

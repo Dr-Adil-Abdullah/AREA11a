@@ -140,7 +140,8 @@ tests through the public service methods and a real bill in `TestDatabase`.
 > * **The sentence lives with the page, the card lives with the frame.** `EmptyPage` holds one line
 >   per page (what would *fill* it); the shell draws one card under the current page and re-asks on
 >   every property change of that page. One card in `ShellWindow` instead of a copy in twenty-six views
->   is one chance to forget, not twenty-six.
+>   is one chance to forget, not twenty-six. A container (the customers page) **delegates**: it asks
+>   the open tab ('empty-page: delegated'), so a tab never inherits the container's words.
 > * **A picker is not a search.** On the four pages where the search narrows the visible list (Counter,
 >   Products, Bills, Black box) an empty result says "nothing matches"; on the pages where the box
 >   picks a record to act on (a bill to return, a medicine to write off) the page deliberately does not

@@ -17,8 +17,14 @@ namespace Area11.Desktop.ViewModels;
 /// payable by a credit note, and lets the stock go negative (U-30) with a warning instead of
 /// stopping the shop.
 /// </summary>
-public sealed class SuppliersViewModel : ObservableObject
-{
+public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
+{    /// <summary>
+    /// Why this tab has nothing on it, in the shop's words (v0.33.0, D-89). **Null when it has
+    /// rows** - the container page shows whichever tab is open.
+    /// </summary>
+    public EmptyHint? EmptyHint => EmptyPage.When(Suppliers.Count == 0, "Suppliers");
+
+
     private readonly AppServices _services;
     private readonly User _user;
     private readonly Action? _onChanged;

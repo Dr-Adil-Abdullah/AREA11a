@@ -70,6 +70,11 @@ public sealed class EmptyPageTests
         Assert.Contains("counter", EmptyPage.For("Bills").Advice);
         Assert.Contains("reorder", EmptyPage.For("Reorder pad").Advice);
         Assert.Contains("works alone", EmptyPage.For("Second counter (LAN)").Advice);
+
+        // The three tabs of the customers page answer for themselves, not with the container's words.
+        Assert.Contains("New customer", EmptyPage.For("Customers").Advice);
+        Assert.Contains("owes the shop money", EmptyPage.For("Udhaar recovery").Advice);
+        Assert.Contains("delivers the stock", EmptyPage.For("Suppliers").Advice);
     }
 
     [Fact]
