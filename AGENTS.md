@@ -129,6 +129,33 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
+> **v0.32.0 (Amethyst `#69359C`) - a broken page must not take the till down.**
+>
+> * **A WPF property setter is the UI thread.** `SelectedNav = row` built the page's view-model
+>   inside the setter; every one of those constructors reads the database. One failed read - a bad
+>   row, a table missing from an old copy of the file - threw out of the setter into the dispatcher
+>   while the shell was still being built, and the window died. That is the same shape as the 22 Oct
+>   crash, but at sign-in: the shop would have lost the counter, not a screen. Every page is now
+>   built through **`PageGuard.Open`**, which returns either the page or a `PageFault`.
+> * **The guard must never be the second fault.** `Open` catches `Exception` (deliberately broad -
+>   after an `OutOfMemoryException` the only useful thing left is a window that is still open), logs
+>   it, offers it to the caller's recorder, and returns. The log call and the recorder are wrapped in
+>   their **own** unfiltered catches - a recorder that fails in an unpredicted way used to escape and
+>   become a second crash - and `Open` itself is a thin net around the whole body.
+> * **Say that the rest of the shop still works.** The card's first line is *"Nothing else is
+>   affected"*, because an operator who believes the till is broken closes the program and loses the
+>   day's billing - the sentence is the feature, not the decoration. It also names the page, keeps
+>   the exception's own words, and says to press another page and try again (a read that failed once
+>   often works on the second try) and to run `tools\SEND-REPORT.cmd` if it fails twice.
+> * **A path must be read, not typed.** The first draft of the card's last line escaped a Windows
+>   path twice in the source, so the screen showed doubled separators. The wording now lives in Core
+>   (`PageFault.ReportLabel`) where a test asserts no doubled backslash and that the tool's name is
+>   printed - a path a shopkeeper cannot copy is a path he cannot use.
+> * **Gate #40** fails if the unguarded `= value?.Resolve()` returns, if fewer than three pages are
+>   guarded, if the log/recorder catches are narrowed to file errors, if the card or its
+>   `DataTemplate` disappears, or if the reassuring sentence and the report path leave the card. It
+>   was proved twice by breaking the program on purpose.
+>
 > **v0.31.2 (Bistre `#584204`) - the evidence tool broke, and the quiet bindings now leave a file.**
 >
 > * **A tool that fails while collecting evidence must say so IN the evidence.** `SEND-REPORT.cmd`
@@ -535,7 +562,7 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >
 > The last confirmed Windows build is v0.4.8; everything from v0.6.2 on is proved only by
 > `tools/check_repo.py` until the owner runs `START-AREA11.bat` and `tools\\RUN-TESTS.cmd`
-> (**704 cases**).
+> (**717 cases**).
 >
 > **The checker learned two things from this version.** `DashboardService` used `User` with no
 > `using Area11.Core.Models;` and the gate stayed quiet: its mention patterns wanted `.`, `(` or

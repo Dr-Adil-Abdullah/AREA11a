@@ -179,7 +179,7 @@ public sealed class ShellViewModel : ObservableObject
             }
 
             IsShowingAlerts = false;
-            CurrentViewModel = value?.Resolve();
+            CurrentViewModel = value is null ? null : OpenPage(value);
 
             // Move around the app and the bell refreshes itself; no timer, no background thread.
             RefreshAlerts();
@@ -438,6 +438,31 @@ public sealed class ShellViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Builds the page for a menu row, and **never lets its failure reach the dispatcher** (D-88).
+    ///
+    /// Why: every page's constructor reads the shop's database. One failed read used to throw out
+    /// of `Resolve()` - inside a property setter, on the UI thread - and on 22 Oct 2026 that is how
+    /// the window died. A page is not the program: if it cannot be built, the operator gets a card
+    /// that names it, and the counter stays one click away.
+    /// </summary>
+    private ObservableObject OpenPage(NavItem page)
+    {
+        var opened = PageGuard.Open<ObservableObject>(
+            page.Title, () => page.Resolve(), _services.Log, RecordPageFault);
+
+        return opened.Ok ? opened.Page! : new PageFaultViewModel(opened.Fault!);
+    }
+
+    /// <summary>
+    /// Writes the page's fault where the owner can send it from: the crash report (which the batch
+    /// files already know how to print and collect). Silently does nothing if it cannot be written -
+    /// the card on the screen is the message that matters.
+    /// </summary>
+    private static string RecordPageFault(string pageTitle, Exception exception) =>
+        CrashLog.Write("opening the " + pageTitle + " page", exception,
+            "The page could not be opened. The rest of the program kept working.");
+
+    /// <summary>
     /// Opens or closes a heading. The rows are hidden, not removed: rebuilding the list would drop
     /// the selected row (and with it the page the operator is reading).
     ///
@@ -498,13 +523,25 @@ public sealed class ShellViewModel : ObservableObject
     /// </summary>
     private ObservableObject CreateSettingsPage()
     {
-        if (_settingsPage is null)
+        // Settings reads the whole settings table twice (once to build the page, once to refresh
+        // it), so it is the page most able to fail on a half-written file - and it is opened by
+        // clicking the shop's own name, which the owner does without thinking (D-88).
+        var opened = PageGuard.Open<SettingsViewModel>("Settings", () =>
         {
-            _settingsPage = new SettingsViewModel(_services, _user, RefreshHeader);
-        }
+            // Written out rather than `??=` inside a lambda: the compiler's own type of `??=` on a
+            // nullable field is `SettingsViewModel?`, and a nullable type argument does not satisfy
+            // this method's `where T : class`. The explicit T removes the guess entirely.
+            if (_settingsPage is null)
+            {
+                _settingsPage = new SettingsViewModel(_services, _user, RefreshHeader);
+            }
 
-        _settingsPage.Refresh();
-        return _settingsPage;
+            var page = _settingsPage;
+            page.Refresh();
+            return page;
+        }, _services.Log, RecordPageFault);
+
+        return opened.Ok ? opened.Page! : new PageFaultViewModel(opened.Fault!);
     }
 
     /// <summary>The read-only check of the shop's own arithmetic (F-54).</summary>
@@ -560,12 +597,21 @@ public sealed class ShellViewModel : ObservableObject
         UserMenuOpen = false;
         RefreshAlerts();
 
-        _alertsPage ??= new AlertsViewModel(_services, _user, RefreshAlerts);
-        _alertsPage.Load();
+        var opened = PageGuard.Open<AlertsViewModel>("Alerts", () =>
+        {
+            if (_alertsPage is null)
+            {
+                _alertsPage = new AlertsViewModel(_services, _user, RefreshAlerts);
+            }
+
+            var page = _alertsPage;
+            page.Load();
+            return page;
+        }, _services.Log, RecordPageFault);
 
         // No menu row belongs to this page, so the list clears itself (the bell stays lit).
         SetProperty(ref _selectedNav, null, nameof(SelectedNav));
-        CurrentViewModel = _alertsPage;
+        CurrentViewModel = opened.Ok ? opened.Page! : new PageFaultViewModel(opened.Fault!);
         IsShowingAlerts = true;
     }
 

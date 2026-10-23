@@ -61,6 +61,7 @@ VIEW_MODEL_OF = {
     "DashboardView.xaml": "DashboardViewModel",
     "ProductsView.xaml": "ProductsViewModel",
     "PosView.xaml": "PosViewModel",
+    "PageFaultView.xaml": "PageFaultViewModel",
     "PurchasesView.xaml": "PurchasesViewModel",
     "SettingsView.xaml": "SettingsViewModel",
     "ReturnsView.xaml": "ReturnsViewModel",
@@ -3171,6 +3172,95 @@ def check_report_tool() -> None:
 
 
 # ---------------------------------------------------------------------------
+def check_page_guard() -> None:
+    """A page that fails must not take the till down with it (D-88).
+
+    Why: every menu row builds its view-model from a constructor that reads the shop's database,
+    inside a WPF property setter, on the UI thread. One failed read therefore used to land in the
+    dispatcher while the shell was still being built - the same shape as the 22 Oct crash, but at
+    sign-in, which would leave the shop with no counter at all. The fix is structural: every page is
+    built through `PageGuard.Open`, which turns an exception into a card that names the page and
+    says the rest of the shop still works.
+
+    What this check insists on:
+      * the unguarded call is gone (`= value?.Resolve()` is the exact line that used to run);
+      * the guard is really used, for the menu page, Settings and the bell;
+      * the card exists - the view, the view model, and the template the shell draws it through;
+      * the card's own words promise that nothing else is affected and name the report file, because
+        a failure message that does not say "the rest still works" makes the operator close the
+        program and lose the day's billing.
+    """
+    shell = DOTNET / "Area11.Desktop/ViewModels/ShellViewModel.cs"
+    guard = DOTNET / "Area11.Core/Utils/PageGuard.cs"
+    card = DOTNET / "Area11.Desktop/ViewModels/PageFaultViewModel.cs"
+    view = DOTNET / "Area11.Desktop/Views/PageFaultView.xaml"
+    window = DOTNET / "Area11.Desktop/Views/ShellWindow.xaml"
+
+    for needed in (shell, guard, card, view, window):
+        if not needed.exists():
+            fail(f"the page guard is half-built: {rel(needed)} is missing")
+    if not all(path.exists() for path in (shell, guard, card, view, window)):
+        return
+
+    text = shell.read_text(encoding="utf-8", errors="replace")
+
+    # `PageGuard.Open<SettingsViewModel>(...)` is the preferred form, because the compiler's own type
+    # of `field ??= new(...)` is nullable and a nullable argument fails the method's `class`
+    # constraint. The pattern therefore accepts an explicit type argument.
+    guarded_page = re.compile(r"PageGuard\.Open(?:<[^>]+>)?\(")
+
+    if not guarded_page.search(text):
+        fail("ShellViewModel does not build pages through PageGuard - one failed page would still "
+             "reach the dispatcher and close the window (the 22 Oct fault)")
+
+    if re.search(r"=\s*value\??\.Resolve\(\)", text):
+        fail("ShellViewModel calls Resolve() outside the guard - a page that throws while being "
+             "built would escape into the UI thread")
+
+    if len(guarded_page.findall(text)) < 3:
+        fail("ShellViewModel guards fewer than three pages - the menu page, Settings and the bell "
+             "are all built from the database and all able to fail")
+
+    guard_text = guard.read_text(encoding="utf-8", errors="replace")
+
+    if "catch (Exception exception)" not in guard_text:
+        fail("PageGuard does not catch the exception it exists to catch")
+
+    # The guard's own error path - the log line and the crash recorder - must not be narrowed to the
+    # file errors somebody expected. A recorder that fails in an unpredicted way used to escape the
+    # catch and become the second fault, which is the exact thing this class exists to prevent.
+    if re.search(r"catch \(Exception (?:logFailure|recordFailure)\) when", guard_text):
+        fail("PageGuard narrows its own error path to a list of file errors - a logger or recorder "
+             "that fails in another way would then throw out of the guard and close the window")
+
+    if "Nothing else is affected" not in guard_text:
+        fail("PageGuard's message does not tell the operator the rest of the shop still works - "
+             "he would close the program and lose the day's billing")
+
+    if "SEND-REPORT" not in guard_text:
+        fail("PageGuard's message does not say how to send the evidence")
+
+    if "ReportPath" not in card.read_text(encoding="utf-8", errors="replace") and \
+       "ReportLabel" not in card.read_text(encoding="utf-8", errors="replace"):
+        fail("the failure card does not name the report file")
+
+    window_text = window.read_text(encoding="utf-8", errors="replace")
+
+    if 'DataType="{x:Type vm:PageFaultViewModel}"' not in window_text:
+        fail("ShellWindow has no template for PageFaultViewModel - the card would open as an "
+             "empty frame, which is exactly what it exists to prevent")
+
+    tests = DOTNET / "Area11.Tests/PageGuardTests.cs"
+
+    if not tests.exists():
+        fail("PageGuard has no tests - the one method that must never throw is the one that needs "
+             "them most")
+
+    REPORT.append("Page guard: every page is built through the guard, and a failed page shows a "
+                  "card that names it, keeps the shop usable and says where the report is")
+
+
+# ---------------------------------------------------------------------------
 def check_docs() -> None:
     docs = [ROOT / "README.md", ROOT / "HANDOFF.md", ROOT / "AGENTS.md", ROOT / "dotnet/README.md"]
     docs += sorted((ROOT / "docs").glob("*.md"))
@@ -3662,6 +3752,7 @@ def main() -> int:
     check_binding_modes()
     check_crash_report_honesty()
     check_report_tool()
+    check_page_guard()
     check_csharp_grammar()
 
     if not quiet:
