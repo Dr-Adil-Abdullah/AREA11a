@@ -27,6 +27,7 @@ public sealed class SyncService
     public const string KeyKey = "sync.key";
     public const string TableKey = "sync.table";
     public const string ShopIdKey = "sync.shopId";
+    public const string EnabledKey = "sync.enabled";
     public const string StatusKey = "sync.status";
     public const string LastSyncKey = "sync.lastSyncAt";
 
@@ -35,6 +36,9 @@ public sealed class SyncService
 
     /// <summary>Above this, the page warns before a push: mobile internet is not free.</summary>
     public const long BigPayloadBytes = 8L * 1024 * 1024;
+
+    /// <summary>How SQLite stores the shop's clock, and the exact shape <see cref="Clock.Now"/> writes.</summary>
+    private const string ShopStampFormat = "yyyy-MM-dd HH:mm:ss";
 
     /// <summary>The shop's clock has no milliseconds; the cloud column is a timestamptz.</summary>
     private const string CloudStampFormat = "yyyy-MM-ddTHH:mm:sszzz";
@@ -130,8 +134,19 @@ public sealed class SyncService
     /// <summary>Kept private to this class: the key is a password to the whole shop's mirror.</summary>
     private string Key => _settings.GetString(KeyKey).Trim();
 
+    /// <summary>The owner's tick in Settings -> Cloud sync (`sync.enabled`). Off means "do not talk to the cloud".</summary>
+    public bool Enabled => _settings.GetBool(EnabledKey);
+
+    /// <summary>Is a key saved? The key itself is never shown, so the screen needs this one fact.</summary>
+    public bool HasKey => Key.Length > 0;
+
+    /// <summary>
+    /// Ready to talk: the switch is on **and** the four details are filled in. Asking both questions
+    /// matters because the two failures need different sentences - "switched off" is a choice the owner
+    /// made, "not set up yet" is a form he has not finished.
+    /// </summary>
     public bool IsConfigured =>
-        Url.Length > 0 && Key.Length > 0 && Table.Length > 0 && ShopId.Length > 0;
+        Enabled && Url.Length > 0 && Key.Length > 0 && Table.Length > 0 && ShopId.Length > 0;
 
     /// <summary>"eyJh...9f2c" - enough to recognise a key, not enough to use it.</summary>
     public string KeyLabel
@@ -168,7 +183,8 @@ public sealed class SyncService
             ShopId = ShopId,
             KeyLabel = KeyLabel,
             LastSync = _settings.GetString(LastSyncKey).Trim(),
-            StatusLabel = StatusText(_settings.GetString(StatusKey))
+            StatusLabel = StatusText(_settings.GetString(StatusKey)),
+            Enabled = Enabled
         };
 
         try
@@ -202,6 +218,12 @@ public sealed class SyncService
         {
             return ServiceResult<SyncEnvelope>.Fail(
                 "Only the owner can send the shop's data to the cloud.");
+        }
+
+        if (!Enabled)
+        {
+            return ServiceResult<SyncEnvelope>.Fail(
+                "Cloud sync is switched off. Turn it on in Settings -> Cloud sync, then press Push again.");
         }
 
         if (!IsConfigured)
@@ -242,7 +264,9 @@ public sealed class SyncService
                 }
             }
 
-            envelope.SizeBytes = Encoding.UTF8.GetByteCount(ToJson(envelope));
+            // The size the owner sees is the size of the ROW that will be posted (the document plus the
+            // five columns around it), because that is what his internet pays for.
+            envelope.SizeBytes = Encoding.UTF8.GetByteCount(ToJson(RowFor(envelope)));
 
             return ServiceResult<SyncEnvelope>.Success(envelope);
         }
@@ -273,7 +297,9 @@ public sealed class SyncService
                 "There is nothing to send yet - this shop has no medicines or bills.");
         }
 
-        var json = ToJson(envelope);
+        // The table's row, not the document: snake_case columns, `version` as an int, and the document
+        // itself inside `payload` (Spec 25.2). A raw envelope asked for a `format` column and was refused.
+        var json = ToJson(RowFor(envelope));
         var answer = _cloud.Send(Url, Key, Table, json);
 
         if (!answer.Ok)
@@ -302,6 +328,37 @@ public sealed class SyncService
         return ServiceResult<SyncRun>.Success(run);
     }
 
+    /// <summary>
+    /// The cloud table's row for one document: `shop_id`, `shop_name`, `sent_at`, `version`, `payload`.
+    ///
+    /// The stamp is the shop's own time with its offset, written in <see cref="CloudStampFormat"/> so a
+    /// `timestamptz` column keeps the moment the document was made rather than the moment it arrived
+    /// (Spec 5.1.3). `version` is the document format as an int; the program's version is text and
+    /// travels inside the document.
+    /// </summary>
+    public static SyncRow RowFor(SyncEnvelope envelope) => new()
+    {
+        ShopId = envelope.ShopId,
+        ShopName = envelope.ShopName,
+        SentAt = CloudStamp(envelope.MadeAt),
+        Version = envelope.Format,
+        Payload = envelope
+    };
+
+    /// <summary>
+    /// "2026-10-26 14:05:00" (how SQLite stores the shop's clock) -> "2026-10-26T14:05:00+05:00".
+    /// A text that is not a stamp falls back to now: a push must never be refused for a clock's format.
+    /// </summary>
+    private static string CloudStamp(string madeAt)
+    {
+        var moment = DateTime.TryParseExact(madeAt, ShopStampFormat, CultureInfo.InvariantCulture,
+                          DateTimeStyles.AssumeLocal, out var parsed)
+            ? parsed
+            : DateTime.Now;
+
+        return moment.ToString(CloudStampFormat, CultureInfo.InvariantCulture);
+    }
+
     /// <summary>"See from cloud": reads and compares, writes nothing - not the database, not the cloud.</summary>
     public ServiceResult<SyncPreview> Preview(User? user)
     {
@@ -309,6 +366,12 @@ public sealed class SyncService
         {
             return ServiceResult<SyncPreview>.Fail(
                 "Only the owner can read the cloud copy of the shop.");
+        }
+
+        if (!Enabled)
+        {
+            return ServiceResult<SyncPreview>.Fail(
+                "Cloud sync is switched off. Turn it on in Settings -> Cloud sync, then try again.");
         }
 
         if (!IsConfigured)
@@ -588,8 +651,11 @@ public sealed class SyncService
             {
                 ShopId = envelope.Value.ShopId,
                 ShopName = FirstNonEmpty(envelope.Value.ShopName, ShopName),
-                SentAt = TextOf(row, "sent_at"),
-                Version = FirstNonEmpty(envelope.Value.Version, TextOf(row, "version")),
+                SentAt = PrettyStamp(TextOf(row, "sent_at")),
+
+                // The app version is text and lives in the document; the table's own `version` is the
+                // format as an int and would read as a meaningless "1" on the page (v0.26.0).
+                Version = envelope.Value.Version,
                 Envelope = envelope.Value,
                 HereRows = here.Values.Sum()
             };
@@ -687,6 +753,23 @@ public sealed class SyncService
         _ => element.GetRawText()
     };
 
+    /// <summary>
+    /// "2026-10-26T09:05:00+00:00" (what Supabase returns) -> "2026-10-26 17:05:00" in the shop's own
+    /// time, so the owner can hold it against the clock on the wall. Text that cannot be read is shown
+    /// exactly as it came, never hidden: the moment decides whether the cloud copy is worth bringing back.
+    /// </summary>
+    private static string PrettyStamp(string raw)
+    {
+        if (raw.Trim().Length == 0)
+        {
+            return string.Empty;
+        }
+
+        return DateTimeOffset.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.None, out var moment)
+            ? moment.ToLocalTime().ToString(ShopStampFormat, CultureInfo.InvariantCulture)
+            : raw;
+    }
+
     private static string TextOf(JsonElement element, string name)
     {
         if (!element.TryGetProperty(name, out var value))
@@ -772,8 +855,12 @@ public sealed class SyncService
         return rows;
     }
 
-    private static string ToJson(SyncEnvelope envelope) =>
-        JsonSerializer.Serialize(envelope, JsonOptions);
+    /// <summary>
+    /// The one way this class turns an object into text. Generic on purpose: a push serialises the
+    /// table's **row** (<see cref="SyncRow"/>) while the size warning and the tests still serialise the
+    /// document, and both must use the same options.
+    /// </summary>
+    private static string ToJson<T>(T value) => JsonSerializer.Serialize(value, JsonOptions);
 
     /// <summary>Turns an HTTP answer into a sentence the owner can act on (Spec 25.6).</summary>
     private static string WireError(SyncTransportResult answer)

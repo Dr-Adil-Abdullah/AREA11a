@@ -20,7 +20,7 @@ Ported from the original Next.js + SQLite web app (`Dr-Adil-Abdullah/Area11`) us
 | **1** | Foundation, database, sign-in, products, purchases `PINV`, counter `INV`, receipt & instant print, settings screen, **hold cart, split payment** | ✅ written and compiled; needs one real walk-through by the owner |
 | **2** | Returns `RET` / provisional `PR` / quarantine `Q`, alert centre, write-off, stock-take `ST`, khata and supplier ledgers | ✅ written (v0.3.0 - v0.3.12) |
 | **3** | Shift & galla, expenses, udhaar recovery, reports, black box, **backup ZIP**, **Excel / CSV import+export**, **reorder + WhatsApp order**, **stock-minus registry** | ✅ written (v0.4.0 - v0.11.0) |
-| **4** | **Loyalty** ✅ (v0.12.0), **photos & camera** ✅ (v0.13.0), **own fields** ✅ (v0.14.0), **several barcodes** ✅ (v0.15.0), **doctors, reps & lifetime profit** ✅ (v0.16.0), **second counter over the LAN** ✅ (v0.17.0), **tax, receipts & monthly statements** ✅ (v0.18.0), **self-installing installer** ✅ (v0.19.0), **printer & scanner test** 🟡 (v0.20.0 - waits for the shop's own printer), **Supabase cloud sync** ✅ (v0.21.0), **bills page with reprint** ✅ (v0.22.0), **printer fixed (code 6) and printers listed** ✅ (v0.22.1), **sample shop for a new database** ✅ (v0.23.0), **misspelt-medicine search** ✅ (v0.24.0), **purchase / partner / numbering tests** ✅ (v0.25.0), fuzzy search | 🟡 started (v0.12.0) |
+| **4** | **Loyalty** ✅ (v0.12.0), **photos & camera** ✅ (v0.13.0), **own fields** ✅ (v0.14.0), **several barcodes** ✅ (v0.15.0), **doctors, reps & lifetime profit** ✅ (v0.16.0), **second counter over the LAN** ✅ (v0.17.0), **tax, receipts & monthly statements** ✅ (v0.18.0), **self-installing installer** ✅ (v0.19.0), **printer & scanner test** 🟡 (v0.20.0 - waits for the shop's own printer), **Supabase cloud sync** ✅ (v0.21.0, repaired v0.26.0), **bills page with reprint** ✅ (v0.22.0), **printer fixed (code 6) and printers listed** ✅ (v0.22.1), **sample shop for a new database** ✅ (v0.23.0), **misspelt-medicine search** ✅ (v0.24.0), **purchase / partner / numbering tests** ✅ (v0.25.0), **cloud push repaired + Settings → Cloud sync** ✅ (v0.26.0), fuzzy search | 🟡 started (v0.12.0) |
 
 The cloud mirror is set up from [`docs/CLOUD-SYNC.md`](docs/CLOUD-SYNC.md) (Urdu): one SQL block in Supabase,
 four settings in Area11, then push / look / bring.
@@ -31,7 +31,7 @@ Live counts are in [`docs/PROGRESS.md`](docs/PROGRESS.md) (features) and
 **Honest note:** the agent's build machine is Linux with no .NET SDK, so nothing in `dotnet/` is
 compiled there. Every change is checked statically (C# parses, explicit usings, XAML, resources,
 every binding against its view model, every SQL statement against the real schema, every mapped
-column against its model, migrations executed on SQLite) and **629 test cases** are written for the
+column against its model, migrations executed on SQLite) and **641 test cases** are written for the
 Windows run. The Windows build has succeeded up to v0.4.8, and the owner's own runs compiled Core
 and Tests; the newest releases are tested by him with `tools\RUN-TESTS.cmd`. See
 [`docs/VERSIONS.md`](docs/VERSIONS.md) for which build he has.
@@ -93,7 +93,7 @@ Step-by-step help, including what to do when the build fails: [`docs/BUILD-ON-WI
 | [`docs/PROGRESS.md`](docs/PROGRESS.md) | English | every feature: ID, state, files, test, "done when" |
 | [`docs/RULES-MATRIX.md`](docs/RULES-MATRIX.md) | English | 116 numbered owner rules → where each is implemented |
 | [`docs/AREA11-MASTER-SPEC.md`](docs/AREA11-MASTER-SPEC.md) | English | the blueprint (sections 3, 5, 11, 12, 14, 15, 34) |
-| [`docs/OWNER-DECISIONS.md`](docs/OWNER-DECISIONS.md) | **Urdu** | the owner's decisions D-01…D-71, phase plan, open questions |
+| [`docs/OWNER-DECISIONS.md`](docs/OWNER-DECISIONS.md) | **Urdu** | the owner's decisions D-01…D-72, phase plan, open questions |
 | [`docs/SCHEMA-REFERENCE.md`](docs/SCHEMA-REFERENCE.md) | English | column-by-column reference of every table |
 | [`docs/PORT-PLAN.md`](docs/PORT-PLAN.md) | English | the technical study: conflicts, module map, test map, port order |
 | [`docs/BUILD-ON-WINDOWS.md`](docs/BUILD-ON-WINDOWS.md) | English | build, run, test, and what to send back when something fails |

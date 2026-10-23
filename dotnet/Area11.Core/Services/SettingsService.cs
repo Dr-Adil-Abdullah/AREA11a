@@ -270,6 +270,37 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         }
     }
 
+    /// <summary>The text of a setting exactly as it was typed, trimmed - never null.</summary>
+    private static string TextValue(object? value) => (value as string ?? string.Empty).Trim();
+
+    /// <summary>
+    /// A name that will be part of a URL and of the cloud row's key: letters, digits and `_`, plus `-`
+    /// for the shop id. An empty name is allowed - it simply means "not set up yet".
+    /// </summary>
+    private static string? CleanName(string name, string what, bool allowDash, int maxLength)
+    {
+        if (name.Length > maxLength)
+        {
+            return what + " cannot be longer than "
+                + maxLength.ToString(CultureInfo.InvariantCulture) + " characters.";
+        }
+
+        foreach (var character in name)
+        {
+            var allowed = char.IsLetterOrDigit(character)
+                          || character == '_'
+                          || (allowDash && character == '-');
+
+            if (!allowed)
+            {
+                return what + " can only use letters, digits, _ "
+                    + (allowDash ? "and - (no spaces)." : "(no spaces).");
+            }
+        }
+
+        return null;
+    }
+
     /// <summary>
     /// The few keys where a wrong number breaks the shop. The screen is not the only doorway into
     /// this service, so the rule lives here (D-26: a printed receipt cannot be un-printed).
@@ -375,6 +406,26 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
                 return number is >= 1 and <= 500
                     ? null
                     : "Keep between 1 and 500 automatic backups.";
+
+            // Cloud sync (F-48). The address becomes a URL and the table and shop id become parts of a
+            // request and of a row key, so they are checked here and not only on the screen: a shop name
+            // typed with a space into `sync.shopId` would silently push under a different key every time.
+            case "sync.url":
+            {
+                var address = TextValue(value);
+
+                return address.Length == 0
+                       || address.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+                       || address.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+                    ? null
+                    : "The cloud address must start with https:// (or http:// on your own network).";
+            }
+
+            case "sync.table":
+                return CleanName(TextValue(value), "The table name", allowDash: false, 63);
+
+            case "sync.shopId":
+                return CleanName(TextValue(value), "The shop id", allowDash: true, 64);
 
             default:
                 return null;

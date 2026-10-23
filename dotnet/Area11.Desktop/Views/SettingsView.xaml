@@ -13,7 +13,7 @@
         <DockPanel Grid.Row="0" Margin="0,0,0,6">
             <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
                 <TextBlock Text="Settings" Style="{StaticResource PageTitle}" />
-                <TextBlock Text="Shop details, printing, sales rules and staff — no code change needed"
+                <TextBlock Text="Shop details, printing, sales rules, cloud sync and staff — no code change needed"
                            Style="{StaticResource PageSubtitle}" />
             </StackPanel>
 
@@ -307,7 +307,67 @@
                 </ScrollViewer>
             </TabItem>
 
-            <!-- =========================== 4. STAFF ============================ -->
+            <!-- ========================= 4. CLOUD SYNC ========================= -->
+            <TabItem Header="Cloud sync">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel IsEnabled="{Binding CanChangeCloud}">
+                                <TextBlock Text="Supabase mirror (optional)" Style="{StaticResource SectionTitle}" />
+                                <TextBlock Text="A copy of the shop for looking at from home. The database on this computer is always the truth; the cloud is a mirror. Area11 works with no internet and no cloud account."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+
+                                <CheckBox Content="Cloud sync is switched on for this shop"
+                                          IsChecked="{Binding SyncEnabled, Mode=TwoWay}" Margin="0,10,0,0" />
+
+                                <TextBlock Text="Address (Project URL)" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding SyncUrl, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock Text="Like https://abcdxyz.supabase.co — no / at the end."
+                                           Style="{StaticResource FieldHint}" />
+
+                                <Grid Margin="0,4,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Table" Style="{StaticResource FieldLabel}" />
+                                        <TextBox Text="{Binding SyncTable, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="Shop id" Style="{StaticResource FieldLabel}" />
+                                        <TextBox Text="{Binding SyncShopId, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+                                </Grid>
+                                <TextBlock Text="The table is area11_sync unless the SQL in docs/CLOUD-SYNC.md says otherwise. Both counters of one shop use the same shop id; a second branch uses its own (shop-2)."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+
+                                <TextBlock Text="API key (anon public)" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding SyncKey, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock Text="{Binding SyncKeyLabel}" Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+                                <TextBlock Text="The key is a password to the whole mirror. It is never shown again after saving, and it never appears in the black box or on the Cloud sync page."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+
+                                <Button Content="Remove the saved key" Style="{StaticResource GhostButton}"
+                                        HorizontalAlignment="Left" Margin="0,8,0,0"
+                                        Command="{Binding ClearSyncKeyCommand}" />
+
+                                <TextBlock Text="{Binding SyncSummary}" Style="{StaticResource FieldHint}"
+                                           TextWrapping="Wrap" Margin="0,12,0,0" />
+                                <TextBlock Text="After saving, open SYSTEM → Cloud sync to push the data or to read the cloud copy."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- =========================== 5. STAFF ============================ -->
             <TabItem Header="Staff &amp; permissions">
                 <Grid>
 

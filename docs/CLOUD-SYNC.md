@@ -24,14 +24,18 @@ create table if not exists public.area11_sync (
 3. **Project Settings → API** سے دو چیزیں کاپی کریں:
    - **Project URL** (مثلاً `https://abcdxyz.supabase.co`)
    - **anon public** key (لمبا کوڈ)
-4. Area11 میں **SYSTEM → Settings → Cloud sync** کھولیں اور یہ بھریں:
+4. Area11 میں **SYSTEM → Settings → Cloud sync** کھولیں، **ٹک لگائیں** اور یہ بھریں:
 
 | خانہ | کیا لکھیں |
 |---|---|
+| Cloud sync is switched on | **ٹک لگائیں** — بغیر ٹک کے پروگرام کلاؤڈ سے بات ہی نہیں کرتا (خاموش، محفوظ) |
 | Address (URL) | `https://abcdxyz.supabase.co` — آخر میں `/` نہ لگائیں |
-| Key | anon key (یہ پاس ورڈ کی طرح ہے — کسی کو نہ دیں) |
+| Key | anon key (یہ پاس ورڈ کی طرح ہے — کسی کو نہ دیں؛ محفوظ ہونے کے بعد دوبارہ سکرین پر نہیں آتا) |
 | Table | `area11_sync` |
 | Shop id | `shop-1` (ایک ہی دکان کے دونوں کاؤنٹر پر **ایک ہی**؛ دوسری برانچ ہو تو `shop-2`) |
+
+پھر **Save settings** دبائیں۔ اگر ٹک لگی ہو اور کوئی خانہ خالی ہو تو صفحہ محفوظ نہیں کرتا اور صاف کہتا ہے کہ کون سا خانہ
+باقی ہے۔ غلط خانہ بھی وہیں رد ہو جاتا ہے: ایڈریس `https://` سے شروع ہونا چاہیے، اور **shop id میں خالی جگہ نہیں** ہو سکتی۔
 
 5. **SYSTEM → Cloud sync** کھولیں اور **Push the shop's data to the cloud** دبائیں۔
 
@@ -60,6 +64,25 @@ create table if not exists public.area11_sync (
 
 ---
 
+## 3a. کلاؤڈ میں کیا لکھا جاتا ہے (ایک قطار)
+
+Supabase کا ٹیبل `area11_sync` ایک ہی قطار رکھتا ہے، اور Area11 اُسے **ٹیبل کے اپنے کالم** سے بھرتا ہے
+(یہی چیز v0.26.0 میں درست ہوئی — پہلے پورا دستاویز ہی بھیج دیا جاتا تھا اور Supabase اُسے `format` کالم
+سمجھ کر انکار کر دیتا تھا):
+
+| کالم | کیا جاتا ہے |
+|---|---|
+| `shop_id` | آپ کا shop id (`shop-1`) — اسی پر پرانی قطار بدلی جاتی ہے |
+| `shop_name` | دکان کا نام (وہی جو رسید پر چھپتا ہے) |
+| `sent_at` | بھیجنے کا وقت، دکان کی گھڑی اور اُس کا آفسیٹ (`+05:00`) |
+| `version` | **دستاویز کی شکل** کا نمبر (آج `1`) — پروگرام کا ورژن نہیں |
+| `payload` | پورا Area11 دستاویز، جس میں 12 ٹیبل اور `version` میں پروگرام کا ورژن (`0.26.0`) |
+
+`payload` کے اندر جو `version` ہے وہ **پروگرام** کا ہے؛ باہر والا `version` صرف دستاویز کی شکل کا نمبر ہے۔
+یہ فرق جان بوجھ کر ہے: `version` کالم `int` ہے، اور "0.26.0" جیسا متن اُس میں نہیں بیٹھ سکتا۔
+
+---
+
 ## 4. خطرہ — یہ بات سمجھ لینا ضروری ہے
 
 > **اس فیچر میں یہ نقصان ہے:** "Bring the cloud data here" کلاؤڈ کی **پرانی** قطاریں اِس کمپیوٹر کی قطاروں پر
@@ -74,6 +97,7 @@ create table if not exists public.area11_sync (
 
 | پیغام | مطلب | حل |
 |---|---|---|
+| "Cloud sync is switched off…" | Settings میں ٹک نہیں لگا | Settings → Cloud sync میں ٹک لگا کر Save دبائیں |
 | "Fill the cloud address, the key and the shop id…" | سیٹنگز خالی ہیں | Settings → Cloud sync بھریں |
 | "The key was refused by Supabase (401)" | key غلط یا بدل دی گئی | Project Settings سے نئی anon key کاپی کریں |
 | "The address or the table was not found (404)" | URL یا ٹیبل کا نام غلط | URL میں `/` نہ ہو؛ ٹیبل `area11_sync` |

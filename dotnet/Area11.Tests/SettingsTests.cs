@@ -120,6 +120,66 @@ public sealed class SettingsTests
         Assert.Equal(1L, audits);
     }
 
+    // ---------------------------- Cloud sync (F-48) ----------------------------
+
+    [Fact]
+    public void ACloudAddressWithoutHttps_IsRefused()
+    {
+        using var test = new TestDatabase();
+
+        var refused = test.Settings.Set("sync.url", "abcdxyz.supabase.co", Owner);
+
+        Assert.False(refused.Ok);
+        Assert.Contains("https://", refused.Error!);
+        Assert.Equal(string.Empty, test.Settings.GetString("sync.url"));
+    }
+
+    [Fact]
+    public void ACloudAddressWithHttps_IsKept()
+    {
+        using var test = new TestDatabase();
+
+        var saved = test.Settings.Set("sync.url", "https://abcdxyz.supabase.co", Owner);
+
+        Assert.True(saved.Ok, saved.Error);
+        Assert.Equal("https://abcdxyz.supabase.co", test.Settings.GetString("sync.url"));
+    }
+
+    [Fact]
+    public void AShopIdWithASpace_IsRefusedBecauseItIsAPartOfTheRequest()
+    {
+        using var test = new TestDatabase();
+
+        var refused = test.Settings.Set("sync.shopId", "shop 1", Owner);
+
+        Assert.False(refused.Ok);
+        Assert.Contains("no spaces", refused.Error!);
+        Assert.Equal("shop-1", test.Settings.GetString("sync.shopId"));
+    }
+
+    [Fact]
+    public void ATableNameWithADash_IsRefusedAndTheUnderscoreOneIsKept()
+    {
+        using var test = new TestDatabase();
+
+        Assert.False(test.Settings.Set("sync.table", "area11-sync", Owner).Ok);
+        Assert.Equal("area11_sync", test.Settings.GetString("sync.table"));
+
+        var good = test.Settings.Set("sync.table", "area11_sync", Owner);
+        Assert.True(good.Ok, good.Error);
+    }
+
+    [Fact]
+    public void TheCloudSwitch_StartsOffAndCanBeTurnedOn()
+    {
+        using var test = new TestDatabase();
+
+        Assert.False(test.Settings.GetBool("sync.enabled"));
+
+        Assert.True(test.Settings.Set("sync.enabled", true, Owner).Ok);
+        Assert.True(test.Settings.GetBool("sync.enabled"));
+    }
+
     [Fact]
     public void PrintingDefaults_MatchTheAgreedBehaviour()
     {

@@ -149,6 +149,38 @@ public sealed class SyncEnvelope
     }
 }
 
+/// <summary>
+/// One row of the cloud table `area11_sync` (Spec 25.2): `shop_id`, `shop_name`, `sent_at`, `version`,
+/// `payload`.
+///
+/// Why the push sends this and not the document itself: the table's columns are snake_case and
+/// `version` is an **int**, while the Area11 document inside `payload` is the shop's own camelCase JSON.
+/// Posting the document directly asked PostgREST for a `format` column the table does not have, so a
+/// real push was refused with "Could not find the 'format' column" (repaired in v0.26.0).
+///
+/// `version` here is the **document format** (1 today), not the program's version: the table was made
+/// for a schema number, and the program version travels inside the document where it can be any text -
+/// "0.26.0" cannot be written into an int column, and a cloud copy must still be readable years later.
+/// </summary>
+public sealed class SyncRow
+{
+    [JsonPropertyName("shop_id")]
+    public string ShopId { get; set; } = string.Empty;
+
+    [JsonPropertyName("shop_name")]
+    public string ShopName { get; set; } = string.Empty;
+
+    /// <summary>Local shop time with its offset - a `timestamptz` Supabase can place on any clock.</summary>
+    [JsonPropertyName("sent_at")]
+    public string SentAt { get; set; } = string.Empty;
+
+    [JsonPropertyName("version")]
+    public int Version { get; set; } = SyncEnvelope.CurrentFormat;
+
+    [JsonPropertyName("payload")]
+    public SyncEnvelope Payload { get; set; } = new();
+}
+
 /// <summary>What a push actually sent, so the page can say a number instead of "done".</summary>
 public sealed class SyncRun
 {
@@ -265,9 +297,14 @@ public sealed class SyncStatus
         ? "never sent from this computer"
         : "last sync " + LastSync;
 
+    /// <summary>The owner's tick in Settings -> Cloud sync (`sync.enabled`).</summary>
+    public bool Enabled { get; set; }
+
     public string ConfigLabel => Configured
         ? "Cloud sync is set up"
-        : "Cloud sync is not set up yet";
+        : Enabled
+            ? "Cloud sync is not set up yet"
+            : "Cloud sync is switched off";
 }
 
 /// <summary>

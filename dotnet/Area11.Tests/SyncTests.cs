@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO;
 using System.Text.Json;
 using Area11.Core.Models;
@@ -408,6 +409,132 @@ public sealed class SyncTests
         Assert.DoesNotContain("secret-key-1234-5678", cloud.KeyLabel);
     }
 
+    // ============================== the row on the wire ==============================
+
+    [Fact]
+    public void APushSendsTheTablesOwnRowAndNotTheDocument()
+    {
+        // The defect this pins (found after v0.21.0): the push posted the document itself, so PostgREST
+        // was asked for a `format` column the table does not have and refused the whole push.
+        using var test = new TestDatabase();
+        Configure(test);
+        TestData.AddProduct(test);
+
+        var wire = new FakeCloud();
+        var pushed = Cloud(test, wire).Push(TestData.Owner);
+
+        Assert.True(pushed.Ok, pushed.Error);
+        Assert.NotNull(wire.SentJson);
+
+        using var document = JsonDocument.Parse(wire.SentJson!);
+        var row = document.RootElement;
+
+        Assert.Equal("shop-1", row.GetProperty("shop_id").GetString());
+        Assert.Equal("Area11 Pharmacy", row.GetProperty("shop_name").GetString());
+        Assert.Equal(JsonValueKind.Object, row.GetProperty("payload").ValueKind);
+
+        Assert.False(row.TryGetProperty("shopId", out _));   // the camelCase document is INSIDE payload
+        Assert.False(row.TryGetProperty("format", out _));   // there is no such column in the table
+    }
+
+    [Fact]
+    public void TheRowsVersionIsTheFormatAndTheProgramVersionStaysInTheDocument()
+    {
+        using var test = new TestDatabase();
+        Configure(test);
+        TestData.AddProduct(test);
+
+        var wire = new FakeCloud();
+        Assert.True(Cloud(test, wire).Push(TestData.Owner).Ok);
+
+        using var document = JsonDocument.Parse(wire.SentJson!);
+        var row = document.RootElement;
+
+        Assert.True(row.GetProperty("version").TryGetInt32(out var format));
+        Assert.Equal(SyncEnvelope.CurrentFormat, format);       // 1, an int column (Spec 25.2)
+
+        Assert.Equal(BuildInfo.Version,
+            row.GetProperty("payload").GetProperty("version").GetString());
+    }
+
+    [Fact]
+    public void TheSentStampCarriesTheShopsClockAndItsOffset()
+    {
+        using var test = new TestDatabase();
+        Configure(test);
+        TestData.AddProduct(test);
+
+        var wire = new FakeCloud();
+        Assert.True(Cloud(test, wire).Push(TestData.Owner).Ok);
+
+        using var document = JsonDocument.Parse(wire.SentJson!);
+        var stamp = document.RootElement.GetProperty("sent_at").GetString();
+
+        Assert.False(string.IsNullOrWhiteSpace(stamp));
+        Assert.True(DateTimeOffset.TryParseExact(stamp, "yyyy-MM-ddTHH:mm:sszzz",
+            CultureInfo.InvariantCulture, DateTimeStyles.None, out _), stamp);
+    }
+
+    // ============================== the switch ==============================
+
+    [Fact]
+    public void ASwitchedOffShopIsToldTheSwitchIsOffRatherThanAskedToFillTheForm()
+    {
+        using var test = new TestDatabase();
+        Configure(test);
+        Assert.True(test.Settings.SetUiOnly(SyncService.EnabledKey, false).Ok);
+
+        var refused = Cloud(test, new FakeCloud()).Push(TestData.Owner);
+
+        Assert.False(refused.Ok);
+        Assert.Contains("switched off", refused.Error!);
+        Assert.Contains("Settings -> Cloud sync", refused.Error!);
+    }
+
+    [Fact]
+    public void ThePageSaysTheCloudIsSwitchedOffRatherThanNotSetUp()
+    {
+        using var test = new TestDatabase();
+        Configure(test);
+        Assert.True(test.Settings.SetUiOnly(SyncService.EnabledKey, false).Ok);
+
+        var status = Cloud(test, new FakeCloud()).Status(TestData.Owner).Value!;
+
+        Assert.False(status.Enabled);
+        Assert.False(status.Configured);
+        Assert.Equal("Cloud sync is switched off", status.ConfigLabel);
+    }
+
+    // ============================== reading the cloud back ==============================
+
+    [Fact]
+    public void ThePreviewShowsTheProgramVersionAndNeverTheFormatNumber()
+    {
+        using var test = new TestDatabase();
+        Configure(test);
+
+        var wire = new FakeCloud { FetchAnswer = SyncTransportResult.Success(200, CloudBody("shop-1", _ => { })) };
+        var preview = Cloud(test, wire).Preview(TestData.Owner).Value!;
+
+        Assert.Equal("0.21.0", preview.Version);   // the document's text, not the row's int 1
+    }
+
+    [Fact]
+    public void ACloudStampIsShownInTheShopsOwnTime()
+    {
+        using var test = new TestDatabase();
+        Configure(test);
+
+        var wire = new FakeCloud { FetchAnswer = SyncTransportResult.Success(200, CloudBody("shop-1", _ => { })) };
+        var preview = Cloud(test, wire).Preview(TestData.Owner).Value!;
+
+        var expected = DateTimeOffset.Parse("2026-10-20T10:00:00+05:00", CultureInfo.InvariantCulture)
+            .ToLocalTime()
+            .ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+
+        Assert.Equal(expected, preview.SentAt);
+    }
+
     // ============================== helpers ==============================
 
     /// <summary>One fake wire, so a push or a pull can be exercised without an internet card.</summary>
@@ -451,6 +578,9 @@ public sealed class SyncTests
     private static void Configure(TestDatabase test, string shopId = "shop-1")
     {
         // SetUiOnly: the point of these tests is not to audit a settings screen, it is the sync itself.
+        // The switch is ticked here because it is the same door the owner uses (v0.26.0): a shop whose
+        // `sync.enabled` is off is told so, and never sends anything.
+        Assert.True(test.Settings.SetUiOnly(SyncService.EnabledKey, true).Ok);
         Assert.True(test.Settings.SetUiOnly("sync.url", "https://shop.supabase.co").Ok);
         Assert.True(test.Settings.SetUiOnly("sync.key", "secret-key-1234-5678").Ok);
         Assert.True(test.Settings.SetUiOnly("sync.table", "area11_sync").Ok);

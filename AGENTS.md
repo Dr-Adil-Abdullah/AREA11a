@@ -129,7 +129,7 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.25.0 (Verdigris `#2E7D6F`)** - all four phases are written: Phase 1-3 in full (billing, returns,
+> **v0.26.0 (Nimbus `#3D4E63`)** - all four phases are written: Phase 1-3 in full (billing, returns,
 > purchase, khata, supplier ledger, shift/galla, expenses, reports, black box, backup & restore,
 > Excel / CSV, reorder + WhatsApp, stock-minus registry), and Phase 4 has **all 12 of its features**:
 > loyalty from the screen, photos for medicines / customers / suppliers (copied into the shop's
@@ -142,7 +142,15 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >
 > The last confirmed Windows build is v0.4.8; everything from v0.6.2 on is proved only by
 > `tools/check_repo.py` until the owner runs `START-AREA11.bat` and `tools\\RUN-TESTS.cmd`
-> (**629 cases**).
+> (**641 cases**).
+>
+> **v0.26.0 repairs the cloud push (F-48).** The cloud table's row is built from its own snake_case columns
+> (`shop_id`, `shop_name`, `sent_at`, `version` as an int, `payload`), `sent_at` carries the shop's offset,
+> `version` holds the document format while the program version stays in `payload`, and Settings has its
+> fifth tab - **Cloud sync** - with the `sync.enabled` switch that was declared in Spec 6.12 and never read.
+> The key is never shown again, never audited, and the tab is closed to anyone without cloud-sync permission.
+> These 12 new tests have **not** been compiled or run here; `tools\RUN-TESTS.cmd` must end `Failed: 0`
+> with **641** cases, and the first real Supabase push is still the owner's to make.
 >
 > **v0.25.0 adds the purchase, partner and numbering tests (F-18)** - the last untested corner of
 > the code, proved through the public services only: a 2 x 10 box is 20 tablets, a bonus line never

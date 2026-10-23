@@ -9,11 +9,12 @@ namespace Area11.Desktop.ViewModels;
 /// Settings (F-17) — the screen the owner asked for when he said printing must be a choice
 /// ("in setting there is an option for auto or manu[a]l printing", D-26).
 ///
-/// Four tabs, one save button:
-///   • Shop      — name, address, phone, the note at the bottom of the receipt.
-///   • Printing  — printer, 58 / 80 mm, automatic or manual, cut, copies.
-///   • Sales     — discount limits, tax, negative stock.
-///   • Staff     — people, their role and one checkbox per module (D-03).
+/// Five tabs, one save button:
+///   • Shop        — name, address, phone, the note at the bottom of the receipt.
+///   • Printing    — printer, 58 / 80 mm, automatic or manual, cut, copies.
+///   • Sales       — discount limits, tax, negative stock.
+///   • Cloud sync  — the Supabase address, key, table and shop id (F-48, Spec 25.3).
+///   • Staff       — people, their role and one checkbox per module (D-03).
 ///
 /// All rules live in Core: <see cref="SettingsService"/> refuses a bad width, a bad copy count or a
 /// cashier limit above the manager's, and <see cref="PermissionService"/> refuses a permission change
@@ -59,6 +60,16 @@ public sealed class SettingsViewModel : ObservableObject
     private string _loyaltyVipText = "500";
     private string _loyaltySummary = string.Empty;
 
+    // ---- Cloud sync (F-48): the key is typed here but never read back onto the screen ----
+    private bool _syncEnabled;
+    private string _syncUrl = string.Empty;
+    private string _syncTable = "area11_sync";
+    private string _syncShopId = string.Empty;
+    private string _syncKey = string.Empty;
+    private string _syncKeyLabel = string.Empty;
+    private string _syncSummary = string.Empty;
+    private bool _syncKeyCleared;
+
     private int _selectedTabIndex;
     private User? _selectedUser;
     private string _newStaffName = string.Empty;
@@ -80,6 +91,7 @@ public sealed class SettingsViewModel : ObservableObject
         ResetPermissionsCommand = new RelayCommand(ResetPermissions);
         ToggleActiveCommand = new RelayCommand(ToggleActive);
         RefreshStaffCommand = new RelayCommand(LoadUsers);
+        ClearSyncKeyCommand = new RelayCommand(ClearSyncKey);
 
         PaperOptions = new ObservableCollection<PaperOption>
         {
@@ -108,6 +120,9 @@ public sealed class SettingsViewModel : ObservableObject
     public RelayCommand ToggleActiveCommand { get; }
 
     public RelayCommand RefreshStaffCommand { get; }
+
+    /// <summary>Takes the saved key off this computer (it takes effect when Save is pressed).</summary>
+    public RelayCommand ClearSyncKeyCommand { get; }
 
     public bool CanManageStaff => _services.Permissions.Can(_user, Modules.Staff);
 
@@ -440,6 +455,15 @@ public sealed class SettingsViewModel : ObservableObject
         LoyaltyPerPointText = settings.GetLong("loyalty.rupeesPerPoint", 100).ToString(CultureInfo.InvariantCulture);
         LoyaltyVipText = settings.GetLong("loyalty.vipThreshold", 500).ToString(CultureInfo.InvariantCulture);
         RaiseLoyaltySummary();
+
+        // Cloud sync (F-48): the key is the one value that is shown as a masked label, never as text.
+        SyncEnabled = settings.GetBool(SyncService.EnabledKey);
+        SyncUrl = settings.GetString(SyncService.UrlKey);
+        SyncTable = settings.GetString(SyncService.TableKey);
+        SyncShopId = settings.GetString(SyncService.ShopIdKey);
+        SyncKey = string.Empty;
+        _syncKeyCleared = false;
+        RaiseSyncLabels();
     }
 
     /// <summary>
@@ -447,14 +471,14 @@ public sealed class SettingsViewModel : ObservableObject
     /// the counter screen writes the same key) is shown here too.
     /// </summary>
     /// <summary>
-    /// Which tab is open: 0 Shop, 1 Printing, 2 Sales rules, 3 Staff &amp; permissions.
+    /// Which tab is open: 0 Shop, 1 Printing, 2 Sales rules, 3 Cloud sync, 4 Staff &amp; permissions.
     /// Bound two-way, so the shop name in the sidebar can open Shop and a person's name can open the
     /// staff tab (D-50) - the two questions the owner actually clicks.
     /// </summary>
     public int SelectedTabIndex
     {
         get => _selectedTabIndex;
-        set => SetProperty(ref _selectedTabIndex, Math.Clamp(value, 0, 3));
+        set => SetProperty(ref _selectedTabIndex, Math.Clamp(value, 0, 4));
     }
 
     /// <summary>
@@ -608,6 +632,19 @@ public sealed class SettingsViewModel : ObservableObject
             return;
         }
 
+        // A switch that is ON with half a form behind it would fail on the Cloud sync page with a
+        // sentence the owner cannot act on, so the page refuses the combination here (D-66, v0.26.0).
+        var keyWillExist = !_syncKeyCleared && (_services.Cloud.HasKey || SyncKey.Trim().Length > 0);
+
+        if (CanChangeCloud && SyncEnabled
+            && (SyncUrl.Trim().Length == 0 || SyncTable.Trim().Length == 0
+                || SyncShopId.Trim().Length == 0 || !keyWillExist))
+        {
+            SetStatus("Cloud sync is switched on, but the address, table, shop id and key must all be filled. " +
+                      "Fill them, or switch cloud sync off.", true);
+            return;
+        }
+
         var values = new Dictionary<string, object?>(StringComparer.Ordinal)
         {
             ["store.name"] = StoreName.Trim(),
@@ -641,6 +678,25 @@ public sealed class SettingsViewModel : ObservableObject
             ["loyalty.vipThreshold"] = vipPoints
         };
 
+        // Only a person the owner ticked for cloud sync writes these four keys: the key is a password
+        // to the whole shop's mirror, and a manager's Settings tab must not be able to replace it.
+        if (CanChangeCloud)
+        {
+            values[SyncService.EnabledKey] = SyncEnabled;
+            values[SyncService.UrlKey] = SyncUrl.Trim();
+            values[SyncService.TableKey] = SyncTable.Trim();
+            values[SyncService.ShopIdKey] = SyncShopId.Trim();
+
+            if (_syncKeyCleared)
+            {
+                values[SyncService.KeyKey] = string.Empty;
+            }
+            else if (SyncKey.Trim().Length > 0)
+            {
+                values[SyncService.KeyKey] = SyncKey.Trim();
+            }
+        }
+
         var result = _services.Settings.SetMany(values, _user);
 
         if (!result.Ok)
@@ -654,9 +710,127 @@ public sealed class SettingsViewModel : ObservableObject
         ExpirySummary = _services.Settings.ExpiryBands.Summary;
         RaiseLoyaltySummary();
 
+        // The key box is emptied at once: a key left on the screen is one a person walking past can read.
+        SyncKey = string.Empty;
+        _syncKeyCleared = false;
+        RaiseSyncLabels();
+
         _onSaved?.Invoke();
+
+        // The cloud sentence is added only when the owner could have changed it, so a cashier's save
+        // still says exactly what it saved.
+        var cloudNote = !CanChangeCloud
+            ? string.Empty
+            : !SyncEnabled
+                ? " Cloud sync is switched off."
+                : _services.Cloud.IsConfigured
+                    ? " Cloud sync is ready."
+                    : " Cloud sync is switched on but still incomplete.";
+
         SetStatus($"Saved. Paper {paper.Width} mm, printing " +
-                  (AutoPrint ? "automatic." : "manual (use the button on the counter screen)."), false);
+                  (AutoPrint ? "automatic." : "manual (use the button on the counter screen).") +
+                  cloudNote, false);
+    }
+
+    // ---------------------------- Cloud sync ----------------------------
+
+    /// <summary>Only someone the owner ticked for cloud sync may see or change these four boxes.</summary>
+    public bool CanChangeCloud => _services.Cloud.CanSync(_user);
+
+    public bool SyncEnabled
+    {
+        get => _syncEnabled;
+        set
+        {
+            if (SetProperty(ref _syncEnabled, value))
+            {
+                RaiseSyncSummary();
+            }
+        }
+    }
+
+    public string SyncUrl
+    {
+        get => _syncUrl;
+        set => SetProperty(ref _syncUrl, value);
+    }
+
+    public string SyncTable
+    {
+        get => _syncTable;
+        set => SetProperty(ref _syncTable, value);
+    }
+
+    public string SyncShopId
+    {
+        get => _syncShopId;
+        set => SetProperty(ref _syncShopId, value);
+    }
+
+    /// <summary>
+    /// What the owner types when he wants to replace the key. It is deliberately **not** loaded from the
+    /// database: a password that appears on a screen is a password that ends up in a photograph. An
+    /// empty box means "keep the saved key".
+    /// </summary>
+    public string SyncKey
+    {
+        get => _syncKey;
+        set => SetProperty(ref _syncKey, value);
+    }
+
+    /// <summary>"A key is saved (eyJh********9f2c)." - proof there is one, without showing it.</summary>
+    public string SyncKeyLabel
+    {
+        get => _syncKeyLabel;
+        private set => SetProperty(ref _syncKeyLabel, value);
+    }
+
+    /// <summary>One sentence: is the cloud set up, and what does the owner do next?</summary>
+    public string SyncSummary
+    {
+        get => _syncSummary;
+        private set => SetProperty(ref _syncSummary, value);
+    }
+
+    private void ClearSyncKey()
+    {
+        if (!CanChangeCloud)
+        {
+            SetStatus("Only a person the owner ticked for cloud sync can change the key.", true);
+            return;
+        }
+
+        _syncKeyCleared = true;
+        SyncKey = string.Empty;
+        SyncKeyLabel = "The saved key will be removed when you press Save settings.";
+    }
+
+    private void RaiseSyncLabels()
+    {
+        SyncKeyLabel = _services.Cloud.HasKey
+            ? "A key is saved (" + _services.Cloud.KeyLabel + "). Leave the box empty to keep it."
+            : "No key is saved yet.";
+
+        RaiseSyncSummary();
+    }
+
+    private void RaiseSyncSummary()
+    {
+        if (!CanChangeCloud)
+        {
+            SyncSummary = "Only a person the owner ticked for cloud sync can change these.";
+            return;
+        }
+
+        if (!SyncEnabled)
+        {
+            SyncSummary = "Cloud sync is off - nothing is ever sent. The rest of Area11 works without it.";
+            return;
+        }
+
+        SyncSummary = _services.Cloud.IsConfigured
+            ? "Ready. Open SYSTEM -> Cloud sync to push the shop's data, or to read the cloud copy."
+            : "Switched on but not complete - fill the address, the key, the table and the shop id, then press Save settings.";
     }
 
     // ------------------------------ Staff -------------------------------
