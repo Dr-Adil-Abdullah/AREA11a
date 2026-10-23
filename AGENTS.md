@@ -129,14 +129,26 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
+> **v0.29.4 (Saffron `#8A6508`) - a gate for method names on services, so CS1061 stops reaching the shop PC.**
+>
+> * **`_services.Prop.Method(` and `_field.Method(` are now resolved** against the real classes (rule 1i).
+>   The holder `_services` is read **only** through `AppServices`'s own property declarations; every other
+>   service field is read from its declaration. Wrong name, wrong line, wrong class: `check_repo.py`
+>   says `file:line ... is not a method of `X` (CS1061 - the build stops here)`.
+> * **Prove every new gate by breaking it on purpose.** The first two drafts of this rule were wrong -
+>   one resolved 0 calls, the other flagged all 235 real ones. A gate nobody has seen fail is not a gate.
+> * **Write the two shapes, not everything.** A pattern broad enough to catch `_db.Query(...)` catches the
+>   whole tree and teaches people to ignore the output.
+>
 > **v0.29.3 (Cerulean `#14607A`) - a gate for XAML, and one limit of the checker written down.**
 >
 > * **`{x:Static}` is parsed at window creation, so it needs a gate like `{StaticResource}`.** A misspelt
 >   member builds cleanly and throws before the sign-in window. `check_repo.py` now resolves prefix →
 >   namespace → class → member against the source; prove any new gate by breaking it on purpose first.
-> * **What the checker cannot see:** method names on services. `Backup.AutomaticIfDue()` (the real name
->   is `RunAutomaticIfDue`) would fail `dotnet build` and no rule here would warn. When you add a call to
->   a service, **grep the method name in the service file** - that is what caught this one.
+> * **Method names on services are checked (v0.29.4).** `Backup.AutomaticIfDue()` (the real name is
+>   `RunAutomaticIfDue`) is now a rule failure with its file and line, not something a reader has to spot.
+>   What the checker still cannot see: a method name on a **non-service** type (`_db.Query`, a model), an
+>   overload mismatch, and a `Type?` in a generic argument. For those, read the declaration.
 > * **Failures before the first window must land in `crash-*.txt`.** Anything done in `Program.Main`
 >   goes inside the try, including the demo switch, or the owner gets a window-less silent exit.
 >

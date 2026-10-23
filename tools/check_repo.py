@@ -1205,6 +1205,102 @@ def check_x_static() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 1i. Service method names (the CS1061 class of error nothing else could see)
+# ---------------------------------------------------------------------------
+def check_service_methods() -> None:
+    """`_services.Sales.Create(...)` and `_sales.Create(...)` must name real methods.
+
+    Why: the Desktop project has not compiled on the shop PC since v0.22.0, and a wrong method
+    name there is an ordinary compile error (CS1061) - yet no rule looked at method names. This
+    round found the gap the hard way: `Backup.AutomaticIfDue()` was written where the method is
+    `RunAutomaticIfDue`, and every check stayed green.
+
+    Two shapes are checked, and only these two:
+      * `_services.<Property>.<Method>(` - the holder must hold `AppServices`, the property gives
+        the service class (`AppServices` declares them), then the method must exist on it;
+      * `_<field>.<Method>(` - the field must be declared as a `...Service` type.
+    Anything else (`_db.Query(...)`, a local, a LINQ call) is left alone, which is what keeps the
+    rule quiet.
+    """
+    services_path = DOTNET / "Area11.Desktop" / "AppServices.cs"
+    if not services_path.exists():
+        return
+
+    services_text = mask_csharp_noise(services_path.read_text(encoding="utf-8-sig"))
+
+    # public SaleService Sales { get; }  ->  Sales -> SaleService
+    members = {
+        name: type_name
+        for type_name, name in re.findall(
+            r"public\s+(\w+(?:Service|Services))\s+(\w+)\s*\{\s*get;", services_text)
+    }
+
+    # Every service class, from its declaration to the end of its file.
+    bodies: dict[str, str] = {}
+
+    for source in DOTNET.rglob("*.cs"):
+        text = mask_csharp_noise(source.read_text(encoding="utf-8-sig"))
+
+        for match in re.finditer(r"\b(?:class|record)\s+(\w+(?:Service|Services))\b", text):
+            bodies.setdefault(match.group(1), text[match.start():])
+
+    def has_method(owner: str | None, method: str) -> bool:
+        body = bodies.get(owner) if owner is not None else None
+
+        return body is not None and re.search(
+            r"\b" + re.escape(method) + r"\s*(?:<[^>]*>)?\s*\(", body) is not None
+
+    checked = 0
+
+    # Core as well as Desktop: a service calling another service has the same two shapes, and Core
+    # is where most of the shop's rules live.
+    for path in DOTNET.rglob("*.cs"):
+        if "obj" in path.parts or "bin" in path.parts or "prototypes" in path.parts:
+            continue
+
+        text = path.read_text(encoding="utf-8-sig")
+        masked = mask_csharp_noise(text)
+
+        fields = {
+            name: type_name
+            for type_name, name in re.findall(
+                r"(?:private|internal|public)\s+(?:readonly\s+)?(\w+(?:Service|Services))\s+(\w+)\s*[;=]",
+                masked)
+        }
+
+        for match in re.finditer(r"\b(\w+)\.(\w+)\.(\w+)\s*\(", masked):
+            holder, prop, method = match.group(1), match.group(2), match.group(3)
+
+            if fields.get(holder) != "AppServices":
+                continue
+
+            owner = members.get(prop)
+            checked += 1
+
+            if not has_method(owner, method):
+                line = text[:match.start()].count("\n") + 1
+                fail(f"{rel(path)}:{line}: `{holder}.{prop}.{method}(...)` is not a method of "
+                     f"`{owner or 'an unknown service'}` (CS1061 - the build stops here)")
+
+        for match in re.finditer(r"\b(_\w+)\.(\w+)\s*(?:<[^>]*>)?\(", masked):
+            holder, method = match.group(1), match.group(2)
+
+            owner = fields.get(holder)
+
+            if owner is None or owner == "AppServices":
+                continue
+
+            checked += 1
+
+            if not has_method(owner, method):
+                line = text[:match.start()].count("\n") + 1
+                fail(f"{rel(path)}:{line}: `{holder}.{method}(...)` is not a method of "
+                     f"`{owner}` (CS1061 - the build stops here)")
+
+    REPORT.append(f"Service calls: {checked} method name(s) exist on their service")
+
+
+# ---------------------------------------------------------------------------
 # 2. XML (XAML, csproj, props)
 # ---------------------------------------------------------------------------
 def check_xml() -> None:
@@ -2076,6 +2172,7 @@ def main() -> int:
     check_readonly_members()
     check_resources()
     check_x_static()
+    check_service_methods()
     check_xml()
     check_bindings()
     check_migrations()
