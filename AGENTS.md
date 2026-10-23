@@ -129,6 +129,16 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
+> **v0.30.0 (Mauve `#7A5C7B`) - the page map is a gate too: `{x:Type}`, the template, and the view in it.**
+>
+> * **A shell page is three names that must agree:** `new XViewModel(...)` in `ShellViewModel`, a
+>   `<DataTemplate DataType="{x:Type vm:XViewModel}">` in `ShellWindow.xaml`, and `<views:XView />`
+>   inside it. A typo in any of the three either closes the program before the sign-in window
+>   (`{x:Type}`) or opens an empty frame, or - worst - opens the **wrong screen under the right menu
+>   name** with no error at all. `check_templates` now holds all three.
+> * **Suppress the cascade.** A misspelt type also makes its page "have no template"; printing both
+>   sends the reader hunting for a template that is right there. One root cause, one line.
+>
 > **v0.29.9 (Quartz `#6E7B8B`) - a binding is checked against ITS page, not against the whole program.**
 >
 > * **A pool of "every property anywhere" is not a check.** `{Binding BalancePaisa}` in a grid of

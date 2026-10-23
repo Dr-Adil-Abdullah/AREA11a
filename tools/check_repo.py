@@ -1570,6 +1570,135 @@ def check_bindings() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 3c. {x:Type} names, and the DataTemplate that decides which screen a page is
+# ---------------------------------------------------------------------------
+def _declared_types(folder_namespace: tuple[str, pathlib.Path]) -> dict[str, set[str]]:
+    """namespace -> the class names declared in that namespace, inside one project folder."""
+    namespace, folder = folder_namespace
+    found: dict[str, set[str]] = {}
+
+    for path in folder.rglob("*.cs"):
+        if {"obj", "bin"} & set(path.parts):
+            continue
+
+        text = path.read_text(encoding="utf-8-sig")
+        room = re.search(r"\bnamespace\s+([\w.]+)", text)
+
+        if room is None or room.group(1) != namespace:
+            continue
+
+        found.setdefault(namespace, set()).update(
+            re.findall(r"\b(?:class|record|struct|enum)\s+(\w+)", text))
+
+    return found
+
+
+def check_templates() -> None:
+    """`{x:Type ns:SomeClass}` must name a real class, and a page must have its own template.
+
+    Why: a `<DataTemplate DataType="{x:Type vm:PosViewModel}">` with a misspelt type is the SAME
+    runtime failure as a misspelt `{x:Static}` - XAML is parsed when the window is created, so the
+    program closes before the sign-in screen and a WinExe says nothing (F-01, F-16).
+
+    Why the template body too: the shell builds a page by `new SomeViewModel(...)` and WPF picks the
+    template whose DataType is that type. A view model with **no** template is not an error - it is
+    a page that shows the object's own name in an empty frame, which the owner reads as "the page is
+    broken". And a template that holds the WRONG view (`<views:PosView />` under
+    `DashboardViewModel`) compiles, runs, and shows the counter where the dashboard should be.
+    """
+    desktop = DOTNET / "Area11.Desktop"
+    shell = desktop / "Views" / "ShellWindow.xaml"
+
+    if not shell.exists():
+        return
+
+    text = shell.read_text(encoding="utf-8-sig")
+
+    prefixes = {}
+    for match in re.finditer(
+            r'xmlns:(\w+)="clr-namespace:([^";]+)(?:;assembly=([^"]+))?"', text):
+        prefixes[match.group(1)] = (match.group(2), match.group(3) or "Area11.Desktop")
+
+    known: dict[str, set[str]] = {}
+
+    for prefix, (namespace, assembly) in prefixes.items():
+        folder = {"Area11.Core": DOTNET / "Area11.Core", "Area11.Desktop": desktop}.get(assembly)
+
+        if folder is None:
+            continue                     # a framework namespace: not ours to check
+
+        for room, names in _declared_types((namespace, folder)).items():
+            known.setdefault(prefix, set()).update(names)
+
+    # ---- 1. every `{x:Type prefix:Class}` names a class that exists
+    typed = 0
+    broken_type = False
+
+    for path in desktop.rglob("*.xaml"):
+        body = path.read_text(encoding="utf-8-sig")
+        local = {}
+
+        for match in re.finditer(
+                r'xmlns:(\w+)="clr-namespace:([^";]+)(?:;assembly=([^"]+))?"', body):
+            local[match.group(1)] = (match.group(2), match.group(3) or "Area11.Desktop")
+
+        for match in re.finditer(r"\{x:Type\s+(\w+):(\w+)\s*\}", body):
+            prefix, name = match.group(1), match.group(2)
+
+            if prefix not in local:
+                continue
+
+            namespace, assembly = local[prefix]
+            folder = {"Area11.Core": DOTNET / "Area11.Core", "Area11.Desktop": desktop}.get(assembly)
+
+            if folder is None:
+                continue
+
+            typed += 1
+            declared = _declared_types((namespace, folder)).get(namespace, set())
+
+            if name not in declared:
+                broken_type = True
+                line = body[:match.start()].count("\n") + 1
+                fail(f"{rel(path)}:{line}: {{x:Type {prefix}:{name}}} names `{name}`, which is not "
+                     f"declared in `{namespace}` (XamlParseException when the window opens)")
+
+    # ---- 2 and 3. the shell's own templates: one per page, and the right view inside each
+    templates = {}
+
+    for match in re.finditer(
+            r'<DataTemplate\s+DataType="\{x:Type\s+\w+:(\w+)\}"\s*>(.*?)</DataTemplate>',
+            text, re.S):
+        templates[match.group(1)] = match.group(2)
+
+    pages = set(re.findall(r"new\s+([A-Z]\w*ViewModel)\s*\(", (desktop / "ViewModels" / "ShellViewModel.cs").read_text(encoding="utf-8-sig")))
+    views = {path.stem for path in (desktop / "Views").glob("*.xaml")}
+
+    # One root cause, one message. A misspelt {x:Type} also leaves the page it belonged to without a
+    # template, and reporting that second fact would send the reader looking for a missing template
+    # that is in fact right there, misspelt. The cascade is suppressed; the first line is the truth.
+    for page in ([] if broken_type else sorted(pages)):
+        if page not in templates:
+            fail(f"ShellWindow.xaml: the shell creates `new {page}(...)` but has no DataTemplate for "
+                 f"it - the page opens as an empty frame (no exception, nothing said)")
+
+    for page, body in sorted(templates.items()):
+        inside = re.findall(r"<views:(\w+)\s*/>", body)
+        wanted = page[:-len("ViewModel")] + "View" if page.endswith("ViewModel") else ""
+
+        if wanted and wanted not in views:
+            fail(f"ShellWindow.xaml: the template for `{page}` shows `{wanted}`, "
+                 f"but Views/{wanted}.xaml does not exist")
+        elif wanted and inside != [wanted]:
+            shown = ", ".join(inside) if inside else "nothing"
+            fail(f"ShellWindow.xaml: the template for `{page}` shows {shown}, and it should show "
+                 f"`{wanted}` - the wrong screen would open under the right menu name")
+
+    REPORT.append(f"Templates: {typed} {{x:Type}} name(s) resolve, "
+                  f"{len(templates)} page template(s) match their view")
+
+
+# ---------------------------------------------------------------------------
 # 4. Migrations
 # ---------------------------------------------------------------------------
 def check_migrations() -> None:
@@ -2439,6 +2568,7 @@ def main() -> int:
     check_service_members()
     check_xml()
     check_bindings()
+    check_templates()
     check_migrations()
     check_sql()
     check_column_mapping()
