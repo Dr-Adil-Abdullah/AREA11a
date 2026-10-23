@@ -166,8 +166,9 @@ public sealed class SampleShopViewModel : ObservableObject
         CanSeed = false;
 
         SetStatus(
-            "The sample shop is in. Open Counter (POS) and sell something, or SELL -> Bills to see the "
-            + "twelve sample bills. The black box has one line saying it was demo data.",
+            "The sample shop is in. Open Counter (POS) and sell something, or SELL -> Bills to walk "
+            + "through two and a half months: seven hundred bills, a khata with names, and today's drawer "
+            + "still open. The black box has one line saying it was demo data.",
             false);
     }
 

@@ -323,13 +323,15 @@ VALUES('product', @id, 'product-1-20261022-090000-000.jpg', 1, 1, '2026-10-22 09
         var fields = Fields(test);
         var product = TestData.AddProduct(test);
 
-        var field = fields.Add(TestData.Owner, CustomFieldEntity.Product, "Shelf", CustomFieldType.Text, null, false);
+        // `field` is a contextual keyword in C# 14 (the property-accessor keyword), so the local is
+        // called `shelf` - clearer to read, and the syntax checker can parse the line.
+        var shelf = fields.Add(TestData.Owner, CustomFieldEntity.Product, "Shelf", CustomFieldType.Text, null, false);
 
         Assert.False(fields.SaveValues(TestData.Owner, CustomFieldEntity.Product, product,
             new Dictionary<int, string?> { [9999] = "A-1" }).Ok);
 
         Assert.False(fields.SaveValues(TestData.Owner, CustomFieldEntity.Product, 9999,
-            new Dictionary<int, string?> { [field.Value!.Id] = "A-1" }).Ok);
+            new Dictionary<int, string?> { [shelf.Value!.Id] = "A-1" }).Ok);
 
         Assert.False(fields.Add(TestData.Owner, "spaceship", "Deck", CustomFieldType.Text, null, false).Ok);
         Assert.Equal(0L, Rows(test, "SELECT COUNT(1) FROM custom_values;"));

@@ -58,7 +58,7 @@
                         <TextBlock Text="BEFORE YOU PRESS" Style="{StaticResource SectionTitle}" />
 
                         <TextBlock TextWrapping="Wrap" Margin="0,6,0,0" LineHeight="20"
-                                   Text="This writes demo money into every page: twenty medicines, four purchases, twelve bills, two returns, khata, expenses, a drawer count and a stock-take. The names are real Pakistani brands but the numbers are inventions." />
+                                   Text="This writes demo money into every page: 44 medicines over 17 categories, six suppliers, twenty customers, and two and a half months of one small shop - about seven hundred bills, khata collections, returns, expenses, a stock-take and seventy-three counted drawers. The names are real Pakistani brands but the numbers are inventions." />
 
                         <TextBlock TextWrapping="Wrap" Margin="0,6,0,0" LineHeight="20"
                                    Text="It runs only once, and only in a shop that has no bills or purchases. A real shop keeps its own money untouched." />
