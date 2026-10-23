@@ -225,7 +225,7 @@ public sealed class ShellViewModel : ObservableObject
         // Sample data writes demo money into every page, so it is the owner's alone (F-53, D-69).
         var canSample = _services.SampleShop.CanSeed(_user);
 
-        NavItems.Add(new NavItem("Dashboard", "Today at a glance", () => new DashboardViewModel(_services)));
+        NavItems.Add(new NavItem("Dashboard", "Today at a glance", () => new DashboardViewModel(_services, _user)));
 
         // ---- SELL: the counter and what comes back from it ----
         if (canSell || canReturn || canBills)

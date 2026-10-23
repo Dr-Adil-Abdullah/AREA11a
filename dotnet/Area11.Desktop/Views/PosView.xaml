@@ -115,6 +115,30 @@
                                   SelectedItem="{Binding SelectedCustomer, Mode=TwoWay}" />
                         <TextBlock Text="{Binding CustomerHint}" Style="{StaticResource MetricLabel}" Margin="0,4,0,0" />
 
+                        <!-- a new face at the counter: add the khata without losing the cart (F-11) -->
+                        <Button Content="New customer..." Style="{StaticResource GhostButton}"
+                                Margin="0,6,0,0" HorizontalAlignment="Left"
+                                Command="{Binding BeginAddCustomerCommand}"
+                                Visibility="{Binding CanAddCustomer, Converter={StaticResource BoolToVis}}" />
+                        <Border Background="{StaticResource BrandSoftBrush}" CornerRadius="6" Padding="9"
+                                Margin="0,6,0,0"
+                                Visibility="{Binding IsAddingCustomer, Converter={StaticResource BoolToVis}}">
+                            <StackPanel>
+                                <TextBlock Text="The cart stays as it is. Only the name on the bill changes."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+                                <TextBlock Text="Name" Style="{StaticResource FieldLabel}" Margin="0,6,0,0" />
+                                <TextBox Text="{Binding NewCustomerName, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock Text="Phone (optional)" Style="{StaticResource FieldLabel}" Margin="0,6,0,0" />
+                                <TextBox Text="{Binding NewCustomerPhone, UpdateSourceTrigger=PropertyChanged}" />
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <Button Content="Save customer" Style="{StaticResource PrimaryButton}"
+                                            Command="{Binding SaveCustomerCommand}" Margin="0,0,8,0" />
+                                    <Button Content="Cancel" Style="{StaticResource GhostButton}"
+                                            Command="{Binding CancelAddCustomerCommand}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
                         <TextBlock Text="Doctor (prescription, optional)" Style="{StaticResource FieldLabel}" Margin="0,8,0,0" />
                         <ComboBox ItemsSource="{Binding Doctors}" DisplayMemberPath="Name"
                                   SelectedItem="{Binding SelectedDoctor, Mode=TwoWay}"

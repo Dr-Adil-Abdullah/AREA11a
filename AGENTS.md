@@ -129,7 +129,7 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.28.0 (Pine `#1E4D3B`)** - all four phases are written: Phase 1-3 in full (billing, returns,
+> **v0.29.0 (Burgundy `#6B1F3A`)** - all four phases are written: Phase 1-3 in full (billing, returns,
 > purchase, khata, supplier ledger, shift/galla, expenses, reports, black box, backup & restore,
 > Excel / CSV, reorder + WhatsApp, stock-minus registry), and Phase 4 has **all 12 of its features**:
 > loyalty from the screen, photos for medicines / customers / suppliers (copied into the shop's
@@ -142,7 +142,24 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >
 > The last confirmed Windows build is v0.4.8; everything from v0.6.2 on is proved only by
 > `tools/check_repo.py` until the owner runs `START-AREA11.bat` and `tools\\RUN-TESTS.cmd`
-> (**666 cases**).
+> (**686 cases**).
+>
+> **The checker learned two things from this version.** `DashboardService` used `User` with no
+> `using Area11.Core.Models;` and the gate stayed quiet: its mention patterns wanted `.`, `(` or
+> `<` after the name, and a nullable parameter writes `User?`. Widening the pattern then produced
+> six false failures, because `record` is contextual (`foreach (var record in rows)` looked like a
+> declaration of a type called `in`) and because a private nested class was being registered as a
+> namespace type. Both were fixed at the root and **the rule was proved by re-introducing the
+> real bug** (checker fails) and taking it out again (checker passes).
+>
+> **v0.29.0 repairs the home screen and finishes F-11 at the counter (F-12, F-11, D-75).**
+> Today's profit now follows the report's own four rows (bills - refunds - cost + restocked cost),
+> the expiry cards count by **day** instead of by stored year-month, the profit card hides from
+> anyone without the `profit` module (the service does not even read the number), and held/void
+> bills no longer count as today's sales. The counter gains "New customer..." beside the
+> customer box - the cart survives, and `PartnerService` keeps refusing a duplicate phone.
+> 20 new cases in `DashboardTests`; none compiled here, `tools\RUN-TESTS.cmd` must end
+> `Failed: 0` with **686** cases.
 >
 > **v0.28.0 turns the sample shop into a running shop (F-53, D-74).** SYSTEM -> *Sample shop* now
 > writes **72 days** - 44 medicines over 17 categories, 20 customers, ~700 bills, deliveries six

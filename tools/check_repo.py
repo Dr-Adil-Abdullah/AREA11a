@@ -271,6 +271,17 @@ def first_error_line(node, source: bytes) -> int:
 # ---------------------------------------------------------------------------
 # 1b. Explicit usings: the CS0103 class of error
 # ---------------------------------------------------------------------------
+# Reserved words that can never name a type. Kept short: only the ones a `class|record|enum|...`
+# scan can actually mistake for a declaration (contextual keywords used as plain identifiers).
+CSHARP_KEYWORDS = {
+    "in", "is", "as", "of", "on", "into", "when", "where", "select", "from", "let", "order",
+    "group", "by", "ascending", "descending", "equals", "and", "or", "not", "with", "init",
+    "get", "set", "value", "var", "new", "return", "if", "else", "for", "foreach", "while",
+    "do", "switch", "case", "default", "break", "continue", "try", "catch", "finally", "throw",
+    "using", "namespace", "class", "record", "struct", "enum", "interface", "public", "private",
+    "protected", "internal", "static", "readonly", "const", "void", "true", "false", "null"
+}
+
 NEEDED_NAMESPACES = {
     "System.IO": ("Path", "File", "Directory", "FileInfo", "DirectoryInfo", "Stream", "FileStream",
                   "StreamReader", "StreamWriter", "MemoryStream", "FileMode", "FileAccess",
@@ -336,7 +347,46 @@ def check_usings() -> None:
 
         project = path.relative_to(DOTNET).parts[0]
 
-        for name in re.findall(r"\b(?:class|record|enum|interface|struct)\s+(\w+)", masked_text):
+        # `record` is a CONTEXTUAL keyword: `foreach (var record in _rows)` reads exactly like a
+        # declaration to a regex. That minted a type called `in` in Area11.Core.Services, and then
+        # every `foreach (... in ...)` in the Desktop project "used" it - six false failures the day
+        # the mention patterns below were widened (v0.29.0). A reserved word is never a type name, so
+        # the keywords are skipped here once, for every rule that reads this table.
+        #
+        # Only NAMESPACE-level types are registered. A private nested `Counts` inside a service is
+        # invisible outside that service, so treating it as `Area11.Core.Services.Counts` made a
+        # property called `Counts` in another file look like a missing using (the second false alarm
+        # of the same day). Depth tells the two apart: with a file-scoped namespace (`namespace X;`)
+        # a top-level type sits at depth 0, with a block namespace (`namespace X {`) at depth 1.
+        file_scoped = re.search(r"namespace\s+[\w.]+\s*;", masked_text) is not None
+        top_level_depth = 0 if file_scoped else 1
+
+        # One pass of brace depth for the whole file, then O(1) per declaration. Counting the
+        # braces before every match instead made this check three times slower (12 s -> 34 s),
+        # and it runs on every push.
+        depth_now = 0
+        depth_at = [0] * (len(masked_text) + 1)
+        positions = masked_text
+
+        for position, character in enumerate(positions):
+            depth_at[position] = depth_now
+
+            if character == "{":
+                depth_now += 1
+            elif character == "}":
+                depth_now -= 1
+
+        depth_at[len(positions)] = depth_now
+
+        for match in re.finditer(r"\b(?:class|record|enum|interface|struct)\s+(\w+)", masked_text):
+            name = match.group(1)
+
+            if name in CSHARP_KEYWORDS:
+                continue
+
+            if depth_at[match.start()] != top_level_depth:
+                continue
+
             declared_ns.setdefault(name, namespace.group(1))
             project_of.setdefault(name, project)
 
@@ -354,8 +404,24 @@ def check_usings() -> None:
         own_ns = namespace_match.group(1)
         project = path.relative_to(DOTNET).parts[0]
 
+        # Types declared IN THIS FILE (a nested row class, a private helper) are always visible.
+        own_types = set(re.findall(r"\b(?:class|record|enum|interface|struct)\s+(\w+)", masked_text))
+
+        # Every identifier in the file, once. Testing 450 declared types against the whole text, three
+        # patterns each, for 292 files is ~400k regex runs (34 s per check); this set drops the types
+        # the file never names, and the precise patterns below only run on the few that remain.
+        words = set(re.findall(r"[A-Za-z_]\w*", masked_text))
+
         for name, type_ns in declared_ns.items():
-            if project_of.get(name) == project:
+            if name not in words:
+                continue
+
+            # A same-PROJECT type used to be skipped here, on the theory that "our own assembly wins".
+            # That is true for ambiguity and false for visibility: `DashboardService` (in
+            # Area11.Core.Services) used `User` (in Area11.Core.Models) with no `using`, and the
+            # checker stayed silent while the compiler would have said CS0246 - caught by hand at
+            # v0.29.0. A namespace is what makes a type visible, so only the namespace rules apply.
+            if name in own_types:
                 continue
 
             if own_ns == type_ns or own_ns.startswith(type_ns + "."):
@@ -364,7 +430,13 @@ def check_usings() -> None:
             if f"using {type_ns};" in text:
                 continue
 
-            mention = re.search(rf"(?<![\w.]){re.escape(name)}\s*[.(<]", masked_text)
+            # Three ways a type is named in code. The third one is why this rule once went blind:
+            # `GetSnapshot(User? user)` puts a `?` where the old pattern wanted `.`, `(` or `<`, so a
+            # whole service could use a Core type with no `using` and the checker stayed quiet
+            # (found by hand at v0.29.0, then reproduced as a failing check before the fix).
+            mention = (re.search(rf"(?<![\w.]){re.escape(name)}\s*[.(<]", masked_text)
+                       or re.search(rf"(?<![\w.]){re.escape(name)}\??\s+[A-Za-z_]", masked_text)
+                       or re.search(rf"(?<![\w.]){re.escape(name)}\?", masked_text))
 
             if mention:
                 offenders += 1

@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 using Area11.Core.Models;
+using Area11.Core.Services;
 using Area11.Core.Utils;
 
 namespace Area11.Desktop.ViewModels;
@@ -35,6 +36,9 @@ public sealed class PosViewModel : ObservableObject
     private string _tenderedText = string.Empty;
     private string _secondMethod = "online";
     private string _secondAmountText = string.Empty;
+    private bool _isAddingCustomer;
+    private string _newCustomerName = string.Empty;
+    private string _newCustomerPhone = string.Empty;
 
     private string _subtotalText = "Rs 0";
     private string _discountText = "Rs 0";
@@ -62,6 +66,9 @@ public sealed class PosViewModel : ObservableObject
         RefreshCommand = new RelayCommand(LoadLookups);
         HoldCommand = new RelayCommand(HoldCart);
         RefreshHeldCommand = new RelayCommand(LoadHeldCarts);
+        BeginAddCustomerCommand = new RelayCommand(BeginAddCustomer);
+        CancelAddCustomerCommand = new RelayCommand(CancelAddCustomer);
+        SaveCustomerCommand = new RelayCommand(SaveNewCustomer);
 
         _autoPrint = _services.Settings.GetBool("printer.autoPrint", true);
 
@@ -105,6 +112,13 @@ public sealed class PosViewModel : ObservableObject
     public RelayCommand HoldCommand { get; }
 
     public RelayCommand RefreshHeldCommand { get; }
+
+    /// <summary>Open the small "new customer" card under the customer box (F-11).</summary>
+    public RelayCommand BeginAddCustomerCommand { get; }
+
+    public RelayCommand CancelAddCustomerCommand { get; }
+
+    public RelayCommand SaveCustomerCommand { get; }
 
     public string CashierName => _user.Name;
 
@@ -366,6 +380,33 @@ public sealed class PosViewModel : ObservableObject
         get => _lastBill;
         private set => SetProperty(ref _lastBill, value);
     }
+
+    /// <summary>
+    /// Quick creation at the counter (F-11, D-50). A customer walks in with no khata in the shop and
+    /// still wants the bill on credit: without this card the cashier has to abandon the cart, open
+    /// Customers, add the person and start again - and on a busy evening the bill goes through as
+    /// walk-in cash instead. The rules are PartnerService's, the same ones the Customers page uses.
+    /// </summary>
+    public bool IsAddingCustomer
+    {
+        get => _isAddingCustomer;
+        private set => SetProperty(ref _isAddingCustomer, value);
+    }
+
+    public string NewCustomerName
+    {
+        get => _newCustomerName;
+        set => SetProperty(ref _newCustomerName, value);
+    }
+
+    public string NewCustomerPhone
+    {
+        get => _newCustomerPhone;
+        set => SetProperty(ref _newCustomerPhone, value);
+    }
+
+    /// <summary>Only a person who may see the khata book may add a name to it.</summary>
+    public bool CanAddCustomer => _services.Permissions.Can(_user, Modules.Customers);
 
     public string CustomerHint => SelectedCustomer is null || SelectedCustomer.Id == 0
         ? "Cash customer"
@@ -925,6 +966,48 @@ public sealed class PosViewModel : ObservableObject
 
         LoadHeldCarts();
         SetStatus($"{row.Code} thrown away - nothing was sold.", false);
+    }
+
+    private void BeginAddCustomer()
+    {
+        if (!CanAddCustomer)
+        {
+            SetStatus("You are not allowed to add customers.", true);
+            return;
+        }
+
+        NewCustomerName = string.Empty;
+        NewCustomerPhone = string.Empty;
+        IsAddingCustomer = true;
+
+        SetStatus("Type the customer's name (and phone, if they give it) and press Save customer.", false);
+    }
+
+    private void CancelAddCustomer()
+    {
+        IsAddingCustomer = false;
+        SetStatus("No customer was added - the cart was not touched.", false);
+    }
+
+    private void SaveNewCustomer()
+    {
+        var saved = _services.Partners.CreateCustomer(_user, NewCustomerName, NewCustomerPhone, "normal");
+
+        if (!saved.Ok)
+        {
+            SetStatus(saved.Error ?? "The customer could not be saved.", true);
+            return;
+        }
+
+        // The cart stays exactly as it is; only the name on the bill changes. Reloading the list is
+        // what puts the new person in the box - the same list the khata page reads.
+        var name = NewCustomerName.Trim();
+        IsAddingCustomer = false;
+        LoadLookups();
+
+        SelectedCustomer = Customers.FirstOrDefault(person => person.Id == saved.Value) ?? SelectedCustomer;
+
+        SetStatus("Added " + name + " - the khata starts at zero. Pick them on a credit bill.", false);
     }
 
     private void SetStatus(string message, bool isError)

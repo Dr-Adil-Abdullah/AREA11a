@@ -44,7 +44,8 @@
                                    Foreground="{StaticResource BrandBrush}" />
                     </StackPanel>
                 </Border>
-                <Border Style="{StaticResource Card}" Margin="6,0,6,0">
+                <Border Style="{StaticResource Card}" Margin="6,0,6,0"
+                        Visibility="{Binding CanSeeProfit, Converter={StaticResource BoolToVis}}">
                     <StackPanel>
                         <TextBlock Text="TODAY'S PROFIT" Style="{StaticResource MetricLabel}" />
                         <TextBlock Text="{Binding ProfitText}" Style="{StaticResource MetricValue}"
@@ -82,9 +83,17 @@
                 </Border>
                 <Border Style="{StaticResource Card}" Margin="6,0,0,0">
                     <StackPanel>
-                        <TextBlock Text="EXPIRED BATCHES" Style="{StaticResource MetricLabel}" />
-                        <TextBlock Text="{Binding ExpiryText}" Style="{StaticResource MetricValue}"
-                                   Foreground="{StaticResource DangerBrush}" />
+                        <TextBlock Text="NEAR EXPIRY / EXPIRED" Style="{StaticResource MetricLabel}" />
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding ExpiringText}" Style="{StaticResource MetricValue}"
+                                       Foreground="{StaticResource WarningBrush}" />
+                            <TextBlock Text=" / " Style="{StaticResource MetricValue}"
+                                       Foreground="{StaticResource MutedBrush}" />
+                            <TextBlock Text="{Binding ExpiryText}" Style="{StaticResource MetricValue}"
+                                       Foreground="{StaticResource DangerBrush}" />
+                        </StackPanel>
+                        <TextBlock Text="inside the nearest band / already past the date"
+                                   Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
             </UniformGrid>

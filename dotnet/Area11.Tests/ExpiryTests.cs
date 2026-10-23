@@ -20,7 +20,8 @@ public sealed class ExpiryTests
             new PermissionService(test.Database, test.Log, test.Audit), test.Log);
 
     private static DashboardService Dashboard(TestDatabase test) =>
-        new(test.Database, test.Settings, test.Log);
+        new(test.Database, test.Settings,
+            new PermissionService(test.Database, test.Log, test.Audit), test.Log);
 
     /// <summary>A batch that expires exactly <paramref name="days"/> days from today.</summary>
     private static string InDays(int days) =>
@@ -174,7 +175,7 @@ WHERE product_id = @productId;",
         SetExpiry(test, product, 75);
 
         // Shipped scale: 75 days is inside Level 3 (90), so the card warns.
-        var before = Dashboard(test).GetSnapshot();
+        var before = Dashboard(test).GetSnapshot(TestData.Owner);
         Assert.True(before.Ok, before.Error);
         Assert.Equal(1, before.Value!.ExpiringSoon);
 
@@ -185,7 +186,7 @@ WHERE product_id = @productId;",
             new Dictionary<string, object?> { ["expiry.levels"] = Bands(400, 120, 1) },
             TestData.Owner);
 
-        var after = Dashboard(test).GetSnapshot();
+        var after = Dashboard(test).GetSnapshot(TestData.Owner);
         Assert.True(after.Ok, after.Error);
         Assert.Equal(0, after.Value!.ExpiringSoon);
     }
