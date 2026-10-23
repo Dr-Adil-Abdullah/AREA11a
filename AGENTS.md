@@ -129,6 +129,14 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
+> **v0.29.7 (Coral `#C2554A`) - the column rule reads the tests, so a test's row class is guarded too.**
+>
+> * **851 columns became 871 over 101 files.** A test fills its own small row class from a query; a
+>   column that reaches no property is dropped by Dapper and stays 0, and the assertion then blames the
+>   program. That was the known blind spot of v0.29.6, now closed rather than described.
+> * **A gate's reach should be printed, not implied.** The line now says how many files it read, because
+>   "851 columns checked" was equally true when it read one folder.
+>
 > **v0.29.6 (Grape `#6D28D9`) - the SQL gate was reading half the SQL, and two of my tests were wrong.**
 >
 > * **A literal's closing quote is not the next literal's opening.** The plain-string scan treated the
@@ -141,8 +149,8 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >   `SampleShopTests` from v0.29.1 to v0.29.5 without ever running.
 > * **A statement built by pasting a variable is a fragment, not a statement.** Ones ending on `FROM`,
 >   `=`, `(` or a comma are counted and skipped instead of being prepared and reported as faults.
-> * **Known blind spot, written down rather than left to be discovered:** the column-mapping rule (851
->   columns) still reads only `Area11.Core`; a test's own row class is not compared with its query.
+> * **The column-mapping rule reads the tests too as of v0.29.7** (871 columns, 101 files). What it still
+>   cannot see: a row class created outside the folder it scans, and a query built at run time.
 > * **When a page gains a line, look for the test that counts the lines.** `Assert.Equal(13,
 >   report.Steps.Count)` was the only thing v0.29.5 broke by adding a step.
 >

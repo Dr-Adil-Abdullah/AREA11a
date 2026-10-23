@@ -1735,7 +1735,15 @@ def check_column_mapping() -> None:
     checked = 0
     problems = 0
 
-    for path in sorted((DOTNET / "Area11.Core/Services").glob("*.cs")):
+    # The tests as well as the services. A test reads the shop's rows through its own little row
+    # classes, and a column that does not reach one of them leaves a 0 that the assertion then
+    # blames on the program: "expected 3, actual 0" is a sentence the owner cannot act on. The
+    # services were the only folder checked until v0.29.7, which is the same half-a-gate that let
+    # the SQL rule miss the tests.
+    sources = sorted((DOTNET / "Area11.Core/Services").glob("*.cs"))
+    sources += sorted((DOTNET / "Area11.Tests").glob("*.cs"))
+
+    for path in sources:
         text = path.read_text(encoding="utf-8-sig")
         local = _classes_in(text)
 
@@ -1798,7 +1806,8 @@ def check_column_mapping() -> None:
                     fail(f"{rel(path)}: column '{alias}' has no property on {model} "
                          f"(Dapper drops it and the field stays 0)")
 
-    REPORT.append(f"Column mapping: {checked} selected column(s) checked against their model")
+    REPORT.append(f"Column mapping: {checked} selected column(s) checked against their model"
+                  + (f", {len(sources)} file(s)" if len(sources) else ""))
 
 
 # ---------------------------------------------------------------------------
