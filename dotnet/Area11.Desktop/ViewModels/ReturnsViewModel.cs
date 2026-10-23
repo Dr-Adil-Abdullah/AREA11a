@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using Area11.Core.Models;
 using Area11.Core.Services;
 using Area11.Core.Utils;
@@ -29,6 +30,14 @@ public sealed class ReturnsViewModel : ObservableObject
     private bool _isStatusError;
     private int _saleId;
     private string _billSummary = string.Empty;
+    // ---- "Which bill was it?" (F-20): a list, never a guess ----
+    private string _searchText = string.Empty;
+    private string _fromDate = string.Empty;
+    private string _toDate = string.Empty;
+    private SaleLookupRow? _selectedMatch;
+    private string _searchCaption =
+        "Type a bill number, a phone, a name or a medicine - or choose a date range.";
+
     private string _quarantineCaption = "No goods are waiting for a decision.";
     private bool _busy;
 
@@ -38,6 +47,8 @@ public sealed class ReturnsViewModel : ObservableObject
         _user = user;
 
         FindCommand = new RelayCommand(Find);
+        SearchCommand = new RelayCommand(SearchBills);
+        OpenMatchCommand = new RelayCommand(OpenMatch);
         TakeCommand = new RelayCommand(TakeReturn);
         RefreshQuarantineCommand = new RelayCommand(LoadQuarantine);
         ClearCommand = new RelayCommand(Clear);
@@ -47,6 +58,9 @@ public sealed class ReturnsViewModel : ObservableObject
 
     public ObservableCollection<ReturnLineRow> Lines { get; } = new();
 
+    /// <summary>Bills that match the search, newest first.</summary>
+    public ObservableCollection<SaleLookupRow> Matches { get; } = new();
+
     public ObservableCollection<QuarantineRow> Pending { get; } = new();
 
     public ObservableCollection<QuarantineItem> History { get; } = new();
@@ -54,6 +68,12 @@ public sealed class ReturnsViewModel : ObservableObject
     public IReadOnlyList<string> Reasons { get; } = ReturnService.Reasons;
 
     public RelayCommand FindCommand { get; }
+
+    /// <summary>Finds a bill by anything the customer remembers (F-20).</summary>
+    public RelayCommand SearchCommand { get; }
+
+    /// <summary>Opens the bill chosen in that list, exactly as if its number had been typed.</summary>
+    public RelayCommand OpenMatchCommand { get; }
 
     public RelayCommand TakeCommand { get; }
 
@@ -189,6 +209,98 @@ public sealed class ReturnsViewModel : ObservableObject
         Recalculate();
     }
 
+    // ------------------------------------------------- "which bill was it?" (F-20)
+
+    /// <summary>Anything the customer remembers: bill number, phone, name, medicine.</summary>
+    public string SearchText
+    {
+        get => _searchText;
+        set => SetProperty(ref _searchText, value);
+    }
+
+    public string FromDate
+    {
+        get => _fromDate;
+        set => SetProperty(ref _fromDate, value);
+    }
+
+    public string ToDate
+    {
+        get => _toDate;
+        set => SetProperty(ref _toDate, value);
+    }
+
+    public SaleLookupRow? SelectedMatch
+    {
+        get => _selectedMatch;
+        set => SetProperty(ref _selectedMatch, value);
+    }
+
+    /// <summary>What the list is showing, in words - never a silent zero.</summary>
+    public string SearchCaption
+    {
+        get => _searchCaption;
+        private set => SetProperty(ref _searchCaption, value);
+    }
+
+    public bool HasMatches => Matches.Count > 0;
+
+    private void SearchBills()
+    {
+        var found = _services.Returns.Search(new SaleLookupInput
+        {
+            Text = SearchText,
+            FromDate = FromDate,
+            ToDate = ToDate
+        });
+
+        if (!found.Ok || found.Value is null)
+        {
+            Matches.Clear();
+            SelectedMatch = null;
+            OnPropertyChanged(nameof(HasMatches));
+            SearchCaption = found.Error ?? "The bills could not be searched.";
+            return;
+        }
+
+        Matches.Clear();
+
+        foreach (var row in found.Value)
+        {
+            Matches.Add(row);
+        }
+
+        SelectedMatch = Matches.FirstOrDefault();
+        OnPropertyChanged(nameof(HasMatches));
+
+        SearchCaption = Matches.Count switch
+        {
+            0 => "No bill matches that. Try fewer letters, or another day.",
+            100 => "Showing the newest 100 bills. Narrow it down with a date if the bill is not here.",
+            _ => Matches.Count == 1
+                ? "One bill found."
+                : Matches.Count.ToString(CultureInfo.InvariantCulture) + " bills found - pick the right one."
+        };
+    }
+
+    /// <summary>
+    /// Opens the chosen bill: sets the number box and runs the same <see cref="Find"/> the typed
+    /// number runs, so there is one way into a bill and one set of checks behind it.
+    /// </summary>
+    private void OpenMatch()
+    {
+        var row = SelectedMatch;
+
+        if (row is null)
+        {
+            SetStatus("Pick a bill in the list first.", true);
+            return;
+        }
+
+        BillCode = row.Code;
+        Find();
+    }
+
     private void ResetBill()
     {
         _saleId = 0;
@@ -203,6 +315,13 @@ public sealed class ReturnsViewModel : ObservableObject
     private void Clear()
     {
         BillCode = string.Empty;
+        SearchText = string.Empty;
+        FromDate = string.Empty;
+        ToDate = string.Empty;
+        Matches.Clear();
+        SelectedMatch = null;
+        OnPropertyChanged(nameof(HasMatches));
+        SearchCaption = "Type a bill number, a phone, a name or a medicine - or choose a date range.";
         Note = string.Empty;
         Reason = ReturnService.ReasonChangedMind;
         Restock = true;

@@ -31,6 +31,7 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
 
@@ -55,10 +56,73 @@
                                 </StackPanel>
                             </Grid>
 
-                            <TextBlock Grid.Row="1" Text="{Binding BillSummary}" Style="{StaticResource FieldHint}"
+                            <!-- No bill number? Find it by anything the customer remembers (F-20). -->
+                            <Expander Grid.Row="1" Header="No bill number? Find it" Margin="0,8,0,0"
+                                      IsExpanded="False">
+                                <StackPanel>
+                                    <Grid Margin="0,6,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="110" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="110" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Bill number, phone, name or medicine"
+                                                       Style="{StaticResource FieldLabel}" />
+                                            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                                     ToolTip="0300-1234567, Ali Raza, Panadol, INV-0007 - any part of it" />
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="From" Style="{StaticResource FieldLabel}" />
+                                            <TextBox Text="{Binding FromDate, UpdateSourceTrigger=PropertyChanged}"
+                                                     ToolTip="2026-10-01 - leave empty for no limit" />
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="4">
+                                            <TextBlock Text="To" Style="{StaticResource FieldLabel}" />
+                                            <TextBox Text="{Binding ToDate, UpdateSourceTrigger=PropertyChanged}"
+                                                     ToolTip="2026-10-31 - leave empty for no limit" />
+                                        </StackPanel>
+
+                                        <Button Grid.Column="6" Content="Search" VerticalAlignment="Bottom"
+                                                Style="{StaticResource PrimaryButton}"
+                                                Command="{Binding SearchCommand}" />
+                                    </Grid>
+
+                                    <TextBlock Text="{Binding SearchCaption}" Style="{StaticResource FieldHint}"
+                                               TextWrapping="Wrap" Margin="0,6,0,4" />
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="Open this bill" Style="{StaticResource GhostButton}"
+                                                Command="{Binding OpenMatchCommand}" />
+                                    </StackPanel>
+
+                                    <DataGrid ItemsSource="{Binding Matches}" Height="140" Margin="0,6,0,0"
+                                              SelectedItem="{Binding SelectedMatch, Mode=TwoWay}"
+                                              Visibility="{Binding HasMatches, Converter={StaticResource BoolToVis}}">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Bill" Binding="{Binding Code}" Width="90" />
+                                            <DataGridTextColumn Header="When" Binding="{Binding DateLabel}" Width="120" />
+                                            <DataGridTextColumn Header="Customer" Binding="{Binding CustomerLabel}" Width="*" />
+                                            <DataGridTextColumn Header="Items" Binding="{Binding ItemsLabel}" Width="70" />
+                                            <DataGridTextColumn Header="Total" Binding="{Binding TotalText}" Width="90" />
+                                            <DataGridTextColumn Header="Due" Binding="{Binding DueLabel}" Width="90" />
+                                            <DataGridTextColumn Header="Status" Binding="{Binding StatusLabel}" Width="90" />
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </StackPanel>
+                            </Expander>
+
+                            <TextBlock Grid.Row="2" Text="{Binding BillSummary}" Style="{StaticResource FieldHint}"
                                        Margin="0,8,0,8" />
 
-                            <DataGrid Grid.Row="2" ItemsSource="{Binding Lines}">
+                            <DataGrid Grid.Row="3" ItemsSource="{Binding Lines}">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Medicine" Binding="{Binding Name}" Width="2*" />
                                     <DataGridTextColumn Header="Sold" Binding="{Binding SoldLabel}" Width="80" />

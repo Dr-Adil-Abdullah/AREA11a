@@ -129,7 +129,7 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.26.1 (Sepia `#7A5C3E`)** - all four phases are written: Phase 1-3 in full (billing, returns,
+> **v0.27.0 (Moss `#4A5D23`)** - all four phases are written: Phase 1-3 in full (billing, returns,
 > purchase, khata, supplier ledger, shift/galla, expenses, reports, black box, backup & restore,
 > Excel / CSV, reorder + WhatsApp, stock-minus registry), and Phase 4 has **all 12 of its features**:
 > loyalty from the screen, photos for medicines / customers / suppliers (copied into the shop's
@@ -142,7 +142,13 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >
 > The last confirmed Windows build is v0.4.8; everything from v0.6.2 on is proved only by
 > `tools/check_repo.py` until the owner runs `START-AREA11.bat` and `tools\\RUN-TESTS.cmd`
-> (**641 cases**).
+> (**654 cases**).
+>
+> **v0.27.0 adds the bill lookup for a return (F-20).** The Returns page takes the bill number, a phone with or
+> without dashes, a customer name or a medicine, plus an optional date range, and answers with a **list** of
+> bills - never a guess. *Open this bill* runs the same lookup a typed number runs, so there is one doorway.
+> Searching writes nothing. 13 new cases, none of them compiled or run here; `tools\RUN-TESTS.cmd` must end
+> `Failed: 0` with **654** cases.
 >
 > **v0.26.1 is a build fix (F-53).** The owner's first real build of the cloud round stopped in Core with **CS0200**:
 > `new SaleSample { Lines = lines }` set a getter-only property; it is `init;` now. The lesson is a **24th checker

@@ -1,3 +1,4 @@
+using System.Globalization;
 using Area11.Core.Data;
 using Area11.Core.Models;
 using Area11.Core.Utils;
@@ -83,6 +84,113 @@ public sealed class ReturnService
             _log.Error($"The bill {clean} could not be looked up.", exception);
             return ServiceResult<int>.Fail("The bill could not be looked up.");
         }
+    }
+
+    /// <summary>
+    /// "Which bill was it?" (F-20, Spec 9.1): the customer has no paper, so the shop looks the bill up
+    /// by anything the person can remember - the number, a phone with or without dashes, a name, a
+    /// medicine - and can narrow it by date.
+    ///
+    /// The result is a list, never a guess: two bills of Panadol on the same day are told apart by the
+    /// date, the customer and the total, and a person chooses. Nothing is written here, so a wrong
+    /// search costs nothing.
+    /// </summary>
+    public ServiceResult<List<SaleLookupRow>> Search(SaleLookupInput? input)
+    {
+        var term = (input?.Text ?? string.Empty).Trim();
+
+        if (!TryReadDate(input?.FromDate, "From", out var fromDate, out var dateError)
+            || !TryReadDate(input?.ToDate, "To", out var toDate, out dateError))
+        {
+            return ServiceResult<List<SaleLookupRow>>.Fail(dateError!);
+        }
+
+        if (fromDate.Length > 0 && toDate.Length > 0
+            && string.CompareOrdinal(fromDate, toDate) > 0)
+        {
+            return ServiceResult<List<SaleLookupRow>>.Fail(
+                "The 'From' date is after the 'To' date. Swap them, or leave one empty.");
+        }
+
+        if (term.Length == 0 && fromDate.Length == 0 && toDate.Length == 0)
+        {
+            return ServiceResult<List<SaleLookupRow>>.Fail(
+                "Type a bill number, a phone number, a name or a medicine - or choose a date. "
+                + "An empty search would bring every bill the shop has ever made.");
+        }
+
+        try
+        {
+            // A phone is typed with dashes, spaces or a leading +, but it is stored however the
+            // customer was added. Comparing the digits only makes 0300-1234567 and 03001234567 one
+            // number - the one thing a person at the counter will not do is retype it properly.
+            var digits = new string(term.Where(char.IsDigit).ToArray());
+
+            using var connection = _db.Open();
+
+            var rows = _db.Query<SaleLookupRow>(connection, @"
+SELECT s.id AS saleId, s.code AS code, s.date AS date,
+       IFNULL(c.name, '') AS customerName, IFNULL(c.phone, '') AS customerPhone,
+       s.total_paisa AS totalPaisa, s.due_paisa AS duePaisa, s.status AS status,
+       (SELECT COUNT(1) FROM sale_items i WHERE i.sale_id = s.id) AS lineCount
+FROM sales s
+LEFT JOIN customers c ON c.id = s.customer_id
+WHERE (@term = ''
+       OR s.code LIKE @like COLLATE NOCASE
+       OR IFNULL(c.name, '') LIKE @like COLLATE NOCASE
+       OR IFNULL(c.phone, '') LIKE @like COLLATE NOCASE
+       OR (@digits <> '' AND REPLACE(REPLACE(REPLACE(IFNULL(c.phone, ''), '-', ''), ' ', ''), '+', '') LIKE @digits)
+       OR EXISTS (SELECT 1 FROM sale_items i
+                  WHERE i.sale_id = s.id AND IFNULL(i.name_snapshot, '') LIKE @like COLLATE NOCASE))
+  AND (@fromDate = '' OR SUBSTR(s.date, 1, 10) >= @fromDate)
+  AND (@toDate = '' OR SUBSTR(s.date, 1, 10) <= @toDate)
+ORDER BY s.date DESC, s.id DESC
+LIMIT 100;",
+                new
+                {
+                    term,
+                    like = "%" + term + "%",
+                    digits = digits.Length >= 3 ? "%" + digits + "%" : string.Empty,
+                    fromDate,
+                    toDate
+                });
+
+            return ServiceResult<List<SaleLookupRow>>.Success(rows);
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The bills could not be searched.", exception);
+            return ServiceResult<List<SaleLookupRow>>.Fail("The bills could not be searched.");
+        }
+    }
+
+    /// <summary>
+    /// A date typed by a person, in any of the three shapes the shop already uses, turned into the
+    /// yyyy-MM-dd the database compares. Empty is allowed (no limit); nonsense is refused by name,
+    /// because "From date is not a date" is a sentence the owner can act on.
+    /// </summary>
+    private static bool TryReadDate(string? text, string which, out string date, out string? error)
+    {
+        date = string.Empty;
+        error = null;
+
+        var clean = (text ?? string.Empty).Trim();
+        if (clean.Length == 0)
+        {
+            return true;
+        }
+
+        var formats = new[] { "yyyy-MM-dd", "yyyy/MM/dd", "dd-MM-yyyy", "dd/MM/yyyy" };
+
+        if (!DateTime.TryParseExact(clean, formats, CultureInfo.InvariantCulture, DateTimeStyles.None,
+                out var parsed))
+        {
+            error = "The " + which + " date '" + clean + "' is not a date. Write it as 2026-10-20.";
+            return false;
+        }
+
+        date = parsed.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        return true;
     }
 
     /// <summary>Every line of a bill, with what already came back and what a full return would refund.</summary>
