@@ -16,8 +16,14 @@ namespace Area11.Desktop.ViewModels;
 /// No rule lives here: StockService refuses what must be refused (permission, zero, negative stock
 /// switched off in Settings) and warns what must be warned.
 /// </summary>
-public sealed class WriteOffViewModel : ObservableObject
+public sealed class WriteOffViewModel : ObservableObject, IEmptyPage
 {
+    /// <summary>
+    /// Why this page has nothing on it, in the shop's words (v0.33.0, D-89). **Null when it
+    /// has rows**, so nothing in this page has to keep a second flag in step with its list.
+    /// </summary>
+    public EmptyHint? EmptyHint => EmptyPage.When(History.Count == 0, "Write-off");
+
     private readonly AppServices _services;
     private readonly User _user;
 

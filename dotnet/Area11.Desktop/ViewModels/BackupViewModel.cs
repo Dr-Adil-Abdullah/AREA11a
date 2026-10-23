@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Globalization;
 using Area11.Core.Models;
 using Area11.Core.Services;
+using Area11.Core.Utils;
 
 namespace Area11.Desktop.ViewModels;
 
@@ -16,8 +17,14 @@ namespace Area11.Desktop.ViewModels;
 ///
 /// The work itself is in <see cref="BackupService"/>: this class moves text and buttons only.
 /// </summary>
-public sealed class BackupViewModel : ObservableObject
+public sealed class BackupViewModel : ObservableObject, IEmptyPage
 {
+    /// <summary>
+    /// Why this page has nothing on it, in the shop's words (v0.33.0, D-89). **Null when it
+    /// has rows**, so nothing in this page has to keep a second flag in step with its list.
+    /// </summary>
+    public EmptyHint? EmptyHint => EmptyPage.When(Files.Count == 0, "Backup & restore");
+
     private readonly AppServices _services;
     private readonly User _user;
     private readonly Action? _onRestored;

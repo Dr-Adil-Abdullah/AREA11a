@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 using Area11.Core.Models;
+using Area11.Core.Utils;
 
 namespace Area11.Desktop.ViewModels;
 
@@ -11,8 +12,14 @@ namespace Area11.Desktop.ViewModels;
 /// and hides the net profit from anyone without the `profit` permission. The view model only turns
 /// the answer into text, so a wrong number here can never be caught "in the screen".
 /// </summary>
-public sealed class ReportsViewModel : ObservableObject
+public sealed class ReportsViewModel : ObservableObject, IEmptyPage
 {
+    /// <summary>
+    /// Why this page has nothing on it, in the shop's words (v0.33.0, D-89). **Null when it
+    /// has rows**, so nothing in this page has to keep a second flag in step with its list.
+    /// </summary>
+    public EmptyHint? EmptyHint => EmptyPage.When(Days.Count == 0, "Reports");
+
     private readonly AppServices _services;
     private readonly User _user;
 

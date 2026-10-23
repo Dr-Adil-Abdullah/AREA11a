@@ -16,8 +16,14 @@ namespace Area11.Desktop.ViewModels;
 /// The whole rule set (stock, numbering, who may attach/cancel, compulsory reason) is in
 /// ProvisionalReturnService - this class only moves text and commands.
 /// </summary>
-public sealed class ProvisionalViewModel : ObservableObject
+public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
 {
+    /// <summary>
+    /// Why this page has nothing on it, in the shop's words (v0.33.0, D-89). **Null when it
+    /// has rows**, so nothing in this page has to keep a second flag in step with its list.
+    /// </summary>
+    public EmptyHint? EmptyHint => EmptyPage.When(History.Count == 0, "No bill (PR)");
+
     private readonly AppServices _services;
     private readonly User _user;
 

@@ -2,6 +2,8 @@ using Area11.Core.Utils;
 
 namespace Area11.Desktop.ViewModels;
 
+// empty-page: none - this page exists only to explain a failure, and its own card is the
+// sentence; adding "nothing here yet" over it would contradict what it just said.
 /// <summary>
 /// The card that stands in for a page which could not be opened (v0.32.0, D-88).
 ///

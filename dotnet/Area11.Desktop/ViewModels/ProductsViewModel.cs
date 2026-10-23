@@ -9,8 +9,17 @@ namespace Area11.Desktop.ViewModels;
 /// the live list. All rules (permission, validation, audit, partial update) live in
 /// ProductService — this class only moves text between the screen and that service.
 /// </summary>
-public sealed class ProductsViewModel : ObservableObject
+public sealed class ProductsViewModel : ObservableObject, IEmptyPage
 {
+    /// <summary>
+    /// Why this page has nothing on it, in the shop's words (v0.33.0, D-89). **Null when it
+    /// has rows**, so nothing in this page has to keep a second flag in step with its list.
+    /// </summary>
+    public EmptyHint? EmptyHint => EmptyPage.When(
+        Items.Count == 0,
+        "Products",
+        searched: SearchText.Trim().Length > 0);
+
     private readonly AppServices _services;
     private readonly User _user;
 

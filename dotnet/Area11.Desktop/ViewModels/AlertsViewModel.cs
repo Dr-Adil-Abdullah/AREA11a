@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Area11.Core.Models;
 using Area11.Core.Services;
+using Area11.Core.Utils;
 
 namespace Area11.Desktop.ViewModels;
 
@@ -14,8 +15,14 @@ namespace Area11.Desktop.ViewModels;
 /// the owner has to end it (U-31). The rule itself is enforced in <see cref="AlertService"/>, so a
 /// hidden button is never the security.
 /// </summary>
-public sealed class AlertsViewModel : ObservableObject
+public sealed class AlertsViewModel : ObservableObject, IEmptyPage
 {
+    /// <summary>
+    /// Why this page has nothing on it, in the shop's words (v0.33.0, D-89). **Null when it
+    /// has rows**, so nothing in this page has to keep a second flag in step with its list.
+    /// </summary>
+    public EmptyHint? EmptyHint => EmptyPage.When(Live.Count + Ended.Count == 0, "Alerts");
+
     private readonly AppServices _services;
     private readonly User _user;
     private readonly Action? _onChanged;

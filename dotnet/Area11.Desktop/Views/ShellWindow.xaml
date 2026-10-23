@@ -340,8 +340,34 @@
         </Border>
 
         <!-- ===================== The page ===================== -->
-        <ContentControl Grid.Row="1" Grid.Column="1" Margin="20,16,20,18"
-                        Content="{Binding CurrentViewModel}" />
+        <!--
+            The page, and under it one sentence explaining an empty one (v0.33.0, D-89).
+
+            Why here and not in every view: the frame already knows which page is on the screen, and
+            the page already knows why it is empty. Putting the sentence in twenty-six views would
+            mean twenty-six chances to forget it; here it is one card, drawn from the page's own
+            answer, and a page that has rows leaves it collapsed with nothing to hide.
+        -->
+        <Grid Grid.Row="1" Grid.Column="1" Margin="20,16,20,18">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <ContentControl Grid.Row="0" Content="{Binding CurrentViewModel}" />
+
+            <Border Grid.Row="1" Style="{StaticResource EmptyCard}"
+                    Visibility="{Binding EmptyHint, Converter={StaticResource EmptyHintVis}}"
+                    AutomationProperties.Name="Why this page is empty">
+                <StackPanel>
+                    <TextBlock Text="{Binding EmptyHint, Converter={StaticResource EmptyHintText}, ConverterParameter=Headline}"
+                               FontSize="12.5" FontWeight="SemiBold" TextWrapping="Wrap"
+                               Foreground="{StaticResource BrandDarkBrush}" />
+                    <TextBlock Text="{Binding EmptyHint, Converter={StaticResource EmptyHintText}, ConverterParameter=Advice}"
+                               Style="{StaticResource FieldHint}" Margin="0,4,0,0" />
+                </StackPanel>
+            </Border>
+        </Grid>
 
         <!-- ===================== The person's own menu ===================== -->
         <Popup IsOpen="{Binding UserMenuOpen, Mode=TwoWay}"

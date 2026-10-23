@@ -19,8 +19,14 @@ namespace Area11.Desktop.ViewModels;
 /// The work - parsing, checking, one transaction, the audit lines - is in <see cref="ImportService"/>.
 /// This class opens dialogs and moves text.
 /// </summary>
-public sealed class ImportExportViewModel : ObservableObject
+public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
 {
+    /// <summary>
+    /// Why this page has nothing on it, in the shop's words (v0.33.0, D-89). **Null when it
+    /// has rows**, so nothing in this page has to keep a second flag in step with its list.
+    /// </summary>
+    public EmptyHint? EmptyHint => EmptyPage.When(Rows.Count == 0, "Excel / CSV");
+
     private readonly AppServices _services;
     private readonly User _user;
 

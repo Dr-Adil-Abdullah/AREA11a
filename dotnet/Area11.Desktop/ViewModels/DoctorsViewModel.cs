@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Area11.Core.Models;
 using Area11.Core.Services;
+using Area11.Core.Utils;
 
 namespace Area11.Desktop.ViewModels;
 
@@ -12,8 +13,14 @@ namespace Area11.Desktop.ViewModels;
 /// which rep comes on Tuesday, and which doctor sends the patients. Nothing is calculated here -
 /// <see cref="RepService"/> owns the money - this class only carries the chosen rows and the form.
 /// </summary>
-public sealed class DoctorsViewModel : ObservableObject
+public sealed class DoctorsViewModel : ObservableObject, IEmptyPage
 {
+    /// <summary>
+    /// Why this page has nothing on it, in the shop's words (v0.33.0, D-89). **Null when it
+    /// has rows**, so nothing in this page has to keep a second flag in step with its list.
+    /// </summary>
+    public EmptyHint? EmptyHint => EmptyPage.When(Rows.Count == 0, "Doctors & reps");
+
     private readonly AppServices _services;
     private readonly User _user;
 

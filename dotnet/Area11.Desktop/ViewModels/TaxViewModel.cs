@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using Area11.Core.Models;
 using Area11.Core.Services;
+using Area11.Core.Utils;
 
 namespace Area11.Desktop.ViewModels;
 
@@ -13,8 +14,14 @@ namespace Area11.Desktop.ViewModels;
 /// sale. Copying the table is the bridge to the accountant, so the shape of that text is built and
 /// tested in the service, not here.
 /// </summary>
-public sealed class TaxViewModel : ObservableObject
+public sealed class TaxViewModel : ObservableObject, IEmptyPage
 {
+    /// <summary>
+    /// Why this page has nothing on it, in the shop's words (v0.33.0, D-89). **Null when it
+    /// has rows**, so nothing in this page has to keep a second flag in step with its list.
+    /// </summary>
+    public EmptyHint? EmptyHint => EmptyPage.When(Rows.Count == 0, "Tax report");
+
     private readonly AppServices _services;
     private readonly User _user;
 

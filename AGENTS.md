@@ -129,6 +129,35 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
+> **v0.33.0 (Mauveine `#A050A0`) - an empty page must say why, and a page that dies while drawing must say so.**
+>
+> * **A blank grid is not an answer.** "Nothing here yet" and "nothing matches what you typed" call
+>   for two different actions - add stock, or widen the search - and one generic sentence for both is
+>   how a shopkeeper concludes the program lost his data. Every page the menu can open now implements
+>   `IEmptyPage`, whose hint is **computed from the page's own list** (`EmptyPage.When(rows == 0,
+>   "Products", searched: …)`), so no page carries a second flag that can drift from the list it
+>   describes.
+> * **The sentence lives with the page, the card lives with the frame.** `EmptyPage` holds one line
+>   per page (what would *fill* it); the shell draws one card under the current page and re-asks on
+>   every property change of that page. One card in `ShellWindow` instead of a copy in twenty-six views
+>   is one chance to forget, not twenty-six.
+> * **A picker is not a search.** On the four pages where the search narrows the visible list (Counter,
+>   Products, Bills, Black box) an empty result says "nothing matches"; on the pages where the box
+>   picks a record to act on (a bill to return, a medicine to write off) the page deliberately does not
+>   pass the flag - saying "nothing matches" there would be false. The gate encodes exactly those four.
+> * **A page can refuse in writing.** Two pages have no empty state - the fault card, and the container
+>   whose tabs carry their own sentences - and they must say so with `// empty-page: none - <why>`.
+>   The reason is mandatory: an exemption without a reason is how a page goes silent.
+> * **A page can die after it is built.** `PageGuard.Open` covers the constructor; a template, a
+>   converter or a binding that throws arrives later, on the dispatcher, and used to leave a half-drawn
+>   screen behind a crash file. `PageGuard.Drawing` turns that into the same card with a **different
+>   sentence** - "stopped while its screen was being drawn" - because the data was read and the drawing
+>   is what failed. The frame remembers which page is on the screen, which is the only place that knows.
+> * **Gates #40 and #41** were proved by **nine injections**: a page's interface removed, a hint's
+>   title changed, a `searched:` flag dropped, the card unbound in `ShellWindow`, a generic "No data"
+>   sentence, the dispatcher's call removed, the drawing fault stripped of its log and report, an
+>   exemption written without a real reason, and a sentence no page uses.
+>
 > **v0.32.0 (Amethyst `#69359C`) - a broken page must not take the till down.**
 >
 > * **A WPF property setter is the UI thread.** `SelectedNav = row` built the page's view-model
@@ -562,7 +591,7 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >
 > The last confirmed Windows build is v0.4.8; everything from v0.6.2 on is proved only by
 > `tools/check_repo.py` until the owner runs `START-AREA11.bat` and `tools\\RUN-TESTS.cmd`
-> (**717 cases**).
+> (**730 cases**).
 >
 > **The checker learned two things from this version.** `DashboardService` used `User` with no
 > `using Area11.Core.Models;` and the gate stayed quiet: its mention patterns wanted `.`, `(` or

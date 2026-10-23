@@ -12,8 +12,14 @@ namespace Area11.Desktop.ViewModels;
 /// the one line `shop.ini` and says **restart**. That is why "prepare" and "join" are two-step
 /// buttons - the next click is the one that changes the shop (D-62).
 /// </summary>
-public sealed class LanViewModel : ObservableObject
+public sealed class LanViewModel : ObservableObject, IEmptyPage
 {
+    /// <summary>
+    /// Why this page has nothing on it, in the shop's words (v0.33.0, D-89). **Null when it
+    /// has rows**, so nothing in this page has to keep a second flag in step with its list.
+    /// </summary>
+    public EmptyHint? EmptyHint => EmptyPage.When(Connections.Count == 0, "Second counter (LAN)");
+
     private readonly AppServices _services;
     private readonly User _user;
 

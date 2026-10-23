@@ -19,8 +19,14 @@ namespace Area11.Desktop.ViewModels;
 /// No rule lives here: the label, the choices and every answer are checked by
 /// <see cref="CustomFieldService"/>.
 /// </summary>
-public sealed class CustomFieldsViewModel : ObservableObject
+public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
 {
+    /// <summary>
+    /// Why this page has nothing on it, in the shop's words (v0.33.0, D-89). **Null when it
+    /// has rows**, so nothing in this page has to keep a second flag in step with its list.
+    /// </summary>
+    public EmptyHint? EmptyHint => EmptyPage.When(Fields.Count == 0, "Own fields");
+
     private readonly AppServices _services;
     private readonly User _user;
 

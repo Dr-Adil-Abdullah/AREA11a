@@ -36,6 +36,8 @@ public sealed class ShellViewModel : ObservableObject
     private SettingsViewModel? _settingsPage;
     private AlertsViewModel? _alertsPage;
     private bool _isShowingAlerts;
+    private string _currentPageTitle = string.Empty;
+    private bool _showingDrawingFault;
     private bool _userMenuOpen;
     private bool _menuPinned;
     private bool _hasBellAlerts;
@@ -189,8 +191,45 @@ public sealed class ShellViewModel : ObservableObject
     public ObservableObject? CurrentViewModel
     {
         get => _currentViewModel;
-        private set => SetProperty(ref _currentViewModel, value);
+        private set
+        {
+            var previous = _currentViewModel;
+
+            if (!SetProperty(ref _currentViewModel, value))
+            {
+                return;
+            }
+
+            // The "why is this page empty?" card belongs to the page on the screen, so the frame
+            // listens to that page and asks it again whenever it says something changed (D-89).
+            // Unsubscribing the old page matters: a page that is gone must not keep this window
+            // alive, and two pages must never both refresh the same card.
+            if (previous is not null)
+            {
+                previous.PropertyChanged -= OnPageChanged;
+            }
+
+            if (value is not null)
+            {
+                value.PropertyChanged += OnPageChanged;
+            }
+
+            OnPropertyChanged(nameof(EmptyHint));
+        }
     }
+
+    /// <summary>
+    /// Why the page on the screen has nothing on it, or **null** when it has rows (v0.33.0, D-89).
+    ///
+    /// The question is asked of the page itself, not kept here: a page knows what fills it, and a
+    /// copy of that answer in the frame is a second truth that drifts the first time a page is
+    /// changed. A page that does not implement <see cref="IEmptyPage"/> simply has no card.
+    /// </summary>
+    public EmptyHint? EmptyHint => (CurrentViewModel as IEmptyPage)?.EmptyHint;
+
+    /// <summary>A page changed something - a search, a save, a list reloaded - so ask it again.</summary>
+    private void OnPageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) =>
+        OnPropertyChanged(nameof(EmptyHint));
 
     /// <summary>
     /// The menu, short and grouped. Only the owner sees the owner's pages, and a heading is drawn
@@ -447,10 +486,54 @@ public sealed class ShellViewModel : ObservableObject
     /// </summary>
     private ObservableObject OpenPage(NavItem page)
     {
+        // Its name, so a fault raised later - while WPF is drawing this page - can still say which
+        // page it was (v0.33.0, D-89). The window frame is the only place that knows.
+        _currentPageTitle = page.Title;
+
         var opened = PageGuard.Open<ObservableObject>(
             page.Title, () => page.Resolve(), _services.Log, RecordPageFault);
 
         return opened.Ok ? opened.Page! : new PageFaultViewModel(opened.Fault!);
+    }
+
+    /// <summary>
+    /// A fault that arrived **after** the page was built - WPF fell over while drawing it, and the
+    /// exception reached the dispatcher (v0.33.0, D-89).
+    ///
+    /// Why the frame takes it: the dispatcher's handler in `App` already writes the crash file, but
+    /// writing a file is not an explanation. Without this the operator is left looking at a
+    /// half-drawn page with no words on it, and the honest-looking thing to do is to close the
+    /// program. The page is replaced by the same card a construction fault gets, saying that the
+    /// screen stopped being drawn - which is a different sentence from "could not be opened",
+    /// because the data was read and the drawing is what failed.
+    ///
+    /// It never throws and it cannot loop: a fault raised while showing the card is ignored here.
+    /// </summary>
+    public void ShowDrawingFault(Exception? exception)
+    {
+        if (_showingDrawingFault)
+        {
+            return;
+        }
+
+        _showingDrawingFault = true;
+
+        try
+        {
+            var title = string.IsNullOrWhiteSpace(_currentPageTitle) ? "page" : _currentPageTitle;
+            var fault = PageGuard.Drawing(title, exception, _services.Log, RecordPageFault);
+
+            CurrentViewModel = new PageFaultViewModel(fault);
+        }
+        catch (Exception)
+        {
+            // The crash file is already written by the caller; a card that fails must not become a
+            // second fault on the dispatcher.
+        }
+        finally
+        {
+            _showingDrawingFault = false;
+        }
     }
 
     /// <summary>
@@ -526,6 +609,8 @@ public sealed class ShellViewModel : ObservableObject
         // Settings reads the whole settings table twice (once to build the page, once to refresh
         // it), so it is the page most able to fail on a half-written file - and it is opened by
         // clicking the shop's own name, which the owner does without thinking (D-88).
+        _currentPageTitle = "Settings";
+
         var opened = PageGuard.Open<SettingsViewModel>("Settings", () =>
         {
             // Written out rather than `??=` inside a lambda: the compiler's own type of `??=` on a
@@ -596,6 +681,8 @@ public sealed class ShellViewModel : ObservableObject
     {
         UserMenuOpen = false;
         RefreshAlerts();
+
+        _currentPageTitle = "Alerts";
 
         var opened = PageGuard.Open<AlertsViewModel>("Alerts", () =>
         {

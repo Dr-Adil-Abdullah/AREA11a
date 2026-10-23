@@ -3,6 +3,8 @@ using Area11.Core.Services;
 
 namespace Area11.Desktop.ViewModels;
 
+// empty-page: none - a container whose three tabs carry their own sentences, and the page
+// always draws the tab strip, so there is nothing blank here to explain.
 /// <summary>
 /// One place for the people the shop owes or is owed by (D-50).
 ///

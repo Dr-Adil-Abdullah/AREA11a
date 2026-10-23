@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 using Area11.Core.Models;
+using Area11.Core.Utils;
 
 namespace Area11.Desktop.ViewModels;
 
@@ -13,8 +14,14 @@ namespace Area11.Desktop.ViewModels;
 /// uses - so the test can never pass a scanner the counter would refuse. This class carries the rows,
 /// the buttons and the one-line message at the bottom.
 /// </summary>
-public sealed class HardwareViewModel : ObservableObject
+public sealed class HardwareViewModel : ObservableObject, IEmptyPage
 {
+    /// <summary>
+    /// Why this page has nothing on it, in the shop's words (v0.33.0, D-89). **Null when it
+    /// has rows**, so nothing in this page has to keep a second flag in step with its list.
+    /// </summary>
+    public EmptyHint? EmptyHint => EmptyPage.When(Printers.Count == 0, "Printer & scanner");
+
     private readonly AppServices _services;
     private readonly User _user;
 

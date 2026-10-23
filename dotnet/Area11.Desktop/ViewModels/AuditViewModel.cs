@@ -16,8 +16,16 @@ namespace Area11.Desktop.ViewModels;
 /// All the rules live in `AuditHistoryService`: it refuses anyone without the `audit` permission
 /// (owner only by default) and it builds the CSV. This class only turns the answer into text.
 /// </summary>
-public sealed class AuditViewModel : ObservableObject
+public sealed class AuditViewModel : ObservableObject, IEmptyPage
 {
+    /// <summary>
+    /// Why this page has nothing on it, in the shop's words (v0.33.0, D-89). **Null when it
+    /// has rows**, so nothing in this page has to keep a second flag in step with its list.
+    /// </summary>
+    public EmptyHint? EmptyHint => EmptyPage.When(
+        Rows.Count == 0,
+        "Black box",
+        searched: SearchText.Trim().Length > 0);
     private const string AllTime = "All time";
     private const string Today = "Today";
     private const string Last7 = "Last 7 days";

@@ -4,6 +4,8 @@ using Area11.Core.Utils;
 
 namespace Area11.Desktop.ViewModels;
 
+// empty-page: none - the page is a form for the delivery being entered, with suppliers beside it;
+// its only list is the draft lines of a purchase that has not been saved yet.
 /// <summary>
 /// Stock-in screen. Lines are built on the right and saved in one transaction by PurchaseService,
 /// which also creates the batches and the supplier payable.

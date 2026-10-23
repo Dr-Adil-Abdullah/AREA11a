@@ -14,10 +14,19 @@ public sealed class PageFault
     /// <summary>Where the full detail was written, so it can be sent.</summary>
     public string ReportPath { get; init; } = string.Empty;
 
+    /// <summary>
+    /// True when the page was **built** and then failed while WPF drew it (v0.33.0, D-89). The
+    /// difference matters to the operator: a page that could not be opened has no data to show, a
+    /// page that stopped while drawing may have read everything and failed on the picture.
+    /// </summary>
+    public bool WhileDrawing { get; init; }
+
     /// <summary>The headline. It names the page, because "something went wrong" names nothing.</summary>
     public string Sentence =>
         (string.IsNullOrWhiteSpace(PageTitle) ? "This page" : "The " + PageTitle + " page")
-        + " could not be opened.";
+        + (WhileDrawing
+            ? " stopped while its screen was being drawn."
+            : " could not be opened.");
 
     /// <summary>
     /// What to do next - and the first half is the part that matters: **nothing else is broken**.
@@ -133,6 +142,85 @@ public static class PageGuard
                 Detail = unexpected.GetType().Name + ": " + unexpected.Message
             });
         }
+    }
+
+    /// <summary>
+    /// The other half of the guard: a page that **was built** and then failed while WPF drew it
+    /// (v0.33.0, D-89).
+    ///
+    /// Why it is needed: `Open` wraps the constructor, but a view-model can be perfect and its XAML
+    /// still throw - a template, a converter, a binding that reaches a property which throws. That
+    /// exception arrives on the dispatcher, after the page is already the current one, and before
+    /// v0.33.0 it was written to a crash file while the operator stared at a half-drawn page with no
+    /// words on it. The window now calls this method, which says what happened, logs it, and records
+    /// it in the same crash file the report collects.
+    ///
+    /// It never throws, for the same reason `Open` never throws: it runs while the program is
+    /// already dealing with a fault.
+    /// </summary>
+    public static PageFault Drawing(
+        string pageTitle,
+        Exception? exception,
+        LogService? log = null,
+        Func<string, Exception, string>? record = null)
+    {
+        try
+        {
+            return Draw(pageTitle, exception, log, record);
+        }
+        catch (Exception unexpected)
+        {
+            // The same last line of defence as Open: a card, not a second crash.
+            return new PageFault
+            {
+                PageTitle = pageTitle,
+                WhileDrawing = true,
+                Detail = unexpected.GetType().Name + ": " + unexpected.Message
+            };
+        }
+    }
+
+    /// <summary>The drawing body. Only <see cref="Drawing"/> may call it.</summary>
+    private static PageFault Draw(
+        string pageTitle,
+        Exception? exception,
+        LogService? log,
+        Func<string, Exception, string>? record)
+    {
+        var path = string.Empty;
+
+        try
+        {
+            log?.Error("The " + pageTitle + " page failed while its screen was being drawn.", exception);
+        }
+        catch (Exception)
+        {
+            // The card matters more than the log line - the same rule as Open.
+        }
+
+        try
+        {
+            var written = record?.Invoke(pageTitle, exception ?? new InvalidOperationException("no detail"));
+
+            if (!string.IsNullOrWhiteSpace(written))
+            {
+                path = written!;
+            }
+        }
+        catch (Exception)
+        {
+            // A recorder that fails must not take the explanation with it.
+        }
+
+        return new PageFault
+        {
+            PageTitle = pageTitle,
+            WhileDrawing = true,
+            Detail = exception is null
+                ? "The screen stopped without telling the program why."
+                : exception.GetType().Name + ": " + exception.Message,
+            ReportPath = path
+        };
     }
 
     /// <summary>The guarded body. Only <see cref="Open{T}"/> may call it.</summary>

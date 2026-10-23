@@ -233,6 +233,78 @@ public sealed class PageGuardTests : IDisposable
     }
 
     [Fact]
+    public void APageThatFailsWhileDrawing_SaysThat_InsteadOfCouldNotBeOpened()
+    {
+        var fault = PageGuard.Drawing(
+            "Counter (POS)",
+            new InvalidOperationException("the template could not be created"),
+            NewLog());
+
+        // Two different accidents, two different sentences: the page was built (so its data was
+        // read) and the drawing is what failed. Telling the operator it "could not be opened" would
+        // send him looking for a data fault that is not there.
+        Assert.True(fault.WhileDrawing);
+        Assert.Contains("stopped while its screen was being drawn", fault.Sentence);
+        Assert.DoesNotContain("could not be opened", fault.Sentence);
+        Assert.Contains("Counter (POS)", fault.Sentence);
+    }
+
+    [Fact]
+    public void TheDrawingFault_KeepsTheExceptionsOwnWords_AndIsLogged()
+    {
+        var log = NewLog();
+
+        var fault = PageGuard.Drawing("Bills", new InvalidOperationException("converter failed"), log);
+
+        Assert.Contains("InvalidOperationException", fault.Detail);
+        Assert.Contains("converter failed", fault.Detail);
+
+        var text = string.Concat(Directory.GetFiles(_folder, "app-*.log").Select(File.ReadAllText));
+
+        Assert.Contains("[ERROR]", text);
+        Assert.Contains("Bills", text);
+        Assert.Contains("converter failed", text);
+    }
+
+    [Fact]
+    public void TheDrawingFault_NamesTheReportFile()
+    {
+        var fault = PageGuard.Drawing(
+            "Reports",
+            new InvalidOperationException("bad template"),
+            NewLog(),
+            (_, _) => @"C:\ProgramData\Area11\logs\crash-2026-10-23_111111.txt");
+
+        Assert.True(fault.HasReport);
+        Assert.Contains("crash-2026-10-23", fault.ReportLabel);
+    }
+
+    [Fact]
+    public void ADrawingFaultWithNoException_StillExplainsItself()
+    {
+        // WPF can report a frame fault with nothing attached; a card with an empty detail line
+        // would look like a bug in the card.
+        var fault = PageGuard.Drawing("Alerts", null, NewLog());
+
+        Assert.True(fault.WhileDrawing);
+        Assert.Contains("without telling the program why", fault.Detail);
+    }
+
+    [Fact]
+    public void ARecorderThatThrows_WhileDrawing_DoesNotThrow()
+    {
+        var fault = PageGuard.Drawing(
+            "Share",
+            new InvalidOperationException("gone"),
+            NewLog(),
+            (_, _) => throw new Exception("the recorder failed too"));
+
+        // Drawing runs while the program is already dealing with a fault; it must not add one.
+        Assert.True(fault.WhileDrawing);
+        Assert.Contains("gone", fault.Detail);
+    }
+
+    [Fact]
     public void ARecorderThatItselfFails_DoesNotStopTheCard()
     {
         var opened = PageGuard.Open<FakePage>(

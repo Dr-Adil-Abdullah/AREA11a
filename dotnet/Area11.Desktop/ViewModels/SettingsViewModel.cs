@@ -5,6 +5,8 @@ using Area11.Core.Services;
 
 namespace Area11.Desktop.ViewModels;
 
+// empty-page: none - the page is a set of forms (shop, printing, staff, permissions), not a list;
+// a "nothing here yet" card over a form would be telling the operator the wrong thing.
 /// <summary>
 /// Settings (F-17) — the screen the owner asked for when he said printing must be a choice
 /// ("in setting there is an option for auto or manu[a]l printing", D-26).

@@ -13,8 +13,14 @@ namespace Area11.Desktop.ViewModels;
 /// hands it over. All this page does is show the six lines, take the counted number and repeat the
 /// service's verdict: exact, over, or short.
 /// </summary>
-public sealed class ShiftViewModel : ObservableObject
+public sealed class ShiftViewModel : ObservableObject, IEmptyPage
 {
+    /// <summary>
+    /// Why this page has nothing on it, in the shop's words (v0.33.0, D-89). **Null when it
+    /// has rows**, so nothing in this page has to keep a second flag in step with its list.
+    /// </summary>
+    public EmptyHint? EmptyHint => EmptyPage.When(History.Count == 0, "Shift (galla)");
+
     private readonly AppServices _services;
     private readonly User _user;
 

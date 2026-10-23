@@ -3256,8 +3256,240 @@ def check_page_guard() -> None:
         fail("PageGuard has no tests - the one method that must never throw is the one that needs "
              "them most")
 
+    # ---- the other half: a page that was built and then failed while WPF drew it (D-89) ----
+    app = DOTNET / "Area11.Desktop/App.xaml.cs"
+
+    if not app.exists():
+        fail("App.xaml.cs is missing - the drawing half of the page guard cannot be checked")
+
+    if app.exists():
+        app_text = app.read_text(encoding="utf-8", errors="replace")
+
+        if "ShowDrawingFault(" not in app_text:
+            fail("the dispatcher's handler never hands a drawing fault to the shell - the operator "
+                 "would see a half-drawn page with no words on it, which is what D-89 exists to stop")
+
+        # It has to be in the DISPATCHER handler, not the domain one: the domain exception cannot be
+        # handled, so a card there would promise something the program cannot keep.
+        dispatcher = re.search(r"void OnDispatcherException\(.*?\n    \}", app_text, re.S)
+
+        if dispatcher is None or "ShowDrawingFault(" not in dispatcher.group(0):
+            fail("ShowDrawingFault is not called from OnDispatcherException - a UI-thread fault "
+                 "would keep its half-drawn page")
+
+        if "public static PageFault Drawing(" not in guard_text:
+            fail("PageGuard.Drawing is gone - nothing turns a fault raised while drawing into a card")
+
+        if "ShowDrawingFault(" not in text:
+            fail("ShellViewModel no longer offers ShowDrawingFault - the window frame is the only "
+                 "thing that knows which page was on the screen")
+
+        if "_currentPageTitle" not in text:
+            fail("ShellViewModel does not remember which page is on the screen, so a drawing fault "
+                 "could not name it")
+
+        # The drawing fault must leave the same evidence a construction fault does: the log line
+        # and the crash report. A card with no evidence behind it is a dead end for the engineer.
+        drawing_call = re.search(r"PageGuard\.Drawing\((.*?)\);", text, re.S)
+
+        if drawing_call is None:
+            fail("ShellViewModel calls PageGuard.Drawing without the page's name, the log and the "
+                 "crash recorder - the card would be the only trace of the fault")
+        elif "_services.Log" not in drawing_call.group(1) or "RecordPageFault" not in drawing_call.group(1):
+            fail("the drawing fault is not written to the shop's log and to the crash report - "
+                 "a card with no evidence behind it cannot be sent to anybody")
+
+        if "stopped while its screen was being drawn" not in guard_text:
+            fail("the drawing fault does not say what happened - 'could not be opened' would send "
+                 "the operator looking for a data fault that is not there")
+
     REPORT.append("Page guard: every page is built through the guard, and a failed page shows a "
-                  "card that names it, keeps the shop usable and says where the report is")
+                  "card that names it, keeps the shop usable and says where the report is - "
+                  "including a page that failed while it was being drawn")
+
+
+    # ------------------------------------------------------------------
+def check_empty_page() -> None:
+    """An empty page must say why it is empty, in the shop's own words (v0.33.0, D-89).
+
+    Why: a blank grid is the most common thing a shopkeeper sees and the least useful. "Nothing
+    here yet" and "nothing matches what you typed" call for two different actions, and one generic
+    sentence for both is how a shopkeeper concludes the program lost his data.
+
+    What this check insists on:
+      * every page the shell can open says it is an `IEmptyPage`;
+      * the page's hint is computed from its own list (`EmptyPage.When(...)`), never a stored flag;
+      * the title in that call is the one the table answers for, so the card is never generic by
+        accident;
+      * a page with a search box passes `searched:`, because an empty search result is not an
+        empty shop;
+      * the frame draws the card, and both converters exist and treat "no hint" as "hide".
+    """
+    core = DOTNET / "Area11.Core/Utils/EmptyPage.cs"
+    shell = DOTNET / "Area11.Desktop/ViewModels/ShellViewModel.cs"
+    window = DOTNET / "Area11.Desktop/Views/ShellWindow.xaml"
+    theme = DOTNET / "Area11.Desktop/Resources/Theme.xaml"
+    converters = DOTNET / "Area11.Desktop/Converters/EmptyHintConverter.cs"
+    tests = DOTNET / "Area11.Tests/EmptyPageTests.cs"
+
+    for needed in (core, shell, window, theme, converters, tests):
+        if not needed.exists():
+            fail(f"the empty-page card is half-built: {rel(needed)} is missing")
+    if not all(path.exists() for path in (core, shell, window, theme, converters, tests)):
+        return
+
+    core_text = core.read_text(encoding="utf-8", errors="replace")
+
+    if "interface IEmptyPage" not in core_text or "EmptyHint? EmptyHint" not in core_text:
+        fail("EmptyPage does not define IEmptyPage with an `EmptyHint? EmptyHint` property - the "
+             "window would have nothing to bind to")
+
+    # The table answers for the pages by the titles the shell writes on the menu rows.
+    known = set(re.findall(r'\[\s*"([^"]+)"\s*\]\s*=', core_text))
+
+    if len(known) < 25:
+        fail(f"only {len(known)} page(s) have their own empty-page sentence - the rest would say "
+             "something generic")
+
+    generic = re.search(r'"No data[^"]*"', core_text)
+
+    if generic:
+        fail("the empty-page table carries a generic \"No data\" sentence, which is the sentence "
+             "that makes the operator think the shop is empty")
+
+    shell_text = shell.read_text(encoding="utf-8", errors="replace")
+
+    # Every page the menu can open is built with `new SomethingViewModel(` inside the shell. Each one
+    # must implement IEmptyPage, or its empty state is silent.
+    built = sorted(set(re.findall(r"new ([A-Za-z]+ViewModel)\(", shell_text)))
+
+    if len(built) < 20:
+        fail(f"only {len(built)} page(s) found in the shell's menu - the check reads the wrong file?")
+
+    missing = []
+
+    for view_model in built:
+        path = DOTNET / f"Area11.Desktop/ViewModels/{view_model}.cs"
+
+        if not path.exists():
+            fail(f"the shell builds {view_model}, which has no file - the menu names a page that "
+                 "does not exist")
+
+        text = path.read_text(encoding="utf-8", errors="replace")
+
+        if "IEmptyPage" not in text:
+            # A page may say, in writing, that it has no empty state to explain - a container whose
+            # tabs carry their own sentences, or the fault card itself. The reason is mandatory and
+            # has to be a real sentence: an exemption without a reason is how a page goes silent.
+            said_none = re.search(r"// empty-page: none - (.{20,})", text)
+
+            if said_none is None:
+                missing.append(view_model)
+
+    if missing:
+        fail("these pages say nothing when they are empty: " + ", ".join(missing) +
+             " - a blank grid with no sentence reads as lost data (or write "
+             "`// empty-page: none - <why>` on the page)")
+
+    problems = []
+
+    for view_model in built:
+        text = (DOTNET / f"Area11.Desktop/ViewModels/{view_model}.cs").read_text(
+            encoding="utf-8", errors="replace")
+
+        # The pages that wrote down why they have no empty state are already answered above.
+        if re.search(r"// empty-page: none - (.{20,})", text):
+            continue
+
+        call = re.search(r"public EmptyHint\? EmptyHint =>\s*EmptyPage\.When\((.*?)\);", text, re.S)
+
+        if call is None:
+            problems.append(f"{view_model}: EmptyHint is not computed from EmptyPage.When(...)")
+            continue
+
+        arguments = call.group(1)
+
+        title = re.search(r'"([^"]+)"', arguments)
+
+        if title is None:
+            problems.append(f"{view_model}: EmptyPage.When is called without a page title")
+        elif title.group(1) not in known:
+            problems.append(f"{view_model}: the title \"{title.group(1)}\" has no advice in "
+                            f"EmptyPage.cs - the card would fall back to a generic sentence")
+
+        # An empty search result is not an empty shop - but only where the search narrows THIS
+        # page's own list. On the four pages below the visible list is the search's result, so an
+        # empty one must say "nothing matches" rather than "nothing here yet". On the other pages
+        # the box picks a record to act on (a bill to return, a medicine to write off), and saying
+        # "nothing matches what you typed" about the page would be false - those pages do not pass
+        # the flag, deliberately.
+        search_narrows_the_page = {
+            "PosViewModel",
+            "ProductsViewModel",
+            "SaleHistoryViewModel",
+            "AuditViewModel",
+        }
+
+        if view_model in search_narrows_the_page and "searched:" not in arguments:
+            problems.append(f"{view_model}: its search narrows the page's own list but it does not "
+                            "pass `searched:` - an empty result would read as an empty shop")
+
+        if "searched:" in arguments and re.search(r"searched:\s*(true|false)\b", arguments):
+            problems.append(f"{view_model}: passes a literal to `searched:` - the flag has to come "
+                            "from the page's own search box")
+
+    if problems:
+        fail("the empty-page sentences do not match the pages: " + "; ".join(problems))
+
+    # And the other direction: a sentence nobody shows is a sentence nobody has read, and it will
+    # describe a page that has since changed. Every line must be reachable from a page.
+    used_titles = set()
+
+    # Every view model, not only the ones the menu builds directly: Customers and Suppliers are
+    # built inside the container page, and their sentences are just as real.
+    for path in sorted((DOTNET / "Area11.Desktop/ViewModels").glob("*ViewModel.cs")):
+        text = path.read_text(encoding="utf-8", errors="replace")
+        call = re.search(r"public EmptyHint\? EmptyHint =>\s*EmptyPage\.When\((.*?)\);", text, re.S)
+
+        if call is not None:
+            title = re.search(r'"([^"]+)"', call.group(1))
+
+            if title is not None:
+                used_titles.add(title.group(1))
+
+    unused = sorted(known - used_titles)
+
+    if unused:
+        fail("these pages have an empty-page sentence that no page uses: " + ", ".join(unused) +
+             " - a sentence nobody shows goes stale, and a page that is later given a list would "
+             "fall back to the generic one")
+
+    window_text = window.read_text(encoding="utf-8", errors="replace")
+
+    for needle, reason in (
+        ('Converter={StaticResource EmptyHintVis}', "the frame does not show or hide the card"),
+        ('Converter={StaticResource EmptyHintText}', "the frame does not print the sentence"),
+    ):
+        if needle not in window_text:
+            fail(f"ShellWindow: {reason} - {needle} is missing")
+
+    theme_text = theme.read_text(encoding="utf-8", errors="replace")
+
+    for key in ("EmptyHintConverter", "EmptyHintVisibilityConverter", "EmptyCard"):
+        if key not in theme_text:
+            fail(f"Theme.xaml no longer defines {key} - the card would not draw")
+
+    converter_text = converters.read_text(encoding="utf-8", errors="replace")
+
+    if "Visibility.Collapsed" not in converter_text:
+        fail("the card's visibility converter never collapses - every page would show an empty "
+             "banner")
+
+    if "EmptyHint" not in shell_text or "IEmptyPage" not in shell_text:
+        fail("the window frame does not ask the page why it is empty - the card would stay empty")
+
+    REPORT.append("Empty pages: every page the menu can open says why it is empty in its own "
+                  "words, a search that finds nothing says so, and the frame draws one card")
 
 
 # ---------------------------------------------------------------------------
@@ -3753,6 +3985,7 @@ def main() -> int:
     check_crash_report_honesty()
     check_report_tool()
     check_page_guard()
+    check_empty_page()
     check_csharp_grammar()
 
     if not quiet:

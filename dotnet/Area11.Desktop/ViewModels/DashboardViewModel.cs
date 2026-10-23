@@ -4,13 +4,23 @@ using Area11.Core.Utils;
 
 namespace Area11.Desktop.ViewModels;
 
-public sealed class DashboardViewModel : ObservableObject
+public sealed class DashboardViewModel : ObservableObject, IEmptyPage
 {
+    /// <summary>
+    /// Why this page has nothing on it, in the shop's words (v0.33.0, D-89).
+    ///
+    /// The dashboard is "empty" only for a shop that has not started: no medicine on the shelf and
+    /// no bill today. A shop that has medicines but a quiet morning still has something to show
+    /// (stock, khata, expiry), and calling that empty would be wrong.
+    /// </summary>
+    public EmptyHint? EmptyHint => EmptyPage.When(_isEmptyShop, "Dashboard");
+
     private readonly AppServices _services;
     private readonly User _user;
     private string _statusMessage = string.Empty;
     private bool _hasAlert;
     private bool _canSeeProfit;
+    private bool _isEmptyShop;
 
     public DashboardViewModel(AppServices services, User user)
     {
@@ -82,6 +92,11 @@ public sealed class DashboardViewModel : ObservableObject
         }
 
         var snapshot = result.Value;
+
+        // A brand-new shop: nothing on the shelf and nothing billed. Set here, where the numbers
+        // arrive, so the card cannot claim a shop is new after a single sale (D-89).
+        _isEmptyShop = snapshot.Products == 0 && snapshot.TodayBills == 0;
+        OnPropertyChanged(nameof(EmptyHint));
 
         BillsText = snapshot.TodayBills.ToString();
         SalesText = Money.Format(snapshot.TodaySalesPaisa);

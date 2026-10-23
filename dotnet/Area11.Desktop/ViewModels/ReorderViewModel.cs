@@ -18,8 +18,13 @@ namespace Area11.Desktop.ViewModels;
 /// The pad is per supplier on purpose: a message that mixes two suppliers is a message nobody can
 /// act on, so mixing the ticks is shown as a warning and the send button stays closed.
 /// </summary>
-public sealed class ReorderViewModel : ObservableObject
+public sealed class ReorderViewModel : ObservableObject, IEmptyPage
 {
+    /// <summary>
+    /// Why this page has nothing on it, in the shop's words (v0.33.0, D-89). **Null when it
+    /// has rows**, so nothing in this page has to keep a second flag in step with its list.
+    /// </summary>
+    public EmptyHint? EmptyHint => EmptyPage.When(Rows.Count == 0, "Reorder pad");
     public const string AllSuppliers = "All suppliers";
     public const string NoSupplier = "No supplier yet";
 

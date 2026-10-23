@@ -14,8 +14,14 @@ namespace Area11.Desktop.ViewModels;
 /// Why the preview is on this page: paper costs money and a wrong paper width loses the last column.
 /// The owner sees the exact text that will print - at 32 or 48 characters - before he spends a slip.
 /// </summary>
-public sealed class SaleHistoryViewModel : ObservableObject
+public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
 {
+    /// <summary>
+    /// Why this page has nothing on it, in the shop's words (v0.33.0, D-89). **Null when it
+    /// has rows**, so nothing in this page has to keep a second flag in step with its list.
+    /// </summary>
+    public EmptyHint? EmptyHint => EmptyPage.When(Rows.Count == 0, "Bills", searched: SearchText.Trim().Length > 0);
+
     private readonly AppServices _services;
     private readonly User _user;
 

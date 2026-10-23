@@ -19,8 +19,17 @@ namespace Area11.Desktop.ViewModels;
 /// No rule lives here. CustomerLedgerService refuses an over-payment, writes the collection into
 /// `payments`, and rebuilds the running balance with the same clamps the rest of the app uses.
 /// </summary>
-public sealed class CustomersViewModel : ObservableObject
+public sealed class CustomersViewModel : ObservableObject, IEmptyPage
 {
+    /// <summary>
+    /// Why this page has nothing on it, in the shop's words (v0.33.0, D-89). **Null when it
+    /// has rows**, so nothing in this page has to keep a second flag in step with its list.
+    /// </summary>
+    public EmptyHint? EmptyHint => EmptyPage.When(
+        Customers.Count == 0,
+        "Customers & suppliers",
+        searched: SearchText.Trim().Length > 0);
+
     private readonly AppServices _services;
     private readonly User _user;
     private readonly Action? _onChanged;

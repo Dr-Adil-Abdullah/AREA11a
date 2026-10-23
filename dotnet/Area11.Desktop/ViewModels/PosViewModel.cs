@@ -10,8 +10,17 @@ namespace Area11.Desktop.ViewModels;
 /// The counter. The total on the screen is always produced by SaleService.Quote — the same
 /// calculation that saves the bill — so what the cashier reads is what is stored.
 /// </summary>
-public sealed class PosViewModel : ObservableObject
+public sealed class PosViewModel : ObservableObject, IEmptyPage
 {
+    /// <summary>
+    /// Why this page has nothing on it, in the shop's words (v0.33.0, D-89). **Null when it
+    /// has rows**, so nothing in this page has to keep a second flag in step with its list.
+    /// </summary>
+    public EmptyHint? EmptyHint => EmptyPage.When(
+        Products.Count == 0,
+        "Counter (POS)",
+        searched: SearchText.Trim().Length > 0);
+
     private readonly AppServices _services;
     private readonly User _user;
     private readonly List<Product> _catalog = new();

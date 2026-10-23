@@ -18,8 +18,14 @@ namespace Area11.Desktop.ViewModels;
 /// No rule lives here: ExpenseService refuses a zero amount, a missing title or a cashier trying to
 /// take the owner's money, and warns when the entry cannot reach a drawer count.
 /// </summary>
-public sealed class ExpensesViewModel : ObservableObject
+public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
 {
+    /// <summary>
+    /// Why this page has nothing on it, in the shop's words (v0.33.0, D-89). **Null when it
+    /// has rows**, so nothing in this page has to keep a second flag in step with its list.
+    /// </summary>
+    public EmptyHint? EmptyHint => EmptyPage.When(Rows.Count == 0, "Expenses");
+
     private readonly AppServices _services;
     private readonly User _user;
 
