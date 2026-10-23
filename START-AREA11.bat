@@ -194,7 +194,7 @@ rem  and tools\check_repo.py fails if it disagrees with BuildInfo.cs - so it can
 rem  the owner is never told an old tree is the new one. Reading the number out of the source with
 rem  findstr printed "vunknown" on his PC (v0.30.0): the tokens did not line up, and a banner that
 rem  says nothing is worse than no banner, because it looks like a failure of the tree.
-set "BUILD=v0.30.8 (Zaffre)"
+set "BUILD=v0.30.9 (Oxblood)"
 
 echo        Code on this PC: %BUILD%
 
@@ -207,6 +207,7 @@ rem  in a wall of restore and warning text. The file is also what tools\SEND-REP
 rem  sends, so nothing has to be copied by hand.
 set "BUILDLOG=%CD%\build.log"
 set "ERRLOG=%CD%\build-errors.txt"
+set "PROJLOG=%CD%\build-projects.txt"
 del /q "%BUILDLOG%" 2>nul
 del /q "%ERRLOG%" 2>nul
 
@@ -242,6 +243,20 @@ if "%ERRSIZE%"=="0" (
     echo   The errors ^(one line each - this is all that is needed^):
     echo.
     type "%ERRLOG%"
+
+    rem  WHICH project broke? Every compiler error names its project at the end of
+    rem  the line, in square brackets. Reading that is the difference between
+    rem  "something is wrong" and "the window failed, the shop's rules compiled".
+    rem  Added in v0.30.9 after the owner's first Desktop build attempt, where the
+    rem  only useful fact in forty lines was the project name.
+    del /q "%PROJLOG%" 2>nul
+    for /f "tokens=2 delims=[]" %%p in ('findstr /c:".csproj]" "%ERRLOG%"') do @echo %%~nxp>>"%PROJLOG%"
+    if exist "%PROJLOG%" (
+        sort /unique "%PROJLOG%" /o "%PROJLOG%"
+        echo.
+        echo   The fault is in this project:
+        type "%PROJLOG%"
+    )
 )
 
 echo.

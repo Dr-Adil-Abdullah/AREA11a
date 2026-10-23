@@ -2630,6 +2630,82 @@ def check_installer() -> None:
 # ---------------------------------------------------------------------------
 # 6. Documentation links and referenced files
 # ---------------------------------------------------------------------------
+# 7c. The test runner must be able to say "green"
+# ---------------------------------------------------------------------------
+def check_run_verdict() -> None:
+    """A runner that cannot tell success from failure is a log, not a runner.
+
+    Why this exists: `tools\\RUN-TESTS.cmd` printed
+
+        "Not OK is not a disaster: send the lines above ..."
+
+    on **every** run, including the owner's first fully green one (686 of 686, failed: 0,
+    23 Oct 2026). The run was perfect and the tool told him it was not - at the exact moment
+    he was supposed to trust it. That is worse than no message: the next time it really is
+    red, he has already learned that the sentence means nothing.
+
+    A batch file has no compiler, so this gate reads the script as text and asks four things:
+
+      * there is a success branch at all (`ALL GREEN`), not only a failure message;
+      * the failure advice lives **after** its `:testsnotok` label, so it can only print on
+        failure - the literal sentence must not sit in the main flow;
+      * the exit code of `dotnet test` is captured (`TESTEXIT`) instead of trusted to luck;
+      * a green run of an OLD folder is caught (`LSS %EXPECTED%`), because a smaller total
+        means the pull did not happen and the green proves nothing.
+
+    It also checks that the build failure can name the project that broke - the one fact
+    that matters when the window fails and the shop's own rules compiled fine.
+    """
+    runner = ROOT / "tools" / "RUN-TESTS.cmd"
+    launcher = ROOT / "START-AREA11.bat"
+
+    if not runner.exists():
+        fail("tools\\RUN-TESTS.cmd is missing - the owner has no way to run the tests")
+        return
+
+    text = runner.read_text(encoding="utf-8", errors="replace")
+
+    if "ALL GREEN" not in text:
+        fail("tools\\RUN-TESTS.cmd never says a run was green - a passing run would read as a failure")
+
+    if "TESTEXIT" not in text:
+        fail("tools\\RUN-TESTS.cmd does not keep the exit code of `dotnet test` - "
+             "a failing run could be reported as green")
+
+    if "testsnotok" not in text:
+        fail("tools\\RUN-TESTS.cmd has no separate failure branch (:testsnotok)")
+
+    # The failure sentence must sit inside the failure branch, not in the main flow. Find the
+    # label and the sentence; the sentence must come after it.
+    label_at = text.find(":testsnotok")
+    sentence_at = text.find("NOT OK - and that is fixable")
+
+    if sentence_at < 0:
+        fail("tools\\RUN-TESTS.cmd lost its failure message")
+
+    if label_at < 0 or sentence_at < label_at:
+        fail("tools\\RUN-TESTS.cmd prints the failure advice before it knows the result - "
+             "a green run would end with 'not OK' (the v0.30.8 bug)")
+
+    if not re.search(r"if\s+%TOTALN%\s+LSS\s+%EXPECTED%", text):
+        fail("tools\\RUN-TESTS.cmd does not compare the total with EXPECTED - "
+             "a green run of an old folder would be reported as a pass")
+
+    if not launcher.exists():
+        fail("START-AREA11.bat is missing")
+        return
+
+    launch = launcher.read_text(encoding="utf-8", errors="replace")
+
+    if "The fault is in this project" not in launch:
+        fail("START-AREA11.bat does not name the project that failed to build - "
+             "the owner would have to read every error line to learn whether it was the shop's rules or the window")
+
+    REPORT.append("Run verdict: the runner says ALL GREEN only on a full pass, counts the cases "
+                  "against EXPECTED, and the launcher names the failing project")
+
+
+# ---------------------------------------------------------------------------
 def check_docs() -> None:
     docs = [ROOT / "README.md", ROOT / "HANDOFF.md", ROOT / "AGENTS.md", ROOT / "dotnet/README.md"]
     docs += sorted((ROOT / "docs").glob("*.md"))
@@ -3116,6 +3192,7 @@ def main() -> int:
     check_docs()
     check_scripts()
     check_running_app()
+    check_run_verdict()
     check_csharp_grammar()
 
     if not quiet:

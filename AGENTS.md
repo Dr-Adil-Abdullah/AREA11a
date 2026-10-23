@@ -129,6 +129,29 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
+> **v0.30.9 (Oxblood `#4A0E0E`) - 686 of 686 green, and the runner that could not say so.**
+>
+> * **The whole suite passes on the shop PC.** 686 of 686, failed: 0, 51 s - including the 26 tests
+>   for the books check and the handover that had never been compiled before v0.30.6. That number is
+>   now the floor: `EXPECTED` in `tools\RUN-TESTS.cmd` must equal it, and the checker compares them.
+> * **The tool told the owner the run failed.** `RUN-TESTS.cmd` printed *"Not OK is not a disaster:
+>   send the lines above"* after that perfect run, because the sentence was in the main flow and not
+>   behind a branch. **A message that appears on both outcomes carries no information**, and the next
+>   red run would have been read as noise. The verdict now comes from three things, in order: the
+>   exit code, the word `Failed: 0`, and the total.
+> * **Three outcomes, because there are three:** every case passed; every case passed but the folder
+>   is old (`GREEN, BUT THIS IS AN OLD FOLDER`, exit 1 - a green run of yesterday's code proves
+>   nothing); something failed. The middle one is the one a reader would otherwise trust by mistake.
+> * **`set /p` on a CRLF file can leave a carriage return in the value**, and `686<CR>` makes
+>   `if %N% LSS %EXPECTED%` a syntax error, not a comparison. The number is written with no trailing
+>   line break and a numeric guard drops anything that is not a plain number.
+> * **Name the project that broke.** MSBuild ends each error line with its project in brackets, so a
+>   failed build prints *"The fault is in this project: Area11.Desktop"*. When the shop's rules compile
+>   and only the window fails, that single line is the whole diagnosis.
+> * **Both gates were proved by breaking them** (#34 the launcher's process name, #35 the runner's
+>   verdict): the sentence was moved back above its label, the checker failed with the exact message,
+>   and restoring the file turned the tree green.
+>
 > **v0.30.8 (Zaffre `#0818A8`) - the build that failed because the program was open.**
 >
 > * **MSB3027 is not a compiler error.** *"Failed. The file is locked by: Area11 (8460)"* means

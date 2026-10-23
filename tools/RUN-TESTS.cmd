@@ -18,7 +18,7 @@ rem  and tools\check_repo.py fails if it disagrees with BuildInfo.cs - so it can
 rem  the owner is never told an old tree is the new one. Reading the number out of the source with
 rem  findstr printed "vunknown" on his PC (v0.30.0): the tokens did not line up, and a banner that
 rem  says nothing is worse than no banner, because it looks like a failure of the tree.
-set "BUILD=v0.30.8 (Zaffre)"
+set "BUILD=v0.30.9 (Oxblood)"
 
 
 echo.
@@ -59,11 +59,14 @@ rem of the window. The log is what tools\SEND-REPORT.cmd sends.
 set "TESTLOG=%CD%\test.log"
 set "ERRLOG=%CD%\test-build-errors.txt"
 set "FAILEDLOG=%CD%\test-failed-names.txt"
+set "TOTALFILE=%CD%\test-total.txt"
 del /q "%TESTLOG%" 2>nul
 del /q "%ERRLOG%" 2>nul
 del /q "%FAILEDLOG%" 2>nul
+del /q "%TOTALFILE%" 2>nul
 
 dotnet test "dotnet\Area11.Tests\Area11.Tests.csproj" -v minimal > "%TESTLOG%" 2>&1
+set "TESTEXIT=%errorlevel%"
 
 findstr /i /c:": error " /c:" error CS" /c:" error MC" /c:" error MSB" "%TESTLOG%" > "%ERRLOG%" 2>nul
 
@@ -95,12 +98,92 @@ if not "%ERRSIZE%"=="0" (
     type "%ERRLOG%"
 )
 
+rem ==========================================================================
+rem  THE VERDICT.
+rem
+rem  Until v0.30.9 this file printed the failure advice on EVERY run - including a
+rem  fully green one. The owner's first 686/686 run ended with "Not OK is not a
+rem  disaster", which is the tool telling a lie at the exact moment it is supposed
+rem  to be trusted. A runner that cannot say "green" is not a runner, it is a log.
+rem
+rem  Two questions, asked in this order because they are different:
+rem    1. did anything fail?      -> the exit code of `dotnet test`, and the word
+rem                                  "Failed: 0" in the summary line;
+rem    2. did the RIGHT suite run? -> the total, compared with EXPECTED. A green
+rem                                  run of an old folder proves nothing at all.
+rem ==========================================================================
 echo.
+if not "%TESTEXIT%"=="0" goto :testsnotok
+findstr /r /c:"Failed: *0," "%TESTLOG%" >nul 2>&1
+if errorlevel 1 goto :testsnotok
+
+rem  The total, read out of the summary line with PowerShell because cmd cannot
+rem  pick the Nth number out of "... Total:   686, Duration: 51 s" reliably.
+rem  Written with [Console]::Out.Write and no line break on purpose: `set /p` on a file
+rem  that ends in CRLF can leave a stray carriage return inside the number, and
+rem  "686<CR>" makes the comparison below a syntax error rather than a comparison.
+powershell -NoProfile -Command "$t=(Get-Content -LiteralPath '%TESTLOG%') -join ' '; $m=[regex]::Matches($t,'Total:\s*(\d+)'); if ($m.Count -gt 0) { [Console]::Out.Write($m[$m.Count-1].Groups[1].Value) }" > "%TOTALFILE%" 2>nul
+
+set "TOTALN="
+if exist "%TOTALFILE%" set /p TOTALN=<"%TOTALFILE%"
+
+rem  Only a number may reach the comparison. Anything else (a Windows error, an empty
+rem  file, a localised test runner) falls through to the "green but unreadable" screen
+rem  instead of turning into a batch syntax error.
+if defined TOTALN echo %TOTALN%| findstr /r /c:"^[0-9][0-9]*$" >nul 2>&1
+if errorlevel 1 set "TOTALN="
+
+if not defined TOTALN goto :testsgreen
+if %TOTALN% LSS %EXPECTED% goto :testsstale
+
+echo  ==========================================================
+echo    ALL GREEN - %TOTALN% of %EXPECTED% cases passed, failed: 0
+echo  ==========================================================
+echo.
+echo    Build %BUILD%.
+echo    Every test passed. Nothing is wrong and nothing needs sending.
+echo    Full output: %TESTLOG%
+echo.
+pause
+exit /b 0
+
+:testsstale
+echo  ==========================================================
+echo    GREEN, BUT THIS IS AN OLD FOLDER
+echo  ==========================================================
+echo.
+echo    %TOTALN% case(s) ran, and this build should have %EXPECTED%.
+echo    The run itself was clean - but it tested an older copy of the code,
+echo    so it proves nothing about %BUILD%.
+echo.
+echo    Fix: GitHub Desktop - "Fetch origin" then "Pull origin", and run this
+echo    file again. The total must reach %EXPECTED%.
+echo.
+echo    Full output: %TESTLOG%
+echo.
+pause
+exit /b 1
+
+:testsgreen
+echo  ==========================================================
+echo    ALL GREEN - every test passed, failed: 0
+echo  ==========================================================
+echo.
+echo    Build %BUILD%. The number of cases could not be read from the log,
+echo    so open it and check the summary line says "Total: %EXPECTED%".
+echo    Full output: %TESTLOG%
+echo.
+pause
+exit /b 0
+
+:testsnotok
 echo  ----------------------------------------------------------
-echo   Not OK is not a disaster: send the lines above ^(or the
-echo   whole thing with tools\SEND-REPORT.cmd^) and it gets fixed.
-echo   The count grows with every version, so only "failed: 0"
-echo   matters - and the total must never be BELOW %EXPECTED%.
+echo   NOT OK - and that is fixable, not a disaster.
+echo.
+echo   Send the lines above ^(or the whole thing with tools\SEND-REPORT.cmd^)
+echo   and the first one gets fixed. The count grows with every version, so
+echo   only "failed: 0" matters - and the total must never be BELOW %EXPECTED%.
 echo   Full output: %TESTLOG%
 echo  ----------------------------------------------------------
 pause
+exit /b 1
