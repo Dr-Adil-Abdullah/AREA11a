@@ -20,6 +20,16 @@ import sys
 import xml.etree.ElementTree as ET
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+
+# The double-click scripts that tell the owner WHICH build is about to run. v0.30.1 taught this
+# lesson: a banner that parsed C# printed "vunknown" on his PC. Each script holds one literal, and
+# the version rule below compares every one of them with BuildInfo.cs - so a new script only has
+# to be added to this tuple to be kept honest.
+SCRIPTS_THAT_NAME_THE_BUILD = (
+    "tools/RUN-TESTS.cmd",
+    "START-AREA11.bat",
+    "tools/SEND-REPORT.cmd",
+)
 DOTNET = ROOT / "dotnet"
 
 FAILURES: list[str] = []
@@ -2417,7 +2427,7 @@ def check_tests() -> None:
     if version and code_name:
         wanted = f"v{version.group(1)} ({code_name.group(1)})"
 
-        for name in ("tools/RUN-TESTS.cmd", "START-AREA11.bat"):
+        for name in SCRIPTS_THAT_NAME_THE_BUILD:
             script_path = ROOT / name
 
             if not script_path.exists():
@@ -2432,7 +2442,7 @@ def check_tests() -> None:
                 fail(f"{name} will print '{printed.group(1)}' but this build is '{wanted}' - "
                      "the owner would read the wrong version on his own screen")
 
-        REPORT.append(f"Script banners: 2 file(s) print '{wanted}'")
+        REPORT.append(f"Script banners: {len(SCRIPTS_THAT_NAME_THE_BUILD)} file(s) print '{wanted}'")
 
     settings = (DOTNET / "Area11.Core/Services/SettingsService.cs").read_text(encoding="utf-8")
     # The lookbehind matters: "GetRaw(" ends in "Raw(", and without it every reader of a setting
@@ -2568,6 +2578,98 @@ def check_docs() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 7. The double-click scripts have no compiler either
+# ---------------------------------------------------------------------------
+def check_scripts() -> None:
+    """Every .bat / .cmd must be able to run: closed blocks, real labels, safe echos.
+
+    Why: a batch file that is wrong does not fail to start - cmd.exe reads it line by line and
+    does something else. A missing `)` swallows the rest of the file, `goto :typo` jumps into
+    nothing, and an unescaped `)` inside `echo ...` **closes the block early**, so the shop owner
+    double-clicks a launcher and sees a menu that stops halfway with a message nobody wrote.
+    There is no compiler for these files, so this is their compiler. It is the same reason the
+    error-line extraction lives in the launcher: the tooling is now the first thing he runs.
+
+    It is deliberately conservative - it only counts parentheses that cmd itself would count:
+    comments (`rem`) and echoed text are display, single-quoted `for` bodies are left alone, and
+    `^( ... ^)` is the escape that means "print a bracket".
+    """
+    scripts = sorted(list(ROOT.glob("*.bat")) + list(ROOT.glob("*.cmd"))
+                     + list((ROOT / "tools").glob("*.bat")) + list((ROOT / "tools").glob("*.cmd")))
+
+    problems = 0
+
+    for script in scripts:
+        text = script.read_text(encoding="utf-8", errors="replace")
+        depth = 0
+        labels: dict[str, list[int]] = {}
+        gotos: list[tuple[str, int]] = []
+
+        for number, raw in enumerate(text.splitlines(), 1):
+            line = raw.rstrip()
+            stripped = line.strip()
+            low = stripped.lower()
+
+            if not stripped or low == "rem" or low.startswith("rem "):
+                continue
+
+            label = re.fullmatch(r":(\w+)", stripped)
+
+            if label:
+                labels.setdefault(label.group(1), []).append(number)
+                continue
+
+            for target in re.findall(r"\bgoto\s+:?(\w+)", low):
+                if target not in ("eof", "eof ".strip()):
+                    gotos.append((target, number))
+
+            for target in re.findall(r"\bcall\s+:(\w+)", low):
+                gotos.append((target, number))
+
+            # Quoted text is data (a path, a message), never a bracket the parser counts.
+            clean = re.sub(r'"[^"]*"', '""', line)
+            clean = clean.replace("^(", "").replace("^)", "")
+
+            if low.startswith("echo"):
+                # An unescaped bracket here ends the enclosing block early - the classic
+                # "the script printed half a menu and stopped" fault.
+                if depth > 0 and re.search(r"(?<!\^)[()]", clean[4:]):
+                    problems += 1
+                    fail(f"{rel(script)}:{number}: an unescaped bracket inside `echo` inside a "
+                         f"block - it closes the block early (write ^( and ^))")
+
+                continue
+
+            depth += clean.count("(") - clean.count(")")
+
+            if depth < 0:
+                problems += 1
+                fail(f"{rel(script)}:{number}: a closing bracket with no opening - "
+                     f"cmd.exe would stop reading the block here")
+                depth = 0
+
+        if depth != 0:
+            problems += 1
+            fail(f"{rel(script)}: {depth} opened block(s) never closed - cmd.exe reads the rest "
+                 f"of the file as part of the block")
+
+        for name, lines in labels.items():
+            if len(lines) > 1:
+                problems += 1
+                fail(f"{rel(script)}: the label :{name} appears {len(lines)} times "
+                     f"(lines {lines}) - a jump always lands on the first one")
+
+        for name, number in gotos:
+            if name not in labels:
+                problems += 1
+                fail(f"{rel(script)}:{number}: jumps to :{name}, which does not exist - "
+                     f"the script dies with no message")
+
+    REPORT.append(f"Scripts: {len(scripts)} .bat/.cmd files, blocks closed, every goto lands, "
+                  f"{problems} problem(s)")
+
+
+# ---------------------------------------------------------------------------
 def rel(path: pathlib.Path) -> str:
     try:
         return str(path.relative_to(ROOT))
@@ -2605,6 +2707,7 @@ def main() -> int:
     check_tests()
     check_installer()
     check_docs()
+    check_scripts()
 
     if not quiet:
         for line in REPORT:

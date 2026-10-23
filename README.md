@@ -65,6 +65,12 @@ dotnet test
 dotnet run --project dotnet\Area11.Desktop
 ```
 
+**If something fails:** `START-AREA11.bat` keeps `build.log` and shows **only the error lines**;
+`tools\RUN-TESTS.cmd` keeps `test.log` and shows the result, the failed test names and the compile
+errors. When you need help, double-click **`tools\SEND-REPORT.cmd`** — it writes **one text file**
+(build, .NET version, branch, project files, shop folder, the whole newest crash report, the last
+build and test output) and it only reads. [Urdu](docs/HOW-TO-RUN-URDU.md) · v0.30.3, D-78.
+
 Sign in as **Owner** with password **`area11`**, then change it. Data lives in
 `%ProgramData%\Area11\` (`area11.db`, `photos\`, `logs\`, `backups\`) and is never committed.
 Step-by-step help, including what to do when the build fails: [`docs/BUILD-ON-WINDOWS.md`](docs/BUILD-ON-WINDOWS.md).

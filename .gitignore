@@ -17,6 +17,18 @@ obj/
 *.db-wal
 *.log
 
+# What the double-click scripts leave behind (v0.30.3). They are diagnostic output
+# from THIS machine and are never part of the product: START-AREA11.bat writes
+# build.log / build-errors.txt, tools\RUN-TESTS.cmd writes test.log, and
+# tools\SEND-REPORT.cmd writes report-<date>.txt.
+/build.log
+/build-errors.txt
+/test.log
+/test-build-errors.txt
+/test-failed-names.txt
+/report-*.txt
+/tools/diagnosis.txt
+
 # OS files
 Thumbs.db
 .DS_Store

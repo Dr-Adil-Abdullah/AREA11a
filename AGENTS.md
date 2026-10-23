@@ -129,6 +129,29 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
+> **v0.30.3 (Cocoa `#4B2E20`) - the first build must be readable in one paste.**
+>
+> * **A console that prints 300 lines is a measurement the owner cannot take.** The one line that
+>   names a fault (`Something.cs(12,34): error CS1234`) scrolled past, and he was asked to find it by
+>   eye. `START-AREA11.bat` now writes `build.log` and prints **only the error lines**;
+>   `tools\RUN-TESTS.cmd` writes `test.log` and prints the result line, the failed test names and the
+>   compile errors. **The thing being measured must be the thing on the screen.**
+> * **`tools\SEND-REPORT.cmd` is the new first question.** One file: build, `dotnet --info`, git
+>   state, project files, shop folder (names, sizes, dates - **no rows, never the database**), the
+>   whole newest crash report, the log tail, the last build and test output. It only reads. When he
+>   reports anything, ask for that file before asking for a screenshot; it is also why the launcher
+>   and the runner keep their logs.
+> * **A third script means a third banner to keep.** The version literal is now in three files and
+>   `SCRIPTS_THAT_NAME_THE_BUILD` in `check_repo.py` is the list - the rule caught this version's own
+>   half-finished bump, which is the only proof worth having that a checker works.
+> * **The batch files got a compiler too (`check_scripts`, the 31st check).** They have none: cmd.exe
+>   reads line by line, so a missing `)` swallows the rest of the file and an unescaped `)` inside an
+>   `echo` inside a block ends the block early - the launcher prints half a menu and stops with a
+>   message nobody wrote. A gate is only real once it has been seen failing: two faults were injected
+>   into the new script and both were named before it went green again.
+> * **`tools\diagnose.bat` stays** as the no-PowerShell fallback for a PC where script execution is
+>   blocked; two tools for one question is a cost, and this is the reason it is paid.
+>
 > **v0.30.2 (Auburn `#8B3A3A`) - the demo is deleted, and deletion has companions.**
 >
 > * **The owner's word was the trigger D-76 was waiting for.** *"Delete whatever demo data there is -

@@ -145,27 +145,60 @@ rem  and tools\check_repo.py fails if it disagrees with BuildInfo.cs - so it can
 rem  the owner is never told an old tree is the new one. Reading the number out of the source with
 rem  findstr printed "vunknown" on his PC (v0.30.0): the tokens did not line up, and a banner that
 rem  says nothing is worse than no banner, because it looks like a failure of the tree.
-set "BUILD=v0.30.2 (Auburn)"
+set "BUILD=v0.30.3 (Cocoa)"
 
 echo        Code on this PC: %BUILD%
 
 echo  [5/5] Building...  ^(this takes a minute the first time^)
-dotnet build Area11.sln -v minimal
-if errorlevel 1 (
+
+rem  The build writes everything it says to build.log, and only the ERROR lines reach the
+rem  screen. Why: MSBuild prints hundreds of lines, the one line that matters - the one with
+rem  "... error CS1234: ..." - scrolls past, and the owner was being asked to find it by eye
+rem  in a wall of restore and warning text. The file is also what tools\SEND-REPORT.cmd
+rem  sends, so nothing has to be copied by hand.
+set "BUILDLOG=%CD%\build.log"
+set "ERRLOG=%CD%\build-errors.txt"
+del /q "%BUILDLOG%" 2>nul
+del /q "%ERRLOG%" 2>nul
+
+dotnet build Area11.sln -v minimal > "%BUILDLOG%" 2>&1
+if errorlevel 1 goto :buildfailed
+
+echo        BUILD OK - the program was compiled.
+goto :run
+
+:buildfailed
+rem  Four patterns, because MSBuild writes its own errors differently from the C# and XAML
+rem  compilers ("MSBUILD : error MSB1009" has a space before the colon).
+findstr /i /c:": error " /c:" error CS" /c:" error MC" /c:" error MSB" "%BUILDLOG%" > "%ERRLOG%" 2>nul
+
+echo.
+echo  ==========================================================
+echo   BUILD FAILED
+echo  ==========================================================
+set "ERRSIZE=0"
+if exist "%ERRLOG%" for %%A in ("%ERRLOG%") do set "ERRSIZE=%%~zA"
+
+if "%ERRSIZE%"=="0" (
+    echo   No file-and-line error was printed. The last 30 lines of the build:
     echo.
-    echo  ==========================================================
-    echo   BUILD FAILED
-    echo  ==========================================================
-    echo   Copy the FIRST error line above and send it in the chat.
-    echo   The line looks like:  Something.cs^(12,34^): error CS1234: ...
+    powershell -NoProfile -Command "Get-Content -LiteralPath '%BUILDLOG%' -Tail 30"
+) else (
+    echo   The errors ^(one line each - this is all that is needed^):
     echo.
-    echo   If the error mentions a project file that could not be loaded,
-    echo   run tools\CHECK-AREA11.cmd once and try again.
-    echo.
-    pause
-    exit /b 1
+    type "%ERRLOG%"
 )
 
+echo.
+echo   Full output : %BUILDLOG%
+echo   The FIRST line above is the one to send in the chat.
+echo   Or double-click tools\SEND-REPORT.cmd: it puts these errors, the .NET
+echo   version, the shop folder and the newest crash into ONE file.
+echo.
+pause
+exit /b 1
+
+:run
 rem ---- 5. run ---------------------------------------------------------------
 echo.
 echo  Starting Area11...
