@@ -13,30 +13,21 @@ public static class AppPaths
     private static readonly Lazy<string> RootLazy = new(ResolveRoot, LazyThreadSafetyMode.ExecutionAndPublication);
 
     /// <summary>
-    /// The real shop's folder, whatever this run is. Only the demo switch asks for it directly.
+    /// Everything this run owns: database, photos, logs, backups and exports.
+    ///
+    /// There is exactly one folder and one answer. Until v0.30.2 this property could be pointed at a
+    /// second folder by the `--demo` switch (D-76); the owner had the demo removed from the product on
+    /// 23 Oct 2026 (D-77), so the switch, its folder and its three files are gone. A shop that cannot
+    /// be redirected is a shop whose books cannot be split in two by a command-line flag.
     /// </summary>
-    public static string RealDataRoot => RootLazy.Value;
-
-    /// <summary>
-    /// Everything this run owns. Normally the shop's folder; when the program was started with
-    /// `--demo` it is the demo's own folder instead (D-76), so not one file of the real shop is
-    /// opened - database, photos, logs and backups all move together.
-    /// </summary>
-    public static string DataRoot =>
-        DemoShop.DataFolder is { Length: > 0 } folder ? folder : RootLazy.Value;
+    public static string DataRoot => RootLazy.Value;
 
     /// <summary>
     /// Where this counter keeps the shop's database. A second counter points at the main PC's shared
     /// folder through `shop.ini`, so the whole shop reads one file (F-45).
-    ///
-    /// The demo deliberately ignores `shop.ini`: a demo that pointed at the second counter's shared
-    /// folder would write invented bills into the shop's real database - the one mistake this whole
-    /// switch exists to make impossible.
     /// </summary>
     public static string DatabaseFolder =>
-        DemoShop.IsOn
-            ? DataRoot
-            : ShopConfig.Current.DataFolder is { Length: > 0 } folder ? folder : DataRoot;
+        ShopConfig.Current.DataFolder is { Length: > 0 } folder ? folder : DataRoot;
 
     public static string DatabaseFile => Path.Combine(DatabaseFolder, "area11.db");
 

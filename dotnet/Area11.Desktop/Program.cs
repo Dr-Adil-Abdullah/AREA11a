@@ -27,19 +27,6 @@ public static class Program
 
         try
         {
-            // D-76: `Area11.exe --demo` runs the DEMO shop, in its own folder, so the owner can look
-            // at two and a half months of invented bills without one invented rupee reaching his own
-            // database. It must be decided BEFORE the first window, because every path below
-            // (database, photos, logs, backups) reads AppPaths.DataRoot - and that is the demo folder.
-            //
-            // It sits inside the try on purpose: making the folder can fail (no permission, a full
-            // disk), and a WinExe that dies before its first window prints nothing at all. Here the
-            // failure becomes a crash file the batch file can show.
-            if (DemoShop.WantsDemo(args))
-            {
-                DemoShop.TurnOn(AppPaths.RealDataRoot);
-            }
-
             var app = new App();
             app.InitializeComponent();
             return app.Run();

@@ -80,7 +80,6 @@ VIEW_MODEL_OF = {
     "HardwareView.xaml": "HardwareViewModel",
     "CloudSyncView.xaml": "CloudSyncViewModel",
     "SaleHistoryView.xaml": "SaleHistoryViewModel",
-    "SampleShopView.xaml": "SampleShopViewModel",
 }
 
 
@@ -1231,7 +1230,7 @@ def check_service_members() -> None:
 
     Why: `check_service_methods` resolves `_services.Sales.Create(...)` - three parts - but the
     two-part form is used just as often (`_services.AuditHistory.CanRead(...)` starts here;
-    `_services.Cloud` and `_services.SampleShop` are passed around as values). A misspelt
+    `_services.Cloud` and `_services.Reports` are passed around as values). A misspelt
     two-part name is a **CS1061** in the one project that has never compiled on the shop PC, and
     nothing looked at it.
 
@@ -2418,7 +2417,7 @@ def check_tests() -> None:
     if version and code_name:
         wanted = f"v{version.group(1)} ({code_name.group(1)})"
 
-        for name in ("tools/RUN-TESTS.cmd", "START-AREA11.bat", "DEMO-AREA11.cmd"):
+        for name in ("tools/RUN-TESTS.cmd", "START-AREA11.bat"):
             script_path = ROOT / name
 
             if not script_path.exists():
@@ -2433,7 +2432,7 @@ def check_tests() -> None:
                 fail(f"{name} will print '{printed.group(1)}' but this build is '{wanted}' - "
                      "the owner would read the wrong version on his own screen")
 
-        REPORT.append(f"Script banners: 3 file(s) print '{wanted}'")
+        REPORT.append(f"Script banners: 2 file(s) print '{wanted}'")
 
     settings = (DOTNET / "Area11.Core/Services/SettingsService.cs").read_text(encoding="utf-8")
     # The lookbehind matters: "GetRaw(" ends in "Raw(", and without it every reader of a setting

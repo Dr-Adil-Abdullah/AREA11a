@@ -129,6 +129,22 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
+> **v0.30.2 (Auburn `#8B3A3A`) - the demo is deleted, and deletion has companions.**
+>
+> * **The owner's word was the trigger D-76 was waiting for.** *"Delete whatever demo data there is -
+>   now we are trying to make an app that will be completely real."* Nine files went, and the value of
+>   a demo is exactly what it costs to remove: every switch that made it possible (a second data root,
+>   a `shop.ini` exception, a title branch, a receipt watermark) had to be unpicked, not just the page.
+> * **Deleting a view is four edits, not one.** The file, its `_VIEW_OF` entry, its `{x:Type}` template
+>   and its `DataTemplate` - `check_repo.py` names whichever one was left behind. Same for a test file
+>   and `RUN-TESTS.cmd`'s `EXPECTED`. **A deletion is not done until the checker is green.**
+> * **A feature that the owner confirms by doing it is ✅.** F-13 (receipt + instant print) stood 🟡 for
+>   forty versions; the owner printed on the shop printer and said *"it is working perfectly"*. Written
+>   proof is his sentence, not a test. F-46 became half-done in the same message: the printer is real,
+>   the **scanner** is still only a promise.
+> * **A retired feature stays in the table.** F-53 keeps its row, its ❌-free history and its 🧪 column,
+>   marked *(removed)*, so a later reader cannot mistake a deleted feature for one that was never built.
+>
 > **v0.30.1 (Citrine `#A98B18`) - 696/696 on the shop PC, and two faults the green run exposed.**
 >
 > * **A banner must not parse anything.** v0.30.0 read the version out of `BuildInfo.cs` with
@@ -358,6 +374,7 @@ tests through the public service methods and a real bill in `TestDatabase`.
 > every row in **one transaction**, never deletes, and ignores tables or columns this database does
 > not have.
 >
-> **Next:** the misspelt-medicine search (F-50), the sample shop (F-53), and the owner's own run of
-> the printer slip on the shop's paper (F-46).
+> **All three landed and are closed.** F-50 in v0.22.0, F-53 in v0.28.0 and *deleted* in v0.30.2
+> (D-77), F-46's printer half confirmed by the owner on 23 Oct 2026. §8 at the top of this file is
+> the only place that says what is current; the bullets below it are history.
 > Details: `HANDOFF.md` §4.

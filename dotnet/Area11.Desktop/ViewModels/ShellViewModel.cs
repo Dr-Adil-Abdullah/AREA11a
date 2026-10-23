@@ -66,29 +66,10 @@ public sealed class ShellViewModel : ObservableObject
         // and never blocks the till: a failed backup is a line in the log and a note on the page.
         _services.Backup.RunAutomaticIfDue();
 
-        // The demo opens on the page that fills it (D-76). The owner asked for "a button that loads
-        // demo data"; making him hunt for that button in SYSTEM is how the first try went wrong, so
-        // in the demo shop the Sample-shop page is the first thing on the screen, with its group
-        // already open. In the real shop nothing changes.
+        // The home screen is the first page of the menu (F-12). There is no special start page any
+        // more: the demo shop was removed from the product on the owner's word (D-77), so every start
+        // is the same start, in the shop's own books.
         SelectedNav = NavItems.FirstOrDefault(item => item.IsPage);
-
-        if (DemoShop.IsOn)
-        {
-            var sample = NavItems.FirstOrDefault(item =>
-                item.IsPage && string.Equals(item.Title, "Sample shop", StringComparison.Ordinal));
-
-            if (sample is not null && sample.GroupKey.Length > 0)
-            {
-                var group = _groups.FirstOrDefault(item => item.Key == sample.GroupKey);
-
-                if (group is not null)
-                {
-                    SetCollapsed(group, false);
-                }
-
-                SelectedNav = sample;
-            }
-        }
     }
 
     public event Action? LoggedOut;
@@ -246,9 +227,6 @@ public sealed class ShellViewModel : ObservableObject
         // the owner grants one person at a time (F-48, D-66).
         var canSync = _services.Cloud.CanSync(_user);
 
-        // Sample data writes demo money into every page, so it is the owner's alone (F-53, D-69).
-        var canSample = _services.SampleShop.CanSeed(_user);
-
         NavItems.Add(new NavItem("Dashboard", "Today at a glance", () => new DashboardViewModel(_services, _user)));
 
         // ---- SELL: the counter and what comes back from it ----
@@ -355,7 +333,7 @@ public sealed class ShellViewModel : ObservableObject
         }
 
         // ---- SYSTEM: the shop's own settings, its memory and its safety net ----
-        if (canAudit || canBackup || canImport || canSettings || canLan || canSync || canSample)
+        if (canAudit || canBackup || canImport || canSettings || canLan || canSync)
         {
             AddGroup("system", "SYSTEM");
 
@@ -379,17 +357,13 @@ public sealed class ShellViewModel : ObservableObject
                 AddPage("system", "Backup & restore", "ZIP of database + photos", CreateBackupPage);
             }
 
-            // The demo shop never talks to another PC or to the cloud (D-76). Both pages send the
-            // shop's data somewhere real: the second counter would point the demo at a shared folder,
-            // and cloud sync would upload invented bills to the owner's own Supabase table. Hidden is
-            // better than refused here - a page that exists but cannot be used invites a question.
-            if (canLan && !DemoShop.IsOn)
+            if (canLan)
             {
                 AddPage("system", "Second counter (LAN)", "Two PCs, one database",
                     () => new LanViewModel(_services, _user));
             }
 
-            if (canSync && !DemoShop.IsOn)
+            if (canSync)
             {
                 // Beside the second counter: both are about the shop's data leaving this PC, and both
                 // are the owner's decision alone (F-48).
@@ -408,14 +382,6 @@ public sealed class ShellViewModel : ObservableObject
                     () => new HardwareViewModel(_services, _user));
 
                 AddPage("system", "Settings", "Shop, printing, staff", CreateSettingsPage);
-            }
-
-            if (canSample)
-            {
-                // Last in SYSTEM and named for what it is: the page a brand-new shop opens once, and
-                // then never needs again.
-                AddPage("system", "Sample shop", "Demo data for a new shop",
-                    () => new SampleShopViewModel(_services, _user));
             }
         }
 

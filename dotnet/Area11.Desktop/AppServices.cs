@@ -62,8 +62,6 @@ public sealed class AppServices
         Cloud = new SyncService(Database, Settings, Audit, Permissions, Log, Backup, new SupabaseTransport());
         // The bill history and its reprint: the same ReceiptService that printed the original (F-52).
         History = new SaleHistoryService(Database, Receipts, ReturnReceipts, Audit, Permissions, Log);
-        // A new shop can be filled with believable demo data; the service refuses a shop with bills (F-53).
-        SampleShop = new SampleShopService(Database, Settings, Audit, Permissions, Log);
         Lan = new LanService(Database, Audit, Log, Config);
     }
 
@@ -136,9 +134,6 @@ public sealed class AppServices
 
     /// <summary>Find any bill and print it again (F-52).</summary>
     public SaleHistoryService History { get; }
-
-    /// <summary>The sample shop: demo data for a new database (F-53).</summary>
-    public SampleShopService SampleShop { get; }
 
     public AuditHistoryService AuditHistory { get; }
 
