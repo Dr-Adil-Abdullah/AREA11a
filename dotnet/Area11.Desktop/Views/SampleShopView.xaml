@@ -13,7 +13,7 @@
         <DockPanel Grid.Row="0" Margin="0,0,0,10">
             <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
                 <TextBlock Text="Sample shop" Style="{StaticResource PageTitle}" />
-                <TextBlock Text="Fill a new Area11 with a believable day's work, so every page has something to show (F-53)."
+                <TextBlock Text="Fill a new Area11 with two and a half months of one small shop, so every page has something to show (F-53)."
                            Style="{StaticResource PageSubtitle}" TextWrapping="Wrap" />
             </StackPanel>
 
@@ -58,10 +58,10 @@
                         <TextBlock Text="BEFORE YOU PRESS" Style="{StaticResource SectionTitle}" />
 
                         <TextBlock TextWrapping="Wrap" Margin="0,6,0,0" LineHeight="20"
-                                   Text="This writes demo money into every page: 44 medicines over 17 categories, six suppliers, twenty customers, and two and a half months of one small shop - about seven hundred bills, khata collections, returns, expenses, a stock-take and seventy-three counted drawers. The names are real Pakistani brands but the numbers are inventions." />
+                                   Text="This writes demo money into every page: 44 medicines across 14 shelves, six suppliers, twenty customers, and two and a half months of one small shop - about seven hundred bills, khata collections, returns, expenses, a stock-take and seventy-three counted drawers. The names are real Pakistani brands but the numbers are inventions." />
 
                         <TextBlock TextWrapping="Wrap" Margin="0,6,0,0" LineHeight="20"
-                                   Text="It runs only once, and only in a shop that has no bills or purchases. A real shop keeps its own money untouched." />
+                                   Text="It runs only once, and only in a shop that has nothing of its own yet - no bills, no purchases, no medicines, companies, suppliers or customers that you typed. A real shop keeps its own money untouched." />
 
                         <TextBlock TextWrapping="Wrap" Margin="0,6,0,0" LineHeight="20" FontWeight="SemiBold"
                                    Text="The program never deletes these rows afterwards. To keep a real shop clean, start it as a new shop - or take a backup before pressing, and restore it if you change your mind." />

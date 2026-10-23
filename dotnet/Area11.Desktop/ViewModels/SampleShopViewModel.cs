@@ -3,8 +3,9 @@ using Area11.Core.Models;
 namespace Area11.Desktop.ViewModels;
 
 /// <summary>
-/// The sample shop page (F-53, D-69): one button that fills a new Area11 with a believable day's work
-/// so every screen - the counter, the khata, the reports, the black box - has something to show.
+/// The sample shop page (F-53, D-69, D-74): one button that fills a new Area11 with two and a half
+/// months of one small pharmacy, so every screen - the counter, the khata, the reports, the black box -
+/// has something to show.
 ///
 /// No rule lives here. <see cref="SampleShopService"/> decides whether this database may receive demo
 /// data at all, writes all of it in one transaction, and leaves one line in the black box; this class

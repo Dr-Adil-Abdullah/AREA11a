@@ -129,6 +129,27 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
+> **v0.29.1 (Indigo `#3F3D8C`) - the sample shop never worked, and a "green" mirror hid it.**
+> The owner ran the suite for the first time on a machine with a real SQLite engine: **666 cases, 28
+> failed**, every one of the 28 downstream of a single sentence - `UNIQUE constraint failed:
+> categories.name`. The lesson is not about categories; it is about **what a mirror can prove**:
+>
+> * **A brand-new database is not an empty one.** The first start writes five categories, and
+>   `categories.name` is UNIQUE. Any generator that inserts "the usual" rows must read the table
+>   first (`SeedService` already did; `SampleShopService.WriteCategories` did not). When you add a
+>   write to a table with a UNIQUE index, ask: *does the app already put something there?*
+> * **The mirror could not see it.** `sim10.py` rebuilt every sum over 74 days and reported 0
+>   mismatches - because it started from an empty categories table. A mirror is only as good as the
+>   state it starts in; **start it the way `TestDatabase` starts** (migrations + `Seed.Seed()`), and
+>   list the UNIQUE constraints of every table you write to before believing it.
+> * **A failure message must name the step.** "Could not be written" told the owner the table but not
+>   which of forty writes had failed. `SampleShopService` now reports *while writing the shelves /
+>   the medicines / two and a half months of days*.
+> * **A test that asserts one machine is not a test.** *Printer: Windows default printer* is only
+>   true with no printer installed; *omeprazol* is a prefix, so the exact search (correctly) found it
+>   and the fuzzy test's premise was wrong. Both were repaired on the test side, and a new case pins
+>   the behaviour that was actually wanted.
+>
 > **v0.29.0 (Burgundy `#6B1F3A`)** - all four phases are written: Phase 1-3 in full (billing, returns,
 > purchase, khata, supplier ledger, shift/galla, expenses, reports, black box, backup & restore,
 > Excel / CSV, reorder + WhatsApp, stock-minus registry), and Phase 4 has **all 12 of its features**:

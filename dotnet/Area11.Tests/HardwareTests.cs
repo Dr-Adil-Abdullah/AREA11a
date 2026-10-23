@@ -65,7 +65,15 @@ public sealed class HardwareTests
         using var test = new TestDatabase();
         var document = Hardware(test).BuildSlip(TestData.Owner).Value!;
 
-        Assert.Contains(document.Lines, line => line.Text == "Printer: Windows default printer");
+        // The printer line names what Windows resolved, so it differs from PC to PC: on a machine
+        // with a real default printer it reads "Windows default - EPSON", on one without it says
+        // "Windows default printer". Asserting the exact sentence made the test fail on the shop PC
+        // the moment a printer was installed (v0.28.0, the owner's run) - the slip was right.
+        var printer = Assert.Single(document.Lines, line => line.Text.StartsWith("Printer: "));
+
+        Assert.StartsWith("Printer: ", printer.Text);
+        Assert.Contains("Windows default", printer.Text);
+
         Assert.Contains(document.Lines, line => line.Text == "Paper: 58 mm / 32 characters");
     }
 

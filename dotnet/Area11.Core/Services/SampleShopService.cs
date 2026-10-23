@@ -8,7 +8,7 @@ namespace Area11.Core.Services;
 
 /// <summary>
 /// The sample shop (F-53, D-69, D-74): one button that fills a new Area11 with **two and a half
-/// months of one small pharmacy** - 44 medicines over 17 categories, sixteen companies with their
+/// months of one small pharmacy** - 44 medicines across 14 shelves, sixteen companies with their
 /// medical reps, six suppliers, twenty customers (two clinics, three doctors), about seven hundred
 /// bills at the counter, khata running from before Area11, collections, returns, write-offs, a
 /// supplier return, two stock-takes, seventy-two drawers opened and counted, rent, salaries, the
@@ -32,9 +32,6 @@ public sealed class SampleShopService
 {
     /// <summary>The one black-box line this action leaves.</summary>
     public const string AuditAction = "sample_shop";
-
-    /// <summary>A shop that already carries this many medicines is a real shop, not a demo.</summary>
-    public const int RealShopProducts = 30;
 
     /// <summary>How far back the story runs: seventy-two days - two and a half months of one shop.</summary>
     public const int HistoryDays = 72;
@@ -433,18 +430,26 @@ public sealed class SampleShopService
     /// <summary>The medicine whose shelf is empty at the end of the story.</summary>
     private const int SoldOutProduct = 43;
 
-    private static readonly string[] CategoryParents = { "Medicines", "General", "Surgical" };
+    /// <summary>Which write the sample is busy with - only ever used to make a failure readable.</summary>
+    private string _step = "the sample";
+
+    /// <summary>
+    /// The three groups, spelled the way the first-start seed already spells them: "Medicine",
+    /// "General" and "Surgical" are three of the five categories every new shop is born with, so the
+    /// sample reuses those rows instead of creating near-duplicates ("Medicine" next to "Medicines").
+    /// </summary>
+    private static readonly string[] CategoryParents = { "Medicine", "General", "Surgical" };
 
     private static readonly (string Name, string Parent)[] CategoryChildren =
     {
-        ("Tablets", "Medicines"),
-        ("Capsules", "Medicines"),
-        ("Syrups", "Medicines"),
-        ("Injections", "Medicines"),
-        ("Sachets", "Medicines"),
-        ("Drops", "Medicines"),
-        ("Inhalers", "Medicines"),
-        ("Ointments", "Medicines"),
+        ("Tablets", "Medicine"),
+        ("Capsules", "Medicine"),
+        ("Syrups", "Medicine"),
+        ("Injections", "Medicine"),
+        ("Sachets", "Medicine"),
+        ("Drops", "Medicine"),
+        ("Inhalers", "Medicine"),
+        ("Ointments", "Medicine"),
         ("Skin care", "General"),
         ("Vitamins", "General"),
         ("Baby care", "General"),
@@ -611,7 +616,8 @@ public sealed class SampleShopService
             _log.Error("The sample shop could not be written.", exception);
 
             return ServiceResult<SampleShopReport>.Fail(
-                "The sample shop could not be written, so nothing was added: " + exception.Message);
+                "The sample shop could not be written, so nothing was added while writing " + _step
+                + ": " + exception.Message);
         }
     }
 
@@ -639,16 +645,32 @@ public sealed class SampleShopService
                 + "Sample data is only for a shop with no bills at all, so that nothing real can be mixed with demo data.");
         }
 
-        if (products >= RealShopProducts)
+        // A shop that has been *used at all* - even a few rows typed by hand - is refused, and for the
+        // same reason the categories clash taught us: the sample writes its own companies, suppliers,
+        // customers and barcodes, and several of those columns are UNIQUE (companies.name,
+        // products.barcode, held_carts.code ...). Half a real shop plus half a demo shop would either
+        // collide - the v0.28.0 fault - or, worse, succeed and leave the owner unable to tell his own
+        // row from an invented one. A sentence on the page is better than either.
+        var companies = Convert.ToInt64(_db.Scalar(connection, "SELECT COUNT(1) FROM companies;") ?? 0L);
+        var suppliers = Convert.ToInt64(_db.Scalar(connection, "SELECT COUNT(1) FROM suppliers;") ?? 0L);
+        var customers = Convert.ToInt64(_db.Scalar(connection, "SELECT COUNT(1) FROM customers;") ?? 0L);
+
+        if (products > 0 || companies > 0 || suppliers > 0 || customers > 0)
         {
             report.Problems.Add(
-                "There are already " + products + " medicines in this shop. That is a real shop, not a new one.");
+                "This shop has already been started by hand - " + products + " medicines, " + companies
+                + " companies, " + suppliers + " suppliers and " + customers + " customers. The sample is "
+                + "for a shop that has not been used yet, so that no invented row sits beside a real one. "
+                + "Take a backup and open a new, empty database to try the demo.");
         }
 
-        report.Steps.Add(Products.Length + " medicines across 17 categories: tablets, capsules, syrups, injections, "
-                         + "sachets, drops, inhalers, ointments, skin care, vitamins, baby care, sanitary, "
-                         + "dressings and equipment - one or two batches each, with a healthy shelf, a shelf near "
-                         + "expiry, an expired bottle and one medicine that is finished.");
+        // The categories a brand-new shop already owns are reused, not duplicated (see WriteCategories),
+        // so the honest count is "shelves", not "rows in the categories table".
+        report.Steps.Add(Products.Length + " medicines across 14 shelves in the shop's own groups: tablets, capsules, "
+                         + "syrups, injections, sachets, drops, inhalers, ointments, skin care, vitamins, baby care, "
+                         + "sanitary, dressings and equipment - the five categories a new shop starts with are kept "
+                         + "and nothing is written twice. One or two batches each, with a healthy shelf, a shelf "
+                         + "near expiry, an expired bottle and one medicine that is finished.");
         report.Steps.Add(Companies.Length + " companies with the medical rep's name, phone and visit day.");
         report.Steps.Add(Suppliers.Length + " suppliers, each with an agency, a phone and a running account.");
         report.Steps.Add(Customers.Length + " customers: fourteen on khata, two clinics, three doctors - four of "
@@ -696,37 +718,89 @@ public sealed class SampleShopService
     {
         var at = Clock.Now();
 
+        // The step name is kept so a failure can say WHERE it stopped. The owner's v0.28.0 message
+        // was only "UNIQUE constraint failed: categories.name" - enough to find the fault, but not
+        // enough to know which of forty writes had produced it.
+        _step = "the shelves";
         var categories = WriteCategories(connection, at);
+
+        _step = "the companies";
         var companies = WriteCompanies(connection, at);
+
+        _step = "the suppliers";
         var suppliers = WriteSuppliers(connection, at);
+
+        _step = "the customers";
         var customers = WriteCustomers(connection, at);
+
+        _step = "the medicines";
         var products = WriteProducts(connection, at, categories, companies);
 
+        _step = "two and a half months of days";
         var run = new Run(_db, _settings, connection, user, at, suppliers, customers, products);
         var counts = run.Execute();
+
+        _step = "finishing";
 
         return counts;
     }
 
+    /// <summary>
+    /// The shelves, reusing whatever the shop already has.
+    ///
+    /// Why looking first is not optional: a brand-new Area11 is **not empty**. The first start writes
+    /// five categories of its own (Medicine, Surgical, Cosmetics, General, Baby Care), and
+    /// `categories.name` is UNIQUE. A sample that inserted its own "General" stopped on that index and
+    /// the whole transaction was rolled back - which is exactly what the owner saw on his PC at
+    /// v0.28.0: the button said "UNIQUE constraint failed: categories.name" and no demo data appeared
+    /// anywhere. The same five rows exist here, so the sample must find them, not fight them.
+    ///
+    /// Matching ignores case: a shop that already has "general" must not gain a second "General".
+    /// </summary>
     private Dictionary<string, int> WriteCategories(SqliteConnection connection, string at)
     {
+        var existing = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var sort = 0;
+
+        foreach (var row in _db.Query<Category>(connection,
+                     "SELECT id, name, parent_id, sort_order FROM categories ORDER BY id;"))
+        {
+            existing[row.Name] = row.Id;
+
+            if (row.SortOrder > sort)
+            {
+                sort = row.SortOrder;
+            }
+        }
+
         var ids = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        var sort = 1;
+
+        int Resolve(string name, int? parentId)
+        {
+            if (existing.TryGetValue(name, out var found))
+            {
+                return found;
+            }
+
+            var id = Insert(connection, @"
+INSERT INTO categories(name, parent_id, sort_order, active, created_at)
+VALUES(@name, @parent, @sort, 1, @at);", new { name, parent = parentId, sort = ++sort, at });
+
+            existing[name] = id;
+
+            return id;
+        }
 
         foreach (var parent in CategoryParents)
         {
-            ids[parent] = Insert(connection, @"
-INSERT INTO categories(name, parent_id, sort_order, active, created_at)
-VALUES(@name, NULL, @sort, 1, @at);", new { name = parent, sort = sort++, at });
+            ids[parent] = Resolve(parent, null);
         }
 
         foreach (var child in CategoryChildren)
         {
             var parentId = child.Parent.Length == 0 ? (int?)null : ids[child.Parent];
 
-            ids[child.Name] = Insert(connection, @"
-INSERT INTO categories(name, parent_id, sort_order, active, created_at)
-VALUES(@name, @parent, @sort, 1, @at);", new { name = child.Name, parent = parentId, sort = sort++, at });
+            ids[child.Name] = Resolve(child.Name, parentId);
         }
 
         return ids;

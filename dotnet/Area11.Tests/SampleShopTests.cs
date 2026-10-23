@@ -27,9 +27,13 @@ public sealed class SampleShopTests
 
         Assert.True(seeded.Ok, seeded.Error);
 
-        // What stands on the shelves and behind the counter.
+        // What stands on the shelves and behind the counter. Eighteen categories, not seventeen: the
+        // five a brand-new shop is born with (Medicine, Surgical, Cosmetics, General, Baby Care) are
+        // reused, and one of them - Baby Care - carries the sample's baby products, so only thirteen
+        // new shelves are added. The count is here at all because getting it wrong is what stopped
+        // v0.28.0 dead on the owner's PC: "UNIQUE constraint failed: categories.name".
         Assert.Equal(44, Count(test, "products"));
-        Assert.Equal(17, Count(test, "categories"));
+        Assert.Equal(18, Count(test, "categories"));
         Assert.Equal(16, Count(test, "companies"));
         Assert.Equal(6, Count(test, "suppliers"));
         Assert.Equal(20, Count(test, "customers"));
@@ -81,13 +85,121 @@ public sealed class SampleShopTests
     public void TheSampleRunsInOneGoOrNotAtAll()
     {
         using var test = new TestDatabase();
-        var report = Sample(test).Seed(TestData.Owner).Value!;
+        var seeded = Sample(test).Seed(TestData.Owner);
+
+        // Assert the reason FIRST. Written the other way round, a refused seed made `.Value!` throw a
+        // NullReferenceException and the run showed "Object reference not set" instead of the one
+        // sentence that says what went wrong (v0.28.0 on the owner's PC).
+        Assert.True(seeded.Ok, seeded.Error);
+
+        var report = seeded.Value!;
 
         // Every promise the page made is a row: no step may be quietly dropped.
         Assert.True(report.CanSeed);
         Assert.Equal(13, report.Steps.Count);
         Assert.Contains("44 medicines", string.Join(" ", report.Steps));
-        Assert.Contains("17 categories", string.Join(" ", report.Steps));
+        Assert.Contains("14 shelves", string.Join(" ", report.Steps));
+    }
+
+    [Fact]
+    public void TheSampleKeepsTheShopsOwnCategoriesAndWritesNoNameTwice()
+    {
+        using var test = new TestDatabase();
+
+        // A brand-new shop is NOT an empty database: the first start writes these five, and
+        // `categories.name` is UNIQUE. This is the exact state the owner's PC was in when v0.28.0
+        // answered "UNIQUE constraint failed: categories.name" and wrote nothing at all.
+        Assert.Equal(5, Count(test, "categories"));
+
+        Assert.True(Sample(test).Seed(TestData.Owner).Ok);
+
+        using var connection = test.Database.Open();
+
+        var seeded = test.Database.Query<string>(connection,
+            "SELECT name FROM categories WHERE name IN ('Medicine', 'Surgical', 'Cosmetics', 'General', 'Baby Care');");
+
+        Assert.Equal(5, seeded.Count);
+
+        // Not one name twice, and not one pair that differs only by case ("General" / "general").
+        var names = test.Database.Query<string>(connection, "SELECT name FROM categories ORDER BY id;");
+        var folded = names.Select(name => name.ToLowerInvariant()).ToList();
+
+        Assert.Equal(names.Count, folded.Distinct().Count());
+
+        // The thirteen new shelves hang under real headings - the shop's own rows, not copies.
+        var orphans = Convert.ToInt64(test.Database.Scalar(connection, @"
+SELECT COUNT(1) FROM categories c
+WHERE c.parent_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM categories p WHERE p.id = c.parent_id);") ?? 0L);
+
+        Assert.Equal(0L, orphans);
+    }
+
+    [Fact]
+    public void TheSampleReusesACategoryTheOwnerTypedHimself()
+    {
+        using var test = new TestDatabase();
+
+        // Someone typed "tablets" by hand before ever opening the Sample-shop page. The sample must
+        // use that row - and must not create "Tablets" beside it, which the UNIQUE index would refuse.
+        using (var connection = test.Database.Open())
+        {
+            test.Database.Execute(connection,
+                "INSERT INTO categories(name, sort_order, active, created_at) VALUES('tablets', 90, 1, @at);",
+                new { at = Clock.Now() });
+        }
+
+        var before = Count(test, "categories");
+        var seeded = Sample(test).Seed(TestData.Owner);
+
+        Assert.True(seeded.Ok, seeded.Error);
+
+        using var after = test.Database.Open();
+
+        // Thirteen shelves minus the one that already existed: 5 + 1 + 12.
+        Assert.Equal(before + 12, Count(test, "categories"));
+
+        var typed = test.Database.QuerySingle<int?>(after,
+            "SELECT id FROM categories WHERE name = 'tablets';");
+
+        var used = Convert.ToInt64(test.Database.Scalar(after,
+            "SELECT COUNT(1) FROM products WHERE category_id = @id;", new { id = typed }) ?? 0L);
+
+        Assert.True(used > 0, "The owner's own category should carry the sample's tablets.");
+    }
+
+    [Fact]
+    public void AShopStartedByHandIsRefusedWithASentenceNotACollision()
+    {
+        using var test = new TestDatabase();
+
+        // One company typed by hand is enough to make this "not a new shop". The sample's own
+        // sixteen companies carry fixed names and `companies.name` is UNIQUE, so letting it run
+        // would either stop on that index (v0.28.0) or mix invented rows into real ones.
+        using (var connection = test.Database.Open())
+        {
+            test.Database.Execute(connection,
+                "INSERT INTO companies(name, created_at) VALUES('My own company', @at);",
+                new { at = Clock.Now() });
+        }
+
+        var sample = Sample(test);
+
+        // Preview always answers - it is the page's description - but it says the shop cannot be filled.
+        var preview = sample.Preview(TestData.Owner);
+
+        Assert.True(preview.Ok, preview.Error);
+        Assert.False(preview.Value!.CanSeed);
+        Assert.Contains("started by hand", preview.Value.ProblemText);
+
+        var seeded = sample.Seed(TestData.Owner);
+
+        Assert.False(seeded.Ok);
+        Assert.Contains("started by hand", seeded.Error ?? string.Empty);
+
+        // And nothing was written on the way to the refusal.
+        Assert.Equal(0, Count(test, "products"));
+        Assert.Equal(0, Count(test, "sales"));
     }
 
     // ============================== the money adds up ==============================
@@ -285,13 +397,22 @@ WHERE category_id IS NULL OR company_id IS NULL OR IFNULL(barcode, '') = '' OR I
         var used = Convert.ToInt64(test.Database.Scalar(connection, @"
 SELECT COUNT(DISTINCT category_id) FROM products;") ?? 0L);
 
-        // Fourteen shelves under three headings - tablets to equipment.
+        // Fourteen shelves carry stock - tablets to equipment.
         Assert.Equal(14L, used);
 
+        // Five headings: the shop's own five start-up categories, none of them duplicated and none
+        // of them replaced. The sample's children hang under Medicine / General / Surgical.
         var parents = Convert.ToInt64(test.Database.Scalar(connection,
             "SELECT COUNT(1) FROM categories WHERE parent_id IS NULL;") ?? 0L);
 
-        Assert.Equal(3L, parents);
+        Assert.Equal(5L, parents);
+
+        // The three groups the sample hangs its shelves on must be the REAL rows, with children.
+        var grouped = Convert.ToInt64(test.Database.Scalar(connection, @"
+SELECT COUNT(1) FROM categories
+WHERE parent_id IS NOT NULL;") ?? 0L);
+
+        Assert.Equal(13L, grouped);
     }
 
     [Fact]

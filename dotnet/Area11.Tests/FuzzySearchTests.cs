@@ -52,9 +52,28 @@ public sealed class FuzzySearchTests
         using var test = new TestDatabase();
         Add(test, "Risek 20mg", "Omeprazole");
 
-        var found = Smart(test, "omeprazol");
+        // A real misspelling, not a prefix: "omeprazle" has the o and the l the wrong way round.
+        // The old test typed "omeprazol", which is a PREFIX of the salt - and the exact search
+        // matches a prefix through LIKE, so the answer came back exact and was (correctly) not
+        // labelled a guess. The test, not the search, was wrong; the owner's run of v0.28.0 found it.
+        var found = Smart(test, "omeprazle");
 
         Assert.True(found.Value!.IsFuzzy);
+        Assert.Equal("Risek 20mg", found.Value.Items[0].Name);
+    }
+
+    [Fact]
+    public void APrefixOfTheSaltIsFoundExactlyAndIsNotCalledAGuess()
+    {
+        using var test = new TestDatabase();
+        Add(test, "Risek 20mg", "Omeprazole");
+
+        // The other half of the same rule: half a word is a normal way to search, and when it finds
+        // the medicine the page says nothing about typos - there was no typo to forgive.
+        var found = Smart(test, "omeprazol");
+
+        Assert.True(found.Ok, found.Error);
+        Assert.False(found.Value!.IsFuzzy);
         Assert.Equal("Risek 20mg", found.Value.Items[0].Name);
     }
 
