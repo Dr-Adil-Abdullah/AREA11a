@@ -1,15 +1,33 @@
 @echo off
 rem ============================================================================
 rem  Area11 - run the tests (double-click this file)
-rem  Expected: "Passed! - Failed: 0" - every test green, no number to remember.
+rem  Expected: "Passed! - Failed: 0" - every test green.
+rem  The banner below prints the version it is about to test and the number of
+rem  cases that version has, both read from the code. A tree that was not pulled
+rem  says so at once, instead of looking like a fault in the shop.
 rem ============================================================================
 title Area11 - tests
 cd /d "%~dp0.."
+
+rem How many cases this build should run. tools\check_repo.py fails if this number
+rem and the suite disagree, so it cannot quietly go stale.
+set "EXPECTED=696"
+
+set "VER=unknown"
+set "NAME=unknown"
+for /f "tokens=5 delims= ;=" %%a in ('findstr /c:"public const string Version" "dotnet\Area11.Core\Utils\BuildInfo.cs" 2^>nul') do set "VER=%%~a"
+for /f "tokens=5 delims= ;=" %%a in ('findstr /c:"public const string CodeName" "dotnet\Area11.Core\Utils\BuildInfo.cs" 2^>nul') do set "NAME=%%~a"
 
 echo.
 echo  ==========================================================
 echo    AREA11 - running the tests
 echo  ==========================================================
+echo.
+echo    Build under test : v%VER% (%NAME%)
+echo    Expect at the end: total: %EXPECTED%, failed: 0
+echo.
+echo    If the total below is SMALLER than %EXPECTED%, this folder was not
+echo    pulled (an older build), and a green run proves nothing about this one.
 echo.
 
 if not exist "Area11.sln" (

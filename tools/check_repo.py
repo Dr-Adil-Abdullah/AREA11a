@@ -934,9 +934,20 @@ def _split_arguments(text: str) -> list[str]:
             current.append(ch)
             continue
 
-        if ch in "([{<":
+        if ch in "([{":
             depth += 1
-        elif ch in ")]}>":
+        elif ch == "<":
+            # Angle brackets are tracked only where they can be a generic: after a name and before a
+            # type. Without this guard the `<` of `x < 5` and the `>` of a lambda's `=>` both moved
+            # the counter, and `new NavItem(a, b, () => new View(...))` counted FOUR arguments -
+            # which is how a correct call was reported as a CS7036 in the first run of this rule.
+            following = text[index + 1:index + 2]
+            if (previous.isalnum() or previous in ">]_?") and (following.isalpha() or following in "_?"):
+                depth += 1
+        elif ch == ">":
+            if previous != "=" and depth > 0:
+                depth -= 1
+        elif ch in ")]}":
             depth -= 1
         elif ch == "," and depth == 0:
             parts.append("".join(current))
@@ -986,7 +997,15 @@ def check_constructor_arity() -> None:
     required: dict[str, tuple[int, int]] = {}
     calls_checked = 0
 
-    for path in (DOTNET / "Area11.Core").rglob("*.cs"):
+    # Every project, not only Core. Until v0.29.8 only Core declared the classes, so a Desktop row
+    # class (`new QuarantineRow(item, Decide)`) was never compared with its own constructor - the
+    # call was scanned, found no declaration to compare against, and passed silently. The window
+    # program is the project that has never compiled on the shop PC; it is the last place to leave
+    # a blind spot.
+    for path in DOTNET.rglob("*.cs"):
+        if {"obj", "bin"} & set(path.parts):
+            continue
+
         original = path.read_text(encoding="utf-8-sig")
         masked = mask_csharp_noise(original)
 
@@ -1202,6 +1221,52 @@ def check_x_static() -> None:
                      f"(XamlParseException when the window opens)")
 
     REPORT.append(f"x:Static: {checked} member reference(s) resolve against the code")
+
+
+# ---------------------------------------------------------------------------
+# 1k. `_services.X` must be a member of AppServices (the CS1061 class, at the root)
+# ---------------------------------------------------------------------------
+def check_service_members() -> None:
+    """Every `_services.X` in the window program must be a member of `AppServices`.
+
+    Why: `check_service_methods` resolves `_services.Sales.Create(...)` - three parts - but the
+    two-part form is used just as often (`_services.AuditHistory.CanRead(...)` starts here;
+    `_services.Cloud` and `_services.SampleShop` are passed around as values). A misspelt
+    two-part name is a **CS1061** in the one project that has never compiled on the shop PC, and
+    nothing looked at it.
+
+    What counts as a member: anything `AppServices` declares as public - a property, a method
+    (`SignIn`, `SignOut` are methods, not properties, and LoginViewModel calls one). What does not
+    count: a local, a nested type or a field the class keeps to itself, because those cannot be
+    reached from a view model.
+    """
+    services_path = DOTNET / "Area11.Desktop" / "AppServices.cs"
+
+    if not services_path.exists():
+        return
+
+    text = mask_csharp_noise(services_path.read_text(encoding="utf-8-sig"))
+
+    members = set(re.findall(r"public\s+[\w<>?\[\], .]+?\s+(\w+)\s*(?:\{|=>)", text))
+    members |= set(re.findall(r"public\s+[\w<>?\[\], .]+?\s+(\w+)\s*\(", text))
+    members |= set(re.findall(r"public\s+[\w<>?\[\], .]+?\s+(\w+)\s*[;=]", text))
+
+    checked = 0
+
+    for path in (DOTNET / "Area11.Desktop").rglob("*.cs"):
+        body = path.read_text(encoding="utf-8-sig")
+        masked = mask_csharp_noise(body)
+
+        for match in re.finditer(r"\b_services\.(\w+)", masked):
+            name = match.group(1)
+            checked += 1
+
+            if name not in members:
+                line = body[:match.start()].count("\n") + 1
+                fail(f"{rel(path)}:{line}: `_services.{name}` is not a member of AppServices "
+                     f"(CS1061 - the build stops here)")
+
+    REPORT.append(f"App services: {checked} member reference(s) exist on AppServices")
 
 
 # ---------------------------------------------------------------------------
@@ -2069,6 +2134,26 @@ def check_tests() -> None:
     REPORT.append(f"Tests: {facts} facts + {theories} theories ({inline} inline rows) "
                   f"= {cases} cases in {len(files)} files")
 
+    # The double-click test runner prints "expect total: N" before it starts, because the owner has
+    # twice sent a result from a tree that was not pulled (686 when 695 was current) and read it as a
+    # fault in the shop. That number is typed by hand in the batch file, so it needs a keeper: here.
+    script = ROOT / "tools" / "RUN-TESTS.cmd"
+
+    if script.exists():
+        runner = script.read_text(encoding="utf-8", errors="replace")
+        wanted = re.search(r'set "EXPECTED=(\d+)"', runner)
+
+        if wanted is None:
+            fail("tools/RUN-TESTS.cmd no longer says how many cases to expect "
+                 '(the line `set "EXPECTED=<number>"` is gone)')
+        elif int(wanted.group(1)) != cases:
+            fail(f"tools/RUN-TESTS.cmd expects {wanted.group(1)} cases but the suite has {cases} - "
+                 "the owner would read a correct run as a stale pull")
+        else:
+            REPORT.append(f"Test runner: the printed expectation ({cases}) matches the suite")
+    else:
+        fail("tools/RUN-TESTS.cmd is missing - the owner cannot run the tests by double-click")
+
     settings = (DOTNET / "Area11.Core/Services/SettingsService.cs").read_text(encoding="utf-8")
     # The lookbehind matters: "GetRaw(" ends in "Raw(", and without it every reader of a setting
     # looks like a second declaration of it.
@@ -2228,6 +2313,7 @@ def main() -> int:
     check_resources()
     check_x_static()
     check_service_methods()
+    check_service_members()
     check_xml()
     check_bindings()
     check_migrations()

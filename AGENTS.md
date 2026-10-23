@@ -129,6 +129,23 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
+> **v0.29.8 (Steel `#4A6FA5`) - the wiring gate, and a gate that cried wolf before it was allowed to stay.**
+>
+> * **`check_constructor_arity` now reads every project.** It collected declarations from
+>   `Area11.Core` alone, so a Desktop row class (`new QuarantineRow(item, Decide)`) was scanned, found
+>   no declaration, and passed in silence. 1,144 calls today.
+> * **`_services.X` is checked too** (`check_service_members`): properties and methods of `AppServices`,
+>   238 references. `SignIn`/`SignOut` are methods - a property-only rule would have refused them.
+> * **A gate that cries wolf must be fixed the same hour.** The first run of the widened rule reported a
+>   correct `new NavItem(title, subtitle, () => new View(a, b))` as four arguments, because the argument
+>   splitter counted the `>` of `=>` as a closing angle bracket. It now treats `<` as a generic only
+>   after a name and before a type.
+> * **The double-click files print the build they are about to run**, read from `BuildInfo.cs`:
+>   `RUN-TESTS.cmd` says *v0.29.8 (Steel) … expect total: 696*, and both launch scripts print
+>   *Code on this PC*. A pull that failed is visible instead of silent - the owner has twice tested a
+>   tree that was not pulled and read the result as a fault in the shop. `set "EXPECTED=…"` is kept
+>   equal to the real case count by `check_repo.py`.
+>
 > **v0.29.7 (Coral `#C2554A`) - the column rule reads the tests, so a test's row class is guarded too.**
 >
 > * **851 columns became 871 over 101 files.** A test fills its own small row class from a query; a

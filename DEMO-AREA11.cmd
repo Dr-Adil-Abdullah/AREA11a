@@ -66,6 +66,14 @@ if errorlevel 1 echo        Could not update - continuing with the code already 
 
 rem ---- 2. build -------------------------------------------------------------
 :build
+rem  Which build is about to run? Read from the code, never typed by hand - so a pull that
+rem  failed above shows up here as an old version number instead of a silent mystery.
+set "VER=unknown"
+set "NAME=unknown"
+for /f "tokens=5 delims= ;=" %%a in ('findstr /c:"public const string Version" "dotnet\Area11.Core\Utils\BuildInfo.cs" 2^>nul') do set "VER=%%~a"
+for /f "tokens=5 delims= ;=" %%a in ('findstr /c:"public const string CodeName" "dotnet\Area11.Core\Utils\BuildInfo.cs" 2^>nul') do set "NAME=%%~a"
+echo        Code on this PC: v%VER% (%NAME%)
+
 echo  [2/3] Building...  ^(a few seconds when nothing changed^)
 dotnet build Area11.sln -v minimal
 if errorlevel 1 goto :buildfailed
