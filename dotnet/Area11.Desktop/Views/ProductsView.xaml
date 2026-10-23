@@ -16,13 +16,21 @@
                            Style="{StaticResource PageSubtitle}" />
             </StackPanel>
 
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                <TextBox Width="230" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                         ToolTip="Name, salt, barcode or rack" />
-                <Button Content="New" Style="{StaticResource GhostButton}" Command="{Binding NewCommand}"
-                        Margin="8,0,0,0" />
-                <Button Content="Refresh" Style="{StaticResource GhostButton}" Command="{Binding RefreshCommand}"
-                        Margin="8,0,0,0" />
+            <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal">
+                    <TextBox Width="230" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="Name, salt, barcode or rack" />
+                    <Button Content="New" Style="{StaticResource GhostButton}" Command="{Binding NewCommand}"
+                            Margin="8,0,0,0" />
+                    <Button Content="Refresh" Style="{StaticResource GhostButton}" Command="{Binding RefreshCommand}"
+                            Margin="8,0,0,0" />
+                </StackPanel>
+
+                <!-- F-50: the grid below is a guess, and the page says so before a row is picked. -->
+                <TextBlock Text="{Binding SearchNote}" TextWrapping="Wrap" MaxWidth="360" FontWeight="Bold"
+                           FontSize="11" Margin="0,4,0,0" HorizontalAlignment="Right" TextAlignment="Right"
+                           Foreground="{StaticResource BrandDarkBrush}"
+                           Visibility="{Binding IsSearchGuessing, Converter={StaticResource BoolToVis}}" />
             </StackPanel>
         </DockPanel>
 

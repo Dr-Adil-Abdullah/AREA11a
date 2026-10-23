@@ -20,6 +20,8 @@ public sealed class PosViewModel : ObservableObject
     private readonly Dictionary<int, List<string>> _codesByProduct = new();
 
     private string _searchText = string.Empty;
+    private string _searchHint = string.Empty;
+    private bool _isSearchGuessing;
     private Product? _selectedProduct;
     private string _unit = "strip";
     private string _quantity = "1";
@@ -112,6 +114,23 @@ public sealed class PosViewModel : ObservableObject
         UserRole.Manager => _services.Settings.GetInt("discount.maxPercentManager", 20),
         _ => _services.Settings.GetInt("discount.maxPercentCashier", 5)
     };
+
+    /// <summary>
+    /// The sentence under the search box (F-50). Empty for an exact search; a "did you mean" line
+    /// when the list below is a guess, so no cashier ever reads a suggestion as an answer.
+    /// </summary>
+    public string SearchHint
+    {
+        get => _searchHint;
+        private set => SetProperty(ref _searchHint, value);
+    }
+
+    /// <summary>True while the list below is a typo suggestion - the hint turns amber to say so.</summary>
+    public bool IsSearchGuessing
+    {
+        get => _isSearchGuessing;
+        private set => SetProperty(ref _isSearchGuessing, value);
+    }
 
     public string SearchText
     {
@@ -458,6 +477,8 @@ public sealed class PosViewModel : ObservableObject
         var term = SearchText.Trim();
         Products.Clear();
 
+        var shown = new List<Product>();
+
         foreach (var product in _catalog)
         {
             var codeMatches = _codesByProduct.TryGetValue(product.Id, out var codes)
@@ -469,8 +490,37 @@ public sealed class PosViewModel : ObservableObject
                 || (product.Barcode ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase)
                 || codeMatches)
             {
-                Products.Add(product);
+                shown.Add(product);
             }
+        }
+
+        // F-50: nothing spells like that, so show the neighbourhood - and say so. A suggestion only
+        // reaches the cart by a second, human press of "Add to cart"; Enter stays a barcode, never a guess.
+        if (shown.Count == 0 && Fuzzy.Words(term).Length > 0)
+        {
+            var close = Fuzzy.Rank(term, _catalog, product => product.Name, product => product.Generic,
+                limit: 12);
+
+            foreach (var hit in close)
+            {
+                shown.Add(hit.Item);
+            }
+
+            SearchHint = close.Count == 0
+                ? "No medicine is spelt like \"" + term + "\", and nothing close is on the shelf."
+                : Fuzzy.SuggestionLabel(term, close[0].Item.Name);
+
+            IsSearchGuessing = close.Count > 0;
+        }
+        else
+        {
+            SearchHint = string.Empty;
+            IsSearchGuessing = false;
+        }
+
+        foreach (var product in shown)
+        {
+            Products.Add(product);
         }
 
         if (SelectedProduct is null || !Products.Contains(SelectedProduct))

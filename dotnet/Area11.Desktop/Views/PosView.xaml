@@ -46,6 +46,11 @@
 
                         <TextBlock Text="Scan a barcode and press Enter - one of the pack it belongs to is added."
                                    Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,2,0,0" />
+
+                        <!-- F-50: the list below is a guess, and the shop is told so before a box moves. -->
+                        <TextBlock Text="{Binding SearchHint}" TextWrapping="Wrap" Margin="0,4,0,0" FontWeight="Bold"
+                                   FontSize="11.5" Foreground="{StaticResource BrandDarkBrush}"
+                                   Visibility="{Binding IsSearchGuessing, Converter={StaticResource BoolToVis}}" />
                         <Grid Margin="0,8,0,10">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="90" />

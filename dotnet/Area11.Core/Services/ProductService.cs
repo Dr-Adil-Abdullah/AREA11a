@@ -77,6 +77,68 @@ ORDER BY p.name COLLATE NOCASE;",
         }
     }
 
+    /// <summary>
+    /// The search the counter and the product list use (F-50, Spec 8.4): the exact search first, and -
+    /// only when it found nothing - the closest medicines to what was typed.
+    ///
+    /// Why "only when it found nothing": an exact answer is never second-guessed. A search that
+    /// quietly mixes a guess into a good result is how a cashier learns not to trust the list; a
+    /// search that says "nothing is spelt that way, did you mean these" is how he learns to use it.
+    ///
+    /// Why the fallback is limited to a pharmacy-sized catalog: a shop has a few thousand rows, and
+    /// ranking them in memory costs less than the round trip that would be needed to ask SQL to do it.
+    /// </summary>
+    public ServiceResult<ProductSearchResult> SearchSmart(
+        string? term = null,
+        int? categoryId = null,
+        int? companyId = null,
+        bool lowStockOnly = false)
+    {
+        var typed = (term ?? string.Empty).Trim();
+
+        var exact = Search(typed, categoryId, companyId, lowStockOnly);
+
+        if (!exact.Ok || exact.Value is null)
+        {
+            return ServiceResult<ProductSearchResult>.Fail(exact.Error ?? "The product list could not be loaded.");
+        }
+
+        var answer = new ProductSearchResult { Typed = typed };
+        answer.Items.AddRange(exact.Value);
+
+        if (answer.Items.Count > 0 || Fuzzy.Words(typed).Length == 0)
+        {
+            return ServiceResult<ProductSearchResult>.Success(answer);
+        }
+
+        // Nothing exact: look for the neighbourhood. The filters still apply, because a person who
+        // narrowed the list to one company does not want a suggestion from another one.
+        var all = Search(null, categoryId, companyId, lowStockOnly);
+
+        if (!all.Ok || all.Value is null)
+        {
+            return ServiceResult<ProductSearchResult>.Success(answer);
+        }
+
+        var close = Fuzzy.Rank(typed, all.Value, product => product.Name, product => product.Generic);
+
+        if (close.Count == 0)
+        {
+            return ServiceResult<ProductSearchResult>.Success(answer);
+        }
+
+        answer.IsFuzzy = true;
+        answer.ClosestName = close[0].Item.Name;
+        answer.NoteLabel = Fuzzy.SuggestionLabel(typed, answer.ClosestName);
+
+        foreach (var hit in close)
+        {
+            answer.Items.Add(hit.Item);
+        }
+
+        return ServiceResult<ProductSearchResult>.Success(answer);
+    }
+
     public ServiceResult<Product> Get(int id)
     {
         try

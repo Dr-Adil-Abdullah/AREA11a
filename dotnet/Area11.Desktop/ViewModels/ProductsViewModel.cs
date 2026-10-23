@@ -18,6 +18,8 @@ public sealed class ProductsViewModel : ObservableObject
     private int? _editingId;
 
     private string _searchText = string.Empty;
+    private string _searchNote = string.Empty;
+    private bool _isSearchGuessing;
     private string _name = string.Empty;
     private string _generic = string.Empty;
     private string _brand = string.Empty;
@@ -238,6 +240,20 @@ public sealed class ProductsViewModel : ObservableObject
         private set => SetProperty(ref _statusMessage, value);
     }
 
+    /// <summary>The "did you mean" sentence under the search box (F-50); empty for an exact search.</summary>
+    public string SearchNote
+    {
+        get => _searchNote;
+        private set => SetProperty(ref _searchNote, value);
+    }
+
+    /// <summary>True while the grid below is a typo suggestion rather than a result.</summary>
+    public bool IsSearchGuessing
+    {
+        get => _isSearchGuessing;
+        private set => SetProperty(ref _isSearchGuessing, value);
+    }
+
     public bool IsStatusError
     {
         get => _isStatusError;
@@ -269,7 +285,9 @@ public sealed class ProductsViewModel : ObservableObject
 
     private void Load()
     {
-        var result = _services.Products.Search(SearchText);
+        // F-50: exact first; when nothing matches, the closest medicines with a sentence saying so.
+        var result = _services.Products.SearchSmart(SearchText);
+
         if (!result.Ok || result.Value is null)
         {
             SetStatus(result.Error ?? "The product list could not be loaded.", true);
@@ -277,12 +295,16 @@ public sealed class ProductsViewModel : ObservableObject
         }
 
         Items.Clear();
-        foreach (var product in result.Value)
+
+        foreach (var product in result.Value.Items)
         {
             Items.Add(product);
         }
 
-        SetStatus($"{Items.Count} product(s).", false);
+        SearchNote = result.Value.IsFuzzy ? result.Value.NoteLabel : string.Empty;
+        IsSearchGuessing = result.Value.IsFuzzy;
+
+        SetStatus(result.Value.SummaryLabel, result.Value.IsEmpty && !result.Value.IsFuzzy);
     }
 
     private void NewProduct()
