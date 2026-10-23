@@ -129,6 +129,27 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
+> **v0.30.8 (Zaffre `#0818A8`) - the build that failed because the program was open.**
+>
+> * **MSB3027 is not a compiler error.** *"Failed. The file is locked by: Area11 (8460)"* means
+>   Windows refused to overwrite a DLL that a running program had loaded - the shop screen from the
+>   previous run, still open behind the launcher. No change to the code can fix it, and the same four
+>   lines would greet the owner after **every** update he installs with the program still running.
+> * **A launcher that cannot replace the program must first close it - and ask.** Step 5 of 6 reads
+>   the process list, names the process, offers *Y/N*, ends it, and waits about two seconds before
+>   building, because Windows releases handles a moment after the process dies. **N** stops cleanly:
+>   killing a window with work in it is the owner's decision, never the script's.
+> * **Say the true thing on the failure screen too.** A copy can be left open by another Windows user,
+>   or a file held by something else, so the guard can lose. When it does, MSB3027/MSB3021 now print
+>   *"the program is still open - this is not a code error"* and three steps, not forty lines of MSBuild.
+> * **A guard looking for the wrong process is no guard.** Check #34 reads `<AssemblyName>` out of
+>   `Area11.Desktop.csproj` and fails if the batch file looks for a different exe - the exact failure a
+>   rename would cause, silently. It also fails if the script stops asking (`tasklist`), stops closing
+>   (`taskkill`) or stops recognising either error code. Proved by pointing the script at
+>   `Area11.Desktop.exe`: the checker failed by name, and the tree went green when it was restored.
+> * **The failure lives between the compiler and the shop.** A gate that reads only C# can never see
+>   it; this one reads the project file and the batch file together, which is why it can.
+>
 > **v0.30.7 (Bottle `#0A4626`) - the first real run, and what it says about a test written without a compiler.**
 >
 > * **A test you never ran is a guess, not a proof.** 26 tests for the books check and the handover were

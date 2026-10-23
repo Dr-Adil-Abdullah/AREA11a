@@ -103,6 +103,73 @@ def warn(message: str) -> None:
 
 
 # ---------------------------------------------------------------------------
+# 7b. The launcher must know which program it is about to replace
+# ---------------------------------------------------------------------------
+def check_running_app() -> None:
+    """The build cannot replace a DLL that a running Area11 has loaded.
+
+    Why this exists: on 23 Oct 2026 the owner's build stopped with **MSB3027 - "Failed. The file
+    is locked by: Area11 (8460)"**. Nothing was wrong with the code: the program from the previous
+    run was still open behind the window, and Windows does not let a build overwrite a file in
+    use. He sent four error lines that all said the same thing, and no compiler message can be
+    fixed because there was no compiler fault.
+
+    So START-AREA11.bat closes the old copy first (after asking), and the build failure path
+    recognises MSB3027/MSB3021 and says one plain sentence instead of a wall. This gate keeps
+    that guard honest, in the two ways it can silently stop working:
+
+      * the process name in the script must equal `<AssemblyName>` in the desktop project - a
+        rename would leave a guard looking for a program that no longer exists, which is the same
+        as no guard;
+      * the script must still carry the guard at all, and still recognise the two error codes.
+
+    A gate that only looks at the C# cannot see any of this: the failure lives in a batch file and
+    in the Windows file system, between the compiler and the shop.
+    """
+    project = DOTNET / "Area11.Desktop" / "Area11.Desktop.csproj"
+    launcher = ROOT / "START-AREA11.bat"
+
+    if not project.exists() or not launcher.exists():
+        fail("START-AREA11.bat or Area11.Desktop.csproj is missing - the launcher guard cannot be checked")
+        return
+
+    csproj = project.read_text(encoding="utf-8-sig")
+    script = launcher.read_text(encoding="utf-8", errors="replace")
+
+    match = re.search(r"<AssemblyName>\s*([^<\s]+)\s*</AssemblyName>", csproj)
+    if not match:
+        fail("Area11.Desktop.csproj has no <AssemblyName> - the launcher cannot name the program it closes")
+        return
+
+    assembly = match.group(1).strip()
+
+    named = re.search(r'set\s+"APPPROCESS=([^"]+)"', script, re.I)
+    if not named:
+        fail("START-AREA11.bat does not set APPPROCESS - a running Area11 would fail the build with MSB3027")
+        return
+
+    process = named.group(1).strip()
+
+    if process.lower() != (assembly + ".exe").lower():
+        fail(f"START-AREA11.bat closes '{process}' but the program is built as '{assembly}.exe' - "
+             f"the guard would look for the wrong process and the build would lock again")
+
+    if "tasklist" not in script.lower():
+        fail("START-AREA11.bat names the program but never asks Windows whether it is running (tasklist)")
+
+    if "taskkill" not in script.lower():
+        fail("START-AREA11.bat can see a running Area11 but never closes it (taskkill)")
+
+    for code in ("MSB3027", "MSB3021"):
+        if code not in script:
+            fail(f"START-AREA11.bat does not recognise {code} - the lock error would be shown "
+                 f"as a compiler fault, which it is not")
+
+    REPORT.append(f"Launcher: closes '{process}' (matches the project's AssemblyName) "
+                  f"and explains MSB3027 / MSB3021 itself")
+
+
+# ---------------------------------------------------------------------------
 # 1. C#
 # ---------------------------------------------------------------------------
 def check_csharp() -> None:
@@ -3048,6 +3115,7 @@ def main() -> int:
     check_installer()
     check_docs()
     check_scripts()
+    check_running_app()
     check_csharp_grammar()
 
     if not quiet:
