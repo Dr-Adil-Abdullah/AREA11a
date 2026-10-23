@@ -129,6 +129,18 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
+> **v0.30.1 (Citrine `#A98B18`) - 696/696 on the shop PC, and two faults the green run exposed.**
+>
+> * **A banner must not parse anything.** v0.30.0 read the version out of `BuildInfo.cs` with
+>   `findstr` and a token split; on the owner's console it printed `vunknown (unknown)`. The three
+>   double-click scripts now hold one literal `set "BUILD=..."`, and `check_repo.py` fails if it and
+>   `BuildInfo.cs` disagree. If the version bumps, the checker is the thing that remembers.
+> * **A rule the counter shows must be the rule the save applies.** `Quote` accepted a tender smaller
+>   than the cash part and showed change 0; only `Create` refused it, after the button. The quote now
+>   carries the same sentence as a **warning** while typing, and the total stays on screen.
+> * **Run 22 (v0.30.0) was the first complete green run**: 696 total, 0 failed, 74.3 s. Core + Tests
+>   now build and pass on Windows. The Desktop project is still the one that has never compiled.
+>
 > **v0.30.0 (Mauve `#7A5C7B`) - the page map is a gate too: `{x:Type}`, the template, and the view in it.**
 >
 > * **A shell page is three names that must agree:** `new XViewModel(...)` in `ShellViewModel`, a

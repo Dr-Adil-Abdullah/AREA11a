@@ -52,6 +52,35 @@ VALUES(@productId, 'B-1', '2027-06-30', '2027-06', @qty, @cost, @retail, 0, 1, @
     };
 
     [Fact]
+    public void TheScreenSaysTheCashIsShortBeforeTheBillIsRefused()
+    {
+        using var test = new TestDatabase();
+        var (sales, productId, owner) = Build(test, costPaisa: 20000, retailPaisa: 30000);
+
+        var input = One(productId);          // one strip: Rs 300, an exact multiple of the round step
+        input.TenderedPaisa = 10000;         // the customer hands over Rs 100
+
+        // The quote keeps showing what the bill IS - blanking the total while the cashier corrects
+        // the amount would be worse than the mistake.
+        var quote = sales.Quote(input, owner);
+
+        Assert.True(quote.Ok, quote.Error);
+        Assert.Equal(30000L, quote.Value!.TotalPaisa);
+
+        // ...and it says, in the words the save would use, that the cash cannot cover the bill.
+        // Before v0.30.1 this sentence arrived only AFTER the button was pressed: the cashier saw a
+        // total and a change of zero, pressed "Make bill", and the money was refused by the till.
+        Assert.Contains("less than the cash part",
+            string.Join(" ", quote.Value.Warnings));
+
+        // The rule itself does not move: the save still refuses the same tender.
+        var saved = sales.Create(input, owner);
+
+        Assert.False(saved.Ok);
+        Assert.Contains("less than the cash part", saved.Error ?? string.Empty);
+    }
+
+    [Fact]
     public void MarginDiscount_IsTenPercentOfProfit()
     {
         using var test = new TestDatabase();

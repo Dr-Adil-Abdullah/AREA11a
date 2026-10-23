@@ -11,19 +11,22 @@ cd /d "%~dp0.."
 
 rem How many cases this build should run. tools\check_repo.py fails if this number
 rem and the suite disagree, so it cannot quietly go stale.
-set "EXPECTED=696"
+set "EXPECTED=697"
 
-set "VER=unknown"
-set "NAME=unknown"
-for /f "tokens=5 delims= ;=" %%a in ('findstr /c:"public const string Version" "dotnet\Area11.Core\Utils\BuildInfo.cs" 2^>nul') do set "VER=%%~a"
-for /f "tokens=5 delims= ;=" %%a in ('findstr /c:"public const string CodeName" "dotnet\Area11.Core\Utils\BuildInfo.cs" 2^>nul') do set "NAME=%%~a"
+rem  Which build is about to run? The line below is the ONLY place this script names a version,
+rem  and tools\check_repo.py fails if it disagrees with BuildInfo.cs - so it cannot go stale, and
+rem  the owner is never told an old tree is the new one. Reading the number out of the source with
+rem  findstr printed "vunknown" on his PC (v0.30.0): the tokens did not line up, and a banner that
+rem  says nothing is worse than no banner, because it looks like a failure of the tree.
+set "BUILD=v0.30.1 (Citrine)"
+
 
 echo.
 echo  ==========================================================
 echo    AREA11 - running the tests
 echo  ==========================================================
 echo.
-echo    Build under test : v%VER% (%NAME%)
+echo    Build under test : %BUILD%
 echo    Expect at the end: total: %EXPECTED%, failed: 0
 echo.
 echo    If the total below is SMALLER than %EXPECTED%, this folder was not

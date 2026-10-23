@@ -140,13 +140,14 @@ if errorlevel 1 (
 
 rem ---- 4. build -------------------------------------------------------------
 :build
-rem  Which build is about to run? Read from the code, never typed by hand - so a pull that
-rem  failed above shows up here as an old version number instead of a silent mystery.
-set "VER=unknown"
-set "NAME=unknown"
-for /f "tokens=5 delims= ;=" %%a in ('findstr /c:"public const string Version" "dotnet\Area11.Core\Utils\BuildInfo.cs" 2^>nul') do set "VER=%%~a"
-for /f "tokens=5 delims= ;=" %%a in ('findstr /c:"public const string CodeName" "dotnet\Area11.Core\Utils\BuildInfo.cs" 2^>nul') do set "NAME=%%~a"
-echo        Code on this PC: v%VER% (%NAME%)
+rem  Which build is about to run? The line below is the ONLY place this script names a version,
+rem  and tools\check_repo.py fails if it disagrees with BuildInfo.cs - so it cannot go stale, and
+rem  the owner is never told an old tree is the new one. Reading the number out of the source with
+rem  findstr printed "vunknown" on his PC (v0.30.0): the tokens did not line up, and a banner that
+rem  says nothing is worse than no banner, because it looks like a failure of the tree.
+set "BUILD=v0.30.1 (Citrine)"
+
+echo        Code on this PC: %BUILD%
 
 echo  [5/5] Building...  ^(this takes a minute the first time^)
 dotnet build Area11.sln -v minimal

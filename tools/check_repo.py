@@ -2406,6 +2406,35 @@ def check_tests() -> None:
     else:
         fail("tools/RUN-TESTS.cmd is missing - the owner cannot run the tests by double-click")
 
+    # The three double-click scripts each print one line saying WHICH build is about to run. That line
+    # is typed by hand, so it needs a keeper: v0.30.0 read the number out of the source with findstr
+    # and printed "vunknown" on the owner's PC, which is worse than printing nothing - a banner that
+    # says nothing looks like a broken tree. The scripts now hold a literal, and this rule compares it
+    # with BuildInfo, so a version bump that forgets the scripts fails here instead of on his screen.
+    build_info = (DOTNET / "Area11.Core/Utils/BuildInfo.cs").read_text(encoding="utf-8-sig")
+    version = re.search(r'public const string Version = "([^"]+)"', build_info)
+    code_name = re.search(r'public const string CodeName = "([^"]+)"', build_info)
+
+    if version and code_name:
+        wanted = f"v{version.group(1)} ({code_name.group(1)})"
+
+        for name in ("tools/RUN-TESTS.cmd", "START-AREA11.bat", "DEMO-AREA11.cmd"):
+            script_path = ROOT / name
+
+            if not script_path.exists():
+                continue
+
+            body = script_path.read_text(encoding="utf-8", errors="replace")
+            printed = re.search(r'set "BUILD=([^"]*)"', body)
+
+            if printed is None:
+                fail(f"{name} no longer says which build it runs (the line `set \"BUILD=...\"` is gone)")
+            elif printed.group(1) != wanted:
+                fail(f"{name} will print '{printed.group(1)}' but this build is '{wanted}' - "
+                     "the owner would read the wrong version on his own screen")
+
+        REPORT.append(f"Script banners: 3 file(s) print '{wanted}'")
+
     settings = (DOTNET / "Area11.Core/Services/SettingsService.cs").read_text(encoding="utf-8")
     # The lookbehind matters: "GetRaw(" ends in "Raw(", and without it every reader of a setting
     # looks like a second declaration of it.

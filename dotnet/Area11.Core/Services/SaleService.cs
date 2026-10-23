@@ -47,6 +47,22 @@ public sealed class SaleService
 
             var split = Plan(input, computed.TotalPaisa);
 
+            var warnings = new List<string>(computed.Warnings);
+
+            // The save refuses a tender that does not cover the cash part (see Save). Saying the same
+            // thing HERE means the cashier reads it while typing, not after pressing "Make bill" -
+            // a refusal after the button is a queue at the counter, and the screen had already shown
+            // a total. It is a warning, not a failure, because the total must stay on the screen
+            // while the cashier corrects the amount.
+            if (split.CashPartPaisa > 0 && input.TenderedPaisa > 0
+                && input.TenderedPaisa < split.CashPartPaisa)
+            {
+                warnings.Add(
+                    $"Cash received ({Money.Format(input.TenderedPaisa)}) is less than the cash part "
+                    + $"of the bill ({Money.Format(split.CashPartPaisa)}) - put the rest on khata, "
+                    + "or collect it in full.");
+            }
+
             var change = 0L;
             if (split.CashPartPaisa > 0 && input.TenderedPaisa > split.CashPartPaisa)
             {
@@ -67,8 +83,8 @@ public sealed class SaleService
                 RedeemPaisa = computed.RedeemPaisa,
                 Units = computed.Lines.Sum(line => line.QtyBase),
                 GoesNegative = computed.WentNegative,
-                Warnings = computed.Warnings
-            }, computed.Warnings.ToArray());
+                Warnings = warnings
+            }, warnings.ToArray());
         }
         catch (ValidationException exception)
         {
