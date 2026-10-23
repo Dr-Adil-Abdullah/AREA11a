@@ -110,6 +110,11 @@
         <DataTemplate DataType="{x:Type vm:SaleHistoryViewModel}">
             <views:SaleHistoryView />
         </DataTemplate>
+        <!-- F-54: the read-only "do the books add up?" page. A page without a template is a blank
+             screen, not a missing page - WPF cannot say which one is wrong. -->
+        <DataTemplate DataType="{x:Type vm:BookCheckViewModel}">
+            <views:BookCheckView />
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>

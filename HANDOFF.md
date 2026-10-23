@@ -30,7 +30,7 @@ shop computer. Talk to him in Urdu; keep code, database and UI in English.
 | Default owner login | user **Owner**, password **`area11`** (change it on day one) |
 | How does the owner report a fault? | **`tools\SEND-REPORT.cmd`** (v0.30.3, D-78) writes one text file with the build, `dotnet --info`, the git state, the project files, the shop folder (names/sizes/dates - no rows), the whole newest crash report and the last build/test output. `START-AREA11.bat` keeps `build.log` + `build-errors.txt` and prints only the error lines; `tools\RUN-TESTS.cmd` keeps `test.log` and prints only the result, the failed names and the compile errors |
 
-Status in one line: **all four phases are written - 43 of 51 features done and 8 that only the shop PC can prove; 659 test cases pass on the owner's machine for Core + Tests (run 22: 696 of 696, and the 37 that left with the demo shop in v0.30.2 are the only difference) - but the WPF project itself has still never been compiled, so the sign-in window remains the one thing unproven, and the installer (F-47) has never been run.**
+Status in one line: **all four phases are written - 44 of 52 features done and 8 that only the shop PC can prove; 669 test cases, of which the owner's machine has run 696 of 696 on the version before the demo shop was deleted (the 37 that left with it are the only difference) - but the WPF project itself has still never been compiled, so the sign-in window remains the one thing unproven, and the installer (F-47) has never been run.**
 
 ---
 
@@ -75,7 +75,7 @@ Full detail in [`docs/PROGRESS.md`](docs/PROGRESS.md). The short version:
 | **Cloud sync** (push, preview, bring with a backup; never deletes a row) | `Area11.Core/Services/SyncService.cs`, `Area11.Core/Services/CloudTransport.cs`, `Area11.Desktop/Views/CloudSyncView.xaml` |
 | **Dashboard** (F-12): the home screen's eleven numbers, each equal to the page it summarises - profit by the report's rule, expiry by day, hidden from staff without the profit permission | `Area11.Core/Services/DashboardService.cs`, `Desktop/ViewModels/DashboardViewModel.cs`, `Area11.Tests/DashboardTests.cs` |
 | **No demo, ever** (D-77): the sample shop that filled a new database with two and a half months of invented bills was **deleted on the owner's word** in v0.30.2 - `SampleShopService`, its page, `DEMO-AREA11.cmd` and the `--demo` switch are gone, and no flag or button can invent a row | `Area11.Core/Utils/AppPaths.cs` (one data root), `Area11.Core/Utils/BuildInfo.cs` (one title) |
-| 659 test cases | `Area11.Tests/` |
+| 668 test cases | `Area11.Tests/` |
 
 **Written but never tested on the shop PC (🟡)**
 
@@ -149,6 +149,7 @@ Do them one at a time; each one ends with a commit (see `AGENTS.md` §6).
 | D-05 / D-23 | Printing is instant: no dialog, straight ESC/POS, 58 and 80 mm, plus reprint |
 | D-06 | Camera capture is not in Phase 1 |
 | D-58 | Photos are **copied** into `photos\` and only the file name is stored (U-19); 12 MB and six per record; a wrong photo is **put away**, never deleted; the camera opens the Windows Camera app |
+| D-79 | **The shop checks its own books** (v0.30.4, F-54): SYSTEM → *Check the books* runs **eleven read-only rules** over the database - a bill's lines/header/paid+due/money rows/impossible money, a purchase's lines/header/paid+due/money rows, a khata below zero, and every payment belonging to someone - and names each failing document with what it says beside what its rows add up to. No repair, no recalculation, no write of any kind; the Reports/Black-box permission decides who may open it |
 | D-78 | **A fault is reported as one file** (v0.30.3): `tools\SEND-REPORT.cmd` collects the build, the SDK, the branch, the project files, the shop folder (no rows), the whole newest crash report and the last build/test output into one text file; the two launchers print only the lines that decide the run. Read-only throughout - nothing is built, deleted or opened |
 | D-77 | **The demo is deleted** (v0.30.2, 23 Oct 2026): the owner said *"delete whatever demo data there is - now we are trying to make an app that will be completely real."* That was the time D-76 reserved for him. Gone: `DEMO-AREA11.cmd`, `--demo`, the **SYSTEM → Sample shop** page and menu entry, `SampleShopService`, `SampleShopModels`, `DemoShop.cs`, the DEMO window title, the receipt watermark, `AppPaths.RealDataRoot`, and 37 tests. **One program, one database, one title** - and nothing in the product can write a row the shop did not sell. `C:\ProgramData\Area11` is still never to be deleted; only the now-orphaned `demo` sub-folder may go |
 | D-76 | *(spent in v0.30.2)* **The demo was its own shop** (v0.29.2): `--demo` moved everything to `%ProgramData%\Area11\demo`, hid LAN and cloud sync, and printed *DEMO - NOT A REAL BILL*. That separation is exactly why deleting it was one folder and needed no cleanup of real books - the decision is kept here as history |

@@ -220,6 +220,9 @@ public sealed class ShellViewModel : ObservableObject
         var canImport = permissions.Can(_user, Modules.Import);
         var canSettings = CanOpenSettings;
 
+        // The books check reads the whole shop's arithmetic: the same permission as its page (F-54).
+        var canBooks = _services.Books.CanRun(_user);
+
         // Moving the shop's database changes every counter at once, so only the owner sees it (F-45).
         var canLan = _user.IsOwner;
 
@@ -333,7 +336,7 @@ public sealed class ShellViewModel : ObservableObject
         }
 
         // ---- SYSTEM: the shop's own settings, its memory and its safety net ----
-        if (canAudit || canBackup || canImport || canSettings || canLan || canSync)
+        if (canAudit || canBackup || canImport || canSettings || canLan || canSync || canBooks)
         {
             AddGroup("system", "SYSTEM");
 
@@ -382,6 +385,13 @@ public sealed class ShellViewModel : ObservableObject
                     () => new HardwareViewModel(_services, _user));
 
                 AddPage("system", "Settings", "Shop, printing, staff", CreateSettingsPage);
+            }
+
+            if (canBooks)
+            {
+                // Read-only, so it sits beside the black box: both answer "is the shop's record
+                // itself sound?" rather than "what shall we do next?" (F-54).
+                AddPage("system", "Check the books", "Do the totals add up?", CreateBookCheckPage);
             }
         }
 
@@ -496,6 +506,9 @@ public sealed class ShellViewModel : ObservableObject
         _settingsPage.Refresh();
         return _settingsPage;
     }
+
+    /// <summary>The read-only check of the shop's own arithmetic (F-54).</summary>
+    private ObservableObject CreateBookCheckPage() => new BookCheckViewModel(_services, _user);
 
     /// <summary>
     /// The backup page. A restore replaces the database file, so the whole program is started again

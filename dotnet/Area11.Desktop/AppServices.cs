@@ -62,6 +62,8 @@ public sealed class AppServices
         Cloud = new SyncService(Database, Settings, Audit, Permissions, Log, Backup, new SupabaseTransport());
         // The bill history and its reprint: the same ReceiptService that printed the original (F-52).
         History = new SaleHistoryService(Database, Receipts, ReturnReceipts, Audit, Permissions, Log);
+        // Do the books add up? A read-only check over the shop's own rows (F-54).
+        Books = new BookCheckService(Database, Permissions, Log);
         Lan = new LanService(Database, Audit, Log, Config);
     }
 
@@ -134,6 +136,9 @@ public sealed class AppServices
 
     /// <summary>Find any bill and print it again (F-52).</summary>
     public SaleHistoryService History { get; }
+
+    /// <summary>The read-only "do the books add up?" check (F-54) - it never writes a row.</summary>
+    public BookCheckService Books { get; }
 
     public AuditHistoryService AuditHistory { get; }
 

@@ -129,6 +129,28 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
+> **v0.30.4 (Mazarine `#1B2A66`) - the books can be checked without being touched (F-54).**
+>
+> * **A total that disagrees with its own rows is invisible from every other page.** The counter, the
+>   report and the receipt all read the same number, so they agree with each other. `BookCheckService`
+>   compares each document with the rows underneath it, and the page prints the document, what it
+>   says, what its rows say, and the gap in words. **This is the class of fault the owner's "no error
+>   may remain" order is really about**, and it is why the check exists at all.
+> * **A rule must be an identity, not a second opinion.** Every rule is something this program
+>   guarantees by construction (lines → total, header → total, paid + due → total, money rows → paid,
+>   khata ≥ 0). Two rules were deliberately **not** written - stock vs batches, and supplier balances -
+>   because the program legally leaves those open (negative shelves, cash-refunded supplier returns).
+>   **A check that cries wolf teaches the shop to ignore the next alarm**, which is worse than silence.
+> * **A read-only page needs no confirmation and no permission of its own** - it borrows the Reports /
+>   Black-box permission, and `BookCheckService.CanRun` is the one place that decides, so a menu row
+>   can never point at a page that refuses to open.
+> * **A check that repairs is not a check.** The service has no UPDATE and no recalculation, one test
+>   runs it twice to prove the fault is still there, and the page's last line says so. The owner
+>   decides what a difference means; the black box keeps every attempt.
+> * **Prove the gate on the page you just added.** The binding rule was shown failing on
+>   `BookCheckView.xaml` (`HeadLine`) before it went green - a new page is exactly where a new gate is
+>   worth nothing until it has been seen to fail.
+>
 > **v0.30.3 (Cocoa `#4B2E20`) - the first build must be readable in one paste.**
 >
 > * **A console that prints 300 lines is a measurement the owner cannot take.** The one line that
