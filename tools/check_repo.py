@@ -2813,6 +2813,263 @@ def check_shift_report_gate() -> None:
 
 
 # ---------------------------------------------------------------------------
+def _property_setters() -> dict[str, dict[str, bool]]:
+    """class -> {property: True when WPF may only READ it}.
+
+    Why this is parsed from C# and not assumed: a property is read-only to a binding only when
+    it has no **public** setter. `{ get; private set; }` counts as read-only too, because the
+    binding engine cannot call a private setter; `=>` members never have one at all.
+    """
+    found: dict[str, dict[str, bool]] = {}
+
+    for path in DOTNET.rglob("*.cs"):
+        if {"obj", "bin"} & set(path.parts):
+            continue
+
+        text = path.read_text(encoding="utf-8-sig", errors="replace")
+
+        for match in re.finditer(r"\bclass\s+(\w+)", text):
+            brace = text.find("{", match.end())
+
+            if brace < 0:
+                continue
+
+            depth = 0
+            end = len(text)
+
+            for index in range(brace, len(text)):
+                if text[index] == "{":
+                    depth += 1
+                elif text[index] == "}":
+                    depth -= 1
+                    if depth == 0:
+                        end = index
+                        break
+
+            body = text[brace:end]
+            room = found.setdefault(match.group(1), {})
+
+            for prop in re.finditer(r"^\s*public\s+(?:static\s+)?(?:override\s+)?(?:virtual\s+)?"
+                                    r"(?:sealed\s+)?[\w<>?,\[\]\. ]+?\s+(\w+)\s*(\{|=>)",
+                                    body, re.M):
+                name, shape = prop.group(1), prop.group(2)
+
+                if shape == "=>":
+                    room[name] = True
+                    continue
+
+                start = body.index("{", prop.end() - 1)
+                level = 0
+                stop = len(body)
+
+                for index in range(start, len(body)):
+                    if body[index] == "{":
+                        level += 1
+                    elif body[index] == "}":
+                        level -= 1
+                        if level == 0:
+                            stop = index
+                            break
+
+                block = body[start:stop]
+                setter = re.search(r"(?<!\w)(private|protected|internal)?\s*set\s*[;{]|set\s*=>", block)
+
+                room[name] = not setter or bool(setter.group(1))
+
+    return found
+
+
+def check_binding_modes() -> None:
+    """A binding that can write must never point at a property that cannot be written.
+
+    Why this is a whole check and not a style opinion: WPF gives **`Run.Text`** and **every
+    `DataGrid...Column.Binding`** a default mode of TwoWay (the framework registers
+    `Run.Text` with `BindsTwoWayByDefault`). A computed label - `QtyLabel`, `RateLabel`,
+    `TotalLabel` - has no setter, so the moment such a binding is attached WPF throws
+
+        InvalidOperationException: A TwoWay or OneWayToSource binding cannot work on the
+        read-only property 'QtyLabel' of type 'Area11.Core.Models.SaleHistoryLine'
+
+    inside the layout pass, which surfaces as a `XamlParseException` and takes the window down
+    with it. That is exactly what the owner's crash report of 22 Oct 2026 showed - the first
+    time the WPF program ever ran a page with a grid on it. **123 bindings** in this repository
+    were in that state, and nothing in the build could see it: XAML is not compiled by the C#
+    compiler, and the fault only exists at the moment a template is created.
+
+    The rule is deliberately narrow so it cannot cry wolf: a name counts as read-only only when
+    **every** class that declares it has no public setter, so the writable `Code` of a bill row
+    is never accused just because some other row class computes a `Code`.
+    """
+    targets = {
+        "Run": {"Text"},
+        "TextBox": {"Text"},
+        "ComboBox": {"SelectedItem", "SelectedValue", "Text"},
+        "CheckBox": {"IsChecked"},
+        "RadioButton": {"IsChecked"},
+        "ToggleButton": {"IsChecked"},
+        "DatePicker": {"SelectedDate"},
+        "Slider": {"Value"},
+        "ListBox": {"SelectedItem"},
+        "TabControl": {"SelectedItem"},
+    }
+
+    index = _property_setters()
+    problems = 0
+    checked = 0
+
+    def only_readable(name: str, owner: str) -> bool:
+        """True when the property has no public setter on the object the row really is.
+
+        The owner matters: `StatusLabel` is computed on a drawer but a plain field on a sync
+        row, so a name is never accused merely because some unrelated class computes it. When
+        the row type cannot be worked out (an ItemsSource that is not a simple collection), the
+        answer falls back to "read-only everywhere" - narrow, never a false accusation.
+        """
+        if owner and owner in index and name in index[owner]:
+            return index[owner][name]
+
+        owners = [room for room in index if name in index[room]]
+        return bool(owners) and all(index[room][name] for room in owners)
+
+    for view in sorted((DOTNET / "Area11.Desktop" / "Views").glob("*.xaml")):
+        text = view.read_text(encoding="utf-8", errors="replace")
+        vm_name = VIEW_MODEL_OF.get(view.name, "")
+        vm_path = DOTNET / "Area11.Desktop" / "ViewModels" / f"{vm_name}.cs"
+        vm_text = vm_path.read_text(encoding="utf-8", errors="replace") if vm_path.exists() else ""
+
+        scopes: list[tuple[str, str]] = []
+
+        for number, line in enumerate(text.splitlines(), 1):
+            owner = scopes[-1][1] if scopes and scopes[-1][1] else vm_name
+
+            if "{Binding" in line:
+                tag_match = re.search(r"<([A-Za-z][\w.]*)", line)
+
+                if tag_match:
+                    tag = tag_match.group(1)
+
+                    for attr in re.finditer(r'([A-Za-z][\w.]*)="(\{Binding[^"]*)"', line):
+                        attribute, value = attr.group(1), attr.group(2)
+                        inner = value[len("{Binding"):-1]
+                        path = inner.split(",")[0].strip()
+                        name = path.split(".")[0]
+
+                        if not re.fullmatch(r"[A-Za-z_]\w*", name):
+                            continue
+
+                        two_way = (tag in targets and attribute in targets[tag]) or \
+                                  (tag.endswith("Column") and attribute == "Binding")
+
+                        if not two_way:
+                            continue
+
+                        checked += 1
+
+                        if "Mode=OneWay" in inner or "Mode=OneTime" in inner:
+                            continue
+
+                        if only_readable(name, owner):
+                            problems += 1
+                            fail(f"{view.name}:{number}: {tag}.{attribute} binds the read-only "
+                                 f"property '{name}' of {owner or 'the page'} without Mode=OneWay - "
+                                 f"WPF throws at render time and the window closes "
+                                 f"(this is the 22 Oct crash)")
+
+            opened = re.search(r"<(DataGrid|ItemsControl|ListBox|ComboBox)\b", line)
+
+            if opened and 'ItemsSource="{Binding ' in line:
+                collection = re.search(r'ItemsSource="\{Binding\s+([\w.]+)', line)
+                element = _element_type(vm_text, collection.group(1).split(".")[-1]) if collection else ""
+
+                if "/>" not in line:
+                    scopes.append((opened.group(1), element))
+
+            closed = re.search(r"</(DataGrid|ItemsControl|ListBox|ComboBox)>", line)
+
+            if closed and scopes and scopes[-1][0] == closed.group(1):
+                scopes.pop()
+
+    REPORT.append(f"Binding modes: {checked} TwoWay-by-default binding(s) checked against their "
+                  f"source property, {problems} problem(s)")
+
+
+# ---------------------------------------------------------------------------
+def check_crash_report_honesty() -> None:
+    """The failure screen may only print a crash report written by the run that just failed.
+
+    Why: on 23 Oct 2026 the launcher stopped and printed
+
+        Report: C:\ProgramData\Area11\logs\crash-2026-10-22_174207.txt
+        Version  : 0.29.0 (Burgundy)
+
+    - a report written the day before, by a different version, for a fault that had already
+    been repaired. The owner was about to send a day-old file to explain a brand-new failure,
+    which is worse than an empty screen: it aims the repair at the wrong fault and hides the
+    real one. The report was the newest on the PC simply because **this run wrote none** (the
+    program wrote it under `%TEMP%\Area11` when the shop folder was not writable).
+
+    So the script must carry three things, and this check insists on all of them:
+      * a marker written **before** the program starts, so "newer than the marker" means "from
+        this run";
+      * both places searched, because the crash writer falls back to `%TEMP%\Area11`;
+      * an honest branch for "no new report", which names the older file but **never prints it**
+        - no `type` of an old report anywhere in that path.
+    """
+    launcher = ROOT / "START-AREA11.bat"
+
+    if not launcher.exists():
+        fail("START-AREA11.bat is missing")
+        return
+
+    text = launcher.read_text(encoding="utf-8", errors="replace")
+
+    marker_at = text.find('set "RUNMARKER=')
+    exe_at = text.find("\"%APPEXE%\"")
+
+    if marker_at < 0:
+        fail("START-AREA11.bat has no run marker - it cannot tell this run's crash report from "
+             "an old one")
+
+    elif exe_at >= 0 and marker_at > exe_at:
+        fail("START-AREA11.bat writes its run marker AFTER starting the program - a crash in the "
+             "first second would look older than the marker and be hidden")
+
+    core_crash = ROOT / "dotnet/Area11.Core/Utils/CrashLog.cs"
+
+    if not core_crash.exists() or "latest-crash.txt" not in core_crash.read_text(encoding="utf-8"):
+        fail("CrashLog no longer records where its newest report is - the launcher would have to "
+             "guess the folder again (a shared folder for the second counter was the wrong guess)")
+
+    if "latest-crash.txt" not in text:
+        fail("START-AREA11.bat does not read the program's own pointer (latest-crash.txt) - it "
+             "would guess the folder, and on 23 Oct 2026 it guessed wrong")
+
+    if "%TEMP%\\Area11" not in text:
+        fail("START-AREA11.bat only looks in the shop folder for a crash report - the program "
+             "falls back to %TEMP%\\Area11 when it cannot write there, and that report would be "
+             "invisible")
+
+    if "LastWriteTimeUtc -gt $m" not in text:
+        fail("START-AREA11.bat does not compare the report's time with the run marker - it would "
+             "print any old report as if it were this run's")
+
+    if "This run wrote NO crash report of its own" not in text:
+        fail("START-AREA11.bat has no honest branch for a run that wrote no report - it would "
+             "show an older file instead of saying so")
+
+    older = text[text.find(":olderreport"):] if ":olderreport" in text else ""
+
+    if ":olderreport" not in text:
+        fail("START-AREA11.bat does not name the older report and its date when this run wrote none")
+    elif re.search(r'type\s+"?%OLD', older):
+        fail("START-AREA11.bat prints an OLD crash report - the owner would send a file from "
+             "another day to explain today's fault")
+
+    REPORT.append("Crash report: only a report written after this run's marker is printed, both "
+                  "folders are searched, and an older report is named but never shown")
+
+
+# ---------------------------------------------------------------------------
 def check_docs() -> None:
     docs = [ROOT / "README.md", ROOT / "HANDOFF.md", ROOT / "AGENTS.md", ROOT / "dotnet/README.md"]
     docs += sorted((ROOT / "docs").glob("*.md"))
@@ -3301,6 +3558,8 @@ def main() -> int:
     check_running_app()
     check_run_verdict()
     check_shift_report_gate()
+    check_binding_modes()
+    check_crash_report_honesty()
     check_csharp_grammar()
 
     if not quiet:

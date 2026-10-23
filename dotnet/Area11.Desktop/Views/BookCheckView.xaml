@@ -114,10 +114,10 @@
                             </Style>
                         </DataGrid.RowStyle>
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="#" Binding="{Binding Number}" Width="30" />
-                            <DataGridTextColumn Header="" Binding="{Binding Badge}" Width="58" />
-                            <DataGridTextColumn Header="Rule" Binding="{Binding Title}" Width="2*" />
-                            <DataGridTextColumn Header="What was checked" Binding="{Binding Summary}" Width="1.6*" />
+                            <DataGridTextColumn Header="#" Binding="{Binding Number, Mode=OneWay}" Width="30" />
+                            <DataGridTextColumn Header="" Binding="{Binding Badge, Mode=OneWay}" Width="58" />
+                            <DataGridTextColumn Header="Rule" Binding="{Binding Title, Mode=OneWay}" Width="2*" />
+                            <DataGridTextColumn Header="What was checked" Binding="{Binding Summary, Mode=OneWay}" Width="1.6*" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -140,11 +140,11 @@
                               AutoGenerateColumns="False" HeadersVisibility="Column"
                               GridLinesVisibility="Horizontal">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Document" Binding="{Binding Code}" Width="1.1*" />
-                            <DataGridTextColumn Header="Rule" Binding="{Binding Rule}" Width="1.6*" />
-                            <DataGridTextColumn Header="Says" Binding="{Binding ExpectedText}" Width="1*" />
-                            <DataGridTextColumn Header="Rows say" Binding="{Binding FoundText}" Width="1*" />
-                            <DataGridTextColumn Header="Gap" Binding="{Binding GapText}" Width="1.2*" />
+                            <DataGridTextColumn Header="Document" Binding="{Binding Code, Mode=OneWay}" Width="1.1*" />
+                            <DataGridTextColumn Header="Rule" Binding="{Binding Rule, Mode=OneWay}" Width="1.6*" />
+                            <DataGridTextColumn Header="Says" Binding="{Binding ExpectedText, Mode=OneWay}" Width="1*" />
+                            <DataGridTextColumn Header="Rows say" Binding="{Binding FoundText, Mode=OneWay}" Width="1*" />
+                            <DataGridTextColumn Header="Gap" Binding="{Binding GapText, Mode=OneWay}" Width="1.2*" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>

@@ -168,11 +168,11 @@
                             </Style>
                         </DataGrid.RowStyle>
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="When" Binding="{Binding DateLabel}" Width="120" />
-                            <DataGridTextColumn Header="What" Binding="{Binding KindLabel}" Width="150" />
-                            <DataGridTextColumn Header="Detail" Binding="{Binding DetailLabel}" Width="2*" />
-                            <DataGridTextColumn Header="By" Binding="{Binding WhoLabel}" Width="110" />
-                            <DataGridTextColumn Header="Cash out" Binding="{Binding CashLabel}" Width="110" />
+                            <DataGridTextColumn Header="When" Binding="{Binding DateLabel, Mode=OneWay}" Width="120" />
+                            <DataGridTextColumn Header="What" Binding="{Binding KindLabel, Mode=OneWay}" Width="150" />
+                            <DataGridTextColumn Header="Detail" Binding="{Binding DetailLabel, Mode=OneWay}" Width="2*" />
+                            <DataGridTextColumn Header="By" Binding="{Binding WhoLabel, Mode=OneWay}" Width="110" />
+                            <DataGridTextColumn Header="Cash out" Binding="{Binding CashLabel, Mode=OneWay}" Width="110" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>

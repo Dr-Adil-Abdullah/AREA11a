@@ -33,6 +33,7 @@ public static class CrashLog
                     "crash-" + DateTime.Now.ToString("yyyy-MM-dd_HHmmss", CultureInfo.InvariantCulture) + ".txt");
 
                 File.WriteAllText(file, text);
+                RecordNewest(file);
 
                 return file;
             }
@@ -44,6 +45,43 @@ public static class CrashLog
         }
 
         return string.Empty;
+    }
+
+    /// <summary>
+    /// Where the pointer to the newest report lives - an always-writable place, so the launcher can
+    /// find a report that was written somewhere it did not think to look.
+    /// </summary>
+    public static string PointerPath =>
+        Path.Combine(Path.GetTempPath(), "Area11", "latest-crash.txt");
+
+    /// <summary>
+    /// Remembers the full path of the report that was just written (one line, overwritten).
+    ///
+    /// Why: the report goes to the **shop folder**, which for the second counter is the shared
+    /// folder on the main PC (F-45, D-62) - and when that share is switched off, to %TEMP%. A
+    /// launcher cannot guess every one of those places, and on 23 Oct 2026 the guess it made was
+    /// wrong: it printed a report from the day before, written by another version, for a fault
+    /// that had already been fixed. The program now says where its own report is, and the launcher
+    /// reads that instead of guessing. Never throws: a pointer that fails must not become a crash.
+    /// </summary>
+    public static void RecordNewest(string file)
+    {
+        if (string.IsNullOrWhiteSpace(file))
+        {
+            return;
+        }
+
+        try
+        {
+            var folder = Path.GetDirectoryName(PointerPath)!;
+            Directory.CreateDirectory(folder);
+            File.WriteAllText(PointerPath, file);
+        }
+        catch (Exception pointerFailure) when (pointerFailure is IOException or UnauthorizedAccessException
+                                                   or NotSupportedException or ArgumentException)
+        {
+            // The report itself is already on disk; the launcher also searches the two usual folders.
+        }
     }
 
     private static IEnumerable<string> CandidateFolders()

@@ -151,8 +151,8 @@
                                       SelectedItem="{Binding SelectedEntry, Mode=TwoWay}">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="No." Binding="{Binding Code}" Width="90" />
-                                    <DataGridTextColumn Header="Customer" Binding="{Binding CustomerLabel}" Width="*" />
-                                    <DataGridTextColumn Header="Refund" Binding="{Binding RefundText}" Width="90" />
+                                    <DataGridTextColumn Header="Customer" Binding="{Binding CustomerLabel, Mode=OneWay}" Width="*" />
+                                    <DataGridTextColumn Header="Refund" Binding="{Binding RefundText, Mode=OneWay}" Width="90" />
                                 </DataGrid.Columns>
                             </DataGrid>
 
@@ -184,8 +184,8 @@
                                           SelectedItem="{Binding SelectedLookup, Mode=TwoWay}">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Bill" Binding="{Binding Code}" Width="90" />
-                                        <DataGridTextColumn Header="Date" Binding="{Binding DateLabel}" Width="115" />
-                                        <DataGridTextColumn Header="Total" Binding="{Binding TotalText}" Width="85" />
+                                        <DataGridTextColumn Header="Date" Binding="{Binding DateLabel, Mode=OneWay}" Width="115" />
+                                        <DataGridTextColumn Header="Total" Binding="{Binding TotalText, Mode=OneWay}" Width="85" />
                                         <DataGridTextColumn Header="Items" Binding="{Binding ItemsLabel}" Width="*" />
                                     </DataGrid.Columns>
                                 </DataGrid>
@@ -218,8 +218,8 @@
                                       SelectedItem="{Binding SelectedEntry, Mode=TwoWay}">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="No." Binding="{Binding Code}" Width="85" />
-                                    <DataGridTextColumn Header="Refund" Binding="{Binding RefundText}" Width="85" />
-                                    <DataGridTextColumn Header="State" Binding="{Binding StatusLabel}" Width="*" />
+                                    <DataGridTextColumn Header="Refund" Binding="{Binding RefundText, Mode=OneWay}" Width="85" />
+                                    <DataGridTextColumn Header="State" Binding="{Binding StatusLabel, Mode=OneWay}" Width="*" />
                                 </DataGrid.Columns>
                             </DataGrid>
                         </StackPanel>

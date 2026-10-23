@@ -108,11 +108,11 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0">
                                 <TextBlock Text="Cost (Rs)" Style="{StaticResource FieldLabel}" />
-                                <TextBox Text="{Binding CostText, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBox Text="{Binding CostText, Mode=OneWay}" IsReadOnly="True" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
                                 <TextBlock Text="Retail (Rs)" Style="{StaticResource FieldLabel}" />
-                                <TextBox Text="{Binding RetailText, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBox Text="{Binding RetailText, Mode=OneWay}" IsReadOnly="True" />
                             </StackPanel>
                         </Grid>
 
@@ -141,11 +141,11 @@
 
                     <DataGrid Grid.Row="1" ItemsSource="{Binding Lines}">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Item" Binding="{Binding ProductName}" Width="2*" />
-                            <DataGridTextColumn Header="Qty" Binding="{Binding QuantityText}" Width="90" />
-                            <DataGridTextColumn Header="Batch" Binding="{Binding BatchNo}" Width="*" />
-                            <DataGridTextColumn Header="Expiry" Binding="{Binding Expiry}" Width="90" />
-                            <DataGridTextColumn Header="Cost" Binding="{Binding CostText}" Width="90" />
+                            <DataGridTextColumn Header="Item" Binding="{Binding ProductName, Mode=OneWay}" Width="2*" />
+                            <DataGridTextColumn Header="Qty" Binding="{Binding QuantityText, Mode=OneWay}" Width="90" />
+                            <DataGridTextColumn Header="Batch" Binding="{Binding BatchNo, Mode=OneWay}" Width="*" />
+                            <DataGridTextColumn Header="Expiry" Binding="{Binding Expiry, Mode=OneWay}" Width="90" />
+                            <DataGridTextColumn Header="Cost" Binding="{Binding CostText, Mode=OneWay}" Width="90" />
                         </DataGrid.Columns>
                     </DataGrid>
 

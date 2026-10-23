@@ -156,13 +156,13 @@
 
                             <DataGrid Grid.Row="1" ItemsSource="{Binding Lines}" IsReadOnly="True">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Date" Binding="{Binding DateLabel}" Width="115" />
-                                    <DataGridTextColumn Header="What" Binding="{Binding KindLabel}" Width="105" />
+                                    <DataGridTextColumn Header="Date" Binding="{Binding DateLabel, Mode=OneWay}" Width="115" />
+                                    <DataGridTextColumn Header="What" Binding="{Binding KindLabel, Mode=OneWay}" Width="105" />
                                     <DataGridTextColumn Header="No." Binding="{Binding Code}" Width="95" />
                                     <DataGridTextColumn Header="Detail" Binding="{Binding Description}" Width="*" />
-                                    <DataGridTextColumn Header="Udhaar" Binding="{Binding DebitLabel}" Width="85" />
-                                    <DataGridTextColumn Header="Paid" Binding="{Binding CreditLabel}" Width="85" />
-                                    <DataGridTextColumn Header="Balance" Binding="{Binding RunningLabel}" Width="95" />
+                                    <DataGridTextColumn Header="Udhaar" Binding="{Binding DebitLabel, Mode=OneWay}" Width="85" />
+                                    <DataGridTextColumn Header="Paid" Binding="{Binding CreditLabel, Mode=OneWay}" Width="85" />
+                                    <DataGridTextColumn Header="Balance" Binding="{Binding RunningLabel, Mode=OneWay}" Width="95" />
                                 </DataGrid.Columns>
                             </DataGrid>
 

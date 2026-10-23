@@ -127,11 +127,11 @@
                                   GridLinesVisibility="Horizontal">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Doctor" Binding="{Binding Name}" Width="1.6*" />
-                                <DataGridTextColumn Header="Phone" Binding="{Binding PhoneLabel}" Width="130" />
-                                <DataGridTextColumn Header="Bills" Binding="{Binding BillsText}" Width="80" />
-                                <DataGridTextColumn Header="Sales" Binding="{Binding SalesText}" Width="100" />
-                                <DataGridTextColumn Header="Profit" Binding="{Binding ProfitText}" Width="95" />
-                                <DataGridTextColumn Header="Last bill" Binding="{Binding LastBillLabel}" Width="95" />
+                                <DataGridTextColumn Header="Phone" Binding="{Binding PhoneLabel, Mode=OneWay}" Width="130" />
+                                <DataGridTextColumn Header="Bills" Binding="{Binding BillsText, Mode=OneWay}" Width="80" />
+                                <DataGridTextColumn Header="Sales" Binding="{Binding SalesText, Mode=OneWay}" Width="100" />
+                                <DataGridTextColumn Header="Profit" Binding="{Binding ProfitText, Mode=OneWay}" Width="95" />
+                                <DataGridTextColumn Header="Last bill" Binding="{Binding LastBillLabel, Mode=OneWay}" Width="95" />
                             </DataGrid.Columns>
                         </DataGrid>
 
@@ -167,12 +167,12 @@
                                   GridLinesVisibility="Horizontal">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Customer" Binding="{Binding Name}" Width="1.6*" />
-                                <DataGridTextColumn Header="Phone" Binding="{Binding PhoneLabel}" Width="130" />
-                                <DataGridTextColumn Header="Kind" Binding="{Binding CategoryLabel}" Width="85" />
-                                <DataGridTextColumn Header="Bills" Binding="{Binding BillsText}" Width="80" />
-                                <DataGridTextColumn Header="Sales" Binding="{Binding SalesText}" Width="110" />
-                                <DataGridTextColumn Header="Lifetime profit" Binding="{Binding ProfitText}" Width="120" />
-                                <DataGridTextColumn Header="Last bill" Binding="{Binding LastBillLabel}" Width="95" />
+                                <DataGridTextColumn Header="Phone" Binding="{Binding PhoneLabel, Mode=OneWay}" Width="130" />
+                                <DataGridTextColumn Header="Kind" Binding="{Binding CategoryLabel, Mode=OneWay}" Width="85" />
+                                <DataGridTextColumn Header="Bills" Binding="{Binding BillsText, Mode=OneWay}" Width="80" />
+                                <DataGridTextColumn Header="Sales" Binding="{Binding SalesText, Mode=OneWay}" Width="110" />
+                                <DataGridTextColumn Header="Lifetime profit" Binding="{Binding ProfitText, Mode=OneWay}" Width="120" />
+                                <DataGridTextColumn Header="Last bill" Binding="{Binding LastBillLabel, Mode=OneWay}" Width="95" />
                             </DataGrid.Columns>
                         </DataGrid>
                     </Grid>

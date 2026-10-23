@@ -214,8 +214,8 @@
                                   GridLinesVisibility="Horizontal" MaxHeight="260">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Category" Binding="{Binding Name}" Width="*" />
-                                <DataGridTextColumn Header="Sales" Binding="{Binding SalesLabel}" Width="110" />
-                                <DataGridTextColumn Header="Share" Binding="{Binding ShareLabel}" Width="70" />
+                                <DataGridTextColumn Header="Sales" Binding="{Binding SalesLabel, Mode=OneWay}" Width="110" />
+                                <DataGridTextColumn Header="Share" Binding="{Binding ShareLabel, Mode=OneWay}" Width="70" />
                             </DataGrid.Columns>
                         </DataGrid>
                     </StackPanel>
@@ -238,10 +238,10 @@
                                   AutoGenerateColumns="False" HeadersVisibility="Column"
                                   GridLinesVisibility="Horizontal" MaxHeight="280">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="#" Binding="{Binding RankLabel}" Width="34" />
+                                <DataGridTextColumn Header="#" Binding="{Binding RankLabel, Mode=OneWay}" Width="34" />
                                 <DataGridTextColumn Header="Medicine" Binding="{Binding Name}" Width="*" />
-                                <DataGridTextColumn Header="Qty" Binding="{Binding QtyLabel}" Width="60" />
-                                <DataGridTextColumn Header="Sales" Binding="{Binding SalesLabel}" Width="100" />
+                                <DataGridTextColumn Header="Qty" Binding="{Binding QtyLabel, Mode=OneWay}" Width="60" />
+                                <DataGridTextColumn Header="Sales" Binding="{Binding SalesLabel, Mode=OneWay}" Width="100" />
                             </DataGrid.Columns>
                         </DataGrid>
                     </StackPanel>
@@ -266,10 +266,10 @@
                                   AutoGenerateColumns="False" HeadersVisibility="Column"
                                   GridLinesVisibility="Horizontal" MaxHeight="280">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="#" Binding="{Binding RankLabel}" Width="34" />
+                                <DataGridTextColumn Header="#" Binding="{Binding RankLabel, Mode=OneWay}" Width="34" />
                                 <DataGridTextColumn Header="Medicine" Binding="{Binding Name}" Width="*" />
-                                <DataGridTextColumn Header="Sales" Binding="{Binding SalesLabel}" Width="100" />
-                                <DataGridTextColumn Header="Profit" Binding="{Binding ProfitLabel}" Width="100" />
+                                <DataGridTextColumn Header="Sales" Binding="{Binding SalesLabel, Mode=OneWay}" Width="100" />
+                                <DataGridTextColumn Header="Profit" Binding="{Binding ProfitLabel, Mode=OneWay}" Width="100" />
                             </DataGrid.Columns>
                         </DataGrid>
                     </StackPanel>
@@ -287,9 +287,9 @@
                               GridLinesVisibility="Horizontal" MaxHeight="260">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Medicine" Binding="{Binding Name}" Width="*" />
-                            <DataGridTextColumn Header="On the shelf" Binding="{Binding StockLabel}" Width="110" />
-                            <DataGridTextColumn Header="Money at cost" Binding="{Binding ValueLabel}" Width="120" />
-                            <DataGridTextColumn Header="Last sold" Binding="{Binding LastSoldLabel}" Width="110" />
+                            <DataGridTextColumn Header="On the shelf" Binding="{Binding StockLabel, Mode=OneWay}" Width="110" />
+                            <DataGridTextColumn Header="Money at cost" Binding="{Binding ValueLabel, Mode=OneWay}" Width="120" />
+                            <DataGridTextColumn Header="Last sold" Binding="{Binding LastSoldLabel, Mode=OneWay}" Width="110" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </StackPanel>

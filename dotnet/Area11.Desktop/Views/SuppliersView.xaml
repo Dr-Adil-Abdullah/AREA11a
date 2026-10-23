@@ -138,13 +138,13 @@
 
                             <DataGrid Grid.Row="1" ItemsSource="{Binding Movements}" IsReadOnly="True">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Date" Binding="{Binding DateLabel}" Width="110" />
-                                    <DataGridTextColumn Header="What" Binding="{Binding KindLabel}" Width="120" />
+                                    <DataGridTextColumn Header="Date" Binding="{Binding DateLabel, Mode=OneWay}" Width="110" />
+                                    <DataGridTextColumn Header="What" Binding="{Binding KindLabel, Mode=OneWay}" Width="120" />
                                     <DataGridTextColumn Header="No." Binding="{Binding Code}" Width="90" />
                                     <DataGridTextColumn Header="Detail" Binding="{Binding Description}" Width="*" />
-                                    <DataGridTextColumn Header="Owed" Binding="{Binding DebitLabel}" Width="80" />
-                                    <DataGridTextColumn Header="Paid" Binding="{Binding CreditLabel}" Width="80" />
-                                    <DataGridTextColumn Header="Balance" Binding="{Binding RunningLabel}" Width="90" />
+                                    <DataGridTextColumn Header="Owed" Binding="{Binding DebitLabel, Mode=OneWay}" Width="80" />
+                                    <DataGridTextColumn Header="Paid" Binding="{Binding CreditLabel, Mode=OneWay}" Width="80" />
+                                    <DataGridTextColumn Header="Balance" Binding="{Binding RunningLabel, Mode=OneWay}" Width="90" />
                                 </DataGrid.Columns>
                             </DataGrid>
 
@@ -299,9 +299,9 @@
                             <DataGrid ItemsSource="{Binding Tray}" Height="110" Margin="0,4,0,0" IsReadOnly="True"
                                       SelectedItem="{Binding SelectedTrayRow, Mode=TwoWay}">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Batch" Binding="{Binding Caption}" Width="*" />
-                                    <DataGridTextColumn Header="Qty" Binding="{Binding QtyLabel}" Width="70" />
-                                    <DataGridTextColumn Header="Value" Binding="{Binding ValueLabel}" Width="85" />
+                                    <DataGridTextColumn Header="Batch" Binding="{Binding Caption, Mode=OneWay}" Width="*" />
+                                    <DataGridTextColumn Header="Qty" Binding="{Binding QtyLabel, Mode=OneWay}" Width="70" />
+                                    <DataGridTextColumn Header="Value" Binding="{Binding ValueLabel, Mode=OneWay}" Width="85" />
                                 </DataGrid.Columns>
                             </DataGrid>
 

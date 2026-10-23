@@ -87,13 +87,13 @@
                           GridLinesVisibility="Horizontal" SelectionMode="Single">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Bill" Binding="{Binding Code}" Width="110" />
-                        <DataGridTextColumn Header="When" Binding="{Binding WhenLabel}" Width="150" />
-                        <DataGridTextColumn Header="Customer" Binding="{Binding CustomerLabel}" Width="*" />
-                        <DataGridTextColumn Header="Lines" Binding="{Binding ItemsLabel}" Width="70" />
-                        <DataGridTextColumn Header="Total" Binding="{Binding TotalLabel}" Width="100" />
-                        <DataGridTextColumn Header="Due" Binding="{Binding DueLabel}" Width="90" />
-                        <DataGridTextColumn Header="Paid by" Binding="{Binding MethodLabel}" Width="80" />
-                        <DataGridTextColumn Header="Status" Binding="{Binding StatusLabel}" Width="90" />
+                        <DataGridTextColumn Header="When" Binding="{Binding WhenLabel, Mode=OneWay}" Width="150" />
+                        <DataGridTextColumn Header="Customer" Binding="{Binding CustomerLabel, Mode=OneWay}" Width="*" />
+                        <DataGridTextColumn Header="Lines" Binding="{Binding ItemsLabel, Mode=OneWay}" Width="70" />
+                        <DataGridTextColumn Header="Total" Binding="{Binding TotalLabel, Mode=OneWay}" Width="100" />
+                        <DataGridTextColumn Header="Due" Binding="{Binding DueLabel, Mode=OneWay}" Width="90" />
+                        <DataGridTextColumn Header="Paid by" Binding="{Binding MethodLabel, Mode=OneWay}" Width="80" />
+                        <DataGridTextColumn Header="Status" Binding="{Binding StatusLabel, Mode=OneWay}" Width="90" />
                     </DataGrid.Columns>
                 </DataGrid>
             </Border>
@@ -118,9 +118,9 @@
                                                 <StackPanel Grid.Column="0">
                                                     <TextBlock Text="{Binding Name}" TextWrapping="Wrap" />
                                                     <TextBlock Style="{StaticResource FieldHint}">
-                                                        <Run Text="{Binding QtyLabel}" />
+                                                        <Run Text="{Binding QtyLabel, Mode=OneWay}" />
                                                         <Run Text=" x " />
-                                                        <Run Text="{Binding RateLabel}" />
+                                                        <Run Text="{Binding RateLabel, Mode=OneWay}" />
                                                     </TextBlock>
                                                 </StackPanel>
                                                 <TextBlock Grid.Column="1" Text="{Binding TotalLabel}"
@@ -214,9 +214,9 @@
                                             <TextBlock DockPanel.Dock="Right" Text="{Binding AmountLabel}"
                                                        HorizontalAlignment="Right" />
                                             <TextBlock>
-                                                <Run Text="{Binding WhenLabel}" />
+                                                <Run Text="{Binding WhenLabel, Mode=OneWay}" />
                                                 <Run Text=" - " />
-                                                <Run Text="{Binding MethodLabel}" />
+                                                <Run Text="{Binding MethodLabel, Mode=OneWay}" />
                                             </TextBlock>
                                         </DockPanel>
                                     </DataTemplate>

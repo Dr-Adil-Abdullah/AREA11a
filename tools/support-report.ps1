@@ -208,24 +208,41 @@ else {
 }
 
 # -----------------------------------------------------------------------------
-Section "THE NEWEST CRASH REPORT (this is the part that names the fault)"
+Section "THE CRASH REPORTS ON THIS PC (newest first - the DATE decides which one matters)"
 
-$crash = $null
-$logsFolder = Join-Path $shop "logs"
+#  Why a list and not one file: on 23 Oct 2026 the launcher printed a report from the
+#  day before, written by a different version, for a fault that had already been fixed.
+#  A report is evidence only for the run that wrote it, so every report is listed with
+#  its date and version, and only the newest is quoted in full. Two folders are read,
+#  because the program writes into %TEMP%\Area11 when the shop folder is not writable
+#  (a second counter whose share is switched off).
+$crashFolders = @((Join-Path $shop "logs"), (Join-Path $env:TEMP "Area11"))
+$crashes = @()
 
-if (Test-Path -LiteralPath $logsFolder) {
-    $crash = Get-ChildItem -LiteralPath $logsFolder -Filter "crash-*.txt" -File -ErrorAction SilentlyContinue |
-        Sort-Object LastWriteTime -Descending |
-        Select-Object -First 1
+foreach ($folder in $crashFolders) {
+    if (Test-Path -LiteralPath $folder) {
+        $crashes += Get-ChildItem -LiteralPath $folder -Filter "crash-*.txt" -File -ErrorAction SilentlyContinue
+    }
 }
 
-if ($null -eq $crash) {
+$crashes = @($crashes | Sort-Object LastWriteTime -Descending)
+
+if ($crashes.Count -eq 0) {
     $lines.Add("No crash report exists - the program has not died with an exception on this PC.")
 }
 else {
-    $lines.Add("File: " + $crash.FullName + "  (" + $crash.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss") + ")")
+    $lines.Add("Reports on this PC: " + $crashes.Count)
     $lines.Add("")
-    Add-FileText $crash.FullName "crash report" 200
+
+    foreach ($one in $crashes) {
+        $lines.Add("  " + $one.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss") + "   " +
+                   $one.Length.ToString().PadLeft(6) + " bytes   " + $one.FullName)
+    }
+
+    $lines.Add("")
+    $lines.Add("The newest one, quoted in full - it belongs to the run that wrote it, on the date above:")
+    $lines.Add("")
+    Add-FileText $crashes[0].FullName "crash report" 200
 }
 
 # -----------------------------------------------------------------------------

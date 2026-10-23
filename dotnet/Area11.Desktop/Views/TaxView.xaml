@@ -77,11 +77,11 @@
                               AutoGenerateColumns="False" HeadersVisibility="Column"
                               GridLinesVisibility="Horizontal">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Date" Binding="{Binding DayLabel}" Width="110" />
-                            <DataGridTextColumn Header="Bills" Binding="{Binding BillsLabel}" Width="70" />
-                            <DataGridTextColumn Header="Before tax" Binding="{Binding NetLabel}" Width="*" />
-                            <DataGridTextColumn Header="Tax" Binding="{Binding TaxLabel}" Width="*" />
-                            <DataGridTextColumn Header="Total" Binding="{Binding GrossLabel}" Width="*" />
+                            <DataGridTextColumn Header="Date" Binding="{Binding DayLabel, Mode=OneWay}" Width="110" />
+                            <DataGridTextColumn Header="Bills" Binding="{Binding BillsLabel, Mode=OneWay}" Width="70" />
+                            <DataGridTextColumn Header="Before tax" Binding="{Binding NetLabel, Mode=OneWay}" Width="*" />
+                            <DataGridTextColumn Header="Tax" Binding="{Binding TaxLabel, Mode=OneWay}" Width="*" />
+                            <DataGridTextColumn Header="Total" Binding="{Binding GrossLabel, Mode=OneWay}" Width="*" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>

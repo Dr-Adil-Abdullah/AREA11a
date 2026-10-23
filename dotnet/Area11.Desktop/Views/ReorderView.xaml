@@ -117,9 +117,9 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTextColumn Header="Medicine" Binding="{Binding NameLabel}" Width="1.7*" />
-                                <DataGridTextColumn Header="Stock" Binding="{Binding StockText}" Width="90" />
-                                <DataGridTextColumn Header="Minimum" Binding="{Binding LevelText}" Width="95" />
+                                <DataGridTextColumn Header="Medicine" Binding="{Binding NameLabel, Mode=OneWay}" Width="1.7*" />
+                                <DataGridTextColumn Header="Stock" Binding="{Binding StockText, Mode=OneWay}" Width="90" />
+                                <DataGridTextColumn Header="Minimum" Binding="{Binding LevelText, Mode=OneWay}" Width="95" />
 
                                 <DataGridTemplateColumn Header="Order" Width="80">
                                     <DataGridTemplateColumn.CellTemplate>
@@ -131,8 +131,8 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTextColumn Header="Supplier" Binding="{Binding SupplierLabel}" Width="140" />
-                                <DataGridTextColumn Header="State" Binding="{Binding TierLabel}" Width="115" />
+                                <DataGridTextColumn Header="Supplier" Binding="{Binding SupplierLabel, Mode=OneWay}" Width="140" />
+                                <DataGridTextColumn Header="State" Binding="{Binding TierLabel, Mode=OneWay}" Width="115" />
                             </DataGrid.Columns>
                         </DataGrid>
 

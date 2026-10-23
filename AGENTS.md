@@ -129,6 +129,28 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
+> **v0.31.1 (Boysenberry `#8A0A6C`) - the first time the window ran, and why 171 bindings could only crash.**
+>
+> * **`Run.Text` and every `DataGrid...Column.Binding` are TwoWay by default.** The framework
+>   registers `Run.Text` with `BindsTwoWayByDefault`; a grid column generates its editing element
+>   with the same binding. Point one at a **computed label** (`QtyLabel`, `StockLabel`,
+>   `StatusLabel`) and WPF throws *"A TwoWay or OneWayToSource binding cannot work on the read-only
+>   property"* inside the layout pass - which arrives as a `XamlParseException` and closes the
+>   window. Nothing in a C# build can see it: the fault exists only when a template is created.
+>   **171 bindings** here were in that state. Read-only display targets get `Mode=OneWay`, always.
+> * **A gate that cannot know the row type guesses, and a guess cries wolf.** The first version of
+>   #37 accused the writable `Code` of a bill row because an unrelated class computed a `Code`.
+>   It now walks the XAML with a **scope stack** (DataGrid / ItemsControl / ListBox / ComboBox) and
+>   resolves the property against the class the row really is; only when that cannot be worked out
+>   does it fall back to "read-only everywhere".
+> * **A failure screen that shows an old crash file is worse than one that shows nothing.** On
+>   23 Oct the launcher printed a report from the day before, written by another version, for a
+>   fault already repaired - and the real report (written to `%TEMP%\Area11` because the shop
+>   folder was not writable) was never seen. The launcher now writes a **marker before starting**,
+>   the program records the **path of its own newest report**, and only a report newer than the
+>   marker is printed; otherwise the screen says so and names the old file *with its date*, without
+>   printing it. **The tool must never tell a story the evidence does not support.**
+>
 > **v0.31.0 (Loden `#244506`) - who was short, and the total that must never be netted.**
 >
 > * **A spec line that says "not built" is a debt.** Spec 7.2.7 said *"a per-user shift report is
@@ -339,7 +361,8 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >   than the cash part and showed change 0; only `Create` refused it, after the button. The quote now
 >   carries the same sentence as a **warning** while typing, and the total stays on screen.
 > * **Run 22 (v0.30.0) was the first complete green run**: 696 total, 0 failed, 74.3 s. Core + Tests
->   now build and pass on Windows. The Desktop project is still the one that has never compiled.
+>   build and pass on Windows; the Desktop project itself first compiled on 23 Oct 2026 (v0.30.9,
+>   `BUILD OK`) and v0.31.1 repairs the binding fault that run exposed.
 >
 > **v0.30.0 (Mauve `#7A5C7B`) - the page map is a gate too: `{x:Type}`, the template, and the view in it.**
 >
@@ -489,7 +512,7 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >
 > The last confirmed Windows build is v0.4.8; everything from v0.6.2 on is proved only by
 > `tools/check_repo.py` until the owner runs `START-AREA11.bat` and `tools\\RUN-TESTS.cmd`
-> (**695 cases**).
+> (**697 cases**).
 >
 > **The checker learned two things from this version.** `DashboardService` used `User` with no
 > `using Area11.Core.Models;` and the gate stayed quiet: its mention patterns wanted `.`, `(` or

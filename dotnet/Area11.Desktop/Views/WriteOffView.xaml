@@ -64,9 +64,9 @@
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Batch" Binding="{Binding BatchNo}" Width="*" />
                                 <DataGridTextColumn Header="Expiry" Binding="{Binding ExpiryDate}" Width="100" />
-                                <DataGridTextColumn Header="State" Binding="{Binding ExpiryLabel}" Width="110" />
-                                <DataGridTextColumn Header="Qty" Binding="{Binding QtyLabel}" Width="80" />
-                                <DataGridTextColumn Header="Value" Binding="{Binding ValueLabel}" Width="95" />
+                                <DataGridTextColumn Header="State" Binding="{Binding ExpiryLabel, Mode=OneWay}" Width="110" />
+                                <DataGridTextColumn Header="Qty" Binding="{Binding QtyLabel, Mode=OneWay}" Width="80" />
+                                <DataGridTextColumn Header="Value" Binding="{Binding ValueLabel, Mode=OneWay}" Width="95" />
                             </DataGrid.Columns>
                         </DataGrid>
 
@@ -146,12 +146,12 @@
 
                     <DataGrid Grid.Row="1" ItemsSource="{Binding History}">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="When" Binding="{Binding DateLabel}" Width="115" />
+                            <DataGridTextColumn Header="When" Binding="{Binding DateLabel, Mode=OneWay}" Width="115" />
                             <DataGridTextColumn Header="Medicine" Binding="{Binding ProductName}" Width="2*" />
                             <DataGridTextColumn Header="Batch" Binding="{Binding BatchNo}" Width="80" />
-                            <DataGridTextColumn Header="Qty" Binding="{Binding SignedQtyLabel}" Width="75" />
-                            <DataGridTextColumn Header="Loss" Binding="{Binding ValueLabel}" Width="95" />
-                            <DataGridTextColumn Header="Why" Binding="{Binding ReasonLabel}" Width="110" />
+                            <DataGridTextColumn Header="Qty" Binding="{Binding SignedQtyLabel, Mode=OneWay}" Width="75" />
+                            <DataGridTextColumn Header="Loss" Binding="{Binding ValueLabel, Mode=OneWay}" Width="95" />
+                            <DataGridTextColumn Header="Why" Binding="{Binding ReasonLabel, Mode=OneWay}" Width="110" />
                             <DataGridTextColumn Header="By" Binding="{Binding UserName}" Width="90" />
                         </DataGrid.Columns>
                     </DataGrid>

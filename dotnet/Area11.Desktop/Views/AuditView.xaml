@@ -92,12 +92,12 @@
                       AutoGenerateColumns="False" HeadersVisibility="Column"
                       GridLinesVisibility="Horizontal">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="When" Binding="{Binding AtLabel}" Width="130" />
-                    <DataGridTextColumn Header="Who" Binding="{Binding WhoLabel}" Width="110" />
+                    <DataGridTextColumn Header="When" Binding="{Binding AtLabel, Mode=OneWay}" Width="130" />
+                    <DataGridTextColumn Header="Who" Binding="{Binding WhoLabel, Mode=OneWay}" Width="110" />
                     <DataGridTextColumn Header="Module" Binding="{Binding Module}" Width="100" />
-                    <DataGridTextColumn Header="Action" Binding="{Binding ActionLabel}" Width="150" />
-                    <DataGridTextColumn Header="On" Binding="{Binding EntityLabel}" Width="140" />
-                    <DataGridTextColumn Header="Change" Binding="{Binding ChangeLabel}" Width="*" />
+                    <DataGridTextColumn Header="Action" Binding="{Binding ActionLabel, Mode=OneWay}" Width="150" />
+                    <DataGridTextColumn Header="On" Binding="{Binding EntityLabel, Mode=OneWay}" Width="140" />
+                    <DataGridTextColumn Header="Change" Binding="{Binding ChangeLabel, Mode=OneWay}" Width="*" />
                 </DataGrid.Columns>
             </DataGrid>
         </Border>

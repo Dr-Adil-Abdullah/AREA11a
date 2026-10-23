@@ -146,9 +146,9 @@
                           AutoGenerateColumns="False" HeadersVisibility="Column"
                           GridLinesVisibility="Horizontal">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="When" Binding="{Binding WhenLabel}" Width="150" />
-                        <DataGridTextColumn Header="Computer" Binding="{Binding PcLabel}" Width="1.4*" />
-                        <DataGridTextColumn Header="Pressed by" Binding="{Binding UserLabel}" Width="1.4*" />
+                        <DataGridTextColumn Header="When" Binding="{Binding WhenLabel, Mode=OneWay}" Width="150" />
+                        <DataGridTextColumn Header="Computer" Binding="{Binding PcLabel, Mode=OneWay}" Width="1.4*" />
+                        <DataGridTextColumn Header="Pressed by" Binding="{Binding UserLabel, Mode=OneWay}" Width="1.4*" />
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>

@@ -394,8 +394,8 @@
                                           SelectedItem="{Binding SelectedUser, Mode=TwoWay}">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
-                                        <DataGridTextColumn Header="Role" Binding="{Binding RoleLabel}" Width="90" />
-                                        <DataGridTextColumn Header="Account" Binding="{Binding ActiveLabel}" Width="75" />
+                                        <DataGridTextColumn Header="Role" Binding="{Binding RoleLabel, Mode=OneWay}" Width="90" />
+                                        <DataGridTextColumn Header="Account" Binding="{Binding ActiveLabel, Mode=OneWay}" Width="75" />
                                     </DataGrid.Columns>
                                 </DataGrid>
 

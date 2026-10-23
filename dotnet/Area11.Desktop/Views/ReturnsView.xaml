@@ -108,12 +108,12 @@
                                               Visibility="{Binding HasMatches, Converter={StaticResource BoolToVis}}">
                                         <DataGrid.Columns>
                                             <DataGridTextColumn Header="Bill" Binding="{Binding Code}" Width="90" />
-                                            <DataGridTextColumn Header="When" Binding="{Binding DateLabel}" Width="120" />
-                                            <DataGridTextColumn Header="Customer" Binding="{Binding CustomerLabel}" Width="*" />
-                                            <DataGridTextColumn Header="Items" Binding="{Binding ItemsLabel}" Width="70" />
-                                            <DataGridTextColumn Header="Total" Binding="{Binding TotalText}" Width="90" />
-                                            <DataGridTextColumn Header="Due" Binding="{Binding DueLabel}" Width="90" />
-                                            <DataGridTextColumn Header="Status" Binding="{Binding StatusLabel}" Width="90" />
+                                            <DataGridTextColumn Header="When" Binding="{Binding DateLabel, Mode=OneWay}" Width="120" />
+                                            <DataGridTextColumn Header="Customer" Binding="{Binding CustomerLabel, Mode=OneWay}" Width="*" />
+                                            <DataGridTextColumn Header="Items" Binding="{Binding ItemsLabel, Mode=OneWay}" Width="70" />
+                                            <DataGridTextColumn Header="Total" Binding="{Binding TotalText, Mode=OneWay}" Width="90" />
+                                            <DataGridTextColumn Header="Due" Binding="{Binding DueLabel, Mode=OneWay}" Width="90" />
+                                            <DataGridTextColumn Header="Status" Binding="{Binding StatusLabel, Mode=OneWay}" Width="90" />
                                         </DataGrid.Columns>
                                     </DataGrid>
                                 </StackPanel>
@@ -124,11 +124,11 @@
 
                             <DataGrid Grid.Row="3" ItemsSource="{Binding Lines}">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Medicine" Binding="{Binding Name}" Width="2*" />
-                                    <DataGridTextColumn Header="Sold" Binding="{Binding SoldLabel}" Width="80" />
-                                    <DataGridTextColumn Header="Returned" Binding="{Binding ReturnedLabel}" Width="80" />
-                                    <DataGridTextColumn Header="Can return" Binding="{Binding RemainingLabel}" Width="90" />
-                                    <DataGridTextColumn Header="Refund if all" Binding="{Binding MoneyLabel}" Width="100" />
+                                    <DataGridTextColumn Header="Medicine" Binding="{Binding Name, Mode=OneWay}" Width="2*" />
+                                    <DataGridTextColumn Header="Sold" Binding="{Binding SoldLabel, Mode=OneWay}" Width="80" />
+                                    <DataGridTextColumn Header="Returned" Binding="{Binding ReturnedLabel, Mode=OneWay}" Width="80" />
+                                    <DataGridTextColumn Header="Can return" Binding="{Binding RemainingLabel, Mode=OneWay}" Width="90" />
+                                    <DataGridTextColumn Header="Refund if all" Binding="{Binding MoneyLabel, Mode=OneWay}" Width="100" />
 
                                     <!-- The only editable cell: how many units are coming back (base units). -->
                                     <DataGridTemplateColumn Header="Coming back" Width="100">
@@ -236,11 +236,11 @@
                                                         </DockPanel>
 
                                                         <TextBlock Style="{StaticResource FieldHint}">
-                                                            <Run Text="{Binding QuantityLabel}" />
+                                                            <Run Text="{Binding QuantityLabel, Mode=OneWay}" />
                                                             <Run Text=" · reason: " />
-                                                            <Run Text="{Binding ReasonLabel}" />
+                                                            <Run Text="{Binding ReasonLabel, Mode=OneWay}" />
                                                             <Run Text=" · " />
-                                                            <Run Text="{Binding DateLabel}" />
+                                                            <Run Text="{Binding DateLabel, Mode=OneWay}" />
                                                         </TextBlock>
 
                                                         <TextBox Text="{Binding NoteText, UpdateSourceTrigger=PropertyChanged}"
@@ -282,8 +282,8 @@
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Q no." Binding="{Binding QCode}" Width="80" />
                                     <DataGridTextColumn Header="Medicine" Binding="{Binding ProductName}" Width="2*" />
-                                    <DataGridTextColumn Header="Qty" Binding="{Binding QuantityLabel}" Width="80" />
-                                    <DataGridTextColumn Header="Outcome" Binding="{Binding DispositionLabel}" Width="120" />
+                                    <DataGridTextColumn Header="Qty" Binding="{Binding QuantityLabel, Mode=OneWay}" Width="80" />
+                                    <DataGridTextColumn Header="Outcome" Binding="{Binding DispositionLabel, Mode=OneWay}" Width="120" />
                                     <DataGridTextColumn Header="When" Binding="{Binding DisposedAt}" Width="130" />
                                     <DataGridTextColumn Header="By" Binding="{Binding DisposedBy}" Width="90" />
                                 </DataGrid.Columns>

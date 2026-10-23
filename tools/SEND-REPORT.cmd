@@ -20,7 +20,7 @@ cd /d "%~dp0.."
 rem  The build this report is about. The line below is the ONLY place this script
 rem  names a version, and tools\check_repo.py fails if it disagrees with
 rem  BuildInfo.cs - the same keeper the other two double-click scripts have.
-set "BUILD=v0.31.0 (Loden)"
+set "BUILD=v0.31.1 (Boysenberry)"
 
 echo.
 echo  ==========================================================

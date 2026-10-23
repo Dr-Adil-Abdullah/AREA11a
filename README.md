@@ -31,7 +31,7 @@ Live counts are in [`docs/PROGRESS.md`](docs/PROGRESS.md) (features) and
 **Honest note:** the agent's build machine is Linux with no .NET SDK, so nothing in `dotnet/` is
 compiled there. Every change is checked statically (C# parses, explicit usings, XAML, resources,
 every binding against its view model, every SQL statement against the real schema, every mapped
-column against its model, migrations executed on SQLite) and **695 test cases** (686 green on Windows before this release, 0 failed) are written for the
+column against its model, migrations executed on SQLite) and **697 test cases** (686 green on Windows before these releases, 0 failed) are written for the
 Windows run. The Windows build has succeeded up to v0.4.8, and the owner's own runs compiled Core
 and Tests; the newest releases are tested by him with `tools\RUN-TESTS.cmd`. See
 [`docs/VERSIONS.md`](docs/VERSIONS.md) for which build he has.

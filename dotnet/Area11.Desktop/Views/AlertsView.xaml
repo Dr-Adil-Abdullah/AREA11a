@@ -57,10 +57,10 @@
                         </DataGrid.RowStyle>
                         <DataGrid.Columns>
                             <!-- Who may touch it: the two kinds the owner asked for (D-50). -->
-                            <DataGridTextColumn Header="Who" Binding="{Binding KindLabel}" Width="86" />
-                            <DataGridTextColumn Header="Alert" Binding="{Binding TypeLabel}" Width="130" />
-                            <DataGridTextColumn Header="Item" Binding="{Binding Title}" Width="2*" />
-                            <DataGridTextColumn Header="Detail" Binding="{Binding Detail}" Width="2.4*" />
+                            <DataGridTextColumn Header="Who" Binding="{Binding KindLabel, Mode=OneWay}" Width="86" />
+                            <DataGridTextColumn Header="Alert" Binding="{Binding TypeLabel, Mode=OneWay}" Width="130" />
+                            <DataGridTextColumn Header="Item" Binding="{Binding Title, Mode=OneWay}" Width="2*" />
+                            <DataGridTextColumn Header="Detail" Binding="{Binding Detail, Mode=OneWay}" Width="2.4*" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -118,9 +118,9 @@
                             <DataGrid ItemsSource="{Binding Ended}" Height="220" Margin="0,8,0,0"
                                       SelectedItem="{Binding Selected, Mode=TwoWay}">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Item" Binding="{Binding Title}" Width="*" />
-                                    <DataGridTextColumn Header="Reason" Binding="{Binding Reason}" Width="1.6*" />
-                                    <DataGridTextColumn Header="When" Binding="{Binding EndedAt}" Width="120" />
+                                    <DataGridTextColumn Header="Item" Binding="{Binding Title, Mode=OneWay}" Width="*" />
+                                    <DataGridTextColumn Header="Reason" Binding="{Binding Reason, Mode=OneWay}" Width="1.6*" />
+                                    <DataGridTextColumn Header="When" Binding="{Binding EndedAt, Mode=OneWay}" Width="120" />
                                 </DataGrid.Columns>
                             </DataGrid>
 

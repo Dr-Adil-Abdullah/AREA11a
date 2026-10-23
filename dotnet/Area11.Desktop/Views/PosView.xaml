@@ -73,8 +73,8 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Medicine" Binding="{Binding Name}" Width="2*" />
                             <DataGridTextColumn Header="Salt" Binding="{Binding Generic}" Width="1.4*" />
-                            <DataGridTextColumn Header="Stock" Binding="{Binding StockLabel}" Width="90" />
-                            <DataGridTextColumn Header="Retail" Binding="{Binding RetailText}" Width="90" />
+                            <DataGridTextColumn Header="Stock" Binding="{Binding StockLabel, Mode=OneWay}" Width="90" />
+                            <DataGridTextColumn Header="Retail" Binding="{Binding RetailText, Mode=OneWay}" Width="90" />
                             <DataGridTextColumn Header="Rack" Binding="{Binding RackNo}" Width="70" />
                         </DataGrid.Columns>
                     </DataGrid>
@@ -102,9 +102,9 @@
 
                     <DataGrid Grid.Row="1" ItemsSource="{Binding Cart}">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Item" Binding="{Binding Name}" Width="2*" />
-                            <DataGridTextColumn Header="Unit" Binding="{Binding UnitLabel}" Width="60" />
-                            <DataGridTextColumn Header="Qty" Binding="{Binding QuantityText}" Width="60" />
+                            <DataGridTextColumn Header="Item" Binding="{Binding Name, Mode=OneWay}" Width="2*" />
+                            <DataGridTextColumn Header="Unit" Binding="{Binding UnitLabel, Mode=OneWay}" Width="60" />
+                            <DataGridTextColumn Header="Qty" Binding="{Binding QuantityText, Mode=OneWay}" Width="60" />
                         </DataGrid.Columns>
                     </DataGrid>
 

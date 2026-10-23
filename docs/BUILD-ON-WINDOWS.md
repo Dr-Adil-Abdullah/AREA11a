@@ -1,8 +1,11 @@
 # Area11 — building on Windows
 
-The whole application is written but has **never been compiled**: the machine where it is produced is
-Linux with no .NET SDK, and WPF only builds on Windows. This page is the exact procedure, plus what to
-send back if something fails.
+The application is written on a Linux machine with no .NET SDK, so a real compile happens only on
+Windows. **On 23 Oct 2026 it happened:** the owner's launcher printed `BUILD OK - the program was
+compiled` for the whole solution - Core, Tests **and** the WPF project - and `dotnet test` passed 686 of
+686 in 53 s. That first run of the window then stopped on a binding fault (171 `Run.Text` and grid-column
+bindings pointing at computed labels), which v0.31.1 repairs. This page is still the exact procedure,
+plus what to send back if something fails.
 
 ## 1. What to install (once)
 

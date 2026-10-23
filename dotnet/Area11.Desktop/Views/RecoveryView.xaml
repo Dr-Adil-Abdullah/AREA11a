@@ -147,15 +147,15 @@
                             </DataGrid.RowStyle>
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Customer" Binding="{Binding Name}" Width="1.6*" />
-                                <DataGridTextColumn Header="Phone" Binding="{Binding PhoneLabel}" Width="120" />
-                                <DataGridTextColumn Header="Udhaar" Binding="{Binding BalanceText}" Width="100" />
-                                <DataGridTextColumn Header="Oldest" Binding="{Binding OldestLabel}" Width="150" />
-                                <DataGridTextColumn Header="0-30" Binding="{Binding Bucket0Text}" Width="85" />
-                                <DataGridTextColumn Header="31-60" Binding="{Binding Bucket1Text}" Width="85" />
-                                <DataGridTextColumn Header="61-90" Binding="{Binding Bucket2Text}" Width="85" />
-                                <DataGridTextColumn Header="90+" Binding="{Binding Bucket3Text}" Width="85" />
-                                <DataGridTextColumn Header="Carried in" Binding="{Binding OpeningLabel}" Width="95" />
-                                <DataGridTextColumn Header="Last paid" Binding="{Binding LastPaymentLabel}" Width="100" />
+                                <DataGridTextColumn Header="Phone" Binding="{Binding PhoneLabel, Mode=OneWay}" Width="120" />
+                                <DataGridTextColumn Header="Udhaar" Binding="{Binding BalanceText, Mode=OneWay}" Width="100" />
+                                <DataGridTextColumn Header="Oldest" Binding="{Binding OldestLabel, Mode=OneWay}" Width="150" />
+                                <DataGridTextColumn Header="0-30" Binding="{Binding Bucket0Text, Mode=OneWay}" Width="85" />
+                                <DataGridTextColumn Header="31-60" Binding="{Binding Bucket1Text, Mode=OneWay}" Width="85" />
+                                <DataGridTextColumn Header="61-90" Binding="{Binding Bucket2Text, Mode=OneWay}" Width="85" />
+                                <DataGridTextColumn Header="90+" Binding="{Binding Bucket3Text, Mode=OneWay}" Width="85" />
+                                <DataGridTextColumn Header="Carried in" Binding="{Binding OpeningLabel, Mode=OneWay}" Width="95" />
+                                <DataGridTextColumn Header="Last paid" Binding="{Binding LastPaymentLabel, Mode=OneWay}" Width="100" />
                             </DataGrid.Columns>
                         </DataGrid>
                     </Grid>

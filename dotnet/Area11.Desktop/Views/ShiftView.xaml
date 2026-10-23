@@ -183,14 +183,14 @@
                     <DataGrid Grid.Row="1" ItemsSource="{Binding History}" IsReadOnly="True"
                               AutoGenerateColumns="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Opened" Binding="{Binding OpenedLabel}" Width="115" />
+                            <DataGridTextColumn Header="Opened" Binding="{Binding OpenedLabel, Mode=OneWay}" Width="115" />
                             <DataGridTextColumn Header="By" Binding="{Binding OpenedBy}" Width="*" />
-                            <DataGridTextColumn Header="Float" Binding="{Binding FloatLabel}" Width="95" />
-                            <DataGridTextColumn Header="Expected" Binding="{Binding ExpectedLabel}" Width="105" />
-                            <DataGridTextColumn Header="Counted" Binding="{Binding ActualLabel}" Width="105" />
-                            <DataGridTextColumn Header="Difference" Binding="{Binding DifferenceLabel}" Width="140" />
-                            <DataGridTextColumn Header="State" Binding="{Binding StatusLabel}" Width="70" />
-                            <DataGridTextColumn Header="Handover" Binding="{Binding HandoverLabel}" Width="180" />
+                            <DataGridTextColumn Header="Float" Binding="{Binding FloatLabel, Mode=OneWay}" Width="95" />
+                            <DataGridTextColumn Header="Expected" Binding="{Binding ExpectedLabel, Mode=OneWay}" Width="105" />
+                            <DataGridTextColumn Header="Counted" Binding="{Binding ActualLabel, Mode=OneWay}" Width="105" />
+                            <DataGridTextColumn Header="Difference" Binding="{Binding DifferenceLabel, Mode=OneWay}" Width="140" />
+                            <DataGridTextColumn Header="State" Binding="{Binding StatusLabel, Mode=OneWay}" Width="70" />
+                            <DataGridTextColumn Header="Handover" Binding="{Binding HandoverLabel, Mode=OneWay}" Width="180" />
                         </DataGrid.Columns>
                     </DataGrid>
 
@@ -210,13 +210,13 @@
                                       GridLinesVisibility="Horizontal" MaxHeight="190" MinHeight="90">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="By" Binding="{Binding Name}" Width="*" />
-                                    <DataGridTextColumn Header="Shifts" Binding="{Binding ShiftsLabel}" Width="80" />
-                                    <DataGridTextColumn Header="Expected" Binding="{Binding ExpectedLabel}" Width="105" />
-                                    <DataGridTextColumn Header="Counted" Binding="{Binding CountedLabel}" Width="105" />
-                                    <DataGridTextColumn Header="Difference" Binding="{Binding DifferenceLabel}" Width="140" />
-                                    <DataGridTextColumn Header="Pattern" Binding="{Binding PatternLabel}" Width="120" />
-                                    <DataGridTextColumn Header="Worst short" Binding="{Binding WorstShortLabel}" Width="105" />
-                                    <DataGridTextColumn Header="Worst over" Binding="{Binding WorstOverLabel}" Width="105" />
+                                    <DataGridTextColumn Header="Shifts" Binding="{Binding ShiftsLabel, Mode=OneWay}" Width="80" />
+                                    <DataGridTextColumn Header="Expected" Binding="{Binding ExpectedLabel, Mode=OneWay}" Width="105" />
+                                    <DataGridTextColumn Header="Counted" Binding="{Binding CountedLabel, Mode=OneWay}" Width="105" />
+                                    <DataGridTextColumn Header="Difference" Binding="{Binding DifferenceLabel, Mode=OneWay}" Width="140" />
+                                    <DataGridTextColumn Header="Pattern" Binding="{Binding PatternLabel, Mode=OneWay}" Width="120" />
+                                    <DataGridTextColumn Header="Worst short" Binding="{Binding WorstShortLabel, Mode=OneWay}" Width="105" />
+                                    <DataGridTextColumn Header="Worst over" Binding="{Binding WorstOverLabel, Mode=OneWay}" Width="105" />
                                 </DataGrid.Columns>
                             </DataGrid>
                         </StackPanel>

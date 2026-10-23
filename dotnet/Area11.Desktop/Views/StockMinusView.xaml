@@ -100,12 +100,12 @@
                                 </Style>
                             </DataGrid.RowStyle>
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Medicine" Binding="{Binding NameLabel}" Width="1.6*" />
-                                <DataGridTextColumn Header="Stock" Binding="{Binding StockText}" Width="100" />
-                                <DataGridTextColumn Header="Value" Binding="{Binding ValueText}" Width="95" />
-                                <DataGridTextColumn Header="Since / why" Binding="{Binding CauseLabel}" Width="2*" />
-                                <DataGridTextColumn Header="Days" Binding="{Binding DaysLabel}" Width="95" />
-                                <DataGridTextColumn Header="Review" Binding="{Binding ReviewLabel}" Width="185" />
+                                <DataGridTextColumn Header="Medicine" Binding="{Binding NameLabel, Mode=OneWay}" Width="1.6*" />
+                                <DataGridTextColumn Header="Stock" Binding="{Binding StockText, Mode=OneWay}" Width="100" />
+                                <DataGridTextColumn Header="Value" Binding="{Binding ValueText, Mode=OneWay}" Width="95" />
+                                <DataGridTextColumn Header="Since / why" Binding="{Binding CauseLabel, Mode=OneWay}" Width="2*" />
+                                <DataGridTextColumn Header="Days" Binding="{Binding DaysLabel, Mode=OneWay}" Width="95" />
+                                <DataGridTextColumn Header="Review" Binding="{Binding ReviewLabel, Mode=OneWay}" Width="185" />
                             </DataGrid.Columns>
                         </DataGrid>
 

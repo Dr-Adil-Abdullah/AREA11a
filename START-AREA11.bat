@@ -194,7 +194,7 @@ rem  and tools\check_repo.py fails if it disagrees with BuildInfo.cs - so it can
 rem  the owner is never told an old tree is the new one. Reading the number out of the source with
 rem  findstr printed "vunknown" on his PC (v0.30.0): the tokens did not line up, and a banner that
 rem  says nothing is worse than no banner, because it looks like a failure of the tree.
-set "BUILD=v0.31.0 (Loden)"
+set "BUILD=v0.31.1 (Boysenberry)"
 
 echo        Code on this PC: %BUILD%
 
@@ -292,6 +292,14 @@ exit /b 1
 
 :run
 rem ---- 5. run ---------------------------------------------------------------
+rem  A timestamp written BEFORE the program starts. Anything older than this file
+rem  belongs to an earlier run - and showing it here would send the repair in the
+rem  wrong direction, which is exactly what happened on 23 Oct 2026: the window
+rem  printed a report from the day before, written by v0.29.0, for a fault that
+rem  had already been fixed.
+set "RUNMARKER=%TEMP%\area11-run-start.txt"
+echo started %DATE% %TIME%> "%RUNMARKER%"
+
 echo.
 echo  Starting Area11...
 echo.
@@ -317,12 +325,21 @@ exit /b 0
 
 rem ---- 6. what went wrong? -------------------------------------------------
 rem  A Windows program has no console of its own, so the exception text does not
-rem  always reach this window. The app now writes every crash to a file; print the
-rem  newest one, because that file is the only thing needed to fix the problem.
+rem  always reach this window. The program writes a crash file for every failure;
+rem  this step prints the ONE report that belongs to THIS run, and refuses to
+rem  present an older one as if it were today's.
+rem
+rem  Two places are searched, because the report goes wherever the program could
+rem  write it: the shop folder, and %TEMP%\Area11 when the shop folder is not
+rem  writable (a second counter whose share is switched off).
 :crashed
 set "LOGDIR=%ProgramData%\Area11\logs"
+set "TEMPAPPDIR=%TEMP%\Area11"
 set "CRASHFILE="
-for /f "delims=" %%f in ('dir /b /o-d "%LOGDIR%\crash-*.txt" 2^>nul') do if not defined CRASHFILE set "CRASHFILE=%LOGDIR%\%%f"
+set "CRASHLIST=%TEMP%\area11-crash-this-run.txt"
+del "%CRASHLIST%" 2>nul
+powershell -NoProfile -Command "$m=[datetime]::MinValue; if (Test-Path -LiteralPath '%RUNMARKER%') { $m=(Get-Item -LiteralPath '%RUNMARKER%').LastWriteTimeUtc }; $all=@(); $pointer=Join-Path $env:TEMP 'Area11\latest-crash.txt'; if (Test-Path -LiteralPath $pointer) { $raw=Get-Content -LiteralPath $pointer -Raw; if ($raw) { $said=$raw.Trim(); if ($said -and (Test-Path -LiteralPath $said)) { $all += Get-Item -LiteralPath $said } } }; foreach ($d in @('%LOGDIR%','%TEMPAPPDIR%')) { if (Test-Path -LiteralPath $d) { $all += Get-ChildItem -LiteralPath $d -Filter 'crash-*.txt' -File -ErrorAction SilentlyContinue } }; $new=@($all | Where-Object { $_.LastWriteTimeUtc -gt $m } | Sort-Object LastWriteTimeUtc -Descending); if ($new.Count -gt 0) { [Console]::Out.Write($new[0].FullName) }" > "%CRASHLIST%" 2>nul
+if exist "%CRASHLIST%" for /f "usebackq delims=" %%f in ("%CRASHLIST%") do set "CRASHFILE=%%f"
 
 echo.
 echo  ===========================================================
@@ -333,13 +350,20 @@ goto :showlog
 
 :showcrash
 echo   Report: %CRASHFILE%
+echo   This report was written by THIS run.
 echo.
 type "%CRASHFILE%"
 goto :done
 
+rem  No NEW report: say so plainly instead of printing yesterday's. An old report
+rem  from another version is worse than no report - it names a fault that may no
+rem  longer exist and hides the one that does.
 :showlog
-echo   No crash report was written, so the program closed without an
-echo   exception of its own. The end of the newest log is shown instead:
+echo   This run wrote NO crash report of its own.
+echo.
+call :olderreport
+echo.
+echo   The end of the newest log is shown instead:
 echo.
 set "LOGFILE="
 for /f "delims=" %%f in ('dir /b /o-d "%LOGDIR%\*.log" 2^>nul') do if not defined LOGFILE set "LOGFILE=%LOGDIR%\%%f"
@@ -348,6 +372,20 @@ echo   %LOGFILE%
 echo.
 powershell -NoProfile -Command "Get-Content -LiteralPath '%LOGFILE%' -Tail 40"
 goto :done
+
+:olderreport
+set "OLDFILE="
+set "OLDDATE="
+set "OLDINFO=%TEMP%\area11-old-crash.txt"
+del "%OLDINFO%" 2>nul
+powershell -NoProfile -Command "$all=@(); $pointer=Join-Path $env:TEMP 'Area11\latest-crash.txt'; if (Test-Path -LiteralPath $pointer) { $raw=Get-Content -LiteralPath $pointer -Raw; if ($raw) { $said=$raw.Trim(); if ($said -and (Test-Path -LiteralPath $said)) { $all += Get-Item -LiteralPath $said } } }; foreach ($d in @('%LOGDIR%','%TEMPAPPDIR%')) { if (Test-Path -LiteralPath $d) { $all += Get-ChildItem -LiteralPath $d -Filter 'crash-*.txt' -File -ErrorAction SilentlyContinue } }; $best=@($all | Sort-Object LastWriteTimeUtc -Descending); if ($best.Count -gt 0) { [Console]::Out.Write($best[0].FullName + '|' + $best[0].LastWriteTime.ToString('yyyy-MM-dd HH:mm')) }" > "%OLDINFO%" 2>nul
+if not exist "%OLDINFO%" goto :eof
+for /f "usebackq delims=" %%f in ("%OLDINFO%") do set "OLDFILE=%%f"
+if not defined OLDFILE goto :eof
+for /f "tokens=1* delims=|" %%a in ("%OLDFILE%") do echo     The newest report on this PC is %%a  (%%b, an EARLIER run - not shown).
+echo   It describes a different day, so it is named but NOT printed.
+goto :eof
+
 
 :nofiles
 echo   The folder %LOGDIR% has no files at all.

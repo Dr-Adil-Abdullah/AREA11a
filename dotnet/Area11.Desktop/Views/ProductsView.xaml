@@ -48,10 +48,10 @@
                         <DataGridTextColumn Header="Medicine" Binding="{Binding Name}" Width="2*" />
                         <DataGridTextColumn Header="Salt / formula" Binding="{Binding Generic}" Width="1.4*" />
                         <DataGridTextColumn Header="Rack" Binding="{Binding RackNo}" Width="70" />
-                        <DataGridTextColumn Header="Stock" Binding="{Binding StockLabel}" Width="90" />
-                        <DataGridTextColumn Header="Cost" Binding="{Binding CostText}" Width="90" />
-                        <DataGridTextColumn Header="Retail" Binding="{Binding RetailText}" Width="90" />
-                        <DataGridTextColumn Header="Margin" Binding="{Binding MarginLabel}" Width="70" />
+                        <DataGridTextColumn Header="Stock" Binding="{Binding StockLabel, Mode=OneWay}" Width="90" />
+                        <DataGridTextColumn Header="Cost" Binding="{Binding CostText, Mode=OneWay}" Width="90" />
+                        <DataGridTextColumn Header="Retail" Binding="{Binding RetailText, Mode=OneWay}" Width="90" />
+                        <DataGridTextColumn Header="Margin" Binding="{Binding MarginLabel, Mode=OneWay}" Width="70" />
                     </DataGrid.Columns>
                 </DataGrid>
             </Border>
