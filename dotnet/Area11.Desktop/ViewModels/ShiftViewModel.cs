@@ -35,6 +35,7 @@ public sealed class ShiftViewModel : ObservableObject
     private string _statusText = "Open the drawer with the cash you start with.";
     private bool _isStatusError;
     private User? _selectedPerson;
+    private string _peopleSummaryText = string.Empty;
     private string _handoverCashText = string.Empty;
     private ShiftHandover? _lastHandover;
 
@@ -56,6 +57,9 @@ public sealed class ShiftViewModel : ObservableObject
 
     /// <summary>Everybody who could take the drawer - the signed-in person is not in this list.</summary>
     public ObservableCollection<User> NextPeople { get; } = new();
+
+    /// <summary>Who counted a drawer in the last 30 days and how far each one landed (F-56).</summary>
+    public ObservableCollection<ShiftPersonSummary> PeopleSummary { get; } = new();
 
     public RelayCommand OpenCommand { get; }
 
@@ -106,6 +110,20 @@ public sealed class ShiftViewModel : ObservableObject
     }
 
     public bool HasLastHandover => _lastHandover is not null;
+
+    /// <summary>
+    /// "Who was short" is a management question: the owner and a manager see it, a cashier does not,
+    /// even when the cashier is allowed to open the till. The service enforces the same rule, so a
+    /// hidden card and a refused call can never disagree.
+    /// </summary>
+    public bool CanSeePeople => _user.CanManage;
+
+    /// <summary>The sentence under the table: how many shifts, how many people, and what it found.</summary>
+    public string PeopleSummaryText
+    {
+        get => _peopleSummaryText;
+        private set => SetProperty(ref _peopleSummaryText, value);
+    }
 
     public string HeaderText
     {
@@ -231,6 +249,7 @@ public sealed class ShiftViewModel : ObservableObject
         }
 
         LoadPeople();
+        LoadPeopleSummary();
 
         History.Clear();
 
@@ -264,6 +283,39 @@ public sealed class ShiftViewModel : ObservableObject
         }
 
         SelectedPerson = NextPeople.FirstOrDefault(person => person.Id == keeper) ?? NextPeople.FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Reads the per-person report (F-56). The page stays usable when the answer is a refusal: the
+    /// list is emptied and the sentence says who may look, because an empty table with no reason
+    /// reads like "nobody was ever short".
+    /// </summary>
+    private void LoadPeopleSummary()
+    {
+        PeopleSummary.Clear();
+
+        if (!CanSeePeople)
+        {
+            PeopleSummaryText = "Only the owner or a manager can see who was short on the drawer.";
+            return;
+        }
+
+        var result = _services.Shifts.ByPerson(_user, 30);
+
+        if (!result.Ok || result.Value is null)
+        {
+            PeopleSummaryText = result.Error ?? "The shift report could not be read.";
+            return;
+        }
+
+        var report = result.Value;
+
+        foreach (var person in report.People)
+        {
+            PeopleSummary.Add(person);
+        }
+
+        PeopleSummaryText = report.Sentence;
     }
 
     private void HandOver()

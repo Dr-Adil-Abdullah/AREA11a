@@ -350,6 +350,106 @@ VALUES(@userId, @at, @openingFloat, 'open', @note, @fromId);",
         }
     }
 
+    /// <summary>
+    /// Who counted the drawer, and how far each person's counts landed from what the bills said
+    /// (F-56, Spec 7.2.7). Read-only: it opens no till and changes no row.
+    ///
+    /// **Why per person and not per day.** A single short count is noise - a note miscounted, a
+    /// rupee that rolled under the tray. The same person short in three counts out of five is a
+    /// pattern, and a daily report cannot show it because every day starts from zero. Adding one
+    /// person's differences over a month is the only arithmetic that reveals it.
+    ///
+    /// **Who may ask.** Cash permission *and* a manager or the owner: this is the page that says
+    /// somebody's drawer was short, and that is a conversation for the person who runs the shop.
+    /// A cashier who may open the till still may not read his colleagues' differences.
+    ///
+    /// **Short and over stay apart** (the same rule as the books check, F-54): one net number would
+    /// let a drawer that leaks cancel a drawer that hoards, and the shop would read "no problem".
+    /// </summary>
+    public ServiceResult<ShiftPersonReport> ByPerson(User? user, int days = 30)
+    {
+        if (!_permissions.Can(user, Modules.Cash) || user is null || !user.CanManage)
+        {
+            return ServiceResult<ShiftPersonReport>.Fail(
+                "Only the owner or a manager can see who was short on the drawer.");
+        }
+
+        if (days < 1 || days > 3650)
+        {
+            return ServiceResult<ShiftPersonReport>.Fail("Choose a window between 1 and 3650 days.");
+        }
+
+        try
+        {
+            using var connection = _db.Open();
+
+            // A closed shift always has both numbers: Close() writes them in the same statement that
+            // marks the row closed. The filter is belt-and-braces for a file written by something
+            // else - a shift with no counted cash has no difference and must not be counted as zero.
+            var people = _db.Query<ShiftPersonSummary>(connection, @"
+SELECT s.user_id AS userId, IFNULL(u.name, '(removed)') AS name,
+       COUNT(1) AS closedShifts,
+       IFNULL(SUM(s.expected_paisa), 0) AS expectedPaisa,
+       IFNULL(SUM(s.actual_paisa), 0) AS countedPaisa,
+       IFNULL(SUM(s.actual_paisa - s.expected_paisa), 0) AS differencePaisa,
+       SUM(CASE WHEN s.actual_paisa - s.expected_paisa < 0 THEN 1 ELSE 0 END) AS shortCount,
+       SUM(CASE WHEN s.actual_paisa - s.expected_paisa > 0 THEN 1 ELSE 0 END) AS overCount,
+       SUM(CASE WHEN s.actual_paisa = s.expected_paisa THEN 1 ELSE 0 END) AS exactCount,
+       IFNULL(MIN(CASE WHEN s.actual_paisa < s.expected_paisa
+                       THEN s.expected_paisa - s.actual_paisa END), 0) AS worstShortPaisa,
+       IFNULL(MAX(CASE WHEN s.actual_paisa > s.expected_paisa
+                       THEN s.actual_paisa - s.expected_paisa END), 0) AS worstOverPaisa
+FROM shifts s
+LEFT JOIN users u ON u.id = s.user_id
+WHERE s.status = 'closed'
+  AND s.actual_paisa IS NOT NULL
+  AND s.expected_paisa IS NOT NULL
+  AND IFNULL(s.closed_at, s.opened_at) >= datetime('now', 'localtime', @cut)
+GROUP BY s.user_id, u.name
+ORDER BY ABS(IFNULL(SUM(s.actual_paisa - s.expected_paisa), 0)) DESC, IFNULL(u.name, '') COLLATE NOCASE;",
+                new { cut = "-" + days + " days" });
+
+            // The shop's short and over are added up from the SHIFT ROWS, not from the people above.
+            // Why: a person can be short in one count and over in another, and their row shows one
+            // net number - which is right for "where does this person stand" and wrong for "how much
+            // did the shop lose". Adding the nets would report a shop that was short Rs 500 once and
+            // over Rs 200 once as simply "Rs 300 short", and both facts would be gone. The first
+            // version of this method did exactly that, and a real SQLite file showed it in one run.
+            var shop = _db.QuerySingle<ShopTotals>(connection, @"
+SELECT COUNT(1) AS closedShifts,
+       IFNULL(SUM(s.expected_paisa), 0) AS expectedPaisa,
+       IFNULL(SUM(s.actual_paisa), 0) AS countedPaisa,
+       IFNULL(SUM(CASE WHEN s.actual_paisa < s.expected_paisa
+                       THEN s.expected_paisa - s.actual_paisa ELSE 0 END), 0) AS missingPaisa,
+       IFNULL(SUM(CASE WHEN s.actual_paisa > s.expected_paisa
+                       THEN s.actual_paisa - s.expected_paisa ELSE 0 END), 0) AS tooMuchPaisa
+FROM shifts s
+WHERE s.status = 'closed'
+  AND s.actual_paisa IS NOT NULL
+  AND s.expected_paisa IS NOT NULL
+  AND IFNULL(s.closed_at, s.opened_at) >= datetime('now', 'localtime', @cut);",
+                new { cut = "-" + days + " days" });
+
+            var report = new ShiftPersonReport
+            {
+                Days = days,
+                People = people,
+                ClosedShifts = shop?.ClosedShifts ?? 0,
+                ExpectedPaisa = shop?.ExpectedPaisa ?? 0,
+                CountedPaisa = shop?.CountedPaisa ?? 0,
+                MissingPaisa = shop?.MissingPaisa ?? 0,
+                TooMuchPaisa = shop?.TooMuchPaisa ?? 0
+            };
+
+            return ServiceResult<ShiftPersonReport>.Success(report);
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The per-person shift report could not be read.", exception);
+            return ServiceResult<ShiftPersonReport>.Fail("The shift report could not be read.");
+        }
+    }
+
     /// <summary>The last shifts, newest first - the day-by-day record of the drawer.</summary>
     public List<ShiftMoney> History(int limit = 60)
     {
@@ -464,5 +564,22 @@ SELECT
         shift.ExpectedPaisa = shift.OpeningFloatPaisa + shift.CashSalesPaisa + shift.CashCollectionsPaisa
                               + shift.SupplierCashInPaisa - shift.CashRefundsPaisa - shift.SupplierCashOutPaisa
                               - shift.ExpensesPaisa - shift.DrawingsPaisa;
+    }
+
+    /// <summary>
+    /// The shop's own totals over the window - one row, read straight from the shift rows.
+    /// Named to match the SELECT aliases exactly: a column with no property is dropped silently.
+    /// </summary>
+    private sealed class ShopTotals
+    {
+        public int ClosedShifts { get; set; }
+
+        public long ExpectedPaisa { get; set; }
+
+        public long CountedPaisa { get; set; }
+
+        public long MissingPaisa { get; set; }
+
+        public long TooMuchPaisa { get; set; }
     }
 }

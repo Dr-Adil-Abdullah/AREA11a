@@ -2706,6 +2706,113 @@ def check_run_verdict() -> None:
 
 
 # ---------------------------------------------------------------------------
+def check_shift_report_gate() -> None:
+    """Who was short is a management screen, and its two totals must stay two totals.
+
+    Why this exists: v0.31.0 added the per-person shift report (F-56), and it has two ways to go
+    quietly wrong - both of them silent, both of them expensive:
+
+      * **the shop's short could be netted against its over.** The first version of `ByPerson`
+        summed each person's net difference, so a shop short Rs 500 once and over Rs 200 once
+        read as "Rs 300 short" - and both facts vanished. A real SQLite file caught it in one run
+        (1500 short / 200 over came out 1300 / 0). The rule is now structural: the shop's two
+        numbers come from a **second query over the shift rows**, and `ByPerson` never calls
+        `.Sum(` over people. A gate cannot see a database, but it can see that the summing code
+        is not there to be written again by accident.
+      * **the card could be shown to the wrong person.** A cashier may open the till and still
+        not read a colleague's differences. The view-model hides the table with `CanManage` and
+        the service refuses the same person; if only one of the two changed, the shop would
+        either show a page that then errors or hide a page the manager needs. Both must use the
+        same rule and the same sentence, or the screen and the service drift apart and the drift
+        is invisible until the shop is open.
+
+    This is a static check - it reads the four files. The behaviour is proved by
+    `ShiftSummaryTests` (9 cases) on the shop PC.
+    """
+    service = ROOT / "dotnet/Area11.Core/Services/ShiftService.cs"
+    view_model = ROOT / "dotnet/Area11.Desktop/ViewModels/ShiftViewModel.cs"
+    view = ROOT / "dotnet/Area11.Desktop/Views/ShiftView.xaml"
+
+    for needed in (service, view_model, view):
+        if not needed.exists():
+            fail(f"the per-person shift report is half-built: {rel(needed)} is missing")
+    if not all(path.exists() for path in (service, view_model, view)):
+        return
+
+    code = service.read_text(encoding="utf-8", errors="replace")
+
+    marker = "public ServiceResult<ShiftPersonReport> ByPerson"
+
+    if marker not in code:
+        fail("ShiftService has no ByPerson - the per-person report has no service behind it")
+        return
+
+    start = code.index(marker)
+    try_at = code.find("try", start)
+    guard = code[start:try_at if try_at > start else start + 1500]
+
+    if "Modules.Cash" not in guard or "CanManage" not in guard:
+        fail("ByPerson does not ask for both the Cash permission and a manager - "
+             "a cashier with the till permission could read a colleague's differences")
+
+    if "Only the owner or a manager" not in guard:
+        fail("ByPerson refuses without saying who may look - an unexplained refusal reads as a fault")
+
+    if "QuerySingle<ShopTotals>" not in code[start:]:
+        fail("ByPerson has no separate shop-totals query - the short and over would have to be "
+             "summed from the people, and netting them hides both facts")
+
+    if ".Sum(" in code:
+        fail("ShiftService sums people - the shop's short and over must come from the shift rows, "
+             "never from the per-person nets (a shop short 500 and over 200 is not '300 short')")
+
+    if "private sealed class ShopTotals" not in code:
+        fail("ShiftService lost its private ShopTotals row - the shop's own totals have no home")
+
+    screen = view_model.read_text(encoding="utf-8", errors="replace")
+
+    can_line = next((line for line in screen.splitlines() if "CanSeePeople =>" in line), "")
+
+    if not can_line:
+        fail("ShiftViewModel has no CanSeePeople - the card's visibility has no rule")
+
+    if "CanManage" not in can_line:
+        fail("ShiftViewModel shows the per-person card to somebody who is not a manager - "
+             "CanSeePeople must be the same rule the service refuses on")
+
+    body = screen[screen.find("private void LoadPeopleSummary"):]
+    body = body[:body.find("private void ") if body.find("private void ") > 0 else 1200]
+
+    if "ByPerson(" not in body:
+        fail("LoadPeopleSummary never calls ByPerson - the card would sit empty with no reason")
+
+    if "Only the owner or a manager" not in body:
+        fail("LoadPeopleSummary has no refusal sentence - an empty table reads as "
+             "'nobody was ever short', which is the one wrong answer")
+
+    xaml = view.read_text(encoding="utf-8", errors="replace")
+    table = 'ItemsSource="{Binding PeopleSummary}"'
+    count = xaml.count(table)
+
+    if count == 0:
+        fail("ShiftView has no table bound to PeopleSummary - the report has no screen")
+    elif count > 1:
+        fail("ShiftView binds PeopleSummary more than once - a second copy can escape the "
+             "manager-only wrapper and show a cashier what the service refuses him")
+
+    if count == 1:
+        at = xaml.index(table)
+        before = xaml[max(0, at - 900):at]
+
+        if "Visibility=\"{Binding CanSeePeople" not in before or "BoolToVis" not in before:
+            fail("the PeopleSummary table in ShiftView is not wrapped in the CanSeePeople "
+                 "visibility - a cashier would see the table the service refuses to fill")
+
+    REPORT.append("Shift report: manager-only on both sides, and the shop's short and over are "
+                  "a second query - never the sum of the people's nets")
+
+
+# ---------------------------------------------------------------------------
 def check_docs() -> None:
     docs = [ROOT / "README.md", ROOT / "HANDOFF.md", ROOT / "AGENTS.md", ROOT / "dotnet/README.md"]
     docs += sorted((ROOT / "docs").glob("*.md"))
@@ -3193,6 +3300,7 @@ def main() -> int:
     check_scripts()
     check_running_app()
     check_run_verdict()
+    check_shift_report_gate()
     check_csharp_grammar()
 
     if not quiet:

@@ -171,6 +171,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
                     <StackPanel Grid.Row="0" Margin="0,0,0,8">
@@ -192,6 +193,34 @@
                             <DataGridTextColumn Header="Handover" Binding="{Binding HandoverLabel}" Width="180" />
                         </DataGrid.Columns>
                     </DataGrid>
+
+                    <!-- ================= who counted, and how it landed (F-56) ================= -->
+                    <Border Grid.Row="2" Margin="0,12,0,0" Padding="0,10,0,0"
+                            BorderThickness="0,1,0,0" BorderBrush="{StaticResource LineBrush}"
+                            Visibility="{Binding CanSeePeople, Converter={StaticResource BoolToVis}}">
+                        <StackPanel>
+                            <TextBlock Text="Who counted, and how it landed" Style="{StaticResource SectionTitle}" />
+                            <TextBlock Text="{Binding PeopleSummaryText}" Style="{StaticResource FieldHint}"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Text="Short and over are added up separately: a drawer that leaks must not be hidden by a drawer that holds extra. Worst first."
+                                       Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,2,0,6" />
+
+                            <DataGrid ItemsSource="{Binding PeopleSummary}" IsReadOnly="True"
+                                      AutoGenerateColumns="False" HeadersVisibility="Column"
+                                      GridLinesVisibility="Horizontal" MaxHeight="190" MinHeight="90">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="By" Binding="{Binding Name}" Width="*" />
+                                    <DataGridTextColumn Header="Shifts" Binding="{Binding ShiftsLabel}" Width="80" />
+                                    <DataGridTextColumn Header="Expected" Binding="{Binding ExpectedLabel}" Width="105" />
+                                    <DataGridTextColumn Header="Counted" Binding="{Binding CountedLabel}" Width="105" />
+                                    <DataGridTextColumn Header="Difference" Binding="{Binding DifferenceLabel}" Width="140" />
+                                    <DataGridTextColumn Header="Pattern" Binding="{Binding PatternLabel}" Width="120" />
+                                    <DataGridTextColumn Header="Worst short" Binding="{Binding WorstShortLabel}" Width="105" />
+                                    <DataGridTextColumn Header="Worst over" Binding="{Binding WorstOverLabel}" Width="105" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </Border>
                 </Grid>
             </Border>
         </Grid>

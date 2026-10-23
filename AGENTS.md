@@ -129,6 +129,28 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
+> **v0.31.0 (Loden `#244506`) - who was short, and the total that must never be netted.**
+>
+> * **A spec line that says "not built" is a debt.** Spec 7.2.7 said *"a per-user shift report is
+>   also not built"* and it stayed true for forty versions, because the feature board never had a row
+>   for it. A gap that lives only in the specification has no owner - so when the board is green,
+>   read the spec's own list of what is missing, not only the board.
+> * **Netting two differences destroys both.** A shop short Rs 500 in one count and over Rs 200 in
+>   another is **"500 short, 200 over"**, never "300 short". The first version of `ByPerson` summed
+>   the per-person nets and produced exactly the wrong number; a SQLite file built from the 23
+>   migrations showed it in one run (`1500 / 200` versus `1300 / 0`). Totals of **missing** and
+>   **too much** come from the raw rows, and a person's own row keeps their net - *where this person
+>   stands* and *how much the shop lost* are two questions with two answers.
+> * **A window is a claim; say what it excludes.** An open drawer has no counted number, so it is
+>   not in the report: calling it "exact" would be a lie in the shop's favour, which is the most
+>   expensive kind.
+> * **One sentence, three copies.** "exact / over by Rs 50 / short by Rs 120" is read on the shift
+>   page, the handover slip and now this table. It lives in `ShiftWords` - three copies would drift,
+>   and the copy that drifted would be the one the owner trusted.
+> * **A hidden card and a refused call must agree.** The view-model hides the table for a cashier
+>   and the service refuses the same person; both ask `CanManage`, so the screen can never show a
+>   page that then errors, and the service can never be reached around the page.
+>
 > **v0.30.9 (Oxblood `#4A0E0E`) - 686 of 686 green, and the runner that could not say so.**
 >
 > * **The whole suite passes on the shop PC.** 686 of 686, failed: 0, 51 s - including the 26 tests
@@ -467,7 +489,7 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >
 > The last confirmed Windows build is v0.4.8; everything from v0.6.2 on is proved only by
 > `tools/check_repo.py` until the owner runs `START-AREA11.bat` and `tools\\RUN-TESTS.cmd`
-> (**686 cases**).
+> (**695 cases**).
 >
 > **The checker learned two things from this version.** `DashboardService` used `User` with no
 > `using Area11.Core.Models;` and the gate stayed quiet: its mention patterns wanted `.`, `(` or
