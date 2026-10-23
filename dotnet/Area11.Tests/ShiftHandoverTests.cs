@@ -243,8 +243,12 @@ FROM audit_logs WHERE action IN ('shift_handover', 'shift_open') ORDER BY id;");
         Assert.Equal(handover.From.Id.ToString(), handoverLine.EntityId);
         Assert.Equal("Rs 50 missing", handoverLine.Note);
 
-        var openLine = audit.Single(row => row.Action == "shift_open");
-        Assert.Equal(handover.To.Id.ToString(), openLine.EntityId);
+        // Two openings by now - the morning one and the one this handover created - so the test
+        // asks for the last rather than the only one. `Single` here was the first failure this
+        // file ever produced on Windows (v0.30.7).
+        var openLines = audit.Where(row => row.Action == "shift_open").ToList();
+        Assert.Equal(2, openLines.Count);
+        Assert.Equal(handover.To.Id.ToString(), openLines[^1].EntityId);
 
         var history = Shifts(test).History();
         Assert.Equal(2, history.Count);
@@ -262,7 +266,8 @@ FROM audit_logs WHERE action IN ('shift_handover', 'shift_open') ORDER BY id;");
         Assert.True(Shifts(test).Open(TestData.Owner, 0, null).Ok);
 
         // Two boxes before the change of hands, one after it.
-        Assert.True(TestData.Sales(test).Create(TestData.Cart(product, qty: 2, method: "cash"), TestData.Owner).Ok);
+        var before = TestData.Sales(test).Create(TestData.Cart(product, qty: 2, method: "cash"), TestData.Owner);
+        Assert.True(before.Ok, before.Error);
 
         var handover = Shifts(test).Handover(TestData.Owner, bilal, 60000, null).Value!;
 
@@ -270,7 +275,13 @@ FROM audit_logs WHERE action IN ('shift_handover', 'shift_open') ORDER BY id;");
         Assert.Equal(60000L, handover.From.ExpectedPaisa);
         Assert.Equal(60000L, handover.To.OpeningFloatPaisa);
 
-        Assert.True(TestData.Sales(test).Create(TestData.Cart(product, qty: 1, method: "cash"), bilal).Ok);
+        var after = TestData.Sales(test).Create(TestData.Cart(product, qty: 1, method: "cash"), bilal);
+        Assert.True(after.Ok, after.Error);
+
+        // A test does everything in a few milliseconds, so both bills and the handover carry the
+        // same second - and a rule about the second cannot be proved by the clock. The four stamps
+        // are pinned instead: first bill at -15 s, handover at -10 s, second bill at -5 s.
+        PinAroundTheHandover(test, handover, before.Value!.Code, after.Value!.Code);
 
         var second = Shifts(test).Current()!;
 
@@ -280,8 +291,77 @@ FROM audit_logs WHERE action IN ('shift_handover', 'shift_open') ORDER BY id;");
         var history = Shifts(test).History();
         var first = history.Single(row => row.Id == handover.From.Id);
 
-        // The two shifts together say exactly what the shop sold: 6 + 3 = 9, never 15.
-        Assert.Equal(90000L, first.CashSalesPaisa + second.CashSalesPaisa);
+        // The two shifts together say exactly what the shop sold: 6 + 3 = 9, never 15. The first
+        // shift's own number was fixed when the drawer was counted, so it cannot be rewritten by
+        // the bill that came afterwards.
+        Assert.Equal(60000L, first.ExpectedPaisa);
+        Assert.Equal(90000L, handover.From.CashSalesPaisa + second.CashSalesPaisa);
+    }
+
+    [Fact]
+    public void ABillInTheHandoverSecond_BelongsToTheShiftThatWasCounted()
+    {
+        using var test = new TestDatabase();
+        var product = TestData.AddProduct(test, retailPaisa: 30000, batchQty: 100);
+        var bilal = AddPerson(test, "Bilal", "cashier", withCash: true);
+
+        Assert.True(Shifts(test).Open(TestData.Owner, 0, null).Ok);
+
+        var bill = TestData.Sales(test).Create(TestData.Cart(product, qty: 1, method: "cash"), TestData.Owner);
+        Assert.True(bill.Ok, bill.Error);
+
+        var handover = Shifts(test).Handover(TestData.Owner, bilal, 30000, null).Value!;
+        var opened = Shifts(test).Current()!;
+
+        // No pinning needed here: whichever seconds the two land in, the bill is never after the
+        // count, because it was written before the handover ran.
+        Assert.Equal(30000L, handover.From.CashSalesPaisa);
+        Assert.Equal(30000L, handover.From.ExpectedPaisa);
+        Assert.Equal(0L, handover.From.DifferencePaisa);
+
+        // And the new shift must not count it a second time: its window starts strictly after the
+        // second the drawer changed hands. Counting it twice would invent Rs 300.
+        Assert.Equal(0L, opened.CashSalesPaisa);
+        Assert.Equal(30000L, opened.OpeningFloatPaisa);
+        Assert.Equal(30000L, opened.ExpectedPaisa);
+        Assert.Equal(30000L, handover.From.CashSalesPaisa + opened.CashSalesPaisa);
+    }
+
+    /// <summary>
+    /// Pins the two shifts and the two bills to fixed seconds in the past: the first bill at -15 s,
+    /// the handover at -10 s and the second bill at -5 s. Without this the wall clock decides which
+    /// shift sees which bill and the test proves nothing on a slow machine or the wrong thing on a
+    /// fast one. Only the four stamps change; no money moves.
+    /// </summary>
+    private static void PinAroundTheHandover(TestDatabase test, ShiftHandover handover, string beforeCode, string afterCode)
+    {
+        test.Database.Tx(connection =>
+        {
+            test.Database.Execute(connection, @"
+UPDATE shifts SET opened_at = datetime('now','localtime','-20 seconds'),
+                  closed_at = datetime('now','localtime','-10 seconds')
+WHERE id = @id;", new { id = handover.From.Id });
+
+            test.Database.Execute(connection,
+                "UPDATE shifts SET opened_at = datetime('now','localtime','-10 seconds') WHERE id = @id;",
+                new { id = handover.To.Id });
+
+            test.Database.Execute(connection,
+                "UPDATE sales SET date = datetime('now','localtime','-15 seconds') WHERE code = @code;",
+                new { code = beforeCode });
+
+            test.Database.Execute(connection, @"
+UPDATE payments SET date = datetime('now','localtime','-15 seconds')
+WHERE sale_id = (SELECT id FROM sales WHERE code = @code);", new { code = beforeCode });
+
+            test.Database.Execute(connection,
+                "UPDATE sales SET date = datetime('now','localtime','-5 seconds') WHERE code = @code;",
+                new { code = afterCode });
+
+            test.Database.Execute(connection, @"
+UPDATE payments SET date = datetime('now','localtime','-5 seconds')
+WHERE sale_id = (SELECT id FROM sales WHERE code = @code);", new { code = afterCode });
+        });
     }
 
     [Fact]

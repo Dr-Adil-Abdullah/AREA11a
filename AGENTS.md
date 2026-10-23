@@ -129,6 +129,30 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
+> **v0.30.7 (Bottle `#0A4626`) - the first real run, and what it says about a test written without a compiler.**
+>
+> * **A test you never ran is a guess, not a proof.** 26 tests for the books check and the handover were
+>   written in this sandbox and marked done; on their first real run **six failed**. Three were the
+>   *tests* (a purchase test built three units and expected two units' numbers; a CSV test wanted
+>   `5 missing` where the screen says `Rs 5 missing`; a handover test asked for one `shift_open` row
+>   when there are two). A red line does not mean the program is wrong - it means *something* is wrong,
+>   and the first job is to find out which side.
+> * **Three were the program, and they were one fault: the boundary second.** v0.30.6 gave the second
+>   of a handover to the NEW shift. A bill rung in that second was then counted by the new shift even
+>   though its cash was already inside the counted float - **Rs 300 invented** - and the same rows
+>   reported 800 or 500 depending on whether a sale and a handover landed in the same second. A money
+>   rule that depends on the clock is not a rule.
+> * **The fix is decided by the row, not by the caller.** Only a shift that carries
+>   `opened_from_shift_id` excludes its own opening second; every other window is untouched, so a
+>   handover reports exactly what a plain close would for the same rows. A flag passed by the caller
+>   would have left the page, the close button and the slip free to disagree about the same shift.
+> * **A test must not be decided by the clock.** A suite runs in milliseconds, so every row lands in
+>   the same second and a boundary rule proves nothing. One test now pins the stamps to -20/-15/-10/-5
+>   seconds; another needs no pinning because the ordering it asserts is true whatever the seconds.
+> * **Correct the record, do not bury it.** The v0.30.6 rows in `VERSIONS.md`, `PROGRESS.md` and D-81
+>   described the wrong window. They now describe what the code actually does, with the correction
+>   named, because the owner reads these files as the shop's memory.
+>
 > **v0.30.6 (Damson `#70266E`) - the drawer changes hands, and the board stops lying to itself.**
 >
 > * **A gap can live inside a ✅ row.** F-31 has been marked done since v0.4.0 and said, in the same
@@ -145,11 +169,12 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >   that shortfall is booked against him, and the person taking over starts clean at the counted
 >   figure. Opening the next shift at the *expected* figure would move the loss into the next
 >   person's day - and it would never be seen again.
-> * **One second can hold both a bill and a handover.** A SQLite stamp here has no fraction. So the
->   closing window is `[opened, at)` and the new one is `[at, now]`: a bill in the handover second
->   belongs to the new shift and to nobody twice. With `<=` on both sides the same bill is counted
->   on each side of the change (money invented) or on neither (money lost). This was decided by
->   running the two windows against a real database, not by reading the SQL.
+> * **One second can hold both a bill and a handover.** A SQLite stamp here has no fraction. v0.30.6
+>   first gave that second to the new shift (`[opened, at)` / `[at, now]`) and v0.30.7 corrected it:
+>   the closing shift keeps `[opened, at]` - the window a plain close uses - and a shift opened by a
+>   handover counts `(at, now]`. A bill in that second belongs to the closing shift, and to nobody
+>   twice. **See the v0.30.7 block: the first version of this bullet was wrong, and only a real run
+>   could show it.**
 > * **`_` is part of a name.** The checker split the select list at the word `FROM` and therefore
 >   read the column `opened_from_shift_id` as the keyword `FROM`, then reported four healthy queries
 >   as broken. A gate that fails on good code is worse than no gate: it teaches the owner that red

@@ -217,9 +217,13 @@ WHERE code = @code;", new { code = purchase.Value!.Code }));
 
         var finding = Assert.Single(Rule(report, "A purchase's lines add up to its subtotal").Findings);
 
+        // Three units at Rs 100 is Rs 300; the header was lowered by one rupee, so it now says
+        // Rs 299 while the lines still say Rs 300. This test said 199/200 until it was first run on
+        // Windows (v0.30.7): it had been written for a two-unit purchase and never executed, and
+        // only a real run can tell a wrong expectation from a wrong rule.
         Assert.Equal(purchase.Value!.Code, finding.Code);
-        Assert.Equal(19900L, finding.ExpectedPaisa);
-        Assert.Equal(20000L, finding.FoundPaisa);
+        Assert.Equal(29900L, finding.ExpectedPaisa);
+        Assert.Equal(30000L, finding.FoundPaisa);
         Assert.Equal(-100L, finding.DifferencePaisa);
 
         // The header rule is a DIFFERENT identity and must stay clean here: three rules were not
@@ -353,8 +357,10 @@ VALUES(@at, 'cash', 7500, 'no owner');", new { at = Clock.Now() }));
         var bill = lines.First(line => line.StartsWith("A bill's lines add up to the bill", StringComparison.Ordinal));
 
         // "Rs 305" would be a picture of money; the file carries numbers so the accountant can add
-        // the column up. The bill says 305, its line still says 300, and the gap is 5.
-        Assert.Contains(",INV-0001,305,300,5,5 missing", bill);
+        // the column up. The bill says 305, its line still says 300, and the gap is 5. The last
+        // column is the same sentence the screen shows, so it keeps its "Rs" - and the CSV writer
+        // quotes it if the amount ever grows a thousands comma.
+        Assert.Contains(",INV-0001,305,300,5,Rs 5 missing", bill);
     }
 
     [Fact]

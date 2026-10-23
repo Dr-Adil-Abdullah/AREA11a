@@ -261,7 +261,7 @@ WHERE id = @id;",
                 }
 
                 var at = Clock.Now();
-                FillDrawer(connection, shift, shift.OpenedAt, at, beforeTheHandover: true);
+                FillDrawer(connection, shift, shift.OpenedAt, at);
 
                 shift.ActualPaisa = countedPaisa;
                 shift.DifferencePaisa = countedPaisa - shift.ExpectedPaisa;
@@ -319,10 +319,10 @@ VALUES(@userId, @at, @openingFloat, 'open', @note, @fromId);",
 
                 // The stored row keeps the expected/actual/difference, but the six lines that
                 // explain *how* that expected figure was reached are not columns - they are read
-                // from the history. The slip prints them, so the closed shift is filled again
-                // with the same half-open window it was closed with. Without this the slip would
-                // hand the next person a piece of paper full of zeros.
-                FillDrawer(connection, closedShift, closedShift.OpenedAt, at, beforeTheHandover: true);
+                // from the history. The slip prints them, so the closed shift is filled again with
+                // exactly the same rule it was closed with. Without this the slip would hand the
+                // next person a piece of paper full of zeros.
+                FillDrawer(connection, closedShift, closedShift.OpenedAt, at);
 
                 var openedShift = ReadShift(connection, nextShiftId);
 
@@ -403,19 +403,27 @@ WHERE s.id = @id;", new { id });
     /// <summary>
     /// Fills the six money lines from the history between two timestamps. Every line is its own
     /// sub-select so one empty table can never hide another line.
+    ///
+    /// **The boundary is decided by the row, not by the caller.** A shift that was opened by a
+    /// handover does not count the second it was opened in: that second already belongs to the
+    /// drawer the previous person counted. Every other shift counts its opening second, exactly as
+    /// it always has. This is why the rule lives here instead of in a parameter - the same shift is
+    /// read again when the page refreshes, when it is closed and when its slip is printed, and all
+    /// four readings must agree.
+    ///
+    /// Why the closing side stays inclusive: a normal close has always counted `[opened, closed]`,
+    /// and a handover must report the same number a plain close would for the same rows - otherwise
+    /// the same drawer says 800 on one button and 500 on the other, and the owner trusts neither.
+    /// So a bill stamped in the same second as the handover belongs to the **closing** shift. It
+    /// can only belong to one of them, and giving it to the person whose counted cash was taken
+    /// after it is the ordering that really happens: ring the bill, then count, then hand over.
     /// </summary>
     private void FillDrawer(
         Microsoft.Data.Sqlite.SqliteConnection connection,
         ShiftMoney shift,
         string from,
-        string to,
-        bool beforeTheHandover = false)
+        string to)
     {
-        // A handover and a bill can land in the same second, because a stamp is only accurate to
-        // the second. On a handover the closing shift's window is [open, at) and the new shift's is
-        // [at, now], so a bill in that one second belongs to the new shift and to nobody twice.
-        // Without this, a handover in the same second as a sale either counts the sale on both
-        // sides of the change or on neither - and both of those are wrong money.
         var sql = @"
 SELECT
   IFNULL((SELECT SUM(p.amount_paisa) FROM payments p
@@ -438,7 +446,10 @@ SELECT
   IFNULL((SELECT SUM(d.amount_paisa) FROM owner_drawings d
           WHERE d.type = 'cash' AND d.date >= @from AND d.date <= @to), 0) AS drawingsPaisa;";
 
-        sql = sql.Replace("<= @to", beforeTheHandover ? "< @to" : "<= @to", StringComparison.Ordinal);
+        if (shift.OpenedFromShiftId is not null)
+        {
+            sql = sql.Replace(">= @from", "> @from", StringComparison.Ordinal);
+        }
 
         var drawer = _db.QuerySingle<ShiftMoney>(connection, sql, new { from, to });
 
