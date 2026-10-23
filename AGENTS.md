@@ -129,6 +129,19 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
+> **v0.29.9 (Quartz `#6E7B8B`) - a binding is checked against ITS page, not against the whole program.**
+>
+> * **A pool of "every property anywhere" is not a check.** `{Binding BalancePaisa}` in a grid of
+>   medicines passed for two years of versions because a customer model owned that name. The legal
+>   names are now the page's view-model plus the element types its `ItemsSource` collections carry
+>   (81 row types resolved), and all 1,278 bindings still resolve - so the rule got stricter and
+>   stayed silent, which is the only shape worth shipping.
+> * **Match braces, not `[^}]+`.** A binding that contains another markup extension
+>   (`RelativeSource={RelativeSource ...}`) was cut at the first `}`, and the tail swallowed the
+>   next binding - `CanFoldMenu` was being read as `xt.CanFoldMenu` and skipped.
+> * **A 🟡 row is not a missing feature.** All 51 are written; the nine that stay yellow are the ones
+>   only the shop PC can prove. See "Where we stand" in `docs/PROGRESS.md` before starting new work.
+>
 > **v0.29.8 (Steel `#4A6FA5`) - the wiring gate, and a gate that cried wolf before it was allowed to stay.**
 >
 > * **`check_constructor_arity` now reads every project.** It collected declarations from

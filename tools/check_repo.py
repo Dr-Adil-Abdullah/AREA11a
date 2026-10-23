@@ -1384,66 +1384,189 @@ def check_xml() -> None:
 # ---------------------------------------------------------------------------
 # 3. XAML bindings
 # ---------------------------------------------------------------------------
+#: `public int Id { get; }`, `public string Name => ...` - the properties a binding may name.
+_BINDABLE_RE = re.compile(r"public\s+[\w<>?\[\], .]+?\s+(\w+)\s*(?:\{|=>)")
+
+
+def _bindings_in(text: str) -> list[tuple[int, str]]:
+    """(offset, path) for every `{Binding path ...}` in a view, with the braces matched properly.
+
+    Why not a regex: a binding may contain another markup extension - `{Binding DataContext.X,
+    RelativeSource={RelativeSource AncestorType=ItemsControl}}` - and `[^}]+` stops at the FIRST
+    `}`. The tail of that broken match then swallows the next binding, which is how `CanFoldMenu`
+    was read as `xt.CanFoldMenu` and quietly skipped (`xt.*` is not a property of anything, so the
+    old rule treated the name as a row binding and let it pass).
+    """
+    found = []
+    position = 0
+
+    while True:
+        start = text.find("{Binding", position)
+        if start < 0:
+            break
+
+        depth = 0
+        index = start
+
+        while index < len(text):
+            if text[index] == "{":
+                depth += 1
+            elif text[index] == "}":
+                depth -= 1
+                if depth == 0:
+                    break
+            index += 1
+
+        inner = text[start + len("{Binding"):index].strip()
+        path = inner.split(",")[0].strip()
+        found.append((start, path))
+        position = index + 1
+
+    return found
+
+
+def _class_index() -> tuple[dict[str, set[str]], dict[str, str]]:
+    """Every class in the repository: its public properties, and its base class.
+
+    The whole tree, not one folder: a row class lives beside its view-model (`AlertRow`), beside
+    the menu (`NavItem`) or in `Core/Models`, and the ItemsSource of a grid decides which one a
+    column binds to.
+    """
+    properties: dict[str, set[str]] = {}
+    bases: dict[str, str] = {}
+
+    for path in DOTNET.rglob("*.cs"):
+        if {"obj", "bin"} & set(path.parts):
+            continue
+
+        text = path.read_text(encoding="utf-8-sig")
+
+        for match in re.finditer(r"\bclass\s+(\w+)", text):
+            brace = text.find("{", match.end())
+            if brace < 0:
+                continue
+
+            depth = 0
+            end = len(text)
+
+            for index in range(brace, len(text)):
+                if text[index] == "{":
+                    depth += 1
+                elif text[index] == "}":
+                    depth -= 1
+                    if depth == 0:
+                        end = index
+                        break
+
+            properties.setdefault(match.group(1), set()).update(
+                _BINDABLE_RE.findall(text[brace:end]))
+
+            header = text[match.end():brace]
+            parent = re.search(r":\s*([\w.]+)", header)
+            if parent and not parent.group(1).startswith("I"):
+                bases.setdefault(match.group(1), parent.group(1).split(".")[-1])
+
+    return properties, bases
+
+
+def _element_type(view_model_text: str, collection: str) -> str:
+    """`ObservableCollection<AlertRow> Alerts` + "Alerts" -> "AlertRow"."""
+    for shape in (r"ObservableCollection<([\w.]+)>\s+" + re.escape(collection) + r"\b",
+                  r"List<([\w.]+)>\s+" + re.escape(collection) + r"\b",
+                  r"IReadOnlyList<([\w.]+)>\s+" + re.escape(collection) + r"\b"):
+        match = re.search(shape, view_model_text)
+        if match:
+            return match.group(1).split(".")[-1]
+
+    return ""
+
+
 def check_bindings() -> None:
-    # Resource keys are checked for every .xaml by check_resources(); this function only checks the
-    # bindings of the pages that have a view-model.
+    """Every `{Binding X}` must name a property the DataContext really has.
 
-    # Rows inside a DataGrid / ListBox bind to a *model*, not to the page's view-model. Reading the
-    # model files makes those bindings checkable instead of ticking a hand-kept allow-list: a typo
-    # in a column ("BalanceTxt") now fails here rather than printing an empty column in the shop.
-    model_properties: set[str] = set()
-    for model in sorted((DOTNET / "Area11.Core/Models").glob("*.cs")):
-        model_properties |= set(re.findall(
-            r"public\s+[\w<>?\[\], .]+\s+(\w+)\s*(?:\{|=>)", model.read_text(encoding="utf-8-sig")))
+    Why this rule exists at all: a wrong path does not throw. WPF writes a binding error to the
+    debug output and leaves the box empty, so the shop shows a blank column and the owner reports
+    "the page has no data" - the hardest kind of fault to trace back to one letter.
 
-    # Row classes live in the view-model files as well (NavItem for the menu, AlertRow for the bell).
-    # Their public properties belong in the same pool as the models above: a template's DataContext
-    # is the row, so `{Binding IsHeader}` is legal even though ShellViewModel has no such property.
-    # Without this the checker would demand a hand-kept name list - and a hand-kept list is exactly
-    # what let a wrong column name through in v0.4.9.
-    for vm_file in sorted((DOTNET / "Area11.Desktop/ViewModels").glob("*.cs")):
-        vm_text = vm_file.read_text(encoding="utf-8-sig")
+    What changed in v0.29.9 and why it mattered: the pool of legal names used to be EVERY public
+    property of EVERY model and row class in the program, so `{Binding BalancePaisa}` in a grid of
+    medicines passed the moment any unrelated model happened to own `BalancePaisa`. The pool is now
+    built per page: the page's own view-model, the common `ItemProperties`, the Core models, and the
+    element types of the collections THAT page actually binds an ItemsSource to. A name from
+    somewhere else in the program is no longer a pass - proved by putting the customer property
+    `BalancePaisa` into a grid of medicines: it fails now, and it passed before v0.29.9.
 
-        declares_row = any(name.endswith("Row") or name == "NavItem"
-                           for name in re.findall(r"public\s+(?:sealed\s+)?class\s+(\w+)", vm_text))
-        if declares_row:
-            model_properties |= set(re.findall(
-                r"public\s+[\w<>?\[\], .]+\s+(\w+)\s*(?:\{|=>)", vm_text))
+    The Core models are not added wholesale either: every one of the 1,278 bindings resolves
+    through the page's own view-model or through a row type taken from its ItemsSource, and a
+    pool that is merely "all models" is what hid the fault above.
+    """
+    properties, bases = _class_index()
+
+    def with_bases(name: str, seen: tuple[str, ...] = ()) -> set[str]:
+        if name in seen:
+            return set()
+
+        found = set(properties.get(name, set()))
+        parent = bases.get(name)
+
+        if parent:
+            found |= with_bases(parent, seen + (name,))
+
+        return found
 
     problems = 0
     checked = 0
+    row_types = 0
+
     for view_name, vm_name in VIEW_MODEL_OF.items():
         view_path = DOTNET / "Area11.Desktop/Views" / view_name
         vm_path = DOTNET / "Area11.Desktop/ViewModels" / f"{vm_name}.cs"
+
         if not view_path.exists() or not vm_path.exists():
             fail(f"view or view-model missing for {view_name}")
             continue
 
         text = view_path.read_text(encoding="utf-8")
         vm_text = vm_path.read_text(encoding="utf-8")
-        properties = set(re.findall(r"public\s+[\w<>?\[\], .]+\s+(\w+)\s*(?:\{|=>)", vm_text))
-        commands = set(re.findall(r"public\s+ICommand\s+(\w+)", vm_text))
-        properties |= commands
 
-        for raw in re.findall(r"\{Binding ([^}]+)\}", text):
-            name = raw.split(",")[0].strip()
-            # "Source=" binds to the object itself (e.g. a static label), not to a view-model property
+        legal = set(_BINDABLE_RE.findall(vm_text)) | set(ITEM_PROPERTIES)
+        legal |= set(re.findall(r"public\s+ICommand\s+(\w+)", vm_text))
+
+        for _, collection in _bindings_in(text):
+            if not re.fullmatch(r"[A-Za-z_]\w*", collection):
+                continue
+
+            element = _element_type(vm_text, collection)
+
+            if element and element in properties:
+                row_types += 1
+                legal |= with_bases(element)
+
+        for _, path in _bindings_in(text):
+            name = path.split(".")[0].strip()
+
             if not name or name.startswith(("Path=", "RelativeSource", "ElementName", "Source=")):
                 continue
 
-            # `{Binding DataContext.X, RelativeSource=...ItemsControl}` reaches the page's own
-            # view-model through the ancestor's DataContext, so X is a page property, not a row one.
-            if name.startswith("DataContext."):
-                name = name[len("DataContext."):]
-            checked += 1
-            if name in ITEM_PROPERTIES or name in model_properties:
+            # `{Binding DataContext.X, RelativeSource=...}` reaches the page's view-model through
+            # an ancestor, so X is a page property - the same test applies.
+            if name == "DataContext" and "." in path:
+                name = path.split(".")[1].strip()
+
+            if not re.fullmatch(r"[A-Za-z_]\w*", name):
                 continue
-            if name not in properties:
-                problems += 1
-                fail(view_name + ": binding {" + "Binding " + name + "} not found in " + vm_name)
 
+            checked += 1
 
-    REPORT.append(f"XAML bindings: {checked} checked, {problems} problems")
+            if name in legal:
+                continue
+
+            problems += 1
+            fail(f"{view_name}: binding {{Binding {name}}} is not a property of {vm_name} "
+                 f"or of the rows this page lists (WPF leaves the box empty and says nothing)")
+
+    REPORT.append(f"XAML bindings: {checked} checked, {problems} problems, "
+                  f"{row_types} row type(s) resolved from ItemsSource")
 
 
 # ---------------------------------------------------------------------------
