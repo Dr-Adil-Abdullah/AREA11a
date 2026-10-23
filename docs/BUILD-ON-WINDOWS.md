@@ -44,3 +44,17 @@ the shop's own books, and no flag, button or file can point it at invented rows.
 anything any more. Delete that folder when convenient; the shop's own data is in
 `C:\ProgramData\Area11\` and is not touched by deleting it.
 
+### 2c. If the build fails - send one file, not twenty screenshots (v0.30.3, D-78)
+
+`START-AREA11.bat` writes the whole build to `build.log` and puts **only the error lines** on the
+screen. Read the **first** one; it is the one that matters. If you would rather send everything,
+double-click **`tools\SEND-REPORT.cmd`**: it writes one text file (`report-<date>.txt`) holding the
+build, `dotnet --info`, the branch, the project files, the shop folder (names, sizes and dates - **no
+row of your books is read**), the whole newest crash report, the end of the log and the last build
+and test output.
+
+`tools\RUN-TESTS.cmd` works the same way: the run goes to `test.log`, and the screen shows the
+result line, the names of the failed tests and any compile errors - never the middle of a failure.
+
+> `tools\diagnose.bat` is the small folder-only check, and it runs **without PowerShell**; use it if
+> script execution is blocked on that PC.
