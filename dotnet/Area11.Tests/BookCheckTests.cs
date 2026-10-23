@@ -334,6 +334,90 @@ VALUES(@at, 'cash', 7500, 'no owner');", new { at = Clock.Now() }));
     }
 
     [Fact]
+    public void TheSavedFileHasTheDocumentAndBothNumbers()
+    {
+        using var test = new TestDatabase();
+        var code = MakeBill(test, out _);
+
+        test.Database.Tx(connection => test.Database.Execute(connection,
+            "UPDATE sales SET total_paisa = total_paisa + 500 WHERE code = @code;", new { code }));
+
+        var csv = Run(test).ToCsv();
+        var lines = csv.Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
+
+        // A header, then one line per finding - the file is what leaves the shop, so its shape is
+        // part of the contract, not an implementation detail.
+        Assert.Equal("Rule,Document,Says,Rows say,Gap,Gap in words", lines[0]);
+        Assert.Equal(4, lines.Length);
+
+        var bill = lines.First(line => line.StartsWith("A bill's lines add up to the bill", StringComparison.Ordinal));
+
+        // "Rs 305" would be a picture of money; the file carries numbers so the accountant can add
+        // the column up. The bill says 305, its line still says 300, and the gap is 5.
+        Assert.Contains(",INV-0001,305,300,5,5 missing", bill);
+    }
+
+    [Fact]
+    public void ACleanShopSavesAFileThatSaysSo()
+    {
+        using var test = new TestDatabase();
+
+        var csv = Run(test).ToCsv();
+        var lines = csv.Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
+
+        // An empty file would look like a failed export; a file with one honest line is evidence.
+        Assert.Equal(2, lines.Length);
+        Assert.StartsWith("No fault,-,0,0,0,", lines[1]);
+        Assert.Contains("all add up", lines[1]);
+    }
+
+    [Fact]
+    public void MissingAndTooMuchAreCountedApart()
+    {
+        using var test = new TestDatabase();
+
+        var first = MakeBill(test, out _);
+        var productTwo = TestData.AddProduct(test, name: "Augmentin 625mg");
+
+        var second = TestData.Sales(test).Create(new SaleInput
+        {
+            PaymentMethod = "cash",
+            Lines = new List<SaleLineInput>
+            {
+                new() { ProductId = productTwo, Unit = "base", Quantity = 1 }
+            }
+        }, TestData.Owner);
+
+        Assert.True(second.Ok, second.Error);
+
+        // One bill says 5 too many, the other says 3 too few. A single net total would read "2"
+        // and hide both faults; a shop that is short 5 and over 3 is not a shop short 2.
+        test.Database.Tx(connection =>
+        {
+            test.Database.Execute(connection,
+                "UPDATE sales SET total_paisa = total_paisa + 500 WHERE code = @code;", new { code = first });
+            test.Database.Execute(connection,
+                "UPDATE sales SET total_paisa = total_paisa - 300 WHERE code = @code;",
+                new { code = second.Value!.Code });
+        });
+
+        var report = Run(test);
+
+        Assert.Equal(500L, report.MissingPaisa);
+        Assert.Equal(300L, report.TooMuchPaisa);
+        Assert.Contains("missing", report.MoneyText);
+        Assert.Contains("too much", report.MoneyText);
+    }
+
+    [Fact]
+    public void ACleanShopSaysNoRupeeIsUnexplained()
+    {
+        using var test = new TestDatabase();
+
+        Assert.Equal("No rupee is unexplained.", Run(test).MoneyText);
+    }
+
+    [Fact]
     public void ACashierCannotRunTheCheck()
     {
         using var test = new TestDatabase();

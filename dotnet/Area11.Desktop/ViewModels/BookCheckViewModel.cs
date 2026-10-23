@@ -1,4 +1,7 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
+using System.IO;
+using System.Text;
 using Area11.Core.Models;
 using Area11.Core.Services;
 using Area11.Core.Utils;
@@ -77,11 +80,16 @@ public sealed class BookCheckViewModel : ObservableObject
     private readonly AppServices _services;
     private readonly User _user;
 
+    private BookCheckReport? _report;
+    private string _statusText = string.Empty;
+    private bool _isStatusError;
+
     private string _headline = "Not checked yet.";
     private string _advice = string.Empty;
     private string _whenText = string.Empty;
     private string _databaseText = string.Empty;
     private bool _hasProblems;
+    private string _moneyText = string.Empty;
 
     public BookCheckViewModel(AppServices services, User user)
     {
@@ -89,12 +97,38 @@ public sealed class BookCheckViewModel : ObservableObject
         _user = user;
 
         RefreshCommand = new RelayCommand(Load);
+        SaveCommand = new RelayCommand(Save, () => _report is not null);
 
         Load();
     }
 
     /// <summary>The only action on the page. It cannot write, so it needs no confirmation.</summary>
     public RelayCommand RefreshCommand { get; }
+
+    /// <summary>Writes the list of findings to a CSV the owner can send on. Reads only.</summary>
+    public RelayCommand SaveCommand { get; }
+
+    /// <summary>What the Save button did, in words - the file's own path, or why it failed.</summary>
+    public string StatusText
+    {
+        get => _statusText;
+        private set
+        {
+            if (SetProperty(ref _statusText, value))
+            {
+                OnPropertyChanged(nameof(HasStatus));
+            }
+        }
+    }
+
+    public bool IsStatusError
+    {
+        get => _isStatusError;
+        private set => SetProperty(ref _isStatusError, value);
+    }
+
+    /// <summary>True once the Save button has something to say - the line is hidden until then.</summary>
+    public bool HasStatus => StatusText.Length > 0;
 
     public ObservableCollection<BookCheckRuleRow> Rules { get; } = new();
 
@@ -125,6 +159,13 @@ public sealed class BookCheckViewModel : ObservableObject
         private set => SetProperty(ref _databaseText, value);
     }
 
+    /// <summary>"Rs 500 missing, Rs 0 too much" - the rupee answer beside the headline.</summary>
+    public string MoneyText
+    {
+        get => _moneyText;
+        private set => SetProperty(ref _moneyText, value);
+    }
+
     /// <summary>True when anything is wrong, so the banner can be red.</summary>
     public bool HasProblems
     {
@@ -144,6 +185,8 @@ public sealed class BookCheckViewModel : ObservableObject
 
         if (!result.Ok)
         {
+            _report = null;
+            MoneyText = string.Empty;
             Headline = result.Error ?? "The check could not run.";
             Advice = "Nothing was changed. Send this page with tools\\SEND-REPORT.cmd.";
             WhenText = DateTime.Now.ToString("dd MMM yyyy, HH:mm");
@@ -153,6 +196,7 @@ public sealed class BookCheckViewModel : ObservableObject
         }
 
         var report = result.Value!;
+        _report = report;
 
         var number = 1;
 
@@ -168,9 +212,60 @@ public sealed class BookCheckViewModel : ObservableObject
 
         Headline = report.Headline;
         Advice = report.Advice;
+        MoneyText = report.MoneyText;
         WhenText = report.RanAt.ToString("dd MMM yyyy, HH:mm");
         DatabaseText = report.DatabaseFile;
+        StatusText = string.Empty;
+        IsStatusError = false;
         SetProblems(!report.Clean);
+        SaveCommand.RaiseCanExecuteChanged();
+    }
+
+    /// <summary>
+    /// Writes exactly what is on the screen. One file, one row per finding, and the money as plain
+    /// numbers so the accountant can add the column up.
+    /// </summary>
+    private void Save()
+    {
+        if (_report is null)
+        {
+            return;
+        }
+
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "Save the books check",
+            FileName = "Area11-books-" + Clock.Today() + ".csv",
+            DefaultExt = ".csv",
+            Filter = "CSV file (*.csv)|*.csv|All files (*.*)|*.*",
+            AddExtension = true,
+            OverwritePrompt = true
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
+        {
+            // UTF-8 WITH a BOM: without it Excel reads Urdu names as gibberish (the same rule the
+            // black box's export follows).
+            File.WriteAllText(dialog.FileName, _report.ToCsv(),
+                new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+
+            IsStatusError = false;
+            StatusText = _report.Problems == 0
+                ? "Saved: the shop is clean. " + dialog.FileName
+                : _report.Problems.ToString(CultureInfo.InvariantCulture) + " fault(s) saved to "
+                  + dialog.FileName;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            IsStatusError = true;
+            StatusText = "The file could not be written. Close it if it is open in Excel, then try "
+                         + "again. (" + exception.Message + ")";
+        }
     }
 
     /// <summary>One change, two properties: the page reads both, so both are raised together.</summary>

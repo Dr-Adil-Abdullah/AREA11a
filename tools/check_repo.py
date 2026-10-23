@@ -2671,6 +2671,336 @@ def check_scripts() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 9. The C# the compiler will actually read: a real grammar, and the names it refers to
+# ---------------------------------------------------------------------------
+def _grammar():
+    """The C# grammar, or None when the package is not installed in this environment.
+
+    Why a real parser at all: `check_csharp` counts braces, and brace counting cannot see a
+    misplaced `else`, a broken lambda or a `switch` arm without its arrow - the exact faults a
+    first compile reports. tree-sitter-c-sharp is a full grammar, so an ERROR node means the file
+    is not valid C#. It is still not a compiler: it knows nothing about types.
+    """
+    try:
+        import tree_sitter_c_sharp  # noqa: F401  (imported for the language capsule)
+        from tree_sitter import Language, Parser
+    except Exception:
+        return None
+
+    return Parser(Language(tree_sitter_c_sharp.language()))
+
+
+def _cs_files() -> list[pathlib.Path]:
+    return [p for p in DOTNET.rglob("*.cs") if not ({"obj", "bin"} & set(p.parts))]
+
+
+def _node_text(source: bytes, node) -> str:
+    return source[node.start_byte:node.end_byte].decode("utf-8", errors="replace")
+
+
+_TYPE_NODES = {"class_declaration", "struct_declaration", "interface_declaration",
+               "record_declaration", "record_struct_declaration", "enum_declaration"}
+
+
+def _member_name(source: bytes, node) -> str | None:
+    """The identifier that NAMES a member - never the one that names its return type.
+
+    `public static StoragePlan For(...)` has two identifiers; picking the first one records a
+    method called "StoragePlan" and loses "For". That mistake was made once here and the check
+    then reported real methods as missing, which is worse than no check at all.
+    """
+    kids = node.children
+
+    for anchor in ("parameter_list", "accessor_list", "arrow_expression_clause", "initializer_expression", ";"):
+        for index, child in enumerate(kids):
+            if child.type != anchor:
+                continue
+
+            for back in reversed(kids[:index]):
+                if back.type == "identifier":
+                    return _node_text(source, back)
+
+                if back.type in ("predefined_type", "generic_name", "qualified_name"):
+                    return None
+
+    return None
+
+
+def _parameters(source: bytes, node) -> tuple[int, int, bool]:
+    """(required, total, variadic) for a parameter list."""
+    plist = next((c for c in node.children if c.type == "parameter_list"), None)
+
+    if plist is None:
+        return 0, 0, False
+
+    required = 0
+    total = 0
+    variadic = False
+
+    for parameter in plist.children:
+        if parameter.type != "parameter":
+            continue
+
+        total += 1
+        body = _node_text(source, parameter)
+
+        # `params string[] warnings` may be called with nothing at all, and a parameter with a
+        # default (`stepRupees = 10`) is optional. Both were counted as required in the first
+        # draft of this rule, which then invented 580 faults on a healthy tree.
+        if "params " in body:
+            variadic = True
+            continue
+
+        if "=" in body:
+            continue
+
+        required += 1
+
+    return required, total, variadic
+
+
+def check_csharp_grammar() -> None:
+    """Every C# file must parse, and every `Type.Member` must be a member that type declares.
+
+    Why this check exists: the Desktop project has never been compiled, and this machine has no
+    .NET. Two classes of first-build error are now caught here instead:
+
+      * **a file that is not valid C#** - the grammar reports an ERROR node with a line number,
+        where brace counting only noticed "the braces balance";
+      * **a name that does not exist** - `Calc.Round(...)`, `Money.Format(...)`,
+        `AppPaths.DatabaseFile`, `Modules.Pos`: the method is named on a type that this project
+        declares, so the member can be looked up. Wrong name (CS0117/CS1061) and wrong argument
+        count (CS7036) are both reported. Before this rule the program's own `Calc`,
+        `Money`, `Clock`, `Expiry` and `AppPaths` calls were unchecked.
+
+    What it deliberately does NOT do: it only looks at a bare identifier that names exactly ONE
+    top-level type in this repository, and skips any file where that name is also declared as a
+    property, field, parameter or local (a `Modules` collection shadows the `Modules` class).
+    Instance calls (`db.Query<T>(...)`) are out of reach - knowing the type of `db` needs a real
+    compiler, and guessing types is how a checker starts reporting faults that are not there.
+    """
+    parser = _grammar()
+
+    if parser is None:
+        warn("tree-sitter-c-sharp is not installed, so the real-grammar pass was skipped "
+             "(pip install tree_sitter tree_sitter_c_sharp). The brace check still ran.")
+        REPORT.append("C# grammar: not installed - skipped")
+        return
+
+    files = _cs_files()
+    broken = 0
+
+    for path in files:
+        source = path.read_bytes()
+        tree = parser.parse(source)
+        node = tree.root_node
+
+        if not node.has_error:
+            continue
+
+        # The FIRST error is the one to read; the rest are usually the grammar recovering.
+        stack = [node]
+        first = None
+
+        while stack:
+            current = stack.pop()
+
+            if current.type == "ERROR" or current.is_missing:
+                first = current
+                break
+
+            stack.extend(current.children)
+
+        line = (first.start_point[0] + 1) if first is not None else 0
+        broken += 1
+        fail(f"{rel(path)}:{line}: not valid C# - the grammar stopped here")
+
+    # ---- the type map: every top-level declaration, with its methods and members ----
+    types: dict[str, dict] = {}
+
+    def entry(name: str) -> dict:
+        return types.setdefault(name, {"files": set(), "methods": {}, "members": set(),
+                                       "bases": set(), "nested": False})
+
+    for path in files:
+        source = path.read_bytes()
+        tree = parser.parse(source)
+        stack: list[tuple[object, str | None]] = [(tree.root_node, None)]
+
+        while stack:
+            current, outer = stack.pop()
+
+            for child in current.children:
+                if child.type not in _TYPE_NODES:
+                    stack.append((child, outer))
+                    continue
+
+                name_node = next((c for c in child.children if c.type == "identifier"), None)
+
+                if name_node is None:
+                    continue
+
+                name = _node_text(source, name_node)
+                info = entry(name)
+                info["files"].add(str(path))
+
+                if outer is not None:
+                    info["nested"] = True
+
+                if outer is None:
+                    body = next((c for c in child.children
+                                 if c.type in ("declaration_list", "enum_member_declaration_list")), None)
+
+                    if body is not None:
+                        for member in body.children:
+                            if member.type == "method_declaration":
+                                shorthand = _member_name(source, member)
+
+                                if shorthand:
+                                    info["methods"].setdefault(shorthand, set()).add(
+                                        _parameters(source, member))
+                            elif member.type in ("property_declaration", "event_declaration",
+                                                 "indexer_declaration"):
+                                shorthand = _member_name(source, member)
+
+                                if shorthand:
+                                    info["members"].add(shorthand)
+                            elif member.type == "enum_member_declaration":
+                                identifier = next((c for c in member.children
+                                                   if c.type == "identifier"), None)
+
+                                if identifier is not None:
+                                    info["members"].add(_node_text(source, identifier))
+                            elif member.type in ("field_declaration", "event_field_declaration",
+                                                 "const_declaration"):
+                                for part in member.named_children:
+                                    holders = [part] if part.type == "variable_declarator" else [
+                                        d for d in part.children if d.type == "variable_declarator"]
+
+                                    for holder in holders:
+                                        identifier = next((c for c in holder.children
+                                                           if c.type == "identifier"), None)
+
+                                        if identifier is not None:
+                                            info["members"].add(_node_text(source, identifier))
+
+                for part in child.children:
+                    if part.type == "base_list":
+                        for base in part.children:
+                            if base.type in ("identifier", "qualified_name", "generic_name"):
+                                info["bases"].add(
+                                    _node_text(source, base).split("<")[0].split(".")[-1])
+
+                stack.append((child, name))
+
+    usable = {name for name, info in types.items()
+              if not info["nested"] and len(info["files"]) == 1}
+
+    def family(name: str) -> list[str]:
+        """The type and its bases, inside this repository only."""
+        found: list[str] = []
+        todo = [name]
+
+        while todo:
+            current = todo.pop()
+
+            if current in found or current not in types:
+                continue
+
+            found.append(current)
+            todo.extend(types[current]["bases"])
+
+        return found
+
+    calls = 0
+    names = 0
+    problems = 0
+
+    for path in files:
+        source = path.read_bytes()
+        tree = parser.parse(source)
+
+        # A name that is also a property, field, parameter or local in THIS file is that thing,
+        # not the type with the same name - `Category.Key` where `Category` is a property.
+        shadow: set[str] = set()
+        stack = [tree.root_node]
+
+        while stack:
+            current = stack.pop()
+
+            if current.type == "property_declaration":
+                shorthand = _member_name(source, current)
+
+                if shorthand:
+                    shadow.add(shorthand)
+            elif current.type in ("variable_declarator", "parameter"):
+                identifier = next((c for c in current.children if c.type == "identifier"), None)
+
+                if identifier is not None:
+                    shadow.add(_node_text(source, identifier))
+
+            stack.extend(current.children)
+
+        stack = [tree.root_node]
+
+        while stack:
+            node = stack.pop()
+
+            if node.type == "invocation_expression":
+                function = node.children[0] if node.children else None
+
+                if (function is not None and function.type == "member_access_expression"
+                        and function.children[0].type == "identifier"):
+                    owner = _node_text(source, function.children[0])
+
+                    if owner in usable and owner not in shadow and function.children[-1].type == "identifier":
+                        member = _node_text(source, function.children[-1])
+                        arguments = next((c for c in node.children if c.type == "argument_list"), None)
+                        count = sum(1 for c in arguments.children if c.type == "argument") if arguments else 0
+                        calls += 1
+
+                        known = False
+                        arity = False
+
+                        for one in family(owner):
+                            for required, total, variadic in types[one]["methods"].get(member, set()):
+                                known = True
+                                arity = arity or (count >= required if variadic else required <= count <= total)
+
+                        if not known:
+                            if member in {m for one in family(owner) for m in types[one]["members"]}:
+                                continue
+
+                            problems += 1
+                            fail(f"{rel(path)}:{node.start_point[0] + 1}: {owner}.{member}() does not exist "
+                                 f"on the type this project declares")
+                        elif not arity:
+                            problems += 1
+                            fail(f"{rel(path)}:{node.start_point[0] + 1}: {owner}.{member}() is called with "
+                                 f"{count} argument(s), which the declaration does not accept")
+            elif node.type == "member_access_expression" and node.children[0].type == "identifier":
+                owner = _node_text(source, node.children[0])
+
+                if owner in usable and owner not in shadow and node.children[-1].type == "identifier":
+                    member = _node_text(source, node.children[-1])
+                    names += 1
+
+                    if (member not in {m for one in family(owner) for m in types[one]["members"]}
+                            and member not in {m for one in family(owner) for m in types[one]["methods"]}):
+                        problems += 1
+                        fail(f"{rel(path)}:{node.start_point[0] + 1}: {owner}.{member} does not exist "
+                             f"on the type this project declares")
+
+            stack.extend(node.children)
+
+    if broken == 0:
+        REPORT.append(f"C# grammar: {len(files)} file(s) parsed as real C#, no error nodes")
+
+    REPORT.append(f"Static members: {calls} call(s) and {names} member reference(s) resolved, "
+                  f"{problems} problem(s)")
+
+
+# ---------------------------------------------------------------------------
 def rel(path: pathlib.Path) -> str:
     try:
         return str(path.relative_to(ROOT))
@@ -2709,6 +3039,7 @@ def main() -> int:
     check_installer()
     check_docs()
     check_scripts()
+    check_csharp_grammar()
 
     if not quiet:
         for line in REPORT:

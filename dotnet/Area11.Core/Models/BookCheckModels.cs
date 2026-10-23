@@ -98,4 +98,74 @@ public sealed class BookCheckReport
         ? "Nothing was changed. Run this again after a busy day, or after an import."
         : "Nothing was changed. Send this page with tools\\SEND-REPORT.cmd; a fault here means a "
           + "number was written by something other than the program, or a bill was edited by hand.";
+
+    /// <summary>
+    /// Each DOCUMENT once, with its biggest disagreement.
+    ///
+    /// Why not simply add every finding: one broken bill is seen by three rules - its lines, its
+    /// header and "paid or owed" all disagree with it - so adding them would report a Rs 15 fault
+    /// for a Rs 5 gap, and the owner would go looking for money that was never missing. A document
+    /// is one amount of money that fails to add up; the rules are three ways of noticing it.
+    /// </summary>
+    public IReadOnlyList<BookCheckFinding> WorstPerDocument => Rules
+        .SelectMany(rule => rule.Findings)
+        .GroupBy(finding => finding.Code)
+        .Select(group => group.OrderByDescending(finding => Math.Abs(finding.DifferencePaisa)).First())
+        .ToList();
+
+    /// <summary>
+    /// Every rupee the documents claim and their own rows do not confirm. Two totals, never one:
+    /// "missing" and "too much" cancel each other out, and a shop that lost 500 and gained 500 is
+    /// not a shop with no problem.
+    /// </summary>
+    public long MissingPaisa => WorstPerDocument
+        .Where(finding => finding.DifferencePaisa > 0)
+        .Sum(finding => finding.DifferencePaisa);
+
+    public long TooMuchPaisa => WorstPerDocument
+        .Where(finding => finding.DifferencePaisa < 0)
+        .Sum(finding => -finding.DifferencePaisa);
+
+    /// <summary>How many documents disagree with their own rows - the number behind the money.</summary>
+    public int DocumentsWithFaults => WorstPerDocument.Count;
+
+    /// <summary>"Rs 500 missing, Rs 0 too much" - the line under the headline.</summary>
+    public string MoneyText => Clean
+        ? "No rupee is unexplained."
+        : Money.Format(MissingPaisa) + " missing, " + Money.Format(TooMuchPaisa) + " too much";
+
+    /// <summary>
+    /// The file the Save button writes: one line per finding, plus an honest line when there is
+    /// nothing to report. Money is written as a plain number so Excel can add the column up -
+    /// "Rs 1,234.50" is a picture of money, not money.
+    ///
+    /// Why a file at all: a fault is not fixed at the counter. It goes to whoever keeps the books -
+    /// the accountant, a second person, the supplier - and a list that can be sent is worth more
+    /// than a screen that has to be believed.
+    /// </summary>
+    public string ToCsv()
+    {
+        var rows = Rules.SelectMany(rule => rule.Findings.Select(finding => new[]
+        {
+            rule.Title,
+            finding.Code,
+            Money.Edit(finding.ExpectedPaisa),
+            Money.Edit(finding.FoundPaisa),
+            Money.Edit(finding.DifferencePaisa),
+            finding.GapText
+        })).ToList();
+
+        if (rows.Count == 0)
+        {
+            rows.Add(new[]
+            {
+                "No fault", "-", "0", "0", "0",
+                "Checked " + RulesChecked + " rule(s) at " + RanAt.ToString("yyyy-MM-dd HH:mm") + " - all add up"
+            });
+        }
+
+        return CsvWriter.Document(
+            new[] { "Rule", "Document", "Says", "Rows say", "Gap", "Gap in words" },
+            rows);
+    }
 }

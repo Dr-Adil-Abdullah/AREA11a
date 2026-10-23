@@ -18,9 +18,13 @@
                            Text="Every total is compared with the rows it was built from. The check only reads: nothing is repaired, and nothing is changed (F-54)." />
             </StackPanel>
 
-            <Button DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center"
-                    Content="Check again" Style="{StaticResource GhostButton}"
-                    Command="{Binding RefreshCommand}" />
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- The list goes to whoever keeps the books, so it can leave the screen (F-54). -->
+                <Button Content="Save this list" Style="{StaticResource GhostButton}" Margin="0,0,8,0"
+                        Command="{Binding SaveCommand}" />
+                <Button Content="Check again" Style="{StaticResource GhostButton}"
+                        Command="{Binding RefreshCommand}" />
+            </StackPanel>
         </DockPanel>
 
         <!-- ================================ the answer ================================ -->
@@ -50,8 +54,29 @@
                 <TextBlock Text="{Binding Advice}" Style="{StaticResource FieldHint}"
                            TextWrapping="Wrap" Margin="0,6,0,0" />
 
+                <TextBlock Text="{Binding MoneyText}" FontWeight="SemiBold" Margin="0,6,0,0"
+                           TextWrapping="Wrap" />
+
                 <TextBlock Text="{Binding DatabaseText}" FontFamily="Consolas" FontSize="10"
                            Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,6,0,0" />
+
+                <!-- What the Save button did, or why it could not. Hidden until it has something to say. -->
+                <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap" Margin="0,6,0,0" FontSize="11">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasStatus}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsStatusError}" Value="True">
+                                    <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
             </StackPanel>
         </Border>
 

@@ -129,6 +129,28 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
+> **v0.30.5 (Sable `#2E2118`) - read the C# with a real grammar, and resolve every static name.**
+>
+> * **Brace counting is not a syntax check.** It says the `{` and `}` match; it says nothing about a
+>   misplaced `else`, a broken lambda or a `switch` arm without its arrow - which is exactly what a
+>   first compile reports. `check_csharp_grammar` parses all 239 files with **tree-sitter-c-sharp**
+>   and fails with a line number. It is still not a compiler: it knows nothing about types.
+> * **`Type.Member` is checkable; `variable.Member` is not.** 2,021 calls and 3,325 references are
+>   resolved against the declaring type for names that belong to exactly one top-level type here.
+>   Guessing the type of a local (`db.Query<T>`) is the regex-inference dead end - refused again.
+> * **Two bugs in the rule itself, and both would have cried wolf.** Picking the first identifier of
+>   a method declaration records the RETURN type as the method name (`StoragePlan For(...)` became a
+>   method called `StoragePlan`); a `params` or defaulted parameter was counted as required, which
+>   invented 580 faults. Both were found by running the rule on the healthy tree before trusting it.
+>   **A gate is finished only when it reports zero on code that is known good AND fails on code that
+>   is known bad** - this one was checked in both directions.
+> * **A name in the file beats a name in the project.** `Modules.Clear()` in a view model is a
+>   collection property, not the static `Modules` class; the rule skips any type name that this file
+>   also declares as a property, field, parameter or local.
+> * **A rupee counted twice is a lie about money.** The books check counts **per document, not per
+>   rule**: one broken bill is three findings. Totals are per document and "missing" and "too much"
+>   stay apart, because they cancel each other out otherwise.
+>
 > **v0.30.4 (Mazarine `#1B2A66`) - the books can be checked without being touched (F-54).**
 >
 > * **A total that disagrees with its own rows is invisible from every other page.** The counter, the
