@@ -7,9 +7,14 @@ database in one file, and prints bills instantly on a 58 mm or 80 mm thermal pri
 Ported from the original Next.js + SQLite web app (`Dr-Adil-Abdullah/Area11`) using the
 [master specification](docs/AREA11-MASTER-SPEC.md) as the blueprint.
 
-> **Taking over this repository? Start with [`HANDOFF.md`](HANDOFF.md).**
-> It says what is finished, what is next, and the traps. [`AGENTS.md`](AGENTS.md) explains how to
-> work here. The owner's own decisions are in [`docs/OWNER-DECISIONS.md`](docs/OWNER-DECISIONS.md).
+> **Handing this repository to a new agent? Send it the link and [`TAKEOVER.md`](TAKEOVER.md).**
+> That one file is the complete brief - where it stands, what is left, the non-negotiables, how a
+> release is made, the traps, and the first message to send the owner. The long manual is
+> [`HANDOFF.md`](HANDOFF.md), the working protocol [`AGENTS.md`](AGENTS.md), the owner's own
+> decisions [`docs/OWNER-DECISIONS.md`](docs/OWNER-DECISIONS.md), and
+> [`docs/HANDOFF-CHECKLIST.md`](docs/HANDOFF-CHECKLIST.md) is the receipt of what was actually
+> checked before the handover. In Urdu for the owner:
+> [`docs/HANDOVER-FOR-OWNER-URDU.md`](docs/HANDOVER-FOR-OWNER-URDU.md).
 
 ---
 
@@ -95,6 +100,7 @@ Step-by-step help, including what to do when the build fails: [`docs/BUILD-ON-WI
 | `Area11.sln` · `dotnet/` | **The product**: the solution is in the root; `Area11.Core` (rules, SQLite) · `Area11.Desktop` (WPF) · `Area11.Tests` (xUnit) |
 | `docs/` | specification, owner decisions, progress board, rules matrix, schema reference, build guide, port plan |
 | `tools/` | `check_repo.py` (static checks) · `build_rules_matrix.py` (keeps the rules matrix in sync with the spec) · `ci/build.yml` |
+| `TAKEOVER.md` | the handover brief for a new agent - read this first |
 | `HANDOFF.md` · `AGENTS.md` | the takeover manual and the working protocol |
 | `prototypes/` | earlier prototypes (`Area11.WPF`, `WPFSample`), reference only — they are not the app |
 

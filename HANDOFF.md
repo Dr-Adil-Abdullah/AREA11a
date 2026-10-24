@@ -1,5 +1,8 @@
 # HANDOFF - read this first
 
+> **New agent: read [`TAKEOVER.md`](TAKEOVER.md) first** - it is the whole handover on one page
+> (state, what is left, non-negotiables, release steps, traps). This file is the long manual behind it.
+>
 > ## اردو میں مختصر
 > یہ فائل اِس لیے ہے کہ آپ اِس ریپو کا **لنک کسی بھی ایجنٹ کو دیں** اور وہ سب سمجھ جائے:
 > کیا بنا ہے، کیا باقی ہے، کس اصول پر کام ہونا ہے۔ اِس کے ساتھ `AGENTS.md` (کام کرنے کا طریقہ)،
@@ -76,20 +79,27 @@ Full detail in [`docs/PROGRESS.md`](docs/PROGRESS.md). The short version:
 | **Cloud sync** (push, preview, bring with a backup; never deletes a row) | `Area11.Core/Services/SyncService.cs`, `Area11.Core/Services/CloudTransport.cs`, `Area11.Desktop/Views/CloudSyncView.xaml` |
 | **Dashboard** (F-12): the home screen's eleven numbers, each equal to the page it summarises - profit by the report's rule, expiry by day, hidden from staff without the profit permission | `Area11.Core/Services/DashboardService.cs`, `Desktop/ViewModels/DashboardViewModel.cs`, `Area11.Tests/DashboardTests.cs` |
 | **No demo, ever** (D-77): the sample shop that filled a new database with two and a half months of invented bills was **deleted on the owner's word** in v0.30.2 - `SampleShopService`, its page, `DEMO-AREA11.cmd` and the `--demo` switch are gone, and no flag or button can invent a row | `Area11.Core/Utils/AppPaths.cs` (one data root), `Area11.Core/Utils/BuildInfo.cs` (one title) |
-| 668 test cases | `Area11.Tests/` |
+| **769 test cases** (v0.35.2; the board lists each feature's own test) | `Area11.Tests/` |
 
-**Written but never tested on the shop PC (🟡)**
+**The five features that still need one action in the shop (🟡)** — the board is the only source of
+truth for state; this list is a copy and `docs/PROGRESS.md` wins if they ever differ:
 
-1. Receipt + instant printing (F-13) - needs one real print
-2. Settings screen (F-17) - needs one walk-through by the owner
-3. Customer khata (F-27) - needs one real collection at the counter and one printed statement
-4. Supplier ledger + `SR` return (F-28) - needs one real payment and one real return to the company
+| ID | Feature | The action |
+|---|---|---|
+| F-04 | Audit black box | one real action is seen in it |
+| F-08 | Products | the owner adds a medicine with a batch |
+| F-09 | Purchases `PINV` | one real delivery enters stock |
+| F-10 | Counter `INV` | one real bill prints |
+| F-46 | Printer & scanner | one USB scan finds a medicine and the record lands in the black box (the slip half was confirmed on 23 Oct 2026) |
 
-**Not started (⬜)**
+**Six numbered rules are still open** (E-12 ⬜ custom labels, S-05 🟡, E-04 🟡 rename/put away
+categories, Z-05 🟡 no undo, T-05 🟡 no charts, T-10 🟡 CSV not `.xlsx`) - the matrix is generated from
+`tools/build_rules_matrix.py`, and the list is repeated in [`TAKEOVER.md`](TAKEOVER.md) §4.
 
-1. The rest of Phase 2: expiry levels from settings (next)
-3. Phase 3: shifts/galla, expenses, `SR`, reports, audit viewer, backup, Excel, reorder/WhatsApp
-6. Phase 4: the **misspelt-medicine search** (F-50) - the second counter (v0.17.0), the installer (v0.19.0), the tax round (v0.18.0), the hardware test (v0.20.0), cloud sync (v0.21.0) and the bills page (v0.22.0) have shipped
+**Not started (⬜): none.** All 57 features on the board are written; 52 are ✅ and the 5 above are 🟡.
+Earlier versions of this file carried a list here (expiry levels, shifts, reports, the misspelt search
+…) that had already shipped - they are all ✅ on the board now. If you are reading a copy of this file
+that still lists them as ⬜, it is stale: trust `docs/PROGRESS.md`.
 
 ---
 

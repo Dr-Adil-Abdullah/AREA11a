@@ -8,6 +8,8 @@ features and the four phases.
 - Owner's decisions (Urdu, authoritative): [`OWNER-DECISIONS.md`](OWNER-DECISIONS.md)
 - Blueprint (English, authoritative): [`AREA11-MASTER-SPEC.md`](AREA11-MASTER-SPEC.md)
 - How to build and run on Windows: [`BUILD-ON-WINDOWS.md`](BUILD-ON-WINDOWS.md)
+- **Handing the repository to a new agent:** [`../TAKEOVER.md`](../TAKEOVER.md) (the brief) and
+  [`HANDOFF-CHECKLIST.md`](HANDOFF-CHECKLIST.md) (the receipt of what was checked before handover)
 
 > **The same board as a page the owner can print:** [`CHECKLIST-URDU.md`](CHECKLIST-URDU.md)
 > (printable A4: [`CHECKLIST-URDU.html`](CHECKLIST-URDU.html), or double-click `PRINT-CHECKLIST.cmd`).
@@ -18,10 +20,15 @@ features and the four phases.
 
 | Badge | Meaning |
 |---|---|
-| ✅ | working | 
-| 🟡 | code written but **not yet compiled on Windows**, or only partly finished |
-| ⬜ | not started |
-| 🧪 | test written (tests have never been executed - see "Verification" below) |
+| ✅ | finished - the code is written, compiled on the owner's PC, and tested (or its test is named in the row) |
+| 🟡 | the code is finished; **one action in the shop** still has to prove it (the action is written in the row) |
+| ⬜ | not started - **there are none at v0.35.2** |
+| 🧪 | a test case covers this row in `Area11.Tests` (the count is checked against `EXPECTED` on every run) |
+
+> **How to read a ✅.** It means the code exists, is covered by a named test, and the solution compiled
+> on the owner's PC (v0.35.1 printed `BUILD OK`; v0.33.0 printed `0 Warning(s), 0 Error(s)`). It does
+> **not** always mean the owner has clicked that page himself - the walk-throughs in `HANDOFF.md` §4
+> are how that last step is recorded.
 
 > **Verification status, read this before trusting a ✅.**
 > The machine this repository is written on has no .NET SDK (Linux sandbox), so every statement about
@@ -33,11 +40,12 @@ features and the four phases.
 > -> `13:53:31 Signed in: Owner`. **The sign-in window stayed open and a person signed in**, which is
 > the step every earlier run failed to reach, so F-05 and F-16 are ✅ on evidence from his PC and not on
 > a static check.
-> **What that leaves:** the pages have still not been walked on his PC under v0.34.0 or v0.35.0, so the
-> empty-page sentences, the page guard, the heartbeat, the failed-button banner, the drawer card and the
-> session warning are proven by **769 static cases** plus that one green suite - **not yet by a hand on
-> the shop's keyboard.** The **769 cases** of v0.35.0 wait for his next run, and the five 🟡 rows wait
-> for one action each in the shop.
+> **What that leaves:** on **v0.35.1** he opened Dashboard, Bills, Purchases, Products, Counter (POS),
+> No bill (PR) and Reorder pad - the trail names every one of them - so the pages do open on his PC.
+> What that run did **not** prove is the new behaviour on each page (the empty-page sentences, the page
+> guard's card, the failed-button line, the drawer card, the session warning) **one by one**, and its
+> four red tests are why v0.35.2 exists. Those behaviours rest on **769 cases** plus that one green
+> suite, and the five 🟡 rows wait for one action each in the shop.
 
 > **Board at v0.35.2 (Tarragon):** 57 features - **52 ✅ / 5 🟡 / 0 ⬜ (91.2% / 8.8%)**. Every feature
 > is written, **the program compiles on Windows**, and - new on 23 Oct 2026 - **the window opened and a
@@ -57,7 +65,7 @@ features and the four phases.
 | Question | Number | What it means |
 |---|---|---|
 | Features in the board | **57** | **52 ✅ done (91.2%)**, **5 🟡 written but only the shop PC can prove them (8.8%)**, 0 ⬜ not started |
-| Code | **63,959 lines** of C# (Core 29,619 · Desktop 17,214 · Tests 17,126) + **8,020 lines** of XAML | 265 C# files, 38 XAML files |
+| Code | **63,973 lines** of C# (Core 29,623 · Desktop 17,224 · Tests 17,126) + **8,020 lines** of XAML | 265 C# files, 38 XAML files |
 | The shop's rules | **47 service files** in `Area11.Core`, **41 model files**, **34 database tables** over 23 migrations | the original `area11.db` opens unchanged |
 | Screens | **36 views**, **36 page view-models**, 1,325 XAML bindings (179 made `Mode=OneWay`) | every binding checked against its page's own view-model or row type |
 | Tests | **769 cases** in 62 files | 717 facts + 12 theories (52 inline rows) |
@@ -69,7 +77,13 @@ features and the four phases.
 **What is actually left.** Nothing in the feature list is unbuilt, and as of v0.31.0 that sentence is
 true in the strict sense it was always meant: the last gap the *specification* admitted in its own text -
 *"a per-user shift report is not built"* (Spec 7.2.7) - is now written, tested and on the Shift page (F-56),
-and the handover the board carried as *"still to come"* since v0.4.0 is written and printed (F-55). The five 🟡 rows are not gaps in the code; they are promises only the shop PC can
+and the handover the board carried as *"still to come"* since v0.4.0 is written and printed (F-55).
+**Six of the owner's 116 numbered rules are not fully finished** (the rules matrix is the authority;
+it differs from this board on purpose, because it counts *rules* and this page counts *features*):
+**E-12** ⬜ a screen that renames the app's own words; **S-05** 🟡 (waits for E-12); **E-04** 🟡
+categories and companies cannot yet be renamed, put away or ordered; **Z-05** 🟡 no undo of a finished
+action; **T-05** 🟡 reports are tables of numbers, not drawn charts; **T-10** 🟡 CSV, not native `.xlsx`.
+The five 🟡 rows below are not gaps in the code; they are promises only the shop PC can
 keep, and each is **one action**: one medicine added with a batch (F-08), one real delivery
 (F-09), one real bill printed (F-10), one line in the black box from a real action (F-04), and the **scan**
 half of the printer/scanner test (F-46 - its printing half is confirmed, because the owner printed on the
@@ -177,9 +191,9 @@ of books.
 
 | Check | How | State |
 |---|---|---|
-| C# parses (204 files) | `python3 tools/check_repo.py` | ✅ |
+| C# parses with the real grammar (**265 files**) | `python3 tools/check_repo.py` | ✅ 0 error nodes |
 | Every file imports the namespaces it uses (`System.IO` … **and every type this repo declares**) | `python3 tools/check_repo.py` | ✅ |
-| Every SQL statement prepares against the real schema (228) | `python3 tools/check_repo.py` | ✅ |
+| Every SQL statement prepares against the real schema (**632 statements**) | `python3 tools/check_repo.py` | ✅ 0 invalid |
 | XAML / csproj / props are valid XML | `python3 tools/check_repo.py` | ✅ |
 | Every XAML binding matches its view-model | `python3 tools/check_repo.py` | ✅ |
 | Every `StaticResource` key exists, in **every** XAML file | `python3 tools/check_repo.py` | ✅ |
@@ -189,9 +203,13 @@ of books.
 | Migrations 001-023 produce 34 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
 | **Compiles on Windows** | `dotnet build Area11.sln` | ✅ 20 Oct 2026 (v0.1.1); re-check after each release |
-| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ v0.28.0 Pine |
+| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ `v0.35.2 (Tarragon, #5A6B3B)` |
+| Every `StaticResource` key exists (**1,434 keys**) | `python3 tools/check_repo.py` | ✅ |
+| Every binding matches its view-model (**1,324 bindings**) | `python3 tools/check_repo.py` | ✅ |
+| The three script banners match the build | `python3 tools/check_repo.py` | ✅ 3 files |
+| The board and the printable tick-list agree | `python3 tools/make_checklist.py` + the checker | ✅ 57 / 52 / 5 / 0 |
 | **Printer prints (owner's code 6)** | SYSTEM -> *Printer & scanner*, pick the printer, **Print test slip** | 🟡 v0.22.1 fixes the cause (the program opened the print server, not the default printer) - the owner's next slip is the proof |
-| **659 tests green** | `dotnet test` (or `tools\RUN-TESTS.cmd`) | 🟡 **fourth run (v0.6.1): 320 of 321 in 27.5 s.** Runs five to fifteen were never reported. **Run 16 (v0.18.0): 479 total, 6 failed, 473 passed** - all six were tests written from an older rule (the program was right) and every one is repaired in v0.19.1; see the 0.19.1 row in `docs/VERSIONS.md`. Runs 17+ are waiting on the owner's machine: v0.19.0 503, v0.19.1 505, v0.20.0 519, v0.21.0 539, v0.22.0 553, v0.22.1 559, v0.23.0 577, v0.24.0 593, v0.25.0 629, v0.26.0/0.26.1 641, v0.27.0 654, v0.28.0 666, v0.29.0 686, v0.29.1 689, **v0.29.2 695** |
+| **769 tests green** | `dotnet test` (or `tools\RUN-TESTS.cmd`) | 🟡 **his last full green run was v0.33.0: 730 of 730 in 53 s**; v0.35.1 ran **765 of 769** (four `RunTrail` tests, fixed in v0.35.2); the 769 wait for his next run. Older runs: **fourth run (v0.6.1): 320 of 321 in 27.5 s.** Runs five to fifteen were never reported. **Run 16 (v0.18.0): 479 total, 6 failed, 473 passed** - all six were tests written from an older rule (the program was right) and every one is repaired in v0.19.1; see the 0.19.1 row in `docs/VERSIONS.md`. Runs 17+ are waiting on the owner's machine: v0.19.0 503, v0.19.1 505, v0.20.0 519, v0.21.0 539, v0.22.0 553, v0.22.1 559, v0.23.0 577, v0.24.0 593, v0.25.0 629, v0.26.0/0.26.1 641, v0.27.0 654, v0.28.0 666, v0.29.0 686, v0.29.1 689, **v0.29.2 695** |
 
 ## Change log
 
@@ -204,6 +222,7 @@ of books.
 | 26 Oct 2026 | **v0.27.0 Moss - a customer comes back without the bill, and the shop still finds it (F-20).** The Returns page grew **No bill number? Find it**: one box takes the bill number, a phone (0300-1234567, 0300 1234567 or 03001234567), a customer name, or a medicine name, with an optional from/to date range that accepts 2026-10-20, 20/10/2026 or 20-10-2026. The answer is a **list**, newest first - bill, when, customer, items, total, due, status in the owner's words ("on the khata", "part paid") - and **Open this bill** runs the same lookup a typed number runs, so there is one doorway and one set of checks. Searching writes nothing. The search refuses an empty box (it would return every bill ever made), a backwards date range, and a date it cannot read (naming what it wanted). `LIMIT 100` and a sentence when the list is cut. **Verified before shipping:** the SQL was run against a real migrated database with three bills, and every case - dashes, bare digits, spaces, partial name, partial number, medicine, date range, nothing-found, newest-first - returned exactly the expected rows. 13 new tests. 654 cases. **Moss**, a deep olive-green never used before. |
 | 26 Oct 2026 | **v0.28.0 Pine - the sample shop became a real shop (F-53, D-74).** The owner asked for demo data that looks like a shop that has been running for two or three months, not a single day - so every page can be tried with real history instead of being built up by hand. SYSTEM -> *Sample shop* now writes **72 days**: 44 medicines over 17 categories, 16 companies with their rep, 6 suppliers, 20 customers (two clinics, three doctors, fourteen on khata, four carrying a balance from before Area11), about **700 bills** in cash, card, online, split and khata, ~60 on a doctor's prescription; deliveries six mornings a week with old invoices and a real payable; 16 returns over the period (shelf or quarantine), 3 write-offs, 2 supplier returns (one waiting), 2 stock-takes; khata collections weeks after the bill; rent, salary, electricity, internet, chai, petrol, shopping bags, **a repaired fan** and a shutter spring; owner drawings; and **73 drawers** counted at night with two small mistakes and today's shift still open. Every closed drawer is rebuilt from its own payments the way `ShiftService` rebuilds it, and a test proves all 72 of them agree to the rupee. The generator is deterministic (`Random(20261026)`): the same shop every time. **Verified before shipping** by mirroring the generator into a real SQLite database: 728 bills, every total = its lines, every payment = what was paid, shelves = movements, khata exact, payable exact, **0 drawer mismatches**, 1 empty shelf, 1 expired batch with stock, 1 near-expiry batch. That mirror caught two real faults before the owner ever saw them: a FEFO date with the sign the wrong way (the demo would have sold nearly-expired medicine) and short-dated lots that were sold before they could expire. 12 new tests, 666 cases. **Pine** `#1E4D3B`. |
 | 24 Oct 2026 | **The owner's printed tick-list (D-91)** - every feature on one A4 page he can tick with a pen, built from this board by `tools/make_checklist.py`: `docs/CHECKLIST-URDU.md` and `.html`, opened by `PRINT-CHECKLIST.cmd`. Gate **#43** refuses a commit where the marks or the totals disagree with the board (proved by four injections: a mark changed by hand, a feature row deleted, the printed total changed, and the double-click pointed at a missing file), which is the only way a printed list stays honest between rounds. **No program code changed, so the colour did not change.** |
+| 24 Oct 2026 | **Documentation sweep before the handover (no program code changed - still v0.35.2).** The repository was about to be given to a new agent, so every document was read against the code. Three stale statements would have misled it badly: (1) `docs/RULES-MATRIX.md` still said **17 of the owner's rules were not started** and listed returns, quarantine, alerts, the return receipt, the receipt layout, the permission editor and the audit viewer as future work - all of them shipped in Phase 2-4. Its status map had not been touched since Phase 1; **43 entries were re-read against the services** and corrected, and the matrix now says `116 rules: 90 done, 5 partial, 1 todo, 20 standing`, with the six open ones named here and in `TAKEOVER.md` §4. (2) `HANDOFF.md` §3 still carried a **"not started"** list (expiry levels, shifts, reports, the misspelt search) that had all shipped, and a "668 test cases" label - replaced by the five real 🟡 rows and the real count. (3) `PROGRESS.md`'s own legend described 🟡 as "not yet compiled on Windows", which stopped being true when his PC built the solution; the badge now means "the code is finished, one action in the shop proves it". The verification table and the line counts were refreshed to what the checker measures today (265 C# files, 632 SQL statements, 1,434 resource keys, 1,324 bindings, 63,973 lines). New for the handover: **`TAKEOVER.md`** (the brief a new agent reads first), **`docs/HANDOVER-FOR-OWNER-URDU.md`** (the same in the owner's language) and **`docs/HANDOFF-CHECKLIST.md`** (the receipt: what was checked, what could not be checked here, and the owner's sign-off boxes). 22 documentation files, 0 broken links, 44 checks green. |
 | 24 Oct 2026 | **v0.35.2 Tarragon - the run left one line instead of many, and the installer stopped on a nameless sentence.** The owner's v0.35.1 run: **765 passed, 4 failed, 769 total** - all four in `RunTrailTests`, because `AppendAllText` writes no line end, so every step glued onto the one before it and the file held a single enormous line (his own paste shows `database ready2026-10-23 14:56:05  login window shown`). The tests were right and the code was wrong: `AppendAllLines` now writes the terminator, one step per line, so the 140-line cap works again. **The installer** failed with *"Parameter set cannot be resolved using the specified named parameters"* after `Print spooler: running.` - a binding message with no line and no command in it. The icons and the **Add or remove programs** entry now use plain .NET (`Directory.EnumerateFiles`, `Registry.LocalMachine.CreateSubKey`, `SetValue`), each block in its own `try/catch` that prints a sentence and carries on, and the top-level catch prints **`Where : line N`** with the command. **769 cases, 44 checks**, checker rule for both faults, each proved by putting it back. **Tarragon** `#5A6B3B` (a fresh codename - v0.35.1 had repeated *Ultramarine* from v0.5.0). |
 | 24 Oct 2026 | **v0.35.1 Ultramarine - the first line of the heartbeat did not compile (D-90 follow-up).** The owner's launcher printed `RunTrail.cs(79,37): error CS1503: cannot convert from 'string' to `System.Func<string>`'` and stopped before the first window. The header line `Folder  : ` called `Safe(AppContext.BaseDirectory)`; `Safe` takes a `Func<string>`, so the folder has to be read inside a lambda - one line, like the three lines above it. **It reached him because v0.34.0 was never compiled here** and the static checker reads member names, not argument types. `check_repo.py` now refuses any `Safe(` in `RunTrail` that is not handed a lambda (proved by putting the fault back). Nothing else in v0.35.0 changed. **769 cases, 44 checks.** **Ultramarine** `#3F00A0`, 33.6 from the nearest colour, 12.2:1 on white. |
 | 24 Oct 2026 | **v0.35.0 Raspberry - one time for the shop, a session that ends by itself, and no bill without a galla (D-92).** Three answers the owner gave in one message, all three about the same fear: a counter that belongs to nobody. **Time:** `TimeSource` asks a time server (UDP, `time.windows.com` / `pool.ntp.org` / `time.google.com`, 1,500 ms budget, three servers) and keeps one correction; `Clock.Now()` returns the corrected time, so every bill, every audit line and every shift stamp follows it. No answer means the computer's clock, and the question is asked again every 20 minutes. An answer more than two days out is refused as a wrong answer, because 1980 is not drift. **Session:** `SessionPolicy` holds two clocks - the owner's idle choice from Settings, and a **12-hour ceiling that is not a setting**; a `DispatcherTimer` in the frame checks them every 30 seconds, any click or key press postpones the idle clock only, and the last 15 minutes are shown in the top bar naming the clock that will fire. **Drawer:** `SaleService.Create` refuses without an open shift, the counter shows a card over its own page with **Open a galla now**, and a drawer left open by a forgotten session is remembered (`SessionHandover`) instead of being closed - closing it would invent the one number a person must count. **19 new tests (769 cases, 62 files)**, **gate #44** (the shape of all three rules, on every machine), Settings shows where the clock came from. **Raspberry** `#B3446C`, 40.9 from the nearest colour already used, 5.3:1 against white. |

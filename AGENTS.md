@@ -11,6 +11,8 @@ never Roman Urdu**. Code, database and UI stay in **English**.
 
 ## 1. Start here (10 minutes)
 
+0. **[`TAKEOVER.md`](TAKEOVER.md) - the complete brief for a new agent.** State, what is left, the
+   non-negotiables, the eight-file release bump, the traps, and the first message to send the owner.
 1. [`HANDOFF.md`](HANDOFF.md) - orientation, next tasks, traps.
 2. [`docs/PROGRESS.md`](docs/PROGRESS.md) - every feature: ID, state, files, test, "done when".
 3. [`docs/OWNER-DECISIONS.md`](docs/OWNER-DECISIONS.md) - the owner's decisions (Urdu, authoritative).
