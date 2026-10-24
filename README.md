@@ -15,6 +15,12 @@ Ported from the original Next.js + SQLite web app (`Dr-Adil-Abdullah/Area11`) us
 
 ## Where it stands
 
+> **Want to see what is done, as one page you can print?** Open
+> [`docs/CHECKLIST-URDU.html`](docs/CHECKLIST-URDU.html) (or double-click `PRINT-CHECKLIST.cmd`).
+> It has one line per feature with a mark - finished / one action left / not started - and an empty
+> box beside each line for the owner's pen. It is generated from the board below, so it cannot
+> drift: `python3 tools/make_checklist.py`.
+
 | Phase | Contents | State |
 |---|---|---|
 | **1** | Foundation, database, sign-in, products, purchases `PINV`, counter `INV`, receipt & instant print, settings screen, **hold cart, split payment** | ✅ written and compiled; needs one real walk-through by the owner |

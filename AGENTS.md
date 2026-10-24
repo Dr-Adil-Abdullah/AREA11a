@@ -121,7 +121,11 @@ new colour and a version number. Nothing may be shipped without it:
    `dotnet/Area11.Desktop/Resources/Theme.xaml`;
 4. add the row to `docs/VERSIONS.md`;
 5. `python3 tools/check_repo.py` - it fails if the three disagree;
-6. commit with the version in the message.
+6. commit with the version in the message;
+7. **if you touched the feature board** (`docs/PROGRESS.md`), run `python3 tools/make_checklist.py` -
+   it rebuilds the owner's printable tick-list (`docs/CHECKLIST-URDU.md` / `.html`) from the board,
+   and gate #43 refuses a commit where the two disagree. The owner asked for that page by name
+   (D-91): he ticks it with a pen, so a stale mark is worse than a missing one.
 
 **Tests may only use public code.** `check_repo.py` fails if a test names an `internal` type: the
 sandbox cannot compile, so a CS0122 would otherwise reach the owner's PC (it did, in v0.2.1). Write

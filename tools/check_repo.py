@@ -3514,6 +3514,91 @@ def check_empty_page() -> None:
 
 
 # ---------------------------------------------------------------------------
+def check_checklist() -> None:
+    """The owner's printed tick-list must say exactly what the board says (v0.34.1, D-91).
+
+    Why: the owner asked for one page he can hold in his hand and tick with a pen. A list written by
+    hand would be right on the day it was written and wrong from the next round on - and a wrong list
+    is worse than no list, because he would stop asking and start trusting it. So the list is
+    **generated** from `docs/PROGRESS.md` by `tools/make_checklist.py`, and this gate refuses a
+    commit where the two disagree: same features, same marks, same totals.
+    """
+    board = ROOT / "docs" / "PROGRESS.md"
+    markdown = ROOT / "docs" / "CHECKLIST-URDU.md"
+    printable = ROOT / "docs" / "CHECKLIST-URDU.html"
+    maker = ROOT / "tools" / "make_checklist.py"
+    launcher = ROOT / "PRINT-CHECKLIST.cmd"
+
+    for needed in (board, markdown, printable, maker, launcher):
+        if not needed.exists():
+            fail(f"the owner's tick-list is half-built: {rel(needed)} is missing")
+    if not all(path.exists() for path in (board, markdown, printable, maker, launcher)):
+        return
+
+    def states(text: str, pattern: str) -> "dict[str, str]":
+        found: dict[str, str] = {}
+        for line in text.splitlines():
+            match = re.search(pattern, line)
+            if match is not None:
+                found[match.group(1)] = match.group(2)
+        return found
+
+    wanted = states(board.read_text(encoding="utf-8"), r"^\| (F-\d+) \| .+? \| (✅|🟡|⬜) \|")
+    listed = states(markdown.read_text(encoding="utf-8"),
+                    r"^\| ☐ \| (F-\d+) \| .+ \| (✅|🟡|❌) ")
+
+    if not wanted:
+        fail("docs/PROGRESS.md has no feature rows - the tick-list has nothing to be built from")
+        return
+
+    missing = sorted(set(wanted) - set(listed))
+    extra = sorted(set(listed) - set(wanted))
+
+    if missing:
+        fail(f"docs/CHECKLIST-URDU.md is missing {len(missing)} feature(s) the board has: "
+             + ", ".join(missing[:6]))
+    if extra:
+        fail(f"docs/CHECKLIST-URDU.md lists {len(extra)} feature(s) the board does not have: "
+             + ", ".join(extra[:6]))
+
+    wrong = [feature for feature, mark in listed.items()
+             if feature in wanted and mark != (wanted[feature] if wanted[feature] != "⬜" else "❌")]
+    if wrong:
+        fail("docs/CHECKLIST-URDU.md disagrees with the board about "
+             + ", ".join(sorted(wrong)[:6]) + " - run: python3 tools/make_checklist.py")
+
+    counts = {"✅": 0, "🟡": 0, "❌": 0}
+    for mark in wanted.values():
+        counts["❌" if mark == "⬜" else mark] += 1
+    total = sum(counts.values())
+
+    page = printable.read_text(encoding="utf-8")
+
+    for mark, word in (("✅", "مکمل"), ("🟡", "جاری"), ("❌", "شروع نہیں")):
+        if f"<td>{mark} {word}</td><td>{counts[mark]}</td>" not in page:
+            fail(f"docs/CHECKLIST-URDU.html does not print the {word} count ({counts[mark]}) - the "
+                 "printable page must show the same totals as the board")
+
+    absent = [feature for feature in wanted if f'class="id">{feature}<' not in page]
+    if absent:
+        fail(f"docs/CHECKLIST-URDU.html is missing {len(absent)} feature row(s), starting with "
+             f"{absent[0]} - a printed list with holes is worse than no list")
+
+    script = launcher.read_text(encoding="utf-8", errors="replace")
+
+    if "CHECKLIST-URDU.html" not in script:
+        fail("PRINT-CHECKLIST.cmd does not open docs\\CHECKLIST-URDU.html - the double-click would "
+             "print nothing")
+
+    if "pause" not in script.lower():
+        fail("PRINT-CHECKLIST.cmd does not pause - a double-clicked file must leave its window open")
+
+    REPORT.append(f"Checklist: {total} features ({counts['✅']} done, {counts['🟡']} in progress, "
+                  f"{counts['❌']} not started) match the board, the printable page and "
+                  "PRINT-CHECKLIST.cmd agree")
+
+
+# ---------------------------------------------------------------------------
 def check_run_trail() -> None:
     """A run must leave a heartbeat, and a failed button must stay on its page (v0.34.0, D-90).
 
@@ -4137,6 +4222,7 @@ def main() -> int:
     check_page_guard()
     check_empty_page()
     check_run_trail()
+    check_checklist()
     check_csharp_grammar()
 
     if not quiet:
