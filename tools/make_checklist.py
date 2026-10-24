@@ -114,7 +114,7 @@ NOTES = {
 # list because the owner asked "what is really left", and a list that hides them would be a lie.
 OPEN_ITEMS = (
     ("انسٹالر (F-47)", "`MAKE-INSTALLER.cmd` چلائیں، پھر بنی ہوئی فائل دو بار کلک کریں — پروگرام `C:\\Program Files\\Area11` میں جائے اور آپ کا ڈیٹا `C:\\ProgramData\\Area11` میں جیسے تھا ویسے رہے۔ **یہ آج تک کبھی نہیں چلا۔**"),
-    ("صفحات کا ہاتھ سے چلنا", "v0.34.0 کھول کر کم از کم پانچ صفحے دیکھیں (Products، Counter، Bills، Customers، Reports) اور `%TEMP%\\Area11\\last-run.txt` میں اُن کے نام دیکھیں۔"),
+    ("صفحات کا ہاتھ سے چلنا", "تازہ ترین build کھول کر کم از کم پانچ صفحے دیکھیں (Products، Counter، Bills، Customers، Reports) اور `%TEMP%\\Area11\\last-run.txt` میں اُن کے نام دیکھیں۔ ساتھ ہی کاؤنٹر پر **گلا بند** کا کارڈ اور **Settings → Shop** میں گھڑی کی سطر دیکھیں۔"),
     ("دوسرا کاؤنٹر (F-45)", "کوئی شیئر فولڈر بنا کر `SHARE-AREA11.cmd` چلائیں — یہ صرف اُس وقت ضروری ہے جب آپ واقعی دوسرا کمپیوٹر لگائیں۔"),
 )
 

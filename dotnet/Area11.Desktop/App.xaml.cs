@@ -34,9 +34,19 @@ public partial class App : Application
             // The shop's time (v0.35.0, D-92): asked from the internet in the background, from this
             // moment and every 20 minutes after it. Nothing waits for the answer - if the line is
             // down the sign-in window opens at once on the computer's own clock.
+            // The trail keeps one line per change of answer, not one every 20 minutes: the heartbeat
+            // is read by a person and has 140 lines for the whole day (D-90), so thirty identical
+            // "no time server answered" lines would bury the one page that failed.
+            var lastClockNote = string.Empty;
+
             TimeSource.StartBackgroundSync(note =>
             {
-                RunTrail.Step("clock: " + note);
+                if (!string.Equals(note, lastClockNote, StringComparison.Ordinal))
+                {
+                    lastClockNote = note;
+                    RunTrail.Step("clock: " + note);
+                }
+
                 _services!.Log.Info("Clock: " + note);
             });
 
