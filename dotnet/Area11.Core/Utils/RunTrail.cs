@@ -76,7 +76,7 @@ public static class RunTrail
                 "Build   : " + (appLine ?? string.Empty),
                 "Computer: " + Safe(() => Environment.MachineName),
                 "Windows : " + Safe(() => Environment.UserName),
-                "Folder  : " + Safe(AppContext.BaseDirectory),
+                "Folder  : " + Safe(() => AppContext.BaseDirectory),
                 "Process : " + Safe(() => Environment.ProcessId.ToString(CultureInfo.InvariantCulture)),
                 "------------------------------------------------------------"
             };

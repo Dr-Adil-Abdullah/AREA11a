@@ -3753,6 +3753,18 @@ def check_run_trail() -> None:
         fail("RunTrail does not write last-run.txt - the report tool and the owner are told to look "
              "for that exact name")
 
+    # v0.35.1: the header line `Folder : ` called `Safe(AppContext.BaseDirectory)` while `Safe`
+    # takes a `Func<string>` - CS1503, and the owner's build stopped there before the first window.
+    # A static check cannot type-check, but it can insist that every `Safe(` call in this file is
+    # handed a lambda, like its three neighbours. Proved by putting the fault back.
+    safe_calls = trail_text.count("Safe(") - trail_text.count("string Safe(")
+    safe_lambdas = trail_text.count("Safe(() =>")
+
+    if safe_calls != safe_lambdas:
+        fail(f"RunTrail calls Safe(...) {safe_calls} time(s) but hands it a lambda {safe_lambdas} "
+             "time(s) - Safe takes a Func<string>, so a plain value is CS1503 and the build stops "
+             "before the first window (that is exactly what v0.34.0 did)")
+
     if "Path.GetTempPath()" not in trail_text:
         fail("RunTrail does not use the temp folder - a diagnostics file must never be written into "
              "the shop folder, which can be the second counter's share")

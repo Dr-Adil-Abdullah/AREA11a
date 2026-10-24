@@ -133,7 +133,15 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.35.0 (Raspberry `#B3446C`) - one time for the shop, a session that ends by itself, and no bill without a galla (D-92).**
+> **v0.35.1 (Ultramarine `#3F00A0`) - one time for the shop, a session that ends by itself, and no bill without a galla (D-92).**
+>
+> * **v0.35.1 fixed the first line that did not compile.** `RunTrail.Begin` built its `Folder :` header
+>   with `Safe(AppContext.BaseDirectory)` while `Safe` takes a `Func<string>` - CS1503, and the owner's
+>   build stopped there. **Why it escaped:** v0.34.0 was never compiled here, and the static checker
+>   resolves member *names*, not argument *types*. The checker now refuses any `Safe(` in `RunTrail`
+>   that is not handed a lambda, and the fault was put back once to watch it fail. The lesson for every
+>   later round: when a helper takes a delegate, call it with a lambda - and never assume a v-number
+>   was compiled just because the checker is green.
 >
 > * **The time is taken, not assumed.** `TimeSource` asks a time server on a background thread
 >   **before the first window** (1,500 ms, three servers), keeps one correction
