@@ -140,11 +140,19 @@ function New-Area11Shortcut([object]$shell, [string]$shortcutPath, [string]$targ
 }
 
 function ConvertTo-Kilobytes([string]$folder) {
-    $sum = (Get-ChildItem -LiteralPath $folder -Recurse -File -ErrorAction SilentlyContinue |
-        Measure-Object -Property Length -Sum).Sum
+    # Plain .NET (v0.35.2): the cmdlet version was one of the calls that could bind ambiguously on
+    # the owner's PC, and this number is only the size Windows lists in "Add or remove programs".
+    try {
+        $sum = 0
 
-    if ($null -eq $sum) { return 0 }
-    return [int]($sum / 1KB)
+        foreach ($file in [System.IO.Directory]::EnumerateFiles($folder, '*', 'AllDirectories')) {
+            $sum += (New-Object System.IO.FileInfo $file).Length
+        }
+
+        return [int]($sum / 1KB)
+    } catch {
+        return 0
+    }
 }
 
 function Install-Area11 {
@@ -313,35 +321,61 @@ function Install-Area11 {
     }
 
     # ---- 6. the icons ------------------------------------------------------
+    # v0.35.2: the program has already been copied, so an icon that cannot be written is a note,
+    # not the end of the install. On the owner's PC the installer (v0.35.1) stopped in this region
+    # with a cmdlet-binding message that named neither the line nor the value.
     $desktopFolder = [Environment]::GetFolderPath('CommonDesktopDirectory')
     $startFolder = [Environment]::GetFolderPath('CommonPrograms')
-    $shell = New-Object -ComObject WScript.Shell
 
-    New-Area11Shortcut -shell $shell -shortcutPath (Join-Path $desktopFolder ($desktopShortcutName + '.lnk')) `
-        -target $installedExe -description 'Area11 - pharmacy POS'
-    New-Area11Shortcut -shell $shell -shortcutPath (Join-Path $startFolder ($startMenuShortcutName + '.lnk')) `
-        -target $installedExe -description 'Area11 - pharmacy POS'
-    New-Area11Shortcut -shell $shell -shortcutPath (Join-Path $startFolder ($uninstallShortcutName + '.lnk')) `
-        -target (Join-Path $installFolder $uninstallerName) -description 'Remove Area11 from this PC. The shop data stays.'
+    try {
+        $shell = New-Object -ComObject WScript.Shell
+
+        New-Area11Shortcut -shell $shell -shortcutPath (Join-Path $desktopFolder ($desktopShortcutName + '.lnk')) `
+            -target $installedExe -description 'Area11 - pharmacy POS'
+        New-Area11Shortcut -shell $shell -shortcutPath (Join-Path $startFolder ($startMenuShortcutName + '.lnk')) `
+            -target $installedExe -description 'Area11 - pharmacy POS'
+        New-Area11Shortcut -shell $shell -shortcutPath (Join-Path $startFolder ($uninstallShortcutName + '.lnk')) `
+            -target (Join-Path $installFolder $uninstallerName) -description 'Remove Area11 from this PC. The shop data stays.'
+
+        Write-Host '  Desktop and Start menu icons: written.'
+    } catch {
+        Write-Host ('  Note: the icons could not be written (' + $_.Exception.Message + ').') -ForegroundColor Yellow
+        Write-Host ('        Area11 is installed - start it from ' + $installedExe + '.') -ForegroundColor Yellow
+    }
 
     # ---- 7. Add or remove programs ----------------------------------------
     $version = Get-Area11Version -exePath $installedExe -rootPath $root
     $uninstallerPath = Join-Path $installFolder $uninstallerName
 
-    if (-not (Test-Path -LiteralPath $uninstallKey)) {
-        New-Item -Path $uninstallKey -Force | Out-Null
-    }
+    try {
+        # .NET instead of New-Item / New-ItemProperty (v0.35.2): five plain calls cannot resolve to
+        # the wrong "parameter set", and if Windows refuses (no elevation) the sentence below says
+        # what was not written and what to do - the program is still installed either way.
+        # One definition of the path: $uninstallKey is 'HKLM:\...' and Substring(6) drops 'HKLM:\'.
+        $key = [Microsoft.Win32.Registry]::LocalMachine.CreateSubKey($uninstallKey.Substring(6), $true)
 
-    New-ItemProperty -Path $uninstallKey -Name 'DisplayName' -Value $displayName -PropertyType String -Force | Out-Null
-    New-ItemProperty -Path $uninstallKey -Name 'DisplayVersion' -Value $version -PropertyType String -Force | Out-Null
-    New-ItemProperty -Path $uninstallKey -Name 'Publisher' -Value $publisher -PropertyType String -Force | Out-Null
-    New-ItemProperty -Path $uninstallKey -Name 'InstallLocation' -Value $installFolder -PropertyType String -Force | Out-Null
-    New-ItemProperty -Path $uninstallKey -Name 'DisplayIcon' -Value ($installedExe + ',0') -PropertyType String -Force | Out-Null
-    New-ItemProperty -Path $uninstallKey -Name 'UninstallString' -Value ('"' + $uninstallerPath + '"') -PropertyType String -Force | Out-Null
-    New-ItemProperty -Path $uninstallKey -Name 'QuietUninstallString' -Value ('"' + $uninstallerPath + '" -Quiet') -PropertyType String -Force | Out-Null
-    New-ItemProperty -Path $uninstallKey -Name 'EstimatedSize' -Value (ConvertTo-Kilobytes $installFolder) -PropertyType DWord -Force | Out-Null
-    New-ItemProperty -Path $uninstallKey -Name 'NoModify' -Value 1 -PropertyType DWord -Force | Out-Null
-    New-ItemProperty -Path $uninstallKey -Name 'NoRepair' -Value 1 -PropertyType DWord -Force | Out-Null
+        if ($null -eq $key) {
+            throw 'Windows refused to create the entry.'
+        }
+
+        $key.SetValue('DisplayName', $displayName)
+        $key.SetValue('DisplayVersion', $version)
+        $key.SetValue('Publisher', $publisher)
+        $key.SetValue('InstallLocation', $installFolder)
+        $key.SetValue('DisplayIcon', ($installedExe + ',0'))
+        $key.SetValue('UninstallString', ('"' + $uninstallerPath + '"'))
+        $key.SetValue('QuietUninstallString', ('"' + $uninstallerPath + '" -Quiet'))
+        $key.SetValue('EstimatedSize', [int](ConvertTo-Kilobytes $installFolder),
+            [Microsoft.Win32.RegistryValueKind]::DWord)
+        $key.SetValue('NoModify', 1, [Microsoft.Win32.RegistryValueKind]::DWord)
+        $key.SetValue('NoRepair', 1, [Microsoft.Win32.RegistryValueKind]::DWord)
+        $key.Close()
+
+        Write-Host '  Add or remove programs: Area11 listed.'
+    } catch {
+        Write-Host ('  Note: the "Add or remove programs" entry could not be written (' + $_.Exception.Message + ').') -ForegroundColor Yellow
+        Write-Host ('        The program is installed in ' + $installFolder + '; the shop data is untouched.') -ForegroundColor Yellow
+    }
 
     # ---- done -------------------------------------------------------------
     Show-Headline ('AREA11 ' + $version + ' IS INSTALLED')
@@ -375,6 +409,18 @@ try {
     Write-Host ''
     Show-Headline 'THE INSTALLER STOPPED'
     Write-Host ('  ' + $_.Exception.Message) -ForegroundColor Red
+
+    # Where it stopped (v0.35.2). "Parameter set cannot be resolved" named neither the line nor the
+    # command, and finding it cost a round; the next stop prints both.
+    try {
+        $where = $_.InvocationInfo
+
+        if ($where -and $where.ScriptLineNumber -gt 0) {
+            Write-Host ('  Where : line ' + $where.ScriptLineNumber + ' - ' + $where.Line.Trim()) -ForegroundColor Yellow
+        }
+    } catch {
+    }
+
     Write-Host ''
     Write-Host '  Nothing was deleted. The shop data in C:\ProgramData\Area11 is untouched.'
     Write-Host '  Copy everything above and send it in the chat.'

@@ -133,7 +133,18 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.35.1 (Ultramarine `#3F00A0`) - one time for the shop, a session that ends by itself, and no bill without a galla (D-92).**
+> **v0.35.2 (Tarragon `#5A6B3B`) - one time for the shop, a session that ends by itself, and no bill without a galla (D-92).**
+>
+> * **v0.35.2 fixed what the owner's run found.** (1) `RunTrail.Append` used `File.AppendAllText`, which
+>   writes **no line end**, so every step glued onto the previous one and the trail was one enormous
+>   line - four `RunTrailTests` failed on his PC and were right. It now uses `AppendAllLines`.
+>   (2) The installer stopped after `Print spooler: running.` with *"Parameter set cannot be resolved
+>   using the specified named parameters"*: the icon and **Add or remove programs** blocks are now
+>   plain .NET (`Directory.EnumerateFiles`, `Registry.LocalMachine.CreateSubKey`), each in a `try/catch`
+>   that says what it could not write and carries on, and the top-level catch prints **`Where : line N`**.
+>   Both rules are in `check_repo.py`, each proved by putting the fault back.
+> (3) **Tarragon is a fresh codename**: v0.35.1 repeated *Ultramarine*, which v0.5.0 had used in
+>   2026 - a codename is a version marker, so re-using one makes two different builds look alike.
 >
 > * **v0.35.1 fixed the first line that did not compile.** `RunTrail.Begin` built its `Folder :` header
 >   with `Safe(AppContext.BaseDirectory)` while `Safe` takes a `Func<string>` - CS1503, and the owner's

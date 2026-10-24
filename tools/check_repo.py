@@ -3765,6 +3765,17 @@ def check_run_trail() -> None:
              "time(s) - Safe takes a Func<string>, so a plain value is CS1503 and the build stops "
              "before the first window (that is exactly what v0.34.0 did)")
 
+    # v0.35.2: `File.AppendAllText` writes exactly the characters it is given - no line end - so
+    # every step after "started" was glued onto the previous one and the run read as a single line
+    # (four tests failed on the owner's PC for exactly this). The file must be written by a call
+    # that adds the terminator.
+    if "File.AppendAllText(" in trail_text or ("File.AppendAllLines(" not in trail_text
+                                              and "Environment.NewLine" not in trail_text):
+        fail("RunTrail appends a step in a way that adds no line end - File.AppendAllText writes "
+             "exactly the characters it is given, so every step glues onto the one before it and the "
+             "trail becomes one unreadable line (v0.35.1 did exactly that on the owner's PC and four "
+             "tests failed on it); one step must be written by AppendAllLines")
+
     if "Path.GetTempPath()" not in trail_text:
         fail("RunTrail does not use the temp folder - a diagnostics file must never be written into "
              "the shop folder, which can be the second counter's share")

@@ -137,7 +137,11 @@ public static class RunTrail
                     .Replace("\r", " ", StringComparison.Ordinal)
                     .Trim();
 
-                File.AppendAllText(path!, Line(text));
+                // One step is one line (v0.35.2). `AppendAllText` writes exactly the characters it is
+                // given - no line end - so v0.34.0 and v0.35.x glued every step onto the previous one
+                // and the whole run read as one long line. `AppendAllLines` writes the line and its
+                // terminator, which is what "one line per step" means on Windows and in the tests.
+                File.AppendAllLines(path!, new[] { Line(text) });
 
                 var lines = File.ReadAllLines(path!);
 
