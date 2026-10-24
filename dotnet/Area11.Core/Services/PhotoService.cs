@@ -200,7 +200,7 @@ SELECT IFNULL(MAX(sort_order), 0) + 1 FROM photos WHERE entity = @entity AND ent
                 // A stamped name can never collide with an older file, even when two people add a
                 // photo in the same minute on a second counter.
                 var name = key + "-" + entityId + "-"
-                           + DateTime.Now.ToString("yyyyMMdd-HHmmss-fff", System.Globalization.CultureInfo.InvariantCulture)
+                           + TimeSource.Now.ToString("yyyyMMdd-HHmmss-fff", System.Globalization.CultureInfo.InvariantCulture)
                            + extension;
 
                 destination = Path.Combine(PhotosFolder, name);

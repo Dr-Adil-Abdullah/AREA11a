@@ -31,6 +31,21 @@
             <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
                 <StackPanel>
 
+                    <!-- The note a forgotten session leaves (v0.35.0, D-92): the drawer is open and
+                         the person who opened it is gone. Area11 does not close it - only a counted
+                         amount may close a drawer - so the next person is told to count it here. -->
+                    <Border Style="{StaticResource Card}" Padding="16" Background="{StaticResource WarningSoftBrush}"
+                            Visibility="{Binding HasHandoverNote, Converter={StaticResource BoolToVis}}">
+                        <StackPanel>
+                            <TextBlock Text="A drawer was left open" Style="{StaticResource SectionTitle}"
+                                       Foreground="{StaticResource WarningBrush}" />
+                            <TextBlock Text="{Binding HandoverNote}" TextWrapping="Wrap" FontSize="12.5"
+                                       Foreground="{StaticResource TextBrush}" Margin="0,6,0,0" />
+                            <TextBlock Text="Count the cash in the drawer and close it below; then open your own with the float you are starting from. Until then no bill can be made."
+                                       Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                        </StackPanel>
+                    </Border>
+
                     <Border Style="{StaticResource Card}" Padding="16"
                             Visibility="{Binding IsBlocked, Converter={StaticResource BoolToVis}}">
                         <TextBlock Text="You can look at the shift history, but opening and closing the drawer needs the Cash / shifts permission."

@@ -354,7 +354,7 @@ public sealed class SyncService
         var moment = DateTime.TryParseExact(madeAt, ShopStampFormat, CultureInfo.InvariantCulture,
                           DateTimeStyles.AssumeLocal, out var parsed)
             ? parsed
-            : DateTime.Now;
+            : TimeSource.Now;
 
         return moment.ToString(CloudStampFormat, CultureInfo.InvariantCulture);
     }

@@ -457,6 +457,14 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
             case "sync.shopId":
                 return CleanName(TextValue(value), "The shop id", allowDash: true, 64);
 
+            // Session (v0.35.0, D-92). The idle limit must be one of the choices printed on the page:
+            // a number typed wrongly (200) would silently become "never", which is the exact fault the
+            // rule exists to prevent. 0 is allowed and means "only the 12-hour limit".
+            case "session.idleHours":
+                return number is 0 or 1 or 2 or 4 or 6 or 12
+                    ? null
+                    : "The sign-out time must be 1, 2, 4, 6 or 12 hours (or 0 for the 12-hour limit only).";
+
             default:
                 return null;
         }
@@ -655,6 +663,15 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         // The owner's tick: keep every group open and take the folding away altogether.
         Flag("menu.pinnedOpen", false);
 
+        // ---- Session and the drawer (v0.35.0, D-92) ----
+        // How long the counter may stand untouched before the person is signed out (hours; 0 = only
+        // the 12-hour limit). Two hours by default: a cashier who bills all day never reaches it, one
+        // who walks away with the drawer open does.
+        Number("session.idleHours", 2);
+        // The note a forgotten session leaves (SessionHandover writes it): empty means nothing is
+        // pending, so an old database opens with nothing to complain about.
+        Text("session.handoverAt", string.Empty);
+        Text("session.handoverBy", string.Empty);
         // ---- Owner ----
         Text("owner.name", "Owner");
 

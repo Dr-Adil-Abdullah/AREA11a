@@ -38,6 +38,7 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
     private string _openFloatText = string.Empty;
     private string _actualText = string.Empty;
     private string _noteText = string.Empty;
+    private string _handoverNote = string.Empty;
     private string _statusText = "Open the drawer with the cash you start with.";
     private bool _isStatusError;
     private User? _selectedPerson;
@@ -83,6 +84,19 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
     public bool CanWork => _services.Permissions.Can(_user, Modules.Cash);
 
     public bool IsBlocked => !CanWork;
+
+    /// <summary>
+    /// The note a forgotten session left behind (v0.35.0, D-92), or empty. Shown above the drawer
+    /// numbers so the person who must count it cannot miss it - and cleared the moment a drawer is
+    /// opened, closed or handed over, because then a person has counted the cash.
+    /// </summary>
+    public string HandoverNote
+    {
+        get => _handoverNote;
+        private set => SetProperty(ref _handoverNote, value);
+    }
+
+    public bool HasHandoverNote => _handoverNote.Length > 0;
 
     public bool HasShift
     {
@@ -223,6 +237,9 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
 
     public void Load()
     {
+        HandoverNote = SessionHandover.Read(_services.Settings);
+        OnPropertyChanged(nameof(HasHandoverNote));
+
         var current = _services.Shifts.Current();
 
         HasShift = current is not null;
@@ -352,6 +369,7 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
         OnPropertyChanged(nameof(HasLastHandover));
         HandoverCashText = string.Empty;
         NoteText = string.Empty;
+        SessionHandover.Clear(_services.Settings);
         Load();
 
         // The money has already moved, so a printer that is off must not look like a failed
@@ -399,6 +417,7 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
 
         OpenFloatText = string.Empty;
         NoteText = string.Empty;
+        SessionHandover.Clear(_services.Settings);
         Load();
 
         SetStatus("Shift opened with " + result.Value.FloatLabel + ".", false);
@@ -423,6 +442,7 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
         var closed = result.Value;
         ActualText = string.Empty;
         NoteText = string.Empty;
+        SessionHandover.Clear(_services.Settings);
         Load();
 
         SetStatus("Shift closed. Expected " + closed.ExpectedLabel + ", counted " + closed.ActualLabel

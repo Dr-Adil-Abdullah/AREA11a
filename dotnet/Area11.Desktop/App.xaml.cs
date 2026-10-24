@@ -31,6 +31,15 @@ public partial class App : Application
             CommandGuard.Sink = (message, exception) => _services!.Log.Error(message, exception);
             RunTrail.Step("database ready");
 
+            // The shop's time (v0.35.0, D-92): asked from the internet in the background, from this
+            // moment and every 20 minutes after it. Nothing waits for the answer - if the line is
+            // down the sign-in window opens at once on the computer's own clock.
+            TimeSource.StartBackgroundSync(note =>
+            {
+                RunTrail.Step("clock: " + note);
+                _services!.Log.Info("Clock: " + note);
+            });
+
             ShowLogin();
         }
         catch (Exception exception)
@@ -112,6 +121,16 @@ public partial class App : Application
         };
 
         viewModel.LoggedOut += () =>
+        {
+            _loggingOut = true;
+            ShowLogin();
+            shell.Close();
+            _loggingOut = false;
+        };
+
+        // The idle limit or the 12-hour limit ended the session (v0.35.0, D-92). Same road as a
+        // sign-out: the frame closes and the sign-in window is the only thing on the screen.
+        viewModel.SessionExpired += () =>
         {
             _loggingOut = true;
             ShowLogin();

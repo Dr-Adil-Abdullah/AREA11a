@@ -33,6 +33,10 @@ VALUES(@productId, 'B-1', '2027-06-30', '2027-06', @qty, @cost, @retail, 0, 1, @
             return newId;
         });
 
+        // A bill needs an open drawer (v0.35.0, D-92), so the fixture opens one - with a zero float,
+        // so no cash total in this file moves.
+        TestData.EnsureDrawerOpen(test);
+
         var permissions = new PermissionService(test.Database, test.Log, test.Audit);
         var sales = new SaleService(test.Database, test.Audit, new NumberingService(test.Settings),
             test.Settings, permissions, test.Log);

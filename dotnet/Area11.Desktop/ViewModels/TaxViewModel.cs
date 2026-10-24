@@ -46,7 +46,7 @@ public sealed class TaxViewModel : ObservableObject, IEmptyPage
         _services = services;
         _user = user;
 
-        var today = DateTime.Now;
+        var today = TimeSource.Now;
         _year = today.Year;
         _month = today.Month;
 
@@ -207,7 +207,7 @@ public sealed class TaxViewModel : ObservableObject, IEmptyPage
 
     private void GoToThisMonth()
     {
-        var today = DateTime.Now;
+        var today = TimeSource.Now;
         _year = today.Year;
         _month = today.Month;
         Load();

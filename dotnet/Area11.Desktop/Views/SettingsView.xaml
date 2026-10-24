@@ -93,6 +93,31 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- The session and the shop's clock (v0.35.0, D-92). The owner asked for the
+                             sign-out time to be his choice and for the time to come from the internet;
+                             both answers belong on one card, because both are about "whose day is it". -->
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel>
+                                <TextBlock Text="Sign out and the shop's clock" Style="{StaticResource SectionTitle}" />
+                                <TextBlock Text="Area11 signs the person out after the time you choose here, so a counter left alone cannot be used by the next person under the last person's name. Whatever you choose, 12 hours after a sign-in everything closes."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+
+                                <TextBlock Text="Sign out a person who has not touched the counter for" Style="{StaticResource FieldLabel}" />
+                                <ComboBox ItemsSource="{Binding IdleHourOptions}"
+                                          SelectedItem="{Binding SelectedIdleHour, Mode=TwoWay}"
+                                          DisplayMemberPath="Label" Width="320" HorizontalAlignment="Left" />
+
+                                <TextBlock Text="The 12-hour limit is not a setting: after 12 hours from the sign-in the session ends even while the counter is busy. An open drawer is never closed by Area11 - it is counted by a person on the Shift (galla) page."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,6,0,0" />
+
+                                <TextBlock Text="Where the time comes from" Style="{StaticResource FieldLabel}" Margin="0,14,0,4" />
+                                <TextBlock Text="{Binding ClockText}" TextWrapping="Wrap" FontSize="12"
+                                           Foreground="{StaticResource TextBrush}" />
+                                <TextBlock Text="Bills are stamped with the time server's time when the internet answers, and with this computer's clock when it does not. Area11 asks again every 20 minutes."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Border>
+
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>

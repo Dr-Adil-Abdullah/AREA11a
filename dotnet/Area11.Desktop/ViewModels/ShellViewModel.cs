@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using System.Windows.Threading;
 using Area11.Core.Models;
 using Area11.Core.Services;
 using Area11.Core.Utils;
@@ -45,6 +46,8 @@ public sealed class ShellViewModel : ObservableObject
     private string _bellSummaryText = "Nothing needs attention.";
     private string _faultBanner = string.Empty;
     private bool _hasFaultBanner;
+    private readonly DispatcherTimer _sessionTimer;
+    private string _sessionNotice = string.Empty;
 
     public ShellViewModel(AppServices services, User user)
     {
@@ -80,14 +83,105 @@ public sealed class ShellViewModel : ObservableObject
         // more: the demo shop was removed from the product on the owner's word (D-77), so every start
         // is the same start, in the shop's own books.
         SelectedNav = NavItems.FirstOrDefault(item => item.IsPage);
+
+        // The two clocks of the session (v0.35.0, D-92). Started here, at the sign-in, and stopped
+        // when this window goes - a timer that outlives its window is a timer that signs somebody
+        // out twice.
+        SessionWatch.Start();
+        _sessionTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
+        _sessionTimer.Tick += (_, _) => CheckSession();
+        _sessionTimer.Start();
     }
 
     public event Action? LoggedOut;
+
+    /// <summary>
+    /// Raised when the idle limit or the 12-hour limit ended the session. App shows the sign-in
+    /// window; the drawer is **not** closed here, because closing it means counting the cash and a
+    /// program must never invent that number (D-92).
+    /// </summary>
+    public event Action? SessionExpired;
+
+    /// <summary>Any click or key press on the frame counts as work - the idle clock starts again.</summary>
+    public void TouchSession() => SessionWatch.Touch();
+
+    /// <summary>The warning line in the top bar, or empty when there is no hurry.</summary>
+    public string SessionNotice
+    {
+        get => _sessionNotice;
+        private set
+        {
+            if (SetProperty(ref _sessionNotice, value))
+            {
+                OnPropertyChanged(nameof(HasSessionNotice));
+            }
+        }
+    }
+
+    public bool HasSessionNotice => _sessionNotice.Length > 0;
+
+    /// <summary>
+    /// Reads both clocks once every 30 seconds (v0.35.0, D-92). The rule is in `SessionPolicy`, so
+    /// the tests can prove it without a window; this method only carries out the verdict.
+    /// </summary>
+    private void CheckSession()
+    {
+        if (!SessionWatch.Running)
+        {
+            return;
+        }
+
+        var hours = _services.Settings.GetInt("session.idleHours", 2);
+        var check = SessionPolicy.Check(
+            SessionWatch.SignedInAt, SessionWatch.LastActivityAt, TimeSource.Now, hours);
+
+        if (check.Expired)
+        {
+            ExpireSession(check);
+            return;
+        }
+
+        SessionNotice = !check.Warning
+            ? string.Empty
+            : check.Next == SessionEnd.HardCap
+                ? "Signed out in " + SessionPolicy.MinutesLeft(check) +
+                  " minutes: the 12-hour limit cannot be extended by touching the screen."
+                : "Signed out in " + SessionPolicy.MinutesLeft(check) +
+                  " minutes because the counter is idle - touch the screen to stay signed in.";
+    }
+
+    /// <summary>Carries out an expired session: a note if the drawer is open, then the sign-in window.</summary>
+    private void ExpireSession(SessionCheck check)
+    {
+        if (!SessionWatch.Running)
+        {
+            return;
+        }
+
+        _sessionTimer.Stop();
+        SessionWatch.Stop();
+        SessionNotice = string.Empty;
+
+        var reason = check.End == SessionEnd.HardCap ? "the 12-hour limit" : "the idle limit";
+        RunTrail.Step("session ended by " + reason + " for " + _user.Name);
+        _services.Log.Info("Signed out automatically by " + reason + " for " + _user.Name + ".");
+
+        // A drawer that is still open must be counted by a person, so it stays open and a note is
+        // left where the next sign-in will find it (SessionHandover).
+        if (_services.Shifts.Current() is not null)
+        {
+            SessionHandover.Mark(_services.Settings, _user.Name);
+        }
+
+        SessionExpired?.Invoke();
+    }
 
     /// <summary>Closes the user's own menu and stops listening to the command guard.</summary>
     public void Detach()
     {
         CommandGuard.Failed -= OnCommandFailed;
+        _sessionTimer.Stop();
+        SessionWatch.Stop();
         UserMenuOpen = false;
     }
 
@@ -258,6 +352,11 @@ public sealed class ShellViewModel : ObservableObject
             if (previous is not null)
             {
                 previous.PropertyChanged -= OnPageChanged;
+
+                if (previous is PosViewModel oldCounter)
+                {
+                    oldCounter.OpenShiftRequested -= GoToShift;
+                }
             }
 
             if (value is not null)
@@ -277,6 +376,17 @@ public sealed class ShellViewModel : ObservableObject
     /// changed. A page that does not implement <see cref="IEmptyPage"/> simply has no card.
     /// </summary>
     public EmptyHint? EmptyHint => (CurrentViewModel as IEmptyPage)?.EmptyHint;
+
+    /// <summary>Walks to the Shift (galla) page - the one place a drawer may be opened (D-92).</summary>
+    private void GoToShift()
+    {
+        var shift = NavItems.FirstOrDefault(item => item.IsPage && item.Title == "Shift (galla)");
+
+        if (shift is not null)
+        {
+            SelectedNav = shift;
+        }
+    }
 
     /// <summary>A page changed something - a search, a save, a list reloaded - so ask it again.</summary>
     private void OnPageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) =>
@@ -548,6 +658,14 @@ public sealed class ShellViewModel : ObservableObject
         var opened = PageGuard.Open<ObservableObject>(
             page.Title, () => page.Resolve(), _services.Log, RecordPageFault);
 
+        if (opened.Ok && opened.Page is PosViewModel counter)
+        {
+            // The counter cannot open a drawer itself (it is a page, and opening a drawer is a money
+            // action with a counted float), so its card asks the frame to walk to the shift page
+            // (v0.35.0, D-92). Detached in CurrentViewModel when another page arrives.
+            counter.OpenShiftRequested += GoToShift;
+        }
+
         return opened.Ok ? opened.Page! : new PageFaultViewModel(opened.Fault!);
     }
 
@@ -790,6 +908,9 @@ public sealed class ShellViewModel : ObservableObject
     private void Logout()
     {
         UserMenuOpen = false;
+        _sessionTimer.Stop();
+        SessionWatch.Stop();
+        SessionNotice = string.Empty;
         _services.Auth.Logout(_user);
         _services.SignOut();
         LoggedOut?.Invoke();

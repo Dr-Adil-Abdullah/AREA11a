@@ -338,5 +338,27 @@
                 </Grid>
             </Border>
         </Grid>
+
+        <!-- The drawer gate (v0.35.0, D-92): with no galla open there is no bill, and the way out
+             is one button on this very screen - the owner's words: "sign in or open the galla right
+             here". The card covers the page rather than hiding it, so the cashier sees the shop's
+             work behind the sentence and knows the program did not lose it. -->
+        <Border Grid.Row="0" Grid.RowSpan="2" Background="#B3FFFFFF"
+                Visibility="{Binding IsBlocked, Converter={StaticResource BoolToVis}}">
+            <Border Style="{StaticResource Card}" MaxWidth="620" VerticalAlignment="Center"
+                    HorizontalAlignment="Center" Padding="26">
+                <StackPanel>
+                    <TextBlock Text="The drawer (galla) is closed" Style="{StaticResource PageTitle}"
+                               Foreground="{StaticResource BrandBrush}" />
+                    <TextBlock Text="{Binding BlockedText}" TextWrapping="Wrap" FontSize="13"
+                               Foreground="{StaticResource TextBrush}" Margin="0,10,0,0" />
+                    <TextBlock Text="Nothing in the shop is lost: the list on this page stays as it is. Opening the drawer is the only thing that starts the counter again."
+                               Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,10,0,0" />
+                    <Button Content="Open a galla now" Style="{StaticResource PrimaryButton}"
+                            HorizontalAlignment="Left" Margin="0,16,0,0"
+                            Command="{Binding OpenShiftCommand}" />
+                </StackPanel>
+            </Border>
+        </Border>
     </Grid>
 </UserControl>

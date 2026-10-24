@@ -453,10 +453,10 @@ VALUES(@productId, @batchId, 'return_in', @qty, 'sale_return', @returnOf, @code,
 
         var maxDays = _settings.GetInt("returns.maxDays", 0);
         if (maxDays > 0 && DateTime.TryParse(sale.Date, out var soldOn)
-            && (DateTime.Now - soldOn).TotalDays > maxDays)
+            && (TimeSource.Now - soldOn).TotalDays > maxDays)
         {
             throw new ValidationException(
-                $"This bill is {Math.Floor((DateTime.Now - soldOn).TotalDays):0} days old; " +
+                $"This bill is {Math.Floor((TimeSource.Now - soldOn).TotalDays):0} days old; " +
                 $"returns are allowed for {maxDays} days.");
         }
 

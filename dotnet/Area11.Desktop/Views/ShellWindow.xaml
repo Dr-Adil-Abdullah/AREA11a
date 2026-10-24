@@ -6,7 +6,8 @@
         xmlns:utils="clr-namespace:Area11.Core.Utils;assembly=Area11.Core"
         Title="{x:Static utils:BuildInfo.WindowTitle}" Height="760" Width="1240"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource CanvasBrush}">
+        Background="{StaticResource CanvasBrush}"
+        PreviewMouseDown="OnActivity" PreviewKeyDown="OnActivity">
 
     <!--
         The frame as the owner drew it (D-51):
@@ -205,6 +206,13 @@
                             </Border>
                         </Grid>
                     </Button>
+                    <!-- The session warning (v0.35.0, D-92). Amber on the dark bar, and it says which
+                         clock it is: touching the counter postpones the idle limit and does nothing
+                         about the 12-hour one. -->
+                    <TextBlock Text="{Binding SessionNotice}" Foreground="#FCD34D" FontSize="11"
+                               VerticalAlignment="Center" Margin="10,0,0,0" MaxWidth="380"
+                               TextWrapping="Wrap"
+                               Visibility="{Binding HasSessionNotice, Converter={StaticResource BoolToVis}}" />
                 </StackPanel>
 
                 <!-- The right third is left empty on purpose: the signed-in person lives in the

@@ -119,7 +119,7 @@ public sealed class BackupService
 
         try
         {
-            var stamp = DateTime.Now.ToString(StampFormat, CultureInfo.InvariantCulture);
+            var stamp = TimeSource.Now.ToString(StampFormat, CultureInfo.InvariantCulture);
             var name = $"{FilePrefix}{stamp}{(automatic ? "-auto" : string.Empty)}.zip";
             path = UniquePath(Path.Combine(_backupsFolder, name));
 
@@ -244,7 +244,7 @@ public sealed class BackupService
 
             if (DateTime.TryParseExact(last, TimeFormat, CultureInfo.InvariantCulture,
                     DateTimeStyles.None, out var when)
-                && DateTime.Now < when.AddHours(EveryHours))
+                && TimeSource.Now < when.AddHours(EveryHours))
             {
                 return null;
             }
@@ -336,7 +336,7 @@ public sealed class BackupService
 
             // --- from here on the shop's own file is about to change ---
 
-            var safetyName = SafetyPrefix + DateTime.Now.ToString(StampFormat, CultureInfo.InvariantCulture) + ".db";
+            var safetyName = SafetyPrefix + TimeSource.Now.ToString(StampFormat, CultureInfo.InvariantCulture) + ".db";
             var safetyPath = UniquePath(Path.Combine(_backupsFolder, safetyName));
 
             CopyDatabase(safetyPath);
@@ -400,7 +400,7 @@ public sealed class BackupService
         try
         {
             var clean = string.IsNullOrWhiteSpace(tag) ? "safety" : tag.Trim().ToLowerInvariant();
-            var name = $"area11-before-{clean}-{DateTime.Now.ToString(StampFormat, CultureInfo.InvariantCulture)}.db";
+            var name = $"area11-before-{clean}-{TimeSource.Now.ToString(StampFormat, CultureInfo.InvariantCulture)}.db";
             var path = UniquePath(Path.Combine(_backupsFolder, name));
 
             CopyDatabase(path);

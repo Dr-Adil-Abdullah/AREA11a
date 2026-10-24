@@ -133,6 +133,26 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
+> **v0.35.0 (Raspberry `#B3446C`) - one time for the shop, a session that ends by itself, and no bill without a galla (D-92).**
+>
+> * **The time is taken, not assumed.** `TimeSource` asks a time server on a background thread
+>   **before the first window** (1,500 ms, three servers), keeps one correction
+>   (`online - computer`), and `Clock.Now()` applies it - so every bill, audit line and shift stamp
+>   follows one answer, and no service had to learn about the internet. No answer means this PC's
+>   clock, the question is repeated **every 20 minutes**, and an answer more than **two days** out is
+>   refused as a wrong answer rather than drift.
+> * **The 12-hour ceiling is not a setting.** `SessionPolicy` holds the owner's idle choice from
+>   Settings *and* the cap; the frame checks both every 30 seconds; a click or key press postpones
+>   the **idle** clock only; the last 15 minutes are named in the top bar **with the clock that will
+>   fire**. A session that ends this way closes the frame and shows the sign-in window.
+> * **No bill without a drawer.** `SaleService.Create` refuses without an open shift, so no page -
+>   present or future - can save one. The counter shows a card **over** its page (the cart survives)
+>   with **Open a galla now**. A drawer left open by a forgotten session is **never closed by the
+>   program**: a note (`SessionHandover`) blocks the counter until a person counts it, because only a
+>   counted amount may close a drawer.
+> * **A test that bills opens the drawer.** `TestData.EnsureDrawerOpen` (called by `TestData.Sales`
+>   and `SaleTests`) opens a zero-float shift, so every bill in the suite goes through the real door.
+>
 > **v0.34.0 (Smalt `#003399`) - a heartbeat, and a button that cannot take the counter down.**
 >
 > * **An absence is not evidence.** `%TEMP%\Area11\binding-errors.txt` is written only when WPF
@@ -637,8 +657,8 @@ tests through the public service methods and a real bill in `TestDatabase`.
 > **Superseded on 23 Oct 2026, and kept because the history matters:** the owner's own PC has since
 > built the whole solution and run the suite green several times - `0 Warning(s), 0 Error(s)`, then
 > **730 of 730 in 53 s** on v0.33.0, with the window open and `Signed in: Owner` in
-> `app-2026-10-23.log`. What is still proved only by `tools/check_repo.py` is the **750 cases of
-> v0.34.0**, which wait for his next `tools\\RUN-TESTS.cmd`.
+> `app-2026-10-23.log`. What is still proved only by `tools/check_repo.py` is the **769 cases of
+> v0.35.0**, which wait for his next `tools\\RUN-TESTS.cmd`.
 >
 > **The checker learned two things from this version.** `DashboardService` used `User` with no
 > `using Area11.Core.Models;` and the gate stayed quiet: its mention patterns wanted `.`, `(` or

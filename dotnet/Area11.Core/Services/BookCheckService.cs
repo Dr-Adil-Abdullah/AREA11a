@@ -90,7 +90,7 @@ public sealed class BookCheckService
 
             var report = new BookCheckReport
             {
-                RanAt = DateTime.Now,
+                RanAt = TimeSource.Now,
                 DatabaseFile = AppPaths.DatabaseFile,
                 Rules = rules
             };

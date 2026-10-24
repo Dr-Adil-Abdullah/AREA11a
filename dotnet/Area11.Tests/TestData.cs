@@ -141,8 +141,30 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, @role, 1, @at);"
         new(test.Database, test.Audit, test.Settings,
             new PermissionService(test.Database, test.Log, test.Audit), test.Log);
 
+    /// <summary>The drawer (galla), one constructor in one place (v0.35.0, D-92).</summary>
+    public static ShiftService Shifts(TestDatabase test) =>
+        new(test.Database, test.Audit, new PermissionService(test.Database, test.Log, test.Audit), test.Log);
+
+    /// <summary>
+    /// A shop that is allowed to make a bill. Since v0.35.0 a bill needs an **open drawer** - the
+    /// owner's rule - so the factories below open one with a zero float when the test has not. The
+    /// bill is still what the test is about; the drawer is only the door it now goes through, and
+    /// the zero float keeps every cash total exactly where the test expects it.
+    /// </summary>
+    public static void EnsureDrawerOpen(TestDatabase test)
+    {
+        var shifts = Shifts(test);
+
+        if (shifts.Current() is null)
+        {
+            shifts.Open(Owner, 0, "test");
+        }
+    }
+
     public static SaleService Sales(TestDatabase test)
     {
+        EnsureDrawerOpen(test);
+
         var permissions = new PermissionService(test.Database, test.Log, test.Audit);
         return new SaleService(test.Database, test.Audit, new NumberingService(test.Settings),
             test.Settings, permissions, test.Log);

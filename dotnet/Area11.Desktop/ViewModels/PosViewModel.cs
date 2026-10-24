@@ -60,6 +60,9 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     private string _lastBill = string.Empty;
     private int _lastSaleId;
     private bool _autoPrint;
+    private bool _shiftClosed;
+    private string _handoverNote = string.Empty;
+    private string _blockedText = string.Empty;
 
     public PosViewModel(AppServices services, User user)
     {
@@ -78,6 +81,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         BeginAddCustomerCommand = new RelayCommand(BeginAddCustomer);
         CancelAddCustomerCommand = new RelayCommand(CancelAddCustomer);
         SaveCustomerCommand = new RelayCommand(SaveNewCustomer);
+        OpenShiftCommand = new RelayCommand(() => OpenShiftRequested?.Invoke());
 
         _autoPrint = _services.Settings.GetBool("printer.autoPrint", true);
 
@@ -121,6 +125,37 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     public RelayCommand HoldCommand { get; }
 
     public RelayCommand RefreshHeldCommand { get; }
+
+    /// <summary>Takes the operator to the Shift (galla) page when the drawer is closed (D-92).</summary>
+    public RelayCommand OpenShiftCommand { get; }
+
+    /// <summary>The frame listens, so this page does not need to know how the menu works.</summary>
+    public event Action? OpenShiftRequested;
+
+    /// <summary>
+    /// True while no shift is open (v0.35.0, D-92). The owner's rule: **no work happens before the
+    /// drawer is counted** - a bill made outside a drawer is money nobody counted at closing time,
+    /// and the difference looks like theft. The page says so and offers one button, instead of
+    /// letting the cashier fill a cart and be refused at the end.
+    /// </summary>
+    public bool ShiftClosed
+    {
+        get => _shiftClosed;
+        private set => SetProperty(ref _shiftClosed, value);
+    }
+
+    /// <summary>The sentence on the card. Built in one place, so the screen cannot drift.</summary>
+    public string BlockedText
+    {
+        get => _blockedText;
+        private set => SetProperty(ref _blockedText, value);
+    }
+
+    /// <summary>
+    /// True while a bill is impossible: no drawer open, or a drawer that a forgotten session left
+    /// uncounted (v0.35.0, D-92). One flag for the card, so the page has one thing to bind to.
+    /// </summary>
+    public bool IsBlocked => ShiftClosed || _handoverNote.Length > 0;
 
     /// <summary>Open the small "new customer" card under the customer box (F-11).</summary>
     public RelayCommand BeginAddCustomerCommand { get; }
@@ -519,7 +554,27 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         SelectedDoctor = Doctors[0];
 
         FilterProducts();
+        CheckDrawer();
         Recalculate();
+    }
+
+    /// <summary>
+    /// Reads whether a bill is possible. Called on every refresh, at the start of every bill and
+    /// after every sign-out, so the card comes and goes with the real state rather than with a flag
+    /// somebody has to remember (v0.35.0, D-92).
+    /// </summary>
+    private void CheckDrawer()
+    {
+        var shift = _services.Shifts.Current();
+        ShiftClosed = shift is null;
+        _handoverNote = SessionHandover.Read(_services.Settings);
+
+        BlockedText = _handoverNote.Length > 0
+            ? _handoverNote
+            : "The drawer (galla) is closed, so no bill can be made. Count the opening cash on the Shift " +
+              "(galla) page and open the drawer - the counter works again the moment it is open.";
+
+        OnPropertyChanged(nameof(IsBlocked));
     }
 
     private void FilterProducts()
@@ -647,6 +702,12 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
     private void AddToCart()
     {
+        if (IsBlocked)
+        {
+            SetStatus("No bill can be made until the drawer is opened - see the card above.", true);
+            return;
+        }
+
         if (SelectedProduct is null)
         {
             SetStatus("Pick a medicine first.", true);
@@ -703,6 +764,16 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
     private void CompleteSale()
     {
+        // Asked again here even though the page shows a card: the drawer can be closed from another
+        // window while this cart is open, and the bill is the last place it may be discovered.
+        CheckDrawer();
+
+        if (IsBlocked)
+        {
+            SetStatus("No bill can be made until the drawer is opened - see the card above.", true);
+            return;
+        }
+
         if (Cart.Count == 0)
         {
             SetStatus("The cart is empty.", true);

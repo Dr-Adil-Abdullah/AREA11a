@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using Area11.Core.Models;
 using Area11.Core.Services;
+using Area11.Core.Utils;
 
 namespace Area11.Desktop.ViewModels;
 
@@ -73,6 +74,8 @@ public sealed class SettingsViewModel : ObservableObject
     private bool _syncKeyCleared;
 
     private int _selectedTabIndex;
+    private IdleHourOption? _selectedIdleHour;
+    private string _clockText = string.Empty;
     private User? _selectedUser;
     private string _newStaffName = string.Empty;
     private string _newStaffPin = string.Empty;
@@ -101,11 +104,37 @@ public sealed class SettingsViewModel : ObservableObject
             new(80, "80 mm  —  48 characters per line (wide printer)")
         };
 
+        IdleHourOptions = new ObservableCollection<IdleHourOption>
+        {
+            new(0, "Never - only the 12-hour limit"),
+            new(1, "After 1 hour without work"),
+            new(2, "After 2 hours without work"),
+            new(4, "After 4 hours without work"),
+            new(6, "After 6 hours without work"),
+            new(12, "After 12 hours without work")
+        };
+
         Load();
         LoadUsers();
     }
 
     public ObservableCollection<PaperOption> PaperOptions { get; }
+
+    /// <summary>The sign-out choices (v0.35.0, D-92). 12 hours is also the ceiling for every choice.</summary>
+    public ObservableCollection<IdleHourOption> IdleHourOptions { get; }
+
+    public IdleHourOption? SelectedIdleHour
+    {
+        get => _selectedIdleHour;
+        set => SetProperty(ref _selectedIdleHour, value);
+    }
+
+    /// <summary>Where the shop's time comes from, in the owner's words - set by Load().</summary>
+    public string ClockText
+    {
+        get => _clockText;
+        private set => SetProperty(ref _clockText, value);
+    }
 
     public ObservableCollection<User> Users { get; } = new();
 
@@ -428,6 +457,14 @@ public sealed class SettingsViewModel : ObservableObject
         AppName = settings.GetString("brand.appName");
         MenuPinnedOpen = settings.GetBool("menu.pinnedOpen");
 
+        var idleHours = settings.GetInt("session.idleHours", 2);
+        SelectedIdleHour = IdleHourOptions.FirstOrDefault(option => option.Hours == idleHours)
+                           ?? IdleHourOptions[2];
+
+        // The clock line (v0.35.0, D-92). It says where the time comes from and how far the two
+        // clocks were apart when Area11 last looked - a shop whose PC is a day out must see it here.
+        ClockText = TimeSource.DescribeForOwner();
+
         PrinterName = settings.GetString("printer.name");
         AutoPrint = settings.GetBool("printer.autoPrint", true);
         AutoCut = settings.GetBool("printer.autoCut", true);
@@ -677,7 +714,8 @@ public sealed class SettingsViewModel : ObservableObject
             ["supplier.returnAlertDays"] = alertDays,
             ["loyalty.enabled"] = LoyaltyEnabled,
             ["loyalty.rupeesPerPoint"] = perPoint,
-            ["loyalty.vipThreshold"] = vipPoints
+            ["loyalty.vipThreshold"] = vipPoints,
+            ["session.idleHours"] = SelectedIdleHour?.Hours ?? 2
         };
 
         // Only a person the owner ticked for cloud sync writes these four keys: the key is a password
@@ -949,6 +987,22 @@ public sealed class SettingsViewModel : ObservableObject
 }
 
 /// <summary>One paper size in the drop-down. ToString() is what the ComboBox shows.</summary>
+/// <summary>One sign-out choice on the Settings page (v0.35.0, D-92).</summary>
+public sealed class IdleHourOption
+{
+    public IdleHourOption(int hours, string label)
+    {
+        Hours = hours;
+        Label = label;
+    }
+
+    public int Hours { get; }
+
+    public string Label { get; }
+
+    public override string ToString() => Label;
+}
+
 public sealed class PaperOption
 {
     public PaperOption(int width, string label)

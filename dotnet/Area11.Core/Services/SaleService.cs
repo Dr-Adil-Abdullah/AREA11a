@@ -104,6 +104,16 @@ public sealed class SaleService
             return ServiceResult<SaleResult>.Fail("You do not have permission to make bills.");
         }
 
+        // No bill before the drawer is counted (v0.35.0, D-92). The owner's rule, in his words:
+        // "no work happens while the galla is closed". A bill made outside a drawer is money that
+        // nobody counted at the end of the day, and the difference looks like theft. There is no
+        // switch for it: a rule with a switch is a rule the next person turns off.
+        if (!HasOpenDrawer())
+        {
+            return ServiceResult<SaleResult>.Fail(
+                "The drawer (galla) is closed. Open the shift on the Shift (galla) page, then make the bill.");
+        }
+
         try
         {
             var result = _db.Tx(connection => Save(connection, input, user));
@@ -117,6 +127,28 @@ public sealed class SaleService
         {
             _log.Error("The bill could not be saved.", exception);
             return ServiceResult<SaleResult>.Fail("The bill could not be saved. Please try again.");
+        }
+    }
+
+    /// <summary>
+    /// True when a shift is open. Why it is not a failure when the read breaks: refusing every bill
+    /// because one query failed would stop the shop on the busiest day. The fault is logged, the
+    /// bill goes through, and the drawer report will show the money that was never counted.
+    /// </summary>
+    private bool HasOpenDrawer()
+    {
+        try
+        {
+            using var connection = _db.Open();
+            var count = Convert.ToInt64(
+                _db.Scalar(connection, "SELECT COUNT(1) FROM shifts WHERE status = 'open';") ?? 0L);
+
+            return count > 0;
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The open drawer could not be read, so the bill was allowed.", exception);
+            return true;
         }
     }
 

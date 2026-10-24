@@ -62,7 +62,7 @@ public sealed class RecoveryService
         {
             using var connection = _db.Open();
 
-            return ServiceResult<RecoveryReport>.Success(Build(connection, (today ?? DateTime.Now).Date));
+            return ServiceResult<RecoveryReport>.Success(Build(connection, (today ?? TimeSource.Now).Date));
         }
         catch (Exception exception)
         {

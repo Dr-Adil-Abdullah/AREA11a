@@ -195,7 +195,7 @@ public sealed class BookCheckViewModel : ObservableObject, IEmptyPage
             MoneyText = string.Empty;
             Headline = result.Error ?? "The check could not run.";
             Advice = "Nothing was changed. Send this page with tools\\SEND-REPORT.cmd.";
-            WhenText = DateTime.Now.ToString("dd MMM yyyy, HH:mm");
+            WhenText = TimeSource.Now.ToString("dd MMM yyyy, HH:mm");
             DatabaseText = string.Empty;
             SetProblems(true);
             return;

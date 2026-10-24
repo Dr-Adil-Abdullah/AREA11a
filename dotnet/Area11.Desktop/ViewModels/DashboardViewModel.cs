@@ -34,7 +34,7 @@ public sealed class DashboardViewModel : ObservableObject, IEmptyPage
 
     public string StoreName => _services.Settings.GetString("store.name");
 
-    public string TodayText => DateTime.Now.ToString("dddd, dd MMMM yyyy");
+    public string TodayText => TimeSource.Now.ToString("dddd, dd MMMM yyyy");
 
     public string BillsText { get; private set; } = "0";
 

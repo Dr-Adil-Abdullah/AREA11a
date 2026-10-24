@@ -3514,6 +3514,121 @@ def check_empty_page() -> None:
 
 
 # ---------------------------------------------------------------------------
+def check_shop_clock() -> None:
+    """One time for the shop, a session that ends by itself, and no bill without a drawer (D-92).
+
+    Why a check and not a comment: these three are the only rules of v0.35.0 that cost money. A
+    `Clock` that quietly goes back to `DateTime.Now`, a 12-hour limit that becomes a setting, or a
+    bill that slips through with the drawer closed would each look perfect on the screen and be
+    wrong in the books - so the shape of the code is checked here, on every run, on every machine.
+    """
+    core = DOTNET / "Area11.Core/Utils"
+    source = core / "TimeSource.cs"
+    ntp = core / "NtpTime.cs"
+    policy = core / "SessionPolicy.cs"
+    watch = core / "SessionWatch.cs"
+    handover = core / "SessionHandover.cs"
+    paths = core / "AppPaths.cs"
+    settings = DOTNET / "Area11.Core/Services/SettingsService.cs"
+    sales = DOTNET / "Area11.Core/Services/SaleService.cs"
+    pos = DOTNET / "Area11.Desktop/ViewModels/PosViewModel.cs"
+    pos_view = DOTNET / "Area11.Desktop/Views/PosView.xaml"
+    shell = DOTNET / "Area11.Desktop/ViewModels/ShellViewModel.cs"
+    app = DOTNET / "Area11.Desktop/App.xaml.cs"
+    session_tests = DOTNET / "Area11.Tests/SessionTests.cs"
+    clock_tests = DOTNET / "Area11.Tests/TimeSourceTests.cs"
+
+    needed = (source, ntp, policy, watch, handover, paths, settings, sales, pos, pos_view, shell, app,
+              session_tests, clock_tests)
+
+    for path in needed:
+        if not path.exists():
+            fail(f"the shop's clock is half-built: {rel(path)} is missing")
+
+    if not all(path.exists() for path in needed):
+        return
+
+    paths_text = paths.read_text(encoding="utf-8", errors="replace")
+
+    if "TimeSource.Now" not in paths_text:
+        fail("Clock does not read TimeSource - a bill would be stamped with the computer clock even "
+             "when a time server answered")
+
+    # The four methods of Clock, and no fifth opinion about the time.
+    clock_block = paths_text[paths_text.find("public static class Clock"):]
+    if "DateTime.Now" in clock_block.split("DateDaysAgo")[-1] or "DateTime.Now" in clock_block.split("public static string Now")[0]:
+        fail("Clock still contains DateTime.Now - one call site left behind is a stamp from the wrong clock")
+
+    ntp_text = ntp.read_text(encoding="utf-8", errors="replace")
+
+    if ": 123" not in ntp_text and ", 123" not in ntp_text:
+        fail("NtpTime does not talk to port 123 - that is the only port a time server answers on")
+
+    source_text = source.read_text(encoding="utf-8", errors="replace")
+
+    if "LargestAcceptedOffset" not in source_text or "FromDays(2)" not in source_text:
+        fail("TimeSource no longer refuses an answer that is more than two days out - one wrong "
+             "server would move every bill in the shop")
+
+    policy_text = policy.read_text(encoding="utf-8", errors="replace")
+
+    if "HardCapHours = 12" not in policy_text:
+        fail("SessionPolicy lost the 12-hour ceiling - the owner's rule is 'in every case', not a setting")
+
+    if "HardCapHours = 12" in policy_text and "AllowedIdleHours" in policy_text:
+        choice_line = [line for line in policy_text.splitlines() if "AllowedIdleHours" in line and "{" in line]
+        if not choice_line:
+            fail("SessionPolicy does not list the sign-out choices - the Settings page and the service "
+                 "must agree about which numbers are allowed")
+
+    settings_text = settings.read_text(encoding="utf-8", errors="replace")
+
+    if '"session.idleHours"' not in settings_text:
+        fail("the sign-out time is not a stored setting - it would reset on every restart")
+
+    if "session.handoverAt" not in settings_text:
+        fail("the handover note has no setting behind it - a forgotten drawer could not be remembered")
+
+    sales_text = sales.read_text(encoding="utf-8", errors="replace")
+
+    if "HasOpenDrawer()" not in sales_text:
+        fail("SaleService does not ask whether a drawer is open - a bill could be saved with the "
+             "galla closed")
+
+    if "status = 'open'" not in sales_text:
+        fail("SaleService does not read the open shift - the drawer gate cannot be answered")
+
+    pos_text = pos.read_text(encoding="utf-8", errors="replace")
+
+    if "IsBlocked" not in pos_text:
+        fail("the counter does not know it is blocked - the card would never appear")
+
+    if "OpenShiftCommand" not in pos_text:
+        fail("the counter cannot walk to the shift page - the owner asked for the way out to be on "
+             "that same screen")
+
+    pos_view_text = pos_view.read_text(encoding="utf-8", errors="replace")
+
+    if "IsBlocked" not in pos_view_text:
+        fail("PosView does not show the drawer card - the rule would be invisible until the bill failed")
+
+    shell_text = shell.read_text(encoding="utf-8", errors="replace")
+
+    if "SessionWatch.Start()" not in shell_text:
+        fail("the shell never starts the session clock - nobody would ever be signed out")
+
+    if "SessionExpired" not in shell_text:
+        fail("the shell cannot end a session - the idle limit would only draw a warning")
+
+    app_text = app.read_text(encoding="utf-8", errors="replace")
+
+    if "StartBackgroundSync" not in app_text:
+        fail("the program never asks a time server - the shop's time would be the computer's alone")
+
+    REPORT.append("Shop clock: online time with the computer as fallback, a 12-hour ceiling that is "
+                  "not a setting, and no bill without an open drawer")
+
+
 def check_checklist() -> None:
     """The owner's printed tick-list must say exactly what the board says (v0.34.1, D-91).
 
@@ -4222,6 +4337,7 @@ def main() -> int:
     check_page_guard()
     check_empty_page()
     check_run_trail()
+    check_shop_clock()
     check_checklist()
     check_csharp_grammar()
 

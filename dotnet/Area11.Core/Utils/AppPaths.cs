@@ -82,21 +82,28 @@ public static class AppPaths
     }
 }
 
-/// <summary>Shop-local time in the exact text format SQLite stores (Spec 5.1.3).</summary>
+/// <summary>
+/// Shop-local time in the exact text format SQLite stores (Spec 5.1.3).
+///
+/// Every stamp in the database goes through here, and **every one of them now goes through
+/// `TimeSource`** (v0.35.0, D-92): when a time server answered at startup, `TimeSource.Now` is the
+/// server's time; when none answered, it is the computer's own clock. One line changed here means
+/// one hundred call sites follow, and no service had to learn about the internet.
+/// </summary>
 public static class Clock
 {
     private const string StampFormat = "yyyy-MM-dd HH:mm:ss";
 
-    public static string Now() => DateTime.Now.ToString(StampFormat, CultureInfo.InvariantCulture);
+    public static string Now() => TimeSource.Now.ToString(StampFormat, CultureInfo.InvariantCulture);
 
-    public static string Today() => DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    public static string Today() => TimeSource.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
-    public static string MonthKey() => DateTime.Now.ToString("yyyy-MM", CultureInfo.InvariantCulture);
+    public static string MonthKey() => TimeSource.Now.ToString("yyyy-MM", CultureInfo.InvariantCulture);
 
     /// <summary>
     /// The date <paramref name="days"/> days ago, as SQLite stores it - the cut for the 90 days of bills
     /// that travel to the cloud (F-48, Spec 25.5). Date only, so the first day is included whole.
     /// </summary>
     public static string DateDaysAgo(int days) =>
-        DateTime.Now.AddDays(-Math.Abs(days)).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        TimeSource.Now.AddDays(-Math.Abs(days)).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 }
