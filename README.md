@@ -64,7 +64,7 @@ itself in *Add or remove programs*, and **never touches the shop data in `C:\Pro
 
 > **`Area11.sln` missing in your folder?** That copy is old or incomplete (the download was
 > interrupted, or an older extract was merged into it). Take a fresh copy instead of repairing it:
-> [download the ZIP](https://github.com/Dr-Adil-Abdullah/AREA11a/archive/refs/heads/arena/a8a3b2e0-area11a.zip),
+> [download the ZIP](https://github.com/Dr-Adil-Abdullah/AREA11a/archive/refs/heads/main.zip),
 > extract to `D:\`, then run `START-AREA11.bat` inside the new folder. Shop data lives in
 > `C:\ProgramData\Area11` and is never touched.
 
@@ -73,6 +73,7 @@ Or manually:
 ```bat
 git clone https://github.com/Dr-Adil-Abdullah/AREA11a.git
 cd AREA11a
+rem  the product is on the default branch "main" - nothing to switch to
 dotnet build
 dotnet test
 dotnet run --project dotnet\Area11.Desktop

@@ -31,7 +31,7 @@ echo.
 echo       Fix it in three steps:
 echo.
 echo         1. Open this link in the browser - it downloads a fresh copy:
-echo            https://github.com/Dr-Adil-Abdullah/AREA11a/archive/refs/heads/arena/a8a3b2e0-area11a.zip
+echo            https://github.com/Dr-Adil-Abdullah/AREA11a/archive/refs/heads/main.zip
 echo.
 echo         2. Right-click the downloaded file - "Extract All" - choose  D:\
 echo.
@@ -107,21 +107,20 @@ if errorlevel 1 (
     goto :build
 )
 
-rem  All the work lives on ONE branch. A clone made with GitHub Desktop or Visual Studio
-rem  starts on "main", where the new code is not - so say it plainly instead of quietly
-rem  building an old version.
+rem  The product now lives on the default branch "main" (pull request #1 was merged on
+rem  24 Oct 2026). The old working branch "arena/a8a3b2e0-area11a" still holds the same code,
+rem  so both are accepted - but nothing else is: a stray branch would build an old version.
 set "BRANCH="
 for /f "delims=" %%b in ('git rev-parse --abbrev-ref HEAD 2^>nul') do set "BRANCH=%%b"
 
-if not "%BRANCH%"=="arena/a8a3b2e0-area11a" (
+if not "%BRANCH%"=="main" if not "%BRANCH%"=="arena/a8a3b2e0-area11a" (
     echo.
     echo  [X]  This folder is on the branch "%BRANCH%", but the new code is on
-    echo       "arena/a8a3b2e0-area11a".
+    echo       "main" ^(and the same code is on "arena/a8a3b2e0-area11a"^).
     echo.
     echo       Fix it in one step:
     echo         GitHub Desktop - click "Current Branch" at the top, pick
-    echo                          "arena/a8a3b2e0-area11a", then "Fetch origin"
-    echo                          and "Pull origin".
+    echo                          "main", then "Fetch origin" and "Pull origin".
     echo         Visual Studio  - the branch list is in the bottom right corner.
     echo         VS Code        - click the branch name in the bottom left corner.
     echo.

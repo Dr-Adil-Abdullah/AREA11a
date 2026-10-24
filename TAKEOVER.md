@@ -7,7 +7,8 @@
 > اِس فائل میں یہ سب ہے: پروگرام کیا ہے، ابھی کہاں کھڑا ہے، **کیا باقی ہے**، کیا **کبھی نہیں** کرنا،
 > اور ایک نیا ورژن کیسے نکالنا ہے۔ آپ کے لیے چھوٹی اردو فائل: [`docs/HANDOVER-FOR-OWNER-URDU.md`](docs/HANDOVER-FOR-OWNER-URDU.md)۔
 
-**Status:** v0.35.2 · Tarragon · `#5A6B3B` — branch `arena/a8a3b2e0-area11a`, pull request #1.
+**Status:** v0.35.2 · Tarragon · `#5A6B3B` — **default branch `main`** (pull request #1 was merged on
+24 October 2026). The old working branch `arena/a8a3b2e0-area11a` still points at the same code.
 
 *Last rewritten: 24 October 2026, at code commit `60a6683` (plus the documentation commit that added this file).*
 
@@ -88,6 +89,18 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
    `SetValue`), each inside its own `try/catch` that prints a sentence and carries on, and the
    top-level catch prints **`Where : line N — <the command>`** so the next stop names itself.
 
+### If anything changes after this handover — say it in the repository, not only in the chat
+
+The owner's habit is to close one chat and open another, so **the repository is the only memory**. Every
+time you find a fault, finish a task, change a decision or learn something that cost time:
+
+1. fix it (code first, never by weakening a test);
+2. write it down here and in the file that owns that fact — board `docs/PROGRESS.md`, decision
+   `docs/OWNER-DECISIONS.md`, release `docs/VERSIONS.md`, traps §11 of this file;
+3. push it, and merge it to `main` (open a pull request from your branch if you worked on one) - a
+   commit that exists only on a side branch is invisible to the next agent;
+4. answer the owner in one message, in his language, saying what he must run and what he should see.
+
 **Neither fix has been seen working on his PC yet.** That is the first thing you must get:
 
 > Ask him to pull, run `tools\RUN-TESTS.cmd` (needs `Failed: 0`, `Total: 769`), and run
@@ -144,8 +157,7 @@ WPF cannot decode `.webp` photos; cloud sync is optional and never deletes a row
 
 ```bash
 git clone https://github.com/Dr-Adil-Abdullah/AREA11a.git
-cd AREA11a
-git checkout arena/a8a3b2e0-area11a      # the only working branch; the PR is #1
+cd AREA11a                               # main is the default branch - the product is already here
 pip install --break-system-packages tree_sitter tree_sitter_c_sharp   # gives the real C# grammar
 python3 tools/check_repo.py              # must end: OK - 44 checks, no problems
 python3 tools/build_rules_matrix.py --check
@@ -155,8 +167,11 @@ Then read, in this order: this file → `AGENTS.md` → `docs/PROGRESS.md` (the 
 (the walk-throughs) → `docs/OWNER-DECISIONS.md` (at least D-77, D-88 … D-92) → the code you are about
 to touch.
 
-**Do not start a new branch, do not rename this one, do not force-push.** Commit to
-`arena/a8a3b2e0-area11a` and push there; the open pull request follows automatically.
+**How work reaches `main` from now on.** `main` is protected only by habit, not by a rule: work on a
+branch of your own (`git switch -c fix/<the-fault>`), commit there, push it and open a pull request -
+the owner merges it with one click, or ask him and merge it yourself once his console shows it green.
+**Never force-push and never rewrite `main`'s history.** The old branch
+`arena/a8a3b2e0-area11a` is kept as a pointer to the same commit; do not work on it.
 
 ---
 
@@ -290,7 +305,7 @@ git add -A && git commit -m "v0.xx.y Colour - <what a person would notice>" && g
 ```
 
 **Then verify the push, not the disk:** download the branch zip from
-`https://codeload.github.com/Dr-Adil-Abdullah/AREA11a/zip/refs/heads/arena/a8a3b2e0-area11a`, unpack it
+`https://codeload.github.com/Dr-Adil-Abdullah/AREA11a/zip/refs/heads/main`, unpack it
 in `/tmp`, and run the checker inside it. Only then tell the owner.
 
 **A red test is fixed in the code, never by weakening the test.** If the expectation itself was wrong,
@@ -370,7 +385,7 @@ honest caveat about what is not yet proven. If he asks for a printable status, r
 1. Read the checker's message — it names the file and the reason, and it was written to be read.
 2. Ask for `%TEMP%\Area11\last-run.txt` and `latest-crash.txt`; they say **how far** a run got.
 3. Change one thing, re-run, commit. Do not stack guesses.
-4. Roll back with `git fetch origin && git reset --mixed origin/arena/a8a3b2e0-area11a` — **never**
+4. Roll back with `git fetch origin && git reset --mixed origin/main` — **never**
    `--force`.
 5. When a decision belongs to the shop, ask the owner in the MCQ form and record the answer as the
    next `D-xx`.

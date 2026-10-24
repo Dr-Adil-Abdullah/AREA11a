@@ -32,12 +32,12 @@ are fine - the road is closed. Nothing inside Area11 can fix this; the network m
 The branch is downloadable as an ordinary file - the browser only needs to reach github.com once:
 
 ```
-https://github.com/Dr-Adil-Abdullah/AREA11a/archive/refs/heads/arena/a8a3b2e0-area11a.zip
+https://github.com/Dr-Adil-Abdullah/AREA11a/archive/refs/heads/main.zip
 ```
 
 1. Open the link, let the ZIP download (about 0.5 MB).
 2. Right-click the downloaded file → **Extract All** → choose `D:\` → Extract.
-3. Open the new folder (`D:\AREA11a-arena-a8a3b2e0-area11a`) and double-click **`START-AREA11.bat`**.
+3. Open the new folder (`D:\AREA11a-main`) and double-click **`START-AREA11.bat`**.
    It notices there is no `.git` folder, skips the update, builds and runs the program.
 
 The version is the same as the latest commit; the colour on the sign-in screen proves which build is

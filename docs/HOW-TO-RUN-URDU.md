@@ -15,10 +15,10 @@
 ### قدم 1 — یہ لنک کھولیں
 
 ```
-https://github.com/Dr-Adil-Abdullah/AREA11a/archive/refs/heads/arena/a8a3b2e0-area11a.zip
+https://github.com/Dr-Adil-Abdullah/AREA11a/archive/refs/heads/main.zip
 ```
 
-براؤزر فائل ڈاؤن لوڈ کرے گا (`AREA11a-arena-a8a3b2e0-area11a.zip`)۔
+براؤزر فائل ڈاؤن لوڈ کرے گا (`AREA11a-main.zip`)۔
 
 ### قدم 2 — ایکسٹریکٹ کریں
 
@@ -126,7 +126,7 @@ https://github.com/Dr-Adil-Abdullah/AREA11a/archive/refs/heads/arena/a8a3b2e0-ar
 
 ```
 git fetch origin
-git reset --hard origin/arena/a8a3b2e0-area11a
+git reset --hard origin/main
 ```
 
 > یہ کمانڈ آپ کے فولڈر کو بالکل GitHub جیسا بنا دیتی ہے۔ `START-AREA11.bat` اب خود بتا دیتا ہے

@@ -17,9 +17,9 @@
 **اہم:** تینوں ٹولز ایک ہی فولڈر (`D:\Area11`) استعمال کر سکتے ہیں — ایک ہی کوڈ،
 ایک ہی ڈیٹابیس (`C:\ProgramData\Area11`)۔ کوئی ٹول دوسرے کا کام خراب نہیں کرتا۔
 
-**سب سے ضروری بات:** سارا نیا کام شاخ (branch) **`arena/a8a3b2e0-area11a`** پر ہے۔
-اگر آپ نے `main` شاخ کلون کی، تو پرانا کوڈ کھلے گا — نہ نیا رنگ، نہ نئی سہولتیں۔
-اب `START-AREA11.bat` خود بتا دیتا ہے اگر آپ غلط شاخ پر ہیں۔
+**سب سے ضروری بات:** اب سارا کوڈ **`main`** شاخ پر ہے — یہی ریپو کی اصل شاخ ہے، اِس لیے کلون کرتے ہی سب کچھ
+آ جاتا ہے۔ پرانی شاخ **`arena/a8a3b2e0-area11a`** پر بھی بالکل یہی کوڈ موجود ہے (24 اکتوبر 2026 کو ضم ہوا)،
+اِس لیے دونوں چلتی ہیں۔ `START-AREA11.bat` خود بتا دیتا ہے اگر آپ کسی اور شاخ پر ہوں۔
 
 ---
 
@@ -43,7 +43,7 @@ D:\AREA11a-arena-a8a3b2e0-area11a\AREA11a-arena-a8a3b2e0-area11a\dotnet\...
 یہ وہی طریقہ ہے جو آپ نے استعمال کیا۔ جب نیا کوڈ آئے تو:
 
 1. نیا ZIP ڈاؤن لوڈ کریں:
-   `https://github.com/Dr-Adil-Abdullah/AREA11a/archive/refs/heads/arena/a8a3b2e0-area11a.zip`
+   `https://github.com/Dr-Adil-Abdullah/AREA11a/archive/refs/heads/main.zip`
 2. **نئے** فولڈر میں ایکسٹریکٹ کریں (پرانے پر نہ کھولیں)
 3. `START-AREA11.bat` پر ڈبل کلک
 
@@ -66,11 +66,9 @@ D:\AREA11a-arena-a8a3b2e0-area11a\AREA11a-arena-a8a3b2e0-area11a\dotnet\...
 4. **Local path** میں `D:\Area11` رکھیں
 5. **Clone** دبائیں
 
-### قدم 3 — درست شاخ منتخب کریں (یہ سب سے اہم قدم)
-کلون کے بعد اوپر **Current Branch** پر کلک کریں → فہرست میں
-**`arena/a8a3b2e0-area11a`** منتخب کریں → **Checkout**۔
-
-> اگر یہ نہ کریں تو آپ `main` پر رہیں گے، جہاں پرانا کوڈ ہے۔
+### قدم 3 — شاخ (branch) کی جانچ
+کلون کے بعد اوپر **Current Branch** میں **`main`** لکھا ہونا چاہیے۔ اب یہی اصل شاخ ہے اور اِسی میں نیا کوڈ ہے۔
+اگر آپ کے پاس پرانی شاخ `arena/a8a3b2e0-area11a` ہے تو وہ بھی بالکل ویسا ہی کوڈ رکھتی ہے — کوئی فرق نہیں۔
 
 ### قدم 4 — چلائیں
 `D:\Area11` میں **`START-AREA11.bat`** ڈبل کلک۔
@@ -101,7 +99,7 @@ D:\AREA11a-arena-a8a3b2e0-area11a\AREA11a-arena-a8a3b2e0-area11a\dotnet\...
 ٹرمینل کھولیں (یا `D:\` میں رائٹ کلک → *Open in Terminal*) اور یہ ایک لائن:
 
 ```
-git clone -b arena/a8a3b2e0-area11a https://github.com/Dr-Adil-Abdullah/AREA11a.git Area11
+git clone https://github.com/Dr-Adil-Abdullah/AREA11a.git Area11
 ```
 
 اب `D:\Area11` میں مکمل کوڈ، `.git` کے ساتھ (یعنی اپ ڈیٹ بھی خود ہو سکے گا)۔
@@ -210,5 +208,5 @@ dotnet\Area11.Desktop\Resources\Theme.xaml
 | `NU1903` سیکیورٹی وارننگ | اب درست — `SQLitePCLRaw` کو 2.1.12 پر pin کیا گیا ہے |
 | بلڈ ہو گیا مگر ایپ نہیں کھلی | `dotnet run --project dotnet\Area11.Desktop` کا آخری حصہ بھیجیں |
 | سائن اِن نہیں ہو رہا | نام **خالی**، پاس ورڈ `area11` |
-| اپ ڈیٹ کے بعد بھی پرانا رنگ | آپ غلط شاخ پر ہیں — `arena/a8a3b2e0-area11a` منتخب کریں |
+| اپ ڈیٹ کے بعد بھی پرانا رنگ | آپ پرانی شاخ پر ہیں — GitHub Desktop میں `main` منتخب کر کے *Pull origin* دبائیں |
 | GitHub Desktop کہتا ہے "no local changes" مگر نیا کوڈ نہیں | **Fetch origin** پھر **Pull origin** دبائیں |

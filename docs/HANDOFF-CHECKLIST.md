@@ -16,7 +16,11 @@ things that **could not** be checked here.
 |---|---|---|---|
 | ✅ | the branch on disk is the one on GitHub | `git fetch origin` + `git status -sb` | `60a6683` = `origin/arena/a8a3b2e0-area11a` — **identical**, nothing uncommitted |
 | ✅ | no work was lost when this session's checkout was found on a stale commit (`f0af796`) | `git reset --mixed origin/arena/a8a3b2e0-area11a` | files restored from the remote commit; `git diff` empty |
-| ✅ | open pull request | `gh pr list --head …` | **#1 open** — phase 1, foundation + documentation |
+| ✅ | open pull request | `gh pr list --head …` | **#1 open** at the time of the check |
+| ✅ | **was `main` empty?** | `git log origin/main`, `git ls-tree origin/main` | **yes** - `main` held only `README.md` at `f0af796`, so a new agent cloning the default branch would have found an empty repository |
+| ✅ | **merge to the default branch** | `gh pr merge 1 --merge` | **merged on 24 October 2026** - `main` now holds the product, so the repository link alone is enough; the old branch keeps the same tree |
+| ✅ | `main` verified after the merge | fresh ZIP of `main` + `check_repo.py` | `OK - 44 checks, no problems`, rules matrix up to date, 22 documents with no broken links |
+| ✅ | the launcher accepts the new default branch | `START-AREA11.bat` | accepts `main` **and** `arena/a8a3b2e0-area11a`, and still refuses any other branch |
 
 ## 2. The static gate (44 checks)
 

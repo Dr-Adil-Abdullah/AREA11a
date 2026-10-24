@@ -74,7 +74,7 @@ echo           whether it is the provider.
 echo.
 echo      Meanwhile the SAME code can be downloaded in the browser - see
 echo      docs\GITHUB-NETWORK.md, or just open:
-echo        https://github.com/Dr-Adil-Abdullah/AREA11a/archive/refs/heads/arena/a8a3b2e0-area11a.zip
+echo        https://github.com/Dr-Adil-Abdullah/AREA11a/archive/refs/heads/main.zip
 echo      Extract it to D:\ and double-click START-AREA11.bat inside it.
 echo.
 echo    If step 2 says OPEN but GitHub Desktop still fails:
