@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<title>Area11 - مکمل فیچر ٹک لسٹ - v0.35.2 (Tarragon)</title>
+<style>
+  @page { size: A4; margin: 12mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", "Noto Nastaliq Urdu", "Jameel Noori Nastaleeq", sans-serif;
+         color: #111827; font-size: 10.5pt; line-height: 1.75; margin: 0 auto; max-width: 190mm; }
+  .brand { border-right: 8px solid #5A6B3B; padding: 6px 12px; margin-bottom: 10px; }
+  h1 { font-size: 17pt; margin: 0 0 2px 0; }
+  h2 { font-size: 13pt; margin: 16px 0 6px 0; border-bottom: 2px solid #e5e7eb; padding-bottom: 3px; }
+  .muted { color: #6b7280; font-size: 9.5pt; }
+  .en { direction: ltr; unicode-bidi: embed; font-family: Consolas, 'Segoe UI', monospace; font-size: 9.5pt; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 10px 0; }
+  th, td { border: 1px solid #d1d5db; padding: 4px 6px; vertical-align: top; }
+  th { background: #f3f4f6; font-size: 9.5pt; }
+  td.mark { text-align: center; width: 16mm; font-size: 13pt; }
+  td.box { text-align: center; width: 12mm; font-size: 14pt; }
+  td.id { width: 18mm; direction: ltr; text-align: left; font-family: Consolas, monospace; font-size: 9pt; }
+  .summary td { font-size: 11pt; }
+  .half { background: #fffbeb; }
+  .todo { background: #fef2f2; }
+  .checks { background: #f9fafb; border: 1px dashed #9ca3af; padding: 6px 10px; margin: 4px 0 12px 0; }
+  .checks ol { margin: 4px 0 0 0; padding-right: 18px; }
+  .page-break { page-break-before: always; }
+  .legend span { display: inline-block; margin-left: 14px; }
+  .sign { margin-top: 14px; border-top: 1px solid #d1d5db; padding-top: 8px; }
+</style>
+</head>
+<body>
+<div class="brand">
+<h1>Area11 — مکمل فیچر ٹک لسٹ</h1>
+<div class="muted">ورژن v0.35.2 (Tarragon <span class="en">#5A6B3B</span>) · 2026-10-24 · کل 57 فیچر</div>
+</div>
+<div class="legend">
+<span>✅ مکمل</span><span>🟡 جاری</span><span>❌ شروع نہیں</span><span>☐ = آپ کا اپنا نشان</span>
+</div>
+<h2>ایک نظر میں</h2>
+<table class="summary">
+<tr><th>حالت</th><th>گنتی</th><th>فیصد</th></tr>
+<tr><td>✅ مکمل</td><td>52</td><td>91.2%</td></tr>
+<tr class="half"><td>🟡 جاری</td><td>5</td><td>8.8%</td></tr>
+<tr class="todo"><td>❌ شروع نہیں</td><td>0</td><td>0%</td></tr>
+<tr><th>کل</th><th>57</th><th>100%</th></tr>
+</table>
+<p class="muted">جاری کا مطلب: کوڈ مکمل ہے، دکان میں ایک عمل باقی ہے (ہر ایک کے لیے نیچے ایک سطر ہے)۔</p>
+<p class="muted">یہ فہرست خودکار بنتی ہے (<span class="en">tools/make_checklist.py</span>) اور <span class="en">docs/PROGRESS.md</span> کے بورڈ سے میل کھاتی ہے؛ چیکر اِسے جانچتا ہے۔</p>
+<h2>فیز 1 — بنیاد، دوا اور بل</h2>
+<div class="muted">18 فیچر — 14 ✅ · 4 🟡 · 0 ❌ — یہاں دکان کا روزمرہ کام ہے: دوا کی فہرست، خریداری، اور کاؤنٹر پر بل۔</div>
+<table>
+<tr><th>ٹک</th><th>نمبر</th><th>فیچر</th><th>حالت</th></tr>
+<tr><td class="box">☐</td><td class="id">F-01</td><td><span class="en">Solution with three projects</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-02</td><td><span class="en">Exact database schema, migrations 001-023, 34 business tables</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-03</td><td><span class="en">Settings service, 86 keys, every change audited, saved in one transaction</span></td><td class="mark">✅ مکمل</td></tr>
+<tr class="half"><td class="box">☐</td><td class="id">F-04</td><td><span class="en">Audit black box (old -&gt; new values, never deleted)</span></td><td class="mark">🟡 جاری</td></tr>
+<tr><td class="box">☐</td><td class="id">F-05</td><td><span class="en">Sign-in: owner password, staff PIN, 5 tries -&gt; 2 minute lock</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-06</td><td><span class="en">Per-person permissions stored in the database</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-07</td><td><span class="en">Permanent numbering `INV` / `PINV` / `RET` / `Q` / `SR` / `PR` / `ST`</span></td><td class="mark">✅ مکمل</td></tr>
+<tr class="half"><td class="box">☐</td><td class="id">F-08</td><td><span class="en">Products: search, create, edit, box/strip/unit packing, prices, rack</span></td><td class="mark">🟡 جاری</td></tr>
+<tr class="half"><td class="box">☐</td><td class="id">F-09</td><td><span class="en">Purchases `PINV`: supplier, batch, expiry, sample lines, payable</span></td><td class="mark">🟡 جاری</td></tr>
+<tr class="half"><td class="box">☐</td><td class="id">F-10</td><td><span class="en">Counter `INV`: FEFO, box/strip/unit, discount guard, round-off, cash change, credit</span></td><td class="mark">🟡 جاری</td></tr>
+<tr><td class="box">☐</td><td class="id">F-11</td><td><span class="en">Customers: quick create at the counter</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-12</td><td><span class="en">Dashboard: today's bills, sales, profit by the report's own rule, khata, payable, l...</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-13</td><td><span class="en">Receipt render + instant ESC/POS print, 58 / 80 mm, auto or manual</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-14</td><td><span class="en">Hold cart / bring back a held cart</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-15</td><td><span class="en">Split payment (cash + online / card / khata in one bill)</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-16</td><td><span class="en">First real Windows build and test run</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-17</td><td><span class="en">Settings screen: shop info, printing, discount rules, and per-person permission ticks</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-18</td><td><span class="en">Tests for purchases, partners, numbering</span></td><td class="mark">✅ مکمل</td></tr>
+</table>
+<div class="checks"><b>دکان میں کیسے دیکھیں:</b><ol>
+<li>`START-AREA11.bat` دو بار کلک کریں اور سائن اِن کریں (صارف نام خالی، پاس ورڈ `area11`)۔</li>
+<li>`Products` → **New medicine**: نام، پیک، ریٹ لکھ کر محفوظ کریں۔ فہرست میں دوا آ جائے۔</li>
+<li>`Counter (POS)` → اُس دوا کو تلاش کر کے کارٹ میں ڈالیں → **Save** → بل نمبر `INV-` سے شروع ہو اور رسید پرنٹ ہو۔</li>
+<li>`Purchases` → ایک خریداری `PINV-` لکھیں (سپلائر، بیچ، میعاد) → دونوں میں اسٹاک بڑھے۔</li>
+</ol></div>
+<b>اِس حصے میں باقی:</b><ul>
+<li>🟡 <b>F-04</b> — <span class="en">Audit black box (old -&gt; new values, never deleted)</span>: `Black box` کھولیں: آج جو بھی کام کیا (دوا شامل، بل، واپسی)، اُس کی ایک سطر نظر آئے — کس نے، کب، کیا بدلا۔</li>
+<li>🟡 <b>F-08</b> — <span class="en">Products: search, create, edit, box/strip/unit packing, prices, rack</span>: `Products` → **New medicine** → ایک دوا **بیچ کے ساتھ** (بیچ نمبر، میعاد، تعداد) محفوظ کریں۔</li>
+<li>🟡 <b>F-09</b> — <span class="en">Purchases `PINV`: supplier, batch, expiry, sample lines, payable</span>: `Purchases` → ایک اصل ڈیلیوری لکھیں (سپلائر، بیچ، میعاد، تعداد) → اسٹاک بڑھے اور واجب الادا بنے۔</li>
+<li>🟡 <b>F-10</b> — <span class="en">Counter `INV`: FEFO, box/strip/unit, discount guard, round-off, cash change, credit</span>: `Counter (POS)` → ایک اصل بل بنائیں اور دکان کے پرنٹر پر نکالیں — رسید پوری اور صاف آئے۔</li>
+</ul>
+<div class="muted"><b>نوٹ:</b><ul>
+<li>F-16: پہلی اصل ونڈوز build اور ٹیسٹ — 23 اکتوبر 2026 کو آپ کے کمپیوٹر پر **0 warning / 0 error** اور **730 میں سے 730**۔</li>
+</ul></div>
+<h2 class="page-break">فیز 2 — واپسی، اسٹاک اور الرٹس</h2>
+<div class="muted">10 فیچر — 10 ✅ · 0 🟡 · 0 ❌ — یہاں وہ کام ہیں جو بل کے بعد آتے ہیں: واپسی، خراب مال، گنتی، اور کھاتے۔</div>
+<table>
+<tr><th>ٹک</th><th>نمبر</th><th>فیچر</th><th>حالت</th></tr>
+<tr><td class="box">☐</td><td class="id">F-20</td><td><span class="en">Bill lookup for a return: by printed number and by phone / customer / medicine / date</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-21</td><td><span class="en">Return `RET` against the original bill, strict limits, printed return receipt</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-23</td><td><span class="en">Quarantine `Q` with permanent number + disposition by owner or manager</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-22</td><td><span class="en">Provisional (no-bill) return `PR-nnnn`</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-25</td><td><span class="en">Stock write-off / breakage</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-26</td><td><span class="en">Stock-take `ST-nnnn`: frozen book, count sheet</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-27</td><td><span class="en">Customer khata: list + page, money received</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-28</td><td><span class="en">Supplier ledger + supplier return `SR-nnnn`</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-29</td><td><span class="en">Expiry levels read from settings</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-30</td><td><span class="en">Return receipt (permanent number, original bill, reason)</span></td><td class="mark">✅ مکمل</td></tr>
+</table>
+<div class="checks"><b>دکان میں کیسے دیکھیں:</b><ol>
+<li>`Returns` → بل نمبر یا فون سے بل ڈھونڈیں → واپسی `RET-` بنے اور اسٹاک واپس آئے۔</li>
+<li>`Write-off` → میعاد ختم یا ٹوٹی دوا لکھیں → تاریخ اور وجہ کے ساتھ ریکارڈ ہو۔</li>
+<li>`Stock-take` → ایک گنتی `ST-` بنائیں → کتاب اور گنی ہوئی تعداد کا فرق نظر آئے۔</li>
+<li>اوپر کی گھنٹی (🔔) دبائیں → الرٹس اپنے الفاظ میں نظر آئیں۔</li>
+</ol></div>
+<h2 class="page-break">فیز 3 — کھاتے، رپورٹس، بیک اپ</h2>
+<div class="muted">9 فیچر — 9 ✅ · 0 🟡 · 0 ❌ — یہاں دکان کا حساب ہے: گلہ، اخراجات، رپورٹس، ادھار کی وصولی، اور بیک اپ۔</div>
+<table>
+<tr><th>ٹک</th><th>نمبر</th><th>فیچر</th><th>حالت</th></tr>
+<tr><td class="box">☐</td><td class="id">F-31</td><td><span class="en">Shift / galla: open, close, variance, and hand the drawer to the next person with a...</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-32</td><td><span class="en">Expenses and owner drawings</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-33</td><td><span class="en">Udhaar recovery: ageing</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-34</td><td><span class="en">Reports</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-35</td><td><span class="en">Audit viewer + CSV export (owner; manager hidden by default)</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-36</td><td><span class="en">Backup</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-37</td><td><span class="en">Import / export / bulk price change</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-38</td><td><span class="en">Reorder levels + WhatsApp order text</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-39</td><td><span class="en">Stock-minus registry: every shelf below zero, the movement that took it there, valu...</span></td><td class="mark">✅ مکمل</td></tr>
+</table>
+<div class="checks"><b>دکان میں کیسے دیکھیں:</b><ol>
+<li>`Shift (galla)` → گلہ کھولیں، رقم گنیں، بند کریں → فرق (کم/زیادہ) لکھا آئے۔</li>
+<li>`Expenses` → ایک خرچ (بجلی، چائے) لکھیں → رپورٹ میں نظر آئے۔</li>
+<li>`Reports` → آج / 7 دن / 30 دن کے نمبر دیکھیں؛ `Tax report` مہینے کا حساب دکھائے۔</li>
+<li>`Backup &amp; restore` → **Back up now** → `C:\ProgramData\Area11\backups` میں ZIP بنے۔</li>
+</ol></div>
+<h2 class="page-break">فیز 4 — باقی سب (دکان کے لیے اضافی سہولتیں)</h2>
+<div class="muted">20 فیچر — 19 ✅ · 1 🟡 · 0 ❌ — یہاں وہ سہولتیں ہیں جو ہر دکان استعمال نہیں کرتی — لیکن لکھی اور آزمائی ہوئی ہیں۔</div>
+<table>
+<tr><th>ٹک</th><th>نمبر</th><th>فیچر</th><th>حالت</th></tr>
+<tr><td class="box">☐</td><td class="id">F-40</td><td><span class="en">Loyalty: rupees spent -&gt; points -&gt; 1-5 stars -&gt; a title. Points spent at the counter</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-41</td><td><span class="en">Photos: 2-3 per product, supplier and customer, camera capture</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-42</td><td><span class="en">Custom fields (text / number / amount / date / list / yes-no / photo)</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-43</td><td><span class="en">Several barcodes per product</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-44</td><td><span class="en">Medical rep / salesman info, doctor tracking, lifetime profit per customer</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-45</td><td><span class="en">Second counter over the LAN</span></td><td class="mark">✅ مکمل</td></tr>
+<tr class="half"><td class="box">☐</td><td class="id">F-46</td><td><span class="en">Printer &amp; scanner test (Spec 33.3.4)</span></td><td class="mark">🟡 جاری</td></tr>
+<tr><td class="box">☐</td><td class="id">F-47</td><td><span class="en">Self-installing installer (D-19)</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-48</td><td><span class="en">Cloud sync with Supabase (Spec 25)</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-49</td><td><span class="en">Tax report month by month, the `PAY-` money-received slip, and the customer's month...</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-50</td><td><span class="en">Misspelt search (Spec 8.4, D-70)</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-51</td><td><span class="en">Supplier-return cutoff window</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-53</td><td><span class="en">Sample shop (D-69, D-74) - built, proved, then removed on the owner's word (D-77)</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-54</td><td><span class="en">Do the books add up? - eleven read-only rules over the shop's own rows</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-55</td><td><span class="en">The drawer changes hands (Spec 14.4 / 18.2, migration 009)</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-56</td><td><span class="en">Who was short (Spec 7.2.7, the last line in the spec that still said *not built*)</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-57</td><td><span class="en">One time for the whole shop</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-58</td><td><span class="en">The session ends by itself</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-59</td><td><span class="en">No bill while the drawer is closed</span></td><td class="mark">✅ مکمل</td></tr>
+<tr><td class="box">☐</td><td class="id">F-52</td><td><span class="en">Bills page (Spec 12.3 `/sales`)</span></td><td class="mark">✅ مکمل</td></tr>
+</table>
+<div class="checks"><b>دکان میں کیسے دیکھیں:</b><ol>
+<li>`Printer &amp; scanner` → ٹیسٹ پرچی چھاپیں (58 یا 80 mm)؛ سکینر سے بارکوڈ آزمائیں۔</li>
+<li>`Own fields` → ایک نیا خانہ بنائیں → وہی خانہ گاہک یا دوا کے فارم پر فوراً نظر آئے۔</li>
+<li>`Second counter (LAN)` اور `Cloud sync` صرف اُس وقت آزمائیں جب آپ واقعی دوسرا کمپیوٹر یا کلاؤڈ استعمال کریں۔</li>
+<li>`Check the books` → «کتابیں ملتی ہیں؟» کا جواب دیکھیں (یہ صرف پڑھتا ہے، کچھ بدلتا نہیں)۔</li>
+</ol></div>
+<b>اِس حصے میں باقی:</b><ul>
+<li>🟡 <b>F-46</b> — <span class="en">Printer &amp; scanner test (Spec 33.3.4)</span>: `Printer &amp; scanner` → سکینر سے ایک بارکوڈ پڑھوائیں اور دیکھیں کہ دوا خود آ جائے (چھاپنے والا حصہ آپ نے 23 اکتوبر کو آزمایا تھا)۔</li>
+</ul>
+<div class="muted"><b>نوٹ:</b><ul>
+<li>F-53: نمونہ دکان (sample shop) بنا اور آزمایا گیا، پھر آپ کے کہنے پر ہٹا دیا گیا (D-77) — اِس لیے پروگرام میں یہ صفحہ نہیں ہے۔</li>
+</ul></div>
+<h2 class="page-break">جو فیچر نہیں، مگر ابھی آزمایا نہیں گیا</h2>
+<table>
+<tr><th>ٹک</th><th>کیا</th><th>کیسے</th></tr>
+<tr><td class="box">☐</td><td>انسٹالر (F-47)</td><td>`MAKE-INSTALLER.cmd` چلائیں، پھر بنی ہوئی فائل دو بار کلک کریں — پروگرام `C:\Program Files\Area11` میں جائے اور آپ کا ڈیٹا `C:\ProgramData\Area11` میں جیسے تھا ویسے رہے۔ **یہ آج تک کبھی نہیں چلا۔**</td></tr>
+<tr><td class="box">☐</td><td>صفحات کا ہاتھ سے چلنا</td><td>تازہ ترین build کھول کر کم از کم پانچ صفحے دیکھیں (Products، Counter، Bills، Customers، Reports) اور `%TEMP%\Area11\last-run.txt` میں اُن کے نام دیکھیں۔ ساتھ ہی کاؤنٹر پر **گلا بند** کا کارڈ اور **Settings → Shop** میں گھڑی کی سطر دیکھیں۔</td></tr>
+<tr><td class="box">☐</td><td>دوسرا کاؤنٹر (F-45)</td><td>کوئی شیئر فولڈر بنا کر `SHARE-AREA11.cmd` چلائیں — یہ صرف اُس وقت ضروری ہے جب آپ واقعی دوسرا کمپیوٹر لگائیں۔</td></tr>
+</table>
+<p class="muted">جتنے فیچر لکھنے تھے، سب لکھے جا چکے ہیں — فہرست میں کوئی ❌ نہیں۔ باقی صرف دکان میں ایک ایک عمل ہے۔ جب آپ کوئی عمل کر لیں، اگلی دوڑ میں اُس کا نشان خود بدل جائے گا۔</p>
+<div class="sign">
+<div>میرا دستخط: ______________________________ &nbsp;&nbsp; تاریخ: ____________</div>
+<div class="muted">یہ صفحہ پرنٹ کرنے کے لیے ہے: Ctrl+P دبائیں، کاغذ A4 رکھیں، اور ہر سطر کے خالی خانے میں قلم سے ٹک لگائیں۔</div>
+</div>
+</body>
+</html>

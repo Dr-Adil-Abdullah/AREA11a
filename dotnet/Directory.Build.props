@@ -1,0 +1,19 @@
+<Project>
+  <!-- Shared build settings for every project in dotnet/ -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Deterministic>true</Deterministic>
+    <Product>Area11</Product>
+    <Company>Area11</Company>
+    <!-- Must equal BuildInfo.Version: Windows shows this number in the exe's properties and the
+         installer writes it into Add/Remove Programs. `tools/check_repo.py` fails if they differ. -->
+    <Version>0.35.2</Version>
+    <NeutralLanguage>en</NeutralLanguage>
+    <!-- Zero-warning quality gate (Spec 4.5.1). Kept as warning-as-info during the first
+         compile on the shop PC; the gate is switched on once the solution builds clean. -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+  </PropertyGroup>
+</Project>

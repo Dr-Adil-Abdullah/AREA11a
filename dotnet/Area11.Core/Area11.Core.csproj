@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Area11.Core</RootNamespace>
+    <AssemblyName>Area11.Core</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 10.0.2+ carries SQLitePCLRaw 2.1.12, which clears the security warning NU1903
+         (GHSA-2m69-gcr7-jv3q, high severity) seen in the first Windows build. -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.2" />
+
+    <!-- Pinned on purpose: Microsoft.Data.Sqlite brings the native SQLite build transitively, and
+         the version it chooses (2.1.11) carries a high-severity advisory (GHSA-2m69-gcr7-jv3q).
+         2.1.12 is the patched build of the same series, so it is safe to lift it here. -->
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.12" />
+    <PackageReference Include="Dapper" Version="2.1.89" />
+  </ItemGroup>
+
+  <!-- SQL migrations are copied next to the executable; the runner reads them from
+       AppContext.BaseDirectory/Migrations so they can be inspected and diffed. -->
+  <ItemGroup>
+    <Content Include="Data/Migrations/*.sql">
+      <Link>Migrations/%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

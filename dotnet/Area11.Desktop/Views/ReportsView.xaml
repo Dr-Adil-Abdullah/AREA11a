@@ -1,0 +1,306 @@
+<UserControl x:Class="Area11.Desktop.Views.ReportsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+
+            <DockPanel Margin="0,0,0,14">
+                <StackPanel DockPanel.Dock="Left">
+                    <TextBlock Text="Reports" Style="{StaticResource PageTitle}" />
+                    <TextBlock Text="{Binding PeriodLabel}" Style="{StaticResource PageSubtitle}" />
+                </StackPanel>
+                <Button Content="Refresh" Style="{StaticResource GhostButton}"
+                        HorizontalAlignment="Right" VerticalAlignment="Center"
+                        Command="{Binding RefreshCommand}" />
+            </DockPanel>
+
+            <!-- The four periods of Spec 21.1. Each button says exactly what it counts. -->
+            <UniformGrid Columns="4" Margin="0,0,0,12">
+                <Button Content="Today" Style="{StaticResource GhostButton}" Margin="0,0,6,0"
+                        Command="{Binding TodayCommand}" />
+                <Button Content="Last 7 days" Style="{StaticResource GhostButton}" Margin="3,0,3,0"
+                        Command="{Binding WeekCommand}" />
+                <Button Content="Last 30 days" Style="{StaticResource GhostButton}" Margin="3,0,3,0"
+                        Command="{Binding Month30Command}" />
+                <Button Content="This month" Style="{StaticResource GhostButton}" Margin="6,0,0,0"
+                        Command="{Binding MonthCommand}" />
+            </UniformGrid>
+
+            <TextBlock Text="{Binding StatusText}" Style="{StaticResource PageSubtitle}" Margin="0,0,0,12" />
+
+            <!-- KPI cards: the number the owner reads first (Spec 21.2). -->
+            <UniformGrid Columns="4" Margin="0,0,0,12">
+                <Border Style="{StaticResource Card}" Margin="0,0,6,0">
+                    <StackPanel>
+                        <TextBlock Text="BILLS" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding BillsText}" Style="{StaticResource MetricValue}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="3,0,3,0">
+                    <StackPanel>
+                        <TextBlock Text="ITEMS SOLD" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding ItemsText}" Style="{StaticResource MetricValue}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="3,0,3,0">
+                    <StackPanel>
+                        <TextBlock Text="SALES" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding SalesText}" Style="{StaticResource MetricValue}"
+                                   Foreground="{StaticResource BrandBrush}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="6,0,0,0">
+                    <StackPanel>
+                        <TextBlock Text="DISCOUNT GIVEN" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding DiscountText}" Style="{StaticResource MetricValue}" />
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <UniformGrid Columns="4" Margin="0,0,0,12">
+                <Border Style="{StaticResource Card}" Margin="0,0,6,0">
+                    <StackPanel>
+                        <TextBlock Text="AVERAGE BILL" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding AverageBillText}" Style="{StaticResource MetricValue}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="3,0,3,0">
+                    <StackPanel>
+                        <TextBlock Text="CASH RECEIVED" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding CashText}" Style="{StaticResource MetricValue}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="3,0,3,0">
+                    <StackPanel>
+                        <TextBlock Text="ON KHATA" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding CreditText}" Style="{StaticResource MetricValue}"
+                                   Foreground="{StaticResource WarningBrush}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="6,0,0,0">
+                    <StackPanel>
+                        <TextBlock Text="REFUNDED" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding RefundText}" Style="{StaticResource MetricValue}"
+                                   Foreground="{StaticResource DangerBrush}" />
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <!-- Profit is the owner's (Spec 12.1.2). The whole block disappears for a manager. -->
+            <StackPanel>
+                <StackPanel.Style>
+                    <Style TargetType="StackPanel">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding CanSeeProfit}" Value="False">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </StackPanel.Style>
+
+                <UniformGrid Columns="3" Margin="0,0,0,8">
+                    <Border Style="{StaticResource Card}" Margin="0,0,6,0">
+                        <StackPanel>
+                            <TextBlock Text="PROFIT (COST AT SALE)" Style="{StaticResource MetricLabel}" />
+                            <TextBlock Text="{Binding ProfitText}" Style="{StaticResource MetricValue}"
+                                       Foreground="{StaticResource SuccessBrush}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}" Margin="3,0,3,0">
+                        <StackPanel>
+                            <TextBlock Text="MARGIN" Style="{StaticResource MetricLabel}" />
+                            <TextBlock Text="{Binding MarginText}" Style="{StaticResource MetricValue}"
+                                       Foreground="{StaticResource SuccessBrush}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}" Margin="6,0,0,0">
+                        <StackPanel>
+                            <TextBlock Text="NET AFTER EXPENSES AND DRAWINGS" Style="{StaticResource MetricLabel}" />
+                            <TextBlock Text="{Binding NetText}" Style="{StaticResource MetricValue}" />
+                        </StackPanel>
+                    </Border>
+                </UniformGrid>
+
+                <TextBlock Text="{Binding ProfitNote}" Style="{StaticResource PageSubtitle}"
+                           TextWrapping="Wrap" Margin="0,0,0,12" />
+            </StackPanel>
+
+            <!-- Expenses, drawings and purchases: the money that left the shop. -->
+            <UniformGrid Columns="4" Margin="0,0,0,12">
+                <Border Style="{StaticResource Card}" Margin="0,0,6,0">
+                    <StackPanel>
+                        <TextBlock Text="EXPENSES" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding ExpensesText}" Style="{StaticResource MetricValue}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="3,0,3,0">
+                    <StackPanel>
+                        <TextBlock Text="OWNER TOOK (CASH)" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding DrawingsText}" Style="{StaticResource MetricValue}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="3,0,3,0">
+                    <StackPanel>
+                        <TextBlock Text="PURCHASES" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding PurchasesText}" Style="{StaticResource MetricValue}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="6,0,0,0">
+                    <StackPanel>
+                        <TextBlock Text="BEST DAY EVER" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding BestDayText}" Style="{StaticResource MetricValue}"
+                                   FontSize="15" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3*" />
+                    <ColumnDefinition Width="2*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Style="{StaticResource Card}" Margin="0,0,6,0">
+                    <StackPanel>
+                        <TextBlock Text="DAY BY DAY" Style="{StaticResource SectionTitle}" />
+                        <TextBlock Text="Every day of the period, including the quiet ones."
+                                   Style="{StaticResource PageSubtitle}" Margin="0,3,0,8" />
+
+                        <ItemsControl ItemsSource="{Binding Days}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,2,0,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="64" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="92" />
+                                            <ColumnDefinition Width="92" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0" Text="{Binding DayLabel}"
+                                                   Foreground="{StaticResource MutedBrush}" FontSize="11"
+                                                   VerticalAlignment="Center" />
+
+                                        <ProgressBar Grid.Column="1" Height="12" Margin="4,0,8,0"
+                                                     Minimum="0" Maximum="1" Value="{Binding BarShare}"
+                                                     Foreground="{StaticResource BrandBrush}"
+                                                     Background="{StaticResource BrandSoftBrush}"
+                                                     BorderThickness="0" VerticalAlignment="Center" />
+
+                                        <TextBlock Grid.Column="2" Text="{Binding SalesLabel}"
+                                                   FontSize="11" TextAlignment="Right"
+                                                   VerticalAlignment="Center" />
+
+                                        <TextBlock Grid.Column="3" Text="{Binding ProfitLabel}"
+                                                   FontSize="11" TextAlignment="Right"
+                                                   Foreground="{StaticResource SuccessBrush}"
+                                                   VerticalAlignment="Center" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="1" Style="{StaticResource Card}" Margin="6,0,0,0">
+                    <StackPanel>
+                        <TextBlock Text="BY CATEGORY" Style="{StaticResource SectionTitle}" />
+                        <TextBlock Text="Net of refunds, the same rule as the total."
+                                   Style="{StaticResource PageSubtitle}" Margin="0,3,0,8" />
+
+                        <DataGrid ItemsSource="{Binding Categories}" IsReadOnly="True"
+                                  AutoGenerateColumns="False" HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal" MaxHeight="260">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Category" Binding="{Binding Name}" Width="*" />
+                                <DataGridTextColumn Header="Sales" Binding="{Binding SalesLabel, Mode=OneWay}" Width="110" />
+                                <DataGridTextColumn Header="Share" Binding="{Binding ShareLabel, Mode=OneWay}" Width="70" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Style="{StaticResource Card}" Margin="0,0,6,0">
+                    <StackPanel>
+                        <TextBlock Text="TOP 10 BY QUANTITY" Style="{StaticResource SectionTitle}" />
+                        <TextBlock Text="What the counter really sells."
+                                   Style="{StaticResource PageSubtitle}" Margin="0,3,0,8" />
+
+                        <DataGrid ItemsSource="{Binding TopByQty}" IsReadOnly="True"
+                                  AutoGenerateColumns="False" HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal" MaxHeight="280">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="#" Binding="{Binding RankLabel, Mode=OneWay}" Width="34" />
+                                <DataGridTextColumn Header="Medicine" Binding="{Binding Name}" Width="*" />
+                                <DataGridTextColumn Header="Qty" Binding="{Binding QtyLabel, Mode=OneWay}" Width="60" />
+                                <DataGridTextColumn Header="Sales" Binding="{Binding SalesLabel, Mode=OneWay}" Width="100" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="1" Margin="6,0,0,0">
+                    <Border.Style>
+                        <Style TargetType="Border" BasedOn="{StaticResource Card}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding CanSeeProfit}" Value="False">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <StackPanel>
+                        <TextBlock Text="TOP 10 BY PROFIT" Style="{StaticResource SectionTitle}" />
+                        <TextBlock Text="Profit per medicine, after returns came back."
+                                   Style="{StaticResource PageSubtitle}" Margin="0,3,0,8" />
+
+                        <DataGrid ItemsSource="{Binding TopByProfit}" IsReadOnly="True"
+                                  AutoGenerateColumns="False" HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal" MaxHeight="280">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="#" Binding="{Binding RankLabel, Mode=OneWay}" Width="34" />
+                                <DataGridTextColumn Header="Medicine" Binding="{Binding Name}" Width="*" />
+                                <DataGridTextColumn Header="Sales" Binding="{Binding SalesLabel, Mode=OneWay}" Width="100" />
+                                <DataGridTextColumn Header="Profit" Binding="{Binding ProfitLabel, Mode=OneWay}" Width="100" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="{Binding DeadStockTitle}" Style="{StaticResource SectionTitle}" />
+                    <TextBlock Text="{Binding DeadStockNote}" Style="{StaticResource PageSubtitle}"
+                               Margin="0,3,0,8" TextWrapping="Wrap" />
+
+                    <DataGrid ItemsSource="{Binding DeadStock}" IsReadOnly="True"
+                              AutoGenerateColumns="False" HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal" MaxHeight="260">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Medicine" Binding="{Binding Name}" Width="*" />
+                            <DataGridTextColumn Header="On the shelf" Binding="{Binding StockLabel, Mode=OneWay}" Width="110" />
+                            <DataGridTextColumn Header="Money at cost" Binding="{Binding ValueLabel, Mode=OneWay}" Width="120" />
+                            <DataGridTextColumn Header="Last sold" Binding="{Binding LastSoldLabel, Mode=OneWay}" Width="110" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </StackPanel>
+            </Border>
+
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Left" Text="Worst day ever:  " Style="{StaticResource PageSubtitle}" />
+                <TextBlock Text="{Binding WorstDayText}" Style="{StaticResource PageSubtitle}"
+                           FontWeight="SemiBold" />
+            </DockPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

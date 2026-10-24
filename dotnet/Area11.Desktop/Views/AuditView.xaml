@@ -1,0 +1,118 @@
+<UserControl x:Class="Area11.Desktop.Views.AuditView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" Margin="0,0,0,12">
+            <StackPanel DockPanel.Dock="Left">
+                <TextBlock Text="Black box" Style="{StaticResource PageTitle}" />
+                <TextBlock Text="Every change, who made it, and what it was before."
+                           Style="{StaticResource PageSubtitle}" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <Button Content="Save CSV" Style="{StaticResource GhostButton}" Margin="0,0,8,0"
+                        Command="{Binding ExportCommand}" IsEnabled="{Binding CanExport}" />
+                <Button Content="Search" Style="{StaticResource PrimaryButton}"
+                        Command="{Binding RefreshCommand}" />
+            </StackPanel>
+        </DockPanel>
+
+        <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,0,0,12">
+            <StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="110" />
+                        <ColumnDefinition Width="110" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                        <TextBlock Text="SEARCH" Style="{StaticResource FieldLabel}" />
+                        <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,4,0,0">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding RefreshCommand}" />
+                            </TextBox.InputBindings>
+                        </TextBox>
+                        <TextBlock Text="Name, medicine, action, old or new value."
+                                   Style="{StaticResource PageSubtitle}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                        <TextBlock Text="MODULE" Style="{StaticResource FieldLabel}" />
+                        <ComboBox ItemsSource="{Binding Modules}" SelectedItem="{Binding SelectedModule}"
+                                  Margin="0,4,0,0" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2" Margin="0,0,10,0">
+                        <TextBlock Text="ACTION" Style="{StaticResource FieldLabel}" />
+                        <ComboBox ItemsSource="{Binding Actions}" SelectedItem="{Binding SelectedAction}"
+                                  Margin="0,4,0,0" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="3" Margin="0,0,10,0">
+                        <TextBlock Text="LINES" Style="{StaticResource FieldLabel}" />
+                        <ComboBox ItemsSource="{Binding PageSizes}" SelectedItem="{Binding PageSize}"
+                                  Margin="0,4,0,0" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="4">
+                        <TextBlock Text="CLEAR" Style="{StaticResource FieldLabel}" />
+                        <Button Content="Clear" Style="{StaticResource GhostButton}" Margin="0,4,0,0"
+                                Command="{Binding ClearCommand}" />
+                    </StackPanel>
+                </Grid>
+
+                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                    <TextBlock Text="WHEN" Style="{StaticResource FieldLabel}" VerticalAlignment="Center"
+                               Margin="0,0,10,0" />
+                    <Button Content="Today" Style="{StaticResource GhostButton}" Margin="0,0,6,0"
+                            Command="{Binding TodayCommand}" />
+                    <Button Content="Last 7 days" Style="{StaticResource GhostButton}" Margin="0,0,6,0"
+                            Command="{Binding WeekCommand}" />
+                    <Button Content="Last 30 days" Style="{StaticResource GhostButton}" Margin="0,0,6,0"
+                            Command="{Binding MonthCommand}" />
+                    <Button Content="All time" Style="{StaticResource GhostButton}"
+                            Command="{Binding AllCommand}" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="2" Style="{StaticResource Card}">
+            <DataGrid ItemsSource="{Binding Rows}" IsReadOnly="True"
+                      AutoGenerateColumns="False" HeadersVisibility="Column"
+                      GridLinesVisibility="Horizontal">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="When" Binding="{Binding AtLabel, Mode=OneWay}" Width="130" />
+                    <DataGridTextColumn Header="Who" Binding="{Binding WhoLabel, Mode=OneWay}" Width="110" />
+                    <DataGridTextColumn Header="Module" Binding="{Binding Module}" Width="100" />
+                    <DataGridTextColumn Header="Action" Binding="{Binding ActionLabel, Mode=OneWay}" Width="150" />
+                    <DataGridTextColumn Header="On" Binding="{Binding EntityLabel, Mode=OneWay}" Width="140" />
+                    <DataGridTextColumn Header="Change" Binding="{Binding ChangeLabel, Mode=OneWay}" Width="*" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <Grid Grid.Row="3" Margin="0,10,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0" Text="{Binding CountText}" Style="{StaticResource SectionTitle}"
+                       VerticalAlignment="Center" Margin="0,0,14,0" />
+
+            <TextBlock Grid.Column="1" Text="{Binding StatusText}" Style="{StaticResource PageSubtitle}"
+                       TextWrapping="Wrap" VerticalAlignment="Center" />
+        </Grid>
+    </Grid>
+</UserControl>

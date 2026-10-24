@@ -1,0 +1,111 @@
+<UserControl x:Class="Area11.Desktop.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+            <DockPanel Margin="0,0,0,16">
+                <StackPanel DockPanel.Dock="Left">
+                    <TextBlock Text="Dashboard" Style="{StaticResource PageTitle}" />
+                    <TextBlock Text="{Binding TodayText}" Style="{StaticResource PageSubtitle}" />
+                </StackPanel>
+                <Button Content="Refresh" Style="{StaticResource GhostButton}"
+                        HorizontalAlignment="Right" VerticalAlignment="Center"
+                        Command="{Binding RefreshCommand}" />
+            </DockPanel>
+
+            <Border Background="{StaticResource DangerSoftBrush}" BorderBrush="{StaticResource DangerBrush}"
+                    BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,14">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HasAlert}" Value="True">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource DangerBrush}"
+                           FontWeight="SemiBold" FontSize="12" TextWrapping="Wrap" />
+            </Border>
+
+            <UniformGrid Columns="4" Margin="0,0,0,14">
+                <Border Style="{StaticResource Card}" Margin="0,0,6,0">
+                    <StackPanel>
+                        <TextBlock Text="TODAY'S BILLS" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding BillsText}" Style="{StaticResource MetricValue}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="6,0,6,0">
+                    <StackPanel>
+                        <TextBlock Text="TODAY'S SALES" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding SalesText}" Style="{StaticResource MetricValue}"
+                                   Foreground="{StaticResource BrandBrush}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="6,0,6,0"
+                        Visibility="{Binding CanSeeProfit, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <TextBlock Text="TODAY'S PROFIT" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding ProfitText}" Style="{StaticResource MetricValue}"
+                                   Foreground="{StaticResource SuccessBrush}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="6,0,0,0">
+                    <StackPanel>
+                        <TextBlock Text="CUSTOMER CREDIT" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding CreditText}" Style="{StaticResource MetricValue}" />
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <UniformGrid Columns="4">
+                <Border Style="{StaticResource Card}" Margin="0,0,6,0">
+                    <StackPanel>
+                        <TextBlock Text="PRODUCTS" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding ProductsText}" Style="{StaticResource MetricValue}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="6,0,6,0">
+                    <StackPanel>
+                        <TextBlock Text="LOW STOCK" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding LowStockText}" Style="{StaticResource MetricValue}"
+                                   Foreground="{StaticResource WarningBrush}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="6,0,6,0">
+                    <StackPanel>
+                        <TextBlock Text="STOCK MINUS" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding NegativeText}" Style="{StaticResource MetricValue}"
+                                   Foreground="{StaticResource DangerBrush}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="6,0,0,0">
+                    <StackPanel>
+                        <TextBlock Text="NEAR EXPIRY / EXPIRED" Style="{StaticResource MetricLabel}" />
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding ExpiringText}" Style="{StaticResource MetricValue}"
+                                       Foreground="{StaticResource WarningBrush}" />
+                            <TextBlock Text=" / " Style="{StaticResource MetricValue}"
+                                       Foreground="{StaticResource MutedBrush}" />
+                            <TextBlock Text="{Binding ExpiryText}" Style="{StaticResource MetricValue}"
+                                       Foreground="{StaticResource DangerBrush}" />
+                        </StackPanel>
+                        <TextBlock Text="inside the nearest band / already past the date"
+                                   Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <Border Style="{StaticResource Card}" Margin="0,14,0,0">
+                <StackPanel>
+                    <TextBlock Text="Cash drawer" Style="{StaticResource SectionTitle}" />
+                    <TextBlock Text="{Binding ShiftText}" Style="{StaticResource PageSubtitle}" />
+                    <TextBlock Text="{Binding PayableText, StringFormat=Supplier payable: {0}}"
+                               Style="{StaticResource PageSubtitle}" Margin="0,6,0,0" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

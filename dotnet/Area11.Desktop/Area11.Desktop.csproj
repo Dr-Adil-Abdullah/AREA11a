@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>Area11.Desktop</RootNamespace>
+    <AssemblyName>Area11</AssemblyName>
+    <!-- Program.Main wraps the generated WPF startup in a try/catch, so a failure before the first
+         window still writes a crash report instead of closing silently. -->
+    <StartupObject>Area11.Desktop.Program</StartupObject>
+    <!-- The picture on the desktop, in the taskbar and in Program Files (F-47). Regenerate it with
+         `python3 tools/make_icon.py` after a colour change - it reads BuildInfo.BrandHex. -->
+    <ApplicationIcon>Resources\area11.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Area11.Core\Area11.Core.csproj" />
+  </ItemGroup>
+
+  <!-- The migration runner reads AppContext.BaseDirectory/Migrations. A referenced project's
+       content is not guaranteed to reach THIS folder, and when it does not the application exits
+       before the login screen with "Migrations folder was not found". Linking them here as well
+       makes the folder unconditional; the files are tiny and are read once per start. -->
+  <ItemGroup>
+    <Content Include="..\Area11.Core\Data\Migrations\*.sql">
+      <Link>Migrations\%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

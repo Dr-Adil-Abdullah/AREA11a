@@ -1,0 +1,178 @@
+<UserControl x:Class="Area11.Desktop.Views.StockMinusView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- ================================ the heading ================================ -->
+        <DockPanel Grid.Row="0" Margin="0,0,0,10">
+            <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                <TextBlock Text="Stock minus" Style="{StaticResource PageTitle}" />
+                <TextBlock Text="Shelves below zero, since when, and the owner's monthly review - a review changes no stock."
+                           Style="{StaticResource PageSubtitle}" />
+            </StackPanel>
+
+            <Button DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center"
+                    Content="Refresh" Style="{StaticResource GhostButton}" Command="{Binding RefreshCommand}" />
+        </DockPanel>
+
+        <!-- ================================ the page ================================ -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="360" />
+            </Grid.ColumnDefinitions>
+
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0" Style="{StaticResource Card}" Padding="14" Margin="0,0,0,10"
+                        Visibility="{Binding IsNotAllowed, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="This page needs the Stock permission. Ask the owner to switch it on for this login in Settings - Staff."
+                               TextWrapping="Wrap" Foreground="{StaticResource WarningBrush}" />
+                </Border>
+
+                <!-- four numbers: how many, how much, how old, how many seen -->
+                <Border Grid.Row="1" Style="{StaticResource Card}" Padding="14" Margin="0,0,0,10"
+                        Visibility="{Binding CanRead, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="MEDICINES IN MINUS" Style="{StaticResource FieldHint}" />
+                                <TextBlock Text="{Binding CountText}" FontSize="20" FontWeight="Bold"
+                                           Foreground="{StaticResource DangerBrush}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="VALUE AT COST" Style="{StaticResource FieldHint}" />
+                                <TextBlock Text="{Binding TotalText}" FontSize="15" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="OLDEST" Style="{StaticResource FieldHint}" />
+                                <TextBlock Text="{Binding OldestText}" FontSize="15" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="3">
+                                <TextBlock Text="REVIEWED THIS MONTH" Style="{StaticResource FieldHint}" />
+                                <TextBlock Text="{Binding ReviewedText}" FontSize="15" />
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock Text="{Binding SummaryText}" TextWrapping="Wrap" FontSize="12" Margin="0,10,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Row="2" Style="{StaticResource Card}" Padding="12"
+                        Visibility="{Binding CanRead, Converter={StaticResource BoolToVis}}">
+                    <Grid>
+                        <DataGrid ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected, Mode=TwoWay}"
+                                  IsReadOnly="True" AutoGenerateColumns="False" HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal">
+                            <DataGrid.RowStyle>
+                                <Style TargetType="DataGridRow">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Tone}" Value="fresh">
+                                            <Setter Property="Background" Value="{StaticResource WarningSoftBrush}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Tone}" Value="old">
+                                            <Setter Property="Background" Value="{StaticResource DangerSoftBrush}" />
+                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.RowStyle>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Medicine" Binding="{Binding NameLabel, Mode=OneWay}" Width="1.6*" />
+                                <DataGridTextColumn Header="Stock" Binding="{Binding StockText, Mode=OneWay}" Width="100" />
+                                <DataGridTextColumn Header="Value" Binding="{Binding ValueText, Mode=OneWay}" Width="95" />
+                                <DataGridTextColumn Header="Since / why" Binding="{Binding CauseLabel, Mode=OneWay}" Width="2*" />
+                                <DataGridTextColumn Header="Days" Binding="{Binding DaysLabel, Mode=OneWay}" Width="95" />
+                                <DataGridTextColumn Header="Review" Binding="{Binding ReviewLabel, Mode=OneWay}" Width="185" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <TextBlock Text="Nothing is below zero. That is the answer this page wants to give every month."
+                                   TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   FontSize="12" Foreground="{StaticResource MutedBrush}" MaxWidth="360"
+                                   Visibility="{Binding HasNoRows, Converter={StaticResource BoolToVis}}" />
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- ============================ the right side ============================ -->
+            <Border Grid.Column="2" Style="{StaticResource Card}" Padding="16"
+                    Visibility="{Binding CanRead, Converter={StaticResource BoolToVis}}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="Monthly review" Style="{StaticResource SectionTitle}" />
+
+                    <StackPanel Grid.Row="1" Margin="0,8,0,0">
+                        <TextBlock Text="{Binding SelectedName}" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding SelectedStock}" FontSize="16" FontWeight="Bold"
+                                   Foreground="{StaticResource DangerBrush}" Margin="0,4,0,0" />
+                        <TextBlock Text="{Binding SelectedCause}" Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding SelectedReview}" Style="{StaticResource FieldHint}" TextWrapping="Wrap"
+                                   Margin="0,4,0,0" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="2" Margin="0,12,0,0">
+                        <TextBlock Text="What did you find?" Style="{StaticResource FieldLabel}" />
+                        <TextBlock Text="Broken strip, a bill keyed twice, a strip sold loose, something missing - write it down. It stays in the black box for ever."
+                                   Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+                        <TextBox Text="{Binding NoteText, UpdateSourceTrigger=PropertyChanged}" Height="110"
+                                 AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                                 Margin="0,6,0,0" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="3" Margin="0,10,0,0">
+                        <Button Content="Mark reviewed" Style="{StaticResource PrimaryButton}"
+                                HorizontalAlignment="Left" Command="{Binding ReviewCommand}"
+                                IsEnabled="{Binding CanReview}" />
+
+                        <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap" FontSize="11.5" Margin="0,8,0,0">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsStatusError}" Value="True">
+                                            <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                                            <Setter Property="FontWeight" Value="Bold" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ================================ the footer line ================================ -->
+        <TextBlock Grid.Row="2" Margin="0,8,0,0" Style="{StaticResource FieldHint}" TextWrapping="Wrap"
+                   Text="A minus shelf is corrected by a stock-take, a return or a write-off - never by a review. The review only records that you looked, who you are, and what you found." />
+    </Grid>
+</UserControl>

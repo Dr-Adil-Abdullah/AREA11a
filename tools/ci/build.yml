@@ -1,0 +1,49 @@
+name: build
+
+# HOW TO ENABLE (one minute, done by the owner or an agent with a personal token):
+#   GitHub -> this repository -> Add file -> Create new file ->
+#   path: .github/workflows/build.yml -> paste this file -> Commit.
+# The agent's GitHub App token is not allowed to create workflow files, which is why this
+# template lives here instead of being active.
+#
+# Why this exists: the owner builds on Windows, but every agent needs a way to prove the code
+# actually compiles without touching his shop computer. This is that proof - and it is the gate
+# in docs/PROGRESS.md task F-16.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    name: Windows build + tests
+    runs-on: windows-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Show SDK version
+        run: dotnet --info
+
+      - name: Restore
+        run: dotnet restore Area11.sln
+
+      - name: Build
+        run: dotnet build Area11.sln --no-restore --configuration Release
+
+      - name: Test
+        run: dotnet test Area11.sln --no-build --configuration Release --logger "console;verbosity=normal"
+
+      - name: Static checks
+        shell: pwsh
+        run: |
+          python tools/check_repo.py
+          python tools/build_rules_matrix.py --check
