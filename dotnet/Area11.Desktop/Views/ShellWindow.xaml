@@ -350,13 +350,39 @@
         -->
         <Grid Grid.Row="1" Grid.Column="1" Margin="20,16,20,18">
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <ContentControl Grid.Row="0" Content="{Binding CurrentViewModel}" />
+            <!--
+                One failed button, said out loud, without touching the page (v0.34.0, D-90).
 
-            <Border Grid.Row="1" Style="{StaticResource EmptyCard}"
+                Why a thin line and not a box: a message box stops the till and has to be dismissed
+                before the next customer is billed, and it teaches the operator to click OK without
+                reading. This line names the button, says the page is still open, names the report
+                file, and goes away with one click - the work underneath is never rebuilt, so a
+                half-typed bill survives the failure.
+            -->
+            <Border Grid.Row="0" Background="{StaticResource DangerSoftBrush}"
+                    BorderBrush="{StaticResource DangerBrush}" BorderThickness="1"
+                    CornerRadius="8" Padding="12,8" Margin="0,0,0,10"
+                    Visibility="{Binding HasFaultBanner, Converter={StaticResource BoolToVis}}"
+                    AutomationProperties.Name="The last button failed">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Content="Dismiss"
+                            Command="{Binding DismissFaultCommand}"
+                            Style="{StaticResource GhostButton}" Padding="10,4" FontSize="11.5"
+                            Margin="10,0,0,0" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding FaultBanner, Mode=OneWay}" TextWrapping="Wrap"
+                               FontSize="12" Foreground="{StaticResource TextBrush}"
+                               VerticalAlignment="Center" />
+                </DockPanel>
+            </Border>
+
+            <ContentControl Grid.Row="1" Content="{Binding CurrentViewModel}" />
+
+            <Border Grid.Row="2" Style="{StaticResource EmptyCard}"
                     Visibility="{Binding EmptyHint, Converter={StaticResource EmptyHintVis}}"
                     AutomationProperties.Name="Why this page is empty">
                 <StackPanel>

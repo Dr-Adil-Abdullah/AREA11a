@@ -21,62 +21,58 @@ features and the four phases.
 > **Verification status, read this before trusting a ✅.**
 > The machine this repository is written on has no .NET SDK (Linux sandbox), so every statement about
 > C# here is static - a real `dotnet build` cannot be run while writing. **The owner's own machine has
-> since filled part of that gap:** his last run (v0.31.2, 23 Oct 2026) built **Area11.Core and
-> Area11.Tests** and passed **704 of 704** cases in 52 s; the tree now holds **730**, which is those
-> 704 plus thirteen for the page guard (v0.32.0) and thirteen for the empty-page work (v0.33.0), and
-> they wait for his next run.
-> **What that leaves:** `Area11.Desktop` **does compile on his machine** as of 23 Oct 2026 (v0.30.9:
-> `BUILD OK`), so F-01 and F-16 are ✅ - but the **window itself** has only run once and stopped on a
-> `Run.Text` binding fault that v0.31.1 repairs, and his v0.31.2 run reported the suite, not the
-> window. Until he signs in on v0.33.0, the binding repairs, the page guard and these 730 cases are
-> verified by the static checker and by one green suite run, and this file says so rather than
-> claiming otherwise.
-> **The owner's runs of 23 Oct 2026 closed the suite question twice:** `Failed: 0, Passed: 697,
-> Total: 697, Duration: 51 s` on v0.31.1, then `Failed: 0, Passed: 704, Total: 704, Duration: 52 s`
-> on v0.31.2 - **ALL GREEN** twice.
+> now closed the largest part of that gap.** On **v0.33.0 (Mauveine)**, 23 Oct 2026, his launcher
+> printed `Build succeeded. 0 Warning(s). 0 Error(s)` and `tools\RUN-TESTS.cmd` printed
+> `Passed: 730, Failed: 0, Total: 730, Duration: 53 s` - **ALL GREEN** - and then `app-2026-10-23.log`
+> shows the window itself: `13:52:46 Starting Area11 v0.33.0 (Mauveine) as Dr.Iqbal` -> `database ready`
+> -> `13:53:31 Signed in: Owner`. **The sign-in window stayed open and a person signed in**, which is
+> the step every earlier run failed to reach, so F-05 and F-16 are ✅ on evidence from his PC and not on
+> a static check.
+> **What that leaves:** the pages have still not been walked on his PC under v0.33.0 or v0.34.0, so the
+> empty-page sentences, the page guard, the heartbeat and the failed-button banner are proven by 750
+> static cases plus that one green suite - **not yet by a hand on the shop's keyboard.** The **750 cases**
+> of v0.34.0 wait for his next run, and the five 🟡 rows wait for one action each in the shop.
 
-> **Board at v0.33.0 (Mauveine):** 54 features - **48 ✅ / 6 🟡 / 0 ⬜ (88.9% / 11.1%)**. Every feature
-> is now written, and **the program compiles on Windows** - the owner's launcher printed `BUILD OK` on
-> 23 Oct 2026, which is the first time the WPF project ever built. The 6 🟡 are the ones only the shop PC
-> can prove - the owner signing in on it (F-05), one medicine added with a batch (F-08), one delivery
-> entered by hand (F-09), one real bill on the shop's printer (F-10), one real action in the black box
-> (F-04), and the **scan** half of F-46. The **window itself** is still the thing to prove: the v0.31.1
-> run stopped on a binding fault (171 `Run.Text` / grid-column bindings pointing at computed labels),
-> which v0.31.1 itself repairs; his v0.31.2 run then reported 704 of 704, so the suite is settled and
-> the **sign-in window staying open** is what his next run will show. F-13 closed on 23 Oct 2026: the
-> owner printed on the shop's own printer and said it works. **F-54** (the books check) is ✅ because its proof is fourteen
-> tests over a real database, and **F-55** (the handover) is ✅ for the same reason: twelve tests, and the
-> SQL run against a SQLite file built from all 23 migrations. Neither has anything left for the shop PC
-> to prove.
+> **Board at v0.34.0 (Smalt):** 54 features - **49 ✅ / 5 🟡 / 0 ⬜ (90.7% / 9.3%)**. Every feature
+> is written, **the program compiles on Windows**, and - new on 23 Oct 2026 - **the window opened and a
+> person signed in on the owner's PC** (v0.33.0: `Signed in: Owner`). The 5 🟡 are the ones only the shop
+> PC can prove, and each is **one action**: one medicine added with a batch (F-08), one delivery entered
+> by hand (F-09), one real bill on the shop's printer (F-10), one real action in the black box (F-04),
+> and the **scan** half of F-46. F-13 closed on 23 Oct 2026: the owner printed on the shop's own printer
+> and said it works. **F-54** (the books check) is ✅ because its proof is fourteen tests over a real
+> database, and **F-55** (the handover) is ✅ for the same reason: twelve tests, and the SQL run against
+> a SQLite file built from all 23 migrations. Neither has anything left for the shop PC to prove.
 >
 > v0.29.0 moved **F-12 (the dashboard)** to ✅ after giving it 20 tests; the mock database used for
 > them was rebuilt from all 23 migrations and every SQL statement was run on it before shipping.
 
-## Where we stand (v0.33.0)
+## Where we stand (v0.34.0)
 
 | Question | Number | What it means |
 |---|---|---|
-| Features in the board | **54** | **48 ✅ done (88.9%)**, **6 🟡 written but only the shop PC can prove them (11.1%)**, 0 ⬜ not started |
-| Code | **61,623 lines** of C# (Core 28,460 · Desktop 16,767 · Tests 16,396) + **7,924 lines** of XAML | 254 C# files, 38 XAML files |
+| Features in the board | **54** | **49 ✅ done (90.7%)**, **5 🟡 written but only the shop PC can prove them (9.3%)**, 0 ⬜ not started |
+| Code | **62,482 lines** of C# (Core 28,824 · Desktop 16,909 · Tests 16,749) + **7,950 lines** of XAML | 258 C# files, 38 XAML files |
 | The shop's rules | **47 service files** in `Area11.Core`, **41 model files**, **34 database tables** over 23 migrations | the original `area11.db` opens unchanged |
-| Screens | **36 views**, **36 page view-models**, 1,311 XAML bindings (178 made `Mode=OneWay`) | every binding checked against its page's own view-model or row type |
-| Tests | **730 cases** in 58 files | 678 facts + 12 theories (52 inline rows) |
-| Static gates | **41 checks** in `tools/check_repo.py` | ~8 seconds; not a compiler - see the warning at the end |
+| Screens | **36 views**, **36 page view-models**, 1,317 XAML bindings (179 made `Mode=OneWay`) | every binding checked against its page's own view-model or row type |
+| Tests | **750 cases** in 60 files | 698 facts + 12 theories (52 inline rows) |
+| Static gates | **42 checks** in `tools/check_repo.py` | ~8 seconds; not a compiler - see the warning at the end |
 | Reporting a fault | **one file** - `tools\SEND-REPORT.cmd` (v0.30.3, D-78) | build, SDK, git state, shop folder (no rows), whole crash report, last build/test output |
-| Versions shipped | 0.1.0 -> **0.33.0** | each with its own brand colour (D-24) |
-| Owner decisions recorded | **D-00 … D-89** | `docs/OWNER-DECISIONS.md`, in Urdu |
+| Versions shipped | 0.1.0 -> **0.34.0** | each with its own brand colour (D-24) |
+| Owner decisions recorded | **D-00 … D-90** | `docs/OWNER-DECISIONS.md`, in Urdu |
 
 **What is actually left.** Nothing in the feature list is unbuilt, and as of v0.31.0 that sentence is
 true in the strict sense it was always meant: the last gap the *specification* admitted in its own text -
 *"a per-user shift report is not built"* (Spec 7.2.7) - is now written, tested and on the Shift page (F-56),
-and the handover the board carried as *"still to come"* since v0.4.0 is written and printed (F-55). The six 🟡 rows are not gaps in the code; they are promises only the shop PC can
-keep: the owner signing in on the window (F-05), one medicine added with a batch (F-08), one real delivery
+and the handover the board carried as *"still to come"* since v0.4.0 is written and printed (F-55). The five 🟡 rows are not gaps in the code; they are promises only the shop PC can
+keep, and each is **one action**: one medicine added with a batch (F-08), one real delivery
 (F-09), one real bill printed (F-10), one line in the black box from a real action (F-04), and the **scan**
 half of the printer/scanner test (F-46 - its printing half is confirmed, because the owner printed on the
-shop printer on 23 Oct 2026 and said it works). **The build itself is no longer one of them:** the whole
-solution compiled on his PC on 23 Oct 2026 (F-01, F-16 ✅), and the window's first run exposed a binding
-fault that v0.31.1 repairs. **Each of the six closes the moment the owner does the thing once and says it
-worked.** The demo shop was removed on his word (D-77), so there is now one program and one set of books.
+shop printer on 23 Oct 2026 and said it works). **Three earlier 🟡 rows are now closed, and closed the only
+way they ever could be:** the build (F-01), the window (F-16) and the sign-in (F-05) - on 23 Oct 2026 the
+solution compiled with `0 Warning(s), 0 Error(s)`, the window opened, and `app-2026-10-23.log` recorded
+`Signed in: Owner` at 13:53:31. **Each of the five closes the moment the owner does the thing once and
+says it worked.** The demo shop was removed on his word (D-77), so there is now one program and one set
+of books.
 
 ---
 
@@ -88,7 +84,7 @@ worked.** The demo shop was removed on his word (D-77), so there is now one prog
 | F-02 | Exact database schema, migrations 001-023, 34 business tables | ✅ | `dotnet/Area11.Core/Data/Migrations/` | `MigrationTests` 🧪 | an old `area11.db` opens unchanged |
 | F-03 | Settings service, 86 keys, every change audited, saved in one transaction | ✅ | `Area11.Core/Services/SettingsService.cs` | `SettingsTests` 🧪 | bad values are refused before they reach the database |
 | F-04 | Audit black box (old -> new values, never deleted) | 🟡 | `Services/AuditService.cs`, `Utils/AuditDiff.cs` | `AuditDiffTests` 🧪 | every module writes (U-27) |
-| F-05 | Sign-in: owner password, staff PIN, 5 tries -> 2 minute lock | 🟡 | `Services/AuthService.cs`, `Utils/PasswordHasher.cs` | `PasswordHasherTests` 🧪 | owner signs in on Windows |
+| F-05 | Sign-in: owner password, staff PIN, 5 tries -> 2 minute lock | ✅ | `Services/AuthService.cs`, `Utils/PasswordHasher.cs` | `PasswordHasherTests` 🧪 | owner signs in on Windows - **done 23 Oct 2026 on v0.33.0**: `app-2026-10-23.log` shows `13:53:31 Signed in: Owner` |
 | F-06 | Per-person permissions stored in the database | ✅ | `Migr. 014`, `Services/PermissionService.cs`, `Views/SettingsView.xaml` | `PermissionTests` 🧪 | the owner ticks/unticks in Settings; every change is audited |
 | F-07 | Permanent numbering `INV` / `PINV` / `RET` / `Q` / `SR` / `PR` / `ST` | ✅ | `Services/NumberingService.cs` | `MigrationTests` 🧪 | no duplicate numbers under one transaction |
 | F-08 | Products: search, create, edit, box/strip/unit packing, prices, rack | 🟡 | `Services/ProductService.cs`, `Views/ProductsView.xaml` | - | owner adds a medicine with a batch |
@@ -198,6 +194,7 @@ worked.** The demo shop was removed on his word (D-77), so there is now one prog
 | 26 Oct 2026 | **v0.26.1 Sepia - the first real Windows build, and the one line it refused (F-53).** The owner's build stopped in `Area11.Core` with **CS0200** at `SampleShopService.cs(936)`: `new SaleSample { Lines = lines }` set a property declared `{ get; } = new();`. Only a constructor may set such a property, so it is now `{ get; init; }` and the initializer is legal. The line came from the **sample shop** (F-53, v0.23.0) - written in this sandbox and never compiled until the owner ran `START-AREA11.bat` - and it was the **only** error the compiler found in Core. **A new gate came out of it:** `tools/check_repo.py` now has a 24th rule, `check_readonly_members`, which scans every `new Type { ... }` in the repository and fails if it assigns a getter-only property; the rule was proved by putting the old line back (checker fails with the exact message) and taking it out again (checker passes). Every other candidate report was reviewed by hand and rejected as a false positive - method declarations are not calls, `params` arrays take any number of arguments, and expression-bodied methods have no parameter list to count. No test changed: 641 cases. **Sepia**, a warm brown never used before. |
 | 26 Oct 2026 | **v0.27.0 Moss - a customer comes back without the bill, and the shop still finds it (F-20).** The Returns page grew **No bill number? Find it**: one box takes the bill number, a phone (0300-1234567, 0300 1234567 or 03001234567), a customer name, or a medicine name, with an optional from/to date range that accepts 2026-10-20, 20/10/2026 or 20-10-2026. The answer is a **list**, newest first - bill, when, customer, items, total, due, status in the owner's words ("on the khata", "part paid") - and **Open this bill** runs the same lookup a typed number runs, so there is one doorway and one set of checks. Searching writes nothing. The search refuses an empty box (it would return every bill ever made), a backwards date range, and a date it cannot read (naming what it wanted). `LIMIT 100` and a sentence when the list is cut. **Verified before shipping:** the SQL was run against a real migrated database with three bills, and every case - dashes, bare digits, spaces, partial name, partial number, medicine, date range, nothing-found, newest-first - returned exactly the expected rows. 13 new tests. 654 cases. **Moss**, a deep olive-green never used before. |
 | 26 Oct 2026 | **v0.28.0 Pine - the sample shop became a real shop (F-53, D-74).** The owner asked for demo data that looks like a shop that has been running for two or three months, not a single day - so every page can be tried with real history instead of being built up by hand. SYSTEM -> *Sample shop* now writes **72 days**: 44 medicines over 17 categories, 16 companies with their rep, 6 suppliers, 20 customers (two clinics, three doctors, fourteen on khata, four carrying a balance from before Area11), about **700 bills** in cash, card, online, split and khata, ~60 on a doctor's prescription; deliveries six mornings a week with old invoices and a real payable; 16 returns over the period (shelf or quarantine), 3 write-offs, 2 supplier returns (one waiting), 2 stock-takes; khata collections weeks after the bill; rent, salary, electricity, internet, chai, petrol, shopping bags, **a repaired fan** and a shutter spring; owner drawings; and **73 drawers** counted at night with two small mistakes and today's shift still open. Every closed drawer is rebuilt from its own payments the way `ShiftService` rebuilds it, and a test proves all 72 of them agree to the rupee. The generator is deterministic (`Random(20261026)`): the same shop every time. **Verified before shipping** by mirroring the generator into a real SQLite database: 728 bills, every total = its lines, every payment = what was paid, shelves = movements, khata exact, payable exact, **0 drawer mismatches**, 1 empty shelf, 1 expired batch with stock, 1 near-expiry batch. That mirror caught two real faults before the owner ever saw them: a FEFO date with the sign the wrong way (the demo would have sold nearly-expired medicine) and short-dated lots that were sold before they could expire. 12 new tests, 666 cases. **Pine** `#1E4D3B`. |
+| 23 Oct 2026 | **v0.34.0 Smalt - a heartbeat, and a button that cannot take the counter down (D-90).** An absent diagnostics file proved two opposite things at once, and on 23 Oct 2026 that cost the owner a false alarm: `%TEMP%\Area11\binding-errors.txt` is written only when WPF raises a binding complaint, so **no file** means *no complaint* - but a run that never reached the window leaves exactly the same folder. `RunTrail` now writes `%TEMP%\Area11\last-run.txt` **before the first window** (build, PC, Windows user, process) and adds a timestamped line for the database, the sign-in window, the signed-in name, **every page opened**, any fault on the UI thread, an unrecoverable failure and the exit code; capped at 140 lines with a count of what was dropped, unable to throw, and never written into the shop folder (it can be the second counter's share). **Second half:** both kinds of `RelayCommand` now run through `CommandGuard.Run`, so an exception from a button is caught **inside that button** - full report through the same `CrashLog`, one line in the shop log, and a red banner **above** the page naming the button, saying the page is still open and the rest of the shop untouched, and naming the file to send; the page is not rebuilt, so a failed Save no longer empties a cart. The banner never claims *"nothing was saved"* (a half-finished command is possible) and says **"A button on this page"** when the compiler's name is `<.ctor>b__…`. `tools\support-report.ps1` gained **THE LAST RUN** and now says in words that a missing binding file is the healthy answer. **20 new tests (750 cases, 60 files)**, **gate #42** proved by five injections, plus a rule that `docs/VERSIONS.md` is **one** table - it had been split in two since v0.2.5, with 86 rows stranded below the notes (proved by two more injections). **42 checks.** **Smalt** `#003399`. |
 | 23 Oct 2026 | **v0.33.0 Mauveine - an empty page now says why, and a page that dies while drawing says that too (D-89).** A blank grid was the most common thing the shop saw and the least useful. Two different situations - a shop that has entered nothing, and a search that finds nothing - need two different actions, and one generic sentence for both is how a shopkeeper concludes the program lost his data. Every page the menu can open now answers the question in the shop's own words - including the three tabs inside the customers page, where the container asks whichever tab is open: `EmptyPage` holds **one line per page** (what would put something on it - the Excel import for Products, the first bill for the Dashboard, the shop's shared folder for the second counter), each page computes its own hint from its own list (`EmptyPage.When(Rows.Count == 0, "Bills", searched: SearchText…)`), and the frame draws **one card** under the page instead of twenty-six copies in twenty-six views. An empty *search* says **"Nothing matches what you typed"** and points at the boxes, never "nothing here yet". Two pages say **in writing** that they have no empty state - the fault card, and the container whose three tabs carry their own sentences. **Second half:** a page that was built and then failed while WPF drew it (a template, a converter, a binding that throws) used to leave a half-drawn screen and a crash file; the dispatcher now hands that fault to the window frame, which shows the same card with **"stopped while its screen was being drawn"** and logs it and records it like any other. **13 new tests** (730 cases, 58 files), **gate #41** plus four new rules in gate #40, proved by **nine injections** - a page's interface removed, a title changed, a `searched:` flag dropped, the card unbound, a generic "No data" sentence, the dispatcher call removed, the drawing fault stripped of its log and report, an exemption written without a real reason, and a sentence no page uses; all nine were caught. **41 checks.** **Mauveine** `#A050A0`. |
 | 23 Oct 2026 | **v0.32.0 Amethyst - a broken page must not take the till down (D-88).** Every menu row, the Settings page and the alert bell are now built through `PageGuard.Open`: a constructor that throws - one failed read, one odd row, one missing table in an old copy of the file - becomes a **card in the place the page would have been**, not an exception on the UI thread. The card names the page (*"The Bills page could not be opened."*), keeps the exception's own words, says **"Nothing else is affected"** and tells the operator to press another page and try again; if it happens twice, `tools\SEND-REPORT.cmd` collects the evidence and the card names the file the report went to. The guard **never throws** - its own log and report paths are caught too, and a recorder that fails in an unpredicted way cannot escape - it logs the exception, and it hands the caller a recorder so the crash file is written. **13 new tests** (717 cases, 57 files) and **gate #40**, proved by four injections - the unguarded `Resolve()` put back, the reassuring sentence removed, one page left unguarded, and the guard's own log catch narrowed to file errors; all four were caught. **40 checks.** **Amethyst** `#69359C`, 35.7 from the nearest colour already used. |
 | 23 Oct 2026 | **v0.31.2 Bistre - 697 of 697 green, and the report tool that broke while collecting the evidence.** The owner's run: *"Failed: 0, Passed: 697, Total: 697, Duration: 51 s"* → **ALL GREEN - 697 of 697**, on the first build that carried the 171 binding repairs. **The first thing he ran that day failed, though:** `tools\SEND-REPORT.cmd` printed *"Test-Path : Cannot bind argument to parameter 'LiteralPath' because it is null"* and still produced a report - v0.31.1 had moved the crash section and taken its local `$logsFolder` with it. The holder is now computed once before anything uses it, the log section cannot hand `$null` to `Test-Path`, and **the report carries its own errors** in a section of the file - a fault in the tool must never hide in the evidence. **New in the program:** a **binding watch**. A binding that names a property which does not exist never throws; WPF writes one line to the debug output and leaves the box empty, so the owner reports "no data". Those lines now go to `%TEMP%\Area11\binding-errors.txt` (timestamped, clipped, rotated to `.old` past 200 KB so the first complaint is never lost, never a thrown exception), the listener is attached **before** `InitializeComponent` so the theme is covered, and the crash report names the file. **7 new tests, one new gate (#39), proved three times by breaking it.** **704 cases in 56 files, 39 checks.** **Bistre** `#584204`. |

@@ -254,6 +254,51 @@ else {
 }
 
 # -----------------------------------------------------------------------------
+Section "THE LAST RUN (the program's own heartbeat)"
+
+#  Why this section exists (v0.34.0, D-90): on 23 Oct 2026 the owner was asked to look for
+#  %TEMP%\Area11\binding-errors.txt after a run, found the folder missing entirely, and that
+#  absence was read as a fault - while it actually meant "nothing was noted", which is the healthy
+#  answer. The two cases look identical from the outside, so the program now writes a small trail on
+#  every start: no file = it never started; last line = the last thing it reached.
+$trailPath = Join-Path (Join-Path $env:TEMP "Area11") "last-run.txt"
+
+if (Test-Path -LiteralPath $trailPath) {
+    $trail = Get-Content -LiteralPath $trailPath -ErrorAction SilentlyContinue
+    $trailCount = @($trail).Count
+
+    $lines.Add("A trail exists: " + $trailCount + " line(s), last written " +
+               (Get-Item -LiteralPath $trailPath).LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss"))
+    $lines.Add("")
+    $lines.Add("Read it from the TOP: the header names the build, and the LAST line is the last")
+    $lines.Add("thing the program reached. No 'closed' line means it was still open when this ran.")
+    $lines.Add("The program caps this file at 140 lines, so the whole of it is printed below.")
+    $lines.Add("")
+    Add-FileText $trailPath "last-run" 200
+}
+else {
+    $lines.Add("No trail file at all: " + $trailPath)
+    $lines.Add("")
+    $lines.Add("That means the program has NOT STARTED since v0.34.0 - so the absence of a")
+    $lines.Add("binding-errors file below says nothing about the shop. Build and launch first")
+    $lines.Add("with START-AREA11.bat, then run this report again.")
+}
+
+$lines.Add("")
+$lines.Add("The binding watch (the folder is created only when WPF raises a real complaint):")
+
+$watchPath = Join-Path (Join-Path $env:TEMP "Area11") "binding-errors.txt"
+
+if (Test-Path -LiteralPath $watchPath) {
+    Add-FileText $watchPath "binding-errors" 40
+}
+else {
+    $lines.Add("binding-errors.txt: (not there) - this is the HEALTHY answer: a run with no")
+    $lines.Add("silent binding fault writes no file at all. It only means something once the")
+    $lines.Add("trail above proves the program started and pages were opened.")
+}
+
+# -----------------------------------------------------------------------------
 Section "THE END OF THE NEWEST LOG"
 
 $logFile = $null

@@ -43,6 +43,8 @@ public sealed class ShellViewModel : ObservableObject
     private bool _hasBellAlerts;
     private string _bellBadgeText = string.Empty;
     private string _bellSummaryText = "Nothing needs attention.";
+    private string _faultBanner = string.Empty;
+    private bool _hasFaultBanner;
 
     public ShellViewModel(AppServices services, User user)
     {
@@ -60,6 +62,12 @@ public sealed class ShellViewModel : ObservableObject
         ToggleGroupCommand = new RelayCommand<NavItem>(ToggleGroup);
         OpenUserMenuCommand = new RelayCommand(() => UserMenuOpen = true);
         CloseUserMenuCommand = new RelayCommand(() => UserMenuOpen = false);
+        DismissFaultCommand = new RelayCommand(DismissFault);
+
+        // A button that fails reports here, once, and the page it was on stays exactly as it was
+        // (v0.34.0, D-90). Subscribed in the constructor and released in Detach(), because a window
+        // that closes must not keep answering for a shell nobody is looking at.
+        CommandGuard.Failed += OnCommandFailed;
 
         BuildNavigation();
         RefreshAlerts();
@@ -75,6 +83,49 @@ public sealed class ShellViewModel : ObservableObject
     }
 
     public event Action? LoggedOut;
+
+    /// <summary>Closes the user's own menu and stops listening to the command guard.</summary>
+    public void Detach()
+    {
+        CommandGuard.Failed -= OnCommandFailed;
+        UserMenuOpen = false;
+    }
+
+    /// <summary>
+    /// The line above the page after a button failed, or empty when nothing has failed
+    /// (v0.34.0, D-90). It names the button, says the page is still open, and names the report file
+    /// when one was written - the owner is asked to send a file, so the file has to be findable.
+    /// </summary>
+    public string FaultBanner
+    {
+        get => _faultBanner;
+        private set => SetProperty(ref _faultBanner, value);
+    }
+
+    public bool HasFaultBanner
+    {
+        get => _hasFaultBanner;
+        private set => SetProperty(ref _hasFaultBanner, value);
+    }
+
+    public RelayCommand DismissFaultCommand { get; }
+
+    private void OnCommandFailed(CommandOutcome outcome)
+    {
+        // The trail is what makes "no file" readable later (D-90): the button, the time and the
+        // exact fault, in the same small file the report tool prints.
+        RunTrail.Step("FAILED button \"" + outcome.Name + "\": " + outcome.Detail);
+
+        FaultBanner = outcome.Sentence
+                      + (outcome.HasReport ? " The whole detail was written to: " + outcome.ReportPath : string.Empty);
+        HasFaultBanner = true;
+    }
+
+    private void DismissFault()
+    {
+        FaultBanner = string.Empty;
+        HasFaultBanner = false;
+    }
 
     public ObservableCollection<NavItem> NavItems { get; } = new();
 
@@ -488,7 +539,11 @@ public sealed class ShellViewModel : ObservableObject
     {
         // Its name, so a fault raised later - while WPF is drawing this page - can still say which
         // page it was (v0.33.0, D-89). The window frame is the only place that knows.
+        // The banner belongs to the page it was raised on (v0.34.0, D-90): once another page is on
+        // the screen, its button is no longer the one the operator is looking at.
+        DismissFault();
         _currentPageTitle = page.Title;
+        RunTrail.Step("page: " + page.Title);
 
         var opened = PageGuard.Open<ObservableObject>(
             page.Title, () => page.Resolve(), _services.Log, RecordPageFault);
@@ -609,7 +664,9 @@ public sealed class ShellViewModel : ObservableObject
         // Settings reads the whole settings table twice (once to build the page, once to refresh
         // it), so it is the page most able to fail on a half-written file - and it is opened by
         // clicking the shop's own name, which the owner does without thinking (D-88).
+        DismissFault();
         _currentPageTitle = "Settings";
+        RunTrail.Step("page: Settings");
 
         var opened = PageGuard.Open<SettingsViewModel>("Settings", () =>
         {
@@ -682,7 +739,9 @@ public sealed class ShellViewModel : ObservableObject
         UserMenuOpen = false;
         RefreshAlerts();
 
+        DismissFault();
         _currentPageTitle = "Alerts";
+        RunTrail.Step("page: Alerts");
 
         var opened = PageGuard.Open<AlertsViewModel>("Alerts", () =>
         {

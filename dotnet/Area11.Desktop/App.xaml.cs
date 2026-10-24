@@ -25,6 +25,12 @@ public partial class App : Application
         try
         {
             _services = AppServices.Create();
+
+            // Every button that fails writes one line to the same log the rest of the program uses
+            // (v0.34.0, D-90). Set once, here, because this is the first moment the log exists.
+            CommandGuard.Sink = (message, exception) => _services!.Log.Error(message, exception);
+            RunTrail.Step("database ready");
+
             ShowLogin();
         }
         catch (Exception exception)
@@ -44,6 +50,7 @@ public partial class App : Application
 
     private void OnDispatcherException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
+        RunTrail.Step("FAULT on the UI thread: " + e.Exception.GetType().Name + ": " + e.Exception.Message);
         CrashReporter.Report("working in the application", e.Exception, "The window that was open has a problem.");
 
         // A file is not an explanation (v0.33.0, D-89). When the shell is on the screen, the page
@@ -69,11 +76,14 @@ public partial class App : Application
 
     private void OnDomainException(object sender, UnhandledExceptionEventArgs e)
     {
+        RunTrail.Step("UNRECOVERABLE: " + (e.ExceptionObject as Exception)?.Message);
         CrashReporter.Report("an unrecoverable error", e.ExceptionObject as Exception);
     }
 
     private void ShowLogin()
     {
+        RunTrail.Step("login window shown");
+
         var viewModel = new LoginViewModel(_services!);
         viewModel.SignedIn += OpenShell;
 
@@ -84,11 +94,17 @@ public partial class App : Application
 
     private void OpenShell(User user)
     {
+        RunTrail.Step("signed in: " + user.Name);
+
         var viewModel = new ShellViewModel(_services!, user);
         var shell = new ShellWindow { DataContext = viewModel };
 
         shell.Closed += (_, _) =>
         {
+            // The frame listens to the command guard; it must stop when the frame goes, or the
+            // next shell would share one banner with a window that no longer exists.
+            viewModel.Detach();
+
             if (!_loggingOut)
             {
                 Shutdown();

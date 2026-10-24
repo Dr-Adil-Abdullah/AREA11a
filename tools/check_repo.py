@@ -2435,11 +2435,23 @@ def check_version_colour() -> None:
             fail(f"{name}: Theme.xaml says {actual} but BuildInfo.cs says {expected}")
 
     # last row of the released-versions table
-    rows = [line for line in versions.splitlines()
-            if re.match(r"^\|\s*\d+\.\d+\.\d+\s*\|", line)]
+    version_lines = versions.splitlines()
+    row_at = [index for index, line in enumerate(version_lines)
+              if re.match(r"^\|\s*\d+\.\d+\.\d+\s*\|", line)]
+    rows = [version_lines[index] for index in row_at]
     if not rows:
         fail("docs/VERSIONS.md has no released-version row")
         return
+
+    # One table, not two. Rows that keep being added to the end of a file that has a "Notes" section
+    # in the middle end up **after** the notes - and a table broken in the middle reads like a
+    # complete history to anyone who stops scrolling at the last row before the heading. Every round
+    # is required to add one row, so the break grows by one version each time and is never noticed.
+    gaps = [first for first, second in zip(row_at, row_at[1:]) if second - first != 1]
+    if gaps:
+        fail("docs/VERSIONS.md: the released-version table is broken after "
+             f"{version_lines[gaps[0]][:40]!r} - every row must sit in one table, with the notes "
+             "below it")
 
     cells = [cell.strip() for cell in rows[-1].strip().strip("|").split("|")]
     if len(cells) < 5:
@@ -3502,6 +3514,129 @@ def check_empty_page() -> None:
 
 
 # ---------------------------------------------------------------------------
+def check_run_trail() -> None:
+    """A run must leave a heartbeat, and a failed button must stay on its page (v0.34.0, D-90).
+
+    Why: on 23 Oct 2026 the owner was asked to look for `%TEMP%\Area11\binding-errors.txt`, found
+    the folder missing, and that absence was read - by both of us - as if it proved something. It
+    did not: a run with no silent binding fault writes no file, and a run that never started writes
+    no file either. An absence is only evidence when its cause is knowable, so:
+
+      * the program writes `%TEMP%\Area11\last-run.txt` **before its first window**, and adds a
+        line for the database, the sign-in, every page and the exit;
+      * the trail can never throw and never grows without a cap;
+      * one failed button is caught inside the button, reported on one line above the page, and
+        never reaches the dispatcher;
+      * the report tool prints all of it, so the next report answers this question itself.
+    """
+    trail = DOTNET / "Area11.Core/Utils/RunTrail.cs"
+    guard = DOTNET / "Area11.Core/Utils/CommandGuard.cs"
+    program = DOTNET / "Area11.Desktop/Program.cs"
+    relay = DOTNET / "Area11.Desktop/ViewModels/RelayCommand.cs"
+    shell = DOTNET / "Area11.Desktop/ViewModels/ShellViewModel.cs"
+    app = DOTNET / "Area11.Desktop/App.xaml.cs"
+    window = DOTNET / "Area11.Desktop/Views/ShellWindow.xaml"
+    report = ROOT / "tools/support-report.ps1"
+    tests = DOTNET / "Area11.Tests/RunTrailTests.cs"
+    guard_tests = DOTNET / "Area11.Tests/CommandGuardTests.cs"
+
+    for needed in (trail, guard, program, relay, shell, app, window, report, tests, guard_tests):
+        if not needed.exists():
+            fail(f"the heartbeat is half-built: {rel(needed)} is missing")
+    if not all(path.exists() for path in (trail, guard, program, relay, shell, app, window, report,
+                                          tests, guard_tests)):
+        return
+
+    trail_text = trail.read_text(encoding="utf-8", errors="replace")
+
+    if '"last-run.txt"' not in trail_text:
+        fail("RunTrail does not write last-run.txt - the report tool and the owner are told to look "
+             "for that exact name")
+
+    if "Path.GetTempPath()" not in trail_text:
+        fail("RunTrail does not use the temp folder - a diagnostics file must never be written into "
+             "the shop folder, which can be the second counter's share")
+
+    if "catch (Exception)" not in trail_text:
+        fail("RunTrail does not catch everything - a heartbeat that throws would turn a healthy "
+             "start into a crash report about a heartbeat")
+
+    if "MaxLines" not in trail_text:
+        fail("RunTrail has no size cap - a PC that is never switched off would fill the disk")
+
+    program_text = program.read_text(encoding="utf-8", errors="replace")
+
+    begin_at = program_text.find("RunTrail.Begin(")
+    window_at = program_text.find("app.InitializeComponent();")
+
+    if begin_at < 0:
+        fail("Program.Main never starts the heartbeat - an absent file would go back to proving "
+             "nothing")
+    elif window_at >= 0 and begin_at > window_at:
+        fail("the heartbeat is started after the first window - a start that dies in the theme "
+             "(the 22 Oct fault) would leave no file at all")
+
+    if "RunTrail.Step(" not in shell.read_text(encoding="utf-8", errors="replace"):
+        fail("the window frame never adds a page to the trail - the file could not say how far the "
+             "operator got")
+
+    if "RunTrail.Step(" not in program_text:
+        fail("the trail is never told that the program closed - a missing 'closed' line would then "
+             "be read as a crash")
+
+    guard_text = guard.read_text(encoding="utf-8", errors="replace")
+
+    if "catch (Exception exception)" not in guard_text:
+        fail("CommandGuard does not catch the exception it exists to catch")
+
+    if "CrashLog.Write(" not in guard_text:
+        fail("a failed button leaves no crash report - the owner would be asked to send a file that "
+             "does not exist")
+
+    if "Failed?.Invoke(" not in guard_text:
+        fail("CommandGuard never tells the window - the operator would see the button do nothing")
+
+    relay_text = relay.read_text(encoding="utf-8", errors="replace")
+
+    if relay_text.count("CommandGuard.Run(") < 2:
+        fail("not every RelayCommand runs through the guard - one of the two kinds still lets an "
+             "exception reach the dispatcher, which replaces the whole page")
+
+    shell_text = shell.read_text(encoding="utf-8", errors="replace")
+
+    if "CommandGuard.Failed +=" not in shell_text or "CommandGuard.Failed -=" not in shell_text:
+        fail("the frame does not subscribe AND unsubscribe to the command guard - a closed window "
+             "would keep answering for a shell nobody is looking at")
+
+    window_text = window.read_text(encoding="utf-8", errors="replace")
+
+    if "{Binding FaultBanner" not in window_text or "HasFaultBanner" not in window_text:
+        fail("ShellWindow does not draw the failed-button line - the fault would be silent again")
+
+    app_text = app.read_text(encoding="utf-8", errors="replace")
+
+    if "CommandGuard.Sink" not in app_text:
+        fail("the command guard has no log sink - a failed button would write no line in the "
+             "shop's own log")
+
+    report_text = report.read_text(encoding="utf-8", errors="replace")
+
+    for needle, reason in (
+        ("last-run.txt", "the report tool does not print the heartbeat"),
+        ("binding-errors.txt", "the report tool does not explain the binding watch"),
+        ("HEALTHY answer", "the report tool does not say that an absent binding file is the healthy "
+                           "answer - that is the exact confusion of 23 Oct 2026"),
+    ):
+        if needle not in report_text:
+            fail(f"tools/support-report.ps1: {reason}")
+
+    REPORT.append("Run trail: the program leaves a capped heartbeat before its first window and names "
+                  "every page; one failed button is caught in its own button, reported on one line "
+                  "and never reaches the dispatcher; the report tool prints both files and says what "
+                  "an absent one means")
+
+
+# ---------------------------------------------------------------------------
 def check_docs() -> None:
     docs = [ROOT / "README.md", ROOT / "HANDOFF.md", ROOT / "AGENTS.md", ROOT / "dotnet/README.md"]
     docs += sorted((ROOT / "docs").glob("*.md"))
@@ -3733,6 +3868,12 @@ def check_csharp_grammar() -> None:
         warn("tree-sitter-c-sharp is not installed, so the real-grammar pass was skipped "
              "(pip install tree_sitter tree_sitter_c_sharp). The brace check still ran.")
         REPORT.append("C# grammar: not installed - skipped")
+
+        # The static-member pass is a separate gate and it still has to be counted, even when it had
+        # nothing to read: a check count that changes with what is installed on the machine is how a
+        # future agent wastes an hour looking for a gate that "disappeared" (it happened on
+        # 23 Oct 2026: the count read 40 instead of 41, and the missing number was this package).
+        REPORT.append("Static members: skipped - the grammar needed to read them is not installed")
         return
 
     files = _cs_files()
@@ -3995,6 +4136,7 @@ def main() -> int:
     check_report_tool()
     check_page_guard()
     check_empty_page()
+    check_run_trail()
     check_csharp_grammar()
 
     if not quiet:

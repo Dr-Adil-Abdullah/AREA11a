@@ -129,6 +129,46 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
+> **v0.34.0 (Smalt `#003399`) - a heartbeat, and a button that cannot take the counter down.**
+>
+> * **An absence is not evidence.** `%TEMP%\Area11\binding-errors.txt` is written only when WPF
+>   raises a real binding complaint, so its absence means *no complaint* - and a run that never
+>   reached the window leaves the identical empty folder. On 23 Oct 2026 that ambiguity cost the owner
+>   a false alarm. An absence is only evidence when its cause is knowable, so the program now writes
+>   **`%TEMP%\Area11\last-run.txt` on every start**, before the first window, and adds one line per
+>   named step. *No file = it never started*; the last line says how far it got.
+> * **Diagnostics never live in the shop folder.** The trail goes to the temp folder, because the shop
+>   folder can be the second counter's SMB share and can be off. The same rule as `BindingWatch` and
+>   the crash pointer (D-62, D-78).
+> * **The heartbeat must not become the crash.** Every write is wrapped in one unfiltered catch and
+>   the file is capped (`MaxLines = 140`, keep the header and the tail, print how many lines were
+>   dropped). Nothing here may throw: a heartbeat that stops the till is worse than no heartbeat.
+> * **A failed button belongs to the button.** `RelayCommand` used to let the exception reach the
+>   dispatcher, which replaced the **whole page** - a failed Save took the cart with it. Both command
+>   kinds now run through `CommandGuard.Run`, which catches, writes the crash report through the same
+>   `CrashLog`, logs one line, and raises an outcome the frame turns into a banner **above** the page.
+>   The page is not rebuilt.
+> * **Never guess about the data.** The banner says which button failed, that the page is still open
+>   and that the rest of the shop is untouched, and it names the report file. It must **not** say
+>   "nothing was saved": the command may have written half its work before it failed, and a sentence
+>   that guesses is worse than one that admits what it knows. The reason is written next to the
+>   sentence in `CommandGuard`.
+> * **A machine name is not a button name.** The compiler calls a lambda in a constructor
+>   `<.ctor>b__12_0`; `NameOf` maps that to `"button"` and `HasName` lets the sentence say **"A button
+>   on this page"** rather than repeating a name no shopkeeper has ever seen.
+> * **The report tool answers the question itself.** `tools\support-report.ps1` prints the trail and
+>   states, in words, that a missing binding file is the healthy answer - and that it means nothing
+>   until the trail proves the program started.
+> * **Gates.** **#42** checks the trail name, the temp folder, the unfiltered catch, the cap, the
+>   heartbeat before `app.InitializeComponent()`, a step from the frame, the exit line, both command
+>   kinds, the crash report, the subscribe *and* unsubscribe, the banner bindings, the log sink and the
+>   report's three sentences; a rule inside the VERSIONS gate checks that the released table is **one**
+>   table. Both were proved by **seven injections** (heartbeat deleted, heartbeat moved after the
+>   window, one command kind unguarded, unsubscribe removed, the report's healthy-answer sentence
+>   changed, a paragraph pushed into the version table, the notes section put back above the rows).
+>   A check that only counts injections proves nothing; each one was expected to fail with its own
+>   message.
+>
 > **v0.33.0 (Mauveine `#A050A0`) - an empty page must say why, and a page that dies while drawing must say so.**
 >
 > * **A blank grid is not an answer.** "Nothing here yet" and "nothing matches what you typed" call
@@ -590,9 +630,11 @@ tests through the public service methods and a real bill in `TestDatabase`.
 > **cloud sync** (F-48, D-66) and the **bills page** (F-52, D-67) - 12 of 12, with the printer
 > repair of v0.22.1 keeping the hardware test honest.
 >
-> The last confirmed Windows build is v0.4.8; everything from v0.6.2 on is proved only by
-> `tools/check_repo.py` until the owner runs `START-AREA11.bat` and `tools\\RUN-TESTS.cmd`
-> (**730 cases**).
+> **Superseded on 23 Oct 2026, and kept because the history matters:** the owner's own PC has since
+> built the whole solution and run the suite green several times - `0 Warning(s), 0 Error(s)`, then
+> **730 of 730 in 53 s** on v0.33.0, with the window open and `Signed in: Owner` in
+> `app-2026-10-23.log`. What is still proved only by `tools/check_repo.py` is the **750 cases of
+> v0.34.0**, which wait for his next `tools\\RUN-TESTS.cmd`.
 >
 > **The checker learned two things from this version.** `DashboardService` used `User` with no
 > `using Area11.Core.Models;` and the gate stayed quiet: its mention patterns wanted `.`, `(` or

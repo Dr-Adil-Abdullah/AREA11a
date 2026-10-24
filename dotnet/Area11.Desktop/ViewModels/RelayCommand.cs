@@ -1,4 +1,5 @@
 using System.Windows.Input;
+using Area11.Core.Utils;
 
 namespace Area11.Desktop.ViewModels;
 
@@ -20,10 +21,15 @@ public sealed class RelayCommand : ICommand
 
     public void Execute(object? parameter)
     {
-        if (CanExecute(parameter))
+        if (!CanExecute(parameter))
         {
-            _execute();
+            return;
         }
+
+        // One failed click must not take the counter down (v0.34.0, D-90). The method name is the
+        // button's name, so the sentence, the log line and the crash file all agree without a
+        // hundred call sites being edited.
+        CommandGuard.Run(CommandGuard.NameOf(_execute), _execute);
     }
 
     public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
@@ -49,7 +55,9 @@ public sealed class RelayCommand<T> : ICommand
     public bool CanExecute(object? parameter) =>
         parameter is T typed ? _canExecute?.Invoke(typed) ?? true : _canExecute?.Invoke(default) ?? true;
 
-    public void Execute(object? parameter) => _execute(parameter is T typed ? typed : default);
+    public void Execute(object? parameter) =>
+        CommandGuard.Run(CommandGuard.NameOf(_execute),
+            () => _execute(parameter is T typed ? typed : default));
 
     public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
 }
