@@ -10,7 +10,7 @@
 **Status:** v0.35.5 · Carmine · `#A50021` — **default branch `main`**; this repair is on the current
 working branch `arena/60395e95-area11a` until its pull request is merged.
 
-*Last updated: 25 October 2026, with the owner's green v0.35.5 run: 772 of 772 in 56 s.*
+*Last updated: 25 October 2026, with the green v0.35.5 run and the current-code AlertService investigation.*
 
 ---
 
@@ -131,9 +131,11 @@ time you find a fault, finish a task, change a decision or learn something that 
 4. answer the owner in one message, in his language, saying what he must run and what he should see.
 
 **The v0.35.5 suite is green on his PC: 772 of 772 in 56 s.** Keep that evidence; do not ask him to
-re-prove a pulled tree unless the code changes. The previously reported `AlertService.Report()` runtime
-mapping fault is a separate investigation and is not covered by that green claim. The Desktop installer
-still needs its own run:
+re-prove a pulled tree unless the code changes. The earlier `AlertService.Report()` mapping report was
+investigated against this exact source: `qty_base` is SQLite `REAL`, `ProblemRow.Qty` is C# `double`,
+and the green suite exercises all seven alert sources, including low-stock REAL quantities 1.0 and 2.0.
+No current mismatch was found, so no production cast was invented. A recurrence on v0.35.5 or later
+needs a fresh report from that version. The Desktop installer still needs its own run:
 
 > After the next code repair, ask him to pull and run `tools\RUN-TESTS.cmd` again (needs `Failed: 0`,
 > with the new expected total). For installation, run `tools\INSTALL-AREA11.cmd` (needs the desktop

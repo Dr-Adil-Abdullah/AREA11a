@@ -146,6 +146,11 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >   it again; the production second-open refusal is unchanged. No schema or test-count change (772).
 >   Static checks pass, and the owner's Windows run then passed **772 of 772 in 56 s**.
 >
+> * **The old AlertService mapping report did not reproduce against current code.** `qty_base` is
+>   SQLite `REAL`, `ProblemRow.Qty` is C# `double`, and all seven alert sources have passing tests in
+>   that 772-case run (including low-stock REAL values 1.0 and 2.0). No cast or production file was
+>   changed. Do not "fix" it to `long`; a fresh v0.35.5+ crash report is needed if it recurs.
+>
 > * **v0.35.4 fixes the delivery gate, not a shop rule.** `START-AREA11.bat` accepted only `main` and
 >   a retired Arena branch, so it refused the correct current branch before building. The active
 >   `WORK_BRANCH` is now declared once and accepted beside `main`; other branches remain refused.
