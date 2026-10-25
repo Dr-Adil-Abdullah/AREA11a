@@ -137,7 +137,13 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.35.2 (Tarragon `#5A6B3B`) - one time for the shop, a session that ends by itself, and no bill without a galla (D-92).**
+> **v0.35.3 (Bluebell `#465BA8`) - document numbers come from the live transaction, not a stale cache.**
+>
+> * **v0.35.3 repairs cross-instance numbering and rollback.** `NumberingService` reads the counter on
+>   the caller's connection; `WriteCounter` no longer mutates memory that SQLite cannot roll back.
+>   Three public-service tests cover independent settings instances, rollback and repeated numbers in
+>   one transaction (772 cases). The schema did not change. **Not compiled or executed here:** the
+>   owner must run `tools\RUN-TESTS.cmd` and see `ALL GREEN - 772 of 772`.
 >
 > * **v0.35.2 fixed what the owner's run found.** (1) `RunTrail.Append` used `File.AppendAllText`, which
 >   writes **no line end**, so every step glued onto the previous one and the trail was one enormous

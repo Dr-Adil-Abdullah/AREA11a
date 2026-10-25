@@ -22,7 +22,7 @@ features and the four phases.
 |---|---|
 | ✅ | finished - the code is written, compiled on the owner's PC, and tested (or its test is named in the row) |
 | 🟡 | the code is finished; **one action in the shop** still has to prove it (the action is written in the row) |
-| ⬜ | not started - **there are none at v0.35.2** |
+| ⬜ | not started - **there are none at v0.35.3** |
 | 🧪 | a test case covers this row in `Area11.Tests` (the count is checked against `EXPECTED` on every run) |
 
 > **How to read a ✅.** It means the code exists, is covered by a named test, and the solution compiled
@@ -47,7 +47,7 @@ features and the four phases.
 > four red tests are why v0.35.2 exists. Those behaviours rest on **769 cases** plus that one green
 > suite, and the five 🟡 rows wait for one action each in the shop.
 
-> **Board at v0.35.2 (Tarragon):** 57 features - **52 ✅ / 5 🟡 / 0 ⬜ (91.2% / 8.8%)**. Every feature
+> **Board at v0.35.3 (Bluebell):** 57 features - **52 ✅ / 5 🟡 / 0 ⬜ (91.2% / 8.8%)**. Every feature
 > is written, **the program compiles on Windows**, and - new on 23 Oct 2026 - **the window opened and a
 > person signed in on the owner's PC** (v0.33.0: `Signed in: Owner`). The 5 🟡 are the ones only the shop
 > PC can prove, and each is **one action**: one medicine added with a batch (F-08), one delivery entered
@@ -60,19 +60,19 @@ features and the four phases.
 > v0.29.0 moved **F-12 (the dashboard)** to ✅ after giving it 20 tests; the mock database used for
 > them was rebuilt from all 23 migrations and every SQL statement was run on it before shipping.
 
-## Where we stand (v0.35.2)
+## Where we stand (v0.35.3)
 
 | Question | Number | What it means |
 |---|---|---|
 | Features in the board | **57** | **52 ✅ done (91.2%)**, **5 🟡 written but only the shop PC can prove them (8.8%)**, 0 ⬜ not started |
-| Code | **63,973 lines** of C# (Core 29,623 · Desktop 17,224 · Tests 17,126) + **8,020 lines** of XAML | 265 C# files, 38 XAML files |
+| Code | **64,045 lines** of C# (Core 29,645 · Desktop 17,224 · Tests 17,176) + **8,020 lines** of XAML | 265 C# files, 38 XAML files |
 | The shop's rules | **47 service files** in `Area11.Core`, **41 model files**, **34 database tables** over 23 migrations | the original `area11.db` opens unchanged |
 | Screens | **36 views**, **36 page view-models**, 1,325 XAML bindings (179 made `Mode=OneWay`) | every binding checked against its page's own view-model or row type |
-| Tests | **769 cases** in 62 files | 717 facts + 12 theories (52 inline rows) |
+| Tests | **772 cases** in 62 files | 720 facts + 12 theories (52 inline rows) |
 | Static gates | **44 checks** in `tools/check_repo.py` | ~8 seconds; not a compiler - see the warning at the end |
 | Reporting a fault | **one file** - `tools\SEND-REPORT.cmd` (v0.30.3, D-78) | build, SDK, git state, shop folder (no rows), whole crash report, last build/test output |
-| Versions shipped | 0.1.0 -> **0.35.2** | each with its own brand colour (D-24) |
-| Owner decisions recorded | **D-00 … D-92** | `docs/OWNER-DECISIONS.md`, in Urdu |
+| Versions shipped | 0.1.0 -> **0.35.3** | each with its own brand colour (D-24) |
+| Owner decisions recorded | **D-00 … D-93** | `docs/OWNER-DECISIONS.md`, in Urdu |
 
 **What is actually left.** Nothing in the feature list is unbuilt, and as of v0.31.0 that sentence is
 true in the strict sense it was always meant: the last gap the *specification* admitted in its own text -
@@ -106,7 +106,7 @@ of books.
 | F-04 | Audit black box (old -> new values, never deleted) | 🟡 | `Services/AuditService.cs`, `Utils/AuditDiff.cs` | `AuditDiffTests` 🧪 | every module writes (U-27) |
 | F-05 | Sign-in: owner password, staff PIN, 5 tries -> 2 minute lock | ✅ | `Services/AuthService.cs`, `Utils/PasswordHasher.cs` | `PasswordHasherTests` 🧪 | owner signs in on Windows - **done 23 Oct 2026 on v0.33.0**: `app-2026-10-23.log` shows `13:53:31 Signed in: Owner` |
 | F-06 | Per-person permissions stored in the database | ✅ | `Migr. 014`, `Services/PermissionService.cs`, `Views/SettingsView.xaml` | `PermissionTests` 🧪 | the owner ticks/unticks in Settings; every change is audited |
-| F-07 | Permanent numbering `INV` / `PINV` / `RET` / `Q` / `SR` / `PR` / `ST` | ✅ | `Services/NumberingService.cs` | `MigrationTests` 🧪 | no duplicate numbers under one transaction |
+| F-07 | Permanent numbering `INV` / `PINV` / `RET` / `Q` / `SR` / `PR` / `ST` | ✅ | `Services/NumberingService.cs`, `Services/SettingsService.cs` | `NumberingTests` 🧪 | no duplicate numbers across independent settings instances, inside one transaction, or after rollback |
 | F-08 | Products: search, create, edit, box/strip/unit packing, prices, rack | 🟡 | `Services/ProductService.cs`, `Views/ProductsView.xaml` | - | owner adds a medicine with a batch |
 | F-09 | Purchases `PINV`: supplier, batch, expiry, sample lines, payable | 🟡 | `Services/PurchaseService.cs`, `Views/PurchasesView.xaml` | `PurchaseTests` 🧪 | one real delivery enters stock |
 | F-10 | Counter `INV`: FEFO, box/strip/unit, discount guard, round-off, cash change, credit | 🟡 | `Services/SaleService.cs`, `Views/PosView.xaml` | `SaleTests` 🧪 | one real bill prints |
@@ -203,18 +203,19 @@ of books.
 | Migrations 001-023 produce 34 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
 | **Compiles on Windows** | `dotnet build Area11.sln` | ✅ 20 Oct 2026 (v0.1.1); re-check after each release |
-| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ `v0.35.2 (Tarragon, #5A6B3B)` |
+| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ `v0.35.3 (Bluebell, #465BA8)` |
 | Every `StaticResource` key exists (**1,434 keys**) | `python3 tools/check_repo.py` | ✅ |
 | Every binding matches its view-model (**1,324 bindings**) | `python3 tools/check_repo.py` | ✅ |
 | The three script banners match the build | `python3 tools/check_repo.py` | ✅ 3 files |
 | The board and the printable tick-list agree | `python3 tools/make_checklist.py` + the checker | ✅ 57 / 52 / 5 / 0 |
 | **Printer prints (owner's code 6)** | SYSTEM -> *Printer & scanner*, pick the printer, **Print test slip** | 🟡 v0.22.1 fixes the cause (the program opened the print server, not the default printer) - the owner's next slip is the proof |
-| **769 tests green** | `dotnet test` (or `tools\RUN-TESTS.cmd`) | 🟡 **his last full green run was v0.33.0: 730 of 730 in 53 s**; v0.35.1 ran **765 of 769** (four `RunTrail` tests, fixed in v0.35.2); the 769 wait for his next run. Older runs: **fourth run (v0.6.1): 320 of 321 in 27.5 s.** Runs five to fifteen were never reported. **Run 16 (v0.18.0): 479 total, 6 failed, 473 passed** - all six were tests written from an older rule (the program was right) and every one is repaired in v0.19.1; see the 0.19.1 row in `docs/VERSIONS.md`. Runs 17+ are waiting on the owner's machine: v0.19.0 503, v0.19.1 505, v0.20.0 519, v0.21.0 539, v0.22.0 553, v0.22.1 559, v0.23.0 577, v0.24.0 593, v0.25.0 629, v0.26.0/0.26.1 641, v0.27.0 654, v0.28.0 666, v0.29.0 686, v0.29.1 689, **v0.29.2 695** |
+| **772 tests green** | `dotnet test` (or `tools\RUN-TESTS.cmd`) | 🟡 **his last full green run was v0.33.0: 730 of 730 in 53 s**; v0.35.1 ran **765 of 769** (four `RunTrail` tests, fixed in v0.35.2); the 772 of v0.35.3, including the three numbering regression cases, wait for his next run. Older runs: **fourth run (v0.6.1): 320 of 321 in 27.5 s.** Runs five to fifteen were never reported. **Run 16 (v0.18.0): 479 total, 6 failed, 473 passed** - all six were tests written from an older rule (the program was right) and every one is repaired in v0.19.1; see the 0.19.1 row in `docs/VERSIONS.md`. Runs 17+ are waiting on the owner's machine: v0.19.0 503, v0.19.1 505, v0.20.0 519, v0.21.0 539, v0.22.0 553, v0.22.1 559, v0.23.0 577, v0.24.0 593, v0.25.0 629, v0.26.0/0.26.1 641, v0.27.0 654, v0.28.0 666, v0.29.0 686, v0.29.1 689, **v0.29.2 695** |
 
 ## Change log
 
 | Date | What |
 |---|---|
+| 25 Oct 2026 | **v0.35.3 Bluebell - document numbers no longer trust a stale cache.** `NumberingService` now reads the live counter on the caller's connection inside the immediate transaction; `WriteCounter` leaves memory alone because SQLite rollback cannot undo a cache write. Independent settings instances cannot issue the same next code after the other commits, rollback no longer leaves a phantom gap, and repeated quarantine numbers inside one transaction still advance correctly. **3 new tests, 772 cases; no schema change.** All 44 static checks pass with real C# grammar; no .NET SDK exists here, so the owner's run must end `ALL GREEN - 772 of 772`. |
 | 26 Oct 2026 | **v0.24.0 Sage - a misspelt medicine is still found (F-50, Spec 8.4).** The counter and the Products page now survive a typo: `panadl` finds *Panadol*, `augmnetin` finds *Augmentin* (a swapped pair counts as one mistake) and `omeprazol` finds *Risek* through its salt. **Exact first, always** - only when nothing matches does the program look at the neighbourhood, and then it says so: *"Nothing is spelt \"panadl\". Closest: Panadol 500mg. Check the box before you bill it."* The list is a suggestion, never an answer: Enter stays a barcode, and a medicine reaches the cart only by pressing *Add to cart*. Strength and packaging words are ignored, a short word (under five letters) is never matched by distance alone, every typed word must land somewhere, and the shop's own filters are kept. 16 new tests. 593 cases. |
 | 26 Oct 2026 | **v0.25.0 Verdigris - the last untested corner: purchases, partners and the numbers (F-18).** 36 new cases prove the paperwork the shop cannot afford to get wrong. **A purchase** (`PurchaseService`): one box enters the whole pack on the shelf (a 2 x 10 medicine means 20 tablets), a strip enters ten and a single tablet enters one; the supplier is owed exactly `total - paid`, a payment bigger than the bill is clamped to the bill, and a **bonus line** adds free stock at cost 0 and never reaches the bill. A missing batch number and an impossible expiry are **warnings, not refusals** (U-30) - the batch is still named `NO-BATCH`, and an expiry month `2027-06` is stored as `2027-06-30`, the last day it means. A purchase with no lines, a quantity of zero and a cashier are refused, and nothing is written. **The partners** (`PartnerService`, `SupplierLedgerService`): one phone number belongs to one customer and the refusal names the person who already has it, an unknown category falls back to `normal`, a doctor stays a doctor. A supplier payment is numbered `PAY-nnnn`, may not overshoot the payable and cannot be made on a settled or credit account. A supplier return takes the chosen quantity off the shelf, drops the payable by the credit note at cost (or leaves it alone when the cash came back), needs one of the five reasons, and is owner-or-manager only. **The numbers** (`NumberingService`): every paper has its own counter (`INV`, `PINV`, `RET`, `PR`, `SR`, `ST`, `Q`, `H`), the prefix and the padding come from Settings, a counter of zero reads as one, an unknown kind throws instead of inventing a number, and a sale carries the number the counter issued even after a restart. **What these tests do not prove:** they have never been compiled or run on this machine (no .NET SDK here) - they are static-checker clean, and `tools\RUN-TESTS.cmd` on the shop PC is the proof; they do not prove printing, the shop's own printer, or a real delivery entered by hand. 36 new tests. 629 cases. **Verdigris**, a blue-green never used before, marks the round that closed the last untested corner of the code. |
 | 26 Oct 2026 | **v0.26.0 Nimbus - the cloud push Supabase refused, and the Settings page it never had (F-48 defects).** Four real defects from v0.21.0 are repaired. **(1) The row on the wire:** a push posted the Area11 document itself, so PostgREST was asked for a `format` column the table does not have and answered *Could not find the 'format' column* - the mirror never received a single shop. Every push now sends the table's own row (`shop_id`, `shop_name`, `sent_at`, `version`, `payload`) with the document whole inside `payload`, and a test parses the sent JSON to prove there is no camelCase key at the top. **(2) `sent_at`:** the shop's clock text is written as `2026-10-26T14:05:00+05:00` with `CloudStampFormat` - a constant that until now was declared and never used. **(3) `version`:** the column is `int` (Spec 25.2), so it carries the **document format** (1); the program's version is text and stays inside the document, which is also what the cloud preview now shows instead of the row's bare "1", and the preview's sent time reads in the shop's own clock. **(4) Settings -> Cloud sync:** a fifth tab with the switch, address, table, shop id and API key; a switch that is ON with an empty field is refused before anything is written; an address without `https://`, a shop id with a space and a table name with a dash are refused in `SettingsService` (the screen is not the only doorway); the key is never shown again - only `eyJh********9f2c` - never reaches the black box, and is cleared from the box after saving; the tab is disabled for anyone not ticked for cloud sync. The `sync.enabled` flag from Spec 6.12 is finally read: OFF means *Cloud sync is switched off*, not *fill the form*. 12 new tests. 641 cases. **Nimbus**, a storm grey-blue never used before. |

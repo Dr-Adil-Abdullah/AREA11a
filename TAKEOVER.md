@@ -7,10 +7,10 @@
 > اِس فائل میں یہ سب ہے: پروگرام کیا ہے، ابھی کہاں کھڑا ہے، **کیا باقی ہے**، کیا **کبھی نہیں** کرنا،
 > اور ایک نیا ورژن کیسے نکالنا ہے۔ آپ کے لیے چھوٹی اردو فائل: [`docs/HANDOVER-FOR-OWNER-URDU.md`](docs/HANDOVER-FOR-OWNER-URDU.md)۔
 
-**Status:** v0.35.2 · Tarragon · `#5A6B3B` — **default branch `main`** (pull request #1 was merged on
-24 October 2026). The old working branch `arena/a8a3b2e0-area11a` still points at the same code.
+**Status:** v0.35.3 · Bluebell · `#465BA8` — **default branch `main`**; this repair is on the current
+working branch `arena/60395e95-area11a` until its pull request is merged.
 
-*Last rewritten: 24 October 2026, at code commit `60a6683` (plus the documentation commit that added this file).*
+*Last updated: 25 October 2026, for the v0.35.3 numbering repair.*
 
 ---
 
@@ -38,7 +38,7 @@ repository is a **behaviour reference only** — never modify it, never copy its
 | Question | File that owns the answer |
 |---|---|
 | What is done, what is next, per feature (ID, files, test, "done when") | **`docs/PROGRESS.md`** — the board |
-| What the owner decided, in his own language (D-00 … D-92) | **`docs/OWNER-DECISIONS.md`** (Urdu, authoritative) |
+| What the owner decided, in his own language (D-00 … D-93) | **`docs/OWNER-DECISIONS.md`** (Urdu, authoritative) |
 | His 116 numbered rules and where each is implemented | `docs/RULES-MATRIX.md` |
 | The blueprint (rules, data, pricing, billing, printing, rebuild protocol) | `docs/AREA11-MASTER-SPEC.md` |
 | Every table and column | `docs/SCHEMA-REFERENCE.md` |
@@ -56,15 +56,15 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 
 ## 3. Where it stands right now (read this twice)
 
-**v0.35.2 "Tarragon" is written, checked and pushed. It has not yet been run on the owner's PC.**
+**v0.35.3 "Bluebell" is written and statically checked. It has not yet been run on the owner's PC.**
 
 | | |
 |---|---|
-| Test cases written | **769** in 62 files (`tools\RUN-TESTS.cmd` compares the run against `EXPECTED=769`) |
+| Test cases written | **772** in 62 files (`tools\RUN-TESTS.cmd` compares the run against `EXPECTED=772`) |
 | Static checks | **44**, all green: `OK - 44 checks, no problems` |
 | Owner's numbered rules | **116 - 90 ✅ done, 5 🟡 partial, 1 ⬜ (E-12), 20 standing** - see §4 |
 | Feature board | **57 features — 52 ✅ done, 5 🟡 one shop action each, 0 ⬜ not started** (91.2 % / 8.8 %) |
-| Code size | 265 C# files (63,973 lines) + 38 XAML files (8,020 lines, 36 of them pages/windows); 47 services, 41 view models |
+| Code size | 265 C# files (64,045 lines) + 38 XAML files (8,020 lines, 36 of them pages/windows); 47 services, 41 view models |
 | Database | 23 migrations → **34 business tables**, append-only, existing `area11.db` opens unchanged |
 
 ### What the owner's own PC has already proved
@@ -74,6 +74,15 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 * On **v0.35.1** his launcher printed **`BUILD OK`** again, and the program started, opened its
   pages and signed in — so `Area11.Desktop` **compiles**. That closed a worry that had lasted for
   several versions (nothing in `dotnet/` can be compiled in the agent's Linux sandbox).
+
+### What v0.35.3 changes — document numbering without a stale cache
+
+1. `NumberingService` reads each counter on the caller's live connection inside the immediate
+   transaction. A second settings instance no longer issues the number its startup cache remembered.
+2. `WriteCounter` does not mutate that cache, because SQLite rollback cannot roll back a memory write.
+   A failed document therefore no longer leaves the next in-memory number ahead of the database.
+3. Three public-service regression tests cover independent instances, rollback and repeated
+   quarantine numbers in one transaction. **772 cases, no schema change; not compiled here.**
 
 ### What v0.35.1 got wrong — both were real, both are fixed in v0.35.2
 
@@ -101,9 +110,9 @@ time you find a fault, finish a task, change a decision or learn something that 
    commit that exists only on a side branch is invisible to the next agent;
 4. answer the owner in one message, in his language, saying what he must run and what he should see.
 
-**Neither fix has been seen working on his PC yet.** That is the first thing you must get:
+**The v0.35.3 changes have not been seen working on his PC yet.** That is the first thing you must get:
 
-> Ask him to pull, run `tools\RUN-TESTS.cmd` (needs `Failed: 0`, `Total: 769`), and run
+> Ask him to pull, run `tools\RUN-TESTS.cmd` (needs `Failed: 0`, `Total: 772`), and run
 > `tools\INSTALL-AREA11.cmd` (needs the desktop icon **and** Area11 listed in *Add or remove
 > programs* with its version). Both results come back as a pasted console.
 

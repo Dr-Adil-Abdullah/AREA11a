@@ -499,8 +499,30 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
     }
 
     /// <summary>
+    /// Reads a counter on the caller's connection and inside its immediate transaction. A second
+    /// settings instance must see the committed database value, not the copy it cached at startup;
+    /// repeated numbers inside one transaction must also see the earlier uncommitted increment.
+    /// </summary>
+    internal long ReadCounter(SqliteConnection connection, string key)
+    {
+        if (!Defaults.ContainsKey(key))
+        {
+            throw new ArgumentOutOfRangeException(nameof(key), key, "Unknown counter setting.");
+        }
+
+        var raw = Convert.ToString(_db.Scalar(connection,
+            "SELECT value FROM settings WHERE key = @key;", new { key }), CultureInfo.InvariantCulture);
+
+        return long.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
+            ? value
+            : 0;
+    }
+
+    /// <summary>
     /// Counter advance used by the numbering service. Deliberately NOT audited: one audit row
-    /// per printed bill would bury the real events in the black box.
+    /// per printed bill would bury the real events in the black box. The cache is deliberately not
+    /// changed: the caller's transaction may roll back, and a memory write cannot roll back with it.
+    /// Every counter read therefore goes through <see cref="ReadCounter"/> on the live connection.
     /// </summary>
     internal void WriteCounter(SqliteConnection connection, string key, long value)
     {
@@ -515,11 +537,6 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
 INSERT INTO settings(key, value, updated_at) VALUES(@key, @value, @at)
 ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at;",
             new { key, value = json, at = Clock.Now() });
-
-        lock (_gate)
-        {
-            _cache[key] = json;
-        }
     }
 
     private static Dictionary<string, string> BuildDefaults()
