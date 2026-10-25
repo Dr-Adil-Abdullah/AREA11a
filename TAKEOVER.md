@@ -10,7 +10,7 @@
 **Status:** v0.35.5 · Carmine · `#A50021` — **default branch `main`**; this repair is on the current
 working branch `arena/60395e95-area11a` until its pull request is merged.
 
-*Last updated: 25 October 2026, for the v0.35.5 session and Shift-test repairs.*
+*Last updated: 25 October 2026, with the owner's green v0.35.5 run: 772 of 772 in 56 s.*
 
 ---
 
@@ -56,7 +56,7 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 
 ## 3. Where it stands right now (read this twice)
 
-**v0.35.5 "Carmine" is written and statically checked. It has not yet been run on the owner's PC.**
+**v0.35.5 "Carmine" is proven on the owner's PC: Core and Tests compiled and all 772 cases passed in 56 s.**
 
 | | |
 |---|---|
@@ -75,8 +75,10 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
   pages and signed in — so `Area11.Desktop` **compiles**. That closed a worry that had lasted for
   several versions (nothing in `dotnet/` can be compiled in the agent's Linux sandbox).
 * On **v0.35.4** the corrected branch passed the launcher guard and the real suite reported
-  **769 passed, 3 failed, 772 total in 55 s**. Those three cases are the subject of v0.35.5; this is
-  evidence of the old build's failures, not a green claim about the new one.
+  **769 passed, 3 failed, 772 total in 55 s**. Those three cases are the subject of v0.35.5.
+* On **v0.35.5** his next run compiled `Area11.Core` and `Area11.Tests` and reported
+  **Failed: 0, Passed: 772, Total: 772 in 56 s — ALL GREEN**. This proves the numbering, session and
+  Shift repairs together; it is not a claim that the Desktop installer or every page was exercised.
 
 ### What v0.35.5 changes — the three failures from the real 772-case run
 
@@ -128,11 +130,14 @@ time you find a fault, finish a task, change a decision or learn something that 
    commit that exists only on a side branch is invisible to the next agent;
 4. answer the owner in one message, in his language, saying what he must run and what he should see.
 
-**The v0.35.5 changes have not been seen working on his PC yet.** That is the first thing you must get:
+**The v0.35.5 suite is green on his PC: 772 of 772 in 56 s.** Keep that evidence; do not ask him to
+re-prove a pulled tree unless the code changes. The previously reported `AlertService.Report()` runtime
+mapping fault is a separate investigation and is not covered by that green claim. The Desktop installer
+still needs its own run:
 
-> Ask him to pull, run `tools\RUN-TESTS.cmd` (needs `Failed: 0`, `Total: 772`), and run
-> `tools\INSTALL-AREA11.cmd` (needs the desktop icon **and** Area11 listed in *Add or remove
-> programs* with its version). Both results come back as a pasted console.
+> After the next code repair, ask him to pull and run `tools\RUN-TESTS.cmd` again (needs `Failed: 0`,
+> with the new expected total). For installation, run `tools\INSTALL-AREA11.cmd` (needs the desktop
+> icon **and** Area11 listed in *Add or remove programs* with its version).
 
 ---
 

@@ -144,7 +144,7 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >   the session on the safe hard-cap answer rather than the shorter idle countdown. Two Shift tests
 >   now open the drawer before billing instead of asking `TestData.Sales()` to open it and then opening
 >   it again; the production second-open refusal is unchanged. No schema or test-count change (772).
->   Static checks pass, but this repair still needs a green Windows run.
+>   Static checks pass, and the owner's Windows run then passed **772 of 772 in 56 s**.
 >
 > * **v0.35.4 fixes the delivery gate, not a shop rule.** `START-AREA11.bat` accepted only `main` and
 >   a retired Arena branch, so it refused the correct current branch before building. The active
