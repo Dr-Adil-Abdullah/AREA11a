@@ -996,6 +996,29 @@ rules → Loyalty points** سے خود آن کرتا ہے، اور وہیں تی
 **دوبارہ نہ ہو:** Version اب **0.13.0 · Deep Sea `#0C4A6E`** ہے (پچھلا Mocha `#6B4F3A`)۔
 
 
+### D-93 — **Negative stock کا خاتمہ: نیا کام صفر سے نیچے نہیں** (completion plan)
+
+**فیصلہ (25 اکتوبر 2026):** مکمل source audit کے بعد app-completion plan پر بات ہوئی۔ آپ نے negative stock کے تین
+ممکنہ راستوں میں سے **«مکمل ختم کریں — تجویز کردہ»** منتخب کیا۔ یہ فیصلہ آئندہ transactions کے لیے پرانے
+U-25/U-30 اصول کو بدل دیتا ہے؛ پرانے اصول تاریخی record کے طور پر اپنے مقام پر رہیں گے۔
+
+| بات | نیا فیصلہ |
+|---|---|
+| نئے transactions | کوئی sale یا stock کم کرنے والا operation موجودہ stock کو صفر سے نیچے نہیں لے جا سکتا |
+| اطلاق کا دائرہ | صرف sale نہیں: stock adjustment/write-off، goods drawing، supplier return، provisional-return cancellation اور ہر نیا stock-decrement path |
+| پرانی negative quantities | پہلے read-only reconciliation report، پھر physical count اور audited correction؛ migration میں خاموشی سے صفر کرنا ممنوع |
+| پرانے business records | تاریخی sale، return، receipt اور report حذف یا دوبارہ لکھنا نہیں؛ ان کے حساب درست رہنے چاہیئں |
+| Setting / exception | retirement مکمل ہونے پر negative-stock checkbox نئے کام میں bypass نہیں ہوگا؛ owner-only exception منتخب نہیں کیا گیا |
+| ناکام operation | خاموش success نہیں؛ دستیاب quantity کی واضح خبر اور فارم/کارٹ محفوظ رہے |
+
+**ترتیب:** پہلے موجودہ Windows build/test baseline، پھر backup/migration safety، پھر ایک مرکزی stock policy اور
+تمام decrement paths پر enforcement۔ Negative-stock کے حساب والی پرانی defects کو صرف checkbox بند کر کے
+حل نہ سمجھا جائے گا؛ historical reads، returns اور reports کے tests بھی لازم ہیں۔
+
+**موجودہ حالت:** ابھی صرف یہ owner decision درج ہوا ہے۔ **v0.35.2 کا program code نہیں بدلا** اور موجودہ app
+پرانی U-25/U-30 behavior پر ہے۔ Implementation کے ساتھ نیا version، رنگ، tests اور reconciliation evidence الگ
+ریکارڈ ہوگا۔
+
 ### D-92 — **ایک وقت پوری دکان کا، ایک سیشن جو خود بند ہو، اور گلا بند ہو تو بل نہیں** (v0.35.0)
 
 **درخواست (24 اکتوبر 2026):** آپ نے تین باتیں کہیں، اور تینوں ایک ہی بات سے نکلتی ہیں — **ایک کاؤنٹر جس کا کوئی
@@ -2437,6 +2460,7 @@ restart نہیں (Spec 8.4.3)۔
 
 | تاریخ | کیا |
 |---|---|
+| 25 اکتوبر 2026 | **D-93 — Negative stock کا خاتمہ**: مالک نے مکمل retirement منتخب کی؛ نئے transactions صفر سے نیچے نہیں، ہر decrement path پر اطلاق، پرانی negatives کی physical/audited reconciliation، تاریخی rows کو خاموشی سے صفر نہیں کرنا۔ ابھی decision-only؛ v0.35.2 کا code اور رنگ نہیں بدلا۔ |
 | 24 اکتوبر 2026 | **D-92 — ایک وقت پوری دکان کا، سیشن خود بند، گلا بند تو بل نہیں**: `TimeSource` + `NtpTime` (آن لائن پہلے، کمپیوٹر بطور بیک اپ، ہر 20 منٹ، دو دن سے زیادہ کا جواب مسترد)، `SessionPolicy` + `SessionWatch` (سیٹنگز میں 1/2/4/6/12 گھنٹے، مگر **12 گھنٹے کی چھت ہر صورت**)، `SaleService` کا گلا گیٹ + کاؤنٹر پر کارڈ اور «Open a galla now»، `SessionHandover` کا نوٹ؛ 19 ٹیسٹ (769 کیس)، گیٹ #44 · **v0.35.0 Raspberry `#B3446C`** |
 | 24 اکتوبر 2026 | **D-91 — مالک کے ہاتھ میں پرنٹ شدہ ٹک لسٹ**: `docs/CHECKLIST-URDU.md` اور `.html` (A4، قلم سے ٹک لگانے والے خانے)، `PRINT-CHECKLIST.cmd`، اور `tools/make_checklist.py` جو اُسے بورڈ سے بناتا ہے؛ نیا گیٹ #43 تینوں گنتیاں میل کرواتا ہے · کوئی کوڈ نہیں بدلا، اِس لیے رنگ وہی **Smalt `#003399`** |
 | 23 اکتوبر 2026 | **D-90 — دل کی دھڑکن اور بٹن کی حفاظت (v0.34.0)**: پروگرام اب پہلی ونڈو سے پہلے `%TEMP%\Area11\last-run.txt` لکھتا ہے (ڈیٹابیس، سائن اِن، ہر صفحہ، خرابی، بند ہونے کا کوڈ؛ 140 سطر کی حد؛ کبھی exception نہیں)، اور ہر بٹن `CommandGuard` سے گزرتا ہے — ناکام بٹن صفحے کے اوپر ایک سرخ پٹی دکھاتا ہے، صفحہ اور کارٹ سلامت رہتے ہیں۔ **اسی دوڑ میں مالک کی تصدیق بھی ریکارڈ ہے:** v0.33.0 پر **730 میں سے 730 پاس (53 سیکنڈ)**، build میں 0 warning / 0 error، اور `app-2026-10-23.log` میں `13:53:31 Signed in: Owner` — **سائن اِن ونڈو پہلی بار کھلی رہی** (F-05 ✅) · **Smalt `#003399`** |

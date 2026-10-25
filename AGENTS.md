@@ -40,8 +40,10 @@ rejected even if it "works".
 2. **Bill total = sum of line totals.** Round once (`Money.RoundDownWithCostGuard`), then spread the
    difference over the last allocation. Never re-round the total afterwards.
 3. **Round down only, never below purchase cost** (Z-11).
-4. **Negative stock never blocks a sale or a stock operation**; it warns, records `negative_sale`, and
-   raises a persistent alert. It blocks only when `stock.allowNegative` is off (U-25/U-30).
+4. **Negative stock is retired by D-93 (25 Oct 2026), superseding U-25/U-30 for new transactions.**
+   New implementation must stop every stock-decrement path from taking stock below zero, reconcile existing
+   negatives through physical counts and audited corrections, and never silently zero historical rows.
+   v0.35.2 still has the old warning-and-allow behavior until the D-93 implementation lands.
 5. **Permissions are enforced in `Area11.Core`**, keyed on the signed-in `User`. Hiding a button is not
    a permission. Owner-only actions: dismissing alerts, applying stock-take, restoring backup.
 6. **Never delete business rows.** Use `active = 0`. Audit rows and sales are permanent.

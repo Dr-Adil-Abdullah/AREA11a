@@ -134,8 +134,9 @@ Do them one at a time; each one ends with a commit (see `AGENTS.md` §6).
 3. **The bill total must equal the sum of its line totals** - `SaleService` spreads the difference into
    the last allocation (`Spread()`). Never "fix" it by rounding the total afterwards.
 4. **Round down only, and never below cost** - `Money.RoundDownWithCostGuard(preRound, costTotal, step)`.
-5. **Negative stock never blocks a sale**; it warns and records `negative_sale` (owner rule U-25/U-30).
-   It *does* block when the owner has switched `stock.allowNegative` off.
+5. **D-93 retires negative stock for new transactions**, superseding U-25/U-30. Every decrement path must
+   eventually enforce it; existing negatives need audited physical reconciliation, never a silent zeroing
+   migration. Until that implementation lands, v0.35.2 still has the old warning-and-allow behavior.
 6. **Discount is capped by role** (owner 100 %, manager 20 %, cashier 5 % by default) and the cap comes
    from settings. Below-cost discounts are clamped unless the setting allows them.
 7. **Permissions are enforced in `Area11.Core`, never in XAML.** A hidden button is not a permission.
