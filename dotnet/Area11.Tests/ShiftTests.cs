@@ -111,11 +111,14 @@ INSERT INTO users(name, role, active, created_at) VALUES('Cashier', 'cashier', 1
         var product = TestData.AddProduct(test, retailPaisa: 30000, batchQty: 100);
         var customer = TestData.AddCustomer(test);
 
+        // Open the drawer before the bill. TestData.Sales() also ensures that one is open; asking
+        // it to make the credit bill first and then calling Open() again is correctly refused.
+        var opened = Shifts(test).Open(TestData.Owner, 0, null);
+        Assert.True(opened.Ok, opened.Error);
+
         var credit = TestData.Sales(test).Create(
             TestData.Cart(product, qty: 2, method: "credit", customerId: customer), TestData.Owner);
         Assert.True(credit.Ok, credit.Error);
-
-        Assert.True(Shifts(test).Open(TestData.Owner, 0, null).Ok);
 
         var ledger = new CustomerLedgerService(test.Database, test.Audit, test.Settings,
             new PermissionService(test.Database, test.Log, test.Audit), test.Log);
@@ -136,10 +139,13 @@ INSERT INTO users(name, role, active, created_at) VALUES('Cashier', 'cashier', 1
         using var test = new TestDatabase();
         var product = TestData.AddProduct(test, retailPaisa: 30000, batchQty: 100);
 
+        // The sale and its refund must both belong to this already-open shift. In particular, do
+        // not rely on a same-second timestamp to pull a pre-opening sale into the drawer totals.
+        var opened = Shifts(test).Open(TestData.Owner, 0, null);
+        Assert.True(opened.Ok, opened.Error);
+
         var sale = TestData.Sales(test).Create(TestData.Cart(product, qty: 3, method: "cash"), TestData.Owner);
         Assert.True(sale.Ok, sale.Error);
-
-        Assert.True(Shifts(test).Open(TestData.Owner, 0, null).Ok);
 
         var returned = TestData.Returns(test).Create(TestData.Return(sale.Value!, 1), TestData.Owner);
         Assert.True(returned.Ok, returned.Error);

@@ -137,7 +137,14 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.35.4 (Garnet `#7C2D4E`) - the launcher accepts the branch carrying this repair.**
+> **v0.35.5 (Carmine `#A50021`) - the owner's three red cases are answered.**
+>
+> * **v0.35.5 repairs one policy mismatch and two stale test fixtures.** The owner's v0.35.4 run proved
+>   the correct tree (**769 passed, 3 failed, 772 total**). A sign-in ahead of the PC clock now keeps
+>   the session on the safe hard-cap answer rather than the shorter idle countdown. Two Shift tests
+>   now open the drawer before billing instead of asking `TestData.Sales()` to open it and then opening
+>   it again; the production second-open refusal is unchanged. No schema or test-count change (772).
+>   Static checks pass, but this repair still needs a green Windows run.
 >
 > * **v0.35.4 fixes the delivery gate, not a shop rule.** `START-AREA11.bat` accepted only `main` and
 >   a retired Arena branch, so it refused the correct current branch before building. The active

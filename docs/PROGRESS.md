@@ -22,7 +22,7 @@ features and the four phases.
 |---|---|
 | ✅ | finished - the code is written, compiled on the owner's PC, and tested (or its test is named in the row) |
 | 🟡 | the code is finished; **one action in the shop** still has to prove it (the action is written in the row) |
-| ⬜ | not started - **there are none at v0.35.4** |
+| ⬜ | not started - **there are none at v0.35.5** |
 | 🧪 | a test case covers this row in `Area11.Tests` (the count is checked against `EXPECTED` on every run) |
 
 > **How to read a ✅.** It means the code exists, is covered by a named test, and the solution compiled
@@ -47,7 +47,7 @@ features and the four phases.
 > four red tests are why v0.35.2 exists. Those behaviours rest on **769 cases** plus that one green
 > suite, and the five 🟡 rows wait for one action each in the shop.
 
-> **Board at v0.35.4 (Garnet):** 57 features - **52 ✅ / 5 🟡 / 0 ⬜ (91.2% / 8.8%)**. Every feature
+> **Board at v0.35.5 (Carmine):** 57 features - **52 ✅ / 5 🟡 / 0 ⬜ (91.2% / 8.8%)**. Every feature
 > is written, **the program compiles on Windows**, and - new on 23 Oct 2026 - **the window opened and a
 > person signed in on the owner's PC** (v0.33.0: `Signed in: Owner`). The 5 🟡 are the ones only the shop
 > PC can prove, and each is **one action**: one medicine added with a batch (F-08), one delivery entered
@@ -60,7 +60,7 @@ features and the four phases.
 > v0.29.0 moved **F-12 (the dashboard)** to ✅ after giving it 20 tests; the mock database used for
 > them was rebuilt from all 23 migrations and every SQL statement was run on it before shipping.
 
-## Where we stand (v0.35.4)
+## Where we stand (v0.35.5)
 
 | Question | Number | What it means |
 |---|---|---|
@@ -71,7 +71,7 @@ features and the four phases.
 | Tests | **772 cases** in 62 files | 720 facts + 12 theories (52 inline rows) |
 | Static gates | **44 checks** in `tools/check_repo.py` | ~8 seconds; not a compiler - see the warning at the end |
 | Reporting a fault | **one file** - `tools\SEND-REPORT.cmd` (v0.30.3, D-78) | build, SDK, git state, shop folder (no rows), whole crash report, last build/test output |
-| Versions shipped | 0.1.0 -> **0.35.4** | each with its own brand colour (D-24) |
+| Versions shipped | 0.1.0 -> **0.35.5** | each with its own brand colour (D-24) |
 | Owner decisions recorded | **D-00 … D-93** | `docs/OWNER-DECISIONS.md`, in Urdu |
 
 **What is actually left.** Nothing in the feature list is unbuilt, and as of v0.31.0 that sentence is
@@ -203,18 +203,19 @@ of books.
 | Migrations 001-023 produce 34 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
 | **Compiles on Windows** | `dotnet build Area11.sln` | ✅ 20 Oct 2026 (v0.1.1); re-check after each release |
-| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ `v0.35.4 (Garnet, #7C2D4E)` |
+| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ `v0.35.5 (Carmine, #A50021)` |
 | Every `StaticResource` key exists (**1,434 keys**) | `python3 tools/check_repo.py` | ✅ |
 | Every binding matches its view-model (**1,324 bindings**) | `python3 tools/check_repo.py` | ✅ |
 | The three script banners match the build | `python3 tools/check_repo.py` | ✅ 3 files |
 | The board and the printable tick-list agree | `python3 tools/make_checklist.py` + the checker | ✅ 57 / 52 / 5 / 0 |
 | **Printer prints (owner's code 6)** | SYSTEM -> *Printer & scanner*, pick the printer, **Print test slip** | 🟡 v0.22.1 fixes the cause (the program opened the print server, not the default printer) - the owner's next slip is the proof |
-| **772 tests green** | `dotnet test` (or `tools\RUN-TESTS.cmd`) | 🟡 **his last full green run was v0.33.0: 730 of 730 in 53 s**; v0.35.1 ran **765 of 769** (four `RunTrail` tests, fixed in v0.35.2); the 772 of v0.35.4, including the three numbering regression cases, wait for his next run. Older runs: **fourth run (v0.6.1): 320 of 321 in 27.5 s.** Runs five to fifteen were never reported. **Run 16 (v0.18.0): 479 total, 6 failed, 473 passed** - all six were tests written from an older rule (the program was right) and every one is repaired in v0.19.1; see the 0.19.1 row in `docs/VERSIONS.md`. Runs 17+ are waiting on the owner's machine: v0.19.0 503, v0.19.1 505, v0.20.0 519, v0.21.0 539, v0.22.0 553, v0.22.1 559, v0.23.0 577, v0.24.0 593, v0.25.0 629, v0.26.0/0.26.1 641, v0.27.0 654, v0.28.0 666, v0.29.0 686, v0.29.1 689, **v0.29.2 695** |
+| **772 tests green** | `dotnet test` (or `tools\RUN-TESTS.cmd`) | 🟡 **v0.35.4 ran the correct 772-case tree: 769 passed, 3 failed in 55 s.** The backward-clock policy and two stale Shift fixtures are repaired in v0.35.5 and await his next run. His last full green run was v0.33.0: **730 of 730 in 53 s**; v0.35.1 ran **765 of 769** (four `RunTrail` tests, fixed in v0.35.2). Older runs: **fourth run (v0.6.1): 320 of 321 in 27.5 s.** Runs five to fifteen were never reported. **Run 16 (v0.18.0): 479 total, 6 failed, 473 passed** - all six were tests written from an older rule (the program was right) and every one is repaired in v0.19.1; see the 0.19.1 row in `docs/VERSIONS.md`. Runs 17+ are waiting on the owner's machine: v0.19.0 503, v0.19.1 505, v0.20.0 519, v0.21.0 539, v0.22.0 553, v0.22.1 559, v0.23.0 577, v0.24.0 593, v0.25.0 629, v0.26.0/0.26.1 641, v0.27.0 654, v0.28.0 666, v0.29.0 686, v0.29.1 689, **v0.29.2 695** |
 
 ## Change log
 
 | Date | What |
 |---|---|
+| 25 Oct 2026 | **v0.35.5 Carmine - the three red cases from the real 772-case run are repaired.** The owner reported **769 passed, 3 failed, 772 total in 55 s** on v0.35.4. `SessionPolicy` now keeps the backward-clock case on the safe hard-cap answer instead of showing the shorter idle countdown. The two Shift failures were fixtures that opened a drawer through `TestData.Sales()` and then wrongly opened it again; they now open before the sale, while the service's second-open refusal remains intact. The session test also pins the hard-cap clock and absence of a warning. **772 cases, no schema change.** All 44 static checks pass; Windows execution is still required. |
 | 25 Oct 2026 | **v0.35.4 Garnet - the launcher accepts the repair branch.** The branch guard named only `main` and a retired Arena branch, so the correct `arena/60395e95-area11a` copy was refused before building. The active `WORK_BRANCH` is now declared once and accepted beside `main`; other branches remain refused, and the message no longer claims two branches have identical code. **No business rule, schema or test-count change: 772 cases.** All 44 static checks pass; the owner must still run the Windows build and tests. |
 | 25 Oct 2026 | **v0.35.3 Bluebell - document numbers no longer trust a stale cache.** `NumberingService` now reads the live counter on the caller's connection inside the immediate transaction; `WriteCounter` leaves memory alone because SQLite rollback cannot undo a cache write. Independent settings instances cannot issue the same next code after the other commits, rollback no longer leaves a phantom gap, and repeated quarantine numbers inside one transaction still advance correctly. **3 new tests, 772 cases; no schema change.** All 44 static checks pass with real C# grammar; no .NET SDK exists here, so the owner's run must end `ALL GREEN - 772 of 772`. |
 | 26 Oct 2026 | **v0.24.0 Sage - a misspelt medicine is still found (F-50, Spec 8.4).** The counter and the Products page now survive a typo: `panadl` finds *Panadol*, `augmnetin` finds *Augmentin* (a swapped pair counts as one mistake) and `omeprazol` finds *Risek* through its salt. **Exact first, always** - only when nothing matches does the program look at the neighbourhood, and then it says so: *"Nothing is spelt \"panadl\". Closest: Panadol 500mg. Check the box before you bill it."* The list is a suggestion, never an answer: Enter stays a barcode, and a medicine reaches the cart only by pressing *Add to cart*. Strength and packaging words are ignored, a short word (under five letters) is never matched by distance alone, every typed word must land somewhere, and the shop's own filters are kept. 16 new tests. 593 cases. |

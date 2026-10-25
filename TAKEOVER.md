@@ -7,10 +7,10 @@
 > اِس فائل میں یہ سب ہے: پروگرام کیا ہے، ابھی کہاں کھڑا ہے، **کیا باقی ہے**، کیا **کبھی نہیں** کرنا،
 > اور ایک نیا ورژن کیسے نکالنا ہے۔ آپ کے لیے چھوٹی اردو فائل: [`docs/HANDOVER-FOR-OWNER-URDU.md`](docs/HANDOVER-FOR-OWNER-URDU.md)۔
 
-**Status:** v0.35.4 · Garnet · `#7C2D4E` — **default branch `main`**; this repair is on the current
+**Status:** v0.35.5 · Carmine · `#A50021` — **default branch `main`**; this repair is on the current
 working branch `arena/60395e95-area11a` until its pull request is merged.
 
-*Last updated: 25 October 2026, for the v0.35.4 launcher branch-guard repair.*
+*Last updated: 25 October 2026, for the v0.35.5 session and Shift-test repairs.*
 
 ---
 
@@ -56,7 +56,7 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 
 ## 3. Where it stands right now (read this twice)
 
-**v0.35.4 "Garnet" is written and statically checked. It has not yet been run on the owner's PC.**
+**v0.35.5 "Carmine" is written and statically checked. It has not yet been run on the owner's PC.**
 
 | | |
 |---|---|
@@ -74,6 +74,18 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 * On **v0.35.1** his launcher printed **`BUILD OK`** again, and the program started, opened its
   pages and signed in — so `Area11.Desktop` **compiles**. That closed a worry that had lasted for
   several versions (nothing in `dotnet/` can be compiled in the agent's Linux sandbox).
+* On **v0.35.4** the corrected branch passed the launcher guard and the real suite reported
+  **769 passed, 3 failed, 772 total in 55 s**. Those three cases are the subject of v0.35.5; this is
+  evidence of the old build's failures, not a green claim about the new one.
+
+### What v0.35.5 changes — the three failures from the real 772-case run
+
+The owner's v0.35.4 run was on the correct tree and ended **769 passed, 3 failed, 772 total in 55 s**.
+`SessionPolicy` no longer lets the idle choice supply the countdown while the sign-in timestamp is
+ahead of the PC clock; the safe hard-cap answer remains until the timeline catches up. Two Shift tests
+had made a sale through a helper that already opens a drawer and then tried to open it again. They now
+open the drawer before the sale. The production rule refusing a second open shift was **not** weakened,
+and no schema or test count changed.
 
 ### What v0.35.4 changes — the launcher accepts this working branch
 
@@ -116,7 +128,7 @@ time you find a fault, finish a task, change a decision or learn something that 
    commit that exists only on a side branch is invisible to the next agent;
 4. answer the owner in one message, in his language, saying what he must run and what he should see.
 
-**The v0.35.4 changes have not been seen working on his PC yet.** That is the first thing you must get:
+**The v0.35.5 changes have not been seen working on his PC yet.** That is the first thing you must get:
 
 > Ask him to pull, run `tools\RUN-TESTS.cmd` (needs `Failed: 0`, `Total: 772`), and run
 > `tools\INSTALL-AREA11.cmd` (needs the desktop icon **and** Area11 listed in *Add or remove
