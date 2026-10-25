@@ -400,7 +400,7 @@ VALUES(@code, @date, @phone, @name, @reason, @notes, @refund, 'pending', @userId
 
         var headerId = (int)_db.NextId(connection);
 
-        var saved = 0;
+        var savedLines = new List<SavedLine>();
 
         foreach (var line in lines)
         {
@@ -416,12 +416,13 @@ VALUES(@code, @date, @phone, @name, @reason, @notes, @refund, 'pending', @userId
             var perUnit = PerUnit(product, line.Unit);
             var qtyBase = Calc.ToBase(line.QtyEntered, perUnit);
 
-            if (qtyBase <= 0)
+            if (!double.IsFinite(qtyBase) || qtyBase <= 0)
             {
-                throw new ValidationException(product.Name + ": the quantity must be more than zero.");
+                throw new ValidationException(product.Name + ": the quantity must be a finite number more than zero.");
             }
 
-            var batchId = FindOrOpenBatch(connection, product, stamp);
+            var batch = FindOrOpenBatch(connection, product, stamp);
+            var batchId = batch.Id;
 
             _db.Execute(connection,
                 "UPDATE batches SET qty_base = qty_base + @qty WHERE id = @id;",
@@ -443,8 +444,9 @@ VALUES(@productId, @batchId, 'return_in', @qty, 'provisional_return', @refId, @c
                 });
 
             _db.Execute(connection, @"
-INSERT INTO provisional_items(provisional_id, product_id, qty_base, batch_id, qty_entered, unit_entered, created_at)
-VALUES(@provisionalId, @productId, @qtyBase, @batchId, @qtyEntered, @unit, @at);",
+INSERT INTO provisional_items(provisional_id, product_id, qty_base, batch_id, qty_entered, unit_entered,
+                              refund_paisa, cost_paisa_at_return, created_at)
+VALUES(@provisionalId, @productId, @qtyBase, @batchId, @qtyEntered, @unit, 0, @cost, @at);",
                 new
                 {
                     provisionalId = headerId,
@@ -453,22 +455,43 @@ VALUES(@provisionalId, @productId, @qtyBase, @batchId, @qtyEntered, @unit, @at);
                     batchId,
                     qtyEntered = line.QtyEntered,
                     unit = string.IsNullOrWhiteSpace(line.Unit) ? product.BaseUnit : line.Unit.Trim().ToLowerInvariant(),
+                    cost = batch.CostPaisa,
                     at = stamp
                 });
 
-            saved++;
+            savedLines.Add(new SavedLine
+            {
+                Id = (int)_db.NextId(connection)
+            });
+        }
+
+        AllocateRefund(connection, savedLines, input.RefundPaisa);
+
+        if (input.RefundPaisa > 0)
+        {
+            _db.Execute(connection, @"
+INSERT INTO payments(date, method, amount_paisa, provisional_return_id, user_id, note)
+VALUES(@date, 'cash', @amount, @provisionalId, @userId, @note);",
+                new
+                {
+                    date = stamp,
+                    amount = -input.RefundPaisa,
+                    provisionalId = headerId,
+                    userId = user.Id,
+                    note = "No-bill cash refund " + code
+                });
         }
 
         _audit.Record(connection, user, "Returns", "provisional_create", "provisional_returns", code,
             oldValue: null,
-            newValue: "no-bill return of " + Money.Format(input.RefundPaisa) + " for " + saved.ToString() + " item(s)");
+            newValue: "no-bill return of " + Money.Format(input.RefundPaisa) + " for " + savedLines.Count.ToString() + " item(s)");
 
         return ServiceResult<ProvisionalResult>.Success(new ProvisionalResult
         {
             Id = headerId,
             Code = code,
             RefundPaisa = input.RefundPaisa,
-            ItemCount = saved,
+            ItemCount = savedLines.Count,
             Warnings = warnings
         }, warnings.ToArray());
     }
@@ -515,16 +538,19 @@ ORDER BY p.id DESC;", parameters);
     /// Where the returned goods go. Nobody knows which batch they came from, so they join the newest
     /// open batch; if the shop never bought that medicine, one honest "open" batch is created.
     /// </summary>
-    private int FindOrOpenBatch(SqliteConnection connection, ProductRow product, string stamp)
+    private BatchRow FindOrOpenBatch(SqliteConnection connection, ProductRow product, string stamp)
     {
-        var batchId = _db.QuerySingle<int?>(connection, @"
-SELECT id FROM batches WHERE product_id = @productId AND active = 1
-ORDER BY (expiry_date IS NULL OR expiry_date = '') ASC, expiry_date DESC, id DESC LIMIT 1;",
+        var batch = _db.QuerySingle<BatchRow>(connection, @"
+SELECT id, cost_paisa AS costPaisa
+FROM batches
+WHERE product_id = @productId AND active = 1
+ORDER BY (expiry_date IS NULL OR expiry_date = '') ASC, expiry_date DESC, id DESC
+LIMIT 1;",
             new { productId = product.Id });
 
-        if (batchId is int existing)
+        if (batch is not null)
         {
-            return existing;
+            return batch;
         }
 
         _db.Execute(connection, @"
@@ -532,7 +558,36 @@ INSERT INTO batches(product_id, batch_no, expiry_date, expiry_ym, qty_base, cost
 VALUES(@productId, 'OPEN', NULL, NULL, 0, @cost, @retail, 0, 1, @at);",
             new { productId = product.Id, cost = product.CostPaisa, retail = product.RetailPaisa, at = stamp });
 
-        return (int)_db.NextId(connection);
+        return new BatchRow
+        {
+            Id = (int)_db.NextId(connection),
+            CostPaisa = product.CostPaisa
+        };
+    }
+
+    /// <summary>
+    /// Stores the header refund on its lines for product and category reports. A no-bill entry has
+    /// no trustworthy line prices, so every line gets an equal integer share and the first lines
+    /// get the remaining paisa. Migration 024 uses the same long division/remainder rule: no
+    /// floating-point boundary can make old and new rows disagree.
+    /// </summary>
+    private void AllocateRefund(SqliteConnection connection, List<SavedLine> lines, long refundPaisa)
+    {
+        if (lines.Count == 0)
+        {
+            return;
+        }
+
+        var share = refundPaisa / lines.Count;
+        var remainder = refundPaisa % lines.Count;
+
+        for (var index = 0; index < lines.Count; index++)
+        {
+            var lineRefund = share + (index < remainder ? 1 : 0);
+            _db.Execute(connection,
+                "UPDATE provisional_items SET refund_paisa = @refund WHERE id = @id;",
+                new { refund = lineRefund, id = lines[index].Id });
+        }
     }
 
     private static bool CanClose(User? user) =>
@@ -557,6 +612,18 @@ VALUES(@productId, 'OPEN', NULL, NULL, 0, @cost, @retail, 0, 1, @at);",
         public long CostPaisa { get; set; }
 
         public long RetailPaisa { get; set; }
+    }
+
+    private sealed class BatchRow
+    {
+        public int Id { get; set; }
+
+        public long CostPaisa { get; set; }
+    }
+
+    private sealed class SavedLine
+    {
+        public int Id { get; set; }
     }
 
     private sealed class StockRow

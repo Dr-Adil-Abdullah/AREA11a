@@ -163,7 +163,7 @@ public sealed class ReportItemRow
 
     public string Name { get; set; } = string.Empty;
 
-    public long QtyBase { get; set; }
+    public double QtyBase { get; set; }
 
     public long SalesPaisa { get; set; }
 
@@ -171,7 +171,7 @@ public sealed class ReportItemRow
 
     public string RankLabel => Rank.ToString(CultureInfo.InvariantCulture);
 
-    public string QtyLabel => QtyBase.ToString(CultureInfo.InvariantCulture);
+    public string QtyLabel => Qty.Format(QtyBase);
 
     public string SalesLabel => Money.Format(SalesPaisa);
 

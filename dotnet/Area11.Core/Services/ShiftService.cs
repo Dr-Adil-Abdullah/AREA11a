@@ -531,12 +531,16 @@ SELECT
             AND p.date >= @from AND p.date <= @to), 0) AS cashSalesPaisa,
   IFNULL((SELECT SUM(p.amount_paisa) FROM payments p
           WHERE p.method = 'cash' AND p.sale_id IS NULL AND p.customer_id IS NOT NULL
+            AND p.provisional_return_id IS NULL
             AND p.date >= @from AND p.date <= @to), 0) AS cashCollectionsPaisa,
   IFNULL((SELECT SUM(p.amount_paisa) FROM payments p
           WHERE p.method = 'cash' AND p.supplier_id IS NOT NULL
             AND p.date >= @from AND p.date <= @to), 0) AS supplierCashOutPaisa,
   IFNULL((SELECT SUM(r.cash_refund_paisa) FROM sale_returns r
-          WHERE r.date >= @from AND r.date <= @to), 0) AS cashRefundsPaisa,
+          WHERE r.date >= @from AND r.date <= @to), 0)
+  + IFNULL((SELECT -SUM(p.amount_paisa) FROM payments p
+            WHERE p.provisional_return_id IS NOT NULL AND p.amount_paisa < 0
+              AND p.date >= @from AND p.date <= @to), 0) AS cashRefundsPaisa,
   IFNULL((SELECT SUM(sr.total_paisa) FROM supplier_returns sr
           WHERE sr.settled = 1 AND sr.date >= @from AND sr.date <= @to), 0) AS supplierCashInPaisa,
   -- F-32: money the shop spent (rent, tea, a repair) and cash the owner took both left the till.

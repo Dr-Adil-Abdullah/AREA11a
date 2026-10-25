@@ -1,4 +1,6 @@
+using Area11.Core.Data;
 using Area11.Core.Services;
+using Area11.Core.Utils;
 using System.IO;
 using Xunit;
 
@@ -135,6 +137,80 @@ public sealed class MigrationTests
         Assert.NotNull(row);
         Assert.Equal("5", row!.OldValue);
         Assert.Equal("-7", row.NewValue);
+    }
+
+    [Fact]
+    public void ProvisionalMoneyMigration_BackfillsOldLinesAndPayments()
+    {
+        var folder = Path.Combine(Path.GetTempPath(), "area11-migration-test", Guid.NewGuid().ToString("N"));
+        var legacyFolder = Path.Combine(folder, "legacy");
+        Directory.CreateDirectory(legacyFolder);
+
+        foreach (var source in Directory.GetFiles(TestDatabase.MigrationsFolder, "*.sql"))
+        {
+            if (!Path.GetFileName(source).StartsWith("024_", StringComparison.Ordinal))
+            {
+                File.Copy(source, Path.Combine(legacyFolder, Path.GetFileName(source)));
+            }
+        }
+
+        var path = Path.Combine(folder, "legacy.db");
+
+        try
+        {
+            var database = new Database(path, pooling: false, durable: false);
+            var log = new LogService(Path.Combine(folder, "logs"));
+            var runner = new MigrationRunner(database, log);
+            runner.ApplyPending(legacyFolder);
+
+            database.Tx(connection =>
+            {
+                database.Execute(connection, @"
+INSERT INTO products(id, name, base_unit, cost_paisa, retail_paisa, created_at, updated_at)
+VALUES(1, 'First', 'tablet', 500, 800, '2026-01-01', '2026-01-01'),
+      (2, 'Second', 'tablet', 700, 1600, '2026-01-01', '2026-01-01');");
+                database.Execute(connection, @"
+INSERT INTO batches(id, product_id, batch_no, qty_base, cost_paisa, retail_paisa, created_at)
+VALUES(1, 1, 'A', 0, 500, 800, '2026-01-01'),
+      (2, 2, 'B', 0, 700, 1600, '2026-01-01');");
+                database.Execute(connection, @"
+INSERT INTO provisional_returns(id, code, date, refund_paisa, status, cancel_reason, cancelled_at)
+VALUES(1, 'PR-0001', '2026-10-20 10:00:00', 10001, 'cancelled', 'typed twice', '2026-10-21 11:00:00');");
+                database.Execute(connection, @"
+INSERT INTO provisional_items(id, provisional_id, product_id, batch_id, qty_base, qty_entered, unit_entered, created_at)
+VALUES(1, 1, 1, 1, 1, 1, 'tablet', '2026-10-20 10:00:00'),
+      (2, 1, 2, 2, 2, 2, 'tablet', '2026-10-20 10:00:00');");
+            });
+
+            Assert.Equal(1, runner.ApplyPending(TestDatabase.MigrationsFolder));
+
+            using var connection = database.Open();
+            var lines = database.Query<MigrationMoneyRow>(connection,
+                "SELECT refund_paisa AS refundPaisa, cost_paisa_at_return AS costPaisa FROM provisional_items ORDER BY id;");
+            Assert.Equal(10001L, lines.Sum(row => row.RefundPaisa));
+            Assert.Equal(new long[] { 5001, 5000 }, lines.Select(row => row.RefundPaisa));
+            Assert.All(lines, row => Assert.True(row.RefundPaisa >= 0));
+            Assert.Equal(new long[] { 500, 700 }, lines.Select(row => row.CostPaisa));
+
+            var payment = Assert.Single(database.Query<long>(connection,
+                "SELECT amount_paisa FROM payments WHERE provisional_return_id = 1;"));
+            Assert.Equal(-10001L, payment); // cancellation is not proof of cash coming back
+
+            var reportRows = Convert.ToInt64(database.Scalar(connection,
+                "SELECT COUNT(1) FROM provisional_report_lines;") ?? 0L);
+            Assert.Equal(0L, reportRows); // a cancelled document is void in reports, not a negative refund
+        }
+        finally
+        {
+            try { Directory.Delete(folder, recursive: true); } catch (IOException) { }
+        }
+    }
+
+    private sealed class MigrationMoneyRow
+    {
+        public long RefundPaisa { get; set; }
+
+        public long CostPaisa { get; set; }
     }
 
     private sealed class AuditRow

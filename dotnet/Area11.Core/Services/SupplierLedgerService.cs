@@ -619,6 +619,7 @@ SELECT pm.date AS date, 'payment' AS kind,
        'Paid (' || pm.method || ')' AS description
 FROM payments pm
 WHERE pm.supplier_id = @id AND pm.purchase_id IS NULL
+  AND pm.provisional_return_id IS NULL
 ORDER BY pm.date, pm.id;", new { id = supplierId });
 
         var returns = _db.Query<SupplierMovement>(connection, @"
@@ -652,7 +653,8 @@ SELECT s.id AS id, s.name AS name, s.agency AS agency, s.phone AS phone,
        s.balance_paisa AS payablePaisa, s.opening_balance_paisa AS openingPaisa,
        IFNULL((SELECT SUM(p.total_paisa) FROM purchases p WHERE p.supplier_id = s.id), 0) AS purchasesPaisa,
        IFNULL((SELECT SUM(pm.amount_paisa) FROM payments pm
-               WHERE pm.supplier_id = s.id AND pm.purchase_id IS NULL), 0)
+               WHERE pm.supplier_id = s.id AND pm.purchase_id IS NULL
+                 AND pm.provisional_return_id IS NULL), 0)
          + IFNULL((SELECT SUM(p.paid_paisa) FROM purchases p WHERE p.supplier_id = s.id), 0) AS paidPaisa,
        IFNULL((SELECT SUM(r.total_paisa) FROM supplier_returns r
                WHERE r.supplier_id = s.id AND r.settled = 0), 0) AS creditedPaisa,

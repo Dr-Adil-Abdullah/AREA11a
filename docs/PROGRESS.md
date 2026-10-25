@@ -22,7 +22,7 @@ features and the four phases.
 |---|---|
 | ✅ | finished - the code is written, compiled on the owner's PC, and tested (or its test is named in the row) |
 | 🟡 | the code is finished; **one action in the shop** still has to prove it (the action is written in the row) |
-| ⬜ | not started - **there are none at v0.35.5** |
+| ⬜ | not started - **there are none at v0.35.6** |
 | 🧪 | a test case covers this row in `Area11.Tests` (the count is checked against `EXPECTED` on every run) |
 
 > **How to read a ✅.** It means the code exists, is covered by a named test, and the solution compiled
@@ -47,31 +47,31 @@ features and the four phases.
 > four red tests are why v0.35.2 exists. Those behaviours rest on **769 cases** plus that one green
 > suite, and the five 🟡 rows wait for one action each in the shop.
 
-> **Board at v0.35.5 (Carmine):** 57 features - **52 ✅ / 5 🟡 / 0 ⬜ (91.2% / 8.8%)**. Every feature
+> **Board at v0.35.6 (Cedar):** 57 features - **52 ✅ / 5 🟡 / 0 ⬜ (91.2% / 8.8%)**. Every feature
 > is written, **the program compiles on Windows**, and - new on 23 Oct 2026 - **the window opened and a
 > person signed in on the owner's PC** (v0.33.0: `Signed in: Owner`). The 5 🟡 are the ones only the shop
 > PC can prove, and each is **one action**: one medicine added with a batch (F-08), one delivery entered
 > by hand (F-09), one real bill on the shop's printer (F-10), one real action in the black box (F-04),
 > and the **scan** half of F-46. F-13 closed on 23 Oct 2026: the owner printed on the shop's own printer
-> and said it works. **F-54** (the books check) is ✅ because its proof is fourteen tests over a real
+> and said it works. **F-54** (the books check) is ✅ because its proof is fifteen tests over a real
 > database, and **F-55** (the handover) is ✅ for the same reason: twelve tests, and the SQL run against
-> a SQLite file built from all 23 migrations. Neither has anything left for the shop PC to prove.
+> a SQLite file built from all 24 migrations. Neither has anything left for the shop PC to prove.
 >
 > v0.29.0 moved **F-12 (the dashboard)** to ✅ after giving it 20 tests; the mock database used for
 > them was rebuilt from all 23 migrations and every SQL statement was run on it before shipping.
 
-## Where we stand (v0.35.5)
+## Where we stand (v0.35.6)
 
 | Question | Number | What it means |
 |---|---|---|
 | Features in the board | **57** | **52 ✅ done (91.2%)**, **5 🟡 written but only the shop PC can prove them (8.8%)**, 0 ⬜ not started |
 | Code | **64,045 lines** of C# (Core 29,645 · Desktop 17,224 · Tests 17,176) + **8,020 lines** of XAML | 265 C# files, 38 XAML files |
-| The shop's rules | **47 service files** in `Area11.Core`, **41 model files**, **34 database tables** over 23 migrations | the original `area11.db` opens unchanged |
+| The shop's rules | **47 service files** in `Area11.Core`, **41 model files**, **34 database tables** over 24 migrations | migration 024 adds provisional money evidence without editing original bill rows |
 | Screens | **36 views**, **36 page view-models**, 1,325 XAML bindings (179 made `Mode=OneWay`) | every binding checked against its page's own view-model or row type |
-| Tests | **772 cases** in 62 files | 720 facts + 12 theories (52 inline rows) |
+| Tests | **782 cases** in 62 files | 730 facts + 12 theories (52 inline rows) |
 | Static gates | **44 checks** in `tools/check_repo.py` | ~8 seconds; not a compiler - see the warning at the end |
 | Reporting a fault | **one file** - `tools\SEND-REPORT.cmd` (v0.30.3, D-78) | build, SDK, git state, shop folder (no rows), whole crash report, last build/test output |
-| Versions shipped | 0.1.0 -> **0.35.5** | each with its own brand colour (D-24) |
+| Versions shipped | 0.1.0 -> **0.35.6** | each with its own brand colour (D-24) |
 | Owner decisions recorded | **D-00 … D-93** | `docs/OWNER-DECISIONS.md`, in Urdu |
 
 **What is actually left.** Nothing in the feature list is unbuilt, and as of v0.31.0 that sentence is
@@ -101,7 +101,7 @@ of books.
 | ID | Feature | State | Where | Test | Done when |
 |---|---|---|---|---|---|
 | F-01 | Solution with three projects (Core / Desktop / Tests), .NET 10, MVVM | ✅ | `Area11.sln`, `dotnet/Directory.Build.props` | - | **compiled on Windows**, 23 Oct 2026, v0.30.9: the launcher printed **`BUILD OK - the program was compiled`** for the first time - Core and Tests had compiled before, the WPF project had not. (The window then stopped on a binding fault of its own - see v0.31.1 and F-16.) |
-| F-02 | Exact database schema, migrations 001-023, 34 business tables | ✅ | `dotnet/Area11.Core/Data/Migrations/` | `MigrationTests` 🧪 | an old `area11.db` opens unchanged |
+| F-02 | Exact database schema, migrations 001-024, 34 business tables + provisional report view | ✅ | `dotnet/Area11.Core/Data/Migrations/` | `MigrationTests` 🧪 | an old `area11.db` opens unchanged and migration 024 backfills provisional money rows |
 | F-03 | Settings service, 86 keys, every change audited, saved in one transaction | ✅ | `Area11.Core/Services/SettingsService.cs` | `SettingsTests` 🧪 | bad values are refused before they reach the database |
 | F-04 | Audit black box (old -> new values, never deleted) | 🟡 | `Services/AuditService.cs`, `Utils/AuditDiff.cs` | `AuditDiffTests` 🧪 | every module writes (U-27) |
 | F-05 | Sign-in: owner password, staff PIN, 5 tries -> 2 minute lock | ✅ | `Services/AuthService.cs`, `Utils/PasswordHasher.cs` | `PasswordHasherTests` 🧪 | owner signs in on Windows - **done 23 Oct 2026 on v0.33.0**: `app-2026-10-23.log` shows `13:53:31 Signed in: Owner` |
@@ -141,7 +141,7 @@ of books.
 | F-31 | Shift / galla: open, close, variance, **and hand the drawer to the next person with a printed slip** (F-55, v0.30.6) | ✅ | `Services/ShiftService.cs`, `Views/ShiftView.xaml` | `ShiftTests` 🧪 | expected cash = float + sales - payouts; the page says exact / over / short · v0.4.0 |
 | F-32 | Expenses and owner drawings | ✅ | `Services/ExpenseService.cs`, `Views/ExpensesView.xaml` | `ExpenseTests` 🧪 | they reduce the drawer, not the profit · v0.4.4 |
 | F-33 | Udhaar recovery: ageing (0-30 / 31-60 / 61-90 / 90+), oldest first, `PAY-nnnn` recovery slip | ✅ | `Services/RecoveryService.cs`, `Views/RecoveryView.xaml` | `RecoveryTests` 🧪 | the four columns add up to the khata, and a payment knocks the oldest bill off first · v0.4.5 |
-| F-34 | Reports: today / 7 / 30 days / this month, KPI cards, per-day chart, top 10 by quantity and by profit, category split, dead stock, best and worst day | ✅ | `Services/ReportService.cs`, `Views/ReportsView.xaml` | `ReportTests` 🧪 (12) | profit uses cost-at-sale and the return rule of Spec 15.6 · v0.4.9 |
+| F-34 | Reports: today / 7 / 30 days / this month, KPI cards, per-day chart, top 10 by quantity and by profit, category split, dead stock, best and worst day; provisional refund events included | ✅ | `Services/ReportService.cs`, `Views/ReportsView.xaml` | `ReportTests` 🧪 (16) | profit uses cost-at-sale, cost-at-return and the return rule of Spec 15.6 · v0.35.6 |
 | F-35 | Audit viewer + CSV export (owner; manager hidden by default) | ✅ | `Services/AuditHistoryService.cs`, `Views/AuditView.xaml` | `AuditViewerTests` 🧪 (10) | search + module/action filters + date window, no edit or delete, CSV is exactly what is on screen · v0.5.0 |
 | UI | **Owner's screen overhaul (D-50)**: 176 px sidebar grouped in five headings, one bell with a count badge, red bar removed, two alert kinds (anyone closes a reminder; only the owner ends a problem), low-stock and expired alerts, customers + suppliers + recovery as one page, and the **new customer** form that never existed | ✅ | `Views/ShellWindow.xaml`, `ViewModels/PartnersViewModel.cs`, `Views/CustomersView.xaml` | `AlertKindTests` 🧪 (13), `CustomerCreateTests` 🧪 (8) | a reminder is one click for anybody; a money problem is owner-only; one people page · v0.6.0 |
 | F-36 | Backup: ZIP of database + photos, daily automatic, restore, safety copy before the swap | ✅ | `Services/BackupService.cs`, `ViewModels/BackupViewModel.cs`, `Views/BackupView.xaml` | `BackupTests` 🧪 | restore on a clean PC |
@@ -166,7 +166,7 @@ of books.
 | F-50 | **Misspelt search** (Spec 8.4, D-70): a typo at the counter or on the Products page still finds the medicine, and the page says the list is a guess ("Nothing is spelt \"panadl\". Closest: Panadol 500mg"); exact searches are never second-guessed, a swapped pair of letters counts as one mistake, strength and packaging words are ignored, and nothing under five letters is matched by distance | ✅ | `Core/Utils/Fuzzy.cs`, `Core/Models/ProductSearchModels.cs`, `Core/Services/ProductService.cs` (`SearchSmart`), `Desktop/ViewModels/PosViewModel.cs`, `Desktop/ViewModels/ProductsViewModel.cs` | `FuzzySearchTests` 🧪 (16) | typing `panadl` finds Panadol and says so; `zink` finds nothing rather than guessing |
 | F-51 | Supplier-return cutoff window (§9.3.6) - a batch 3-6 months from expiry is a return reminder with a deadline | ✅ | `Services/AlertService.cs` + two Settings boxes | `SupplierCutoffTests` 🧪 | the board says the last day the supplier accepts the goods |
 | F-53 | **Sample shop** (D-69, D-74) - **built, proved, then removed on the owner's word (D-77)** | ✅ | *(removed)* `SampleShopService`, `SampleShopView`, `DEMO-AREA11.cmd` | *(removed with it)* | **retired 23 Oct 2026** (v0.30.2): the owner asked for the demo to be deleted once the product was ready - the script, the page, the service, the models and 37 tests are gone, and no flag or button can create invented rows any more |
-| F-54 | **Do the books add up?** - eleven read-only rules over the shop's own rows: a bill's lines, a bill's header, paid + due, a bill's money rows, impossible money, a purchase's lines, a purchase's header, a purchase's paid + due, a purchase's money rows, a khata below zero, and every payment belonging to someone. Each failing document is named with what it says beside what its rows add up to, and the rupee gap in words | ✅ | `Core/Services/BookCheckService.cs`, `Core/Models/BookCheckModels.cs`, `Desktop/ViewModels/BookCheckViewModel.cs`, `Desktop/Views/BookCheckView.xaml` | `BookCheckTests` 🧪 (14) | nothing on the shop PC to prove - the proof is the tests: a clean shop has zero faults, and a hand-written UPDATE/INSERT is caught and named. The eleven SQL were also run on a real SQLite file built from the 23 migrations: zero on a clean shop, and seven injected faults each named by the right rule |
+| F-54 | **Do the books add up?** - eleven read-only rules over the shop's own rows, including the provisional-payment owner check. Each failing document is named with what it says beside what its rows add up to, and the rupee gap in words | ✅ | `Core/Services/BookCheckService.cs`, `Core/Models/BookCheckModels.cs`, `Desktop/ViewModels/BookCheckViewModel.cs`, `Desktop/Views/BookCheckView.xaml` | `BookCheckTests` 🧪 (15) | a clean shop has zero faults, a hand-written fault is caught, and a no-bill refund payment is not called an orphan |
 | F-55 | **The drawer changes hands** (Spec 14.4 / 18.2, migration 009): the first person counts the cash, the second starts with exactly that money - one transaction closes the first shift, writes who gave it to whom and opens the next shift with the counted figure as its float. The difference stays on the shift that produced it; the boundary rule was first written as `[opened, at)` / `[at, now)` and **corrected in v0.30.7** to `[opened, at]` / `(at, now]` - see that row. Refused: to yourself, to a switched-off account, to somebody without the Cash permission, by a peer, or with no shift open. The slip carries both names, the eight money lines, expected / counted / difference in words and **two signature lines**, at 32 / 48 characters | ✅ | `Core/Models/ShiftHandoverModels.cs`, `Core/Services/ShiftService.cs` (`Handover`), `Core/Services/HandoverSlipService.cs`, `Desktop/ViewModels/ShiftViewModel.cs`, `Desktop/Views/ShiftView.xaml` | `ShiftHandoverTests` 🧪 (12) | nothing on the shop PC to prove - the proof is the tests plus the SQL run on a real SQLite file built from all 23 migrations: exact handover, short-by-50, a bill pinned to the boundary second (300 once, never 600) and a two-handover chain (300 / 500 / 600) |
 | F-56 | **Who was short** (Spec 7.2.7, the last line in the spec that still said *not built*): the drawer over a window, **per person** - shifts counted, what the bills expected, what was counted, the net difference, the pattern ("3 short, 1 over"), and the worst short and worst over of that person; worst first. Short and over are added up from the **shift rows**, never from the people's nets, so a drawer that leaks cannot be hidden by one that holds extra. Owner or manager only, cash permission required; 1-3650 days, default 30; an open drawer is never in it | ✅ | `Core/Models/ShiftModels.cs` (`ShiftPersonSummary`, `ShiftPersonReport`, `ShiftWords`), `Core/Services/ShiftService.cs` (`ByPerson`), `Desktop/ViewModels/ShiftViewModel.cs`, `Desktop/Views/ShiftView.xaml` | `ShiftSummaryTests` 🧪 (9) | nothing on the shop PC to prove - proved by the tests, and the SQL was run on a SQLite file built from all 23 migrations (7 drawers, 5 inside the window: 1500 short / 200 over, not 1300 / 0) |
 | F-57 | **One time for the whole shop** (D-92): the time on a bill is the **time server's** time when the internet answers, and this computer's clock when it does not. `TimeSource` keeps one correction (`online - computer`) and `Clock` - the one place every stamp in the database goes through - reads it, so one hundred call sites moved together without one of them being edited. A new shop starts asking **before the first window** on a background thread with a 1,500 ms budget (nothing waits for it), asks again **every 20 minutes** so a line that comes back at noon is used at noon, refuses an answer more than **two days** out as a wrong answer rather than drift, and never throws. Settings → Shop shows where the time came from and how far the two clocks were apart | ✅ | `Core/Utils/TimeSource.cs`, `Core/Utils/NtpTime.cs`, `Core/Utils/AppPaths.cs` (Clock), `Desktop/ViewModels/SettingsViewModel.cs` | `TimeSourceTests` 🧪 (8) | the NTP client itself cannot be proven here (no network in this build area) - his PC with the cable in, and again with it out, is the proof |

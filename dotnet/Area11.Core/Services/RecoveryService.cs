@@ -111,6 +111,7 @@ SELECT customerId, id, date, amountPaisa, kind FROM (
     FROM payments p
     JOIN customers c ON c.id = p.customer_id AND c.active = 1 AND c.balance_paisa > 0
     WHERE p.customer_id IS NOT NULL AND p.sale_id IS NULL AND p.purchase_id IS NULL
+      AND p.provisional_return_id IS NULL
     UNION ALL
     SELECT s.customer_id AS customerId, r.id AS id, r.date AS date, r.credit_reduced_paisa AS amountPaisa,
            'return' AS kind
@@ -266,7 +267,8 @@ SELECT p.id AS id, p.date AS date, p.customer_id AS customerId, p.amount_paisa A
        p.method AS method, p.note AS note, IFNULL(u.name, '') AS userName
 FROM payments p
 LEFT JOIN users u ON u.id = p.user_id
-WHERE p.id = @id AND p.customer_id IS NOT NULL AND p.sale_id IS NULL AND p.purchase_id IS NULL;",
+WHERE p.id = @id AND p.customer_id IS NOT NULL AND p.sale_id IS NULL AND p.purchase_id IS NULL
+  AND p.provisional_return_id IS NULL;",
                 new { id = paymentId });
 
             if (payment is null)
@@ -297,6 +299,7 @@ SELECT customerId, id, date, amountPaisa, kind FROM (
                'collection' AS kind
         FROM payments p
         WHERE p.customer_id = @id AND p.sale_id IS NULL AND p.purchase_id IS NULL
+          AND p.provisional_return_id IS NULL
         UNION ALL
         SELECT s.customer_id AS customerId, r.id AS id, r.date AS date, r.credit_reduced_paisa AS amountPaisa,
                'return' AS kind

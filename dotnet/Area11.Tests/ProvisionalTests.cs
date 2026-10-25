@@ -251,6 +251,106 @@ public sealed class ProvisionalTests
     }
 
     [Fact]
+    public void MultiLineRefund_IsAllocatedExactly_AndCostIsSnapshotted()
+    {
+        using var test = new TestDatabase();
+        var first = TestData.AddProduct(test, costPaisa: 500, retailPaisa: 800, name: "First");
+        var second = TestData.AddProduct(test, costPaisa: 700, retailPaisa: 1600, name: "Second");
+        var input = new ProvisionalInput
+        {
+            RefundPaisa = 10001,
+            Lines = new List<ProvisionalLineInput>
+            {
+                new() { ProductId = first, QtyEntered = 1, Unit = "base" },
+                new() { ProductId = second, QtyEntered = 2, Unit = "base" }
+            }
+        };
+
+        var saved = TestData.Provisionals(test).Create(input, TestData.Owner);
+
+        Assert.True(saved.Ok, saved.Error);
+        using var connection = test.Database.Open();
+        var lines = test.Database.Query<ProvisionalMoneyRow>(connection, @"
+SELECT product_id AS productId, refund_paisa AS refundPaisa, cost_paisa_at_return AS costPaisa
+FROM provisional_items WHERE provisional_id = @id ORDER BY id;", new { id = saved.Value!.Id });
+
+        Assert.Equal(2, lines.Count);
+        Assert.Equal(5001L, lines[0].RefundPaisa);   // equal shares; first line gets the extra paisa
+        Assert.Equal(5000L, lines[1].RefundPaisa);   // no invented line-price weighting
+        Assert.Equal(10001L, lines.Sum(line => line.RefundPaisa));
+        Assert.Equal(500L, lines[0].CostPaisa);
+        Assert.Equal(700L, lines[1].CostPaisa);
+        Assert.All(lines, line => Assert.True(line.RefundPaisa >= 0));
+
+        var cash = Convert.ToInt64(test.Database.Scalar(connection,
+            "SELECT SUM(amount_paisa) FROM payments WHERE provisional_return_id = @id;",
+            new { id = saved.Value.Id }) ?? 0L);
+        Assert.Equal(-10001L, cash);
+    }
+
+    [Fact]
+    public void LinkedProvisionalPayment_CannotBeUsedAsKhataMoney()
+    {
+        using var test = new TestDatabase();
+        var product = TestData.AddProduct(test);
+        var customer = TestData.AddCustomer(test, name: "Not a refund customer");
+        var saved = TestData.Provisionals(test).Create(TestData.RushReturn(product), TestData.Owner);
+        Assert.True(saved.Ok, saved.Error);
+
+        using var connection = test.Database.Open();
+        var paymentId = test.Database.QuerySingle<int>(connection,
+            "SELECT id FROM payments WHERE provisional_return_id = @id;", new { id = saved.Value!.Id });
+
+        // Simulate an old/imported row with both foreign keys. Ownership is exclusive: the PR
+        // marker wins, so neither khata receipt path may reinterpret this cash-out as a collection.
+        test.Database.Execute(connection,
+            "UPDATE payments SET customer_id = @customer WHERE id = @paymentId;",
+            new { customer, paymentId });
+
+        var receipt = TestData.Ledger(test).PaymentReceipt(TestData.Owner, paymentId);
+        var slip = TestData.Recovery(test).Slip(paymentId, TestData.Owner);
+
+        Assert.False(receipt.Ok);
+        Assert.False(slip.Ok);
+    }
+
+    [Fact]
+    public void CashRefund_StaysOutAfterCancellation_AndEarlierShiftIsUnchanged()
+    {
+        using var test = new TestDatabase();
+        var product = TestData.AddProduct(test);
+        var shifts = TestData.Shifts(test);
+        var firstShift = shifts.Open(TestData.Owner, 100000, "first");
+        Assert.True(firstShift.Ok, firstShift.Error);
+
+        var rush = TestData.Provisionals(test).Create(TestData.RushReturn(product), TestData.Owner);
+        Assert.True(rush.Ok, rush.Error);
+
+        var beforeClose = shifts.Current()!;
+        Assert.Equal(60000L, beforeClose.CashRefundsPaisa);
+        Assert.Equal(40000L, beforeClose.ExpectedPaisa);
+        Assert.True(shifts.Close(TestData.Owner, 40000, "counted").Ok);
+
+        var secondShift = shifts.Open(TestData.Owner, 0, "second");
+        Assert.True(secondShift.Ok, secondShift.Error);
+        var cancelled = TestData.Provisionals(test).Cancel(rush.Value!.Id, "typed twice by mistake", TestData.Owner);
+        Assert.True(cancelled.Ok, cancelled.Error);
+
+        var current = shifts.Current()!;
+        Assert.Equal(0L, current.CashRefundsPaisa);
+        Assert.Equal(0L, current.ExpectedPaisa);  // no customer cash came back: cancelling is not cash-in
+
+        var firstRow = shifts.History().Single(row => row.Id == firstShift.Value!.Id);
+        Assert.Equal(40000L, firstRow.ExpectedPaisa);  // the later cancellation did not rewrite history
+
+        using var connection = test.Database.Open();
+        var payments = test.Database.Query<long>(connection,
+            "SELECT amount_paisa FROM payments WHERE provisional_return_id = @id ORDER BY id;",
+            new { id = rush.Value.Id });
+        Assert.Equal(-60000L, Assert.Single(payments));
+    }
+
+    [Fact]
     public void CreatingAndLinking_AreWrittenToTheBlackBox()
     {
         using var test = new TestDatabase();
@@ -265,5 +365,14 @@ public sealed class ProvisionalTests
             "SELECT action FROM audit_logs WHERE action LIKE 'provisional_%' ORDER BY id;");
 
         Assert.Equal(new[] { "provisional_create", "provisional_link" }, actions);
+    }
+
+    private sealed class ProvisionalMoneyRow
+    {
+        public int ProductId { get; set; }
+
+        public long RefundPaisa { get; set; }
+
+        public long CostPaisa { get; set; }
     }
 }

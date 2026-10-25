@@ -107,7 +107,7 @@ public sealed class ReportTests
 
         var row = Assert.Single(report.TopByQty);
 
-        Assert.Equal(3L, row.QtyBase);            // 6 sold, 3 back on the shelf
+        Assert.Equal(3d, row.QtyBase);            // 6 sold, 3 back on the shelf
         Assert.Equal(24000L, row.SalesPaisa);
         Assert.Equal(9000L, row.ProfitPaisa);
 
@@ -119,6 +119,121 @@ public sealed class ReportTests
         Assert.Equal(row.QtyBase, report.TopByProfit[0].QtyBase);
         Assert.Equal(report.Totals.ProfitPaisa, report.TopByQty.Sum(item => item.ProfitPaisa));
         Assert.Equal(report.Totals.ProfitPaisa, report.TopByProfit.Sum(item => item.ProfitPaisa));
+    }
+
+    [Fact]
+    public void TopProductQuantity_KeepsFractionalBaseUnits()
+    {
+        using var test = new TestDatabase();
+        var product = TestData.AddProduct(test);
+        var cart = TestData.Cart(product);
+        cart.Lines[0].Quantity = 1.5;
+        var sale = TestData.Sales(test).Create(cart, TestData.Owner);
+        Assert.True(sale.Ok, sale.Error);
+        using var connection = test.Database.Open();
+        var storedQuantity = test.Database.QuerySingle<double>(connection,
+            "SELECT SUM(qty_base) FROM sale_items WHERE sale_id = @id;", new { id = sale.Value!.Id });
+
+        var report = TestData.Reports(test).Build(ReportRange.Today, TestData.Owner);
+
+        Assert.Equal(1.5d, storedQuantity);
+        Assert.True(report.Ok, report.Error);
+        Assert.Equal(1.5d, Assert.Single(report.Value!.TopByQty).QtyBase);
+    }
+
+    [Fact]
+    public void ProvisionalRefund_AndRestockedCost_AgreeAcrossEveryReport()
+    {
+        using var test = new TestDatabase();
+        var product = TestData.AddProduct(test, costPaisa: UnitCost, retailPaisa: UnitPrice);
+        SeedSale(test, product, Clock.Today() + " 10:00:00", qty: 6);
+
+        var rush = TestData.Provisionals(test).Create(
+            TestData.RushReturn(product, qty: 3, unit: "base", refundPaisa: 24000), TestData.Owner);
+        Assert.True(rush.Ok, rush.Error);
+
+        var report = TestData.Reports(test).Build(ReportRange.Today, TestData.Owner).Value!;
+        var totals = report.Totals;
+
+        Assert.Equal(48000L, totals.SalesPaisa);
+        Assert.Equal(24000L, totals.RefundPaisa);
+        Assert.Equal(30000L, totals.CostPaisa);
+        Assert.Equal(15000L, totals.RestockCostPaisa);
+        Assert.Equal(9000L, totals.ProfitPaisa);
+        Assert.Equal(totals.ProfitPaisa, report.Days.Sum(day => day.ProfitPaisa));
+
+        var item = Assert.Single(report.TopByQty);
+        Assert.Equal(3d, item.QtyBase);
+        Assert.Equal(24000L, item.SalesPaisa);
+        Assert.Equal(9000L, item.ProfitPaisa);
+        Assert.Equal(totals.ProfitPaisa, report.TopByProfit.Sum(row => row.ProfitPaisa));
+
+        var category = Assert.Single(report.Categories);
+        Assert.Equal("Uncategorised", category.Name);
+        Assert.Equal(24000L, category.SalesPaisa);
+    }
+
+    [Fact]
+    public void RefundOnlyRows_DoNotReviveAnInactiveCategory()
+    {
+        using var test = new TestDatabase();
+        var product = TestData.AddProduct(test);
+        test.Database.Tx(connection =>
+        {
+            test.Database.Execute(connection,
+                "INSERT INTO categories(name, active, created_at) VALUES('Retired category', 0, @at);",
+                new { at = Clock.Now() });
+            var categoryId = test.Database.NextId(connection);
+            test.Database.Execute(connection,
+                "UPDATE products SET category_id = @categoryId WHERE id = @productId;",
+                new { categoryId, productId = product });
+        });
+        var rush = TestData.Provisionals(test).Create(
+            TestData.RushReturn(product, qty: 1, unit: "base", refundPaisa: 1000), TestData.Owner);
+        Assert.True(rush.Ok, rush.Error);
+
+        var report = TestData.Reports(test).Build(ReportRange.Today, TestData.Owner).Value!;
+
+        var category = Assert.Single(report.Categories);
+        Assert.Equal("Uncategorised", category.Name);
+        Assert.Equal(-1000L, category.SalesPaisa);
+    }
+
+    [Fact]
+    public void CancelledProvisional_DisappearsFromReports_WithoutCashIn()
+    {
+        using var test = new TestDatabase();
+        var product = TestData.AddProduct(test, costPaisa: UnitCost, retailPaisa: UnitPrice);
+        var rush = TestData.Provisionals(test).Create(
+            TestData.RushReturn(product, qty: 3, unit: "base", refundPaisa: 24000), TestData.Owner);
+        Assert.True(rush.Ok, rush.Error);
+
+        test.Database.Tx(connection =>
+        {
+            test.Database.Execute(connection,
+                "UPDATE provisional_returns SET date = @old WHERE id = @id;",
+                new { old = Day(-1) + " 10:00:00", id = rush.Value!.Id });
+            test.Database.Execute(connection,
+                "UPDATE payments SET date = @old WHERE provisional_return_id = @id AND amount_paisa < 0;",
+                new { old = Day(-1) + " 10:00:00", id = rush.Value.Id });
+        });
+
+        Assert.True(TestData.Provisionals(test).Cancel(rush.Value!.Id, "typed twice", TestData.Owner).Ok);
+
+        var today = TestData.Reports(test).Build(ReportRange.Today, TestData.Owner).Value!;
+        Assert.Equal(0L, today.Totals.RefundPaisa);
+        Assert.Equal(0L, today.Totals.RestockCostPaisa);
+        Assert.Equal(0L, today.Totals.ProfitPaisa);
+        Assert.Empty(today.TopByQty);
+        Assert.Empty(today.Categories);
+
+        var week = TestData.Reports(test).Build(ReportRange.Last7, TestData.Owner).Value!;
+        Assert.Equal(0L, week.Totals.RefundPaisa);
+        Assert.Equal(0L, week.Totals.RestockCostPaisa);
+        Assert.Equal(0L, week.Totals.ProfitPaisa);
+        Assert.Equal(0L, week.Days.Sum(day => day.ProfitPaisa));
+        Assert.Empty(week.TopByQty);
+        Assert.Empty(week.Categories);
     }
 
     // ------------------------------------------------------------------ the per-day sheet

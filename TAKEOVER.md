@@ -7,10 +7,10 @@
 > اِس فائل میں یہ سب ہے: پروگرام کیا ہے، ابھی کہاں کھڑا ہے، **کیا باقی ہے**، کیا **کبھی نہیں** کرنا،
 > اور ایک نیا ورژن کیسے نکالنا ہے۔ آپ کے لیے چھوٹی اردو فائل: [`docs/HANDOVER-FOR-OWNER-URDU.md`](docs/HANDOVER-FOR-OWNER-URDU.md)۔
 
-**Status:** v0.35.5 · Carmine · `#A50021` — **default branch `main`**; this repair is on the current
+**Status:** v0.35.6 · Cedar · `#6B3F2A` — **default branch `main`**; this repair is on the current
 working branch `arena/60395e95-area11a` until its pull request is merged.
 
-*Last updated: 25 October 2026, with the green v0.35.5 run and the current-code AlertService investigation.*
+*Last updated: 25 October 2026, with v0.35.6 Cedar's provisional money repair awaiting the owner's 782-case run; v0.35.5's 772-case green run is retained as prior evidence.*
 
 ---
 
@@ -56,16 +56,16 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 
 ## 3. Where it stands right now (read this twice)
 
-**v0.35.5 "Carmine" is proven on the owner's PC: Core and Tests compiled and all 772 cases passed in 56 s.**
+**Prior evidence: v0.35.5 "Carmine" was proven on the owner's PC with all 772 cases passing in 56 s. Current source: v0.35.6 "Cedar", whose 782 cases still require the owner's Windows run.**
 
 | | |
 |---|---|
-| Test cases written | **772** in 62 files (`tools\RUN-TESTS.cmd` compares the run against `EXPECTED=772`) |
+| Test cases written | **782** in 62 files (`tools\RUN-TESTS.cmd` compares the run against `EXPECTED=782`) |
 | Static checks | **44**, all green: `OK - 44 checks, no problems` |
 | Owner's numbered rules | **116 - 90 ✅ done, 5 🟡 partial, 1 ⬜ (E-12), 20 standing** - see §4 |
 | Feature board | **57 features — 52 ✅ done, 5 🟡 one shop action each, 0 ⬜ not started** (91.2 % / 8.8 %) |
 | Code size | 265 C# files (64,045 lines) + 38 XAML files (8,020 lines, 36 of them pages/windows); 47 services, 41 view models |
-| Database | 23 migrations → **34 business tables**, append-only, existing `area11.db` opens unchanged |
+| Database | 24 migrations → **34 business tables + provisional report view**, append-only, existing `area11.db` opens unchanged |
 
 ### What the owner's own PC has already proved
 
@@ -79,6 +79,17 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 * On **v0.35.5** his next run compiled `Area11.Core` and `Area11.Tests` and reported
   **Failed: 0, Passed: 772, Total: 772 in 56 s — ALL GREEN**. This proves the numbering, session and
   Shift repairs together; it is not a claim that the Desktop installer or every page was exercised.
+
+### What v0.35.6 changes — provisional money evidence
+
+Migration 024 adds the provisional payment link, line refund shares and cost-at-return snapshots.
+The write path records cash out once; multi-line headers use equal integer-paisa shares with the
+remainder in line order (there is no reliable no-bill line price to invent). Cancellation removes the
+returned stock but never creates a cash-in payment. Only pending/linked PRs feed the sales/profit read view, so a cancelled document
+does not remain as a bogus refund or become a negative cash/profit transaction. The dashboard,
+reports, tax list and books check use the same rules. Ten regressions were added (782 total).
+These changes are statically checked but **not compiled or executed here**; the owner must run the
+Windows suite before this build is called green.
 
 ### What v0.35.5 changes — the three failures from the real 772-case run
 
@@ -258,7 +269,7 @@ makes that absence mean something). `tools\SEND-REPORT.cmd` collects everything 
    not a permission.
 6. **Nothing is ever deleted.** Business rows use `active = 0`; the audit trail and sales are permanent.
 7. **Migrations are append-only**, run inside `BEGIN IMMEDIATE`, and re-check `_migrations` after the
-   lock. Add `024_*.sql` — never edit an existing file.
+   lock. Add `025_*.sql` — never edit an existing file.
 8. **Views contain no SQL and no business logic.** Services own every rule and transaction; a service
    method takes `User` when the rule depends on permissions.
 9. **Everything editable comes from `settings`** — shop name, wording, limits, printer width, colour

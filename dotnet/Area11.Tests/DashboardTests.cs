@@ -241,6 +241,26 @@ VALUES('INV-9002', @at, @userId, 400000, 0, 0, 0, 400000, 0, 0, 'hold', 'cash', 
     }
 
     [Fact]
+    public void AProvisionalRefund_IsIncludedInTheDashboardAndReportTogether()
+    {
+        using var test = new TestDatabase();
+        var product = TestData.AddProduct(test, costPaisa: 20000, retailPaisa: 30000);
+        var sale = TestData.Sales(test).Create(TestData.Cart(product, qty: 3), TestData.Owner);
+        Assert.True(sale.Ok, sale.Error);
+
+        var rush = TestData.Provisionals(test).Create(
+            TestData.RushReturn(product, qty: 1, unit: "base", refundPaisa: 30000), TestData.Owner);
+        Assert.True(rush.Ok, rush.Error);
+
+        var snapshot = Snapshot(test);
+        var report = TestData.Reports(test).Build(ReportRange.Today, TestData.Owner);
+        Assert.True(report.Ok, report.Error);
+        Assert.Equal(30000L, report.Value!.Totals.RefundPaisa);
+        Assert.Equal(report.Value.Totals.ProfitPaisa, snapshot.TodayProfitPaisa);
+        Assert.Equal(20000L, snapshot.TodayProfitPaisa);
+    }
+
+    [Fact]
     public void AStaffMemberWithoutProfitPermission_SeesZeroAndIsToldSo()
     {
         using var test = new TestDatabase();
