@@ -137,7 +137,12 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.35.3 (Bluebell `#465BA8`) - document numbers come from the live transaction, not a stale cache.**
+> **v0.35.4 (Garnet `#7C2D4E`) - the launcher accepts the branch carrying this repair.**
+>
+> * **v0.35.4 fixes the delivery gate, not a shop rule.** `START-AREA11.bat` accepted only `main` and
+>   a retired Arena branch, so it refused the correct current branch before building. The active
+>   `WORK_BRANCH` is now declared once and accepted beside `main`; other branches remain refused.
+>   No schema or test-count change (772 cases). It has not been compiled or executed here.
 >
 > * **v0.35.3 repairs cross-instance numbering and rollback.** `NumberingService` reads the counter on
 >   the caller's connection; `WriteCounter` no longer mutates memory that SQLite cannot roll back.
