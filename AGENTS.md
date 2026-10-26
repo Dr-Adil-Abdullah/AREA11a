@@ -138,26 +138,24 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.35.18 (Obsidian `#27323A`) - two workbook test-fixture repairs; 860-case rerun pending.**
+> **v0.35.18 (Obsidian `#27323A`) - owner-verified `ALL GREEN - 860 of 860`.**
 >
-> * **Eclipse really improved the run to 858 passed / 2 failed / 860 total.** That is eleven more
->   passes than Glaucous and confirms the PR allocation parameter repair on the owner's PC. The two
->   remaining identities are `Reader_UnderstandsSharedStringsAndRealExcelDateCells` and
->   `BulkUpdate_RefusesStockAndAccountBalanceChanges`. Obsidian changes only their fixtures: an
->   expandable stream for the ZIP part addition, and a pack barcode owned by the OTHER product so the
->   intended guard is exercised. A new assertion requires zero ready changes. **860 cases and 52 static
->   checks remain; both old fixtures were rejected in 2/2 injection/restoration checks.**
+> * **The correct Obsidian commit `cb2e321` passed on the owner's Windows PC:** Failed 0, Passed 860,
+>   Skipped 0, Total 860, in 1 m 17 s. The banner was v0.35.18 and the runner printed
+>   **`ALL GREEN - 860 of 860 cases passed, failed: 0`**. This closes the current xUnit gate and verifies
+>   both workbook fixture repairs together with the retained PR allocation repair. The suite remains
+>   **860 cases** and the local static gate remains **52 checks**. Recording this result changes no code.
 >
-> * **No production workbook rule changed in Obsidian.** The first test's actual error text was not in
->   the pasted tail, so its expandable-stream repair still needs the rerun. The second result itself
->   proved the fixture had two errors plus one valid same-product edit. PR exact binding and the cloud
->   format-2 dependency repair remain. No Obsidian .NET, real Excel or real Supabase run happened here.
+> * **Green tests do not close the separate live checks.** The board remains 52/57 done with five
+>   owner-action rows, and the matrix remains 92 done / 4 partial. Keep T-10 🟡 until real Excel
+>   open/edit/preview/apply/re-import proof; E-12/S-05/Z-05 still need their Windows walk-throughs,
+>   and real Supabase proof remains separate. No new WPF-window, real-Excel or real-cloud evidence is
+>   inferred from the test run. D-93 stock/money and PR cancellation rules are unchanged.
 >
 > * **Earlier verification is not backfilled.** Paprika really reported **837 passed / 14 failed / 851
->   total**. Quasar's 853-case target was not executed. The current requirement is
->   **`ALL GREEN - 860 of 860`** with the complete log and every remaining failure name. Keep T-10 🟡
->   until that green run and real Excel open/edit/preview/apply/re-import proof; E-12/S-05/Z-05 and
->   real-cloud proof also remain open. D-93 stock/money and PR cancellation rules are unchanged.
+>   total**, and Quasar's 853-case target was not executed. Cypress 789/789 is now an earlier green
+>   run, not the latest. The current 860-case requirement is achieved; do not start another feature
+>   stage unless the owner writes `next`.
 >
 > * **v0.35.5 repairs one policy mismatch and two stale test fixtures.** The owner's v0.35.4 run proved
 >   the correct tree (**769 passed, 3 failed, 772 total**). A sign-in ahead of the PC clock now keeps

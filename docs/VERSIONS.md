@@ -162,6 +162,10 @@ table below** - currently Obsidian `#27323A`; a shade listed there has been used
 ## Notes for the next agent
 
 - **Do not** edit an old row. The table is a record, like the audit log.
+- **Post-release verification:** on 26 Oct 2026 the owner's correct v0.35.18 Obsidian commit
+  `cb2e321` reported **Failed 0, Passed 860, Skipped 0, Total 860 in 1 m 17 s** and
+  **`ALL GREEN - 860 of 860`**. This is owner xUnit evidence, not real Excel or real Supabase proof;
+  the release row above remains the record of what was known when the build shipped.
 - **Amber `#B45309` and Emerald `#047857` are skipped** on purpose: they are already the colours of
   the warning and success messages, and a brand colour must never mean two different things.
 - The version marker is temporary scaffolding for the test period; it must not become a second

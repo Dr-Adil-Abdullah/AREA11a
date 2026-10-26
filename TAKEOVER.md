@@ -10,7 +10,7 @@
 **Status:** v0.35.18 · Obsidian · `#27323A` — **default branch `main`**; this repair is on the current
 working branch `arena/60395e95-area11a` until its pull request is merged.
 
-*Last updated: 26 October 2026, after the owner's Eclipse run improved to **858 passed / 2 failed / 860 total**. The exact PR allocation binding gained eleven passes. The two remaining workbook tests had invalid fixtures: a fixed-size stream used to add a ZIP part, and an active pack barcode assigned to the same product whose base barcode was edited. Obsidian repairs those fixtures and adds a zero-ready-changes assertion without changing production workbook, stock, payment, refund or cancellation rules. The suite stays at **860 written cases**; 52 static checks and 2/2 targeted injection/restoration pass locally. The reader failure's actual error text was not pasted, so Obsidian still needs `ALL GREEN - 860 of 860` with the complete log. Real Excel and real Supabase proof remain separate; Paprika's **837/851** and Quasar's unexecuted 853-case target remain historical; T-10, Z-05 and E-12/S-05 remain 🟡.*
+*Last updated: 26 October 2026, after the owner's correct **v0.35.18 Obsidian** run at commit `cb2e321` reported **Failed 0, Passed 860, Skipped 0, Total 860 in 1 m 17 s** and printed **`ALL GREEN - 860 of 860 cases passed, failed: 0`**. The current xUnit gate is therefore closed. The feature board still has 52 done / 5 owner-action rows and the matrix still has four partial rules: green tests do not replace real Excel, App words, Black-box live selection or optional real-cloud proof. Recording this result changes documentation only, not code, version, stock, payment, refund or cancellation rules. Paprika's **837/851** and Quasar's unexecuted 853-case target remain historical.*
 
 ---
 
@@ -56,7 +56,7 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 
 ## 3. Where it stands right now (read this twice)
 
-**Current source: v0.35.18 "Obsidian" repairs the two workbook test fixtures left by Eclipse while retaining the confirmed PR Link binding and Glaucous's format-2 cloud dependency closure and Apply guards. Eclipse genuinely ran 860 cases and reported 858 passed / 2 failed, eleven more passes than Glaucous. Obsidian uses an expandable stream for the shared-string ZIP fixture, puts the active pack on a different product from the edited base barcode, and asserts zero ready changes. It leaves all 860 cases in place and passes 52 static checks plus 2/2 old-fixture injections. No Obsidian .NET, real Excel or real Supabase execution happened here, and the reader failure's original error text was not supplied. Paprika's real 837/851 and Quasar's unexecuted 853 target are not backfilled. T-10, Z-05, E-12 and S-05 remain partial. Prior fully green owner evidence: v0.35.7 "Cypress" passed 789/789 in 1 m 6 s.**
+**Current source: v0.35.18 "Obsidian" is owner-verified `ALL GREEN - 860 of 860`. The correct commit `cb2e321` compiled Core and Tests on the owner's Windows PC, then passed all 860 cases with zero failed/skipped in 1 m 17 s. This verifies the workbook fixture repairs and retains the confirmed PR Link binding plus Glaucous's format-2 cloud dependency closure and Apply guards. All 52 static checks pass locally. The test result does not mark real Excel, WPF live walk-throughs or real Supabase as proved; T-10, Z-05, E-12 and S-05 remain partial and the five owner-action feature rows remain open. Paprika's real 837/851 and Quasar's unexecuted 853 target are not backfilled. Cypress 789/789 is an earlier green run, not the latest.**
 
 | | |
 |---|---|
@@ -80,6 +80,10 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
   **Failed: 0, Passed: 772, Total: 772 in 56 s — ALL GREEN**. This proves the numbering, session and
   Shift repairs together; it is not a claim that the Desktop installer or every page was exercised.
 
+* On **v0.35.18 Obsidian** his correct `cb2e321` build reported **Failed 0, Passed 860, Skipped 0,
+  Total 860 in 1 m 17 s — ALL GREEN**. This is the latest full xUnit proof; it does not by itself
+  prove a fresh WPF-window walk-through, real Excel or real Supabase.
+
 ### What v0.35.18 changes — the real Eclipse result and two workbook fixtures
 
 Eclipse was still red, but its **858 passed / 2 failed / 860 total** was eleven better than Glaucous.
@@ -100,11 +104,11 @@ workbook behavior is already proven. The only two remaining test identities were
   genuinely cross-product. It also asserts `ChangeCount == 0`. Stock/account protection and the
   barcode service's same-product migration behavior are unchanged.
 
-No case was removed or renamed: **860 remains the only accepted total**. All **52** static checks pass,
+No case was removed or renamed: **860 remains the accepted total**. All **52** static checks pass,
 and injecting the fixed-size stream and same-product pack separately makes the workbook guard fail
-**2/2** times before byte-for-byte restoration. This is test-fixture evidence, not .NET or real-Excel
-proof. Required next: the complete Obsidian run with **`ALL GREEN - 860 of 860`**, followed by the
-separate real Excel workflow. No real Supabase mutation is authorized.
+**2/2** times before byte-for-byte restoration. The owner's subsequent Obsidian run then passed
+**860/860 with zero failed/skipped in 1 m 17 s**, so both fixture repairs are now xUnit-verified.
+The separate real Excel workflow still remains; no real Supabase mutation is authorized.
 
 ### What v0.35.17 changes — the real Glaucous result and exact PR parameter binding
 
@@ -722,10 +726,9 @@ honest caveat about what is not yet proven. If he asks for a printable status, r
 ## 16. The first message to send him (copy, paste, adjust)
 
 > میں نے ریپو پڑھ لی ہے۔ ابھی حالت یہ ہے: **v0.35.18 (Obsidian)** — 860 written cases اور 52 static checks مکمل ہیں۔
-> Eclipse آپ کے PC پر **858/860 یعنی صرف 2 failures** تک پہنچا؛ PR Link کی اصلاح سے گیارہ مزید tests کامیاب ہوئے۔
-> Obsidian میں باقی دو workbook tests کے fixtures درست کیے گئے ہیں؛ production کے stock، payment، refund، cancellation اور barcode اصول نہیں بدلے۔ پہلی failure کا اصل error متن نہیں ملا تھا، اس لیے دوبارہ مکمل جانچ ضروری ہے۔
-> سب سے پہلے `git pull` کر کے `START-AREA11.bat` اور `tools\\RUN-TESTS.cmd` چلائیں؛ مطلوبہ نتیجہ
-> `ALL GREEN - 860 of 860` ہے۔ صرف آخری سطریں نہیں، مکمل `test.log` بھیجیں تاکہ کوئی باقی failure ہو تو اُس کا actual error بھی ملے۔
+> Obsidian آپ کے PC پر **860/860، 0 failed، 0 skipped، 1 منٹ 17 سیکنڈ** کے ساتھ **ALL GREEN** رہا؛ موجودہ test gate مکمل ہے۔
+> دونوں workbook fixture repairs اب 860-case test run میں ثابت ہیں؛ production کے stock، payment، refund، cancellation اور barcode اصول نہیں بدلے۔ Code بدلے بغیر دوبارہ tests چلانے کی ضرورت نہیں۔
+> اب باقی صرف live walk-throughs ہیں؛ نیا feature stage صرف آپ کے `next` پر شروع ہوگا۔
 > پھر Excel میں workbook کھول کر edit، preview، apply اور دوبارہ upload پر 0 changes دیکھیں؛ T-10 ابھی 🟡 ہے۔
-> الگ test Shop id/table اور test database پر `docs/CLOUD-SYNC.md` §7 کی push/preview/apply جانچ کریں؛ key نہ بھیجیں۔
+> Cloud استعمال کرنا ہو تو الگ test Shop id/table اور test database پر `docs/CLOUD-SYNC.md` §7 کی جانچ کریں؛ key نہ بھیجیں۔
 > Z-05 اور Settings → **App words** کی تصدیق بھی باقی ہے۔
