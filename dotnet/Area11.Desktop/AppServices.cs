@@ -53,6 +53,7 @@ public sealed class AppServices
         Printer = new PrinterService(Settings, Log);
         Backup = new BackupService(Database, Settings, Audit, Permissions, Log);
         Import = new ImportService(Database, Audit, Permissions, Log);
+        Workbooks = new WorkbookService(Database, Audit, Permissions, Settings, Log, Import);
         Reorder = new ReorderService(Database, Audit, Settings, Permissions, Log);
         StockMinus = new StockMinusService(Database, Audit, Permissions, Log);
         Photos = new PhotoService(Database, Audit, Permissions, Log);
@@ -173,6 +174,9 @@ public sealed class AppServices
     public RepService Reps { get; }
 
     public ImportService Import { get; }
+
+    /// <summary>Native .xlsx templates, all-data download and safe bulk update (T-10).</summary>
+    public WorkbookService Workbooks { get; }
 
     public User? CurrentUser { get; private set; }
 

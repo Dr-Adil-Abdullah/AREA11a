@@ -131,7 +131,7 @@ STATUS: dict[str, tuple[str, str, str]] = {
     "B-05": ("DONE", "Arena snapshots + commits after every change", "-"),
     "B-06": ("DONE", "linear history, never force-push to main", "-"),
     "B-07": ("DONE", "pushed to GitHub after every change", "-"),
-    "B-08": ("DONE", "replaced by `tools/check_repo.py` (48 checks) + `tools/build_rules_matrix.py`", "`tools/check_repo.py`"),
+    "B-08": ("DONE", "replaced by `tools/check_repo.py` (49 checks) + `tools/build_rules_matrix.py`", "`tools/check_repo.py`"),
     "B-09": ("DONE", "fixed session branch, commits/tags for return", "-"),
     "B-10": ("DONE", "tags `net-stage-N` from stage 2 onward", "-"),
 
@@ -158,7 +158,7 @@ STATUS: dict[str, tuple[str, str, str]] = {
     "T-07": ("DONE", "misspelt search (F-50): `panadl` finds Panadol, and Enter never adds a guess", "ProductTests.*"),
     "T-08": ("DONE", "`EscPosBuilder` + `PrinterService`; the owner printed on the shop printer on 23 Oct 2026", "PrintTests.*"),
     "T-09": ("DONE", "the Reorder pad builds the order text and opens WhatsApp (F-38)", "ReorderTests.*"),
-    "T-10": ("WIP", "CSV import and export are written (Excel opens them); a native `.xlsx` writer is not used", "ImportTests.*"),
+    "T-10": ("WIP", "dependency-free native `.xlsx` read/write, multi-sheet templates and eight-sheet all-data/bulk update are written with protected stock/balances/Settings and 14 facts; Windows/xUnit and real Excel open/edit/re-import proof pending", "WorkbookTests.*; ImportTests.*"),
     "T-11": ("DUTY", "desktop app", "-"),
     "T-12": ("DONE", "git tags", "-"),
     "T-13": ("DONE", "hand-written SQL migrations 001-015", "-"),

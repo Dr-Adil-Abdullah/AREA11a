@@ -3970,6 +3970,136 @@ def check_report_chart() -> None:
 
 
 # ---------------------------------------------------------------------------
+def check_native_workbook() -> None:
+    """T-10 needs real Open XML and a safe bulk-update workflow, not a CSV renamed to .xlsx.
+
+    Keep this dependency-free (D-53's build-risk concern), retain CSV for the workflows that use it,
+    and make the all-data workbook safe: empty is no change, __CLEAR__ is explicit, stock/balances and
+    secrets stay locked, Settings needs its own tick, and every old value is checked again before the
+    single audited transaction. The tests exercise both our writer and ordinary Excel cell encodings.
+    """
+    codec_path = DOTNET / "Area11.Core/Models/XlsxWorkbook.cs"
+    model_path = DOTNET / "Area11.Core/Models/WorkbookModels.cs"
+    service_path = DOTNET / "Area11.Core/Services/WorkbookService.cs"
+    import_path = DOTNET / "Area11.Core/Services/ImportService.cs"
+    vm_path = DOTNET / "Area11.Desktop/ViewModels/ImportExportViewModel.cs"
+    view_path = DOTNET / "Area11.Desktop/Views/ImportExportView.xaml"
+    test_path = DOTNET / "Area11.Tests/WorkbookTests.cs"
+    paths = (codec_path, model_path, service_path, import_path, vm_path, view_path, test_path)
+    missing = False
+
+    for path in paths:
+        if not path.exists():
+            fail(f"T-10 native workbook file is missing: {rel(path)}")
+            missing = True
+
+    if missing:
+        return
+
+    codec = codec_path.read_text(encoding="utf-8", errors="replace")
+    service = service_path.read_text(encoding="utf-8", errors="replace")
+    imports = import_path.read_text(encoding="utf-8", errors="replace")
+    vm = vm_path.read_text(encoding="utf-8", errors="replace")
+    view = view_path.read_text(encoding="utf-8", errors="replace")
+    tests = test_path.read_text(encoding="utf-8", errors="replace")
+
+    for needle in (
+        "public static byte[] Write(XlsxWorkbook workbook)",
+        "public static XlsxWorkbook Read(byte[] bytes)",
+        'writer.WriteAttributeString("t", "inlineStr")',
+        "DtdProcessing = DtdProcessing.Prohibit",
+        "xl/sharedStrings.xml",
+        "DateTime.FromOADate(serial)",
+        "MaxTotalBytes = 64 * 1024 * 1024",
+    ):
+        if needle not in codec:
+            fail(f"T-10 Open XML codec lost a format/safety rule: {needle}")
+
+    for needle in (
+        'private const string ClearToken = "__CLEAR__";',
+        "if (text.Length == 0)",
+        "if (text == ClearToken)",
+        "VerifyCurrentRow(connection, record);",
+        "user is not null && user.CanManage && _permissions.Can(user, Modules.Import)",
+        "Snapshot = currentFingerprint",
+        "ReadRows(connection, schema, record.KeyValue)",
+        "Fingerprint(schema, current)",
+        "FROM product_barcodes",
+        "ValidateAcrossRows(connection, preview);",
+        "_db.Tx(connection =>",
+        "_audit.RecordChange(connection, user",
+        "_settings.PrepareBulk",
+        'Col("Quantity", "qty_base", CellKind.Quantity, editable: false',
+        'Col("Stock on shelf", "stock_base", CellKind.Quantity, editable: false',
+        'Col("Udhaar now", "balance_paisa", CellKind.Money, editable: false',
+        'Col("Payable now", "balance_paisa", CellKind.Money, editable: false',
+        'key.StartsWith("security.", StringComparison.Ordinal)',
+        'key.StartsWith("bill.next", StringComparison.Ordinal)',
+        'Name = "Products", Table = "products"',
+        'Name = "Customers", Table = "customers"',
+        'Name = "Suppliers", Table = "suppliers"',
+        'Name = "Categories", Table = "categories"',
+        'Name = "Companies", Table = "companies"',
+        'Name = "Batches", Table = "batches"',
+        'Name = "Settings"',
+        'Name = "Instructions"',
+    ):
+        if needle not in service:
+            fail(f"T-10 workbook preview/apply protection is missing: {needle}")
+
+    if "PreviewWorkbook(string kind, byte[] bytes)" not in imports:
+        fail("T-10 new-record import no longer accepts the matching native worksheet")
+
+    for needle in (
+        "_services.Import.PreviewWorkbook(Kind, bytes)",
+        "WorkbookService.Template()",
+        "_services.Workbooks.ExportAll(_user)",
+        "_services.Workbooks.PreviewBulk(_user, bytes, IncludeSettings)",
+        "_services.Workbooks.ApplyBulk(_user, _bulkPreview)",
+    ):
+        if needle not in vm:
+            fail(f"T-10 desktop workbook workflow is disconnected: {needle}")
+
+    for needle in (
+        'Command="{Binding DownloadAllCommand}"',
+        'Command="{Binding ChooseBulkFileCommand}"',
+        'Command="{Binding ApplyBulkCommand}"',
+        'ItemsSource="{Binding BulkRows}"',
+        'IsChecked="{Binding IncludeSettings, Mode=TwoWay}"',
+    ):
+        if needle not in view:
+            fail(f"T-10 workbook page binding is missing: {needle}")
+
+    for test_name in (
+        "XlsxRoundTrip_KeepsUnicodeLeadingZerosAndFormulaText",
+        "Reader_UnderstandsSharedStringsAndRealExcelDateCells",
+        "Template_HasFourSheets_AndWorkbookImportUsesTheMatchingOne",
+        "NativeListExport_IsRealXlsxWithTheSameRupeeValues",
+        "AllDataDownload_HasEightSheetsWithoutPhotosSecretsOrCounters",
+        "BulkApply_ShowsBeforeAfter_ClearsAndAuditsWithoutTouchingStock",
+        "BulkUpdate_UploadingTheAppliedFileAgainMeansZeroChanges",
+        "BulkUpdate_RefusesStockAndAccountBalanceChanges",
+        "BulkUpdate_SettingsNeedTheTick_AndKeepStringNumberAndArrayTypes",
+        "BulkUpdate_LockedSettingsCannotBeAddedByHand",
+        "BulkUpdate_CashierCannotDownloadPreviewOrApply",
+        "BulkApply_StaleLaterRowRollsBackTheEarlierValidRow",
+        "BulkUpdate_BatchExpiryAlsoUpdatesItsMonth_NotItsQuantity",
+        "BulkUpdate_CategoryCycleIsRefusedBeforeAnythingIsWritten",
+    ):
+        if test_name not in tests:
+            fail(f"T-10 workbook regression fact is missing: {test_name}")
+
+    for project in DOTNET.rglob("*.csproj"):
+        packages = project.read_text(encoding="utf-8", errors="replace")
+        if any(name in packages for name in ("ClosedXML", "EPPlus", "DocumentFormat.OpenXml")):
+            fail(f"T-10 added a spreadsheet package despite the dependency-free codec: {rel(project)}")
+
+    REPORT.append(
+        "Native workbook: dependency-free Open XML read/write, eight-sheet data/template workflows, "
+        "protected fields, Settings types/tick, stale-row checks and one audited transaction; 14 facts present")
+
+
+# ---------------------------------------------------------------------------
 def check_shop_clock() -> None:
     """One time for the shop, a session that ends by itself, and no bill without a drawer (D-92).
 
@@ -4822,6 +4952,7 @@ def main() -> int:
     check_checklist()
     check_audit_recovery()
     check_report_chart()
+    check_native_workbook()
     check_csharp_grammar()
 
     if not quiet:

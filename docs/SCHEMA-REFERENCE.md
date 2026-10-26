@@ -484,7 +484,7 @@ Indexes: `idx_sales_date`, `idx_sales_customer`, `idx_sales_status`, `idx_sales_
 | `value` | TEXT | yes |  |
 | `updated_at` | TEXT | yes | `datetime('now','localtime')` |
 
-v0.35.13 retains **121 known keys**. Thirty-two are `labels.*` JSON strings added in v0.35.11 for
+v0.35.14 retains **121 known keys**; native workbook import/export adds no setting, table or migration. Thirty-two are `labels.*` JSON strings added in v0.35.11 for
 E-12/S-05 application section names. `SettingsService.EnsureDefaults()` inserts only missing rows
 during startup, so an old
 database upgrades without a migration or an overwrite. Label saves use the normal validated,

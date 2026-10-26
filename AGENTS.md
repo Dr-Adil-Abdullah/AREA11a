@@ -138,21 +138,22 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.35.13 (Cinnamon `#7C2D12`) - T-05's existing native report chart is verified; stale status corrected.**
+> **v0.35.14 (Paprika `#842E1B`) - T-10 native Excel and all-data bulk update are written; live proof pending.**
 >
-> * **The required Spec 21.3 per-day bar chart already existed.** Native WPF bars bind
->   `ReportDayRow.BarShare`, quiet days stay visible, exact paisa labels remain beside the geometry,
->   and managers receive no per-day profit. Recharts/TanStack are reference-web libraries, not a reason
->   to add a duplicate desktop package. Three new regressions cover proportional scaling, an all-quiet
->   week and profit hiding; the new static guard passed 4/4 fault-injection/restoration outcomes.
->   **837 cases are written and all 48 static checks pass here.** T-05 is ✅ on the existing
->   Windows-compiled chart and earlier owner-green per-day facts; the three new cases still need the
->   owner's current `ALL GREEN - 837 of 837` run. No report query, total, model or layout changed.
+> * **Real `.xlsx` is now built in, with no spreadsheet package or migration.** The Open XML codec
+>   handles ordinary Excel shared strings and date cells and writes formula-safe text. Templates have
+>   four sheets; Download your data has the specified eight. Empty cells do nothing, `__CLEAR__` is
+>   explicit, every edit has a before → after preview, stock/balances/secrets/counters are protected,
+>   Settings needs a separate tick and keeps JSON types, and apply revalidates stale rows before one
+>   audited transaction. Re-uploading an applied file means zero changes. CSV workflows remain.
+>   **851 cases are written and all 49 static checks pass; the T-10 guard passed 5/5 injections/restoration.**
+>   No .NET SDK or Excel exists here. Keep T-10 🟡 until `ALL GREEN - 851 of 851` and the owner's real
+>   Excel open/edit/preview/apply/re-import walk-through.
 >
-> * **Four rules remain partial: E-12, S-05, Z-05 and T-10.** Azure's Z-05 reader still needs its live
->   selection/copy/filter-clearing proof, E-12/S-05 need rename/restart/reset proof, and Merlot's
->   Dashboard/PR checks remain open; no old result is backfilled. T-10 native `.xlsx` and cloud work
->   were not started. D-93 stock/money and PR cancellation rules remain unchanged.
+> * **Four rules remain partial: E-12, S-05, Z-05 and T-10.** E-12/S-05 still need rename/restart/reset
+>   proof and Z-05 needs its live reader/correction walk-through. Merlot's Dashboard/PR checks and all
+>   earlier unexecuted release targets remain unbackfilled. Cloud work was not started, and D-93
+>   stock/money plus PR cancellation rules are unchanged.
 >
 > * **v0.35.5 repairs one policy mismatch and two stale test fixtures.** The owner's v0.35.4 run proved
 >   the correct tree (**769 passed, 3 failed, 772 total**). A sign-in ahead of the PC clock now keeps

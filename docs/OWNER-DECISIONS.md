@@ -996,6 +996,29 @@ rules → Loyalty points** سے خود آن کرتا ہے، اور وہیں تی
 **دوبارہ نہ ہو:** Version اب **0.13.0 · Deep Sea `#0C4A6E`** ہے (پچھلا Mocha `#6B4F3A`)۔
 
 
+### D-94 — **حقیقی Excel workbook، مگر کوئی نیا package نہیں** (T-10 / D-53 کی تکمیل)
+
+T-05 کے بعد مالک کے `next` پر T-10 کا actual-code دوبارہ جائزہ لیا گیا۔ صرف `.xlsx` writer غائب نہیں تھا:
+Master Spec §24.2 کا **آٹھ شیٹ all-data workbook اور before → after bulk update** بھی غائب تھا۔
+
+**اب کا فیصلہ/نفاذ:**
+
+1. D-53 کا package سے بچنے والا مقصد برقرار ہے، مگر اس کا «صرف CSV» نتیجہ نئے workbook workflows کے لیے
+   superseded ہے۔ .NET کے اپنے ZIP/XML ذرائع سے حقیقی Open XML `.xlsx` پڑھنا/لکھنا؛ کوئی NuGet spreadsheet
+   package، Excel interop یا migration نہیں۔
+2. Blank template میں Products، Customers، Suppliers اور Instructions؛ Download your data میں آٹھ
+   مقررہ sheets۔ موجودہ duplicate skip، opening batches/expiry اور opening balances برقرار؛ CSV بھی رہے گا۔
+3. Bulk update میں ہر تبدیلی پہلے نظر آئے، خالی cell = کوئی تبدیلی نہیں، `__CLEAR__` = جان بوجھ کر صاف۔
+   Stock، balances، protected links، secrets اور counters فائل سے نہیں بدلتے۔ Settings الگ tick اور JSON type
+   preservation کے ساتھ۔ Apply سے پہلے stale/current values اور cross-record rules دوبارہ جانچ، پھر ایک
+   audited transaction؛ repeated upload پر 0 changes۔
+4. اس کام کے لیے stock/money یا PR cancellation rules نہیں بدلے۔ Universal financial Undo شامل نہیں۔
+5. یہ written implementation ہے، live proof نہیں۔ T-10 تب تک 🟡 رہے گا جب تک مالک کے Windows پر
+   **`ALL GREEN - 851 of 851`** اور اصل Excel میں open/edit/preview/apply/re-import مکمل نہ ہو۔
+
+ورژن **v0.35.14 Paprika `#842E1B`**۔ 14 نئے facts؛ 49 static checks اور 5/5 guard injection/restoration
+نتائج۔ اس sandbox میں .NET SDK یا Excel نہیں، اس لیے compilation/xUnit/Excel interop کا دعویٰ نہیں۔
+
 ### D-93 — **Negative stock کا خاتمہ: نیا کام صفر سے نیچے نہیں** (completion plan)
 
 **فیصلہ (25 اکتوبر 2026):** مکمل source audit کے بعد app-completion plan پر بات ہوئی۔ آپ نے negative stock کے تین
@@ -2475,6 +2498,7 @@ restart نہیں (Spec 8.4.3)۔
 
 | تاریخ | کیا |
 |---|---|
+| 26 اکتوبر 2026 | **D-94 / T-10 implementation — v0.35.14 Paprika `#842E1B`**: D-53 کا package-free مقصد برقرار، مگر native Open XML `.xlsx` کے ساتھ «صرف CSV» نتیجہ نئے workflows کے لیے superseded۔ چار شیٹ template، native list downloads، آٹھ شیٹ all-data workbook، before → after preview، خالی cell/no change، `__CLEAR__`، protected stock/balances/links، الگ tick والی type-preserving Settings، stale-row recheck، ایک audited transaction اور repeat upload پر 0 changes۔ CSV اور opening batches/balances برقرار؛ کوئی package/migration نہیں۔ **851 written cases، 49 static checks، 5/5 guard outcomes**۔ Windows/xUnit اور real Excel proof باقی، اس لیے T-10 🟡؛ Cloud شروع نہیں ہوا۔ |
 | 26 اکتوبر 2026 | **Z-05 implementation — v0.35.12 Azure `#005A9C`**: Black box میں منتخب row کی مکمل پہلے/بعد کی حالت، context، details اور محفوظ correction راستہ۔ Raw old/new اور CSV نہیں بدلتے؛ JSON صرف پڑھنے کے لیے indented، Unicode/لمبا متن محفوظ، خراب JSON جوں کا توں۔ Refresh پر پرانا panel غائب، recorded-new کو live state نہیں کہا گیا۔ **Universal financial Undo جان بوجھ کر نہیں**: کوئی sale/payment/return/stock/PR rollback یا نیا payment نہیں۔ PR cancellation same batch سے stock-only، original financial effect کی reversal نہیں؛ Settings/master-data کی درستی نئی audited save سے۔ **834 written cases، 47 static checks، 4/4 guard injection/restoration outcomes**؛ Windows/xUnit اور live walk-through باقی، اس لیے Z-05 🟡۔ E-12/S-05 اور Merlot کے ثبوت الگ باقی؛ charts، native `.xlsx` اور cloud کام شروع نہیں کیا گیا۔ |
 | 26 اکتوبر 2026 | **E-12/S-05 implementation — v0.35.11 Topaz `#8A5A00`**: Settings → **App words** میں app کے 32 supported section labels؛ stable keys سے navigation/permissions/page resolution محفوظ، save پر menu، 26 page headings، Cloud sync tab اور Own fields panel heading فوراً بدلتے ہیں۔ پرانے database میں صرف missing defaults، کوئی migration نہیں۔ Unicode، trimming، non-empty/single-line/60-character validation، Settings permission، atomic old/new audit، direct-write guards اور دو clicks والا صرف labels کا reset۔ خراب blank stored row پر default واپس، receipts/عام sentences/history/document numbers نہیں بدلتے۔ **827 written cases، 46 static checks، 6/6 SQLite storage groups**؛ Windows/xUnit اور live walk-through باقی، اس لیے completion کا دعویٰ نہیں۔ Merlot log review پر positive total کے ساتھ legacy minus batch ہونے کی صورت میں physical stock-take guidance ٹھیک کی گئی؛ ordinary shortage کا پیغام اور stock/money قواعد نہیں بدلے، 3/3 guidance checks مکمل۔ پہلی Topaz build میں `AppLabelTests.cs(42)` پر CS1674 آیا کیونکہ Database قابلِ disposal type نہیں؛ plain-variable repair اور injection-checked static guard مکمل، rebuilt run باقی۔ Merlot rerun اور D-93 قواعد برقرار۔ |
 | 26 اکتوبر 2026 | **E-04 implementation — v0.35.10 Merlot `#722F37`**: Products میں category/company management؛ create، rename، order، soft put-away/restore، category parent کی دو سطحیں اور parent filter میں children۔ Migration 026 صرف company ordering جڑتی ہے۔ Put-away صرف current product link الگ کرتا ہے، کوئی product/batch/bill/stock row نہیں مٹتی، restore پرانا link خود نہیں بناتا؛ company کے phone/notes/rep/visit-day محفوظ۔ Core permission، case-insensitive uniqueness اور audit۔ **820 written cases، 45 static checks، 8/8 SQLite rehearsal groups**؛ Windows build/xUnit مالک کے لیے باقی، D-93 financial/stock rules برقرار۔ |

@@ -9,10 +9,9 @@ namespace Area11.Core.Services;
 /// Excel import, export and price change (F-37, Spec 24) - the bridge between the shop's old
 /// spreadsheet and this program.
 ///
-/// **Files are CSV, not XLSX, and that is a deliberate decision** (D-53 in the owner's file): Excel
-/// opens a CSV and saves one, and the app needs no extra package to read it. A pharmacy's old stock
-/// list is a plain table of columns; the one thing a CSV cannot carry is prettiness, and prettiness
-/// is not worth a build that might stop on the shop PC.
+/// Both real .xlsx workbooks and the original CSV workflow are accepted. The dependency-free Open
+/// XML codec and all-data/bulk-update rules live in <see cref="WorkbookService"/>; this service keeps
+/// the same new-record preview, duplicate, opening-stock and price-change rules for either format.
 ///
 /// The shape of every import is the same, because it is the shape that protects the shop:
 ///
@@ -77,6 +76,39 @@ public sealed class ImportService
         };
 
         return CsvWriter.Document(header, Array.Empty<IEnumerable<string?>>());
+    }
+
+    /// <summary>
+    /// Reads the matching worksheet from a real .xlsx file, then uses the exact same preview and
+    /// duplicate/opening-stock rules as CSV. A one-sheet workbook may have any sheet name.
+    /// </summary>
+    public ImportPreview PreviewWorkbook(string kind, byte[] bytes)
+    {
+        var workbook = XlsxFile.Read(bytes);
+        var sheet = workbook.Sheet(kind);
+        if (sheet is null)
+        {
+            var dataSheets = workbook.Sheets
+                .Where(candidate => !string.Equals(candidate.Name, "Instructions", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            if (dataSheets.Count == 1)
+            {
+                sheet = dataSheets[0];
+            }
+        }
+
+        if (sheet is null)
+        {
+            throw new InvalidDataException("The workbook has no '" + kind + "' worksheet.");
+        }
+
+        var text = XlsxFile.SheetAsCsv(sheet);
+        return kind switch
+        {
+            "Customers" => PreviewCustomers(text),
+            "Suppliers" => PreviewSuppliers(text),
+            _ => PreviewProducts(text)
+        };
     }
 
     /// <summary>

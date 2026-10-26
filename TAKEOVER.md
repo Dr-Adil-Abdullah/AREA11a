@@ -7,10 +7,10 @@
 > اِس فائل میں یہ سب ہے: پروگرام کیا ہے، ابھی کہاں کھڑا ہے، **کیا باقی ہے**، کیا **کبھی نہیں** کرنا،
 > اور ایک نیا ورژن کیسے نکالنا ہے۔ آپ کے لیے چھوٹی اردو فائل: [`docs/HANDOVER-FOR-OWNER-URDU.md`](docs/HANDOVER-FOR-OWNER-URDU.md)۔
 
-**Status:** v0.35.13 · Cinnamon · `#7C2D12` — **default branch `main`**; this repair is on the current
+**Status:** v0.35.14 · Paprika · `#842E1B` — **default branch `main`**; this repair is on the current
 working branch `arena/60395e95-area11a` until its pull request is merged.
 
-*Last updated: 26 October 2026, after actual-code review proved T-05's native per-day chart already existed and all 48 static checks plus 4/4 chart-guard injection/restoration outcomes passed. Cinnamon has **837 written cases**; the three new chart facts and the current suite still need Windows/xUnit. T-05 is DONE on the existing compiled chart and earlier green facts. Z-05, E-12/S-05 and Merlot live checks remain open, T-10 is untouched, and D-93/PR rules remain in force.*
+*Last updated: 26 October 2026, after T-10's dependency-free native `.xlsx` and eight-sheet all-data/bulk-update workflow was written and all 49 static checks plus 5/5 guard injection/restoration outcomes passed. Paprika has **851 written cases** but no Windows/xUnit or real Excel run here. T-10 remains 🟡 pending `ALL GREEN - 851 of 851` and the owner's Excel open/edit/preview/apply/re-import proof. Z-05, E-12/S-05 and Merlot checks remain open; D-93/PR rules remain in force and cloud was not started.*
 
 ---
 
@@ -56,15 +56,15 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 
 ## 3. Where it stands right now (read this twice)
 
-**Current source: v0.35.13 "Cinnamon" verifies T-05's existing native per-day chart while retaining Azure's Z-05 reader, D-93, and the Topaz/Merlot repairs. Its 837 cases are written but not executed here (no .NET SDK). T-05 is done on prior compiled/green evidence; Z-05, E-12 and S-05 remain partial pending Windows and live UI proof. Prior owner evidence: v0.35.7 "Cypress" passed 789/789 in 1 m 6 s; v0.35.6 "Cedar" passed 782/782 in 1 m 3 s.**
+**Current source: v0.35.14 "Paprika" writes T-10's native `.xlsx` templates/list downloads, eight-sheet data workbook and safe bulk update while retaining Cinnamon's T-05 correction, Azure's Z-05 reader and D-93. Its 851 cases are written but not executed here (no .NET SDK or Excel). T-10, Z-05, E-12 and S-05 remain partial pending their owner evidence. Prior owner evidence: v0.35.7 "Cypress" passed 789/789 in 1 m 6 s; v0.35.6 "Cedar" passed 782/782 in 1 m 3 s.**
 
 | | |
 |---|---|
-| Test cases written | **837** in 66 files (`tools\\RUN-TESTS.cmd` compares the run against `EXPECTED=837`) |
-| Static checks | **48**, all green: `OK - 48 checks, no problems` |
+| Test cases written | **851** in 67 files (`tools\\RUN-TESTS.cmd` compares the run against `EXPECTED=851`) |
+| Static checks | **49**, all green: `OK - 49 checks, no problems` |
 | Owner's numbered rules | **116 - 92 ✅ done, 4 🟡 partial, 0 ⬜, 20 standing** - see §4 |
 | Feature board | **57 features — 52 ✅ done, 5 🟡 one shop action each, 0 ⬜ not started** (91.2 % / 8.8 %) |
-| Code size | 277 C# files (68,641 lines) + 39 XAML files (8,317 lines, 37 of them pages/windows); 50 services, 42 view models |
+| Code size | 281 C# files (71,599 lines) + 39 XAML files (8,412 lines, 37 of them pages/windows); 51 services, 42 view models |
 | Database | 26 migrations → **35 business tables + provisional report view**, append-only, existing `area11.db` opens unchanged |
 
 ### What the owner's own PC has already proved
@@ -79,6 +79,31 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 * On **v0.35.5** his next run compiled `Area11.Core` and `Area11.Tests` and reported
   **Failed: 0, Passed: 772, Total: 772 in 56 s — ALL GREEN**. This proves the numbering, session and
   Shift repairs together; it is not a claim that the Desktop installer or every page was exercised.
+
+### What v0.35.14 changes — T-10 native Excel and safe all-data bulk update
+
+`Models/XlsxWorkbook.cs` is a dependency-free Open XML reader/writer, not a CSV file with a new
+extension. It accepts ordinary Excel shared strings, inline strings, numbers, booleans and date cells;
+its own writer uses formula-safe inline text and bounded ZIP/XML input. No package, Excel installation
+or migration is required. The four-sheet blank template feeds the existing new-record previews, and
+ordinary list downloads are real `.xlsx`. CSV remains for new-record imports and report/black-box exports.
+
+**Download your data** produces Products, Customers, Suppliers, Categories, Companies, Batches,
+Settings and Instructions without photos, secrets or numbering counters. On the Bulk update tab an
+edited workbook produces a complete before → after preview. Empty cells mean no change; `__CLEAR__`
+clears only allowed nullable values. Stock, balances and protected record links are read-only.
+Settings require a separate tick and keep string/number/boolean/array/object types through the same
+Settings guard. Catalog names/parents and product barcodes are checked across the whole file.
+
+Every changed row carries a snapshot. Apply verifies all old values and cross-record rules before the
+first update, then writes all rows and black-box entries in one transaction; a stale later row rolls
+back an earlier valid row. An already-applied file previews **0 changes**. Fourteen facts cover these
+rules, real Excel cell encodings, permissions and rollback. The written inventory is **851 cases in
+67 files**; **49 static checks** and the T-10 guard's **5/5** injection/restoration outcomes pass here.
+
+There is no .NET SDK or Excel in this sandbox, so T-10 stays 🟡 until the owner's
+**`ALL GREEN - 851 of 851`** and real open/edit/preview/apply/re-import walk-through. Z-05, E-12/S-05
+and Merlot evidence remain separate; cloud was not started.
 
 ### What v0.35.13 changes — T-05 was already built; the stale status is corrected
 
@@ -152,7 +177,7 @@ The owner's first Topaz build then stopped at `AppLabelTests.cs(42)` with **CS16
 does not implement `IDisposable`. The second-database test now uses a plain variable, matching the
 existing NumberingTests lifetime pattern. The existing C# static check rejects `using ... new Database`
 and caught the fault when it was injected back at line 42. The 827-case inventory and product rules
-were unchanged by that repair; Topaz's own rerun was never supplied. Azure then became the target, and Cinnamon's 837-case run is now the current verification target.
+were unchanged by that repair; Topaz's own rerun was never supplied. Azure and Cinnamon followed, and Paprika's 851-case run is now the current verification target.
 
 ### What v0.35.10 changes — E-04 catalog management is complete
 
@@ -324,7 +349,7 @@ matrix and the feature board differ, and both are telling the truth: every *feat
 | **E-12** 🟡 | the 32-label Settings → App words editor, Core guards and audited reset are written; Windows and the live owner walk-through are still missing |
 | **S-05** 🟡 | stable-key menu/page refresh is written for all supported headings; immediate propagation, restart persistence and reset still need the same owner proof |
 | **Z-05** 🟡 | the selected-row earlier-state reader and safe correction guidance are written; Windows/xUnit and the live selection/filter-clearing walk-through are still missing. Universal financial undo is deliberately not built |
-| **T-10** 🟡 | CSV import/export is written (Excel opens it); a native **`.xlsx`** writer is not used |
+| **T-10** 🟡 | native `.xlsx`, four-sheet templates, eight-sheet download and safe bulk update are written; Windows/xUnit and real Excel open/edit/apply/re-import proof is still missing |
 
 **T-05 is ✅ as of Cinnamon:** the spec's per-day native WPF bar chart already existed; actual-code review corrected the stale no-chart entry and added regression guards, not another chart package.
 
@@ -340,7 +365,7 @@ WPF cannot decode `.webp` photos; cloud sync is optional and never deletes a row
 git clone https://github.com/Dr-Adil-Abdullah/AREA11a.git
 cd AREA11a                               # main is the default branch - the product is already here
 pip install --break-system-packages tree_sitter tree_sitter_c_sharp   # gives the real C# grammar
-python3 tools/check_repo.py              # must end: OK - 48 checks, no problems
+python3 tools/check_repo.py              # must end: OK - 49 checks, no problems
 python3 tools/build_rules_matrix.py --check
 ```
 
@@ -481,7 +506,7 @@ Then the documents that must not drift: `docs/PROGRESS.md` (the row + a change-l
 `python3 tools/make_checklist.py` if the board changed.
 
 ```bash
-python3 tools/check_repo.py          # OK - 48 checks, no problems
+python3 tools/check_repo.py          # OK - 49 checks, no problems
 python3 tools/build_rules_matrix.py --check
 git add -A && git commit -m "v0.xx.y Colour - <what a person would notice>" && git push
 ```
@@ -500,7 +525,7 @@ in `/tmp`, and run the checker inside it. Only then tell the owner.
 This sandbox is Linux with **no .NET SDK and no PowerShell**. That means:
 
 * you **cannot** build the WPF app, run the tests, run `install.ps1`, or open a window;
-* you **can** run `python3 tools/check_repo.py` — 48 checks that parse every C# file with the real
+* you **can** run `python3 tools/check_repo.py` — 49 checks that parse every C# file with the real
   tree-sitter grammar, resolve explicit usings, validate XAML/csproj XML, every binding against its
   view-model, every `StaticResource` key, every SQL statement against the real schema, every mapped
   column, constructor arity, migration execution on SQLite, version/colour/VERSIONS agreement, docs
@@ -586,7 +611,7 @@ honest caveat about what is not yet proven. If he asks for a printable status, r
 | `dotnet/Area11.Desktop/Views/` (37) | the pages; `PosView`, `ProductsView`, `PurchasesView`, `ShiftView`, `HardwareView` … |
 | `dotnet/Area11.Desktop/Resources/Theme.xaml` | the three brand brushes |
 | `dotnet/Area11.Tests/` (66 test files) | `TestDatabase`, `TestData`, one file per feature |
-| `tools/check_repo.py` | the 48 static checks (read the docstring of a failing check) |
+| `tools/check_repo.py` | the 49 static checks (read the docstring of a failing check) |
 | `tools/make_checklist.py`, `make_icon.py`, `build_rules_matrix.py` | the printable list, the icon, the rules matrix |
 | `tools/*.cmd`, `tools/install/*.ps1` | what the owner double-clicks: start, update, test, report, install, uninstall, share |
 | `docs/` | the spec, the decisions, the board, the rules, the schema, the guides |
@@ -595,10 +620,10 @@ honest caveat about what is not yet proven. If he asks for a printable status, r
 
 ## 16. The first message to send him (copy, paste, adjust)
 
-> میں نے ریپو پڑھ لی ہے۔ ابھی حالت یہ ہے: **v0.35.13 (Cinnamon)** — 837 written cases اور 48 static checks مکمل ہیں۔
-> T-05 میں per-day chart پہلے سے موجود تھا؛ پرانی «کوئی chart نہیں» درجہ بندی ٹھیک کر دی گئی ہے، نیا chart package نہیں
-> لگایا گیا۔ مگر نئے cases سمیت Windows build/xUnit ابھی آپ کے کمپیوٹر پر باقی ہے۔ 57 فیچر میں 52 مکمل (91.2٪)،
-> 5 میں صرف ایک ایک عمل باقی۔ سب سے پہلے `git pull` کر کے `START-AREA11.bat` اور `tools\\RUN-TESTS.cmd` چلائیں؛
-> مطلوبہ نتیجہ `ALL GREEN - 837 of 837` ہے۔ Reports میں proportional bars اور quiet days دیکھیں، ساتھ Black box کا
-> Z-05 panel اور Settings → **App words** کا rename/restart/reset بھی آزمائیں۔ Merlot کا Dashboard/PR معائنا باقی ہے؛
-> T-10 اور Cloud شروع نہیں کیے گئے۔ مکمل کنسول بھیج دیں۔
+> میں نے ریپو پڑھ لی ہے۔ ابھی حالت یہ ہے: **v0.35.14 (Paprika)** — 851 written cases اور 49 static checks مکمل ہیں۔
+> T-10 کا حقیقی `.xlsx`، چار شیٹ template، آٹھ شیٹ data workbook اور محفوظ before → after bulk update لکھا گیا ہے؛
+> کوئی نیا spreadsheet package یا migration نہیں۔ مگر Windows/xUnit اور اصل Excel میں جانچ ابھی باقی ہے، اس لیے T-10 🟡 ہے۔
+> سب سے پہلے `git pull` کر کے `START-AREA11.bat` اور `tools\\RUN-TESTS.cmd` چلائیں؛ مطلوبہ نتیجہ
+> `ALL GREEN - 851 of 851` ہے۔ پھر Excel میں workbook کھول کر edit، preview، apply اور دوبارہ upload پر 0 changes دیکھیں؛
+> stock، balances، secrets اور counters فائل سے نہیں بدلنے چاہیئیں۔ Z-05 اور Settings → **App words** کی پرانی تصدیق بھی باقی ہے؛
+> Merlot کے نتائج نہیں لگائے گئے۔ Cloud شروع نہیں کیا گیا۔ مکمل کنسول بھیج دیں۔

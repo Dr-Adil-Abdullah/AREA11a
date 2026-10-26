@@ -237,19 +237,13 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
             return ServiceResult.Fail("You are not allowed to change the application labels.");
         }
 
-        foreach (var pair in values)
+        var preparation = PrepareBulk(values);
+        if (!preparation.Ok || preparation.Value is null)
         {
-            if (!Defaults.ContainsKey(pair.Key))
-            {
-                return ServiceResult.Fail($"Unknown setting '{pair.Key}'.");
-            }
-
-            var refusal = Guard(pair.Key, pair.Value, values);
-            if (refusal is not null)
-            {
-                return ServiceResult.Fail(refusal);
-            }
+            return ServiceResult.Fail(preparation.Error ?? "The settings could not be validated.");
         }
+
+        var prepared = preparation.Value;
 
         try
         {
@@ -257,7 +251,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
             {
                 foreach (var pair in values)
                 {
-                    var json = Serialise(pair.Key, pair.Value);
+                    var json = prepared[pair.Key];
 
                     var old = _db.Scalar(connection,
                         "SELECT value FROM settings WHERE key = @key;", new { key = pair.Key })?.ToString();
@@ -275,7 +269,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
             {
                 foreach (var pair in values)
                 {
-                    _cache[pair.Key] = Serialise(pair.Key, pair.Value);
+                    _cache[pair.Key] = prepared[pair.Key];
                 }
             }
 
@@ -286,6 +280,35 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
             _log.Error($"Settings could not be saved ({string.Join(", ", values.Keys)}).", exception);
             return ServiceResult.Fail("The settings could not be saved.");
         }
+    }
+
+    /// <summary>
+    /// Validates and serialises settings without opening a transaction. The native workbook preview
+    /// uses this exact same guard, then applies the prepared values inside the workbook's ONE database
+    /// transaction. It is internal so an arbitrary UI cannot bypass the normal permission path.
+    /// </summary>
+    internal ServiceResult<IReadOnlyDictionary<string, string>> PrepareBulk(
+        IReadOnlyDictionary<string, object?> values)
+    {
+        var prepared = new Dictionary<string, string>(StringComparer.Ordinal);
+
+        foreach (var pair in values)
+        {
+            if (!Defaults.ContainsKey(pair.Key))
+            {
+                return ServiceResult<IReadOnlyDictionary<string, string>>.Fail($"Unknown setting '{pair.Key}'.");
+            }
+
+            var refusal = Guard(pair.Key, pair.Value, values);
+            if (refusal is not null)
+            {
+                return ServiceResult<IReadOnlyDictionary<string, string>>.Fail(refusal);
+            }
+
+            prepared[pair.Key] = Serialise(pair.Key, pair.Value);
+        }
+
+        return ServiceResult<IReadOnlyDictionary<string, string>>.Success(prepared);
     }
 
     /// <summary>The text of a setting exactly as it was typed, trimmed - never null.</summary>
@@ -343,6 +366,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
             var bands = value switch
             {
                 string text => ExpiryLevels.ParseBands(text),
+                JsonElement element => ExpiryLevels.ParseBands(element.GetRawText()),
                 IEnumerable<ExpiryBand> list => list.ToList(),
                 _ => null
             };
@@ -392,6 +416,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
                 var bands = value switch
                 {
                     string json => ExpiryLevels.ParseBands(json),
+                    JsonElement element => ExpiryLevels.ParseBands(element.GetRawText()),
                     IEnumerable<ExpiryBand> list => list.ToList(),
                     _ => new List<ExpiryBand>()
                 };

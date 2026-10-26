@@ -148,7 +148,7 @@ History is never lost.
 | **B-05** | Even unsaved work is not lost — an automatic safety snapshot (tested). | ✅ done | Arena snapshots + commits after every change | - | - |
 | **B-06** | Nothing is ever erased — history stays linear. | ✅ done | linear history, never force-push to main | - | - |
 | **B-07** | Safe across sessions: ckpt.sh push (GitHub). | ✅ done | pushed to GitHub after every change | - | - |
-| **B-08** | Helper scripts: sync-spec.sh (spec → Part 1 automatic copy), rules-count.sh (counting of the numbers; says SAB THEEK when no rule number is missing). | ✅ done | replaced by `tools/check_repo.py` (48 checks) + `tools/build_rules_matrix.py` | `tools/check_repo.py` | - |
+| **B-08** | Helper scripts: sync-spec.sh (spec → Part 1 automatic copy), rules-count.sh (counting of the numbers; says SAB THEEK when no rule number is missing). | ✅ done | replaced by `tools/check_repo.py` (49 checks) + `tools/build_rules_matrix.py` | `tools/check_repo.py` | - |
 | **B-09** | The session branch is fixed, but tags/commits allow complete return. The earlier session branch's history and tags stage-1…stage-6 were fast-forwarded into the current branch on 3 Oct 2026 — nothing lost. | ✅ done | fixed session branch, commits/tags for return | - | - |
 | **B-10** | Return is possible even after merges: tags stage-1…N and every commit always remain. To look: git checkout stage-N, or ckpt.sh go N; to undo a merge: git revert -m 1 <merge-commit>. Never delete tags/history; never force-push. | ✅ done | tags `net-stage-N` from stage 2 onward | - | - |
 
@@ -185,7 +185,7 @@ What the original used, and what the rebuild uses instead.
 | **T-07** | Search: Fuse.js (even a wrongly spelled medicine is found). | ✅ done | misspelt search (F-50): `panadl` finds Panadol, and Enter never adds a guess | ProductTests.* | Phase 4 |
 | **T-08** | Print: node-thermal-printer / ESC-POS (58/80 mm) + react-to-print (A4). | ✅ done | `EscPosBuilder` + `PrinterService`; the owner printed on the shop printer on 23 Oct 2026 | PrintTests.* | Phase 1 |
 | **T-09** | WhatsApp: free wa.me link — no paid API (Spec §11.2.5). | ✅ done | the Reorder pad builds the order text and opens WhatsApp (F-38) | ReorderTests.* | Phase 3 |
-| **T-10** | Excel: SheetJS (import old data / export reports). | 🟡 written / partial | CSV import and export are written (Excel opens them); a native `.xlsx` writer is not used | ImportTests.* | Phase 3 |
+| **T-10** | Excel: SheetJS (import old data / export reports). | 🟡 written / partial | dependency-free native `.xlsx` read/write, multi-sheet templates and eight-sheet all-data/bulk update are written with protected stock/balances/Settings and 14 facts; Windows/xUnit and real Excel open/edit/re-import proof pending | WorkbookTests.*; ImportTests.* | Phase 3 |
 | **T-11** | Live preview: dev server (0.0.0.0). | 🔁 standing rule | desktop app | - | - |
 | **T-12** | Return/go-back: Git + tags (no new engine to write). | ✅ done | git tags | - | - |
 | **T-13** | No extra library for the schema: SQL schema + migrations written by hand (short, clean, understandable). | ✅ done | hand-written SQL migrations 001-015 | - | - |
