@@ -358,7 +358,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         // as strict so the stored value and its old/new audit match the text the shell displays.
         if (key.StartsWith("labels.", StringComparison.Ordinal))
         {
-            return JsonSerializer.Serialize(TextValue(value));
+            return JsonSerializer.Serialize(TextValue(value), Json.WriterOptions);
         }
 
         if (key == "expiry.levels")
@@ -377,7 +377,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
             }
         }
 
-        return JsonSerializer.Serialize(value);
+        return JsonSerializer.Serialize(value, Json.WriterOptions);
     }
 
     /// <summary>

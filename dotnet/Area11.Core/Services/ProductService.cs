@@ -20,7 +20,7 @@ SELECT p.id, p.name, p.generic, p.brand, p.barcode, p.category_id, p.company_id,
        p.track_expiry, p.active,
        c.name AS category_name,
        co.name AS company_name,
-       IFNULL((SELECT SUM(b.qty_base) FROM batches b WHERE b.product_id = p.id AND b.active = 1), 0) AS stock_base
+       CAST(IFNULL((SELECT SUM(b.qty_base) FROM batches b WHERE b.product_id = p.id AND b.active = 1), 0) AS REAL) AS stock_base
 FROM products p
 LEFT JOIN categories c ON c.id = p.category_id
 LEFT JOIN companies co ON co.id = p.company_id

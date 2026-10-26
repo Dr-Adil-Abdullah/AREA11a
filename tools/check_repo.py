@@ -1294,7 +1294,8 @@ def check_app_labels() -> None:
         ("_permissions?.Can(actor, Modules.Settings) != true", "direct label writes no longer fail closed without Settings permission"),
         ("return AppLabelService.GuardSetting(key, value);", "direct settings writes bypass the label validator"),
         ("Application labels must be saved through the audited settings path.", "quiet UI writes can bypass label audit"),
-        ("return JsonSerializer.Serialize(TextValue(value));", "direct label writes no longer trim before storage and audit"),
+        ("return JsonSerializer.Serialize(TextValue(value), Json.WriterOptions);",
+         "direct label writes must trim and preserve readable Unicode before storage and audit"),
     ):
         if needle not in settings_text:
             fail("SettingsService: " + reason)
@@ -3970,6 +3971,56 @@ def check_report_chart() -> None:
 
 
 # ---------------------------------------------------------------------------
+def check_real_stock_projections() -> None:
+    """An empty product and a stocked product must expose the same SQLite numeric type.
+
+    IFNULL(SUM(REAL), 0) is integer zero when no batch exists and Double when a later product has
+    stock. Dapper can cache the first row's shape, so the live product/reorder lists failed with a
+    Double -> Int64 cast even though both C# properties were already double. Cast only the projected
+    fallback to REAL: qty_base stays REAL, fractional quantities stay fractional, and money is not
+    involved. The two facts keep the empty-first ordering that reproduces the owner's failure.
+    """
+    expression = (
+        "CAST(IFNULL((SELECT SUM(b.qty_base) FROM batches b "
+        "WHERE b.product_id = p.id AND b.active = 1), 0) AS REAL)"
+    )
+    targets = (
+        (DOTNET / "Area11.Core/Services/ProductService.cs", "stock_base"),
+        (DOTNET / "Area11.Core/Services/ReorderService.cs", "stockQty"),
+    )
+
+    for path, alias in targets:
+        if not path.exists():
+            fail(f"REAL stock projection file is missing: {rel(path)}")
+            continue
+
+        text = path.read_text(encoding="utf-8", errors="replace")
+        if f"{expression} AS {alias}" not in text:
+            fail(f"{rel(path)}: {alias} must CAST the empty/stocked SUM projection AS REAL")
+
+    product = DOTNET / "Area11.Core/Models/Product.cs"
+    if product.exists() and "public double StockBase { get; set; }" not in product.read_text(
+            encoding="utf-8", errors="replace"):
+        fail("Product.StockBase must remain double; do not repair SQLite materialization by truncation")
+
+    reorder = targets[1][0]
+    if reorder.exists() and "public double StockQty { get; set; }" not in reorder.read_text(
+            encoding="utf-8", errors="replace"):
+        fail("Reorder ProductRow.StockQty must remain double")
+
+    for path, fact in (
+        (DOTNET / "Area11.Tests/CatalogTests.cs", "ProductSearch_ReadsAnEmptyProductBeforeARealStockSum"),
+        (DOTNET / "Area11.Tests/ReorderTests.cs", "ReorderReport_ReadsAnEmptyProductBeforeARealStockSum"),
+    ):
+        if not path.exists() or fact not in path.read_text(encoding="utf-8", errors="replace"):
+            fail(f"Mixed empty/REAL stock regression fact is missing: {fact}")
+
+    REPORT.append(
+        "REAL stock projections: empty-first product and reorder reads stay double without casting "
+        "qty_base or quantities to INTEGER; both runtime regression facts present")
+
+
+# ---------------------------------------------------------------------------
 def check_native_workbook() -> None:
     """T-10 needs real Open XML and a safe bulk-update workflow, not a CSV renamed to .xlsx.
 
@@ -4952,6 +5003,7 @@ def main() -> int:
     check_checklist()
     check_audit_recovery()
     check_report_chart()
+    check_real_stock_projections()
     check_native_workbook()
     check_csharp_grammar()
 

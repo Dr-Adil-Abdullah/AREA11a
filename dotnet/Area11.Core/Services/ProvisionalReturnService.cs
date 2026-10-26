@@ -222,7 +222,7 @@ WHERE i.provisional_id = @id;", new { id = provisionalId }) ?? 0L);
                 }
 
                 var provisionalItems = _db.Query<ReconcileItem>(connection, @"
-SELECT i.id, i.product_id AS productId, i.qty_base AS qtyBase, i.refund_paisa AS refundPaisa,
+SELECT i.id, i.product_id AS productId, CAST(i.qty_base AS REAL) AS qtyBase, i.refund_paisa AS refundPaisa,
        p.name AS name
 FROM provisional_items i
 JOIN products p ON p.id = i.product_id
@@ -305,7 +305,14 @@ WHERE id = @id
         catch (Exception exception)
         {
             _log.Error("The bill could not be attached to no-bill return " + provisionalId + ".", exception);
-            return ServiceResult.Fail("The bill could not be attached. Nothing was changed.");
+
+            // The owner runs the written suite on the shop PC. Keep the plain rollback promise, but
+            // do not hide the only useful diagnostic behind a log file that a throw-away test deletes.
+            var detail = exception.InnerException is null
+                ? exception.Message
+                : exception.Message + " " + exception.InnerException.Message;
+            return ServiceResult.Fail(
+                "The bill could not be attached. Nothing was changed. Technical detail: " + detail);
         }
     }
 
@@ -632,19 +639,19 @@ ORDER BY p.id DESC;", parameters);
         var lines = _db.Query<SaleLineState>(connection, @"
 SELECT si.id AS saleItemId, si.product_id AS productId,
        COALESCE(NULLIF(si.name_snapshot, ''), p.name) AS name,
-       si.qty_base AS remainingBase, si.line_total_paisa AS remainingPaisa
+       CAST(si.qty_base AS REAL) AS remainingBase, si.line_total_paisa AS remainingPaisa
 FROM sale_items si
 JOIN products p ON p.id = si.product_id
 WHERE si.sale_id = @saleId
 ORDER BY si.id;", new { saleId });
 
         var returned = _db.Query<ReturnedRow>(connection, @"
-SELECT sale_item_id AS saleItemId, SUM(qty_base) AS qty, SUM(refund_paisa) AS refund
+SELECT sale_item_id AS saleItemId, CAST(SUM(qty_base) AS REAL) AS qty, SUM(refund_paisa) AS refund
 FROM sale_returns WHERE sale_id = @saleId GROUP BY sale_item_id;", new { saleId })
             .ToDictionary(row => row.SaleItemId);
 
         var provisionallyReturned = _db.Query<ReturnedRow>(connection, @"
-SELECT a.sale_item_id AS saleItemId, SUM(a.qty_base) AS qty, SUM(a.refund_paisa) AS refund
+SELECT a.sale_item_id AS saleItemId, CAST(SUM(a.qty_base) AS REAL) AS qty, SUM(a.refund_paisa) AS refund
 FROM provisional_return_allocations a
 JOIN provisional_items i ON i.id = a.provisional_item_id
 JOIN provisional_returns pr ON pr.id = i.provisional_id

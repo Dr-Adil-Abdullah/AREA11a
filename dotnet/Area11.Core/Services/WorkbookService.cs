@@ -562,7 +562,7 @@ WHERE active = 1 AND product_id <> @id AND LOWER(TRIM(barcode)) = LOWER(@code);"
         return null;
     }
 
-    private bool ReferenceExists(SqliteConnection connection, string table, object value, bool activeOnly)
+    private bool ReferenceExists(SqliteConnection connection, string table, object? value, bool activeOnly)
     {
         // Only the four fixed callers above reach this method; no workbook text becomes an identifier.
         var sql = table switch
@@ -757,7 +757,8 @@ WHERE active = 1 AND product_id <> @id AND LOWER(TRIM(barcode)) = LOWER(@code);"
         }
 
         _settings.Reload();
-        var values = candidates.ToDictionary(candidate => candidate.Key, candidate => candidate.TypedValue, StringComparer.Ordinal);
+        var values = candidates.ToDictionary(candidate => candidate.Key,
+            candidate => (object?)candidate.TypedValue, StringComparer.Ordinal);
         var preparation = _settings.PrepareBulk(values);
         if (!preparation.Ok || preparation.Value is null)
         {
@@ -1232,7 +1233,7 @@ WHERE active = 1 AND product_id <> @id AND LOWER(TRIM(barcode)) = LOWER(@code);"
             or "backup.lastRunAt" or "backup.lastFile" or "session.handoverAt" or "session.handoverBy"
             or "menu.collapsedGroups";
 
-    private static string KeyText(object value) => Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty;
+    private static string KeyText(object? value) => Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty;
 
     private static string RecordKey(IReadOnlyDictionary<string, object?> row, int fallback)
     {

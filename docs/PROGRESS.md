@@ -22,7 +22,7 @@ features and the four phases.
 |---|---|
 | ✅ | finished - the code is written, compiled on the owner's PC, and tested (or its test is named in the row) |
 | 🟡 | the code is finished; **one action in the shop** still has to prove it (the action is written in the row) |
-| ⬜ | not started - **there are none at v0.35.14** |
+| ⬜ | not started - **there are none at v0.35.15** |
 | 🧪 | a test case covers this row in `Area11.Tests` (the count is checked against `EXPECTED` on every run) |
 
 > **How to read a ✅.** It means the code exists, is covered by a named test, and the solution compiled
@@ -47,7 +47,7 @@ features and the four phases.
 > four red tests are why v0.35.2 exists. Those behaviours rest on **769 cases** plus that one green
 > suite, and the five 🟡 rows wait for one action each in the shop.
 
-> **Board at v0.35.14 (Paprika):** 57 features - **52 ✅ / 5 🟡 / 0 ⬜ (91.2% / 8.8%)**. Every feature
+> **Board at v0.35.15 (Quasar):** 57 features - **52 ✅ / 5 🟡 / 0 ⬜ (91.2% / 8.8%)**. Every feature
 > is written, **the program compiles on Windows**, and - new on 23 Oct 2026 - **the window opened and a
 > person signed in on the owner's PC** (v0.33.0: `Signed in: Owner`). The 5 🟡 are the ones only the shop
 > PC can prove, and each is **one action**: one medicine added with a batch (F-08), one delivery entered
@@ -60,18 +60,18 @@ features and the four phases.
 > v0.29.0 moved **F-12 (the dashboard)** to ✅ after giving it 20 tests; the mock database used for
 > them was rebuilt from all 23 migrations and every SQL statement was run on it before shipping.
 
-## Where we stand (v0.35.14)
+## Where we stand (v0.35.15)
 
 | Question | Number | What it means |
 |---|---|---|
 | Features in the board | **57** | **52 ✅ done (91.2%)**, **5 🟡 written but only the shop PC can prove them (8.8%)**, 0 ⬜ not started |
-| Code | **71,599 lines** of C# (Core 33,745 · Desktop 18,081 · Tests 19,773) + **8,412 lines** of XAML | 281 C# files, 39 XAML files |
+| Code | **71,646 lines** of C# (Core 33,753 · Desktop 18,081 · Tests 19,812) + **8,412 lines** of XAML | 281 C# files, 39 XAML files |
 | The shop's rules | **51 service files** in `Area11.Core`, **44 model files**, **35 database tables** over 26 migrations | labels reuse `settings`; migration 026 remains the latest schema change |
 | Screens | **37 views**, **36 page view-models**, 1,393 XAML bindings | every binding and two-way-by-default mode checked against its view-model or row type, including the snapshot panel |
-| Tests | **851 cases** in 67 files | 789 facts + 16 theories (62 inline rows) |
-| Static gates | **49 checks** in `tools/check_repo.py` | ~12 seconds; not a compiler - see the warning at the end |
+| Tests | **853 cases** in 67 files | 791 facts + 16 theories (62 inline rows) |
+| Static gates | **50 checks** in `tools/check_repo.py` | ~12 seconds; not a compiler - see the warning at the end |
 | Reporting a fault | **one file** - `tools\SEND-REPORT.cmd` (v0.30.3, D-78) | build, SDK, git state, shop folder (no rows), whole crash report, last build/test output |
-| Versions shipped | 0.1.0 -> **0.35.14** | each with its own brand colour (D-24) |
+| Versions shipped | 0.1.0 -> **0.35.15** | each with its own brand colour (D-24) |
 | Owner decisions recorded | **D-00 … D-94** | `docs/OWNER-DECISIONS.md`, in Urdu |
 
 **What is actually left.** Nothing in the feature list is unbuilt, and as of v0.31.0 that sentence is
@@ -195,7 +195,7 @@ of books.
 |---|---|---|
 | C# parses with the real grammar (**281 files**) | `python3 tools/check_repo.py` | ✅ 0 error nodes |
 | Every file imports the namespaces it uses (`System.IO` … **and every type this repo declares**) | `python3 tools/check_repo.py` | ✅ |
-| Every SQL statement prepares against the real schema (**778 statements**) | `python3 tools/check_repo.py` | ✅ 0 invalid |
+| Every SQL statement prepares against the real schema (**779 statements**) | `python3 tools/check_repo.py` | ✅ 0 invalid |
 | XAML / csproj / props are valid XML | `python3 tools/check_repo.py` | ✅ |
 | Every XAML binding matches its view-model | `python3 tools/check_repo.py` | ✅ |
 | Every `StaticResource` key exists, in **every** XAML file | `python3 tools/check_repo.py` | ✅ |
@@ -205,23 +205,25 @@ of books.
 | Migrations 001-026 produce 35 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
 | **Compiles on Windows** | `dotnet build Area11.sln` | ✅ 20 Oct 2026 (v0.1.1); re-check after each release |
-| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ `v0.35.14 (Paprika, #842E1B)` |
+| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ `v0.35.15 (Quasar, #3B2F63)` |
 | Every `StaticResource`/`DynamicResource` key exists (**1,535 references**) | `python3 tools/check_repo.py` | ✅ |
 | The 32 label definitions, theme defaults, live headings, Core guards and stable navigation keys agree | `python3 tools/check_repo.py` | ✅ gate #46, proved by theme, missing-heading, notification, stable-key and trimming injections |
 | Z-05 selected-row snapshot, safe correction guidance and absence of universal undo/restore commands | `python3 tools/check_repo.py` | ✅ static gate #47; missing snapshot, Undo command and missing earlier-value binding all rejected, restored source passed (4/4 outcomes) |
 | T-10 native Open XML, protected bulk updates, stale checks and atomic apply | `python3 tools/check_repo.py` | ✅ static gate #49; protected quantity, clear marker, stale verification and UI command injections rejected, restored source passed (5/5 outcomes); 14 facts written, not executed here |
+| Empty-first Product/Reorder quantities stay REAL/double | `python3 tools/check_repo.py` | ✅ static gate #50; both projections and both empty-before-fractional-stock regression facts are required; no quantity is cast to INTEGER |
 | T-05 native per-day chart scaling, quiet days, exact values and profit permission | `python3 tools/check_repo.py` | ✅ static gate #48; scaling, bar binding and permission injections rejected, restored source passed (4/4 outcomes); existing chart itself unchanged |
 | Every binding matches its view-model (**1,393 bindings**) | `python3 tools/check_repo.py` | ✅ |
 | The three script banners match the build | `python3 tools/check_repo.py` | ✅ 3 files |
 | The board and the printable tick-list agree | `python3 tools/make_checklist.py` + the checker | ✅ 57 / 52 / 5 / 0 |
 | **Printer prints (owner's code 6)** | SYSTEM -> *Printer & scanner*, pick the printer, **Print test slip** | 🟡 v0.22.1 fixes the cause (the program opened the print server, not the default printer) - the owner's next slip is the proof |
-| **851 tests written; Paprika Windows/Excel run pending** | `dotnet test` (or `tools\\RUN-TESTS.cmd`) | 🟡 **v0.35.14 Paprika has not been compiled or executed here (no .NET SDK or Excel): the owner must see `ALL GREEN - 851 of 851`, open/edit/preview/apply/re-import a real workbook and retain the Z-05 and E-12/S-05 walk-throughs.** T-10 remains partial until then; repeated upload must show zero changes and stock/balances must not change from the file. Merlot's Dashboard/PR walk-through remains outstanding. ✅ Prior evidence: Cypress passed 789/789 in 1 m 6 s; Cedar passed 782/782. |
+| **853 tests written; Quasar Windows/Excel run pending** | `dotnet test` (or `tools\\RUN-TESTS.cmd`) | 🟡 **Paprika really compiled and opened on the owner's PC but reported 837/851 with 14 failures. Quasar has not been compiled or executed here (no .NET SDK or Excel): the owner must see `ALL GREEN - 853 of 853` and send the complete `test.log`, then open/edit/preview/apply/re-import a real workbook and retain Z-05 and E-12/S-05.** Only four old failure names were supplied. T-10 remains partial; repeated upload must show zero changes and stock/balances must not change from the file. ✅ Prior fully green evidence: Cypress passed 789/789 in 1 m 6 s; Cedar passed 782/782. |
 | **Label storage rehearsal** | real SQLite schema + the service's UPSERT/audit transaction shapes | ✅ **6/6 groups:** upgrade defaults, Unicode persistence, five invalid batches, unknown keys, audited reset and rollback. Not a C#/xUnit substitute. |
 
 ## Change log
 
 | Date | What |
 |---|---|
+| 26 Oct 2026 | **v0.35.15 Quasar - Paprika verification repair; the failed result stays on record.** The correct Paprika commit built on .NET SDK 10.0.402 with 0 errors / 9 nullability warnings, opened and navigated, then reported **837 passed / 14 failed / 851 total**. Live Products/Reorder errors are reproduced by an empty product before a stocked one: `IFNULL(SUM(...), 0)` changes from integer zero to `Double`; both projections now explicitly return `REAL`, with two fractional-stock regressions and no INTEGER quantity cast. Settings uses the existing Unicode-preserving JSON writer so the unchanged AppLabel audit test reads real Urdu. PR/RET quantity reads are explicitly REAL, linking still creates no stock/payment event, and any remaining link exception now includes inner detail. Three nullability-only Workbook edits address all nine warnings without changing T-10 behavior. **2 facts → 853 cases in 67 files; 50 static checks; 281 C# files / 71,646 lines; 39 XAML files / 8,412 lines; 779 SQL statements; 1,393 bindings.** Only four Paprika failure names were supplied: the complete 146-line log and `ALL GREEN - 853 of 853` are still required, no all-fourteen fix is claimed, and real Excel proof remains separate. Cloud not started. |
 | 26 Oct 2026 | **v0.35.14 Paprika - T-10 native `.xlsx` and all-data bulk update are written.** Actual-code review found §24.2's all-data/bulk workflow missing as well as the writer. Added a package-free Open XML codec with real Excel shared/inline strings, numbers, booleans and dates; four-sheet templates, native list downloads and the specified eight-sheet workbook without photos/secrets/counters. Added before → after preview, empty=no change, `__CLEAR__`, protected stock/balances/links, separately ticked type-preserving Settings, whole-file catalog checks, stale-row revalidation, one audited transaction and zero changes on repeated upload. CSV imports/report exports remain. **14 facts → 851 cases in 67 files; 49 static checks; 281 C# files / 71,599 lines; 39 XAML files / 8,412 lines; 778 SQL statements; 1,393 bindings; 5/5 guard outcomes.** No .NET SDK or Excel here: T-10 remains 🟡 pending `ALL GREEN - 851 of 851` and the real Excel walk-through. No migration; D-93/PR rules unchanged; cloud not started. |
 | 26 Oct 2026 | **v0.35.13 Cinnamon - T-05 was a stale matrix entry; the native per-day chart already existed.** Actual code and Spec 21.3 agree on one per-day bar chart: WPF `ProgressBar` rows use `ReportDayRow.BarShare`, quiet days remain, exact paisa labels stay unchanged, and managers get no profit. Recharts/TanStack are reference-web names; no duplicate desktop engine was added. Three new facts cover proportional Rs 160/320/480 bars, seven quiet zero bars and manager profit hiding; the static guard passed 4/4 injections/restoration. **837 cases in 66 files; 48 static checks; 277 C# files / 68,641 lines; 39 XAML files / 8,317 lines; 768 SQL statements; 1,376 bindings.** No report query, total, model, layout or financial rule changed. T-05 is ✅ on the existing Windows-compiled chart and earlier green facts; the new cases still need `ALL GREEN - 837 of 837`. The matrix is now **92 done / 4 partial**; Z-05, E-12/S-05 and Merlot checks remain open, T-10/cloud untouched. |
 | 26 Oct 2026 | **v0.35.12 Azure - Z-05 wrong-entry recovery now shows the earlier state without a universal financial Undo.** Selecting a Black box row opens complete read-only before/after values, context, details and a module-specific correction route. Raw old/new values and CSV remain unchanged; JSON formatting is display-only, Unicode/long text is retained, and plain/broken JSON stays verbatim. Create/delete/details-only cases explain missing sides, refresh clears stale selection, and recorded-new is not labelled as live state. No sale, payment, return, stock or PR rollback is attempted; PR guidance says same-batch stock-only cancellation, no payment and no original-financial reversal. Seven facts: **834 cases in 66 files; 47 static checks; 277 C# files / 68,576 lines; 39 XAML files / 8,317 lines; 768 SQL statements; 1,376 bindings.** The new guard passed 4/4 fault-injection/restoration outcomes. **No .NET SDK here:** Z-05 remains 🟡 until `ALL GREEN - 834 of 834` and the live reader/correction walk-through. E-12/S-05 and Merlot live checks remain open; charts, native `.xlsx` and cloud work were not started. |

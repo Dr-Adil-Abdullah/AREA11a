@@ -7,10 +7,10 @@
 > اِس فائل میں یہ سب ہے: پروگرام کیا ہے، ابھی کہاں کھڑا ہے، **کیا باقی ہے**، کیا **کبھی نہیں** کرنا،
 > اور ایک نیا ورژن کیسے نکالنا ہے۔ آپ کے لیے چھوٹی اردو فائل: [`docs/HANDOVER-FOR-OWNER-URDU.md`](docs/HANDOVER-FOR-OWNER-URDU.md)۔
 
-**Status:** v0.35.14 · Paprika · `#842E1B` — **default branch `main`**; this repair is on the current
+**Status:** v0.35.15 · Quasar · `#3B2F63` — **default branch `main`**; this repair is on the current
 working branch `arena/60395e95-area11a` until its pull request is merged.
 
-*Last updated: 26 October 2026, after T-10's dependency-free native `.xlsx` and eight-sheet all-data/bulk-update workflow was written and all 49 static checks plus 5/5 guard injection/restoration outcomes passed. Paprika has **851 written cases** but no Windows/xUnit or real Excel run here. T-10 remains 🟡 pending `ALL GREEN - 851 of 851` and the owner's Excel open/edit/preview/apply/re-import proof. Z-05, E-12/S-05 and Merlot checks remain open; D-93/PR rules remain in force and cloud was not started.*
+*Last updated: 26 October 2026, after the owner's correct Paprika run compiled and opened but reported **837 passed / 14 failed / 851 total**. Quasar repairs the shown empty-first stock materialization and Unicode settings/audit writes, keeps PR quantities `REAL` without new stock/payment events, and resolves the nine nullability-only workbook warnings. It has **853 written cases** and 50 static checks, but no Windows/xUnit or real Excel run here. Only four Paprika failure names were supplied; the complete log and `ALL GREEN - 853 of 853` are still required. T-10, Z-05 and E-12/S-05 remain 🟡; D-93/PR rules remain in force and cloud was not started.*
 
 ---
 
@@ -38,7 +38,7 @@ repository is a **behaviour reference only** — never modify it, never copy its
 | Question | File that owns the answer |
 |---|---|
 | What is done, what is next, per feature (ID, files, test, "done when") | **`docs/PROGRESS.md`** — the board |
-| What the owner decided, in his own language (D-00 … D-93) | **`docs/OWNER-DECISIONS.md`** (Urdu, authoritative) |
+| What the owner decided, in his own language (D-00 … D-94) | **`docs/OWNER-DECISIONS.md`** (Urdu, authoritative) |
 | His 116 numbered rules and where each is implemented | `docs/RULES-MATRIX.md` |
 | The blueprint (rules, data, pricing, billing, printing, rebuild protocol) | `docs/AREA11-MASTER-SPEC.md` |
 | Every table and column | `docs/SCHEMA-REFERENCE.md` |
@@ -56,15 +56,15 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 
 ## 3. Where it stands right now (read this twice)
 
-**Current source: v0.35.14 "Paprika" writes T-10's native `.xlsx` templates/list downloads, eight-sheet data workbook and safe bulk update while retaining Cinnamon's T-05 correction, Azure's Z-05 reader and D-93. Its 851 cases are written but not executed here (no .NET SDK or Excel). T-10, Z-05, E-12 and S-05 remain partial pending their owner evidence. Prior owner evidence: v0.35.7 "Cypress" passed 789/789 in 1 m 6 s; v0.35.6 "Cedar" passed 782/782 in 1 m 3 s.**
+**Current source: v0.35.15 "Quasar" is a verification repair on Paprika, not a new feature stage. It stabilizes empty-first Product/Reorder quantities as `REAL`, writes readable Unicode settings/audit JSON, keeps PR/double-return quantities explicitly `REAL`, and makes three nullability-only workbook corrections. Two new facts make 853 written cases; 50 static checks pass. Paprika's real 837/851 result is not backfilled, and Quasar is not executed here (no .NET SDK or Excel). T-10, Z-05, E-12 and S-05 remain partial. Prior fully green owner evidence: v0.35.7 "Cypress" passed 789/789 in 1 m 6 s; v0.35.6 "Cedar" passed 782/782 in 1 m 3 s.**
 
 | | |
 |---|---|
-| Test cases written | **851** in 67 files (`tools\\RUN-TESTS.cmd` compares the run against `EXPECTED=851`) |
-| Static checks | **49**, all green: `OK - 49 checks, no problems` |
+| Test cases written | **853** in 67 files (`tools\\RUN-TESTS.cmd` compares the run against `EXPECTED=853`) |
+| Static checks | **50**, all green: `OK - 50 checks, no problems` |
 | Owner's numbered rules | **116 - 92 ✅ done, 4 🟡 partial, 0 ⬜, 20 standing** - see §4 |
 | Feature board | **57 features — 52 ✅ done, 5 🟡 one shop action each, 0 ⬜ not started** (91.2 % / 8.8 %) |
-| Code size | 281 C# files (71,599 lines) + 39 XAML files (8,412 lines, 37 of them pages/windows); 51 services, 42 view models |
+| Code size | 281 C# files (71,646 lines) + 39 XAML files (8,412 lines, 37 of them pages/windows); 51 services, 42 view models |
 | Database | 26 migrations → **35 business tables + provisional report view**, append-only, existing `area11.db` opens unchanged |
 
 ### What the owner's own PC has already proved
@@ -79,6 +79,30 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 * On **v0.35.5** his next run compiled `Area11.Core` and `Area11.Tests` and reported
   **Failed: 0, Passed: 772, Total: 772 in 56 s — ALL GREEN**. This proves the numbering, session and
   Shift repairs together; it is not a claim that the Desktop installer or every page was exercised.
+
+### What v0.35.15 changes — Paprika verification repair
+
+Paprika's correct Windows run is evidence, not something to hide: .NET SDK 10.0.402 built it with
+**0 errors / 9 warnings**, the WPF window opened and navigated, and xUnit reported **837 passed /
+14 failed / 851 total**. Only four failed-test identities were included in the pasted tail; the full
+146-line `test.log` remains necessary before claiming every failure was addressed.
+
+The live Products/Reorder errors came from a mixed projection: a product with no batch makes
+`IFNULL(SUM(...), 0)` integer zero, while a later stocked product returns `Double`. Both projections
+now `CAST(... AS REAL)` and two facts put an empty product before one with 3.5 units. This does not
+cast `qty_base` or any quantity to `INTEGER`; the schema and models remain `REAL`/`double`.
+
+Settings serialization now uses the repository's existing `Json.WriterOptions`, so Urdu remains
+readable in stored/audited JSON and the unchanged AppLabel assertion tests the real write path.
+PR reconciliation and RET double-return reads explicitly project quantities as `REAL`; linking still
+creates no stock movement or payment and the reconciliation tests remain in force. An unexpected PR
+link error now includes its inner technical detail so the next complete log is actionable.
+
+The nine Paprika warnings were four nullable values passed to `KeyText`, four guarded nullable ids
+passed to `ReferenceExists`, and one `PrepareBulk` dictionary-nullability mismatch. Three signature/
+inference edits resolve those without changing workbook behavior. **853 cases in 67 files and 50
+static checks** are the local evidence, not compilation or xUnit. The owner must see
+**`ALL GREEN - 853 of 853`**, send the complete log, and still perform the real Excel walk-through.
 
 ### What v0.35.14 changes — T-10 native Excel and safe all-data bulk update
 
@@ -101,9 +125,10 @@ back an earlier valid row. An already-applied file previews **0 changes**. Fourt
 rules, real Excel cell encodings, permissions and rollback. The written inventory is **851 cases in
 67 files**; **49 static checks** and the T-10 guard's **5/5** injection/restoration outcomes pass here.
 
-There is no .NET SDK or Excel in this sandbox, so T-10 stays 🟡 until the owner's
-**`ALL GREEN - 851 of 851`** and real open/edit/preview/apply/re-import walk-through. Z-05, E-12/S-05
-and Merlot evidence remain separate; cloud was not started.
+There was no .NET SDK or Excel in this sandbox when Paprika was written. The owner's subsequent
+correct run did compile and open it, but xUnit was **not green: 837/851 with 14 failures**. T-10 stays
+🟡; Quasar is the current 853-case repair target and the real open/edit/preview/apply/re-import
+walk-through is still separate. Z-05 and E-12/S-05 evidence remain separate; cloud was not started.
 
 ### What v0.35.13 changes — T-05 was already built; the stale status is corrected
 
@@ -177,7 +202,7 @@ The owner's first Topaz build then stopped at `AppLabelTests.cs(42)` with **CS16
 does not implement `IDisposable`. The second-database test now uses a plain variable, matching the
 existing NumberingTests lifetime pattern. The existing C# static check rejects `using ... new Database`
 and caught the fault when it was injected back at line 42. The 827-case inventory and product rules
-were unchanged by that repair; Topaz's own rerun was never supplied. Azure and Cinnamon followed, and Paprika's 851-case run is now the current verification target.
+were unchanged by that repair; Topaz's own rerun was never supplied. Azure, Cinnamon and Paprika followed; Paprika's actual 851-case run failed 14, so Quasar's 853-case run is now the current verification target.
 
 ### What v0.35.10 changes — E-04 catalog management is complete
 
@@ -604,14 +629,14 @@ honest caveat about what is not yet proven. If he asks for a printable status, r
 | Path | What is in it |
 |---|---|
 | `dotnet/Area11.Core/Data/Database.cs`, `StoragePlan.cs`, `Migrations/001…026` | connection, WAL / share mode, the schema |
-| `dotnet/Area11.Core/Services/` (50) | every rule: `SaleService`, `PurchaseService`, `ShiftService`, `SettingsService`, `AuthService`, `PermissionService`, `ReportService`, `BackupService`, `InstallService`, `SyncService`, `HardwareService` … |
+| `dotnet/Area11.Core/Services/` (51) | every rule: `SaleService`, `PurchaseService`, `ShiftService`, `SettingsService`, `AuthService`, `PermissionService`, `ReportService`, `BackupService`, `InstallService`, `SyncService`, `HardwareService` … |
 | `dotnet/Area11.Core/Utils/` | `Money`, `Calc`, `AppPaths`, `BuildInfo`, `RunTrail`, `CommandGuard`, `TimeSource`, `NtpTime`, `SessionPolicy`, `SessionWatch`, `SessionHandover`, `ShopConfig`, `CrashLog` |
 | `dotnet/Area11.Desktop/AppServices.cs` | the composition root — a new service is constructed **here** |
 | `dotnet/Area11.Desktop/ViewModels/ShellViewModel.cs` | the frame, the menu, the session, the fault banner |
 | `dotnet/Area11.Desktop/Views/` (37) | the pages; `PosView`, `ProductsView`, `PurchasesView`, `ShiftView`, `HardwareView` … |
 | `dotnet/Area11.Desktop/Resources/Theme.xaml` | the three brand brushes |
-| `dotnet/Area11.Tests/` (66 test files) | `TestDatabase`, `TestData`, one file per feature |
-| `tools/check_repo.py` | the 49 static checks (read the docstring of a failing check) |
+| `dotnet/Area11.Tests/` (67 test files) | `TestDatabase`, `TestData`, one file per feature |
+| `tools/check_repo.py` | the 50 static checks (read the docstring of a failing check) |
 | `tools/make_checklist.py`, `make_icon.py`, `build_rules_matrix.py` | the printable list, the icon, the rules matrix |
 | `tools/*.cmd`, `tools/install/*.ps1` | what the owner double-clicks: start, update, test, report, install, uninstall, share |
 | `docs/` | the spec, the decisions, the board, the rules, the schema, the guides |
@@ -620,10 +645,10 @@ honest caveat about what is not yet proven. If he asks for a printable status, r
 
 ## 16. The first message to send him (copy, paste, adjust)
 
-> میں نے ریپو پڑھ لی ہے۔ ابھی حالت یہ ہے: **v0.35.14 (Paprika)** — 851 written cases اور 49 static checks مکمل ہیں۔
-> T-10 کا حقیقی `.xlsx`، چار شیٹ template، آٹھ شیٹ data workbook اور محفوظ before → after bulk update لکھا گیا ہے؛
-> کوئی نیا spreadsheet package یا migration نہیں۔ مگر Windows/xUnit اور اصل Excel میں جانچ ابھی باقی ہے، اس لیے T-10 🟡 ہے۔
+> میں نے ریپو پڑھ لی ہے۔ ابھی حالت یہ ہے: **v0.35.15 (Quasar)** — 853 written cases اور 50 static checks مکمل ہیں۔
+> Paprika آپ کے PC پر compile اور open ہوا، مگر اس کا حقیقی نتیجہ **837/851 یعنی 14 failures** تھا؛ اسے green نہیں لکھا گیا۔
+> Quasar میں Products/Reorder کی empty-first REAL quantity repair، Urdu audit JSON، PR quantity reads اور workbook nullability repair ہے۔
 > سب سے پہلے `git pull` کر کے `START-AREA11.bat` اور `tools\\RUN-TESTS.cmd` چلائیں؛ مطلوبہ نتیجہ
-> `ALL GREEN - 851 of 851` ہے۔ پھر Excel میں workbook کھول کر edit، preview، apply اور دوبارہ upload پر 0 changes دیکھیں؛
-> stock، balances، secrets اور counters فائل سے نہیں بدلنے چاہیئیں۔ Z-05 اور Settings → **App words** کی پرانی تصدیق بھی باقی ہے؛
-> Merlot کے نتائج نہیں لگائے گئے۔ Cloud شروع نہیں کیا گیا۔ مکمل کنسول بھیج دیں۔
+> `ALL GREEN - 853 of 853` ہے۔ صرف آخری سطریں نہیں، مکمل `test.log` بھیجیں کیونکہ دس failure names ابھی معلوم نہیں۔
+> پھر Excel میں workbook کھول کر edit، preview، apply اور دوبارہ upload پر 0 changes دیکھیں؛ T-10 ابھی 🟡 ہے۔
+> Z-05 اور Settings → **App words** کی تصدیق بھی باقی ہے۔ Cloud شروع نہیں کیا گیا۔

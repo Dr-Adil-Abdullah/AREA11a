@@ -138,22 +138,21 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.35.14 (Paprika `#842E1B`) - T-10 native Excel and all-data bulk update are written; live proof pending.**
+> **v0.35.15 (Quasar `#3B2F63`) - Paprika verification repair; 853-case Windows proof pending.**
 >
-> * **Real `.xlsx` is now built in, with no spreadsheet package or migration.** The Open XML codec
->   handles ordinary Excel shared strings and date cells and writes formula-safe text. Templates have
->   four sheets; Download your data has the specified eight. Empty cells do nothing, `__CLEAR__` is
->   explicit, every edit has a before → after preview, stock/balances/secrets/counters are protected,
->   Settings needs a separate tick and keeps JSON types, and apply revalidates stale rows before one
->   audited transaction. Re-uploading an applied file means zero changes. CSV workflows remain.
->   **851 cases are written and all 49 static checks pass; the T-10 guard passed 5/5 injections/restoration.**
->   No .NET SDK or Excel exists here. Keep T-10 🟡 until `ALL GREEN - 851 of 851` and the owner's real
->   Excel open/edit/preview/apply/re-import walk-through.
+> * **Paprika's real result is not backfilled.** On the correct commit and .NET SDK 10.0.402 it built
+>   with 0 errors / 9 warnings, opened and navigated, then reported **837 passed / 14 failed / 851 total**.
+>   Quasar stabilizes empty-first Product/Reorder stock projections as `REAL`, adds two regressions,
+>   writes readable Unicode settings/audit JSON, keeps PR quantities explicitly `REAL` without adding
+>   stock/payment events, exposes any remaining PR inner error, and resolves the nine warnings through
+>   three nullability-only workbook edits. **853 cases and 50 static checks are written/green here.**
+>   Only four failure names were supplied; obtain the complete 146-line log and do not claim all 14 fixed.
 >
-> * **Four rules remain partial: E-12, S-05, Z-05 and T-10.** E-12/S-05 still need rename/restart/reset
->   proof and Z-05 needs its live reader/correction walk-through. Merlot's Dashboard/PR checks and all
->   earlier unexecuted release targets remain unbackfilled. Cloud work was not started, and D-93
->   stock/money plus PR cancellation rules are unchanged.
+> * **Four rules remain partial: E-12, S-05, Z-05 and T-10.** Keep T-10 🟡 until
+>   `ALL GREEN - 853 of 853` and the owner's real Excel open/edit/preview/apply/re-import walk-through.
+>   E-12/S-05 still need rename/restart/reset proof and Z-05 needs its live reader/correction
+>   walk-through. Earlier unexecuted release targets remain unbackfilled. Cloud work was not started,
+>   and D-93 stock/money plus PR cancellation rules are unchanged.
 >
 > * **v0.35.5 repairs one policy mismatch and two stale test fixtures.** The owner's v0.35.4 run proved
 >   the correct tree (**769 passed, 3 failed, 772 total**). A sign-in ahead of the PC clock now keeps

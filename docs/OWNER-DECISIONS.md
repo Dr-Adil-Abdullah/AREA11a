@@ -1019,6 +1019,12 @@ Master Spec §24.2 کا **آٹھ شیٹ all-data workbook اور before → afte
 ورژن **v0.35.14 Paprika `#842E1B`**۔ 14 نئے facts؛ 49 static checks اور 5/5 guard injection/restoration
 نتائج۔ اس sandbox میں .NET SDK یا Excel نہیں، اس لیے compilation/xUnit/Excel interop کا دعویٰ نہیں۔
 
+**تصدیقی تکمیل — v0.35.15 Quasar:** Paprika درست commit پر compile اور open ہوا، مگر حقیقی نتیجہ
+**837/851 اور 14 failures** رہا؛ اسے green نہیں لکھا گیا۔ Products/Reorder اور Urdu audit کی ظاہر شدہ
+خرابیوں کی repair کے ساتھ دو نئے regression facts ہیں، اس لیے موجودہ ہدف **`ALL GREEN - 853 of 853`** ہے۔
+PR stock/payment rules اور D-94 کا workbook behavior نہیں بدلا۔ صرف چار failure names دستیاب ہیں؛ مکمل
+`test.log` اور اصل Excel walk-through ابھی لازم ہیں، اس لیے T-10 🟡 ہی رہے گا۔
+
 ### D-93 — **Negative stock کا خاتمہ: نیا کام صفر سے نیچے نہیں** (completion plan)
 
 **فیصلہ (25 اکتوبر 2026):** مکمل source audit کے بعد app-completion plan پر بات ہوئی۔ آپ نے negative stock کے تین

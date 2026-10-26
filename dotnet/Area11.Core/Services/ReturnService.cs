@@ -642,12 +642,12 @@ ORDER BY id LIMIT 1;", new { id = sale.Id });
         }
 
         var returned = _db.Query<ReturnedRow>(connection, @"
-SELECT sale_item_id AS saleItemId, SUM(qty_base) AS qty, SUM(refund_paisa) AS refund
+SELECT sale_item_id AS saleItemId, CAST(SUM(qty_base) AS REAL) AS qty, SUM(refund_paisa) AS refund
 FROM sale_returns WHERE sale_id = @id GROUP BY sale_item_id;", new { id = sale.Id })
             .ToDictionary(row => row.SaleItemId);
 
         var provisionallyReturned = _db.Query<ReturnedRow>(connection, @"
-SELECT a.sale_item_id AS saleItemId, SUM(a.qty_base) AS qty, SUM(a.refund_paisa) AS refund
+SELECT a.sale_item_id AS saleItemId, CAST(SUM(a.qty_base) AS REAL) AS qty, SUM(a.refund_paisa) AS refund
 FROM provisional_return_allocations a
 JOIN provisional_items i ON i.id = a.provisional_item_id
 JOIN provisional_returns pr ON pr.id = i.provisional_id

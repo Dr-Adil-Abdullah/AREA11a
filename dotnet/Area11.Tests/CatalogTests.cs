@@ -241,6 +241,25 @@ FROM companies c JOIN products p ON p.company_id = c.id WHERE c.id = 1;");
         }
     }
 
+    [Fact]
+    public void ProductSearch_ReadsAnEmptyProductBeforeARealStockSum()
+    {
+        using var test = new TestDatabase();
+        var service = Service(test);
+
+        // IFNULL(SUM(...), 0) is an Int64 zero for the first row and a Double for the second.
+        // Dapper must see one stable REAL projection; quantities themselves remain double/REAL.
+        var empty = AddProduct(service, "A empty product", null, null);
+        var stocked = TestData.AddProduct(test, batchQty: 3.5, name: "B stocked product");
+
+        var result = service.Search();
+
+        Assert.True(result.Ok, result.Error);
+        var rows = result.Value!;
+        Assert.Equal(0d, rows.Single(row => row.Id == empty).StockBase);
+        Assert.Equal(3.5d, rows.Single(row => row.Id == stocked).StockBase);
+    }
+
     private static ProductService Service(TestDatabase test) => new(test.Database, test.Audit, test.Log);
 
     private static int AddProduct(ProductService service, string name, int? categoryId, int? companyId)
