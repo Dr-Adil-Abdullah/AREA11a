@@ -22,7 +22,7 @@ features and the four phases.
 |---|---|
 | ✅ | finished - the code is written, compiled on the owner's PC, and tested (or its test is named in the row) |
 | 🟡 | the code is finished; **one action in the shop** still has to prove it (the action is written in the row) |
-| ⬜ | not started - **there are none at v0.35.12** |
+| ⬜ | not started - **there are none at v0.35.13** |
 | 🧪 | a test case covers this row in `Area11.Tests` (the count is checked against `EXPECTED` on every run) |
 
 > **How to read a ✅.** It means the code exists, is covered by a named test, and the solution compiled
@@ -47,7 +47,7 @@ features and the four phases.
 > four red tests are why v0.35.2 exists. Those behaviours rest on **769 cases** plus that one green
 > suite, and the five 🟡 rows wait for one action each in the shop.
 
-> **Board at v0.35.12 (Azure):** 57 features - **52 ✅ / 5 🟡 / 0 ⬜ (91.2% / 8.8%)**. Every feature
+> **Board at v0.35.13 (Cinnamon):** 57 features - **52 ✅ / 5 🟡 / 0 ⬜ (91.2% / 8.8%)**. Every feature
 > is written, **the program compiles on Windows**, and - new on 23 Oct 2026 - **the window opened and a
 > person signed in on the owner's PC** (v0.33.0: `Signed in: Owner`). The 5 🟡 are the ones only the shop
 > PC can prove, and each is **one action**: one medicine added with a batch (F-08), one delivery entered
@@ -60,32 +60,31 @@ features and the four phases.
 > v0.29.0 moved **F-12 (the dashboard)** to ✅ after giving it 20 tests; the mock database used for
 > them was rebuilt from all 23 migrations and every SQL statement was run on it before shipping.
 
-## Where we stand (v0.35.12)
+## Where we stand (v0.35.13)
 
 | Question | Number | What it means |
 |---|---|---|
 | Features in the board | **57** | **52 ✅ done (91.2%)**, **5 🟡 written but only the shop PC can prove them (8.8%)**, 0 ⬜ not started |
-| Code | **68,576 lines** of C# (Core 31,432 · Desktop 17,898 · Tests 19,246) + **8,317 lines** of XAML | 277 C# files, 39 XAML files |
+| Code | **68,641 lines** of C# (Core 31,432 · Desktop 17,898 · Tests 19,311) + **8,317 lines** of XAML | 277 C# files, 39 XAML files |
 | The shop's rules | **50 service files** in `Area11.Core`, **42 model files**, **35 database tables** over 26 migrations | labels reuse `settings`; migration 026 remains the latest schema change |
 | Screens | **37 views**, **36 page view-models**, 1,376 XAML bindings | every binding and two-way-by-default mode checked against its view-model or row type, including the snapshot panel |
-| Tests | **834 cases** in 66 files | 772 facts + 16 theories (62 inline rows) |
-| Static gates | **47 checks** in `tools/check_repo.py` | ~12 seconds; not a compiler - see the warning at the end |
+| Tests | **837 cases** in 66 files | 775 facts + 16 theories (62 inline rows) |
+| Static gates | **48 checks** in `tools/check_repo.py` | ~12 seconds; not a compiler - see the warning at the end |
 | Reporting a fault | **one file** - `tools\SEND-REPORT.cmd` (v0.30.3, D-78) | build, SDK, git state, shop folder (no rows), whole crash report, last build/test output |
-| Versions shipped | 0.1.0 -> **0.35.12** | each with its own brand colour (D-24) |
+| Versions shipped | 0.1.0 -> **0.35.13** | each with its own brand colour (D-24) |
 | Owner decisions recorded | **D-00 … D-93** | `docs/OWNER-DECISIONS.md`, in Urdu |
 
 **What is actually left.** Nothing in the feature list is unbuilt, and as of v0.31.0 that sentence is
 true in the strict sense it was always meant: the last gap the *specification* admitted in its own text -
 *"a per-user shift report is not built"* (Spec 7.2.7) - is now written, tested and on the Shift page (F-56),
 and the handover the board carried as *"still to come"* since v0.4.0 is written and printed (F-55).
-**Five of the owner's 116 numbered rules are not fully finished** (the rules matrix is the authority;
+**Four of the owner's 116 numbered rules are not fully finished** (the rules matrix is the authority;
 it differs from this board on purpose, because it counts *rules* and this page counts *features*):
 **E-12** 🟡 and **S-05** 🟡 now have the 32-label Settings editor, stable-key navigation, live page/menu
 resources, Core guards and audited reset written, but still need the owner's Windows rename/restart/reset
-walk-through; **Z-05** 🟡 now has the selected-row earlier-state reader and safe correction guidance, but still needs Windows/xUnit and live selection/filter-clearing proof; **T-05** 🟡 reports are tables of numbers, not
-drawn charts; **T-10** 🟡 CSV, not native `.xlsx`. **E-04 is done** since v0.35.10: catalog
+walk-through; **Z-05** 🟡 now has the selected-row earlier-state reader and safe correction guidance, but still needs Windows/xUnit and live selection/filter-clearing proof; **T-10** 🟡 CSV, not native `.xlsx`. **E-04 is done** since v0.35.10: catalog
 create/rename/order, soft put-away/restore, two-level parent filtering and unlink-only semantics are
-covered by `CatalogTests`.
+covered by `CatalogTests`. **T-05 is done** as of v0.35.13: the native per-day chart already existed, so actual-code review corrected the stale status and added regression guards without another chart engine.
 The five 🟡 rows below are not gaps in the code; they are promises only the shop PC can
 keep, and each is **one action**: one medicine added with a batch (F-08), one real delivery
 (F-09), one real bill printed (F-10), one line in the black box from a real action (F-04), and the **scan**
@@ -144,7 +143,7 @@ of books.
 | F-31 | Shift / galla: open, close, variance, **and hand the drawer to the next person with a printed slip** (F-55, v0.30.6) | ✅ | `Services/ShiftService.cs`, `Views/ShiftView.xaml` | `ShiftTests` 🧪 | expected cash = float + sales - payouts; the page says exact / over / short · v0.4.0 |
 | F-32 | Expenses and owner drawings | ✅ | `Services/ExpenseService.cs`, `Views/ExpensesView.xaml` | `ExpenseTests` 🧪 | they reduce the drawer, not the profit · v0.4.4 |
 | F-33 | Udhaar recovery: ageing (0-30 / 31-60 / 61-90 / 90+), collections oldest first, returns tied to their own bill, `PAY-nnnn` recovery slip | ✅ | `Services/RecoveryService.cs`, `Services/CustomerSettlementLedger.cs`, `Views/RecoveryView.xaml` | `RecoveryTests` 🧪 | the four columns plus remaining carried-in khata add up; a payment knocks the oldest existing bill off first; a later bill cannot rewrite a reprint · v0.35.7 |
-| F-34 | Reports: today / 7 / 30 days / this month, KPI cards, per-day chart, top 10 by quantity and by profit, category split, dead stock, best and worst day; provisional refund events included | ✅ | `Services/ReportService.cs`, `Views/ReportsView.xaml` | `ReportTests` 🧪 (16) | profit uses cost-at-sale, cost-at-return and the return rule of Spec 15.6 · v0.35.6 |
+| F-34 | Reports: today / 7 / 30 days / this month, KPI cards, per-day chart, top 10 by quantity and by profit, category split, dead stock, best and worst day; provisional refund events included | ✅ | `Services/ReportService.cs`, `Views/ReportsView.xaml` | `ReportTests` 🧪 (19) | profit uses cost-at-sale, cost-at-return and the return rule of Spec 15.6 · v0.35.6 |
 | F-35 | Audit viewer + CSV export (owner; manager hidden by default) | ✅ | `Services/AuditHistoryService.cs`, `Views/AuditView.xaml` | `AuditViewerTests` 🧪 (10) | search + module/action filters + date window, no edit or delete, CSV is exactly what is on screen · v0.5.0 |
 | UI | **Owner's screen overhaul (D-50)**: 176 px sidebar grouped in five headings, one bell with a count badge, red bar removed, two alert kinds (anyone closes a reminder; only the owner ends a problem), low-stock and expired alerts, customers + suppliers + recovery as one page, and the **new customer** form that never existed | ✅ | `Views/ShellWindow.xaml`, `ViewModels/PartnersViewModel.cs`, `Views/CustomersView.xaml` | `AlertKindTests` 🧪 (13), `CustomerCreateTests` 🧪 (8) | a reminder is one click for anybody; a money problem is owner-only; one people page · v0.6.0 |
 | F-36 | Backup: ZIP of database + photos, daily automatic, restore, safety copy before the swap | ✅ | `Services/BackupService.cs`, `ViewModels/BackupViewModel.cs`, `Views/BackupView.xaml` | `BackupTests` 🧪 | restore on a clean PC |
@@ -206,21 +205,23 @@ of books.
 | Migrations 001-026 produce 35 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
 | **Compiles on Windows** | `dotnet build Area11.sln` | ✅ 20 Oct 2026 (v0.1.1); re-check after each release |
-| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ `v0.35.12 (Azure, #005A9C)` |
+| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ `v0.35.13 (Cinnamon, #7C2D12)` |
 | Every `StaticResource`/`DynamicResource` key exists (**1,516 references**) | `python3 tools/check_repo.py` | ✅ |
 | The 32 label definitions, theme defaults, live headings, Core guards and stable navigation keys agree | `python3 tools/check_repo.py` | ✅ gate #46, proved by theme, missing-heading, notification, stable-key and trimming injections |
 | Z-05 selected-row snapshot, safe correction guidance and absence of universal undo/restore commands | `python3 tools/check_repo.py` | ✅ static gate #47; missing snapshot, Undo command and missing earlier-value binding all rejected, restored source passed (4/4 outcomes) |
+| T-05 native per-day chart scaling, quiet days, exact values and profit permission | `python3 tools/check_repo.py` | ✅ static gate #48; scaling, bar binding and permission injections rejected, restored source passed (4/4 outcomes); existing chart itself unchanged |
 | Every binding matches its view-model (**1,376 bindings**) | `python3 tools/check_repo.py` | ✅ |
 | The three script banners match the build | `python3 tools/check_repo.py` | ✅ 3 files |
 | The board and the printable tick-list agree | `python3 tools/make_checklist.py` + the checker | ✅ 57 / 52 / 5 / 0 |
 | **Printer prints (owner's code 6)** | SYSTEM -> *Printer & scanner*, pick the printer, **Print test slip** | 🟡 v0.22.1 fixes the cause (the program opened the print server, not the default printer) - the owner's next slip is the proof |
-| **834 tests written; Azure Windows run pending** | `dotnet test` (or `tools\\RUN-TESTS.cmd`) | 🟡 **v0.35.12 Azure has not been compiled or executed here (no .NET SDK): the owner must see `ALL GREEN - 834 of 834`, complete the Z-05 selection/copy/filter-clearing walk-through and retain the E-12/S-05 label proof.** Merlot's Dashboard/PR walk-through remains outstanding; no old result is backfilled. ✅ Prior evidence: Cypress passed 789/789 in 1 m 6 s; Cedar passed 782/782. |
+| **837 tests written; Cinnamon Windows run pending** | `dotnet test` (or `tools\\RUN-TESTS.cmd`) | 🟡 **v0.35.13 Cinnamon has not been compiled or executed here (no .NET SDK): the owner must see `ALL GREEN - 837 of 837`, retain the Z-05 and E-12/S-05 walk-throughs, and can visually confirm the existing chart.** T-05 is done on the older compiled/green evidence; its three new cases still need this run. Merlot's Dashboard/PR walk-through remains outstanding. ✅ Prior evidence: Cypress passed 789/789 in 1 m 6 s; Cedar passed 782/782. |
 | **Label storage rehearsal** | real SQLite schema + the service's UPSERT/audit transaction shapes | ✅ **6/6 groups:** upgrade defaults, Unicode persistence, five invalid batches, unknown keys, audited reset and rollback. Not a C#/xUnit substitute. |
 
 ## Change log
 
 | Date | What |
 |---|---|
+| 26 Oct 2026 | **v0.35.13 Cinnamon - T-05 was a stale matrix entry; the native per-day chart already existed.** Actual code and Spec 21.3 agree on one per-day bar chart: WPF `ProgressBar` rows use `ReportDayRow.BarShare`, quiet days remain, exact paisa labels stay unchanged, and managers get no profit. Recharts/TanStack are reference-web names; no duplicate desktop engine was added. Three new facts cover proportional Rs 160/320/480 bars, seven quiet zero bars and manager profit hiding; the static guard passed 4/4 injections/restoration. **837 cases in 66 files; 48 static checks; 277 C# files / 68,641 lines; 39 XAML files / 8,317 lines; 768 SQL statements; 1,376 bindings.** No report query, total, model, layout or financial rule changed. T-05 is ✅ on the existing Windows-compiled chart and earlier green facts; the new cases still need `ALL GREEN - 837 of 837`. The matrix is now **92 done / 4 partial**; Z-05, E-12/S-05 and Merlot checks remain open, T-10/cloud untouched. |
 | 26 Oct 2026 | **v0.35.12 Azure - Z-05 wrong-entry recovery now shows the earlier state without a universal financial Undo.** Selecting a Black box row opens complete read-only before/after values, context, details and a module-specific correction route. Raw old/new values and CSV remain unchanged; JSON formatting is display-only, Unicode/long text is retained, and plain/broken JSON stays verbatim. Create/delete/details-only cases explain missing sides, refresh clears stale selection, and recorded-new is not labelled as live state. No sale, payment, return, stock or PR rollback is attempted; PR guidance says same-batch stock-only cancellation, no payment and no original-financial reversal. Seven facts: **834 cases in 66 files; 47 static checks; 277 C# files / 68,576 lines; 39 XAML files / 8,317 lines; 768 SQL statements; 1,376 bindings.** The new guard passed 4/4 fault-injection/restoration outcomes. **No .NET SDK here:** Z-05 remains 🟡 until `ALL GREEN - 834 of 834` and the live reader/correction walk-through. E-12/S-05 and Merlot live checks remain open; charts, native `.xlsx` and cloud work were not started. |
 | 26 Oct 2026 | **v0.35.11 Topaz - E-12/S-05 custom application labels are written and awaiting owner proof.** Settings → App words edits 32 supported section labels stored as ordinary settings, with default insertion for old databases and no schema migration. Stable keys retain navigation, permissions, Shift/Settings shortcuts and page resolution; live resources update the menu, 26 real page headings, the Dashboard tooltip, the Cloud sync tab and the Own fields panel heading. Core validates supported keys, trimming, Unicode, non-empty single-line text up to 60 characters, Settings permission (including direct writes), atomic old/new audit and reset; the unaudited UI writer refuses labels and a damaged blank row falls back to the default. A two-click reset restores only these labels, never receipts, arbitrary sentences, historical text or document numbers. Seven public-service facts: **827 cases in 66 files; 46 static checks; 277 C# files; 768 SQL statements prepared; 1,369 XAML bindings; 6/6 SQLite storage rehearsal groups.** The catalog/resource/navigation gate also passes theme, missing-heading, wrong-notification, title-as-key and untrimmed-write injection tests. Reviewing the owner's pasted Merlot 808/820 tail against current source confirmed and fixed the positive-total/beside-legacy-minus sale-guidance defect; ordinary shortages keep their original advice, stock/financial rules are unchanged, and 3/3 real-schema guidance checks pass. The owner's first Topaz build stopped at `AppLabelTests.cs(42)` with CS1674 because Database is not IDisposable; the plain-variable repair is written, and the existing C# gate now catches that pattern by fault injection. **No .NET SDK here:** owner must see `ALL GREEN - 827 of 827` and complete rename/restart/reset before shop-proven completion. Merlot's 820-case rerun and Dashboard/PR walk-through remain outstanding. |
 | 26 Oct 2026 | **v0.35.10 Merlot - E-04 category/company management is complete.** Products opens a management window for create, rename, owner order, soft put-away and restore. Categories support unlimited rows, one optional parent and a two-level Core guard; parent filters include children. Migration 026 adds company ordering while preserving existing rows. Put-away only unlinks current product references and writes the count in the audit; no product, batch, bill, payment or stock movement is deleted, and restore does not invent links. Company phone/notes/rep/visit-day fields survive. Quick-add and management share Core permission, case-insensitive uniqueness and active-link checks. Six public-service facts added: **820 cases in 65 files; 45 static checks; 273 C# files; 26 migrations/35 tables; 762 SQL statements prepared; 1,365 XAML bindings checked; 8/8 E-04 SQLite rehearsal groups.** The first Windows run compiled and reported **808/820**; the low-stock alert read and PR reconciliation reads were corrected, with no financial-rule change. The fixed commit still needs the owner's rerun: `ALL GREEN - 820 of 820`. Onyx's 814-case baseline and Cypress's 789/789 are prior evidence. |

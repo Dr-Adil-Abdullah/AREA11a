@@ -131,7 +131,7 @@ STATUS: dict[str, tuple[str, str, str]] = {
     "B-05": ("DONE", "Arena snapshots + commits after every change", "-"),
     "B-06": ("DONE", "linear history, never force-push to main", "-"),
     "B-07": ("DONE", "pushed to GitHub after every change", "-"),
-    "B-08": ("DONE", "replaced by `tools/check_repo.py` (47 checks) + `tools/build_rules_matrix.py`", "`tools/check_repo.py`"),
+    "B-08": ("DONE", "replaced by `tools/check_repo.py` (48 checks) + `tools/build_rules_matrix.py`", "`tools/check_repo.py`"),
     "B-09": ("DONE", "fixed session branch, commits/tags for return", "-"),
     "B-10": ("DONE", "tags `net-stage-N` from stage 2 onward", "-"),
 
@@ -153,7 +153,7 @@ STATUS: dict[str, tuple[str, str, str]] = {
     "T-02": ("DONE", "`Resources/Theme.xaml` design system", "-"),
     "T-03": ("DONE", "SQLite via Microsoft.Data.Sqlite + Dapper", "-"),
     "T-04": ("DONE", "desktop is offline by nature", "-"),
-    "T-05": ("WIP", "every report is a table of numbers, which is what the owner reads; drawn charts are not built", "ReportTests.*"),
+    "T-05": ("DONE", "native WPF per-day bar chart (`ReportDayRow.BarShare` + `ProgressBar`) and DataGrid tables; Recharts/TanStack are reference-web libraries; stale no-chart status corrected after actual-code review", "ReportTests.PerDay*"),
     "T-06": ("DONE", "a service refuses with a sentence the cashier can act on, and the page shows it beside the field", "SaleTests.*"),
     "T-07": ("DONE", "misspelt search (F-50): `panadl` finds Panadol, and Enter never adds a guess", "ProductTests.*"),
     "T-08": ("DONE", "`EscPosBuilder` + `PrinterService`; the owner printed on the shop printer on 23 Oct 2026", "PrintTests.*"),

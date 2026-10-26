@@ -138,23 +138,21 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.35.12 (Azure `#005A9C`) - Z-05 earlier-state recovery is written; owner proof is pending.**
+> **v0.35.13 (Cinnamon `#7C2D12`) - T-05's existing native report chart is verified; stale status corrected.**
 >
-> * **The Black box now opens a complete read-only before/after snapshot for the selected row.** It
->   preserves raw old/new values, formats JSON only for display, keeps Unicode/long or broken text
->   readable, shows details/context, and points to the module's existing audited correction screen.
->   Refresh clears the old selection. There is deliberately **no universal financial Undo**: no sale,
->   payment, return, stock ledger or PR is rolled back, and PR guidance repeats same-batch stock-only
->   cancellation with no payment or reversal of the original financial effect.
->   **834 cases are written and all 47 static checks pass here; the Z-05 guard passed 4/4 fault-injection /
->   restoration outcomes.** No .NET SDK or live WPF proof exists in this sandbox. Keep Z-05 🟡 until
->   the owner's `ALL GREEN - 834 of 834` and selection/copy/filter-clearing/correction walk-through.
+> * **The required Spec 21.3 per-day bar chart already existed.** Native WPF bars bind
+>   `ReportDayRow.BarShare`, quiet days stay visible, exact paisa labels remain beside the geometry,
+>   and managers receive no per-day profit. Recharts/TanStack are reference-web libraries, not a reason
+>   to add a duplicate desktop package. Three new regressions cover proportional scaling, an all-quiet
+>   week and profit hiding; the new static guard passed 4/4 fault-injection/restoration outcomes.
+>   **837 cases are written and all 48 static checks pass here.** T-05 is ✅ on the existing
+>   Windows-compiled chart and earlier owner-green per-day facts; the three new cases still need the
+>   owner's current `ALL GREEN - 837 of 837` run. No report query, total, model or layout changed.
 >
-> * **Earlier work remains unbackfilled.** E-12/S-05 still need the same current Windows run plus
->   rename/restart/reset proof; Merlot's Dashboard/PR live checks remain open. Topaz's CS1674 repair
->   is included, but its own 827-case rerun never happened; Azure is now the current verification
->   target. D-93 stock/money rules and the positive-total/beside-legacy-minus guidance are unchanged.
->   Charts, native `.xlsx` and cloud work were not pulled into this stage.
+> * **Four rules remain partial: E-12, S-05, Z-05 and T-10.** Azure's Z-05 reader still needs its live
+>   selection/copy/filter-clearing proof, E-12/S-05 need rename/restart/reset proof, and Merlot's
+>   Dashboard/PR checks remain open; no old result is backfilled. T-10 native `.xlsx` and cloud work
+>   were not started. D-93 stock/money and PR cancellation rules remain unchanged.
 >
 > * **v0.35.5 repairs one policy mismatch and two stale test fixtures.** The owner's v0.35.4 run proved
 >   the correct tree (**769 passed, 3 failed, 772 total**). A sign-in ahead of the PC clock now keeps

@@ -7,10 +7,10 @@
 > اِس فائل میں یہ سب ہے: پروگرام کیا ہے، ابھی کہاں کھڑا ہے، **کیا باقی ہے**، کیا **کبھی نہیں** کرنا،
 > اور ایک نیا ورژن کیسے نکالنا ہے۔ آپ کے لیے چھوٹی اردو فائل: [`docs/HANDOVER-FOR-OWNER-URDU.md`](docs/HANDOVER-FOR-OWNER-URDU.md)۔
 
-**Status:** v0.35.12 · Azure · `#005A9C` — **default branch `main`**; this repair is on the current
+**Status:** v0.35.13 · Cinnamon · `#7C2D12` — **default branch `main`**; this repair is on the current
 working branch `arena/60395e95-area11a` until its pull request is merged.
 
-*Last updated: 26 October 2026, after Z-05's read-only earlier-state reader was implemented and all 47 static checks plus 4/4 guard injection/restoration outcomes passed. Azure has **834 written cases** and still needs the owner's Windows/xUnit and live Z-05 walk-through; E-12/S-05 also retain their rename/restart/reset proof, and Merlot's Dashboard/PR checks remain open. D-93 and PR money rules remain in force; Cypress's **789/789** is prior verified evidence.*
+*Last updated: 26 October 2026, after actual-code review proved T-05's native per-day chart already existed and all 48 static checks plus 4/4 chart-guard injection/restoration outcomes passed. Cinnamon has **837 written cases**; the three new chart facts and the current suite still need Windows/xUnit. T-05 is DONE on the existing compiled chart and earlier green facts. Z-05, E-12/S-05 and Merlot live checks remain open, T-10 is untouched, and D-93/PR rules remain in force.*
 
 ---
 
@@ -56,15 +56,15 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 
 ## 3. Where it stands right now (read this twice)
 
-**Current source: v0.35.12 "Azure" writes Z-05's complete read-only before/after reader and safe correction guidance while retaining D-93, the Topaz repair and the Merlot repairs. Its 834 cases are written but not executed here (no .NET SDK). Z-05, E-12 and S-05 remain partial pending Windows and live UI proof. Prior owner evidence: v0.35.7 "Cypress" passed 789/789 in 1 m 6 s; v0.35.6 "Cedar" passed 782/782 in 1 m 3 s.**
+**Current source: v0.35.13 "Cinnamon" verifies T-05's existing native per-day chart while retaining Azure's Z-05 reader, D-93, and the Topaz/Merlot repairs. Its 837 cases are written but not executed here (no .NET SDK). T-05 is done on prior compiled/green evidence; Z-05, E-12 and S-05 remain partial pending Windows and live UI proof. Prior owner evidence: v0.35.7 "Cypress" passed 789/789 in 1 m 6 s; v0.35.6 "Cedar" passed 782/782 in 1 m 3 s.**
 
 | | |
 |---|---|
-| Test cases written | **834** in 66 files (`tools\\RUN-TESTS.cmd` compares the run against `EXPECTED=834`) |
-| Static checks | **47**, all green: `OK - 47 checks, no problems` |
-| Owner's numbered rules | **116 - 91 ✅ done, 5 🟡 partial, 0 ⬜, 20 standing** - see §4 |
+| Test cases written | **837** in 66 files (`tools\\RUN-TESTS.cmd` compares the run against `EXPECTED=837`) |
+| Static checks | **48**, all green: `OK - 48 checks, no problems` |
+| Owner's numbered rules | **116 - 92 ✅ done, 4 🟡 partial, 0 ⬜, 20 standing** - see §4 |
 | Feature board | **57 features — 52 ✅ done, 5 🟡 one shop action each, 0 ⬜ not started** (91.2 % / 8.8 %) |
-| Code size | 277 C# files (68,576 lines) + 39 XAML files (8,317 lines, 37 of them pages/windows); 50 services, 42 view models |
+| Code size | 277 C# files (68,641 lines) + 39 XAML files (8,317 lines, 37 of them pages/windows); 50 services, 42 view models |
 | Database | 26 migrations → **35 business tables + provisional report view**, append-only, existing `area11.db` opens unchanged |
 
 ### What the owner's own PC has already proved
@@ -79,6 +79,22 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 * On **v0.35.5** his next run compiled `Area11.Core` and `Area11.Tests` and reported
   **Failed: 0, Passed: 772, Total: 772 in 56 s — ALL GREEN**. This proves the numbering, session and
   Shift repairs together; it is not a claim that the Desktop installer or every page was exercised.
+
+### What v0.35.13 changes — T-05 was already built; the stale status is corrected
+
+Actual-code review found the Spec 21.3 per-day bar chart already in `ReportsView.xaml`, backed by
+`ReportDayRow.BarShare` and `ReportService.ReadDays`. It includes quiet days, scales against the
+busiest day without altering integer-paisa values, and zeroes per-day profit for a manager. The old
+Recharts/TanStack names describe the reference web app; native WPF bars and DataGrids are the desktop
+implementation. No second chart engine, package, report query, total, model or layout was added.
+
+Three new facts cover Rs 160/320/480 proportional bars, a seven-day all-quiet zero-scale and manager
+profit hiding. The new static guard protects the same service/view/test wiring and caught scaling,
+binding and permission injections before passing restored source (**4/4 outcomes**). The written
+inventory is **837 cases in 66 files** and all **48 static checks** pass. T-05 is ✅ on the existing
+Windows-compiled chart and earlier owner-green per-day facts; the three new cases still require
+Cinnamon's `ALL GREEN - 837 of 837`. Z-05, E-12/S-05 and Merlot live checks remain open; T-10 native
+`.xlsx` and cloud work were not started.
 
 ### What v0.35.12 changes — Z-05 earlier-state recovery without financial rollback
 
@@ -136,7 +152,7 @@ The owner's first Topaz build then stopped at `AppLabelTests.cs(42)` with **CS16
 does not implement `IDisposable`. The second-database test now uses a plain variable, matching the
 existing NumberingTests lifetime pattern. The existing C# static check rejects `using ... new Database`
 and caught the fault when it was injected back at line 42. The 827-case inventory and product rules
-were unchanged by that repair; Topaz's own rerun was never supplied, and Azure's 834-case run is now the current verification target.
+were unchanged by that repair; Topaz's own rerun was never supplied. Azure then became the target, and Cinnamon's 837-case run is now the current verification target.
 
 ### What v0.35.10 changes — E-04 catalog management is complete
 
@@ -298,7 +314,7 @@ walk-throughs in `HANDOFF.md` §4** — not missing modules. The unproven ones, 
    fallback), **the session ends by itself** (Settings choice, 12-hour ceiling), **no bill while the
    galla is closed** (the sell screen offers *Open a galla now*).
 
-**Five of the owner's 116 numbered rules are not fully finished** — this is the one place the rule
+**Four of the owner's 116 numbered rules are not fully finished** — this is the one place the rule
 matrix and the feature board differ, and both are telling the truth: every *feature* exists, but these
 *rules* have a piece missing. `docs/RULES-MATRIX.md` is generated from
 `tools/build_rules_matrix.py`; change the `STATUS` map there and regenerate, never edit the matrix.
@@ -308,8 +324,9 @@ matrix and the feature board differ, and both are telling the truth: every *feat
 | **E-12** 🟡 | the 32-label Settings → App words editor, Core guards and audited reset are written; Windows and the live owner walk-through are still missing |
 | **S-05** 🟡 | stable-key menu/page refresh is written for all supported headings; immediate propagation, restart persistence and reset still need the same owner proof |
 | **Z-05** 🟡 | the selected-row earlier-state reader and safe correction guidance are written; Windows/xUnit and the live selection/filter-clearing walk-through are still missing. Universal financial undo is deliberately not built |
-| **T-05** 🟡 | reports are numbers and tables; **drawn charts** are not built |
 | **T-10** 🟡 | CSV import/export is written (Excel opens it); a native **`.xlsx`** writer is not used |
+
+**T-05 is ✅ as of Cinnamon:** the spec's per-day native WPF bar chart already existed; actual-code review corrected the stale no-chart entry and added regression guards, not another chart package.
 
 Known, deliberate limitations (not bugs): SQLite on a share is supported for **two** counters only
 (a third needs the small `Area11.Server` named in the spec §34.9 — a separate future project);
@@ -323,7 +340,7 @@ WPF cannot decode `.webp` photos; cloud sync is optional and never deletes a row
 git clone https://github.com/Dr-Adil-Abdullah/AREA11a.git
 cd AREA11a                               # main is the default branch - the product is already here
 pip install --break-system-packages tree_sitter tree_sitter_c_sharp   # gives the real C# grammar
-python3 tools/check_repo.py              # must end: OK - 47 checks, no problems
+python3 tools/check_repo.py              # must end: OK - 48 checks, no problems
 python3 tools/build_rules_matrix.py --check
 ```
 
@@ -464,7 +481,7 @@ Then the documents that must not drift: `docs/PROGRESS.md` (the row + a change-l
 `python3 tools/make_checklist.py` if the board changed.
 
 ```bash
-python3 tools/check_repo.py          # OK - 47 checks, no problems
+python3 tools/check_repo.py          # OK - 48 checks, no problems
 python3 tools/build_rules_matrix.py --check
 git add -A && git commit -m "v0.xx.y Colour - <what a person would notice>" && git push
 ```
@@ -483,7 +500,7 @@ in `/tmp`, and run the checker inside it. Only then tell the owner.
 This sandbox is Linux with **no .NET SDK and no PowerShell**. That means:
 
 * you **cannot** build the WPF app, run the tests, run `install.ps1`, or open a window;
-* you **can** run `python3 tools/check_repo.py` — 47 checks that parse every C# file with the real
+* you **can** run `python3 tools/check_repo.py` — 48 checks that parse every C# file with the real
   tree-sitter grammar, resolve explicit usings, validate XAML/csproj XML, every binding against its
   view-model, every `StaticResource` key, every SQL statement against the real schema, every mapped
   column, constructor arity, migration execution on SQLite, version/colour/VERSIONS agreement, docs
@@ -569,7 +586,7 @@ honest caveat about what is not yet proven. If he asks for a printable status, r
 | `dotnet/Area11.Desktop/Views/` (37) | the pages; `PosView`, `ProductsView`, `PurchasesView`, `ShiftView`, `HardwareView` … |
 | `dotnet/Area11.Desktop/Resources/Theme.xaml` | the three brand brushes |
 | `dotnet/Area11.Tests/` (66 test files) | `TestDatabase`, `TestData`, one file per feature |
-| `tools/check_repo.py` | the 47 static checks (read the docstring of a failing check) |
+| `tools/check_repo.py` | the 48 static checks (read the docstring of a failing check) |
 | `tools/make_checklist.py`, `make_icon.py`, `build_rules_matrix.py` | the printable list, the icon, the rules matrix |
 | `tools/*.cmd`, `tools/install/*.ps1` | what the owner double-clicks: start, update, test, report, install, uninstall, share |
 | `docs/` | the spec, the decisions, the board, the rules, the schema, the guides |
@@ -578,10 +595,10 @@ honest caveat about what is not yet proven. If he asks for a printable status, r
 
 ## 16. The first message to send him (copy, paste, adjust)
 
-> میں نے ریپو پڑھ لی ہے۔ ابھی حالت یہ ہے: **v0.35.12 (Azure)** — Z-05 کے 834 written cases، 47 static checks
-> اور محفوظ earlier-state reader مکمل ہیں، مگر Windows build/xUnit اور live checking ابھی آپ کے کمپیوٹر پر باقی ہے۔
-> 57 فیچر میں 52 مکمل (91.2٪)، 5 میں صرف ایک ایک عمل باقی۔ سب سے پہلے `git pull` کر کے `START-AREA11.bat` اور
-> `tools\\RUN-TESTS.cmd` چلائیں؛ مطلوبہ نتیجہ `ALL GREEN - 834 of 834` ہے۔ پھر Black box میں row منتخب کر کے
-> مکمل پہلے/بعد کی حالت، copy، filter پر پرانا panel غائب ہونا اور محفوظ correction ہدایت دیکھیں؛ کوئی Undo یا payment
-> نہیں بننا چاہیے۔ Settings → **App words** کا rename/restart/reset اور Merlot کا Dashboard/PR معائنا بھی باقی ہے۔
-> مکمل کنسول بھیج دیں۔ Cloud ابھی postponed ہے۔
+> میں نے ریپو پڑھ لی ہے۔ ابھی حالت یہ ہے: **v0.35.13 (Cinnamon)** — 837 written cases اور 48 static checks مکمل ہیں۔
+> T-05 میں per-day chart پہلے سے موجود تھا؛ پرانی «کوئی chart نہیں» درجہ بندی ٹھیک کر دی گئی ہے، نیا chart package نہیں
+> لگایا گیا۔ مگر نئے cases سمیت Windows build/xUnit ابھی آپ کے کمپیوٹر پر باقی ہے۔ 57 فیچر میں 52 مکمل (91.2٪)،
+> 5 میں صرف ایک ایک عمل باقی۔ سب سے پہلے `git pull` کر کے `START-AREA11.bat` اور `tools\\RUN-TESTS.cmd` چلائیں؛
+> مطلوبہ نتیجہ `ALL GREEN - 837 of 837` ہے۔ Reports میں proportional bars اور quiet days دیکھیں، ساتھ Black box کا
+> Z-05 panel اور Settings → **App words** کا rename/restart/reset بھی آزمائیں۔ Merlot کا Dashboard/PR معائنا باقی ہے؛
+> T-10 اور Cloud شروع نہیں کیے گئے۔ مکمل کنسول بھیج دیں۔

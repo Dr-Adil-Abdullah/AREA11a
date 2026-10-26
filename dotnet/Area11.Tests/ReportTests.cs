@@ -275,6 +275,71 @@ public sealed class ReportTests
         Assert.Equal(report.Totals.ProfitPaisa, report.Days.Sum(day => day.ProfitPaisa));
     }
 
+    [Fact]
+    public void PerDayChart_ScalesToTheBusiestDay_WithoutChangingTheMoney()
+    {
+        using var test = new TestDatabase();
+        var product = TestData.AddProduct(test);
+
+        SeedSale(test, product, Day(-2) + " 10:00:00", qty: 2, code: "INV-8201");  // Rs 160
+        SeedSale(test, product, Day(-1) + " 10:00:00", qty: 4, code: "INV-8202");  // Rs 320
+        SeedSale(test, product, Clock.Today() + " 10:00:00", qty: 6, code: "INV-8203");  // Rs 480
+
+        var report = TestData.Reports(test).Build(ReportRange.Last7, TestData.Owner).Value!;
+        var days = report.Days.ToDictionary(row => row.Date);
+
+        Assert.Equal(1d / 3d, days[Day(-2)].BarShare, 3);
+        Assert.Equal(2d / 3d, days[Day(-1)].BarShare, 3);
+        Assert.Equal(1d, days[Clock.Today()].BarShare, 3);
+
+        // BarShare is only geometry. The signed integer-paisa report values remain untouched.
+        Assert.Equal(16000L, days[Day(-2)].SalesPaisa);
+        Assert.Equal(32000L, days[Day(-1)].SalesPaisa);
+        Assert.Equal(48000L, days[Clock.Today()].SalesPaisa);
+        Assert.Equal(report.Totals.SalesPaisa, report.Days.Sum(row => row.SalesPaisa));
+        Assert.All(report.Days.Where(row => row.SalesPaisa == 0),
+            row => Assert.Equal(0d, row.BarShare, 3));
+    }
+
+    [Fact]
+    public void PerDayChart_AllQuietWeekKeepsSevenZeroBars()
+    {
+        using var test = new TestDatabase();
+
+        var report = TestData.Reports(test).Build(ReportRange.Last7, TestData.Owner).Value!;
+
+        Assert.Equal(7, report.Days.Count);
+        Assert.Equal(0, report.Totals.Bills);
+        Assert.All(report.Days, row =>
+        {
+            Assert.False(row.HasSales);
+            Assert.Equal(0L, row.SalesPaisa);
+            Assert.Equal(0d, row.BarShare, 3);   // busiest = 0 must not divide by zero
+        });
+    }
+
+    [Fact]
+    public void PerDayChart_ManagerKeepsTheSalesBarButNotTheProfit()
+    {
+        using var test = new TestDatabase();
+        var product = TestData.AddProduct(test);
+        SeedSale(test, product, Clock.Today() + " 10:00:00", qty: 2, code: "INV-8204");
+        var manager = TestData.AddUser(test, "manager");
+
+        var result = TestData.Reports(test).Build(ReportRange.Today, manager);
+
+        Assert.True(result.Ok, result.Error);
+        var report = result.Value!;
+        var day = Assert.Single(report.Days);
+        Assert.False(report.CanSeeProfit);
+        Assert.Equal(16000L, day.SalesPaisa);
+        Assert.Equal(1d, day.BarShare, 3);
+        Assert.Equal(0L, day.ProfitPaisa);
+        Assert.Equal(Money.Format(0), day.ProfitLabel);
+        Assert.Equal(0L, report.Totals.ProfitPaisa);
+        Assert.Empty(report.TopByProfit);
+    }
+
     // ------------------------------------------------------------------ dead stock (Spec 21.3)
 
     [Fact]

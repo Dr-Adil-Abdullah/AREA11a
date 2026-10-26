@@ -3893,6 +3893,83 @@ def check_audit_recovery() -> None:
 
 
 # ---------------------------------------------------------------------------
+def check_report_chart() -> None:
+    """T-05 is the existing native per-day chart, not a reason to add a web chart package.
+
+    Recharts/TanStack belong to the reference web app. The desktop port uses WPF bars and grids.
+    Keep the geometry separate from integer-paisa values, include quiet days, and never let the
+    per-day profit value leak to a manager. This guard protects that existing implementation; the
+    matrix must not claim that no chart exists merely because it does not use a JavaScript library.
+    """
+    model_path = DOTNET / "Area11.Core/Models/ReportModels.cs"
+    service_path = DOTNET / "Area11.Core/Services/ReportService.cs"
+    vm_path = DOTNET / "Area11.Desktop/ViewModels/ReportsViewModel.cs"
+    view_path = DOTNET / "Area11.Desktop/Views/ReportsView.xaml"
+    test_path = DOTNET / "Area11.Tests/ReportTests.cs"
+    paths = (model_path, service_path, vm_path, view_path, test_path)
+    missing = False
+
+    for path in paths:
+        if not path.exists():
+            fail(f"T-05 report chart file is missing: {rel(path)}")
+            missing = True
+
+    if missing:
+        return
+
+    model = model_path.read_text(encoding="utf-8", errors="replace")
+    service = service_path.read_text(encoding="utf-8", errors="replace")
+    vm = vm_path.read_text(encoding="utf-8", errors="replace")
+    view = view_path.read_text(encoding="utf-8", errors="replace")
+    tests = test_path.read_text(encoding="utf-8", errors="replace")
+    days = service.split("private List<ReportDayRow> ReadDays", 1)[-1].split(
+        "private List<ReportItemRow> ReadTop", 1)[0]
+
+    if "public double BarShare { get; set; }" not in model:
+        fail("T-05 ReportDayRow no longer exposes the bar's 0..1 share")
+
+    for needle in (
+        "for (var day = first; day <= last; day = day.AddDays(1))",
+        "var busiest = rows.Count == 0 ? 0 : rows.Max(row => row.SalesPaisa);",
+        "row.BarShare = busiest <= 0 ? 0 : (double)row.SalesPaisa / busiest;",
+        "ProfitPaisa = canSeeProfit ? salesPaisa - refundPaisa - (cost - restockCost) : 0",
+    ):
+        if needle not in days:
+            fail(f"T-05 per-day chart lost a quiet-day/scaling/permission rule: {needle}")
+
+    for needle in ("foreach (var day in value.Days)", "Days.Add(day);"):
+        if needle not in vm:
+            fail(f"T-05 report view-model no longer supplies the real day rows: {needle}")
+
+    for needle in (
+        '<ItemsControl ItemsSource="{Binding Days}">',
+        "<ProgressBar",
+        'Minimum="0" Maximum="1" Value="{Binding BarShare}"',
+        'Text="{Binding DayLabel}"',
+        'Text="{Binding SalesLabel}"',
+        'Text="{Binding ProfitLabel}"',
+        'ItemsSource="{Binding TopByQty}"',
+        'ItemsSource="{Binding Categories}"',
+    ):
+        if needle not in view:
+            fail(f"T-05 native chart/table wiring is missing: {needle}")
+
+    for test_name in (
+        "PerDay_HasEveryDayOfThePeriod_EvenTheQuietOnes",
+        "PerDayProfit_AddsUpToTheTotalProfit",
+        "PerDayChart_ScalesToTheBusiestDay_WithoutChangingTheMoney",
+        "PerDayChart_AllQuietWeekKeepsSevenZeroBars",
+        "PerDayChart_ManagerKeepsTheSalesBarButNotTheProfit",
+    ):
+        if test_name not in tests:
+            fail(f"T-05 regression fact is missing: {test_name}")
+
+    REPORT.append(
+        "Report chart: native per-day bars keep quiet days, scale to the busiest day, preserve "
+        "integer-paisa labels and hide profit without permission; named regression facts present")
+
+
+# ---------------------------------------------------------------------------
 def check_shop_clock() -> None:
     """One time for the shop, a session that ends by itself, and no bill without a drawer (D-92).
 
@@ -4744,6 +4821,7 @@ def main() -> int:
     check_shop_clock()
     check_checklist()
     check_audit_recovery()
+    check_report_chart()
     check_csharp_grammar()
 
     if not quiet:
