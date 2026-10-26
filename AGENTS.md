@@ -156,6 +156,11 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >   assert both paths, 3/3 real-schema guidance checks pass, and the gate prepares 768 SQL statements.
 >   This is not a claimed Windows run; Topaz still needs the owner's 827/827 result.
 >
+> * **Topaz build follow-up:** the owner's first Topaz build stopped at `AppLabelTests.cs(42)` with
+>   CS1674: `Database` does not implement IDisposable. The test now uses a plain variable like the
+>   existing NumberingTests pattern. The existing C# gate rejects `using ... new Database` and caught
+>   the fault when it was injected back at line 42. No test-count or product-rule change; rerun pending.
+>
 > * **v0.35.5 repairs one policy mismatch and two stale test fixtures.** The owner's v0.35.4 run proved
 >   the correct tree (**769 passed, 3 failed, 772 total**). A sign-in ahead of the PC clock now keeps
 >   the session on the safe hard-cap answer rather than the shorter idle countdown. Two Shift tests

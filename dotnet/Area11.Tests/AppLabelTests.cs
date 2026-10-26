@@ -39,7 +39,7 @@ public sealed class AppLabelTests
         Assert.True(result.Ok, result.Error);
         Assert.Equal("ریکاؤنٹر", Service(test).Get("counter"));
 
-        using var secondDatabase = new Database(test.Database.FilePath, pooling: false, durable: false);
+        var secondDatabase = new Database(test.Database.FilePath, pooling: false, durable: false);
         var secondSettings = new SettingsService(secondDatabase, test.Audit, test.Log);
         Assert.Equal("ریکاؤنٹر", new AppLabelService(secondSettings, TestData.Permissions(test)).Get("counter"));
 

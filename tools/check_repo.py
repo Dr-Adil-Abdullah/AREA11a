@@ -193,6 +193,19 @@ def check_csharp() -> None:
     broken = 0
     for path in files:
         source = path.read_bytes()
+        text = source.decode("utf-8", errors="replace")
+
+        # Database owns short-lived connections but is not IDisposable itself. A using declaration
+        # here is CS1674, which a grammar-only parser quite correctly does not report as bad syntax.
+        lifetime = re.search(
+            r"\busing\s*\(?\s*(?:var|Database)\s+[A-Za-z_]\w*\s*=\s*new\s+Database\s*\(",
+            mask_csharp_noise(text))
+        if lifetime is not None:
+            broken += 1
+            line = text.count("\n", 0, lifetime.start()) + 1
+            fail(f"{rel(path)}:{line}: Database is not IDisposable; use a plain variable and dispose "
+                 "the connections returned by Database.Open() instead")
+            continue
 
         if parser is not None:
             tree = parser.parse(source)
@@ -202,7 +215,6 @@ def check_csharp() -> None:
                 fail(f"C# syntax error: {rel(path)}:{line}")
             continue
 
-        text = source.decode("utf-8", errors="replace")
         text = strip_csharp_noise(text)
         if text.count("{") != text.count("}") or text.count("(") != text.count(")"):
             broken += 1

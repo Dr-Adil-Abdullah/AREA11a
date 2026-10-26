@@ -111,6 +111,12 @@ stock, money or audit rule changed. Existing Quote and Create assertions were st
 changing the 827-case inventory. The real-schema rehearsal passed **3/3**, and the static gate now
 prepares **768 SQL statements**. This is a source repair, not a claimed Topaz xUnit result.
 
+The owner's first Topaz build then stopped at `AppLabelTests.cs(42)` with **CS1674**: `Database`
+does not implement `IDisposable`. The second-database test now uses a plain variable, matching the
+existing NumberingTests lifetime pattern. The existing C# static check rejects `using ... new Database`
+and caught the fault when it was injected back at line 42. The 827-case inventory and product rules
+are unchanged; the owner's rebuilt Topaz run remains required.
+
 ### What v0.35.10 changes — E-04 catalog management is complete
 
 Products → **Manage categories and companies…** opens one window for create, rename, order,
