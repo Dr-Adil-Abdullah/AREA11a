@@ -14,8 +14,9 @@ namespace Area11.Core.Services;
 /// The rules, all enforced inside one transaction:
 ///   • the return hangs on the original bill; an item that is not on that bill is refused;
 ///   • never more than was sold, counting every earlier return of the same bill;
-///   • never more money than was collected for that bill - cash refunds are capped by `paid_paisa`;
-///   • if the bill was on credit, the khata is reduced first and only the rest leaves the drawer;
+///   • never more than the bill's remaining value, counting every earlier return;
+///   • the khata is reduced only by what is still owed on THIS bill after chronological recoveries;
+///     only the already-collected, not-yet-refunded remainder leaves the drawer;
 ///   • the original bill rows are never edited (15.1.6) - a return is a new record;
 ///   • goods go back to the SAME batch instantly (U-32), or to quarantine with a permanent
 ///     Q-number when the cashier deliberately chooses "not back to stock" (U-34).
@@ -504,7 +505,7 @@ VALUES(@productId, @batchId, 'return_in', @qty, 'sale_return', @returnOf, @code,
                 Item = item,
                 QtyBase = wholeRemainder ? item.RemainingBase : wanted.QtyBase,
                 QtyEntered = wholeRemainder
-                    ? item.QtyEntered
+                    ? item.RemainingUnits
                     : item.QtyBase <= 0 ? 0 : item.QtyEntered * wanted.QtyBase / item.QtyBase,
                 RefundPaisa = refund
             });
@@ -517,13 +518,36 @@ VALUES(@productId, @batchId, 'return_in', @qty, 'sale_return', @returnOf, @code,
 
         var refundTotal = lines.Sum(line => line.RefundPaisa);
 
-        // Never more money than the shop took for this bill, and the khata comes first.
-        var creditCap = Math.Max(0, sale.DuePaisa - sale.CreditRefundedPaisa);
-        var cashCap = Math.Max(0, sale.PaidPaisa - sale.CashRefundedPaisa);
+        // The remaining line value is the total that can still be refunded. For a customer's bill,
+        // the shared chronological replay says how much of THAT bill is still owed after recoveries
+        // and its own earlier returns. The rest is collected money available for cash back:
+        //
+        //   remaining value - remaining khata
+        //     = original paid + recoveries allocated to this bill - earlier cash refunds.
+        //
+        // A later collection therefore moves value from khata to cash; it never increases the total.
+        var remainingValue = Math.Max(0, items.Sum(item => item.RemainingPaisa));
+        long creditCap;
+        long cashCap;
 
-        // A khata can only shrink if there is a customer to shrink it on. A bill with no customer
-        // (walk-in) has nothing to write the debt off against, so the whole refund must be cash.
-        var credit = sale.CustomerId is int ? Math.Min(creditCap, refundTotal) : 0L;
+        if (sale.CustomerId is int customerId)
+        {
+            var settlement = CustomerSettlementLedger.Read(_db, connection, customerId);
+            var bill = settlement.Bill(sale.Id) ?? throw new ValidationException(
+                "This bill's khata history could not be found, so the refund was not calculated.");
+
+            creditCap = Math.Min(remainingValue, Math.Max(0, bill.CreditRemainingPaisa));
+            cashCap = remainingValue - creditCap;
+        }
+        else
+        {
+            // A walk-in has no khata to reduce. Any uncollected part of such a historical bill is
+            // not cash and can never be handed back.
+            creditCap = 0;
+            cashCap = Math.Min(remainingValue, Math.Max(0, sale.PaidPaisa - sale.CashRefundedPaisa));
+        }
+
+        var credit = Math.Min(creditCap, refundTotal);
         var cash = refundTotal - credit;
 
         if (cash > cashCap)
@@ -545,7 +569,7 @@ VALUES(@productId, @batchId, 'return_in', @qty, 'sale_return', @returnOf, @code,
             RefundPaisa = refundTotal,
             CashPaisa = cash,
             CreditPaisa = credit,
-            RefundablePaisa = cashCap,
+            RefundablePaisa = cashCap + creditCap,
             Warnings = warnings
         };
     }
@@ -555,10 +579,9 @@ VALUES(@productId, @batchId, 'return_in', @qty, 'sale_return', @returnOf, @code,
     private SaleRow LoadSale(SqliteConnection connection, int saleId)
     {
         var sale = _db.QuerySingle<SaleRow>(connection, @"
-SELECT s.id, s.code, s.date, s.customer_id AS customerId, s.total_paisa AS totalPaisa,
-       s.paid_paisa AS paidPaisa, s.due_paisa AS duePaisa, s.status,
-       COALESCE((SELECT SUM(r.cash_refund_paisa)   FROM sale_returns r WHERE r.sale_id = s.id), 0) AS cashRefundedPaisa,
-       COALESCE((SELECT SUM(r.credit_reduced_paisa) FROM sale_returns r WHERE r.sale_id = s.id), 0) AS creditRefundedPaisa
+SELECT s.id, s.code, s.date, s.customer_id AS customerId,
+       s.paid_paisa AS paidPaisa, s.status,
+       COALESCE((SELECT SUM(r.cash_refund_paisa) FROM sale_returns r WHERE r.sale_id = s.id), 0) AS cashRefundedPaisa
 FROM sales s WHERE s.id = @id;", new { id = saleId });
 
         if (sale is null)
@@ -605,17 +628,11 @@ FROM sale_items WHERE sale_id = @id ORDER BY id;", new { id = sale.Id });
 
         public int? CustomerId { get; set; }
 
-        public long TotalPaisa { get; set; }
-
         public long PaidPaisa { get; set; }
-
-        public long DuePaisa { get; set; }
 
         public string? Status { get; set; }
 
         public long CashRefundedPaisa { get; set; }
-
-        public long CreditRefundedPaisa { get; set; }
     }
 
     private sealed class ItemRow : ReturnLineOption

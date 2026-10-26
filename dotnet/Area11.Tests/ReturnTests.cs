@@ -290,4 +290,121 @@ FROM sales WHERE id = @id;", new { id = saleId }) ?? string.Empty;
 
         Assert.Equal(1L, rows);
     }
+
+    [Fact]
+    public void AFullReturnAfterLaterCollection_SplitsCashAndKhataByWhatIsActuallyLeft()
+    {
+        using var test = new TestDatabase();
+        var (sales, returns, product) = Build(test);
+        var customer = TestData.AddCustomer(test);
+
+        var sale = sales.Create(TestData.Cart(product, qty: 2, method: "credit", customerId: customer),
+            TestData.Owner);
+        Assert.True(sale.Ok, sale.Error);
+        Assert.True(TestData.Ledger(test).Collect(TestData.Owner, customer, 50000, "cash", null).Ok);
+
+        var input = TestData.Return(sale.Value!, 2);
+        var quote = returns.Quote(input, TestData.Owner);
+        Assert.True(quote.Ok, quote.Error);
+        Assert.Equal(60000L, quote.Value!.RefundPaisa);
+        Assert.Equal(50000L, quote.Value.CashPaisa);
+        Assert.Equal(10000L, quote.Value.CreditReducedPaisa);
+        Assert.Equal(60000L, quote.Value.RefundablePaisa);       // cash + khata, never cash alone
+
+        var result = returns.Create(input, TestData.Owner);
+        Assert.True(result.Ok, result.Error);
+        Assert.Equal(50000L, result.Value!.CashPaisa);
+        Assert.Equal(10000L, result.Value.CreditReducedPaisa);
+
+        var receipt = TestData.ReturnReceipts(test).Build(result.Value.Code);
+        Assert.True(receipt.Ok, receipt.Error);
+        Assert.Contains("Cash refunded", receipt.Value!.PlainText);
+        Assert.Contains("Khata reduced", receipt.Value.PlainText);
+    }
+
+    [Fact]
+    public void AReturnBeforeLaterCollection_LeavesOnlyTheRemainingValueToRefundInCash()
+    {
+        using var test = new TestDatabase();
+        var (sales, returns, product) = Build(test);
+        var customer = TestData.AddCustomer(test);
+
+        var sale = sales.Create(TestData.Cart(product, qty: 2, method: "credit", customerId: customer),
+            TestData.Owner);
+        Assert.True(sale.Ok, sale.Error);
+
+        var first = returns.Create(TestData.Return(sale.Value!, 1), TestData.Owner);
+        Assert.True(first.Ok, first.Error);
+        Assert.Equal(30000L, first.Value!.CreditReducedPaisa);
+        Assert.Equal(0L, first.Value.CashPaisa);
+
+        // The customer now pays the other Rs 300. Only the one remaining tablet can still be
+        // refunded; the earlier khata reduction cannot become refundable a second time.
+        Assert.True(TestData.Ledger(test).Collect(TestData.Owner, customer, 30000, "cash", null).Ok);
+
+        var second = returns.Create(TestData.Return(sale.Value!, 1), TestData.Owner);
+        Assert.True(second.Ok, second.Error);
+        Assert.Equal(30000L, second.Value!.RefundPaisa);
+        Assert.Equal(30000L, second.Value.CashPaisa);
+        Assert.Equal(0L, second.Value.CreditReducedPaisa);
+    }
+
+    [Fact]
+    public void ACollectionOnTheOlderBill_DoesNotTurnTheNewerBillsKhataIntoCash()
+    {
+        using var test = new TestDatabase();
+        var (sales, returns, product) = Build(test);
+        var customer = TestData.AddCustomer(test);
+
+        var older = sales.Create(TestData.Cart(product, method: "credit", customerId: customer),
+            TestData.Owner);
+        var newer = sales.Create(TestData.Cart(product, method: "credit", customerId: customer),
+            TestData.Owner);
+        Assert.True(older.Ok, older.Error);
+        Assert.True(newer.Ok, newer.Error);
+
+        // Oldest-first recovery collected the older bill, not both bills and not the newer one.
+        Assert.True(TestData.Ledger(test).Collect(TestData.Owner, customer, 30000, "cash", null).Ok);
+
+        var oldReturn = returns.Create(TestData.Return(older.Value!, 1), TestData.Owner);
+        Assert.True(oldReturn.Ok, oldReturn.Error);
+        Assert.Equal(30000L, oldReturn.Value!.CashPaisa);
+        Assert.Equal(0L, oldReturn.Value.CreditReducedPaisa);
+
+        var newReturn = returns.Create(TestData.Return(newer.Value!, 1), TestData.Owner);
+        Assert.True(newReturn.Ok, newReturn.Error);
+        Assert.Equal(0L, newReturn.Value!.CashPaisa);
+        Assert.Equal(30000L, newReturn.Value.CreditReducedPaisa);
+    }
+
+    [Fact]
+    public void TheFinalRemainder_KeepsItsOwnEnteredQuantityAndExactRemainingPaisa()
+    {
+        using var test = new TestDatabase();
+        var (sales, returns, product) = Build(test);
+        var cart = TestData.Cart(product);
+        cart.Lines[0].Unit = "strip";
+        cart.Lines[0].Quantity = 2;                              // 2 strips = 20 tablets
+
+        var sale = sales.Create(cart, TestData.Owner);
+        Assert.True(sale.Ok, sale.Error);
+        Assert.Equal(600000L, sale.Value!.TotalPaisa);
+
+        var first = returns.Create(TestData.Return(sale.Value!, 10), TestData.Owner);
+        Assert.True(first.Ok, first.Error);
+        Assert.Equal(300000L, first.Value!.RefundPaisa);
+
+        var remaining = returns.Lines(sale.Value.SaleId).Value!.Single();
+        Assert.Equal(1d, remaining.RemainingUnits);
+
+        var second = returns.Create(TestData.Return(sale.Value!, 10), TestData.Owner);
+        Assert.True(second.Ok, second.Error);
+        Assert.Equal(300000L, second.Value!.RefundPaisa);
+
+        using var connection = test.Database.Open();
+        var entered = test.Database.QuerySingle<double>(connection,
+            "SELECT qty_entered FROM sale_returns WHERE sale_id = @id ORDER BY id DESC LIMIT 1;",
+            new { id = sale.Value.SaleId });
+        Assert.Equal(1d, entered);                               // not the original two strips
+    }
 }

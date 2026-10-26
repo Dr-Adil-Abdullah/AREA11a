@@ -427,4 +427,94 @@ public sealed class RecoveryTests
         Assert.False(slip.Ok);
         Assert.False(string.IsNullOrWhiteSpace(slip.Error));
     }
+
+    [Fact]
+    public void AReturnReducesItsOwnBill_NotWhateverBillHappensToBeOldest()
+    {
+        using var test = new TestDatabase();
+        var product = TestData.AddProduct(test, retailPaisa: 30000);
+        var customer = TestData.AddCustomer(test);
+
+        CreditBill(test, product, customer, units: 1, days: 100);  // old bill stays owed
+        var newer = CreditBill(test, product, customer, units: 1, days: 10);
+
+        var returned = TestData.Returns(test).Create(new ReturnInput
+        {
+            SaleId = newer,
+            Restock = true,
+            Lines = new List<ReturnLineInput>
+            {
+                new() { SaleItemId = FirstItemId(test, newer), QtyBase = 1 }
+            }
+        }, TestData.Owner);
+        Assert.True(returned.Ok, returned.Error);
+        Assert.Equal(30000L, returned.Value!.CreditReducedPaisa);
+
+        var row = Assert.Single(Report(test).Rows);
+        Assert.Equal(30000L, row.BalancePaisa);
+        Assert.Equal(30000L, row.Bucket3Paisa);
+        Assert.Equal(0L, row.Bucket0Paisa);
+        Assert.Equal(100, row.OldestDays);                        // the new return did not clear old debt
+        Assert.True(row.BooksMatch);
+    }
+
+    [Fact]
+    public void ARecoverySlip_DoesNotAbsorbABillCreatedAfterThatPayment()
+    {
+        using var test = new TestDatabase();
+        var product = TestData.AddProduct(test, retailPaisa: 30000);
+        var customer = TestData.AddCustomer(test);
+
+        CreditBill(test, product, customer, units: 3, days: 100); // Rs 900
+        var paid = TestData.Ledger(test).Collect(TestData.Owner, customer, 30000, "cash", "part");
+        Assert.True(paid.Ok, paid.Error);
+        AgePayment(test, paid.Value!.PaymentId, 50);
+
+        var before = TestData.Recovery(test).Slip(paid.Value.PaymentId, TestData.Owner).Value!;
+        Assert.Equal(90000L, before.BalanceBeforePaisa);
+        Assert.Equal(60000L, before.BalanceAfterPaisa);
+
+        CreditBill(test, product, customer, units: 2, days: 0);   // a later Rs 600 bill
+
+        var reprint = TestData.Recovery(test).Slip(paid.Value.PaymentId, TestData.Owner).Value!;
+        Assert.Equal(before.BalanceBeforePaisa, reprint.BalanceBeforePaisa);
+        Assert.Equal(before.BalanceAfterPaisa, reprint.BalanceAfterPaisa);
+        var hit = Assert.Single(reprint.Hits);
+        Assert.Equal(30000L, hit.PaidPaisa);
+        Assert.Equal(60000L, hit.LeftPaisa);
+    }
+
+    [Fact]
+    public void ACollectionBeyondTheBills_ReducesCarriedInKhataAndItsSlipExplainsWhereItWent()
+    {
+        using var test = new TestDatabase();
+        var product = TestData.AddProduct(test, retailPaisa: 30000);
+        var customer = TestData.AddCustomer(test);
+
+        using (var connection = test.Database.Open())
+        {
+            test.Database.Execute(connection,
+                "UPDATE customers SET opening_balance_paisa = 20000, balance_paisa = 20000 WHERE id = @id;",
+                new { id = customer });
+        }
+
+        CreditBill(test, product, customer, units: 1, days: 20); // Rs 300 + Rs 200 carried in
+        var paid = TestData.Ledger(test).Collect(TestData.Owner, customer, 40000, "cash", "bills and opening");
+        Assert.True(paid.Ok, paid.Error);
+
+        var row = Assert.Single(Report(test).Rows);
+        Assert.Equal(10000L, row.BalancePaisa);
+        Assert.Equal(10000L, row.OpeningPaisa);
+        Assert.Equal(0L, row.BucketsTotalPaisa);
+        Assert.True(row.BooksMatch);
+
+        var slip = TestData.Recovery(test).Slip(paid.Value!.PaymentId, TestData.Owner);
+        Assert.True(slip.Ok, slip.Error);
+        Assert.Equal(50000L, slip.Value!.BalanceBeforePaisa);
+        Assert.Equal(10000L, slip.Value.BalanceAfterPaisa);
+        Assert.Equal(2, slip.Value.Hits.Count);
+        Assert.Equal(10000L, slip.Value.Hits[1].PaidPaisa);
+        Assert.True(slip.Value.Hits[1].IsOpening);
+        Assert.Contains("Carried-in udhaar", slip.Value.Hits[1].Label);
+    }
 }

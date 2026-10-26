@@ -87,7 +87,10 @@ public sealed class ReturnQuote
 
     public long CreditReducedPaisa { get; init; }
 
-    /// <summary>What was collected for this bill and has not been refunded yet.</summary>
+    /// <summary>
+    /// The bill's total remaining refundable value: cash that can still go back PLUS khata that can
+    /// still be reduced. It is deliberately not labelled as a cash-only amount.
+    /// </summary>
     public long RefundablePaisa { get; init; }
 
     public List<string> Warnings { get; init; } = new();

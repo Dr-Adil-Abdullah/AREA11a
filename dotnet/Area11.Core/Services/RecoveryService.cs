@@ -16,6 +16,7 @@ namespace Area11.Core.Services;
 ///   • every khata collection and every return that reduced the khata takes money off;
 ///   • each rupee of payment is applied to the **oldest unpaid bill first**, the way a shopkeeper
 ///     with a notebook works through a page;
+///   • a return's khata reduction stays on its own bill - it is not an oldest-first collection;
 ///   • what is left on a bill keeps that bill's date, so the 90+ column holds money that has really
 ///     been owed for three months.
 ///
@@ -94,8 +95,9 @@ ORDER BY c.name COLLATE NOCASE;");
 
         // Every credit bill of every customer who still owes, oldest first. One query, not one per
         // customer: the screen opens on every visit and must not take a second per row.
-        var bills = _db.Query<BillRow>(connection, @"
-SELECT s.customer_id AS customerId, s.id AS id, s.code AS code, s.date AS date, s.due_paisa AS duePaisa
+        var bills = _db.Query<CustomerSettlementBill>(connection, @"
+SELECT s.customer_id AS customerId, s.id AS id, s.code AS code, s.date AS date,
+       s.due_paisa AS originalDuePaisa
 FROM sales s
 JOIN customers c ON c.id = s.customer_id AND c.active = 1 AND c.balance_paisa > 0
 WHERE s.status IN ('paid', 'partial', 'credit') AND s.due_paisa > 0
@@ -103,18 +105,19 @@ ORDER BY s.customer_id, s.date, s.id;");
 
         // The only two things that take money off a khata (5.1.11): a collection and a return's
         // credit part. A payment written at the till against a sale is already inside due_paisa,
-        // so counting it here would subtract the same rupee twice.
-        var credits = _db.Query<CreditRow>(connection, @"
-SELECT customerId, id, date, amountPaisa, kind FROM (
+        // so counting it here would subtract the same rupee twice. The return keeps its sale_id:
+        // it reduces its own bill, unlike a collection which walks oldest-first.
+        var credits = _db.Query<CustomerSettlementEvent>(connection, @"
+SELECT customerId, id, date, amountPaisa, kind, saleId FROM (
     SELECT p.customer_id AS customerId, p.id AS id, p.date AS date, p.amount_paisa AS amountPaisa,
-           'collection' AS kind
+           'collection' AS kind, NULL AS saleId
     FROM payments p
     JOIN customers c ON c.id = p.customer_id AND c.active = 1 AND c.balance_paisa > 0
     WHERE p.customer_id IS NOT NULL AND p.sale_id IS NULL AND p.purchase_id IS NULL
-      AND p.provisional_return_id IS NULL
+      AND p.provisional_return_id IS NULL AND p.amount_paisa > 0
     UNION ALL
     SELECT s.customer_id AS customerId, r.id AS id, r.date AS date, r.credit_reduced_paisa AS amountPaisa,
-           'return' AS kind
+           'return' AS kind, r.sale_id AS saleId
     FROM sale_returns r
     JOIN sales s ON s.id = r.sale_id
     JOIN customers c ON c.id = s.customer_id AND c.active = 1 AND c.balance_paisa > 0
@@ -131,23 +134,13 @@ ORDER BY customerId, date, id;");
 
         foreach (var customer in customers)
         {
-            var open = (billsByCustomer.TryGetValue(customer.CustomerId, out var hisBills) ? hisBills : new List<BillRow>())
-                .Select(bill => new OpenBill
-                {
-                    Code = bill.Code ?? string.Empty,
-                    Date = bill.Date ?? string.Empty,
-                    Left = bill.DuePaisa
-                })
-                .ToList();
-
+            var hisBills = billsByCustomer.TryGetValue(customer.CustomerId, out var foundBills)
+                ? foundBills
+                : new List<CustomerSettlementBill>();
             var hisCredits = creditsByCustomer.TryGetValue(customer.CustomerId, out var found)
                 ? found
-                : new List<CreditRow>();
-
-            foreach (var credit in hisCredits)
-            {
-                Allocate(open, credit.AmountPaisa);
-            }
+                : new List<CustomerSettlementEvent>();
+            var settlement = CustomerSettlementLedger.Replay(hisBills, hisCredits, customer.OpeningPaisa);
 
             var row = new RecoveryRow
             {
@@ -156,14 +149,14 @@ ORDER BY customerId, date, id;");
                 Phone = customer.Phone,
                 Category = customer.Category,
                 BalancePaisa = customer.BalancePaisa,
-                OpeningPaisa = customer.OpeningPaisa,
+                OpeningPaisa = settlement.OpeningRemainingPaisa,
                 LastPaymentDate = hisCredits
-                    .Where(credit => credit.Kind == "collection")
+                    .Where(credit => credit.IsCollection)
                     .Select(credit => credit.Date)
                     .LastOrDefault()
             };
 
-            foreach (var bill in open.Where(bill => bill.Left > 0))
+            foreach (var bill in settlement.Bills.Where(bill => bill.Started && bill.CreditRemainingPaisa > 0))
             {
                 var days = Ageing.AgeInDays(bill.Date, today);
 
@@ -175,10 +168,10 @@ ORDER BY customerId, date, id;");
 
                 switch (Ageing.Bucket(days))
                 {
-                    case 0: row.Bucket0Paisa += bill.Left; break;
-                    case 1: row.Bucket1Paisa += bill.Left; break;
-                    case 2: row.Bucket2Paisa += bill.Left; break;
-                    default: row.Bucket3Paisa += bill.Left; break;
+                    case 0: row.Bucket0Paisa += bill.CreditRemainingPaisa; break;
+                    case 1: row.Bucket1Paisa += bill.CreditRemainingPaisa; break;
+                    case 2: row.Bucket2Paisa += bill.CreditRemainingPaisa; break;
+                    default: row.Bucket3Paisa += bill.CreditRemainingPaisa; break;
                 }
             }
 
@@ -210,33 +203,6 @@ ORDER BY customerId, date, id;");
         });
 
         return report;
-    }
-
-    /// <summary>Applies one payment to the oldest unpaid bills, for as long as the money lasts.</summary>
-    private static void Allocate(List<OpenBill> bills, long amountPaisa)
-    {
-        var left = amountPaisa;
-
-        foreach (var bill in bills)
-        {
-            if (left <= 0)
-            {
-                return;
-            }
-
-            if (bill.Left <= 0)
-            {
-                continue;
-            }
-
-            var take = Math.Min(left, bill.Left);
-
-            bill.Left -= take;
-            left -= take;
-        }
-
-        // Money beyond the oldest debt is not invented onto a new bill; the khata cannot go below
-        // zero (Collect refuses an over-payment and ReturnService clamps), so the rest is dropped.
     }
 
     // ------------------------------------------------------------------ the slip
@@ -285,36 +251,14 @@ WHERE p.id = @id AND p.customer_id IS NOT NULL AND p.sale_id IS NULL AND p.purch
                 return ServiceResult<RecoverySlip>.Fail("The customer of that collection was not found.");
             }
 
-            // Replay this customer's history exactly as the khata page does, stopping at the target
-            // payment: before = what he owed on that day, after = what he owed an instant later.
-            var bills = _db.Query<BillRow>(connection, @"
-SELECT s.customer_id AS customerId, s.id AS id, s.code AS code, s.date AS date, s.due_paisa AS duePaisa
-FROM sales s
-WHERE s.customer_id = @id AND s.status IN ('paid', 'partial', 'credit') AND s.due_paisa > 0
-ORDER BY s.date, s.id;", new { id = payment.CustomerId });
-
-            var credits = _db.Query<CreditRow>(connection, @"
-SELECT customerId, id, date, amountPaisa, kind FROM (
-        SELECT p.customer_id AS customerId, p.id AS id, p.date AS date, p.amount_paisa AS amountPaisa,
-               'collection' AS kind
-        FROM payments p
-        WHERE p.customer_id = @id AND p.sale_id IS NULL AND p.purchase_id IS NULL
-          AND p.provisional_return_id IS NULL
-        UNION ALL
-        SELECT s.customer_id AS customerId, r.id AS id, r.date AS date, r.credit_reduced_paisa AS amountPaisa,
-               'return' AS kind
-        FROM sale_returns r
-        JOIN sales s ON s.id = r.sale_id
-        WHERE s.customer_id = @id AND r.credit_reduced_paisa > 0
-    )
-    ORDER BY date, id;", new { id = payment.CustomerId });
-
-            var open = bills.Select(bill => new OpenBill
+            // The same replay used by Returns and the ageing report stops immediately after this
+            // payment. A future bill or return therefore cannot rewrite an old piece of paper.
+            var settlement = CustomerSettlementLedger.Read(_db, connection, payment.CustomerId, payment.Id);
+            var collected = settlement.Collection;
+            if (collected is null)
             {
-                Code = bill.Code ?? string.Empty,
-                Date = bill.Date ?? string.Empty,
-                Left = bill.DuePaisa
-            }).ToList();
+                return ServiceResult<RecoverySlip>.Fail("That collection is not in the customer's history.");
+            }
 
             var slip = new RecoverySlip
             {
@@ -326,60 +270,21 @@ SELECT customerId, id, date, amountPaisa, kind FROM (
                 ReceivedPaisa = payment.AmountPaisa,
                 Method = payment.Method ?? "cash",
                 Note = payment.Note,
-                ReceivedBy = payment.UserName
+                ReceivedBy = payment.UserName,
+                BalanceBeforePaisa = collected.BalanceBeforePaisa,
+                BalanceAfterPaisa = collected.BalanceAfterPaisa
             };
 
-            var reached = false;
-
-            foreach (var credit in credits)
+            foreach (var hit in collected.Hits)
             {
-                if (credit.Kind == "collection" && credit.Id == payment.Id)
+                slip.Hits.Add(new RecoveryHit
                 {
-                    // What he owed a moment before the money was handed over.
-                    slip.BalanceBeforePaisa = open.Sum(bill => bill.Left);
-
-                    // The same oldest-first walk as Allocate, keeping a note of every bill touched:
-                    // the paper must be able to show where the money went.
-                    var left = payment.AmountPaisa;
-
-                    foreach (var bill in open)
-                    {
-                        if (left <= 0)
-                        {
-                            break;
-                        }
-
-                        if (bill.Left <= 0)
-                        {
-                            continue;
-                        }
-
-                        var take = Math.Min(left, bill.Left);
-
-                        bill.Left -= take;
-                        left -= take;
-
-                        slip.Hits.Add(new RecoveryHit
-                        {
-                            BillCode = bill.Code,
-                            BillDate = bill.Date,
-                            PaidPaisa = take,
-                            LeftPaisa = bill.Left
-                        });
-                    }
-
-                    slip.BalanceAfterPaisa = Math.Max(0, slip.BalanceBeforePaisa - payment.AmountPaisa);
-                    reached = true;
-
-                    break;
-                }
-
-                Allocate(open, credit.AmountPaisa);
-            }
-
-            if (!reached)
-            {
-                return ServiceResult<RecoverySlip>.Fail("That collection is not in the customer's history.");
+                    BillCode = hit.Code,
+                    BillDate = hit.Date,
+                    PaidPaisa = hit.PaidPaisa,
+                    LeftPaisa = hit.LeftPaisa,
+                    IsOpening = hit.IsOpening
+                });
             }
 
             return ServiceResult<RecoverySlip>.Success(slip);
@@ -461,7 +366,7 @@ SELECT customerId, id, date, amountPaisa, kind FROM (
         if (data.Hits.Count > 0)
         {
             document.Lines.Add(ReceiptLine.Sep(width));
-            Add("Knocked off these bills:");
+            Add("Where the money went:");
 
             foreach (var hit in data.Hits)
             {
@@ -491,15 +396,6 @@ SELECT customerId, id, date, amountPaisa, kind FROM (
 
     // ------------------------------------------------------------------ types
 
-    private sealed class OpenBill
-    {
-        public string Code { get; init; } = string.Empty;
-
-        public string Date { get; init; } = string.Empty;
-
-        public long Left { get; set; }
-    }
-
     private sealed class CustomerRow
     {
         public int CustomerId { get; set; }
@@ -513,32 +409,6 @@ SELECT customerId, id, date, amountPaisa, kind FROM (
         public long BalancePaisa { get; set; }
 
         public long OpeningPaisa { get; set; }
-    }
-
-    private sealed class BillRow
-    {
-        public int CustomerId { get; set; }
-
-        public int Id { get; set; }
-
-        public string? Code { get; set; }
-
-        public string? Date { get; set; }
-
-        public long DuePaisa { get; set; }
-    }
-
-    private sealed class CreditRow
-    {
-        public int CustomerId { get; set; }
-
-        public int Id { get; set; }
-
-        public string? Date { get; set; }
-
-        public long AmountPaisa { get; set; }
-
-        public string? Kind { get; set; }
     }
 
     private sealed class PaymentRow

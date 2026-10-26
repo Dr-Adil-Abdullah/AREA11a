@@ -22,7 +22,7 @@ features and the four phases.
 |---|---|
 | ✅ | finished - the code is written, compiled on the owner's PC, and tested (or its test is named in the row) |
 | 🟡 | the code is finished; **one action in the shop** still has to prove it (the action is written in the row) |
-| ⬜ | not started - **there are none at v0.35.6** |
+| ⬜ | not started - **there are none at v0.35.7** |
 | 🧪 | a test case covers this row in `Area11.Tests` (the count is checked against `EXPECTED` on every run) |
 
 > **How to read a ✅.** It means the code exists, is covered by a named test, and the solution compiled
@@ -47,7 +47,7 @@ features and the four phases.
 > four red tests are why v0.35.2 exists. Those behaviours rest on **769 cases** plus that one green
 > suite, and the five 🟡 rows wait for one action each in the shop.
 
-> **Board at v0.35.6 (Cedar):** 57 features - **52 ✅ / 5 🟡 / 0 ⬜ (91.2% / 8.8%)**. Every feature
+> **Board at v0.35.7 (Cypress):** 57 features - **52 ✅ / 5 🟡 / 0 ⬜ (91.2% / 8.8%)**. Every feature
 > is written, **the program compiles on Windows**, and - new on 23 Oct 2026 - **the window opened and a
 > person signed in on the owner's PC** (v0.33.0: `Signed in: Owner`). The 5 🟡 are the ones only the shop
 > PC can prove, and each is **one action**: one medicine added with a batch (F-08), one delivery entered
@@ -60,18 +60,18 @@ features and the four phases.
 > v0.29.0 moved **F-12 (the dashboard)** to ✅ after giving it 20 tests; the mock database used for
 > them was rebuilt from all 23 migrations and every SQL statement was run on it before shipping.
 
-## Where we stand (v0.35.6)
+## Where we stand (v0.35.7)
 
 | Question | Number | What it means |
 |---|---|---|
 | Features in the board | **57** | **52 ✅ done (91.2%)**, **5 🟡 written but only the shop PC can prove them (8.8%)**, 0 ⬜ not started |
-| Code | **64,045 lines** of C# (Core 29,645 · Desktop 17,224 · Tests 17,176) + **8,020 lines** of XAML | 265 C# files, 38 XAML files |
-| The shop's rules | **47 service files** in `Area11.Core`, **41 model files**, **34 database tables** over 24 migrations | migration 024 adds provisional money evidence without editing original bill rows |
+| Code | **64,916 lines** of C# (Core 29,947 · Desktop 17,226 · Tests 17,743) + **8,020 lines** of XAML | 266 C# files, 38 XAML files |
+| The shop's rules | **48 service files** in `Area11.Core`, **41 model files**, **34 database tables** over 24 migrations | migration 024 adds provisional money evidence without editing original bill rows |
 | Screens | **36 views**, **36 page view-models**, 1,325 XAML bindings (179 made `Mode=OneWay`) | every binding checked against its page's own view-model or row type |
-| Tests | **782 cases** in 62 files | 730 facts + 12 theories (52 inline rows) |
+| Tests | **789 cases** in 62 files | 737 facts + 12 theories (52 inline rows) |
 | Static gates | **44 checks** in `tools/check_repo.py` | ~8 seconds; not a compiler - see the warning at the end |
 | Reporting a fault | **one file** - `tools\SEND-REPORT.cmd` (v0.30.3, D-78) | build, SDK, git state, shop folder (no rows), whole crash report, last build/test output |
-| Versions shipped | 0.1.0 -> **0.35.6** | each with its own brand colour (D-24) |
+| Versions shipped | 0.1.0 -> **0.35.7** | each with its own brand colour (D-24) |
 | Owner decisions recorded | **D-00 … D-93** | `docs/OWNER-DECISIONS.md`, in Urdu |
 
 **What is actually left.** Nothing in the feature list is unbuilt, and as of v0.31.0 that sentence is
@@ -124,7 +124,7 @@ of books.
 | ID | Feature | State | Where | Test | Done when |
 |---|---|---|---|---|---|
 | F-20 | Bill lookup for a return: by printed number **and** by phone / customer / medicine / date | ✅ | `Services/ReturnService.Search` + `FindSale`, `Models/SaleLookupModels.cs`, search panel on `Views/ReturnsView.xaml` | `SaleLookupTests` 🧪 (13) | the customer has no paper, and the right bill is found by any one thing they remember - as a list, never a guess |
-| F-21 | Return `RET` against the original bill, strict limits, **printed return receipt** | ✅ | `Migr. 017`, `Services/ReturnService.cs`, `Services/ReturnReceiptService.cs`, `Views/ReturnsView.xaml` | `ReturnTests` 🧪 | cannot refund more than was sold or collected (U-28, U-35) |
+| F-21 | Return `RET` against the original bill, strict limits, **printed return receipt** | ✅ | `Migr. 017`, `Services/ReturnService.cs`, `Services/CustomerSettlementLedger.cs`, `Services/ReturnReceiptService.cs`, `Views/ReturnsView.xaml` | `ReturnTests` 🧪 (17) | cumulative quantity/value caps hold after later recoveries; only this bill's remaining khata is reduced and only collected value becomes cash (U-28, U-35) · v0.35.7 |
 | F-23 | Quarantine `Q` with permanent number + disposition by owner **or manager** (D-22) | ✅ | `Services/QuarantineService.cs`, `Views/ReturnsView.xaml` | `QuarantineTests` 🧪 | goods never restock without a decision; history kept forever |
 | F-22 | Provisional (no-bill) return `PR-nnnn`: refund at once, stock on the shelf, bill attached later, cancel with reason | ✅ | `Services/ProvisionalReturnService.cs`, `Services/ProvisionalReceiptService.cs`, `Views/ProvisionalView.xaml` | `ProvisionalTests` 🧪 | a refund without a bill can never be checked - the number is permanent and the badge does not stop (U-33) |
 | F-25 | Stock write-off / breakage: expired, broken, lost, count short/extra, **valued at cost**, never blocks (U-30) | ✅ | `Services/StockService.cs`, `Views/WriteOffView.xaml` | `StockTests` 🧪 | removing more than the book says must warn, never refuse (U-30) |
@@ -140,7 +140,7 @@ of books.
 |---|---|---|---|---|---|
 | F-31 | Shift / galla: open, close, variance, **and hand the drawer to the next person with a printed slip** (F-55, v0.30.6) | ✅ | `Services/ShiftService.cs`, `Views/ShiftView.xaml` | `ShiftTests` 🧪 | expected cash = float + sales - payouts; the page says exact / over / short · v0.4.0 |
 | F-32 | Expenses and owner drawings | ✅ | `Services/ExpenseService.cs`, `Views/ExpensesView.xaml` | `ExpenseTests` 🧪 | they reduce the drawer, not the profit · v0.4.4 |
-| F-33 | Udhaar recovery: ageing (0-30 / 31-60 / 61-90 / 90+), oldest first, `PAY-nnnn` recovery slip | ✅ | `Services/RecoveryService.cs`, `Views/RecoveryView.xaml` | `RecoveryTests` 🧪 | the four columns add up to the khata, and a payment knocks the oldest bill off first · v0.4.5 |
+| F-33 | Udhaar recovery: ageing (0-30 / 31-60 / 61-90 / 90+), collections oldest first, returns tied to their own bill, `PAY-nnnn` recovery slip | ✅ | `Services/RecoveryService.cs`, `Services/CustomerSettlementLedger.cs`, `Views/RecoveryView.xaml` | `RecoveryTests` 🧪 | the four columns plus remaining carried-in khata add up; a payment knocks the oldest existing bill off first; a later bill cannot rewrite a reprint · v0.35.7 |
 | F-34 | Reports: today / 7 / 30 days / this month, KPI cards, per-day chart, top 10 by quantity and by profit, category split, dead stock, best and worst day; provisional refund events included | ✅ | `Services/ReportService.cs`, `Views/ReportsView.xaml` | `ReportTests` 🧪 (16) | profit uses cost-at-sale, cost-at-return and the return rule of Spec 15.6 · v0.35.6 |
 | F-35 | Audit viewer + CSV export (owner; manager hidden by default) | ✅ | `Services/AuditHistoryService.cs`, `Views/AuditView.xaml` | `AuditViewerTests` 🧪 (10) | search + module/action filters + date window, no edit or delete, CSV is exactly what is on screen · v0.5.0 |
 | UI | **Owner's screen overhaul (D-50)**: 176 px sidebar grouped in five headings, one bell with a count badge, red bar removed, two alert kinds (anyone closes a reminder; only the owner ends a problem), low-stock and expired alerts, customers + suppliers + recovery as one page, and the **new customer** form that never existed | ✅ | `Views/ShellWindow.xaml`, `ViewModels/PartnersViewModel.cs`, `Views/CustomersView.xaml` | `AlertKindTests` 🧪 (13), `CustomerCreateTests` 🧪 (8) | a reminder is one click for anybody; a money problem is owner-only; one people page · v0.6.0 |
@@ -203,18 +203,19 @@ of books.
 | Migrations 001-023 produce 34 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
 | **Compiles on Windows** | `dotnet build Area11.sln` | ✅ 20 Oct 2026 (v0.1.1); re-check after each release |
-| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ `v0.35.5 (Carmine, #A50021)` |
+| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ `v0.35.7 (Cypress, #1F4D3A)` |
 | Every `StaticResource` key exists (**1,434 keys**) | `python3 tools/check_repo.py` | ✅ |
 | Every binding matches its view-model (**1,324 bindings**) | `python3 tools/check_repo.py` | ✅ |
 | The three script banners match the build | `python3 tools/check_repo.py` | ✅ 3 files |
 | The board and the printable tick-list agree | `python3 tools/make_checklist.py` + the checker | ✅ 57 / 52 / 5 / 0 |
 | **Printer prints (owner's code 6)** | SYSTEM -> *Printer & scanner*, pick the printer, **Print test slip** | 🟡 v0.22.1 fixes the cause (the program opened the print server, not the default printer) - the owner's next slip is the proof |
-| **772 tests green** | `dotnet test` (or `tools\RUN-TESTS.cmd`) | ✅ **v0.35.5 Carmine on the owner's PC: Failed 0, Passed 772, Total 772 in 56 s — ALL GREEN.** Core and Tests compiled; the numbering, backward-clock and Shift repairs are therefore runtime-proven together. Previous evidence: v0.35.4 ran **769 of 772** (the three cases repaired in v0.35.5); v0.35.1 ran **765 of 769** (four `RunTrail` tests, fixed in v0.35.2); v0.33.0 passed **730 of 730 in 53 s**. Older runs: **fourth run (v0.6.1): 320 of 321 in 27.5 s.** Runs five to fifteen were never reported. **Run 16 (v0.18.0): 479 total, 6 failed, 473 passed** - all six were tests written from an older rule (the program was right) and every one is repaired in v0.19.1; see the 0.19.1 row in `docs/VERSIONS.md`. Runs 17+ are waiting on the owner's machine: v0.19.0 503, v0.19.1 505, v0.20.0 519, v0.21.0 539, v0.22.0 553, v0.22.1 559, v0.23.0 577, v0.24.0 593, v0.25.0 629, v0.26.0/0.26.1 641, v0.27.0 654, v0.28.0 666, v0.29.0 686, v0.29.1 689, **v0.29.2 695** |
+| **782 tests green (prior release); 789 written now** | `dotnet test` (or `tools\RUN-TESTS.cmd`) | ✅ **v0.35.6 Cedar on the owner's PC: Failed 0, Passed 782, Total 782 in 1 m 3 s — ALL GREEN.** The new v0.35.7 Cypress suite has 789 cases and needs its own Windows run. |
 
 ## Change log
 
 | Date | What |
 |---|---|
+| 26 Oct 2026 | **v0.35.7 Cypress - bill returns and khata recovery use one chronological rule.** A later collection now moves only the remaining refundable value from khata to cash: a Rs 600 credit bill with Rs 500 collected refunds **Rs 500 cash + Rs 100 khata**, never Rs 600 off the khata. Collections remain oldest-first, while a return reduces its own bill. The shared replay also drives ageing and reprints; later bills cannot rewrite an old recovery slip, and carried-in khata remains visible without an invented date. Final packed-unit remainders keep the remaining entered quantity. Seven regressions added, **789 cases**, 266 C# files; no migration and no historical rows rewritten. Cedar is prior owner evidence at **782/782**. Cypress is statically checked and needs the owner's Windows run. |
 | 25 Oct 2026 | **AlertService mapping investigation - no current defect, no code change.** The old report said SQLite `qty=1 - Double` was being read as `Int64`, but current `ProblemRow.Qty` is `double` and `qty_base` is `REAL`. The owner's green 772-case run already exercises all seven alert sources, including the low-stock query with REAL 1.0 and 2.0. A new cast would be speculative and could truncate quantities; none was made. A recurrence needs a fresh v0.35.5+ report. |
 | 25 Oct 2026 | **v0.35.5 Carmine - the three red cases from the real 772-case run are repaired.** The owner reported **769 passed, 3 failed, 772 total in 55 s** on v0.35.4. `SessionPolicy` now keeps the backward-clock case on the safe hard-cap answer instead of showing the shorter idle countdown. The two Shift failures were fixtures that opened a drawer through `TestData.Sales()` and then wrongly opened it again; they now open before the sale, while the service's second-open refusal remains intact. The session test also pins the hard-cap clock and absence of a warning. **772 cases, no schema change.** All 44 static checks pass; **the owner's subsequent Windows run passed 772 of 772 in 56 s**, proving these repairs and the earlier numbering cases together. |
 | 25 Oct 2026 | **v0.35.4 Garnet - the launcher accepts the repair branch.** The branch guard named only `main` and a retired Arena branch, so the correct `arena/60395e95-area11a` copy was refused before building. The active `WORK_BRANCH` is now declared once and accepted beside `main`; other branches remain refused, and the message no longer claims two branches have identical code. **No business rule, schema or test-count change: 772 cases.** All 44 static checks pass; the owner must still run the Windows build and tests. |
