@@ -22,7 +22,7 @@ features and the four phases.
 |---|---|
 | ✅ | finished - the code is written, compiled on the owner's PC, and tested (or its test is named in the row) |
 | 🟡 | the code is finished; **one action in the shop** still has to prove it (the action is written in the row) |
-| ⬜ | not started - **there are none at v0.35.7** |
+| ⬜ | not started - **there are none at v0.35.8** |
 | 🧪 | a test case covers this row in `Area11.Tests` (the count is checked against `EXPECTED` on every run) |
 
 > **How to read a ✅.** It means the code exists, is covered by a named test, and the solution compiled
@@ -47,7 +47,7 @@ features and the four phases.
 > four red tests are why v0.35.2 exists. Those behaviours rest on **769 cases** plus that one green
 > suite, and the five 🟡 rows wait for one action each in the shop.
 
-> **Board at v0.35.7 (Cypress):** 57 features - **52 ✅ / 5 🟡 / 0 ⬜ (91.2% / 8.8%)**. Every feature
+> **Board at v0.35.8 (Lapis):** 57 features - **52 ✅ / 5 🟡 / 0 ⬜ (91.2% / 8.8%)**. Every feature
 > is written, **the program compiles on Windows**, and - new on 23 Oct 2026 - **the window opened and a
 > person signed in on the owner's PC** (v0.33.0: `Signed in: Owner`). The 5 🟡 are the ones only the shop
 > PC can prove, and each is **one action**: one medicine added with a batch (F-08), one delivery entered
@@ -60,18 +60,18 @@ features and the four phases.
 > v0.29.0 moved **F-12 (the dashboard)** to ✅ after giving it 20 tests; the mock database used for
 > them was rebuilt from all 23 migrations and every SQL statement was run on it before shipping.
 
-## Where we stand (v0.35.7)
+## Where we stand (v0.35.8)
 
 | Question | Number | What it means |
 |---|---|---|
 | Features in the board | **57** | **52 ✅ done (91.2%)**, **5 🟡 written but only the shop PC can prove them (8.8%)**, 0 ⬜ not started |
-| Code | **64,916 lines** of C# (Core 29,947 · Desktop 17,226 · Tests 17,743) + **8,020 lines** of XAML | 266 C# files, 38 XAML files |
-| The shop's rules | **48 service files** in `Area11.Core`, **41 model files**, **34 database tables** over 24 migrations | migration 024 adds provisional money evidence without editing original bill rows |
-| Screens | **36 views**, **36 page view-models**, 1,325 XAML bindings (179 made `Mode=OneWay`) | every binding checked against its page's own view-model or row type |
-| Tests | **789 cases** in 62 files | 737 facts + 12 theories (52 inline rows) |
+| Code | **65,772 lines** of C# (Core 30,455 · Desktop 17,232 · Tests 18,085) + **8,020 lines** of XAML | 267 C# files, 38 XAML files |
+| The shop's rules | **48 service files** in `Area11.Core`, **41 model files**, **35 database tables** over 25 migrations | migration 025 adds durable PR-to-sale-line reconciliation without editing original bill rows |
+| Screens | **36 views**, **36 page view-models**, 1,324 XAML bindings (179 made `Mode=OneWay`) | every binding checked against its page's own view-model or row type |
+| Tests | **798 cases** in 63 files | 744 facts + 13 theories (54 inline rows) |
 | Static gates | **44 checks** in `tools/check_repo.py` | ~8 seconds; not a compiler - see the warning at the end |
 | Reporting a fault | **one file** - `tools\SEND-REPORT.cmd` (v0.30.3, D-78) | build, SDK, git state, shop folder (no rows), whole crash report, last build/test output |
-| Versions shipped | 0.1.0 -> **0.35.7** | each with its own brand colour (D-24) |
+| Versions shipped | 0.1.0 -> **0.35.8** | each with its own brand colour (D-24) |
 | Owner decisions recorded | **D-00 … D-93** | `docs/OWNER-DECISIONS.md`, in Urdu |
 
 **What is actually left.** Nothing in the feature list is unbuilt, and as of v0.31.0 that sentence is
@@ -101,7 +101,7 @@ of books.
 | ID | Feature | State | Where | Test | Done when |
 |---|---|---|---|---|---|
 | F-01 | Solution with three projects (Core / Desktop / Tests), .NET 10, MVVM | ✅ | `Area11.sln`, `dotnet/Directory.Build.props` | - | **compiled on Windows**, 23 Oct 2026, v0.30.9: the launcher printed **`BUILD OK - the program was compiled`** for the first time - Core and Tests had compiled before, the WPF project had not. (The window then stopped on a binding fault of its own - see v0.31.1 and F-16.) |
-| F-02 | Exact database schema, migrations 001-024, 34 business tables + provisional report view | ✅ | `dotnet/Area11.Core/Data/Migrations/` | `MigrationTests` 🧪 | an old `area11.db` opens unchanged and migration 024 backfills provisional money rows |
+| F-02 | Exact database schema, migrations 001-025, 35 business tables + provisional report view | ✅ | `dotnet/Area11.Core/Data/Migrations/` | `MigrationTests` 🧪 | an old `area11.db` opens unchanged; 024 backfills provisional money and 025 adds sale-line allocations without guessing old links |
 | F-03 | Settings service, 86 keys, every change audited, saved in one transaction | ✅ | `Area11.Core/Services/SettingsService.cs` | `SettingsTests` 🧪 | bad values are refused before they reach the database |
 | F-04 | Audit black box (old -> new values, never deleted) | 🟡 | `Services/AuditService.cs`, `Utils/AuditDiff.cs` | `AuditDiffTests` 🧪 | every module writes (U-27) |
 | F-05 | Sign-in: owner password, staff PIN, 5 tries -> 2 minute lock | ✅ | `Services/AuthService.cs`, `Utils/PasswordHasher.cs` | `PasswordHasherTests` 🧪 | owner signs in on Windows - **done 23 Oct 2026 on v0.33.0**: `app-2026-10-23.log` shows `13:53:31 Signed in: Owner` |
@@ -126,7 +126,7 @@ of books.
 | F-20 | Bill lookup for a return: by printed number **and** by phone / customer / medicine / date | ✅ | `Services/ReturnService.Search` + `FindSale`, `Models/SaleLookupModels.cs`, search panel on `Views/ReturnsView.xaml` | `SaleLookupTests` 🧪 (13) | the customer has no paper, and the right bill is found by any one thing they remember - as a list, never a guess |
 | F-21 | Return `RET` against the original bill, strict limits, **printed return receipt** | ✅ | `Migr. 017`, `Services/ReturnService.cs`, `Services/CustomerSettlementLedger.cs`, `Services/ReturnReceiptService.cs`, `Views/ReturnsView.xaml` | `ReturnTests` 🧪 (17) | cumulative quantity/value caps hold after later recoveries; only this bill's remaining khata is reduced and only collected value becomes cash (U-28, U-35) · v0.35.7 |
 | F-23 | Quarantine `Q` with permanent number + disposition by owner **or manager** (D-22) | ✅ | `Services/QuarantineService.cs`, `Views/ReturnsView.xaml` | `QuarantineTests` 🧪 | goods never restock without a decision; history kept forever |
-| F-22 | Provisional (no-bill) return `PR-nnnn`: refund at once, stock on the shelf, bill attached later, cancel with reason | ✅ | `Services/ProvisionalReturnService.cs`, `Services/ProvisionalReceiptService.cs`, `Views/ProvisionalView.xaml` | `ProvisionalTests` 🧪 | a refund without a bill can never be checked - the number is permanent and the badge does not stop (U-33) |
+| F-22 | Provisional (no-bill) return `PR-nnnn`: refund/restock once, later **sale-line reconciliation**, cancel with reason | ✅ | `Migr. 025`, `Services/ProvisionalReturnService.cs`, `Services/ReturnService.cs`, `Services/ProvisionalReceiptService.cs`, `Views/ProvisionalView.xaml` | `ProvisionalTests` + `ProvisionalReconciliationTests` 🧪 | pending means unchecked; linking allocates real quantities/refund without another stock/payment event, repeated/split lines and cumulative RET caps agree, old links need same-bill repair, and refund differences remain visible (U-33) · v0.35.8 |
 | F-25 | Stock write-off / breakage: expired, broken, lost, count short/extra, **valued at cost**, never blocks (U-30) | ✅ | `Services/StockService.cs`, `Views/WriteOffView.xaml` | `StockTests` 🧪 | removing more than the book says must warn, never refuse (U-30) |
 | F-26 | Stock-take `ST-nnnn`: frozen book, count sheet (book/counted/diff/value), apply once (owner), frozen cost, GINTI batch for found stock | ✅ | `Services/StockTakeService.cs`, `Views/StockTakeView.xaml` | `StockTakeTests` 🧪 | the count is evidence; the book must follow it, not the other way round (19.2) |
 | F-27 | Customer khata: list + page, money received (`PAY-`), running balance, statement, stars | ✅ | `Services/CustomerLedgerService.cs`, `Views/CustomersView.xaml` | `CustomerLedgerTests` 🧪 | balance always equals the sum of movements ("books match"), and money received is refused above the udhaar |
@@ -191,30 +191,31 @@ of books.
 
 | Check | How | State |
 |---|---|---|
-| C# parses with the real grammar (**265 files**) | `python3 tools/check_repo.py` | ✅ 0 error nodes |
+| C# parses with the real grammar (**267 files**) | `python3 tools/check_repo.py` | ✅ 0 error nodes |
 | Every file imports the namespaces it uses (`System.IO` … **and every type this repo declares**) | `python3 tools/check_repo.py` | ✅ |
-| Every SQL statement prepares against the real schema (**632 statements**) | `python3 tools/check_repo.py` | ✅ 0 invalid |
+| Every SQL statement prepares against the real schema (**679 statements**) | `python3 tools/check_repo.py` | ✅ 0 invalid |
 | XAML / csproj / props are valid XML | `python3 tools/check_repo.py` | ✅ |
 | Every XAML binding matches its view-model | `python3 tools/check_repo.py` | ✅ |
 | Every `StaticResource` key exists, in **every** XAML file | `python3 tools/check_repo.py` | ✅ |
 | Every column a query maps has a property on its model | `python3 tools/check_repo.py` | ✅ (22nd check) |
 | No member of a model is read off its `ServiceResult` envelope (CS1061) | `python3 tools/check_repo.py` | ✅ new in v0.6.1 |
 | Every `new XService(...)` matches its constructor (CS7036/CS1501) | `python3 tools/check_repo.py` | ✅ |
-| Migrations 001-023 produce 34 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
+| Migrations 001-025 produce 35 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
 | **Compiles on Windows** | `dotnet build Area11.sln` | ✅ 20 Oct 2026 (v0.1.1); re-check after each release |
-| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ `v0.35.7 (Cypress, #1F4D3A)` |
+| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ `v0.35.8 (Lapis, #2A4B9B)` |
 | Every `StaticResource` key exists (**1,434 keys**) | `python3 tools/check_repo.py` | ✅ |
 | Every binding matches its view-model (**1,324 bindings**) | `python3 tools/check_repo.py` | ✅ |
 | The three script banners match the build | `python3 tools/check_repo.py` | ✅ 3 files |
 | The board and the printable tick-list agree | `python3 tools/make_checklist.py` + the checker | ✅ 57 / 52 / 5 / 0 |
 | **Printer prints (owner's code 6)** | SYSTEM -> *Printer & scanner*, pick the printer, **Print test slip** | 🟡 v0.22.1 fixes the cause (the program opened the print server, not the default printer) - the owner's next slip is the proof |
-| **789 tests green** | `dotnet test` (or `tools\RUN-TESTS.cmd`) | ✅ **v0.35.7 Cypress on the owner's PC: Failed 0, Passed 789, Skipped 0, Total 789 in 1 m 6 s — ALL GREEN.** Prior release Cedar also passed 782/782. |
+| **798 tests written; Lapis Windows run pending** | `dotnet test` (or `tools\RUN-TESTS.cmd`) | 🟡 **v0.35.8 Lapis has not been compiled or executed here (no .NET SDK): the owner must see `ALL GREEN - 798 of 798`.** ✅ Prior evidence: Cypress passed 789/789 in 1 m 6 s; Cedar passed 782/782. |
 
 ## Change log
 
 | Date | What |
 |---|---|
+| 26 Oct 2026 | **v0.35.8 Lapis - PR links now reconcile the original sale lines and close the double-return path.** Migration 025 stores each PR line's quantity, expected bill value and actual refund against real `sale_items`; linking still writes no stock movement, payment or khata event and never edits the original bill. RET reads those allocations and also applies a whole-bill cumulative refund cap. Wrong products/insufficient quantities roll back; split lines, repeated products and multiple PRs accumulate; over/under refunds stay visible instead of being rewritten. Old header-only links need one same-bill repair before another RET. Nine cases added (**798 total, 63 files**), four unrealistic link fixtures corrected, 267 C# files, 25 migrations and 35 tables. All 44 static checks, the real 023→025 SQLite upgrade and 500 independent allocation-model cases pass. **No .NET SDK here: Lapis still needs the owner's `ALL GREEN - 798 of 798`; Cypress's 789/789 is prior evidence.** |
 | 26 Oct 2026 | **v0.35.7 Cypress - bill returns and khata recovery use one chronological rule.** A later collection now moves only the remaining refundable value from khata to cash: a Rs 600 credit bill with Rs 500 collected refunds **Rs 500 cash + Rs 100 khata**, never Rs 600 off the khata. Collections remain oldest-first, while a return reduces its own bill. The shared replay also drives ageing and reprints; later bills cannot rewrite an old recovery slip, and carried-in khata remains visible without an invented date. Final packed-unit remainders keep the remaining entered quantity. Seven regressions added, **789 cases**, 266 C# files; no migration and no historical rows rewritten. Cedar is prior owner evidence at **782/782**. Cypress subsequently passed the owner's Windows run: **789/789 in 1 m 6 s, failed 0 — ALL GREEN**. |
 | 25 Oct 2026 | **AlertService mapping investigation - no current defect, no code change.** The old report said SQLite `qty=1 - Double` was being read as `Int64`, but current `ProblemRow.Qty` is `double` and `qty_base` is `REAL`. The owner's green 772-case run already exercises all seven alert sources, including the low-stock query with REAL 1.0 and 2.0. A new cast would be speculative and could truncate quantities; none was made. A recurrence needs a fresh v0.35.5+ report. |
 | 25 Oct 2026 | **v0.35.5 Carmine - the three red cases from the real 772-case run are repaired.** The owner reported **769 passed, 3 failed, 772 total in 55 s** on v0.35.4. `SessionPolicy` now keeps the backward-clock case on the safe hard-cap answer instead of showing the shorter idle countdown. The two Shift failures were fixtures that opened a drawer through `TestData.Sales()` and then wrongly opened it again; they now open before the sale, while the service's second-open refusal remains intact. The session test also pins the hard-cap clock and absence of a warning. **772 cases, no schema change.** All 44 static checks pass; **the owner's subsequent Windows run passed 772 of 772 in 56 s**, proving these repairs and the earlier numbering cases together. |

@@ -101,9 +101,10 @@ public sealed class ProvisionalTests
         var sale = TestData.Sales(test).Create(TestData.Cart(product, qty: 2), TestData.Owner);
         Assert.True(sale.Ok, sale.Error);
 
-        var rush = TestData.Provisionals(test).Create(TestData.RushReturn(product, qty: 1), TestData.Owner);
+        var rush = TestData.Provisionals(test).Create(
+            TestData.RushReturn(product, qty: 2, unit: "base", refundPaisa: 60000), TestData.Owner);
         var afterRush = StockOf(test, product);
-        Assert.Equal(28d, afterRush);   // 10 - 2 sold + 20 returned
+        Assert.Equal(10d, afterRush);   // 10 - 2 sold + the same 2 returned
 
         var linked = TestData.Provisionals(test).Link(rush.Value!.Id, sale.Value!.Code, TestData.Owner);
 
@@ -172,7 +173,8 @@ public sealed class ProvisionalTests
         using var test = new TestDatabase();
         var product = TestData.AddProduct(test);
         var sale = TestData.Sales(test).Create(TestData.Cart(product), TestData.Owner);
-        var rush = TestData.Provisionals(test).Create(TestData.RushReturn(product), TestData.Owner);
+        var rush = TestData.Provisionals(test).Create(
+            TestData.RushReturn(product, qty: 1, unit: "base", refundPaisa: 30000), TestData.Owner);
 
         var cashier = new User { Id = 5, Name = "Bilal", Role = "cashier" };
 
@@ -189,7 +191,8 @@ public sealed class ProvisionalTests
         using var test = new TestDatabase();
         var product = TestData.AddProduct(test);
         var sale = TestData.Sales(test).Create(TestData.Cart(product), TestData.Owner);
-        var rush = TestData.Provisionals(test).Create(TestData.RushReturn(product), TestData.Owner);
+        var rush = TestData.Provisionals(test).Create(
+            TestData.RushReturn(product, qty: 1, unit: "base", refundPaisa: 30000), TestData.Owner);
 
         var alerts = TestData.Alerts(test);
 
@@ -206,8 +209,9 @@ public sealed class ProvisionalTests
 
         // Even after the bill is attached the alert stays until the owner writes a reason (15.5.4).
         Assert.True(afterLink.HasLive);
-        var key = afterLink.Live.First(alert => alert.Type == "provisional_linked").Key;
-        Assert.True(alerts.Dismiss(TestData.Owner, key, "checked against the bill").Ok);
+        var linkedAlert = afterLink.Live.First(alert => alert.Type == "provisional_linked");
+        Assert.Contains(sale.Value.Code, linkedAlert.Detail);       // the INV, not the PR number
+        Assert.True(alerts.Dismiss(TestData.Owner, linkedAlert.Key, "checked against the bill").Ok);
         Assert.False(alerts.Report().HasLive);
     }
 
@@ -373,7 +377,8 @@ UPDATE shifts SET opened_at = datetime('now','localtime','-20 seconds'),
         using var test = new TestDatabase();
         var product = TestData.AddProduct(test);
         var sale = TestData.Sales(test).Create(TestData.Cart(product), TestData.Owner);
-        var rush = TestData.Provisionals(test).Create(TestData.RushReturn(product), TestData.Owner);
+        var rush = TestData.Provisionals(test).Create(
+            TestData.RushReturn(product, qty: 1, unit: "base", refundPaisa: 30000), TestData.Owner);
 
         Assert.True(TestData.Provisionals(test).Link(rush.Value!.Id, sale.Value!.Code, TestData.Owner).Ok);
 

@@ -194,7 +194,7 @@ rem  and tools\check_repo.py fails if it disagrees with BuildInfo.cs - so it can
 rem  the owner is never told an old tree is the new one. Reading the number out of the source with
 rem  findstr printed "vunknown" on his PC (v0.30.0): the tokens did not line up, and a banner that
 rem  says nothing is worse than no banner, because it looks like a failure of the tree.
-set "BUILD=v0.35.7 (Cypress)"
+set "BUILD=v0.35.8 (Lapis)"
 
 echo        Code on this PC: %BUILD%
 

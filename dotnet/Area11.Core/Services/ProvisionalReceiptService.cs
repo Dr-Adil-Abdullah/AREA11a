@@ -126,14 +126,25 @@ public sealed class ProvisionalReceiptService
 
         document.Lines.Add(ReceiptLine.Sep(width));
 
-        // The sentence that makes this slip worth printing.
-        Add("Paper bill missing. Keep this slip.", ReceiptAlign.Center, bold: true);
-        Add("The bill can be attached later; the", ReceiptAlign.Center);
-        Add("number above is permanent.", ReceiptAlign.Center);
-
+        // A reprint must describe the CURRENT state; saying "bill missing" above "bill attached"
+        // made an old linked slip contradict itself.
         if (row.IsLinked && !string.IsNullOrWhiteSpace(row.LinkedCode))
         {
-            Add("Bill attached: " + row.LinkedCode, ReceiptAlign.Center);
+            Add("Bill attached: " + row.LinkedCode, ReceiptAlign.Center, bold: true);
+            Add(row.NeedsReconciliation
+                ? "Quantity reconciliation required."
+                : "Stock/payment not added again.", ReceiptAlign.Center);
+
+            if (row.HasLinkVariance)
+            {
+                Add("Refund differs from bill value.", ReceiptAlign.Center, bold: true);
+            }
+        }
+        else
+        {
+            Add("Paper bill missing. Keep this slip.", ReceiptAlign.Center, bold: true);
+            Add("The bill can be attached later; the", ReceiptAlign.Center);
+            Add("number above is permanent.", ReceiptAlign.Center);
         }
 
         if (row.IsCancelled)

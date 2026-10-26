@@ -1,11 +1,11 @@
 # SCHEMA REFERENCE — exact columns of the rebuilt database
 
 > Generated from the reference `src/lib/schema.ts` (migrations 001–013, verbatim) plus
-> Area11 migrations 014–022 (per-user permissions, photos, own fields, several barcodes).
-> Verified by running all 22 files against SQLite in order. This is the authority for every SQL
+> Area11 migrations 014–025 (permissions, photos, own fields, barcodes, provisional money and reconciliation).
+> Verified by running all 25 files against SQLite in order. This is the authority for every SQL
 > statement in `Area11.Core`.
 
-**34 tables** · 22 migrations
+**35 tables** · 25 migrations · plus the `provisional_report_lines` view
 
 ## `_migrations`  (2 columns)
 
@@ -175,7 +175,7 @@ Indexes: `idx_expenses_date`
 | `user_id` | INTEGER |  |  |
 | `created_at` | TEXT | yes | `datetime('now','localtime')` |
 
-## `payments`  (11 columns)
+## `payments`  (12 columns)
 
 | Column | Type | Not null | Default |
 |---|---|---|---|
@@ -190,10 +190,11 @@ Indexes: `idx_expenses_date`
 | `supplier_id` | INTEGER |  |  |
 | `user_id` | INTEGER |  |  |
 | `note` | TEXT |  |  |
+| `provisional_return_id` | INTEGER |  |  |
 
-FK: `supplier_id` → `suppliers.id` · `customer_id` → `customers.id` · `purchase_id` → `purchases.id` · `sale_id` → `sales.id`
+FK: `supplier_id` → `suppliers.id` · `customer_id` → `customers.id` · `purchase_id` → `purchases.id` · `sale_id` → `sales.id` · `provisional_return_id` → `provisional_returns.id`
 
-Indexes: `idx_payments_date`
+Indexes: `idx_payments_date`, `idx_payments_provisional`
 
 ## `photos`  (7 columns)
 
@@ -262,7 +263,7 @@ FK: `category_id` → `categories.id` · `company_id` → `companies.id`
 
 Indexes: `idx_products_name`, `idx_products_generic`, `idx_products_barcode`
 
-## `provisional_items`  (5 columns)
+## `provisional_items`  (10 columns)
 
 | Column | Type | Not null | Default |
 |---|---|---|---|
@@ -271,12 +272,37 @@ Indexes: `idx_products_name`, `idx_products_generic`, `idx_products_barcode`
 | `product_id` | INTEGER | yes |  |
 | `qty_base` | REAL | yes | `0` |
 | `created_at` | TEXT | yes | `datetime('now','localtime')` |
+| `batch_id` | INTEGER |  |  |
+| `qty_entered` | REAL | yes | `0` |
+| `unit_entered` | TEXT |  |  |
+| `refund_paisa` | INTEGER | yes | `0` |
+| `cost_paisa_at_return` | INTEGER | yes | `0` |
 
-FK: `product_id` → `products.id` · `provisional_id` → `provisional_returns.id`
+FK: `product_id` → `products.id` · `provisional_id` → `provisional_returns.id` · `batch_id` → `batches.id`
 
-Indexes: `idx_prov_items`
+Indexes: `idx_prov_items`, `idx_prov_items_product`
 
-## `provisional_returns`  (13 columns)
+## `provisional_return_allocations`  (7 columns)
+
+One row allocates part of the ORIGINAL PR event to one original sale line. It is not another return,
+stock movement or payment. `expected_refund_paisa` is the remaining bill value of that quantity at
+link time; `refund_paisa` is the actual PR money allocated to the line.
+
+| Column | Type | Not null | Default |
+|---|---|---|---|
+| `id` | INTEGER |  |  |
+| `provisional_item_id` | INTEGER | yes |  |
+| `sale_item_id` | INTEGER | yes |  |
+| `qty_base` | REAL | yes | CHECK > 0 |
+| `expected_refund_paisa` | INTEGER | yes | CHECK >= 0 |
+| `refund_paisa` | INTEGER | yes | CHECK >= 0 |
+| `created_at` | TEXT | yes | `datetime('now','localtime')` |
+
+FK: `provisional_item_id` → `provisional_items.id` (cascade) · `sale_item_id` → `sale_items.id`
+
+Indexes: `idx_pr_alloc_sale_item`, `idx_pr_alloc_provisional_item`; unique `(provisional_item_id, sale_item_id)`
+
+## `provisional_returns`  (20 columns)
 
 | Column | Type | Not null | Default |
 |---|---|---|---|
@@ -293,10 +319,17 @@ Indexes: `idx_prov_items`
 | `linked_by` | INTEGER |  |  |
 | `user_id` | INTEGER |  |  |
 | `created_at` | TEXT | yes | `datetime('now','localtime')` |
+| `customer_name` | TEXT |  |  |
+| `linked_code` | TEXT |  |  |
+| `cancel_reason` | TEXT |  |  |
+| `cancelled_at` | TEXT |  |  |
+| `cancelled_by` | INTEGER |  |  |
+| `linked_expected_paisa` | INTEGER |  | NULL = old link needs reconciliation |
+| `linked_unallocated_paisa` | INTEGER |  | actual PR money above matched line capacity |
 
 FK: `linked_sale_id` → `sales.id`
 
-Indexes: `idx_prov_status`, `idx_prov_date`
+Indexes: `idx_prov_status`, `idx_prov_date`, unique `idx_prov_code`
 
 ## `purchase_items`  (12 columns)
 

@@ -95,8 +95,11 @@ WHERE r.disposition = 'quarantine'
 ORDER BY r.created_at DESC;"));
 
             problems.AddRange(_db.Query<ProblemRow>(connection, @"
-SELECT q.id AS entityId, 'No-bill return ' || q.code AS name, 0 AS qty, q.created_at AS lastChange,
-       q.code AS qcode, q.date AS date, q.status AS status, q.refund_paisa AS refundPaisa
+SELECT q.id AS entityId, 'No-bill return ' || q.code AS name, 0 AS qty,
+       COALESCE(q.linked_at, q.created_at) AS lastChange,
+       q.linked_code AS qcode, q.date AS date, q.status AS status, q.refund_paisa AS refundPaisa,
+       q.linked_expected_paisa AS linkedExpectedPaisa,
+       q.linked_unallocated_paisa AS linkedUnallocatedPaisa
 FROM provisional_returns q
 WHERE q.status IN ('pending', 'linked')
 ORDER BY q.id DESC;"));
@@ -540,25 +543,47 @@ JOIN products p ON p.id = b.product_id WHERE b.id = @id;", new { id }) ?? string
         return string.IsNullOrWhiteSpace(problem.QCode) ? TypeNegativeStock : TypeQuarantine;
     }
 
-    private static string DetailOf(ProblemRow problem, string kind, int cutoffDays) => kind switch
+    private static string DetailOf(ProblemRow problem, string kind, int cutoffDays)
     {
-        TypeSupplierCutoff =>
-            Qty.Format(problem.Qty) + " expiring " + ShortDate(problem.Date) + " (" + problem.DaysLeft +
-            " days) - send it back by " + LastReturnDay(problem.Date, cutoffDays) +
-            ", after that the supplier may refuse it",
-        TypeQuarantine =>
-            Qty.Format(problem.Qty) + " in quarantine since " + ShortDate(problem.LastChange) +
-            " - decide: back in stock, damaged, or sold",
-        TypeProvisional =>
-            Money.Format(problem.RefundPaisa) + " refunded on " + ShortDate(problem.Date) +
-            " with no bill - attach the bill",
-        TypeProvisionalLinked =>
-            "bill " + (problem.QCode ?? string.Empty) + " attached - confirm it is the right bill, then end this alert",
-        TypeShiftOpen =>
-            "opened " + ShortDate(problem.Date) + " by " + (problem.Name ?? "someone") +
-            " - count the drawer and close it on the Shift (galla) page",
-        _ => "stock " + Qty.Format(problem.Qty) + " - fix by a stock count or a purchase"
-    };
+        if (kind == TypeProvisionalLinked)
+        {
+            var bill = string.IsNullOrWhiteSpace(problem.QCode) ? "(unknown)" : problem.QCode;
+
+            if (problem.LinkedExpectedPaisa is null)
+            {
+                return "bill " + bill + " attached before line reconciliation - attach the same bill " +
+                       "again on the No bill (PR) page before another return";
+            }
+
+            var variance = problem.RefundPaisa - problem.LinkedExpectedPaisa.Value;
+            if (variance != 0 || (problem.LinkedUnallocatedPaisa ?? 0) > 0)
+            {
+                return "bill " + bill + " attached - PR refund differs from the returned quantities' " +
+                       "bill value by " + Money.Format(Math.Abs(variance)) +
+                       "; check the reconciliation, then end this alert";
+            }
+
+            return "bill " + bill + " attached - confirm it is the right bill, then end this alert";
+        }
+
+        return kind switch
+        {
+            TypeSupplierCutoff =>
+                Qty.Format(problem.Qty) + " expiring " + ShortDate(problem.Date) + " (" + problem.DaysLeft +
+                " days) - send it back by " + LastReturnDay(problem.Date, cutoffDays) +
+                ", after that the supplier may refuse it",
+            TypeQuarantine =>
+                Qty.Format(problem.Qty) + " in quarantine since " + ShortDate(problem.LastChange) +
+                " - decide: back in stock, damaged, or sold",
+            TypeProvisional =>
+                Money.Format(problem.RefundPaisa) + " refunded on " + ShortDate(problem.Date) +
+                " with no bill - attach the bill",
+            TypeShiftOpen =>
+                "opened " + ShortDate(problem.Date) + " by " + (problem.Name ?? "someone") +
+                " - count the drawer and close it on the Shift (galla) page",
+            _ => "stock " + Qty.Format(problem.Qty) + " - fix by a stock count or a purchase"
+        };
+    }
 
     /// <summary>The last day the supplier still takes this batch back: expiry minus the cutoff.</summary>
     private static string LastReturnDay(string? expiryDate, int cutoffDays)
@@ -600,6 +625,10 @@ JOIN products p ON p.id = b.product_id WHERE b.id = @id;", new { id }) ?? string
         public string? Status { get; set; }
 
         public long RefundPaisa { get; set; }
+
+        public long? LinkedExpectedPaisa { get; set; }
+
+        public long? LinkedUnallocatedPaisa { get; set; }
 
         /// <summary>Set only by a query that already knows its kind (the supplier cutoff).</summary>
         public string? Type { get; set; }

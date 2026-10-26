@@ -204,7 +204,10 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
 
     public string SelectedCaption => _selectedEntry is null
         ? "Pick an entry from the list first."
-        : _selectedEntry.Code + " · " + _selectedEntry.RefundText + " · " + _selectedEntry.StatusLabel;
+        : _selectedEntry.Code + " · " + _selectedEntry.RefundText + " · " + _selectedEntry.StatusLabel
+          + (string.IsNullOrWhiteSpace(_selectedEntry.ReconciliationLabel)
+              ? string.Empty
+              : " · " + _selectedEntry.ReconciliationLabel);
 
     public string TotalText
     {
@@ -377,7 +380,7 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
     {
         if (SelectedEntry is null)
         {
-            SetStatus("Pick a pending entry first.", true);
+            SetStatus("Pick a no-bill return first.", true);
             return;
         }
 
@@ -394,7 +397,10 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
         Lookup.Clear();
         LookupText = string.Empty;
         Load();
-        SetStatus(caption + ": bill attached. Stock was NOT added again; the alert waits for the owner.", false);
+        var warning = result.Warnings.Count == 0 ? string.Empty : " " + string.Join(" ", result.Warnings);
+        SetStatus(caption + ": bill attached; quantities and refund reconciled. " +
+                  "Stock and payment were NOT created again; the alert waits for the owner." + warning,
+            result.Warnings.Count > 0);
     }
 
     private void CancelEntry()

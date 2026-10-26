@@ -7,10 +7,10 @@
 > اِس فائل میں یہ سب ہے: پروگرام کیا ہے، ابھی کہاں کھڑا ہے، **کیا باقی ہے**، کیا **کبھی نہیں** کرنا،
 > اور ایک نیا ورژن کیسے نکالنا ہے۔ آپ کے لیے چھوٹی اردو فائل: [`docs/HANDOVER-FOR-OWNER-URDU.md`](docs/HANDOVER-FOR-OWNER-URDU.md)۔
 
-**Status:** v0.35.7 · Cypress · `#1F4D3A` — **default branch `main`**; this repair is on the current
+**Status:** v0.35.8 · Lapis · `#2A4B9B` — **default branch `main`**; this repair is on the current
 working branch `arena/60395e95-area11a` until its pull request is merged.
 
-*Last updated: 26 October 2026, after the owner's Windows run verified v0.35.7 Cypress with **789/789 tests passing**; the PR-linking stage waits for `next`.*
+*Last updated: 26 October 2026, after PR-link reconciliation was implemented and all 44 static checks plus the SQLite upgrade passed. Lapis has **798 written cases** and still needs the owner's Windows run; Cypress's **789/789** is prior verified evidence.*
 
 ---
 
@@ -56,16 +56,16 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 
 ## 3. Where it stands right now (read this twice)
 
-**Current source: v0.35.7 "Cypress" is owner-verified: all 789 cases passed in 1 m 6 s, failed 0. Prior evidence: v0.35.6 "Cedar" passed all 782 cases in 1 m 3 s.**
+**Current source: v0.35.8 "Lapis" implements PR-to-sale-line reconciliation. Its 798 cases are written but not executed here (no .NET SDK). Prior owner evidence: v0.35.7 "Cypress" passed 789/789 in 1 m 6 s; v0.35.6 "Cedar" passed 782/782 in 1 m 3 s.**
 
 | | |
 |---|---|
-| Test cases written | **789** in 62 files (`tools\RUN-TESTS.cmd` compares the run against `EXPECTED=789`) |
+| Test cases written | **798** in 63 files (`tools\RUN-TESTS.cmd` compares the run against `EXPECTED=798`) |
 | Static checks | **44**, all green: `OK - 44 checks, no problems` |
 | Owner's numbered rules | **116 - 90 ✅ done, 5 🟡 partial, 1 ⬜ (E-12), 20 standing** - see §4 |
 | Feature board | **57 features — 52 ✅ done, 5 🟡 one shop action each, 0 ⬜ not started** (91.2 % / 8.8 %) |
-| Code size | 266 C# files (64,916 lines) + 38 XAML files (8,020 lines, 36 of them pages/windows); 48 services, 41 view models |
-| Database | 24 migrations → **34 business tables + provisional report view**, append-only, existing `area11.db` opens unchanged |
+| Code size | 267 C# files (65,772 lines) + 38 XAML files (8,020 lines, 36 of them pages/windows); 48 services, 41 view models |
+| Database | 25 migrations → **35 business tables + provisional report view**, append-only, existing `area11.db` opens unchanged |
 
 ### What the owner's own PC has already proved
 
@@ -80,6 +80,30 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
   **Failed: 0, Passed: 772, Total: 772 in 56 s — ALL GREEN**. This proves the numbering, session and
   Shift repairs together; it is not a claim that the Desktop installer or every page was exercised.
 
+### What v0.35.8 changes — a linked PR cannot be returned again
+
+Migration 025 adds `provisional_return_allocations`: each PR item is matched to one or more real
+`sale_items`, with base quantity, expected remaining bill paisa and actual allocated PR paisa. The
+whole link is one transaction. It writes **no stock movement, payment, khata event or sale update**;
+the original PR event and original bill stay immutable. Wrong medicines and quantities above the
+bill's unreconciled remainder are refused atomically. Repeated products, split sale lines and
+multiple PRs consume the same cumulative remainder, and `ReturnService` now includes those rows in
+both its preview and save caps.
+
+A refund mismatch is not hidden or “corrected” by rewriting history. The PR stores expected value
+and unallocatable excess, the audit stores every allocation, and the owner sees the over/under
+warning. RET applies both per-line and whole-bill refund caps; goods may still come back with a zero
+refund if earlier PR money already consumed the bill value. Old Cedar/Cypress linked headers have
+NULL reconciliation fields: another RET is blocked until the owner/manager selects that closed PR
+and attaches the **same** bill again. No migration guesses those old quantities. Linked alerts now
+name the real INV and explain the repair; linked reprints no longer claim the bill is missing.
+
+Nine regressions were added (**798 total**) and four impossible old fixtures were made realistic.
+All 44 static checks, the real SQLite 023→025 upgrade and 500 independent allocation-model cases
+pass here. **There is no .NET SDK here, so Lapis is not compiled or xUnit-verified yet.** The owner
+must run `tools\RUN-TESTS.cmd` and see `ALL GREEN - 798 of 798`. **Next code stage: D-93 negative-
+stock retirement, only after another `next`; cloud remains postponed.**
+
 ### What v0.35.7 changes — bill returns and recovery agree about the money
 
 `CustomerSettlementLedger` is the single chronological replay used by bill-linked returns, recovery
@@ -93,8 +117,7 @@ cash-plus-khata value, and a final packed-unit remainder stores its own remainin
 Seven regressions were added (**789 total**). No schema or historical sale/payment/return row changed.
 Static checks and five SQLite chronology rehearsals passed here. The owner's subsequent Windows
 run compiled Core and Tests and reported **Failed 0, Passed 789, Skipped 0, Total 789 in 1 m 6 s —
-ALL GREEN**. **Next code stages, only on `next`: PR-link reconciliation, then D-93 negative-stock
-retirement. Cloud sync is postponed by the owner.**
+ALL GREEN**. This is prior verified evidence, not a claim that Lapis has run on the owner's PC.
 
 ### What v0.35.6 changes — provisional money evidence
 
@@ -457,7 +480,7 @@ honest caveat about what is not yet proven. If he asks for a printable status, r
 
 | Path | What is in it |
 |---|---|
-| `dotnet/Area11.Core/Data/Database.cs`, `StoragePlan.cs`, `Migrations/001…023` | connection, WAL / share mode, the schema |
+| `dotnet/Area11.Core/Data/Database.cs`, `StoragePlan.cs`, `Migrations/001…025` | connection, WAL / share mode, the schema |
 | `dotnet/Area11.Core/Services/` (47) | every rule: `SaleService`, `PurchaseService`, `ShiftService`, `SettingsService`, `AuthService`, `PermissionService`, `ReportService`, `BackupService`, `InstallService`, `SyncService`, `HardwareService` … |
 | `dotnet/Area11.Core/Utils/` | `Money`, `Calc`, `AppPaths`, `BuildInfo`, `RunTrail`, `CommandGuard`, `TimeSource`, `NtpTime`, `SessionPolicy`, `SessionWatch`, `SessionHandover`, `ShopConfig`, `CrashLog` |
 | `dotnet/Area11.Desktop/AppServices.cs` | the composition root — a new service is constructed **here** |

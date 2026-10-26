@@ -30,6 +30,7 @@ public sealed class ProvisionalReturnService
     public const string StatusCancelled = "cancelled";
 
     private const int MinimumReasonLength = 3;
+    private const double QuantityEpsilon = 0.0005;
 
     private readonly Database _db;
     private readonly AuditService _audit;
@@ -151,9 +152,13 @@ ORDER BY i.id;", new { id = provisionalId });
     }
 
     /// <summary>
-    /// Attaches the real bill (15.5.3). Owner or manager only. **No stock change** - the goods were
-    /// already added when the customer was refunded, and adding them again would invent medicine.
-    /// The alert deliberately stays, in amber, until the owner writes a reason (15.5.4).
+    /// Attaches the real bill (15.5.3). Owner or manager only. **No stock or payment change** - both
+    /// happened when the customer came back. The new rows allocate that original quantity and money
+    /// to real sale lines, so a later RET cannot return the same goods or bill value again.
+    ///
+    /// A v0.35.7 link had only a header. It can be attached to the SAME bill once more to create the
+    /// missing allocations; another normal return is blocked until that repair is complete. The
+    /// alert deliberately stays, in amber, until the owner writes a reason (15.5.4).
     /// </summary>
     public ServiceResult Link(int provisionalId, string? saleCode, User user)
     {
@@ -179,30 +184,118 @@ ORDER BY i.id;", new { id = provisionalId });
                     throw new ValidationException("That no-bill return was not found.");
                 }
 
-                if (!string.Equals(row.Status, StatusPending, StringComparison.OrdinalIgnoreCase))
+                var pending = string.Equals(row.Status, StatusPending, StringComparison.OrdinalIgnoreCase);
+                var oldLink = string.Equals(row.Status, StatusLinked, StringComparison.OrdinalIgnoreCase)
+                    && row.LinkedExpectedPaisa is null;
+
+                if (!pending && !oldLink)
                 {
                     throw new ValidationException(
-                        "This entry is already " + row.Status + "; a bill can only be attached to a pending entry.");
+                        "This entry is already " + row.Status + "; only a pending entry or an old unreconciled link can be attached.");
                 }
 
-                var saleId = _db.QuerySingle<int?>(connection,
-                    "SELECT id FROM sales WHERE upper(code) = upper(@code);", new { code = clean });
+                var sale = _db.QuerySingle<SaleIdentityRow>(connection,
+                    "SELECT id, code FROM sales WHERE upper(code) = upper(@code);", new { code = clean });
 
-                if (saleId is not int linkedSaleId)
+                if (sale is null)
                 {
                     throw new ValidationException("No bill found with the number " + clean + ".");
                 }
 
-                _db.Execute(connection, @"
+                if (oldLink && row.LinkedSaleId is int previousSaleId && previousSaleId != sale.Id)
+                {
+                    throw new ValidationException(
+                        row.Code + " is already attached to " + (row.LinkedCode ?? "another bill") +
+                        ". Reconcile it against that same bill; do not move its history.");
+                }
+
+                var existingAllocations = Convert.ToInt64(_db.Scalar(connection, @"
+SELECT COUNT(1)
+FROM provisional_return_allocations a
+JOIN provisional_items i ON i.id = a.provisional_item_id
+WHERE i.provisional_id = @id;", new { id = provisionalId }) ?? 0L);
+
+                if (existingAllocations > 0)
+                {
+                    throw new ValidationException(
+                        row.Code + " already has sale-line allocations. Its reconciliation was not changed.");
+                }
+
+                var provisionalItems = _db.Query<ReconcileItem>(connection, @"
+SELECT i.id, i.product_id AS productId, i.qty_base AS qtyBase, i.refund_paisa AS refundPaisa,
+       p.name AS name
+FROM provisional_items i
+JOIN products p ON p.id = i.product_id
+WHERE i.provisional_id = @id
+ORDER BY i.id;", new { id = provisionalId });
+
+                if (provisionalItems.Count == 0)
+                {
+                    throw new ValidationException(row.Code + " has no medicine lines to reconcile.");
+                }
+
+                if (provisionalItems.Sum(item => item.RefundPaisa) != row.RefundPaisa)
+                {
+                    throw new ValidationException(
+                        row.Code + ": its line refunds do not add up to its payment. Nothing was linked; the entry needs an audited correction.");
+                }
+
+                var saleLines = ReadReconciliationSaleLines(connection, sale.Id);
+                var plan = Reconcile(provisionalItems, saleLines);
+                var stamp = Clock.Now();
+
+                foreach (var line in plan.Lines)
+                {
+                    _db.Execute(connection, @"
+INSERT INTO provisional_return_allocations(
+    provisional_item_id, sale_item_id, qty_base, expected_refund_paisa, refund_paisa, created_at)
+VALUES(@provisionalItemId, @saleItemId, @qtyBase, @expected, @refund, @at);",
+                        new
+                        {
+                            line.ProvisionalItemId,
+                            line.SaleItemId,
+                            qtyBase = line.QtyBase,
+                            expected = line.ExpectedPaisa,
+                            refund = line.RefundPaisa,
+                            at = stamp
+                        });
+                }
+
+                var updated = _db.Execute(connection, @"
 UPDATE provisional_returns
-SET status = 'linked', linked_sale_id = @saleId, linked_code = @code, linked_at = @at, linked_by = @userId
-WHERE id = @id;",
-                    new { saleId = linkedSaleId, code = clean.ToUpperInvariant(), at = Clock.Now(), userId = user.Id, id = provisionalId });
+SET status = 'linked', linked_sale_id = @saleId, linked_code = @code, linked_at = @at,
+    linked_by = @userId, linked_expected_paisa = @expected, linked_unallocated_paisa = @unallocated
+WHERE id = @id
+  AND (status = 'pending' OR (status = 'linked' AND linked_expected_paisa IS NULL));",
+                    new
+                    {
+                        saleId = sale.Id,
+                        code = sale.Code,
+                        at = stamp,
+                        userId = user.Id,
+                        expected = plan.ExpectedPaisa,
+                        unallocated = plan.UnallocatedPaisa,
+                        id = provisionalId
+                    });
 
-                _audit.Record(connection, user, "Returns", "provisional_link", "provisional_returns", row.Code,
-                    oldValue: "pending", newValue: "linked to " + clean.ToUpperInvariant());
+                if (updated != 1)
+                {
+                    throw new ValidationException(row.Code + " changed while it was being linked. Nothing was saved; try again.");
+                }
 
-                return ServiceResult.Success();
+                var warnings = ReconciliationWarnings(row.RefundPaisa, plan);
+                _audit.Record(connection, user, "Returns", oldLink ? "provisional_reconcile" : "provisional_link",
+                    "provisional_returns", row.Code,
+                    oldValue: oldLink ? "linked without sale-line allocations" : "pending",
+                    newValue: $"linked to {sale.Code}: {plan.Lines.Count} allocation(s), " +
+                              $"expected {plan.ExpectedPaisa} paisa, actual {row.RefundPaisa} paisa, " +
+                              $"unallocated {plan.UnallocatedPaisa} paisa",
+                    details: string.Join(" | ", plan.Lines.Select(line =>
+                        $"PR line {line.ProvisionalItemId} -> sale line {line.SaleItemId}: " +
+                        $"qty {Qty.Format(line.QtyBase)}, expected {line.ExpectedPaisa} paisa, " +
+                        $"allocated {line.RefundPaisa} paisa")));
+
+                return ServiceResult.Success(warnings.ToArray());
             });
         }
         catch (ValidationException exception)
@@ -212,7 +305,7 @@ WHERE id = @id;",
         catch (Exception exception)
         {
             _log.Error("The bill could not be attached to no-bill return " + provisionalId + ".", exception);
-            return ServiceResult.Fail("The bill could not be attached.");
+            return ServiceResult.Fail("The bill could not be attached. Nothing was changed.");
         }
     }
 
@@ -506,6 +599,8 @@ VALUES(@date, 'cash', @amount, @provisionalId, @userId, @note);",
 SELECT p.id AS id, p.code AS code, p.date AS date, p.customer_name AS customerName, p.phone AS phone,
        p.reason AS reason, p.notes AS notes, p.refund_paisa AS refundPaisa, p.status AS status,
        p.linked_sale_id AS linkedSaleId, p.linked_code AS linkedCode, p.linked_at AS linkedAt,
+       p.linked_expected_paisa AS linkedExpectedPaisa,
+       p.linked_unallocated_paisa AS linkedUnallocatedPaisa,
        p.cancel_reason AS cancelReason, p.cancelled_at AS cancelledAt, u.name AS cashierName,
        (SELECT COUNT(1) FROM provisional_items i WHERE i.provisional_id = p.id) AS itemCount,
        COALESCE((SELECT group_concat(i3.name, ', ')
@@ -518,6 +613,208 @@ LEFT JOIN users u ON u.id = p.user_id
 ORDER BY p.id DESC;", parameters);
 
     // ------------------------------------------------------------------- helpers
+
+    /// <summary>
+    /// Reads the original lines with BOTH kinds of earlier returns removed. A linked PR allocation
+    /// consumes quantity/value here; its original stock movement and payment are not read again.
+    /// </summary>
+    private List<SaleLineState> ReadReconciliationSaleLines(SqliteConnection connection, int saleId)
+    {
+        var lines = _db.Query<SaleLineState>(connection, @"
+SELECT si.id AS saleItemId, si.product_id AS productId,
+       COALESCE(NULLIF(si.name_snapshot, ''), p.name) AS name,
+       si.qty_base
+         - COALESCE((SELECT SUM(r.qty_base) FROM sale_returns r WHERE r.sale_item_id = si.id), 0)
+         - COALESCE((SELECT SUM(a.qty_base)
+                     FROM provisional_return_allocations a
+                     JOIN provisional_items pi ON pi.id = a.provisional_item_id
+                     JOIN provisional_returns pr ON pr.id = pi.provisional_id
+                     WHERE a.sale_item_id = si.id AND pr.status = 'linked'), 0) AS remainingBase,
+       si.line_total_paisa
+         - COALESCE((SELECT SUM(r.refund_paisa) FROM sale_returns r WHERE r.sale_item_id = si.id), 0)
+         - COALESCE((SELECT SUM(a.refund_paisa)
+                     FROM provisional_return_allocations a
+                     JOIN provisional_items pi ON pi.id = a.provisional_item_id
+                     JOIN provisional_returns pr ON pr.id = pi.provisional_id
+                     WHERE a.sale_item_id = si.id AND pr.status = 'linked'), 0) AS remainingPaisa
+FROM sale_items si
+JOIN products p ON p.id = si.product_id
+WHERE si.sale_id = @saleId
+ORDER BY si.id;", new { saleId });
+
+        foreach (var line in lines)
+        {
+            // An old defect may already have consumed too much. Never turn that into negative stock
+            // or a negative refund while reconciling; the quantity check below will refuse it.
+            line.RemainingBase = Math.Max(0, line.RemainingBase);
+            line.RemainingPaisa = Math.Max(0, line.RemainingPaisa);
+        }
+
+        return lines;
+    }
+
+    /// <summary>
+    /// Matches every PR medicine in sale-line order. Repeated products and split lines are handled
+    /// by consuming each line's remaining quantity once. Expected money follows the same final-
+    /// remainder/rounding rule as ReturnService; actual PR money is then allocated proportionally
+    /// to those expected shares and capped by each original line's remaining value.
+    /// </summary>
+    private static ReconciliationPlan Reconcile(
+        List<ReconcileItem> provisionalItems,
+        List<SaleLineState> saleLines)
+    {
+        var plan = new ReconciliationPlan();
+
+        foreach (var item in provisionalItems)
+        {
+            if (!double.IsFinite(item.QtyBase) || item.QtyBase <= 0 || item.RefundPaisa < 0)
+            {
+                throw new ValidationException(item.Name + ": its saved quantity or refund is invalid. Nothing was linked.");
+            }
+
+            var matching = saleLines.Where(line => line.ProductId == item.ProductId).ToList();
+            if (matching.Count == 0)
+            {
+                throw new ValidationException(
+                    item.Name + " is not on this bill. Nothing was linked; choose the bill that really contained it.");
+            }
+
+            var available = matching.Sum(line => line.RemainingBase);
+            if (item.QtyBase > available + QuantityEpsilon)
+            {
+                throw new ValidationException(
+                    $"{item.Name}: this PR has {Qty.Format(item.QtyBase)} base unit(s), but only " +
+                    $"{Qty.Format(Math.Max(0, available))} unreconciled unit(s) remain on the bill. " +
+                    "Nothing was linked; check for a different bill or an earlier return.");
+            }
+
+            var quantityLeft = item.QtyBase;
+            var targets = new List<AllocationLine>();
+
+            foreach (var saleLine in matching)
+            {
+                if (quantityLeft <= QuantityEpsilon)
+                {
+                    break;
+                }
+
+                if (saleLine.RemainingBase <= QuantityEpsilon)
+                {
+                    continue;
+                }
+
+                var take = Math.Min(quantityLeft, saleLine.RemainingBase);
+                var wholeRemainder = saleLine.RemainingBase - take < QuantityEpsilon;
+                if (wholeRemainder)
+                {
+                    take = saleLine.RemainingBase;
+                }
+
+                var expected = wholeRemainder
+                    ? saleLine.RemainingPaisa
+                    : Calc.Round((double)saleLine.RemainingPaisa * take /
+                                 Math.Max(saleLine.RemainingBase, 0.000001));
+                expected = Math.Clamp(expected, 0L, saleLine.RemainingPaisa);
+
+                targets.Add(new AllocationLine
+                {
+                    ProvisionalItemId = item.Id,
+                    SaleItemId = saleLine.SaleItemId,
+                    SaleLine = saleLine,
+                    QtyBase = take,
+                    ExpectedPaisa = expected,
+                    CapacityPaisa = saleLine.RemainingPaisa
+                });
+
+                saleLine.RemainingBase = Math.Max(0, saleLine.RemainingBase - take);
+                quantityLeft -= take;
+            }
+
+            if (quantityLeft > QuantityEpsilon)
+            {
+                // The aggregate check above normally catches this. Keep the second guard next to the
+                // write plan so a floating-point edge can never persist a partial PR allocation.
+                throw new ValidationException(item.Name + ": the full quantity could not be allocated. Nothing was linked.");
+            }
+
+            plan.ExpectedPaisa += targets.Sum(target => target.ExpectedPaisa);
+            plan.UnallocatedPaisa += AllocateActualRefund(targets, item.RefundPaisa);
+            plan.Lines.AddRange(targets);
+
+            foreach (var target in targets)
+            {
+                target.SaleLine.RemainingPaisa = Math.Max(0,
+                    target.SaleLine.RemainingPaisa - target.RefundPaisa);
+            }
+        }
+
+        return plan;
+    }
+
+    /// <summary>Allocates actual paisa without inventing money or exceeding an original line.</summary>
+    private static long AllocateActualRefund(List<AllocationLine> targets, long refundPaisa)
+    {
+        var left = refundPaisa;
+        var expectedTotal = targets.Sum(target => target.ExpectedPaisa);
+
+        for (var index = 0; index < targets.Count; index++)
+        {
+            var target = targets[index];
+            var share = index == targets.Count - 1
+                ? left
+                : expectedTotal > 0
+                    ? Calc.Round((double)refundPaisa * target.ExpectedPaisa / expectedTotal)
+                    : 0L;
+
+            share = Math.Clamp(share, 0L, Math.Min(left, target.CapacityPaisa));
+            target.RefundPaisa = share;
+            left -= share;
+        }
+
+        // Rounding or a capped line can leave paisa over. Fill any remaining original-line capacity
+        // in the same stable order; anything still left is recorded on the PR header as a variance.
+        if (left > 0)
+        {
+            foreach (var target in targets)
+            {
+                var extra = Math.Min(left, Math.Max(0, target.CapacityPaisa - target.RefundPaisa));
+                target.RefundPaisa += extra;
+                left -= extra;
+
+                if (left == 0)
+                {
+                    break;
+                }
+            }
+        }
+
+        return left;
+    }
+
+    private static List<string> ReconciliationWarnings(long actualPaisa, ReconciliationPlan plan)
+    {
+        var warnings = new List<string>();
+        var variance = actualPaisa - plan.ExpectedPaisa;
+
+        if (variance != 0)
+        {
+            warnings.Add(
+                $"PR paid {Money.Format(actualPaisa)}, but the returned quantities had " +
+                $"{Money.Format(plan.ExpectedPaisa)} of remaining bill value: " +
+                $"{Money.Format(Math.Abs(variance))} {(variance > 0 ? "over" : "under")}. " +
+                "The original payment was not changed.");
+        }
+
+        if (plan.UnallocatedPaisa > 0)
+        {
+            warnings.Add(
+                $"{Money.Format(plan.UnallocatedPaisa)} of the PR refund is above the matched " +
+                "original lines' remaining value. It is recorded as a difference; later returns " +
+                "against this bill are capped so no further bill value is refunded twice.");
+        }
+
+        return warnings;
+    }
 
     /// <summary>How many base units one of the cashier's words holds (5.1.3).</summary>
     private static double PerUnit(ProductRow product, string? unit)
@@ -596,6 +893,65 @@ VALUES(@productId, 'OPEN', NULL, NULL, 0, @cost, @retail, 0, 1, @at);",
             || string.Equals(user.Role, "manager", StringComparison.OrdinalIgnoreCase));
 
     // -------------------------------------------------------------------- types
+
+    private sealed class SaleIdentityRow
+    {
+        public int Id { get; set; }
+
+        public string Code { get; set; } = string.Empty;
+    }
+
+    private sealed class ReconcileItem
+    {
+        public int Id { get; set; }
+
+        public int ProductId { get; set; }
+
+        public string Name { get; set; } = string.Empty;
+
+        public double QtyBase { get; set; }
+
+        public long RefundPaisa { get; set; }
+    }
+
+    private sealed class SaleLineState
+    {
+        public int SaleItemId { get; set; }
+
+        public int ProductId { get; set; }
+
+        public string Name { get; set; } = string.Empty;
+
+        public double RemainingBase { get; set; }
+
+        public long RemainingPaisa { get; set; }
+    }
+
+    private sealed class AllocationLine
+    {
+        public int ProvisionalItemId { get; set; }
+
+        public int SaleItemId { get; set; }
+
+        public SaleLineState SaleLine { get; init; } = new();
+
+        public double QtyBase { get; init; }
+
+        public long ExpectedPaisa { get; init; }
+
+        public long CapacityPaisa { get; init; }
+
+        public long RefundPaisa { get; set; }
+    }
+
+    private sealed class ReconciliationPlan
+    {
+        public List<AllocationLine> Lines { get; } = new();
+
+        public long ExpectedPaisa { get; set; }
+
+        public long UnallocatedPaisa { get; set; }
+    }
 
     private sealed class ProductRow
     {
