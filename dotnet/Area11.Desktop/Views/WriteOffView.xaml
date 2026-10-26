@@ -112,10 +112,10 @@
                         <Border Background="{StaticResource DangerSoftBrush}" CornerRadius="8" Padding="10" Margin="0,8,0,0"
                                 Visibility="{Binding WillGoMinus, Converter={StaticResource BoolToVis}}">
                             <StackPanel>
-                                <TextBlock Text="This will make the stock MINUS" FontWeight="Bold" FontSize="12"
+                                <TextBlock Text="Not enough stock - Save will be refused" FontWeight="Bold" FontSize="12"
                                            Foreground="{StaticResource DangerBrush}" />
                                 <TextBlock TextWrapping="Wrap" FontSize="11.5" Foreground="{StaticResource DangerBrush}"
-                                           Text="The book says there is less on the shelf than you are writing off. The work still goes through (U-30) - the red bar on every page will remember it until a stock count fixes the number." />
+                                           Text="D-93 does not allow a new write-off below zero. Reduce the quantity, or reconcile an existing minus with a physical stock-take. Your typed form will stay here if the service refuses it." />
                             </StackPanel>
                         </Border>
 

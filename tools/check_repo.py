@@ -2892,6 +2892,87 @@ def _property_setters() -> dict[str, dict[str, bool]]:
     return found
 
 
+def check_stock_policy_gate() -> None:
+    """D-93: every ordinary stock decrement has one guarded, transactional door.
+
+    A source scan is useful here because a future bypass is otherwise just one harmless-looking
+    SQL line. Additions to stock remain ordinary additions. StockTakeService is the one exception
+    that assigns an absolute number: it is the owner-only, audited physical-count reconciliation,
+    not a decrement API. Historical negative rows are never rewritten by this gate or a migration.
+    """
+    services = DOTNET / "Area11.Core/Services"
+    policy = services / "StockPolicy.cs"
+    guarded_callers = (
+        "SaleService.cs",
+        "StockService.cs",
+        "ExpenseService.cs",
+        "SupplierLedgerService.cs",
+        "ProvisionalReturnService.cs",
+    )
+
+    if not policy.exists():
+        fail("D-93 StockPolicy.cs is missing; ordinary decrements have no central guard")
+        return
+
+    for name in guarded_callers:
+        path = services / name
+        if not path.exists():
+            fail(f"D-93 decrement service is missing: {rel(path)}")
+            continue
+
+        text = path.read_text(encoding="utf-8", errors="replace")
+        if "StockPolicy.Decrease(" not in text:
+            fail(f"{name} no longer calls StockPolicy.Decrease; a stock decrement can bypass D-93")
+
+    policy_text = policy.read_text(encoding="utf-8", errors="replace")
+    normalized_policy = re.sub(r"\s+", " ", policy_text)
+    if not re.search(r"SET qty_base = qty_base - @quantity", normalized_policy, re.IGNORECASE):
+        fail("StockPolicy lost its single guarded batch decrement")
+    if not re.search(r"qty_base >= @quantity", normalized_policy, re.IGNORECASE):
+        fail("StockPolicy's UPDATE no longer requires enough quantity in the selected batch")
+    if "WHERE b.product_id = @productId AND b.active = 1) >= @quantity" not in normalized_policy:
+        fail("StockPolicy's UPDATE no longer protects the active product total")
+    if "internal static class StockPolicy" not in policy_text:
+        fail("StockPolicy must stay an internal service boundary, not a public bypass API")
+
+    update_count = 0
+    for path in services.glob("*.cs"):
+        text = path.read_text(encoding="utf-8", errors="replace")
+        for match in re.finditer(r"UPDATE\s+batches\b", text, re.IGNORECASE):
+            update_count += 1
+            statement = re.sub(r"\s+", " ", text[match.start():match.start() + 700])
+
+            if path.name == "StockPolicy.cs":
+                continue  # the strict conditional decrement was checked above
+
+            if path.name == "StockTakeService.cs":
+                if not re.search(r"SET qty_base = @qty", statement, re.IGNORECASE):
+                    fail("StockTakeService may assign only the audited physical count to a batch")
+                continue
+
+            if not re.search(r"SET qty_base = qty_base \+ @qty", statement, re.IGNORECASE):
+                fail(f"{rel(path)} contains an unguarded batch decrement or absolute assignment; "
+                     "use StockPolicy.Decrease (stock-take is the sole absolute-count exception)")
+
+    stock_take = (services / "StockTakeService.cs").read_text(encoding="utf-8", errors="replace")
+    if "!double.IsFinite(counted) || counted < 0" not in stock_take:
+        fail("The physical-count exception no longer validates a finite, non-negative count")
+
+    legacy_readers = []
+    for tree in (DOTNET / "Area11.Core", DOTNET / "Area11.Desktop"):
+        for path in tree.rglob("*.cs"):
+            text = path.read_text(encoding="utf-8", errors="replace")
+            if re.search(r"GetBool\s*\(\s*[\"']stock\.allowNegative[\"']", text):
+                legacy_readers.append(rel(path))
+    if legacy_readers:
+        fail("the retired negative-stock bypass is still read by: " + ", ".join(legacy_readers))
+
+    REPORT.append(
+        f"Stock policy: {len(guarded_callers)} decrement services use the central guard, "
+        f"{update_count} batch updates are guarded/additions/physical counts, "
+        "and the legacy allow-negative setting has no production reader")
+
+
 def check_binding_modes() -> None:
     """A binding that can write must never point at a property that cannot be written.
 
@@ -4354,6 +4435,7 @@ def main() -> int:
     check_running_app()
     check_run_verdict()
     check_shift_report_gate()
+    check_stock_policy_gate()
     check_binding_modes()
     check_crash_report_honesty()
     check_report_tool()

@@ -15,7 +15,7 @@ namespace Area11.Desktop.ViewModels;
 /// Five tabs, one save button:
 ///   • Shop        — name, address, phone, the note at the bottom of the receipt.
 ///   • Printing    — printer, 58 / 80 mm, automatic or manual, cut, copies.
-///   • Sales       — discount limits, tax, negative stock.
+///   • Sales       — discount limits, tax, and the D-93 non-negative stock rule.
 ///   • Cloud sync  — the Supabase address, key, table and shop id (F-48, Spec 25.3).
 ///   • Staff       — people, their role and one checkbox per module (D-03).
 ///
@@ -48,7 +48,6 @@ public sealed class SettingsViewModel : ObservableObject
     private bool _blockBelowCost;
     private bool _taxEnabled;
     private string _taxPercentText = "0";
-    private bool _allowNegativeStock;
 
     private string _expiry1Text = "365";
     private string _expiry2Text = "180";
@@ -284,12 +283,6 @@ public sealed class SettingsViewModel : ObservableObject
         set => SetProperty(ref _taxPercentText, value);
     }
 
-    public bool AllowNegativeStock
-    {
-        get => _allowNegativeStock;
-        set => SetProperty(ref _allowNegativeStock, value);
-    }
-
     /// <summary>Level 1 is the farthest band (default a year), Level 3 the nearest (three months).</summary>
     public string Expiry1Text
     {
@@ -479,7 +472,6 @@ public sealed class SettingsViewModel : ObservableObject
         BlockBelowCost = settings.GetBool("discount.blockBelowCost", true);
         TaxEnabled = settings.GetBool("tax.enabled");
         TaxPercentText = Text(settings.GetDouble("tax.percent"));
-        AllowNegativeStock = settings.GetBool("stock.allowNegative", true);
 
         var bands = settings.ExpiryBands;
         Expiry1Text = bands.Level1Days.ToString(CultureInfo.InvariantCulture);
@@ -705,7 +697,6 @@ public sealed class SettingsViewModel : ObservableObject
             ["discount.blockBelowCost"] = BlockBelowCost,
             ["tax.enabled"] = TaxEnabled,
             ["tax.percent"] = taxPercent,
-            ["stock.allowNegative"] = AllowNegativeStock,
             ["expiry.levels"] = _services.Settings.ExpiryBands
                 .WithDays(expiry1, expiry2, expiry3)
                 .Bands

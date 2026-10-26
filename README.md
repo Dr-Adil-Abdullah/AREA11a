@@ -42,11 +42,11 @@ Live counts are in [`docs/PROGRESS.md`](docs/PROGRESS.md) (features) and
 **Honest note:** the agent's build machine is Linux with no .NET SDK, so nothing in `dotnet/` is
 compiled there. Every change is checked statically (C# parses, explicit usings, XAML, resources,
 every binding against its view model, every SQL statement against the real schema, every mapped
-column against its model, migrations executed on SQLite) and **769 test cases** are written for the
-Windows run. The owner's own machine has since built the whole solution and run the suite green -
-**730 of 730 in 53 s** on v0.33.0, `0 Warning(s), 0 Error(s)`, with the sign-in window open and
-`Signed in: Owner` in the log - and the newest release is tested by him with `tools\RUN-TESTS.cmd`
-(769 expected, printed at the end of every run). See
+column against its model, migrations executed on SQLite) and **814 test cases** are written for the
+Windows run. The owner's own machine has built the whole solution and run earlier suites green; the latest
+verified run is **789 of 789 in 1 m 6 s** on v0.35.7 Cypress. The whole solution also built with
+`0 Warning(s), 0 Error(s)` on v0.33.0, with the sign-in window open and `Signed in: Owner` in the log.
+The current v0.35.9 Onyx release still needs his `tools\RUN-TESTS.cmd` run (**814 expected**). See
 [`docs/VERSIONS.md`](docs/VERSIONS.md) for which build he has.
 
 ---
@@ -114,7 +114,7 @@ Step-by-step help, including what to do when the build fails: [`docs/BUILD-ON-WI
 | [`docs/PROGRESS.md`](docs/PROGRESS.md) | English | every feature: ID, state, files, test, "done when" |
 | [`docs/RULES-MATRIX.md`](docs/RULES-MATRIX.md) | English | 116 numbered owner rules → where each is implemented |
 | [`docs/AREA11-MASTER-SPEC.md`](docs/AREA11-MASTER-SPEC.md) | English | the blueprint (sections 3, 5, 11, 12, 14, 15, 34) |
-| [`docs/OWNER-DECISIONS.md`](docs/OWNER-DECISIONS.md) | **Urdu** | the owner's decisions D-01…D-75, phase plan, open questions |
+| [`docs/OWNER-DECISIONS.md`](docs/OWNER-DECISIONS.md) | **Urdu** | the owner's decisions D-01…D-93, phase plan, open questions |
 | [`docs/SCHEMA-REFERENCE.md`](docs/SCHEMA-REFERENCE.md) | English | column-by-column reference of every table |
 | [`docs/PORT-PLAN.md`](docs/PORT-PLAN.md) | English | the technical study: conflicts, module map, test map, port order |
 | [`docs/BUILD-ON-WINDOWS.md`](docs/BUILD-ON-WINDOWS.md) | English | build, run, test, and what to send back when something fails |
@@ -122,19 +122,19 @@ Step-by-step help, including what to do when the build fails: [`docs/BUILD-ON-WI
 
 ## Database
 
-`dotnet/Area11.Core/Data/Migrations/` holds the **original 13 migrations verbatim**, plus
-`014_user_permissions.sql` (per-person permissions) and `015_photos.sql` (several photos per product,
-supplier and customer), then Phase 2's `016`-`019` (held carts, return detail, no-bill detail, stock-take
-detail). They create **33 business tables** (plus the `_migrations` ledger) and run
-append-only inside `BEGIN IMMEDIATE`, so an existing `area11.db` opens unchanged and no data is lost
-when the app is updated.
+`dotnet/Area11.Core/Data/Migrations/` holds the **original 13 migrations verbatim** plus the
+append-only Area11 migrations `014`-`025` (permissions, photos, stock detail, barcodes, provisional
+money and reconciliation). They create **35 tables** (including the `_migrations` ledger) plus the
+`provisional_report_lines` view, and run inside `BEGIN IMMEDIATE`, so an existing `area11.db` opens
+unchanged and no data is lost when the app is updated. D-93 adds no migration and never rewrites a
+historical negative quantity to zero.
 
 ## The rules that shape the code
 
 - Money is **integer paisa**; quantities are `double` (the schema stores REAL). Never `decimal`.
 - A bill's total always equals the sum of its line totals.
 - Rounding is **downward only**, and never below purchase cost.
-- Negative stock never stops a sale — it warns and raises an alert (owner's rule U-25).
+- **D-93:** no new sale, write-off, goods drawing, supplier return or PR cancellation may take a batch or product below zero. The legacy checkbox is not a bypass. Historical negatives stay readable and are reconciled by physical count plus audited correction, never silent zeroing.
 - Discounts are capped per role and can never sell below cost.
 - Permissions are enforced in the business layer, not by hiding buttons.
 - Nothing is hard-coded: shop name, wording, limits, printer width all come from `settings`.

@@ -144,9 +144,7 @@ VALUES(@userId, @at, 0, 0, 0, 0, 'open');",
     {
         using var test = new TestDatabase();
 
-        var product = TestData.AddProduct(test, batchQty: 2);
-        var sale = TestData.Sales(test).Create(TestData.Cart(product, qty: 5), TestData.Owner);
-        Assert.True(sale.Ok, sale.Error);
+        TestData.AddProduct(test, batchQty: -3); // legacy fixture, not a new D-93 sale
 
         OpenDrawer(test, DateTime.Today.AddDays(-2).AddHours(20));
 
@@ -199,9 +197,7 @@ VALUES(@userId, @at, 0, 0, 0, 0, 'open');",
         using var test = new TestDatabase();
         var cashier = TestData.Cashier(test);
 
-        var product = TestData.AddProduct(test, batchQty: 2);
-        var sale = TestData.Sales(test).Create(TestData.Cart(product, qty: 5), TestData.Owner);
-        Assert.True(sale.Ok, sale.Error);
+        TestData.AddProduct(test, batchQty: -3); // legacy fixture, not a new D-93 sale
 
         var negative = Alerts(test).Report().Live.Single(alert => alert.Type == "negstock");
 
@@ -248,9 +244,7 @@ ORDER BY id DESC LIMIT 1;",
     {
         using var test = new TestDatabase();
 
-        var product = TestData.AddProduct(test, batchQty: 2);
-        var sale = TestData.Sales(test).Create(TestData.Cart(product, qty: 5), TestData.Owner);
-        Assert.True(sale.Ok, sale.Error);
+        TestData.AddProduct(test, batchQty: -3); // legacy fixture, not a new D-93 sale
 
         var negative = Alerts(test).Report().Live.Single(alert => alert.Type == "negstock");
 

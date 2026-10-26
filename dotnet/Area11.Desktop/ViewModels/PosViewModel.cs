@@ -904,11 +904,6 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         ChangeText = Money.Format(quote.Value.ChangePaisa);
         CashPartText = Money.Format(quote.Value.CashPartPaisa);
         CreditPartText = Money.Format(quote.Value.CreditPartPaisa);
-
-        if (quote.Value.GoesNegative)
-        {
-            SetStatus("⚠ This bill takes stock into MINUS. It will still be saved (owner rule U-30).", true);
-        }
     }
 
     private void PrintLast()

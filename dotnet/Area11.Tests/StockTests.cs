@@ -5,10 +5,10 @@ using Xunit;
 namespace Area11.Tests;
 
 /// <summary>
-/// Write-off and count correction (Spec 19.1, U-30). What must stay true:
+/// Write-off and count correction (Spec 19.1, D-93). What must stay true:
 ///   • the loss is valued at **purchase cost**, never at the selling price;
 ///   • the stock ledger and the adjustment record both get a line;
-///   • writing off more than the book says is **allowed with a warning** - never blocked;
+///   • writing off more than the book says is refused atomically, with no legacy-setting bypass;
 ///   • a mistyped entry is corrected by a second line, never by editing the first.
 /// </summary>
 public sealed class StockTests
@@ -79,32 +79,10 @@ public sealed class StockTests
     }
 
     [Fact]
-    public void WritingOffMoreThanTheBook_IsAllowed_WithAWarning()
+    public void WritingOffMoreThanTheBook_IsRefused_AndNothingChanges()
     {
         using var test = new TestDatabase();
         var product = TestData.AddProduct(test, batchQty: 3);
-
-        var result = Stock(test).WriteOff(new WriteOffInput
-        {
-            ProductId = product,
-            QtyEntered = 10,
-            Unit = "unit",
-            Reason = StockService.ReasonExpired
-        }, TestData.Owner);
-
-        Assert.True(result.Ok, result.Error);          // U-30: never blocks
-        Assert.NotEmpty(result.Value!.Warnings);
-        Assert.Contains("MINUS", result.Value.Warnings[0].ToUpperInvariant());
-        Assert.Equal(-7d, BatchQty(test, product));
-    }
-
-    [Fact]
-    public void WhenNegativeStockIsSwitchedOff_TheWriteOffIsRefused()
-    {
-        using var test = new TestDatabase();
-        var product = TestData.AddProduct(test, batchQty: 3);
-        test.Settings.Set("stock.allowNegative", false, TestData.Owner);
-        test.Settings.Reload();
 
         var result = Stock(test).WriteOff(new WriteOffInput
         {
@@ -115,8 +93,44 @@ public sealed class StockTests
         }, TestData.Owner);
 
         Assert.False(result.Ok);
-        Assert.Contains("Negative stock is switched off", result.Error ?? string.Empty);
+        Assert.Contains("below zero", result.Error ?? string.Empty);
+        Assert.Contains("3", result.Error ?? string.Empty);
         Assert.Equal(3d, BatchQty(test, product));
+
+        using var connection = test.Database.Open();
+        Assert.Equal(0L, Convert.ToInt64(test.Database.Scalar(connection,
+            "SELECT COUNT(1) FROM stock_adjustments;") ?? 0L));
+        Assert.Equal(0L, Convert.ToInt64(test.Database.Scalar(connection,
+            "SELECT COUNT(1) FROM stock_movements WHERE type = 'writeoff';") ?? 0L));
+    }
+
+    [Fact]
+    public void CountShort_CannotUseTheLegacySwitch_EitherOnOrOff()
+    {
+        using var test = new TestDatabase();
+        var product = TestData.AddProduct(test, batchQty: 3);
+
+        foreach (var legacyValue in new[] { false, true })
+        {
+            Assert.True(test.Settings.Set("stock.allowNegative", legacyValue, TestData.Owner).Ok);
+            test.Settings.Reload();
+
+            var result = Stock(test).WriteOff(new WriteOffInput
+            {
+                ProductId = product,
+                QtyEntered = 10,
+                Unit = "unit",
+                Reason = StockService.ReasonCountShort
+            }, TestData.Owner);
+
+            Assert.False(result.Ok);
+            Assert.Contains("below zero", result.Error ?? string.Empty);
+            Assert.Equal(3d, BatchQty(test, product));
+        }
+
+        using var connection = test.Database.Open();
+        Assert.Equal(0L, Convert.ToInt64(test.Database.Scalar(connection,
+            "SELECT COUNT(1) FROM stock_movements WHERE type = 'adjust';") ?? 0L));
     }
 
     [Fact]

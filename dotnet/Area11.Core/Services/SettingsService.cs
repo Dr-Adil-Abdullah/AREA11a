@@ -635,7 +635,9 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Raw("payment.methods", "[\"cash\",\"credit\"]");
         Text("payment.default", "cash");
 
-        // ---- Stock (U-25, U-30) ----
+        // ---- Stock ----
+        // Both legacy keys stay readable so an old database needs no destructive migration. D-93 removed
+        // the checkbox and no production rule reads either key; historical alerts follow actual stock.
         Flag("stock.allowNegative", true);
         Flag("stock.warnNegative", true);
 

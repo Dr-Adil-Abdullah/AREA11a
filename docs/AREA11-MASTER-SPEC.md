@@ -152,6 +152,8 @@ Full permission matrix: Section 7.4.
 
 3.1.30 **[U-30]** **Negative stock must never stop any work**: supplier return, stock adjust, write-off — anywhere the quantity exceeds available stock, **no error, only an alert (warning)**; the work completes even if stock goes negative. (6 Oct 2026)
 
+3.1.30A **D-93 supersedes U-25/U-26/U-30 for every new transaction (26 Oct 2026).** No sale or other stock decrement may take a batch or active product total below zero, regardless of the legacy setting or owner role. The whole operation is validated cumulatively and rolls back atomically. Historical negative quantities and their alerts remain unchanged until a read-only review, physical count and audited stock-take correction; no migration silently zeroes them.
+
 3.1.31 **[U-31]** **Every alert is dismissed only by the owner, by writing a reason**: any alert (negative stock, no-bill return, etc.) can be "ended" only by the **Owner** and a **reason is compulsory**; the reason is stored and logged. Until the owner dismisses it with a reason, the alert shows on every page. (6 Oct 2026)
 
 3.1.32 **[U-32]** **Returned goods go straight into stock, no quarantine**: the moment goods are taken back from a customer (as soon as money goes out) they are **added to stock at once**. Damaged/expired goods are not taken back at all, so no separate quarantine is needed. (6 Oct 2026)
@@ -673,8 +675,8 @@ Full permission matrix: Section 7.4.
 
 | Key | Meaning |
 |---|---|
-| `stock.allowNegative` (default **ON**) | ON = sales continue even if stock is 0/low (only the big red alert); OFF = a sale that exceeds stock is refused with an Urdu/English message |
-| `stock.warnNegative` | Show the big alert for negative stock |
+| `stock.allowNegative` | Legacy compatibility key only. D-93 has no production reader, Settings checkbox or owner bypass; every new decrement is guarded regardless of its stored value. |
+| `stock.warnNegative` | Legacy compatibility key only. Historical negative-stock alerts follow the actual stored quantities and remain available for reconciliation. |
 | `returns.requireInvoice` (ON) | A return without the original bill number is not allowed |
 | `returns.maxDays` (0 = no limit) | Return window in days (e.g. 7) |
 
@@ -853,7 +855,7 @@ Full permission matrix: Section 7.4.
 
 9.3.1 Reasons: expired, damaged, wrong goods. Each line names the batch (or falls back to FEFO). The stock leaves, and what the shop owes is reduced (or a **credit note** is created that is deducted from the next invoice).
 
-9.3.2 **Rule U-30**: if the quantity returned exceeds the stock in the batch, the return **still completes**; stock goes negative and the response carries a warning ("stock MINUS (-10) gone"). (Original defect: "Batch has only N" stopped the work.)
+9.3.2 **D-93 (supersedes U-30 for new returns):** if the cumulative quantity returned exceeds the selected batch or active product total, the whole supplier return is refused with available-versus-requested detail. Header, credit/payment effect, stock rows, audit and `SR` number roll back together. A credit note larger than the payable is still allowed when the physical stock really exists.
 
 9.3.3 Expired batches ticked on the alerts page can be **sent back to the supplier in one click**.
 
@@ -885,7 +887,7 @@ Full permission matrix: Section 7.4.
 
 10.2.4 **Expired batches cannot be sold** at the counter `[Spec §6.2.2]`; they are available only for supplier return or write-off (and, under U-34, from quarantine "if wanted").
 
-10.2.5 If no batch has enough stock and `stock.allowNegative` is ON, the **last batch** is cut so that stock really goes negative `[U-26]`; book and reality never silently differ.
+10.2.5 **D-93:** only positive, unexpired batch quantities are sellable. Repeated cart lines reserve their FEFO allocations cumulatively. If the requested product total or sellable allocations are insufficient, the sale is refused; there is no last-batch negative fallback. Book and reality are reconciled by purchase/return or audited physical count, never by overselling.
 
 ### 10.3 Stock movement ledger
 
@@ -971,11 +973,11 @@ Full permission matrix: Section 7.4.
 
 12.1.6 **Payment area**: methods from settings (default cash / credit), **split pad** (see 13.3), **cash-tendered box with live change calculator** and quick buttons (Exact, 100, 500, 1000, 2000, 5000), change shown on screen and on the receipt.
 
-12.1.7 **Shift reminder**: a small amber strip when no cash shift is open. **Offline banner**: amber strip "internet is off" (billing continues).
+12.1.7 **Drawer gate and offline notice**: a closed drawer (galla) prevents a new sale and the counter offers **Open a galla now** without clearing the cart. The offline banner remains amber; billing continues without internet.
 
-12.1.8 **Instant notices `[U-29]`**: toasts when a medicine is added with problems — "stock 0 — sale will go ahead but stock will go MINUS", "only 5 available — this quantity takes stock negative", "VIP/DOCTOR rate applied", discount/round-off applied; a **sticky red alert bar** at the top stays while the problem exists; the line itself shows "⚠ stock will go minus (−7)".
+12.1.8 **Instant notices `[U-29]`**: low/zero-stock and cumulative-shortage messages explain available versus requested quantity before saving; VIP/Doctor rate, discount and round-off notices remain. A shortage refuses the bill and preserves the cart rather than promising a negative sale. Historical negative quantities keep their existing alert and Stock minus entries.
 
-12.1.9 After saving, the server's warnings appear in the big alert at the top (not hidden in small text) and the receipt opens for printing (auto-print).
+12.1.9 After a successful save, its warnings appear in the big alert at the top (not hidden in small text) and the receipt opens for printing (auto-print). A refused sale has no receipt or success alert and leaves the entered cart intact.
 
 ### 12.2 Sale creation algorithm (REQUIRED order)
 
@@ -991,11 +993,11 @@ Full permission matrix: Section 7.4.
 
 12.2.6 Apply loyalty redemption if used (13.6).
 
-12.2.7 Deduct stock in base units, write movements; if stock is insufficient and `stock.allowNegative` is ON, continue and cut the last batch (stock goes negative), record a `negative_sale` audit event with old → new quantity and return `negativeItems`; if OFF, refuse with a clear message "Settings › Stock to allow".
+12.2.7 Before invoice numbering, validate the whole cart cumulatively by product and reserve shared FEFO batches. During the same immediate transaction, deduct every allocation through `StockPolicy.Decrease`, whose conditional SQL guards both selected batch and active product total. Any shortage rolls back the sale, payments, stock movements, audit rows and number; the legacy setting and owner role are not bypasses.
 
 12.2.8 Create the sale (code `INV-nnnn`), lines, payments, change; update customer balance/points; earn loyalty points (if enabled).
 
-12.2.9 Write audit rows; return the sale code, warnings and `negativeItems`.
+12.2.9 Write the ordinary audit rows and return the sale code plus warnings. A refused operation writes no partial history and no new `negative_sale` event; historical negative-sale audit rows remain readable.
 
 12.2.10 All of this happens in **one transaction**.
 
@@ -1119,7 +1121,7 @@ Full permission matrix: Section 7.4.
 
 15.4.2 Fields: `disposition` — `quarantine` (in quarantine) → `restocked` (back to stock) / `expired` (expired-damaged write-off) / `sold` (sold on); with time, note and user.
 
-15.4.3 The owner/manager decides each item with three buttons: **back in stock / damaged-expired / sold**. Only "back in stock" increases stock. The negative-stock rule applies here too.
+15.4.3 The owner/manager decides each item with three buttons: **back in stock / damaged-expired / sold**. Restocked and sold-on outcomes return the quantity to the shelf; expired-damaged does not add and remove it again. "Sold" is not a stock-decrement endpoint: the goods must then be rung through the normal counter, where D-93 guards the sale.
 
 15.4.4 **As long as goods are in quarantine the alert keeps going** (and the owner can dismiss it with a reason, 16.4).
 
@@ -1149,9 +1151,11 @@ Full permission matrix: Section 7.4.
 
 ### 16.1 Principle
 
-16.1.1 **Stock negativity never stops any work** — sale, supplier return, write-off, adjust all continue. Only a warning/alert is produced. (Two counters selling the last item together on a dead network also fall under this `[Spec §1.2.5]`: the system must not crash; it shows stock as minus and raises the alert.)
+16.1.1 **D-93: new work never takes stock below zero.** Sales, write-offs/count-short adjustments, owner goods drawings, supplier returns and PR cancellation use one central transactional policy guarding both selected batch and active product total. Repeated products and shared batches are validated cumulatively; a shortage refuses the whole operation with available-versus-requested detail and preserves the form/cart, financial history and document number. Two counters cannot use a network failure as an oversell bypass: the conditional database update remains the final guard.
 
-16.1.2 `stock.allowNegative` can be switched OFF; then a sale exceeding stock is refused with a clear message.
+16.1.2 The legacy `stock.allowNegative` row is retained only for database compatibility. It has no production reader, no Settings checkbox and no owner-only bypass. Existing negative quantities remain visible in alerts and the read-only Stock minus report, then require a physical count and audited stock-take correction; migration never silently zeroes them.
+
+16.1.3 Exact zero is a successful outcome, including fractional `REAL` quantities. Planning may ignore only tiny binary floating-point residue; the SQL `qty_base >= requested` guard stays strict. Historical sales, returns, receipts and reports remain readable, and a historical return may increase a negative batch towards zero.
 
 ### 16.2 Where alerts are shown
 
@@ -1159,13 +1163,13 @@ Full permission matrix: Section 7.4.
 
 16.2.2 `/alerts` has a top card "Stock MINUS" (how many medicines, how much).
 
-16.2.3 `/stock` shows write-off warnings in a big red alert box.
+16.2.3 `/stock` shows a clear red validation error before a write-off would exceed available stock; the typed form stays intact and nothing is saved.
 
-16.2.4 Each cart line shows a red mark; the post-bill alert stays in the top bar.
+16.2.4 Cart lines may show low/zero-stock warnings. A cumulative shortage prevents saving; it does not create a new negative-stock alert. Alerts for historical negative rows remain in the top bar until their existing owner-dismissal/reconciliation rules are met.
 
 ### 16.3 What is recorded
 
-16.3.1 Every negative sale is stored in the black box as `negative_sale` with "who · when · old value → new value".
+16.3.1 Historical negative-sale records remain readable in the black box and historical audit exports. D-93 refusals are failed operations, not new negative sales: they create no partial stock, payment or `negative_sale` history. Successful guarded operations retain their ordinary stock/audit entries.
 
 ### 16.4 Alert dismissal `[U-31]`
 
@@ -1183,7 +1187,7 @@ Full permission matrix: Section 7.4.
 
 16.5.1 Negative stock per product; pending / linked no-bill returns (`PR-…`); items in quarantine (`Q-…`); overpayment to a supplier (informational, recorded in the black box). Each has a stable alert key used by the dismissal table.
 
-16.5.2 During a stock-take apply, negative book stock is corrected automatically.
+16.5.2 During a stock-take apply, a historical negative book quantity is corrected to the finite, non-negative physical count with an audited adjustment. Counting zero is valid; leaving a row uncounted does not silently zero it.
 
 16.5.3 Cart-time toast rules: stock 0 / low / negative; VIP/Doctor rate applied; discount limit; round-off applied.
 
@@ -1255,7 +1259,7 @@ Full permission matrix: Section 7.4.
 
 19.1.1 One click to write off goods that are expired, broken/dropped, lost, or to correct a count. Value is computed at **purchase cost** (the real loss) and stored.
 
-19.1.2 Removing more than the available stock is **allowed with a big red warning** `[U-30]`.
+19.1.2 **D-93 (supersedes U-30 for new adjustments):** removing more than the available batch/product quantity is refused atomically with a clear available-versus-requested message. The form and any document number are preserved until a valid save. A physical stock-take is the correction path for a historical negative balance.
 
 ### 19.2 Stock-take / physical stock audit (`/stock-take`) `[Spec §15.2.4]` (stage-29)
 
@@ -1527,11 +1531,11 @@ create table if not exists public.area11_sync (
 
 30.2.4 Item-total reconciliation (plain bill, loyalty only, round-off only, both; line sums equal bill total) and round-off with cost guard.
 
-30.2.5 Stock rules for negative stock (decisions for sale / supplier return / write-off; never blocks when allowed; blocks when `allowNegative` is OFF).
+30.2.5 D-93 stock rules for every decrement route (cumulative repeated products/shared batches, exact and fractional zero, finite inputs, legacy negative product totals, selected-batch guard, atomic rollback and no burned number).
 
 30.2.6 Audit diff (new record, deleted record, edited record = only changed fields, no-change = nothing).
 
-30.2.7 Alert key, dismissed alerts hidden, **reason compulsory**, **owner only**, negative stock does not block work.
+30.2.7 Alert key, dismissed alerts hidden, **reason compulsory**, **owner only**, historical negative-stock alerts/reconciliation remain readable, and no new decrement can bypass D-93.
 
 30.2.8 Report math (profit with restocked-return cost, margin; 5 tests).
 
@@ -1555,15 +1559,15 @@ create table if not exists public.area11_sync (
 
 ## 31. ACCEPTANCE SCENARIOS (verified live in the original — the rebuild must give the same results)
 
-31.1 **Negative stock sale**: stock 5, sell 12 → sale succeeds, code `INV-0001`, warning "stock MINUS (−7) gone", `negativeItems = [{inStock 5, sold 12, after −7}]`. Turn `stock.allowNegative` OFF and sell 3 more → refused (400) "stock only −7 … negative stock is off". Turn ON again → sale goes through, stock −10.
+31.1 **D-93 sale boundary**: stock 5, sell 12 → refused before `INV-0001` is taken; cart and stock 5 are unchanged, and no financial/audit rows are written. The legacy `stock.allowNegative` value does not change the result. Two lines for the same product, 3 + 2, succeed and leave exactly zero. A fractional sale `0.1 + 0.2` against stock `0.3` also leaves zero; the next positive decrement is refused.
 
-31.2 **Audit old → new**: batch quantity `5 → −7` logged as `negative_sale`; a return logs `refunded_so_far 0 → 8000`, `cash_back 8000`; CSV exports Old/New.
+31.2 **Historical minus and audited correction**: opening a database with legacy batch quantity −5 does not rewrite it. Catalog, Stock minus, old sale/return receipts and reports remain readable. A physical count of 7 applies an audited +12 adjustment; a physical count of 0 is also valid. No migration or background job silently zeroes the row.
 
 31.3 **Return validation**: 12 bikes sold → returning 100 refused ("now only 12 can be returned"); returning an item of another bill refused ("Item #2 is not on this bill (INV-0001)"); returning 4 allowed (refund 8000 paisa); then returning 9 more (13 > 12) refused ("4 already returned — now only 8").
 
 31.4 **Alert dismissal**: no reason → rejected; with reason → alert disappears, reason shown in `/alerts` and in the black box; a cashier attempting → "ending an alert is only the owner's job".
 
-31.5 **Supplier return with negative stock**: batch at −4, return 6 → completes, stock −10, response `warnings: ["…stock MINUS (−10) gone"]`.
+31.5 **D-93 supplier return**: batch 5, two return lines requesting 3 + 3 for the same product/batch → refused atomically with available/requested detail; no `SR` number, supplier financial effect, stock row or audit row survives. Correcting the form to a total of 5 succeeds and leaves exactly zero. A historical negative batch still cannot hide a product-level shortage.
 
 31.6 **No-bill return**: stock −7, 3 returned → stock **−4 immediately**; then link the bill → stock **stays −4** (no double add); the alert remains ("PR-0001 — bill (INV-0001) linked, owner's confirmation pending").
 
@@ -1619,7 +1623,7 @@ create table if not exists public.area11_sync (
 
 32.8 An empty shift auto-created at first start → removed (18.1.1).
 
-32.9 Supplier return stopped with "Batch has only N" → warning only (9.3.2, U-30).
+32.9 Supplier return originally stopped with "Batch has only N"; U-30 later allowed a negative batch instead. D-93 now resolves the defect without either extreme: the entered return is validated and either completes non-negatively or rolls back atomically with a useful available/requested message (9.3.2).
 
 32.10 Hidden settings (`bill.stockTakePrefix`, `provisionalPrefix`, `supplierReturnPrefix`, `discount.blockBelowCost`, `owner.name`) → shown (6.4.1).
 
@@ -1658,7 +1662,7 @@ create table if not exists public.area11_sync (
 | §1.2.1 offline | ✅ | keep |
 | §1.2.2 auto-sync on reconnect, §1.2.4 periodic sync | ❌ not built (manual push/pull only) | later, with sync/server |
 | §1.2.3 manual sync | ✅ | later |
-| §1.2.5 offline stock conflict | ✅ (negative stock + alert) | keep |
+| §1.2.5 offline stock conflict | ✅ (original used negative stock + alert) | D-93 conditional transactional guard for new work; preserve historical alerts and physical-count reconciliation |
 | §1.3.1 manual backup | ✅ | keep |
 | §1.3.2 scheduled backup | ✅ (daily, configurable) | keep |
 | §1.3.3 daily auto-send by e-mail/WhatsApp | ❌ (manual WhatsApp summary) | build |
@@ -1683,7 +1687,7 @@ create table if not exists public.area11_sync (
 | §14 financials | ✅ | keep |
 | §15.1 top / dead stock ✅; all-time highest/lowest day ❌ | | add |
 | §15.2.1 vendor return cutoff alert ❌; §15.2.2 write-off ✅; §15.2.3 alternative suggestion ❌; §15.2.4 stock-take ✅ | | build the ❌ ones |
-| Owner orders U-25…U-36 | ✅ | keep |
+| Owner orders U-25…U-36 | ✅ | keep, except D-93 supersedes U-25/U-26/U-30 overselling for new transactions; historical evidence remains |
 
 ### 33.3 Original remaining list (as of stage-43)
 
@@ -1761,7 +1765,7 @@ create table if not exists public.area11_sync (
 
 34.7 **Hardware last**: test the printer and the scanner at the real shop PC at the end; absence of devices must not stop the app.
 
-34.8 **Android later**: the owner does not want Android sync now but wants to add it later — possibly a separate Kotlin app (viewing data first; selling later). Because of the interface/DTO design (4.4) it will connect to the same data through the future server API (or the Supabase mirror). Phone selling brings two-device stock conflicts — handled by negative-stock + alert rules (Section 16) and server-side transactions.
+34.8 **Android later**: the owner does not want Android sync now but wants to add it later — possibly a separate Kotlin app (viewing data first; selling later). Because of the interface/DTO design (4.4) it will connect to the same data through the future server API (or the Supabase mirror). Any future phone sale must use the same server-side immediate transactions and central D-93 stock policy; a network conflict is never an oversell bypass, while historical negative rows remain reconcilable.
 
 34.9 **Second counter later**: one computer now; later a main PC runs `Area11.Server` (ASP.NET Core minimal API, same Core + same SQLite file) and the second counter's Desktop uses the HTTP implementation of the service interfaces. WAL mode and single-transaction operations prevent double-selling.
 

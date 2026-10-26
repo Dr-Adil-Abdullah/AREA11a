@@ -72,6 +72,26 @@ FK: `supplier_id` → `suppliers.id` · `product_id` → `products.id`
 
 Indexes: `idx_batches_product`, `idx_batches_expiry`
 
+### D-93 quantity invariant (v0.35.9 — no schema change)
+
+`qty_base` remains **REAL**, including fractional quantities; report projections must not cast it to
+`INTEGER`. Existing databases may contain negative batch quantities from the retired U-25/U-30 rules.
+Those rows are historical evidence, so v0.35.9 adds **no migration**, no silent zeroing and no
+retroactive `CHECK (qty_base >= 0)` that would make an old database fail to open.
+
+Every new ordinary decrement goes through `Area11.Core/Services/StockPolicy.cs`. In the caller's
+immediate transaction it reads the active batch and product total, then executes a conditional
+`UPDATE` requiring both `batches.qty_base >= requested` and the active product `SUM(qty_base) >=
+requested`. The batch, product total, stock/financial/audit rows and document number therefore commit
+or roll back together. Sale planning separately reserves repeated products and shared FEFO batches
+before numbering so the user gets the shortage before a number is taken.
+
+The only absolute batch assignment is the owner-only physical **stock-take**: a finite, non-negative
+counted quantity is written with an audited adjustment. This is the reconciliation path for a
+historical minus. `StockMinusService` and its page remain read-only reports/review trails. The legacy
+`stock.allowNegative` settings key may remain in an old `settings` row, but production no longer reads
+it; it is not a bypass and v0.35.9 does not delete that historical setting.
+
 ## `categories`  (6 columns)
 
 | Column | Type | Not null | Default |

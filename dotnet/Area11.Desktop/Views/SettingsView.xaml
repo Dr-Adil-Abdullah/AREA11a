@@ -271,11 +271,10 @@
                             <StackPanel>
                                 <TextBlock Text="Stock" Style="{StaticResource SectionTitle}" />
 
-                                <CheckBox Content="Allow a bill when the stock count is short (negative stock)"
-                                          IsChecked="{Binding AllowNegativeStock, Mode=TwoWay}"
-                                          Margin="0,10,0,0" />
-                                <TextBlock Text="Recommended: a counter must never refuse a sale because the computer's count is wrong. The shortage shows on the stock report."
-                                           Style="{StaticResource FieldHint}" />
+                                <TextBlock Text="New work never takes stock below zero (D-93)"
+                                           Style="{StaticResource FieldLabel}" Margin="0,10,0,0" />
+                                <TextBlock TextWrapping="Wrap" Style="{StaticResource FieldHint}"
+                                           Text="Sales, write-offs, goods drawings, supplier returns and PR cancellations stop with a clear shortage message. There is no checkbox or owner bypass. Existing minus quantities stay visible in Stock minus until a physical stock-take reconciles them." />
 
                                 <Separator Margin="0,14,0,10" />
 

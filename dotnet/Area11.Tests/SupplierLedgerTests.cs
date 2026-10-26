@@ -15,7 +15,7 @@ namespace Area11.Tests;
 ///   • a payment bigger than the debt is refused, so a payment can never make the account negative;
 ///   • a credit note lowers the payable and takes the stock out of the chosen batch;
 ///   • cash from the supplier leaves the payable alone - goods went back, money came in instead;
-///   • returning more than the batch holds still completes with a warning (U-30);
+///   • returning more than the batch holds is refused without a partial SR or a burned number (D-93);
 ///   • a cashier cannot reach either button.
 /// </summary>
 public sealed class SupplierLedgerTests
@@ -217,13 +217,54 @@ SELECT qty_base FROM stock_movements WHERE ref_code = 'SR-0001' ORDER BY id DESC
     }
 
     [Fact]
-    public void ReturningMoreThanTheBatchHolds_StillCompletes_WithAWarning()
+    public void ReturningMoreThanTheBatchHolds_RollsBackAndDoesNotBurnTheSrNumber()
     {
         using var test = new TestDatabase();
         var product = TestData.AddProduct(test, batchQty: 0);
         var supplier = TestData.AddSupplier(test);
 
         Buy(test, supplier, product);
+        var batch = NewestBatch(test, product);
+
+        SupplierReturnInput Input(double qty) => new()
+        {
+            SupplierId = supplier,
+            Reason = SupplierLedgerService.ReasonDamaged,
+            Lines = new List<SupplierReturnLineInput>
+            {
+                new() { ProductId = product, BatchId = batch, QtyEntered = qty, Unit = "unit" }
+            }
+        };
+
+        var result = Ledger(test).Return(TestData.Owner, Input(100));
+
+        Assert.False(result.Ok);
+        Assert.Contains("below zero", result.Error ?? string.Empty);
+        Assert.Equal(40d, BatchQty(test, batch));
+        Assert.Equal(800000L, StoredPayable(test, supplier));
+
+        using (var connection = test.Database.Open())
+        {
+            Assert.Equal(0L, Convert.ToInt64(test.Database.Scalar(connection,
+                "SELECT COUNT(1) FROM supplier_returns;") ?? 0L));
+        }
+
+        // The failed SR-0001 was rolled back with the header and credit note, so the valid return
+        // uses that same number rather than leaving a phantom gap.
+        var valid = Ledger(test).Return(TestData.Owner, Input(40));
+        Assert.True(valid.Ok, valid.Error);
+        Assert.Equal("SR-0001", valid.Value!.Code);
+        Assert.Equal(0d, BatchQty(test, batch));
+    }
+
+    [Fact]
+    public void ACreditNoteAboveThePayable_StillWorksWhenTheStockIsReallyThere()
+    {
+        using var test = new TestDatabase();
+        var product = TestData.AddProduct(test, batchQty: 0);
+        var supplier = TestData.AddSupplier(test);
+
+        Buy(test, supplier, product, boxes: 5, paidPaisa: 1200000); // 100 tablets; Rs 8,000 still owed
         var batch = NewestBatch(test, product);
 
         var result = Ledger(test).Return(TestData.Owner, new SupplierReturnInput
@@ -236,9 +277,8 @@ SELECT qty_base FROM stock_movements WHERE ref_code = 'SR-0001' ORDER BY id DESC
             }
         });
 
-        Assert.True(result.Ok, result.Error);                    // U-30: never blocked
-        Assert.Equal(-60d, BatchQty(test, batch));
-        Assert.Contains(result.Value!.Warnings, w => w.Contains("MINUS", StringComparison.Ordinal));
+        Assert.True(result.Ok, result.Error);
+        Assert.Equal(0d, BatchQty(test, batch));
 
         // 100 x Rs 200 = Rs 20,000 returned against Rs 8,000 owed: the shop is Rs 12,000 in credit.
         Assert.Equal(-1200000L, result.Value!.NewPayablePaisa);

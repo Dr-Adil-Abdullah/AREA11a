@@ -211,7 +211,7 @@ SELECT type AS type, qty_base AS qtyBase FROM stock_movements WHERE product_id =
     }
 
     [Fact]
-    public void AGoodsDrawing_BiggerThanTheShelf_IsAllowedWithAWarning()
+    public void AGoodsDrawing_BiggerThanTheShelf_IsRefusedWithoutAnyRows()
     {
         using var test = new TestDatabase();
         var product = TestData.AddProduct(test, batchQty: 3);
@@ -224,24 +224,15 @@ SELECT type AS type, qty_base AS qtyBase FROM stock_movements WHERE product_id =
             Unit = "unit"
         });
 
-        Assert.True(saved.Ok, saved.Error);
-        Assert.True(saved.Value!.HasWarning);
-        Assert.Contains("MINUS", saved.Value.WarningText, StringComparison.OrdinalIgnoreCase);
-        Assert.Equal(-7d, StockOf(test, product));
+        Assert.False(saved.Ok);
+        Assert.Contains("below zero", saved.Error ?? string.Empty);
+        Assert.Equal(3d, StockOf(test, product));
 
-        // …unless the owner switched negative stock off (U-30 is a setting, not a law).
-        Assert.True(test.Settings.Set("stock.allowNegative", false, TestData.Owner).Ok);
-
-        var refused = TestData.CashOut(test).AddDrawing(TestData.Owner, new DrawingInput
-        {
-            Type = "goods",
-            ProductId = product,
-            QtyEntered = 1,
-            Unit = "unit"
-        });
-
-        Assert.False(refused.Ok);
-        Assert.Equal(-7d, StockOf(test, product));
+        using var connection = test.Database.Open();
+        Assert.Equal(0L, Convert.ToInt64(test.Database.Scalar(connection,
+            "SELECT COUNT(1) FROM owner_drawings;") ?? 0L));
+        Assert.Equal(0L, Convert.ToInt64(test.Database.Scalar(connection,
+            "SELECT COUNT(1) FROM stock_movements WHERE type = 'drawing';") ?? 0L));
     }
 
     [Fact]

@@ -156,22 +156,31 @@ VALUES(@productId, 'B-1', '2027-06-30', '2027-06', @qty, @cost, @retail, 0, 1, @
     }
 
     [Fact]
-    public void NegativeStock_DoesNotBlockTheSale_AndWarns()
+    public void NegativeStock_IsRefused_EvenWhenTheLegacySwitchIsOn()
     {
         using var test = new TestDatabase();
         var (sales, productId, owner) = Build(test, costPaisa: 20000, retailPaisa: 30000, batchQty: 5);
+        Assert.True(test.Settings.Set("stock.allowNegative", true, owner).Ok);
+
+        var quote = sales.Quote(One(productId, qty: 12), owner);
+        Assert.False(quote.Ok);
+        Assert.Contains("below zero", quote.Error ?? string.Empty);
 
         var result = sales.Create(One(productId, qty: 12), owner);
 
-        Assert.True(result.Ok, result.Error);
-        Assert.NotEmpty(result.Warnings);
+        Assert.False(result.Ok);
+        Assert.Contains("below zero", result.Error ?? string.Empty);
 
         using var connection = test.Database.Open();
         var stock = Convert.ToDouble(test.Database.Scalar(connection,
             "SELECT IFNULL(SUM(qty_base), 0) FROM batches WHERE product_id = @id;",
             new { id = productId }) ?? 0d);
 
-        Assert.Equal(-7d, stock, 3);
+        Assert.Equal(5d, stock, 3);
+        Assert.Equal(0L, Convert.ToInt64(test.Database.Scalar(connection,
+            "SELECT COUNT(1) FROM sales;") ?? 0L));
+        Assert.Equal(0L, Convert.ToInt64(test.Database.Scalar(connection,
+            "SELECT COUNT(1) FROM audit_logs WHERE action = 'negative_sale';") ?? 0L));
     }
 
     [Fact]

@@ -92,8 +92,6 @@ public sealed class SaleQuote
 
     public double Units { get; init; }
 
-    public bool GoesNegative { get; init; }
-
     public List<string> Warnings { get; init; } = new();
 }
 
@@ -137,6 +135,8 @@ public sealed class SaleDraftLine
     public string BatchNo { get; init; } = string.Empty;
 
     public string UnitSold { get; init; } = "base";
+
+    public string BaseUnit { get; init; } = "unit";
 
     public double QtyEntered { get; init; }
 

@@ -6,7 +6,7 @@ namespace Area11.Core.Services;
 
 /// <summary>
 /// The alert board (Spec 16, U-31, U-34, 15.2.1, D-50). Six sources today:
-///   • a medicine whose stock is MINUS - somebody sold what the shelf did not have;
+///   • a historical medicine whose stock is MINUS - D-93 blocks new decrements, but old rows stay visible;
 ///   • goods sitting in quarantine, waiting for a decision;
 ///   • a no-bill return that is still missing its bill;
 ///   • a batch inside the **supplier return window**: the supplier will take it back only until a

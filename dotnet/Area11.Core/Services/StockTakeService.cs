@@ -22,7 +22,8 @@ namespace Area11.Core.Services;
 /// A medicine found on the shelf that the book has never seen is not a problem: it gets a batch
 /// `GINTI-ST-0001` at Apply, so the stock exists from that day on and the count is complete.
 ///
-/// Negative book stock is corrected like any other number: the count wins (U-30).
+/// Negative book stock is corrected like any other number: the non-negative physical count wins
+/// (D-93). This absolute-count door is deliberately separate from ordinary stock decrements.
 /// </summary>
 public sealed class StockTakeService
 {
@@ -197,9 +198,9 @@ WHERE id = @sessionId;", new { sessionId });
             return ServiceResult.Fail("You do not have permission to run a stock-take.");
         }
 
-        if (qtyEntered < 0)
+        if (!double.IsFinite(qtyEntered) || qtyEntered < 0)
         {
-            return ServiceResult.Fail("A count cannot be a minus number.");
+            return ServiceResult.Fail("A physical count must be a real number of zero or more.");
         }
 
         try
@@ -358,6 +359,12 @@ ORDER BY i.id;", new { sessionId });
         foreach (var line in lines)
         {
             var counted = line.CountedQtyBase ?? 0d;
+            if (!double.IsFinite(counted) || counted < 0)
+            {
+                throw new ValidationException(
+                    line.ProductName + ": the physical count must be a real number of zero or more. Nothing was applied.");
+            }
+
             var diff = counted - line.SystemQtyBase;
             var batchId = line.BatchId;
 

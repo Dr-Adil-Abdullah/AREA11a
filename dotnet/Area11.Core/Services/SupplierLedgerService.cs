@@ -25,8 +25,8 @@ namespace Area11.Core.Services;
 /// row - it is `supplier_returns.settled = 1`. The shift/galla report (Phase 3) must count those rows
 /// as money IN, or the drawer will look long by exactly that amount.
 ///
-/// Stock follows U-30: returning more than the batch holds still completes, the stock goes negative
-/// and the answer carries a warning - unless the owner has switched negative stock off in Settings.
+/// Stock follows D-93: a supplier return cannot take the chosen batch or the product total below
+/// zero. A refusal rolls back the SR header, credit note, stock rows and number together.
 /// </summary>
 public sealed class SupplierLedgerService
 {
@@ -406,16 +406,12 @@ SELECT id, name, balance_paisa AS payablePaisa FROM suppliers WHERE id = @id AND
         var warnings = new List<string>();
         var stamp = Clock.Now();
 
+        // Repeated batch lines are allowed. StockPolicy sees each earlier line's in-transaction
+        // decrement, so their combined quantity is guarded rather than validated independently.
         var planned = new List<PlannedReturnLine>();
-        var seen = new HashSet<int>();
 
         foreach (var wanted in input.Lines)
         {
-            if (!seen.Add(wanted.BatchId))
-            {
-                throw new ValidationException("The same batch is listed twice. Put both quantities on one line.");
-            }
-
             if (wanted.QtyEntered <= 0)
             {
                 throw new ValidationException("Every line needs a quantity bigger than zero.");
@@ -447,27 +443,12 @@ FROM batches WHERE id = @id AND product_id = @productId AND active = 1;",
             var qtyBase = Calc.ToBase(wanted.QtyEntered,
                 Packs.PerUnit(product.BoxStrips, product.StripTablets, wanted.Unit));
 
-            if (qtyBase <= 0)
+            if (!double.IsFinite(qtyBase) || qtyBase <= 0)
             {
-                throw new ValidationException(product.Name + ": the quantity must be more than zero.");
+                throw new ValidationException(product.Name + ": the quantity must be a real number more than zero.");
             }
 
             var costPaisa = batch.CostPaisa > 0 ? batch.CostPaisa : product.CostPaisa;
-            var stockAfter = batch.QtyBase - qtyBase;
-
-            if (stockAfter < -0.0005)
-            {
-                if (!_settings.GetBool("stock.allowNegative", true))
-                {
-                    throw new ValidationException(
-                        product.Name + ": only " + Qty.Format(batch.QtyBase) + " " + product.BaseUnit
-                        + " in batch " + batch.BatchNo + ". Negative stock is switched off in Settings.");
-                }
-
-                // U-30: never block. The shelf is the truth, and the warning is the record.
-                warnings.Add(product.Name + " (" + batch.BatchNo + "): stock MINUS ("
-                    + Qty.Format(stockAfter) + " " + product.BaseUnit + ") after this return.");
-            }
 
             planned.Add(new PlannedReturnLine
             {
@@ -518,8 +499,8 @@ VALUES(@returnId, @productId, @batchId, @qty, @cost, @total);",
                     total = line.LineTotalPaisa
                 });
 
-            _db.Execute(connection, "UPDATE batches SET qty_base = qty_base - @qty WHERE id = @id;",
-                new { qty = line.QtyBase, id = line.Batch.Id });
+            StockPolicy.Decrease(_db, connection, line.Product.Id, line.Batch.Id, line.QtyBase,
+                line.Product.Name, line.Product.BaseUnit, "return to the supplier");
 
             _db.Execute(connection, @"
 INSERT INTO stock_movements(product_id, batch_id, type, qty_base, ref_type, ref_id, ref_code, note,

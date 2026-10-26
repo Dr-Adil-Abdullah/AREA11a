@@ -7,10 +7,10 @@
 > اِس فائل میں یہ سب ہے: پروگرام کیا ہے، ابھی کہاں کھڑا ہے، **کیا باقی ہے**، کیا **کبھی نہیں** کرنا،
 > اور ایک نیا ورژن کیسے نکالنا ہے۔ آپ کے لیے چھوٹی اردو فائل: [`docs/HANDOVER-FOR-OWNER-URDU.md`](docs/HANDOVER-FOR-OWNER-URDU.md)۔
 
-**Status:** v0.35.8 · Lapis · `#2A4B9B` — **default branch `main`**; this repair is on the current
+**Status:** v0.35.9 · Onyx · `#2F3640` — **default branch `main`**; this repair is on the current
 working branch `arena/60395e95-area11a` until its pull request is merged.
 
-*Last updated: 26 October 2026, after PR-link reconciliation was implemented and all 44 static checks plus the SQLite upgrade passed. Lapis has **798 written cases** and still needs the owner's Windows run; Cypress's **789/789** is prior verified evidence.*
+*Last updated: 26 October 2026, after D-93 negative-stock retirement was implemented and all 45 static checks plus the SQLite policy rehearsal passed. Onyx has **814 written cases** and still needs the owner's Windows run; Cypress's **789/789** is prior verified evidence.*
 
 ---
 
@@ -56,15 +56,15 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 
 ## 3. Where it stands right now (read this twice)
 
-**Current source: v0.35.8 "Lapis" implements PR-to-sale-line reconciliation. Its 798 cases are written but not executed here (no .NET SDK). Prior owner evidence: v0.35.7 "Cypress" passed 789/789 in 1 m 6 s; v0.35.6 "Cedar" passed 782/782 in 1 m 3 s.**
+**Current source: v0.35.9 "Onyx" implements D-93 complete negative-stock retirement for new transactions. Its 814 cases are written but not executed here (no .NET SDK). Prior owner evidence: v0.35.7 "Cypress" passed 789/789 in 1 m 6 s; v0.35.6 "Cedar" passed 782/782 in 1 m 3 s.**
 
 | | |
 |---|---|
-| Test cases written | **798** in 63 files (`tools\RUN-TESTS.cmd` compares the run against `EXPECTED=798`) |
-| Static checks | **44**, all green: `OK - 44 checks, no problems` |
+| Test cases written | **814** in 64 files (`tools\RUN-TESTS.cmd` compares the run against `EXPECTED=814`) |
+| Static checks | **45**, all green: `OK - 45 checks, no problems` |
 | Owner's numbered rules | **116 - 90 ✅ done, 5 🟡 partial, 1 ⬜ (E-12), 20 standing** - see §4 |
 | Feature board | **57 features — 52 ✅ done, 5 🟡 one shop action each, 0 ⬜ not started** (91.2 % / 8.8 %) |
-| Code size | 267 C# files (65,772 lines) + 38 XAML files (8,020 lines, 36 of them pages/windows); 48 services, 41 view models |
+| Code size | 269 C# files (66,463 lines) + 38 XAML files (8,019 lines, 36 of them pages/windows); 49 services, 41 view models |
 | Database | 25 migrations → **35 business tables + provisional report view**, append-only, existing `area11.db` opens unchanged |
 
 ### What the owner's own PC has already proved
@@ -80,29 +80,33 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
   **Failed: 0, Passed: 772, Total: 772 in 56 s — ALL GREEN**. This proves the numbering, session and
   Shift repairs together; it is not a claim that the Desktop installer or every page was exercised.
 
-### What v0.35.8 changes — a linked PR cannot be returned again
+### What v0.35.9 changes — D-93 retires negative stock for new work
 
-Migration 025 adds `provisional_return_allocations`: each PR item is matched to one or more real
-`sale_items`, with base quantity, expected remaining bill paisa and actual allocated PR paisa. The
-whole link is one transaction. It writes **no stock movement, payment, khata event or sale update**;
-the original PR event and original bill stay immutable. Wrong medicines and quantities above the
-bill's unreconciled remainder are refused atomically. Repeated products, split sale lines and
-multiple PRs consume the same cumulative remainder, and `ReturnService` now includes those rows in
-both its preview and save caps.
+`StockPolicy` is the single internal door for ordinary decrements. Inside the caller's immediate
+transaction it checks the selected batch and the active product total, then uses a conditional
+atomic `UPDATE`; sale, write-off/count-short, owner goods drawing, supplier return and PR cancellation
+all call it. The legacy `stock.allowNegative` value remains in old settings rows for compatibility,
+but no production code reads it, the checkbox is gone, and there is no owner bypass. A new static
+gate rejects a future raw decrement outside this policy (the audited absolute physical count is the
+only exception).
 
-A refund mismatch is not hidden or “corrected” by rewriting history. The PR stores expected value
-and unallocatable excess, the audit stores every allocation, and the owner sees the over/under
-warning. RET applies both per-line and whole-bill refund caps; goods may still come back with a zero
-refund if earlier PR money already consumed the bill value. Old Cedar/Cypress linked headers have
-NULL reconciliation fields: another RET is blocked until the owner/manager selects that closed PR
-and attaches the **same** bill again. No migration guesses those old quantities. Linked alerts now
-name the real INV and explain the repair; linked reprints no longer claim the bill is missing.
+Sale planning now reserves repeated products and shared FEFO batches cumulatively before invoice
+numbering. A shortage reports available versus requested quantities; the cart stays intact and no
+sale/payment/stock/audit row or number survives a failed operation. Exact zero is allowed, including
+fractional REAL quantities. Supplier-return and PR-cancellation failures roll back earlier lines too.
+PR cancellation remains stock-only: no payment, drawer inflow, negative refund/cost row or repayment
+is invented, and cancelled PRs stay excluded from active reports.
 
-Nine regressions were added (**798 total**) and four impossible old fixtures were made realistic.
-All 44 static checks, the real SQLite 023→025 upgrade and 500 independent allocation-model cases
-pass here. **There is no .NET SDK here, so Lapis is not compiled or xUnit-verified yet.** The owner
-must run `tools\RUN-TESTS.cmd` and see `ALL GREEN - 798 of 798`. **Next code stage: D-93 negative-
-stock retirement, only after another `next`; cloud remains postponed.**
+No migration rewrites a historical negative to zero. Catalog reads, Stock minus, old sales/returns
+and sales reports remain readable; a historical return can still increase stock. Reconciliation is
+a read-only review followed by an owner-only, finite, non-negative physical count and audited
+adjustment. Lapis PR-link allocations, chronological settlement, integer-paisa immutable financial
+history and cumulative return caps are unchanged.
+
+Sixteen cases were added (**814 total, 64 files**) and old overselling fixtures were replaced with
+refusal or explicit legacy-negative fixtures. All 45 static checks and a 7/7 SQLite policy rehearsal
+with 500 guarded attempts pass here. **There is no .NET SDK here, so Onyx is not compiled or
+xUnit-verified yet.** The owner must run `tools\RUN-TESTS.cmd` and see `ALL GREEN - 814 of 814`. Later stages still require another `next`; cloud remains postponed.
 
 ### What v0.35.7 changes — bill returns and recovery agree about the money
 
@@ -117,7 +121,7 @@ cash-plus-khata value, and a final packed-unit remainder stores its own remainin
 Seven regressions were added (**789 total**). No schema or historical sale/payment/return row changed.
 Static checks and five SQLite chronology rehearsals passed here. The owner's subsequent Windows
 run compiled Core and Tests and reported **Failed 0, Passed 789, Skipped 0, Total 789 in 1 m 6 s —
-ALL GREEN**. This is prior verified evidence, not a claim that Lapis has run on the owner's PC.
+ALL GREEN**. This is prior verified evidence, not a claim that Onyx has run on the owner's PC.
 
 ### What v0.35.6 changes — provisional money evidence
 
@@ -243,12 +247,12 @@ WPF cannot decode `.webp` photos; cloud sync is optional and never deletes a row
 git clone https://github.com/Dr-Adil-Abdullah/AREA11a.git
 cd AREA11a                               # main is the default branch - the product is already here
 pip install --break-system-packages tree_sitter tree_sitter_c_sharp   # gives the real C# grammar
-python3 tools/check_repo.py              # must end: OK - 44 checks, no problems
+python3 tools/check_repo.py              # must end: OK - 45 checks, no problems
 python3 tools/build_rules_matrix.py --check
 ```
 
 Then read, in this order: this file → `AGENTS.md` → `docs/PROGRESS.md` (the board) → `HANDOFF.md` §4
-(the walk-throughs) → `docs/OWNER-DECISIONS.md` (at least D-77, D-88 … D-92) → the code you are about
+(the walk-throughs) → `docs/OWNER-DECISIONS.md` (at least D-77, D-88 … D-93) → the code you are about
 to touch.
 
 **How work reaches `main` from now on.** `main` is protected only by habit, not by a rule: work on a
@@ -302,13 +306,14 @@ makes that absence mean something). `tools\SEND-REPORT.cmd` collects everything 
 2. **A bill's total is the sum of its line totals.** Round once (`Money.RoundDownWithCostGuard`), then
    spread the difference; never re-round afterwards.
 3. **Round down only, never below purchase cost** (his Z-11).
-4. **Negative stock never blocks a sale** — it warns, records `negative_sale` and raises an alert
-   (U-25/U-30), unless `stock.allowNegative` is off.
+4. **D-93: no new decrement may take stock below zero.** Sales, write-offs, goods drawings, supplier
+   returns and PR cancellation use `StockPolicy`; there is no setting or owner bypass. Historical
+   negatives remain readable and are corrected only by an audited physical stock-take, never silent zeroing.
 5. **Permissions are enforced in `Area11.Core`**, keyed on the signed-in `User`. Hiding a button is
    not a permission.
 6. **Nothing is ever deleted.** Business rows use `active = 0`; the audit trail and sales are permanent.
 7. **Migrations are append-only**, run inside `BEGIN IMMEDIATE`, and re-check `_migrations` after the
-   lock. Add `025_*.sql` — never edit an existing file.
+   lock. Add `026_*.sql` — never edit an existing file.
 8. **Views contain no SQL and no business logic.** Services own every rule and transaction; a service
    method takes `User` when the rule depends on permissions.
 9. **Everything editable comes from `settings`** — shop name, wording, limits, printer width, colour
@@ -336,8 +341,8 @@ Area11.Tests/XxxTests.cs             ← through the public services and a real 
 docs/PROGRESS.md                     ← the board row: state, files, test, "done when"
 ```
 
-`Area11.Tests` may reference **only `Area11.Core`** — tests must use public code. `TestDatabase` is an
-in-memory SQLite database with all 23 migrations and seed data; `TestData` opens a drawer so that every
+`Area11.Tests` may reference **only `Area11.Core`** — tests must use public code. `TestDatabase` is a
+temporary SQLite database with all 25 migrations and seed data; `TestData` opens a drawer so that every
 bill in the suite goes through the real galla door.
 
 ---
@@ -383,7 +388,7 @@ Then the documents that must not drift: `docs/PROGRESS.md` (the row + a change-l
 `python3 tools/make_checklist.py` if the board changed.
 
 ```bash
-python3 tools/check_repo.py          # OK - 44 checks, no problems
+python3 tools/check_repo.py          # OK - 45 checks, no problems
 python3 tools/build_rules_matrix.py --check
 git add -A && git commit -m "v0.xx.y Colour - <what a person would notice>" && git push
 ```
@@ -402,7 +407,7 @@ in `/tmp`, and run the checker inside it. Only then tell the owner.
 This sandbox is Linux with **no .NET SDK and no PowerShell**. That means:
 
 * you **cannot** build the WPF app, run the tests, run `install.ps1`, or open a window;
-* you **can** run `python3 tools/check_repo.py` — 44 checks that parse every C# file with the real
+* you **can** run `python3 tools/check_repo.py` — 45 checks that parse every C# file with the real
   tree-sitter grammar, resolve explicit usings, validate XAML/csproj XML, every binding against its
   view-model, every `StaticResource` key, every SQL statement against the real schema, every mapped
   column, constructor arity, migration execution on SQLite, version/colour/VERSIONS agreement, docs
@@ -487,8 +492,8 @@ honest caveat about what is not yet proven. If he asks for a printable status, r
 | `dotnet/Area11.Desktop/ViewModels/ShellViewModel.cs` | the frame, the menu, the session, the fault banner |
 | `dotnet/Area11.Desktop/Views/` (36) | the pages; `PosView`, `ProductsView`, `PurchasesView`, `ShiftView`, `HardwareView` … |
 | `dotnet/Area11.Desktop/Resources/Theme.xaml` | the three brand brushes |
-| `dotnet/Area11.Tests/` (62 files) | `TestDatabase`, `TestData`, one file per feature |
-| `tools/check_repo.py` | the 44 static checks (read the docstring of a failing check) |
+| `dotnet/Area11.Tests/` (64 files) | `TestDatabase`, `TestData`, one file per feature |
+| `tools/check_repo.py` | the 45 static checks (read the docstring of a failing check) |
 | `tools/make_checklist.py`, `make_icon.py`, `build_rules_matrix.py` | the printable list, the icon, the rules matrix |
 | `tools/*.cmd`, `tools/install/*.ps1` | what the owner double-clicks: start, update, test, report, install, uninstall, share |
 | `docs/` | the spec, the decisions, the board, the rules, the schema, the guides |
@@ -497,8 +502,8 @@ honest caveat about what is not yet proven. If he asks for a printable status, r
 
 ## 16. The first message to send him (copy, paste, adjust)
 
-> میں نے ریپو پڑھ لی ہے۔ ابھی حالت یہ ہے: **v0.35.2 (Tarragon)** — 769 میں سے 769 ٹیسٹ متوقع،
-> 57 فیچر میں 52 مکمل (91.2٪)، 5 میں صرف ایک ایک عمل باقی، کوئی فیچر شروع نہیں ہوا۔
-> سب سے پہلے آپ `git pull` کر کے `tools\RUN-TESTS.cmd` چلائیں اور `tools\INSTALL-AREA11.cmd` سے
-> انسٹال کریں — مجھے دونوں کا مکمل کنسول بھیج دیں۔ اُس کے بعد میں F-08، F-09، F-10، F-04 اور F-46
-> کے وہ پانچ کام مکمل کرواؤں گا جن کے لیے دکان میں ایک ایک عمل درکار ہے۔
+> میں نے ریپو پڑھ لی ہے۔ ابھی حالت یہ ہے: **v0.35.9 (Onyx)** — D-93 کے 814 written cases اور 45 static checks مکمل ہیں،
+> مگر Windows build/xUnit ابھی آپ کے کمپیوٹر پر کرنا باقی ہے۔ 57 فیچر میں 52 مکمل (91.2٪)، 5 میں صرف ایک ایک عمل باقی۔
+> سب سے پہلے آپ `git pull` کر کے `START-AREA11.bat` اور `tools\RUN-TESTS.cmd` چلائیں؛ مطلوبہ نتیجہ
+> `ALL GREEN - 814 of 814` ہے۔ مجھے مکمل کنسول بھیج دیں۔ اُس کے بعد F-08، F-09، F-10، F-04 اور F-46
+> کے وہ پانچ کام مکمل کرواؤں گا جن کے لیے دکان میں ایک ایک عمل درکار ہے۔ Cloud ابھی postponed ہے۔

@@ -347,18 +347,24 @@ WHERE id = @id
 
                 var stamp = Clock.Now();
                 var items = _db.Query<StockRow>(connection, @"
-SELECT product_id AS productId, batch_id AS batchId, qty_base AS qtyBase, qty_entered AS qtyEntered,
-       unit_entered AS unitEntered
-FROM provisional_items WHERE provisional_id = @id ORDER BY id;", new { id = provisionalId });
+SELECT i.product_id AS productId, i.batch_id AS batchId, i.qty_base AS qtyBase,
+       i.qty_entered AS qtyEntered, i.unit_entered AS unitEntered,
+       p.name AS productName, p.base_unit AS baseUnit
+FROM provisional_items i
+JOIN products p ON p.id = i.product_id
+WHERE i.provisional_id = @id ORDER BY i.id;", new { id = provisionalId });
 
                 foreach (var item in items)
                 {
-                    if (item.BatchId is int batchId)
+                    if (item.BatchId is not int batchId)
                     {
-                        _db.Execute(connection,
-                            "UPDATE batches SET qty_base = qty_base - @qty WHERE id = @id;",
-                            new { qty = item.QtyBase, id = batchId });
+                        throw new ValidationException(row.Code
+                            + ": the original batch is missing, so cancellation cannot remove stock safely. "
+                            + "Reconcile the old row through an audited correction first; nothing was changed.");
                     }
+
+                    StockPolicy.Decrease(_db, connection, item.ProductId, batchId, item.QtyBase,
+                        item.ProductName, item.BaseUnit, "remove for the PR cancellation");
 
                     _db.Execute(connection, @"
 INSERT INTO stock_movements(product_id, batch_id, type, qty_base, ref_type, ref_id, ref_code, note, user_id, created_at)
@@ -395,7 +401,7 @@ WHERE id = @id;",
         catch (Exception exception)
         {
             _log.Error("No-bill return " + provisionalId + " could not be cancelled.", exception);
-            return ServiceResult.Fail("The no-bill return could not be cancelled.");
+            return ServiceResult.Fail("The no-bill return could not be cancelled. Nothing was changed.");
         }
     }
 
@@ -985,6 +991,10 @@ VALUES(@productId, 'OPEN', NULL, NULL, 0, @cost, @retail, 0, 1, @at);",
     private sealed class StockRow
     {
         public int ProductId { get; set; }
+
+        public string ProductName { get; set; } = string.Empty;
+
+        public string BaseUnit { get; set; } = "unit";
 
         public int? BatchId { get; set; }
 

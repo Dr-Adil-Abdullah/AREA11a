@@ -111,7 +111,7 @@ public sealed class DashboardViewModel : ObservableObject, IEmptyPage
         CanSeeProfit = snapshot.CanSeeProfit;
         ShiftText = snapshot.ShiftOpen ? "Shift is open" : "No shift open";
         StatusMessage = snapshot.NegativeStock > 0
-            ? $"Stock is MINUS on {snapshot.NegativeStock} medicine(s). Sales continue; fix by count or purchase."
+            ? $"Stock is MINUS on {snapshot.NegativeStock} medicine(s). New decrements are blocked; reconcile by physical count or receive stock."
             : string.Empty;
         HasAlert = snapshot.NegativeStock > 0;
 

@@ -3,7 +3,7 @@
 > **یہ فائل کیا ہے؟** مالک (ڈاکٹر عادل عبداللہ) کی ہر ہدایت، فیصلہ اور ترجیح یہاں نمبر کے ساتھ محفوظ ہوتی ہے۔
 > کوئی بات زبانی نہیں رہتی۔ نئی ہدایت = نیا نمبر۔ پرانی ہدایت کوئی ایجنٹ خاموشی سے نہیں بدل سکتا۔
 >
-> **آخری اپ ڈیٹ:** 24 اکتوبر 2026 · **ورژن:** D-01 سے D-92 تک (v0.35.0 Raspberry `#B3446C`) — اور اِسی تاریخ کو مالک کی v0.33.0 دوڑ **730 میں سے 730 پاس** ہوئی اور **سائن اِن ونڈو کھلی رہی**
+> **آخری اپ ڈیٹ:** 26 اکتوبر 2026 · **ورژن:** D-01 سے D-93 تک (v0.35.9 Onyx `#2F3640`) — D-93 کے 814 written cases اور 45 static checks مکمل ہیں؛ Windows build/xUnit ابھی مالک کے لیے باقی ہے۔ سابقہ owner-verified evidence: Cypress **789/789**۔
 > **سند (Authority):** `AREA11-MASTER-SPEC.md` (37 حصے + Appendix A) — اور جہاں مالک نے بعد میں کوئی نیا حکم دیا، وہی چلے گا (Spec §1.2.2)۔
 
 ---
@@ -1015,9 +1015,24 @@ U-25/U-30 اصول کو بدل دیتا ہے؛ پرانے اصول تاریخی 
 تمام decrement paths پر enforcement۔ Negative-stock کے حساب والی پرانی defects کو صرف checkbox بند کر کے
 حل نہ سمجھا جائے گا؛ historical reads، returns اور reports کے tests بھی لازم ہیں۔
 
-**موجودہ حالت:** ابھی صرف یہ owner decision درج ہوا ہے۔ **v0.35.2 کا program code نہیں بدلا** اور موجودہ app
-پرانی U-25/U-30 behavior پر ہے۔ Implementation کے ساتھ نیا version، رنگ، tests اور reconciliation evidence الگ
-ریکارڈ ہوگا۔
+**موجودہ حالت (26 اکتوبر 2026 — v0.35.9 Onyx `#2F3640`):** D-93 کا implementation مکمل ہے۔
+`StockPolicy` اب sale، write-off/count-short، owner goods drawing، supplier return اور PR cancellation —
+پانچوں ordinary decrement routes — میں selected batch اور active product total کو ایک ہی immediate
+transaction میں conditional atomic `UPDATE` سے محفوظ کرتا ہے۔ Legacy `stock.allowNegative` row پڑھی جا
+سکتی ہے مگر کوئی production rule اُسے استعمال نہیں کرتا؛ checkbox اور owner bypass دونوں نہیں ہیں۔
+
+Sale میں repeated products اور shared FEFO batches کی cumulative reservation invoice number لینے سے
+پہلے ہوتی ہے۔ Available-versus-requested خبر کے ساتھ ناکامی ہو تو cart/form برقرار رہتا ہے اور stock،
+مالیات، audit اور document number سب rollback ہوتے ہیں۔ Exact zero درست ہے، fractional `REAL` quantities
+بھی۔ PR cancellation صرف اُسی batch سے stock نکالتی ہے؛ کوئی payment، drawer inflow، منفی refund/cost
+cancellation row یا automatic repayment نہیں بنتی۔
+
+کوئی نئی migration نہیں: پرانی negative batch کو صفر نہیں کیا گیا۔ Catalog، Stock minus، تاریخی sale/return
+اور reports پڑھے جا سکتے ہیں، اور historical return stock بڑھا سکتی ہے۔ Reconciliation پہلے read-only
+report، پھر owner-only physical stock-take ہے جس میں finite، non-negative count اور audited adjustment
+ہوتا ہے۔ **814 written cases، 45 static checks، 7/7 SQLite rehearsal groups اور 500 guarded attempts**
+کامیاب ہیں۔ یہاں .NET SDK نہیں، اس لیے Windows build اور xUnit ابھی مالک چلائیں گے؛ مطلوبہ نتیجہ
+`ALL GREEN - 814 of 814` ہے۔ Cloud postponed ہے اور اگلے code stage کے لیے دوبارہ `next` لازم ہوگا۔
 
 ### D-92 — **ایک وقت پوری دکان کا، ایک سیشن جو خود بند ہو، اور گلا بند ہو تو بل نہیں** (v0.35.0)
 
@@ -2460,6 +2475,7 @@ restart نہیں (Spec 8.4.3)۔
 
 | تاریخ | کیا |
 |---|---|
+| 26 اکتوبر 2026 | **D-93 implementation — v0.35.9 Onyx `#2F3640`**: پانچوں decrement routes پر مرکزی `StockPolicy`، cumulative cart/FEFO reservation، atomic refusal اور exact-zero success؛ legacy checkbox/owner bypass ختم، historical minus کو silent zero نہیں، physical stock-take audited correction، PR cancellation stock-only۔ **814 written cases، 45 static checks، 7/7 SQLite groups + 500 guarded attempts**؛ Windows build/xUnit مالک کے لیے باقی۔ |
 | 25 اکتوبر 2026 | **D-93 — Negative stock کا خاتمہ**: مالک نے مکمل retirement منتخب کی؛ نئے transactions صفر سے نیچے نہیں، ہر decrement path پر اطلاق، پرانی negatives کی physical/audited reconciliation، تاریخی rows کو خاموشی سے صفر نہیں کرنا۔ ابھی decision-only؛ v0.35.2 کا code اور رنگ نہیں بدلا۔ |
 | 24 اکتوبر 2026 | **D-92 — ایک وقت پوری دکان کا، سیشن خود بند، گلا بند تو بل نہیں**: `TimeSource` + `NtpTime` (آن لائن پہلے، کمپیوٹر بطور بیک اپ، ہر 20 منٹ، دو دن سے زیادہ کا جواب مسترد)، `SessionPolicy` + `SessionWatch` (سیٹنگز میں 1/2/4/6/12 گھنٹے، مگر **12 گھنٹے کی چھت ہر صورت**)، `SaleService` کا گلا گیٹ + کاؤنٹر پر کارڈ اور «Open a galla now»، `SessionHandover` کا نوٹ؛ 19 ٹیسٹ (769 کیس)، گیٹ #44 · **v0.35.0 Raspberry `#B3446C`** |
 | 24 اکتوبر 2026 | **D-91 — مالک کے ہاتھ میں پرنٹ شدہ ٹک لسٹ**: `docs/CHECKLIST-URDU.md` اور `.html` (A4، قلم سے ٹک لگانے والے خانے)، `PRINT-CHECKLIST.cmd`، اور `tools/make_checklist.py` جو اُسے بورڈ سے بناتا ہے؛ نیا گیٹ #43 تینوں گنتیاں میل کرواتا ہے · کوئی کوڈ نہیں بدلا، اِس لیے رنگ وہی **Smalt `#003399`** |

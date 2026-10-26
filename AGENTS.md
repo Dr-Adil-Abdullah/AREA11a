@@ -40,15 +40,16 @@ rejected even if it "works".
 2. **Bill total = sum of line totals.** Round once (`Money.RoundDownWithCostGuard`), then spread the
    difference over the last allocation. Never re-round the total afterwards.
 3. **Round down only, never below purchase cost** (Z-11).
-4. **Negative stock is retired by D-93 (25 Oct 2026), superseding U-25/U-30 for new transactions.**
-   New implementation must stop every stock-decrement path from taking stock below zero, reconcile existing
-   negatives through physical counts and audited corrections, and never silently zero historical rows.
-   v0.35.2 still has the old warning-and-allow behavior until the D-93 implementation lands.
+4. **Negative stock is retired by D-93 (implemented in v0.35.9 Onyx), superseding U-25/U-30 for new transactions.**
+   Every ordinary decrement must use `StockPolicy.Decrease` inside its immediate transaction; never add a raw
+   subtraction, settings bypass or owner bypass. Sales reserve repeated products/shared FEFO batches
+   cumulatively, exact zero is valid, and failures roll back completely. Historical negatives stay readable
+   and are reconciled only through finite physical counts and audited corrections, never silent zeroing.
 5. **Permissions are enforced in `Area11.Core`**, keyed on the signed-in `User`. Hiding a button is not
    a permission. Owner-only actions: dismissing alerts, applying stock-take, restoring backup.
 6. **Never delete business rows.** Use `active = 0`. Audit rows and sales are permanent.
 7. **Migrations are append-only**, run inside `BEGIN IMMEDIATE`, and re-check `_migrations` after the
-   lock is taken. Add `016_*.sql`; never edit an existing file.
+   lock is taken. Add `026_*.sql`; never edit an existing file.
 8. **Views contain no SQL and no business logic.** Services own every rule and every transaction; a
    service method takes `User` when the rule depends on permissions.
 9. **Never modify the original Next.js app** (`Dr-Adil-Abdullah/Area11`) - it is only a behaviour

@@ -449,11 +449,11 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
             : "Batch " + SelectedBatch.BatchNo + ": " + Qty.Format(SelectedBatch.QtyBase) + " now -> "
               + Qty.Format(SelectedBatch.QtyBase - qtyBase) + " after";
 
-        var willGoMinus = SelectedBatch is not null && SelectedBatch.QtyBase - qtyBase < -0.0005;
+        var willGoMinus = SelectedBatch is not null && SelectedBatch.QtyBase - qtyBase < 0;
 
         if (willGoMinus)
         {
-            StockPreview += "  (MINUS - allowed with a warning, U-30)";
+            StockPreview += "  (NOT ALLOWED - reduce the quantity or count/receive stock first)";
         }
     }
 

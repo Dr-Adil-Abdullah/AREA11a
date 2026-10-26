@@ -6,15 +6,15 @@ using Microsoft.Data.Sqlite;
 namespace Area11.Core.Services;
 
 /// <summary>
-/// Stock write-off and count correction (Spec 19.1, §15.2.2, U-30).
+/// Stock write-off and count correction (Spec 19.1, §15.2.2, D-93).
 ///
 /// The owner stands in front of the shelf with a box of expired strips in his hand. One press must:
 ///   • take the quantity **out of the stock** (or put it in, when the count found more);
 ///   • value the loss **at purchase cost**, never at selling price - that is the real money lost;
 ///   • write the stock ledger (`stock_movements`) and its own record (`stock_adjustments`);
 ///   • go into the black box;
-///   • and **never refuse** because the quantity is bigger than the book says (U-30). It warns, big
-///     and red, and carries on - the shelf is the truth, not the computer.
+///   • and **refuse** a removal bigger than the book says (D-93). The entered form stays intact;
+///     an existing minus is reconciled by the separate physical stock-take, never by another removal.
 ///
 /// What it will never do: edit or delete an old adjustment. A mistake is corrected by a second,
 /// opposite entry with its own reason, so the loss and the correction both stay readable.
@@ -187,9 +187,9 @@ FROM products WHERE id = @id AND active = 1;", new { id = input.ProductId });
         var perUnit = PerUnit(product, input.Unit);
         var qtyBase = Calc.ToBase(input.QtyEntered, perUnit);
 
-        if (qtyBase <= 0)
+        if (!double.IsFinite(qtyBase) || qtyBase <= 0)
         {
-            throw new ValidationException("The quantity must be more than zero.");
+            throw new ValidationException("The quantity must be a real number more than zero.");
         }
 
         // Which batch? The owner can pick one; otherwise the oldest expiry (the one to destroy first).
@@ -216,24 +216,7 @@ ORDER BY (expiry_date IS NULL OR expiry_date = '') ASC, expiry_date ASC, id ASC 
         var costPaisa = batch is not null && batch.CostPaisa > 0 ? batch.CostPaisa : product.CostPaisa;
         var valuePaisa = Calc.Round(qtyBase * costPaisa);
         var stockBefore = batch?.QtyBase ?? 0d;
-        var stockAfter = direction == "out" ? stockBefore - qtyBase : stockBefore + qtyBase;
-
         var warnings = new List<string>();
-
-        if (direction == "out" && stockAfter < -0.0005)
-        {
-            if (!_settings.GetBool("stock.allowNegative", true))
-            {
-                throw new ValidationException(
-                    product.Name + ": only " + Qty.Format(stockBefore) + " " + product.BaseUnit +
-                    " in this batch. Negative stock is switched off in Settings, so this cannot be written off.");
-            }
-
-            // U-30: never blocks. The shelf is the truth; the warning is the record.
-            warnings.Add(
-                product.Name + ": stock MINUS (" + Qty.Format(stockAfter) + " " + product.BaseUnit +
-                ") - you wrote off more than the book had. A stock-take will settle the number.");
-        }
 
         if (direction == "in")
         {
@@ -243,11 +226,27 @@ ORDER BY (expiry_date IS NULL OR expiry_date = '') ASC, expiry_date ASC, id ASC 
         var stamp = Clock.Now();
         var batchId = batch?.Id;
 
+        double stockAfter;
         if (batchId is int realBatchId)
         {
-            _db.Execute(connection,
-                "UPDATE batches SET qty_base = qty_base " + (direction == "out" ? "-" : "+") + " @qty WHERE id = @id;",
-                new { qty = qtyBase, id = realBatchId });
+            if (direction == "out")
+            {
+                stockAfter = StockPolicy.Decrease(_db, connection, product.Id, realBatchId, qtyBase,
+                    product.Name, product.BaseUnit, "write off");
+            }
+            else
+            {
+                _db.Execute(connection,
+                    "UPDATE batches SET qty_base = qty_base + @qty WHERE id = @id;",
+                    new { qty = qtyBase, id = realBatchId });
+                stockAfter = stockBefore + qtyBase;
+            }
+        }
+        else
+        {
+            // Only an inbound legacy count can reach this branch; outbound with no batch was
+            // refused above. The physical stock-take is the path that creates a missing batch.
+            stockAfter = stockBefore + qtyBase;
         }
 
         var movementType = reason is ReasonCountShort or ReasonCountExtra ? "adjust" : "writeoff";

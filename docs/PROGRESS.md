@@ -22,7 +22,7 @@ features and the four phases.
 |---|---|
 | ✅ | finished - the code is written, compiled on the owner's PC, and tested (or its test is named in the row) |
 | 🟡 | the code is finished; **one action in the shop** still has to prove it (the action is written in the row) |
-| ⬜ | not started - **there are none at v0.35.8** |
+| ⬜ | not started - **there are none at v0.35.9** |
 | 🧪 | a test case covers this row in `Area11.Tests` (the count is checked against `EXPECTED` on every run) |
 
 > **How to read a ✅.** It means the code exists, is covered by a named test, and the solution compiled
@@ -47,7 +47,7 @@ features and the four phases.
 > four red tests are why v0.35.2 exists. Those behaviours rest on **769 cases** plus that one green
 > suite, and the five 🟡 rows wait for one action each in the shop.
 
-> **Board at v0.35.8 (Lapis):** 57 features - **52 ✅ / 5 🟡 / 0 ⬜ (91.2% / 8.8%)**. Every feature
+> **Board at v0.35.9 (Onyx):** 57 features - **52 ✅ / 5 🟡 / 0 ⬜ (91.2% / 8.8%)**. Every feature
 > is written, **the program compiles on Windows**, and - new on 23 Oct 2026 - **the window opened and a
 > person signed in on the owner's PC** (v0.33.0: `Signed in: Owner`). The 5 🟡 are the ones only the shop
 > PC can prove, and each is **one action**: one medicine added with a batch (F-08), one delivery entered
@@ -60,18 +60,18 @@ features and the four phases.
 > v0.29.0 moved **F-12 (the dashboard)** to ✅ after giving it 20 tests; the mock database used for
 > them was rebuilt from all 23 migrations and every SQL statement was run on it before shipping.
 
-## Where we stand (v0.35.8)
+## Where we stand (v0.35.9)
 
 | Question | Number | What it means |
 |---|---|---|
 | Features in the board | **57** | **52 ✅ done (91.2%)**, **5 🟡 written but only the shop PC can prove them (8.8%)**, 0 ⬜ not started |
-| Code | **65,772 lines** of C# (Core 30,455 · Desktop 17,232 · Tests 18,085) + **8,020 lines** of XAML | 267 C# files, 38 XAML files |
-| The shop's rules | **48 service files** in `Area11.Core`, **41 model files**, **35 database tables** over 25 migrations | migration 025 adds durable PR-to-sale-line reconciliation without editing original bill rows |
-| Screens | **36 views**, **36 page view-models**, 1,324 XAML bindings (179 made `Mode=OneWay`) | every binding checked against its page's own view-model or row type |
-| Tests | **798 cases** in 63 files | 744 facts + 13 theories (54 inline rows) |
-| Static gates | **44 checks** in `tools/check_repo.py` | ~8 seconds; not a compiler - see the warning at the end |
+| Code | **66,463 lines** of C# (Core 30,592 · Desktop 17,218 · Tests 18,653) + **8,019 lines** of XAML | 269 C# files, 38 XAML files |
+| The shop's rules | **49 service files** in `Area11.Core`, **41 model files**, **35 database tables** over 25 migrations | migration 025 adds durable PR-to-sale-line reconciliation without editing original bill rows |
+| Screens | **36 views**, **36 page view-models**, 1,323 XAML bindings (179 made `Mode=OneWay`) | every binding checked against its page's own view-model or row type |
+| Tests | **814 cases** in 64 files | 752 facts + 16 theories (62 inline rows) |
+| Static gates | **45 checks** in `tools/check_repo.py` | ~8 seconds; not a compiler - see the warning at the end |
 | Reporting a fault | **one file** - `tools\SEND-REPORT.cmd` (v0.30.3, D-78) | build, SDK, git state, shop folder (no rows), whole crash report, last build/test output |
-| Versions shipped | 0.1.0 -> **0.35.8** | each with its own brand colour (D-24) |
+| Versions shipped | 0.1.0 -> **0.35.9** | each with its own brand colour (D-24) |
 | Owner decisions recorded | **D-00 … D-93** | `docs/OWNER-DECISIONS.md`, in Urdu |
 
 **What is actually left.** Nothing in the feature list is unbuilt, and as of v0.31.0 that sentence is
@@ -102,14 +102,14 @@ of books.
 |---|---|---|---|---|---|
 | F-01 | Solution with three projects (Core / Desktop / Tests), .NET 10, MVVM | ✅ | `Area11.sln`, `dotnet/Directory.Build.props` | - | **compiled on Windows**, 23 Oct 2026, v0.30.9: the launcher printed **`BUILD OK - the program was compiled`** for the first time - Core and Tests had compiled before, the WPF project had not. (The window then stopped on a binding fault of its own - see v0.31.1 and F-16.) |
 | F-02 | Exact database schema, migrations 001-025, 35 business tables + provisional report view | ✅ | `dotnet/Area11.Core/Data/Migrations/` | `MigrationTests` 🧪 | an old `area11.db` opens unchanged; 024 backfills provisional money and 025 adds sale-line allocations without guessing old links |
-| F-03 | Settings service, 86 keys, every change audited, saved in one transaction | ✅ | `Area11.Core/Services/SettingsService.cs` | `SettingsTests` 🧪 | bad values are refused before they reach the database |
+| F-03 | Settings service, 89 keys, every change audited, saved in one transaction | ✅ | `Area11.Core/Services/SettingsService.cs` | `SettingsTests` 🧪 | bad values are refused before they reach the database |
 | F-04 | Audit black box (old -> new values, never deleted) | 🟡 | `Services/AuditService.cs`, `Utils/AuditDiff.cs` | `AuditDiffTests` 🧪 | every module writes (U-27) |
 | F-05 | Sign-in: owner password, staff PIN, 5 tries -> 2 minute lock | ✅ | `Services/AuthService.cs`, `Utils/PasswordHasher.cs` | `PasswordHasherTests` 🧪 | owner signs in on Windows - **done 23 Oct 2026 on v0.33.0**: `app-2026-10-23.log` shows `13:53:31 Signed in: Owner` |
 | F-06 | Per-person permissions stored in the database | ✅ | `Migr. 014`, `Services/PermissionService.cs`, `Views/SettingsView.xaml` | `PermissionTests` 🧪 | the owner ticks/unticks in Settings; every change is audited |
 | F-07 | Permanent numbering `INV` / `PINV` / `RET` / `Q` / `SR` / `PR` / `ST` | ✅ | `Services/NumberingService.cs`, `Services/SettingsService.cs` | `NumberingTests` 🧪 | no duplicate numbers across independent settings instances, inside one transaction, or after rollback |
 | F-08 | Products: search, create, edit, box/strip/unit packing, prices, rack | 🟡 | `Services/ProductService.cs`, `Views/ProductsView.xaml` | - | owner adds a medicine with a batch |
 | F-09 | Purchases `PINV`: supplier, batch, expiry, sample lines, payable | 🟡 | `Services/PurchaseService.cs`, `Views/PurchasesView.xaml` | `PurchaseTests` 🧪 | one real delivery enters stock |
-| F-10 | Counter `INV`: FEFO, box/strip/unit, discount guard, round-off, cash change, credit | 🟡 | `Services/SaleService.cs`, `Views/PosView.xaml` | `SaleTests` 🧪 | one real bill prints |
+| F-10 | Counter `INV`: FEFO, box/strip/unit, discount guard, round-off, cash change, credit | 🟡 | `Services/SaleService.cs`, `Services/StockPolicy.cs`, `Views/PosView.xaml` | `SaleTests` + `NegativeStockPolicyTests` 🧪 | **D-93:** one real bill prints; repeated lines/shared batches cannot oversell, a refusal preserves the cart and number, and exact zero succeeds |
 | F-11 | Customers: quick create **at the counter** (v0.29.0) and on the khata page, credit limit | ✅ | `Services/PartnerService.cs`, `ViewModels/PosViewModel.cs` + Edit panel on the khata page | v0.29.0 | a new customer is added at the counter **without losing the cart**, a credit bill lands on their account, and the owner corrects a name, phone, category and limit without touching the udhaar |
 | F-12 | Dashboard: today's bills, sales, **profit by the report's own rule**, khata, payable, low stock, minus stock, near-expiry / expired by day, drawer - and profit hidden from anyone without the profit permission | ✅ | `Services/DashboardService.cs`, `ViewModels/DashboardViewModel.cs`, `Views/DashboardView.xaml` | `DashboardTests` 🧪 (20) | every card equals a hand count, the low-stock card equals the reorder pad's red rows, and today's card equals today's report |
 | F-13 | **Receipt render + instant ESC/POS print, 58 / 80 mm, auto or manual (D-26)** | ✅ | `Services/ReceiptService.cs`, `Services/EscPosBuilder.cs`, `Services/PrinterService.cs`, `Views/PosView.xaml` | `ReceiptTests` 🧪 | his own test on the shop printer: *"I tested it on the printer and it is working perfectly"* (23 Oct 2026, v0.30.2). The slip prints; 58 and 80 mm both chosen from Settings |
@@ -126,11 +126,11 @@ of books.
 | F-20 | Bill lookup for a return: by printed number **and** by phone / customer / medicine / date | ✅ | `Services/ReturnService.Search` + `FindSale`, `Models/SaleLookupModels.cs`, search panel on `Views/ReturnsView.xaml` | `SaleLookupTests` 🧪 (13) | the customer has no paper, and the right bill is found by any one thing they remember - as a list, never a guess |
 | F-21 | Return `RET` against the original bill, strict limits, **printed return receipt** | ✅ | `Migr. 017`, `Services/ReturnService.cs`, `Services/CustomerSettlementLedger.cs`, `Services/ReturnReceiptService.cs`, `Views/ReturnsView.xaml` | `ReturnTests` 🧪 (17) | cumulative quantity/value caps hold after later recoveries; only this bill's remaining khata is reduced and only collected value becomes cash (U-28, U-35) · v0.35.7 |
 | F-23 | Quarantine `Q` with permanent number + disposition by owner **or manager** (D-22) | ✅ | `Services/QuarantineService.cs`, `Views/ReturnsView.xaml` | `QuarantineTests` 🧪 | goods never restock without a decision; history kept forever |
-| F-22 | Provisional (no-bill) return `PR-nnnn`: refund/restock once, later **sale-line reconciliation**, cancel with reason | ✅ | `Migr. 025`, `Services/ProvisionalReturnService.cs`, `Services/ReturnService.cs`, `Services/ProvisionalReceiptService.cs`, `Views/ProvisionalView.xaml` | `ProvisionalTests` + `ProvisionalReconciliationTests` 🧪 | pending means unchecked; linking allocates real quantities/refund without another stock/payment event, repeated/split lines and cumulative RET caps agree, old links need same-bill repair, and refund differences remain visible (U-33) · v0.35.8 |
-| F-25 | Stock write-off / breakage: expired, broken, lost, count short/extra, **valued at cost**, never blocks (U-30) | ✅ | `Services/StockService.cs`, `Views/WriteOffView.xaml` | `StockTests` 🧪 | removing more than the book says must warn, never refuse (U-30) |
-| F-26 | Stock-take `ST-nnnn`: frozen book, count sheet (book/counted/diff/value), apply once (owner), frozen cost, GINTI batch for found stock | ✅ | `Services/StockTakeService.cs`, `Views/StockTakeView.xaml` | `StockTakeTests` 🧪 | the count is evidence; the book must follow it, not the other way round (19.2) |
+| F-22 | Provisional (no-bill) return `PR-nnnn`: refund/restock once, later **sale-line reconciliation**, cancel with reason | ✅ | `Migr. 025`, `Services/ProvisionalReturnService.cs`, `Services/ReturnService.cs`, `Services/ProvisionalReceiptService.cs`, `Views/ProvisionalView.xaml` | `ProvisionalTests` + `ProvisionalReconciliationTests` + `NegativeStockPolicyTests` 🧪 | pending means unchecked; linking allocates real quantities/refund without another stock/payment event, repeated/split lines and cumulative RET caps agree, old links need same-bill repair, and refund differences remain visible (U-33) · v0.35.8; cancellation removes only the same batch, refuses insufficient stock atomically, and never creates a payment (D-93) · v0.35.9 |
+| F-25 | Stock write-off / breakage: expired, broken, lost, count short/extra, **valued at cost**, D-93 guarded | ✅ | `Services/StockService.cs`, `Services/StockPolicy.cs`, `Views/WriteOffView.xaml` | `StockTests` + `NegativeStockPolicyTests` 🧪 | removing more than the book says is refused atomically with available/requested detail; the legacy switch cannot bypass it and the typed form remains |
+| F-26 | Stock-take `ST-nnnn`: frozen book, count sheet (book/counted/diff/value), apply once (owner), frozen cost, GINTI batch for found stock | ✅ | `Services/StockTakeService.cs`, `Views/StockTakeView.xaml` | `StockTakeTests` 🧪 | the count is evidence; a finite non-negative physical count corrects a historical minus (including to zero) with an audited adjustment; uncounted rows are never zeroed (19.2, D-93) |
 | F-27 | Customer khata: list + page, money received (`PAY-`), running balance, statement, stars | ✅ | `Services/CustomerLedgerService.cs`, `Views/CustomersView.xaml` | `CustomerLedgerTests` 🧪 | balance always equals the sum of movements ("books match"), and money received is refused above the udhaar |
-| F-28 | Supplier ledger + supplier return `SR-nnnn` (credit note or cash) | ✅ | `Services/SupplierLedgerService.cs`, `Views/SuppliersView.xaml` | `SupplierLedgerTests` 🧪 | payable always equals opening + purchases - payments - credit notes ("books match") |
+| F-28 | Supplier ledger + supplier return `SR-nnnn` (credit note or cash), D-93 guarded stock | ✅ | `Services/SupplierLedgerService.cs`, `Services/StockPolicy.cs`, `Views/SuppliersView.xaml` | `SupplierLedgerTests` + `NegativeStockPolicyTests` 🧪 | payable always equals opening + purchases - payments - credit notes ("books match"); repeated return lines cannot oversell a batch or burn an SR number |
 | F-29 | Expiry levels read from settings (E-07) | ✅ | `Utils/Expiry.cs` + `Models/ExpiryLevels.cs` + 3 boxes on the Settings tab | v0.3.10 | change the threshold, the colour changes |
 | F-30 | Return receipt (permanent number, original bill, reason) | ✅ | `Services/ReturnReceiptService.cs` | `ReturnTests` 🧪 | the paper says stock or quarantine for every line |
 
@@ -203,18 +203,19 @@ of books.
 | Migrations 001-025 produce 35 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
 | **Compiles on Windows** | `dotnet build Area11.sln` | ✅ 20 Oct 2026 (v0.1.1); re-check after each release |
-| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ `v0.35.8 (Lapis, #2A4B9B)` |
+| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ `v0.35.9 (Onyx, #2F3640)` |
 | Every `StaticResource` key exists (**1,434 keys**) | `python3 tools/check_repo.py` | ✅ |
 | Every binding matches its view-model (**1,324 bindings**) | `python3 tools/check_repo.py` | ✅ |
 | The three script banners match the build | `python3 tools/check_repo.py` | ✅ 3 files |
 | The board and the printable tick-list agree | `python3 tools/make_checklist.py` + the checker | ✅ 57 / 52 / 5 / 0 |
 | **Printer prints (owner's code 6)** | SYSTEM -> *Printer & scanner*, pick the printer, **Print test slip** | 🟡 v0.22.1 fixes the cause (the program opened the print server, not the default printer) - the owner's next slip is the proof |
-| **798 tests written; Lapis Windows run pending** | `dotnet test` (or `tools\RUN-TESTS.cmd`) | 🟡 **v0.35.8 Lapis has not been compiled or executed here (no .NET SDK): the owner must see `ALL GREEN - 798 of 798`.** ✅ Prior evidence: Cypress passed 789/789 in 1 m 6 s; Cedar passed 782/782. |
+| **814 tests written; Onyx Windows run pending** | `dotnet test` (or `tools\RUN-TESTS.cmd`) | 🟡 **v0.35.9 Onyx has not been compiled or executed here (no .NET SDK): the owner must see `ALL GREEN - 814 of 814`.** ✅ Prior evidence: Cypress passed 789/789 in 1 m 6 s; Cedar passed 782/782. |
 
 ## Change log
 
 | Date | What |
 |---|---|
+| 26 Oct 2026 | **v0.35.9 Onyx - D-93 retires negative stock for every new decrement.** A central `StockPolicy` guards selected batch and active product total with a conditional update inside each existing immediate transaction. Sales, write-offs, goods drawings, supplier returns and PR cancellation use it; no legacy setting or owner bypass remains. Sale planning cumulatively reserves repeated products and shared FEFO batches before numbering; exact zero (including fractional REAL quantities) succeeds, while shortages preserve the cart/form and roll back all rows and numbers. Existing negatives are never silently zeroed: historical reads/returns/reports still work, Stock minus stays read-only, and physical stock-take makes the audited correction. PR cancellation remains stock-only with no payment or report-reversal row. **814 cases in 64 files; 45 static checks; 269 C# files; 25 migrations/35 tables; 724 SQL statements prepared; 7/7 SQLite rehearsal groups plus 500 guarded attempts.** No .NET SDK here: the owner must see `ALL GREEN - 814 of 814`; Cypress's 789/789 is prior verified evidence. |
 | 26 Oct 2026 | **v0.35.8 Lapis - PR links now reconcile the original sale lines and close the double-return path.** Migration 025 stores each PR line's quantity, expected bill value and actual refund against real `sale_items`; linking still writes no stock movement, payment or khata event and never edits the original bill. RET reads those allocations and also applies a whole-bill cumulative refund cap. Wrong products/insufficient quantities roll back; split lines, repeated products and multiple PRs accumulate; over/under refunds stay visible instead of being rewritten. Old header-only links need one same-bill repair before another RET. Nine cases added (**798 total, 63 files**), four unrealistic link fixtures corrected, 267 C# files, 25 migrations and 35 tables. All 44 static checks, the real 023→025 SQLite upgrade and 500 independent allocation-model cases pass. **No .NET SDK here: Lapis still needs the owner's `ALL GREEN - 798 of 798`; Cypress's 789/789 is prior evidence.** |
 | 26 Oct 2026 | **v0.35.7 Cypress - bill returns and khata recovery use one chronological rule.** A later collection now moves only the remaining refundable value from khata to cash: a Rs 600 credit bill with Rs 500 collected refunds **Rs 500 cash + Rs 100 khata**, never Rs 600 off the khata. Collections remain oldest-first, while a return reduces its own bill. The shared replay also drives ageing and reprints; later bills cannot rewrite an old recovery slip, and carried-in khata remains visible without an invented date. Final packed-unit remainders keep the remaining entered quantity. Seven regressions added, **789 cases**, 266 C# files; no migration and no historical rows rewritten. Cedar is prior owner evidence at **782/782**. Cypress subsequently passed the owner's Windows run: **789/789 in 1 m 6 s, failed 0 — ALL GREEN**. |
 | 25 Oct 2026 | **AlertService mapping investigation - no current defect, no code change.** The old report said SQLite `qty=1 - Double` was being read as `Int64`, but current `ProblemRow.Qty` is `double` and `qty_base` is `REAL`. The owner's green 772-case run already exercises all seven alert sources, including the low-stock query with REAL 1.0 and 2.0. A new cast would be speculative and could truncate quantities; none was made. A recurrence needs a fresh v0.35.5+ report. |
