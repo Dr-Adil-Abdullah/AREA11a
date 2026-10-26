@@ -45,6 +45,8 @@ public sealed class AuditViewModel : ObservableObject, IEmptyPage
     private bool _isStatusError;
     private bool _canExport;
     private AuditPage? _page;
+    private AuditRow? _selected;
+    private AuditSnapshot? _snapshot;
 
     public AuditViewModel(AppServices services, User user)
     {
@@ -83,6 +85,34 @@ public sealed class AuditViewModel : ObservableObject, IEmptyPage
     public RelayCommand ClearCommand { get; }
 
     public RelayCommand ExportCommand { get; }
+
+    /// <summary>The selected history line. Selecting never loads or changes a business record.</summary>
+    public AuditRow? Selected
+    {
+        get => _selected;
+        set
+        {
+            if (SetProperty(ref _selected, value))
+            {
+                Snapshot = value is null ? null : AuditSnapshot.For(value);
+            }
+        }
+    }
+
+    /// <summary>Complete read-only before/after text and a safe correction route for Z-05.</summary>
+    public AuditSnapshot? Snapshot
+    {
+        get => _snapshot;
+        private set
+        {
+            if (SetProperty(ref _snapshot, value))
+            {
+                OnPropertyChanged(nameof(HasSnapshot));
+            }
+        }
+    }
+
+    public bool HasSnapshot => Snapshot is not null;
 
     public string SearchText
     {
@@ -175,6 +205,11 @@ public sealed class AuditViewModel : ObservableObject, IEmptyPage
         filter.FromDate = from;
         filter.ToDate = to;
 
+        // A result from the previous filter must not remain visible beneath a new one. Clearing the
+        // selection also hides its old/new values; nothing here writes back to the audit or business
+        // tables, and the next explicit row selection builds a fresh read-only snapshot.
+        Selected = null;
+
         var answer = _services.AuditHistory.Read(filter, _user);
 
         Rows.Clear();
@@ -215,7 +250,8 @@ public sealed class AuditViewModel : ObservableObject, IEmptyPage
 
         StatusText = page.IsEmpty
             ? "Nothing matches this search. Widen the dates or clear the boxes."
-            : "Newest line first. No line can be edited or deleted - by anyone, ever (Spec 22.1).";
+            : "Newest line first. Select a line for its complete before/after state and safe correction "
+              + "route. No history line can be edited or deleted (Spec 22.1).";
     }
 
     private (string From, string To) Dates()

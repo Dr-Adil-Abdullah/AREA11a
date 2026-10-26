@@ -148,7 +148,7 @@ History is never lost.
 | **B-05** | Even unsaved work is not lost — an automatic safety snapshot (tested). | ✅ done | Arena snapshots + commits after every change | - | - |
 | **B-06** | Nothing is ever erased — history stays linear. | ✅ done | linear history, never force-push to main | - | - |
 | **B-07** | Safe across sessions: ckpt.sh push (GitHub). | ✅ done | pushed to GitHub after every change | - | - |
-| **B-08** | Helper scripts: sync-spec.sh (spec → Part 1 automatic copy), rules-count.sh (counting of the numbers; says SAB THEEK when no rule number is missing). | ✅ done | replaced by `tools/check_repo.py` (46 checks) + `tools/build_rules_matrix.py` | `tools/check_repo.py` | - |
+| **B-08** | Helper scripts: sync-spec.sh (spec → Part 1 automatic copy), rules-count.sh (counting of the numbers; says SAB THEEK when no rule number is missing). | ✅ done | replaced by `tools/check_repo.py` (47 checks) + `tools/build_rules_matrix.py` | `tools/check_repo.py` | - |
 | **B-09** | The session branch is fixed, but tags/commits allow complete return. The earlier session branch's history and tags stage-1…stage-6 were fast-forwarded into the current branch on 3 Oct 2026 — nothing lost. | ✅ done | fixed session branch, commits/tags for return | - | - |
 | **B-10** | Return is possible even after merges: tags stage-1…N and every commit always remain. To look: git checkout stage-N, or ckpt.sh go N; to undo a merge: git revert -m 1 <merge-commit>. Never delete tags/history; never force-push. | ✅ done | tags `net-stage-N` from stage 2 onward | - | - |
 
@@ -162,7 +162,7 @@ The hard guarantees.
 | **Z-02** | A new change must not break old working parts (test at every stage). | ✅ done | regression tests for every money rule | SaleTests.*, MoneyTests.* | - |
 | **Z-03** | No mistakes in calculation/money (round-off only downward — 545→540). | ✅ done | round-down only downward, never below cost | MoneyTests.*, SaleTests.RoundDown_* | - |
 | **Z-04** | Data is always safe (auto-save + transactions). | ✅ done | single transaction per document, WAL | SaleTests.* | - |
-| **Z-05** | Wrong entry reversible (Undo / see the earlier state). | 🟡 written / partial | every audit line keeps the old and the new value; undoing a finished action is not built | AuditDiffTests.* | - |
+| **Z-05** | Wrong entry reversible (Undo / see the earlier state). | 🟡 written / partial | `AuditSnapshot` + selected Black box row: complete read-only before/after/details and guidance to existing audited corrections; no universal financial undo; Windows/live owner proof pending | AuditViewerTests.EarlierState_* | - |
 | **Z-06** | Offline too — no error (Spec §1.2.1). | ✅ done | SQLite file, no network needed | - | - |
 | **Z-07** | If the printer/barcode device is absent the app must not stop. | ✅ done | a printer fault is reported and the bill is saved anyway - the paper never decides the sale | PrintTests.* | - |
 | **Z-08** | Data is one local file (SQLite) — backup = copy of one file. | ✅ done | one SQLite file + zip backup (Phase 3) | - | - |

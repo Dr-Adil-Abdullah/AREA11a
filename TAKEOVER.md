@@ -7,10 +7,10 @@
 > اِس فائل میں یہ سب ہے: پروگرام کیا ہے، ابھی کہاں کھڑا ہے، **کیا باقی ہے**، کیا **کبھی نہیں** کرنا،
 > اور ایک نیا ورژن کیسے نکالنا ہے۔ آپ کے لیے چھوٹی اردو فائل: [`docs/HANDOVER-FOR-OWNER-URDU.md`](docs/HANDOVER-FOR-OWNER-URDU.md)۔
 
-**Status:** v0.35.11 · Topaz · `#8A5A00` — **default branch `main`**; this repair is on the current
+**Status:** v0.35.12 · Azure · `#005A9C` — **default branch `main`**; this repair is on the current
 working branch `arena/60395e95-area11a` until its pull request is merged.
 
-*Last updated: 26 October 2026, after E-12/S-05 custom application labels were implemented and all 46 static checks plus 6/6 SQLite storage rehearsals passed. Topaz has **827 written cases** and still needs the owner's Windows and live rename/restart/reset runs; both rules stay partial until then. Merlot's fixed rerun remains outstanding, D-93 remains in force, and Cypress's **789/789** is prior verified evidence.*
+*Last updated: 26 October 2026, after Z-05's read-only earlier-state reader was implemented and all 47 static checks plus 4/4 guard injection/restoration outcomes passed. Azure has **834 written cases** and still needs the owner's Windows/xUnit and live Z-05 walk-through; E-12/S-05 also retain their rename/restart/reset proof, and Merlot's Dashboard/PR checks remain open. D-93 and PR money rules remain in force; Cypress's **789/789** is prior verified evidence.*
 
 ---
 
@@ -56,15 +56,15 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 
 ## 3. Where it stands right now (read this twice)
 
-**Current source: v0.35.11 "Topaz" writes E-12/S-05 custom application labels while retaining D-93 and the Merlot repairs. Its 827 cases are written but not executed here (no .NET SDK). E-12/S-05 remain partial pending Windows and live UI proof. Prior owner evidence: v0.35.7 "Cypress" passed 789/789 in 1 m 6 s; v0.35.6 "Cedar" passed 782/782 in 1 m 3 s.**
+**Current source: v0.35.12 "Azure" writes Z-05's complete read-only before/after reader and safe correction guidance while retaining D-93, the Topaz repair and the Merlot repairs. Its 834 cases are written but not executed here (no .NET SDK). Z-05, E-12 and S-05 remain partial pending Windows and live UI proof. Prior owner evidence: v0.35.7 "Cypress" passed 789/789 in 1 m 6 s; v0.35.6 "Cedar" passed 782/782 in 1 m 3 s.**
 
 | | |
 |---|---|
-| Test cases written | **827** in 66 files (`tools\\RUN-TESTS.cmd` compares the run against `EXPECTED=827`) |
-| Static checks | **46**, all green: `OK - 46 checks, no problems` |
+| Test cases written | **834** in 66 files (`tools\\RUN-TESTS.cmd` compares the run against `EXPECTED=834`) |
+| Static checks | **47**, all green: `OK - 47 checks, no problems` |
 | Owner's numbered rules | **116 - 91 ✅ done, 5 🟡 partial, 0 ⬜, 20 standing** - see §4 |
 | Feature board | **57 features — 52 ✅ done, 5 🟡 one shop action each, 0 ⬜ not started** (91.2 % / 8.8 %) |
-| Code size | 277 C# files (68,266 lines) + 39 XAML files (8,271 lines, 37 of them pages/windows); 50 services, 42 view models |
+| Code size | 277 C# files (68,576 lines) + 39 XAML files (8,317 lines, 37 of them pages/windows); 50 services, 42 view models |
 | Database | 26 migrations → **35 business tables + provisional report view**, append-only, existing `area11.db` opens unchanged |
 
 ### What the owner's own PC has already proved
@@ -79,6 +79,27 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 * On **v0.35.5** his next run compiled `Area11.Core` and `Area11.Tests` and reported
   **Failed: 0, Passed: 772, Total: 772 in 56 s — ALL GREEN**. This proves the numbering, session and
   Shift repairs together; it is not a claim that the Desktop installer or every page was exercised.
+
+### What v0.35.12 changes — Z-05 earlier-state recovery without financial rollback
+
+The Black box now has a selected-row snapshot. It shows complete earlier and recorded-new values,
+context and details in read-only copyable fields. Raw strings and CSV stay untouched; valid JSON is
+indented only for display, Unicode and long values remain readable, and plain or malformed JSON is
+shown verbatim. Creation, deletion and details-only rows explain missing sides. A refresh clears the
+old selection, and the panel explicitly says the recorded-new value is not a live database query.
+
+This is deliberately **not universal Undo**. The viewer has no write path or Undo/Restore/Rollback
+command. It directs staff to existing audited correction screens instead of reversing completed
+sales, payments, returns, stock entries or PRs. PR guidance repeats the active rule: cancellation
+removes stock from the same batch only, never creates a payment and does not reverse the original
+financial effect. Settings and master-data corrections require a new audited save.
+
+Seven facts bring the written inventory to **834 cases in 66 files**. All **47 static checks** pass;
+the new Z-05 guard caught a removed snapshot, an injected Undo command and a missing earlier-value
+binding, then passed the restored source (**4/4 outcomes**). There is no .NET SDK here, so these are
+not xUnit or WPF results. The owner must see `ALL GREEN - 834 of 834` and exercise selection, copying,
+filter clearing and guidance. Z-05 stays 🟡 until then. E-12/S-05 label proof and Merlot Dashboard/PR
+checks remain outstanding; charts, native `.xlsx` and cloud work were not started.
 
 ### What v0.35.11 changes — E-12/S-05 custom application labels are written
 
@@ -115,7 +136,7 @@ The owner's first Topaz build then stopped at `AppLabelTests.cs(42)` with **CS16
 does not implement `IDisposable`. The second-database test now uses a plain variable, matching the
 existing NumberingTests lifetime pattern. The existing C# static check rejects `using ... new Database`
 and caught the fault when it was injected back at line 42. The 827-case inventory and product rules
-are unchanged; the owner's rebuilt Topaz run remains required.
+were unchanged by that repair; Topaz's own rerun was never supplied, and Azure's 834-case run is now the current verification target.
 
 ### What v0.35.10 changes — E-04 catalog management is complete
 
@@ -286,7 +307,7 @@ matrix and the feature board differ, and both are telling the truth: every *feat
 |---|---|
 | **E-12** 🟡 | the 32-label Settings → App words editor, Core guards and audited reset are written; Windows and the live owner walk-through are still missing |
 | **S-05** 🟡 | stable-key menu/page refresh is written for all supported headings; immediate propagation, restart persistence and reset still need the same owner proof |
-| **Z-05** 🟡 | every audit line keeps old → new, but **undoing** a finished action is not built |
+| **Z-05** 🟡 | the selected-row earlier-state reader and safe correction guidance are written; Windows/xUnit and the live selection/filter-clearing walk-through are still missing. Universal financial undo is deliberately not built |
 | **T-05** 🟡 | reports are numbers and tables; **drawn charts** are not built |
 | **T-10** 🟡 | CSV import/export is written (Excel opens it); a native **`.xlsx`** writer is not used |
 
@@ -302,7 +323,7 @@ WPF cannot decode `.webp` photos; cloud sync is optional and never deletes a row
 git clone https://github.com/Dr-Adil-Abdullah/AREA11a.git
 cd AREA11a                               # main is the default branch - the product is already here
 pip install --break-system-packages tree_sitter tree_sitter_c_sharp   # gives the real C# grammar
-python3 tools/check_repo.py              # must end: OK - 46 checks, no problems
+python3 tools/check_repo.py              # must end: OK - 47 checks, no problems
 python3 tools/build_rules_matrix.py --check
 ```
 
@@ -443,7 +464,7 @@ Then the documents that must not drift: `docs/PROGRESS.md` (the row + a change-l
 `python3 tools/make_checklist.py` if the board changed.
 
 ```bash
-python3 tools/check_repo.py          # OK - 46 checks, no problems
+python3 tools/check_repo.py          # OK - 47 checks, no problems
 python3 tools/build_rules_matrix.py --check
 git add -A && git commit -m "v0.xx.y Colour - <what a person would notice>" && git push
 ```
@@ -462,7 +483,7 @@ in `/tmp`, and run the checker inside it. Only then tell the owner.
 This sandbox is Linux with **no .NET SDK and no PowerShell**. That means:
 
 * you **cannot** build the WPF app, run the tests, run `install.ps1`, or open a window;
-* you **can** run `python3 tools/check_repo.py` — 46 checks that parse every C# file with the real
+* you **can** run `python3 tools/check_repo.py` — 47 checks that parse every C# file with the real
   tree-sitter grammar, resolve explicit usings, validate XAML/csproj XML, every binding against its
   view-model, every `StaticResource` key, every SQL statement against the real schema, every mapped
   column, constructor arity, migration execution on SQLite, version/colour/VERSIONS agreement, docs
@@ -541,14 +562,14 @@ honest caveat about what is not yet proven. If he asks for a printable status, r
 | Path | What is in it |
 |---|---|
 | `dotnet/Area11.Core/Data/Database.cs`, `StoragePlan.cs`, `Migrations/001…026` | connection, WAL / share mode, the schema |
-| `dotnet/Area11.Core/Services/` (49) | every rule: `SaleService`, `PurchaseService`, `ShiftService`, `SettingsService`, `AuthService`, `PermissionService`, `ReportService`, `BackupService`, `InstallService`, `SyncService`, `HardwareService` … |
+| `dotnet/Area11.Core/Services/` (50) | every rule: `SaleService`, `PurchaseService`, `ShiftService`, `SettingsService`, `AuthService`, `PermissionService`, `ReportService`, `BackupService`, `InstallService`, `SyncService`, `HardwareService` … |
 | `dotnet/Area11.Core/Utils/` | `Money`, `Calc`, `AppPaths`, `BuildInfo`, `RunTrail`, `CommandGuard`, `TimeSource`, `NtpTime`, `SessionPolicy`, `SessionWatch`, `SessionHandover`, `ShopConfig`, `CrashLog` |
 | `dotnet/Area11.Desktop/AppServices.cs` | the composition root — a new service is constructed **here** |
 | `dotnet/Area11.Desktop/ViewModels/ShellViewModel.cs` | the frame, the menu, the session, the fault banner |
 | `dotnet/Area11.Desktop/Views/` (37) | the pages; `PosView`, `ProductsView`, `PurchasesView`, `ShiftView`, `HardwareView` … |
 | `dotnet/Area11.Desktop/Resources/Theme.xaml` | the three brand brushes |
 | `dotnet/Area11.Tests/` (66 test files) | `TestDatabase`, `TestData`, one file per feature |
-| `tools/check_repo.py` | the 46 static checks (read the docstring of a failing check) |
+| `tools/check_repo.py` | the 47 static checks (read the docstring of a failing check) |
 | `tools/make_checklist.py`, `make_icon.py`, `build_rules_matrix.py` | the printable list, the icon, the rules matrix |
 | `tools/*.cmd`, `tools/install/*.ps1` | what the owner double-clicks: start, update, test, report, install, uninstall, share |
 | `docs/` | the spec, the decisions, the board, the rules, the schema, the guides |
@@ -557,10 +578,10 @@ honest caveat about what is not yet proven. If he asks for a printable status, r
 
 ## 16. The first message to send him (copy, paste, adjust)
 
-> میں نے ریپو پڑھ لی ہے۔ ابھی حالت یہ ہے: **v0.35.11 (Topaz)** — E-12/S-05 کے 827 written cases، 46 static checks
-> اور 6/6 SQLite rehearsals مکمل ہیں، مگر Windows build/xUnit اور live rename/restart/reset checking ابھی آپ کے
-> کمپیوٹر پر باقی ہے۔ 57 فیچر میں 52 مکمل (91.2٪)، 5 میں صرف ایک ایک عمل باقی۔ سب سے پہلے `git pull` کر کے
-> `START-AREA11.bat` اور `tools\\RUN-TESTS.cmd` چلائیں؛ مطلوبہ نتیجہ `ALL GREEN - 827 of 827` ہے۔ پھر Settings →
-> **App words** میں نام بدل کر menu اور page heading فوراً بدلنا، restart کے بعد محفوظ رہنا اور دو clicks سے اصل
-> نام واپس آنا دیکھیں۔ مکمل کنسول بھیج دیں۔ Merlot کی repaired rerun اور Dashboard/PR checking بھی ابھی باقی ہے۔
-> Cloud ابھی postponed ہے۔
+> میں نے ریپو پڑھ لی ہے۔ ابھی حالت یہ ہے: **v0.35.12 (Azure)** — Z-05 کے 834 written cases، 47 static checks
+> اور محفوظ earlier-state reader مکمل ہیں، مگر Windows build/xUnit اور live checking ابھی آپ کے کمپیوٹر پر باقی ہے۔
+> 57 فیچر میں 52 مکمل (91.2٪)، 5 میں صرف ایک ایک عمل باقی۔ سب سے پہلے `git pull` کر کے `START-AREA11.bat` اور
+> `tools\\RUN-TESTS.cmd` چلائیں؛ مطلوبہ نتیجہ `ALL GREEN - 834 of 834` ہے۔ پھر Black box میں row منتخب کر کے
+> مکمل پہلے/بعد کی حالت، copy، filter پر پرانا panel غائب ہونا اور محفوظ correction ہدایت دیکھیں؛ کوئی Undo یا payment
+> نہیں بننا چاہیے۔ Settings → **App words** کا rename/restart/reset اور Merlot کا Dashboard/PR معائنا بھی باقی ہے۔
+> مکمل کنسول بھیج دیں۔ Cloud ابھی postponed ہے۔

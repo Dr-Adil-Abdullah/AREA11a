@@ -131,7 +131,7 @@ STATUS: dict[str, tuple[str, str, str]] = {
     "B-05": ("DONE", "Arena snapshots + commits after every change", "-"),
     "B-06": ("DONE", "linear history, never force-push to main", "-"),
     "B-07": ("DONE", "pushed to GitHub after every change", "-"),
-    "B-08": ("DONE", "replaced by `tools/check_repo.py` (46 checks) + `tools/build_rules_matrix.py`", "`tools/check_repo.py`"),
+    "B-08": ("DONE", "replaced by `tools/check_repo.py` (47 checks) + `tools/build_rules_matrix.py`", "`tools/check_repo.py`"),
     "B-09": ("DONE", "fixed session branch, commits/tags for return", "-"),
     "B-10": ("DONE", "tags `net-stage-N` from stage 2 onward", "-"),
 
@@ -140,7 +140,7 @@ STATUS: dict[str, tuple[str, str, str]] = {
     "Z-02": ("DONE", "regression tests for every money rule", "SaleTests.*, MoneyTests.*"),
     "Z-03": ("DONE", "round-down only downward, never below cost", "MoneyTests.*, SaleTests.RoundDown_*"),
     "Z-04": ("DONE", "single transaction per document, WAL", "SaleTests.*"),
-    "Z-05": ("WIP", "every audit line keeps the old and the new value; undoing a finished action is not built", "AuditDiffTests.*"),
+    "Z-05": ("WIP", "`AuditSnapshot` + selected Black box row: complete read-only before/after/details and guidance to existing audited corrections; no universal financial undo; Windows/live owner proof pending", "AuditViewerTests.EarlierState_*"),
     "Z-06": ("DONE", "SQLite file, no network needed", "-"),
     "Z-07": ("DONE", "a printer fault is reported and the bill is saved anyway - the paper never decides the sale", "PrintTests.*"),
     "Z-08": ("DONE", "one SQLite file + zip backup (Phase 3)", "-"),

@@ -1,5 +1,7 @@
 using System.Globalization;
 using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 
 namespace Area11.Core.Models;
 
@@ -75,6 +77,140 @@ public sealed class AuditRow
 
     /// <summary>`settings_change` reads as `settings change` on a printed line.</summary>
     public string ActionLabel => Action.Replace('_', ' ');
+}
+
+/// <summary>
+/// The complete before/after text behind one selected audit row (Z-05).
+///
+/// This is a reader, never a rollback engine. <see cref="EarlierRaw"/> and
+/// <see cref="RecordedRaw"/> keep the stored strings exactly as the history service
+/// returned them; the Text properties only make JSON easier to read on screen. "Recorded" means
+/// immediately after THIS line, not the live state now - a later audit line may have changed it.
+/// Corrections still go through the module's normal audited workflow.
+/// </summary>
+public sealed class AuditSnapshot
+{
+    public const string NoEarlierState = "(No earlier state was recorded before this line.)";
+
+    public const string NoRecordedState = "(No new state was recorded after this line.)";
+
+    private static readonly JsonSerializerOptions DisplayJson = new()
+    {
+        WriteIndented = true,
+        // This is display-only JSON in a read-only TextBox, never HTML or a value written back to
+        // SQLite. Keeping Unicode visible is more useful than showing an Urdu name as \u escapes.
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
+
+    public string? EarlierRaw { get; init; }
+
+    public string? RecordedRaw { get; init; }
+
+    public string EarlierText { get; init; } = NoEarlierState;
+
+    public string RecordedText { get; init; } = NoRecordedState;
+
+    public string DetailsText { get; init; } = string.Empty;
+
+    public string ContextText { get; init; } = string.Empty;
+
+    public string CorrectionText { get; init; } = string.Empty;
+
+    public bool HasEarlierState { get; init; }
+
+    public bool HasRecordedState { get; init; }
+
+    public static AuditSnapshot For(AuditRow row)
+    {
+        ArgumentNullException.ThrowIfNull(row);
+
+        return new AuditSnapshot
+        {
+            EarlierRaw = row.OldValue,
+            RecordedRaw = row.NewValue,
+            HasEarlierState = !string.IsNullOrEmpty(row.OldValue),
+            HasRecordedState = !string.IsNullOrEmpty(row.NewValue),
+            EarlierText = Display(row.OldValue, NoEarlierState),
+            RecordedText = Display(row.NewValue, NoRecordedState),
+            DetailsText = Display(row.Details, "(No extra details were recorded.)"),
+            ContextText = row.ActionLabel + "  ·  " + row.EntityLabel + "  ·  "
+                          + row.WhoLabel + "  ·  " + row.AtLabel,
+            CorrectionText = CorrectionGuidance(row)
+        };
+    }
+
+    private static string Display(string? raw, string emptyText)
+    {
+        if (string.IsNullOrEmpty(raw))
+        {
+            return emptyText;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(raw);
+            return JsonSerializer.Serialize(document.RootElement, DisplayJson);
+        }
+        catch (JsonException)
+        {
+            // Old plain-text values and partial/broken JSON are still evidence. Show them exactly
+            // as stored instead of hiding the line or throwing while the owner is investigating.
+            return raw;
+        }
+    }
+
+    private static string CorrectionGuidance(AuditRow row)
+    {
+        var module = row.Module.Trim().ToUpperInvariant();
+        var action = row.Action.Trim().ToLowerInvariant();
+
+        if (action.StartsWith("provisional_", StringComparison.Ordinal))
+        {
+            return "Use Returns → No bill (PR) and review the linked bill and batch. PR cancellation "
+                   + "removes stock from the same batch only; it never creates a payment and "
+                   + "does not reverse the original financial effect.";
+        }
+
+        if (module == "CUSTOMERS" && (action is "customer_collect" or "khata_reduced"))
+        {
+            return "Use the customer ledger to review a new audited collection or return correction. "
+                   + "Never type over the udhaar balance or create a payment from this viewer.";
+        }
+
+        return module switch
+        {
+            "POS" or "SALES" =>
+                "Use Sales history to find the original bill and Returns for an audited correction. "
+                + "Check goods, khata and drawer separately; never delete the bill or invent a payment.",
+            "RETURNS" =>
+                "Use Returns and the original bill/return history to review a new audited correction. "
+                + "Never delete a return or assume that a stock movement also reversed cash.",
+            "STOCK" or "STOCKTAKE" or "QUARANTINE" =>
+                "Use Write-off / count correction or Stock-take after checking the physical batch. "
+                + "Apply a new audited stock movement; never rewrite the earlier ledger line.",
+            "INVENTORY" or "PRODUCTS" or "REORDER" =>
+                "Use Products / Catalog (or Reorder pad for a level) to save the intended value as a "
+                + "new audited change. Quantity corrections belong in Stock-take, not in this viewer.",
+            "SETTINGS" =>
+                "Open Settings, compare this earlier text with the current value, and save the intended "
+                + "value again. The save creates a new audit line; it does not erase this one.",
+            "USERS" =>
+                "Open Staff & permissions in Settings and save the intended access as a new audited "
+                + "change. Never restore a password or PIN from this panel.",
+            "CASH" or "PURCHASES" or "SUPPLIERS" =>
+                "Use the named cash, purchase or supplier screen for separate, reviewed and audited "
+                + "money/stock corrections. Never edit a ledger balance or create a payment here.",
+            "CUSTOMERS" =>
+                "Use Customers to save a master-data correction as a new audited change. Udhaar changes "
+                + "only through the normal bill, collection or return workflow, never by editing history.",
+            "BACKUP" or "SYNC" or "IMPORT" =>
+                "Do not replay this line as a restore. Inspect the affected records and use the relevant "
+                + "module for a new audited correction; take a fresh backup before any restore decision.",
+            _ =>
+                "Use the named module's normal screen for a new, reviewed and audited correction. "
+                + "This viewer never edits, deletes or replays history."
+        };
+    }
 }
 
 /// <summary>What the owner narrowed the black box down to. Empty fields mean "no restriction".</summary>

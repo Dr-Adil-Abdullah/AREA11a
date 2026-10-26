@@ -3811,6 +3811,88 @@ def check_empty_page() -> None:
 
 
 # ---------------------------------------------------------------------------
+def check_audit_recovery() -> None:
+    """Z-05 shows an earlier state without becoming a financial rollback engine.
+
+    The black box may explain how to make a NEW audited correction, but a generic Undo on a completed
+    sale/payment/return/PR would invent money or stock movements. Keep this page a reader: selected
+    row -> complete snapshot -> existing correction screen. In particular, PR cancellation is not a
+    customer repayment and must never grow a reversal-inflow button here.
+    """
+    model_path = DOTNET / "Area11.Core/Models/AuditModels.cs"
+    vm_path = DOTNET / "Area11.Desktop/ViewModels/AuditViewModel.cs"
+    view_path = DOTNET / "Area11.Desktop/Views/AuditView.xaml"
+
+    missing = False
+
+    for path in (model_path, vm_path, view_path):
+        if not path.exists():
+            fail(f"Z-05 audit recovery file is missing: {rel(path)}")
+            missing = True
+
+    if missing:
+        return
+
+    model = model_path.read_text(encoding="utf-8", errors="replace")
+    vm = vm_path.read_text(encoding="utf-8", errors="replace")
+    view = view_path.read_text(encoding="utf-8", errors="replace")
+
+    snapshot = model.split("public sealed class AuditSnapshot", 1)[-1].split(
+        "public sealed class AuditFilter", 1)[0]
+
+    for needle in (
+        "public static AuditSnapshot For(AuditRow row)",
+        "EarlierRaw = row.OldValue",
+        "RecordedRaw = row.NewValue",
+        "CorrectionGuidance(row)",
+        "never creates a payment",
+        "does not reverse the original financial effect",
+    ):
+        if needle not in snapshot:
+            fail(f"Z-05 AuditSnapshot lost its read-only evidence/safety rule: {needle}")
+
+    for needle in ("Database", "SqliteConnection", "_db.", ".Execute(", ".Tx("):
+        if needle in snapshot:
+            fail(f"Z-05 AuditSnapshot must stay a pure reader, but contains {needle}")
+
+    for needle in (
+        "public AuditRow? Selected",
+        "public AuditSnapshot? Snapshot",
+        "AuditSnapshot.For(value)",
+        "Selected = null;",
+        "public bool HasSnapshot",
+    ):
+        if needle not in vm:
+            fail(f"Z-05 selected-row snapshot is not safely wired: {needle} is missing")
+
+    for command in ("Undo", "Restore", "Rollback", "Revert"):
+        if re.search(rf"public\s+(?:RelayCommand|ICommand)\s+{command}Command\b", vm):
+            fail(f"Z-05 Black box must not grow a universal {command}Command")
+        if re.search(rf'Command="\{{Binding\s+{command}(?:Command)?[,\}}]', view):
+            fail(f"Z-05 Black box view must not expose a {command} command")
+
+    for needle in (
+        'SelectedItem="{Binding Selected}"',
+        'Visibility="{Binding HasSnapshot, Converter={StaticResource BoolToVis}}"',
+        '{Binding Snapshot.EarlierText, Mode=OneWay}',
+        '{Binding Snapshot.RecordedText, Mode=OneWay}',
+        '{Binding Snapshot.DetailsText}',
+        '{Binding Snapshot.CorrectionText}',
+        "not a live query",
+    ):
+        if needle not in view:
+            fail(f"Z-05 earlier-state view is incomplete: {needle} is missing")
+
+    for line_number, line in enumerate(view.splitlines(), 1):
+        if "Text=\"{Binding Snapshot." in line and "TextBox" in line and 'IsReadOnly="True"' not in line:
+            fail(f"AuditView.xaml:{line_number}: snapshot text must be read-only")
+
+    REPORT.append(
+        "Audit recovery: selected row exposes complete read-only before/after values and safe "
+        "correction guidance; no universal undo/restore command")
+
+
+# ---------------------------------------------------------------------------
 def check_shop_clock() -> None:
     """One time for the shop, a session that ends by itself, and no bill without a drawer (D-92).
 
@@ -4661,6 +4743,7 @@ def main() -> int:
     check_run_trail()
     check_shop_clock()
     check_checklist()
+    check_audit_recovery()
     check_csharp_grammar()
 
     if not quiet:

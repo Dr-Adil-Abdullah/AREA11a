@@ -138,28 +138,23 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.35.11 (Topaz `#8A5A00`) - E-12/S-05 custom application labels are written; owner proof is pending.**
+> **v0.35.12 (Azure `#005A9C`) - Z-05 earlier-state recovery is written; owner proof is pending.**
 >
-> * **The 32 supported section names now come from the existing `settings` table.** Settings → App words
->   edits them with Core supported-key, Unicode, trimming, non-empty, single-line/60-character,
->   Settings-permission and old/new audit guards. Stable `LabelKey` values keep navigation and page
->   resolution independent of the editable text; dynamic resources update 26 real page headings,
->   the Cloud sync tab, the Own fields panel and the shell immediately. A two-click reset restores only the catalog, and invalid stored blanks fall
->   back to defaults. No receipt, sentence, historical document or audit text is rewritten.
->   **827 written cases, 46 static checks and 6/6 SQLite storage rehearsals pass here; no .NET SDK or
->   live WPF proof exists in this sandbox.** Keep E-12/S-05 🟡 until the owner's `ALL GREEN - 827 of 827`
->   and rename/restart/reset walk-through. Merlot's fixed 820-case rerun remains outstanding.
+> * **The Black box now opens a complete read-only before/after snapshot for the selected row.** It
+>   preserves raw old/new values, formats JSON only for display, keeps Unicode/long or broken text
+>   readable, shows details/context, and points to the module's existing audited correction screen.
+>   Refresh clears the old selection. There is deliberately **no universal financial Undo**: no sale,
+>   payment, return, stock ledger or PR is rolled back, and PR guidance repeats same-batch stock-only
+>   cancellation with no payment or reversal of the original financial effect.
+>   **834 cases are written and all 47 static checks pass here; the Z-05 guard passed 4/4 fault-injection /
+>   restoration outcomes.** No .NET SDK or live WPF proof exists in this sandbox. Keep Z-05 🟡 until
+>   the owner's `ALL GREEN - 834 of 834` and selection/copy/filter-clearing/correction walk-through.
 >
-> * **Owner-log follow-up:** the pasted Merlot 808/820 tail exposed a current D-93 message defect.
->   A positive total beside a legacy minus batch now names the physical stock-take path; ordinary
->   shortages keep reduce/receive guidance. No stock or financial rule changed. The existing tests
->   assert both paths, 3/3 real-schema guidance checks pass, and the gate prepares 768 SQL statements.
->   This is not a claimed Windows run; Topaz still needs the owner's 827/827 result.
->
-> * **Topaz build follow-up:** the owner's first Topaz build stopped at `AppLabelTests.cs(42)` with
->   CS1674: `Database` does not implement IDisposable. The test now uses a plain variable like the
->   existing NumberingTests pattern. The existing C# gate rejects `using ... new Database` and caught
->   the fault when it was injected back at line 42. No test-count or product-rule change; rerun pending.
+> * **Earlier work remains unbackfilled.** E-12/S-05 still need the same current Windows run plus
+>   rename/restart/reset proof; Merlot's Dashboard/PR live checks remain open. Topaz's CS1674 repair
+>   is included, but its own 827-case rerun never happened; Azure is now the current verification
+>   target. D-93 stock/money rules and the positive-total/beside-legacy-minus guidance are unchanged.
+>   Charts, native `.xlsx` and cloud work were not pulled into this stage.
 >
 > * **v0.35.5 repairs one policy mismatch and two stale test fixtures.** The owner's v0.35.4 run proved
 >   the correct tree (**769 passed, 3 failed, 772 total**). A sign-in ahead of the PC clock now keeps
