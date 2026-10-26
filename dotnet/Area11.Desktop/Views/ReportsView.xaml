@@ -7,7 +7,7 @@
 
             <DockPanel Margin="0,0,0,14">
                 <StackPanel DockPanel.Dock="Left">
-                    <TextBlock Text="Reports" Style="{StaticResource PageTitle}" />
+                    <TextBlock Text="{DynamicResource AppLabel.reports}" Style="{StaticResource PageTitle}" />
                     <TextBlock Text="{Binding PeriodLabel}" Style="{StaticResource PageSubtitle}" />
                 </StackPanel>
                 <Button Content="Refresh" Style="{StaticResource GhostButton}"

@@ -12,12 +12,13 @@ namespace Area11.Desktop.ViewModels;
 /// Settings (F-17) — the screen the owner asked for when he said printing must be a choice
 /// ("in setting there is an option for auto or manu[a]l printing", D-26).
 ///
-/// Five tabs, one save button:
+/// Six tabs, one save button:
 ///   • Shop        — name, address, phone, the note at the bottom of the receipt.
 ///   • Printing    — printer, 58 / 80 mm, automatic or manual, cut, copies.
 ///   • Sales       — discount limits, tax, and the D-93 non-negative stock rule.
 ///   • Cloud sync  — the Supabase address, key, table and shop id (F-48, Spec 25.3).
 ///   • Staff       — people, their role and one checkbox per module (D-03).
+///   • App words   — the shop's names for application sections (E-12/S-05).
 ///
 /// All rules live in Core: <see cref="SettingsService"/> refuses a bad width, a bad copy count or a
 /// cashier limit above the manager's, and <see cref="PermissionService"/> refuses a permission change
@@ -83,6 +84,7 @@ public sealed class SettingsViewModel : ObservableObject
     private string _statusText = "Changes are saved when you press Save.";
     private bool _isStatusError;
     private bool _suppressPermissionSave;
+    private bool _confirmLabelReset;
 
     public SettingsViewModel(AppServices services, User user, Action? onSaved = null)
     {
@@ -93,6 +95,7 @@ public sealed class SettingsViewModel : ObservableObject
         SaveCommand = new RelayCommand(Save);
         AddStaffCommand = new RelayCommand(AddStaff);
         ResetPermissionsCommand = new RelayCommand(ResetPermissions);
+        ResetLabelsCommand = new RelayCommand(ResetLabels);
         ToggleActiveCommand = new RelayCommand(ToggleActive);
         RefreshStaffCommand = new RelayCommand(LoadUsers);
         ClearSyncKeyCommand = new RelayCommand(ClearSyncKey);
@@ -137,6 +140,8 @@ public sealed class SettingsViewModel : ObservableObject
 
     public ObservableCollection<User> Users { get; } = new();
 
+    public ObservableCollection<AppLabelEditRow> LabelRows { get; } = new();
+
     public ObservableCollection<PermissionToggle> Permissions { get; } = new();
 
     public IReadOnlyList<string> StaffRoles { get; } = new[] { "Manager", "Salesman", "Cashier" };
@@ -146,6 +151,10 @@ public sealed class SettingsViewModel : ObservableObject
     public RelayCommand AddStaffCommand { get; }
 
     public RelayCommand ResetPermissionsCommand { get; }
+
+    public RelayCommand ResetLabelsCommand { get; }
+
+    public string ResetLabelsText => _confirmLabelReset ? "Click again to restore all" : "Restore original words";
 
     public RelayCommand ToggleActiveCommand { get; }
 
@@ -439,6 +448,18 @@ public sealed class SettingsViewModel : ObservableObject
 
     // ----------------------------- Loading ------------------------------
 
+    private void LoadLabels()
+    {
+        _confirmLabelReset = false;
+        OnPropertyChanged(nameof(ResetLabelsText));
+        LabelRows.Clear();
+
+        foreach (var label in _services.AppLabels.List())
+        {
+            LabelRows.Add(new AppLabelEditRow(label.Key, label.DefaultText, label.Text));
+        }
+    }
+
     private void Load()
     {
         var settings = _services.Settings;
@@ -449,6 +470,7 @@ public sealed class SettingsViewModel : ObservableObject
         FooterNote = settings.GetString("store.footerNote");
         AppName = settings.GetString("brand.appName");
         MenuPinnedOpen = settings.GetBool("menu.pinnedOpen");
+        LoadLabels();
 
         var idleHours = settings.GetInt("session.idleHours", 2);
         SelectedIdleHour = IdleHourOptions.FirstOrDefault(option => option.Hours == idleHours)
@@ -502,14 +524,14 @@ public sealed class SettingsViewModel : ObservableObject
     /// the counter screen writes the same key) is shown here too.
     /// </summary>
     /// <summary>
-    /// Which tab is open: 0 Shop, 1 Printing, 2 Sales rules, 3 Cloud sync, 4 Staff &amp; permissions.
+    /// Which tab is open: 0 Shop, 1 Printing, 2 Sales rules, 3 Cloud sync, 4 Staff, 5 App words.
     /// Bound two-way, so the shop name in the sidebar can open Shop and a person's name can open the
     /// staff tab (D-50) - the two questions the owner actually clicks.
     /// </summary>
     public int SelectedTabIndex
     {
         get => _selectedTabIndex;
-        set => SetProperty(ref _selectedTabIndex, Math.Clamp(value, 0, 4));
+        set => SetProperty(ref _selectedTabIndex, Math.Clamp(value, 0, 5));
     }
 
     /// <summary>
@@ -676,6 +698,18 @@ public sealed class SettingsViewModel : ObservableObject
             return;
         }
 
+        var labelValues = LabelRows.ToDictionary(
+            row => row.Key,
+            row => (string?)row.Text,
+            StringComparer.Ordinal);
+        var labelValidation = _services.AppLabels.Validate(labelValues);
+
+        if (!labelValidation.Ok)
+        {
+            SetStatus(labelValidation.Error ?? "The application labels could not be saved.", true);
+            return;
+        }
+
         var values = new Dictionary<string, object?>(StringComparer.Ordinal)
         {
             ["store.name"] = StoreName.Trim(),
@@ -708,6 +742,11 @@ public sealed class SettingsViewModel : ObservableObject
             ["loyalty.vipThreshold"] = vipPoints,
             ["session.idleHours"] = SelectedIdleHour?.Hours ?? 2
         };
+
+        foreach (var pair in labelValues)
+        {
+            values[AppLabelService.SettingKey(pair.Key)] = pair.Value!.Trim();
+        }
 
         // Only a person the owner ticked for cloud sync writes these four keys: the key is a password
         // to the whole shop's mirror, and a manager's Settings tab must not be able to replace it.
@@ -745,6 +784,7 @@ public sealed class SettingsViewModel : ObservableObject
         SyncKey = string.Empty;
         _syncKeyCleared = false;
         RaiseSyncLabels();
+        LoadLabels();
 
         _onSaved?.Invoke();
 
@@ -919,6 +959,37 @@ public sealed class SettingsViewModel : ObservableObject
             : $"{person.Name} can sign in again.", false);
     }
 
+    private void ResetLabels()
+    {
+        if (!_services.Permissions.Can(_user, Modules.Settings))
+        {
+            SetStatus("Only a person who may change settings can restore the original application words.", true);
+            return;
+        }
+
+        if (!_confirmLabelReset)
+        {
+            _confirmLabelReset = true;
+            OnPropertyChanged(nameof(ResetLabelsText));
+            SetStatus("Press the restore button once more to put every application word back to its original. Nothing has changed yet.", false);
+            return;
+        }
+
+        var result = _services.AppLabels.Reset(_user);
+
+        if (!result.Ok)
+        {
+            _confirmLabelReset = false;
+            OnPropertyChanged(nameof(ResetLabelsText));
+            SetStatus(result.Error ?? "The original application words could not be restored.", true);
+            return;
+        }
+
+        LoadLabels();
+        _onSaved?.Invoke();
+        SetStatus("Original application words restored. The shell and open pages have been updated.", false);
+    }
+
     private void ResetPermissions()
     {
         if (_selectedUser is null)
@@ -992,6 +1063,23 @@ public sealed class IdleHourOption
     public string Label { get; }
 
     public override string ToString() => Label;
+}
+
+/// <summary>One editable application word. Key stays stable while Text is typed in the box.</summary>
+public sealed class AppLabelEditRow
+{
+    public AppLabelEditRow(string key, string defaultText, string text)
+    {
+        Key = key;
+        DefaultText = defaultText;
+        Text = text;
+    }
+
+    public string Key { get; }
+
+    public string DefaultText { get; }
+
+    public string Text { get; set; }
 }
 
 public sealed class PaperOption

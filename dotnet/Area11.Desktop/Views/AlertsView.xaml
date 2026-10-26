@@ -11,7 +11,7 @@
 
         <DockPanel Grid.Row="0" Margin="0,0,0,10">
             <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                <TextBlock Text="Alerts" Style="{StaticResource PageTitle}" />
+                <TextBlock Text="{DynamicResource AppLabel.alerts}" Style="{StaticResource PageTitle}" />
                 <TextBlock Text="A reminder may be put away by anyone. Anything that is money or stock needs the owner, and the reason stays on record."
                            Style="{StaticResource PageSubtitle}" />
             </StackPanel>

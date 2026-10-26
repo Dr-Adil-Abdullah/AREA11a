@@ -142,7 +142,7 @@
 
                 <!-- The wordmark. Small on purpose: the shop's name is what people recognise. -->
                 <Button Grid.Column="0" Style="{StaticResource SidebarBrandButton}"
-                        Command="{Binding GoHomeCommand}" ToolTip="Dashboard">
+                        Command="{Binding GoHomeCommand}" ToolTip="{DynamicResource AppLabel.dashboard}">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <Border Width="24" Height="24" CornerRadius="6" Background="{StaticResource BrandBrush}">
                             <TextBlock Text="A11" Foreground="White" FontSize="8.5" FontWeight="Bold"

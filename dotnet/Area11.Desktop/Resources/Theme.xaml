@@ -1,15 +1,16 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:conv="clr-namespace:Area11.Desktop.Converters">
+                    xmlns:conv="clr-namespace:Area11.Desktop.Converters"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
     <!-- ============ Palette (the owner can change the brand colour in Settings) ============ -->
     <!-- Brand colour = THE COLOUR OF THIS VERSION (see Area11.Core/Utils/BuildInfo.cs and
          docs/VERSIONS.md). The owner tests every build on his own PC and finds the new one by its
          colour, so a code change is always shipped with a new colour. White text sits on these
          brushes - keep the shade at 4.5:1 or better against white. -->
-    <SolidColorBrush x:Key="BrandBrush" Color="#722F37" />
-    <SolidColorBrush x:Key="BrandDarkBrush" Color="#4E1F25" />
-    <SolidColorBrush x:Key="BrandSoftBrush" Color="#F8EEF0" />
+    <SolidColorBrush x:Key="BrandBrush" Color="#8A5A00" />
+    <SolidColorBrush x:Key="BrandDarkBrush" Color="#5F3D00" />
+    <SolidColorBrush x:Key="BrandSoftBrush" Color="#FBF3DF" />
     <SolidColorBrush x:Key="CanvasBrush" Color="#F3F5F7" />
     <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF" />
     <SolidColorBrush x:Key="SidebarBrush" Color="#0F172A" />
@@ -22,6 +23,42 @@
     <SolidColorBrush x:Key="SuccessBrush" Color="#047857" />
     <SolidColorBrush x:Key="WarningBrush" Color="#B45309" />
     <SolidColorBrush x:Key="WarningSoftBrush" Color="#FFFBEB" />
+
+    <!-- ============ Application section labels (E-12/S-05) ============ -->
+    <!-- LabelResources replaces these strings from the validated settings catalog. DynamicResource
+         keeps every open page and window on the same words; the keys themselves never change. -->
+    <sys:String x:Key="AppLabel.sell">SELL</sys:String>
+    <sys:String x:Key="AppLabel.stock">STOCK</sys:String>
+    <sys:String x:Key="AppLabel.people">CUSTOMERS &amp; SUPPLIERS</sys:String>
+    <sys:String x:Key="AppLabel.money">MONEY</sys:String>
+    <sys:String x:Key="AppLabel.system">SYSTEM</sys:String>
+    <sys:String x:Key="AppLabel.dashboard">Dashboard</sys:String>
+    <sys:String x:Key="AppLabel.counter">Counter (POS)</sys:String>
+    <sys:String x:Key="AppLabel.bills">Bills</sys:String>
+    <sys:String x:Key="AppLabel.returns">Returns</sys:String>
+    <sys:String x:Key="AppLabel.provisional">No bill (PR)</sys:String>
+    <sys:String x:Key="AppLabel.products">Products</sys:String>
+    <sys:String x:Key="AppLabel.reorder">Reorder pad</sys:String>
+    <sys:String x:Key="AppLabel.purchases">Purchases</sys:String>
+    <sys:String x:Key="AppLabel.writeOff">Write-off</sys:String>
+    <sys:String x:Key="AppLabel.stockMinus">Stock minus</sys:String>
+    <sys:String x:Key="AppLabel.stockTake">Stock-take</sys:String>
+    <sys:String x:Key="AppLabel.partners">Customers &amp; suppliers</sys:String>
+    <sys:String x:Key="AppLabel.doctors">Doctors &amp; reps</sys:String>
+    <sys:String x:Key="AppLabel.shift">Shift (galla)</sys:String>
+    <sys:String x:Key="AppLabel.expenses">Expenses</sys:String>
+    <sys:String x:Key="AppLabel.reports">Reports</sys:String>
+    <sys:String x:Key="AppLabel.tax">Tax report</sys:String>
+    <sys:String x:Key="AppLabel.audit">Black box</sys:String>
+    <sys:String x:Key="AppLabel.importExport">Excel / CSV</sys:String>
+    <sys:String x:Key="AppLabel.backup">Backup &amp; restore</sys:String>
+    <sys:String x:Key="AppLabel.lan">Second counter (LAN)</sys:String>
+    <sys:String x:Key="AppLabel.cloud">Cloud sync</sys:String>
+    <sys:String x:Key="AppLabel.customFields">Own fields</sys:String>
+    <sys:String x:Key="AppLabel.hardware">Printer &amp; scanner</sys:String>
+    <sys:String x:Key="AppLabel.settings">Settings</sys:String>
+    <sys:String x:Key="AppLabel.books">Check the books</sys:String>
+    <sys:String x:Key="AppLabel.alerts">Alerts</sys:String>
 
     <!-- ============ Typography ============ -->
     <Style x:Key="PageTitle" TargetType="TextBlock">

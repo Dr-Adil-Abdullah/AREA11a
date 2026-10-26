@@ -1220,6 +1220,197 @@ def check_resources() -> None:
 
 
 # ---------------------------------------------------------------------------
+def check_app_labels() -> None:
+    """The editable words are one catalog, not three lists that can drift (E-12/S-05).
+
+    Resource existence alone cannot catch a forgotten page title, a theme default that differs from
+    Core, or navigation that starts using the editable text as its identity. This gate compares the
+    complete route: Core definitions -> settings/theme -> live page resources -> stable shell keys.
+    """
+    service = DOTNET / "Area11.Core/Services/AppLabelService.cs"
+    settings_service = DOTNET / "Area11.Core/Services/SettingsService.cs"
+    label_tests = DOTNET / "Area11.Tests/AppLabelTests.cs"
+    theme = DOTNET / "Area11.Desktop/Resources/Theme.xaml"
+    shell = DOTNET / "Area11.Desktop/ViewModels/ShellViewModel.cs"
+    nav_item = DOTNET / "Area11.Desktop/ViewModels/NavItem.cs"
+    settings_vm = DOTNET / "Area11.Desktop/ViewModels/SettingsViewModel.cs"
+    settings_view = DOTNET / "Area11.Desktop/Views/SettingsView.xaml"
+    partners_view = DOTNET / "Area11.Desktop/Views/PartnersView.xaml"
+    custom_fields_editor = DOTNET / "Area11.Desktop/Views/CustomFieldsEditorView.xaml"
+    shell_window = DOTNET / "Area11.Desktop/Views/ShellWindow.xaml"
+    app = DOTNET / "Area11.Desktop/App.xaml.cs"
+    needed = (service, settings_service, label_tests, theme, shell, nav_item,
+              settings_vm, settings_view, partners_view, custom_fields_editor, shell_window, app)
+
+    for path in needed:
+        if not path.exists():
+            fail(f"the application-label route is half-built: {rel(path)} is missing")
+    if not all(path.exists() for path in needed):
+        return
+
+    service_text = service.read_text(encoding="utf-8-sig")
+    matches = list(re.finditer(
+        r'new\s+AppLabelDefinition\("([^"]+)",\s*"([^"]*)"\)', service_text))
+    definitions = [(match.group(1), match.group(2)) for match in matches]
+    keys = [key for key, _ in definitions]
+    defaults = [text for _, text in definitions]
+
+    if not definitions:
+        fail("AppLabelService has no readable catalog definitions")
+        return
+
+    for values, what in ((keys, "keys"), (defaults, "default texts")):
+        duplicates = sorted({value for value in values if values.count(value) > 1})
+        if duplicates:
+            fail("AppLabelService has duplicate " + what + ": " + ", ".join(duplicates))
+
+    for key, text in definitions:
+        if not key or not text.strip() or len(text) > 60 or any(ord(char) < 32 for char in text):
+            fail(f"AppLabelService definition '{key}' has an invalid key/default")
+
+    for needle, reason in (
+        ("_permissions.Can(actor, Modules.Settings)", "label writes lost their Core Settings-permission check"),
+        ("return _settings.SetMany", "label writes no longer use the atomic audited settings route"),
+        ("text.Any(char.IsControl)", "label validation no longer rejects line/control characters"),
+    ):
+        if needle not in service_text:
+            fail("AppLabelService: " + reason)
+
+    settings_text = settings_service.read_text(encoding="utf-8-sig")
+    for needle, reason in (
+        ("foreach (var label in AppLabelService.Definitions)", "existing databases no longer receive catalog defaults"),
+        ("_permissions?.Can(actor, Modules.Settings) != true", "direct label writes no longer fail closed without Settings permission"),
+        ("return AppLabelService.GuardSetting(key, value);", "direct settings writes bypass the label validator"),
+        ("Application labels must be saved through the audited settings path.", "quiet UI writes can bypass label audit"),
+        ("return JsonSerializer.Serialize(TextValue(value));", "direct label writes no longer trim before storage and audit"),
+    ):
+        if needle not in settings_text:
+            fail("SettingsService: " + reason)
+
+    test_text = label_tests.read_text(encoding="utf-8-sig")
+    for fact in ("CatalogDefaults_AreUniqueAndPersistedAsKnownSettings",
+                 "UnicodeRename_IsTrimmedPersistedAndAudited", "InvalidLabels_AreRefusedAtomically",
+                 "UnknownLabel_IsRefusedWithoutASettingsRow", "Cashier_CannotSaveOrResetThroughThePublicService",
+                 "Reset_RestoresEveryDefaultAndWritesTheAudit", "DirectSettingsWrite_CannotBypassTheLabelGuard"):
+        if fact not in test_text:
+            fail(f"AppLabelTests: required regression fact '{fact}' is missing")
+
+    catalog = dict(definitions)
+    theme_root = ET.parse(theme).getroot()
+    x_key = "{http://schemas.microsoft.com/winfx/2006/xaml}Key"
+    resources = {
+        element.attrib[x_key][len("AppLabel."):]: element.text or ""
+        for element in theme_root.iter()
+        if element.attrib.get(x_key, "").startswith("AppLabel.")
+    }
+
+    if set(resources) != set(catalog):
+        fail("AppLabel resources and Core catalog differ; missing resources: " +
+             (", ".join(sorted(set(catalog) - set(resources))) or "none") +
+             "; extra resources: " + (", ".join(sorted(set(resources) - set(catalog))) or "none"))
+
+    for key in sorted(set(resources) & set(catalog)):
+        if resources[key] != catalog[key]:
+            fail(f"AppLabel.{key}: Theme says '{resources[key]}' but Core ships '{catalog[key]}'")
+
+    used: set[str] = set()
+    headings: set[str] = set()
+    for path in (DOTNET / "Area11.Desktop").rglob("*.xaml"):
+        text = path.read_text(encoding="utf-8-sig")
+        for match in re.finditer(r"\{DynamicResource AppLabel\.([\w.]+)\}", text):
+            key = match.group(1)
+            used.add(key)
+            if key not in catalog:
+                fail(f"{rel(path)}: dynamic label '{key}' is not in the Core catalog")
+
+        # Count a heading only on an actual PageTitle TextBlock. Dashboard also has a tooltip, and
+        # counting that as its heading would hide a page title that had accidentally gone static.
+        for element in ET.parse(path).getroot().iter():
+            match = re.fullmatch(r"\{DynamicResource AppLabel\.([\w.]+)\}",
+                                 element.attrib.get("Text", ""))
+            if (match is not None
+                    and element.attrib.get("Style") == "{StaticResource PageTitle}"):
+                headings.add(match.group(1))
+
+    shell_text = shell.read_text(encoding="utf-8-sig")
+    header_keys = set(re.findall(r'AddGroup\("([^"]+)"', shell_text))
+    unknown_headers = sorted(header_keys - set(catalog))
+    if unknown_headers:
+        fail("navigation groups have no application-label definition: " + ", ".join(unknown_headers))
+
+    # Partners is deliberately a three-tab container: it has a menu title but no PageTitle of its
+    # own. Do not add a duplicate heading merely to make this set uniform.
+    titleless = {"partners"}
+    partners_text = partners_view.read_text(encoding="utf-8-sig")
+    if "PageTitle" in partners_text or "<views:CustomersView" not in partners_text:
+        fail("PartnersView is no longer the known titleless tab container; update the label route check")
+
+    expected_live = set(catalog) - header_keys - titleless
+    if headings != expected_live:
+        fail("live application-label headings differ from the catalog; missing: " +
+             (", ".join(sorted(expected_live - headings)) or "none") + "; unexpected: " +
+             (", ".join(sorted(headings - expected_live)) or "none"))
+    if 'ToolTip="{DynamicResource AppLabel.dashboard}"' not in shell_window.read_text(encoding="utf-8-sig"):
+        fail("ShellWindow: the Dashboard door no longer uses the live application label")
+
+    nav_key_list = re.findall(r'AddPage\(\s*"[^"]+",\s*"([^"]+)"', shell_text, re.S)
+    duplicate_nav_keys = sorted({key for key in nav_key_list if nav_key_list.count(key) > 1})
+    if duplicate_nav_keys:
+        fail("navigation pages reuse a stable catalog key: " + ", ".join(duplicate_nav_keys))
+    nav_keys = set(nav_key_list)
+    unknown_keys = sorted(nav_keys - set(catalog))
+    if unknown_keys:
+        fail("navigation pages have no stable catalog key: " + ", ".join(unknown_keys))
+    if "dashboard" in catalog:
+        nav_keys.add("dashboard")  # The ungrouped home row is declared directly in BuildNavigation.
+    expected_nav = set(catalog) - header_keys - {"alerts"}
+    if nav_keys != expected_nav:
+        fail("navigation coverage differs from the label catalog; missing: " +
+             (", ".join(sorted(expected_nav - nav_keys)) or "none") + "; extra: " +
+             (", ".join(sorted(nav_keys - expected_nav)) or "none"))
+
+    if "SetProperty(ref _title, title, nameof(Title))" not in nav_item.read_text(encoding="utf-8-sig"):
+        fail("NavItem.SetTitle must notify 'Title' explicitly; CallerMemberName would announce 'SetTitle' and leave the menu stale")
+
+    for needle, reason in (
+        ("LabelKey = labelKey", "AddPage no longer retains the stable key"),
+        ("new NavItem(_services.AppLabels.Get(labelKey)", "AddPage no longer resolves visible text by its stable key"),
+        ("NavItem.Header(_services.AppLabels.Get(key))", "group headers no longer resolve visible text by stable key"),
+        ('new NavItem(_services.AppLabels.Get("dashboard")', "Dashboard construction duplicated its display title"),
+        ('LabelKey = "dashboard"', "the ungrouped Dashboard row lost its stable key"),
+        ("item.SetTitle(_services.AppLabels.Get(item.LabelKey))", "the live menu is not refreshed by key"),
+        ('item.LabelKey == "shift"', "Shift navigation regressed to editable text"),
+        ('item.LabelKey == "settings"', "Settings navigation regressed to editable text"),
+        ("LabelResources.Apply(_services.AppLabels)", "saving does not refresh open dynamic resources"),
+    ):
+        if needle not in shell_text:
+            fail("ShellViewModel: " + reason)
+
+    if "LabelResources.Apply(_services.AppLabels)" not in app.read_text(encoding="utf-8-sig"):
+        fail("App startup does not apply saved labels before the first window")
+
+    vm_text = settings_vm.read_text(encoding="utf-8-sig")
+    for needle in ("_services.AppLabels.Validate", "AppLabelService.SettingKey",
+                   "_services.AppLabels.Reset(_user)", "_onSaved?.Invoke()"):
+        if needle not in vm_text:
+            fail(f"SettingsViewModel is missing the label save/reset route: {needle}")
+
+    view_text = settings_view.read_text(encoding="utf-8-sig")
+    for needle in ('Header="App words"', 'Header="{DynamicResource AppLabel.cloud}"',
+                   'ItemsSource="{Binding LabelRows}"', 'Command="{Binding ResetLabelsCommand}"'):
+        if needle not in view_text:
+            fail(f"SettingsView is missing the application-word editor route: {needle}")
+
+    if 'Text="{DynamicResource AppLabel.customFields}"' not in custom_fields_editor.read_text(encoding="utf-8-sig"):
+        fail("CustomFieldsEditorView: the Own fields panel heading no longer follows its live application label")
+
+    REPORT.append(
+        f"App labels: {len(catalog)} stable keys and matching theme defaults; "
+        f"{len(headings)} live page headings plus the bell, Cloud tab and Own fields panel, "
+        "stable-key navigation and guarded Settings save/reset")
+
+
+# ---------------------------------------------------------------------------
 # 1h. x:Static members (the other XamlParseException class of error)
 # ---------------------------------------------------------------------------
 def check_x_static() -> None:
@@ -2539,6 +2730,18 @@ def check_tests() -> None:
     # The lookbehind matters: "GetRaw(" ends in "Raw(", and without it every reader of a setting
     # looks like a second declaration of it.
     keys = re.findall(r'(?<![A-Za-z0-9_])(?:Text|Number|Flag|Raw)\("([a-zA-Z0-9_.]+)"', settings)
+
+    # Application labels are deliberately generated from one Core catalog instead of repeating 32
+    # literal Text(...) calls. Count those real defaults too, and refuse a catalog that is no longer
+    # installed into the settings table.
+    label_source = (DOTNET / "Area11.Core/Services/AppLabelService.cs")
+    if label_source.exists():
+        label_keys = re.findall(r'new AppLabelDefinition\("([A-Za-z0-9]+)"',
+                                label_source.read_text(encoding="utf-8"))
+        if label_keys and "foreach (var label in AppLabelService.Definitions)" not in settings:
+            fail("AppLabelService has a catalog but SettingsService does not install its defaults")
+        keys.extend("labels." + key for key in label_keys)
+
     if len(keys) != len(set(keys)):
         duplicated = sorted({k for k in keys if keys.count(k) > 1})
         fail(f"duplicate settings keys: {duplicated}")
@@ -4418,6 +4621,7 @@ def main() -> int:
     check_constructor_arity()
     check_readonly_members()
     check_resources()
+    check_app_labels()
     check_x_static()
     check_service_methods()
     check_service_members()

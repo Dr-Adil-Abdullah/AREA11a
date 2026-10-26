@@ -7,10 +7,10 @@
 > اِس فائل میں یہ سب ہے: پروگرام کیا ہے، ابھی کہاں کھڑا ہے، **کیا باقی ہے**، کیا **کبھی نہیں** کرنا،
 > اور ایک نیا ورژن کیسے نکالنا ہے۔ آپ کے لیے چھوٹی اردو فائل: [`docs/HANDOVER-FOR-OWNER-URDU.md`](docs/HANDOVER-FOR-OWNER-URDU.md)۔
 
-**Status:** v0.35.10 · Merlot · `#722F37` — **default branch `main`**; this repair is on the current
+**Status:** v0.35.11 · Topaz · `#8A5A00` — **default branch `main`**; this repair is on the current
 working branch `arena/60395e95-area11a` until its pull request is merged.
 
-*Last updated: 26 October 2026, after E-04 category/company management was implemented and all 45 static checks plus the SQLite migration rehearsal passed. Merlot has **820 written cases** and still needs the owner's Windows run; D-93 remains in force and Cypress's **789/789** is prior verified evidence.*
+*Last updated: 26 October 2026, after E-12/S-05 custom application labels were implemented and all 46 static checks plus 6/6 SQLite storage rehearsals passed. Topaz has **827 written cases** and still needs the owner's Windows and live rename/restart/reset runs; both rules stay partial until then. Merlot's fixed rerun remains outstanding, D-93 remains in force, and Cypress's **789/789** is prior verified evidence.*
 
 ---
 
@@ -56,15 +56,15 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 
 ## 3. Where it stands right now (read this twice)
 
-**Current source: v0.35.10 "Merlot" completes E-04 category/company management while retaining D-93 negative-stock retirement. Its 820 cases are written but not executed here (no .NET SDK). Prior owner evidence: v0.35.7 "Cypress" passed 789/789 in 1 m 6 s; v0.35.6 "Cedar" passed 782/782 in 1 m 3 s.**
+**Current source: v0.35.11 "Topaz" writes E-12/S-05 custom application labels while retaining D-93 and the Merlot repairs. Its 827 cases are written but not executed here (no .NET SDK). E-12/S-05 remain partial pending Windows and live UI proof. Prior owner evidence: v0.35.7 "Cypress" passed 789/789 in 1 m 6 s; v0.35.6 "Cedar" passed 782/782 in 1 m 3 s.**
 
 | | |
 |---|---|
-| Test cases written | **820** in 65 files (`tools\RUN-TESTS.cmd` compares the run against `EXPECTED=820`) |
-| Static checks | **45**, all green: `OK - 45 checks, no problems` |
-| Owner's numbered rules | **116 - 91 ✅ done, 4 🟡 partial, 1 ⬜ (E-12), 20 standing** - see §4 |
+| Test cases written | **827** in 66 files (`tools\\RUN-TESTS.cmd` compares the run against `EXPECTED=827`) |
+| Static checks | **46**, all green: `OK - 46 checks, no problems` |
+| Owner's numbered rules | **116 - 91 ✅ done, 5 🟡 partial, 0 ⬜, 20 standing** - see §4 |
 | Feature board | **57 features — 52 ✅ done, 5 🟡 one shop action each, 0 ⬜ not started** (91.2 % / 8.8 %) |
-| Code size | 273 C# files (67,692 lines) + 39 XAML files (8,185 lines, 37 of them pages/windows); 49 services, 42 view models |
+| Code size | 277 C# files (68,257 lines) + 39 XAML files (8,271 lines, 37 of them pages/windows); 50 services, 42 view models |
 | Database | 26 migrations → **35 business tables + provisional report view**, append-only, existing `area11.db` opens unchanged |
 
 ### What the owner's own PC has already proved
@@ -79,6 +79,29 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 * On **v0.35.5** his next run compiled `Area11.Core` and `Area11.Tests` and reported
   **Failed: 0, Passed: 772, Total: 772 in 56 s — ALL GREEN**. This proves the numbering, session and
   Shift repairs together; it is not a claim that the Desktop installer or every page was exercised.
+
+### What v0.35.11 changes — E-12/S-05 custom application labels are written
+
+Settings → **App words** edits 32 supported application-section names. They are ordinary rows in the
+existing `settings` table, so an old database gets only missing defaults; there is no migration and
+no destructive rewrite. `AppLabelService` owns the catalog, trimming, Unicode and 60-character/
+single-line/non-empty validation, supported-key checks, Settings permission, atomic old/new audit
+and reset. Direct `SettingsService` label writes have the same permission and validation guards,
+and the quiet UI-only writer refuses labels. A damaged blank stored value falls back to its default.
+
+Stable `LabelKey` values, not editable titles, drive navigation, permissions, Shift/Settings
+shortcuts and page resolution. Saving applies WPF dynamic resources and refreshes existing NavItems,
+so the menu, all 26 real page headings, the Dashboard tooltip, the Cloud sync Settings tab
+and the Own fields record-panel heading use the saved words without a shell rebuild. Partners remains a titleless three-tab container by design. The two-click reset
+restores only these 32 labels. Receipts, arbitrary sentences, historical audit text and document
+numbers are not rewrite targets.
+
+Seven public-service facts bring the written inventory to **827 cases in 66 files**. All 46 static
+checks and 6/6 SQLite storage rehearsal groups pass; the gate was also proved with theme,
+missing-heading, wrong-notification, title-as-key and untrimmed-direct-write injections. **There is no .NET SDK here**, so Topaz still needs `ALL GREEN - 827
+of 827` and the owner's live rename/restart/reset walk-through. E-12/S-05 stay 🟡 until then.
+Merlot's fixed 820-case rerun and Dashboard/PR walk-through remain outstanding. Generic undo,
+charts, native `.xlsx` and cloud work were not pulled in.
 
 ### What v0.35.10 changes — E-04 catalog management is complete
 
@@ -247,8 +270,8 @@ matrix and the feature board differ, and both are telling the truth: every *feat
 
 | Rule | What is missing |
 |---|---|
-| **E-12** ⬜ | a screen that renames the app's **own words** (a bill's text comes from settings, the labels do not) |
-| **S-05** 🟡 | depends on E-12: a shop name or price reaches every page, an app word does not |
+| **E-12** 🟡 | the 32-label Settings → App words editor, Core guards and audited reset are written; Windows and the live owner walk-through are still missing |
+| **S-05** 🟡 | stable-key menu/page refresh is written for all supported headings; immediate propagation, restart persistence and reset still need the same owner proof |
 | **Z-05** 🟡 | every audit line keeps old → new, but **undoing** a finished action is not built |
 | **T-05** 🟡 | reports are numbers and tables; **drawn charts** are not built |
 | **T-10** 🟡 | CSV import/export is written (Excel opens it); a native **`.xlsx`** writer is not used |
@@ -265,7 +288,7 @@ WPF cannot decode `.webp` photos; cloud sync is optional and never deletes a row
 git clone https://github.com/Dr-Adil-Abdullah/AREA11a.git
 cd AREA11a                               # main is the default branch - the product is already here
 pip install --break-system-packages tree_sitter tree_sitter_c_sharp   # gives the real C# grammar
-python3 tools/check_repo.py              # must end: OK - 45 checks, no problems
+python3 tools/check_repo.py              # must end: OK - 46 checks, no problems
 python3 tools/build_rules_matrix.py --check
 ```
 
@@ -406,7 +429,7 @@ Then the documents that must not drift: `docs/PROGRESS.md` (the row + a change-l
 `python3 tools/make_checklist.py` if the board changed.
 
 ```bash
-python3 tools/check_repo.py          # OK - 45 checks, no problems
+python3 tools/check_repo.py          # OK - 46 checks, no problems
 python3 tools/build_rules_matrix.py --check
 git add -A && git commit -m "v0.xx.y Colour - <what a person would notice>" && git push
 ```
@@ -425,7 +448,7 @@ in `/tmp`, and run the checker inside it. Only then tell the owner.
 This sandbox is Linux with **no .NET SDK and no PowerShell**. That means:
 
 * you **cannot** build the WPF app, run the tests, run `install.ps1`, or open a window;
-* you **can** run `python3 tools/check_repo.py` — 45 checks that parse every C# file with the real
+* you **can** run `python3 tools/check_repo.py` — 46 checks that parse every C# file with the real
   tree-sitter grammar, resolve explicit usings, validate XAML/csproj XML, every binding against its
   view-model, every `StaticResource` key, every SQL statement against the real schema, every mapped
   column, constructor arity, migration execution on SQLite, version/colour/VERSIONS agreement, docs
@@ -510,8 +533,8 @@ honest caveat about what is not yet proven. If he asks for a printable status, r
 | `dotnet/Area11.Desktop/ViewModels/ShellViewModel.cs` | the frame, the menu, the session, the fault banner |
 | `dotnet/Area11.Desktop/Views/` (37) | the pages; `PosView`, `ProductsView`, `PurchasesView`, `ShiftView`, `HardwareView` … |
 | `dotnet/Area11.Desktop/Resources/Theme.xaml` | the three brand brushes |
-| `dotnet/Area11.Tests/` (65 files) | `TestDatabase`, `TestData`, one file per feature |
-| `tools/check_repo.py` | the 45 static checks (read the docstring of a failing check) |
+| `dotnet/Area11.Tests/` (66 test files) | `TestDatabase`, `TestData`, one file per feature |
+| `tools/check_repo.py` | the 46 static checks (read the docstring of a failing check) |
 | `tools/make_checklist.py`, `make_icon.py`, `build_rules_matrix.py` | the printable list, the icon, the rules matrix |
 | `tools/*.cmd`, `tools/install/*.ps1` | what the owner double-clicks: start, update, test, report, install, uninstall, share |
 | `docs/` | the spec, the decisions, the board, the rules, the schema, the guides |
@@ -520,8 +543,10 @@ honest caveat about what is not yet proven. If he asks for a printable status, r
 
 ## 16. The first message to send him (copy, paste, adjust)
 
-> میں نے ریپو پڑھ لی ہے۔ ابھی حالت یہ ہے: **v0.35.10 (Merlot)** — E-04 کے 820 written cases اور 45 static checks مکمل ہیں،
-> مگر Windows build/xUnit ابھی آپ کے کمپیوٹر پر کرنا باقی ہے۔ 57 فیچر میں 52 مکمل (91.2٪)، 5 میں صرف ایک ایک عمل باقی۔
-> سب سے پہلے آپ `git pull` کر کے `START-AREA11.bat` اور `tools\RUN-TESTS.cmd` چلائیں؛ مطلوبہ نتیجہ
-> `ALL GREEN - 820 of 820` ہے۔ مجھے مکمل کنسول بھیج دیں۔ اُس کے بعد F-08، F-09، F-10، F-04 اور F-46
-> کے وہ پانچ کام مکمل کرواؤں گا جن کے لیے دکان میں ایک ایک عمل درکار ہے۔ Cloud ابھی postponed ہے۔
+> میں نے ریپو پڑھ لی ہے۔ ابھی حالت یہ ہے: **v0.35.11 (Topaz)** — E-12/S-05 کے 827 written cases، 46 static checks
+> اور 6/6 SQLite rehearsals مکمل ہیں، مگر Windows build/xUnit اور live rename/restart/reset checking ابھی آپ کے
+> کمپیوٹر پر باقی ہے۔ 57 فیچر میں 52 مکمل (91.2٪)، 5 میں صرف ایک ایک عمل باقی۔ سب سے پہلے `git pull` کر کے
+> `START-AREA11.bat` اور `tools\\RUN-TESTS.cmd` چلائیں؛ مطلوبہ نتیجہ `ALL GREEN - 827 of 827` ہے۔ پھر Settings →
+> **App words** میں نام بدل کر menu اور page heading فوراً بدلنا، restart کے بعد محفوظ رہنا اور دو clicks سے اصل
+> نام واپس آنا دیکھیں۔ مکمل کنسول بھیج دیں۔ Merlot کی repaired rerun اور Dashboard/PR checking بھی ابھی باقی ہے۔
+> Cloud ابھی postponed ہے۔

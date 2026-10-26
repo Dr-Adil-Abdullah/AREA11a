@@ -11,7 +11,7 @@
 
         <DockPanel Grid.Row="0" Margin="0,0,0,10">
             <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                <TextBlock Text="Write-off" Style="{StaticResource PageTitle}" />
+                <TextBlock Text="{DynamicResource AppLabel.writeOff}" Style="{StaticResource PageTitle}" />
                 <TextBlock Text="Expired, broken, lost or a count that did not match. The loss is valued at purchase cost."
                            Style="{StaticResource PageSubtitle}" />
             </StackPanel>

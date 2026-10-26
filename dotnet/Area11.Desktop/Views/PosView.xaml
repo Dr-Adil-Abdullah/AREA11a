@@ -10,7 +10,7 @@
 
         <DockPanel Grid.Row="0" Margin="0,0,0,14">
             <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                <TextBlock Text="Counter (POS)" Style="{StaticResource PageTitle}" />
+                <TextBlock Text="{DynamicResource AppLabel.counter}" Style="{StaticResource PageTitle}" />
                 <TextBlock Text="Nearest expiry first · box / strip / loose · cash change · round down with cost guard"
                            Style="{StaticResource PageSubtitle}" />
             </StackPanel>

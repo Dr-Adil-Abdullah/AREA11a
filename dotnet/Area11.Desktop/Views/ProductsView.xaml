@@ -11,7 +11,7 @@
 
         <DockPanel Grid.Row="0" Margin="0,0,0,14">
             <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                <TextBlock Text="Products" Style="{StaticResource PageTitle}" />
+                <TextBlock Text="{DynamicResource AppLabel.products}" Style="{StaticResource PageTitle}" />
                 <TextBlock Text="Medicines, packs, rates and shelf location (stock comes from batches)"
                            Style="{StaticResource PageSubtitle}" />
             </StackPanel>

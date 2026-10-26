@@ -50,7 +50,7 @@ STATUS: dict[str, tuple[str, str, str]] = {
     "U-07": ("DONE", "Dapper, Microsoft.Data.Sqlite, WPF, xUnit", "-"),
     "U-08": ("DUTY", "one Compute() for quote+save, shared helpers", "-"),
     "U-09": ("DONE", "personal use, MIT-style dependencies only", "-"),
-    "U-10": ("DONE", "`Services/SettingsService.cs` + the Settings page (89 keys)", "-"),
+    "U-10": ("DONE", "`Services/SettingsService.cs` + the Settings page (121 keys)", "-"),
     "U-11": ("DONE", "services write straight to SQLite, no second copy", "-"),
     "U-12": ("DONE", "this matrix", "-"),
     "U-13": ("DONE", "HANDOFF.md + AGENTS.md + docs/PROGRESS.md + this file", "`tools/check_repo.py`"),
@@ -90,7 +90,7 @@ STATUS: dict[str, tuple[str, str, str]] = {
     "R-10": ("DONE", "`docs/PORT-PLAN.md` + this matrix", "-"),
 
     # ---- E: everything editable ------------------------------------------
-    "E-01": ("DONE", "the `settings` table + `SettingsService` (89 keys) and the Settings page; nothing in the shop is hard-coded", "SettingsTests.*"),
+    "E-01": ("DONE", "the `settings` table + `SettingsService` (121 keys) and the Settings page; nothing in the shop is hard-coded", "SettingsTests.*"),
     "E-02": ("DONE", "branding keys (`store.*`, `brand.*`) edited on Settings -> Shop", "SettingsTests.*"),
     "E-03": ("DONE", "`ReceiptService` prints `store.*` on every bill", "ReceiptTests.*"),
     "E-04": ("DONE", "`ProductService` + Products → Manage categories and companies: create, rename, two-level parents, order, soft put-away/restore and unlink-only product references; Core permissions and old/new audit; migration 026 orders companies", "CatalogTests.*"),
@@ -101,7 +101,7 @@ STATUS: dict[str, tuple[str, str, str]] = {
     "E-09": ("DONE", "`bill.roundTo`, `tax.*` and the printer width in `print.*`", "MoneyTests.*"),
     "E-10": ("DONE", "`receipt.datePosition` and the `receipt.show*` toggles, edited on Settings", "ReceiptTests.*"),
     "E-11": ("DONE", "`user_permissions` + `PermissionService` + the people and permission editor on Settings", "PermissionTests.*"),
-    "E-12": ("TODO", "the words a bill prints come from settings, but there is no screen that renames the app's own labels", "-"),
+    "E-12": ("WIP", "`AppLabelService` + Settings → App words: 32 stable section labels in `settings`, Unicode/length/single-line guards, Settings permission, old/new audit and safe reset; Windows/live owner proof pending", "AppLabelTests.*"),
     "E-13": DUTY,
     "E-14": ("DONE", "soft delete (`active = 0`) everywhere; no business row is ever deleted", "ProductTests.*"),
 
@@ -110,7 +110,7 @@ STATUS: dict[str, tuple[str, str, str]] = {
     "S-02": ("DONE", "categories, companies, shelves and suppliers can be created from the page they are needed on", "-"),
     "S-03": ("DONE", "one `Compute()` drives both Quote and Create", "SaleTests.BillTotal_*"),
     "S-04": ("DONE", "a new field appears on the form at once - the panel is built from the database (F-42)", "CustomFieldTests"),
-    "S-05": ("WIP", "a shop name or price change reaches every page at once; renaming the app's own words waits for E-12", "-"),
+    "S-05": ("WIP", "saved labels use stable keys plus live resources to refresh navigation, all 26 page headings, the Cloud sync tab and Own fields panel without rebuilding the shell; Windows rename/restart proof pending", "AppLabelTests.*"),
     "S-06": ("DONE", "`Data/MigrationRunner.cs`, append-only", "MigrationTests.*"),
     "S-07": ("DONE", "`settings` table", "-"),
     "S-08": ("DONE", "`AuditService` is called by every module - the black box is the proof, not a promise", "AuditDiffTests.*"),
@@ -131,7 +131,7 @@ STATUS: dict[str, tuple[str, str, str]] = {
     "B-05": ("DONE", "Arena snapshots + commits after every change", "-"),
     "B-06": ("DONE", "linear history, never force-push to main", "-"),
     "B-07": ("DONE", "pushed to GitHub after every change", "-"),
-    "B-08": ("DONE", "replaced by `tools/check_repo.py` (44 checks) + `tools/build_rules_matrix.py`", "`tools/check_repo.py`"),
+    "B-08": ("DONE", "replaced by `tools/check_repo.py` (46 checks) + `tools/build_rules_matrix.py`", "`tools/check_repo.py`"),
     "B-09": ("DONE", "fixed session branch, commits/tags for return", "-"),
     "B-10": ("DONE", "tags `net-stage-N` from stage 2 onward", "-"),
 

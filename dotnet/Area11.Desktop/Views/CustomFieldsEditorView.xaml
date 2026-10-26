@@ -9,7 +9,7 @@
         <StackPanel>
             <DockPanel>
                 <StackPanel DockPanel.Dock="Left">
-                    <TextBlock Text="{Binding Title}" Style="{StaticResource SectionTitle}" />
+                    <TextBlock Text="{DynamicResource AppLabel.customFields}" Style="{StaticResource SectionTitle}" />
                     <TextBlock Text="{Binding Subtitle}" Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
                 </StackPanel>
 

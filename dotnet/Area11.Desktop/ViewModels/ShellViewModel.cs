@@ -59,7 +59,7 @@ public sealed class ShellViewModel : ObservableObject
 
         LogoutCommand = new RelayCommand(Logout);
         OpenSettingsCommand = new RelayCommand(() => ShowSettings(0));
-        OpenOwnerSettingsCommand = new RelayCommand(() => ShowSettings(3));
+        OpenOwnerSettingsCommand = new RelayCommand(() => ShowSettings(4));
         OpenAlertsCommand = new RelayCommand(ShowAlerts);
         GoHomeCommand = new RelayCommand(GoHome);
         ToggleGroupCommand = new RelayCommand<NavItem>(ToggleGroup);
@@ -380,7 +380,7 @@ public sealed class ShellViewModel : ObservableObject
     /// <summary>Walks to the Shift (galla) page - the one place a drawer may be opened (D-92).</summary>
     private void GoToShift()
     {
-        var shift = NavItems.FirstOrDefault(item => item.IsPage && item.Title == "Shift (galla)");
+        var shift = NavItems.FirstOrDefault(item => item.IsPage && item.LabelKey == "shift");
 
         if (shift is not null)
         {
@@ -430,81 +430,84 @@ public sealed class ShellViewModel : ObservableObject
         // the owner grants one person at a time (F-48, D-66).
         var canSync = _services.Cloud.CanSync(_user);
 
-        NavItems.Add(new NavItem("Dashboard", "Today at a glance", () => new DashboardViewModel(_services, _user)));
+        NavItems.Add(new NavItem(_services.AppLabels.Get("dashboard"), "Today at a glance", () => new DashboardViewModel(_services, _user))
+        {
+            LabelKey = "dashboard"
+        });
 
         // ---- SELL: the counter and what comes back from it ----
         if (canSell || canReturn || canBills)
         {
-            AddGroup("sell", "SELL");
+            AddGroup("sell");
 
             if (canSell)
             {
-                AddPage("sell", "Counter (POS)", "Make a bill", () => new PosViewModel(_services, _user));
+                AddPage("sell", "counter", "Make a bill", () => new PosViewModel(_services, _user));
             }
 
             if (canBills)
             {
                 // Beside the counter: the same bills, seen after the customer has gone home - and the
                 // only place a copy can be printed (F-52).
-                AddPage("sell", "Bills", "Find one, print it again", () => new SaleHistoryViewModel(_services, _user));
+                AddPage("sell", "bills", "Find one, print it again", () => new SaleHistoryViewModel(_services, _user));
             }
 
             if (canReturn)
             {
-                AddPage("sell", "Returns", "Money back, quarantine", () => new ReturnsViewModel(_services, _user));
-                AddPage("sell", "No bill (PR)", "Rush return, bill later", () => new ProvisionalViewModel(_services, _user));
+                AddPage("sell", "returns", "Money back, quarantine", () => new ReturnsViewModel(_services, _user));
+                AddPage("sell", "provisional", "Rush return, bill later", () => new ProvisionalViewModel(_services, _user));
             }
         }
 
         // ---- STOCK: what is on the shelf and how it got there ----
         if (canProducts || canPurchase || canWriteOff || canCount || canReorder)
         {
-            AddGroup("stock", "STOCK");
+            AddGroup("stock");
 
             if (canProducts)
             {
-                AddPage("stock", "Products", "Medicines and items", () => new ProductsViewModel(_services, _user));
+                AddPage("stock", "products", "Medicines and items", () => new ProductsViewModel(_services, _user));
             }
 
             if (canReorder)
             {
                 // Right under Products: the owner opens this page when he notices a shelf is thin,
                 // and the answer he wants is the message to the supplier.
-                AddPage("stock", "Reorder pad", "What is running out, WhatsApp text",
+                AddPage("stock", "reorder", "What is running out, WhatsApp text",
                     () => new ReorderViewModel(_services, _user));
             }
 
             if (canPurchase)
             {
-                AddPage("stock", "Purchases", "Stock-in (PINV)", () => new PurchasesViewModel(_services, _user));
+                AddPage("stock", "purchases", "Stock-in (PINV)", () => new PurchasesViewModel(_services, _user));
             }
 
             if (canWriteOff)
             {
-                AddPage("stock", "Write-off", "Expired, broken, lost", () => new WriteOffViewModel(_services, _user));
+                AddPage("stock", "writeOff", "Expired, broken, lost", () => new WriteOffViewModel(_services, _user));
 
                 // The other side of the same coin: the shelves that are below zero and the owner's
                 // monthly look at them (F-39).
-                AddPage("stock", "Stock minus", "Below zero, monthly review",
+                AddPage("stock", "stockMinus", "Below zero, monthly review",
                     () => new StockMinusViewModel(_services, _user));
             }
 
             if (canCount)
             {
-                AddPage("stock", "Stock-take", "Count the shelves", () => new StockTakeViewModel(_services, _user));
+                AddPage("stock", "stockTake", "Count the shelves", () => new StockTakeViewModel(_services, _user));
             }
         }
 
         // ---- PEOPLE: one entry, three tabs - the owner's grouping (D-50) ----
         if (canCustomers || canSuppliers || canProducts)
         {
-            AddGroup("people", "CUSTOMERS & SUPPLIERS");
+            AddGroup("people");
 
             if (canCustomers || canSuppliers)
             {
                 // The tabs each person may open are decided by PartnersViewModel from the same two
                 // permissions, so the menu and the page can never disagree.
-                AddPage("people", "Customers & suppliers", "Khata, udhaar recovery, payables",
+                AddPage("people", "partners", "Khata, udhaar recovery, payables",
                     () => new PartnersViewModel(_services, _user, RefreshAlerts));
             }
 
@@ -512,7 +515,7 @@ public sealed class ShellViewModel : ObservableObject
             // hides itself when its own permission is missing (F-44).
             if (canProducts || canCustomers)
             {
-                AddPage("people", "Doctors & reps", "Prescriptions, reps and lifetime profit",
+                AddPage("people", "doctors", "Prescriptions, reps and lifetime profit",
                     () => new DoctorsViewModel(_services, _user));
             }
         }
@@ -520,35 +523,35 @@ public sealed class ShellViewModel : ObservableObject
         // ---- MONEY: the drawer and what it must explain ----
         if (canCash || canReports)
         {
-            AddGroup("money", "MONEY");
+            AddGroup("money");
 
             if (canCash)
             {
-                AddPage("money", "Shift (galla)", "Open and close the drawer", () => new ShiftViewModel(_services, _user));
-                AddPage("money", "Expenses", "Money out, owner drawings", () => new ExpensesViewModel(_services, _user));
+                AddPage("money", "shift", "Open and close the drawer", () => new ShiftViewModel(_services, _user));
+                AddPage("money", "expenses", "Money out, owner drawings", () => new ExpensesViewModel(_services, _user));
             }
 
             if (canReports)
             {
-                AddPage("money", "Reports", "Day, week, dead stock", () => new ReportsViewModel(_services, _user));
-                AddPage("money", "Tax report", "The month for the accountant", () => new TaxViewModel(_services, _user));
+                AddPage("money", "reports", "Day, week, dead stock", () => new ReportsViewModel(_services, _user));
+                AddPage("money", "tax", "The month for the accountant", () => new TaxViewModel(_services, _user));
             }
         }
 
         // ---- SYSTEM: the shop's own settings, its memory and its safety net ----
         if (canAudit || canBackup || canImport || canSettings || canLan || canSync || canBooks)
         {
-            AddGroup("system", "SYSTEM");
+            AddGroup("system");
 
             if (canAudit)
             {
-                AddPage("system", "Black box", "Every change, who made it", () => new AuditViewModel(_services, _user));
+                AddPage("system", "audit", "Every change, who made it", () => new AuditViewModel(_services, _user));
             }
 
             if (canImport)
             {
                 // Import sits above backup: a new shop needs it on day one, before it needs a copy.
-                AddPage("system", "Excel / CSV", "Import, export, prices",
+                AddPage("system", "importExport", "Import, export, prices",
                     () => new ImportExportViewModel(_services, _user));
             }
 
@@ -557,12 +560,12 @@ public sealed class ShellViewModel : ObservableObject
                 // The one page that can bring a dead shop back. It sits above Settings on purpose:
                 // it is the first thing to open after an update and the first thing to open after
                 // a bad day, and both happen more often than a change of printer paper.
-                AddPage("system", "Backup & restore", "ZIP of database + photos", CreateBackupPage);
+                AddPage("system", "backup", "ZIP of database + photos", CreateBackupPage);
             }
 
             if (canLan)
             {
-                AddPage("system", "Second counter (LAN)", "Two PCs, one database",
+                AddPage("system", "lan", "Two PCs, one database",
                     () => new LanViewModel(_services, _user));
             }
 
@@ -570,32 +573,53 @@ public sealed class ShellViewModel : ObservableObject
             {
                 // Beside the second counter: both are about the shop's data leaving this PC, and both
                 // are the owner's decision alone (F-48).
-                AddPage("system", "Cloud sync", "A copy at home", () => new CloudSyncViewModel(_services, _user));
+                AddPage("system", "cloud", "A copy at home", () => new CloudSyncViewModel(_services, _user));
             }
 
             if (canSettings)
             {
                 // The owner's own questions sit beside Settings: both are his, both are about how the
                 // shop's forms look, and neither is a day-to-day page (F-42).
-                AddPage("system", "Own fields", "Your own questions", () => new CustomFieldsViewModel(_services, _user));
+                AddPage("system", "customFields", "Your own questions", () => new CustomFieldsViewModel(_services, _user));
 
                 // The printer and the scanner are tested on the shop's own paper, once, by the owner
                 // (F-46) - so the page that proves it sits next to the page that configures it.
-                AddPage("system", "Printer & scanner", "Test it on this PC",
+                AddPage("system", "hardware", "Test it on this PC",
                     () => new HardwareViewModel(_services, _user));
 
-                AddPage("system", "Settings", "Shop, printing, staff", CreateSettingsPage);
+                AddPage("system", "settings", "Shop, printing, staff", CreateSettingsPage);
             }
 
             if (canBooks)
             {
                 // Read-only, so it sits beside the black box: both answer "is the shop's record
                 // itself sound?" rather than "what shall we do next?" (F-54).
-                AddPage("system", "Check the books", "Do the totals add up?", CreateBookCheckPage);
+                AddPage("system", "books", "Do the totals add up?", CreateBookCheckPage);
             }
         }
 
+        RefreshLabels();
         ApplyMenuState();
+    }
+
+    /// <summary>Applies the saved words without rebuilding pages, selections or open windows.</summary>
+    private void RefreshLabels()
+    {
+        foreach (var item in NavItems.Where(item => item.LabelKey.Length > 0))
+        {
+            item.SetTitle(_services.AppLabels.Get(item.LabelKey));
+        }
+
+        // Fault cards and the run trail must follow the same visible page without using that text
+        // as its identity. The selected NavItem/alert flag remains the stable source of truth.
+        if (IsShowingAlerts)
+        {
+            _currentPageTitle = _services.AppLabels.Get("alerts");
+        }
+        else if (_selectedNav is { IsPage: true } selected)
+        {
+            _currentPageTitle = selected.Title;
+        }
     }
 
     /// <summary>
@@ -618,19 +642,24 @@ public sealed class ShellViewModel : ObservableObject
     }
 
     /// <summary>Adds a foldable heading. It is only created when a page follows it (see BuildNavigation).</summary>
-    private void AddGroup(string key, string title)
+    private void AddGroup(string key)
     {
-        var header = NavItem.Header(title);
+        var header = NavItem.Header(_services.AppLabels.Get(key));
         header.GroupKey = key;
+        header.LabelKey = key;
 
         _groups.Add(new NavGroup(key, header));
         NavItems.Add(header);
     }
 
-    /// <summary>Adds one page under an existing heading.</summary>
-    private void AddPage(string key, string title, string subtitle, Func<ObservableObject> resolve)
+    /// <summary>Adds one page under an existing heading; display text never identifies the page.</summary>
+    private void AddPage(string key, string labelKey, string subtitle, Func<ObservableObject> resolve)
     {
-        var page = new NavItem(title, subtitle, resolve) { GroupKey = key };
+        var page = new NavItem(_services.AppLabels.Get(labelKey), subtitle, resolve)
+        {
+            GroupKey = key,
+            LabelKey = labelKey
+        };
         var group = _groups.First(item => item.Key == key);
 
         group.Pages.Add(page);
@@ -783,10 +812,10 @@ public sealed class ShellViewModel : ObservableObject
         // it), so it is the page most able to fail on a half-written file - and it is opened by
         // clicking the shop's own name, which the owner does without thinking (D-88).
         DismissFault();
-        _currentPageTitle = "Settings";
-        RunTrail.Step("page: Settings");
+        _currentPageTitle = _services.AppLabels.Get("settings");
+        RunTrail.Step("page: " + _currentPageTitle);
 
-        var opened = PageGuard.Open<SettingsViewModel>("Settings", () =>
+        var opened = PageGuard.Open<SettingsViewModel>(_currentPageTitle, () =>
         {
             // Written out rather than `??=` inside a lambda: the compiler's own type of `??=` on a
             // nullable field is `SettingsViewModel?`, and a nullable type argument does not satisfy
@@ -815,7 +844,7 @@ public sealed class ShellViewModel : ObservableObject
         new BackupViewModel(_services, _user, AppRestart.Restart);
 
     /// <summary>
-    /// Opens Settings on a tab: 0 = Shop (the shop name was clicked), 3 = Staff &amp; permissions
+    /// Opens Settings on a tab: 0 = Shop (the shop name was clicked), 4 = Staff &amp; permissions
     /// (the person's name was clicked). The page is created on the way, because the menu row may not
     /// have been opened yet in this session.
     /// </summary>
@@ -828,7 +857,7 @@ public sealed class ShellViewModel : ObservableObject
             return;
         }
 
-        var page = NavItems.FirstOrDefault(item => item.IsPage && item.Title == "Settings");
+        var page = NavItems.FirstOrDefault(item => item.IsPage && item.LabelKey == "settings");
 
         if (page is null)
         {
@@ -858,10 +887,10 @@ public sealed class ShellViewModel : ObservableObject
         RefreshAlerts();
 
         DismissFault();
-        _currentPageTitle = "Alerts";
-        RunTrail.Step("page: Alerts");
+        _currentPageTitle = _services.AppLabels.Get("alerts");
+        RunTrail.Step("page: " + _currentPageTitle);
 
-        var opened = PageGuard.Open<AlertsViewModel>("Alerts", () =>
+        var opened = PageGuard.Open<AlertsViewModel>(_currentPageTitle, () =>
         {
             if (_alertsPage is null)
             {
@@ -897,6 +926,8 @@ public sealed class ShellViewModel : ObservableObject
     {
         StoreName = _services.Settings.GetString("store.name");
         AppName = _services.Settings.GetString("brand.appName");
+        LabelResources.Apply(_services.AppLabels);
+        RefreshLabels();
 
         // The owner may have just ticked (or unticked) "keep every group open" on the Settings page
         // he was taken to by clicking the shop name. Apply it here, or the fold would keep working

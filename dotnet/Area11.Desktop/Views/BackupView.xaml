@@ -12,7 +12,7 @@
         <!-- Title on the left, the folder on the right: the owner must be able to find his files. -->
         <DockPanel Grid.Row="0" Margin="0,0,0,10">
             <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                <TextBlock Text="Backup and restore" Style="{StaticResource PageTitle}" />
+                <TextBlock Text="{DynamicResource AppLabel.backup}" Style="{StaticResource PageTitle}" />
                 <TextBlock Text="One zip holds the whole shop - the database and the photos - so a new computer can be up in minutes."
                            Style="{StaticResource PageSubtitle}" />
             </StackPanel>

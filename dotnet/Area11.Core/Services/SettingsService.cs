@@ -8,9 +8,9 @@ using Microsoft.Data.Sqlite;
 namespace Area11.Core.Services;
 
 /// <summary>
-/// The 75 settings of the shop: the 70 from the reference app, the five printer keys (D-23),
-/// the two cart/hold numbering keys, the return-restock flag, and the permission defaults.
-/// A key that is not in <see cref="Defaults"/> cannot be written - a typo becomes an error, not a
+/// The shop's settings: business rules, printing, receipt text, menu preferences and the catalog
+/// of application section labels. A key that is not in <see cref="Defaults"/> cannot be written -
+/// a typo becomes an error, not a
 /// silent second setting.
 /// Values are stored as JSON so a string stays a string, a number stays a number and a
 /// list stays a list (Spec 6.1). Every change is audited with old → new.
@@ -22,14 +22,16 @@ public sealed class SettingsService
     private readonly Database _db;
     private readonly AuditService _audit;
     private readonly LogService _log;
+    private readonly PermissionService? _permissions;
     private readonly Dictionary<string, string> _cache = new(StringComparer.Ordinal);
     private readonly object _gate = new();
 
-    public SettingsService(Database db, AuditService audit, LogService log)
+    public SettingsService(Database db, AuditService audit, LogService log, PermissionService? permissions = null)
     {
         _db = db;
         _audit = audit;
         _log = log;
+        _permissions = permissions;
         Reload();
     }
 
@@ -180,6 +182,13 @@ public sealed class SettingsService
             return ServiceResult.Fail($"Unknown setting '{key}'.");
         }
 
+        // Application words are owner-visible settings, not transient UI preferences. Keep them on
+        // the validated, permission-checked and audited SetMany/AppLabelService path.
+        if (key.StartsWith("labels.", StringComparison.Ordinal))
+        {
+            return ServiceResult.Fail("Application labels must be saved through the audited settings path.");
+        }
+
         try
         {
             var json = JsonSerializer.Serialize(value);
@@ -219,6 +228,15 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
     /// </summary>
     public ServiceResult SetMany(IReadOnlyDictionary<string, object?> values, User? actor)
     {
+        // Labels can also be saved as part of the Settings screen's larger atomic dictionary. Guard
+        // that real path here as well as AppLabelService.Save, so a direct Core caller cannot bypass
+        // the Settings permission. A manually constructed service without permissions fails closed.
+        if (values.Keys.Any(key => key.StartsWith("labels.", StringComparison.Ordinal))
+            && _permissions?.Can(actor, Modules.Settings) != true)
+        {
+            return ServiceResult.Fail("You are not allowed to change the application labels.");
+        }
+
         foreach (var pair in values)
         {
             if (!Defaults.ContainsKey(pair.Key))
@@ -313,6 +331,13 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
     /// </summary>
     private static string Serialise(string key, object? value)
     {
+        // AppLabelService already trims its own writes; keep the direct SettingsService route just
+        // as strict so the stored value and its old/new audit match the text the shell displays.
+        if (key.StartsWith("labels.", StringComparison.Ordinal))
+        {
+            return JsonSerializer.Serialize(TextValue(value));
+        }
+
         if (key == "expiry.levels")
         {
             var bands = value switch
@@ -345,6 +370,11 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
             }
 
             return GetDouble(otherKey, fallback);
+        }
+
+        if (key.StartsWith("labels.", StringComparison.Ordinal))
+        {
+            return AppLabelService.GuardSetting(key, value);
         }
 
         var number = ToNumber(value);
@@ -691,6 +721,14 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         // pending, so an old database opens with nothing to complain about.
         Text("session.handoverAt", string.Empty);
         Text("session.handoverBy", string.Empty);
+
+        // ---- Application section labels (E-12/S-05) ----
+        // One catalog supplies the defaults, the editor, the Core guard and the WPF resources.
+        foreach (var label in AppLabelService.Definitions)
+        {
+            Text(label.SettingKey, label.DefaultText);
+        }
+
         // ---- Owner ----
         Text("owner.name", "Owner");
 

@@ -3,7 +3,7 @@
 > **یہ فائل کیا ہے؟** مالک (ڈاکٹر عادل عبداللہ) کی ہر ہدایت، فیصلہ اور ترجیح یہاں نمبر کے ساتھ محفوظ ہوتی ہے۔
 > کوئی بات زبانی نہیں رہتی۔ نئی ہدایت = نیا نمبر۔ پرانی ہدایت کوئی ایجنٹ خاموشی سے نہیں بدل سکتا۔
 >
-> **آخری اپ ڈیٹ:** 26 اکتوبر 2026 · **ورژن:** D-01 سے D-93 تک (v0.35.10 Merlot `#722F37`) — E-04 implementation کے 820 written cases اور 45 static checks مکمل ہیں؛ Windows build/xUnit ابھی مالک کے لیے باقی ہے۔ D-93 کا stock فیصلہ بدلا نہیں ہے۔ سابقہ owner-verified evidence: Cypress **789/789**۔
+> **آخری اپ ڈیٹ:** 26 اکتوبر 2026 · **ورژن:** D-01 سے D-93 تک (v0.35.11 Topaz `#8A5A00`) — E-12/S-05 implementation کے 827 written cases، 46 static checks اور 6/6 SQLite storage rehearsals مکمل ہیں؛ Windows build/xUnit اور live rename/restart/reset checking ابھی مالک کے لیے باقی ہے، اس لیے دونوں rules 🟡 ہیں۔ Merlot کی repaired rerun بھی باقی ہے۔ D-93 کا stock فیصلہ بدلا نہیں ہے۔ سابقہ owner-verified evidence: Cypress **789/789**۔
 > **سند (Authority):** `AREA11-MASTER-SPEC.md` (37 حصے + Appendix A) — اور جہاں مالک نے بعد میں کوئی نیا حکم دیا، وہی چلے گا (Spec §1.2.2)۔
 
 ---
@@ -2475,6 +2475,7 @@ restart نہیں (Spec 8.4.3)۔
 
 | تاریخ | کیا |
 |---|---|
+| 26 اکتوبر 2026 | **E-12/S-05 implementation — v0.35.11 Topaz `#8A5A00`**: Settings → **App words** میں app کے 32 supported section labels؛ stable keys سے navigation/permissions/page resolution محفوظ، save پر menu، 26 page headings، Cloud sync tab اور Own fields panel heading فوراً بدلتے ہیں۔ پرانے database میں صرف missing defaults، کوئی migration نہیں۔ Unicode، trimming، non-empty/single-line/60-character validation، Settings permission، atomic old/new audit، direct-write guards اور دو clicks والا صرف labels کا reset۔ خراب blank stored row پر default واپس، receipts/عام sentences/history/document numbers نہیں بدلتے۔ **827 written cases، 46 static checks، 6/6 SQLite storage groups**؛ Windows/xUnit اور live walk-through باقی، اس لیے completion کا دعویٰ نہیں۔ Merlot rerun اور D-93 قواعد برقرار۔ |
 | 26 اکتوبر 2026 | **E-04 implementation — v0.35.10 Merlot `#722F37`**: Products میں category/company management؛ create، rename، order، soft put-away/restore، category parent کی دو سطحیں اور parent filter میں children۔ Migration 026 صرف company ordering جڑتی ہے۔ Put-away صرف current product link الگ کرتا ہے، کوئی product/batch/bill/stock row نہیں مٹتی، restore پرانا link خود نہیں بناتا؛ company کے phone/notes/rep/visit-day محفوظ۔ Core permission، case-insensitive uniqueness اور audit۔ **820 written cases، 45 static checks، 8/8 SQLite rehearsal groups**؛ Windows build/xUnit مالک کے لیے باقی، D-93 financial/stock rules برقرار۔ |
 | 26 اکتوبر 2026 | **D-93 implementation — v0.35.9 Onyx `#2F3640`**: پانچوں decrement routes پر مرکزی `StockPolicy`، cumulative cart/FEFO reservation، atomic refusal اور exact-zero success؛ legacy checkbox/owner bypass ختم، historical minus کو silent zero نہیں، physical stock-take audited correction، PR cancellation stock-only۔ **814 written cases، 45 static checks، 7/7 SQLite groups + 500 guarded attempts**؛ Windows build/xUnit مالک کے لیے باقی۔ |
 | 25 اکتوبر 2026 | **D-93 — Negative stock کا خاتمہ**: مالک نے مکمل retirement منتخب کی؛ نئے transactions صفر سے نیچے نہیں، ہر decrement path پر اطلاق، پرانی negatives کی physical/audited reconciliation، تاریخی rows کو خاموشی سے صفر نہیں کرنا۔ ابھی decision-only؛ v0.35.2 کا code اور رنگ نہیں بدلا۔ |

@@ -12,19 +12,20 @@ public sealed class NavItem : ObservableObject
 {
     private readonly Func<ObservableObject>? _resolve;
 
+    private string _title;
     private bool _isCollapsed;
     private bool _isVisible = true;
 
     public NavItem(string title, string subtitle, Func<ObservableObject> resolve)
     {
-        Title = title;
+        _title = title;
         Subtitle = subtitle;
         _resolve = resolve;
     }
 
     private NavItem(string title)
     {
-        Title = title;
+        _title = title;
         Subtitle = string.Empty;
         IsHeader = true;
     }
@@ -32,7 +33,19 @@ public sealed class NavItem : ObservableObject
     /// <summary>A heading over a group of pages. It is not a page and never opens one.</summary>
     public static NavItem Header(string title) => new(title);
 
-    public string Title { get; }
+    public string Title => _title;
+
+    /// <summary>Stable catalog identity; never use the editable Title for navigation decisions.</summary>
+    public string LabelKey { get; set; } = string.Empty;
+
+    /// <summary>Applies a saved label without rebuilding the menu or losing the selected page.</summary>
+    public void SetTitle(string title)
+    {
+        if (SetProperty(ref _title, title, nameof(Title)))
+        {
+            OnPropertyChanged(nameof(Tooltip));
+        }
+    }
 
     public string Subtitle { get; }
 

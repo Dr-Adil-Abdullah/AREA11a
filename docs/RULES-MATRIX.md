@@ -23,8 +23,8 @@ this file tracks the owner's numbered rules.
 
 - rules in the specification: **116**
 - ✅ done: **91**
-- 🟡 written / partial: **4**
-- ⬜ not started: **1**
+- 🟡 written / partial: **5**
+- ⬜ not started: **0**
 - 🔁 standing rules: **20**
 
 ## U - the owner's rules
@@ -42,7 +42,7 @@ Product, process and the owner's direct orders.
 | **U-07** | Whatever code, library, framework feature or repository already exists — use that. | ✅ done | Dapper, Microsoft.Data.Sqlite, WPF, xUnit | - | - |
 | **U-08** | Write as little code as possible. | 🔁 standing rule | one Compute() for quote+save, shared helpers | - | - |
 | **U-09** | Personal use — no license restriction (condition: mature code). | ✅ done | personal use, MIT-style dependencies only | - | - |
-| **U-10** | Everything must be editable — app name, logo, categories… nothing is final (see E). | ✅ done | `Services/SettingsService.cs` + the Settings page (89 keys) | - | - |
+| **U-10** | Everything must be editable — app name, logo, categories… nothing is final (see E). | ✅ done | `Services/SettingsService.cs` + the Settings page (121 keys) | - | - |
 | **U-11** | A change made on the front end must automatically reach the back end/data (see S). | ✅ done | services write straight to SQLite, no second copy | - | - |
 | **U-12** | Every point is written numbered, so nothing is missed. | ✅ done | this matrix | - | - |
 | **U-13** | One link is enough: giving only the repository link must allow any new agent to understand what is done and what remains. HANDOFF.md and AGENTS.md are always kept current. (Order of 1 Oct 2026.) | ✅ done | HANDOFF.md + AGENTS.md + docs/PROGRESS.md + this file | `tools/check_repo.py` | - |
@@ -92,7 +92,7 @@ Nothing hard-coded; every label, price and rule from settings.
 
 | Rule | Requirement | State | Where it lives | Test | Phase |
 |---|---|---|---|---|---|
-| **E-01** | Nothing is hard-coded — everything comes from data/settings. | ✅ done | the `settings` table + `SettingsService` (89 keys) and the Settings page; nothing in the shop is hard-coded | SettingsTests.* | - |
+| **E-01** | Nothing is hard-coded — everything comes from data/settings. | ✅ done | the `settings` table + `SettingsService` (121 keys) and the Settings page; nothing in the shop is hard-coded | SettingsTests.* | - |
 | **E-02** | Branding: app name, logo, colour/theme — changeable from Settings. | ✅ done | branding keys (`store.*`, `brand.*`) edited on Settings -> Shop | SettingsTests.* | - |
 | **E-03** | Shop information: name, address, phone, terms — printed on the receipt. | ✅ done | `ReceiptService` prints `store.*` on every bill | ReceiptTests.* | Phase 1 |
 | **E-04** | Categories: create, change, delete, order (unlimited + sub-categories). | ✅ done | `ProductService` + Products → Manage categories and companies: create, rename, two-level parents, order, soft put-away/restore and unlink-only product references; Core permissions and old/new audit; migration 026 orders companies | CatalogTests.* | - |
@@ -103,7 +103,7 @@ Nothing hard-coded; every label, price and rule from settings.
 | **E-09** | Round-off, tax, invoice format, printer size (58/80 mm) — from settings. | ✅ done | `bill.roundTo`, `tax.*` and the printer width in `print.*` | MoneyTests.* | - |
 | **E-10** | Receipt layout: date top/bottom, show/hide columns — by toggle. | ✅ done | `receipt.datePosition` and the `receipt.show*` toggles, edited on Settings | ReceiptTests.* | Phase 1 |
 | **E-11** | Roles and permissions: Owner/Manager/Cashier powers — from settings. | ✅ done | `user_permissions` + `PermissionService` + the people and permission editor on Settings | PermissionTests.* | - |
-| **E-12** | Language/terms: words can also be changed (custom labels). | ⬜ not started | the words a bill prints come from settings, but there is no screen that renames the app's own labels | - | Phase 4 |
+| **E-12** | Language/terms: words can also be changed (custom labels). | 🟡 written / partial | `AppLabelService` + Settings → App words: 32 stable section labels in `settings`, Unicode/length/single-line guards, Settings permission, old/new audit and safe reset; Windows/live owner proof pending | AppLabelTests.* | Phase 4 |
 | **E-13** | Rule: nothing is "final" — every item has an edit option later. | 🔁 standing rule | process - see AGENTS.md | - | - |
 | **E-14** | Start from default values but all changeable; when a category is changed/removed old records stay safe. | ✅ done | soft delete (`active = 0`) everywhere; no business row is ever deleted | ProductTests.* | - |
 
@@ -117,7 +117,7 @@ One source of truth: a change on screen is a change in the database.
 | **S-02** | No separate developer work — the user can create/change himself. | ✅ done | categories, companies, shelves and suppliers can be created from the page they are needed on | - | - |
 | **S-03** | UI and data are always consistent (one source of truth). | ✅ done | one `Compute()` drives both Quote and Create | SaleTests.BillTotal_* | - |
 | **S-04** | A new custom field → appears in the form automatically. | ✅ done | a new field appears on the form at once - the panel is built from the database (F-42) | CustomFieldTests | - |
-| **S-05** | Change a name/term → changes everywhere automatically. | 🟡 written / partial | a shop name or price change reaches every page at once; renaming the app's own words waits for E-12 | - | - |
+| **S-05** | Change a name/term → changes everywhere automatically. | 🟡 written / partial | saved labels use stable keys plus live resources to refresh navigation, all 26 page headings, the Cloud sync tab and Own fields panel without rebuilding the shell; Windows rename/restart proof pending | AppLabelTests.* | - |
 | **S-06** | Database structure (schema) changes happen by automatic migration — no data lost. | ✅ done | `Data/MigrationRunner.cs`, append-only | MigrationTests.* | - |
 | **S-07** | Settings are stored in the database (not only in the browser/local UI) — so identical on every counter/device. | ✅ done | `settings` table | - | - |
 | **S-08** | Every change has a record (who, when changed) — Spec §13. | ✅ done | `AuditService` is called by every module - the black box is the proof, not a promise | AuditDiffTests.* | - |
@@ -148,7 +148,7 @@ History is never lost.
 | **B-05** | Even unsaved work is not lost — an automatic safety snapshot (tested). | ✅ done | Arena snapshots + commits after every change | - | - |
 | **B-06** | Nothing is ever erased — history stays linear. | ✅ done | linear history, never force-push to main | - | - |
 | **B-07** | Safe across sessions: ckpt.sh push (GitHub). | ✅ done | pushed to GitHub after every change | - | - |
-| **B-08** | Helper scripts: sync-spec.sh (spec → Part 1 automatic copy), rules-count.sh (counting of the numbers; says SAB THEEK when no rule number is missing). | ✅ done | replaced by `tools/check_repo.py` (44 checks) + `tools/build_rules_matrix.py` | `tools/check_repo.py` | - |
+| **B-08** | Helper scripts: sync-spec.sh (spec → Part 1 automatic copy), rules-count.sh (counting of the numbers; says SAB THEEK when no rule number is missing). | ✅ done | replaced by `tools/check_repo.py` (46 checks) + `tools/build_rules_matrix.py` | `tools/check_repo.py` | - |
 | **B-09** | The session branch is fixed, but tags/commits allow complete return. The earlier session branch's history and tags stage-1…stage-6 were fast-forwarded into the current branch on 3 Oct 2026 — nothing lost. | ✅ done | fixed session branch, commits/tags for return | - | - |
 | **B-10** | Return is possible even after merges: tags stage-1…N and every commit always remain. To look: git checkout stage-N, or ckpt.sh go N; to undo a merge: git revert -m 1 <merge-commit>. Never delete tags/history; never force-push. | ✅ done | tags `net-stage-N` from stage 2 onward | - | - |
 

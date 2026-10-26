@@ -10,7 +10,7 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Margin="0,0,0,10">
-            <TextBlock Text="Excel / CSV" Style="{StaticResource PageTitle}" />
+            <TextBlock Text="{DynamicResource AppLabel.importExport}" Style="{StaticResource PageTitle}" />
             <TextBlock Text="Bring the old stock list and the khata in, take anything out, or change every price at once — nothing is written until you press the button."
                        Style="{StaticResource PageSubtitle}" />
         </StackPanel>

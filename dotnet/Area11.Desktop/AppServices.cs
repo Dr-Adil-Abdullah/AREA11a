@@ -20,9 +20,10 @@ public sealed class AppServices
         Config = ShopConfig.Current;
         Database = new Database();
         Audit = new AuditService(Database, Log);
-        Settings = new SettingsService(Database, Audit, Log);
-        Auth = new AuthService(Database, Audit, Settings, Log);
         Permissions = new PermissionService(Database, Log, Audit);
+        Settings = new SettingsService(Database, Audit, Log, Permissions);
+        Auth = new AuthService(Database, Audit, Settings, Log);
+        AppLabels = new AppLabelService(Settings, Permissions);
         Numbering = new NumberingService(Settings);
         Products = new ProductService(Database, Audit, Log);
         Dashboard = new DashboardService(Database, Settings, Permissions, Log);
@@ -82,6 +83,9 @@ public sealed class AppServices
     public AuditService Audit { get; }
 
     public SettingsService Settings { get; }
+
+    /// <summary>Editable application section names (E-12/S-05), backed by the same settings table.</summary>
+    public AppLabelService AppLabels { get; }
 
     public AuthService Auth { get; }
 

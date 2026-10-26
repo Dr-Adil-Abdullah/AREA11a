@@ -12,8 +12,8 @@
         <!-- Header: title on the left, one Save button on the right -->
         <DockPanel Grid.Row="0" Margin="0,0,0,6">
             <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                <TextBlock Text="Settings" Style="{StaticResource PageTitle}" />
-                <TextBlock Text="Shop details, printing, sales rules, cloud sync and staff — no code change needed"
+                <TextBlock Text="{DynamicResource AppLabel.settings}" Style="{StaticResource PageTitle}" />
+                <TextBlock Text="Shop details, printing, sales rules, cloud sync, staff and application words — no code change needed"
                            Style="{StaticResource PageSubtitle}" />
             </StackPanel>
 
@@ -332,7 +332,7 @@
             </TabItem>
 
             <!-- ========================= 4. CLOUD SYNC ========================= -->
-            <TabItem Header="Cloud sync">
+            <TabItem Header="{DynamicResource AppLabel.cloud}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
 
@@ -509,6 +509,55 @@
                         </StackPanel>
                     </Border>
 
+                </Grid>
+            </TabItem>
+
+            <!-- ========================== 6. APP WORDS ========================== -->
+            <TabItem Header="App words">
+                <Grid Margin="0,4,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Margin="0,0,16,10">
+                            <TextBlock Text="Names used inside Area11" Style="{StaticResource SectionTitle}" />
+                            <TextBlock Style="{StaticResource FieldHint}" TextWrapping="Wrap"
+                                       Text="Type the words your shop uses. Save settings updates the left menu and open page headings at once. This does not rewrite receipts, old records or other sentences." />
+                        </StackPanel>
+                        <Button Grid.Column="1" VerticalAlignment="Top" Style="{StaticResource GhostButton}"
+                                Content="{Binding ResetLabelsText}" Command="{Binding ResetLabelsCommand}" />
+                    </Grid>
+
+                    <Border Grid.Row="1" Style="{StaticResource SettingsGroup}" Margin="0">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding LabelRows}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,5">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="190" />
+                                                <ColumnDefinition Width="16" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Original word" Style="{StaticResource FieldHint}" Margin="0" />
+                                                <TextBlock Text="{Binding DefaultText}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                            <TextBox Grid.Column="2" VerticalContentAlignment="Center" MaxLength="60"
+                                                     Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
+                                                     ToolTip="Your word for this Area11 section. Use Restore original words to reset every section." />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
                 </Grid>
             </TabItem>
 

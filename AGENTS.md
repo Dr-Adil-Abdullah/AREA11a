@@ -138,7 +138,17 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.35.5 (Carmine `#A50021`) - the owner's three red cases are answered.**
+> **v0.35.11 (Topaz `#8A5A00`) - E-12/S-05 custom application labels are written; owner proof is pending.**
+>
+> * **The 32 supported section names now come from the existing `settings` table.** Settings → App words
+>   edits them with Core supported-key, Unicode, trimming, non-empty, single-line/60-character,
+>   Settings-permission and old/new audit guards. Stable `LabelKey` values keep navigation and page
+>   resolution independent of the editable text; dynamic resources update 26 real page headings,
+>   the Cloud sync tab, the Own fields panel and the shell immediately. A two-click reset restores only the catalog, and invalid stored blanks fall
+>   back to defaults. No receipt, sentence, historical document or audit text is rewritten.
+>   **827 written cases, 46 static checks and 6/6 SQLite storage rehearsals pass here; no .NET SDK or
+>   live WPF proof exists in this sandbox.** Keep E-12/S-05 🟡 until the owner's `ALL GREEN - 827 of 827`
+>   and rename/restart/reset walk-through. Merlot's fixed 820-case rerun remains outstanding.
 >
 > * **v0.35.5 repairs one policy mismatch and two stale test fixtures.** The owner's v0.35.4 run proved
 >   the correct tree (**769 passed, 3 failed, 772 total**). A sign-in ahead of the PC clock now keeps

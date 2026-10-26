@@ -11,7 +11,7 @@
 
         <DockPanel Grid.Row="0" Margin="0,0,0,12">
             <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                <TextBlock Text="Purchases (stock-in)" Style="{StaticResource PageTitle}" />
+                <TextBlock Text="{DynamicResource AppLabel.purchases}" Style="{StaticResource PageTitle}" />
                 <TextBlock Text="PINV bill · batch and expiry · sample at zero cost · supplier payable"
                            Style="{StaticResource PageSubtitle}" />
             </StackPanel>

@@ -31,7 +31,7 @@ Ported from the original Next.js + SQLite web app (`Dr-Adil-Abdullah/Area11`) us
 | **1** | Foundation, database, sign-in, products, purchases `PINV`, counter `INV`, receipt & instant print, settings screen, **hold cart, split payment** | ✅ written and compiled; needs one real walk-through by the owner |
 | **2** | Returns `RET` / provisional `PR` / quarantine `Q`, alert centre, write-off, stock-take `ST`, khata and supplier ledgers | ✅ written (v0.3.0 - v0.3.12) |
 | **3** | Shift & galla, expenses, udhaar recovery, reports, black box, **backup ZIP**, **Excel / CSV import+export**, **reorder + WhatsApp order**, **stock-minus registry** | ✅ written (v0.4.0 - v0.11.0) |
-| **4** | **Loyalty** ✅ (v0.12.0), **photos & camera** ✅ (v0.13.0), **own fields** ✅ (v0.14.0), **several barcodes** ✅ (v0.15.0), **doctors, reps & lifetime profit** ✅ (v0.16.0), **second counter over the LAN** ✅ (v0.17.0), **tax, receipts & monthly statements** ✅ (v0.18.0), **self-installing installer** ✅ (v0.19.0), **printer & scanner test** 🟡 (v0.20.0 - waits for the shop's own printer), **Supabase cloud sync** ✅ (v0.21.0, repaired v0.26.0), **bills page with reprint** ✅ (v0.22.0), **printer fixed (code 6) and printers listed** ✅ (v0.22.1), **sample shop for a new database** ✅ (v0.23.0), **misspelt-medicine search** ✅ (v0.24.0), **purchase / partner / numbering tests** ✅ (v0.25.0), **cloud push repaired + Settings → Cloud sync** ✅ (v0.26.0, build fix v0.26.1), **find a bill without its number** ✅ (v0.27.0), **two and a half months of demo shop** ✅ (v0.28.0, **deleted in v0.30.2 - D-77**), **do the books add up? - eleven read-only rules over the shop's own rows** ✅ (v0.30.4), **the drawer changes hands with a signed slip** ✅ (v0.30.6), **who was short - the drawer per person, short and over never netted** ✅ (v0.31.0), **a home screen that matches the pages it summarises** ✅ (v0.29.0), fuzzy search | 🟡 started (v0.12.0) |
+| **4** | **Loyalty** ✅ (v0.12.0), **photos & camera** ✅ (v0.13.0), **own fields** ✅ (v0.14.0), **several barcodes** ✅ (v0.15.0), **doctors, reps & lifetime profit** ✅ (v0.16.0), **second counter over the LAN** ✅ (v0.17.0), **tax, receipts & monthly statements** ✅ (v0.18.0), **self-installing installer** ✅ (v0.19.0), **printer & scanner test** 🟡 (v0.20.0 - waits for the shop's own printer), **Supabase cloud sync** ✅ (v0.21.0, repaired v0.26.0), **bills page with reprint** ✅ (v0.22.0), **printer fixed (code 6) and printers listed** ✅ (v0.22.1), **sample shop for a new database** ✅ (v0.23.0), **misspelt-medicine search** ✅ (v0.24.0), **purchase / partner / numbering tests** ✅ (v0.25.0), **cloud push repaired + Settings → Cloud sync** ✅ (v0.26.0, build fix v0.26.1), **find a bill without its number** ✅ (v0.27.0), **two and a half months of demo shop** ✅ (v0.28.0, **deleted in v0.30.2 - D-77**), **do the books add up? - eleven read-only rules over the shop's own rows** ✅ (v0.30.4), **the drawer changes hands with a signed slip** ✅ (v0.30.6), **who was short - the drawer per person, short and over never netted** ✅ (v0.31.0), **a home screen that matches the pages it summarises** ✅ (v0.29.0), **custom application labels** 🟡 (v0.35.11 - written, awaiting Windows/live proof), fuzzy search | 🟡 started (v0.12.0) |
 
 The cloud mirror is set up from [`docs/CLOUD-SYNC.md`](docs/CLOUD-SYNC.md) (Urdu): one SQL block in Supabase,
 four settings in Area11, then push / look / bring.
@@ -42,11 +42,13 @@ Live counts are in [`docs/PROGRESS.md`](docs/PROGRESS.md) (features) and
 **Honest note:** the agent's build machine is Linux with no .NET SDK, so nothing in `dotnet/` is
 compiled there. Every change is checked statically (C# parses, explicit usings, XAML, resources,
 every binding against its view model, every SQL statement against the real schema, every mapped
-column against its model, migrations executed on SQLite) and **820 test cases** are written for the
+column against its model, migrations executed on SQLite) and **827 test cases** are written for the
 Windows run. The owner's own machine has built the whole solution and run earlier suites green; the latest
 verified run is **789 of 789 in 1 m 6 s** on v0.35.7 Cypress. The whole solution also built with
 `0 Warning(s), 0 Error(s)` on v0.33.0, with the sign-in window open and `Signed in: Owner` in the log.
-The current v0.35.10 Merlot release still needs his `tools\RUN-TESTS.cmd` run (**820 expected**). See
+The current v0.35.11 Topaz release still needs his `tools\\RUN-TESTS.cmd` run (**827 expected**) and
+live label rename/restart/reset walk-through. Merlot's repaired 820-case rerun and Dashboard/PR checks
+remain separately outstanding. See [`docs/VERSIONS.md`](docs/VERSIONS.md) for which build he has.
 [`docs/VERSIONS.md`](docs/VERSIONS.md) for which build he has.
 
 ---

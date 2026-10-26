@@ -11,7 +11,7 @@
 
         <DockPanel Grid.Row="0" Margin="0,0,0,10">
             <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                <TextBlock Text="Shift (galla)" Style="{StaticResource PageTitle}" />
+                <TextBlock Text="{DynamicResource AppLabel.shift}" Style="{StaticResource PageTitle}" />
                 <TextBlock Text="Open the drawer with your float, work the day, count the cash and close it."
                            Style="{StaticResource PageSubtitle}" />
             </StackPanel>

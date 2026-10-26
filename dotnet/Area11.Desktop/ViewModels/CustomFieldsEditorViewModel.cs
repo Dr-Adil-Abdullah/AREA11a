@@ -48,8 +48,6 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
 
     public RelayCommand SaveCommand { get; }
 
-    public string Title => "Own fields";
-
     public string Subtitle => "Questions the owner added for the " + EntityWord + " form.";
 
     /// <summary>True when the owner may fill the panel; a reader only sees what is already there.</summary>
