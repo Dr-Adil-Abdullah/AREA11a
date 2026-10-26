@@ -7,10 +7,10 @@
 > اِس فائل میں یہ سب ہے: پروگرام کیا ہے، ابھی کہاں کھڑا ہے، **کیا باقی ہے**، کیا **کبھی نہیں** کرنا،
 > اور ایک نیا ورژن کیسے نکالنا ہے۔ آپ کے لیے چھوٹی اردو فائل: [`docs/HANDOVER-FOR-OWNER-URDU.md`](docs/HANDOVER-FOR-OWNER-URDU.md)۔
 
-**Status:** v0.35.15 · Quasar · `#3B2F63` — **default branch `main`**; this repair is on the current
+**Status:** v0.35.16 · Glaucous · `#4F6D7A` — **default branch `main`**; this repair is on the current
 working branch `arena/60395e95-area11a` until its pull request is merged.
 
-*Last updated: 26 October 2026, after the owner's correct Paprika run compiled and opened but reported **837 passed / 14 failed / 851 total**. Quasar repairs the shown empty-first stock materialization and Unicode settings/audit writes, keeps PR quantities `REAL` without new stock/payment events, and resolves the nine nullability-only workbook warnings. It has **853 written cases** and 50 static checks, but no Windows/xUnit or real Excel run here. Only four Paprika failure names were supplied; the complete log and `ALL GREEN - 853 of 853` are still required. T-10, Z-05 and E-12/S-05 remain 🟡; D-93/PR rules remain in force and cloud was not started.*
+*Last updated: 26 October 2026, after the owner authorized the deferred cloud stage with `next`. Glaucous repairs the reproduced 90-day cloud foreign-key defect with a 15-table format-2 document, referenced older parents and complete lines, plus stronger Apply/stale-preview guards. It has **860 written cases**, 51 static checks, three SQLite round-trips and 5/5 guard injections, but no Windows/xUnit, real Excel or real Supabase run here. Paprika's actual **837 passed / 14 failed / 851 total** and Quasar's unexecuted 853-case target remain recorded; the current requirement is `ALL GREEN - 860 of 860` with the complete log. T-10, Z-05 and E-12/S-05 remain 🟡; D-93/PR rules remain in force.*
 
 ---
 
@@ -56,15 +56,15 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 
 ## 3. Where it stands right now (read this twice)
 
-**Current source: v0.35.15 "Quasar" is a verification repair on Paprika, not a new feature stage. It stabilizes empty-first Product/Reorder quantities as `REAL`, writes readable Unicode settings/audit JSON, keeps PR/double-return quantities explicitly `REAL`, and makes three nullability-only workbook corrections. Two new facts make 853 written cases; 50 static checks pass. Paprika's real 837/851 result is not backfilled, and Quasar is not executed here (no .NET SDK or Excel). T-10, Z-05, E-12 and S-05 remain partial. Prior fully green owner evidence: v0.35.7 "Cypress" passed 789/789 in 1 m 6 s; v0.35.6 "Cedar" passed 782/782 in 1 m 3 s.**
+**Current source: v0.35.16 "Glaucous" is the deferred cloud-integrity stage authorized by `next`. Its format-2 document keeps 90-day financial rows plus the older parents/lines needed by recent payments and PR reconciliations; it does not upload all history or clear links. Apply and stale-preview boundaries are tightened. Seven facts make 860 written cases; 51 static checks, three SQLite round-trips and 5/5 guard injections pass. No .NET, Excel or real Supabase execution happened here. Paprika's real 837/851 and Quasar's unexecuted 853 target are not backfilled. T-10, Z-05, E-12 and S-05 remain partial. Prior fully green owner evidence: v0.35.7 "Cypress" passed 789/789 in 1 m 6 s.**
 
 | | |
 |---|---|
-| Test cases written | **853** in 67 files (`tools\\RUN-TESTS.cmd` compares the run against `EXPECTED=853`) |
-| Static checks | **50**, all green: `OK - 50 checks, no problems` |
+| Test cases written | **860** in 67 files (`tools\\RUN-TESTS.cmd` compares the run against `EXPECTED=860`) |
+| Static checks | **51**, all green: `OK - 51 checks, no problems` |
 | Owner's numbered rules | **116 - 92 ✅ done, 4 🟡 partial, 0 ⬜, 20 standing** - see §4 |
 | Feature board | **57 features — 52 ✅ done, 5 🟡 one shop action each, 0 ⬜ not started** (91.2 % / 8.8 %) |
-| Code size | 281 C# files (71,646 lines) + 39 XAML files (8,412 lines, 37 of them pages/windows); 51 services, 42 view models |
+| Code size | 281 C# files (72,193 lines) + 39 XAML files (8,412 lines, 37 of them pages/windows); 51 services, 42 view models |
 | Database | 26 migrations → **35 business tables + provisional report view**, append-only, existing `area11.db` opens unchanged |
 
 ### What the owner's own PC has already proved
@@ -79,6 +79,36 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 * On **v0.35.5** his next run compiled `Area11.Core` and `Area11.Tests` and reported
   **Failed: 0, Passed: 772, Total: 772 in 56 s — ALL GREEN**. This proves the numbering, session and
   Shift repairs together; it is not a claim that the Desktop installer or every page was exercised.
+
+### What v0.35.16 changes — cloud dependency integrity
+
+The actual cloud code had a current-schema failure that its 27 fake-wire tests did not cover. A payment
+is selected by its own date, but it can belong to a sale or purchase older than 90 days. Migration 024
+also lets it reference a provisional return. The old document omitted those parents; applying the exact
+shape to another database with foreign keys on reproduced `FOREIGN KEY constraint failed`. Clearing the
+link or skipping the financial row would hide money, so neither is allowed.
+
+`SyncService` now uses one dependency-complete document reader for Status, Preview and Push. The six master lists remain whole;
+recent sales, purchases, provisional returns, payments and expenses, plus their recent lines, are read
+in bulk. Only referenced older parents are added. Their complete lines come too, and a PR allocation can
+pull its old sale line and bill into the same finite closure. Unrelated old bills remain excluded and all
+rows are sorted by id. The common path does not issue one query per recent bill. Format **2** has **15
+tables** (the original 12 plus PR headers, items and allocations). Format 1 remains readable; an older
+Area11 refuses format 2 rather than applying links it does not understand.
+
+Apply is guarded in Core, not only by the button: switched-off or incomplete configuration and an
+unsupported future format are refused before backup. A null id is skipped rather than allowing SQLite
+to auto-number a new row. Refresh or a successful Push clears the previously applicable cloud preview.
+The original permission, shop-id, confirmation, backup, one-transaction, unknown-column and no-delete
+rules remain. No migration, quantity type, stock rule, payment rule or PR cancellation behavior changed.
+
+Seven new facts cover old-sale and old-purchase round-trips, the full PR chain, switch/format/null-id
+boundaries and format-1 compatibility: **860 written cases in 67 files**. The 51st static check protects
+the dependency edges, bulk reads, write order and guards; it rejected **5/5** injected faults before
+restoration. Three real-SQLite round-trips passed foreign-key checks, including recent bulk lines with
+only one old-parent query and an unrelated old bill excluded. These are not xUnit or Supabase results.
+Run **`ALL GREEN - 860 of 860`**, then use `docs/CLOUD-SYNC.md` §7 with a separate test Shop id/table and
+test database copy. Cloud is a partial mirror, not the full-machine zip backup; never share the API key.
 
 ### What v0.35.15 changes — Paprika verification repair
 
@@ -101,8 +131,8 @@ link error now includes its inner technical detail so the next complete log is a
 The nine Paprika warnings were four nullable values passed to `KeyText`, four guarded nullable ids
 passed to `ReferenceExists`, and one `PrepareBulk` dictionary-nullability mismatch. Three signature/
 inference edits resolve those without changing workbook behavior. **853 cases in 67 files and 50
-static checks** are the local evidence, not compilation or xUnit. The owner must see
-**`ALL GREEN - 853 of 853`**, send the complete log, and still perform the real Excel walk-through.
+static checks** are the local evidence, not compilation or xUnit. Quasar's own 853-case target was not
+run; the current Glaucous run includes it in **860 cases**, and the real Excel walk-through remains separate.
 
 ### What v0.35.14 changes — T-10 native Excel and safe all-data bulk update
 
@@ -127,8 +157,9 @@ rules, real Excel cell encodings, permissions and rollback. The written inventor
 
 There was no .NET SDK or Excel in this sandbox when Paprika was written. The owner's subsequent
 correct run did compile and open it, but xUnit was **not green: 837/851 with 14 failures**. T-10 stays
-🟡; Quasar is the current 853-case repair target and the real open/edit/preview/apply/re-import
-walk-through is still separate. Z-05 and E-12/S-05 evidence remain separate; cloud was not started.
+🟡; Quasar became the 853-case repair target and Glaucous now carries those cases in the 860-case
+run. The real open/edit/preview/apply/re-import walk-through is still separate. Z-05 and E-12/S-05
+evidence remain separate; the cloud stage began only after the owner's later `next`.
 
 ### What v0.35.13 changes — T-05 was already built; the stale status is corrected
 
@@ -202,7 +233,7 @@ The owner's first Topaz build then stopped at `AppLabelTests.cs(42)` with **CS16
 does not implement `IDisposable`. The second-database test now uses a plain variable, matching the
 existing NumberingTests lifetime pattern. The existing C# static check rejects `using ... new Database`
 and caught the fault when it was injected back at line 42. The 827-case inventory and product rules
-were unchanged by that repair; Topaz's own rerun was never supplied. Azure, Cinnamon and Paprika followed; Paprika's actual 851-case run failed 14, so Quasar's 853-case run is now the current verification target.
+were unchanged by that repair; Topaz's own rerun was never supplied. Azure, Cinnamon and Paprika followed; Paprika's actual 851-case run failed 14, so Quasar's 853-case run became the next target. Glaucous now includes those cases in the current 860-case target, without marking either old result green.
 
 ### What v0.35.10 changes — E-04 catalog management is complete
 
@@ -636,7 +667,7 @@ honest caveat about what is not yet proven. If he asks for a printable status, r
 | `dotnet/Area11.Desktop/Views/` (37) | the pages; `PosView`, `ProductsView`, `PurchasesView`, `ShiftView`, `HardwareView` … |
 | `dotnet/Area11.Desktop/Resources/Theme.xaml` | the three brand brushes |
 | `dotnet/Area11.Tests/` (67 test files) | `TestDatabase`, `TestData`, one file per feature |
-| `tools/check_repo.py` | the 50 static checks (read the docstring of a failing check) |
+| `tools/check_repo.py` | the 51 static checks (read the docstring of a failing check) |
 | `tools/make_checklist.py`, `make_icon.py`, `build_rules_matrix.py` | the printable list, the icon, the rules matrix |
 | `tools/*.cmd`, `tools/install/*.ps1` | what the owner double-clicks: start, update, test, report, install, uninstall, share |
 | `docs/` | the spec, the decisions, the board, the rules, the schema, the guides |
@@ -645,10 +676,11 @@ honest caveat about what is not yet proven. If he asks for a printable status, r
 
 ## 16. The first message to send him (copy, paste, adjust)
 
-> میں نے ریپو پڑھ لی ہے۔ ابھی حالت یہ ہے: **v0.35.15 (Quasar)** — 853 written cases اور 50 static checks مکمل ہیں۔
-> Paprika آپ کے PC پر compile اور open ہوا، مگر اس کا حقیقی نتیجہ **837/851 یعنی 14 failures** تھا؛ اسے green نہیں لکھا گیا۔
-> Quasar میں Products/Reorder کی empty-first REAL quantity repair، Urdu audit JSON، PR quantity reads اور workbook nullability repair ہے۔
+> میں نے ریپو پڑھ لی ہے۔ ابھی حالت یہ ہے: **v0.35.16 (Glaucous)** — 860 written cases اور 51 static checks مکمل ہیں۔
+> Paprika آپ کے PC پر compile اور open ہوا، مگر اس کا حقیقی نتیجہ **837/851 یعنی 14 failures** تھا؛ Quasar کا 853-case repair یہاں run نہیں ہوا، دونوں کو green نہیں لکھا گیا۔
+> Glaucous میں cloud کا format-2، 15-table document، 90 دن سے باہر ضروری financial parents اور محفوظ Apply guards ہیں؛ اصل Supabase ابھی آزمایا نہیں گیا۔
 > سب سے پہلے `git pull` کر کے `START-AREA11.bat` اور `tools\\RUN-TESTS.cmd` چلائیں؛ مطلوبہ نتیجہ
-> `ALL GREEN - 853 of 853` ہے۔ صرف آخری سطریں نہیں، مکمل `test.log` بھیجیں کیونکہ دس failure names ابھی معلوم نہیں۔
+> `ALL GREEN - 860 of 860` ہے۔ صرف آخری سطریں نہیں، مکمل `test.log` بھیجیں کیونکہ دس پرانی failure names ابھی معلوم نہیں۔
 > پھر Excel میں workbook کھول کر edit، preview، apply اور دوبارہ upload پر 0 changes دیکھیں؛ T-10 ابھی 🟡 ہے۔
-> Z-05 اور Settings → **App words** کی تصدیق بھی باقی ہے۔ Cloud شروع نہیں کیا گیا۔
+> الگ test Shop id/table اور test database پر `docs/CLOUD-SYNC.md` §7 کی push/preview/apply جانچ کریں؛ key نہ بھیجیں۔
+> Z-05 اور Settings → **App words** کی تصدیق بھی باقی ہے۔

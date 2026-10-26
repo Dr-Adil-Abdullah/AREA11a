@@ -4021,6 +4021,132 @@ def check_real_stock_projections() -> None:
 
 
 # ---------------------------------------------------------------------------
+def check_cloud_sync_closure() -> None:
+    """A 90-day cloud document must not cut off a recent row's financial parent.
+
+    Recent payments may belong to older sales/purchases, and migration 024 lets them reference a
+    provisional return. A no-bill reconciliation may in turn reference an old sale line. Keep those
+    dependencies and every selected document's lines in one shared document reader; never drop a link merely
+    to make the insert fit. Apply also needs its own switch/format/null-id guards because it is Core,
+    not just a button. The named xUnit facts are the behavioral evidence; these are source guards.
+    """
+    service_path = DOTNET / "Area11.Core/Services/SyncService.cs"
+    models_path = DOTNET / "Area11.Core/Models/SyncModels.cs"
+    view_model_path = DOTNET / "Area11.Desktop/ViewModels/CloudSyncViewModel.cs"
+    tests_path = DOTNET / "Area11.Tests/SyncTests.cs"
+    paths = (service_path, models_path, view_model_path, tests_path)
+
+    if any(not path.exists() for path in paths):
+        for path in paths:
+            if not path.exists():
+                fail(f"Cloud sync dependency guard file is missing: {rel(path)}")
+        return
+
+    service = service_path.read_text(encoding="utf-8", errors="replace")
+    models = models_path.read_text(encoding="utf-8", errors="replace")
+    view_model = view_model_path.read_text(encoding="utf-8", errors="replace")
+    tests = tests_path.read_text(encoding="utf-8", errors="replace")
+
+    order_match = re.search(r"public static readonly string\[\] Order\s*=\s*\{(.*?)\};", models,
+                            re.DOTALL)
+    if order_match is None:
+        fail("Cloud sync table order is missing")
+    else:
+        order = re.findall(r'"([^"]+)"', order_match.group(1))
+        for parent, child in (
+            ("sales", "sale_items"),
+            ("purchases", "purchase_items"),
+            ("provisional_returns", "provisional_items"),
+            ("provisional_items", "provisional_return_allocations"),
+            ("sale_items", "provisional_return_allocations"),
+            ("provisional_returns", "payments"),
+        ):
+            if parent not in order or child not in order or order.index(parent) >= order.index(child):
+                fail(f"Cloud sync must write {parent} before {child}")
+
+    format_match = re.search(r"CurrentFormat\s*=\s*(\d+)\s*;", models)
+    if format_match is None or int(format_match.group(1)) < 2:
+        fail("Cloud sync format must be 2 or newer so older builds refuse dependency-complete documents")
+
+    # Status, Build and Preview counts all use the same reader, not a second set of COUNT queries.
+    if service.count("var envelope = ReadLocal();") < 3 or "CountRows(" in service:
+        fail("Cloud sync page counts and push no longer share the dependency-complete document reader")
+
+    for pattern in (
+        r'payment,\s*"sale_id",\s*"sales"',
+        r'payment,\s*"purchase_id",\s*"purchases"',
+        r'payment,\s*\r?\n?\s*"provisional_return_id",\s*"provisional_returns"',
+        r'provisional,\s*"linked_sale_id",\s*"sales"',
+        r'allocation,\s*\r?\n?\s*"provisional_item_id",\s*"provisional_items"',
+        r'allocation,\s*\r?\n?\s*"sale_item_id",\s*"sale_items"',
+        r'line,\s*"sale_id",\s*"sales"',
+    ):
+        if not re.search(pattern, service):
+            fail(f"Cloud sync dependency edge is missing: {pattern}")
+
+    for query in (
+        "SELECT * FROM sale_items WHERE sale_id IN (SELECT id FROM sales WHERE date >= @since)",
+        "SELECT * FROM purchase_items WHERE purchase_id IN (SELECT id FROM purchases WHERE date >= @since)",
+        "SELECT * FROM provisional_items WHERE provisional_id IN (SELECT id FROM provisional_returns WHERE date >= @since)",
+        "item.provisional_id IN (SELECT id FROM provisional_returns WHERE date >= @since)",
+        "SELECT * FROM sale_items WHERE sale_id = @parent ORDER BY id",
+        "SELECT * FROM purchase_items WHERE purchase_id = @parent ORDER BY id",
+        "SELECT * FROM provisional_items WHERE provisional_id = @parent ORDER BY id",
+        "FROM provisional_return_allocations allocation",
+        "WHERE item.provisional_id = @parent",
+    ):
+        if query not in service:
+            fail(f"Cloud sync complete-child query is missing: {query}")
+
+    for table in ("sales", "purchases", "provisional_returns"):
+        needle = f'new HashSet<long>(ids["{table}"])'
+        required = 2 if table == "provisional_returns" else 1  # lines and allocations
+        if service.count(needle) < required:
+            fail(f"Cloud sync must mark bulk-loaded {table} lines complete to avoid N+1 recent reads")
+
+    apply_match = re.search(r"public ServiceResult<SyncApplyResult> Apply\(.*?\n    \}(?=\n\n    // =+ the write)",
+                            service, re.DOTALL)
+    if apply_match is None:
+        fail("Cloud sync Apply boundary could not be isolated for its safety guards")
+    else:
+        apply = apply_match.group(0)
+        backup = apply.find("_backup.Create(")
+        enabled = apply.find("if (!Enabled)")
+        future = apply.find("envelope.Format > SyncEnvelope.CurrentFormat")
+        if backup < 0 or enabled < 0 or enabled > backup:
+            fail("Cloud sync Apply must refuse a switched-off shop before taking a backup or writing")
+        if backup < 0 or future < 0 or future > backup:
+            fail("Cloud sync Apply must reject a future format before taking a backup or writing")
+
+    if "id is null" not in service or "!allowed.Contains(\"id\")" not in service:
+        fail("Cloud sync upsert must skip a missing/NULL id instead of letting SQLite auto-number it")
+
+    refresh = re.search(r"private void Refresh\(\).*?\n    \}", view_model, re.DOTALL)
+    push = re.search(r"private void Push\(\).*?\n    \}", view_model, re.DOTALL)
+    if refresh is None or "ClearPreview();" not in refresh.group(0):
+        fail("Cloud sync Refresh must invalidate an old applicable preview")
+    if push is None or "ClearPreview();" not in push.group(0):
+        fail("Cloud sync Push must invalidate the previously previewed cloud document")
+
+    for fact in (
+        "ARecentCollectionBringsItsOlderSaleAndAllTheSaleLines",
+        "ARecentSupplierPaymentBringsItsOlderPurchaseAndLines",
+        "ARecentProvisionalPaymentBringsTheWholeReconciliationChain",
+        "SwitchingCloudOffAfterPreviewAlsoClosesTheCoreWriteDoor",
+        "AFutureFormatCannotBypassPreviewAndReachTheWriter",
+        "ANullCloudIdIsSkippedInsteadOfBecomingANewLocalRow",
+        "AnOlderFormatOneDocumentCanStillBeReadAndApplied",
+    ):
+        if fact not in tests:
+            fail(f"Cloud sync regression fact is missing: {fact}")
+
+    REPORT.append(
+        "Cloud sync: shared 90-day/dependency-complete document reader, parent-before-child writes, "
+        "format-1 compatibility and future-format refusal, switch/null-id guards, stale-preview "
+        "invalidation and seven named regression facts")
+
+
+# ---------------------------------------------------------------------------
 def check_native_workbook() -> None:
     """T-10 needs real Open XML and a safe bulk-update workflow, not a CSV renamed to .xlsx.
 
@@ -5004,6 +5130,7 @@ def main() -> int:
     check_audit_recovery()
     check_report_chart()
     check_real_stock_projections()
+    check_cloud_sync_closure()
     check_native_workbook()
     check_csharp_grammar()
 

@@ -13,13 +13,21 @@ public static class SyncTables
     public static readonly string[] Order =
     {
         "categories", "companies", "suppliers", "customers", "products", "batches",
-        "sales", "sale_items", "purchases", "purchase_items", "payments", "expenses"
+        "sales", "sale_items", "purchases", "purchase_items",
+        "provisional_returns", "provisional_items", "provisional_return_allocations",
+        "payments", "expenses"
     };
 
-    /// <summary>Tables whose rows are cut to the last 90 days (Spec 25.5).</summary>
+    /// <summary>
+    /// Financial tables whose own rows start with the last 90 days (Spec 25.5). An older parent and
+    /// its lines are also included when a recent payment or provisional reconciliation references it;
+    /// that small dependency closure keeps the document valid instead of breaking its financial links.
+    /// </summary>
     public static readonly string[] Recent =
     {
-        "sales", "sale_items", "purchases", "purchase_items", "payments", "expenses"
+        "sales", "sale_items", "purchases", "purchase_items",
+        "provisional_returns", "provisional_items", "provisional_return_allocations",
+        "payments", "expenses"
     };
 
     public static string Label(string table) => table switch
@@ -34,6 +42,9 @@ public static class SyncTables
         "sale_items" => "Bill lines",
         "purchases" => "Purchases (90 days)",
         "purchase_items" => "Purchase lines",
+        "provisional_returns" => "No-bill returns (90 days)",
+        "provisional_items" => "No-bill return lines",
+        "provisional_return_allocations" => "Reconciled no-bill return lines",
         "payments" => "Payments (90 days)",
         "expenses" => "Expenses (90 days)",
         _ => table
@@ -99,7 +110,11 @@ public sealed class SyncTableCount
 /// </summary>
 public sealed class SyncEnvelope
 {
-    public const int CurrentFormat = 1;
+    /// <summary>
+    /// Format 2 adds no-bill returns and dependency-complete financial documents. Format 1 remains
+    /// readable; an older Area11 refuses format 2 instead of trying to apply links it does not know.
+    /// </summary>
+    public const int CurrentFormat = 2;
 
     [JsonPropertyName("format")]
     public int Format { get; set; } = CurrentFormat;
@@ -158,7 +173,7 @@ public sealed class SyncEnvelope
 /// Posting the document directly asked PostgREST for a `format` column the table does not have, so a
 /// real push was refused with "Could not find the 'format' column" (repaired in v0.26.0).
 ///
-/// `version` here is the **document format** (1 today), not the program's version: the table was made
+/// `version` here is the **document format** (2 today), not the program's version: the table was made
 /// for a schema number, and the program version travels inside the document where it can be any text -
 /// "0.26.0" cannot be written into an int column, and a cloud copy must still be readable years later.
 /// </summary>

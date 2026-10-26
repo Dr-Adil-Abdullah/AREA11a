@@ -121,7 +121,7 @@ One source of truth: a change on screen is a change in the database.
 | **S-06** | Database structure (schema) changes happen by automatic migration — no data lost. | ✅ done | `Data/MigrationRunner.cs`, append-only | MigrationTests.* | - |
 | **S-07** | Settings are stored in the database (not only in the browser/local UI) — so identical on every counter/device. | ✅ done | `settings` table | - | - |
 | **S-08** | Every change has a record (who, when changed) — Spec §13. | ✅ done | `AuditService` is called by every module - the black box is the proof, not a promise | AuditDiffTests.* | - |
-| **S-09** | Offline too — a change made offline syncs when the net returns. | ✅ done | `SyncService`: push, preview and bring back, with a backup before any write and no deletion | SyncTests.* | Phase 4 |
+| **S-09** | Offline too — a change made offline syncs when the net returns. | ✅ done | `SyncService`: format-2 push/preview/bring with 90-day rows plus referenced parents, complete lines, backup-first apply and no deletion | SyncTests.* | Phase 4 |
 
 ## P - preview and checking
 

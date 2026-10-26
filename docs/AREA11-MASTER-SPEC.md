@@ -1405,7 +1405,7 @@ create table if not exists public.area11_sync (
 
 25.4 The `/sync` page shows status, counts (medicines/customers/suppliers/sales/batches) and three buttons: **push** (send to cloud), **see from cloud** (preview, changes nothing), **bring and apply here** (writes the cloud data onto this computer — an automatic backup is made first; it **overwrites** tables, so use deliberately).
 
-25.5 **What is sent**: medicines, customers, suppliers, categories, companies, batches, and the last **90 days** of sales / purchases / payments / expenses. **Photos are not sent** (they travel in the zip backup).
+25.5 **What is sent**: medicines, customers, suppliers, categories, companies and batches whole; the last **90 days** of sales / purchases / provisional returns / payments / expenses, with their lines. A recent payment or provisional reconciliation can reference an older sale, purchase or provisional return: that referenced parent and all its lines are included as a small dependency closure, while unrelated old documents stay outside the window. Format **2** carries these **15 tables**; format 1 remains readable, and older builds must refuse format 2 rather than break its links. **Photos are not sent** (they travel in the zip backup). This is a partial mirror, not a full-machine backup.
 
 25.6 Error messages (documented): URL/key missing; 401 key wrong or old; 404 table name wrong or table not created; network error; "no data for this shop in the cloud — push first".
 

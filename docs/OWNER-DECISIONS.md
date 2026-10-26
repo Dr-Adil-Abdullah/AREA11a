@@ -1021,7 +1021,8 @@ Master Spec §24.2 کا **آٹھ شیٹ all-data workbook اور before → afte
 
 **تصدیقی تکمیل — v0.35.15 Quasar:** Paprika درست commit پر compile اور open ہوا، مگر حقیقی نتیجہ
 **837/851 اور 14 failures** رہا؛ اسے green نہیں لکھا گیا۔ Products/Reorder اور Urdu audit کی ظاہر شدہ
-خرابیوں کی repair کے ساتھ دو نئے regression facts ہیں، اس لیے موجودہ ہدف **`ALL GREEN - 853 of 853`** ہے۔
+خرابیوں کی repair کے ساتھ دو نئے regression facts ہیں؛ Quasar کا 853-case ہدف یہاں run نہیں ہوا۔
+بعد کے Glaucous میں وہ cases شامل ہیں اور موجودہ ہدف **`ALL GREEN - 860 of 860`** ہے۔
 PR stock/payment rules اور D-94 کا workbook behavior نہیں بدلا۔ صرف چار failure names دستیاب ہیں؛ مکمل
 `test.log` اور اصل Excel walk-through ابھی لازم ہیں، اس لیے T-10 🟡 ہی رہے گا۔
 
@@ -2172,6 +2173,24 @@ Version اب **0.22.0 · Harbour `#3B5C7F`** ہے (پچھلا Ochre `#8F6400`)۔
 مانگتا ہے؛ 90 دن سے پرانا ڈیٹا نہیں جاتا؛ 401 / 404 / 429 / انٹرنیٹ — ہر ایک کا اپنا سیدھا جملہ ہے۔
 Version اب **0.21.0 · Ochre `#8F6400`** ہے (پچھلا Pebble `#57534E`)۔
 
+**تکنیکی اصلاح (26 اکتوبر 2026 — v0.35.16 Glaucous؛ مالک کے بعد کے `next` پر):** اصل code review اور
+SQLite rehearsal میں ثابت ہوا کہ حالیہ payment کسی 90 دن سے پرانے sale/purchase سے جُڑی ہو سکتی ہے، اور
+migration 024 کے بعد provisional return سے بھی۔ پرانا document parent نہ بھیجتا تو دوسرے database پر
+`FOREIGN KEY constraint failed` آتا۔ Link مٹانا یا payment چھپانا money کے اصول کی خلاف‌ورزی ہوتی، اس لیے وہ
+راستہ نہیں اپنایا گیا۔
+
+اب **format 2 / 15 tables** ہیں: حالیہ financial headers اور lines وہی 90 دن کے bulk reads سے، مگر جن
+پرانے parents کا حوالہ موجود ہو وہ اپنی تمام lines کے ساتھ شامل ہیں۔ غیر متعلقہ پرانا بل صرف پرانا ہونے
+کی وجہ سے نہیں جاتا۔ PR header، items اور sale-line allocations بھی سفر کرتے ہیں۔ Status، Preview اور
+Push ایک ہی dependency-complete document reader استعمال کرتے ہیں؛ format 1 پڑھنا برقرار ہے، پرانا Area11 format 2 کو apply کرنے کے بجائے
+اپڈیٹ مانگے گا۔ Switch/configuration/future format backup سے پہلے رد ہیں، NULL id نیا مقامی record نہیں
+بناتی، اور Refresh/Push پرانی preview کو apply سے ہٹا دیتا ہے۔
+
+D-66 کا اصل فیصلہ نہیں بدلا: مقامی database اصل ہے، ٹک + backup + ایک transaction لازم ہیں، کوئی row
+نہیں مٹتی، key خفیہ رہتی ہے۔ **Cloud مکمل machine backup نہیں**؛ مکمل restore کے لیے Area11 کا zip backup
+لازم ہے۔ **860 written cases، 51 static checks، 3 SQLite round-trips اور 5/5 guard injections** مقامی
+ثبوت ہیں؛ اصل Supabase یا Windows/xUnit نتیجہ نہیں۔ مطلوبہ موجودہ run **`ALL GREEN - 860 of 860`** ہے۔
+
 ### D-65 — پرنٹر اور سکینر کا ٹیسٹ، دکان کے اپنے کاغذ پر (F-46)
 
 **فیصلہ (26 اکتوبر 2026، v0.20.0 Pebble):** SYSTEM میں نیا صفحہ **Printer & scanner**۔ یہ صفحہ کوئی بل نہیں بناتا؛
@@ -2504,6 +2523,7 @@ restart نہیں (Spec 8.4.3)۔
 
 | تاریخ | کیا |
 |---|---|
+| 26 اکتوبر 2026 | **D-66 follow-up — v0.35.16 Glaucous `#4F6D7A`**: cloud format 2 میں 15 tables؛ 90 دن کے financial rows کے ساتھ referenced older parents اور complete lines، PR headers/items/allocations، غیر متعلقہ پرانے documents نہیں۔ Format 1 readable؛ switch/format guards backup سے پہلے، NULL id محفوظ، stale preview ختم۔ **860 written cases، 51 static checks، 3 SQLite round-trips، 5/5 injections**؛ real Supabase/Windows proof باقی۔ Local truth، tick، backup، no-delete اور key secrecy نہیں بدلی؛ cloud مکمل zip backup کا بدل نہیں۔ |
 | 26 اکتوبر 2026 | **D-94 / T-10 implementation — v0.35.14 Paprika `#842E1B`**: D-53 کا package-free مقصد برقرار، مگر native Open XML `.xlsx` کے ساتھ «صرف CSV» نتیجہ نئے workflows کے لیے superseded۔ چار شیٹ template، native list downloads، آٹھ شیٹ all-data workbook، before → after preview، خالی cell/no change، `__CLEAR__`، protected stock/balances/links، الگ tick والی type-preserving Settings، stale-row recheck، ایک audited transaction اور repeat upload پر 0 changes۔ CSV اور opening batches/balances برقرار؛ کوئی package/migration نہیں۔ **851 written cases، 49 static checks، 5/5 guard outcomes**۔ Windows/xUnit اور real Excel proof باقی، اس لیے T-10 🟡؛ Cloud شروع نہیں ہوا۔ |
 | 26 اکتوبر 2026 | **Z-05 implementation — v0.35.12 Azure `#005A9C`**: Black box میں منتخب row کی مکمل پہلے/بعد کی حالت، context، details اور محفوظ correction راستہ۔ Raw old/new اور CSV نہیں بدلتے؛ JSON صرف پڑھنے کے لیے indented، Unicode/لمبا متن محفوظ، خراب JSON جوں کا توں۔ Refresh پر پرانا panel غائب، recorded-new کو live state نہیں کہا گیا۔ **Universal financial Undo جان بوجھ کر نہیں**: کوئی sale/payment/return/stock/PR rollback یا نیا payment نہیں۔ PR cancellation same batch سے stock-only، original financial effect کی reversal نہیں؛ Settings/master-data کی درستی نئی audited save سے۔ **834 written cases، 47 static checks، 4/4 guard injection/restoration outcomes**؛ Windows/xUnit اور live walk-through باقی، اس لیے Z-05 🟡۔ E-12/S-05 اور Merlot کے ثبوت الگ باقی؛ charts، native `.xlsx` اور cloud کام شروع نہیں کیا گیا۔ |
 | 26 اکتوبر 2026 | **E-12/S-05 implementation — v0.35.11 Topaz `#8A5A00`**: Settings → **App words** میں app کے 32 supported section labels؛ stable keys سے navigation/permissions/page resolution محفوظ، save پر menu، 26 page headings، Cloud sync tab اور Own fields panel heading فوراً بدلتے ہیں۔ پرانے database میں صرف missing defaults، کوئی migration نہیں۔ Unicode، trimming، non-empty/single-line/60-character validation، Settings permission، atomic old/new audit، direct-write guards اور دو clicks والا صرف labels کا reset۔ خراب blank stored row پر default واپس، receipts/عام sentences/history/document numbers نہیں بدلتے۔ **827 written cases، 46 static checks، 6/6 SQLite storage groups**؛ Windows/xUnit اور live walk-through باقی، اس لیے completion کا دعویٰ نہیں۔ Merlot log review پر positive total کے ساتھ legacy minus batch ہونے کی صورت میں physical stock-take guidance ٹھیک کی گئی؛ ordinary shortage کا پیغام اور stock/money قواعد نہیں بدلے، 3/3 guidance checks مکمل۔ پہلی Topaz build میں `AppLabelTests.cs(42)` پر CS1674 آیا کیونکہ Database قابلِ disposal type نہیں؛ plain-variable repair اور injection-checked static guard مکمل، rebuilt run باقی۔ Merlot rerun اور D-93 قواعد برقرار۔ |

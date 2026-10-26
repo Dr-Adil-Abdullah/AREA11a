@@ -138,21 +138,25 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.35.15 (Quasar `#3B2F63`) - Paprika verification repair; 853-case Windows proof pending.**
+> **v0.35.16 (Glaucous `#4F6D7A`) - cloud dependency repair; 860-case Windows and real-cloud proof pending.**
 >
-> * **Paprika's real result is not backfilled.** On the correct commit and .NET SDK 10.0.402 it built
->   with 0 errors / 9 warnings, opened and navigated, then reported **837 passed / 14 failed / 851 total**.
->   Quasar stabilizes empty-first Product/Reorder stock projections as `REAL`, adds two regressions,
->   writes readable Unicode settings/audit JSON, keeps PR quantities explicitly `REAL` without adding
->   stock/payment events, exposes any remaining PR inner error, and resolves the nine warnings through
->   three nullability-only workbook edits. **853 cases and 50 static checks are written/green here.**
->   Only four failure names were supplied; obtain the complete 146-line log and do not claim all 14 fixed.
+> * **The 90-day cloud window no longer cuts off a financial parent.** Format 2 carries 15 tables:
+>   recent headers/lines plus any older sale, purchase or provisional-return chain referenced by a
+>   recent payment/reconciliation, with complete lines and no dropped financial links. Status, Preview
+>   and Push share one dependency reader; recent lines stay bulk-read. Format 1 remains readable. Apply checks
+>   the switch/configuration/format before backup, null ids cannot auto-create rows, and Refresh/Push
+>   invalidates an old preview. **Seven facts make 860 cases; 51 static checks, three SQLite round-trips
+>   and 5/5 guard injections pass here.** No real Supabase call or .NET run has happened.
 >
-> * **Four rules remain partial: E-12, S-05, Z-05 and T-10.** Keep T-10 🟡 until
->   `ALL GREEN - 853 of 853` and the owner's real Excel open/edit/preview/apply/re-import walk-through.
->   E-12/S-05 still need rename/restart/reset proof and Z-05 needs its live reader/correction
->   walk-through. Earlier unexecuted release targets remain unbackfilled. Cloud work was not started,
->   and D-93 stock/money plus PR cancellation rules are unchanged.
+> * **Earlier verification is not backfilled.** Paprika really reported **837 passed / 14 failed / 851
+>   total** with only four failure identities supplied. Quasar's REAL/Unicode/PR/workbook repair stayed
+>   at 853 written cases and was not executed here. Glaucous includes those cases plus seven cloud
+>   regressions: the current required result is **`ALL GREEN - 860 of 860`** with the complete log.
+>
+> * **Four rules remain partial: E-12, S-05, Z-05 and T-10.** Keep T-10 🟡 until the current green run
+>   and the owner's real Excel open/edit/preview/apply/re-import walk-through. E-12/S-05 still need
+>   rename/restart/reset proof and Z-05 needs its live reader/correction walk-through. Real cloud
+>   push/preview/apply proof is separate. D-93 stock/money and PR cancellation rules are unchanged.
 >
 > * **v0.35.5 repairs one policy mismatch and two stale test fixtures.** The owner's v0.35.4 run proved
 >   the correct tree (**769 passed, 3 failed, 772 total**). A sign-in ahead of the PC clock now keeps

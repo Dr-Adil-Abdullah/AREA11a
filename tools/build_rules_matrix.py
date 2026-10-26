@@ -114,7 +114,7 @@ STATUS: dict[str, tuple[str, str, str]] = {
     "S-06": ("DONE", "`Data/MigrationRunner.cs`, append-only", "MigrationTests.*"),
     "S-07": ("DONE", "`settings` table", "-"),
     "S-08": ("DONE", "`AuditService` is called by every module - the black box is the proof, not a promise", "AuditDiffTests.*"),
-    "S-09": ("DONE", "`SyncService`: push, preview and bring back, with a backup before any write and no deletion", "SyncTests.*"),
+    "S-09": ("DONE", "`SyncService`: format-2 push/preview/bring with 90-day rows plus referenced parents, complete lines, backup-first apply and no deletion", "SyncTests.*"),
 
     # ---- P: preview and checking -----------------------------------------
     "P-01": ("DONE", "a desktop program; the owner builds and runs it himself", "-"),
