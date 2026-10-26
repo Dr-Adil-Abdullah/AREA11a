@@ -12,6 +12,18 @@ public sealed class Category
 
     public bool Active { get; set; } = true;
 
+    /// <summary>The parent's current name for management/read views; never a historical snapshot.</summary>
+    public string? ParentName { get; set; }
+
+    /// <summary>Current products linked to this row. Putting the row away never deletes them.</summary>
+    public int ProductCount { get; set; }
+
+    public string ParentLabel => ParentName ?? "Top level";
+
+    public string CatalogLabel => Active ? Name : Name + " (put away)";
+
+    public string ActiveLabel => Active ? "Active" : "Put away";
+
     public override string ToString() => Name;
 }
 
@@ -34,6 +46,14 @@ public sealed class Company
     public int? VisitDay { get; set; }
 
     public bool Active { get; set; } = true;
+
+    /// <summary>Owner-defined catalogue order; migration 026 adds this to existing company rows.</summary>
+    public int SortOrder { get; set; }
+
+    /// <summary>Current products linked to this row; historical documents are not counted or changed.</summary>
+    public int ProductCount { get; set; }
+
+    public string ActiveLabel => Active ? "Active" : "Put away";
 
     public override string ToString() => Name;
 }

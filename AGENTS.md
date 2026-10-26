@@ -49,7 +49,7 @@ rejected even if it "works".
    a permission. Owner-only actions: dismissing alerts, applying stock-take, restoring backup.
 6. **Never delete business rows.** Use `active = 0`. Audit rows and sales are permanent.
 7. **Migrations are append-only**, run inside `BEGIN IMMEDIATE`, and re-check `_migrations` after the
-   lock is taken. Add `026_*.sql`; never edit an existing file.
+   lock is taken. Add `027_*.sql`; never edit an existing file.
 8. **Views contain no SQL and no business logic.** Services own every rule and every transaction; a
    service method takes `User` when the rule depends on permissions.
 9. **Never modify the original Next.js app** (`Dr-Adil-Abdullah/Area11`) - it is only a behaviour

@@ -61,6 +61,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         RefreshCommand = new RelayCommand(Load);
         AddCategoryCommand = new RelayCommand(AddCategory);
         AddCompanyCommand = new RelayCommand(AddCompany);
+        ManageCatalogCommand = new RelayCommand(ManageCatalog);
         PhotosCommand = new RelayCommand(OpenPhotos);
         BarcodesCommand = new RelayCommand(OpenBarcodes);
 
@@ -98,6 +99,9 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     public CustomFieldsEditorViewModel Editor { get; }
 
     public RelayCommand AddCompanyCommand { get; }
+
+    /// <summary>E-04: rename, order, put away and restore catalog rows in one small window.</summary>
+    public RelayCommand ManageCatalogCommand { get; }
 
     public string HeaderText => _editingId is null ? "New product" : "Editing product";
 
@@ -424,6 +428,22 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         Load();
         NewProduct();
         SetStatus(message, false);
+    }
+
+    private void ManageCatalog()
+    {
+        var categoryId = SelectedCategory?.Id;
+        var companyId = SelectedCompany?.Id;
+
+        CatalogWindowDoor.Show(_services, _user);
+
+        // Keep every other unsaved form field exactly as the person left it. A renamed id is
+        // selected again; a row just put away can no longer be linked by this form.
+        LoadLookups();
+        SelectedCategory = Categories.FirstOrDefault(row => row.Id == categoryId);
+        SelectedCompany = Companies.FirstOrDefault(row => row.Id == companyId);
+        Load();
+        SetStatus("Category and company lists refreshed; the product form was kept.", false);
     }
 
     /// <summary>The barcode list of the medicine on the form. A new, unsaved medicine has no id yet.</summary>

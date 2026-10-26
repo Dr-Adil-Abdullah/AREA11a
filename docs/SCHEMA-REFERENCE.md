@@ -1,11 +1,11 @@
 # SCHEMA REFERENCE — exact columns of the rebuilt database
 
 > Generated from the reference `src/lib/schema.ts` (migrations 001–013, verbatim) plus
-> Area11 migrations 014–025 (permissions, photos, own fields, barcodes, provisional money and reconciliation).
-> Verified by running all 25 files against SQLite in order. This is the authority for every SQL
+> Area11 migrations 014–026 (permissions, photos, own fields, barcodes, provisional money, reconciliation and catalog ordering).
+> Verified by running all 26 files against SQLite in order. This is the authority for every SQL
 > statement in `Area11.Core`.
 
-**35 tables** · 25 migrations · plus the `provisional_report_lines` view
+**35 tables** · 26 migrations · plus the `provisional_report_lines` view
 
 ## `_migrations`  (2 columns)
 
@@ -103,7 +103,7 @@ it; it is not a bypass and v0.35.9 does not delete that historical setting.
 | `active` | INTEGER | yes | `1` |
 | `created_at` | TEXT | yes | `datetime('now','localtime')` |
 
-## `companies`  (8 columns)
+## `companies`  (9 columns)
 
 | Column | Type | Not null | Default |
 |---|---|---|---|
@@ -115,8 +115,12 @@ it; it is not a bypass and v0.35.9 does not delete that historical setting.
 | `rep_name` | TEXT |  |  |
 | `rep_phone` | TEXT |  |  |
 | `visit_day` | INTEGER |  |  |
+| `sort_order` | INTEGER | yes | `0` |
 
 `visit_day` is 1 = Monday ... 7 = Sunday; NULL = no fixed day (migration 023, F-44).
+`sort_order` is added by append-only migration 026; existing company rows keep their ids, values and
+product links. Catalog reads order by `sort_order`, then case-insensitive name. Indexes are
+`idx_categories_parent_order` and `idx_companies_catalog_order`.
 
 ## `custom_fields`  (9 columns)
 

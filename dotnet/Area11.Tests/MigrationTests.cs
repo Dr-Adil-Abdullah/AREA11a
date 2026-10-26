@@ -150,7 +150,8 @@ public sealed class MigrationTests
         {
             var name = Path.GetFileName(source);
             if (!name.StartsWith("024_", StringComparison.Ordinal)
-                && !name.StartsWith("025_", StringComparison.Ordinal))
+                && !name.StartsWith("025_", StringComparison.Ordinal)
+                && !name.StartsWith("026_", StringComparison.Ordinal))
             {
                 File.Copy(source, Path.Combine(legacyFolder, name));
             }
@@ -184,7 +185,7 @@ VALUES(1, 1, 1, 1, 1, 1, 'tablet', '2026-10-20 10:00:00'),
       (2, 1, 2, 2, 2, 2, 'tablet', '2026-10-20 10:00:00');");
             });
 
-            Assert.Equal(2, runner.ApplyPending(TestDatabase.MigrationsFolder)); // 024 money + 025 reconciliation
+            Assert.Equal(3, runner.ApplyPending(TestDatabase.MigrationsFolder)); // 024 money + 025 reconciliation + 026 catalog
 
             using var connection = database.Open();
             var lines = database.Query<MigrationMoneyRow>(connection,

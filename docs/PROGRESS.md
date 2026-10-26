@@ -22,7 +22,7 @@ features and the four phases.
 |---|---|
 | ✅ | finished - the code is written, compiled on the owner's PC, and tested (or its test is named in the row) |
 | 🟡 | the code is finished; **one action in the shop** still has to prove it (the action is written in the row) |
-| ⬜ | not started - **there are none at v0.35.9** |
+| ⬜ | not started - **there are none at v0.35.10** |
 | 🧪 | a test case covers this row in `Area11.Tests` (the count is checked against `EXPECTED` on every run) |
 
 > **How to read a ✅.** It means the code exists, is covered by a named test, and the solution compiled
@@ -47,7 +47,7 @@ features and the four phases.
 > four red tests are why v0.35.2 exists. Those behaviours rest on **769 cases** plus that one green
 > suite, and the five 🟡 rows wait for one action each in the shop.
 
-> **Board at v0.35.9 (Onyx):** 57 features - **52 ✅ / 5 🟡 / 0 ⬜ (91.2% / 8.8%)**. Every feature
+> **Board at v0.35.10 (Merlot):** 57 features - **52 ✅ / 5 🟡 / 0 ⬜ (91.2% / 8.8%)**. Every feature
 > is written, **the program compiles on Windows**, and - new on 23 Oct 2026 - **the window opened and a
 > person signed in on the owner's PC** (v0.33.0: `Signed in: Owner`). The 5 🟡 are the ones only the shop
 > PC can prove, and each is **one action**: one medicine added with a batch (F-08), one delivery entered
@@ -60,29 +60,30 @@ features and the four phases.
 > v0.29.0 moved **F-12 (the dashboard)** to ✅ after giving it 20 tests; the mock database used for
 > them was rebuilt from all 23 migrations and every SQL statement was run on it before shipping.
 
-## Where we stand (v0.35.9)
+## Where we stand (v0.35.10)
 
 | Question | Number | What it means |
 |---|---|---|
 | Features in the board | **57** | **52 ✅ done (91.2%)**, **5 🟡 written but only the shop PC can prove them (8.8%)**, 0 ⬜ not started |
-| Code | **66,463 lines** of C# (Core 30,592 · Desktop 17,218 · Tests 18,653) + **8,019 lines** of XAML | 269 C# files, 38 XAML files |
-| The shop's rules | **49 service files** in `Area11.Core`, **41 model files**, **35 database tables** over 25 migrations | migration 025 adds durable PR-to-sale-line reconciliation without editing original bill rows |
-| Screens | **36 views**, **36 page view-models**, 1,323 XAML bindings (179 made `Mode=OneWay`) | every binding checked against its page's own view-model or row type |
-| Tests | **814 cases** in 64 files | 752 facts + 16 theories (62 inline rows) |
+| Code | **67,669 lines** of C# (Core 31,026 · Desktop 17,699 · Tests 18,944) + **8,185 lines** of XAML | 273 C# files, 39 XAML files |
+| The shop's rules | **49 service files** in `Area11.Core`, **41 model files**, **35 database tables** over 26 migrations | migration 026 adds company catalog ordering without changing existing company/product rows |
+| Screens | **37 views**, **36 page view-models**, 1,365 XAML bindings (188 made `Mode=OneWay`) | every binding checked against its view-model or row type, including the catalog window |
+| Tests | **820 cases** in 65 files | 758 facts + 16 theories (62 inline rows) |
 | Static gates | **45 checks** in `tools/check_repo.py` | ~8 seconds; not a compiler - see the warning at the end |
 | Reporting a fault | **one file** - `tools\SEND-REPORT.cmd` (v0.30.3, D-78) | build, SDK, git state, shop folder (no rows), whole crash report, last build/test output |
-| Versions shipped | 0.1.0 -> **0.35.9** | each with its own brand colour (D-24) |
+| Versions shipped | 0.1.0 -> **0.35.10** | each with its own brand colour (D-24) |
 | Owner decisions recorded | **D-00 … D-93** | `docs/OWNER-DECISIONS.md`, in Urdu |
 
 **What is actually left.** Nothing in the feature list is unbuilt, and as of v0.31.0 that sentence is
 true in the strict sense it was always meant: the last gap the *specification* admitted in its own text -
 *"a per-user shift report is not built"* (Spec 7.2.7) - is now written, tested and on the Shift page (F-56),
 and the handover the board carried as *"still to come"* since v0.4.0 is written and printed (F-55).
-**Six of the owner's 116 numbered rules are not fully finished** (the rules matrix is the authority;
+**Five of the owner's 116 numbered rules are not fully finished** (the rules matrix is the authority;
 it differs from this board on purpose, because it counts *rules* and this page counts *features*):
-**E-12** ⬜ a screen that renames the app's own words; **S-05** 🟡 (waits for E-12); **E-04** 🟡
-categories and companies cannot yet be renamed, put away or ordered; **Z-05** 🟡 no undo of a finished
-action; **T-05** 🟡 reports are tables of numbers, not drawn charts; **T-10** 🟡 CSV, not native `.xlsx`.
+**E-12** ⬜ a screen that renames the app's own words; **S-05** 🟡 (waits for E-12); **Z-05** 🟡
+no undo of a finished action; **T-05** 🟡 reports are tables of numbers, not drawn charts;
+**T-10** 🟡 CSV, not native `.xlsx`. **E-04 is now done** in v0.35.10: catalog create/rename/order,
+soft put-away/restore, two-level parent filtering and unlink-only semantics are covered by `CatalogTests`.
 The five 🟡 rows below are not gaps in the code; they are promises only the shop PC can
 keep, and each is **one action**: one medicine added with a batch (F-08), one real delivery
 (F-09), one real bill printed (F-10), one line in the black box from a real action (F-04), and the **scan**
@@ -101,13 +102,13 @@ of books.
 | ID | Feature | State | Where | Test | Done when |
 |---|---|---|---|---|---|
 | F-01 | Solution with three projects (Core / Desktop / Tests), .NET 10, MVVM | ✅ | `Area11.sln`, `dotnet/Directory.Build.props` | - | **compiled on Windows**, 23 Oct 2026, v0.30.9: the launcher printed **`BUILD OK - the program was compiled`** for the first time - Core and Tests had compiled before, the WPF project had not. (The window then stopped on a binding fault of its own - see v0.31.1 and F-16.) |
-| F-02 | Exact database schema, migrations 001-025, 35 business tables + provisional report view | ✅ | `dotnet/Area11.Core/Data/Migrations/` | `MigrationTests` 🧪 | an old `area11.db` opens unchanged; 024 backfills provisional money and 025 adds sale-line allocations without guessing old links |
+| F-02 | Exact database schema, migrations 001-026, 35 business tables + provisional report view | ✅ | `dotnet/Area11.Core/Data/Migrations/` | `MigrationTests` + `CatalogTests` 🧪 | an old `area11.db` opens unchanged; 024 backfills provisional money, 025 adds sale-line allocations without guessing old links, and 026 adds company ordering without changing existing rows |
 | F-03 | Settings service, 89 keys, every change audited, saved in one transaction | ✅ | `Area11.Core/Services/SettingsService.cs` | `SettingsTests` 🧪 | bad values are refused before they reach the database |
 | F-04 | Audit black box (old -> new values, never deleted) | 🟡 | `Services/AuditService.cs`, `Utils/AuditDiff.cs` | `AuditDiffTests` 🧪 | every module writes (U-27) |
 | F-05 | Sign-in: owner password, staff PIN, 5 tries -> 2 minute lock | ✅ | `Services/AuthService.cs`, `Utils/PasswordHasher.cs` | `PasswordHasherTests` 🧪 | owner signs in on Windows - **done 23 Oct 2026 on v0.33.0**: `app-2026-10-23.log` shows `13:53:31 Signed in: Owner` |
 | F-06 | Per-person permissions stored in the database | ✅ | `Migr. 014`, `Services/PermissionService.cs`, `Views/SettingsView.xaml` | `PermissionTests` 🧪 | the owner ticks/unticks in Settings; every change is audited |
 | F-07 | Permanent numbering `INV` / `PINV` / `RET` / `Q` / `SR` / `PR` / `ST` | ✅ | `Services/NumberingService.cs`, `Services/SettingsService.cs` | `NumberingTests` 🧪 | no duplicate numbers across independent settings instances, inside one transaction, or after rollback |
-| F-08 | Products: search, create, edit, box/strip/unit packing, prices, rack | 🟡 | `Services/ProductService.cs`, `Views/ProductsView.xaml` | - | owner adds a medicine with a batch |
+| F-08 | Products: search, create, edit, box/strip/unit packing, prices, rack, category/company management | 🟡 | `Services/ProductService.cs`, `Views/ProductsView.xaml`, `Views/CatalogWindow.xaml` | `CatalogTests` 🧪 | owner adds a medicine with a batch |
 | F-09 | Purchases `PINV`: supplier, batch, expiry, sample lines, payable | 🟡 | `Services/PurchaseService.cs`, `Views/PurchasesView.xaml` | `PurchaseTests` 🧪 | one real delivery enters stock |
 | F-10 | Counter `INV`: FEFO, box/strip/unit, discount guard, round-off, cash change, credit | 🟡 | `Services/SaleService.cs`, `Services/StockPolicy.cs`, `Views/PosView.xaml` | `SaleTests` + `NegativeStockPolicyTests` 🧪 | **D-93:** one real bill prints; repeated lines/shared batches cannot oversell, a refusal preserves the cart and number, and exact zero succeeds |
 | F-11 | Customers: quick create **at the counter** (v0.29.0) and on the khata page, credit limit | ✅ | `Services/PartnerService.cs`, `ViewModels/PosViewModel.cs` + Edit panel on the khata page | v0.29.0 | a new customer is added at the counter **without losing the cart**, a credit bill lands on their account, and the owner corrects a name, phone, category and limit without touching the udhaar |
@@ -191,30 +192,31 @@ of books.
 
 | Check | How | State |
 |---|---|---|
-| C# parses with the real grammar (**267 files**) | `python3 tools/check_repo.py` | ✅ 0 error nodes |
+| C# parses with the real grammar (**273 files**) | `python3 tools/check_repo.py` | ✅ 0 error nodes |
 | Every file imports the namespaces it uses (`System.IO` … **and every type this repo declares**) | `python3 tools/check_repo.py` | ✅ |
-| Every SQL statement prepares against the real schema (**679 statements**) | `python3 tools/check_repo.py` | ✅ 0 invalid |
+| Every SQL statement prepares against the real schema (**760 statements**) | `python3 tools/check_repo.py` | ✅ 0 invalid |
 | XAML / csproj / props are valid XML | `python3 tools/check_repo.py` | ✅ |
 | Every XAML binding matches its view-model | `python3 tools/check_repo.py` | ✅ |
 | Every `StaticResource` key exists, in **every** XAML file | `python3 tools/check_repo.py` | ✅ |
 | Every column a query maps has a property on its model | `python3 tools/check_repo.py` | ✅ (22nd check) |
 | No member of a model is read off its `ServiceResult` envelope (CS1061) | `python3 tools/check_repo.py` | ✅ new in v0.6.1 |
 | Every `new XService(...)` matches its constructor (CS7036/CS1501) | `python3 tools/check_repo.py` | ✅ |
-| Migrations 001-025 produce 35 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
+| Migrations 001-026 produce 35 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
 | **Compiles on Windows** | `dotnet build Area11.sln` | ✅ 20 Oct 2026 (v0.1.1); re-check after each release |
-| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ `v0.35.9 (Onyx, #2F3640)` |
-| Every `StaticResource` key exists (**1,434 keys**) | `python3 tools/check_repo.py` | ✅ |
-| Every binding matches its view-model (**1,324 bindings**) | `python3 tools/check_repo.py` | ✅ |
+| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ `v0.35.10 (Merlot, #722F37)` |
+| Every `StaticResource` key exists (**1,471 keys**) | `python3 tools/check_repo.py` | ✅ |
+| Every binding matches its view-model (**1,365 bindings**) | `python3 tools/check_repo.py` | ✅ |
 | The three script banners match the build | `python3 tools/check_repo.py` | ✅ 3 files |
 | The board and the printable tick-list agree | `python3 tools/make_checklist.py` + the checker | ✅ 57 / 52 / 5 / 0 |
 | **Printer prints (owner's code 6)** | SYSTEM -> *Printer & scanner*, pick the printer, **Print test slip** | 🟡 v0.22.1 fixes the cause (the program opened the print server, not the default printer) - the owner's next slip is the proof |
-| **814 tests written; Onyx Windows run pending** | `dotnet test` (or `tools\RUN-TESTS.cmd`) | 🟡 **v0.35.9 Onyx has not been compiled or executed here (no .NET SDK): the owner must see `ALL GREEN - 814 of 814`.** ✅ Prior evidence: Cypress passed 789/789 in 1 m 6 s; Cedar passed 782/782. |
+| **820 tests written; Merlot Windows run pending** | `dotnet test` (or `tools\RUN-TESTS.cmd`) | 🟡 **v0.35.10 Merlot has not been compiled or executed here (no .NET SDK): the owner must see `ALL GREEN - 820 of 820`.** ✅ Prior evidence: Cypress passed 789/789 in 1 m 6 s; Cedar passed 782/782. |
 
 ## Change log
 
 | Date | What |
 |---|---|
+| 26 Oct 2026 | **v0.35.10 Merlot - E-04 category/company management is complete.** Products opens a management window for create, rename, owner order, soft put-away and restore. Categories support unlimited rows, one optional parent and a two-level Core guard; parent filters include children. Migration 026 adds company ordering while preserving existing rows. Put-away only unlinks current product references and writes the count in the audit; no product, batch, bill, payment or stock movement is deleted, and restore does not invent links. Company phone/notes/rep/visit-day fields survive. Quick-add and management share Core permission, case-insensitive uniqueness and active-link checks. Six public-service facts added: **820 cases in 65 files; 45 static checks; 273 C# files; 26 migrations/35 tables; 760 SQL statements prepared; 1,365 XAML bindings checked; 8/8 E-04 SQLite rehearsal groups.** No .NET SDK here: the owner must see `ALL GREEN - 820 of 820`; Onyx's 814-case baseline and Cypress's 789/789 are prior evidence. |
 | 26 Oct 2026 | **v0.35.9 Onyx - D-93 retires negative stock for every new decrement.** A central `StockPolicy` guards selected batch and active product total with a conditional update inside each existing immediate transaction. Sales, write-offs, goods drawings, supplier returns and PR cancellation use it; no legacy setting or owner bypass remains. Sale planning cumulatively reserves repeated products and shared FEFO batches before numbering; exact zero (including fractional REAL quantities) succeeds, while shortages preserve the cart/form and roll back all rows and numbers. Existing negatives are never silently zeroed: historical reads/returns/reports still work, Stock minus stays read-only, and physical stock-take makes the audited correction. PR cancellation remains stock-only with no payment or report-reversal row. **814 cases in 64 files; 45 static checks; 269 C# files; 25 migrations/35 tables; 724 SQL statements prepared; 7/7 SQLite rehearsal groups plus 500 guarded attempts.** No .NET SDK here: the owner must see `ALL GREEN - 814 of 814`; Cypress's 789/789 is prior verified evidence. |
 | 26 Oct 2026 | **v0.35.8 Lapis - PR links now reconcile the original sale lines and close the double-return path.** Migration 025 stores each PR line's quantity, expected bill value and actual refund against real `sale_items`; linking still writes no stock movement, payment or khata event and never edits the original bill. RET reads those allocations and also applies a whole-bill cumulative refund cap. Wrong products/insufficient quantities roll back; split lines, repeated products and multiple PRs accumulate; over/under refunds stay visible instead of being rewritten. Old header-only links need one same-bill repair before another RET. Nine cases added (**798 total, 63 files**), four unrealistic link fixtures corrected, 267 C# files, 25 migrations and 35 tables. All 44 static checks, the real 023→025 SQLite upgrade and 500 independent allocation-model cases pass. **No .NET SDK here: Lapis still needs the owner's `ALL GREEN - 798 of 798`; Cypress's 789/789 is prior evidence.** |
 | 26 Oct 2026 | **v0.35.7 Cypress - bill returns and khata recovery use one chronological rule.** A later collection now moves only the remaining refundable value from khata to cash: a Rs 600 credit bill with Rs 500 collected refunds **Rs 500 cash + Rs 100 khata**, never Rs 600 off the khata. Collections remain oldest-first, while a return reduces its own bill. The shared replay also drives ageing and reprints; later bills cannot rewrite an old recovery slip, and carried-in khata remains visible without an invented date. Final packed-unit remainders keep the remaining entered quantity. Seven regressions added, **789 cases**, 266 C# files; no migration and no historical rows rewritten. Cedar is prior owner evidence at **782/782**. Cypress subsequently passed the owner's Windows run: **789/789 in 1 m 6 s, failed 0 — ALL GREEN**. |

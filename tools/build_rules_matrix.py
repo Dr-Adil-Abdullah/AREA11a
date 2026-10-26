@@ -93,7 +93,7 @@ STATUS: dict[str, tuple[str, str, str]] = {
     "E-01": ("DONE", "the `settings` table + `SettingsService` (89 keys) and the Settings page; nothing in the shop is hard-coded", "SettingsTests.*"),
     "E-02": ("DONE", "branding keys (`store.*`, `brand.*`) edited on Settings -> Shop", "SettingsTests.*"),
     "E-03": ("DONE", "`ReceiptService` prints `store.*` on every bill", "ReceiptTests.*"),
-    "E-04": ("WIP", "categories and companies can be added and listed; renaming, putting away and ordering them is not built yet", "-"),
+    "E-04": ("DONE", "`ProductService` + Products → Manage categories and companies: create, rename, two-level parents, order, soft put-away/restore and unlink-only product references; Core permissions and old/new audit; migration 026 orders companies", "CatalogTests.*"),
     "E-05": ("DONE", "`CustomFieldService` + SYSTEM → Own fields (F-42): text, number, amount, date, list, yes/no, photo", "CustomFieldTests"),
     "E-06": ("DONE", "`products.box_strips` / `strip_tablets`", "SaleTests (unit multiplier)"),
     "E-07": ("DONE", "the three bands are read from `expiry.levels` (fixed in v0.3.10, F-29)", "ExpiryTests.*"),

@@ -22,8 +22,8 @@ this file tracks the owner's numbered rules.
 ## Summary
 
 - rules in the specification: **116**
-- ✅ done: **90**
-- 🟡 written / partial: **5**
+- ✅ done: **91**
+- 🟡 written / partial: **4**
 - ⬜ not started: **1**
 - 🔁 standing rules: **20**
 
@@ -95,7 +95,7 @@ Nothing hard-coded; every label, price and rule from settings.
 | **E-01** | Nothing is hard-coded — everything comes from data/settings. | ✅ done | the `settings` table + `SettingsService` (89 keys) and the Settings page; nothing in the shop is hard-coded | SettingsTests.* | - |
 | **E-02** | Branding: app name, logo, colour/theme — changeable from Settings. | ✅ done | branding keys (`store.*`, `brand.*`) edited on Settings -> Shop | SettingsTests.* | - |
 | **E-03** | Shop information: name, address, phone, terms — printed on the receipt. | ✅ done | `ReceiptService` prints `store.*` on every bill | ReceiptTests.* | Phase 1 |
-| **E-04** | Categories: create, change, delete, order (unlimited + sub-categories). | 🟡 written / partial | categories and companies can be added and listed; renaming, putting away and ordering them is not built yet | - | - |
+| **E-04** | Categories: create, change, delete, order (unlimited + sub-categories). | ✅ done | `ProductService` + Products → Manage categories and companies: create, rename, two-level parents, order, soft put-away/restore and unlink-only product references; Core permissions and old/new audit; migration 026 orders companies | CatalogTests.* | - |
 | **E-05** | Custom fields: owner makes them — text / number / amount / photo (Spec §2.2). | ✅ done | `CustomFieldService` + SYSTEM → Own fields (F-42): text, number, amount, date, list, yes/no, photo | CustomFieldTests | Phase 4 |
 | **E-06** | Unit and packing: per product 1 Box = X Strips = Y Tablets — changeable later. | ✅ done | `products.box_strips` / `strip_tablets` | SaleTests (unit multiplier) | - |
 | **E-07** | Expiry levels: days + colour from settings (levels 1/2/3). | ✅ done | the three bands are read from `expiry.levels` (fixed in v0.3.10, F-29) | ExpiryTests.* | Phase 2 |

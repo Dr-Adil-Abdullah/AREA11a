@@ -131,6 +131,11 @@
                                     Command="{Binding AddCompanyCommand}" />
                         </Grid>
 
+                        <Button Content="Manage categories and companies…"
+                                Style="{StaticResource GhostButton}" Margin="0,8,0,0"
+                                Command="{Binding ManageCatalogCommand}"
+                                ToolTip="Rename, order, put away or bring back. Products and historical records are never deleted." />
+
                         <TextBlock Text="Pack formula — 1 box = ? strips, 1 strip = ? tablets" Style="{StaticResource FieldLabel}" />
                         <Grid>
                             <Grid.ColumnDefinitions>

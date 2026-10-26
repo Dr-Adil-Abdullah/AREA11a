@@ -42,11 +42,11 @@ Live counts are in [`docs/PROGRESS.md`](docs/PROGRESS.md) (features) and
 **Honest note:** the agent's build machine is Linux with no .NET SDK, so nothing in `dotnet/` is
 compiled there. Every change is checked statically (C# parses, explicit usings, XAML, resources,
 every binding against its view model, every SQL statement against the real schema, every mapped
-column against its model, migrations executed on SQLite) and **814 test cases** are written for the
+column against its model, migrations executed on SQLite) and **820 test cases** are written for the
 Windows run. The owner's own machine has built the whole solution and run earlier suites green; the latest
 verified run is **789 of 789 in 1 m 6 s** on v0.35.7 Cypress. The whole solution also built with
 `0 Warning(s), 0 Error(s)` on v0.33.0, with the sign-in window open and `Signed in: Owner` in the log.
-The current v0.35.9 Onyx release still needs his `tools\RUN-TESTS.cmd` run (**814 expected**). See
+The current v0.35.10 Merlot release still needs his `tools\RUN-TESTS.cmd` run (**820 expected**). See
 [`docs/VERSIONS.md`](docs/VERSIONS.md) for which build he has.
 
 ---
@@ -123,8 +123,8 @@ Step-by-step help, including what to do when the build fails: [`docs/BUILD-ON-WI
 ## Database
 
 `dotnet/Area11.Core/Data/Migrations/` holds the **original 13 migrations verbatim** plus the
-append-only Area11 migrations `014`-`025` (permissions, photos, stock detail, barcodes, provisional
-money and reconciliation). They create **35 tables** (including the `_migrations` ledger) plus the
+append-only Area11 migrations `014`-`026` (permissions, photos, stock detail, barcodes, provisional
+money, reconciliation and catalog ordering). They create **35 tables** (including the `_migrations` ledger) plus the
 `provisional_report_lines` view, and run inside `BEGIN IMMEDIATE`, so an existing `area11.db` opens
 unchanged and no data is lost when the app is updated. D-93 adds no migration and never rewrites a
 historical negative quantity to zero.

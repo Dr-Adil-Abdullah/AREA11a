@@ -1,0 +1,161 @@
+<Window x:Class="Area11.Desktop.Views.CatalogWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Categories and companies - Area11" Height="720" Width="1100"
+        MinHeight="620" MinWidth="940" WindowStartupLocation="CenterOwner"
+        Background="{StaticResource CanvasBrush}">
+    <Grid Margin="18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+            <TextBlock Text="Categories and companies" Style="{StaticResource PageTitle}" />
+            <TextBlock Style="{StaticResource PageSubtitle}" TextWrapping="Wrap"
+                       Text="Add, rename, order, put away or bring back. Putting away unlinks current products; it never deletes products, batches, bills or stock history." />
+            <Button Content="Refresh lists" Style="{StaticResource GhostButton}" HorizontalAlignment="Left"
+                    Margin="0,8,0,0" Command="{Binding RefreshCommand}" />
+        </StackPanel>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Style="{StaticResource Card}" Padding="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <DockPanel Grid.Row="0" Margin="0,0,0,8">
+                        <TextBlock Text="Categories" Style="{StaticResource SectionTitle}" DockPanel.Dock="Left" />
+                        <TextBlock Text="{Binding CategoryCountText}" Style="{StaticResource FieldHint}"
+                                   HorizontalAlignment="Right" />
+                    </DockPanel>
+
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Categories}"
+                              SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"
+                              AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                              CanUserDeleteRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                              RowHeaderWidth="0" SelectionMode="Single" MinHeight="170">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Name" Width="*" Binding="{Binding Name, Mode=OneWay}" />
+                            <DataGridTextColumn Header="Parent" Width="*" Binding="{Binding ParentLabel, Mode=OneWay}" />
+                            <DataGridTextColumn Header="Order" Width="Auto" Binding="{Binding SortOrder, Mode=OneWay}" />
+                            <DataGridTextColumn Header="Products" Width="Auto" Binding="{Binding ProductCount, Mode=OneWay}" />
+                            <DataGridTextColumn Header="State" Width="Auto" Binding="{Binding ActiveLabel, Mode=OneWay}" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <TextBlock Grid.Row="1" Text="No categories yet. Choose New category below."
+                               Style="{StaticResource FieldHint}" TextWrapping="Wrap"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               IsHitTestVisible="False"
+                               Visibility="{Binding HasNoCategories, Converter={StaticResource BoolToVis}}" />
+
+                    <Border Grid.Row="2" Background="{StaticResource CanvasBrush}" CornerRadius="8"
+                            Padding="10" Margin="0,10,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Category details" Style="{StaticResource FieldLabel}" />
+                            <TextBlock Text="Name" Style="{StaticResource FieldHint}" Margin="0,6,0,0" />
+                            <TextBox Text="{Binding CategoryName, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Text="Parent (optional; only two levels)" Style="{StaticResource FieldHint}" Margin="0,6,0,0" />
+                            <ComboBox ItemsSource="{Binding ParentOptions}" DisplayMemberPath="CatalogLabel"
+                                      SelectedItem="{Binding SelectedParent, Mode=TwoWay}" />
+                            <TextBlock Text="Order (lower appears first)" Style="{StaticResource FieldHint}" Margin="0,6,0,0" />
+                            <TextBox Text="{Binding CategoryOrderText, UpdateSourceTrigger=PropertyChanged}" />
+                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                <Button Content="New category" Style="{StaticResource GhostButton}" Margin="0,0,6,0"
+                                        Command="{Binding NewCategoryCommand}" IsEnabled="{Binding CanEdit}" />
+                                <Button Content="Save category" Style="{StaticResource PrimaryButton}" Margin="0,0,6,0"
+                                        Command="{Binding SaveCategoryCommand}" IsEnabled="{Binding CanEdit}" />
+                                <Button Content="{Binding CategoryActionLabel}" Style="{StaticResource GhostButton}"
+                                        Command="{Binding ToggleCategoryCommand}" IsEnabled="{Binding CanToggleCategory}" />
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,8,0,0"
+                                       Text="A parent filter includes its children. Putting away a parent leaves its children active and unlinks only products assigned directly to that parent." />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource Card}" Padding="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <DockPanel Grid.Row="0" Margin="0,0,0,8">
+                        <TextBlock Text="Companies" Style="{StaticResource SectionTitle}" DockPanel.Dock="Left" />
+                        <TextBlock Text="{Binding CompanyCountText}" Style="{StaticResource FieldHint}"
+                                   HorizontalAlignment="Right" />
+                    </DockPanel>
+
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Companies}"
+                              SelectedItem="{Binding SelectedCompany, Mode=TwoWay}"
+                              AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                              CanUserDeleteRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                              RowHeaderWidth="0" SelectionMode="Single" MinHeight="170">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Name" Width="*" Binding="{Binding Name, Mode=OneWay}" />
+                            <DataGridTextColumn Header="Order" Width="Auto" Binding="{Binding SortOrder, Mode=OneWay}" />
+                            <DataGridTextColumn Header="Products" Width="Auto" Binding="{Binding ProductCount, Mode=OneWay}" />
+                            <DataGridTextColumn Header="State" Width="Auto" Binding="{Binding ActiveLabel, Mode=OneWay}" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <TextBlock Grid.Row="1" Text="No companies yet. Choose New company below."
+                               Style="{StaticResource FieldHint}" TextWrapping="Wrap"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               IsHitTestVisible="False"
+                               Visibility="{Binding HasNoCompanies, Converter={StaticResource BoolToVis}}" />
+
+                    <Border Grid.Row="2" Background="{StaticResource CanvasBrush}" CornerRadius="8"
+                            Padding="10" Margin="0,10,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Company details" Style="{StaticResource FieldLabel}" />
+                            <TextBlock Text="Name" Style="{StaticResource FieldHint}" Margin="0,6,0,0" />
+                            <TextBox Text="{Binding CompanyName, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Text="Order (lower appears first)" Style="{StaticResource FieldHint}" Margin="0,6,0,0" />
+                            <TextBox Text="{Binding CompanyOrderText, UpdateSourceTrigger=PropertyChanged}" />
+                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                <Button Content="New company" Style="{StaticResource GhostButton}" Margin="0,0,6,0"
+                                        Command="{Binding NewCompanyCommand}" IsEnabled="{Binding CanEdit}" />
+                                <Button Content="Save company" Style="{StaticResource PrimaryButton}" Margin="0,0,6,0"
+                                        Command="{Binding SaveCompanyCommand}" IsEnabled="{Binding CanEdit}" />
+                                <Button Content="{Binding CompanyActionLabel}" Style="{StaticResource GhostButton}"
+                                        Command="{Binding ToggleCompanyCommand}" IsEnabled="{Binding CanToggleCompany}" />
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,8,0,0"
+                                       Text="Phone, notes, medical-representative details and visit day stay on this row. Restore does not recreate former product links." />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <StackPanel Grid.Row="2" Margin="0,10,0,0">
+            <TextBlock Text="Only the owner or a manager can change the catalog. Core checks this again on every write."
+                       Style="{StaticResource FieldHint}" TextWrapping="Wrap"
+                       Visibility="{Binding IsReadOnly, Converter={StaticResource BoolToVis}}" />
+            <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap" FontSize="11.5">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsStatusError}" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                                <Setter Property="FontWeight" Value="Bold" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </StackPanel>
+    </Grid>
+</Window>

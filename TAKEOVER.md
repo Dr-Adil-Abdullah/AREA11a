@@ -7,10 +7,10 @@
 > اِس فائل میں یہ سب ہے: پروگرام کیا ہے، ابھی کہاں کھڑا ہے، **کیا باقی ہے**، کیا **کبھی نہیں** کرنا،
 > اور ایک نیا ورژن کیسے نکالنا ہے۔ آپ کے لیے چھوٹی اردو فائل: [`docs/HANDOVER-FOR-OWNER-URDU.md`](docs/HANDOVER-FOR-OWNER-URDU.md)۔
 
-**Status:** v0.35.9 · Onyx · `#2F3640` — **default branch `main`**; this repair is on the current
+**Status:** v0.35.10 · Merlot · `#722F37` — **default branch `main`**; this repair is on the current
 working branch `arena/60395e95-area11a` until its pull request is merged.
 
-*Last updated: 26 October 2026, after D-93 negative-stock retirement was implemented and all 45 static checks plus the SQLite policy rehearsal passed. Onyx has **814 written cases** and still needs the owner's Windows run; Cypress's **789/789** is prior verified evidence.*
+*Last updated: 26 October 2026, after E-04 category/company management was implemented and all 45 static checks plus the SQLite migration rehearsal passed. Merlot has **820 written cases** and still needs the owner's Windows run; D-93 remains in force and Cypress's **789/789** is prior verified evidence.*
 
 ---
 
@@ -56,16 +56,16 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 
 ## 3. Where it stands right now (read this twice)
 
-**Current source: v0.35.9 "Onyx" implements D-93 complete negative-stock retirement for new transactions. Its 814 cases are written but not executed here (no .NET SDK). Prior owner evidence: v0.35.7 "Cypress" passed 789/789 in 1 m 6 s; v0.35.6 "Cedar" passed 782/782 in 1 m 3 s.**
+**Current source: v0.35.10 "Merlot" completes E-04 category/company management while retaining D-93 negative-stock retirement. Its 820 cases are written but not executed here (no .NET SDK). Prior owner evidence: v0.35.7 "Cypress" passed 789/789 in 1 m 6 s; v0.35.6 "Cedar" passed 782/782 in 1 m 3 s.**
 
 | | |
 |---|---|
-| Test cases written | **814** in 64 files (`tools\RUN-TESTS.cmd` compares the run against `EXPECTED=814`) |
+| Test cases written | **820** in 65 files (`tools\RUN-TESTS.cmd` compares the run against `EXPECTED=820`) |
 | Static checks | **45**, all green: `OK - 45 checks, no problems` |
-| Owner's numbered rules | **116 - 90 ✅ done, 5 🟡 partial, 1 ⬜ (E-12), 20 standing** - see §4 |
+| Owner's numbered rules | **116 - 91 ✅ done, 4 🟡 partial, 1 ⬜ (E-12), 20 standing** - see §4 |
 | Feature board | **57 features — 52 ✅ done, 5 🟡 one shop action each, 0 ⬜ not started** (91.2 % / 8.8 %) |
-| Code size | 269 C# files (66,463 lines) + 38 XAML files (8,019 lines, 36 of them pages/windows); 49 services, 41 view models |
-| Database | 25 migrations → **35 business tables + provisional report view**, append-only, existing `area11.db` opens unchanged |
+| Code size | 273 C# files (67,669 lines) + 39 XAML files (8,185 lines, 37 of them pages/windows); 49 services, 42 view models |
+| Database | 26 migrations → **35 business tables + provisional report view**, append-only, existing `area11.db` opens unchanged |
 
 ### What the owner's own PC has already proved
 
@@ -79,6 +79,25 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 * On **v0.35.5** his next run compiled `Area11.Core` and `Area11.Tests` and reported
   **Failed: 0, Passed: 772, Total: 772 in 56 s — ALL GREEN**. This proves the numbering, session and
   Shift repairs together; it is not a claim that the Desktop installer or every page was exercised.
+
+### What v0.35.10 changes — E-04 catalog management is complete
+
+Products → **Manage categories and companies…** opens one window for create, rename, order,
+soft put-away and restore. Categories have unlimited rows, an optional parent and a two-level
+maximum enforced in Core; choosing a parent in `ProductService.Search` includes its children.
+Append-only migration 026 adds `companies.sort_order`, leaving every existing company, product and
+representative value in place. Rename/order/put-away/restore write old/new audit entries in the same
+immediate transaction as the change; cashier writes and case-only duplicate names are refused.
+
+Put-away is deliberately **not destructive delete**: only current product references are unlinked.
+Products, batches, bills, payments, stock movements and the catalog row itself remain. A parent can
+be put away without putting away its children. Restore never recreates old product links. Company
+phone, notes, rep name/phone and visit day are not rewritten by name/order management. Quick-add
+and the window use the same public ProductService methods, and new product links to inactive rows
+are refused. Six focused facts bring the written suite to **820 cases in 65 files**. All 45 static
+checks and an 8/8-group SQLite rehearsal (fresh 026 plus a real 025→026 upgrade) pass here; **Windows compilation/xUnit are still for
+the owner**, who must see `ALL GREEN - 820 of 820`. D-93 stock behavior and Lapis financial rules
+were not changed. Cloud, native `.xlsx`, custom labels, generic undo and charts were not pulled in.
 
 ### What v0.35.9 changes — D-93 retires negative stock for new work
 
@@ -221,7 +240,7 @@ walk-throughs in `HANDOFF.md` §4** — not missing modules. The unproven ones, 
    fallback), **the session ends by itself** (Settings choice, 12-hour ceiling), **no bill while the
    galla is closed** (the sell screen offers *Open a galla now*).
 
-**Six of the owner's 116 numbered rules are not fully finished** — this is the one place the rule
+**Five of the owner's 116 numbered rules are not fully finished** — this is the one place the rule
 matrix and the feature board differ, and both are telling the truth: every *feature* exists, but these
 *rules* have a piece missing. `docs/RULES-MATRIX.md` is generated from
 `tools/build_rules_matrix.py`; change the `STATUS` map there and regenerate, never edit the matrix.
@@ -230,7 +249,6 @@ matrix and the feature board differ, and both are telling the truth: every *feat
 |---|---|
 | **E-12** ⬜ | a screen that renames the app's **own words** (a bill's text comes from settings, the labels do not) |
 | **S-05** 🟡 | depends on E-12: a shop name or price reaches every page, an app word does not |
-| **E-04** 🟡 | categories and companies can be added and listed; **renaming, putting away and ordering** them is not built |
 | **Z-05** 🟡 | every audit line keeps old → new, but **undoing** a finished action is not built |
 | **T-05** 🟡 | reports are numbers and tables; **drawn charts** are not built |
 | **T-10** 🟡 | CSV import/export is written (Excel opens it); a native **`.xlsx`** writer is not used |
@@ -313,7 +331,7 @@ makes that absence mean something). `tools\SEND-REPORT.cmd` collects everything 
    not a permission.
 6. **Nothing is ever deleted.** Business rows use `active = 0`; the audit trail and sales are permanent.
 7. **Migrations are append-only**, run inside `BEGIN IMMEDIATE`, and re-check `_migrations` after the
-   lock. Add `026_*.sql` — never edit an existing file.
+   lock. Add `027_*.sql` — never edit an existing file.
 8. **Views contain no SQL and no business logic.** Services own every rule and transaction; a service
    method takes `User` when the rule depends on permissions.
 9. **Everything editable comes from `settings`** — shop name, wording, limits, printer width, colour
@@ -342,7 +360,7 @@ docs/PROGRESS.md                     ← the board row: state, files, test, "don
 ```
 
 `Area11.Tests` may reference **only `Area11.Core`** — tests must use public code. `TestDatabase` is a
-temporary SQLite database with all 25 migrations and seed data; `TestData` opens a drawer so that every
+temporary SQLite database with all 26 migrations and seed data; `TestData` opens a drawer so that every
 bill in the suite goes through the real galla door.
 
 ---
@@ -485,14 +503,14 @@ honest caveat about what is not yet proven. If he asks for a printable status, r
 
 | Path | What is in it |
 |---|---|
-| `dotnet/Area11.Core/Data/Database.cs`, `StoragePlan.cs`, `Migrations/001…025` | connection, WAL / share mode, the schema |
-| `dotnet/Area11.Core/Services/` (47) | every rule: `SaleService`, `PurchaseService`, `ShiftService`, `SettingsService`, `AuthService`, `PermissionService`, `ReportService`, `BackupService`, `InstallService`, `SyncService`, `HardwareService` … |
+| `dotnet/Area11.Core/Data/Database.cs`, `StoragePlan.cs`, `Migrations/001…026` | connection, WAL / share mode, the schema |
+| `dotnet/Area11.Core/Services/` (49) | every rule: `SaleService`, `PurchaseService`, `ShiftService`, `SettingsService`, `AuthService`, `PermissionService`, `ReportService`, `BackupService`, `InstallService`, `SyncService`, `HardwareService` … |
 | `dotnet/Area11.Core/Utils/` | `Money`, `Calc`, `AppPaths`, `BuildInfo`, `RunTrail`, `CommandGuard`, `TimeSource`, `NtpTime`, `SessionPolicy`, `SessionWatch`, `SessionHandover`, `ShopConfig`, `CrashLog` |
 | `dotnet/Area11.Desktop/AppServices.cs` | the composition root — a new service is constructed **here** |
 | `dotnet/Area11.Desktop/ViewModels/ShellViewModel.cs` | the frame, the menu, the session, the fault banner |
-| `dotnet/Area11.Desktop/Views/` (36) | the pages; `PosView`, `ProductsView`, `PurchasesView`, `ShiftView`, `HardwareView` … |
+| `dotnet/Area11.Desktop/Views/` (37) | the pages; `PosView`, `ProductsView`, `PurchasesView`, `ShiftView`, `HardwareView` … |
 | `dotnet/Area11.Desktop/Resources/Theme.xaml` | the three brand brushes |
-| `dotnet/Area11.Tests/` (64 files) | `TestDatabase`, `TestData`, one file per feature |
+| `dotnet/Area11.Tests/` (65 files) | `TestDatabase`, `TestData`, one file per feature |
 | `tools/check_repo.py` | the 45 static checks (read the docstring of a failing check) |
 | `tools/make_checklist.py`, `make_icon.py`, `build_rules_matrix.py` | the printable list, the icon, the rules matrix |
 | `tools/*.cmd`, `tools/install/*.ps1` | what the owner double-clicks: start, update, test, report, install, uninstall, share |
@@ -502,8 +520,8 @@ honest caveat about what is not yet proven. If he asks for a printable status, r
 
 ## 16. The first message to send him (copy, paste, adjust)
 
-> میں نے ریپو پڑھ لی ہے۔ ابھی حالت یہ ہے: **v0.35.9 (Onyx)** — D-93 کے 814 written cases اور 45 static checks مکمل ہیں،
+> میں نے ریپو پڑھ لی ہے۔ ابھی حالت یہ ہے: **v0.35.10 (Merlot)** — E-04 کے 820 written cases اور 45 static checks مکمل ہیں،
 > مگر Windows build/xUnit ابھی آپ کے کمپیوٹر پر کرنا باقی ہے۔ 57 فیچر میں 52 مکمل (91.2٪)، 5 میں صرف ایک ایک عمل باقی۔
 > سب سے پہلے آپ `git pull` کر کے `START-AREA11.bat` اور `tools\RUN-TESTS.cmd` چلائیں؛ مطلوبہ نتیجہ
-> `ALL GREEN - 814 of 814` ہے۔ مجھے مکمل کنسول بھیج دیں۔ اُس کے بعد F-08، F-09، F-10، F-04 اور F-46
+> `ALL GREEN - 820 of 820` ہے۔ مجھے مکمل کنسول بھیج دیں۔ اُس کے بعد F-08، F-09، F-10، F-04 اور F-46
 > کے وہ پانچ کام مکمل کرواؤں گا جن کے لیے دکان میں ایک ایک عمل درکار ہے۔ Cloud ابھی postponed ہے۔

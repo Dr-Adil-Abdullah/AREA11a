@@ -529,9 +529,9 @@ Full permission matrix: Section 7.4.
 
 5.3.2 **users** [orig concept] — name, role (owner/manager/cashier), password hash (owner) or PIN hash (staff), active flag. Default owner seeded at first start.
 
-5.3.3 **categories** — name, optional parent (max 2 levels), active. Five categories are seeded at first start (the specification's examples: Medicine, Surgical, Cosmetics, General, Baby Care).
+5.3.3 **categories** — name, optional parent (max 2 levels), owner-defined sort order, active. Five categories are seeded at first start (the specification's examples: Medicine, Surgical, Cosmetics, General, Baby Care).
 
-5.3.4 **companies** — name, active.
+5.3.4 **companies** — name, phone, notes, medical-representative name/phone/visit day, owner-defined sort order, active.
 
 5.3.5 **products** — name, generic/salt/formula, brand, barcode, category, company, room, rack, reorder level (minimum quantity), photo file name, `boxStrips`, `stripTablets`, cost, retail, VIP and doctor rates, active, custom-field values.
 
@@ -799,13 +799,13 @@ Full permission matrix: Section 7.4.
 
 8.2.1 Unlimited categories **and sub-categories** `[Spec §2.1]` — original supports two levels (e.g. `Medicines › Pain/Fever`). Choosing a parent in a filter includes all children.
 
-8.2.2 Create, rename, delete; **deleting only unlinks products, never deletes them**; old records remain safe `[E-14]`.
+8.2.2 Create, rename, order, put away and bring back; **putting away only unlinks current product references, never deletes them**. Child categories and all historical records remain; bringing a row back does not invent old product links `[E-14]`.
 
 8.2.3 Seeded at first start: five categories (Medicine, Surgical, Cosmetics, General, Baby Care).
 
 ### 8.3 Companies and representatives
 
-8.3.1 Company create / rename / delete (delete unlinks only).
+8.3.1 Company create / rename / order / put away / bring back (put-away unlinks only). Phone, notes and medical-representative fields remain intact, and restore does not recreate product links.
 
 8.3.2 Clicking a company shows **all its medicines** `[Spec §10.3.1]`.
 

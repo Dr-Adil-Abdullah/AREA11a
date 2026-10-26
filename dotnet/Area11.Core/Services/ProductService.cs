@@ -26,6 +26,10 @@ LEFT JOIN categories c ON c.id = p.category_id
 LEFT JOIN companies co ON co.id = p.company_id
 ";
 
+    private const int MaxCatalogNameLength = 120;
+    private const int MaxCatalogSortOrder = 1_000_000_000;
+    private const string SortOrderError = "Order must be a whole number from 0 to 1,000,000,000.";
+
     private readonly Database _db;
     private readonly AuditService _audit;
     private readonly LogService _log;
@@ -54,7 +58,9 @@ WHERE p.active = 1
        OR IFNULL(p.barcode, '') LIKE @like OR IFNULL(p.rack_no, '') LIKE @like
        OR EXISTS (SELECT 1 FROM product_barcodes pb
                   WHERE pb.product_id = p.id AND pb.active = 1 AND pb.barcode LIKE @like))
-  AND (@categoryId IS NULL OR p.category_id = @categoryId)
+  AND (@categoryId IS NULL OR p.category_id = @categoryId OR EXISTS (
+      SELECT 1 FROM categories child
+      WHERE child.id = p.category_id AND child.parent_id = @categoryId))
   AND (@companyId IS NULL OR p.company_id = @companyId)
   AND (@lowStock = 0 OR
        IFNULL((SELECT SUM(b.qty_base) FROM batches b WHERE b.product_id = p.id AND b.active = 1), 0) <= p.reorder_level)
@@ -179,6 +185,8 @@ ORDER BY p.name COLLATE NOCASE;",
         {
             var id = _db.Tx(connection =>
             {
+                EnsureActiveCatalogLinks(connection, input.CategoryId, input.CompanyId);
+
                 _db.Execute(connection, @"
 INSERT INTO products
     (name, generic, brand, barcode, category_id, company_id, rack_no, room, pack_size_label,
@@ -221,6 +229,10 @@ VALUES
 
             return ServiceResult<int>.Success(id);
         }
+        catch (ValidationException exception)
+        {
+            return ServiceResult<int>.Fail(exception.Message);
+        }
         catch (SqliteException exception) when (exception.Message.Contains("UNIQUE", StringComparison.OrdinalIgnoreCase))
         {
             return ServiceResult<int>.Fail("That barcode already belongs to another product.");
@@ -252,6 +264,8 @@ VALUES
                 {
                     throw new ValidationException("That product no longer exists.");
                 }
+
+                EnsureActiveCatalogLinks(connection, patch.CategoryId, patch.CompanyId);
 
                 var sets = new List<string>();
                 var args = new DynamicParameters();
@@ -434,13 +448,19 @@ VALUES
         }
     }
 
-    public ServiceResult<List<Category>> GetCategories()
+    public ServiceResult<List<Category>> GetCategories(bool activeOnly = true)
     {
         try
         {
             using var connection = _db.Open();
-            var rows = _db.Query<Category>(connection,
-                "SELECT id, name, parent_id, sort_order, active FROM categories WHERE active = 1 ORDER BY sort_order, name COLLATE NOCASE;");
+            var rows = _db.Query<Category>(connection, @"
+SELECT c.id, c.name, c.parent_id AS parentId, c.sort_order AS sortOrder, c.active,
+       parent.name AS parentName,
+       (SELECT COUNT(1) FROM products p WHERE p.category_id = c.id) AS productCount
+FROM categories c
+LEFT JOIN categories parent ON parent.id = c.parent_id
+" + (activeOnly ? "WHERE c.active = 1 " : string.Empty)
+                + "ORDER BY c.sort_order, c.name COLLATE NOCASE, c.id;");
             return ServiceResult<List<Category>>.Success(rows);
         }
         catch (Exception exception)
@@ -450,15 +470,18 @@ VALUES
         }
     }
 
-    public ServiceResult<List<Company>> GetCompanies()
+    public ServiceResult<List<Company>> GetCompanies(bool activeOnly = true)
     {
         try
         {
             using var connection = _db.Open();
             var rows = _db.Query<Company>(connection, @"
-SELECT id, name, phone, notes, rep_name AS repName, rep_phone AS repPhone,
-       visit_day AS visitDay, active
-FROM companies WHERE active = 1 ORDER BY name COLLATE NOCASE;");
+SELECT c.id, c.name, c.phone, c.notes, c.rep_name AS repName, c.rep_phone AS repPhone,
+       c.visit_day AS visitDay, c.active, c.sort_order AS sortOrder,
+       (SELECT COUNT(1) FROM products p WHERE p.company_id = c.id) AS productCount
+FROM companies c
+" + (activeOnly ? "WHERE c.active = 1 " : string.Empty)
+                + "ORDER BY c.sort_order, c.name COLLATE NOCASE, c.id;");
             return ServiceResult<List<Company>>.Success(rows);
         }
         catch (Exception exception)
@@ -468,84 +491,475 @@ FROM companies WHERE active = 1 ORDER BY name COLLATE NOCASE;");
         }
     }
 
-    /// <summary>“＋ New” inside the product form (U-18).</summary>
-    public ServiceResult<int> AddCategory(User actor, string name)
+    /// <summary>“＋ New” inside the product form (U-18), also used by catalog management (E-04).</summary>
+    public ServiceResult<int> AddCategory(
+        User actor,
+        string? name,
+        int? parentId = null,
+        int? sortOrder = null)
     {
         if (!actor.CanManage)
         {
-            return ServiceResult<int>.Fail("Only the owner or a manager can add categories.");
+            return ServiceResult<int>.Fail("Only the owner or a manager can change categories.");
         }
 
-        var clean = (name ?? string.Empty).Trim();
+        var clean = CleanCatalogName(name);
         if (clean.Length == 0)
         {
             return ServiceResult<int>.Fail("Enter a category name.");
         }
 
+        if (clean.Length > MaxCatalogNameLength)
+        {
+            return ServiceResult<int>.Fail("Keep the category name under 120 characters.");
+        }
+
+        if (sortOrder is not null && !IsValidSortOrder(sortOrder.Value))
+        {
+            return ServiceResult<int>.Fail(SortOrderError);
+        }
+
         try
         {
-            var id = _db.Tx(connection =>
+            return _db.Tx(connection =>
             {
-                _db.Execute(connection,
-                    "INSERT OR IGNORE INTO categories(name, sort_order, active, created_at) VALUES(@name, 0, 1, @at);",
-                    new { name = clean, at = Clock.Now() });
+                if (CatalogNameTaken(connection, "categories", clean, 0))
+                {
+                    return ServiceResult<int>.Fail(
+                        "That category name is already used, including by a category put away.");
+                }
 
-                var newId = Convert.ToInt32(_db.Scalar(connection,
-                    "SELECT id FROM categories WHERE name = @name;", new { name = clean }) ?? 0);
+                var parentError = CategoryParentError(connection, 0, parentId, null);
+                if (parentError is not null)
+                {
+                    return ServiceResult<int>.Fail(parentError);
+                }
 
-                _audit.Record(connection, actor, "Inventory", "category_create", "categories",
-                    newId.ToString(), newValue: $"{{\"name\":\"{clean}\"}}");
+                var order = sortOrder ?? NextSortOrder(connection, "categories");
+                if (!IsValidSortOrder(order))
+                {
+                    return ServiceResult<int>.Fail(SortOrderError);
+                }
 
-                return newId;
+                _db.Execute(connection, @"
+INSERT INTO categories(name, parent_id, sort_order, active, created_at)
+VALUES(@name, @parentId, @sortOrder, 1, @at);",
+                    new { name = clean, parentId, sortOrder = order, at = Clock.Now() });
+
+                var id = Convert.ToInt32(_db.Scalar(connection,
+                    "SELECT id FROM categories WHERE rowid = last_insert_rowid();") ?? 0);
+                var after = FindCategory(connection, id);
+                _audit.RecordChange(connection, actor, "Inventory", "category_create", "categories",
+                    id.ToString(), null, after);
+                return ServiceResult<int>.Success(id);
             });
-
-            return ServiceResult<int>.Success(id);
         }
         catch (Exception exception)
         {
             _log.Error($"Category '{clean}' could not be added.", exception);
-            return ServiceResult<int>.Fail("The category could not be saved.");
+            return ServiceResult<int>.Fail("The category could not be saved. " + exception.Message);
         }
     }
 
-    public ServiceResult<int> AddCompany(User actor, string name)
+    /// <summary>Rename, choose a top-level parent, or change order without touching product history.</summary>
+    public ServiceResult UpdateCategory(User actor, int id, string? name, int? parentId, int sortOrder)
     {
         if (!actor.CanManage)
         {
-            return ServiceResult<int>.Fail("Only the owner or a manager can add companies.");
+            return ServiceResult.Fail("Only the owner or a manager can change categories.");
         }
 
-        var clean = (name ?? string.Empty).Trim();
+        var clean = CleanCatalogName(name);
+        if (id <= 0 || clean.Length == 0)
+        {
+            return ServiceResult.Fail("Pick a category and enter its name.");
+        }
+
+        if (clean.Length > MaxCatalogNameLength)
+        {
+            return ServiceResult.Fail("Keep the category name under 120 characters.");
+        }
+
+        if (!IsValidSortOrder(sortOrder))
+        {
+            return ServiceResult.Fail(SortOrderError);
+        }
+
+        try
+        {
+            return _db.Tx(connection =>
+            {
+                var before = FindCategory(connection, id);
+                if (before is null)
+                {
+                    return ServiceResult.Fail("That category no longer exists.");
+                }
+
+                if (CatalogNameTaken(connection, "categories", clean, id))
+                {
+                    return ServiceResult.Fail(
+                        "That category name is already used, including by a category put away.");
+                }
+
+                var parentError = CategoryParentError(connection, id, parentId, before.ParentId);
+                if (parentError is not null)
+                {
+                    return ServiceResult.Fail(parentError);
+                }
+
+                if (before.Name == clean && before.ParentId == parentId && before.SortOrder == sortOrder)
+                {
+                    return ServiceResult.Success();
+                }
+
+                _db.Execute(connection, @"
+UPDATE categories SET name = @name, parent_id = @parentId, sort_order = @sortOrder
+WHERE id = @id;",
+                    new { name = clean, parentId, sortOrder, id });
+
+                var after = FindCategory(connection, id);
+                _audit.RecordChange(connection, actor, "Inventory", "category_update", "categories",
+                    id.ToString(), before, after);
+                return ServiceResult.Success();
+            });
+        }
+        catch (Exception exception)
+        {
+            _log.Error($"Category {id} could not be updated.", exception);
+            return ServiceResult.Fail("The category could not be saved. " + exception.Message);
+        }
+    }
+
+    /// <summary>
+    /// Soft put-away only. Products linked directly to this category become uncategorised; child
+    /// categories, products, batches, bills and stock movements remain. Restore never invents links.
+    /// </summary>
+    public ServiceResult SetCategoryActive(User actor, int id, bool active)
+    {
+        if (!actor.CanManage)
+        {
+            return ServiceResult.Fail("Only the owner or a manager can change categories.");
+        }
+
+        try
+        {
+            return _db.Tx(connection =>
+            {
+                var before = FindCategory(connection, id);
+                if (before is null)
+                {
+                    return ServiceResult.Fail("That category no longer exists.");
+                }
+
+                if (before.Active == active)
+                {
+                    return ServiceResult.Success();
+                }
+
+                if (active && CatalogNameTaken(connection, "categories", before.Name, id))
+                {
+                    return ServiceResult.Fail("Another category uses this name. Rename one before bringing it back.");
+                }
+
+                var unlinkedIds = new List<int>();
+                if (!active)
+                {
+                    unlinkedIds = _db.Query<int>(connection,
+                        "SELECT id FROM products WHERE category_id = @id ORDER BY id;", new { id });
+                    _db.Execute(connection, @"
+UPDATE products SET category_id = NULL, updated_at = @at WHERE category_id = @id;",
+                        new { at = Clock.Now(), id });
+                }
+
+                _db.Execute(connection, "UPDATE categories SET active = @active WHERE id = @id;",
+                    new { active, id });
+                var after = FindCategory(connection, id);
+                var details = active
+                    ? "Brought back. Former product links were not recreated."
+                    : $"Put away; unlinked {unlinkedIds.Count} product(s) [{string.Join(", ", unlinkedIds)}]. No product or historical record was deleted.";
+                _audit.RecordChange(connection, actor, "Inventory",
+                    active ? "category_restore" : "category_put_away", "categories", id.ToString(),
+                    before, after, details);
+                return ServiceResult.Success();
+            });
+        }
+        catch (Exception exception)
+        {
+            _log.Error($"Category {id} active state could not be changed.", exception);
+            return ServiceResult.Fail("The category could not be changed. " + exception.Message);
+        }
+    }
+
+    public ServiceResult<int> AddCompany(User actor, string? name, int? sortOrder = null)
+    {
+        if (!actor.CanManage)
+        {
+            return ServiceResult<int>.Fail("Only the owner or a manager can change companies.");
+        }
+
+        var clean = CleanCatalogName(name);
         if (clean.Length == 0)
         {
             return ServiceResult<int>.Fail("Enter a company name.");
         }
 
+        if (clean.Length > MaxCatalogNameLength)
+        {
+            return ServiceResult<int>.Fail("Keep the company name under 120 characters.");
+        }
+
+        if (sortOrder is not null && !IsValidSortOrder(sortOrder.Value))
+        {
+            return ServiceResult<int>.Fail(SortOrderError);
+        }
+
         try
         {
-            var id = _db.Tx(connection =>
+            return _db.Tx(connection =>
             {
-                _db.Execute(connection,
-                    "INSERT OR IGNORE INTO companies(name, active) VALUES(@name, 1);",
-                    new { name = clean });
+                if (CatalogNameTaken(connection, "companies", clean, 0))
+                {
+                    return ServiceResult<int>.Fail(
+                        "That company name is already used, including by a company put away.");
+                }
 
-                var newId = Convert.ToInt32(_db.Scalar(connection,
-                    "SELECT id FROM companies WHERE name = @name;", new { name = clean }) ?? 0);
+                var order = sortOrder ?? NextSortOrder(connection, "companies");
+                if (!IsValidSortOrder(order))
+                {
+                    return ServiceResult<int>.Fail(SortOrderError);
+                }
 
-                _audit.Record(connection, actor, "Inventory", "company_create", "companies",
-                    newId.ToString(), newValue: $"{{\"name\":\"{clean}\"}}");
-
-                return newId;
+                _db.Execute(connection, @"
+INSERT INTO companies(name, sort_order, active) VALUES(@name, @sortOrder, 1);",
+                    new { name = clean, sortOrder = order });
+                var id = Convert.ToInt32(_db.Scalar(connection,
+                    "SELECT id FROM companies WHERE rowid = last_insert_rowid();") ?? 0);
+                var after = FindCompany(connection, id);
+                _audit.RecordChange(connection, actor, "Inventory", "company_create", "companies",
+                    id.ToString(), null, after);
+                return ServiceResult<int>.Success(id);
             });
-
-            return ServiceResult<int>.Success(id);
         }
         catch (Exception exception)
         {
             _log.Error($"Company '{clean}' could not be added.", exception);
-            return ServiceResult<int>.Fail("The company could not be saved.");
+            return ServiceResult<int>.Fail("The company could not be saved. " + exception.Message);
         }
     }
+
+    /// <summary>Only name and order change; phone, notes and the medical rep stay on the row.</summary>
+    public ServiceResult UpdateCompany(User actor, int id, string? name, int sortOrder)
+    {
+        if (!actor.CanManage)
+        {
+            return ServiceResult.Fail("Only the owner or a manager can change companies.");
+        }
+
+        var clean = CleanCatalogName(name);
+        if (id <= 0 || clean.Length == 0)
+        {
+            return ServiceResult.Fail("Pick a company and enter its name.");
+        }
+
+        if (clean.Length > MaxCatalogNameLength)
+        {
+            return ServiceResult.Fail("Keep the company name under 120 characters.");
+        }
+
+        if (!IsValidSortOrder(sortOrder))
+        {
+            return ServiceResult.Fail(SortOrderError);
+        }
+
+        try
+        {
+            return _db.Tx(connection =>
+            {
+                var before = FindCompany(connection, id);
+                if (before is null)
+                {
+                    return ServiceResult.Fail("That company no longer exists.");
+                }
+
+                if (CatalogNameTaken(connection, "companies", clean, id))
+                {
+                    return ServiceResult.Fail(
+                        "That company name is already used, including by a company put away.");
+                }
+
+                if (before.Name == clean && before.SortOrder == sortOrder)
+                {
+                    return ServiceResult.Success();
+                }
+
+                _db.Execute(connection,
+                    "UPDATE companies SET name = @name, sort_order = @sortOrder WHERE id = @id;",
+                    new { name = clean, sortOrder, id });
+                var after = FindCompany(connection, id);
+                _audit.RecordChange(connection, actor, "Inventory", "company_update", "companies",
+                    id.ToString(), before, after);
+                return ServiceResult.Success();
+            });
+        }
+        catch (Exception exception)
+        {
+            _log.Error($"Company {id} could not be updated.", exception);
+            return ServiceResult.Fail("The company could not be saved. " + exception.Message);
+        }
+    }
+
+    /// <summary>Soft put-away only; restore deliberately does not recreate former product links.</summary>
+    public ServiceResult SetCompanyActive(User actor, int id, bool active)
+    {
+        if (!actor.CanManage)
+        {
+            return ServiceResult.Fail("Only the owner or a manager can change companies.");
+        }
+
+        try
+        {
+            return _db.Tx(connection =>
+            {
+                var before = FindCompany(connection, id);
+                if (before is null)
+                {
+                    return ServiceResult.Fail("That company no longer exists.");
+                }
+
+                if (before.Active == active)
+                {
+                    return ServiceResult.Success();
+                }
+
+                if (active && CatalogNameTaken(connection, "companies", before.Name, id))
+                {
+                    return ServiceResult.Fail("Another company uses this name. Rename one before bringing it back.");
+                }
+
+                var unlinkedIds = new List<int>();
+                if (!active)
+                {
+                    unlinkedIds = _db.Query<int>(connection,
+                        "SELECT id FROM products WHERE company_id = @id ORDER BY id;", new { id });
+                    _db.Execute(connection, @"
+UPDATE products SET company_id = NULL, updated_at = @at WHERE company_id = @id;",
+                        new { at = Clock.Now(), id });
+                }
+
+                _db.Execute(connection, "UPDATE companies SET active = @active WHERE id = @id;",
+                    new { active, id });
+                var after = FindCompany(connection, id);
+                var details = active
+                    ? "Brought back. Former product links were not recreated."
+                    : $"Put away; unlinked {unlinkedIds.Count} product(s) [{string.Join(", ", unlinkedIds)}]. No product or historical record was deleted.";
+                _audit.RecordChange(connection, actor, "Inventory",
+                    active ? "company_restore" : "company_put_away", "companies", id.ToString(),
+                    before, after, details);
+                return ServiceResult.Success();
+            });
+        }
+        catch (Exception exception)
+        {
+            _log.Error($"Company {id} active state could not be changed.", exception);
+            return ServiceResult.Fail("The company could not be changed. " + exception.Message);
+        }
+    }
+
+    private void EnsureActiveCatalogLinks(SqliteConnection connection, int? categoryId, int? companyId)
+    {
+        if (categoryId is not null)
+        {
+            var exists = Convert.ToInt32(_db.Scalar(connection,
+                "SELECT COUNT(1) FROM categories WHERE id = @categoryId AND active = 1;",
+                new { categoryId }) ?? 0);
+            if (exists == 0)
+            {
+                throw new ValidationException("Choose a category that is on the active list.");
+            }
+        }
+
+        if (companyId is not null)
+        {
+            var exists = Convert.ToInt32(_db.Scalar(connection,
+                "SELECT COUNT(1) FROM companies WHERE id = @companyId AND active = 1;",
+                new { companyId }) ?? 0);
+            if (exists == 0)
+            {
+                throw new ValidationException("Choose a company that is on the active list.");
+            }
+        }
+    }
+
+    private Category? FindCategory(SqliteConnection connection, int id) =>
+        _db.QuerySingle<Category>(connection, @"
+SELECT id, name, parent_id AS parentId, sort_order AS sortOrder, active
+FROM categories WHERE id = @id;", new { id });
+
+    private Company? FindCompany(SqliteConnection connection, int id) =>
+        _db.QuerySingle<Company>(connection, @"
+SELECT id, name, phone, notes, rep_name AS repName, rep_phone AS repPhone,
+       visit_day AS visitDay, sort_order AS sortOrder, active
+FROM companies WHERE id = @id;", new { id });
+
+    private string? CategoryParentError(
+        SqliteConnection connection,
+        int categoryId,
+        int? parentId,
+        int? currentParentId)
+    {
+        if (parentId is null)
+        {
+            return null;
+        }
+
+        if (parentId.Value <= 0 || parentId.Value == categoryId)
+        {
+            return "A category cannot be its own parent.";
+        }
+
+        var parent = FindCategory(connection, parentId.Value);
+        if (parent is null)
+        {
+            return "Choose a parent category that exists.";
+        }
+
+        if (!parent.Active && currentParentId != parentId)
+        {
+            return "Bring the parent category back before assigning it.";
+        }
+
+        if (parent.ParentId is not null)
+        {
+            return "Only two levels are allowed: choose a top-level parent.";
+        }
+
+        var children = Convert.ToInt32(_db.Scalar(connection,
+            "SELECT COUNT(1) FROM categories WHERE parent_id = @categoryId;", new { categoryId }) ?? 0);
+        return categoryId > 0 && children > 0
+            ? "This category has subcategories. Move them before giving it a parent."
+            : null;
+    }
+
+    private bool CatalogNameTaken(SqliteConnection connection, string table, string name, int exceptId)
+    {
+        // Only two fixed callers pass a table name; never accept a table name from the UI.
+        var sql = table == "categories"
+            ? "SELECT COUNT(1) FROM categories WHERE name = @name COLLATE NOCASE AND id <> @exceptId;"
+            : "SELECT COUNT(1) FROM companies WHERE name = @name COLLATE NOCASE AND id <> @exceptId;";
+        return Convert.ToInt32(_db.Scalar(connection, sql, new { name, exceptId }) ?? 0) > 0;
+    }
+
+    private int NextSortOrder(SqliteConnection connection, string table)
+    {
+        var sql = table == "categories"
+            ? "SELECT IFNULL(MAX(sort_order), 0) + 10 FROM categories;"
+            : "SELECT IFNULL(MAX(sort_order), 0) + 10 FROM companies;";
+        return Convert.ToInt32(_db.Scalar(connection, sql) ?? 10);
+    }
+
+    private static string CleanCatalogName(string? name) => (name ?? string.Empty).Trim();
+
+    private static bool IsValidSortOrder(int value) => value is >= 0 and <= MaxCatalogSortOrder;
 
     private static string? NullIfEmpty(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
