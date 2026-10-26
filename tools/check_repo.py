@@ -4316,6 +4316,26 @@ def check_native_workbook() -> None:
         if test_name not in tests:
             fail(f"T-10 workbook regression fact is missing: {test_name}")
 
+    reader_test = tests.split("Reader_UnderstandsSharedStringsAndRealExcelDateCells", 1)[-1].split(
+        "    [Fact]", 1)[0]
+    if "new MemoryStream(bytes);" in reader_test:
+        fail("T-10 ZIP mutation fixture must not use a fixed-size MemoryStream(byte[])")
+    for needle in (
+        "new MemoryStream(bytes.Length + 4096)",
+        "output.Write(bytes, 0, bytes.Length);",
+        "output.Position = 0;",
+    ):
+        if needle not in reader_test:
+            fail(f"T-10 expandable ZIP mutation fixture is incomplete: {needle}")
+
+    protected_test = tests.split("BulkUpdate_RefusesStockAndAccountBalanceChanges", 1)[-1].split(
+        "    [Fact]", 1)[0]
+    if "+ productId + \", 'PACK-999', 'box', 1);\"" not in protected_test \
+            or "+ otherId + \", 'PACK-999', 'box', 1);\"" in protected_test:
+        fail("T-10 active-pack fixture must put the pack and edited base barcode on DIFFERENT products")
+    if "Assert.Equal(0, preview.ChangeCount);" not in protected_test:
+        fail("T-10 protected-field test must prove that no invalid edit became a ready change")
+
     for project in DOTNET.rglob("*.csproj"):
         packages = project.read_text(encoding="utf-8", errors="replace")
         if any(name in packages for name in ("ClosedXML", "EPPlus", "DocumentFormat.OpenXml")):

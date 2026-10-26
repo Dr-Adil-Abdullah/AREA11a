@@ -7,10 +7,10 @@
 > اِس فائل میں یہ سب ہے: پروگرام کیا ہے، ابھی کہاں کھڑا ہے، **کیا باقی ہے**، کیا **کبھی نہیں** کرنا،
 > اور ایک نیا ورژن کیسے نکالنا ہے۔ آپ کے لیے چھوٹی اردو فائل: [`docs/HANDOVER-FOR-OWNER-URDU.md`](docs/HANDOVER-FOR-OWNER-URDU.md)۔
 
-**Status:** v0.35.17 · Eclipse · `#3C4148` — **default branch `main`**; this repair is on the current
+**Status:** v0.35.18 · Obsidian · `#27323A` — **default branch `main`**; this repair is on the current
 working branch `arena/60395e95-area11a` until its pull request is merged.
 
-*Last updated: 26 October 2026, after the owner's Glaucous run reported **847 passed / 13 failed / 860 total**. The two visible failures share an exact PR allocation parameter-name mismatch; Eclipse binds `@provisionalItemId` and `@saleItemId` explicitly without changing stock, payment, refund or cancellation rules. The suite stays at **860 written cases**; 52 static checks and 1/1 targeted injection/restoration pass locally. Only two failure identities were supplied, so the other eleven are not presumed fixed. Eclipse still needs `ALL GREEN - 860 of 860` with the complete log; real Excel and real Supabase proof remain separate. Paprika's **837/851** and Quasar's unexecuted 853-case target remain historical; T-10, Z-05 and E-12/S-05 remain 🟡.*
+*Last updated: 26 October 2026, after the owner's Eclipse run improved to **858 passed / 2 failed / 860 total**. The exact PR allocation binding gained eleven passes. The two remaining workbook tests had invalid fixtures: a fixed-size stream used to add a ZIP part, and an active pack barcode assigned to the same product whose base barcode was edited. Obsidian repairs those fixtures and adds a zero-ready-changes assertion without changing production workbook, stock, payment, refund or cancellation rules. The suite stays at **860 written cases**; 52 static checks and 2/2 targeted injection/restoration pass locally. The reader failure's actual error text was not pasted, so Obsidian still needs `ALL GREEN - 860 of 860` with the complete log. Real Excel and real Supabase proof remain separate; Paprika's **837/851** and Quasar's unexecuted 853-case target remain historical; T-10, Z-05 and E-12/S-05 remain 🟡.*
 
 ---
 
@@ -56,7 +56,7 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 
 ## 3. Where it stands right now (read this twice)
 
-**Current source: v0.35.17 "Eclipse" repairs the confirmed PR Link parameter defect while retaining Glaucous's format-2 cloud dependency closure and Apply guards. Glaucous genuinely ran 860 cases and reported 847 passed / 13 failed; the pasted tail identifies only two PR reconciliation failures, both missing the same six SQL parameters. Eclipse explicitly supplies the two incorrectly-cased identifiers, leaves all 860 cases in place, and passes 52 static checks plus a targeted old-shorthand injection. No Eclipse .NET, real Excel or real Supabase execution happened here. Paprika's real 837/851 and Quasar's unexecuted 853 target are not backfilled. T-10, Z-05, E-12 and S-05 remain partial. Prior fully green owner evidence: v0.35.7 "Cypress" passed 789/789 in 1 m 6 s.**
+**Current source: v0.35.18 "Obsidian" repairs the two workbook test fixtures left by Eclipse while retaining the confirmed PR Link binding and Glaucous's format-2 cloud dependency closure and Apply guards. Eclipse genuinely ran 860 cases and reported 858 passed / 2 failed, eleven more passes than Glaucous. Obsidian uses an expandable stream for the shared-string ZIP fixture, puts the active pack on a different product from the edited base barcode, and asserts zero ready changes. It leaves all 860 cases in place and passes 52 static checks plus 2/2 old-fixture injections. No Obsidian .NET, real Excel or real Supabase execution happened here, and the reader failure's original error text was not supplied. Paprika's real 837/851 and Quasar's unexecuted 853 target are not backfilled. T-10, Z-05, E-12 and S-05 remain partial. Prior fully green owner evidence: v0.35.7 "Cypress" passed 789/789 in 1 m 6 s.**
 
 | | |
 |---|---|
@@ -64,7 +64,7 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 | Static checks | **52**, all green: `OK - 52 checks, no problems` |
 | Owner's numbered rules | **116 - 92 ✅ done, 4 🟡 partial, 0 ⬜, 20 standing** - see §4 |
 | Feature board | **57 features — 52 ✅ done, 5 🟡 one shop action each, 0 ⬜ not started** (91.2 % / 8.8 %) |
-| Code size | 281 C# files (72,196 lines) + 39 XAML files (8,412 lines, 37 of them pages/windows); 51 services, 42 view models |
+| Code size | 281 C# files (72,202 lines) + 39 XAML files (8,412 lines, 37 of them pages/windows); 51 services, 42 view models |
 | Database | 26 migrations → **35 business tables + provisional report view**, append-only, existing `area11.db` opens unchanged |
 
 ### What the owner's own PC has already proved
@@ -79,6 +79,32 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 * On **v0.35.5** his next run compiled `Area11.Core` and `Area11.Tests` and reported
   **Failed: 0, Passed: 772, Total: 772 in 56 s — ALL GREEN**. This proves the numbering, session and
   Shift repairs together; it is not a claim that the Desktop installer or every page was exercised.
+
+### What v0.35.18 changes — the real Eclipse result and two workbook fixtures
+
+Eclipse was still red, but its **858 passed / 2 failed / 860 total** was eleven better than Glaucous.
+That is direct owner evidence for the exact PR allocation binding; it is not a claim that every PR or
+workbook behavior is already proven. The only two remaining test identities were supplied:
+
+* `Reader_UnderstandsSharedStringsAndRealExcelDateCells` — its method-level stack line was pasted, but
+  its actual exception/assertion text was not. The fixture nevertheless had a concrete defect:
+  `new MemoryStream(bytes)` is non-expandable, while `ZipArchiveMode.Update` then adds a new
+  `xl/sharedStrings.xml` part. Obsidian uses `new MemoryStream(bytes.Length + 4096)`, writes the bytes
+  and rewinds before opening the ZIP. The production reader is unchanged; the rerun must confirm the
+  outcome rather than assuming an unseen exception message.
+* `BulkUpdate_RefusesStockAndAccountBalanceChanges` — Eclipse reported **1 record / 1 field ready,
+  7 unchanged, 89 skipped, 2 errors**. The fixture inserted `PACK-999` for `otherId` and then edited
+  that same product's base barcode to `PACK-999`. The production guard rejects an active pack owned
+  by **another** medicine, so that edit was legitimately Ready; stock and Udhaar supplied the other
+  two errors. Obsidian assigns the pack to `productId` and edits `otherId`, making the collision
+  genuinely cross-product. It also asserts `ChangeCount == 0`. Stock/account protection and the
+  barcode service's same-product migration behavior are unchanged.
+
+No case was removed or renamed: **860 remains the only accepted total**. All **52** static checks pass,
+and injecting the fixed-size stream and same-product pack separately makes the workbook guard fail
+**2/2** times before byte-for-byte restoration. This is test-fixture evidence, not .NET or real-Excel
+proof. Required next: the complete Obsidian run with **`ALL GREEN - 860 of 860`**, followed by the
+separate real Excel workflow. No real Supabase mutation is authorized.
 
 ### What v0.35.17 changes — the real Glaucous result and exact PR parameter binding
 
@@ -95,8 +121,8 @@ Eclipse now writes `provisionalItemId = line.ProvisionalItemId` and
 existing PR facts already exercise successful links, split lines, repeated PRs, over/under refunds,
 old-link repair and the promise of no second stock/payment event, so no test was renamed, removed or
 added merely to change the total. **860 cases remain.** A 52nd static check protects the exact names
-and rejected the old shorthand in **1/1** injection before byte-for-byte restoration. This is static
-evidence, not a claim that Eclipse compiled or that all thirteen Glaucous failures are resolved.
+and rejected the old shorthand in **1/1** injection before byte-for-byte restoration. At release this
+was static evidence, not an all-thirteen-fixed claim; the owner's subsequent 858/860 run is recorded above.
 
 ### What v0.35.16 changes — cloud dependency integrity
 
@@ -695,11 +721,11 @@ honest caveat about what is not yet proven. If he asks for a printable status, r
 
 ## 16. The first message to send him (copy, paste, adjust)
 
-> میں نے ریپو پڑھ لی ہے۔ ابھی حالت یہ ہے: **v0.35.17 (Eclipse)** — 860 written cases اور 52 static checks مکمل ہیں۔
-> Glaucous آپ کے PC پر چلا مگر نتیجہ **847/860 یعنی 13 failures** تھا؛ صرف دو failure names بھیجی گئیں، اس لیے باقی گیارہ کی وجہ فرض نہیں کی جا سکتی۔
-> Eclipse میں PR Link کے دو parameter names بالکل SQL جیسے explicitly bind کیے گئے ہیں؛ stock، payment، refund اور cancellation کا اصول نہیں بدلا۔ Cloud کا format-2 محفوظ ہے، مگر اصل Supabase ابھی آزمایا نہیں گیا۔
+> میں نے ریپو پڑھ لی ہے۔ ابھی حالت یہ ہے: **v0.35.18 (Obsidian)** — 860 written cases اور 52 static checks مکمل ہیں۔
+> Eclipse آپ کے PC پر **858/860 یعنی صرف 2 failures** تک پہنچا؛ PR Link کی اصلاح سے گیارہ مزید tests کامیاب ہوئے۔
+> Obsidian میں باقی دو workbook tests کے fixtures درست کیے گئے ہیں؛ production کے stock، payment، refund، cancellation اور barcode اصول نہیں بدلے۔ پہلی failure کا اصل error متن نہیں ملا تھا، اس لیے دوبارہ مکمل جانچ ضروری ہے۔
 > سب سے پہلے `git pull` کر کے `START-AREA11.bat` اور `tools\\RUN-TESTS.cmd` چلائیں؛ مطلوبہ نتیجہ
-> `ALL GREEN - 860 of 860` ہے۔ صرف آخری سطریں نہیں، مکمل `test.log` بھیجیں کیونکہ Glaucous کی باقی گیارہ failure names ابھی معلوم نہیں۔
+> `ALL GREEN - 860 of 860` ہے۔ صرف آخری سطریں نہیں، مکمل `test.log` بھیجیں تاکہ کوئی باقی failure ہو تو اُس کا actual error بھی ملے۔
 > پھر Excel میں workbook کھول کر edit، preview، apply اور دوبارہ upload پر 0 changes دیکھیں؛ T-10 ابھی 🟡 ہے۔
 > الگ test Shop id/table اور test database پر `docs/CLOUD-SYNC.md` §7 کی push/preview/apply جانچ کریں؛ key نہ بھیجیں۔
 > Z-05 اور Settings → **App words** کی تصدیق بھی باقی ہے۔

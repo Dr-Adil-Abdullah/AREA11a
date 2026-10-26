@@ -138,20 +138,20 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.35.17 (Eclipse `#3C4148`) - exact PR allocation parameter repair; 860-case rerun pending.**
+> **v0.35.18 (Obsidian `#27323A`) - two workbook test-fixture repairs; 860-case rerun pending.**
 >
-> * **Glaucous really ran and stayed red: 847 passed / 13 failed / 860 total.** The pasted tail names
->   only `ExcessRefundOnOneMedicine_AlsoCapsTheOtherLinesOfTheBill` and
->   `OldStatusOnlyLink_BlocksAnotherReturn_UntilTheSameBillIsReconciled`. Both reached PR Link's
->   allocation INSERT, which requested `@provisionalItemId`/`@saleItemId` while anonymous shorthand
->   supplied `ProvisionalItemId`/`SaleItemId`. Eclipse binds the exact names explicitly. Do not claim
->   all thirteen had this cause without the complete log. Existing behavioral cases stay unchanged at
->   **860**; **52 static checks** and the new guard's **1/1 injection/restoration** pass locally.
+> * **Eclipse really improved the run to 858 passed / 2 failed / 860 total.** That is eleven more
+>   passes than Glaucous and confirms the PR allocation parameter repair on the owner's PC. The two
+>   remaining identities are `Reader_UnderstandsSharedStringsAndRealExcelDateCells` and
+>   `BulkUpdate_RefusesStockAndAccountBalanceChanges`. Obsidian changes only their fixtures: an
+>   expandable stream for the ZIP part addition, and a pack barcode owned by the OTHER product so the
+>   intended guard is exercised. A new assertion requires zero ready changes. **860 cases and 52 static
+>   checks remain; both old fixtures were rejected in 2/2 injection/restoration checks.**
 >
-> * **The cloud repair is retained, not re-verified.** Format 2 keeps 15 tables, recent bulk reads,
->   referenced older parents and complete lines; Apply and stale-preview guards remain. Glaucous's
->   three SQLite round-trips and 5/5 cloud-guard injections are local evidence only. No real Supabase
->   endpoint, Excel workbook, or Eclipse xUnit run has been used here.
+> * **No production workbook rule changed in Obsidian.** The first test's actual error text was not in
+>   the pasted tail, so its expandable-stream repair still needs the rerun. The second result itself
+>   proved the fixture had two errors plus one valid same-product edit. PR exact binding and the cloud
+>   format-2 dependency repair remain. No Obsidian .NET, real Excel or real Supabase run happened here.
 >
 > * **Earlier verification is not backfilled.** Paprika really reported **837 passed / 14 failed / 851
 >   total**. Quasar's 853-case target was not executed. The current requirement is

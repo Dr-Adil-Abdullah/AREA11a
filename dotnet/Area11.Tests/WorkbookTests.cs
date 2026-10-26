@@ -53,7 +53,10 @@ public sealed class WorkbookTests
         var bytes = XlsxFile.Write(workbook);
         var main = (XNamespace)"http://schemas.openxmlformats.org/spreadsheetml/2006/main";
 
-        using var output = new MemoryStream(bytes);
+        // MemoryStream(byte[]) is fixed-size. Update needs room to add sharedStrings.xml below.
+        using var output = new MemoryStream(bytes.Length + 4096);
+        output.Write(bytes, 0, bytes.Length);
+        output.Position = 0;
         using (var zip = new ZipArchive(output, ZipArchiveMode.Update, leaveOpen: true))
         {
             var sheetDocument = Load(zip.GetEntry("xl/worksheets/sheet1.xml")!);
@@ -213,8 +216,10 @@ public sealed class WorkbookTests
         var productId = TestData.AddProduct(test);
         var otherId = TestData.AddProduct(test, name: "Pack barcode owner");
         var customerId = TestData.AddCustomer(test);
+        // The pack belongs to the FIRST product; the second product's edit must collide with
+        // another medicine's active pack. Assigning both to otherId tests a valid same-product edit.
         Execute(test, "INSERT INTO product_barcodes(product_id, barcode, pack, active) VALUES("
-            + otherId + ", 'PACK-999', 'box', 1);");
+            + productId + ", 'PACK-999', 'box', 1);");
         var workbook = Download(test);
         var products = workbook.Sheet("Products")!;
         var customers = workbook.Sheet("Customers")!;
@@ -224,6 +229,7 @@ public sealed class WorkbookTests
 
         var preview = Workbooks(test).PreviewBulk(TestData.Owner, XlsxFile.Write(workbook), false).Value!;
         Assert.True(preview.ErrorCount >= 3, preview.SummaryText);
+        Assert.Equal(0, preview.ChangeCount); // no protected edit may slip through as a valid change
         Assert.False(preview.CanApply);
         var messages = string.Join(" ", preview.Rows.Where(row => row.IsError).Select(row => row.Message));
         Assert.Contains("read-only", messages);
