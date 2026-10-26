@@ -150,6 +150,12 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >   live WPF proof exists in this sandbox.** Keep E-12/S-05 🟡 until the owner's `ALL GREEN - 827 of 827`
 >   and rename/restart/reset walk-through. Merlot's fixed 820-case rerun remains outstanding.
 >
+> * **Owner-log follow-up:** the pasted Merlot 808/820 tail exposed a current D-93 message defect.
+>   A positive total beside a legacy minus batch now names the physical stock-take path; ordinary
+>   shortages keep reduce/receive guidance. No stock or financial rule changed. The existing tests
+>   assert both paths, 3/3 real-schema guidance checks pass, and the gate prepares 768 SQL statements.
+>   This is not a claimed Windows run; Topaz still needs the owner's 827/827 result.
+>
 > * **v0.35.5 repairs one policy mismatch and two stale test fixtures.** The owner's v0.35.4 run proved
 >   the correct tree (**769 passed, 3 failed, 772 total**). A sign-in ahead of the PC clock now keeps
 >   the session on the safe hard-cap answer rather than the shorter idle countdown. Two Shift tests

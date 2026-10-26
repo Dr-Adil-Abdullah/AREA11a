@@ -448,7 +448,14 @@ WHERE product_id = @productId AND active = 1;", new { productId = product.Id });
             if (totalForProduct - productStock > PlanningTolerance(totalForProduct))
             {
                 var leftForLine = Math.Max(0, productStock - previousForProduct);
-                var repair = productStock < 0
+                // A positive book total can still sit beside a historical minus batch (5 - 3 = 2).
+                // Diagnose the actual rows, not just the sign of their sum, so the owner is shown
+                // the physical-count reconciliation path that applies to this fixture.
+                var hasLegacyMinus = Convert.ToInt64(_db.Scalar(connection, @"
+SELECT EXISTS(SELECT 1 FROM batches
+WHERE product_id = @productId AND active = 1 AND qty_base < 0);",
+                    new { productId = product.Id }) ?? 0L) > 0;
+                var repair = hasLegacyMinus
                     ? " Reconcile the historical minus with a physical stock-take before selling."
                     : " Reduce the cart quantity or receive stock first.";
                 throw new ValidationException(

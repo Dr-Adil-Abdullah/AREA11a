@@ -137,6 +137,7 @@ VALUES(@productId, @batchNo, @expiry, @expiryYm, @quantity, 20000, 30000, 0, 1, 
         Assert.False(quote.Ok);
         Assert.Contains("11", quote.Error ?? string.Empty);
         Assert.Contains("book total 10", quote.Error ?? string.Empty);
+        Assert.DoesNotContain("physical stock-take", quote.Error ?? string.Empty);
 
         var failed = sales.Create(invalid, TestData.Owner);
         Assert.False(failed.Ok);
@@ -207,6 +208,7 @@ VALUES(@productId, @batchNo, @expiry, @expiryYm, @quantity, 20000, 30000, 0, 1, 
 
         var failed = sales.Create(invalid, TestData.Owner);
         Assert.False(failed.Ok);
+        Assert.Contains("physical stock-take", failed.Error ?? string.Empty);
         Assert.Equal(5d, BatchQty(test, positive));
         Assert.Equal(-3d, BatchQty(test, negative)); // history was neither used nor silently zeroed
         Assert.Equal(0L, ScalarLong(test, "SELECT COUNT(1) FROM sales;"));

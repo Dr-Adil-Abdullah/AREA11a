@@ -64,7 +64,7 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 | Static checks | **46**, all green: `OK - 46 checks, no problems` |
 | Owner's numbered rules | **116 - 91 ✅ done, 5 🟡 partial, 0 ⬜, 20 standing** - see §4 |
 | Feature board | **57 features — 52 ✅ done, 5 🟡 one shop action each, 0 ⬜ not started** (91.2 % / 8.8 %) |
-| Code size | 277 C# files (68,257 lines) + 39 XAML files (8,271 lines, 37 of them pages/windows); 50 services, 42 view models |
+| Code size | 277 C# files (68,266 lines) + 39 XAML files (8,271 lines, 37 of them pages/windows); 50 services, 42 view models |
 | Database | 26 migrations → **35 business tables + provisional report view**, append-only, existing `area11.db` opens unchanged |
 
 ### What the owner's own PC has already proved
@@ -102,6 +102,14 @@ missing-heading, wrong-notification, title-as-key and untrimmed-direct-write inj
 of 827` and the owner's live rename/restart/reset walk-through. E-12/S-05 stay 🟡 until then.
 Merlot's fixed 820-case rerun and Dashboard/PR walk-through remain outstanding. Generic undo,
 charts, native `.xlsx` and cloud work were not pulled in.
+
+The owner's pasted **Merlot 808/820** tail was also reviewed against the current source. It exposed
+one still-relevant D-93 guidance defect: a positive batch of 5 beside a legacy batch of -3 gives a
+positive book total of 2, so `SaleService` omitted the physical-stock-take repair path. The refusal
+now checks for an actual active minus batch; ordinary shortages still say reduce/receive, and no
+stock, money or audit rule changed. Existing Quote and Create assertions were strengthened without
+changing the 827-case inventory. The real-schema rehearsal passed **3/3**, and the static gate now
+prepares **768 SQL statements**. This is a source repair, not a claimed Topaz xUnit result.
 
 ### What v0.35.10 changes — E-04 catalog management is complete
 
