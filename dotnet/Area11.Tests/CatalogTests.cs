@@ -28,8 +28,9 @@ public sealed class CatalogTests
 
         var found = service.Search(categoryId: parent.Value);
         Assert.True(found.Ok, found.Error);
-        Assert.Equal(childProduct, Assert.Single(found.Value!).Id);
-        Assert.DoesNotContain(found.Value, row => row.Id == otherProduct);
+        var foundRows = found.Value!;
+        Assert.Equal(childProduct, Assert.Single(foundRows).Id);
+        Assert.DoesNotContain(foundRows, row => row.Id == otherProduct);
 
         // A child cannot become a parent, a row cannot parent itself, and a parent with children
         // cannot be moved beneath another row. The category count itself remains unlimited.

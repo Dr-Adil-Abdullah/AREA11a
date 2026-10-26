@@ -126,14 +126,17 @@ ORDER BY b.expiry_date ASC, p.name COLLATE NOCASE;",
             }
 
             // ---- a shelf running out: ONE line for all of them (serious) ----
+            // The folded line uses only the names and the number of medicines. Do not map an
+            // aggregate quantity that is never read: SQLite SUM may expose either Int64 or Double,
+            // while the quantity itself remains REAL and must never be truncated for this screen.
             var lowStock = _db.Query<ProblemRow>(connection, @"
-SELECT p.id AS entityId, p.name AS name,
-       IFNULL((SELECT SUM(b.qty_base) FROM batches b WHERE b.product_id = p.id AND b.active = 1), 0) AS qty
+SELECT p.id AS entityId, p.name AS name
 FROM products p
 WHERE p.active = 1
   AND IFNULL((SELECT SUM(b.qty_base) FROM batches b WHERE b.product_id = p.id AND b.active = 1), 0) >= 0
   AND IFNULL((SELECT SUM(b.qty_base) FROM batches b WHERE b.product_id = p.id AND b.active = 1), 0) <= p.reorder_level
-ORDER BY qty ASC, p.name COLLATE NOCASE;");
+ORDER BY IFNULL((SELECT SUM(b.qty_base) FROM batches b WHERE b.product_id = p.id AND b.active = 1), 0) ASC,
+         p.name COLLATE NOCASE;");
 
             if (lowStock.Count > 0)
             {

@@ -626,34 +626,44 @@ ORDER BY p.id DESC;", parameters);
     /// </summary>
     private List<SaleLineState> ReadReconciliationSaleLines(SqliteConnection connection, int saleId)
     {
+        // Read stored columns and each kind of earlier return separately, as ReturnService does.
+        // Apart from being easier to audit, this keeps Dapper away from a compound SQLite numeric
+        // expression whose runtime type can differ from the model even though the SQL prepares.
         var lines = _db.Query<SaleLineState>(connection, @"
 SELECT si.id AS saleItemId, si.product_id AS productId,
        COALESCE(NULLIF(si.name_snapshot, ''), p.name) AS name,
-       si.qty_base
-         - COALESCE((SELECT SUM(r.qty_base) FROM sale_returns r WHERE r.sale_item_id = si.id), 0)
-         - COALESCE((SELECT SUM(a.qty_base)
-                     FROM provisional_return_allocations a
-                     JOIN provisional_items pi ON pi.id = a.provisional_item_id
-                     JOIN provisional_returns pr ON pr.id = pi.provisional_id
-                     WHERE a.sale_item_id = si.id AND pr.status = 'linked'), 0) AS remainingBase,
-       si.line_total_paisa
-         - COALESCE((SELECT SUM(r.refund_paisa) FROM sale_returns r WHERE r.sale_item_id = si.id), 0)
-         - COALESCE((SELECT SUM(a.refund_paisa)
-                     FROM provisional_return_allocations a
-                     JOIN provisional_items pi ON pi.id = a.provisional_item_id
-                     JOIN provisional_returns pr ON pr.id = pi.provisional_id
-                     WHERE a.sale_item_id = si.id AND pr.status = 'linked'), 0) AS remainingPaisa
+       si.qty_base AS remainingBase, si.line_total_paisa AS remainingPaisa
 FROM sale_items si
 JOIN products p ON p.id = si.product_id
 WHERE si.sale_id = @saleId
 ORDER BY si.id;", new { saleId });
 
+        var returned = _db.Query<ReturnedRow>(connection, @"
+SELECT sale_item_id AS saleItemId, SUM(qty_base) AS qty, SUM(refund_paisa) AS refund
+FROM sale_returns WHERE sale_id = @saleId GROUP BY sale_item_id;", new { saleId })
+            .ToDictionary(row => row.SaleItemId);
+
+        var provisionallyReturned = _db.Query<ReturnedRow>(connection, @"
+SELECT a.sale_item_id AS saleItemId, SUM(a.qty_base) AS qty, SUM(a.refund_paisa) AS refund
+FROM provisional_return_allocations a
+JOIN provisional_items i ON i.id = a.provisional_item_id
+JOIN provisional_returns pr ON pr.id = i.provisional_id
+JOIN sale_items si ON si.id = a.sale_item_id
+WHERE si.sale_id = @saleId AND pr.status = 'linked'
+GROUP BY a.sale_item_id;", new { saleId })
+            .ToDictionary(row => row.SaleItemId);
+
         foreach (var line in lines)
         {
+            returned.TryGetValue(line.SaleItemId, out var normal);
+            provisionallyReturned.TryGetValue(line.SaleItemId, out var provisional);
+
             // An old defect may already have consumed too much. Never turn that into negative stock
             // or a negative refund while reconciling; the quantity check below will refuse it.
-            line.RemainingBase = Math.Max(0, line.RemainingBase);
-            line.RemainingPaisa = Math.Max(0, line.RemainingPaisa);
+            line.RemainingBase = Math.Max(0,
+                line.RemainingBase - (normal?.Qty ?? 0) - (provisional?.Qty ?? 0));
+            line.RemainingPaisa = Math.Max(0,
+                line.RemainingPaisa - (normal?.Refund ?? 0) - (provisional?.Refund ?? 0));
         }
 
         return lines;
@@ -931,6 +941,15 @@ VALUES(@productId, 'OPEN', NULL, NULL, 0, @cost, @retail, 0, 1, @at);",
         public double RemainingBase { get; set; }
 
         public long RemainingPaisa { get; set; }
+    }
+
+    private sealed class ReturnedRow
+    {
+        public int SaleItemId { get; set; }
+
+        public double Qty { get; set; }
+
+        public long Refund { get; set; }
     }
 
     private sealed class AllocationLine

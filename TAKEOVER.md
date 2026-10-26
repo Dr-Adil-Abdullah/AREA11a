@@ -64,7 +64,7 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 | Static checks | **45**, all green: `OK - 45 checks, no problems` |
 | Owner's numbered rules | **116 - 91 ✅ done, 4 🟡 partial, 1 ⬜ (E-12), 20 standing** - see §4 |
 | Feature board | **57 features — 52 ✅ done, 5 🟡 one shop action each, 0 ⬜ not started** (91.2 % / 8.8 %) |
-| Code size | 273 C# files (67,669 lines) + 39 XAML files (8,185 lines, 37 of them pages/windows); 49 services, 42 view models |
+| Code size | 273 C# files (67,692 lines) + 39 XAML files (8,185 lines, 37 of them pages/windows); 49 services, 42 view models |
 | Database | 26 migrations → **35 business tables + provisional report view**, append-only, existing `area11.db` opens unchanged |
 
 ### What the owner's own PC has already proved

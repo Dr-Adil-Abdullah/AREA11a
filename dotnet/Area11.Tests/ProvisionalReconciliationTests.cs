@@ -234,18 +234,18 @@ FROM provisional_return_allocations ORDER BY sale_item_id;");
 
         var rush = TestData.Provisionals(test).Create(
             TestData.RushReturn(first, qty: 1, unit: "base", refundPaisa: 90000), TestData.Owner);
-        var linked = TestData.Provisionals(test).Link(rush.Value!.Id, sale.Value.Code, TestData.Owner);
+        var linked = TestData.Provisionals(test).Link(rush.Value!.Id, sale.Value!.Code, TestData.Owner);
         Assert.True(linked.Ok, linked.Error);
         Assert.Equal(2, linked.Warnings.Count);
 
-        var row = TestData.Provisionals(test).Get(rush.Value.Code)!;
+        var row = TestData.Provisionals(test).Get(rush.Value!.Code)!;
         Assert.Equal(30000L, row.LinkedExpectedPaisa.GetValueOrDefault());
         Assert.Equal(60000L, row.LinkedUnallocatedPaisa.GetValueOrDefault());
 
         // Second still has its physical quantity and line value, but the actual PR payment already
         // exceeded the whole bill. Accepting it back must not release another Rs 300.
-        var input = TestData.Return(sale.Value, 1);
-        input.Lines[0].SaleItemId = sale.Value.SaleItemIds[1];
+        var input = TestData.Return(sale.Value!, 1);
+        input.Lines[0].SaleItemId = sale.Value!.SaleItemIds[1];
         var normal = TestData.Returns(test).Create(input, TestData.Owner);
 
         Assert.True(normal.Ok, normal.Error);
@@ -270,26 +270,26 @@ FROM provisional_return_allocations ORDER BY sale_item_id;");
 UPDATE provisional_returns
 SET status = 'linked', linked_sale_id = @saleId, linked_code = @code,
     linked_at = datetime('now','localtime')
-WHERE id = @id;", new { saleId = sale.Value!.SaleId, code = sale.Value.Code, id = rush.Value.Id }));
+WHERE id = @id;", new { saleId = sale.Value!.SaleId, code = sale.Value!.Code, id = rush.Value!.Id }));
 
         var oldAlert = TestData.Alerts(test).Report().Live.Single(item => item.Type == "provisional_linked");
         Assert.Contains("before line reconciliation", oldAlert.Detail);
-        Assert.Contains(sale.Value.Code, oldAlert.Detail);
+        Assert.Contains(sale.Value!.Code, oldAlert.Detail);
 
-        var blocked = TestData.Returns(test).Lines(sale.Value.SaleId);
+        var blocked = TestData.Returns(test).Lines(sale.Value!.SaleId);
         Assert.False(blocked.Ok);
-        Assert.Contains(rush.Value.Code, blocked.Error);
+        Assert.Contains(rush.Value!.Code, blocked.Error);
 
-        var wrongBill = TestData.Provisionals(test).Link(rush.Value.Id, other.Value!.Code, TestData.Owner);
+        var wrongBill = TestData.Provisionals(test).Link(rush.Value!.Id, other.Value!.Code, TestData.Owner);
         Assert.False(wrongBill.Ok);
         Assert.Contains("same bill", wrongBill.Error);
         Assert.Equal(0L, ScalarLong(test, "SELECT COUNT(1) FROM provisional_return_allocations;"));
 
-        var repaired = TestData.Provisionals(test).Link(rush.Value.Id, sale.Value.Code, TestData.Owner);
+        var repaired = TestData.Provisionals(test).Link(rush.Value!.Id, sale.Value!.Code, TestData.Owner);
         Assert.True(repaired.Ok, repaired.Error);
-        Assert.False(TestData.Provisionals(test).Get(rush.Value.Code)!.NeedsReconciliation);
+        Assert.False(TestData.Provisionals(test).Get(rush.Value!.Code)!.NeedsReconciliation);
 
-        var lines = TestData.Returns(test).Lines(sale.Value.SaleId);
+        var lines = TestData.Returns(test).Lines(sale.Value!.SaleId);
         Assert.True(lines.Ok, lines.Error);
         Assert.Equal(1d, Assert.Single(lines.Value!).RemainingBase);
 
