@@ -333,6 +333,23 @@ FROM provisional_items WHERE provisional_id = @id ORDER BY id;", new { id = save
 
         var secondShift = shifts.Open(TestData.Owner, 0, "second");
         Assert.True(secondShift.Ok, secondShift.Error);
+
+        // Give the second shift its own later second. Otherwise a fast run puts the refund on both
+        // inclusive normal-shift boundaries and tests timestamp overlap instead of cancellation.
+        test.Database.Tx(connection =>
+        {
+            test.Database.Execute(connection, @"
+UPDATE shifts SET opened_at = datetime('now','localtime','-20 seconds'),
+                  closed_at = datetime('now','localtime','-10 seconds') WHERE id = @id;",
+                new { id = firstShift.Value!.Id });
+            test.Database.Execute(connection,
+                "UPDATE shifts SET opened_at = datetime('now','localtime','-5 seconds') WHERE id = @id;",
+                new { id = secondShift.Value!.Id });
+            test.Database.Execute(connection,
+                "UPDATE payments SET date = datetime('now','localtime','-10 seconds') WHERE provisional_return_id = @id;",
+                new { id = rush.Value!.Id });
+        });
+
         var cancelled = TestData.Provisionals(test).Cancel(rush.Value!.Id, "typed twice by mistake", TestData.Owner);
         Assert.True(cancelled.Ok, cancelled.Error);
 
