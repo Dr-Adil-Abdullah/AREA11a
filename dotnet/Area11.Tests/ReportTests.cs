@@ -132,7 +132,7 @@ public sealed class ReportTests
         Assert.True(sale.Ok, sale.Error);
         using var connection = test.Database.Open();
         var storedQuantity = test.Database.QuerySingle<double>(connection,
-            "SELECT SUM(qty_base) FROM sale_items WHERE sale_id = @id;", new { id = sale.Value!.Id });
+            "SELECT SUM(qty_base) FROM sale_items WHERE sale_id = @id;", new { id = sale.Value!.SaleId });
 
         var report = TestData.Reports(test).Build(ReportRange.Today, TestData.Owner);
 
