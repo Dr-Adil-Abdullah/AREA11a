@@ -10,7 +10,7 @@
 **Status:** v0.35.7 · Cypress · `#1F4D3A` — **default branch `main`**; this repair is on the current
 working branch `arena/60395e95-area11a` until its pull request is merged.
 
-*Last updated: 26 October 2026, with v0.35.7 Cypress's bill-return/recovery repair awaiting the owner's 789-case run; v0.35.6 Cedar's 782-case green run is retained as prior evidence.*
+*Last updated: 26 October 2026, after the owner's Windows run verified v0.35.7 Cypress with **789/789 tests passing**; the PR-linking stage waits for `next`.*
 
 ---
 
@@ -56,7 +56,7 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 
 ## 3. Where it stands right now (read this twice)
 
-**Prior evidence: v0.35.6 "Cedar" was proven on the owner's PC with all 782 cases passing in 1 m 3 s. Current source: v0.35.7 "Cypress", whose 789 cases still require the owner's Windows run.**
+**Current source: v0.35.7 "Cypress" is owner-verified: all 789 cases passed in 1 m 6 s, failed 0. Prior evidence: v0.35.6 "Cedar" passed all 782 cases in 1 m 3 s.**
 
 | | |
 |---|---|
@@ -91,8 +91,9 @@ payment and exclude later bills; carried-in khata is handled without an invented
 The Returns page no longer calls every remaining line value "cash". `RefundablePaisa` means total
 cash-plus-khata value, and a final packed-unit remainder stores its own remaining entered quantity.
 Seven regressions were added (**789 total**). No schema or historical sale/payment/return row changed.
-Static checks and five SQLite chronology rehearsals pass here; the owner's Windows run is still
-required. **Next code stages, only on `next`: PR-link reconciliation, then D-93 negative-stock
+Static checks and five SQLite chronology rehearsals passed here. The owner's subsequent Windows
+run compiled Core and Tests and reported **Failed 0, Passed 789, Skipped 0, Total 789 in 1 m 6 s —
+ALL GREEN**. **Next code stages, only on `next`: PR-link reconciliation, then D-93 negative-stock
 retirement. Cloud sync is postponed by the owner.**
 
 ### What v0.35.6 changes — provisional money evidence
