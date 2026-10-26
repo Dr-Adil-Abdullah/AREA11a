@@ -252,8 +252,11 @@ INSERT INTO provisional_return_allocations(
 VALUES(@provisionalItemId, @saleItemId, @qtyBase, @expected, @refund, @at);",
                         new
                         {
-                            line.ProvisionalItemId,
-                            line.SaleItemId,
+                            // Dapper/Microsoft.Data.Sqlite binds these names exactly. Anonymous-member
+                            // shorthand would expose ProvisionalItemId/SaleItemId instead and SQLite
+                            // would reject the command before writing any allocation.
+                            provisionalItemId = line.ProvisionalItemId,
+                            saleItemId = line.SaleItemId,
                             qtyBase = line.QtyBase,
                             expected = line.ExpectedPaisa,
                             refund = line.RefundPaisa,

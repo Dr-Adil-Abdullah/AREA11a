@@ -7,10 +7,10 @@
 > اِس فائل میں یہ سب ہے: پروگرام کیا ہے، ابھی کہاں کھڑا ہے، **کیا باقی ہے**، کیا **کبھی نہیں** کرنا،
 > اور ایک نیا ورژن کیسے نکالنا ہے۔ آپ کے لیے چھوٹی اردو فائل: [`docs/HANDOVER-FOR-OWNER-URDU.md`](docs/HANDOVER-FOR-OWNER-URDU.md)۔
 
-**Status:** v0.35.16 · Glaucous · `#4F6D7A` — **default branch `main`**; this repair is on the current
+**Status:** v0.35.17 · Eclipse · `#3C4148` — **default branch `main`**; this repair is on the current
 working branch `arena/60395e95-area11a` until its pull request is merged.
 
-*Last updated: 26 October 2026, after the owner authorized the deferred cloud stage with `next`. Glaucous repairs the reproduced 90-day cloud foreign-key defect with a 15-table format-2 document, referenced older parents and complete lines, plus stronger Apply/stale-preview guards. It has **860 written cases**, 51 static checks, three SQLite round-trips and 5/5 guard injections, but no Windows/xUnit, real Excel or real Supabase run here. Paprika's actual **837 passed / 14 failed / 851 total** and Quasar's unexecuted 853-case target remain recorded; the current requirement is `ALL GREEN - 860 of 860` with the complete log. T-10, Z-05 and E-12/S-05 remain 🟡; D-93/PR rules remain in force.*
+*Last updated: 26 October 2026, after the owner's Glaucous run reported **847 passed / 13 failed / 860 total**. The two visible failures share an exact PR allocation parameter-name mismatch; Eclipse binds `@provisionalItemId` and `@saleItemId` explicitly without changing stock, payment, refund or cancellation rules. The suite stays at **860 written cases**; 52 static checks and 1/1 targeted injection/restoration pass locally. Only two failure identities were supplied, so the other eleven are not presumed fixed. Eclipse still needs `ALL GREEN - 860 of 860` with the complete log; real Excel and real Supabase proof remain separate. Paprika's **837/851** and Quasar's unexecuted 853-case target remain historical; T-10, Z-05 and E-12/S-05 remain 🟡.*
 
 ---
 
@@ -56,15 +56,15 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 
 ## 3. Where it stands right now (read this twice)
 
-**Current source: v0.35.16 "Glaucous" is the deferred cloud-integrity stage authorized by `next`. Its format-2 document keeps 90-day financial rows plus the older parents/lines needed by recent payments and PR reconciliations; it does not upload all history or clear links. Apply and stale-preview boundaries are tightened. Seven facts make 860 written cases; 51 static checks, three SQLite round-trips and 5/5 guard injections pass. No .NET, Excel or real Supabase execution happened here. Paprika's real 837/851 and Quasar's unexecuted 853 target are not backfilled. T-10, Z-05, E-12 and S-05 remain partial. Prior fully green owner evidence: v0.35.7 "Cypress" passed 789/789 in 1 m 6 s.**
+**Current source: v0.35.17 "Eclipse" repairs the confirmed PR Link parameter defect while retaining Glaucous's format-2 cloud dependency closure and Apply guards. Glaucous genuinely ran 860 cases and reported 847 passed / 13 failed; the pasted tail identifies only two PR reconciliation failures, both missing the same six SQL parameters. Eclipse explicitly supplies the two incorrectly-cased identifiers, leaves all 860 cases in place, and passes 52 static checks plus a targeted old-shorthand injection. No Eclipse .NET, real Excel or real Supabase execution happened here. Paprika's real 837/851 and Quasar's unexecuted 853 target are not backfilled. T-10, Z-05, E-12 and S-05 remain partial. Prior fully green owner evidence: v0.35.7 "Cypress" passed 789/789 in 1 m 6 s.**
 
 | | |
 |---|---|
 | Test cases written | **860** in 67 files (`tools\\RUN-TESTS.cmd` compares the run against `EXPECTED=860`) |
-| Static checks | **51**, all green: `OK - 51 checks, no problems` |
+| Static checks | **52**, all green: `OK - 52 checks, no problems` |
 | Owner's numbered rules | **116 - 92 ✅ done, 4 🟡 partial, 0 ⬜, 20 standing** - see §4 |
 | Feature board | **57 features — 52 ✅ done, 5 🟡 one shop action each, 0 ⬜ not started** (91.2 % / 8.8 %) |
-| Code size | 281 C# files (72,193 lines) + 39 XAML files (8,412 lines, 37 of them pages/windows); 51 services, 42 view models |
+| Code size | 281 C# files (72,196 lines) + 39 XAML files (8,412 lines, 37 of them pages/windows); 51 services, 42 view models |
 | Database | 26 migrations → **35 business tables + provisional report view**, append-only, existing `area11.db` opens unchanged |
 
 ### What the owner's own PC has already proved
@@ -79,6 +79,24 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 * On **v0.35.5** his next run compiled `Area11.Core` and `Area11.Tests` and reported
   **Failed: 0, Passed: 772, Total: 772 in 56 s — ALL GREEN**. This proves the numbering, session and
   Shift repairs together; it is not a claim that the Desktop installer or every page was exercised.
+
+### What v0.35.17 changes — the real Glaucous result and exact PR parameter binding
+
+Glaucous was not green: the owner's correct 860-case run reported **847 passed, 13 failed, 0 skipped,
+in 1 m 4 s**. The supplied tail identifies only
+`ExcessRefundOnOneMedicine_AlsoCapsTheOtherLinesOfTheBill` and
+`OldStatusOnlyLink_BlocksAnotherReturn_UntilTheSameBillIsReconciled`. Both failed at PR Link with
+`Must add values for ... @provisionalItemId, @saleItemId, @qtyBase, @expected, @refund, @at`.
+The complete `test.log` is still needed if any failure remains; eleven identities are not known.
+
+The allocation SQL used camel-case names while anonymous-member shorthand exposed Pascal-case names.
+Eclipse now writes `provisionalItemId = line.ProvisionalItemId` and
+`saleItemId = line.SaleItemId`; the other four bindings and every financial rule are unchanged. The
+existing PR facts already exercise successful links, split lines, repeated PRs, over/under refunds,
+old-link repair and the promise of no second stock/payment event, so no test was renamed, removed or
+added merely to change the total. **860 cases remain.** A 52nd static check protects the exact names
+and rejected the old shorthand in **1/1** injection before byte-for-byte restoration. This is static
+evidence, not a claim that Eclipse compiled or that all thirteen Glaucous failures are resolved.
 
 ### What v0.35.16 changes — cloud dependency integrity
 
@@ -106,8 +124,9 @@ Seven new facts cover old-sale and old-purchase round-trips, the full PR chain, 
 boundaries and format-1 compatibility: **860 written cases in 67 files**. The 51st static check protects
 the dependency edges, bulk reads, write order and guards; it rejected **5/5** injected faults before
 restoration. Three real-SQLite round-trips passed foreign-key checks, including recent bulk lines with
-only one old-parent query and an unrelated old bill excluded. These are not xUnit or Supabase results.
-Run **`ALL GREEN - 860 of 860`**, then use `docs/CLOUD-SYNC.md` §7 with a separate test Shop id/table and
+only one old-parent query and an unrelated old bill excluded. The owner subsequently ran Glaucous and
+reported **847/860 with 13 failures**; that evidence is preserved above, not rewritten as a pass. For
+the separate real-cloud procedure, use `docs/CLOUD-SYNC.md` §7 with a separate test Shop id/table and
 test database copy. Cloud is a partial mirror, not the full-machine zip backup; never share the API key.
 
 ### What v0.35.15 changes — Paprika verification repair
@@ -132,7 +151,7 @@ The nine Paprika warnings were four nullable values passed to `KeyText`, four gu
 passed to `ReferenceExists`, and one `PrepareBulk` dictionary-nullability mismatch. Three signature/
 inference edits resolve those without changing workbook behavior. **853 cases in 67 files and 50
 static checks** are the local evidence, not compilation or xUnit. Quasar's own 853-case target was not
-run; the current Glaucous run includes it in **860 cases**, and the real Excel walk-through remains separate.
+run; the current **860-case** suite includes it, and the real Excel walk-through remains separate.
 
 ### What v0.35.14 changes — T-10 native Excel and safe all-data bulk update
 
@@ -233,7 +252,7 @@ The owner's first Topaz build then stopped at `AppLabelTests.cs(42)` with **CS16
 does not implement `IDisposable`. The second-database test now uses a plain variable, matching the
 existing NumberingTests lifetime pattern. The existing C# static check rejects `using ... new Database`
 and caught the fault when it was injected back at line 42. The 827-case inventory and product rules
-were unchanged by that repair; Topaz's own rerun was never supplied. Azure, Cinnamon and Paprika followed; Paprika's actual 851-case run failed 14, so Quasar's 853-case run became the next target. Glaucous now includes those cases in the current 860-case target, without marking either old result green.
+were unchanged by that repair; Topaz's own rerun was never supplied. Azure, Cinnamon and Paprika followed; Paprika's actual 851-case run failed 14, so Quasar's 853-case run became the next target. The current suite includes those cases in its 860-case target, without marking either old result green.
 
 ### What v0.35.10 changes — E-04 catalog management is complete
 
@@ -667,7 +686,7 @@ honest caveat about what is not yet proven. If he asks for a printable status, r
 | `dotnet/Area11.Desktop/Views/` (37) | the pages; `PosView`, `ProductsView`, `PurchasesView`, `ShiftView`, `HardwareView` … |
 | `dotnet/Area11.Desktop/Resources/Theme.xaml` | the three brand brushes |
 | `dotnet/Area11.Tests/` (67 test files) | `TestDatabase`, `TestData`, one file per feature |
-| `tools/check_repo.py` | the 51 static checks (read the docstring of a failing check) |
+| `tools/check_repo.py` | the 52 static checks (read the docstring of a failing check) |
 | `tools/make_checklist.py`, `make_icon.py`, `build_rules_matrix.py` | the printable list, the icon, the rules matrix |
 | `tools/*.cmd`, `tools/install/*.ps1` | what the owner double-clicks: start, update, test, report, install, uninstall, share |
 | `docs/` | the spec, the decisions, the board, the rules, the schema, the guides |
@@ -676,11 +695,11 @@ honest caveat about what is not yet proven. If he asks for a printable status, r
 
 ## 16. The first message to send him (copy, paste, adjust)
 
-> میں نے ریپو پڑھ لی ہے۔ ابھی حالت یہ ہے: **v0.35.16 (Glaucous)** — 860 written cases اور 51 static checks مکمل ہیں۔
-> Paprika آپ کے PC پر compile اور open ہوا، مگر اس کا حقیقی نتیجہ **837/851 یعنی 14 failures** تھا؛ Quasar کا 853-case repair یہاں run نہیں ہوا، دونوں کو green نہیں لکھا گیا۔
-> Glaucous میں cloud کا format-2، 15-table document، 90 دن سے باہر ضروری financial parents اور محفوظ Apply guards ہیں؛ اصل Supabase ابھی آزمایا نہیں گیا۔
+> میں نے ریپو پڑھ لی ہے۔ ابھی حالت یہ ہے: **v0.35.17 (Eclipse)** — 860 written cases اور 52 static checks مکمل ہیں۔
+> Glaucous آپ کے PC پر چلا مگر نتیجہ **847/860 یعنی 13 failures** تھا؛ صرف دو failure names بھیجی گئیں، اس لیے باقی گیارہ کی وجہ فرض نہیں کی جا سکتی۔
+> Eclipse میں PR Link کے دو parameter names بالکل SQL جیسے explicitly bind کیے گئے ہیں؛ stock، payment، refund اور cancellation کا اصول نہیں بدلا۔ Cloud کا format-2 محفوظ ہے، مگر اصل Supabase ابھی آزمایا نہیں گیا۔
 > سب سے پہلے `git pull` کر کے `START-AREA11.bat` اور `tools\\RUN-TESTS.cmd` چلائیں؛ مطلوبہ نتیجہ
-> `ALL GREEN - 860 of 860` ہے۔ صرف آخری سطریں نہیں، مکمل `test.log` بھیجیں کیونکہ دس پرانی failure names ابھی معلوم نہیں۔
+> `ALL GREEN - 860 of 860` ہے۔ صرف آخری سطریں نہیں، مکمل `test.log` بھیجیں کیونکہ Glaucous کی باقی گیارہ failure names ابھی معلوم نہیں۔
 > پھر Excel میں workbook کھول کر edit، preview، apply اور دوبارہ upload پر 0 changes دیکھیں؛ T-10 ابھی 🟡 ہے۔
 > الگ test Shop id/table اور test database پر `docs/CLOUD-SYNC.md` §7 کی push/preview/apply جانچ کریں؛ key نہ بھیجیں۔
 > Z-05 اور Settings → **App words** کی تصدیق بھی باقی ہے۔

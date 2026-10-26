@@ -138,25 +138,26 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.35.16 (Glaucous `#4F6D7A`) - cloud dependency repair; 860-case Windows and real-cloud proof pending.**
+> **v0.35.17 (Eclipse `#3C4148`) - exact PR allocation parameter repair; 860-case rerun pending.**
 >
-> * **The 90-day cloud window no longer cuts off a financial parent.** Format 2 carries 15 tables:
->   recent headers/lines plus any older sale, purchase or provisional-return chain referenced by a
->   recent payment/reconciliation, with complete lines and no dropped financial links. Status, Preview
->   and Push share one dependency reader; recent lines stay bulk-read. Format 1 remains readable. Apply checks
->   the switch/configuration/format before backup, null ids cannot auto-create rows, and Refresh/Push
->   invalidates an old preview. **Seven facts make 860 cases; 51 static checks, three SQLite round-trips
->   and 5/5 guard injections pass here.** No real Supabase call or .NET run has happened.
+> * **Glaucous really ran and stayed red: 847 passed / 13 failed / 860 total.** The pasted tail names
+>   only `ExcessRefundOnOneMedicine_AlsoCapsTheOtherLinesOfTheBill` and
+>   `OldStatusOnlyLink_BlocksAnotherReturn_UntilTheSameBillIsReconciled`. Both reached PR Link's
+>   allocation INSERT, which requested `@provisionalItemId`/`@saleItemId` while anonymous shorthand
+>   supplied `ProvisionalItemId`/`SaleItemId`. Eclipse binds the exact names explicitly. Do not claim
+>   all thirteen had this cause without the complete log. Existing behavioral cases stay unchanged at
+>   **860**; **52 static checks** and the new guard's **1/1 injection/restoration** pass locally.
+>
+> * **The cloud repair is retained, not re-verified.** Format 2 keeps 15 tables, recent bulk reads,
+>   referenced older parents and complete lines; Apply and stale-preview guards remain. Glaucous's
+>   three SQLite round-trips and 5/5 cloud-guard injections are local evidence only. No real Supabase
+>   endpoint, Excel workbook, or Eclipse xUnit run has been used here.
 >
 > * **Earlier verification is not backfilled.** Paprika really reported **837 passed / 14 failed / 851
->   total** with only four failure identities supplied. Quasar's REAL/Unicode/PR/workbook repair stayed
->   at 853 written cases and was not executed here. Glaucous includes those cases plus seven cloud
->   regressions: the current required result is **`ALL GREEN - 860 of 860`** with the complete log.
->
-> * **Four rules remain partial: E-12, S-05, Z-05 and T-10.** Keep T-10 🟡 until the current green run
->   and the owner's real Excel open/edit/preview/apply/re-import walk-through. E-12/S-05 still need
->   rename/restart/reset proof and Z-05 needs its live reader/correction walk-through. Real cloud
->   push/preview/apply proof is separate. D-93 stock/money and PR cancellation rules are unchanged.
+>   total**. Quasar's 853-case target was not executed. The current requirement is
+>   **`ALL GREEN - 860 of 860`** with the complete log and every remaining failure name. Keep T-10 🟡
+>   until that green run and real Excel open/edit/preview/apply/re-import proof; E-12/S-05/Z-05 and
+>   real-cloud proof also remain open. D-93 stock/money and PR cancellation rules are unchanged.
 >
 > * **v0.35.5 repairs one policy mismatch and two stale test fixtures.** The owner's v0.35.4 run proved
 >   the correct tree (**769 passed, 3 failed, 772 total**). A sign-in ahead of the PC clock now keeps

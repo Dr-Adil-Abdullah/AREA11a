@@ -4021,6 +4021,56 @@ def check_real_stock_projections() -> None:
 
 
 # ---------------------------------------------------------------------------
+def check_pr_reconciliation_parameters() -> None:
+    """The PR allocation command must receive the exact names used in its SQL.
+
+    Microsoft.Data.Sqlite rejected the owner's real run because anonymous-member shorthand exposed
+    ProvisionalItemId/SaleItemId while the SQL requested @provisionalItemId/@saleItemId. Keep the
+    bindings explicit; the existing service-level facts prove the resulting allocation behavior.
+    """
+    service_path = DOTNET / "Area11.Core/Services/ProvisionalReturnService.cs"
+    test_paths = (
+        DOTNET / "Area11.Tests/ProvisionalReconciliationTests.cs",
+        DOTNET / "Area11.Tests/ProvisionalTests.cs",
+    )
+
+    if not service_path.exists() or any(not path.exists() for path in test_paths):
+        fail("PR reconciliation parameter guard needs its service and behavioral test files")
+        return
+
+    service = service_path.read_text(encoding="utf-8", errors="replace")
+    start = service.find("INSERT INTO provisional_return_allocations(")
+    end = service.find("UPDATE provisional_returns", start + 1) if start >= 0 else -1
+
+    if start < 0 or end < 0:
+        fail("PR reconciliation allocation INSERT could not be isolated")
+        return
+
+    block = service[start:end]
+    for needle in (
+        "@provisionalItemId, @saleItemId, @qtyBase, @expected, @refund, @at",
+        "provisionalItemId = line.ProvisionalItemId",
+        "saleItemId = line.SaleItemId",
+    ):
+        if needle not in block:
+            fail(f"PR allocation SQL and explicit parameter binding drifted apart: {needle}")
+
+    if re.search(r"(?m)^\s*line\.(?:ProvisionalItemId|SaleItemId),\s*$", block):
+        fail("PR allocation parameters must not use differently-cased anonymous-member shorthand")
+
+    for path, fact in (
+        (test_paths[0], "ExactLink_ConsumesQuantityAndValue_WithoutAnotherStockOrPaymentEvent"),
+        (test_paths[1], "AttachingTheBill_DoesNotAddTheStockTwice"),
+    ):
+        if fact not in path.read_text(encoding="utf-8", errors="replace"):
+            fail(f"PR allocation behavioral regression is missing: {fact}")
+
+    REPORT.append(
+        "PR reconciliation: allocation SQL receives exact provisional/sale-item parameter names; "
+        "existing facts retain stock/payment behavior")
+
+
+# ---------------------------------------------------------------------------
 def check_cloud_sync_closure() -> None:
     """A 90-day cloud document must not cut off a recent row's financial parent.
 
@@ -5130,6 +5180,7 @@ def main() -> int:
     check_audit_recovery()
     check_report_chart()
     check_real_stock_projections()
+    check_pr_reconciliation_parameters()
     check_cloud_sync_closure()
     check_native_workbook()
     check_csharp_grammar()

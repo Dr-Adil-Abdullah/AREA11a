@@ -22,7 +22,7 @@ features and the four phases.
 |---|---|
 | ✅ | finished - the code is written, compiled on the owner's PC, and tested (or its test is named in the row) |
 | 🟡 | the code is finished; **one action in the shop** still has to prove it (the action is written in the row) |
-| ⬜ | not started - **there are none at v0.35.16** |
+| ⬜ | not started - **there are none at v0.35.17** |
 | 🧪 | a test case covers this row in `Area11.Tests` (the count is checked against `EXPECTED` on every run) |
 
 > **How to read a ✅.** It means the code exists, is covered by a named test, and the solution compiled
@@ -47,7 +47,7 @@ features and the four phases.
 > four red tests are why v0.35.2 exists. Those behaviours rest on **769 cases** plus that one green
 > suite, and the five 🟡 rows wait for one action each in the shop.
 
-> **Board at v0.35.16 (Glaucous):** 57 features - **52 ✅ / 5 🟡 / 0 ⬜ (91.2% / 8.8%)**. Every feature
+> **Board at v0.35.17 (Eclipse):** 57 features - **52 ✅ / 5 🟡 / 0 ⬜ (91.2% / 8.8%)**. Every feature
 > is written, **the program compiles on Windows**, and - new on 23 Oct 2026 - **the window opened and a
 > person signed in on the owner's PC** (v0.33.0: `Signed in: Owner`). The 5 🟡 are the ones only the shop
 > PC can prove, and each is **one action**: one medicine added with a batch (F-08), one delivery entered
@@ -60,18 +60,18 @@ features and the four phases.
 > v0.29.0 moved **F-12 (the dashboard)** to ✅ after giving it 20 tests; the mock database used for
 > them was rebuilt from all 23 migrations and every SQL statement was run on it before shipping.
 
-## Where we stand (v0.35.16)
+## Where we stand (v0.35.17)
 
 | Question | Number | What it means |
 |---|---|---|
 | Features in the board | **57** | **52 ✅ done (91.2%)**, **5 🟡 written but only the shop PC can prove them (8.8%)**, 0 ⬜ not started |
-| Code | **72,193 lines** of C# (Core 34,009 · Desktop 18,093 · Tests 20,091) + **8,412 lines** of XAML | 281 C# files, 39 XAML files |
+| Code | **72,196 lines** of C# (Core 34,012 · Desktop 18,093 · Tests 20,091) + **8,412 lines** of XAML | 281 C# files, 39 XAML files |
 | The shop's rules | **51 service files** in `Area11.Core`, **44 model files**, **35 database tables** over 26 migrations | labels reuse `settings`; migration 026 remains the latest schema change |
 | Screens | **37 views**, **36 page view-models**, 1,393 XAML bindings | every binding and two-way-by-default mode checked against its view-model or row type, including the snapshot panel |
 | Tests | **860 cases** in 67 files | 798 facts + 16 theories (62 inline rows) |
-| Static gates | **51 checks** in `tools/check_repo.py` | ~12 seconds; not a compiler - see the warning at the end |
+| Static gates | **52 checks** in `tools/check_repo.py` | ~12 seconds; not a compiler - see the warning at the end |
 | Reporting a fault | **one file** - `tools\SEND-REPORT.cmd` (v0.30.3, D-78) | build, SDK, git state, shop folder (no rows), whole crash report, last build/test output |
-| Versions shipped | 0.1.0 -> **0.35.16** | each with its own brand colour (D-24) |
+| Versions shipped | 0.1.0 -> **0.35.17** | each with its own brand colour (D-24) |
 | Owner decisions recorded | **D-00 … D-94** | `docs/OWNER-DECISIONS.md`, in Urdu |
 
 **What is actually left.** Nothing in the feature list is unbuilt, and as of v0.31.0 that sentence is
@@ -205,7 +205,7 @@ of books.
 | Migrations 001-026 produce 35 business tables | `python3 tools/check_repo.py` (SQLite) | ✅ |
 | Rules matrix up to date | `python3 tools/build_rules_matrix.py --check` | ✅ |
 | **Compiles on Windows** | `dotnet build Area11.sln` | ✅ 20 Oct 2026 (v0.1.1); re-check after each release |
-| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ `v0.35.16 (Glaucous, #4F6D7A)` |
+| Version, colour and `docs/VERSIONS.md` agree | `python3 tools/check_repo.py` | ✅ `v0.35.17 (Eclipse, #3C4148)` |
 | Every `StaticResource`/`DynamicResource` key exists (**1,535 references**) | `python3 tools/check_repo.py` | ✅ |
 | The 32 label definitions, theme defaults, live headings, Core guards and stable navigation keys agree | `python3 tools/check_repo.py` | ✅ gate #46, proved by theme, missing-heading, notification, stable-key and trimming injections |
 | Z-05 selected-row snapshot, safe correction guidance and absence of universal undo/restore commands | `python3 tools/check_repo.py` | ✅ static gate #47; missing snapshot, Undo command and missing earlier-value binding all rejected, restored source passed (4/4 outcomes) |
@@ -217,13 +217,14 @@ of books.
 | The three script banners match the build | `python3 tools/check_repo.py` | ✅ 3 files |
 | The board and the printable tick-list agree | `python3 tools/make_checklist.py` + the checker | ✅ 57 / 52 / 5 / 0 |
 | **Printer prints (owner's code 6)** | SYSTEM -> *Printer & scanner*, pick the printer, **Print test slip** | 🟡 v0.22.1 fixes the cause (the program opened the print server, not the default printer) - the owner's next slip is the proof |
-| **860 tests written; Glaucous Windows/Excel/real-cloud run pending** | `dotnet test` (or `tools\\RUN-TESTS.cmd`) | 🟡 **Paprika really compiled and opened on the owner's PC but reported 837/851 with 14 failures; Quasar's 853-case repair was not executed here. Glaucous adds seven cloud facts and must show `ALL GREEN - 860 of 860` with the complete `test.log`.** Only four old failure names were supplied. Retain the real Excel, Z-05 and E-12/S-05 checks and follow `docs/CLOUD-SYNC.md` §7 on a separate test Shop id/table and test database copy; no real Supabase endpoint was used here. T-10 remains partial; repeated upload must show zero changes and stock/balances must not change from the file. ✅ Prior fully green evidence: Cypress passed 789/789 in 1 m 6 s; Cedar passed 782/782. |
+| **860 tests written; Eclipse rerun required after Glaucous's 847/860** | `dotnet test` (or `tools\\RUN-TESTS.cmd`) | 🟡 **Glaucous really reported 847 passed / 13 failed / 860 total. Its two visible PR failures exposed the same missing allocation parameters; Eclipse binds the exact names and retains every case.** Only two current failure identities were supplied, so eleven are not presumed fixed. Static guard #52 rejected 1/1 injected old shorthand before restoration. Require `ALL GREEN - 860 of 860` with the complete `test.log`. Retain the real Excel, Z-05 and E-12/S-05 checks and follow `docs/CLOUD-SYNC.md` §7 on a separate test Shop id/table and test database copy; no real Supabase endpoint was used here. T-10 remains partial; repeated upload must show zero changes and stock/balances must not change from the file. ✅ Prior fully green evidence: Cypress passed 789/789 in 1 m 6 s; Cedar passed 782/782. |
 | **Label storage rehearsal** | real SQLite schema + the service's UPSERT/audit transaction shapes | ✅ **6/6 groups:** upgrade defaults, Unicode persistence, five invalid batches, unknown keys, audited reset and rollback. Not a C#/xUnit substitute. |
 
 ## Change log
 
 | Date | What |
 |---|---|
+| 26 Oct 2026 | **v0.35.17 Eclipse - exact PR allocation parameter binding after real Glaucous evidence.** The owner's 860-case Glaucous run reported **847 passed / 13 failed**; the two visible failures both asked for `@provisionalItemId`, `@saleItemId`, `@qtyBase`, `@expected`, `@refund` and `@at`. The INSERT's anonymous object supplied Pascal-case versions of the first two names. Eclipse explicitly binds `provisionalItemId = line.ProvisionalItemId` and `saleItemId = line.SaleItemId`; all allocation quantities, paisa, transactions and no-second-stock/payment rules stay unchanged. Existing behavioral facts remain the regression proof: **860 cases in 67 files, 52 static checks, 281 C# files / 72,196 lines, 787 SQL statements, 1/1 targeted injection/restoration**. Only two failure identities were supplied, so this is not an all-thirteen-fixed claim. Eclipse still needs `ALL GREEN - 860 of 860` and the complete log; real Excel/cloud checks remain separate. No migration or financial rule changed. |
 | 26 Oct 2026 | **v0.35.16 Glaucous - cloud 90-day dependency integrity and safer Apply.** A real-schema rehearsal reproduced a recent payment referencing an omitted older sale and failing the target with `FOREIGN KEY constraint failed`. Format 2 now carries 15 tables: the original twelve plus provisional returns/items/allocations. Recent headers and lines remain bulk-read for 90 days; only referenced older sales, purchases or PR chains are added, with all their lines, while unrelated old bills stay out. Status, Preview and Push share the dependency-complete document reader and rows stay id-ordered. Format 1 remains readable. Apply refuses disabled/incomplete configuration and future formats before backup; null ids cannot auto-create rows; Refresh/Push invalidates old previews. **7 facts → 860 cases in 67 files; 51 static checks; 281 C# files / 72,193 lines; 39 XAML files / 8,412 lines; 787 SQL statements; 1,393 bindings; three SQLite round-trips; 5/5 guard injections.** No .NET, Excel or real Supabase call here: `ALL GREEN - 860 of 860` and `docs/CLOUD-SYNC.md` §7 real-cloud proof remain. Paprika/Quasar evidence is not backfilled; no migration or stock/money rule changed. |
 | 26 Oct 2026 | **v0.35.15 Quasar - Paprika verification repair; the failed result stays on record.** The correct Paprika commit built on .NET SDK 10.0.402 with 0 errors / 9 nullability warnings, opened and navigated, then reported **837 passed / 14 failed / 851 total**. Live Products/Reorder errors are reproduced by an empty product before a stocked one: `IFNULL(SUM(...), 0)` changes from integer zero to `Double`; both projections now explicitly return `REAL`, with two fractional-stock regressions and no INTEGER quantity cast. Settings uses the existing Unicode-preserving JSON writer so the unchanged AppLabel audit test reads real Urdu. PR/RET quantity reads are explicitly REAL, linking still creates no stock/payment event, and any remaining link exception now includes inner detail. Three nullability-only Workbook edits address all nine warnings without changing T-10 behavior. **2 facts → 853 cases in 67 files; 50 static checks; 281 C# files / 71,646 lines; 39 XAML files / 8,412 lines; 779 SQL statements; 1,393 bindings.** Only four Paprika failure names were supplied: the complete 146-line log and `ALL GREEN - 853 of 853` are still required, no all-fourteen fix is claimed, and real Excel proof remains separate. Cloud not started. |
 | 26 Oct 2026 | **v0.35.14 Paprika - T-10 native `.xlsx` and all-data bulk update are written.** Actual-code review found §24.2's all-data/bulk workflow missing as well as the writer. Added a package-free Open XML codec with real Excel shared/inline strings, numbers, booleans and dates; four-sheet templates, native list downloads and the specified eight-sheet workbook without photos/secrets/counters. Added before → after preview, empty=no change, `__CLEAR__`, protected stock/balances/links, separately ticked type-preserving Settings, whole-file catalog checks, stale-row revalidation, one audited transaction and zero changes on repeated upload. CSV imports/report exports remain. **14 facts → 851 cases in 67 files; 49 static checks; 281 C# files / 71,599 lines; 39 XAML files / 8,412 lines; 778 SQL statements; 1,393 bindings; 5/5 guard outcomes.** No .NET SDK or Excel here: T-10 remains 🟡 pending `ALL GREEN - 851 of 851` and the real Excel walk-through. No migration; D-93/PR rules unchanged; cloud not started. |
