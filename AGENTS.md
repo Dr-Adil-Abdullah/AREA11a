@@ -157,12 +157,12 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >   run, not the latest. The current 860-case requirement is achieved; do not start another feature
 >   stage unless the owner writes `next`.
 >
-> * **Physical testing has started.** PT-01 passed on the owner's PC: startup, a photo-inclusive
->   backup and all requested pages worked. The owner asked for a custom/openable backup folder and
->   stronger protection/recovery around restoring an older backup. These requests and the related
->   photo/safety-copy code-review findings are recorded in **`PHYSICAL-TESTING.md`**. The current
->   instruction is to collect the testing findings before production fixes; no backup code has been
->   changed. PT-02 (a genuine product and its details) is next.
+> * **Physical testing is in progress.** PT-01 passed; PT-02 is PARTIAL, with product saves and Black
+>   box entries confirmed but new catalog, unit, rate, navigation, thumbnail, shift, POS and sale-UI
+>   requests outstanding. All findings and the PT-03/PT-04 instructions live in
+>   **`PHYSICAL-TESTING.md`**. Do not start production fixes until the owner writes **OK**; ambiguous
+>   category, stock-unit, discount and opening-cash rules need the owner's choices first. When the
+>   owner writes **next**, provide the next test portion rather than starting a feature stage.
 >
 > * **v0.35.5 repairs one policy mismatch and two stale test fixtures.** The owner's v0.35.4 run proved
 >   the correct tree (**769 passed, 3 failed, 772 total**). A sign-in ahead of the PC clock now keeps

@@ -6,6 +6,7 @@
 
 - Testing کے دوران پہلے واقعہ، توقع، حقیقی نتیجہ اور مطلوبہ تبدیلی **record** ہوگی۔
 - اس مرحلے میں مسائل جمع کیے جا رہے ہیں؛ production changes صرف مالک کی ہدایت پر ہوں گے۔ کوئی نکتہ خاموشی سے fixed یا rejected نہیں لکھا جائے گا۔
+- مالک کے **OK** کے بعد recorded fixes شروع ہوں گے؛ مالک کے **next** پر اگلا physical-test portion بتایا جائے گا۔ اس سے پہلے صرف evidence اور واضح choices طلب کی جائیں گی۔
 - اصل دکان کے database میں صرف حقیقی لین دین؛ فرضی یا خطرناک مالیاتی cases کے لیے الگ test copy۔
 - ہر item کی حالت: **Recorded → Planned → Fixed → Owner verified**۔
 - پرانے owner notes نہیں مٹائے جائیں گے؛ نئی تصدیق کے ساتھ status اور تاریخ شامل ہوگی۔
@@ -23,9 +24,9 @@
 | Test | حالت | مختصر نتیجہ |
 |---|---|---|
 | **PT-01 — Startup, backup اور UI smoke** | **PASS — improvements logged** | ایپ کھلی، photos کے ساتھ backup بنا، اور تمام مقررہ pages کھلے |
-| **PT-02 — حقیقی medicine اور product details** | **NEXT** | Product save، search، zero stock، Reorder اور Black box |
-| **PT-03 — حقیقی purchase، batch، expiry اور payable** | Pending | Stock اور supplier حساب |
-| **PT-04 — Sale، cash/khata، receipt اور drawer** | Pending | روزمرہ فروخت |
+| **PT-02 — حقیقی medicine اور product details** | **PARTIAL — owner feedback logged** | Save product اور Black box کی تصدیق؛ باقی checklist اور نئے مسائل کھلے ہیں |
+| **PT-03 — حقیقی purchase، batch، expiry اور payable** | **INSTRUCTIONS READY** | Stock، batch conversion اور supplier حساب |
+| **PT-04 — Sale، cash/khata، receipt اور drawer** | **INSTRUCTIONS READY** | حقیقی فروخت، price/cart، receipt اور completion feedback |
 | **PT-05 — Returns، PR اور cancellation** | Pending | الگ test copy کے ساتھ محفوظ جانچ |
 | **PT-06 — Shift، ledgers، permissions اور audit** | Pending | مالیاتی اور user workflows |
 | **PT-07 — Excel، restore، printer اور scanner** | Pending | Hardware اور data workflows |
@@ -180,17 +181,228 @@
 - Margin درست اور Black box entry موجود۔
 - کوئی UI یا usability مسئلہ ہو تو یہیں record ہوگا۔
 
-## مالک کا نتیجہ
+## مالک کی تصدیق — 27 اکتوبر 2026
+
+- **Save product:** حقیقی تبدیلیاں save ہوئیں۔
+- **Black box:** product کی changes ریکارڈ ہوئیں — **PASS**۔
+- PT-02 کو مکمل PASS نہیں لکھا گیا کیونکہ blank-name، search/reopen، zero-stock/Reorder اور Margin کی الگ تصدیق ابھی نہیں بھیجی گئی۔
+- Categories، units، rates، photos، navigation، shift اور sale completion پر نئی درخواستیں ملی ہیں۔
+- Product selection/cart کے ساتھ blank/dashes والا مسئلہ بھی report ہوا، مگر اس کا exact reproduction ابھی درکار ہے۔
+- **PT-02: PARTIAL — تفصیلی items نیچے درج ہیں؛ production fixes کا انتظار مالک کے OK اور واضح choices پر ہے۔**
+
+---
+
+# PT-02 کے نئے مسائل اور تبدیلیوں کی درخواستیں
+
+## PT02-CAT-01 — ایک medicine کے لیے ایک سے زیادہ categories یا subcategories
+
+**حالت:** Recorded — owner choice required before design
+**اہمیت:** اہم catalog/data-model تبدیلی
+
+- موجودہ product form میں ایک وقت میں ایک category منتخب ہوتی ہے۔
+- مالک چاہتا ہے کہ ایک medicine ضرورت کے مطابق ایک سے زیادہ groupings میں آ سکے، یا مناسب subcategory نظام ہو۔
+- مالک نے implementation کا انتخاب agent پر چھوڑا ہے، مگر پہلے واضح کرنا ہے کہ مقصد independent tags ہیں یا درختی parent/child categories۔
+- Financial reports میں ایک sale صرف ایک بار count ہو؛ صرف primary category سے total بنے یا کوئی اور غیر مبهم rule طے ہو۔ Multiple filter selections سے sale/profit duplicate نہیں ہونا چاہیے۔
+
+**قبولیت کا معیار:** category/subcategory choices واضح ہوں، product پر تمام selected groups محفوظ ہوں، filters کام کریں، اور category reports کا میزان کبھی double-count نہ ہو۔
+
+## PT02-NAV-01 — Company، Category اور Dashboard سے clickable filtered views
+
+**حالت:** Recorded — no clarification needed for basic direction
+**اہمیت:** UI/navigation بہتری
+
+- Company یا company-related view پر click کریں تو اسی company کی تمام medicines کا filtered product list کھلے۔
+- Category پر click یا right-click → **Show all** سے اس category کی medicines کھلیں۔
+- Dashboard کے cards/numbers متعلقہ detail page سے linked ہوں، صرف display نہ ہوں۔
+- Product/catalog selection کے ہر ایسے مقام پر ایک مستقل اور predictable navigation راستہ ہو۔
+
+**قبولیت کا معیار:** click کے بعد درست filter، records اور count نظر آئیں؛ واپسی پر قائمہ حالت محفوظ رہے؛ empty result کی واضح وجہ ہو۔
+
+## PT02-UNIT-01 — Editable units، pack contents اور strength/volume
+
+**حالت:** Recorded — stock-unit clarification required before implementation
+**اہمیت:** **بنیادی inventory model؛ احتیاط سے design کرنا ہے**
+
+### مالک کی ضرورت
+
+- Base unit کا fixed/محدود انتخاب سمجھ نہیں آ رہا؛ box / strip / tablets کی موجودہ زبان ہر medicine کے لیے موزوں نہیں۔
+- Units کی ایک محفوظ managed list ہو جیسے categories/companies ہیں؛ owner نیا unit بنا اور edit کر سکے، مثلاً `mL`۔
+- Unit کا نام ہر جگہ ایک جیسا رہے تاکہ `ml`، `ML` یا املا کی غلطی سے الگ الگ units نہ بنیں۔
+- Product پر pack کی تفصیل ہو: بڑے ڈبے میں کتنے injections/عدد ہیں، اور ایک injection کتنے `mL` کا ہے۔
+- `50 mL`، `100 mL`، `250 mL` جیسی strength/volume سے search یا filter ممکن ہو۔
+
+### مالک کی مثال
+
+**ایک box میں 10 injections، اور ہر injection 50 mL۔** اس سے physical pack ہے: `1 box = 10 injections`؛ strength ہے: `1 injection = 50 mL`؛ total content ہے: `500 mL / box`۔
+
+### لازمی clarification
+
+Stock اور sale میں **1 injection** گنا جائے گا یا **1 mL**؟ ان دونوں کا inventory فرق ہے۔ پورے injection کی فروخت میں `injection` base unit اور `50 mL` strength الگ رکھنا عام طور پر صاف ہوگا؛ صرف `mL` base unit partial-volume dispensing کے لیے ہے۔
+
+**قبولیت کا معیار:** managed units، duplicate-name guard، pack conversion، strength filter، اور existing REAL/`double` quantities محفوظ ہوں۔ Used unit delete کرنے سے تاریخ یا stock نہ بگڑے؛ edit/inactivate کے اصول واضح ہوں۔
+
+## PT02-PRICE-01 — VIP/Doctor rate اور bill discount % کی ترتیب
+
+**حالت:** Recorded — numeric example required
+**اہمیت:** **مالیاتی rule؛ واضح کیے بغیر تبدیل نہیں کرنا**
+
+- مالک bill میں percentage discount چاہتا ہے اور VIP/Doctor rates کے ساتھ اس کا رویہ واضح کرنا چاہتا ہے۔
+- Discount کے بعد final selling rate اور کم ہوا margin صاف نظر آنا چاہیے۔
+- Special rate اور percentage discount میں replace یا stacking کا تعلق ابھی واضح نہیں۔
+
+**عددی سوال:** Retail `Rs 100`، VIP/Doctor rate `Rs 80`، اور bill discount `10%` ہو تو final unit rate `80`، `72` یا `90` میں سے کیا ہو؟
+
+**محفوظ شرط:** Cost/below-cost guard اور integer-paisa rounding برقرار رہیں؛ discount سے منفی total یا چھپا ہوا loss accept نہ ہو۔
+
+## PT02-PHOTO-01 — Products اور Counter میں medicine thumbnails
+
+**حالت:** Recorded — no clarification needed for basic direction
+**اہمیت:** UI/recognition بہتری
+
+- Product list اور Counter میں چھوٹی medicine photo نظر آئے تاکہ درست چیز پہچاننا آسان ہو۔
+- Photo نہ ہو تو صاف placeholder ہو؛ موجودہ Photos editor اور put-away history قائم رہے۔
+
+**قبولیت کا معیار:** thumbnail جلدی load ہو، row text پڑھنے میں رکاوٹ نہ بنے، click پر بڑی photo ملے، اور photo نہ ہونے سے sale/search متاثر نہ ہو۔
+
+## PT02-SHIFT-01 — Previous closing cash، اگلا opening float اور difference alerts
+
+**حالت:** Recorded — opening-cash choice required
+**اہمیت:** **انتہائی اہم مالیاتی/UI تصدیق**
+
+- مالک کی مثال: رات کو counted closing cash `Rs 6,000` ہو تو صبح نیا shift اسی `6,000` سے جاری ہونا چاہیے؛ `Rs 1,200` سے آزاد شروع کرنے کا موجودہ رویہ سوال پیدا کرتا ہے۔
+- Closing پر short یا over کا فرق چاہے `Rs 100` ہو یا `Rs 1,000`، Alerts میں نظر آنا چاہیے۔
+
+**لازمی clarification:** اگلا float ہمیشہ previous counted closing کے برابر lock ہو، یا وہی default ہو مگر owner/مجاز شخص reason اور audit کے ساتھ بدل سکے؟
+
+**قبولیت کا معیار:** opening cash واضح، short **اور** over دونوں کی الگ alerts، درست shift/person/amount، alert سے shift detail کا link، اور alert سے خودکار کوئی نیا payment یا financial adjustment نہ بنے۔
+
+## PT02-POS-01 — Product selection/cart price اور blank/dashes کی رپورٹ
+
+**حالت:** Needs reproduction — do not guess a fix
+**اہمیت:** ممکنہ core POS مسئلہ؛ پہلے evidence
+
+مالک نے product selection کے دوران price/cart behaviour میں تبدیلی اور کچھ حالات میں fields کے blank یا dashes ظاہر ہونے کی بات کی ہے۔ اصل جملے سے exact page، product state اور sequence واضح نہیں ہے، اس لیے کوئی diagnosis فرض نہیں کیا گیا۔
+
+**درکار evidence:**
+
+1. کونسے page سے شروع کیا: Products یا Counter؟
+2. کونسی medicine select کی، اس کا stock اور batch کیا تھا؟
+3. Select/Add to cart کے بعد کونسا field خالی یا `—` ہوا؟
+4. پہلے کیا ہوتا تھا اور اب کیا ہونا چاہیے؟
+5. اسکرین شاٹ یا مختصر video، اور error ہو تو `SEND-REPORT.cmd` کا report۔
+
+## PT02-SALE-01 — Sale completion کا واضح، optional confirmation
+
+**حالت:** Recorded — basic direction clear
+**اہمیت:** اہم daily workflow/UI
+
+- کامیاب sale کے بعد چھوٹا واضح confirmation ہو: checkmark، **Done**، invoice number اور ضرورت ہو تو **اتنا cash واپس کریں**۔
+- Owner Settings سے یہ popup بند کر سکے۔
+- اگلا کام جلدی شروع کرنے کے لیے واضح **Continue / New sale / Back** جیسا راستہ ہو؛ keyboard سے بھی جلدی آگے بڑھا جا سکے۔
+- Confirmation صرف successful committed sale کے بعد آئے؛ refused sale پر نہیں۔
+
+**قبولیت کا معیار:** ایک sale = ایک invoice، صحیح change، ہلکا non-blocking indicator، Settings persistence، اور اگلی sale فوراً شروع کرنے کی صلاحیت۔
+
+---
+
+# PT-03 — حقیقی Purchase، Batch، Expiry اور Supplier Payable
+
+**مقصد:** حقیقی delivery سے stock اور supplier حساب درست بننا۔
+**شرط:** اصل دکان میں صرف حقیقی delivery درج کریں۔ آزمائشی purchase کے لیے الگ test copy استعمال کریں۔
+
+## شروع کرنے سے پہلے لکھ لیں
+
+- PT-02 medicine کا موجودہ stock: `______`
+- Supplier کا موجودہ payable: `______`
+- اصل delivery کی quantity، pack، batch اور expiry: `______`
+
+## مراحل
+
+1. **Purchases** کھولیں اور حقیقی Supplier منتخب کریں؛ نیا حقیقی supplier ہو تو **Add supplier** سے بنائیں۔
+2. **Search product** میں PT-02 والی medicine منتخب کریں۔
+3. درست **Unit** منتخب کریں: box / strip / base unit۔
+4. حقیقی **Quantity** لکھیں اور اپنے pack formula سے expected base quantity حساب کر لیں۔
+5. حقیقی **Batch number** اور **Expiry** `YYYY-MM` لکھیں۔
+6. Cost/Retail درست ہیں تو آگے بڑھیں۔ **Sample / bonus line** صرف اس وقت tick کریں جب واقعی zero-cost sample ہو۔
+7. **Add line** دبائیں؛ line کی quantity، batch، expiry اور cost دوبارہ پڑھیں۔
+8. **Paid now** میں اصل paid amount لکھیں: full، partial یا `0` اگر پوری delivery udhaar ہے۔
+9. **Save purchase (PINV)** ایک بار دبائیں۔
+
+## PT-03 PASS کا معیار
+
+- ایک حقیقی **PINV** number بنا؛ duplicate document نہیں۔
+- Stock میں بالکل اتنا اضافہ ہوا جتنا `quantity × pack conversion` بنتا ہے۔
+- Product/batch میں درست batch اور expiry نظر آئے۔
+- Purchase total اور `supplier payable = total − paid now` درست ہیں۔
+- Paid cash صرف اتنا ہی ledger/drawer میں آیا جتنا حقیقت میں ادا ہوا۔
+- Products، Reorder، Purchases، Supplier ledger اور Black box میں درست تفصیل موجود ہے۔
+- UI میں کوئی unclear conversion یا blank/dash ہو تو PT02-UNIT/POS items کے ساتھ record کریں۔
+
+## نتیجہ
 
 ```text
-PT-02: PASS / PARTIAL / FAIL
-Medicine کونسی بنائی:
-Blank name refusal:
-Save اور search:
-Stock = 0 اور Reorder:
-Margin:
+PT-03: PASS / PARTIAL / FAIL
+Supplier اور PINV:
+Pehle stock → بعد کا stock:
+Unit × quantity = expected base qty:
+Batch / expiry:
+Purchase total / paid / payable:
 Black box:
-کوئی UI یا دیگر تبدیلی مطلوب ہو:
+کوئی مسئلہ یا UI تبدیلی:
+```
+
+---
+
+# PT-04 — حقیقی Sale، Cart، Cash Change، Receipt اور Completion
+
+**مقصد:** ایک حقیقی sale میں product، price، stock، cash اور receipt ایک جیسے رہیں۔
+**شرط:** اصل books میں صرف حقیقی فروخت۔ Fake customer، fake payment یا صرف test کے لیے credit sale نہ بنائیں۔
+
+## شروع کرنے سے پہلے
+
+- PT-03 کے بعد product stock لکھیں: `______`
+- Drawer/shift کھلا ہو؛ opening cash حقیقی counted رقم ہو اور وہ رقم PT02-SHIFT-01 کے ساتھ record کریں۔
+- پہلے discount، VIP/Doctor اور loyalty کو غیر ضروری complication سے بچائیں؛ پہلی sale simple ہو۔
+
+## مراحل
+
+1. **Counter (POS)** کھولیں۔
+2. Medicine کو name سے search کریں؛ حقیقی barcode ہو تو scan کر کے **Enter** بھی آزمائیں۔
+3. درست unit اور quantity منتخب کر کے **Add to cart** دبائیں۔
+4. Add کرنے سے پہلے اور بعد میں یہ خاص دیکھیں:
+   - Retail / price واضح ہے یا blank/dash؟
+   - Stock اور unit درست ہیں؟
+   - Cart میں item، unit، qty، rate اور total درست ہیں؟
+5. حقیقی customer ہو تو منتخب کریں؛ سادہ cash sale کے لیے customer لازم نہیں۔
+6. Payment **Cash** رکھیں اور حقیقت میں received رقم **Cash received** میں لکھیں۔
+7. **Change** صحیح حساب سے ظاہر ہو؛ received کم ہو تو sale کی رکاوٹ واضح ہو۔
+8. حقیقی receipt چاہیے تو **Print the receipt automatically** tick رکھیں۔
+9. **Complete sale (F4)** صرف ایک بار دبائیں۔
+10. Sale کے بعد دیکھیں کہ confirmation کافی واضح ہے یا نہیں: Done/checkmark، invoice اور cash change۔ موجودہ کمی PT02-SALE-01 میں پہلے سے logged ہے۔
+
+## PT-04 PASS کا معیار
+
+- ایک **INV** بنا اور cart میں دکھائی گئی رقم ہی final bill بنی۔
+- Stock صحیح unit/qty سے کم ہوا؛ batch FEFO قواعد کے مطابق رہا۔
+- Cash received، change، total اور drawer کا فرق درست ہے۔
+- پرنٹ شدہ receipt اور screen کے item/total ایک جیسے ہیں۔
+- Sale completion کا انداز واضح ہے؛ اگر نہیں تو اسی item میں screenshot/note آئے۔
+- Black box میں sale، payment اور print/reprint entries صحیح ہیں۔
+- **Print last bill again** سے وہی bill دوبارہ print ہو مگر کوئی نئی sale/payment نہ بنے۔
+- حقیقی khata sale ہو تو الگ سے customer balance قبل/بعد لکھ کر verify کریں؛ fake credit test نہ بنائیں۔
+
+## نتیجہ
+
+```text
+PT-04: PASS / PARTIAL / FAIL
+INV:
+Cart price / stock / unit:
+Total / received / change:
+Pehle stock → بعد کا stock:
+Receipt:
+Sale completion ظاہر ہوا:
+Black box:
+کوئی blank/dash یا دوسرا مسئلہ:
 ```
 
 ---

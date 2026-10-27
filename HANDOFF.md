@@ -108,9 +108,11 @@ that still lists them as ⬜, it is stale: trust `docs/PROGRESS.md`.
 
 Do them one at a time; each one ends with a commit (see `AGENTS.md` §6).
 
-**Physical testing:** owner results and change requests are now recorded in
-[`PHYSICAL-TESTING.md`](PHYSICAL-TESTING.md). PT-01 passed; backup-location and old-restore recovery
-requests are logged, with no production backup changes yet. PT-02 is the current test.
+**Physical testing:** owner results and change requests are recorded in
+[`PHYSICAL-TESTING.md`](PHYSICAL-TESTING.md). PT-01 passed; PT-02 is PARTIAL with product save and
+Black-box proof plus new catalog/unit/rate/navigation/photo/shift/POS/sale requests. PT-03 and PT-04
+instructions are ready in the log. Do not start fixes until the owner writes **OK**; **next** means
+provide the next test portion. No production changes have been made for these requests.
 
 | # | Task | Acceptance |
 |---|---|---|
