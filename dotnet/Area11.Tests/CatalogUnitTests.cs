@@ -95,7 +95,7 @@ public sealed class CatalogUnitTests
         var primary = products.AddCategory(TestData.Owner, "Primary financial").Value;
         var tag = products.AddCategory(TestData.Owner, "Filter tag").Value;
         var first = Create(products, "Tagged medicine", primary, tag);
-        var second = Create(products, "Primary tag medicine", tag);
+        var second = Create(products, "Primary tag medicine", tag, configure: patch => patch.RetailPaisa = 300);
         AddBatch(test, first, 10, 100, 200);
         AddBatch(test, second, 10, 100, 300);
 
