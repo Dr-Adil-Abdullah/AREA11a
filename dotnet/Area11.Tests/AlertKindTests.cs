@@ -118,7 +118,7 @@ VALUES(@userId, @at, 0, 0, 0, 0, 'open');",
 
         test.Database.Tx(connection => test.Database.Execute(connection,
             "UPDATE batches SET expiry_date = date('now','localtime','+30 days') WHERE product_id = @productId;",
-            new { productId }));
+            new { productId = product }));
 
         var report = Alerts(test).Report();
         var reminder = report.Live.Single(alert => alert.Type == AlertService.TypeExpirySoon);
