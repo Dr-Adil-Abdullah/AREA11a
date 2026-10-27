@@ -98,13 +98,21 @@ public sealed class BackupService
         }
     }
 
+    /// <summary>Recovery instructions survive the restart that follows a restore.</summary>
+    public string LastRestoreSummary => _settings.GetString("backup.lastRestoreSummary");
+
     // ------------------------------ Creating ------------------------------
 
     /// <summary>
     /// Makes one zip and returns it. <paramref name="includePhotos"/> false makes a database-only
     /// backup, which is smaller but loses every photo (Spec 23.1 offers the choice; the page says so).
     /// </summary>
-    public ServiceResult<BackupFile> Create(User? user, bool includePhotos = true, bool automatic = false)
+    /// <param name="destinationFile">
+    /// Optional owner-chosen zip path. The live database never moves, and an existing file is never
+    /// overwritten: a suffix is added instead. Automatic backups always use the managed folder.
+    /// </param>
+    public ServiceResult<BackupFile> Create(User? user, bool includePhotos = true, bool automatic = false,
+        string? destinationFile = null)
     {
         // The program's own daily backup has no signed-in person; anybody else must hold the
         // permission. The menu hides the page, this line is what actually refuses.
@@ -121,7 +129,35 @@ public sealed class BackupService
         {
             var stamp = TimeSource.Now.ToString(StampFormat, CultureInfo.InvariantCulture);
             var name = $"{FilePrefix}{stamp}{(automatic ? "-auto" : string.Empty)}.zip";
-            path = UniquePath(Path.Combine(_backupsFolder, name));
+            var folder = _backupsFolder;
+
+            if (destinationFile is not null)
+            {
+                if (automatic)
+                {
+                    return ServiceResult<BackupFile>.Fail(
+                        "An automatic backup must stay in the managed backup folder.");
+                }
+
+                var requested = Path.GetFullPath(destinationFile);
+
+                if (!string.Equals(Path.GetExtension(requested), ".zip", StringComparison.OrdinalIgnoreCase))
+                {
+                    return ServiceResult<BackupFile>.Fail("Choose an Area11 backup file ending in .zip.");
+                }
+
+                if (string.Equals(requested, _db.FilePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    return ServiceResult<BackupFile>.Fail("The live shop database cannot be used as a backup file.");
+                }
+
+                folder = Path.GetDirectoryName(requested)
+                    ?? throw new InvalidOperationException("The backup needs a destination folder.");
+                Directory.CreateDirectory(folder);
+                name = Path.GetFileName(requested);
+            }
+
+            path = UniquePath(Path.Combine(folder, name));
 
             // 1. A consistent copy of the database, taken by SQLite while other people keep billing.
             CopyDatabase(tempDatabase);
@@ -151,6 +187,8 @@ public sealed class BackupService
                 FullPath = path,
                 Stamp = PrettyStamp(stamp),
                 IsAutomatic = automatic,
+                IsSafetyCopy = name.StartsWith(SafetyPrefix, StringComparison.Ordinal),
+                BackupVersion = BuildInfo.Version,
                 SizeBytes = size
             };
 
@@ -187,7 +225,7 @@ public sealed class BackupService
         }
     }
 
-    /// <summary>Every backup this program made, newest first. Safety copies are not in this list.</summary>
+    /// <summary>Every backup and visible pre-restore recovery zip, newest first.</summary>
     public IReadOnlyList<BackupFile> List()
     {
         var files = new List<BackupFile>();
@@ -197,19 +235,30 @@ public sealed class BackupService
             return files;
         }
 
-        foreach (var path in Directory.EnumerateFiles(_backupsFolder, FilePrefix + "*.zip"))
+        foreach (var path in Directory.EnumerateFiles(_backupsFolder, "area11-*.zip"))
         {
             try
             {
                 var name = Path.GetFileName(path);
-                var automatic = name.Contains("-auto", StringComparison.Ordinal);
+                var regular = name.StartsWith(FilePrefix, StringComparison.Ordinal);
+                var safety = name.StartsWith(SafetyPrefix, StringComparison.Ordinal);
+
+                if (!regular && !safety)
+                {
+                    continue;
+                }
+
+                var manifest = ReadManifestInfo(path);
 
                 files.Add(new BackupFile
                 {
                     FileName = name,
                     FullPath = path,
                     Stamp = StampOf(name),
-                    IsAutomatic = automatic,
+                    IsAutomatic = regular && name.Contains("-auto", StringComparison.Ordinal),
+                    IsSafetyCopy = safety,
+                    MadeAt = manifest.MadeAt,
+                    BackupVersion = manifest.Version,
                     SizeBytes = new FileInfo(path).Length
                 });
             }
@@ -220,8 +269,127 @@ public sealed class BackupService
             }
         }
 
-        // The name carries an ISO stamp, so plain text ordering is date ordering.
-        return files.OrderByDescending(file => file.FileName, StringComparer.Ordinal).ToList();
+        // Regular and safety names have different prefixes, so compare their real stamps rather
+        // than sorting the prefix text and accidentally putting every safety copy at one end.
+        return files.OrderByDescending(SortTime).ThenByDescending(file => file.FileName, StringComparer.Ordinal).ToList();
+    }
+
+    private static DateTime SortTime(BackupFile file)
+    {
+        if (DateTime.TryParseExact(file.MadeAt, TimeFormat, CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var manifestTime))
+        {
+            return manifestTime;
+        }
+
+        var name = file.FileName;
+
+        if (name.StartsWith(FilePrefix, StringComparison.Ordinal))
+        {
+            name = name[FilePrefix.Length..];
+        }
+        else if (name.StartsWith(SafetyPrefix, StringComparison.Ordinal))
+        {
+            name = name[SafetyPrefix.Length..];
+        }
+
+        return ReadStamp(name) ?? DateTime.MinValue;
+    }
+
+    /// <summary>Human age for the red restore panel; an old hand-made zip may not record one.</summary>
+    public string BackupAge(BackupFile file)
+    {
+        if (!DateTime.TryParseExact(file.MadeAt, TimeFormat, CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var madeAt))
+        {
+            return "age not recorded";
+        }
+
+        var age = TimeSource.Now - madeAt;
+
+        if (age < TimeSpan.Zero)
+        {
+            return "backup clock is ahead";
+        }
+
+        if (age.TotalDays >= 1)
+        {
+            return $"{(int)age.TotalDays} day(s) old";
+        }
+
+        return age.TotalHours >= 1
+            ? $"{(int)age.TotalHours} hour(s) old"
+            : "less than one hour old";
+    }
+
+    /// <summary>A clear warning when the live books contain work newer than the selected backup.</summary>
+    public string RestoreWarning(BackupFile file)
+    {
+        if (!DateTime.TryParseExact(file.MadeAt, TimeFormat, CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var madeAt))
+        {
+            return string.Empty;
+        }
+
+        string? latestText;
+
+        try
+        {
+            latestText = _db.Tx(connection => _db.Scalar(connection,
+                "SELECT MAX(at) FROM audit_logs WHERE COALESCE(module, '') <> 'Backup';")?.ToString());
+        }
+        catch (Exception exception) when (exception is SqliteException or InvalidOperationException)
+        {
+            _log.Warn("The newer-work check before restore could not be read.");
+            return " The newer-work check is unavailable; keep the full recovery zip after restoring.";
+        }
+
+        if (DateTime.TryParseExact(latestText, TimeFormat, CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var latest) && latest > madeAt)
+        {
+            return $" Newer work exists in the live shop (latest change {latestText}). " +
+                   "It will be preserved in the full recovery zip before anything is replaced.";
+        }
+
+        return string.Empty;
+    }
+
+    /// <summary>Reads only the small manifest entry; large photo entries are never loaded for the list.</summary>
+    private static (string MadeAt, string Version) ReadManifestInfo(string path)
+    {
+        try
+        {
+            using var zip = ZipFile.OpenRead(path);
+            var entry = zip.Entries.FirstOrDefault(item =>
+                string.Equals(item.FullName, ManifestEntry, StringComparison.OrdinalIgnoreCase));
+
+            if (entry is null)
+            {
+                return (string.Empty, string.Empty);
+            }
+
+            var madeAt = string.Empty;
+            var version = string.Empty;
+            using var reader = new StreamReader(entry.Open());
+
+            while (reader.ReadLine() is { } line)
+            {
+                if (line.StartsWith("madeAt=", StringComparison.Ordinal))
+                {
+                    madeAt = line[7..].Trim();
+                }
+                else if (line.StartsWith("version=", StringComparison.Ordinal))
+                {
+                    version = line[8..].Trim();
+                }
+            }
+
+            return (madeAt, version);
+        }
+        catch (Exception exception) when (exception is InvalidDataException or IOException or UnauthorizedAccessException)
+        {
+            return (string.Empty, string.Empty);
+        }
     }
 
     /// <summary>
@@ -304,11 +472,16 @@ public sealed class BackupService
         }
 
         var unpacked = Path.Combine(Path.GetTempPath(), $"area11-restore-{Guid.NewGuid():N}.db");
+        var stagedPhotos = Path.Combine(Path.GetTempPath(), $"area11-restore-photos-{Guid.NewGuid():N}");
+        string? safetyPath = null;
+        var databaseReplaced = false;
+        var photosTouched = false;
+        var previousPhotos = new List<string>();
+        var photosInside = 0;
 
         try
         {
             var manifest = new Dictionary<string, string>(StringComparer.Ordinal);
-            var photosInside = 0;
 
             if (extension == ".zip")
             {
@@ -334,28 +507,40 @@ public sealed class BackupService
                     (checkedDatabase.Error ?? "The file is not an Area11 database.") + " Nothing was changed.");
             }
 
-            // --- from here on the shop's own file is about to change ---
-
-            var safetyName = SafetyPrefix + TimeSource.Now.ToString(StampFormat, CultureInfo.InvariantCulture) + ".db";
-            var safetyPath = UniquePath(Path.Combine(_backupsFolder, safetyName));
-
-            CopyDatabase(safetyPath);
-
-            // Windows keeps pooled handles on a closed connection. Without this line the copy onto
-            // the live file fails with "used by another process" - and a half-replaced database is
-            // the one outcome this class exists to prevent.
-            SqliteConnection.ClearAllPools();
-
-            RemoveSidecars(_db.FilePath);
-            File.Copy(unpacked, _db.FilePath, overwrite: true);
-
-            // A restored database must not inherit the WAL of the database it replaced: those
-            // frames belong to another file and replaying them corrupts the new one.
-            RemoveSidecars(_db.FilePath);
-
+            // Read and stage the source before creating the safety copy: automatic retention may
+            // trim an old source zip, but it can no longer interrupt this restore halfway through.
             if (extension == ".zip" && photosInside > 0)
             {
-                ExtractPhotos(sourcePath);
+                Directory.CreateDirectory(stagedPhotos);
+                ExtractPhotos(sourcePath, stagedPhotos);
+            }
+
+            // A full recovery zip, not a hidden database-only copy. If this cannot be made, stop here.
+            var safetyName = SafetyPrefix + TimeSource.Now.ToString(StampFormat, CultureInfo.InvariantCulture) + ".zip";
+            var requestedSafety = Path.Combine(_backupsFolder, safetyName);
+            var safety = Create(user, includePhotos: true, automatic: false, destinationFile: requestedSafety);
+
+            if (!safety.Ok || safety.Value is null)
+            {
+                return ServiceResult<RestoreResult>.Fail(
+                    "A full safety backup could not be made, so nothing was restored. " +
+                    (safety.Error ?? "See the log for details."));
+            }
+
+            safetyPath = safety.Value.FullPath;
+
+            if (Directory.Exists(stagedPhotos))
+            {
+                previousPhotos = CollectPhotos();
+            }
+
+            ReplaceDatabase(unpacked);
+            databaseReplaced = true;
+
+            if (Directory.Exists(stagedPhotos))
+            {
+                photosTouched = true;
+                CopyPhotoTree(stagedPhotos, _photosFolder);
             }
 
             _settings.Reload();
@@ -371,23 +556,146 @@ public sealed class BackupService
                 Photos = photosInside
             };
 
-            _audit.RecordStandalone(user, "Backup", "backup_restore",
-                $"{result.BackupName} restored; safety copy {result.SafetyCopy}");
+            var remembered = _settings.SetUiOnly("backup.lastRestoreSummary", result.SummaryText);
 
-            _log.Info($"Restored {result.BackupName}; safety copy {result.SafetyCopy}.");
+            if (!remembered.Ok)
+            {
+                throw new InvalidOperationException(remembered.Error ?? "Recovery details could not be saved.");
+            }
+
+            _audit.RecordStandalone(user, "Backup", "backup_restore",
+                $"{result.BackupName} restored; full recovery zip {result.SafetyCopy}");
+
+            _log.Info($"Restored {result.BackupName}; full recovery zip {result.SafetyCopy}.");
 
             return ServiceResult<RestoreResult>.Success(result);
         }
         catch (Exception exception)
         {
-            _log.Error("The backup could not be restored.", exception);
+            var liveTouched = databaseReplaced || photosTouched;
+            var recovered = TryRollback(safetyPath, databaseReplaced, photosTouched, previousPhotos);
+            _log.Error("The backup could not be restored safely.", exception);
+
+            var state = !liveTouched
+                ? "Nothing in the live shop was replaced."
+                : recovered
+                    ? "The original shop data was put back from the recovery zip."
+                    : "Recovery may be required; use the named full recovery zip before doing more work.";
+            var safetyName = safetyPath is null ? "No recovery zip was created." :
+                "Recovery zip: " + Path.GetFileName(safetyPath) + ".";
+
             return ServiceResult<RestoreResult>.Fail(
-                "The backup could not be restored. The shop's own database is untouched or already " +
-                "copied aside - see the log file. " + exception.Message);
+                $"The backup could not be restored safely. {state} {safetyName} {exception.Message}");
         }
         finally
         {
             TryDelete(unpacked);
+            TryDeleteDirectory(stagedPhotos);
+        }
+    }
+
+    /// <summary>Same-volume staged replacement keeps the old file intact until the new one is ready.</summary>
+    private void ReplaceDatabase(string sourcePath)
+    {
+        var folder = Path.GetDirectoryName(_db.FilePath)
+            ?? throw new InvalidOperationException("The live database has no containing folder.");
+        var staged = Path.Combine(folder, $".area11-live-{Guid.NewGuid():N}.db");
+
+        try
+        {
+            SqliteConnection.ClearAllPools();
+            File.Copy(sourcePath, staged, overwrite: true);
+            RemoveSidecars(_db.FilePath);
+            File.Move(staged, _db.FilePath, overwrite: true);
+        }
+        finally
+        {
+            TryDelete(staged);
+            RemoveSidecars(_db.FilePath);
+        }
+    }
+
+    private bool TryRollback(string? safetyPath, bool databaseReplaced, bool photosTouched,
+        IReadOnlyCollection<string> previousPhotos)
+    {
+        if (!databaseReplaced && !photosTouched)
+        {
+            return true;
+        }
+
+        if (safetyPath is null || !File.Exists(safetyPath))
+        {
+            return false;
+        }
+
+        var rollbackDatabase = Path.Combine(Path.GetTempPath(), $"area11-rollback-{Guid.NewGuid():N}.db");
+
+        try
+        {
+            if (databaseReplaced)
+            {
+                var manifest = new Dictionary<string, string>(StringComparer.Ordinal);
+                var unpacked = Unpack(safetyPath, rollbackDatabase, manifest);
+
+                if (!unpacked.Ok)
+                {
+                    throw new InvalidDataException(unpacked.Error ?? "The recovery database could not be read.");
+                }
+
+                ReplaceDatabase(rollbackDatabase);
+            }
+
+            if (photosTouched)
+            {
+                var keep = new HashSet<string>(previousPhotos, StringComparer.OrdinalIgnoreCase);
+
+                foreach (var extra in CollectPhotos().Where(path => !keep.Contains(path)))
+                {
+                    TryDelete(extra);
+                }
+
+                ExtractPhotos(safetyPath, _photosFolder);
+            }
+
+            _settings.Reload();
+            return true;
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The backup restore rollback also failed.", exception);
+            return false;
+        }
+        finally
+        {
+            TryDelete(rollbackDatabase);
+        }
+    }
+
+    private static void CopyPhotoTree(string sourceFolder, string destinationFolder)
+    {
+        Directory.CreateDirectory(destinationFolder);
+
+        foreach (var source in Directory.EnumerateFiles(sourceFolder, "*", SearchOption.AllDirectories))
+        {
+            var relative = Path.GetRelativePath(sourceFolder, source);
+            var destination = Path.Combine(destinationFolder, relative);
+            Directory.CreateDirectory(Path.GetDirectoryName(destination) ?? destinationFolder);
+            File.Copy(source, destination, overwrite: true);
+        }
+    }
+
+    private static void TryDeleteDirectory(string path)
+    {
+        try
+        {
+            if (Directory.Exists(path))
+            {
+                Directory.Delete(path, recursive: true);
+            }
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            // A temporary folder is harmless; the operating system can sweep it later.
         }
     }
 
@@ -551,9 +859,10 @@ public sealed class BackupService
         }
     }
 
-    private void ExtractPhotos(string zipPath)
+    private static void ExtractPhotos(string zipPath, string destinationFolder)
     {
-        Directory.CreateDirectory(_photosFolder);
+        Directory.CreateDirectory(destinationFolder);
+        var root = Path.GetFullPath(destinationFolder);
 
         using var zip = ZipFile.OpenRead(zipPath);
 
@@ -566,18 +875,19 @@ public sealed class BackupService
             }
 
             var relative = entry.FullName[PhotoFolderEntry.Length..].Replace('/', Path.DirectorySeparatorChar);
+            var full = Path.GetFullPath(Path.Combine(root, relative));
+            var fromRoot = Path.GetRelativePath(root, full);
 
-            // A zip can name a path that climbs out of the folder ("../../evil.dll"). A backup made
-            // by this program never does; a hand-made one must not be able to.
-            var full = Path.GetFullPath(Path.Combine(_photosFolder, relative));
-
-            if (!full.StartsWith(Path.GetFullPath(_photosFolder), StringComparison.OrdinalIgnoreCase))
+            // StartsWith(root) is not enough: "photos-old" also starts with "photos". Reject both
+            // parent traversal and rooted paths before any live photo or database is touched.
+            if (Path.IsPathRooted(fromRoot) || fromRoot == ".."
+                || fromRoot.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal))
             {
-                _log.Warn($"A photo in the backup pointed outside the photo folder and was skipped: {entry.FullName}");
-                continue;
+                throw new InvalidDataException(
+                    $"A photo in the backup pointed outside the photo folder: {entry.FullName}");
             }
 
-            Directory.CreateDirectory(Path.GetDirectoryName(full) ?? _photosFolder);
+            Directory.CreateDirectory(Path.GetDirectoryName(full) ?? root);
             entry.ExtractToFile(full, overwrite: true);
         }
     }
@@ -698,6 +1008,10 @@ public sealed class BackupService
         if (bare.StartsWith(FilePrefix, StringComparison.Ordinal))
         {
             bare = bare[FilePrefix.Length..];
+        }
+        else if (bare.StartsWith(SafetyPrefix, StringComparison.Ordinal))
+        {
+            bare = bare[SafetyPrefix.Length..];
         }
 
         if (bare.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))

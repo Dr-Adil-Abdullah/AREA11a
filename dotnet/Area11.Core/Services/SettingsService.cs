@@ -719,6 +719,8 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         // black box (written with SetUiOnly) - the backup itself writes its own audit line.
         Text("backup.lastRunAt", string.Empty);
         Text("backup.lastFile", string.Empty);
+        // Recovery remains visible after the automatic restart that follows a restore.
+        Text("backup.lastRestoreSummary", string.Empty);
 
         // ---- Cloud sync (later phase) ----
         Flag("sync.enabled", false);

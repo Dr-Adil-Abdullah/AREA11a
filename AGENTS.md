@@ -157,14 +157,14 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >   run, not the latest. The current 860-case requirement is achieved; do not start another feature
 >   stage unless the owner writes `next`.
 >
-> * **Physical testing is in progress.** PT-01 passed; PT-02 is PARTIAL, with product saves and Black
->   box entries confirmed but new catalog, unit, rate, navigation, thumbnail, shift, POS and sale-UI
->   requests outstanding. All findings and the PT-03/PT-04 instructions live in
->   **`PHYSICAL-TESTING.md`**. The owner has now chosen primary-category-plus-tags, whole-sale-unit
->   stock with separate mL strength, explicit-total-percentage versus optional special rates, and
->   carried opening cash with reasoned red discrepancy alerts plus three bell colours. Do not start
->   production fixes until the owner writes **OK**. The POS blank/dashes report still needs exact
->   reproduction evidence. When the owner writes **next**, provide the next test portion, not a feature stage.
+> * **Physical testing and authorized repairs are in progress.** PT-01 passed; PT-02 is PARTIAL, with
+>   product saves and Black-box entries confirmed. All findings, owner decisions and PT-03/PT-04
+>   instructions live in **`PHYSICAL-TESTING.md`**. On 27 October the owner said **“fix the things”**,
+>   authorizing the recorded fixes in safety order. Backup destination/recovery code has changed and
+>   the written suite is **863**; all **52 static checks** pass, but this new tree has not been compiled
+>   or run on Windows and is not covered by the old 860/860 result. Continue with shift, rate/sale UI,
+>   then catalog/unit/navigation/photo repairs; keep each physical verification separate. The POS
+>   blank/dashes report still needs exact reproduction evidence. **next** still means the next test portion.
 >
 > * **v0.35.5 repairs one policy mismatch and two stale test fixtures.** The owner's v0.35.4 run proved
 >   the correct tree (**769 passed, 3 failed, 772 total**). A sign-in ahead of the PC clock now keeps

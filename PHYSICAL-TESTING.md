@@ -5,8 +5,8 @@
 ## کام کا اصول
 
 - Testing کے دوران پہلے واقعہ، توقع، حقیقی نتیجہ اور مطلوبہ تبدیلی **record** ہوگی۔
-- اس مرحلے میں مسائل جمع کیے جا رہے ہیں؛ production changes صرف مالک کی ہدایت پر ہوں گے۔ کوئی نکتہ خاموشی سے fixed یا rejected نہیں لکھا جائے گا۔
-- مالک کے **OK** کے بعد recorded fixes شروع ہوں گے؛ مالک کے **next** پر اگلا physical-test portion بتایا جائے گا۔ اس سے پہلے صرف evidence اور واضح choices طلب کی جائیں گی۔
+- مالک نے 27 اکتوبر کو **“fix the things”** کہہ کر درج شدہ fixes کی اجازت دی ہے؛ کوئی نکتہ خاموشی سے fixed یا rejected نہیں لکھا جائے گا۔
+- Code fix، static check اور owner physical verification الگ الگ لکھے جائیں گے۔ مالک کے **next** پر اگلا physical-test portion بتایا جائے گا۔
 - اصل دکان کے database میں صرف حقیقی لین دین؛ فرضی یا خطرناک مالیاتی cases کے لیے الگ test copy۔
 - ہر item کی حالت: **Recorded → Planned → Fixed → Owner verified**۔
 - پرانے owner notes نہیں مٹائے جائیں گے؛ نئی تصدیق کے ساتھ status اور تاریخ شامل ہوگی۔
@@ -14,8 +14,9 @@
 ## موجودہ build اور automated ثبوت
 
 - Build: **v0.35.18 Obsidian `#27323A`**
-- Owner xUnit: **860 passed / 0 failed / 0 skipped / 860 total — ALL GREEN**
-- Automated مدت: **1 منٹ 17 سیکنڈ**
+- Owner xUnit: **860 passed / 0 failed / 0 skipped / 860 total — ALL GREEN** (صرف tested Obsidian `cb2e321`)
+- موجودہ working tree: **863 written cases**؛ **52/52 static checks PASS**۔ نیا code یہاں compile/run نہیں ہوا؛ Windows پر `ALL GREEN - 863 of 863` ابھی درکار ہے۔
+- Automated مدت: **1 منٹ 17 سیکنڈ** (پرانے tested Obsidian run کی)
 - Physical testing شروع: **27 اکتوبر 2026**
 - Cloud sync: اس physical-testing مرحلے میں فی الحال شامل نہیں۔
 
@@ -44,7 +45,7 @@
 
 ## PT01-BK-01 — Backup folder منتخب کرنا اور actual folder کھولنا
 
-**حالت:** Recorded — fix pending
+**حالت:** Code changed — Windows/Explorer اور USB verification pending
 **اہمیت:** اہم؛ backup میسر ہے مگر اس تک رسائی اور جگہ کا انتخاب واضح ہونا چاہیے۔
 
 ### مالک کی بات
@@ -69,9 +70,15 @@
 5. Custom destination صرف backup zip کے لیے ہو؛ live `area11.db` کی جگہ نہیں بدلنی چاہیے۔
 6. Physical test: default folder، دوسرا local folder اور USB پر backup بن کر کھولا جائے۔
 
+### 27 اکتوبر code update
+
+- **Back up as…** شامل کیا گیا: owner منتخب `.zip` path پر database + منتخب photos کا نیا backup بنا سکتا ہے؛ live database اپنی جگہ رہتا ہے۔
+- ایک ہی destination دوبارہ منتخب ہو تو پرانی zip overwrite نہیں ہوتی، نیا suffix بنتا ہے۔ Backup کے بعد Explorer میں نئی zip منتخب کر کے کھولنے اور مکمل path دکھانے کا راستہ شامل ہے۔
+- نیا regression `Create_BackUpAs_UsesTheChosenFolderWithoutMovingOrOverwritingAnything` لکھا گیا ہے۔ اصل Windows Explorer/USB test ابھی باقی ہے۔
+
 ## PT01-BK-02 — پرانا backup restore کرنے کے بعد نئے کام اور backups کی حفاظت
 
-**حالت:** Recorded — fix and physical proof pending
+**حالت:** Code changed — A/B/C recovery physical proof pending
 **اہمیت:** **انتہائی اہم / data safety**
 **نوٹ:** مالک نے خدشہ اور required safeguard بیان کیا ہے؛ ایسا کوئی actual data-loss incident report نہیں ہوا۔
 
@@ -113,9 +120,17 @@
    - **B** والا data pre-restore safety copy سے recover ہو سکے۔
 8. یہ scenario صرف الگ test copy پر ہوگا، اصل دکان کے books پر نہیں۔
 
+### 27 اکتوبر code update
+
+- Restore confirmation اب manifest کی date/version دکھاتا ہے اور audit میں backup کے بعد کا نیا کام ملنے پر واضح **Newer work** warning دیتا ہے۔
+- Restore سے پہلے **پورا database + تمام موجود photos والا recovery zip** بننا لازمی ہے؛ اس کے ناکام ہونے پر restore رک جاتا ہے۔
+- Recovery zip عام backup list میں **Before restore** کے نام سے دکھتا ہے، automatic trimming میں نہیں آتا، اور اسے دوبارہ restore کر کے pre-restore حالت پر واپس آنے کا automated round-trip لکھا گیا ہے۔
+- Restore کے بعد recovery summary setting میں محفوظ ہوتی ہے، اس لیے restart کے بعد **Last restore and recovery** میں نظر آئے گی۔
+- یہ بدلاو automated source/test coverage ہے؛ اصل A/B/C، damaged zip، locked file اور disk-full physical proof ابھی نہیں ملا۔
+
 ## PT01-BK-03 — متعلقہ code-review نکات: safety copy کی نمائش اور photos
 
-**حالت:** Recorded — investigation pending
+**حالت:** Code changed — restore/fault verification pending
 **ذریعہ:** Agent code review، owner-reported failure نہیں
 **اہمیت:** BK-02 کے ساتھ حل کرنا ضروری ہے۔
 
@@ -143,7 +158,7 @@
 2. **BK-01:** custom destination، Explorer اور backup discovery کا UI۔
 3. ہر fix کے ساتھ automated regression، پھر اوپر والا physical A/B/C scenario۔
 
-فی الحال کسی production file میں ان تبدیلیوں کا کام شروع نہیں کیا گیا۔
+27 اکتوبر کو backup production code بدلا گیا ہے: database replacement same-volume staged file سے ہوتا ہے، photos پہلے staging میں validate ہوتی ہیں، اور بعد کی ناکامی پر safety zip سے database/photos rollback کی کوشش ہوتی ہے۔ Hand-made zip کا `../` photo path اب reject ہوتا ہے۔ تین نئے backup regressions سمیت written suite **863** ہے اور **52 static checks PASS** ہیں؛ locked-file/disk-full fault injection اور Windows A/B/C ابھی owner verification میں ہیں۔
 
 ---
 
