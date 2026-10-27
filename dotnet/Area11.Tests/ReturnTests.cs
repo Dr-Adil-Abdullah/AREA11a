@@ -88,7 +88,7 @@ public sealed class ReturnTests
     {
         using var test = new TestDatabase();
         var (sales, returns, product) = Build(test);
-        var other = TestData.AddProduct(test, name: "Brufen 400mg", retailPaisa: 15000);
+        var other = TestData.AddProduct(test, name: "Brufen 400mg", retailPaisa: 25000);
 
         var sale = sales.Create(TestData.Cart(product), TestData.Owner);
         var otherSale = sales.Create(TestData.Cart(other), TestData.Owner);
