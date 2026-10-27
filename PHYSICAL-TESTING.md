@@ -13,9 +13,10 @@
 
 ## موجودہ build اور automated ثبوت
 
-- Build: **v0.35.18 Obsidian `#27323A`**
+- Build: **v0.35.19 Spruce `#175E54`** (owner-verified پرانے run کا build الگ نیچے لکھا ہے)
 - Owner xUnit: **860 passed / 0 failed / 0 skipped / 860 total — ALL GREEN** (صرف tested Obsidian `cb2e321`)
-- موجودہ working tree: **872 written cases**؛ **52/52 static checks PASS**۔ نیا code یہاں compile/run نہیں ہوا؛ Windows پر `ALL GREEN - 872 of 872` ابھی درکار ہے۔
+- موجودہ working tree: **877 written cases**؛ **52/52 static checks PASS**۔ نیا code یہاں compile/run نہیں ہوا؛ Windows پر `ALL GREEN - 877 of 877` ابھی درکار ہے۔
+- Windows build report میں `AlertKindTests.cs(121,19)` کا `productId` scope compile error ملا؛ وہ `aedb65d` میں ٹھیک push ہو چکا ہے۔ مکمل build/xUnit کا نیا نتیجہ ابھی باقی ہے۔
 - Automated مدت: **1 منٹ 17 سیکنڈ** (پرانے tested Obsidian run کی)
 - Physical testing شروع: **27 اکتوبر 2026**
 - Cloud sync: اس physical-testing مرحلے میں فی الحال شامل نہیں۔
@@ -264,8 +265,8 @@
 
 ## PT02-PRICE-01 — VIP/Doctor rate اور bill discount % کی ترتیب
 
-**حالت:** Decision recorded — implementation awaits owner **OK**
-**اہمیت:** **مالیاتی rule؛ فیصلہ محفوظ، اب code نہیں**
+**حالت:** Code changed — Windows pricing/WPF verification pending
+**اہمیت:** **مالیاتی rule؛ owner decision کے مطابق code اور regression cases لکھے گئے ہیں**
 
 ### مالک کا فیصلہ — 27 اکتوبر 2026
 
@@ -276,6 +277,14 @@
 5. Special rate ایک default/رہنمائی قیمت ہے؛ مختلف doctors یا customers کو مقررہ rate سے مختلف حقیقی قیمت دینا ممکن رہے گا۔
 
 **محفوظ شرط:** Cost/below-cost guard اور integer-paisa rounding برقرار رہیں؛ discount سے منفی total یا چھپا ہوا loss accept نہ ہو۔ Final selling rate اور margin واضح نظر آئیں۔
+
+### 27 اکتوبر code update
+
+- Explicit discount اب line کے **full retail/selling-price total** پر ہے؛ پرانا `discount.mode = margin` بھی نئے sale کا حساب نہیں بدل سکتا۔ Discount موجود ہو تو special rate کے ساتھ stacking نہیں ہوتی۔
+- Discount صفر ہو اور VIP/Doctor rate واقعی مختلف ہو تو **Yes/No** سوال آتا ہے؛ default **No = normal retail** ہے۔ Yes پر وہی `SaleService` quote/commit کرتا ہے۔
+- Cart میں selected unit کا actual rate نظر آتا ہے۔ Owner/Manager agreed custom rate لکھ سکتے ہیں؛ cashier custom rate سے discount limit bypass نہیں کر سکتا۔ Park/resume پر custom paisa rate محفوظ رہتا ہے۔
+- Below-cost lock ON ہو تو pehle سے batch cost سے کم custom/special/retail line refuse ہوتی ہے؛ explicit discount کا موجودہ cost پر clamp اور integer-paisa line-total reconciliation برقرار ہے۔
+- VIP، Doctor، legacy margin setting، below-cost، custom-rate permission اور normal-retail cases لکھے گئے ہیں۔ Windows پر popup کے Yes/No، held rate، actual receipt اور role checks کی physical verification باقی ہے۔
 
 ## PT02-PHOTO-01 — Products اور Counter میں medicine thumbnails
 
@@ -347,7 +356,7 @@ Bell کی رنگت موجودہ سب سے سنگین active alert کے مطاب�
 
 ## PT02-SALE-01 — Sale completion کا واضح، optional confirmation
 
-**حالت:** Recorded — basic direction clear
+**حالت:** Code changed — Windows confirmation/Settings verification pending
 **اہمیت:** اہم daily workflow/UI
 
 - کامیاب sale کے بعد چھوٹا واضح confirmation ہو: checkmark، **Done**، invoice number اور ضرورت ہو تو **اتنا cash واپس کریں**۔
@@ -356,6 +365,13 @@ Bell کی رنگت موجودہ سب سے سنگین active alert کے مطاب�
 - Confirmation صرف successful committed sale کے بعد آئے؛ refused sale پر نہیں۔
 
 **قبولیت کا معیار:** ایک sale = ایک invoice، صحیح change، ہلکا non-blocking indicator، Settings persistence، اور اگلی sale فوراً شروع کرنے کی صلاحیت۔
+
+### 27 اکتوبر code update
+
+- Successful commit کے بعد Counter پر checkmark والا non-blocking card آتا ہے: **Done — sale saved**، invoice/total، change یا due، اور **Done — ready for next sale**۔
+- Card صرف موجودہ confirmation کو ہٹاتا ہے؛ sale دوبارہ save، print، undo یا payment نہیں کرتا۔ اگلا item scan/add کرنا بھی card ہٹا کر نئی sale جاری رکھتا ہے۔
+- Settings → Sales rules میں **sale.successPopup** کا owner-controlled option ہے؛ OFF ہو تو موجودہ status/LastBill رہتا ہے۔ Auto-print الگ setting رہی۔
+- Windows پر settings persistence، keyboard/scan continuation، exact change، refused-sale پر card نہ آنا، اور ایک click پر ایک ہی invoice کی verification باقی ہے۔
 
 ---
 

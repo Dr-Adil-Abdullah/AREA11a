@@ -74,8 +74,10 @@ public sealed class HoldCartTests
         var panadol = TestData.AddProduct(test);
         var brufen = TestData.AddProduct(test, name: "Brufen 400mg", retailPaisa: 15000);
         var holds = TestData.Holds(test);
+        var cart = TwoLines(panadol, brufen);
+        cart.Lines[0].UnitPricePaisa = 25000;  // an owner/manager rate, not a new default
 
-        var held = holds.Hold(TwoLines(panadol, brufen), TestData.Owner);
+        var held = holds.Hold(cart, TestData.Owner);
         Assert.True(held.Ok, held.Error);
 
         var summary = holds.List(TestData.Owner).Value!.Single();
@@ -88,6 +90,7 @@ public sealed class HoldCartTests
         var strip = resumed.Value.Lines.Single(line => line.ProductId == panadol);
         Assert.Equal("strip", strip.Unit);
         Assert.Equal(2, strip.Quantity);
+        Assert.Equal(25000, strip.UnitPricePaisa);
 
         var tablets = resumed.Value.Lines.Single(line => line.ProductId == brufen);
         Assert.Equal("base", tablets.Unit);

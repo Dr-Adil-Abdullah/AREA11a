@@ -404,12 +404,7 @@ FROM products WHERE id = @id AND active = 1;",
             var unit = (lineInput.Unit ?? "base").Trim().ToLowerInvariant();
             // double, never int: the schema stores quantities as REAL and an int here made
             // Math.Round(long) ambiguous (CS0121) on the first Windows build.
-            var unitsPerSelected = unit switch
-            {
-                "box" => (double)(Math.Max(1, product.BoxStrips) * Math.Max(1, product.StripTablets)),
-                "strip" => (double)Math.Max(1, product.StripTablets),
-                _ => 1d
-            };
+            var unitsPerSelected = Product.QuantityPerSelectedUnit(unit, product.BoxStrips, product.StripTablets);
 
             var qtyBase = Calc.ToBase(lineInput.Quantity, unitsPerSelected);
             if (!double.IsFinite(qtyBase) || qtyBase <= 0)
@@ -417,16 +412,26 @@ FROM products WHERE id = @id AND active = 1;",
                 throw new ValidationException("Every line needs a real quantity greater than zero.");
             }
 
-            var tierPrice = customer?.Category?.ToLowerInvariant() switch
-            {
-                "vip" => product.VipPaisa > 0 ? product.VipPaisa : product.RetailPaisa,
-                "doctor" => product.DoctorPaisa > 0 ? product.DoctorPaisa : product.RetailPaisa,
-                _ => product.RetailPaisa
-            };
+            // Special rates are opt-in guidance, never a silent customer-category default. An
+            // explicit discount uses the retail-plus-discount path instead of stacking both rules.
+            var tierPrice = input.UseSpecialRate && input.DiscountPercent == 0
+                ? customer?.Category?.ToLowerInvariant() switch
+                {
+                    "vip" => product.VipPaisa > 0 ? product.VipPaisa : product.RetailPaisa,
+                    "doctor" => product.DoctorPaisa > 0 ? product.DoctorPaisa : product.RetailPaisa,
+                    _ => product.RetailPaisa
+                }
+                : product.RetailPaisa;
 
             if (tierPrice <= 0)
             {
                 throw new ValidationException($"{product.Name}: no retail rate is set.");
+            }
+
+            if (lineInput.UnitPricePaisa > 0 && !user.CanManage)
+            {
+                throw new ValidationException(
+                    "Only the owner or a manager can enter a custom selling rate. Use the allowed discount or the customer's special rate.");
             }
 
             var pricePerSelected = lineInput.UnitPricePaisa > 0
@@ -541,15 +546,22 @@ ORDER BY CASE WHEN expiry_date IS NULL OR expiry_date = '' THEN 1 ELSE 0 END, ex
             lines.AddRange(lineDrafts);
         }
 
-        // Discount (margin or retail), never below cost when the lock is on.
-        var marginMode = !string.Equals(_settings.GetString("discount.mode"), "retail", StringComparison.OrdinalIgnoreCase);
+        // Owner's 27-Oct rule: an explicit percentage is of the full retail/selling-price total,
+        // not merely the profit margin. The below-cost lock and integer-paisa rounding still apply.
         var blockBelowCost = _settings.GetBool("discount.blockBelowCost");
+
+        // A custom/special rate is not a back door around the cost lock. Refuse before saving rather
+        // than clamping only the displayed total while the receipt keeps a contradictory unit rate.
+        if (blockBelowCost && lines.FirstOrDefault(line => line.GrossPaisa < line.LineCostPaisa) is { } belowCost)
+        {
+            throw new ValidationException(
+                $"{belowCost.Name}: the selling rate is below purchase cost. Increase the rate or ask the owner to correct it.");
+        }
 
         foreach (var line in lines)
         {
             var costs = line.LineCostPaisa;
-            var baseForDiscount = marginMode ? Math.Max(0, line.GrossPaisa - costs) : line.GrossPaisa;
-            var discount = Calc.RoundMoney(baseForDiscount * input.DiscountPercent / 100m);
+            var discount = Calc.RoundMoney(line.GrossPaisa * input.DiscountPercent / 100m);
 
             if (blockBelowCost && line.GrossPaisa - discount < costs)
             {

@@ -1,6 +1,6 @@
 # Area11 — مکمل فیچر ٹک لسٹ (پرنٹ کرنے کے لیے)
 
-**ورژن:** v0.35.18 (Obsidian `#27323A`) · **تاریخ:** 2026-10-26
+**ورژن:** v0.35.19 (Spruce `#175E54`) · **تاریخ:** 2026-10-27
 
 > یہ فائل **خودکار** بنتی ہے: `python3 tools/make_checklist.py`۔ ہاتھ سے نہ بدلیں۔
 > اصلی فیصلہ `docs/PROGRESS.md` کے بورڈ میں ہوتا ہے، اور `tools/check_repo.py` اُس سے میل
@@ -32,14 +32,14 @@
 |---|---|---|---|
 | ☐ | F-01 | Solution with three projects | ✅ مکمل |
 | ☐ | F-02 | Exact database schema, migrations 001-026, 35 business tables + provisional report... | ✅ مکمل |
-| ☐ | F-03 | Settings service, 121 keys, every owner-visible change audited, saved in one transa... | ✅ مکمل |
+| ☐ | F-03 | Settings service, 122 keys, every owner-visible change audited, saved in one transa... | ✅ مکمل |
 | ☐ | F-04 | Audit black box (old -> new values, never deleted) | 🟡 جاری |
 | ☐ | F-05 | Sign-in: owner password, staff PIN, 5 tries -> 2 minute lock | ✅ مکمل |
 | ☐ | F-06 | Per-person permissions stored in the database | ✅ مکمل |
 | ☐ | F-07 | Permanent numbering `INV` / `PINV` / `RET` / `Q` / `SR` / `PR` / `ST` | ✅ مکمل |
 | ☐ | F-08 | Products | 🟡 جاری |
 | ☐ | F-09 | Purchases `PINV`: supplier, batch, expiry, sample lines, payable | 🟡 جاری |
-| ☐ | F-10 | Counter `INV`: FEFO, box/strip/unit, discount guard, round-off, cash change, credit | 🟡 جاری |
+| ☐ | F-10 | Counter `INV` | 🟡 جاری |
 | ☐ | F-11 | Customers: quick create at the counter | ✅ مکمل |
 | ☐ | F-12 | Dashboard: today's bills, sales, profit by the report's own rule, khata, payable, l... | ✅ مکمل |
 | ☐ | F-13 | Receipt render + instant ESC/POS print, 58 / 80 mm, auto or manual | ✅ مکمل |
@@ -61,7 +61,7 @@
 - 🟡 **F-04 — Audit black box (old -> new values, never deleted)**: `Black box` کھولیں: آج جو بھی کام کیا (دوا شامل، بل، واپسی)، اُس کی ایک سطر نظر آئے — کس نے، کب، کیا بدلا۔
 - 🟡 **F-08 — Products**: `Products` → **New medicine** → ایک دوا **بیچ کے ساتھ** (بیچ نمبر، میعاد، تعداد) محفوظ کریں۔
 - 🟡 **F-09 — Purchases `PINV`: supplier, batch, expiry, sample lines, payable**: `Purchases` → ایک اصل ڈیلیوری لکھیں (سپلائر، بیچ، میعاد، تعداد) → اسٹاک بڑھے اور واجب الادا بنے۔
-- 🟡 **F-10 — Counter `INV`: FEFO, box/strip/unit, discount guard, round-off, cash change, credit**: `Counter (POS)` → ایک اصل بل بنائیں اور دکان کے پرنٹر پر نکالیں — رسید پوری اور صاف آئے۔
+- 🟡 **F-10 — Counter `INV`**: `Counter (POS)` → ایک اصل بل بنائیں اور دکان کے پرنٹر پر نکالیں — رسید پوری اور صاف آئے۔
 
 **نوٹ:**
 
@@ -176,4 +176,4 @@
 اور اُس کا پیمانہ اوپر لکھا ہے۔ جب آپ کوئی عمل کر لیں اور کہیں کہ «ہو گیا»، تو اُس فیچر کا نشان اگلی دوڑ میں
 ✅ ہو جائے گا — اِس فائل میں خود بخود۔
 
-*بنایا گیا: 2026-10-26 · `tools/make_checklist.py`*
+*بنایا گیا: 2026-10-27 · `tools/make_checklist.py`*

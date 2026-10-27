@@ -12,7 +12,7 @@ public sealed class SaleLineInput
 
     public double Quantity { get; set; }
 
-    /// <summary>Price for one selected unit; 0 = use the customer tier price.</summary>
+    /// <summary>Custom price for one selected unit; 0 = retail or the explicitly accepted special rate.</summary>
     public long UnitPricePaisa { get; set; }
 }
 
@@ -38,6 +38,12 @@ public sealed class SaleInput
     public List<SaleLineInput> Lines { get; set; } = new();
 
     public decimal DiscountPercent { get; set; }
+
+    /// <summary>
+    /// Explicit Yes in the counter's VIP/Doctor popup. False = normal retail; an explicit discount
+    /// also keeps the sale on the retail-plus-discount path instead of combining two price rules.
+    /// </summary>
+    public bool UseSpecialRate { get; set; }
 
     /// <summary>cash | credit | online | card | split</summary>
     public string PaymentMethod { get; set; } = "cash";

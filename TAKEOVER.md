@@ -7,10 +7,10 @@
 > اِس فائل میں یہ سب ہے: پروگرام کیا ہے، ابھی کہاں کھڑا ہے، **کیا باقی ہے**، کیا **کبھی نہیں** کرنا،
 > اور ایک نیا ورژن کیسے نکالنا ہے۔ آپ کے لیے چھوٹی اردو فائل: [`docs/HANDOVER-FOR-OWNER-URDU.md`](docs/HANDOVER-FOR-OWNER-URDU.md)۔
 
-**Status:** v0.35.18 · Obsidian · `#27323A` — **default branch `main`**; this repair is on the current
+**Status:** v0.35.19 · Spruce · `#175E54` — **default branch `main`**; this repair is on the current
 working branch `arena/60395e95-area11a` until its pull request is merged.
 
-*Last updated: 26 October 2026, after the owner's correct **v0.35.18 Obsidian** run at commit `cb2e321` reported **Failed 0, Passed 860, Skipped 0, Total 860 in 1 m 17 s** and printed **`ALL GREEN - 860 of 860 cases passed, failed: 0`**. The current xUnit gate is therefore closed. The feature board still has 52 done / 5 owner-action rows and the matrix still has four partial rules: green tests do not replace real Excel, App words, Black-box live selection or optional real-cloud proof. Recording this result changes documentation only, not code, version, stock, payment, refund or cancellation rules. Paprika's **837/851** and Quasar's unexecuted 853-case target remain historical.*
+*Last updated: 27 October 2026. The current authorized-fix tree has **877 written cases and 52 green static checks**, but no full Windows build/xUnit result yet. The owner's correct **v0.35.18 Obsidian** commit `cb2e321` remains the latest full green proof: **Failed 0, Passed 860, Skipped 0, Total 860 in 1 m 17 s**. `aedb65d` fixes the subsequently reported AlertKindTests compile error; Spruce still needs a fresh full build/run. The feature board remains 52 done / 5 owner-action rows and the matrix has four partial rules. Real Excel, WPF, physical-restore and optional real-cloud evidence remain separate.*
 
 ---
 
@@ -57,11 +57,11 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 
 ## 3. Where it stands right now (read this twice)
 
-**Current source: v0.35.18 "Obsidian" is owner-verified `ALL GREEN - 860 of 860`. The correct commit `cb2e321` compiled Core and Tests on the owner's Windows PC, then passed all 860 cases with zero failed/skipped in 1 m 17 s. This verifies the workbook fixture repairs and retains the confirmed PR Link binding plus Glaucous's format-2 cloud dependency closure and Apply guards. All 52 static checks pass locally. The test result does not mark real Excel, WPF live walk-throughs or real Supabase as proved; T-10, Z-05, E-12 and S-05 remain partial and the five owner-action feature rows remain open. Paprika's real 837/851 and Quasar's unexecuted 853 target are not backfilled. Cypress 789/789 is an earlier green run, not the latest.**
+**Current source: v0.35.19 "Spruce" contains the owner-authorized physical-testing repairs and 877 written cases. Backup/recovery, shift cash continuity/alert severity, explicit full-retail discount, opt-in VIP/Doctor rates, guarded custom rates, held-rate restoration and the optional sale-success card are changed. The reported AlertKindTests compile error is fixed separately in `aedb65d`. All 52 static checks pass locally, but no full Windows build/xUnit/WPF run covers this tree. Obsidian `cb2e321` remains the latest owner-verified full green source at 860/860 in 1 m 17 s; do not backfill that result onto Spruce. T-10, Z-05, E-12 and S-05 remain partial, the five owner-action feature rows remain open, and PT02-POS-01 still needs exact reproduction.**
 
 | | |
 |---|---|
-| Test cases written | **860** in 67 files (`tools\\RUN-TESTS.cmd` compares the run against `EXPECTED=860`) |
+| Test cases written | **877** in 67 files (`tools\\RUN-TESTS.cmd` compares the run against `EXPECTED=877`) |
 | Static checks | **52**, all green: `OK - 52 checks, no problems` |
 | Owner's numbered rules | **116 - 92 ✅ done, 4 🟡 partial, 0 ⬜, 20 standing** - see §4 |
 | Feature board | **57 features — 52 ✅ done, 5 🟡 one shop action each, 0 ⬜ not started** (91.2 % / 8.8 %) |
@@ -84,6 +84,14 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 * On **v0.35.18 Obsidian** his correct `cb2e321` build reported **Failed 0, Passed 860, Skipped 0,
   Total 860 in 1 m 17 s — ALL GREEN**. This is the latest full xUnit proof; it does not by itself
   prove a fresh WPF-window walk-through, real Excel or real Supabase.
+
+### What v0.35.19 changes — physical-testing repairs and explicit counter pricing
+
+* Backup/recovery and shift/alert changes remain as recorded in `PHYSICAL-TESTING.md`; none creates a payment, drawer inflow or reversal row. The reported expiry-reminder test compile error was fixed in `aedb65d` by binding `productId = product`.
+* Explicit discount now uses full retail/selling price even when an old database contains `discount.mode = margin`. With an explicit discount, special rates do not stack. Otherwise an applicable VIP/Doctor rate requires Yes; No keeps ordinary retail.
+* The cart shows the selected-unit rate. Owner/Manager custom rates use the existing integer-paisa override and survive hold/resume; Core refuses cashier custom-rate bypasses and lines already below batch cost when the lock is on. Quote and Create still share `SaleService.Compute`, and bill total remains the sum of line totals.
+* A successful commit can show the optional Done/invoice/change card. It performs no financial action; Done or scanning the next item merely continues. Settings controls it independently of auto-print.
+* The suite is **877 written cases**, not an executed result. Run the full Windows build and require `ALL GREEN - 877 of 877`, then perform the genuine-sale and isolated-restore checks. Next code work is CAT-01, NAV-01, UNIT-01 and PHOTO-01; do not guess PT02-POS-01.
 
 ### What v0.35.18 changes — the real Eclipse result and two workbook fixtures
 
@@ -726,10 +734,8 @@ honest caveat about what is not yet proven. If he asks for a printable status, r
 
 ## 16. The first message to send him (copy, paste, adjust)
 
-> میں نے ریپو پڑھ لی ہے۔ ابھی حالت یہ ہے: **v0.35.18 (Obsidian)** — 860 written cases اور 52 static checks مکمل ہیں۔
-> Obsidian آپ کے PC پر **860/860، 0 failed، 0 skipped، 1 منٹ 17 سیکنڈ** کے ساتھ **ALL GREEN** رہا؛ موجودہ test gate مکمل ہے۔
-> دونوں workbook fixture repairs اب 860-case test run میں ثابت ہیں؛ production کے stock، payment، refund، cancellation اور barcode اصول نہیں بدلے۔ Code بدلے بغیر دوبارہ tests چلانے کی ضرورت نہیں۔
-> اب باقی صرف live walk-throughs ہیں؛ نیا feature stage صرف آپ کے `next` پر شروع ہوگا۔
-> پھر Excel میں workbook کھول کر edit، preview، apply اور دوبارہ upload پر 0 changes دیکھیں؛ T-10 ابھی 🟡 ہے۔
-> Cloud استعمال کرنا ہو تو الگ test Shop id/table اور test database پر `docs/CLOUD-SYNC.md` §7 کی جانچ کریں؛ key نہ بھیجیں۔
-> Z-05 اور Settings → **App words** کی تصدیق بھی باقی ہے۔
+> میں نے ریپو پڑھ لی ہے۔ ابھی حالت یہ ہے: **v0.35.19 (Spruce)** — 877 written cases اور 52 static checks مکمل ہیں۔
+> Spruce کا مکمل Windows build/xUnit ابھی چلانا ہے؛ مطلوبہ نتیجہ **ALL GREEN - 877 of 877** ہے۔ Obsidian کا پرانا **860/860، 1 منٹ 17 سیکنڈ** نتیجہ تاریخی ثبوت ہے، اس نئے tree کا نہیں۔
+> Backup/shift/alert اور PRICE-01/SALE-01 کی authorized fixes لکھی جا چکی ہیں؛ physical verification الگ ہے۔ اگلا code مرحلہ CAT-01، NAV-01، UNIT-01 اور PHOTO-01 ہے؛ PT02-POS-01 کے لیے exact reproduction لازم ہے۔
+> اصل books میں صرف genuine transactions کریں؛ restore/fault scenarios الگ test copy میں۔ `next` پر اگلا physical-test portion دیں۔
+> Real Excel اور App words/Black-box walk-throughs بھی باقی ہیں؛ cloud الگ test Shop id/table اور test database کے بغیر نہیں۔

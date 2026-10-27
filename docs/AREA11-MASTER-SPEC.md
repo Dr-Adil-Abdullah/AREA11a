@@ -130,7 +130,7 @@ Full permission matrix: Section 7.4.
 
 3.1.19 **[U-19]** **Photos live in a folder** (`data/photos/`), the database stores only the file name — keeps the database light. (5 Oct 2026)
 
-3.1.20 **[U-20]** **The basis of discount is chosen by the owner**: on profit or on retail — **both are built**, switchable in Settings. (5 Oct 2026)
+3.1.20 **[U-20]** **Current rule (27 Oct 2026 physical-testing decision):** an explicit discount percentage applies to the **full retail/selling-price total**. This supersedes the 5 Oct margin/retail choice for new sales; the legacy `discount.mode` value is retained only so old databases open safely and does not change the calculation.
 
 3.1.21 **[U-21]** **Medicine room/almari + camera photo**: each medicine carries "where it is kept" and a photo — both. (5 Oct 2026)
 
@@ -204,7 +204,7 @@ Full permission matrix: Section 7.4.
 
 3.3.7 **[E-07]** **Expiry levels**: days + colour from settings (levels 1/2/3).
 
-3.3.8 **[E-08]** **Rates and discount**: kinds of rate, method of discount (margin/retail), limit — all from settings.
+3.3.8 **[E-08]** **Rates and discount**: retail/VIP/Doctor rates remain editable guidance; a special rate requires an explicit counter **Yes**, while **No** keeps retail. Explicit discount is a percentage of full retail, with role limits from Settings (27 Oct 2026 clarification).
 
 3.3.9 **[E-09]** **Round-off, tax, invoice format, printer size (58/80 mm)** — from settings.
 
@@ -375,7 +375,7 @@ Full permission matrix: Section 7.4.
 | Question | Owner's decision | What was built |
 |---|---|---|
 | What does "room" of a medicine mean? | **Both** — rack/room box **and** camera photo | migration `006_product_room` + photo upload (`U-21`) |
-| On what is discount applied? | **Both** — owner chooses in Settings (profit **or** retail) | `discount.mode` = `margin` / `retail` (`U-20`) |
+| On what is discount applied? | Original 5 Oct answer: both. **Superseded 27 Oct: explicit discount is always on full retail** | `SaleService` full-retail calculation; legacy `discount.mode` is inert (`U-20`) |
 | Where do photos live? | **Files in a folder** (not in the database) | `data/photos/` + photo service (`U-19`) |
 | Where are filters wanted? | **All three places** — medicines, customers, bills | filters + sorting in all three lists (`U-22`) |
 | What does "enlarge/reduce folders" mean? | **Simple group** — by category/company/room, not a tree | collapsible groups in the product list (`U-22`) |
@@ -627,10 +627,11 @@ Full permission matrix: Section 7.4.
 | Key | Meaning |
 |---|---|
 | `discount.enabled` | Discount on/off |
-| `discount.mode` (`margin` default / `retail`) | The limit applies to profit margin or to the retail price `[U-20] [Q-08]` |
+| `discount.mode` (legacy, inert) | Old databases may contain `margin` or `retail`; new sales always use full retail `[U-20]` |
 | `discount.maxPercentCashier` (5) | Cashier maximum % |
 | `discount.maxPercentManager` (20) | Manager maximum % (owner unlimited) |
 | `discount.blockBelowCost` (on) | Nobody may discount below purchase cost `[Spec §7.3.1]` |
+| `sale.successPopup` (on) | Optional post-commit Done/invoice/cash-change card on the Counter |
 
 ### 6.7 Expiry, reorder, loyalty
 
@@ -921,19 +922,19 @@ Full permission matrix: Section 7.4.
 
 11.1.1 Normal retail rate; **VIP rate**; **Doctor / institutional rate** (clinics, hospitals, doctors).
 
-11.1.2 Choosing a customer applies the matching rate **automatically** (customer category → rate). A toast says "VIP/DOCTOR rate applied — Rs 20" `[U-29]`.
+11.1.2 Choosing a customer does **not** silently change the selling rate (27 Oct 2026 decision). With no explicit discount and an applicable VIP/Doctor rate, the Counter asks **Yes/No**: Yes uses the special rate; No keeps ordinary retail. A manually edited line rate remains the final explicit override, but arbitrary custom rates are Owner/Manager only and cannot bypass the cost lock. `[U-29]`
 
 ### 11.2 Discount engine `[Spec §7.2] [U-20]`
 
-11.2.1 **Margin method**: the percentage applies **only to the profit margin**. Example: cost Rs 200, retail Rs 300 (margin 100); 10 % discount = Rs 10; final price Rs 290.
+11.2.1 **Current full-retail method**: the percentage applies to the line's full retail/selling-price total. Example: cost Rs 200, retail Rs 300; 10 % discount = Rs 30; final price Rs 270.
 
-11.2.2 **Retail method**: the traditional discount on the retail price or the whole bill.
+11.2.2 **No stacking with a special rate**: when an explicit discount is present, the sale follows retail plus that discount; a VIP/Doctor rate is not included in the percentage calculation. An editable custom line rate is the selling-price base when one was explicitly entered.
 
-11.2.3 The owner chooses the method in Settings (`discount.mode`); both are built.
+11.2.3 The legacy `discount.mode` setting may remain in an old database, but it no longer selects a margin method. This supersedes the former dual-method rule for new sales.
 
 11.2.4 Discount may be typed in rupees or as a percentage.
 
-11.2.5 **Role limits**: cashier 5 %, manager 20 %, owner unlimited (editable). **The limits are enforced on the server side** — no UI can exceed them. Percent limits measure against the margin or the retail value according to `discount.mode`.
+11.2.5 **Role limits**: cashier 5 %, manager 20 %, owner unlimited (editable). **The limits are enforced on the server side** — no UI can exceed them. The percentage always measures against the full retail/selling-price total.
 
 11.2.6 **Hard lock**: no discount may take the price below purchase cost (`discount.blockBelowCost`) — checked per line and per bill `[Spec §7.3.1]`.
 
@@ -1593,7 +1594,7 @@ create table if not exists public.area11_sync (
 
 31.17 **Supplier overpayment**: payment when nothing is owed → payment accepted, alert "paid in advance", black-box row `overpaid: true`.
 
-31.18 **Price examples**: margin discount cost 200 / retail 300 / 10 % → Rs 290; round-off 545 → 540 and 556 → 550; 545 with cost 543 → 545; 545 with cost 500 → 540; below-cost discount refused.
+31.18 **Price examples**: full-retail discount cost 200 / retail 300 / 10 % → Rs 270; with the below-cost lock, a requested discount that crosses cost is capped at cost and warned, while a custom/special line rate already below batch cost is refused; round-off 545 → 540 and 556 → 550; 545 with cost 543 → 545; 545 with cost 500 → 540. VIP/Doctor rate applies only after explicit Yes; No keeps retail. Custom rates are Owner/Manager only.
 
 31.19 **Roles**: a cashier opening an owner/manager page is redirected to `/pos` (HTTP 307) and the API returns 403; a cashier cannot dismiss alerts, import data, run stock-take apply, or manage custom fields.
 
@@ -1921,6 +1922,8 @@ create table if not exists public.area11_sync (
 - 6.2.2 Separate isolation of expired goods: expired goods are blocked from counter sale and available only for "supplier return".
 
 ### SECTION 7: PRICES, PROFIT PROTECTION AND DISCOUNT ENGINE
+
+> **Historical source text below.** The owner's 27 Oct 2026 physical-testing decision supersedes 7.1.4 and 7.2 for new sales: special rates require explicit Yes, No keeps retail, and an explicit discount is always calculated from full retail. See §11.1–§11.2.
 
 **7.1 Multi-tier rates**
 - 7.1.1 Normal retail rate: for an ordinary customer.

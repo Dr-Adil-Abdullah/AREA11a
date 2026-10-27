@@ -42,7 +42,7 @@ Product, process and the owner's direct orders.
 | **U-07** | Whatever code, library, framework feature or repository already exists — use that. | ✅ done | Dapper, Microsoft.Data.Sqlite, WPF, xUnit | - | - |
 | **U-08** | Write as little code as possible. | 🔁 standing rule | one Compute() for quote+save, shared helpers | - | - |
 | **U-09** | Personal use — no license restriction (condition: mature code). | ✅ done | personal use, MIT-style dependencies only | - | - |
-| **U-10** | Everything must be editable — app name, logo, categories… nothing is final (see E). | ✅ done | `Services/SettingsService.cs` + the Settings page (121 keys) | - | - |
+| **U-10** | Everything must be editable — app name, logo, categories… nothing is final (see E). | ✅ done | `Services/SettingsService.cs` + the Settings page (122 keys) | - | - |
 | **U-11** | A change made on the front end must automatically reach the back end/data (see S). | ✅ done | services write straight to SQLite, no second copy | - | - |
 | **U-12** | Every point is written numbered, so nothing is missed. | ✅ done | this matrix | - | - |
 | **U-13** | One link is enough: giving only the repository link must allow any new agent to understand what is done and what remains. HANDOFF.md and AGENTS.md are always kept current. (Order of 1 Oct 2026.) | ✅ done | HANDOFF.md + AGENTS.md + docs/PROGRESS.md + this file | `tools/check_repo.py` | - |
@@ -51,7 +51,7 @@ Product, process and the owner's direct orders.
 | **U-16** | The next work is given to a new/full agent with only the repository link; the questions (Q-01…Q-19) are already settled and must not be asked again. | ✅ done | AGENTS.md is the single entry point | - | - |
 | **U-18** | Category/company etc. are created where they are chosen: wherever a drop-down exists there is "＋ New" — no need to leave to another page. (5 Oct 2026) | ✅ done | `ProductService` categories, companies and shelves; inline supplier in Purchases | - | - |
 | **U-19** | Photos live in a folder (data/photos/), the database stores only the file name — keeps the database light. (5 Oct 2026) | ✅ done | `PhotoService`: the file lives in `photos` **beside the database** (shared folder = both counters see it), the database keeps only the name; migration 021 adds the put-away flag | PhotoTests | Phase 4 |
-| **U-20** | The basis of discount is chosen by the owner: on profit or on retail — both are built, switchable in Settings. (5 Oct 2026) | ✅ done | SaleService + `discount.mode` | SaleTests.RetailDiscount_* | - |
+| **U-20** | Current rule (27 Oct 2026 physical-testing decision): an explicit discount percentage applies to the full retail/selling-price total. This supersedes the 5 Oct margin/retail choice for new sales; the legacy discount.mode value is retained only so old databases open safely and does not change the calculation. | ✅ done | SaleService full-retail discount + Counter's explicit special-rate choice; legacy `discount.mode` is inert | SaleTests.*Discount*, SaleTests.SpecialRate_* | - |
 | **U-21** | Medicine room/almari + camera photo: each medicine carries "where it is kept" and a photo — both. (5 Oct 2026) | ✅ done | `products.room` + photos of the medicine, the customer and the supplier (F-41) | PhotoTests | - |
 | **U-22** | Filter + sort in the three big lists: medicines, customers, bills — and in the medicine list grouping (category/company/room) that can be expanded/collapsed. (5 Oct 2026) | ✅ done | `ProductService.Search` with the fuzzy fallback (F-50) and the Products page filters | ProductTests.* | - |
 | **U-23** | Git updated with every change: whenever the chat is closed, code + documents must both be on GitHub; "no work should be such that it cannot be updated". (5 Oct 2026) | ✅ done | every change pushed | - | - |
@@ -92,14 +92,14 @@ Nothing hard-coded; every label, price and rule from settings.
 
 | Rule | Requirement | State | Where it lives | Test | Phase |
 |---|---|---|---|---|---|
-| **E-01** | Nothing is hard-coded — everything comes from data/settings. | ✅ done | the `settings` table + `SettingsService` (121 keys) and the Settings page; nothing in the shop is hard-coded | SettingsTests.* | - |
+| **E-01** | Nothing is hard-coded — everything comes from data/settings. | ✅ done | the `settings` table + `SettingsService` (122 keys) and the Settings page; nothing in the shop is hard-coded | SettingsTests.* | - |
 | **E-02** | Branding: app name, logo, colour/theme — changeable from Settings. | ✅ done | branding keys (`store.*`, `brand.*`) edited on Settings -> Shop | SettingsTests.* | - |
 | **E-03** | Shop information: name, address, phone, terms — printed on the receipt. | ✅ done | `ReceiptService` prints `store.*` on every bill | ReceiptTests.* | Phase 1 |
 | **E-04** | Categories: create, change, delete, order (unlimited + sub-categories). | ✅ done | `ProductService` + Products → Manage categories and companies: create, rename, two-level parents, order, soft put-away/restore and unlink-only product references; Core permissions and old/new audit; migration 026 orders companies | CatalogTests.* | - |
 | **E-05** | Custom fields: owner makes them — text / number / amount / photo (Spec §2.2). | ✅ done | `CustomFieldService` + SYSTEM → Own fields (F-42): text, number, amount, date, list, yes/no, photo | CustomFieldTests | Phase 4 |
 | **E-06** | Unit and packing: per product 1 Box = X Strips = Y Tablets — changeable later. | ✅ done | `products.box_strips` / `strip_tablets` | SaleTests (unit multiplier) | - |
 | **E-07** | Expiry levels: days + colour from settings (levels 1/2/3). | ✅ done | the three bands are read from `expiry.levels` (fixed in v0.3.10, F-29) | ExpiryTests.* | Phase 2 |
-| **E-08** | Rates and discount: kinds of rate, method of discount (margin/retail), limit — all from settings. | ✅ done | `discount.mode`, `discount.maxPercent*`, tier prices | SaleTests.*Discount* | - |
+| **E-08** | Rates and discount: retail/VIP/Doctor rates remain editable guidance; a special rate requires an explicit counter Yes, while No keeps retail. Explicit discount is a percentage of full retail, with role limits from Settings (27 Oct 2026 clarification). | ✅ done | editable tier prices + `SaleInput.UseSpecialRate`, `discount.maxPercent*`, and `sale.successPopup`; explicit discount always uses full retail | SaleTests.*Discount*, SaleTests.SpecialRate_* | - |
 | **E-09** | Round-off, tax, invoice format, printer size (58/80 mm) — from settings. | ✅ done | `bill.roundTo`, `tax.*` and the printer width in `print.*` | MoneyTests.* | - |
 | **E-10** | Receipt layout: date top/bottom, show/hide columns — by toggle. | ✅ done | `receipt.datePosition` and the `receipt.show*` toggles, edited on Settings | ReceiptTests.* | Phase 1 |
 | **E-11** | Roles and permissions: Owner/Manager/Cashier powers — from settings. | ✅ done | `user_permissions` + `PermissionService` + the people and permission editor on Settings | PermissionTests.* | - |

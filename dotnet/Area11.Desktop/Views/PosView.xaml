@@ -100,11 +100,25 @@
                         </StackPanel>
                     </DockPanel>
 
-                    <DataGrid Grid.Row="1" ItemsSource="{Binding Cart}">
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Cart}"
+                              ToolTip="Rate is rupees per this line's unit. Owner/Manager may edit an agreed custom price; an unchanged retail rate still allows the VIP/Doctor Yes/No choice.">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Item" Binding="{Binding Name, Mode=OneWay}" Width="2*" />
                             <DataGridTextColumn Header="Unit" Binding="{Binding UnitLabel, Mode=OneWay}" Width="60" />
                             <DataGridTextColumn Header="Qty" Binding="{Binding QuantityText, Mode=OneWay}" Width="60" />
+                            <DataGridTemplateColumn Header="Rate Rs" Width="85">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding RateText, Mode=OneWay}" VerticalAlignment="Center" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate>
+                                        <TextBox Text="{Binding RateText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 IsEnabled="{Binding DataContext.CanEditRates, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                            </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
 
@@ -259,6 +273,25 @@
                                   IsChecked="{Binding AutoPrint, Mode=TwoWay}"
                                   ToolTip="Off = the cashier prints with the button below."
                                   Margin="0,8,0,0" />
+
+                        <Border Background="#F0FDF4" BorderBrush="{StaticResource SuccessBrush}"
+                                BorderThickness="1" CornerRadius="7" Padding="10" Margin="0,10,0,0"
+                                Visibility="{Binding ShowSaleSuccess, Converter={StaticResource BoolToVis}}">
+                            <StackPanel>
+                                <TextBlock Text="✓ Done — sale saved" Foreground="{StaticResource SuccessBrush}"
+                                           FontSize="17" FontWeight="Bold" />
+                                <TextBlock Text="{Binding LastBill}" TextWrapping="Wrap"
+                                           FontWeight="SemiBold" Margin="0,5,0,0" />
+                                <TextBlock Text="{Binding SuccessChangeText}" TextWrapping="Wrap"
+                                           Foreground="{StaticResource DangerBrush}" FontSize="15" FontWeight="Bold"
+                                           Margin="0,5,0,0"
+                                           Visibility="{Binding HasSuccessChange, Converter={StaticResource BoolToVis}}" />
+                                <Button Content="Done — ready for next sale" Style="{StaticResource PrimaryButton}"
+                                        Command="{Binding DoneCommand}" IsDefault="True"
+                                        HorizontalAlignment="Left" Margin="0,9,0,0"
+                                        ToolTip="Dismiss this card only. The invoice is already saved; scanning the next item also continues." />
+                            </StackPanel>
+                        </Border>
 
                         <Button Content="Complete sale  (F4)" Style="{StaticResource PrimaryButton}" Height="40"
                                 Margin="0,12,0,0" Command="{Binding CompleteCommand}" />

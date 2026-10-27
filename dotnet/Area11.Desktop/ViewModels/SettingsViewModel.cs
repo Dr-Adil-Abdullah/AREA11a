@@ -43,6 +43,7 @@ public sealed class SettingsViewModel : ObservableObject
     private bool _autoCut;
     private string _copiesText = "1";
     private bool _showDiscount;
+    private bool _saleSuccessPopup;
 
     private string _cashierLimitText = "5";
     private string _managerLimitText = "20";
@@ -261,6 +262,13 @@ public sealed class SettingsViewModel : ObservableObject
     }
 
     // ------------------------------ Sales -------------------------------
+
+    /// <summary>Optional post-commit checkmark/invoice/change card on the counter.</summary>
+    public bool SaleSuccessPopup
+    {
+        get => _saleSuccessPopup;
+        set => SetProperty(ref _saleSuccessPopup, value);
+    }
 
     public string CashierLimitText
     {
@@ -485,6 +493,7 @@ public sealed class SettingsViewModel : ObservableObject
         AutoCut = settings.GetBool("printer.autoCut", true);
         CopiesText = settings.GetLong("printer.copies", 1).ToString(CultureInfo.InvariantCulture);
         ShowDiscount = settings.GetBool("receipt.showDiscount", true);
+        SaleSuccessPopup = settings.GetBool("sale.successPopup", true);
 
         var width = settings.GetInt("printer.width", 58);
         SelectedPaper = PaperOptions.FirstOrDefault(option => option.Width == width) ?? PaperOptions[0];
@@ -725,6 +734,7 @@ public sealed class SettingsViewModel : ObservableObject
             ["printer.autoCut"] = AutoCut,
             ["printer.copies"] = copies,
             ["receipt.showDiscount"] = ShowDiscount,
+            ["sale.successPopup"] = SaleSuccessPopup,
 
             ["discount.maxPercentCashier"] = cashierLimit,
             ["discount.maxPercentManager"] = managerLimit,

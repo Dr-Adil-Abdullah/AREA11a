@@ -218,6 +218,19 @@
                                           Margin="0,14,0,0" />
                                 <TextBlock Text="Recommended. A sale below cost is a real loss, not a discount."
                                            Style="{StaticResource FieldHint}" />
+                                <TextBlock Text="Discount % is of the full retail/selling-price total. With no discount, the Counter asks before using a VIP/Doctor rate; No keeps ordinary retail."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel>
+                                <TextBlock Text="Sale confirmation" Style="{StaticResource SectionTitle}" />
+                                <CheckBox Content="Show the Done / invoice / cash-change card after a saved sale"
+                                          IsChecked="{Binding SaleSuccessPopup, Mode=TwoWay}"
+                                          Margin="0,10,0,0" />
+                                <TextBlock Text="The card appears only after the bill is committed. Off = the existing status line still shows the saved invoice; printing is controlled separately above."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
                             </StackPanel>
                         </Border>
 

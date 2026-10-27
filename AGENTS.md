@@ -138,7 +138,7 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.35.18 (Obsidian `#27323A`) - owner-verified `ALL GREEN - 860 of 860`.**
+> **v0.35.19 (Spruce `#175E54`) - 877 written cases; Obsidian remains the last owner-verified green build.**
 >
 > * **The correct Obsidian commit `cb2e321` passed on the owner's Windows PC:** Failed 0, Passed 860,
 >   Skipped 0, Total 860, in 1 m 17 s. The banner was v0.35.18 and the runner printed
@@ -161,9 +161,11 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >   product saves and Black-box entries confirmed. All findings, owner decisions and PT-03/PT-04
 >   instructions live in **`PHYSICAL-TESTING.md`**. On 27 October the owner said **“fix the things”**,
 >   authorizing the recorded fixes in safety order. Backup destination/recovery and shift cash/alert
->   code has changed; the written suite is **872** and all **52 static checks** pass, but this new tree
->   has not been compiled or run on Windows and is not covered by the old 860/860 result. Continue with
->   rate/sale UI, then catalog/unit/navigation/photo repairs; keep each physical verification separate. The POS
+>   code has changed; the written suite is **877** and all **52 static checks** pass, but this new tree
+>   has not been compiled or run on Windows and is not covered by the old 860/860 result. `aedb65d` fixes
+>   the owner's reported AlertKindTests compile error; a fresh full build/run is still required. Rate/sale
+>   feedback code is now changed too; continue with catalog/unit/navigation/photo repairs and keep each
+>   physical verification separate. The POS
 >   blank/dashes report still needs exact reproduction evidence. **next** still means the next test portion.
 >
 > * **v0.35.5 repairs one policy mismatch and two stale test fixtures.** The owner's v0.35.4 run proved
@@ -687,8 +689,9 @@ tests through the public service methods and a real bill in `TestDatabase`.
 > removed without touching a single real bill (D-76). Three more lessons from the owner's PC, all of
 > them my own tests being wrong about the shop:
 >
-> * **`discount.mode` ships as `margin`** (Spec 11.2.1). 10 % off a 600 bill whose goods cost 400 is
->   20, not 60. Never write a discount expectation without naming the method and the margin.
+> * **Historical, superseded 27 Oct:** v0.29.2 shipped `discount.mode = margin`. The owner's later
+>   physical-testing decision now requires explicit discount on full retail, so 10 % off a Rs 600 bill
+>   is Rs 60. The old release lesson remains here for provenance; it is not the current pricing rule.
 > * **Sales stay gross; profit nets the returns** (21.2 vs 21.6). The Reports page keeps *sales* and
 >   *refunds* as two cards. If the home screen netted them, one day would show two different numbers.
 > * **`SetMany` must receive typed values.** For `expiry.levels` the caller passes `List<ExpiryBand>`;

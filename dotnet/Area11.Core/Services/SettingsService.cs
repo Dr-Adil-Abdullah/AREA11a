@@ -609,6 +609,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Flag("printer.autoCut", true);
         Number("printer.copies", 1);
         Flag("printer.autoPrint", true);
+        Flag("sale.successPopup", true);
 
         // The hardware test (F-46): the owner's ticks, the date, the person and the paper width they
         // belong to. Five plain settings, so a shop that upgrades reads the same words a new shop does.
@@ -655,9 +656,10 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Number("tax.percent", 0);
         Text("tax.label", "Sales Tax");
 
-        // ---- Discount (Q-08 margin default) ----
+        // ---- Discount (27-Oct owner decision: always full retail/selling price) ----
         Flag("discount.enabled", true);
-        Text("discount.mode", "margin");
+        // Legacy key retained for old databases; the 27-Oct owner rule always discounts full retail.
+        Text("discount.mode", "retail");
         Number("discount.maxPercentCashier", 5);
         Number("discount.maxPercentManager", 20);
         Flag("discount.blockBelowCost", true);
