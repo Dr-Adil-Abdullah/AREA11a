@@ -16,10 +16,18 @@ public sealed class ProductService
     private const string SelectSql = @"
 SELECT p.id, p.name, p.generic, p.brand, p.barcode, p.category_id, p.company_id,
        p.rack_no, p.room, p.pack_size_label, p.base_unit, p.box_strips, p.strip_tablets,
+       p.strength_value, p.strength_unit,
        p.cost_paisa, p.retail_paisa, p.vip_paisa, p.doctor_paisa, p.reorder_level,
        p.track_expiry, p.active,
        c.name AS category_name,
+       (SELECT GROUP_CONCAT(tagged.name, ', ')
+        FROM product_category_tags pct
+        JOIN categories tagged ON tagged.id = pct.category_id AND tagged.active = 1
+        WHERE pct.product_id = p.id) AS category_tags,
        co.name AS company_name,
+       (SELECT ph.file_name FROM photos ph
+        WHERE ph.entity = 'product' AND ph.entity_id = p.id AND IFNULL(ph.active, 1) = 1
+        ORDER BY ph.sort_order, ph.id LIMIT 1) AS photo_file_name,
        CAST(IFNULL((SELECT SUM(b.qty_base) FROM batches b WHERE b.product_id = p.id AND b.active = 1), 0) AS REAL) AS stock_base
 FROM products p
 LEFT JOIN categories c ON c.id = p.category_id
@@ -45,25 +53,40 @@ LEFT JOIN companies co ON co.id = p.company_id
         string? term = null,
         int? categoryId = null,
         int? companyId = null,
-        bool lowStockOnly = false)
+        bool lowStockOnly = false,
+        string? strength = null)
     {
         try
         {
             var text = (term ?? string.Empty).Trim();
+            var strengthText = NormalizeStrengthFilter(strength);
 
             using var connection = _db.Open();
             var products = _db.Query<Product>(connection, SelectSql + @"
 WHERE p.active = 1
   AND (@term = '' OR p.name LIKE @like OR IFNULL(p.generic, '') LIKE @like
        OR IFNULL(p.barcode, '') LIKE @like OR IFNULL(p.rack_no, '') LIKE @like
+       OR IFNULL(p.strength_unit, '') LIKE @like
+       OR (p.strength_value > 0 AND printf('%g', p.strength_value) LIKE @like)
+       OR (p.strength_value > 0 AND (printf('%g', p.strength_value) || ' ' || p.strength_unit) LIKE @like)
        OR EXISTS (SELECT 1 FROM product_barcodes pb
                   WHERE pb.product_id = p.id AND pb.active = 1 AND pb.barcode LIKE @like))
   AND (@categoryId IS NULL OR p.category_id = @categoryId OR EXISTS (
       SELECT 1 FROM categories child
-      WHERE child.id = p.category_id AND child.parent_id = @categoryId))
+      WHERE child.id = p.category_id AND child.parent_id = @categoryId)
+       OR EXISTS (
+      SELECT 1 FROM product_category_tags pct
+      JOIN categories tagged ON tagged.id = pct.category_id AND tagged.active = 1
+      WHERE pct.product_id = p.id
+        AND (pct.category_id = @categoryId OR tagged.parent_id = @categoryId)))
   AND (@companyId IS NULL OR p.company_id = @companyId)
+  AND (@strength = '' OR
+       lower(trim(p.strength_unit)) = @strength OR
+       (p.strength_value > 0 AND printf('%g', p.strength_value) = @strength) OR
+       (p.strength_value > 0 AND replace(lower(printf('%g', p.strength_value) || ' ' || trim(p.strength_unit)), ' ', '') = replace(@strength, ' ', '')))
   AND (@lowStock = 0 OR
-       IFNULL((SELECT SUM(b.qty_base) FROM batches b WHERE b.product_id = p.id AND b.active = 1), 0) <= p.reorder_level)
+       (IFNULL((SELECT SUM(b.qty_base) FROM batches b WHERE b.product_id = p.id AND b.active = 1), 0) >= 0
+        AND IFNULL((SELECT SUM(b.qty_base) FROM batches b WHERE b.product_id = p.id AND b.active = 1), 0) <= p.reorder_level))
 ORDER BY p.name COLLATE NOCASE;",
                 new
                 {
@@ -71,6 +94,7 @@ ORDER BY p.name COLLATE NOCASE;",
                     like = $"%{text}%",
                     categoryId,
                     companyId,
+                    strength = strengthText,
                     lowStock = lowStockOnly ? 1 : 0
                 });
 
@@ -98,11 +122,12 @@ ORDER BY p.name COLLATE NOCASE;",
         string? term = null,
         int? categoryId = null,
         int? companyId = null,
-        bool lowStockOnly = false)
+        bool lowStockOnly = false,
+        string? strength = null)
     {
         var typed = (term ?? string.Empty).Trim();
 
-        var exact = Search(typed, categoryId, companyId, lowStockOnly);
+        var exact = Search(typed, categoryId, companyId, lowStockOnly, strength);
 
         if (!exact.Ok || exact.Value is null)
         {
@@ -119,7 +144,7 @@ ORDER BY p.name COLLATE NOCASE;",
 
         // Nothing exact: look for the neighbourhood. The filters still apply, because a person who
         // narrowed the list to one company does not want a suggestion from another one.
-        var all = Search(null, categoryId, companyId, lowStockOnly);
+        var all = Search(null, categoryId, companyId, lowStockOnly, strength);
 
         if (!all.Ok || all.Value is null)
         {
@@ -151,6 +176,12 @@ ORDER BY p.name COLLATE NOCASE;",
         {
             using var connection = _db.Open();
             var product = _db.QuerySingle<Product>(connection, SelectSql + "WHERE p.id = @id;", new { id });
+            if (product is not null)
+            {
+                product.CategoryTagIds = _db.Query<int>(connection,
+                    "SELECT category_id FROM product_category_tags WHERE product_id = @id ORDER BY category_id;",
+                    new { id }).ToList();
+            }
 
             return product is null
                 ? ServiceResult<Product>.Fail("That product no longer exists.")
@@ -181,20 +212,40 @@ ORDER BY p.name COLLATE NOCASE;",
             return ServiceResult<int>.Fail("Rates cannot be negative.");
         }
 
+        var baseUnit = NormalizeUnitName(input.BaseUnit) is { Length: > 0 } cleanBase ? cleanBase : "tablet";
+        var strengthUnit = NormalizeUnitName(input.StrengthUnit);
+        var strengthValue = input.StrengthValue ?? 0;
+        var strengthError = StrengthError(strengthValue, strengthUnit);
+        if (strengthError is not null)
+        {
+            return ServiceResult<int>.Fail(strengthError);
+        }
+        if (strengthValue == 0)
+        {
+            strengthUnit = string.Empty;
+        }
+
         try
         {
             var id = _db.Tx(connection =>
             {
                 EnsureActiveCatalogLinks(connection, input.CategoryId, input.CompanyId);
+                EnsureActiveUnit(connection, baseUnit);
+                if (strengthValue > 0)
+                {
+                    EnsureActiveUnit(connection, strengthUnit);
+                }
 
                 _db.Execute(connection, @"
 INSERT INTO products
     (name, generic, brand, barcode, category_id, company_id, rack_no, room, pack_size_label,
-     base_unit, box_strips, strip_tablets, cost_paisa, retail_paisa, vip_paisa, doctor_paisa,
+     base_unit, strength_value, strength_unit, box_strips, strip_tablets,
+     cost_paisa, retail_paisa, vip_paisa, doctor_paisa,
      reorder_level, track_expiry, active, created_at, updated_at)
 VALUES
     (@name, @generic, @brand, @barcode, @categoryId, @companyId, @rackNo, @room, @packSizeLabel,
-     @baseUnit, @boxStrips, @stripTablets, @costPaisa, @retailPaisa, @vipPaisa, @doctorPaisa,
+     @baseUnit, @strengthValue, @strengthUnit, @boxStrips, @stripTablets,
+     @costPaisa, @retailPaisa, @vipPaisa, @doctorPaisa,
      @reorderLevel, @trackExpiry, 1, @at, @at);",
                     new
                     {
@@ -207,7 +258,9 @@ VALUES
                         rackNo = NullIfEmpty(input.RackNo),
                         room = NullIfEmpty(input.Room),
                         packSizeLabel = NullIfEmpty(input.PackSizeLabel),
-                        baseUnit = string.IsNullOrWhiteSpace(input.BaseUnit) ? "tablet" : input.BaseUnit.Trim(),
+                        baseUnit,
+                        strengthValue,
+                        strengthUnit,
                         boxStrips = Math.Max(0, input.BoxStrips ?? 0),
                         stripTablets = Math.Max(0, input.StripTablets ?? 0),
                         costPaisa = Math.Max(0, input.CostPaisa ?? 0),
@@ -220,6 +273,7 @@ VALUES
                     });
 
                 var newId = (int)_db.NextId(connection);
+                SaveCategoryTags(connection, newId, input.CategoryId, input.CategoryTagIds);
 
                 _audit.Record(connection, actor, "Inventory", "product_create", "products", newId.ToString(),
                     newValue: $"{{\"name\":\"{name}\",\"retailPaisa\":{input.RetailPaisa ?? 0}}}");
@@ -265,7 +319,40 @@ VALUES
                     throw new ValidationException("That product no longer exists.");
                 }
 
+                before.CategoryTagIds = _db.Query<int>(connection,
+                    "SELECT category_id FROM product_category_tags WHERE product_id = @id ORDER BY category_id;",
+                    new { id }).ToList();
+
                 EnsureActiveCatalogLinks(connection, patch.CategoryId, patch.CompanyId);
+                var effectiveCategoryId = patch.CategoryId ?? before.CategoryId;
+                var effectiveTagIds = patch.CategoryTagIds ?? before.CategoryTagIds;
+                if (effectiveCategoryId is int primary && effectiveTagIds.Contains(primary))
+                {
+                    throw new ValidationException("The primary category cannot also be an additional category tag.");
+                }
+                if (patch.BaseUnit is not null)
+                {
+                    var cleanBase = NormalizeUnitName(patch.BaseUnit);
+                    if (cleanBase.Length == 0)
+                    {
+                        throw new ValidationException("Choose a base unit from the managed list.");
+                    }
+                    EnsureActiveUnit(connection, cleanBase);
+                }
+
+                var effectiveStrength = patch.StrengthValue ?? before.StrengthValue;
+                var effectiveStrengthUnit = patch.StrengthUnit is null
+                    ? before.StrengthUnit
+                    : NormalizeUnitName(patch.StrengthUnit);
+                var strengthError = StrengthError(effectiveStrength, effectiveStrengthUnit);
+                if (strengthError is not null)
+                {
+                    throw new ValidationException(strengthError);
+                }
+                if (effectiveStrength > 0)
+                {
+                    EnsureActiveUnit(connection, NormalizeUnitName(effectiveStrengthUnit));
+                }
 
                 var sets = new List<string>();
                 var args = new DynamicParameters();
@@ -331,7 +418,13 @@ VALUES
 
                 if (patch.BaseUnit is not null)
                 {
-                    Set("base_unit", patch.BaseUnit.Trim(), "baseUnit");
+                    Set("base_unit", NormalizeUnitName(patch.BaseUnit), "baseUnit");
+                }
+
+                if (patch.StrengthValue is not null || patch.StrengthUnit is not null)
+                {
+                    Set("strength_value", effectiveStrength, "strengthValue");
+                    Set("strength_unit", effectiveStrength == 0 ? string.Empty : NormalizeUnitName(effectiveStrengthUnit), "strengthUnit");
                 }
 
                 if (patch.BoxStrips is not null)
@@ -379,18 +472,30 @@ VALUES
                     Set("active", patch.Active.Value ? 1 : 0, "active");
                 }
 
-                if (sets.Count == 0)
+                if (patch.CategoryTagIds is not null)
+                {
+                    SaveCategoryTags(connection, id, effectiveCategoryId, patch.CategoryTagIds);
+                }
+
+                if (sets.Count == 0 && patch.CategoryTagIds is null)
                 {
                     return;
                 }
 
+                // Tag-only edits are still product edits: keep the change visible to audit,
+                // workbook snapshots and any reader that uses updated_at for freshness.
                 sets.Add("updated_at = @at");
-
                 _db.Execute(connection,
                     $"UPDATE products SET {string.Join(", ", sets)} WHERE id = @id;",
                     args);
 
                 var after = _db.QuerySingle<Product>(connection, SelectSql + "WHERE p.id = @id;", new { id });
+                if (after is not null)
+                {
+                    after.CategoryTagIds = _db.Query<int>(connection,
+                        "SELECT category_id FROM product_category_tags WHERE product_id = @id ORDER BY category_id;",
+                        new { id }).ToList();
+                }
 
                 _audit.RecordChange(connection, actor, "Inventory", "product_edit", "products", id.ToString(),
                     before, after);
@@ -456,7 +561,9 @@ VALUES
             var rows = _db.Query<Category>(connection, @"
 SELECT c.id, c.name, c.parent_id AS parentId, c.sort_order AS sortOrder, c.active,
        parent.name AS parentName,
-       (SELECT COUNT(1) FROM products p WHERE p.category_id = c.id) AS productCount
+       (SELECT COUNT(DISTINCT p.id) FROM products p
+        LEFT JOIN product_category_tags pct ON pct.product_id = p.id AND pct.category_id = c.id
+        WHERE p.category_id = c.id OR pct.category_id = c.id) AS productCount
 FROM categories c
 LEFT JOIN categories parent ON parent.id = c.parent_id
 " + (activeOnly ? "WHERE c.active = 1 " : string.Empty)
@@ -662,21 +769,26 @@ WHERE id = @id;",
                 }
 
                 var unlinkedIds = new List<int>();
+                var removedTagLinks = 0;
                 if (!active)
                 {
                     unlinkedIds = _db.Query<int>(connection,
                         "SELECT id FROM products WHERE category_id = @id ORDER BY id;", new { id });
+                    removedTagLinks = Convert.ToInt32(_db.Scalar(connection,
+                        "SELECT COUNT(1) FROM product_category_tags WHERE category_id = @id;", new { id }) ?? 0);
                     _db.Execute(connection, @"
 UPDATE products SET category_id = NULL, updated_at = @at WHERE category_id = @id;",
                         new { at = Clock.Now(), id });
+                    _db.Execute(connection,
+                        "DELETE FROM product_category_tags WHERE category_id = @id;", new { id });
                 }
 
                 _db.Execute(connection, "UPDATE categories SET active = @active WHERE id = @id;",
                     new { active, id });
                 var after = FindCategory(connection, id);
                 var details = active
-                    ? "Brought back. Former product links were not recreated."
-                    : $"Put away; unlinked {unlinkedIds.Count} product(s) [{string.Join(", ", unlinkedIds)}]. No product or historical record was deleted.";
+                    ? "Brought back. Former product and filter-tag links were not recreated."
+                    : $"Put away; unlinked {unlinkedIds.Count} primary product(s) [{string.Join(", ", unlinkedIds)}] and removed {removedTagLinks} filter tag link(s). No product or historical record was deleted.";
                 _audit.RecordChange(connection, actor, "Inventory",
                     active ? "category_restore" : "category_put_away", "categories", id.ToString(),
                     before, after, details);
@@ -865,6 +977,253 @@ UPDATE products SET company_id = NULL, updated_at = @at WHERE company_id = @id;"
         }
     }
 
+    /// <summary>Managed units used by product stock and descriptive strength fields.</summary>
+    public ServiceResult<List<Unit>> GetUnits(bool activeOnly = true)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            var rows = _db.Query<Unit>(connection, @"
+SELECT u.id, u.name, u.active, u.whole_only AS wholeOnly, u.sort_order AS sortOrder,
+       (SELECT COUNT(1) FROM products p WHERE LOWER(TRIM(p.base_unit)) = u.name) AS productCount,
+       (SELECT COUNT(1) FROM products p
+        WHERE p.strength_value > 0 AND LOWER(TRIM(p.strength_unit)) = u.name) AS strengthCount
+FROM units u
+" + (activeOnly ? "WHERE u.active = 1 " : string.Empty)
+                + "ORDER BY u.sort_order, u.name COLLATE NOCASE, u.id;");
+            return ServiceResult<List<Unit>>.Success(rows);
+        }
+        catch (Exception exception)
+        {
+            _log.Error("Units could not be loaded.", exception);
+            return ServiceResult<List<Unit>>.Fail("Units could not be loaded.");
+        }
+    }
+
+    public ServiceResult<int> AddUnit(User actor, string? name, int? sortOrder = null, bool wholeOnly = false)
+    {
+        if (!actor.CanManage)
+        {
+            return ServiceResult<int>.Fail("Only the owner or a manager can change units.");
+        }
+
+        var clean = NormalizeUnitName(name);
+        if (clean.Length == 0)
+        {
+            return ServiceResult<int>.Fail("Enter a unit name, for example injection or ml.");
+        }
+        if (clean.Length > 40)
+        {
+            return ServiceResult<int>.Fail("Keep the unit name under 40 characters.");
+        }
+
+        try
+        {
+            return _db.Tx(connection =>
+            {
+                if (UnitNameTaken(connection, clean, 0))
+                {
+                    return ServiceResult<int>.Fail("That unit is already on the list, including a put-away unit.");
+                }
+
+                var order = sortOrder ?? NextSortOrder(connection, "units");
+                if (!IsValidSortOrder(order))
+                {
+                    return ServiceResult<int>.Fail(SortOrderError);
+                }
+
+                _db.Execute(connection,
+                    "INSERT INTO units(name, active, whole_only, sort_order) VALUES(@name, 1, @wholeOnly, @order);",
+                    new { name = clean, wholeOnly, order });
+                var id = Convert.ToInt32(_db.Scalar(connection,
+                    "SELECT id FROM units WHERE rowid = last_insert_rowid();") ?? 0);
+                _audit.RecordChange(connection, actor, "Inventory", "unit_create", "units",
+                    id.ToString(), null, FindUnit(connection, id));
+                return ServiceResult<int>.Success(id);
+            });
+        }
+        catch (Exception exception)
+        {
+            _log.Error("A unit could not be added.", exception);
+            return ServiceResult<int>.Fail("The unit could not be saved. " + exception.Message);
+        }
+    }
+
+    /// <summary>Renames current product labels atomically; historical quantities and documents are untouched.</summary>
+    public ServiceResult UpdateUnit(User actor, int id, string? name, int sortOrder, bool? wholeOnly = null)
+    {
+        if (!actor.CanManage)
+        {
+            return ServiceResult.Fail("Only the owner or a manager can change units.");
+        }
+
+        var clean = NormalizeUnitName(name);
+        if (id <= 0 || clean.Length == 0 || clean.Length > 40 || !IsValidSortOrder(sortOrder))
+        {
+            return ServiceResult.Fail("Choose a unit, enter a name under 40 characters and a valid order.");
+        }
+
+        try
+        {
+            return _db.Tx(connection =>
+            {
+                var before = FindUnit(connection, id);
+                if (before is null)
+                {
+                    return ServiceResult.Fail("That unit no longer exists.");
+                }
+                if (UnitNameTaken(connection, clean, id))
+                {
+                    return ServiceResult.Fail("That unit name is already used, including by a put-away unit.");
+                }
+
+                var parameters = new { clean, old = before.Name, order = sortOrder, wholeOnly, id, at = Clock.Now() };
+                _db.Execute(connection, @"
+UPDATE products SET base_unit = @clean, updated_at = @at
+WHERE LOWER(TRIM(base_unit)) = @old;", parameters);
+                _db.Execute(connection, @"
+UPDATE products SET strength_unit = @clean, updated_at = @at
+WHERE strength_value > 0 AND LOWER(TRIM(strength_unit)) = @old;", parameters);
+                _db.Execute(connection, "UPDATE units SET name = @clean, whole_only = COALESCE(@wholeOnly, whole_only), sort_order = @order WHERE id = @id", parameters);
+                _audit.RecordChange(connection, actor, "Inventory", "unit_update", "units",
+                    id.ToString(), before, FindUnit(connection, id),
+                    "Current product unit labels updated together; no stock quantity or historical document was rewritten.");
+                return ServiceResult.Success();
+            });
+        }
+        catch (Exception exception)
+        {
+            _log.Error("A unit could not be updated.", exception);
+            return ServiceResult.Fail("The unit could not be saved. " + exception.Message);
+        }
+    }
+
+    /// <summary>Put-away is refused while a current product uses the unit; no stock label is silently cleared.</summary>
+    public ServiceResult SetUnitActive(User actor, int id, bool active)
+    {
+        if (!actor.CanManage)
+        {
+            return ServiceResult.Fail("Only the owner or a manager can change units.");
+        }
+
+        try
+        {
+            return _db.Tx(connection =>
+            {
+                var before = FindUnit(connection, id);
+                if (before is null)
+                {
+                    return ServiceResult.Fail("That unit no longer exists.");
+                }
+                if (before.Active == active)
+                {
+                    return ServiceResult.Success();
+                }
+                if (!active && before.UsageCount > 0)
+                {
+                    return ServiceResult.Fail(
+                        $"This unit is used by {before.UsageCount} product field(s). Rename those products first; nothing was unlinked.");
+                }
+                if (active && UnitNameTaken(connection, before.Name, id))
+                {
+                    return ServiceResult.Fail("Another unit uses this name. Rename one before bringing it back.");
+                }
+
+                _db.Execute(connection, "UPDATE units SET active = @active WHERE id = @id;", new { active, id });
+                _audit.RecordChange(connection, actor, "Inventory",
+                    active ? "unit_restore" : "unit_put_away", "units", id.ToString(),
+                    before, FindUnit(connection, id));
+                return ServiceResult.Success();
+            });
+        }
+        catch (Exception exception)
+        {
+            _log.Error("A unit's active state could not be changed.", exception);
+            return ServiceResult.Fail("The unit could not be changed. " + exception.Message);
+        }
+    }
+
+    private Unit? FindUnit(SqliteConnection connection, int id) =>
+        _db.QuerySingle<Unit>(connection, @"
+SELECT u.id, u.name, u.active, u.whole_only AS wholeOnly, u.sort_order AS sortOrder,
+       (SELECT COUNT(1) FROM products p WHERE LOWER(TRIM(p.base_unit)) = u.name) AS productCount,
+       (SELECT COUNT(1) FROM products p
+        WHERE p.strength_value > 0 AND LOWER(TRIM(p.strength_unit)) = u.name) AS strengthCount
+FROM units u WHERE u.id = @id;", new { id });
+
+    private static string NormalizeUnitName(string? value) =>
+        string.Join(" ", (value ?? string.Empty).Trim()
+            .Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))
+            .ToLowerInvariant();
+
+    private static string NormalizeStrengthFilter(string? value) => NormalizeUnitName(value);
+
+    private static string? StrengthError(double value, string? unit)
+    {
+        if (!double.IsFinite(value) || value < 0)
+        {
+            return "Strength must be a finite number of zero or more.";
+        }
+        if (value > 0 && NormalizeUnitName(unit).Length == 0)
+        {
+            return "Choose a managed unit for the strength, such as ml.";
+        }
+        return null;
+    }
+
+    private void EnsureActiveUnit(SqliteConnection connection, string? name)
+    {
+        var clean = NormalizeUnitName(name);
+        var exists = Convert.ToInt32(_db.Scalar(connection,
+            "SELECT COUNT(1) FROM units WHERE name = @name AND active = 1;", new { name = clean }) ?? 0);
+        if (clean.Length == 0 || exists == 0)
+        {
+            throw new ValidationException(
+                $"The unit '{clean}' is not on the active managed list. Add or restore it in Manage units first.");
+        }
+    }
+
+    private bool UnitNameTaken(SqliteConnection connection, string name, int exceptId) =>
+        Convert.ToInt64(_db.Scalar(connection,
+            "SELECT COUNT(1) FROM units WHERE LOWER(name) = LOWER(@name) AND id <> @exceptId;",
+            new { name, exceptId }) ?? 0L) > 0;
+
+    private void SaveCategoryTags(
+        SqliteConnection connection,
+        int productId,
+        int? primaryCategoryId,
+        IReadOnlyCollection<int>? tagIds)
+    {
+        if (tagIds is null)
+        {
+            return;
+        }
+
+        var clean = tagIds.Where(id => id > 0).Distinct().ToList();
+        if (primaryCategoryId is int primary && clean.Contains(primary))
+        {
+            throw new ValidationException("The primary category is already included; choose only additional category tags.");
+        }
+
+        foreach (var tagId in clean)
+        {
+            var exists = Convert.ToInt32(_db.Scalar(connection,
+                "SELECT COUNT(1) FROM categories WHERE id = @tagId AND active = 1;", new { tagId }) ?? 0);
+            if (exists == 0)
+            {
+                throw new ValidationException("Every additional category tag must be on the active category list.");
+            }
+        }
+
+        _db.Execute(connection, "DELETE FROM product_category_tags WHERE product_id = @productId;", new { productId });
+        foreach (var tagId in clean)
+        {
+            _db.Execute(connection,
+                "INSERT INTO product_category_tags(product_id, category_id) VALUES(@productId, @tagId);",
+                new { productId, tagId });
+        }
+    }
+
     private void EnsureActiveCatalogLinks(SqliteConnection connection, int? categoryId, int? companyId)
     {
         if (categoryId is not null)
@@ -951,9 +1310,13 @@ FROM companies WHERE id = @id;", new { id });
 
     private int NextSortOrder(SqliteConnection connection, string table)
     {
-        var sql = table == "categories"
-            ? "SELECT IFNULL(MAX(sort_order), 0) + 10 FROM categories;"
-            : "SELECT IFNULL(MAX(sort_order), 0) + 10 FROM companies;";
+        var sql = table switch
+        {
+            "categories" => "SELECT IFNULL(MAX(sort_order), 0) + 10 FROM categories;",
+            "companies" => "SELECT IFNULL(MAX(sort_order), 0) + 10 FROM companies;",
+            "units" => "SELECT IFNULL(MAX(sort_order), 0) + 10 FROM units;",
+            _ => throw new ArgumentOutOfRangeException(nameof(table))
+        };
         return Convert.ToInt32(_db.Scalar(connection, sql) ?? 10);
     }
 

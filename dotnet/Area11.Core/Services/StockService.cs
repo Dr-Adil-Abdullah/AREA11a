@@ -191,6 +191,11 @@ FROM products WHERE id = @id AND active = 1;", new { id = input.ProductId });
         {
             throw new ValidationException("The quantity must be a real number more than zero.");
         }
+        if (UnitPolicy.RequiresWhole(_db, connection, product.BaseUnit) && !Qty.IsWhole(qtyBase))
+        {
+            throw new ValidationException(
+                $"{product.Name}: stock corrections use whole {product.BaseUnit} units; ml is strength, not a stock division.");
+        }
 
         // Which batch? The owner can pick one; otherwise the oldest expiry (the one to destroy first).
         var batch = input.BatchId is int wanted

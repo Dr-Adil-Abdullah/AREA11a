@@ -32,6 +32,11 @@ internal static class StockPolicy
             throw new ValidationException(
                 productName + ": the " + operation + " quantity must be a real number greater than zero.");
         }
+        if (UnitPolicy.RequiresWhole(db, connection, baseUnit) && !Qty.IsWhole(quantity))
+        {
+            throw new ValidationException(
+                productName + ": " + operation + " uses whole " + baseUnit + " units; strength is not a stock division.");
+        }
 
         var batch = ReadBatch(db, connection, productId, batchId)
             ?? throw new ValidationException(

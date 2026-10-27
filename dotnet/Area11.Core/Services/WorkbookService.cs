@@ -232,6 +232,16 @@ public sealed class WorkbookService
                 {
                     VerifyPlan(record);
                     VerifyCurrentRow(connection, record);
+                    if (record.Table == "products")
+                    {
+                        var unit = record.Fields.FirstOrDefault(field => field.SqlName == "base_unit");
+                        if (unit is not null && !ActiveUnitExists(connection,
+                                NormalizeUnitName(Convert.ToString(unit.NewValue, CultureInfo.InvariantCulture))))
+                        {
+                            throw new ValidationException(
+                                "A base unit in this workbook is no longer active. Preview a fresh workbook; nothing was changed.");
+                        }
+                    }
                 }
 
                 var oldErrorCount = preview.ErrorCount;
@@ -531,6 +541,15 @@ WHERE active = 1 AND product_id <> @id AND LOWER(TRIM(barcode)) = LOWER(@code);"
             {
                 return "Choose a company that exists and is active.";
             }
+
+            if (changed.Contains("base_unit"))
+            {
+                var unit = NormalizeUnitName(Convert.ToString(after["base_unit"], CultureInfo.InvariantCulture));
+                if (!ActiveUnitExists(connection, unit))
+                {
+                    return "Base unit '" + unit + "' is not on the active managed list. Add or restore it in Manage units first.";
+                }
+            }
         }
         else if (schema.Name == "Customers")
         {
@@ -574,6 +593,16 @@ WHERE active = 1 AND product_id <> @id AND LOWER(TRIM(barcode)) = LOWER(@code);"
         };
         return Convert.ToInt64(_db.Scalar(connection, sql, new { id = value }) ?? 0L) > 0;
     }
+
+    private bool ActiveUnitExists(SqliteConnection connection, string name) =>
+        name.Length > 0 && Convert.ToInt64(_db.Scalar(connection,
+            "SELECT COUNT(1) FROM units WHERE active = 1 AND name = @name COLLATE NOCASE;",
+            new { name }) ?? 0L) > 0;
+
+    private static string NormalizeUnitName(string? value) =>
+        string.Join(" ", (value ?? string.Empty).Trim()
+            .Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))
+            .ToLowerInvariant();
 
     private void ValidateAcrossRows(SqliteConnection connection, BulkUpdatePreview preview)
     {
@@ -1037,6 +1066,11 @@ WHERE active = 1 AND product_id <> @id AND LOWER(TRIM(barcode)) = LOWER(@code);"
             }
 
             return new ParsedCell(null, string.Empty);
+        }
+
+        if (column.SqlName == "base_unit")
+        {
+            text = NormalizeUnitName(text);
         }
 
         switch (column.Kind)

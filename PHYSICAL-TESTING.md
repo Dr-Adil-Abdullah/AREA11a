@@ -15,8 +15,9 @@
 
 - Build: **v0.35.19 Spruce `#175E54`** (owner-verified پرانے run کا build الگ نیچے لکھا ہے)
 - Owner xUnit: **860 passed / 0 failed / 0 skipped / 860 total — ALL GREEN** (صرف tested Obsidian `cb2e321`)
-- موجودہ working tree: **877 written cases**؛ **52/52 static checks PASS**۔ نیا code یہاں compile/run نہیں ہوا؛ Windows پر `ALL GREEN - 877 of 877` ابھی درکار ہے۔
+- موجودہ working tree: **883 written cases in 68 files**؛ **52/52 static checks PASS** (real C# grammar سمیت)۔ Latest gate: **28 migrations / 37 business tables / 825 prepared SQL statements / 123 settings keys**۔ CAT/UNIT/NAV/PHOTO code بھی یہاں compile/run نہیں ہوا؛ Windows پر `ALL GREEN - 883 of 883` ابھی درکار ہے۔
 - Windows build report میں `AlertKindTests.cs(121,19)` کا `productId` scope compile error ملا؛ وہ `aedb65d` میں ٹھیک push ہو چکا ہے۔ مکمل build/xUnit کا نیا نتیجہ ابھی باقی ہے۔
+- 27 اکتوبر CAT-01/NAV-01/UNIT-01/PHOTO-01 code batch: primary+filter tags، managed units اور descriptive strength، product/counter thumbnails، اور dashboard/category/company drill-downs شامل ہیں۔ Migrations `027`–`028` اور **6 نئے regression cases** شامل ہیں؛ یہ code changes ہیں، owner physical verification نہیں۔
 - Automated مدت: **1 منٹ 17 سیکنڈ** (پرانے tested Obsidian run کی)
 - Physical testing شروع: **27 اکتوبر 2026**
 - Cloud sync: اس physical-testing مرحلے میں فی الحال شامل نہیں۔
@@ -212,7 +213,7 @@
 
 ## PT02-CAT-01 — ایک medicine کے لیے ایک سے زیادہ categories یا subcategories
 
-**حالت:** Decision recorded — implementation awaits owner **OK**
+**حالت:** Code changed — Windows/Core verification pending
 **اہمیت:** اہم catalog/data-model تبدیلی
 
 - موجودہ product form میں ایک وقت میں ایک category منتخب ہوتی ہے۔
@@ -224,9 +225,15 @@
 
 **قبولیت کا معیار:** category/subcategory choices واضح ہوں، product پر تمام selected groups محفوظ ہوں، filters کام کریں، اور category reports کا میزان کبھی double-count نہ ہو۔
 
+### 27 اکتوبر code update
+
+- Migration `027_catalog_tags_units.sql` میں `product_category_tags` اور products پر descriptive `strength_value`/`strength_unit` شامل ہیں۔ Primary `products.category_id` financial reports کا واحد category رہتا ہے؛ tags صرف search/filter اور catalog counts کے لیے ہیں۔
+- Product editor میں additional active-category checkboxes، tag-aware category/company filter، اور primary/tag conflict guard شامل ہیں۔ Category put-away primary links کے ساتھ tag links بھی صاف کرتا ہے؛ products/history delete نہیں ہوتے۔
+- Regression source میں tagged product کو category filter میں ایک بار اور category financial total میں primary کے تحت ایک بار رکھنے کا case ہے۔ یہ ابھی Windows پر run نہیں ہوا۔
+
 ## PT02-NAV-01 — Company، Category اور Dashboard سے clickable filtered views
 
-**حالت:** Recorded — no clarification needed for basic direction
+**حالت:** Code changed — Windows navigation verification pending
 **اہمیت:** UI/navigation بہتری
 
 - Company یا company-related view پر click کریں تو اسی company کی تمام medicines کا filtered product list کھلے۔
@@ -236,9 +243,15 @@
 
 **قبولیت کا معیار:** click کے بعد درست filter، records اور count نظر آئیں؛ واپسی پر قائمہ حالت محفوظ رہے؛ empty result کی واضح وجہ ہو۔
 
+### 27 اکتوبر code update
+
+- Products list میں category اور company clickable ہیں؛ وہی filtered product list کھلتا ہے، filter صاف لکھا آتا ہے اور Clear filter دستیاب ہے۔ Empty filtered result کو search/filter empty-state ملتا ہے۔
+- Dashboard کے bills/sales/profit cards today کی تفصیل کھولتے ہیں؛ customer credit اور supplier payable متعلقہ owing tabs کھولتے ہیں؛ products، low-stock، stock-minus اور expiry cards متعلقہ detail pages سے linked ہیں۔
+- Mouse/keyboard navigation، واپسی پر menu state اور ہر card کے actual records/counts کی Windows verification ابھی باقی ہے۔
+
 ## PT02-UNIT-01 — Editable units، pack contents اور strength/volume
 
-**حالت:** Decision recorded — implementation awaits owner **OK**
+**حالت:** Code changed — Windows/unit and genuine-stock verification pending
 **اہمیت:** **بنیادی inventory model؛ احتیاط سے design کرنا ہے**
 
 ### مالک کی ضرورت
@@ -262,6 +275,13 @@
 - Managed editable units پھر بھی ضروری ہیں تاکہ `injection` جیسے base units ایک جیسے املے میں محفوظ ہوں، اور strength سے search/filter ہو سکے۔
 
 **قبولیت کا معیار:** managed units، duplicate-name guard، pack conversion، strength filter، اور existing REAL/`double` quantities محفوظ ہوں۔ Used unit delete کرنے سے تاریخ یا stock نہ بگڑے؛ edit/inactivate کے اصول واضح ہوں۔
+
+### 27 اکتوبر code update
+
+- Products → **Manage units…** میں owner/manager کے لیے add، case-insensitive duplicate guard، rename، order، whole-only quantity rule، put-away/restore شامل ہیں۔ Used unit put-away refuse ہوتا ہے؛ rename current base/strength labels کو ایک transaction میں بدلتا ہے، quantities/history کو نہیں۔
+- Product form میں managed base unit، optional strength value/unit اور pack formula ہے۔ `1 box = 1 inner pack × 10 injections` کی مثال میں stock 10 injection units ہے؛ `50 ml` صرف variant کی strength ہے۔ Search میں strength text اور Products میں exact `50 ml`/`50ml`/numeric/unit filter ہے۔
+- Migration `028_unit_quantity_rules.sql` کے بعد whole-only rule managed unit row کے `whole_only` flag سے آتا ہے، editable نام `"injection"` سے نہیں؛ rename کے بعد بھی fractional sale/stock entry رکتی ہے۔ Sale، purchase، stock correction، physical count/apply، central stock decrement اور opening import پر guards ہیں۔ `qty_base` REAL اور `ItemRow.Qty` double پر کوئی INTEGER cast نہیں آیا۔
+- CSV import اور native workbook دونوں active managed unit چیک کرتے ہیں، canonical spelling لکھتے ہیں اور apply کے وقت unit دوبارہ چیک کرتے ہیں۔ Regression source میں injection sale/fraction refusal، strength variants، rename/put-away، import اور workbook stale-unit cases ہیں؛ Windows/Core execution ابھی باقی ہے۔
 
 ## PT02-PRICE-01 — VIP/Doctor rate اور bill discount % کی ترتیب
 
@@ -288,13 +308,19 @@
 
 ## PT02-PHOTO-01 — Products اور Counter میں medicine thumbnails
 
-**حالت:** Recorded — no clarification needed for basic direction
+**حالت:** Code changed — Windows thumbnail/gallery verification pending
 **اہمیت:** UI/recognition بہتری
 
 - Product list اور Counter میں چھوٹی medicine photo نظر آئے تاکہ درست چیز پہچاننا آسان ہو۔
 - Photo نہ ہو تو صاف placeholder ہو؛ موجودہ Photos editor اور put-away history قائم رہے۔
 
 **قبولیت کا معیار:** thumbnail جلدی load ہو، row text پڑھنے میں رکاوٹ نہ بنے، click پر بڑی photo ملے، اور photo نہ ہونے سے sale/search متاثر نہ ہو۔
+
+### 27 اکتوبر code update
+
+- Products اور Counter دونوں کی medicine rows میں 44px thumbnail یا واضح **No photo** placeholder ہے۔ Thumbnail click موجودہ Photos gallery کھولتا ہے؛ put-away/active predicate وہی رہتا ہے جو migration 015 کے photos schema اور PhotoService استعمال کرتے ہیں۔
+- Database میں صرف پہلے active gallery `file_name` کا selection پڑھا جاتا ہے؛ machine-specific path بنانا desktop کے `AppPaths.PhotosFolder` پر ہے اور missing file کو placeholder ملتا ہے۔ Search/sale میں کوئی photo-required شرط نہیں آئی۔
+- Actual image loading، بند/missing file، gallery click اور sale/search unaffected ہونے کی Windows verification ابھی باقی ہے۔
 
 ## PT02-SHIFT-01 — Previous closing cash، اگلا opening float اور difference alerts
 

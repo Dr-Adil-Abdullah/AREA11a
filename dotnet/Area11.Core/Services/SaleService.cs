@@ -401,7 +401,17 @@ FROM products WHERE id = @id AND active = 1;",
                 new { id = lineInput.ProductId })
                 ?? throw new ValidationException("A product in the cart no longer exists.");
 
-            var unit = (lineInput.Unit ?? "base").Trim().ToLowerInvariant();
+            var requestedUnit = (lineInput.Unit ?? "base").Trim().ToLowerInvariant();
+            // Older callers sometimes sent the actual base-unit label instead of the "base" token.
+            // Keep that harmless spelling, but never treat a different strength unit (ml) as stock.
+            var unit = requestedUnit.Equals(product.BaseUnit, StringComparison.OrdinalIgnoreCase)
+                ? "base"
+                : requestedUnit;
+            if (unit is not ("base" or "strip" or "box"))
+            {
+                throw new ValidationException(
+                    $"{product.Name}: choose box, strip or {product.BaseUnit}. Strength such as ml describes the variant and is not a selling unit.");
+            }
             // double, never int: the schema stores quantities as REAL and an int here made
             // Math.Round(long) ambiguous (CS0121) on the first Windows build.
             var unitsPerSelected = Product.QuantityPerSelectedUnit(unit, product.BoxStrips, product.StripTablets);
@@ -410,6 +420,11 @@ FROM products WHERE id = @id AND active = 1;",
             if (!double.IsFinite(qtyBase) || qtyBase <= 0)
             {
                 throw new ValidationException("Every line needs a real quantity greater than zero.");
+            }
+            if (UnitPolicy.RequiresWhole(_db, connection, product.BaseUnit) && !Qty.IsWhole(qtyBase))
+            {
+                throw new ValidationException(
+                    $"{product.Name}: {product.BaseUnit} is stocked and sold as whole {product.BaseUnit} units; ml is strength, not a stock division.");
             }
 
             // Special rates are opt-in guidance, never a silent customer-category default. An

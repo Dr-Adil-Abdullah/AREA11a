@@ -49,7 +49,7 @@ rejected even if it "works".
    a permission. Owner-only actions: dismissing alerts, applying stock-take, restoring backup.
 6. **Never delete business rows.** Use `active = 0`. Audit rows and sales are permanent.
 7. **Migrations are append-only**, run inside `BEGIN IMMEDIATE`, and re-check `_migrations` after the
-   lock is taken. Add `027_*.sql`; never edit an existing file.
+   lock is taken. Add `029_*.sql` for the next change; never edit an existing file.
 8. **Views contain no SQL and no business logic.** Services own every rule and every transaction; a
    service method takes `User` when the rule depends on permissions.
 9. **Never modify the original Next.js app** (`Dr-Adil-Abdullah/Area11`) - it is only a behaviour
@@ -138,7 +138,7 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.35.19 (Spruce `#175E54`) - 877 written cases; Obsidian remains the last owner-verified green build.**
+> **v0.35.19 (Spruce `#175E54`) - 883 written cases in 68 files; Obsidian remains the last owner-verified green build.**
 >
 > * **The correct Obsidian commit `cb2e321` passed on the owner's Windows PC:** Failed 0, Passed 860,
 >   Skipped 0, Total 860, in 1 m 17 s. The banner was v0.35.18 and the runner printed
@@ -160,13 +160,14 @@ tests through the public service methods and a real bill in `TestDatabase`.
 > * **Physical testing and authorized repairs are in progress.** PT-01 passed; PT-02 is PARTIAL, with
 >   product saves and Black-box entries confirmed. All findings, owner decisions and PT-03/PT-04
 >   instructions live in **`PHYSICAL-TESTING.md`**. On 27 October the owner said **“fix the things”**,
->   authorizing the recorded fixes in safety order. Backup destination/recovery and shift cash/alert
->   code has changed; the written suite is **877** and all **52 static checks** pass, but this new tree
->   has not been compiled or run on Windows and is not covered by the old 860/860 result. `aedb65d` fixes
->   the owner's reported AlertKindTests compile error; a fresh full build/run is still required. Rate/sale
->   feedback code is now changed too; continue with catalog/unit/navigation/photo repairs and keep each
->   physical verification separate. The POS
->   blank/dashes report still needs exact reproduction evidence. **next** still means the next test portion.
+>   authorizing the recorded fixes in safety order. Backup destination/recovery, shift cash/alert,
+>   rate/sale feedback and the CAT-01/NAV-01/UNIT-01/PHOTO-01 source batch have changed; the written
+>   suite is **883 in 68 files** and all **52 static checks** pass, but this new tree has not been
+>   compiled or run on Windows and is not covered by the old 860/860 result. `aedb65d` fixes the owner's
+>   reported AlertKindTests compile error; a fresh full build/run is still required. Prove the new
+>   catalog/unit/navigation/photo workflows with genuine transactions and keep each physical verification
+>   separate. The POS blank/dashes report still needs exact reproduction evidence. **next** still means
+>   the next test portion.
 >
 > * **v0.35.5 repairs one policy mismatch and two stale test fixtures.** The owner's v0.35.4 run proved
 >   the correct tree (**769 passed, 3 failed, 772 total**). A sign-in ahead of the PC clock now keeps

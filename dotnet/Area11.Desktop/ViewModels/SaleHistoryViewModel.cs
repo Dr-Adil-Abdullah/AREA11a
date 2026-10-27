@@ -293,6 +293,16 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
 
     // ============================== the commands ==============================
 
+    /// <summary>Dashboard drill-down: the card means today's bills, not the default last month.</summary>
+    public void ShowToday()
+    {
+        FromText = Clock.Today();
+        ToText = Clock.Today();
+        SearchText = string.Empty;
+        SelectedMethod = AllMethods;
+        Load();
+    }
+
     public void Load()
     {
         var page = _services.History.Search(_user, new SaleHistoryFilter

@@ -438,7 +438,7 @@ public sealed class ShellViewModel : ObservableObject
         // the owner grants one person at a time (F-48, D-66).
         var canSync = _services.Cloud.CanSync(_user);
 
-        NavItems.Add(new NavItem(_services.AppLabels.Get("dashboard"), "Today at a glance", () => new DashboardViewModel(_services, _user))
+        NavItems.Add(new NavItem(_services.AppLabels.Get("dashboard"), "Today at a glance", () => new DashboardViewModel(_services, _user, NavigateDashboard))
         {
             LabelKey = "dashboard"
         });
@@ -802,6 +802,90 @@ public sealed class ShellViewModel : ObservableObject
         foreach (var page in group.Pages)
         {
             page.IsVisible = !collapsed;
+        }
+    }
+
+    private void OpenNavPage(string labelKey)
+    {
+        var page = NavItems.FirstOrDefault(item => item.IsPage && item.LabelKey == labelKey);
+        if (page is null)
+        {
+            return;
+        }
+        var group = _groups.FirstOrDefault(item => item.Key == page.GroupKey);
+        if (group is not null && group.Header.IsCollapsed)
+        {
+            SetCollapsed(group, false);
+        }
+        SelectedNav = page;
+    }
+
+    private void ShowProducts(
+        int? categoryId = null,
+        int? companyId = null,
+        bool lowStockOnly = false,
+        string? strength = null)
+    {
+        OpenNavPage("products");
+        if (CurrentViewModel is ProductsViewModel products)
+        {
+            products.ApplyFilter(categoryId, companyId, lowStockOnly, strength);
+        }
+    }
+
+    private void NavigateDashboard(DashboardLink link)
+    {
+        switch (link)
+        {
+            case DashboardLink.Bills:
+                OpenNavPage("bills");
+                if (CurrentViewModel is SaleHistoryViewModel bills)
+                {
+                    bills.ShowToday();
+                }
+                break;
+            case DashboardLink.Sales:
+            case DashboardLink.Profit:
+                OpenNavPage("reports");
+                if (CurrentViewModel is ReportsViewModel reports)
+                {
+                    reports.ShowToday();
+                }
+                break;
+            case DashboardLink.Credit:
+                OpenNavPage("partners");
+                if (CurrentViewModel is PartnersViewModel customers)
+                {
+                    customers.SelectedTab = 0;
+                    if (customers.Customers is not null)
+                    {
+                        customers.Customers.OnlyCredit = true;
+                    }
+                }
+                break;
+            case DashboardLink.Payable:
+                OpenNavPage("partners");
+                if (CurrentViewModel is PartnersViewModel suppliers)
+                {
+                    suppliers.SelectedTab = 2;
+                    if (suppliers.Suppliers is not null)
+                    {
+                        suppliers.Suppliers.OnlyOwing = true;
+                    }
+                }
+                break;
+            case DashboardLink.Products:
+                ShowProducts();
+                break;
+            case DashboardLink.LowStock:
+                ShowProducts(lowStockOnly: true);
+                break;
+            case DashboardLink.StockMinus:
+                OpenNavPage("stockMinus");
+                break;
+            case DashboardLink.Expiry:
+                ShowAlerts();
+                break;
         }
     }
 

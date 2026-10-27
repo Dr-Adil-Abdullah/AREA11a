@@ -225,6 +225,9 @@ public sealed class ReportsViewModel : ObservableObject, IEmptyPage
         private set => SetProperty(ref _worstDayText, value);
     }
 
+    /// <summary>Dashboard cards always mean today, even when this page was previously on another range.</summary>
+    public void ShowToday() => Select(ReportRange.Today);
+
     private void Select(ReportRange range)
     {
         _range = range;

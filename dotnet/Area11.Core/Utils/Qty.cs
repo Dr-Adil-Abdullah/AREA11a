@@ -26,4 +26,8 @@ public static class Qty
     public static string Format(double value) => value.ToString("#,##0.###", CultureInfo.InvariantCulture);
 
     public static bool NearlyZero(double value) => Math.Abs(value) < 0.0005;
+
+    /// <summary>True only for a finite whole base-unit quantity; REAL storage remains unchanged.</summary>
+    public static bool IsWhole(double value) =>
+        double.IsFinite(value) && Math.Abs(value - Math.Truncate(value)) < 0.0000001;
 }

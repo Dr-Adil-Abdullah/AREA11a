@@ -10,7 +10,7 @@
 **Status:** v0.35.19 · Spruce · `#175E54` — **default branch `main`**; this repair is on the current
 working branch `arena/60395e95-area11a` until its pull request is merged.
 
-*Last updated: 27 October 2026. The current authorized-fix tree has **877 written cases and 52 green static checks**, but no full Windows build/xUnit result yet. The owner's correct **v0.35.18 Obsidian** commit `cb2e321` remains the latest full green proof: **Failed 0, Passed 860, Skipped 0, Total 860 in 1 m 17 s**. `aedb65d` fixes the subsequently reported AlertKindTests compile error; Spruce still needs a fresh full build/run. The feature board remains 52 done / 5 owner-action rows and the matrix has four partial rules. Real Excel, WPF, physical-restore and optional real-cloud evidence remain separate.*
+*Last updated: 27 October 2026. The current authorized-fix tree has **883 written cases and 52 green static checks**, but no full Windows build/xUnit result yet. The owner's correct **v0.35.18 Obsidian** commit `cb2e321` remains the latest full green proof: **Failed 0, Passed 860, Skipped 0, Total 860 in 1 m 17 s**. `aedb65d` fixes the subsequently reported AlertKindTests compile error; Spruce still needs a fresh full build/run. The feature board remains 52 done / 5 owner-action rows and the matrix has four partial rules. Real Excel, WPF, physical-restore and optional real-cloud evidence remain separate.*
 
 ---
 
@@ -39,7 +39,7 @@ repository is a **behaviour reference only** — never modify it, never copy its
 |---|---|
 | Physical test results, owner feedback and requested changes | **`PHYSICAL-TESTING.md`** — append-only physical-testing log |
 | What is done, what is next, per feature (ID, files, test, "done when") | **`docs/PROGRESS.md`** — the board |
-| What the owner decided, in his own language (D-00 … D-94) | **`docs/OWNER-DECISIONS.md`** (Urdu, authoritative) |
+| What the owner decided, in his own language (D-00 … D-95) | **`docs/OWNER-DECISIONS.md`** (Urdu, authoritative) |
 | His 116 numbered rules and where each is implemented | `docs/RULES-MATRIX.md` |
 | The blueprint (rules, data, pricing, billing, printing, rebuild protocol) | `docs/AREA11-MASTER-SPEC.md` |
 | Every table and column | `docs/SCHEMA-REFERENCE.md` |
@@ -57,16 +57,16 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 
 ## 3. Where it stands right now (read this twice)
 
-**Current source: v0.35.19 "Spruce" contains the owner-authorized physical-testing repairs and 877 written cases. Backup/recovery, shift cash continuity/alert severity, explicit full-retail discount, opt-in VIP/Doctor rates, guarded custom rates, held-rate restoration and the optional sale-success card are changed. The reported AlertKindTests compile error is fixed separately in `aedb65d`. All 52 static checks pass locally, but no full Windows build/xUnit/WPF run covers this tree. Obsidian `cb2e321` remains the latest owner-verified full green source at 860/860 in 1 m 17 s; do not backfill that result onto Spruce. T-10, Z-05, E-12 and S-05 remain partial, the five owner-action feature rows remain open, and PT02-POS-01 still needs exact reproduction.**
+**Current source: v0.35.19 "Spruce" contains the owner-authorized physical-testing repairs and 883 written cases in 68 files. Backup/recovery, shift cash continuity/alert severity, explicit full-retail discount, opt-in VIP/Doctor rates, guarded custom rates, held-rate restoration and the optional sale-success card are changed. The CAT-01/NAV-01/UNIT-01/PHOTO-01 batch adds primary-plus-tag filtering, managed units with a rename-safe whole-only rule and descriptive strength, product/counter thumbnails and dashboard/category/company drill-downs, with migrations 027–028 and six new regression cases. The reported AlertKindTests compile error is fixed separately in `aedb65d`. All 52 static checks pass locally, but no full Windows build/xUnit/WPF run covers this tree. Obsidian `cb2e321` remains the latest owner-verified full green source at 860/860 in 1 m 17 s; do not backfill that result onto Spruce. T-10, Z-05, E-12 and S-05 remain partial, the five owner-action feature rows remain open, and PT02-POS-01 still needs exact reproduction.**
 
 | | |
 |---|---|
-| Test cases written | **877** in 67 files (`tools\\RUN-TESTS.cmd` compares the run against `EXPECTED=877`) |
+| Test cases written | **883** in 68 files (`tools\\RUN-TESTS.cmd` compares the run against `EXPECTED=883`) |
 | Static checks | **52**, all green: `OK - 52 checks, no problems` |
 | Owner's numbered rules | **116 - 92 ✅ done, 4 🟡 partial, 0 ⬜, 20 standing** - see §4 |
 | Feature board | **57 features — 52 ✅ done, 5 🟡 one shop action each, 0 ⬜ not started** (91.2 % / 8.8 %) |
-| Code size | 281 C# files (72,202 lines) + 39 XAML files (8,412 lines, 37 of them pages/windows); 51 services, 42 view models |
-| Database | 26 migrations → **35 business tables + provisional report view**, append-only, existing `area11.db` opens unchanged |
+| Code size | 286 C# files + 40 XAML files; 52 services, 43 view models |
+| Database | 28 migrations → **37 business tables + ledger/provisional report view**, append-only, existing `area11.db` opens unchanged |
 
 ### What the owner's own PC has already proved
 
@@ -91,7 +91,7 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 * Explicit discount now uses full retail/selling price even when an old database contains `discount.mode = margin`. With an explicit discount, special rates do not stack. Otherwise an applicable VIP/Doctor rate requires Yes; No keeps ordinary retail.
 * The cart shows the selected-unit rate. Owner/Manager custom rates use the existing integer-paisa override and survive hold/resume; Core refuses cashier custom-rate bypasses and lines already below batch cost when the lock is on. Quote and Create still share `SaleService.Compute`, and bill total remains the sum of line totals.
 * A successful commit can show the optional Done/invoice/change card. It performs no financial action; Done or scanning the next item merely continues. Settings controls it independently of auto-print.
-* The suite is **877 written cases**, not an executed result. Run the full Windows build and require `ALL GREEN - 877 of 877`, then perform the genuine-sale and isolated-restore checks. Next code work is CAT-01, NAV-01, UNIT-01 and PHOTO-01; do not guess PT02-POS-01.
+* The suite is **883 written cases in 68 files**, not an executed result. Run the full Windows build and require `ALL GREEN - 883 of 883`, then perform the genuine-sale, isolated-restore and new catalog/unit/navigation/photo checks. The CAT-01/NAV-01/UNIT-01/PHOTO-01 source batch is present; do not guess PT02-POS-01.
 
 ### What v0.35.18 changes — the real Eclipse result and two workbook fixtures
 
@@ -160,7 +160,7 @@ The original permission, shop-id, confirmation, backup, one-transaction, unknown
 rules remain. No migration, quantity type, stock rule, payment rule or PR cancellation behavior changed.
 
 Seven new facts cover old-sale and old-purchase round-trips, the full PR chain, switch/format/null-id
-boundaries and format-1 compatibility: **860 written cases in 67 files**. The 51st static check protects
+boundaries and format-1 compatibility: **860 written cases in 68 files**. The 51st static check protects
 the dependency edges, bulk reads, write order and guards; it rejected **5/5** injected faults before
 restoration. Three real-SQLite round-trips passed foreign-key checks, including recent bulk lines with
 only one old-parent query and an unrelated old bill excluded. The owner subsequently ran Glaucous and
@@ -188,7 +188,7 @@ link error now includes its inner technical detail so the next complete log is a
 
 The nine Paprika warnings were four nullable values passed to `KeyText`, four guarded nullable ids
 passed to `ReferenceExists`, and one `PrepareBulk` dictionary-nullability mismatch. Three signature/
-inference edits resolve those without changing workbook behavior. **853 cases in 67 files and 50
+inference edits resolve those without changing workbook behavior. **853 cases in 68 files and 50
 static checks** are the local evidence, not compilation or xUnit. Quasar's own 853-case target was not
 run; the current **860-case** suite includes it, and the real Excel walk-through remains separate.
 
@@ -211,7 +211,7 @@ Every changed row carries a snapshot. Apply verifies all old values and cross-re
 first update, then writes all rows and black-box entries in one transaction; a stale later row rolls
 back an earlier valid row. An already-applied file previews **0 changes**. Fourteen facts cover these
 rules, real Excel cell encodings, permissions and rollback. The written inventory is **851 cases in
-67 files**; **49 static checks** and the T-10 guard's **5/5** injection/restoration outcomes pass here.
+68 files**; **49 static checks** and the T-10 guard's **5/5** injection/restoration outcomes pass here.
 
 There was no .NET SDK or Excel in this sandbox when Paprika was written. The owner's subsequent
 correct run did compile and open it, but xUnit was **not green: 837/851 with 14 failures**. T-10 stays
@@ -545,7 +545,7 @@ makes that absence mean something). `tools\SEND-REPORT.cmd` collects everything 
    not a permission.
 6. **Nothing is ever deleted.** Business rows use `active = 0`; the audit trail and sales are permanent.
 7. **Migrations are append-only**, run inside `BEGIN IMMEDIATE`, and re-check `_migrations` after the
-   lock. Add `027_*.sql` — never edit an existing file.
+   lock. Add `029_*.sql` for the next change — never edit an existing file.
 8. **Views contain no SQL and no business logic.** Services own every rule and transaction; a service
    method takes `User` when the rule depends on permissions.
 9. **Everything editable comes from `settings`** — shop name, wording, limits, printer width, colour
@@ -574,7 +574,7 @@ docs/PROGRESS.md                     ← the board row: state, files, test, "don
 ```
 
 `Area11.Tests` may reference **only `Area11.Core`** — tests must use public code. `TestDatabase` is a
-temporary SQLite database with all 26 migrations and seed data; `TestData` opens a drawer so that every
+temporary SQLite database with all 28 migrations and seed data; `TestData` opens a drawer so that every
 bill in the suite goes through the real galla door.
 
 ---
@@ -734,8 +734,8 @@ honest caveat about what is not yet proven. If he asks for a printable status, r
 
 ## 16. The first message to send him (copy, paste, adjust)
 
-> میں نے ریپو پڑھ لی ہے۔ ابھی حالت یہ ہے: **v0.35.19 (Spruce)** — 877 written cases اور 52 static checks مکمل ہیں۔
-> Spruce کا مکمل Windows build/xUnit ابھی چلانا ہے؛ مطلوبہ نتیجہ **ALL GREEN - 877 of 877** ہے۔ Obsidian کا پرانا **860/860، 1 منٹ 17 سیکنڈ** نتیجہ تاریخی ثبوت ہے، اس نئے tree کا نہیں۔
-> Backup/shift/alert اور PRICE-01/SALE-01 کی authorized fixes لکھی جا چکی ہیں؛ physical verification الگ ہے۔ اگلا code مرحلہ CAT-01، NAV-01، UNIT-01 اور PHOTO-01 ہے؛ PT02-POS-01 کے لیے exact reproduction لازم ہے۔
+> میں نے ریپو پڑھ لی ہے۔ ابھی حالت یہ ہے: **v0.35.19 (Spruce)** — 883 written cases اور 52 static checks مکمل ہیں۔
+> Spruce کا مکمل Windows build/xUnit ابھی چلانا ہے؛ مطلوبہ نتیجہ **ALL GREEN - 883 of 883** ہے۔ Obsidian کا پرانا **860/860، 1 منٹ 17 سیکنڈ** نتیجہ تاریخی ثبوت ہے، اس نئے tree کا نہیں۔
+> Backup/shift/alert، PRICE-01/SALE-01 اور CAT-01/NAV-01/UNIT-01/PHOTO-01 کی authorized source fixes لکھی جا چکی ہیں؛ physical verification الگ ہے۔ اب Windows build اور ان workflows کی genuine testing کرنی ہے؛ PT02-POS-01 کے لیے exact reproduction لازم ہے۔
 > اصل books میں صرف genuine transactions کریں؛ restore/fault scenarios الگ test copy میں۔ `next` پر اگلا physical-test portion دیں۔
 > Real Excel اور App words/Black-box walk-throughs بھی باقی ہیں؛ cloud الگ test Shop id/table اور test database کے بغیر نہیں۔

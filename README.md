@@ -125,10 +125,11 @@ Step-by-step help, including what to do when the build fails: [`docs/BUILD-ON-WI
 ## Database
 
 `dotnet/Area11.Core/Data/Migrations/` holds the **original 13 migrations verbatim** plus the
-append-only Area11 migrations `014`-`026` (permissions, photos, stock detail, barcodes, provisional
-money, reconciliation and catalog ordering). They create **35 tables** (including the `_migrations` ledger) plus the
+append-only Area11 migrations `014`-`028` (permissions, photos, stock detail, barcodes, provisional
+money, reconciliation, catalog ordering, managed units, filter-only category tags, descriptive strength and rename-safe quantity rules). They create **37 business tables** plus the
 `provisional_report_lines` view, and run inside `BEGIN IMMEDIATE`, so an existing `area11.db` opens
-unchanged and no data is lost when the app is updated. D-93 adds no migration and never rewrites a
+unchanged and no data is lost when the app is updated. The migration runner keeps the separate `_migrations` ledger. Migrations 027–028 do not change batch quantities,
+sales, payments or historical documents. D-93 adds no migration and never rewrites a
 historical negative quantity to zero.
 
 ## The rules that shape the code

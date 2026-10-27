@@ -1,11 +1,11 @@
 # SCHEMA REFERENCE — exact columns of the rebuilt database
 
 > Generated from the reference `src/lib/schema.ts` (migrations 001–013, verbatim) plus
-> Area11 migrations 014–026 (permissions, photos, own fields, barcodes, provisional money, reconciliation and catalog ordering).
-> Verified by running all 26 files against SQLite in order. This is the authority for every SQL
+> Area11 migrations 014–028 (permissions, photos, own fields, barcodes, provisional money, reconciliation, catalog ordering, managed units, category tags, descriptive strength and rename-safe quantity rules).
+> Verified by running all 28 files against SQLite in order. This is the authority for every SQL
 > statement in `Area11.Core`.
 
-**35 tables** · 26 migrations · plus the `provisional_report_lines` view
+**37 business tables + the `_migrations` ledger** · 28 migrations · plus the `provisional_report_lines` view
 
 ## `_migrations`  (2 columns)
 
@@ -237,6 +237,22 @@ Only `file_name` lives here (rule U-19); the picture itself sits in `%ProgramDat
 
 Indexes: `idx_photos_entity`
 
+## `product_category_tags`  (2 columns)
+
+| Column | Type | Not null | Default |
+|---|---|---|---|
+| `product_id` | INTEGER | yes |  |
+| `category_id` | INTEGER | yes |  |
+
+Migration 027 adds additional **filter-only** category links. `products.category_id` remains the one
+primary category used by financial reports; this table is never joined into sale, profit or category
+money totals. The composite primary key prevents duplicate links. Putting away a category removes
+its tag links without deleting products or history.
+
+FK: `product_id` → `products.id` · `category_id` → `categories.id`
+
+Indexes: `idx_product_category_tags_category`, `idx_product_category_tags_product`
+
 ## `product_barcodes`  (7 columns)
 
 | Column | Type | Not null | Default |
@@ -255,7 +271,7 @@ and is still read as one more code.
 
 Indexes: `idx_pb_code` (UNIQUE, **partial**: `WHERE active = 1`), `idx_pb_product`
 
-## `products`  (23 columns)
+## `products`  (25 columns)
 
 | Column | Type | Not null | Default |
 |---|---|---|---|
@@ -282,10 +298,14 @@ Indexes: `idx_pb_code` (UNIQUE, **partial**: `WHERE active = 1`), `idx_pb_produc
 | `updated_at` | TEXT | yes | `datetime('now','localtime')` |
 | `photo` | TEXT |  |  |
 | `room` | TEXT |  |  |
+| `strength_value` | REAL | yes | `0` |
+| `strength_unit` | TEXT | yes | `''` |
 
 FK: `category_id` → `categories.id` · `company_id` → `companies.id`
 
-Indexes: `idx_products_name`, `idx_products_generic`, `idx_products_barcode`
+Migration 027 adds descriptive strength/volume only. For example, `base_unit = injection`, `strength_value = 50`, `strength_unit = ml`, `box_strips = 1`, `strip_tablets = 10` means ten whole injection units per box; it never means 500 mL of stock. Ten, fifty and hundred mL variants remain separate products. `qty_base` and all historical quantities remain REAL and unchanged.
+
+Indexes: `idx_products_name`, `idx_products_generic`, `idx_products_barcode`, `idx_products_strength`
 
 ## `provisional_items`  (10 columns)
 
@@ -484,7 +504,7 @@ Indexes: `idx_sales_date`, `idx_sales_customer`, `idx_sales_status`, `idx_sales_
 | `value` | TEXT | yes |  |
 | `updated_at` | TEXT | yes | `datetime('now','localtime')` |
 
-v0.35.19 has **122 known keys**: `sale.successPopup` is the only new setting; no table or migration changed. Legacy `discount.mode` remains readable for old databases but no longer changes the full-retail discount calculation. Cloud changes which existing rows travel, not this schema. Thirty-two are `labels.*` JSON strings added in v0.35.11 for
+v0.35.19 has **123 known keys**: `sale.successPopup` was the only new setting in the pricing batch, and migrations 027–028 add no setting. Legacy `discount.mode` remains readable for old databases but no longer changes the full-retail discount calculation. Cloud changes which existing rows travel, not this schema. Thirty-two are `labels.*` JSON strings added in v0.35.11 for
 E-12/S-05 application section names. `SettingsService.EnsureDefaults()` inserts only missing rows
 during startup, so an old
 database upgrades without a migration or an overwrite. Label saves use the normal validated,
@@ -645,6 +665,27 @@ Indexes: `idx_sret_supplier`
 | `created_at` | TEXT | yes | `datetime('now','localtime')` |
 
 Indexes: `idx_suppliers_name`
+
+## `units`  (6 columns)
+
+| Column | Type | Not null | Default |
+|---|---|---|---|
+| `id` | INTEGER |  |  |
+| `name` | TEXT | yes |  |
+| `active` | INTEGER | yes | `1` |
+| `sort_order` | INTEGER | yes | `0` |
+| `created_at` | TEXT | yes | `datetime('now','localtime')` |
+| `whole_only` | INTEGER | yes | `0` |
+
+Migration 027 creates the managed, case-insensitively unique unit list and preserves legacy base-unit
+spellings as canonical lower-case rows. Migration 028 adds `whole_only` and marks the built-in injection
+row. Product create/edit and both Excel import paths require an active unit. Rename updates current
+product base/strength labels in one transaction; it never rewrites batch quantities, sale quantities or
+historical documents. A unit used by a current product cannot be put away. `whole_only = 1` follows the
+managed row through renames, so stock paths do not infer quantity rules from an editable name. `ml` may
+describe strength without becoming an injection stock-count division.
+
+The `name` column has `COLLATE NOCASE UNIQUE` in the migration.
 
 ## `user_permissions`  (5 columns)
 

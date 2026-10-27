@@ -3,7 +3,7 @@
 > **یہ فائل کیا ہے؟** مالک (ڈاکٹر عادل عبداللہ) کی ہر ہدایت، فیصلہ اور ترجیح یہاں نمبر کے ساتھ محفوظ ہوتی ہے۔
 > کوئی بات زبانی نہیں رہتی۔ نئی ہدایت = نیا نمبر۔ پرانی ہدایت کوئی ایجنٹ خاموشی سے نہیں بدل سکتا۔
 >
-> **آخری اپ ڈیٹ:** 27 اکتوبر 2026 · **ورژن:** v0.35.19 Spruce `#175E54` — owner-authorized physical-testing fixes کے ساتھ **877 written cases** اور **52 static checks** ہیں؛ مکمل Windows build/xUnit ابھی باقی ہے۔ PRICE-01 میں explicit discount full retail پر، special rate صرف Yes پر، No پر normal retail؛ SALE-01 میں optional Done/invoice/change card۔ D-93 stock اور PR cancellation کے same-batch stock-only/no-payment/no-financial-reversal قواعد برقرار ہیں۔ آخری مکمل owner-verified green evidence Obsidian `cb2e321` کا **860/860 in 1 m 17 s** ہے، نئے tree کا نہیں۔
+> **آخری اپ ڈیٹ:** 27 اکتوبر 2026 · **ورژن:** v0.35.19 Spruce `#175E54` — owner-authorized physical-testing fixes کے ساتھ **883 written cases in 68 files** اور **52 static checks** ہیں؛ مکمل Windows build/xUnit ابھی باقی ہے۔ D-95 میں CAT/NAV/UNIT/PHOTO اور counter/cash/alert decisions درج ہیں۔ PRICE-01 میں explicit discount full retail پر، special rate صرف Yes پر، No پر normal retail؛ SALE-01 میں optional Done/invoice/change card۔ D-93 stock اور PR cancellation کے same-batch stock-only/no-payment/no-financial-reversal قواعد برقرار ہیں۔ آخری مکمل owner-verified green evidence Obsidian `cb2e321` کا **860/860 in 1 m 17 s** ہے، نئے tree کا نہیں۔
 > **سند (Authority):** `AREA11-MASTER-SPEC.md` (37 حصے + Appendix A) — اور جہاں مالک نے بعد میں کوئی نیا حکم دیا، وہی چلے گا (Spec §1.2.2)۔
 
 ---
@@ -995,6 +995,34 @@ rules → Loyalty points** سے خود آن کرتا ہے، اور وہیں تی
 
 **دوبارہ نہ ہو:** Version اب **0.13.0 · Deep Sea `#0C4A6E`** ہے (پچھلا Mocha `#6B4F3A`)۔
 
+
+### D-95 — **Physical-testing میں catalog، units، navigation، photos اور counter کے فیصلے** (27 اکتوبر 2026)
+
+مالک نے **“fix the things”** کہہ کر درج شدہ اصلاحات کی اجازت دی۔ الگ سوالوں کے جوابات میں یہ واضح فیصلے کیے:
+
+1. **CAT-01:** ہر medicine کی ایک **primary category** ہوگی؛ financial sales/profit totals صرف اسی سے ایک بار
+   بنیں گے۔ اضافی categories **filter-only tags** ہیں، وہ sale، stock یا profit کو double-count نہیں کرتیں۔
+2. **NAV-01:** company/category links اور Dashboard کے cards صرف numbers نہیں رہیں گے؛ click پر متعلقہ
+   filtered product، bill، report، credit یا payable detail کھلے گی۔ Dashboard کے today cards today range پر جائیں گے۔
+3. **UNIT-01:** units کی managed، editable، case-insensitive canonical list ہوگی۔ **ایک box میں 10 injections،
+   ہر injection 50 mL** کا مطلب stock میں **10 injection units** ہے، 500 mL stock نہیں۔ mL الگ descriptive
+   strength ہے؛ 10/50/100 mL variants الگ products رہیں گی۔ Injection جیسے whole-only units میں fractional
+   stock/sale نہیں ہوگی۔ یہ quantity rule unit کے نام پر نہیں بلکہ managed row کے flag پر ہے، تاکہ rename کے
+   بعد بھی safeguard نہ ٹوٹے؛ تاریخی `REAL` quantities اور documents نہیں بدلتے۔
+4. **PHOTO-01:** Products اور Counter میں thumbnails ہوں گی؛ photo نہ ہو یا file missing ہو تو واضح placeholder
+   ہوگا اور search/sale رکے گا نہیں۔ موجودہ gallery، put-away history اور backup photo rules برقرار رہیں گے۔
+5. **SHIFT-01:** اگلے galla کا opening cash پچھلے counted closing cash سے پیش فرض ہوگا۔ Opening/closing میں
+   **Rs 1 بھی فرق** ہو تو reason لازم اور red financial alert ہوگا۔ Bell میں red = financial، yellow = medium
+   warning، green = ordinary reminder (مثلاً nearing expiry) ہوگا۔
+6. **PRICE-01/SALE-01:** explicit discount % full retail/selling-price total پر ہے؛ special rate کے ساتھ
+   stacking نہیں۔ بغیر discount کے applicable VIP/Doctor rate پر Yes/OK ہی special rate لگائے گا، **No = normal
+   retail**۔ Special rates adjustable guidance ہیں، mandatory default نہیں۔ Successful sale کے بعد optional
+   واضح Done/checkmark، invoice/change اور quick continuation card ہوگا؛ cost، role اور integer-paisa safeguards
+   برقرار رہیں گے۔
+
+یہ فیصلے source میں لکھے جا چکے ہیں، مگر **Windows build، 883-case xUnit، WPF اور genuine physical verification
+الگ باقی ہیں**۔ PT02-POS-01 کے blank/dashes مسئلے کو reproduction کے بغیر fix یا reject نہیں لکھا جائے گا۔
+Feature board کو شواہد کے بغیر نہیں بدلا گیا: **52 done / 5 partial / 0 unstarted**۔
 
 ### D-94 — **حقیقی Excel workbook، مگر کوئی نیا package نہیں** (T-10 / D-53 کی تکمیل)
 
@@ -2523,6 +2551,7 @@ restart نہیں (Spec 8.4.3)۔
 
 | تاریخ | کیا |
 |---|---|
+| 27 اکتوبر 2026 | **D-95 / CAT-01, NAV-01, UNIT-01, PHOTO-01 source batch**: primary+filter tags، managed units، descriptive strength، rename-safe whole-only quantity rule (migration 028)، thumbnails/fallbacks اور filtered Dashboard/category/company drill-downs لکھے گئے۔ Box 10 × 50 mL = 10 injection units؛ mL strength ہے، stock division نہیں۔ **883 written cases in 68 files، 52 static checks**؛ Windows build/xUnit/WPF/genuine physical verification باقی، feature counts 52/5/0 برقرار۔ |
 | 27 اکتوبر 2026 | **Physical-testing repairs — v0.35.19 Spruce `#175E54`**: مالک کے «fix the things» authorization پر backup/shift/alert کے بعد PRICE-01/SALE-01 code۔ Explicit discount ہمیشہ full retail/selling-price total پر؛ پرانا margin mode inert، discount کے ساتھ special-rate stacking نہیں۔ Zero discount پر VIP/Doctor کے لیے Yes/No، default No = retail۔ Actual cart rate Owner/Manager custom override کے ساتھ، hold/resume پر محفوظ؛ cashier bypass اور below-cost lock کے ساتھ batch cost سے کم line مسترد۔ Successful commit کے بعد optional non-blocking Done/invoice/change card، الگ auto-print اور persisted Settings key۔ **877 written cases، 52 static checks**؛ Windows build/xUnit اور genuine-sale/isolated-restore verification باقی۔ Reported `AlertKindTests` scope error `aedb65d` میں fix۔ دوبارہ نہ ہو: کوئی test یا financial safeguard ہٹانے کے بجائے نئے regression cases؛ Obsidian کا 860/860 صرف پرانا owner-verified evidence ہے۔ |
 | 26 اکتوبر 2026 | **مالک کی حقیقی جانچ — v0.35.18 Obsidian `#27323A` مکمل کامیاب**: درست commit `cb2e321` پر **Failed 0، Passed 860، Skipped 0، Total 860، مدت 1 منٹ 17 سیکنڈ** اور runner کا **`ALL GREEN - 860 of 860`** نتیجہ آیا۔ موجودہ xUnit gate مکمل ہے؛ دونوں workbook fixture repairs اور محفوظ PR reconciliation repair اب owner-run میں ثابت ہیں۔ نتیجہ محفوظ کرنے پر کوئی code، test count، schema یا business rule نہیں بدلا۔ Real Excel، Z-05، E-12/S-05 اور optional real Supabase جانچ الگ باقی ہیں؛ انھیں green tests سے خودکار مکمل نہیں لکھا گیا۔ |
 | 26 اکتوبر 2026 | **تصدیقی اصلاح — v0.35.18 Obsidian `#27323A`**: Eclipse کا حقیقی نتیجہ **858 passed / 2 failed / 860 total** رہا، یعنی PR reconciliation repair سے گیارہ مزید tests کامیاب ہوئے۔ باقی shared-string/date test کا ZIP stream اب expandable ہے؛ protected bulk-update test میں active pack اور edited base barcode اب **مختلف medicines** کے ہیں اور zero ready changes کی assertion بھی ہے۔ Production workbook/barcode/stock/account/PR rules نہیں بدلے، کوئی test نہیں ہٹا: **860 cases، 52 static checks، 2/2 fixture injections**۔ پہلی failure کا اصل error متن نہیں ملا تھا، اس لیے مکمل Obsidian rerun اور `ALL GREEN - 860 of 860` ابھی لازم ہیں؛ real Excel/Supabase proof الگ ہے۔ |

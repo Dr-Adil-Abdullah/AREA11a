@@ -480,6 +480,8 @@ Full permission matrix: Section 7.4.
 
 5.1.2 **Quantities = base units.** Stock is always stored in the smallest unit (tablet/capsule/ml/piece) as `qty_base` `[Spec §4.1.1]`. Boxes and strips are only a way of typing/displaying quantity.
 
+5.1.2A **Managed-unit clarification (D-95, 27 Oct 2026):** the base-unit list is editable and canonical. A unit marked **whole-only** requires whole stock/sale quantities even after it is renamed; the rule is stored on the unit row, not inferred from the word `injection`. Strength/volume is descriptive only: `1 box = 10 injections`, each `50 mL`, means **10 injection units**, not 500 mL of stock. The 10/50/100 mL variants remain separate products. Historical REAL quantities and documents are not rewritten.
+
 5.1.3 **Dates and times** are local shop time (Asia/Karachi), stored as local text (`datetime('now','localtime')` in SQLite). "Today" = `date(date) = date('now','localtime')`. Expiry is stored as year-month (`YYYY-MM`, e.g. `2027-03`).
 
 5.1.4 **Transactions**: every multi-row write runs inside one transaction (`tx()`); all-or-nothing (also for Excel import and for sync apply).
@@ -774,9 +776,9 @@ Full permission matrix: Section 7.4.
 
 ### 8.1 Products (`/products`, `/products/[id]`)
 
-8.1.1 **Product fields**: name (required), generic name / salt / formula, brand, barcode, category, company, **room / almari** `[U-21]`, **rack / shelf number** (e.g. "Rack B-12") `[Spec §11.1.4]`, **minimum (reorder) quantity**, photo (file or camera), pack formula, rates, custom fields `[U-17]`.
+8.1.1 **Product fields**: name (required), generic name / salt / formula, brand, barcode, **one primary category plus optional filter-only tags**, company, **room / almari** `[U-21]`, **rack / shelf number** (e.g. "Rack B-12") `[Spec §11.1.4]`, **minimum (reorder) quantity**, photo (file or camera) with Products/Counter thumbnail, managed base unit, optional descriptive strength, pack formula, rates, custom fields `[U-17]`.
 
-8.1.2 **Pack formula** `[Spec §4.2]`: configured once per product: `1 Box = X Strips = Y Tablets` (e.g. 1 Box = 2 Strips = 20 Tablets, or 1 Box = 10 Strips = 100 Tablets; stored as `boxStrips` and `stripTablets`). The base unit is always the smallest (tablet/capsule/ml/piece). Entering "5 Boxes" in a purchase automatically adds 100 tablets (when 1 Box = 20 tablets). Non-tablet products (syrups, creams) use the base unit as "piece/ml".
+8.1.2 **Pack formula** `[Spec §4.2]`: configured once per product: `1 Box = X Strips = Y Tablets` (e.g. 1 Box = 2 Strips = 20 Tablets, or 1 Box = 10 Strips = 100 Tablets; stored as `boxStrips` and `stripTablets`). The base unit comes from the managed list. Entering "5 Boxes" in a purchase automatically adds 100 tablets (when 1 Box = 20 tablets). Non-tablet products (syrups, creams) use the appropriate base unit. Under D-95, a whole-only injection/ampoule row stays whole after rename; `10 injections × 50 mL` is 10 base units and `50 mL` is only the variant's descriptive strength.
 
 8.1.3 **Rates**: purchase cost; **normal retail**; **VIP rate**; **Doctor/institutional rate** `[Spec §7.1]`. Typed in rupees, stored as paisa. Rates are also kept per batch (see 10.1) so an old batch keeps its own cost.
 
@@ -804,11 +806,13 @@ Full permission matrix: Section 7.4.
 
 8.2.3 Seeded at first start: five categories (Medicine, Surgical, Cosmetics, General, Baby Care).
 
+8.2.4 **Primary plus tags (D-95):** financial category reports read only `products.category_id`, once per sale line. `product_category_tags` is exclusively for catalog counts and search/filter inclusion; a primary/tag conflict is refused and a filtered product appears once.
+
 ### 8.3 Companies and representatives
 
 8.3.1 Company create / rename / order / put away / bring back (put-away unlinks only). Phone, notes and medical-representative fields remain intact, and restore does not recreate product links.
 
-8.3.2 Clicking a company shows **all its medicines** `[Spec §10.3.1]`.
+8.3.2 Clicking a company shows **all its medicines** `[Spec §10.3.1]`; category links use the corresponding primary/tag filter. Dashboard cards open their actual detail pages, with Bills/Sales/Profit forced to Today and Credit/Payable filtered to owing rows (D-95).
 
 8.3.3 Spec §10.3.2 also asks for the **medical representative / salesman**: name, phone number, **visit day** — not evident in the original; required in the rebuild.
 

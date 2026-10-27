@@ -224,6 +224,15 @@ WHERE i.id = @id;", new { id = lineId })
 
                 var perUnit = PerUnit(line, unit);
                 var countedBase = Calc.ToBase(qtyEntered, perUnit);
+                if (!double.IsFinite(countedBase) || countedBase < 0)
+                {
+                    throw new ValidationException("A physical count must be a real number of zero or more.");
+                }
+                if (UnitPolicy.RequiresWhole(_db, connection, line.BaseUnit) && !Qty.IsWhole(countedBase))
+                {
+                    throw new ValidationException(
+                        $"{line.BaseUnit}: count whole {line.BaseUnit} units; ml is strength, not a stock division.");
+                }
                 var diff = countedBase - line.SystemQtyBase;
                 var value = Calc.Round(diff * line.CostPaisa);
 
@@ -363,6 +372,11 @@ ORDER BY i.id;", new { sessionId });
             {
                 throw new ValidationException(
                     line.ProductName + ": the physical count must be a real number of zero or more. Nothing was applied.");
+            }
+            if (UnitPolicy.RequiresWhole(_db, connection, line.BaseUnit) && !Qty.IsWhole(counted))
+            {
+                throw new ValidationException(
+                    line.ProductName + ": apply whole " + line.BaseUnit + " units; ml is strength, not a stock division. Nothing was applied.");
             }
 
             var diff = counted - line.SystemQtyBase;

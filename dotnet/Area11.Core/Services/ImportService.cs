@@ -2,6 +2,7 @@ using System.Globalization;
 using Area11.Core.Data;
 using Area11.Core.Models;
 using Area11.Core.Utils;
+using Microsoft.Data.Sqlite;
 
 namespace Area11.Core.Services;
 
@@ -291,6 +292,7 @@ ORDER BY s.name COLLATE NOCASE;");
 
         var existingNames = ReadExistingProductNames();
         var existingBarcodes = ReadExistingBarcodes();
+        var activeUnits = ReadActiveUnits();
 
         for (var index = 1; index < table.Count; index++)
         {
@@ -366,6 +368,24 @@ ORDER BY s.name COLLATE NOCASE;");
                 continue;
             }
 
+            var baseUnit = NormalizeUnitName(Field("baseunit"));
+            if (baseUnit.Length == 0)
+            {
+                baseUnit = "tablet";
+            }
+            if (!activeUnits.TryGetValue(baseUnit, out var wholeOnly))
+            {
+                preview.Rows.Add(Error(line, name,
+                    "Base unit '" + baseUnit + "' is not on the active managed list. Add or restore it in Manage units first; nothing was imported."));
+                continue;
+            }
+            if (wholeOnly && !Qty.IsWhole(openingQty))
+            {
+                preview.Rows.Add(Error(line, name,
+                    "Opening " + baseUnit + " quantities must be whole units; ml is strength, not a stock division."));
+                continue;
+            }
+
             var item = new ProductImport
             {
                 Name = name,
@@ -375,7 +395,7 @@ ORDER BY s.name COLLATE NOCASE;");
                 Category = Empty(Field("category")),
                 RackNo = Empty(Field("rack")),
                 PackLabel = Empty(Field("pack")),
-                BaseUnit = Field("baseunit").Length == 0 ? "tablet" : Field("baseunit").ToLowerInvariant(),
+                BaseUnit = baseUnit,
                 BoxStrips = Whole(Field("boxstrips")),
                 StripTablets = Whole(Field("striptablets")),
                 CostPaisa = Money.ToPaisa(costRupees),
@@ -437,6 +457,17 @@ ORDER BY s.name COLLATE NOCASE;");
                 foreach (var item in preview.Products)
                 {
                     var categoryId = CategoryId(connection, item.Category, categoryIds);
+                    var baseUnit = NormalizeUnitName(item.BaseUnit);
+                    if (!ActiveUnitExists(connection, baseUnit))
+                    {
+                        throw new ValidationException(
+                            "Base unit '" + baseUnit + "' is no longer active. Preview the file again after restoring or changing the unit; nothing was imported.");
+                    }
+                    if (UnitPolicy.RequiresWhole(_db, connection, baseUnit) && !Qty.IsWhole(item.OpeningQty))
+                    {
+                        throw new ValidationException(
+                            "Opening " + baseUnit + " quantities must be whole units; nothing was imported.");
+                    }
 
                     _db.Execute(connection, @"
 INSERT INTO products
@@ -456,7 +487,7 @@ VALUES
                             categoryId,
                             rackNo = item.RackNo,
                             packLabel = item.PackLabel,
-                            baseUnit = item.BaseUnit,
+                            baseUnit,
                             boxStrips = item.BoxStrips,
                             stripTablets = item.StripTablets,
                             costPaisa = item.CostPaisa,
@@ -1049,6 +1080,23 @@ WHERE id = @id;",
         return codes;
     }
 
+    private Dictionary<string, bool> ReadActiveUnits()
+    {
+        var units = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+        using var connection = _db.Open();
+        foreach (var row in _db.Query<Unit>(connection,
+            "SELECT name, whole_only AS wholeOnly FROM units WHERE active = 1;"))
+        {
+            units[NormalizeUnitName(row.Name)] = row.WholeOnly;
+        }
+        return units;
+    }
+
+    private bool ActiveUnitExists(SqliteConnection connection, string name) =>
+        name.Length > 0 && Convert.ToInt64(_db.Scalar(connection,
+            "SELECT COUNT(1) FROM units WHERE active = 1 AND name = @name COLLATE NOCASE;",
+            new { name }) ?? 0L) > 0;
+
     private HashSet<string> ReadExistingPhones()
     {
         var phones = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -1120,6 +1168,11 @@ WHERE id = @id;",
         int.TryParse((text ?? string.Empty).Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
             ? Math.Max(0, value)
             : 0;
+
+    private static string NormalizeUnitName(string? value) =>
+        string.Join(" ", (value ?? string.Empty).Trim()
+            .Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))
+            .ToLowerInvariant();
 
     // ---- the flat rows the export queries read ----
 

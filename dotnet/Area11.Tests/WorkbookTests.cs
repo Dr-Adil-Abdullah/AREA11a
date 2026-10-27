@@ -188,6 +188,38 @@ public sealed class WorkbookTests
     }
 
     [Fact]
+    public void BulkUpdate_RequiresAnActiveManagedUnit_AndRechecksAtApply()
+    {
+        using var test = new TestDatabase();
+        var productId = TestData.AddProduct(test);
+        var service = Workbooks(test);
+        var workbook = Download(test);
+        var products = workbook.Sheet("Products")!;
+        Set(products, RowWithId(products, productId), "Base unit", "not-a-unit");
+        var unknown = service.PreviewBulk(TestData.Owner, XlsxFile.Write(workbook), false).Value!;
+        Assert.False(unknown.CanApply);
+        Assert.Contains(unknown.Rows, row => row.IsError && row.Message.Contains("active managed list"));
+        Assert.Equal("tablet", Scalar(test, "SELECT base_unit FROM products WHERE id = " + productId + ";"));
+
+        var catalog = new ProductService(test.Database, test.Audit, test.Log);
+        var unit = catalog.AddUnit(TestData.Owner, "vial").Value;
+        workbook = Download(test);
+        products = workbook.Sheet("Products")!;
+        Set(products, RowWithId(products, productId), "Base unit", "  VIAL  ");
+        var preview = service.PreviewBulk(TestData.Owner, XlsxFile.Write(workbook), false).Value!;
+        Assert.True(preview.CanApply, preview.SummaryText);
+        Assert.True(catalog.SetUnitActive(TestData.Owner, unit, false).Ok);
+        var stale = service.ApplyBulk(TestData.Owner, preview);
+        Assert.False(stale.Ok);
+        Assert.Equal("tablet", Scalar(test, "SELECT base_unit FROM products WHERE id = " + productId + ";"));
+
+        Assert.True(catalog.SetUnitActive(TestData.Owner, unit, true).Ok);
+        var applied = service.ApplyBulk(TestData.Owner, preview);
+        Assert.True(applied.Ok, applied.Error);
+        Assert.Equal("vial", Scalar(test, "SELECT base_unit FROM products WHERE id = " + productId + ";"));
+    }
+
+    [Fact]
     public void BulkUpdate_UploadingTheAppliedFileAgainMeansZeroChanges()
     {
         using var test = new TestDatabase();

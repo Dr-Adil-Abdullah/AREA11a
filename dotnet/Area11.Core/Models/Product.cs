@@ -24,7 +24,17 @@ public sealed class Product
 
     public string? CategoryName { get; set; }
 
+    /// <summary>Additional filter-only tags; never joined into financial category totals.</summary>
+    public string? CategoryTags { get; set; }
+
+    /// <summary>Loaded explicitly by ProductService.Get for the edit form.</summary>
+    public List<int> CategoryTagIds { get; set; } = new();
+
     public string? CompanyName { get; set; }
+
+    public string CategoryLabel => CategoryName ?? "Uncategorised";
+
+    public string CompanyLabel => CompanyName ?? "No company";
 
     public string? RackNo { get; set; }
 
@@ -34,7 +44,16 @@ public sealed class Product
 
     public string BaseUnit { get; set; } = "tablet";
 
-    /// <summary>1 Box = ? strips.</summary>
+    /// <summary>Descriptive strength/volume only; it never converts stock into mL or another unit.</summary>
+    public double StrengthValue { get; set; }
+
+    public string StrengthUnit { get; set; } = string.Empty;
+
+    public string StrengthLabel => StrengthValue > 0 && !string.IsNullOrWhiteSpace(StrengthUnit)
+        ? Qty.Edit(StrengthValue) + " " + StrengthUnit
+        : string.Empty;
+
+    /// <summary>1 Box = ? strips/inner packs.</summary>
     public int BoxStrips { get; set; }
 
     /// <summary>1 Strip = ? base units.</summary>
@@ -53,6 +72,16 @@ public sealed class Product
     public bool TrackExpiry { get; set; } = true;
 
     public bool Active { get; set; } = true;
+
+    /// <summary>First active gallery file name; the database never stores a machine-specific path.</summary>
+    public string? PhotoFileName { get; set; }
+
+    /// <summary>Resolved by the desktop shell for a thumbnail; not a database column.</summary>
+    public string? PhotoPath { get; set; }
+
+    public bool HasPhoto => !string.IsNullOrWhiteSpace(PhotoPath);
+
+    public bool HasNoPhoto => !HasPhoto;
 
     /// <summary>Live shelf stock in base units (sum of batches).</summary>
     public double StockBase { get; set; }
@@ -121,6 +150,9 @@ public sealed class ProductPatch
 
     public int? CategoryId { get; set; }
 
+    /// <summary>Null = leave tags unchanged; an empty list = remove all additional tags.</summary>
+    public List<int>? CategoryTagIds { get; set; }
+
     public int? CompanyId { get; set; }
 
     public string? RackNo { get; set; }
@@ -130,6 +162,11 @@ public sealed class ProductPatch
     public string? PackSizeLabel { get; set; }
 
     public string? BaseUnit { get; set; }
+
+    /// <summary>Zero with an empty StrengthUnit clears the optional descriptive strength.</summary>
+    public double? StrengthValue { get; set; }
+
+    public string? StrengthUnit { get; set; }
 
     public int? BoxStrips { get; set; }
 

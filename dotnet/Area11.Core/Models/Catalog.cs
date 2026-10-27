@@ -27,6 +27,37 @@ public sealed class Category
     public override string ToString() => Name;
 }
 
+/// <summary>A managed base/strength unit. Names are canonical lower-case, case-insensitively unique.</summary>
+public sealed class Unit
+{
+    public int Id { get; set; }
+
+    public string Name { get; set; } = string.Empty;
+
+    public bool Active { get; set; } = true;
+
+    /// <summary>Whole stock quantities are required for this unit; the flag survives a rename.</summary>
+    public bool WholeOnly { get; set; }
+
+    public int SortOrder { get; set; }
+
+    /// <summary>Current products using this as their stock-count base unit.</summary>
+    public int ProductCount { get; set; }
+
+    /// <summary>Current products using this only as a descriptive strength unit.</summary>
+    public int StrengthCount { get; set; }
+
+    public int UsageCount => ProductCount + StrengthCount;
+
+    public string ActiveLabel => Active ? "Active" : "Put away";
+
+    public string QuantityLabel => WholeOnly ? "Whole units" : "Fractions allowed";
+
+    public string CatalogLabel => Active ? Name : Name + " (put away)";
+
+    public override string ToString() => Name;
+}
+
 public sealed class Company
 {
     public int Id { get; set; }

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
 using System.Windows;
 using Area11.Core.Models;
 using Area11.Core.Services;
@@ -81,6 +82,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         DoneCommand = new RelayCommand(() => ShowSaleSuccess = false);
         PrintLastCommand = new RelayCommand(PrintLast, () => _lastSaleId > 0);
         RefreshCommand = new RelayCommand(LoadLookups);
+        OpenProductPhotoCommand = new RelayCommand<int>(OpenProductPhoto);
         HoldCommand = new RelayCommand(HoldCart);
         RefreshHeldCommand = new RelayCommand(LoadHeldCarts);
         BeginAddCustomerCommand = new RelayCommand(BeginAddCustomer);
@@ -129,6 +131,8 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     public RelayCommand PrintLastCommand { get; }
 
     public RelayCommand RefreshCommand { get; }
+
+    public RelayCommand<int> OpenProductPhotoCommand { get; }
 
     public RelayCommand HoldCommand { get; }
 
@@ -544,6 +548,10 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         _catalog.Clear();
         if (products.Ok && products.Value is not null)
         {
+            foreach (var product in products.Value)
+            {
+                product.PhotoPath = ResolvePhotoPath(product);
+            }
             _catalog.AddRange(products.Value);
         }
 
@@ -616,6 +624,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
                 || product.Name.Contains(term, StringComparison.OrdinalIgnoreCase)
                 || (product.Generic ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase)
                 || (product.Barcode ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase)
+                || product.StrengthLabel.Contains(term, StringComparison.OrdinalIgnoreCase)
                 || codeMatches)
             {
                 shown.Add(product);
@@ -721,6 +730,28 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
             codes.Add(match.Barcode);
         }
+    }
+
+    private static string? ResolvePhotoPath(Product product)
+    {
+        if (string.IsNullOrWhiteSpace(product.PhotoFileName))
+        {
+            return null;
+        }
+        var path = Path.Combine(AppPaths.PhotosFolder, product.PhotoFileName);
+        return File.Exists(path) ? path : null;
+    }
+
+    private void OpenProductPhoto(int productId)
+    {
+        var product = _catalog.FirstOrDefault(row => row.Id == productId);
+        if (product is null)
+        {
+            SetStatus("That medicine is no longer in the active catalog. Refresh and try again.", true);
+            return;
+        }
+        PhotoWindow.Show(_services, _user, PhotoEntity.Product, product.Id, product.Name);
+        LoadLookups();
     }
 
     /// <summary>
