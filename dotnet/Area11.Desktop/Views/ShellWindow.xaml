@@ -182,8 +182,24 @@
                         </Button.Style>
                         <Grid Width="26" Height="22">
                             <TextBlock Text="&#xE7ED;" FontFamily="Segoe MDL2 Assets" FontSize="14"
-                                       Foreground="#E2E8F0" HorizontalAlignment="Center"
-                                       VerticalAlignment="Center" />
+                                       HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#E2E8F0" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding BellSeverity}" Value="Red">
+                                                <Setter Property="Foreground" Value="#F87171" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding BellSeverity}" Value="Yellow">
+                                                <Setter Property="Foreground" Value="#FCD34D" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding BellSeverity}" Value="Green">
+                                                <Setter Property="Foreground" Value="#4ADE80" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                             <!-- Light chip, dark figure: readable on the dark bar AND on the brand
                                  colour (a dark red chip would disappear into the brand brush). -->
                             <Border CornerRadius="7" MinWidth="14" Height="14" Padding="3,0"
@@ -194,8 +210,14 @@
                                     <Style TargetType="Border">
                                         <Setter Property="Background" Value="#FCD34D" />
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsShowingAlerts}" Value="True">
-                                                <Setter Property="Background" Value="#FFFFFF" />
+                                            <DataTrigger Binding="{Binding BellSeverity}" Value="Red">
+                                                <Setter Property="Background" Value="#F87171" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding BellSeverity}" Value="Yellow">
+                                                <Setter Property="Background" Value="#FCD34D" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding BellSeverity}" Value="Green">
+                                                <Setter Property="Background" Value="#4ADE80" />
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>

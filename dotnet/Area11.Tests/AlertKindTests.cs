@@ -111,6 +111,27 @@ VALUES(@userId, @at, 0, 0, 0, 0, 'open');",
     }
 
     [Fact]
+    public void NearingExpiry_IsAGreenReminderAndCanBePutAway()
+    {
+        using var test = new TestDatabase();
+        var product = TestData.AddProduct(test, batchQty: 100, name: "Calpol syrup");
+
+        test.Database.Tx(connection => test.Database.Execute(connection,
+            "UPDATE batches SET expiry_date = date('now','localtime','+30 days') WHERE product_id = @productId;",
+            new { productId }));
+
+        var report = Alerts(test).Report();
+        var reminder = report.Live.Single(alert => alert.Type == AlertService.TypeExpirySoon);
+
+        Assert.Equal(AlertSeverity.Green, reminder.Severity);
+        Assert.Equal(AlertSeverity.Green, report.BellSeverity);
+        Assert.True(reminder.IsLight);
+        Assert.Contains("nearing expiry", reminder.Title, StringComparison.Ordinal);
+        Assert.True(Alerts(test).DismissLight(TestData.Cashier(test), reminder.Key).Ok);
+        Assert.Equal(AlertSeverity.None, Alerts(test).Report().BellSeverity);
+    }
+
+    [Fact]
     public void ADrawerLeftOpenFromYesterday_IsAReminder()
     {
         using var test = new TestDatabase();
@@ -253,20 +274,43 @@ ORDER BY id DESC LIMIT 1;",
     }
 
     [Theory]
-    [InlineData("shift_open", true)]
-    [InlineData("provisional_linked", true)]
-    [InlineData("negstock", false)]
-    [InlineData("lowstock", false)]
-    [InlineData("expired", false)]
-    [InlineData("quarantine", false)]
-    [InlineData("supplier_cutoff", false)]
-    public void TheKindOfAnAlert_IsDecidedInOnePlace(string type, bool isReminder)
+    [InlineData("shift_open", true, AlertSeverity.Green)]
+    [InlineData("provisional_linked", true, AlertSeverity.Green)]
+    [InlineData("expiry_soon", true, AlertSeverity.Green)]
+    [InlineData("negstock", false, AlertSeverity.Red)]
+    [InlineData("lowstock", false, AlertSeverity.Yellow)]
+    [InlineData("expired", false, AlertSeverity.Red)]
+    [InlineData("quarantine", false, AlertSeverity.Yellow)]
+    [InlineData("supplier_cutoff", false, AlertSeverity.Yellow)]
+    [InlineData("shift_opening_difference", false, AlertSeverity.Red)]
+    [InlineData("shift_closing_difference", false, AlertSeverity.Red)]
+    public void TheKindOfAnAlert_IsDecidedInOnePlace(string type, bool isReminder, AlertSeverity severity)
     {
         Assert.Equal(isReminder, AlertItem.IsReminderType(type));
 
         var alert = new AlertItem { Type = type };
         Assert.Equal(isReminder, alert.IsLight);
         Assert.Equal(!isReminder, alert.IsSerious);
+        Assert.Equal(severity, alert.Severity);
+    }
+
+    [Fact]
+    public void TheBell_UsesTheMostSevereActiveColour()
+    {
+        var report = new AlertReport();
+        Assert.Equal(AlertSeverity.None, report.BellSeverity);
+
+        report.Live.Add(new AlertItem { Type = "expiry_soon" });
+        Assert.Equal(AlertSeverity.Green, report.BellSeverity);
+
+        report.Live.Add(new AlertItem { Type = "lowstock" });
+        Assert.Equal(AlertSeverity.Yellow, report.BellSeverity);
+
+        report.Live.Add(new AlertItem { Type = "shift_closing_difference" });
+        Assert.Equal(AlertSeverity.Red, report.BellSeverity);
+
+        report.Live.Clear();
+        Assert.Equal(AlertSeverity.None, report.BellSeverity);
     }
 
     [Fact]
@@ -275,7 +319,8 @@ ORDER BY id DESC LIMIT 1;",
         var labels = new[]
         {
             "negstock", "quarantine", "provisional", "provisional_linked",
-            "supplier_cutoff", "lowstock", "expired", "shift_open"
+            "supplier_cutoff", "lowstock", "expired", "expiry_soon", "shift_open",
+            "shift_opening_difference", "shift_closing_difference"
         };
 
         foreach (var type in labels)

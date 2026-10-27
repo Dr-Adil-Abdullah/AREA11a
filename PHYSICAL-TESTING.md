@@ -15,7 +15,7 @@
 
 - Build: **v0.35.18 Obsidian `#27323A`**
 - Owner xUnit: **860 passed / 0 failed / 0 skipped / 860 total — ALL GREEN** (صرف tested Obsidian `cb2e321`)
-- موجودہ working tree: **863 written cases**؛ **52/52 static checks PASS**۔ نیا code یہاں compile/run نہیں ہوا؛ Windows پر `ALL GREEN - 863 of 863` ابھی درکار ہے۔
+- موجودہ working tree: **872 written cases**؛ **52/52 static checks PASS**۔ نیا code یہاں compile/run نہیں ہوا؛ Windows پر `ALL GREEN - 872 of 872` ابھی درکار ہے۔
 - Automated مدت: **1 منٹ 17 سیکنڈ** (پرانے tested Obsidian run کی)
 - Physical testing شروع: **27 اکتوبر 2026**
 - Cloud sync: اس physical-testing مرحلے میں فی الحال شامل نہیں۔
@@ -289,7 +289,7 @@
 
 ## PT02-SHIFT-01 — Previous closing cash، اگلا opening float اور difference alerts
 
-**حالت:** Decision recorded — implementation awaits owner **OK**
+**حالت:** Code changed — Windows financial/alert verification pending
 **اہمیت:** **انتہائی اہم مالیاتی/UI تصدیق**
 
 ### مالک کا فیصلہ — 27 اکتوبر 2026
@@ -302,9 +302,17 @@
 
 **قبولیت کا معیار:** opening cash واضح، short **اور** over دونوں کے alerts، ایک روپے کا فرق بھی capture، لازم reason، درست shift/person/amount، alert سے shift detail کا link اور مکمل Black-box record۔
 
+### 27 اکتوبر code update
+
+- Drawer بند ہو تو نیا opening field آخری **counted closing** سے خود بھر جاتا ہے؛ پہلی shift میں کوئی previous رقم نہ ہو تو واضح پیغام آتا ہے۔
+- Opening previous counted سے ایک paisa بھی مختلف ہو، یا closing/handover short یا over ہو تو service میں reason لازم ہے۔ Reason کے بغیر کوئی shift close/open/handover mutation نہیں ہوتی۔
+- دونوں الگ red alerts ہیں: **Opening cash difference** اور **Closing cash difference**۔ Detail میں shift/person، actual، baseline، فرق اور reason آتا ہے؛ Black box میں بھی opening baseline اور reason محفوظ ہوتا ہے۔
+- نئے tests Rs 1 کم اور Rs 1 زیادہ دونوں جانچتے ہیں، no-reason refusal کے بعد unchanged shift بھی۔ کوئی automatic payment، drawer inflow یا adjustment نہیں بنتا۔
+- Windows پر genuine shift کے ساتھ exact، Rs 1 short، Rs 1 over، handover اور اگلے opening کی physical verification ابھی باقی ہے۔
+
 ## PT02-ALERT-01 — Bell کے تین severity colors
 
-**حالت:** Decision recorded — implementation awaits owner **OK**
+**حالت:** Code changed — bell colour/severity physical verification pending
 
 مالک bell icon پر تین رنگ چاہتا ہے تاکہ مسئلے کی نوعیت دور سے صاف ہو:
 
@@ -313,6 +321,14 @@
 - **Green:** عام معلومات/reminders، مثلاً expiry قریب آنا۔
 
 Bell کی رنگت موجودہ سب سے سنگین active alert کے مطابق ہو؛ تفصیلی mapping کو implementation plan میں موجودہ alert اقسام کے ساتھ جوڑا جائے گا۔ کسی alert کی صرف رنگ بدلنے سے اس کا financial اثر نہیں بدلے گا۔
+
+### 27 اکتوبر code update
+
+- Bell icon اور badge ایک مرکزی severity mapping استعمال کرتے ہیں: **red = financial/urgent، yellow = medium warning، green = ordinary reminder**؛ سب سے سنگین active رنگ جیتتا ہے۔
+- Shift differences red، low-stock/supplier-cutoff/quarantine yellow، drawer-open/bill-confirmation اور نیا **Nearing expiry** reminder green ہیں۔ Expired stock کو ordinary green نہیں کیا گیا۔
+- Nearing expiry صرف Settings کے **nearest expiry band** میں آتا ہے؛ یہ light reminder ہے، کوئی stock یا financial transaction نہیں بناتا۔
+- Alert board rows بھی وہی تین رنگ دکھاتے ہیں۔ Red discrepancy کو light dismiss سے ہٹایا نہیں جا سکتا؛ owner review/reason لازم رہتا ہے۔
+- Written suite اب **872** اور static gate **52/52 PASS** ہے؛ WPF پر تینوں رنگوں کی visual اور dismissal verification باقی ہے۔
 
 ## PT02-POS-01 — Product selection/cart price اور blank/dashes کی رپورٹ
 

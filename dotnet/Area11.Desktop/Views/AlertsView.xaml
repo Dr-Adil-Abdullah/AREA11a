@@ -45,12 +45,15 @@
                         <DataGrid.RowStyle>
                             <Style TargetType="DataGridRow">
                                 <Style.Triggers>
-                                    <!-- Red: money or stock is wrong now. Amber: waiting for the owner. -->
+                                    <!-- Red: financial/urgent. Yellow: medium warning. Green: ordinary reminder. -->
                                     <DataTrigger Binding="{Binding IsCritical}" Value="True">
                                         <Setter Property="Background" Value="{StaticResource DangerSoftBrush}" />
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding IsAmber}" Value="True">
                                         <Setter Property="Background" Value="{StaticResource WarningSoftBrush}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsGreen}" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource SuccessSoftBrush}" />
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>

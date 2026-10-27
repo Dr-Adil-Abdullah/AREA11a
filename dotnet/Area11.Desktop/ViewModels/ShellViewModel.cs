@@ -42,6 +42,7 @@ public sealed class ShellViewModel : ObservableObject
     private bool _userMenuOpen;
     private bool _menuPinned;
     private bool _hasBellAlerts;
+    private AlertSeverity _bellSeverity = AlertSeverity.None;
     private string _bellBadgeText = string.Empty;
     private string _bellSummaryText = "Nothing needs attention.";
     private string _faultBanner = string.Empty;
@@ -261,6 +262,13 @@ public sealed class ShellViewModel : ObservableObject
     {
         get => _hasBellAlerts;
         private set => SetProperty(ref _hasBellAlerts, value);
+    }
+
+    /// <summary>Most severe active alert: red financial, yellow warning, green reminder.</summary>
+    public AlertSeverity BellSeverity
+    {
+        get => _bellSeverity;
+        private set => SetProperty(ref _bellSeverity, value);
     }
 
     /// <summary>The number in the badge, capped at "9+" so it never widens the bell.</summary>
@@ -918,6 +926,7 @@ public sealed class ShellViewModel : ObservableObject
         var report = _services.Alert.Report();
 
         HasBellAlerts = report.HasLive;
+        BellSeverity = report.BellSeverity;
         BellBadgeText = report.LiveCount > 9 ? "9+" : report.LiveCount.ToString();
         BellSummaryText = report.BellText;
     }

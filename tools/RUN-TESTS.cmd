@@ -11,7 +11,7 @@ cd /d "%~dp0.."
 
 rem How many cases this build should run. tools\check_repo.py fails if this number
 rem and the suite disagree, so it cannot quietly go stale.
-set "EXPECTED=863"
+set "EXPECTED=872"
 
 rem  Which build is about to run? The line below is the ONLY place this script names a version,
 rem  and tools\check_repo.py fails if it disagrees with BuildInfo.cs - so it cannot go stale, and

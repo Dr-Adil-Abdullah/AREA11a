@@ -237,6 +237,7 @@ public sealed class AlertRow
         EndedAt = alert.EndedAt ?? string.Empty;
         IsCritical = alert.IsCritical;
         IsAmber = alert.IsAmber;
+        IsGreen = alert.IsGreen;
         IsLight = alert.IsLight;
     }
 
@@ -261,6 +262,8 @@ public sealed class AlertRow
     public bool IsCritical { get; }
 
     public bool IsAmber { get; }
+
+    public bool IsGreen { get; }
 
     /// <summary>True = a reminder (anybody may close it). False = only the owner ends it.</summary>
     public bool IsLight { get; }

@@ -1,5 +1,14 @@
 namespace Area11.Core.Models;
 
+/// <summary>The highest colour the bell needs, independent of who may dismiss the alert.</summary>
+public enum AlertSeverity
+{
+    None,
+    Green,
+    Yellow,
+    Red
+}
+
 /// <summary>
 /// One alert on the board. Alerts are never deleted: an owner ends an episode with a written
 /// reason, and the reason stays in the history for good (U-31).
@@ -30,13 +39,20 @@ public sealed class AlertItem
     /// <summary>How many are in that state, when several rows were folded into one alert.</summary>
     public int Count { get; set; } = 1;
 
-    /// <summary>Red = money or stock is wrong right now. Amber = waiting for the owner's word.</summary>
-    public bool IsCritical => Type is "negstock" or "provisional" or "expired";
+    /// <summary>Red financial/urgent, yellow medium warning, green ordinary reminder.</summary>
+    public AlertSeverity Severity => Type switch
+    {
+        "shift_opening_difference" or "shift_closing_difference" or "negstock" or "provisional" or "expired"
+            => AlertSeverity.Red,
+        "supplier_cutoff" or "quarantine" or "lowstock" => AlertSeverity.Yellow,
+        _ => AlertSeverity.Green
+    };
 
-    /// <summary>Amber = nothing is wrong yet, but a decision has a deadline (a bill to confirm, a
-    /// supplier who will stop accepting the goods, a shelf that is running out).</summary>
-    public bool IsAmber => Type is "provisional_linked" or "supplier_cutoff" or "quarantine"
-        or "lowstock" or "shift_open";
+    public bool IsCritical => Severity == AlertSeverity.Red;
+
+    public bool IsAmber => Severity == AlertSeverity.Yellow;
+
+    public bool IsGreen => Severity == AlertSeverity.Green;
 
     /// <summary>
     /// The two kinds of alert the owner asked for (D-50).
@@ -55,7 +71,7 @@ public sealed class AlertItem
 
     /// <summary>One list, used by the model AND by AlertService, so the two can never disagree.</summary>
     public static bool IsReminderType(string? type) =>
-        type is "shift_open" or "provisional_linked";
+        type is "shift_open" or "provisional_linked" or "expiry_soon";
 
     public string TypeLabel => Type switch
     {
@@ -66,7 +82,10 @@ public sealed class AlertItem
         "supplier_cutoff" => "Return to supplier",
         "lowstock" => "Running out",
         "expired" => "Expired on the shelf",
+        "expiry_soon" => "Nearing expiry",
         "shift_open" => "Drawer left open",
+        "shift_opening_difference" => "Opening cash difference",
+        "shift_closing_difference" => "Closing cash difference",
         _ => Type
     };
 }
@@ -106,6 +125,30 @@ public sealed class AlertReport
     public int ExpiredCount => Live.Count(alert => alert.Type == "expired");
 
     public int ShiftOpenCount => Live.Count(alert => alert.Type == "shift_open");
+
+    public int ExpirySoonCount => Live.Count(alert => alert.Type == "expiry_soon");
+
+    public int ShiftDiscrepancyCount => Live.Count(alert =>
+        alert.Type is "shift_opening_difference" or "shift_closing_difference");
+
+    /// <summary>One bell colour: the most severe live alert wins.</summary>
+    public AlertSeverity BellSeverity
+    {
+        get
+        {
+            if (Live.Any(alert => alert.Severity == AlertSeverity.Red))
+            {
+                return AlertSeverity.Red;
+            }
+
+            if (Live.Any(alert => alert.Severity == AlertSeverity.Yellow))
+            {
+                return AlertSeverity.Yellow;
+            }
+
+            return Live.Count > 0 ? AlertSeverity.Green : AlertSeverity.None;
+        }
+    }
 
     /// <summary>The bell's tooltip sentence: "3 need the owner · 1 reminder".</summary>
     public string BellText
@@ -150,6 +193,11 @@ public sealed class AlertReport
 
             var parts = new List<string>();
 
+            if (ShiftDiscrepancyCount > 0)
+            {
+                parts.Add($"{ShiftDiscrepancyCount} shift cash difference(s) need a reason and review");
+            }
+
             if (NegativeCount > 0)
             {
                 parts.Add($"Stock is MINUS - {NegativeCount} medicine(s)");
@@ -173,6 +221,11 @@ public sealed class AlertReport
             if (ExpiredCount > 0)
             {
                 parts.Add($"{ExpiredCount} batch(es) already expired on the shelf");
+            }
+
+            if (ExpirySoonCount > 0)
+            {
+                parts.Add($"{ExpirySoonCount} expiry reminder(s) coming up");
             }
 
             if (LowStockCount > 0)
