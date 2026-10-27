@@ -921,7 +921,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
                     $"Special subtotal: {Money.Format(specialQuote.Value.SubtotalPaisa)}\n\n" +
                     "Yes = apply the special rate.  No = keep ordinary retail.",
                     "Special selling rate", MessageBoxButton.YesNo, MessageBoxImage.Question,
-                    MessageBoxDefaultButton.Button2);
+                    MessageBoxResult.No);
                 useSpecialRate = answer == MessageBoxResult.Yes;
             }
         }

@@ -17,6 +17,7 @@
 - Owner xUnit: **860 passed / 0 failed / 0 skipped / 860 total — ALL GREEN** (صرف tested Obsidian `cb2e321`)
 - موجودہ working tree: **883 written cases in 68 files**؛ **52/52 static checks PASS** (real C# grammar سمیت)۔ Latest gate: **28 migrations / 37 business tables / 825 prepared SQL statements / 123 settings keys**۔ CAT/UNIT/NAV/PHOTO code بھی یہاں compile/run نہیں ہوا؛ Windows پر `ALL GREEN - 883 of 883` ابھی درکار ہے۔
 - Windows build report میں `AlertKindTests.cs(121,19)` کا `productId` scope compile error ملا؛ وہ `aedb65d` میں ٹھیک push ہو چکا ہے۔ مکمل build/xUnit کا نیا نتیجہ ابھی باقی ہے۔
+- تازہ Windows build report میں `PosViewModel.cs(924,21)` کا **CS0103: `MessageBoxDefaultButton` does not exist** ملا۔ WPF کے صحیح overload کے لیے اسے **`MessageBoxResult.No`** سے بدلا گیا ہے، اس لیے default جواب No/normal retail رہتا ہے۔ Static gate دوبارہ PASS ہے؛ اسی machine پر نیا build ابھی باقی ہے، اس لیے اسے owner-verified نہیں لکھا گیا۔
 - 27 اکتوبر CAT-01/NAV-01/UNIT-01/PHOTO-01 code batch: primary+filter tags، managed units اور descriptive strength، product/counter thumbnails، اور dashboard/category/company drill-downs شامل ہیں۔ Migrations `027`–`028` اور **6 نئے regression cases** شامل ہیں؛ یہ code changes ہیں، owner physical verification نہیں۔
 - Automated مدت: **1 منٹ 17 سیکنڈ** (پرانے tested Obsidian run کی)
 - Physical testing شروع: **27 اکتوبر 2026**
