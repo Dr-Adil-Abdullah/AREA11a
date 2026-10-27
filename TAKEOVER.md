@@ -37,6 +37,7 @@ repository is a **behaviour reference only** — never modify it, never copy its
 
 | Question | File that owns the answer |
 |---|---|
+| Physical test results, owner feedback and requested changes | **`PHYSICAL-TESTING.md`** — append-only physical-testing log |
 | What is done, what is next, per feature (ID, files, test, "done when") | **`docs/PROGRESS.md`** — the board |
 | What the owner decided, in his own language (D-00 … D-94) | **`docs/OWNER-DECISIONS.md`** (Urdu, authoritative) |
 | His 116 numbered rules and where each is implemented | `docs/RULES-MATRIX.md` |
