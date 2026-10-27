@@ -160,9 +160,11 @@ tests through the public service methods and a real bill in `TestDatabase`.
 > * **Physical testing is in progress.** PT-01 passed; PT-02 is PARTIAL, with product saves and Black
 >   box entries confirmed but new catalog, unit, rate, navigation, thumbnail, shift, POS and sale-UI
 >   requests outstanding. All findings and the PT-03/PT-04 instructions live in
->   **`PHYSICAL-TESTING.md`**. Do not start production fixes until the owner writes **OK**; ambiguous
->   category, stock-unit, discount and opening-cash rules need the owner's choices first. When the
->   owner writes **next**, provide the next test portion rather than starting a feature stage.
+>   **`PHYSICAL-TESTING.md`**. The owner has now chosen primary-category-plus-tags, whole-sale-unit
+>   stock with separate mL strength, explicit-total-percentage versus optional special rates, and
+>   carried opening cash with reasoned red discrepancy alerts plus three bell colours. Do not start
+>   production fixes until the owner writes **OK**. The POS blank/dashes report still needs exact
+>   reproduction evidence. When the owner writes **next**, provide the next test portion, not a feature stage.
 >
 > * **v0.35.5 repairs one policy mismatch and two stale test fixtures.** The owner's v0.35.4 run proved
 >   the correct tree (**769 passed, 3 failed, 772 total**). A sign-in ahead of the PC clock now keeps

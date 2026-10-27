@@ -196,13 +196,15 @@
 
 ## PT02-CAT-01 — ایک medicine کے لیے ایک سے زیادہ categories یا subcategories
 
-**حالت:** Recorded — owner choice required before design
+**حالت:** Decision recorded — implementation awaits owner **OK**
 **اہمیت:** اہم catalog/data-model تبدیلی
 
 - موجودہ product form میں ایک وقت میں ایک category منتخب ہوتی ہے۔
-- مالک چاہتا ہے کہ ایک medicine ضرورت کے مطابق ایک سے زیادہ groupings میں آ سکے، یا مناسب subcategory نظام ہو۔
-- مالک نے implementation کا انتخاب agent پر چھوڑا ہے، مگر پہلے واضح کرنا ہے کہ مقصد independent tags ہیں یا درختی parent/child categories۔
-- Financial reports میں ایک sale صرف ایک بار count ہو؛ صرف primary category سے total بنے یا کوئی اور غیر مبهم rule طے ہو۔ Multiple filter selections سے sale/profit duplicate نہیں ہونا چاہیے۔
+- مالک چاہتا ہے کہ ایک medicine ضرورت کے مطابق ایک سے زیادہ groupings میں آ سکے۔
+
+### مالک کا فیصلہ — 27 اکتوبر 2026
+
+**ایک primary category + اضافی tags۔** Financial totals primary category سے صرف ایک بار بنیں گے؛ tags search/filter کے لیے ہوں گے۔ کسی tag/filter سے sale، stock یا profit double-count نہیں ہوگا۔
 
 **قبولیت کا معیار:** category/subcategory choices واضح ہوں، product پر تمام selected groups محفوظ ہوں، filters کام کریں، اور category reports کا میزان کبھی double-count نہ ہو۔
 
@@ -220,7 +222,7 @@
 
 ## PT02-UNIT-01 — Editable units، pack contents اور strength/volume
 
-**حالت:** Recorded — stock-unit clarification required before implementation
+**حالت:** Decision recorded — implementation awaits owner **OK**
 **اہمیت:** **بنیادی inventory model؛ احتیاط سے design کرنا ہے**
 
 ### مالک کی ضرورت
@@ -235,24 +237,30 @@
 
 **ایک box میں 10 injections، اور ہر injection 50 mL۔** اس سے physical pack ہے: `1 box = 10 injections`؛ strength ہے: `1 injection = 50 mL`؛ total content ہے: `500 mL / box`۔
 
-### لازمی clarification
+### مالک کا فیصلہ — 27 اکتوبر 2026
 
-Stock اور sale میں **1 injection** گنا جائے گا یا **1 mL**؟ ان دونوں کا inventory فرق ہے۔ پورے injection کی فروخت میں `injection` base unit اور `50 mL` strength الگ رکھنا عام طور پر صاف ہوگا؛ صرف `mL` base unit partial-volume dispensing کے لیے ہے۔
+- Injection کو **mL میں تقسیم کر کے نہیں بیچنا**؛ stock اور sale whole injections / whole sale units میں ہوں گے۔
+- Box میں صرف یہ معلوم ہو کہ اس میں **کتنے injections / base units** ہیں۔
+- `50 mL` ہر injection کی strength/quantity ہے، stock-count unit نہیں۔
+- `10 mL`، `50 mL` اور `100 mL` والی variants الگ products ہوں گی؛ ایک variant ختم ہونے سے دوسری variant کا stock کم یا زیادہ نہیں ہوگا۔
+- Managed editable units پھر بھی ضروری ہیں تاکہ `injection` جیسے base units ایک جیسے املے میں محفوظ ہوں، اور strength سے search/filter ہو سکے۔
 
 **قبولیت کا معیار:** managed units، duplicate-name guard، pack conversion، strength filter، اور existing REAL/`double` quantities محفوظ ہوں۔ Used unit delete کرنے سے تاریخ یا stock نہ بگڑے؛ edit/inactivate کے اصول واضح ہوں۔
 
 ## PT02-PRICE-01 — VIP/Doctor rate اور bill discount % کی ترتیب
 
-**حالت:** Recorded — numeric example required
-**اہمیت:** **مالیاتی rule؛ واضح کیے بغیر تبدیل نہیں کرنا**
+**حالت:** Decision recorded — implementation awaits owner **OK**
+**اہمیت:** **مالیاتی rule؛ فیصلہ محفوظ، اب code نہیں**
 
-- مالک bill میں percentage discount چاہتا ہے اور VIP/Doctor rates کے ساتھ اس کا رویہ واضح کرنا چاہتا ہے۔
-- Discount کے بعد final selling rate اور کم ہوا margin صاف نظر آنا چاہیے۔
-- Special rate اور percentage discount میں replace یا stacking کا تعلق ابھی واضح نہیں۔
+### مالک کا فیصلہ — 27 اکتوبر 2026
 
-**عددی سوال:** Retail `Rs 100`، VIP/Doctor rate `Rs 80`، اور bill discount `10%` ہو تو final unit rate `80`، `72` یا `90` میں سے کیا ہو؟
+1. اگر bill پر explicit **discount %** دیا جائے تو وہ **total retail price** پر لگے گا؛ VIP/Doctor rate اس percentage calculation میں شامل نہیں ہوگا، چاہے final rate special rate سے کم یا زیادہ ہو۔
+2. اگر discount % خالی/صفر ہو اور متعلقہ special rate موجود ہو تو sale complete کرنے سے پہلے popup پوچھے گا: **“کیا VIP/Doctor rate لگانا ہے؟”**
+3. **Yes / OK:** متعلقہ VIP/Doctor special rate لگے گا۔
+4. **No:** special rate نہیں لگے گا؛ normal retail rate رہے گا۔
+5. Special rate ایک default/رہنمائی قیمت ہے؛ مختلف doctors یا customers کو مقررہ rate سے مختلف حقیقی قیمت دینا ممکن رہے گا۔
 
-**محفوظ شرط:** Cost/below-cost guard اور integer-paisa rounding برقرار رہیں؛ discount سے منفی total یا چھپا ہوا loss accept نہ ہو۔
+**محفوظ شرط:** Cost/below-cost guard اور integer-paisa rounding برقرار رہیں؛ discount سے منفی total یا چھپا ہوا loss accept نہ ہو۔ Final selling rate اور margin واضح نظر آئیں۔
 
 ## PT02-PHOTO-01 — Products اور Counter میں medicine thumbnails
 
@@ -266,15 +274,30 @@ Stock اور sale میں **1 injection** گنا جائے گا یا **1 mL**؟ ا
 
 ## PT02-SHIFT-01 — Previous closing cash، اگلا opening float اور difference alerts
 
-**حالت:** Recorded — opening-cash choice required
+**حالت:** Decision recorded — implementation awaits owner **OK**
 **اہمیت:** **انتہائی اہم مالیاتی/UI تصدیق**
 
-- مالک کی مثال: رات کو counted closing cash `Rs 6,000` ہو تو صبح نیا shift اسی `6,000` سے جاری ہونا چاہیے؛ `Rs 1,200` سے آزاد شروع کرنے کا موجودہ رویہ سوال پیدا کرتا ہے۔
-- Closing پر short یا over کا فرق چاہے `Rs 100` ہو یا `Rs 1,000`، Alerts میں نظر آنا چاہیے۔
+### مالک کا فیصلہ — 27 اکتوبر 2026
 
-**لازمی clarification:** اگلا float ہمیشہ previous counted closing کے برابر lock ہو، یا وہی default ہو مگر owner/مجاز شخص reason اور audit کے ساتھ بدل سکے؟
+- نیا galla/shift کھلنے پر پچھلی shift کا **counted closing cash خود opening cash** بنے؛ مثلاً `Rs 6,000`۔
+- اگر opening رقم پچھلی رقم سے **ایک روپے بھی کم یا زیادہ** ہو تو اس کا **reason لکھنا لازم** ہوگا۔
+- یہ فرق shift change کے کسی بھی وقت ہو، reason کے ساتھ record اور Alerts میں دکھایا جائے۔
+- Closing کا short یا over، opening میں تبدیلی، یا اسی قسم کا مالی فرق **red alert** بنائے گا۔
+- Alert محض اطلاع اور correction guidance دے؛ اس سے خودکار payment، drawer inflow یا financial adjustment نہیں بننا چاہیے۔
 
-**قبولیت کا معیار:** opening cash واضح، short **اور** over دونوں کی الگ alerts، درست shift/person/amount، alert سے shift detail کا link، اور alert سے خودکار کوئی نیا payment یا financial adjustment نہ بنے۔
+**قبولیت کا معیار:** opening cash واضح، short **اور** over دونوں کے alerts، ایک روپے کا فرق بھی capture، لازم reason، درست shift/person/amount، alert سے shift detail کا link اور مکمل Black-box record۔
+
+## PT02-ALERT-01 — Bell کے تین severity colors
+
+**حالت:** Decision recorded — implementation awaits owner **OK**
+
+مالک bell icon پر تین رنگ چاہتا ہے تاکہ مسئلے کی نوعیت دور سے صاف ہو:
+
+- **Red:** پیسوں کا فرق، مالی مسئلہ یا urgent financial discrepancy۔
+- **Yellow:** کم شدت والی warning جس پر توجہ درکار ہے۔
+- **Green:** عام معلومات/reminders، مثلاً expiry قریب آنا۔
+
+Bell کی رنگت موجودہ سب سے سنگین active alert کے مطابق ہو؛ تفصیلی mapping کو implementation plan میں موجودہ alert اقسام کے ساتھ جوڑا جائے گا۔ کسی alert کی صرف رنگ بدلنے سے اس کا financial اثر نہیں بدلے گا۔
 
 ## PT02-POS-01 — Product selection/cart price اور blank/dashes کی رپورٹ
 
