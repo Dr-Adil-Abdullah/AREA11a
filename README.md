@@ -42,14 +42,11 @@ Live counts are in [`docs/PROGRESS.md`](docs/PROGRESS.md) (features) and
 **Honest note:** the agent's build machine is Linux with no .NET SDK, so nothing in `dotnet/` is
 compiled there. Every change is checked statically (C# parses, explicit usings, XAML, resources,
 every binding against its view model, every SQL statement against the real schema, every mapped
-column against its model, migrations executed on SQLite) and **834 test cases** are written for the
-Windows run. The owner's own machine has built the whole solution and run earlier suites green; the latest
-verified run is **789 of 789 in 1 m 6 s** on v0.35.7 Cypress. The whole solution also built with
-`0 Warning(s), 0 Error(s)` on v0.33.0, with the sign-in window open and `Signed in: Owner` in the log.
-The current v0.35.12 Azure release still needs his `tools\\RUN-TESTS.cmd` run (**834 expected**), the
-Z-05 selected-row reader walk-through and the earlier label rename/restart/reset proof. Merlot's
-Dashboard/PR checks remain outstanding; no old result is backfilled. See
-[`docs/VERSIONS.md`](docs/VERSIONS.md) for which build he has.
+column against its model, migrations executed on SQLite). The owner's Windows machine has built the
+current **v0.35.19 Spruce** source and verified **883/883 xUnit cases in 1 m 19 s** on `94723e5`.
+WPF walk-throughs, genuine transactions, isolated restore, real Excel and optional real-cloud proof
+remain separate; no old result is backfilled. See [`docs/VERSIONS.md`](docs/VERSIONS.md) for which
+build he has and [`PHYSICAL-TESTING.md`](PHYSICAL-TESTING.md) for the running evidence log.
 
 ---
 

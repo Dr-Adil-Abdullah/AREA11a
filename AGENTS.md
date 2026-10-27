@@ -138,13 +138,17 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.35.19 (Spruce `#175E54`) - 883 written cases in 68 files; Obsidian remains the last owner-verified green build.**
+> **v0.35.19 (Spruce `#175E54`) - 883 written cases in 68 files; owner-verified 883/883 on `94723e5`.**
+>
+> * **Latest Windows xUnit proof:** Failed 0, Passed 883, Skipped 0, Total 883 in **1 m 19 s** on
+>   Spruce `94723e5`; the runner printed **`ALL GREEN - 883 of 883 cases passed, failed: 0`**.
+>   This verifies the Windows build and suite, not every WPF or genuine physical workflow.
 >
 > * **The correct Obsidian commit `cb2e321` passed on the owner's Windows PC:** Failed 0, Passed 860,
 >   Skipped 0, Total 860, in 1 m 17 s. The banner was v0.35.18 and the runner printed
->   **`ALL GREEN - 860 of 860 cases passed, failed: 0`**. This closes the current xUnit gate and verifies
->   both workbook fixture repairs together with the retained PR allocation repair. The suite remains
->   **860 cases** and the local static gate remains **52 checks**. Recording this result changes no code.
+>   **`ALL GREEN - 860 of 860 cases passed, failed: 0`**. This closed the earlier xUnit gate and verifies
+>   both workbook fixture repairs together with the retained PR allocation repair. This is earlier
+>   **860-case** evidence; the current Spruce result is 883/883 above. Recording these results changes no code.
 >
 > * **Green tests do not close the separate live checks.** The board remains 52/57 done with five
 >   owner-action rows, and the matrix remains 92 done / 4 partial. Keep T-10 🟡 until real Excel
@@ -154,7 +158,7 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >
 > * **Earlier verification is not backfilled.** Paprika really reported **837 passed / 14 failed / 851
 >   total**, and Quasar's 853-case target was not executed. Cypress 789/789 is now an earlier green
->   run, not the latest. The current 860-case requirement is achieved; do not start another feature
+>   run, not the latest. The current 883-case requirement is achieved; do not start another feature
 >   stage unless the owner writes `next`.
 >
 > * **Physical testing and authorized repairs are in progress.** PT-01 passed; PT-02 is PARTIAL, with
@@ -162,9 +166,8 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >   instructions live in **`PHYSICAL-TESTING.md`**. On 27 October the owner said **“fix the things”**,
 >   authorizing the recorded fixes in safety order. Backup destination/recovery, shift cash/alert,
 >   rate/sale feedback and the CAT-01/NAV-01/UNIT-01/PHOTO-01 source batch have changed; the written
->   suite is **883 in 68 files** and all **52 static checks** pass, but this new tree has not been
->   compiled or run on Windows and is not covered by the old 860/860 result. `aedb65d` fixes the owner's
->   reported AlertKindTests compile error; a fresh full build/run is still required. Prove the new
+>   suite is **883 in 68 files**, all **52 static checks** pass, and the owner has run **883/883** on
+>   Windows (`94723e5`). `aedb65d` fixes the owner's reported AlertKindTests compile error. Prove the new
 >   catalog/unit/navigation/photo workflows with genuine transactions and keep each physical verification
 >   separate. The POS blank/dashes report still needs exact reproduction evidence. **next** still means
 >   the next test portion.
