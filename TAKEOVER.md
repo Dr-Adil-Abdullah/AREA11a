@@ -7,10 +7,10 @@
 > اِس فائل میں یہ سب ہے: پروگرام کیا ہے، ابھی کہاں کھڑا ہے، **کیا باقی ہے**، کیا **کبھی نہیں** کرنا،
 > اور ایک نیا ورژن کیسے نکالنا ہے۔ آپ کے لیے چھوٹی اردو فائل: [`docs/HANDOVER-FOR-OWNER-URDU.md`](docs/HANDOVER-FOR-OWNER-URDU.md)۔
 
-**Status:** v0.37.0 · Aurora · `#5B4B8A` — **default branch `main`**; this Phase-2 field/schema release is on the current
+**Status:** v0.38.0 · Cobalt · `#315C8C` — **default branch `main`**; this Phase-3 packaging/search release is on the current
 working branch `arena/60395e95-area11a` until its pull request is merged.
 
-*Last updated: 29 October 2026. D-97 authorizes Phase-2 central field governance/schema. The current tree has **892 written cases and 54 green static checks**; the owner verified **883/883 Windows xUnit cases on Zircon v0.36.0** with 0 failed/skipped in **1 m 10 s**. Aurora's Windows build, 892-case run and PT-09 physical evidence are pending. The feature board remains 52 done / 5 owner-action rows and the matrix has four partial rules. Real Excel, physical-restore and optional real-cloud evidence remain separate.*
+*Last updated: 29 October 2026. D-98 authorizes Phase 3; its first packaging/variant/search slice is implemented. The current tree has **900 written cases and 55 green static checks**; the owner verified **883/883 Windows xUnit cases on Zircon v0.36.0** with 0 failed/skipped in **1 m 10 s**. Cobalt's Windows build, 900-case run and PT-10 physical evidence are pending; Aurora PT-09 remains separate. The feature board remains 52 done / 5 owner-action rows and the matrix has four partial rules. Real Excel, physical-restore and optional real-cloud evidence remain separate.*
 
 ---
 
@@ -39,7 +39,7 @@ repository is a **behaviour reference only** — never modify it, never copy its
 |---|---|
 | Physical test results, owner feedback and requested changes | **`PHYSICAL-TESTING.md`** — append-only physical-testing log |
 | What is done, what is next, per feature (ID, files, test, "done when") | **`docs/PROGRESS.md`** — the board |
-| What the owner decided, in his own language (D-00 … D-97) | **`docs/OWNER-DECISIONS.md`** (Urdu, authoritative) |
+| What the owner decided, in his own language (D-00 … D-98) | **`docs/OWNER-DECISIONS.md`** (Urdu, authoritative) |
 | His 116 numbered rules and where each is implemented | `docs/RULES-MATRIX.md` |
 | The blueprint (rules, data, pricing, billing, printing, rebuild protocol) | `docs/AREA11-MASTER-SPEC.md` |
 | Every table and column | `docs/SCHEMA-REFERENCE.md` |
@@ -57,15 +57,15 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 
 ## 3. Where it stands right now (read this twice)
 
-**Current source: v0.37.0 "Aurora" contains D-97 Phase-2 central field governance/schema changes and 892 written cases in 69 files. `FieldGovernance` owns custom-field definition and answer validation; migration 029 adds stable rename-safe keys and optional guidance without rewriting existing answers. The Own fields admin exposes key/help metadata, while all seven types, required-field atomicity, permissions and photo behavior remain. All 54 static checks pass locally. Zircon v0.36.0 has owner-verified **883/883 Windows xUnit cases in 1 m 10 s**; Aurora's Windows build, 892-case run and PT-09 physical walk-through are required. Phase 3 packaging/search and later phases are not started. T-10, Z-05, E-12 and S-05 remain partial, the five owner-action feature rows remain open, and PT02-POS-01 still needs exact reproduction.**
+**Current source: v0.38.0 "Cobalt" contains the first D-98 Phase-3 packaging/variant/search slice and 900 written cases in 70 files. The existing `pack_size_label` is editable and visible; Products, Counter and Purchase can discover it, and Purchase shows strength/pack text so equal-named variants remain distinct product IDs. `PackagingPolicy` and ProductService preserve exact/fuzzy boundaries and existing extra barcodes. No new variant/stock model or migration was added; base units, conversions, rates, payments and historical documents remain unchanged. Phase-2 field governance and Phase-1 shell remain. All 55 static checks pass locally, and the actual search SQL passed a 7/7 SQLite development probe. Zircon v0.36.0 has owner-verified **883/883 Windows xUnit cases in 1 m 10 s**; Cobalt's Windows build, 900-case run and PT-10 physical walk-through are required. Phase 4 and later phases are not authorized. T-10, Z-05, E-12 and S-05 remain partial, the five owner-action feature rows remain open, and PT02-POS-01 still needs exact reproduction.**
 
 | | |
 |---|---|
-| Test cases written | **892** in 69 files (`tools\\RUN-TESTS.cmd` compares the run against `EXPECTED=892`) |
-| Static checks | **54**, all green: `OK - 54 checks, no problems` |
+| Test cases written | **900** in 70 files (`tools\\RUN-TESTS.cmd` compares the run against `EXPECTED=900`) |
+| Static checks | **55**, all green: `OK - 55 checks, no problems` |
 | Owner's numbered rules | **116 - 92 ✅ done, 4 🟡 partial, 0 ⬜, 20 standing** - see §4 |
 | Feature board | **57 features — 52 ✅ done, 5 🟡 one shop action each, 0 ⬜ not started** (91.2 % / 8.8 %) |
-| Code size | 289 C# files + 40 XAML files; 53 services, 38 view models |
+| Code size | 291 C# files + 40 XAML files; 54 Core service/policy files, 38 views |
 | Database | 29 migrations → **37 business tables + ledger/provisional report view**, append-only, existing `area11.db` opens unchanged |
 
 ### What the owner's own PC has already proved
@@ -85,6 +85,22 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
   Total 883 in 1 m 10 s — ALL GREEN**. This is the latest full xUnit proof; it does not by itself
   prove a fresh WPF-window walk-through, real Excel or real Supabase. Spruce `94723e5` (883/883 in
   1 m 19 s) and Obsidian (860/860) remain earlier historical evidence.
+
+### What v0.38.0 changes — D-98 Phase-3 packaging/variants/search, first slice
+
+* `PackagingPolicy.cs` owns bounded one-line pack-label cleanup and the shared exact in-memory product
+  matcher. `50ml` and `50 mL` share a search key, but the saved label and managed stock unit are untouched.
+* Product create/update persists the existing `pack_size_label` through the same partial-update path.
+  Products now loads, edits, resets and displays it; Counter displays it and searches with all active extra
+  barcodes still supplied; Purchase uses the same matcher and a `ProductChoiceLabel` containing strength/pack.
+* ProductService SQL also discovers brand, room, pack, base unit, primary category, additional category tags
+  and company alongside its existing name/generic/barcode/strength search. Fuzzy name/generic suggestions
+  still run only after no exact hit and remain visibly labelled.
+* **No replacement variant model:** equal-named variants remain separate product rows and IDs. No migration,
+  batch/payment/document rewrite, new stock unit, pack-formula change or Phase-4 history/profit work exists.
+* **Evidence:** 55/55 static checks, 900 written cases in 70 files including 8 focused regressions, and a
+  targeted 7/7 SQLite execution of the actual search SQL. No local .NET/WPF runtime exists; the owner must
+  build Cobalt, run **`ALL GREEN - 900 of 900`** and complete PT-10. Zircon/Aurora evidence is not backfilled.
 
 ### What v0.37.0 changes — D-97 Phase-2 field governance/schema
 
@@ -463,9 +479,9 @@ needs a fresh report from that version. The Desktop installer still needs its ow
 
 ## 4. What is left — exactly
 
-**Immediate authorized task:** build Aurora on Windows, require **`ALL GREEN - 892 of 892`** and complete
-**PT-09** for Phase-2 field governance/schema. Do not start Phase 3 or infer a WPF pass from the 54 static
-checks. Zircon's 883/883 is previous-release evidence. The five existing 🟡 feature rows below remain
+**Immediate authorized task:** build Cobalt on Windows, require **`ALL GREEN - 900 of 900`** and complete
+**PT-10** for the first Phase-3 packaging/variant/search slice. Retain PT-09/PT-08 as separate evidence; do
+not start Phase 4 or infer a WPF pass from the 55 static checks. Zircon's 883/883 is previous-release evidence. The five existing 🟡 feature rows below remain
 separate owner-action evidence; their counts are not changed by this redesign.
 
 **No feature is ⬜.** The five 🟡 rows are code-complete and await **one action in the real shop**:
@@ -516,12 +532,12 @@ WPF cannot decode `.webp` photos; cloud sync is optional and never deletes a row
 git clone https://github.com/Dr-Adil-Abdullah/AREA11a.git
 cd AREA11a                               # main is the default branch - the product is already here
 pip install --break-system-packages tree_sitter tree_sitter_c_sharp   # gives the real C# grammar
-python3 tools/check_repo.py              # must end: OK - 54 checks, no problems
+python3 tools/check_repo.py              # must end: OK - 55 checks, no problems
 python3 tools/build_rules_matrix.py --check
 ```
 
 Then read, in this order: this file → `AGENTS.md` → `docs/PROGRESS.md` (the board) → `HANDOFF.md` §4
-(the walk-throughs) → `docs/OWNER-DECISIONS.md` (at least D-77, D-88 … D-97) → the code you are about
+(the walk-throughs) → `docs/OWNER-DECISIONS.md` (at least D-77, D-88 … D-98) → the code you are about
 to touch.
 
 **How work reaches `main` from now on.** `main` is protected only by habit, not by a rule: work on a

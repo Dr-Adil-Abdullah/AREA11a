@@ -59,18 +59,30 @@ LEFT JOIN companies co ON co.id = p.company_id
         try
         {
             var text = (term ?? string.Empty).Trim();
+            var searchKey = PackagingPolicy.SearchKey(text);
             var strengthText = NormalizeStrengthFilter(strength);
 
             using var connection = _db.Open();
             var products = _db.Query<Product>(connection, SelectSql + @"
 WHERE p.active = 1
   AND (@term = '' OR p.name LIKE @like OR IFNULL(p.generic, '') LIKE @like
-       OR IFNULL(p.barcode, '') LIKE @like OR IFNULL(p.rack_no, '') LIKE @like
+       OR IFNULL(p.brand, '') LIKE @like OR IFNULL(p.barcode, '') LIKE @like
+       OR IFNULL(p.rack_no, '') LIKE @like OR IFNULL(p.room, '') LIKE @like
+       OR IFNULL(p.pack_size_label, '') LIKE @like OR IFNULL(p.base_unit, '') LIKE @like
+       OR IFNULL(c.name, '') LIKE @like OR IFNULL(co.name, '') LIKE @like
        OR IFNULL(p.strength_unit, '') LIKE @like
        OR (p.strength_value > 0 AND printf('%g', p.strength_value) LIKE @like)
        OR (p.strength_value > 0 AND (printf('%g', p.strength_value) || ' ' || p.strength_unit) LIKE @like)
+       OR (@searchKey <> '' AND replace(replace(lower(IFNULL(p.pack_size_label, '')), ' ', ''), '×', 'x') LIKE @keyLike)
+       OR (@searchKey <> '' AND p.strength_value > 0
+           AND replace(replace(lower(printf('%g', p.strength_value) || ' ' || IFNULL(p.strength_unit, '')),
+                       ' ', ''), '×', 'x') LIKE @keyLike)
        OR EXISTS (SELECT 1 FROM product_barcodes pb
-                  WHERE pb.product_id = p.id AND pb.active = 1 AND pb.barcode LIKE @like))
+                  WHERE pb.product_id = p.id AND pb.active = 1 AND pb.barcode LIKE @like)
+       OR EXISTS (SELECT 1 FROM product_category_tags search_tags
+                  JOIN categories search_category ON search_category.id = search_tags.category_id
+                  WHERE search_tags.product_id = p.id AND search_category.active = 1
+                    AND search_category.name LIKE @like))
   AND (@categoryId IS NULL OR p.category_id = @categoryId OR EXISTS (
       SELECT 1 FROM categories child
       WHERE child.id = p.category_id AND child.parent_id = @categoryId)
@@ -92,6 +104,8 @@ ORDER BY p.name COLLATE NOCASE;",
                 {
                     term = text,
                     like = $"%{text}%",
+                    searchKey,
+                    keyLike = $"%{searchKey}%",
                     categoryId,
                     companyId,
                     strength = strengthText,
@@ -212,6 +226,13 @@ ORDER BY p.name COLLATE NOCASE;",
             return ServiceResult<int>.Fail("Rates cannot be negative.");
         }
 
+        var packSizeError = PackagingPolicy.PackSizeError(input.PackSizeLabel);
+        if (packSizeError is not null)
+        {
+            return ServiceResult<int>.Fail(packSizeError);
+        }
+        var packSizeLabel = PackagingPolicy.CleanPackSize(input.PackSizeLabel);
+
         var baseUnit = NormalizeUnitName(input.BaseUnit) is { Length: > 0 } cleanBase ? cleanBase : "tablet";
         var strengthUnit = NormalizeUnitName(input.StrengthUnit);
         var strengthValue = input.StrengthValue ?? 0;
@@ -257,7 +278,7 @@ VALUES
                         companyId = input.CompanyId,
                         rackNo = NullIfEmpty(input.RackNo),
                         room = NullIfEmpty(input.Room),
-                        packSizeLabel = NullIfEmpty(input.PackSizeLabel),
+                        packSizeLabel = NullIfEmpty(packSizeLabel),
                         baseUnit,
                         strengthValue,
                         strengthUnit,
@@ -413,7 +434,14 @@ VALUES
 
                 if (patch.PackSizeLabel is not null)
                 {
-                    Set("pack_size_label", NullIfEmpty(patch.PackSizeLabel), "packSizeLabel");
+                    var packSizeError = PackagingPolicy.PackSizeError(patch.PackSizeLabel);
+                    if (packSizeError is not null)
+                    {
+                        throw new ValidationException(packSizeError);
+                    }
+
+                    Set("pack_size_label",
+                        NullIfEmpty(PackagingPolicy.CleanPackSize(patch.PackSizeLabel)), "packSizeLabel");
                 }
 
                 if (patch.BaseUnit is not null)

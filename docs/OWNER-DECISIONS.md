@@ -3,7 +3,7 @@
 > **یہ فائل کیا ہے؟** مالک (ڈاکٹر عادل عبداللہ) کی ہر ہدایت، فیصلہ اور ترجیح یہاں نمبر کے ساتھ محفوظ ہوتی ہے۔
 > کوئی بات زبانی نہیں رہتی۔ نئی ہدایت = نیا نمبر۔ پرانی ہدایت کوئی ایجنٹ خاموشی سے نہیں بدل سکتا۔
 >
-> **آخری اپ ڈیٹ:** 29 اکتوبر 2026 · **ورژن:** v0.37.0 Aurora `#5B4B8A` — Phase-2 central field governance/schema source کے ساتھ **892 written cases in 69 files** اور **54 static checks** ہیں۔ Zircon v0.36.0 پر Windows xUnit **883/883، 1 منٹ 10 سیکنڈ** کی owner verification محفوظ ہے؛ Aurora کا Windows build/xUnit اور PT-09 physical walk-through ابھی باقی ہے۔ D-97 میں Phase 2 کی اجازت، central validation، stable keys اور migration 029 درج ہیں۔ D-93 stock اور PR cancellation کے same-batch stock-only/no-payment/no-financial-reversal قواعد برقرار ہیں۔ WPF، genuine physical، real Excel اور cloud verification الگ باقی ہیں۔
+> **آخری اپ ڈیٹ:** 29 اکتوبر 2026 · **ورژن:** v0.38.0 Cobalt `#315C8C` — D-98 کے پہلے Phase-3 packaging/variant/search slice کے ساتھ **900 written cases in 70 files** اور **55 static checks** ہیں۔ Zircon v0.36.0 پر Windows xUnit **883/883، 1 منٹ 10 سیکنڈ** کی owner verification محفوظ ہے؛ Cobalt کا Windows build/xUnit اور PT-10 physical walk-through ابھی باقی ہے، اور Aurora PT-09 الگ ثبوت رہے گا۔ Existing pack label، shared search اور variant-aware Purchase picker شامل ہیں؛ کوئی نیا variant/stock model یا migration نہیں۔ D-93 stock اور PR cancellation قواعد برقرار ہیں؛ Phase 4 کی اجازت نہیں۔ WPF، genuine physical، real Excel اور cloud verification الگ باقی ہیں۔
 > **سند (Authority):** `AREA11-MASTER-SPEC.md` (37 حصے + Appendix A) — اور جہاں مالک نے بعد میں کوئی نیا حکم دیا، وہی چلے گا (Spec §1.2.2)۔
 
 ---
@@ -995,6 +995,33 @@ rules → Loyalty points** سے خود آن کرتا ہے، اور وہیں تی
 
 **دوبارہ نہ ہو:** Version اب **0.13.0 · Deep Sea `#0C4A6E`** ہے (پچھلا Mocha `#6B4F3A`)۔
 
+
+### D-98 — **Phase 3 packaging/variants/search کی اجازت اور پہلا محدود slice** (29 اکتوبر 2026)
+
+مالک نے **“Phase 3 کر لو”** کہہ کر D-96 کی ترتیب کے تیسرے مرحلے کی اجازت دی۔ Actual-code review میں معلوم ہوا
+کہ `products.pack_size_label` پہلے سے schema، model، create/update اور import/export میں موجود ہے، مگر Desktop
+میں نظر نہیں آتا اور product discovery میں شامل نہیں۔ اس لیے پہلا slice نیا variant/stock نظام بنانے کے بجائے اسی
+موجودہ field کو مکمل استعمال کرتا ہے۔
+
+1. **Products** میں pack size / variant label load، edit، reset اور list column کے ساتھ آئے گا؛ create/update پر
+   whitespace normal ہوگی، multiline/control اور 100 characters سے بڑا text مسترد ہوگا۔
+2. **Products، Counter اور Purchase** میں pack/variant label سے تلاش ہوگی؛ `50ml` اور `50 mL` ایک search key
+   بناتے ہیں۔ Existing name/generic/barcode/strength search کے ساتھ brand، room، category/company اور base-unit
+   metadata بھی discovery میں ہے۔ Counter کے تمام active extra pack barcodes محفوظ ہیں، fuzzy fallback الگ اور
+   واضح رہے گا۔
+3. **Purchase picker** میں strength + pack text نظر آئے گا تاکہ ایک جیسے نام والی variants الگ منتخب ہوں۔ D-95 کے
+   مطابق 10/50/100 mL variants separate products رہیں گے؛ strength descriptive ہے، stock managed base units میں
+   ہے، اور product IDs نہیں ملائے جائیں گے۔
+4. Box/strip/base conversion، pack-specific barcode rules، batches، quantities، prices، payments، documents،
+   historical rows، financial rules اور Phase-2 custom-field governance نہیں بدلیں گے۔ اس slice میں کوئی migration
+   یا replacement variant table نہیں۔
+5. **Phase 4 histories/profit اور بعد کے phases اس اجازت میں شامل نہیں۔** Cobalt کا Windows build،
+   **`ALL GREEN - 900 of 900`** اور `PHYSICAL-TESTING.md` کا PT-10 genuine walk-through الگ لازم ہے۔
+
+**نفاذ اور evidence boundary:** v0.38.0 Cobalt میں 8 نئے focused regressions کے ساتھ inventory **900 cases in 70
+files**، local static gate **55/55** اور actual ProductService search SQL کا targeted **7/7 SQLite development probe**
+ہے۔ یہ written/static/SQLite evidence ہے، Windows xUnit یا WPF physical PASS نہیں۔ Zircon 883/883 اور Aurora کے
+سابقہ records کو Cobalt پر منتقل نہیں کیا گیا۔
 
 ### D-97 — **Zircon automated verification اور Phase 2 field governance/schema کی اجازت** (29 اکتوبر 2026)
 
@@ -2589,6 +2616,7 @@ restart نہیں (Spec 8.4.3)۔
 
 | تاریخ | کیا |
 |---|---|
+| 29 اکتوبر 2026 | **D-98 / Phase-3 authorization + first packaging/search slice — v0.38.0 Cobalt `#315C8C`**: مالک نے Phase 3 کی اجازت دی۔ Existing pack label اب Products editor/list اور Products/Counter/Purchase search میں؛ Purchase picker strength+pack دکھاتا ہے۔ Separate product IDs، base-unit stock، conversion، rates اور extra barcodes محفوظ؛ کوئی migration نہیں۔ **900 written cases، 55/55 static checks، 7/7 targeted SQLite search groups**؛ Cobalt Windows/xUnit اور PT-10 pending، Phase 4 غیر منظور۔ |
 | 29 اکتوبر 2026 | **D-97 / Zircon verification + Phase-2 authorization — v0.37.0 Aurora `#5B4B8A`**: Zircon Windows xUnit **883/883، 1m10s** موصول؛ مالک نے Phase 2 شروع کرنے کی اجازت دی۔ Central field policy، stable keys، guidance اور migration 029؛ **892 written cases، 54/54 static checks**، Aurora Windows/physical evidence pending۔ |
 | 29 اکتوبر 2026 | **D-96 / Phase-1 global shell — v0.36.0 Zircon `#3E5C76`**: fixed Area11 title، expanded dark header، clickable modules/contextual pages، header Settings sections، Products category picker، 44×44 bell اور user/version popup؛ sidebar/folding retired۔ Permissions، routes، alerts اور financial/stock/schema rules محفوظ؛ **53/53 static checks**، Windows build/xUnit/PT-08 pending۔ بعد کے phases غیر منظور۔ |
 | 27 اکتوبر 2026 | **D-95 / CAT-01, NAV-01, UNIT-01, PHOTO-01 source batch**: primary+filter tags، managed units، descriptive strength، rename-safe whole-only quantity rule (migration 028)، thumbnails/fallbacks اور filtered Dashboard/category/company drill-downs لکھے گئے۔ Box 10 × 50 mL = 10 injection units؛ mL strength ہے، stock division نہیں۔ **883 written cases in 68 files، 52 static checks؛ Windows xUnit 883/883 `94723e5` پر PASS**؛ WPF/genuine physical verification باقی، feature counts 52/5/0 برقرار۔ |

@@ -1,6 +1,6 @@
 # Area11 — مکمل فیچر ٹک لسٹ (پرنٹ کرنے کے لیے)
 
-**ورژن:** v0.37.0 (Aurora `#5B4B8A`) · **تاریخ:** 2026-10-29
+**ورژن:** v0.38.0 (Cobalt `#315C8C`) · **تاریخ:** 2026-10-29
 
 > یہ فائل **خودکار** بنتی ہے: `python3 tools/make_checklist.py`۔ ہاتھ سے نہ بدلیں۔
 > اصلی فیصلہ `docs/PROGRESS.md` کے بورڈ میں ہوتا ہے، اور `tools/check_repo.py` اُس سے میل
@@ -38,7 +38,7 @@
 | ☐ | F-06 | Per-person permissions stored in the database | ✅ مکمل |
 | ☐ | F-07 | Permanent numbering `INV` / `PINV` / `RET` / `Q` / `SR` / `PR` / `ST` | ✅ مکمل |
 | ☐ | F-08 | Products | 🟡 جاری |
-| ☐ | F-09 | Purchases `PINV`: supplier, batch, expiry, sample lines, payable | 🟡 جاری |
+| ☐ | F-09 | Purchases `PINV` | 🟡 جاری |
 | ☐ | F-10 | Counter `INV` | 🟡 جاری |
 | ☐ | F-11 | Customers: quick create at the counter | ✅ مکمل |
 | ☐ | F-12 | Dashboard: today's bills, sales, profit by the report's own rule, khata, payable, l... | ✅ مکمل |
@@ -60,7 +60,7 @@
 
 - 🟡 **F-04 — Audit black box (old -> new values, never deleted)**: `Black box` کھولیں: آج جو بھی کام کیا (دوا شامل، بل، واپسی)، اُس کی ایک سطر نظر آئے — کس نے، کب، کیا بدلا۔
 - 🟡 **F-08 — Products**: `Products` → **New medicine** → ایک دوا **بیچ کے ساتھ** (بیچ نمبر، میعاد، تعداد) محفوظ کریں۔
-- 🟡 **F-09 — Purchases `PINV`: supplier, batch, expiry, sample lines, payable**: `Purchases` → ایک اصل ڈیلیوری لکھیں (سپلائر، بیچ، میعاد، تعداد) → اسٹاک بڑھے اور واجب الادا بنے۔
+- 🟡 **F-09 — Purchases `PINV`**: `Purchases` → ایک اصل ڈیلیوری لکھیں (سپلائر، بیچ، میعاد، تعداد) → اسٹاک بڑھے اور واجب الادا بنے۔
 - 🟡 **F-10 — Counter `INV`**: `Counter (POS)` → ایک اصل بل بنائیں اور دکان کے پرنٹر پر نکالیں — رسید پوری اور صاف آئے۔
 
 **نوٹ:**

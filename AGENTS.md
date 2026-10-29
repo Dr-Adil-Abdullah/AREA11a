@@ -140,17 +140,19 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.37.0 (Aurora `#5B4B8A`) - Phase-2 field governance/schema source; 892 written cases in 69 files and 54 static checks.**
+> **v0.38.0 (Cobalt `#315C8C`) - first Phase-3 packaging/variant/search slice; 900 written cases in 70 files and 55 static checks.**
 >
-> * **Current Phase-2 source:** `FieldGovernance` centralizes custom-field definition and answer rules;
->   migration 029 adds stable rename-safe keys and optional one-line guidance without rewriting answers.
->   Own fields shows the key/help, and the existing permissions, seven types, required-field atomicity and
->   photo gallery remain. Phase 3 packaging/search and later phases are not authorized by this work.
-> * **Verification boundary:** all **54/54 static checks** pass with real C# grammar and XAML binding checks.
->   There is no local .NET SDK/WPF runtime, so the owner must build Aurora, run **`ALL GREEN - 892 of 892`**,
->   and complete PT-09 in `PHYSICAL-TESTING.md`. Do not call the new schema physically tested yet.
+> * **Current Phase-3 source:** D-98 authorizes the phase. Its first slice reuses `pack_size_label` in the
+>   product editor and Products/Counter/Purchase search; Purchase distinguishes variants with strength/pack
+>   text. `PackagingPolicy` shares exact matching, and existing IDs, base-unit stock, conversion, prices and
+>   extra barcodes remain. No migration or replacement variant model was added. Phase-2 field governance and
+>   Phase-1 shell remain; Phase 4 and later phases are not authorized by this work.
+> * **Verification boundary:** all **55/55 static checks** pass with real C# grammar and XAML binding checks;
+>   the actual search SQL also passed a targeted 7/7 SQLite development probe. There is no local .NET SDK/WPF
+>   runtime, so the owner must build Cobalt, run **`ALL GREEN - 900 of 900`**, and complete PT-10 in
+>   `PHYSICAL-TESTING.md`. Do not call the new packaging workflow physically tested yet.
 > * **Latest prior Windows xUnit proof:** Zircon v0.36.0 reported Failed 0, Passed 883, Skipped 0, Total 883
->   in **1 m 10 s** on 29 October 2026. This verifies that release's Windows suite, not Aurora, every WPF
+>   in **1 m 10 s** on 29 October 2026. This verifies that release's Windows suite, not Cobalt, every WPF
 >   page or genuine physical workflow.
 >
 > * **The correct Obsidian commit `cb2e321` passed on the owner's Windows PC:** Failed 0, Passed 860,
@@ -167,8 +169,8 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >
 > * **Earlier verification is not backfilled.** Paprika really reported **837 passed / 14 failed / 851
 >   total**, and Quasar's 853-case target was not executed. Cypress 789/789 is now an earlier green
->   run, not the latest. The current **892-case** suite is written but still awaits its Aurora owner
->   run; do not start another feature stage unless the owner writes `next`.
+>   run, not the latest. The current **900-case** suite is written but still awaits its Cobalt owner
+>   run; do not start Phase 4 or another feature stage unless the owner writes `next`.
 >
 > * **Physical testing and authorized repairs are in progress.** PT-01 passed; PT-02 is **PASS — owner
 >   confirmed 29 October**, with product saves and Black-box entries confirmed. All findings, owner
@@ -180,7 +182,8 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >   `aedb65d` fixes the owner's reported AlertKindTests compile error. Prove the new
 >   catalog/unit/navigation/photo workflows with genuine transactions and keep each physical verification
 >   separate. The POS blank/dashes report still needs exact reproduction evidence. **next** still means
->   the next test portion.
+>   the next test portion. Aurora's 892-case/54-check and Zircon's 883-case/53-check inventories are
+>   historical release evidence, not the current Cobalt inventory.
 >
 > * **v0.35.5 repairs one policy mismatch and two stale test fixtures.** The owner's v0.35.4 run proved
 >   the correct tree (**769 passed, 3 failed, 772 total**). A sign-in ahead of the PC clock now keeps

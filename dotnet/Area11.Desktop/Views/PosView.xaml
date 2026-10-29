@@ -38,7 +38,7 @@
 
                     <StackPanel Grid.Row="0">
                         <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                 ToolTip="Name, salt or barcode. A scanner types the code and presses Enter by itself.">
+                                 ToolTip="Name, pack / variant, strength, salt or barcode. A scanner types the code and presses Enter by itself.">
                             <TextBox.InputBindings>
                                 <KeyBinding Key="Enter" Command="{Binding ScanCommand}" />
                             </TextBox.InputBindings>
@@ -89,6 +89,7 @@
                             </DataGridTemplateColumn>
                             <DataGridTextColumn Header="Medicine" Binding="{Binding Name}" Width="2*" />
                             <DataGridTextColumn Header="Strength" Binding="{Binding StrengthLabel, Mode=OneWay}" Width="80" />
+                            <DataGridTextColumn Header="Pack / variant" Binding="{Binding PackSizeLabel, Mode=OneWay}" Width="100" />
                             <DataGridTextColumn Header="Salt" Binding="{Binding Generic}" Width="1.4*" />
                             <DataGridTextColumn Header="Stock" Binding="{Binding StockLabel, Mode=OneWay}" Width="90" />
                             <DataGridTextColumn Header="Retail" Binding="{Binding RetailText, Mode=OneWay}" Width="90" />

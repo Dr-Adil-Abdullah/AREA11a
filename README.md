@@ -39,19 +39,21 @@ four settings in Area11, then push / look / bring.
 Live counts are in [`docs/PROGRESS.md`](docs/PROGRESS.md) (features) and
 [`docs/RULES-MATRIX.md`](docs/RULES-MATRIX.md) (the owner's 116 numbered rules).
 
-**Current redesign source — v0.37.0 Aurora `#5B4B8A`:** Phase 2 adds central field governance and
-append-only schema migration 029. Custom fields now have stable rename-safe keys, one shared definition/value
-validation policy and optional one-line guidance on record forms; existing answers are preserved. The Phase-1
-Area11 header and all financial rules remain. **54/54 static checks pass with 892 written cases; Aurora's
-Windows build/xUnit and PT-09 physical verification are still pending.** Zircon's owner-verified 883/883 is
-previous-release evidence, not an Aurora result. Phase 3 and later redesign phases require separate review.
+**Current redesign source — v0.38.0 Cobalt `#315C8C`:** the first authorized Phase-3 slice makes the
+existing pack/variant label editable and searchable in Products, Counter and Purchase. Purchase also shows
+strength/pack text so equal-named variants remain separate products. One shared search policy covers pack
+metadata without changing product IDs, base-unit stock, box/strip conversion, barcodes, prices or financial
+rules; no new variant table or migration was needed. Phase-2 field governance and the Phase-1 Area11 header
+remain. **55/55 static checks pass with 900 written cases; Cobalt's Windows build/xUnit and PT-10 physical
+verification are still pending.** Zircon's owner-verified 883/883 is previous-release evidence, not a Cobalt
+result. Phase 4 and later redesign phases still require separate owner approval.
 
 **Honest note:** the agent's build machine is Linux with no .NET SDK, so nothing in `dotnet/` is
 compiled there. Every change is checked statically (C# parses, explicit usings, XAML, resources,
 every binding against its view model, every SQL statement against the real schema, every mapped
 column against its model, migrations executed on SQLite). The owner's Windows machine built the prior
 **v0.36.0 Zircon** source and verified **883/883 xUnit cases in 1 m 10 s** on 29 October 2026; that is not
-backfilled onto the current Aurora field-governance release. WPF walk-throughs, genuine transactions,
+backfilled onto the current Cobalt packaging/search release. WPF walk-throughs, genuine transactions,
 isolated restore, real Excel and optional real-cloud proof remain separate. See [`docs/VERSIONS.md`](docs/VERSIONS.md)
 for release history and [`PHYSICAL-TESTING.md`](PHYSICAL-TESTING.md) for the running evidence log.
 
@@ -129,10 +131,11 @@ Step-by-step help, including what to do when the build fails: [`docs/BUILD-ON-WI
 ## Database
 
 `dotnet/Area11.Core/Data/Migrations/` holds the **original 13 migrations verbatim** plus the
-append-only Area11 migrations `014`-`028` (permissions, photos, stock detail, barcodes, provisional
-money, reconciliation, catalog ordering, managed units, filter-only category tags, descriptive strength and rename-safe quantity rules). They create **37 business tables** plus the
+append-only Area11 migrations `014`-`029` (permissions, photos, stock detail, barcodes, provisional
+money, reconciliation, catalog ordering, managed units, filter-only category tags, descriptive strength,
+rename-safe quantity rules and custom-field governance). They create **37 business tables** plus the
 `provisional_report_lines` view, and run inside `BEGIN IMMEDIATE`, so an existing `area11.db` opens
-unchanged and no data is lost when the app is updated. The migration runner keeps the separate `_migrations` ledger. Migrations 027–028 do not change batch quantities,
+unchanged and no data is lost when the app is updated. The migration runner keeps the separate `_migrations` ledger. Migrations 027–029 do not change batch quantities,
 sales, payments or historical documents. D-93 adds no migration and never rewrites a
 historical negative quantity to zero.
 

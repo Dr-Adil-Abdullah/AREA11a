@@ -64,9 +64,11 @@
                         <TextBlock Text="Add a delivery line" Style="{StaticResource SectionTitle}" />
 
                         <TextBlock Text="Search product" Style="{StaticResource FieldLabel}" />
-                        <TextBox Text="{Binding ProductSearch, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBox Text="{Binding ProductSearch, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="Name, pack / variant, strength, salt, barcode, brand, rack, category or company" />
                         <ComboBox Margin="0,5,0,0" ItemsSource="{Binding FilteredProducts}"
-                                  DisplayMemberPath="Name" SelectedItem="{Binding SelectedProduct, Mode=TwoWay}" />
+                                  DisplayMemberPath="ProductChoiceLabel" SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
+                                  ToolTip="Strength and pack text distinguish variants; each selection remains its original product." />
 
                         <Grid Margin="0,4,0,0">
                             <Grid.ColumnDefinitions>

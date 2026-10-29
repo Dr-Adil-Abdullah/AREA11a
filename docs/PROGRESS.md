@@ -60,19 +60,19 @@ features and the four phases.
 > v0.29.0 moved **F-12 (the dashboard)** to ✅ after giving it 20 tests; the mock database used for
 > them was rebuilt from all 23 migrations and every SQL statement was run on it before shipping.
 
-## Where we stand (v0.37.0 Aurora + current working tree)
+## Where we stand (v0.38.0 Cobalt + current working tree)
 
 | Question | Number | What it means |
 |---|---|---|
 | Features in the board | **57** | **52 ✅ done (91.2%)**, **5 🟡 written but only the shop PC can prove them (8.8%)**, 0 ⬜ not started |
-| Code | **289 C# files**, **40 XAML files** | Aurora static grammar passes; Zircon Windows xUnit passed, current Aurora/WPF proof pending |
-| The shop's rules | **53 service files** in `Area11.Core`, **44 model files**, **37 business tables** over 29 migrations | Phase-2 changes only custom-field metadata/policy; stock, money and history stay intact |
-| Screens | **38 views** including the managed-unit window | bindings are statically checked; Own fields guidance/key and PT-09 need owner proof |
-| Tests | **892 written cases** in 69 files | **883/883 owner-verified on Zircon v0.36.0 (1 m 10 s)**; Aurora 892-case run pending |
-| Static gates | **54 checks** in `tools/check_repo.py` | ~12 seconds; not a compiler - see the warning at the end |
+| Code | **291 C# files**, **40 XAML files** | Cobalt static grammar passes; Zircon Windows xUnit passed, current Cobalt/WPF proof pending |
+| The shop's rules | **54 service/policy files** in `Area11.Core`, **44 model files**, **37 business tables** over 29 migrations | Phase-3 adds a pure packaging/search policy without a migration; stock, money and history stay intact |
+| Screens | **38 views** including the managed-unit window | bindings are statically checked; pack editing/search and PT-10 need owner proof; PT-09 remains separate |
+| Tests | **900 written cases** in 70 files | **883/883 owner-verified on Zircon v0.36.0 (1 m 10 s)**; Cobalt 900-case run pending |
+| Static gates | **55 checks** in `tools/check_repo.py` | ~10 seconds here; not a compiler - see the warning at the end |
 | Reporting a fault | **one file** - `tools\SEND-REPORT.cmd` (v0.30.3, D-78) | build, SDK, git state, shop folder (no rows), whole crash report, last build/test output |
-| Versions shipped | 0.1.0 -> **0.37.0 Aurora** | Phase-2 field governance release colour `#5B4B8A`; Phase 3 not started |
-| Owner decisions recorded | **D-00 … D-97** | `docs/OWNER-DECISIONS.md`, in Urdu |
+| Versions shipped | 0.1.0 -> **0.38.0 Cobalt** | Phase-3 packaging/search release colour `#315C8C`; Phase 4 not authorized |
+| Owner decisions recorded | **D-00 … D-98** | `docs/OWNER-DECISIONS.md`, in Urdu |
 
 **What is actually left.** Nothing in the feature list is unbuilt, and as of v0.31.0 that sentence is
 true in the strict sense it was always meant: the last gap the *specification* admitted in its own text -
@@ -106,7 +106,7 @@ of books.
 | Modules and routes | **Code complete — physical pending** | `ViewModels/ShellViewModel.cs`, `NavItem.cs` | Permission-filtered primary modules, contextual pages, stable label keys, lazy `PageGuard` and existing drill-downs; every permitted page remains reachable and owner-only routes stay protected |
 | Settings sections | **Code complete — physical pending** | `HeaderMenuItem.cs`, `SettingsView.xaml`, `SettingsViewModel.cs` | Six existing sections are shell controls; `SelectedTabIndex` and unsaved section edits survive section switches, with no second in-content tab strip. System pages remain reachable while Settings is open |
 | Products category picker and alert action | **Code complete — physical pending** | `ProductsViewModel.cs`, `ShellViewModel.cs`, `ShellWindow.xaml` | Searchable/dropdown category filter is separate from the editor's category; put-away filters clear. The 44×44 bell retains count, three severities, tooltip and Alerts page |
-| Evidence | **Zircon 883/883 Windows xUnit PASS; WPF pending** | `tools/check_repo.py`, `PHYSICAL-TESTING.md` PT-08 | Zircon passed 883/883 in 1 m 10 s on the owner's PC; PT-08 WPF navigation remains separate. Phase 2 is now authorized and tracked below; Phase 3+ remains unauthorized |
+| Evidence | **Zircon 883/883 Windows xUnit PASS; WPF pending** | `tools/check_repo.py`, `PHYSICAL-TESTING.md` PT-08 | Zircon passed 883/883 in 1 m 10 s on the owner's PC; PT-08 WPF navigation remains separate. Phase 2 and the first Phase-3 slice are tracked below; Phase 4+ remains unauthorized |
 
 ---
 
@@ -117,7 +117,19 @@ of books.
 | Central policy | **Code complete — physical pending** | `dotnet/Area11.Core/Services/FieldGovernance.cs`, `CustomFieldService.cs` | One definition/value validation path for all seven custom-field types; required answers stay atomic, amounts remain paisa and invalid/non-finite input is refused |
 | Stable schema | **Code complete — physical pending** | `Models/CustomFieldModels.cs`, `Data/Migrations/029_field_governance.sql` | `entity.custom.id` survives label edits; migration backfills legacy keys and adds guidance without deleting or rewriting answers |
 | Own fields UI | **Code complete — physical pending** | `CustomFieldsView.xaml`, `CustomFieldsViewModel.cs`, `CustomFieldsEditorViewModel.cs` | Stable key is visible to the owner; optional one-line help appears on record forms; put-away/restore and permissions remain intact |
-| Evidence | **54/54 static checks PASS** | `tools/check_repo.py`, `FieldGovernanceTests.cs`, `MigrationTests.cs`, `PHYSICAL-TESTING.md` PT-09 | 892 written cases in 69 files, including 9 Phase-2 regressions. Aurora Windows build, **`ALL GREEN - 892 of 892`** and PT-09 are pending; Zircon's 883/883 is previous-release evidence. Phase 3 is not started |
+| Evidence | **54/54 static checks PASS** | `tools/check_repo.py`, `FieldGovernanceTests.cs`, `MigrationTests.cs`, `PHYSICAL-TESTING.md` PT-09 | 892 written cases in 69 files, including 9 Phase-2 regressions. Aurora Windows build, **`ALL GREEN - 892 of 892`** and PT-09 are pending; Zircon's 883/883 is previous-release evidence. The first Phase-3 slice is tracked below; Phase 4+ is not authorized |
+
+---
+
+## Redesign Phase 3 - packaging, variants and search, first slice (D-98 / v0.38.0 Cobalt)
+
+| Area | State | Where | Verification / done when |
+|---|---|---|---|
+| Existing pack/variant label | **Code complete — physical pending** | `Services/PackagingPolicy.cs`, `Services/ProductService.cs`, `ViewModels/ProductsViewModel.cs`, `Views/ProductsView.xaml` | Reuses `products.pack_size_label`; no migration or new variant table. Load/edit/reset/list are wired, spacing is normalized, and multiline/control or over-100-character input is refused without a partial write |
+| Products and SQL discovery | **Code complete — physical pending** | `ProductService.Search`, `SearchSmart` | Pack `50ml` matches `50 mL`; brand, room, category/tags, company and base unit join existing name/generic/barcode/strength discovery. Exact pack hits return before the separately labelled fuzzy name/generic fallback |
+| Counter and Purchase discovery | **Code complete — physical pending** | `PackagingPolicy.Matches`, `PosViewModel.cs`, `PurchasesViewModel.cs`, both views | Both in-memory pages use the shared matcher. Counter still supplies every active extra barcode; Purchase selection shows strength + pack so equal-named variants retain their separate product IDs |
+| Stock and financial safeguards | **Unchanged — regression written** | `Models/Product.cs`, `PackagingSearchTests.cs` | Pack text is descriptive only. Base-unit stock, box/strip/base conversion, rates, batches, payments, documents, historical rows and D-93/D-97 rules are not rewritten |
+| Evidence | **55/55 static checks PASS; Windows/PT-10 pending** | `tools/check_repo.py`, `PackagingSearchTests.cs`, `PHYSICAL-TESTING.md` PT-10 | 900 written cases in 70 files, including 8 Phase-3 regressions; actual search SQL passed a targeted 7/7 SQLite development probe. Cobalt Windows build, **`ALL GREEN - 900 of 900`** and PT-10 are pending. Zircon/Aurora evidence is not backfilled; Phase 4 is not authorized |
 
 ---
 
@@ -132,9 +144,9 @@ of books.
 | F-05 | Sign-in: owner password, staff PIN, 5 tries -> 2 minute lock | ✅ | `Services/AuthService.cs`, `Utils/PasswordHasher.cs` | `PasswordHasherTests` 🧪 | owner signs in on Windows - **done 23 Oct 2026 on v0.33.0**: `app-2026-10-23.log` shows `13:53:31 Signed in: Owner` |
 | F-06 | Per-person permissions stored in the database | ✅ | `Migr. 014`, `Services/PermissionService.cs`, `Views/SettingsView.xaml` | `PermissionTests` 🧪 | the owner ticks/unticks in Settings; every change is audited |
 | F-07 | Permanent numbering `INV` / `PINV` / `RET` / `Q` / `SR` / `PR` / `ST` | ✅ | `Services/NumberingService.cs`, `Services/SettingsService.cs` | `NumberingTests` 🧪 | no duplicate numbers across independent settings instances, inside one transaction, or after rollback |
-| F-08 | Products: search, create, edit, box/strip/unit packing, prices, rack, category/company management, filter-only tags, strength, managed units and thumbnails | 🟡 | `Services/ProductService.cs`, `Views/ProductsView.xaml`, `Views/CatalogWindow.xaml`, `Views/UnitWindow.xaml` | `CatalogTests` + `CatalogUnitTests` 🧪 | owner adds a medicine with a batch and proves primary/tag filtering, whole-injection entry and thumbnail fallback |
-| F-09 | Purchases `PINV`: supplier, batch, expiry, sample lines, payable | 🟡 | `Services/PurchaseService.cs`, `Views/PurchasesView.xaml` | `PurchaseTests` 🧪 | one real delivery enters stock |
-| F-10 | Counter `INV`: FEFO, box/strip/unit, full-retail discount guard, opt-in VIP/Doctor rate, Owner/Manager custom rate, round-off, cash change, credit, optional Done/invoice/change card | 🟡 | `Services/SaleService.cs`, `Services/StockPolicy.cs`, `Views/PosView.xaml` | `SaleTests` + `NegativeStockPolicyTests` 🧪 | **D-93:** one real bill prints; repeated lines/shared batches cannot oversell, a refusal preserves the cart and number, and exact zero succeeds. **PRICE/SALE:** Windows must prove Yes=special / No=retail, held custom rates, below-cost/role guards, Settings persistence and one committed invoice per completion |
+| F-08 | Products: search, create, edit, descriptive pack/variant labels, box/strip/unit packing, prices, rack, category/company management, filter-only tags, strength, managed units and thumbnails | 🟡 | `Services/ProductService.cs`, `Services/PackagingPolicy.cs`, `Views/ProductsView.xaml`, `Views/CatalogWindow.xaml`, `Views/UnitWindow.xaml` | `CatalogTests` + `CatalogUnitTests` + `PackagingSearchTests` 🧪 | owner adds a medicine with a batch and proves pack search, primary/tag filtering, whole-injection entry and thumbnail fallback |
+| F-09 | Purchases `PINV`: supplier, pack/variant-aware product discovery, batch, expiry, sample lines, payable | 🟡 | `Services/PurchaseService.cs`, `ViewModels/PurchasesViewModel.cs`, `Views/PurchasesView.xaml` | `PurchaseTests` + `PackagingSearchTests` 🧪 | one real delivery enters stock against the intended separate variant |
+| F-10 | Counter `INV`: pack/variant search, FEFO, box/strip/unit, full-retail discount guard, opt-in VIP/Doctor rate, Owner/Manager custom rate, round-off, cash change, credit, optional Done/invoice/change card | 🟡 | `Services/SaleService.cs`, `Services/StockPolicy.cs`, `Services/PackagingPolicy.cs`, `Views/PosView.xaml` | `SaleTests` + `NegativeStockPolicyTests` + `PackagingSearchTests` 🧪 | **D-93:** one real bill prints; repeated lines/shared batches cannot oversell, a refusal preserves the cart and number, and exact zero succeeds. **PRICE/SALE:** Windows must prove Yes=special / No=retail, held custom rates, below-cost/role guards, Settings persistence and one committed invoice per completion |
 | F-11 | Customers: quick create **at the counter** (v0.29.0) and on the khata page, credit limit | ✅ | `Services/PartnerService.cs`, `ViewModels/PosViewModel.cs` + Edit panel on the khata page | v0.29.0 | a new customer is added at the counter **without losing the cart**, a credit bill lands on their account, and the owner corrects a name, phone, category and limit without touching the udhaar |
 | F-12 | Dashboard: today's bills, sales, **profit by the report's own rule**, khata, payable, low stock, minus stock, near-expiry / expired by day, drawer, filtered drill-downs - and profit hidden from anyone without the profit permission | ✅ | `Services/DashboardService.cs`, `ViewModels/DashboardViewModel.cs`, `Views/DashboardView.xaml`, `ViewModels/ShellViewModel.cs` | `DashboardTests` 🧪 (20) | every card equals a hand count, drill-downs open the correctly filtered page, the low-stock card equals the reorder pad's red rows, and today's card equals today's report |
 | F-13 | **Receipt render + instant ESC/POS print, 58 / 80 mm, auto or manual (D-26)** | ✅ | `Services/ReceiptService.cs`, `Services/EscPosBuilder.cs`, `Services/PrinterService.cs`, `Views/PosView.xaml` | `ReceiptTests` 🧪 | his own test on the shop printer: *"I tested it on the printer and it is working perfectly"* (23 Oct 2026, v0.30.2). The slip prints; 58 and 80 mm both chosen from Settings |

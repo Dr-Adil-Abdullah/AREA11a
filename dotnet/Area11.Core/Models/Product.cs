@@ -53,6 +53,25 @@ public sealed class Product
         ? Qty.Edit(StrengthValue) + " " + StrengthUnit
         : string.Empty;
 
+    /// <summary>Descriptive variant text only; it is not a relationship or a stock conversion.</summary>
+    public string VariantLabel
+    {
+        get
+        {
+            var strength = StrengthLabel;
+            var pack = (PackSizeLabel ?? string.Empty).Trim();
+            if (strength.Length == 0)
+            {
+                return pack;
+            }
+
+            return pack.Length == 0 ? strength : strength + " · " + pack;
+        }
+    }
+
+    /// <summary>Unambiguous text for product pickers when two variants share a medicine name.</summary>
+    public string ProductChoiceLabel => VariantLabel.Length == 0 ? Name : Name + " — " + VariantLabel;
+
     /// <summary>1 Box = ? strips/inner packs.</summary>
     public int BoxStrips { get; set; }
 

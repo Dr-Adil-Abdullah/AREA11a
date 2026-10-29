@@ -617,15 +617,8 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
         foreach (var product in _catalog)
         {
-            var codeMatches = _codesByProduct.TryGetValue(product.Id, out var codes)
-                              && codes.Any(code => code.Contains(term, StringComparison.OrdinalIgnoreCase));
-
-            if (term.Length == 0
-                || product.Name.Contains(term, StringComparison.OrdinalIgnoreCase)
-                || (product.Generic ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase)
-                || (product.Barcode ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase)
-                || product.StrengthLabel.Contains(term, StringComparison.OrdinalIgnoreCase)
-                || codeMatches)
+            _codesByProduct.TryGetValue(product.Id, out var codes);
+            if (PackagingPolicy.Matches(product, term, codes))
             {
                 shown.Add(product);
             }

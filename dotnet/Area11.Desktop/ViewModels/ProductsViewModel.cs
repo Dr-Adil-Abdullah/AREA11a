@@ -36,6 +36,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     private string _barcode = string.Empty;
     private string _rackNo = string.Empty;
     private string _room = string.Empty;
+    private string _packSizeLabel = string.Empty;
     private string _baseUnit = "tablet";
     private string _strengthText = string.Empty;
     private string _strengthUnit = "ml";
@@ -198,6 +199,13 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     {
         get => _room;
         set => SetProperty(ref _room, value);
+    }
+
+    /// <summary>Optional descriptive pack/variant text; never a stock quantity or conversion.</summary>
+    public string PackSizeLabel
+    {
+        get => _packSizeLabel;
+        set => SetProperty(ref _packSizeLabel, value);
     }
 
     public string BaseUnit
@@ -455,6 +463,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         Barcode = string.Empty;
         RackNo = string.Empty;
         Room = string.Empty;
+        PackSizeLabel = string.Empty;
         BaseUnit = BaseUnits.Contains("tablet") ? "tablet" : BaseUnits.FirstOrDefault() ?? "tablet";
         StrengthText = string.Empty;
         StrengthUnit = BaseUnits.Contains("ml") ? "ml" : BaseUnits.FirstOrDefault() ?? "ml";
@@ -486,6 +495,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         Barcode = product.Barcode ?? string.Empty;
         RackNo = product.RackNo ?? string.Empty;
         Room = product.Room ?? string.Empty;
+        PackSizeLabel = product.PackSizeLabel ?? string.Empty;
         BaseUnit = product.BaseUnit;
         StrengthText = product.StrengthValue > 0 ? Qty.Edit(product.StrengthValue) : string.Empty;
         StrengthUnit = string.IsNullOrWhiteSpace(product.StrengthUnit)
@@ -553,6 +563,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
             CompanyId = SelectedCompany?.Id,
             RackNo = RackNo,
             Room = Room,
+            PackSizeLabel = PackSizeLabel,
             BaseUnit = BaseUnit,
             StrengthValue = strength,
             StrengthUnit = strength > 0 ? StrengthUnit : string.Empty,

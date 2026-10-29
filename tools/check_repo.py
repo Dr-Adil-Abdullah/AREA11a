@@ -4863,6 +4863,102 @@ def check_phase_two_fields() -> None:
 
 
 # ---------------------------------------------------------------------------
+def check_phase_three_packaging() -> None:
+    """Phase-3 pack labels must stay descriptive, editable and searchable on every agreed screen."""
+    policy_path = DOTNET / "Area11.Core/Services/PackagingPolicy.cs"
+    service_path = DOTNET / "Area11.Core/Services/ProductService.cs"
+    model_path = DOTNET / "Area11.Core/Models/Product.cs"
+    products_vm_path = DOTNET / "Area11.Desktop/ViewModels/ProductsViewModel.cs"
+    products_view_path = DOTNET / "Area11.Desktop/Views/ProductsView.xaml"
+    pos_vm_path = DOTNET / "Area11.Desktop/ViewModels/PosViewModel.cs"
+    pos_view_path = DOTNET / "Area11.Desktop/Views/PosView.xaml"
+    purchase_vm_path = DOTNET / "Area11.Desktop/ViewModels/PurchasesViewModel.cs"
+    purchase_view_path = DOTNET / "Area11.Desktop/Views/PurchasesView.xaml"
+    tests_path = DOTNET / "Area11.Tests/PackagingSearchTests.cs"
+    paths = (policy_path, service_path, model_path, products_vm_path, products_view_path,
+             pos_vm_path, pos_view_path, purchase_vm_path, purchase_view_path, tests_path)
+    if not all(path.exists() for path in paths):
+        fail("Phase-3 packaging/search is incomplete: policy, product editor, screen or regression file is missing")
+        return
+
+    policy = policy_path.read_text(encoding="utf-8-sig")
+    service = service_path.read_text(encoding="utf-8-sig")
+    model = model_path.read_text(encoding="utf-8-sig")
+    products_vm = products_vm_path.read_text(encoding="utf-8-sig")
+    products_view = products_view_path.read_text(encoding="utf-8-sig")
+    pos_vm = pos_vm_path.read_text(encoding="utf-8-sig")
+    pos_view = pos_view_path.read_text(encoding="utf-8-sig")
+    purchase_vm = purchase_vm_path.read_text(encoding="utf-8-sig")
+    purchase_view = purchase_view_path.read_text(encoding="utf-8-sig")
+    tests = tests_path.read_text(encoding="utf-8-sig")
+
+    for needle, reason in (
+        ("public static string CleanPackSize", "pack-label normalization is not centralized"),
+        ("public static string? PackSizeError", "pack-label validation is not centralized"),
+        ("public static string SearchKey", "spacing-insensitive pack search has no shared key"),
+        ("public static bool Matches", "Desktop pages have no shared exact product matcher"),
+        ("additionalBarcodes", "the shared matcher could drop pack-specific barcodes"),
+    ):
+        if needle not in policy:
+            fail(f"Phase-3 PackagingPolicy: {reason}")
+
+    for needle, reason in (
+        ("IFNULL(p.pack_size_label, '') LIKE @like", "SQL product search omits the pack label"),
+        ("keyLike", "SQL product search cannot match 50ml against 50 mL"),
+        ("packSizeLabel = NullIfEmpty(packSizeLabel)", "create does not save the normalized label"),
+        ("PackagingPolicy.CleanPackSize(patch.PackSizeLabel)", "update bypasses label normalization"),
+    ):
+        if needle not in service:
+            fail(f"Phase-3 ProductService: {reason}")
+    if service.count("PackagingPolicy.PackSizeError") < 2:
+        fail("Phase-3 ProductService: create and update do not both validate the pack label")
+
+    for needle, reason in (
+        ("public string PackSizeLabel", "the product editor has no pack-label property"),
+        ("PackSizeLabel = product.PackSizeLabel", "an existing label is not loaded into the editor"),
+        ("PackSizeLabel = PackSizeLabel", "the editor does not submit the label"),
+        ("PackSizeLabel = string.Empty", "a new product can inherit the previous label"),
+    ):
+        if needle not in products_vm:
+            fail(f"Phase-3 ProductsViewModel: {reason}")
+
+    for text, path, needles in (
+        (products_view, products_view_path,
+         ('{Binding PackSizeLabel, UpdateSourceTrigger=PropertyChanged}',
+          '{Binding PackSizeLabel, Mode=OneWay}')),
+        (pos_view, pos_view_path, ('{Binding PackSizeLabel, Mode=OneWay}',)),
+        (purchase_view, purchase_view_path, ('DisplayMemberPath="ProductChoiceLabel"',)),
+    ):
+        for needle in needles:
+            if needle not in text:
+                fail(f"Phase-3 {rel(path)}: required pack/variant binding is missing ({needle})")
+
+    if "PackagingPolicy.Matches(product, term, codes)" not in pos_vm:
+        fail("Phase-3 Counter no longer uses the shared matcher with its extra barcode map")
+    if "PackagingPolicy.Matches(product, term)" not in purchase_vm:
+        fail("Phase-3 Purchase no longer uses the shared product matcher")
+    if "public string ProductChoiceLabel" not in model or "public string VariantLabel" not in model:
+        fail("Phase-3 Product model cannot distinguish variants in the purchase picker")
+
+    for test_name in (
+        "PackLabelIsEditableNormalized_AndPartialUpdatePreservesOtherFields",
+        "PackLabelValidationRefusesMultilineAndOverlongTextWithoutWriting",
+        "PackSearchWithFlexibleSpacingFindsOnlyTheIntendedSeparateVariant",
+        "ProductSearchIncludesPackBrandRoomCategoryAndCompanyMetadata",
+        "SharedDesktopSearchMatchesPackagingAndEveryExistingBarcode",
+        "ProductChoiceLabelDistinguishesVariantsWithoutCreatingAnotherIdentity",
+        "PackLabelEditDoesNotChangeSaleConversionPriceOrStock",
+        "SmartSearchUsesExactPackHitBeforeFuzzy_AndBlankSearchRemainsSafe",
+    ):
+        if test_name not in tests:
+            fail(f"Phase-3 packaging regression fact is missing: {test_name}")
+
+    REPORT.append(
+        "Phase 3 packaging: existing descriptive pack label is edited, normalized and searchable in "
+        "Products/Counter/Purchase; variant picker text is unambiguous while IDs, units and prices stay intact")
+
+
+# ---------------------------------------------------------------------------
 def check_docs() -> None:
     docs = [ROOT / "README.md", ROOT / "HANDOFF.md", ROOT / "AGENTS.md", ROOT / "dotnet/README.md"]
     docs += sorted((ROOT / "docs").glob("*.md"))
@@ -5368,6 +5464,7 @@ def main() -> int:
     check_shop_clock()
     check_phase_one_shell()
     check_phase_two_fields()
+    check_phase_three_packaging()
     check_checklist()
     check_audit_recovery()
     check_report_chart()

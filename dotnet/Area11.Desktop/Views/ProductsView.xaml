@@ -24,7 +24,7 @@
             <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal">
                     <TextBox Width="190" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                             ToolTip="Name, salt, barcode, rack or strength" />
+                             ToolTip="Name, pack / variant, strength, salt, barcode, brand, rack, category or company" />
                     <TextBox Width="110" Margin="6,0,0,0" Text="{Binding StrengthFilter, UpdateSourceTrigger=PropertyChanged}"
                              ToolTip="Optional exact strength filter: 50 ml, 50ml, 50 or ml" />
                     <Button Content="New" Style="{StaticResource GhostButton}" Command="{Binding NewCommand}"
@@ -88,6 +88,7 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                         <DataGridTextColumn Header="Strength" Binding="{Binding StrengthLabel, Mode=OneWay}" Width="80" />
+                        <DataGridTextColumn Header="Pack / variant" Binding="{Binding PackSizeLabel, Mode=OneWay}" Width="105" />
                         <DataGridTextColumn Header="Salt / formula" Binding="{Binding Generic}" Width="1.4*" />
                         <DataGridTextColumn Header="Rack" Binding="{Binding RackNo}" Width="70" />
                         <DataGridTextColumn Header="Stock" Binding="{Binding StockLabel, Mode=OneWay}" Width="90" />
@@ -206,6 +207,12 @@
                             <ComboBox Grid.Column="2" ItemsSource="{Binding BaseUnits}" SelectedItem="{Binding StrengthUnit, Mode=TwoWay}" />
                         </Grid>
                         <TextBlock Text="Example: base unit injection + strength 50 ml + pack 1 x 10 = 10 injections per box. Sell whole injections, not mL."
+                                   Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,4,0,0" />
+
+                        <TextBlock Text="Pack size / variant label (searchable description only)" Style="{StaticResource FieldLabel}" />
+                        <TextBox Text="{Binding PackSizeLabel, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="Examples: 50 mL bottle, 10 x 10 tablets, or 100 mL syrup. This does not change stock or conversion." />
+                        <TextBlock Text="Keep each strength / pack variant as its own product. Use the formula below for box, strip and base-unit conversion."
                                    Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,4,0,0" />
 
                         <TextBlock Text="Pack formula — 1 box = ? inner packs, 1 inner pack = ? base units" Style="{StaticResource FieldLabel}" />

@@ -13,9 +13,9 @@
 
 ## موجودہ build اور automated ثبوت
 
-- Build: **v0.37.0 Aurora `#5B4B8A`** (Phase-2 field governance source؛ Windows build/xUnit اور PT-09 physical verification ابھی باقی ہے)
-- Latest owner xUnit: **883 passed / 0 failed / 0 skipped / 883 total — ALL GREEN**، **Zircon v0.36.0**، 29 اکتوبر 2026، مدت **1 منٹ 10 سیکنڈ**۔ Aurora کے 892-case run کو اس نتیجے سے replace نہیں کیا جا سکتا۔
-- موجودہ source: **892 written cases in 69 files**؛ **54/54 static checks PASS** (real C# grammar سمیت)۔ Latest gate: **289 C# files / 1,454 XAML bindings / 29 migrations / 37 business tables / 833 prepared SQL statements / 123 settings keys**۔ Phase-2 check central policy، stable keys، guidance اور migration 029 کی حفاظت کرتا ہے۔ **Aurora Windows xUnit اور PT-09 physical walk-through باقی ہیں**؛ PT-08 کی Zircon automated evidence محفوظ ہے۔
+- Build: **v0.38.0 Cobalt `#315C8C`** (پہلا Phase-3 packaging/variant/search slice؛ Windows build/xUnit اور PT-10 physical verification ابھی باقی ہے)
+- Latest owner xUnit: **883 passed / 0 failed / 0 skipped / 883 total — ALL GREEN**، **Zircon v0.36.0**، 29 اکتوبر 2026، مدت **1 منٹ 10 سیکنڈ**۔ Cobalt کے 900-case run یا Aurora کے 892-case run کو اس نتیجے سے replace نہیں کیا جا سکتا۔
+- موجودہ source: **900 written cases in 70 files**؛ **55/55 static checks PASS** (real C# grammar سمیت)۔ Latest gate: **291 C# files / 1,457 XAML bindings / 29 migrations / 37 business tables / 834 prepared SQL statements / 123 settings keys**۔ Phase-3 check pack editor، shared Products/Counter/Purchase search، extra barcodes اور variant picker کی حفاظت کرتا ہے؛ actual search SQL کا targeted **7/7 SQLite development probe** بھی کامیاب ہے۔ **Cobalt Windows xUnit اور PT-10 physical walk-through باقی ہیں**؛ Aurora PT-09 اور Zircon PT-08 الگ evidence ہیں۔
 - Windows build report میں `AlertKindTests.cs(121,19)` کا `productId` scope compile error ملا؛ وہ `aedb65d` میں ٹھیک push ہو چکا ہے۔ بعد کا build xUnit تک پہنچا؛ حتمی 883/883 نتیجہ نیچے محفوظ ہے۔
 - تازہ Windows build report میں `PosViewModel.cs(924,21)` کا **CS0103: `MessageBoxDefaultButton` does not exist** ملا۔ WPF کے صحیح overload کے لیے اسے **`MessageBoxResult.No`** سے بدلا گیا ہے، اس لیے default جواب No/normal retail رہتا ہے۔ Static gate دوبارہ PASS ہے؛ اگلا Windows build xUnit تک پہنچا، مگر اس وقت full green نہیں ہوا؛ حتمی نتیجہ نیچے محفوظ ہے۔
 - تازہ Windows xUnit run: **879 passed / 4 failed / 883 total**۔ Reported HoldCart errors میں below-cost fixtures تھے: Brufen کی test retail cost سے کم تھی، اور ایک custom strip rate پورے strip کی cost سے کم تھا۔ ان غیرمتعلق HoldCart/Return fixtures کو درست rates دیے گئے ہیں؛ production below-cost lock اور اس کے dedicated refusal tests نہیں بدلے۔ اس وقت full run باقی تھا؛ حتمی 883/883 نتیجہ نیچے محفوظ ہے۔
@@ -39,6 +39,7 @@
 | **PT-07 — Excel، restore، printer اور scanner** | Pending | Hardware اور data workflows |
 | **PT-08 — Redesign Phase 1: dark header اور navigation** | **883/883 ZIRCON xUNIT PASS — WPF verification pending** | Automated suite کامیاب؛ header، Settings sections، category filter، keyboard اور permissions کی physical جانچ باقی |
 | **PT-09 — Redesign Phase 2: field governance اور schema** | **CODE READY — Aurora Windows/WPF verification pending** | Stable keys، central validation، guidance، migration 029 اور existing answers |
+| **PT-10 — Redesign Phase 3: packaging، variants اور search** | **CODE READY — Cobalt Windows/WPF verification pending** | Existing pack label، Products/Counter/Purchase discovery، separate variant selection اور unchanged stock conversion |
 
 ---
 
@@ -126,6 +127,59 @@ Screenshots / error / test.log:
 ```
 
 **Owner result:** Pending — کوئی Aurora physical PASS ابھی record نہیں۔
+
+---
+
+# PT-10 — Redesign Phase 3: Packaging, Variants & Search
+
+**حالت:** Code changed — Cobalt کی Windows/xUnit اور owner physical verification pending
+
+**مقصد:** پہلے سے موجود pack/variant label کو edit اور search کے قابل بنانا، اور ایک جیسے نام والی separate products کو Counter/Purchase میں واضح منتخب کرنا۔
+
+**حدود:** کوئی نیا variant/stock model یا migration نہیں۔ Base-unit stock، box/strip/base conversion، prices، payments، documents، historical rows، extra pack barcodes اور Phase-2 governance نہیں بدلنے چاہئیں۔ Phase 4 شامل نہیں۔
+
+## Automated اور development ثبوت
+
+- **55/55 static checks PASS**، real C# grammar سمیت۔
+- **900 written cases in 70 files**، جن میں Phase-3 کے 8 regressions شامل ہیں؛ مطلوبہ Windows نتیجہ **`ALL GREEN - 900 of 900`** ہے۔
+- Actual ProductService search SQL کو تمام 29 migrations والے SQLite database پر چلا کر **7/7 development search groups** کامیاب ہوئے: `50ml`، `100 ML`، brand، room، category، company اور base unit۔ یہ Windows xUnit یا WPF proof نہیں۔
+
+## مالک کی physical checklist
+
+1. **Build اور suite:** `START-AREA11.bat` سے **v0.38.0 · Cobalt** کھولیں اور `tools\\RUN-TESTS.cmd` چلائیں۔ Total **900**، failed **0** ہونا چاہیے۔ Zircon 883 یا Aurora 892 والا پرانا نتیجہ اس release کے لیے کافی نہیں۔
+2. **محفوظ data boundary:** اصل books میں صرف genuine medicines/delivery استعمال کریں۔ Invalid-input، controlled stock conversion یا کوئی risky financial side-effect check الگ test copy میں کریں؛ پہلے backup لیں۔
+3. **دو الگ variants بنائیں:** isolated copy میں ایک ہی نام کی دو medicines بنائیں، مثلاً strength `5 ml` + pack `50 mL bottle` اور strength `10 ml` + pack `100 mL bottle`۔ Base unit `injection` رکھیں۔ Save کے بعد دونوں کی الگ product rows/IDs رہیں؛ کوئی merge یا نیا stock unit نہ بنے۔
+4. **Editor persistence:** پہلی product بند کر کے دوبارہ کھولیں۔ Pack size / variant label اور Products grid کا **Pack / variant** column درست دکھے۔ New product کھولنے پر پرانا label خود copy نہ ہو۔
+5. **Normalization اور refusal:** isolated copy میں `  50   mL bottle  ` save کریں؛ reopen پر `50 mL bottle` ہو۔ Multiline/control label اور 100 characters سے لمبا label مسترد ہو، پیغام واضح ہو، اور name/rate/stock/formula میں کوئی partial change نہ ہو۔
+6. **Products search:** `50ml` سے صرف 50 mL variant اور `100 ML` سے صرف 100 mL variant آئے۔ Brand، room، primary category اور company سے بھی intended product ملے۔ Exact pack hit پر fuzzy suggestion نہ آئے؛ unknown نام پر existing fuzzy note الگ واضح رہے۔
+7. **Counter search:** وہی `50ml` / `100 ML` searches Counter میں کریں۔ Pack / variant column اور selected row intended variant کی ہو۔ Search صرف list filter کرے؛ کوئی medicine خود cart میں add نہ ہو۔
+8. **Existing pack barcode:** کسی محفوظ existing/test product کے active strip اور box codes دوبارہ scan کریں۔ Enter پر پہلے کی طرح درست product اور درست pack unit add ہو؛ put-away code کام نہ کرے۔ نئے shared search نے اس behavior کو نہیں بدلنا چاہیے۔
+9. **Purchase discovery اور picker:** Purchase میں pack label، strength، brand یا barcode سے product تلاش کریں۔ Dropdown میں **name — strength · pack** نظر آئے، ایک جیسے نام والی دونوں variants الگ ہوں، اور منتخب row وہی رہے جس کو search کیا گیا ہو۔
+10. **Conversion safeguard:** isolated copy میں variant کا formula `1 box = 2 inner packs` اور `1 inner pack = 5 injections` رکھیں۔ ایک box receive/sale quote **10 base injections** رہے۔ صرف pack label بدلنے سے quantity، rate، batch cost/retail یا stock نہ بدلے۔
+11. **No financial/history side effect:** pack label edit سے پہلے اور بعد میں existing PINV/INV، batch quantities، supplier/customer balances اور payments compare کریں۔ کوئی نیا payment، drawer inflow، invoice، reversal یا stock adjustment نہ بنے۔ صرف product edit کا expected Black-box entry ہو۔
+12. **Keyboard اور screen fit:** Products editor، Counter grid اور Purchase dropdown کو Tab/Enter اور اپنی normal screen resolution پر دیکھیں؛ pack text کی وجہ سے Save، Add line یا کوئی control clip/overlap نہ ہو۔
+
+## نتیجہ
+
+```text
+Build: v0.38.0 Cobalt
+PT-10: PASS / PARTIAL / FAIL
+Windows xUnit: total / failed / skipped / duration:
+Two variant product IDs and stock units:
+Pack label before → after reopen:
+Normalization / multiline / over-100 refusal:
+Products 50ml / 100 ML results:
+Counter 50ml / 100 ML and pack-column results:
+Strip / box extra-barcode scans:
+Purchase search and displayed variant choice:
+Box/strip/base conversion before → after label edit:
+Rates / batches / payments / documents side effect (must be none):
+Black-box product edit:
+Keyboard / screen fit:
+Screenshots / error / test.log:
+```
+
+**Owner result:** Pending — کوئی Cobalt physical PASS ابھی record نہیں۔
 
 ---
 
