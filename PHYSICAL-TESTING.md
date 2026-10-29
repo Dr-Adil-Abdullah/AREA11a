@@ -32,7 +32,7 @@
 |---|---|---|
 | **PT-01 — Startup, backup اور UI smoke** | **PASS — improvements logged** | ایپ کھلی، photos کے ساتھ backup بنا، اور تمام مقررہ pages کھلے |
 | **PT-02 — حقیقی medicine اور product details** | **PARTIAL — owner feedback logged** | Save product اور Black box کی تصدیق؛ باقی checklist اور نئے مسائل کھلے ہیں |
-| **PT-03 — حقیقی purchase، batch، expiry اور payable** | **INSTRUCTIONS READY** | Stock، batch conversion اور supplier حساب |
+| **PT-03 — حقیقی purchase، batch، expiry اور payable** | **PARTIAL — owner feedback logged، report pending** | ابھی تفصیلی PINV/stock/payable evidence موصول نہیں ہوا؛ PASS نہیں لکھا گیا |
 | **PT-04 — Sale، cash/khata، receipt اور drawer** | **INSTRUCTIONS READY** | حقیقی فروخت، price/cart، receipt اور completion feedback |
 | **PT-05 — Returns، PR اور cancellation** | Pending | الگ test copy کے ساتھ محفوظ جانچ |
 | **PT-06 — Shift، ledgers، permissions اور audit** | Pending | مالیاتی اور user workflows |
@@ -443,6 +443,8 @@ Bell کی رنگت موجودہ سب سے سنگین active alert کے مطاب�
 
 **مقصد:** حقیقی delivery سے stock اور supplier حساب درست بننا۔
 **شرط:** اصل دکان میں صرف حقیقی delivery درج کریں۔ آزمائشی purchase کے لیے الگ test copy استعمال کریں۔
+
+**حالت — 29 اکتوبر 2026:** **PARTIAL** — مالک نے PT-03 کو PARTIAL بتایا ہے اور تفصیلی report بھیجنے کا کہا ہے۔ Report آنے تک PINV، stock conversion، batch/expiry، paid/payable اور Black box کے نتائج خالی رکھیں؛ کسی کو PASS یا fixed نہ لکھیں۔ PT-02 بھی PARTIAL ہی رہے گا۔
 
 ## شروع کرنے سے پہلے لکھ لیں
 
