@@ -13,14 +13,14 @@
 
 ## موجودہ build اور automated ثبوت
 
-- Build: **v0.36.0 Zircon `#3E5C76`** (Windows xUnit verified؛ PT-08 WPF/navigation verification الگ باقی ہے)
-- Owner xUnit: **883 passed / 0 failed / 0 skipped / 883 total — ALL GREEN**، **Zircon**، 29 اکتوبر 2026، مدت **1 منٹ 10 سیکنڈ**۔ یہ current Zircon source کا ثبوت ہے؛ Spruce `94723e5` کا نتیجہ historical ہے۔
-- موجودہ source: **883 written cases in 68 files**؛ **53/53 static checks PASS** (real C# grammar سمیت)۔ Latest gate: **287 C# files / 1,452 XAML bindings / 28 migrations / 37 business tables / 825 prepared SQL statements / 123 settings keys**۔ Zircon کے dedicated Phase-1 shell check میں fixed Area11، 44px bell، header modules/pages، چھ Settings sections اور الگ Products category filter محفوظ ہیں۔ **Windows xUnit 883/883 PASS**؛ PT-08 physical WPF walk-through ابھی باقی ہے۔
+- Build: **v0.37.0 Aurora `#5B4B8A`** (Phase-2 field governance source؛ Windows build/xUnit اور PT-09 physical verification ابھی باقی ہے)
+- Latest owner xUnit: **883 passed / 0 failed / 0 skipped / 883 total — ALL GREEN**، **Zircon v0.36.0**، 29 اکتوبر 2026، مدت **1 منٹ 10 سیکنڈ**۔ Aurora کے 892-case run کو اس نتیجے سے replace نہیں کیا جا سکتا۔
+- موجودہ source: **892 written cases in 69 files**؛ **54/54 static checks PASS** (real C# grammar سمیت)۔ Latest gate: **289 C# files / 1,454 XAML bindings / 29 migrations / 37 business tables / 833 prepared SQL statements / 123 settings keys**۔ Phase-2 check central policy، stable keys، guidance اور migration 029 کی حفاظت کرتا ہے۔ **Aurora Windows xUnit اور PT-09 physical walk-through باقی ہیں**؛ PT-08 کی Zircon automated evidence محفوظ ہے۔
 - Windows build report میں `AlertKindTests.cs(121,19)` کا `productId` scope compile error ملا؛ وہ `aedb65d` میں ٹھیک push ہو چکا ہے۔ بعد کا build xUnit تک پہنچا؛ حتمی 883/883 نتیجہ نیچے محفوظ ہے۔
 - تازہ Windows build report میں `PosViewModel.cs(924,21)` کا **CS0103: `MessageBoxDefaultButton` does not exist** ملا۔ WPF کے صحیح overload کے لیے اسے **`MessageBoxResult.No`** سے بدلا گیا ہے، اس لیے default جواب No/normal retail رہتا ہے۔ Static gate دوبارہ PASS ہے؛ اگلا Windows build xUnit تک پہنچا، مگر اس وقت full green نہیں ہوا؛ حتمی نتیجہ نیچے محفوظ ہے۔
 - تازہ Windows xUnit run: **879 passed / 4 failed / 883 total**۔ Reported HoldCart errors میں below-cost fixtures تھے: Brufen کی test retail cost سے کم تھی، اور ایک custom strip rate پورے strip کی cost سے کم تھا۔ ان غیرمتعلق HoldCart/Return fixtures کو درست rates دیے گئے ہیں؛ production below-cost lock اور اس کے dedicated refusal tests نہیں بدلے۔ اس وقت full run باقی تھا؛ حتمی 883/883 نتیجہ نیچے محفوظ ہے۔
 - اگلا Windows xUnit run: **882 passed / 1 failed / 883 total**۔ واحد reported failure `CatalogUnitTests.AdditionalCategoryTagsFilterOnce_ButFinancialTotalsUsePrimaryOnly` تھا: expected 300، actual 200۔ Code review میں second product کا batch retail 300 مگر product retail 200 ملا؛ SaleService کے درست product-rate چارج کے مطابق fixture کو 300 پر align کیا گیا ہے۔ Report category rule نہیں بدلا؛ اس وقت full green run باقی تھا۔
-- **حتمی Windows xUnit verification — 27 اکتوبر 2026، source `94723e5`: 883 passed / 0 failed / 0 skipped / 883 total — ALL GREEN، مدت 1 منٹ 19 سیکنڈ۔** یہ current Spruce source کا Windows build/xUnit ثبوت ہے؛ WPF screens، genuine transactions، isolated restore اور real Excel/cloud checks کو اس سے automatically verified نہیں لکھا گیا۔
+- **تاریخی Windows xUnit verification — 27 اکتوبر 2026، Spruce source `94723e5`: 883 passed / 0 failed / 0 skipped / 883 total — ALL GREEN، مدت 1 منٹ 19 سیکنڈ۔** یہ Spruce کا Windows build/xUnit ثبوت ہے؛ latest Zircon 883/883 اوپر الگ درج ہے۔ WPF screens، genuine transactions، isolated restore اور real Excel/cloud checks کو ان نتائج سے automatically verified نہیں لکھا گیا۔
 - 27 اکتوبر CAT-01/NAV-01/UNIT-01/PHOTO-01 code batch: primary+filter tags، managed units اور descriptive strength، product/counter thumbnails، اور dashboard/category/company drill-downs شامل ہیں۔ Migrations `027`–`028` اور **6 نئے regression cases** شامل ہیں؛ یہ code changes ہیں، owner physical verification نہیں۔
 - Automated مدت: **1 منٹ 17 سیکنڈ** (پرانے tested Obsidian run کی)
 - Physical testing شروع: **27 اکتوبر 2026**
@@ -38,6 +38,7 @@
 | **PT-06 — Shift، ledgers، permissions اور audit** | Pending | مالیاتی اور user workflows |
 | **PT-07 — Excel، restore، printer اور scanner** | Pending | Hardware اور data workflows |
 | **PT-08 — Redesign Phase 1: dark header اور navigation** | **883/883 ZIRCON xUNIT PASS — WPF verification pending** | Automated suite کامیاب؛ header، Settings sections، category filter، keyboard اور permissions کی physical جانچ باقی |
+| **PT-09 — Redesign Phase 2: field governance اور schema** | **CODE READY — Aurora Windows/WPF verification pending** | Stable keys، central validation، guidance، migration 029 اور existing answers |
 
 ---
 
@@ -52,7 +53,7 @@
 ## Automated ثبوت
 
 - **53/53 static checks PASS**، real C# grammar سمیت۔
-- **1,452 XAML bindings** resolve؛ تمام existing 883 cases بطور inventory موجود ہیں، مگر Zircon پر Windows run ابھی نہیں ہوا۔
+- **1,452 XAML bindings** resolve؛ Zircon پر **883/883 Windows xUnit PASS** (1 منٹ 10 سیکنڈ)۔ یہ WPF navigation یا PT-09/Aurora evidence نہیں۔
 - Dedicated check retired 176px sidebar/editable shell title کو واپس آنے سے روکتا ہے اور header collections/commands/Settings/category separation کی حفاظت کرتا ہے۔
 
 ## مالک کی physical checklist
@@ -71,6 +72,60 @@
 12. **Version menu:** current-user menu سے My settings اور Sign out کھلیں، اور صحیح **v0.36.0 · Zircon** نظر آئے۔
 
 **Owner result:** Pending — کوئی physical PASS ابھی record نہیں۔
+
+---
+
+# PT-09 — Redesign Phase 2: Central Field Governance & Schema
+
+**حالت:** Code changed — Aurora کی Windows/xUnit اور owner physical verification pending
+
+**مقصد:** Own fields کی identity، definition، validation اور guidance ایک central contract سے چلیں؛ پرانے جوابات محفوظ رہیں۔
+
+**حدود:** یہ packaging/variants/purchasing/search یا financial test نہیں۔ Stock، prices، payments، historical documents اور permissions کے موجودہ قواعد نہیں بدلنے چاہئیں۔
+
+## Automated ثبوت
+
+- **54/54 static checks PASS**، real C# grammar سمیت۔
+- **892 written cases in 69 files**، جن میں Phase-2 کے 9 regressions شامل ہیں؛ مطلوبہ Windows نتیجہ **`ALL GREEN - 892 of 892`** ہے۔
+- Migration 029 fresh SQLite پر چلتی ہے اور upgrade regression ثابت کرتی ہے کہ legacy key backfill کے دوران answer نہیں بدلتا۔ یہ Aurora کے Windows run یا WPF proof کا بدل نہیں۔
+
+## مالک کی physical checklist
+
+1. **Build اور suite:** `START-AREA11.bat` سے **v0.37.0 · Aurora** کھولیں اور `tools\RUN-TESTS.cmd` چلائیں۔ Total **892**، failed **0** ہونا چاہیے۔ 883 والا پرانا Zircon نتیجہ اس release کے لیے کافی نہیں۔
+2. **محفوظ backup:** اپنا موجودہ database کھولنے سے پہلے backup رکھیں۔ Migration کے بعد existing products، customers، suppliers اور custom answers موجود ہوں۔ Upgrade/fault test ہو تو isolated copy استعمال کریں۔
+3. **نیا field اور stable key:** SYSTEM → **Own fields** → Medicines میں کوئی حقیقی optional text field بنائیں، مثلاً `Shelf note`، اور **Help on the record form** میں ایک سادہ یک سطری ہدایت لکھیں۔ Save کے بعد stable key `product.custom.<id>` نظر آئے؛ یہ key پڑھ کر لکھ لیں۔
+4. **Form پر ظاہر ہونا:** کسی existing حقیقی product کو کھولیں۔ نیا field اور وہی guidance نظر آئے؛ کوئی rebuild/restart نہ چاہیے۔ جواب لکھ کر **Save extra fields** کریں، product بند کر کے دوبارہ کھولیں؛ جواب اور guidance برقرار رہیں۔
+5. **Rename-safe identity:** Own fields میں اسی field کا نام بدلیں، مثلاً `Shelf note` سے `Rack note`۔ **Stable key بالکل نہیں بدلنی چاہیے**، پرانا جواب موجود رہے، اور Black box میں old → new definition نظر آئے۔
+6. **Help edit:** صرف guidance بدل کر Save کریں۔ Record کے جواب میں کوئی تبدیلی نہ ہو؛ نئی guidance نظر آئے اور audit میں change ہو۔ اگر صرف نام/type بدلیں تو existing guidance اپنے آپ نہ مٹے۔
+7. **Required اور atomic refusal:** الگ test copy میں required field بنائیں۔ خالی required answer کے ساتھ دوسرا optional answer بھر کر Save extra fields کریں؛ واضح field-named refusal آئے اور optional answer بھی partial save نہ ہو۔ بعد میں valid answer سے save ہو۔
+8. **سات types:** isolated copy میں text، number، amount، date، list، yes/no اور photo کے safe examples جانچیں۔ Amount دوبارہ کھولنے پر درست rupees دکھے، date canonical رہے، list صرف defined choices قبول کرے، photo gallery کا existing rule رہے۔
+9. **Invalid input:** number field میں `NaN` اور `Infinity`، name/help میں multiline/control text، اور list میں undefined choice آزمائیں۔ واضح refusal آئے، کوئی خاموش `0` یا غلط stored value نہ بنے۔
+10. **Put away / restore:** field کو **Put this field away** کریں؛ form سے ہٹے مگر answer database میں رہے۔ **Show it on the form again** پر وہی key اور پرانا answer واپس آئے۔ Delete/undo جیسا کوئی خطرناک راستہ نہ ہو۔
+11. **Permissions:** Cashier/limited login سے Own fields manage نہ ہو سکے۔ Existing record permission والے user کو صرف اجازت شدہ entity کے answers ملیں؛ owner/manager management برقرار رہے۔
+12. **Legacy upgrade:** isolated pre-029 copy میں ایک existing custom field اور answer رکھ کر Aurora کھولیں۔ Migration صرف ایک بار لگے، key `entity.custom.id` بنے، answer unchanged رہے۔ دوبارہ startup پر کوئی duplicate migration/error نہ آئے۔
+13. **No business side effect:** اس test کے دوران کوئی PINV/INV/payment یا stock quantity نہ بدلے۔ اگر کوئی financial یا stock فرق نظر آئے تو test روک کر report بھیجیں۔
+
+## نتیجہ
+
+```text
+Build: v0.37.0 Aurora
+PT-09: PASS / PARTIAL / FAIL
+Windows xUnit: total / failed / skipped / duration:
+Migration 029 first start / restart:
+Entity + field id + stable key:
+Help text before → after:
+Rename before → after; key unchanged? :
+Answer before → after:
+Required/invalid refusal and atomicity:
+Seven types checked:
+Put away / restore:
+Permissions:
+Black box old → new:
+Stock/payment/document side effect (must be none):
+Screenshots / error / test.log:
+```
+
+**Owner result:** Pending — کوئی Aurora physical PASS ابھی record نہیں۔
 
 ---
 

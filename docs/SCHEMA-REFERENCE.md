@@ -1,11 +1,11 @@
 # SCHEMA REFERENCE — exact columns of the rebuilt database
 
 > Generated from the reference `src/lib/schema.ts` (migrations 001–013, verbatim) plus
-> Area11 migrations 014–028 (permissions, photos, own fields, barcodes, provisional money, reconciliation, catalog ordering, managed units, category tags, descriptive strength and rename-safe quantity rules).
-> Verified by running all 28 files against SQLite in order. This is the authority for every SQL
+> Area11 migrations 014–029 (permissions, photos, own fields, barcodes, provisional money, reconciliation, catalog ordering, managed units, category tags, descriptive strength, rename-safe quantity rules and central field governance).
+> Verified by running all 29 files against SQLite in order. This is the authority for every SQL
 > statement in `Area11.Core`.
 
-**37 business tables + the `_migrations` ledger** · 28 migrations · plus the `provisional_report_lines` view
+**37 business tables + the `_migrations` ledger** · 29 migrations · plus the `provisional_report_lines` view
 
 ## `_migrations`  (2 columns)
 
@@ -122,21 +122,27 @@ it; it is not a bypass and v0.35.9 does not delete that historical setting.
 product links. Catalog reads order by `sort_order`, then case-insensitive name. Indexes are
 `idx_categories_parent_order` and `idx_companies_catalog_order`.
 
-## `custom_fields`  (9 columns)
+## `custom_fields`  (11 columns)
 
 | Column | Type | Not null | Default |
 |---|---|---|---|
 | `id` | INTEGER |  |  |
 | `entity` | TEXT | yes |  |
+| `field_key` | TEXT |  |  |
 | `label` | TEXT | yes |  |
 | `type` | TEXT | yes | `'text'` |
 | `options_json` | TEXT |  |  |
+| `help_text` | TEXT | yes | `''` |
 | `required` | INTEGER | yes | `0` |
 | `active` | INTEGER | yes | `1` |
 | `sort` | INTEGER | yes | `0` |
 | `created_at` | TEXT | yes | `datetime('now','localtime')` |
 
-Indexes: `idx_cf_entity`
+Migration 029 backfills `field_key` as `entity.custom.id` and leaves every existing answer untouched.
+The service assigns the same stable key to new rows; a label rename never changes it. `help_text` is
+optional one-line display guidance, not an executable validation rule.
+
+Indexes: `idx_cf_entity`, `ux_custom_fields_field_key`, `idx_custom_fields_entity_key`
 
 ## `custom_values`  (6 columns)
 

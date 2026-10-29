@@ -60,19 +60,19 @@ features and the four phases.
 > v0.29.0 moved **F-12 (the dashboard)** to ✅ after giving it 20 tests; the mock database used for
 > them was rebuilt from all 23 migrations and every SQL statement was run on it before shipping.
 
-## Where we stand (v0.36.0 Zircon + current working tree)
+## Where we stand (v0.37.0 Aurora + current working tree)
 
 | Question | Number | What it means |
 |---|---|---|
 | Features in the board | **57** | **52 ✅ done (91.2%)**, **5 🟡 written but only the shop PC can prove them (8.8%)**, 0 ⬜ not started |
-| Code | **287 C# files**, **40 XAML files** | Zircon static grammar passes; prior Windows build/xUnit passed on Spruce `94723e5`, current WPF proof pending |
-| The shop's rules | **52 service files** in `Area11.Core`, **44 model files**, **37 business tables** over 28 migrations | Phase-1 shell changes do not touch migrations, stock or history |
-| Screens | **38 views** including the managed-unit window | bindings are statically checked; Zircon navigation, Settings sections and category picker need owner proof |
-| Tests | **883 written cases** in 68 files | **883/883 owner-verified on prior Spruce (`94723e5`, 1 m 19 s)**; Zircon run pending |
-| Static gates | **53 checks** in `tools/check_repo.py` | ~12 seconds; not a compiler - see the warning at the end |
+| Code | **289 C# files**, **40 XAML files** | Aurora static grammar passes; Zircon Windows xUnit passed, current Aurora/WPF proof pending |
+| The shop's rules | **53 service files** in `Area11.Core`, **44 model files**, **37 business tables** over 29 migrations | Phase-2 changes only custom-field metadata/policy; stock, money and history stay intact |
+| Screens | **38 views** including the managed-unit window | bindings are statically checked; Own fields guidance/key and PT-09 need owner proof |
+| Tests | **892 written cases** in 69 files | **883/883 owner-verified on Zircon v0.36.0 (1 m 10 s)**; Aurora 892-case run pending |
+| Static gates | **54 checks** in `tools/check_repo.py` | ~12 seconds; not a compiler - see the warning at the end |
 | Reporting a fault | **one file** - `tools\SEND-REPORT.cmd` (v0.30.3, D-78) | build, SDK, git state, shop folder (no rows), whole crash report, last build/test output |
-| Versions shipped | 0.1.0 -> **0.36.0 Zircon** | Phase-1 shell release colour `#3E5C76`; no later redesign phase started |
-| Owner decisions recorded | **D-00 … D-96** | `docs/OWNER-DECISIONS.md`, in Urdu |
+| Versions shipped | 0.1.0 -> **0.37.0 Aurora** | Phase-2 field governance release colour `#5B4B8A`; Phase 3 not started |
+| Owner decisions recorded | **D-00 … D-97** | `docs/OWNER-DECISIONS.md`, in Urdu |
 
 **What is actually left.** Nothing in the feature list is unbuilt, and as of v0.31.0 that sentence is
 true in the strict sense it was always meant: the last gap the *specification* admitted in its own text -
@@ -106,7 +106,18 @@ of books.
 | Modules and routes | **Code complete — physical pending** | `ViewModels/ShellViewModel.cs`, `NavItem.cs` | Permission-filtered primary modules, contextual pages, stable label keys, lazy `PageGuard` and existing drill-downs; every permitted page remains reachable and owner-only routes stay protected |
 | Settings sections | **Code complete — physical pending** | `HeaderMenuItem.cs`, `SettingsView.xaml`, `SettingsViewModel.cs` | Six existing sections are shell controls; `SelectedTabIndex` and unsaved section edits survive section switches, with no second in-content tab strip. System pages remain reachable while Settings is open |
 | Products category picker and alert action | **Code complete — physical pending** | `ProductsViewModel.cs`, `ShellViewModel.cs`, `ShellWindow.xaml` | Searchable/dropdown category filter is separate from the editor's category; put-away filters clear. The 44×44 bell retains count, three severities, tooltip and Alerts page |
-| Evidence | **53/53 static checks PASS** | `tools/check_repo.py`, `PHYSICAL-TESTING.md` PT-08 | 287 C# files parsed, 1,452 XAML bindings checked, 883-case inventory retained. **Not compiled or physically tested here:** owner must run Windows build, `ALL GREEN - 883 of 883`, and PT-08. Later redesign phases remain unauthorized |
+| Evidence | **Zircon 883/883 Windows xUnit PASS; WPF pending** | `tools/check_repo.py`, `PHYSICAL-TESTING.md` PT-08 | Zircon passed 883/883 in 1 m 10 s on the owner's PC; PT-08 WPF navigation remains separate. Phase 2 is now authorized and tracked below; Phase 3+ remains unauthorized |
+
+---
+
+## Redesign Phase 2 - central field governance and schema (D-97 / v0.37.0 Aurora)
+
+| Area | State | Where | Verification / done when |
+|---|---|---|---|
+| Central policy | **Code complete — physical pending** | `dotnet/Area11.Core/Services/FieldGovernance.cs`, `CustomFieldService.cs` | One definition/value validation path for all seven custom-field types; required answers stay atomic, amounts remain paisa and invalid/non-finite input is refused |
+| Stable schema | **Code complete — physical pending** | `Models/CustomFieldModels.cs`, `Data/Migrations/029_field_governance.sql` | `entity.custom.id` survives label edits; migration backfills legacy keys and adds guidance without deleting or rewriting answers |
+| Own fields UI | **Code complete — physical pending** | `CustomFieldsView.xaml`, `CustomFieldsViewModel.cs`, `CustomFieldsEditorViewModel.cs` | Stable key is visible to the owner; optional one-line help appears on record forms; put-away/restore and permissions remain intact |
+| Evidence | **54/54 static checks PASS** | `tools/check_repo.py`, `FieldGovernanceTests.cs`, `MigrationTests.cs`, `PHYSICAL-TESTING.md` PT-09 | 892 written cases in 69 files, including 9 Phase-2 regressions. Aurora Windows build, **`ALL GREEN - 892 of 892`** and PT-09 are pending; Zircon's 883/883 is previous-release evidence. Phase 3 is not started |
 
 ---
 
@@ -115,7 +126,7 @@ of books.
 | ID | Feature | State | Where | Test | Done when |
 |---|---|---|---|---|---|
 | F-01 | Solution with three projects (Core / Desktop / Tests), .NET 10, MVVM | ✅ | `Area11.sln`, `dotnet/Directory.Build.props` | - | **compiled on Windows**, 23 Oct 2026, v0.30.9: the launcher printed **`BUILD OK - the program was compiled`** for the first time - Core and Tests had compiled before, the WPF project had not. (The window then stopped on a binding fault of its own - see v0.31.1 and F-16.) |
-| F-02 | Exact database schema, migrations 001-028, 37 business tables + ledger/provisional report view | ✅ | `dotnet/Area11.Core/Data/Migrations/` | `MigrationTests` + `CatalogTests` 🧪 | an old `area11.db` opens unchanged; 024 backfills provisional money, 025 adds sale-line allocations without guessing old links, 026 adds company ordering, 027 adds managed units/filter-only tags/descriptive strength, and 028 adds rename-safe whole-only quantity rules without changing existing stock or history |
+| F-02 | Exact database schema, migrations 001-029, 37 business tables + ledger/provisional report view | ✅ | `dotnet/Area11.Core/Data/Migrations/` | `MigrationTests` + `CatalogTests` + `FieldGovernanceTests` 🧪 | an old `area11.db` opens unchanged; 024 backfills provisional money, 025 adds sale-line allocations without guessing old links, 026 adds company ordering, 027 adds managed units/filter-only tags/descriptive strength, 028 adds rename-safe whole-only quantity rules, and 029 adds stable custom-field keys/guidance without changing answers, stock or history |
 | F-03 | Settings service, 123 keys, every owner-visible change audited, saved in one transaction | ✅ | `Area11.Core/Services/SettingsService.cs` | `SettingsTests` 🧪 | bad values are refused before they reach the database |
 | F-04 | Audit black box (old -> new values, never deleted) | 🟡 | `Services/AuditService.cs`, `Utils/AuditDiff.cs` | `AuditDiffTests` 🧪 | every module writes (U-27) |
 | F-05 | Sign-in: owner password, staff PIN, 5 tries -> 2 minute lock | ✅ | `Services/AuthService.cs`, `Utils/PasswordHasher.cs` | `PasswordHasherTests` 🧪 | owner signs in on Windows - **done 23 Oct 2026 on v0.33.0**: `app-2026-10-23.log` shows `13:53:31 Signed in: Owner` |

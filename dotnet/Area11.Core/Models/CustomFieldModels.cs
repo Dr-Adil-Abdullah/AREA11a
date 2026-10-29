@@ -150,11 +150,17 @@ public sealed class CustomField
 
     public string Entity { get; set; } = CustomFieldEntity.Product;
 
+    /// <summary>Stable identity from migration 029; the label may change without changing this key.</summary>
+    public string FieldKey { get; set; } = string.Empty;
+
     public string Label { get; set; } = string.Empty;
 
     public string Type { get; set; } = CustomFieldType.Text;
 
     public string? OptionsJson { get; set; }
+
+    /// <summary>Optional one-line guidance shown beside the question on the record form.</summary>
+    public string HelpText { get; set; } = string.Empty;
 
     public bool Required { get; set; }
 
@@ -163,6 +169,11 @@ public sealed class CustomField
     public int Sort { get; set; }
 
     public string? CreatedAt { get; set; }
+
+    /// <summary>Fallback also makes a manually inserted legacy row safe to display.</summary>
+    public string Key => string.IsNullOrWhiteSpace(FieldKey)
+        ? global::Area11.Core.Services.FieldGovernance.KeyFor(Entity, Id)
+        : FieldKey;
 
     public string EntityLabel => CustomFieldEntity.LabelFor(Entity);
 

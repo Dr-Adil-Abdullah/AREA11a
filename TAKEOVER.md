@@ -7,10 +7,10 @@
 > اِس فائل میں یہ سب ہے: پروگرام کیا ہے، ابھی کہاں کھڑا ہے، **کیا باقی ہے**، کیا **کبھی نہیں** کرنا،
 > اور ایک نیا ورژن کیسے نکالنا ہے۔ آپ کے لیے چھوٹی اردو فائل: [`docs/HANDOVER-FOR-OWNER-URDU.md`](docs/HANDOVER-FOR-OWNER-URDU.md)۔
 
-**Status:** v0.36.0 · Zircon · `#3E5C76` — **default branch `main`**; this Phase-1 shell is on the current
+**Status:** v0.37.0 · Aurora · `#5B4B8A` — **default branch `main`**; this Phase-2 field/schema release is on the current
 working branch `arena/60395e95-area11a` until its pull request is merged.
 
-*Last updated: 29 October 2026. D-96 authorizes only the Phase-1 global shell/navigation redesign. The current tree has **883 written cases and 53 green static checks**; the owner verified **883/883 Windows xUnit cases on the prior Spruce `94723e5`** with 0 failed/skipped in **1 m 19 s**, not on Zircon. The feature board remains 52 done / 5 owner-action rows and the matrix has four partial rules. Zircon's Windows build, xUnit, PT-08 WPF, real Excel, physical-restore and optional real-cloud evidence remain separate.*
+*Last updated: 29 October 2026. D-97 authorizes Phase-2 central field governance/schema. The current tree has **892 written cases and 54 green static checks**; the owner verified **883/883 Windows xUnit cases on Zircon v0.36.0** with 0 failed/skipped in **1 m 10 s**. Aurora's Windows build, 892-case run and PT-09 physical evidence are pending. The feature board remains 52 done / 5 owner-action rows and the matrix has four partial rules. Real Excel, physical-restore and optional real-cloud evidence remain separate.*
 
 ---
 
@@ -39,7 +39,7 @@ repository is a **behaviour reference only** — never modify it, never copy its
 |---|---|
 | Physical test results, owner feedback and requested changes | **`PHYSICAL-TESTING.md`** — append-only physical-testing log |
 | What is done, what is next, per feature (ID, files, test, "done when") | **`docs/PROGRESS.md`** — the board |
-| What the owner decided, in his own language (D-00 … D-96) | **`docs/OWNER-DECISIONS.md`** (Urdu, authoritative) |
+| What the owner decided, in his own language (D-00 … D-97) | **`docs/OWNER-DECISIONS.md`** (Urdu, authoritative) |
 | His 116 numbered rules and where each is implemented | `docs/RULES-MATRIX.md` |
 | The blueprint (rules, data, pricing, billing, printing, rebuild protocol) | `docs/AREA11-MASTER-SPEC.md` |
 | Every table and column | `docs/SCHEMA-REFERENCE.md` |
@@ -57,16 +57,16 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 
 ## 3. Where it stands right now (read this twice)
 
-**Current source: v0.36.0 "Zircon" contains D-96 Phase-1 global shell/navigation changes and 883 written cases in 68 files. The fixed Area11 title, expanded dark two-row header, permission-filtered modules, contextual pages, shell-owned Settings sections, separate Products category picker and 44×44 bell are implemented. The left sidebar/folding controls are retired; existing routes, alerts, session/fault/empty states and financial rules remain. All 53 static checks pass locally. The owner verified **883/883 Windows xUnit cases on the prior Spruce `94723e5` in 1 m 19 s**, not on this shell; Zircon's Windows build, xUnit and PT-08 WPF walk-through are still required. Obsidian `cb2e321` remains earlier owner-verified full green source at 860/860 in 1 m 17 s. T-10, Z-05, E-12 and S-05 remain partial, the five owner-action feature rows remain open, and PT02-POS-01 still needs exact reproduction. Later redesign phases are unauthorized.**
+**Current source: v0.37.0 "Aurora" contains D-97 Phase-2 central field governance/schema changes and 892 written cases in 69 files. `FieldGovernance` owns custom-field definition and answer validation; migration 029 adds stable rename-safe keys and optional guidance without rewriting existing answers. The Own fields admin exposes key/help metadata, while all seven types, required-field atomicity, permissions and photo behavior remain. All 54 static checks pass locally. Zircon v0.36.0 has owner-verified **883/883 Windows xUnit cases in 1 m 10 s**; Aurora's Windows build, 892-case run and PT-09 physical walk-through are required. Phase 3 packaging/search and later phases are not started. T-10, Z-05, E-12 and S-05 remain partial, the five owner-action feature rows remain open, and PT02-POS-01 still needs exact reproduction.**
 
 | | |
 |---|---|
-| Test cases written | **883** in 68 files (`tools\\RUN-TESTS.cmd` compares the run against `EXPECTED=883`) |
-| Static checks | **53**, all green: `OK - 53 checks, no problems` |
+| Test cases written | **892** in 69 files (`tools\\RUN-TESTS.cmd` compares the run against `EXPECTED=892`) |
+| Static checks | **54**, all green: `OK - 54 checks, no problems` |
 | Owner's numbered rules | **116 - 92 ✅ done, 4 🟡 partial, 0 ⬜, 20 standing** - see §4 |
 | Feature board | **57 features — 52 ✅ done, 5 🟡 one shop action each, 0 ⬜ not started** (91.2 % / 8.8 %) |
-| Code size | 287 C# files + 40 XAML files; 52 services, 38 view models |
-| Database | 28 migrations → **37 business tables + ledger/provisional report view**, append-only, existing `area11.db` opens unchanged |
+| Code size | 289 C# files + 40 XAML files; 53 services, 38 view models |
+| Database | 29 migrations → **37 business tables + ledger/provisional report view**, append-only, existing `area11.db` opens unchanged |
 
 ### What the owner's own PC has already proved
 
@@ -81,9 +81,22 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
   **Failed: 0, Passed: 772, Total: 772 in 56 s — ALL GREEN**. This proves the numbering, session and
   Shift repairs together; it is not a claim that the Desktop installer or every page was exercised.
 
-* On **v0.35.19 Spruce `94723e5`** his Windows build reported **Failed 0, Passed 883, Skipped 0,
-  Total 883 in 1 m 19 s — ALL GREEN**. This is the latest full xUnit proof; it does not by itself
-  prove a fresh WPF-window walk-through, real Excel or real Supabase. The earlier Obsidian 860/860 result remains historical.
+* On **v0.36.0 Zircon** his Windows build reported **Failed 0, Passed 883, Skipped 0,
+  Total 883 in 1 m 10 s — ALL GREEN**. This is the latest full xUnit proof; it does not by itself
+  prove a fresh WPF-window walk-through, real Excel or real Supabase. Spruce `94723e5` (883/883 in
+  1 m 19 s) and Obsidian (860/860) remain earlier historical evidence.
+
+### What v0.37.0 changes — D-97 Phase-2 field governance/schema
+
+* `FieldGovernance.cs` is the single custom-field definition and answer-normalization policy. The older
+  `CustomFieldService.Normalize` facade delegates to it, so existing callers and new UI use the same rules.
+* Migration `029_field_governance.sql` adds `field_key` and `help_text`, backfills legacy keys as
+  `entity.custom.id`, and leaves `custom_values` untouched. A label rename cannot change the key.
+* Own fields shows the stable key and optional one-line help; record forms display that guidance. All seven
+  field types, required-field atomic saves, put-away/restore, permissions and photo-gallery behavior remain.
+* **Evidence:** 54/54 static checks and 892 written cases in 69 files, including 9 focused regressions. No
+  local .NET/WPF runtime exists; the owner must build Aurora, run **`ALL GREEN - 892 of 892`** and complete
+  PT-09. Zircon's 883/883 result is previous-release evidence, not Aurora proof.
 
 ### What v0.36.0 changes — D-96 Phase-1 global shell
 
@@ -100,9 +113,9 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 * The old application-name/menu-fold controls are retired from Settings. The product title is fixed Area11,
   while shop/receipt branding remains store data. Shared header spacing, typography and button styles live
   in `Theme.xaml`; no financial, stock, schema, printing, WhatsApp or sync rule changed.
-* **Evidence:** 53/53 static checks, including real C# grammar and 1,452 XAML bindings. No local .NET SDK/WPF
-  runtime exists, so the owner must build Zircon, run **`ALL GREEN - 883 of 883`** and complete PT-08. The
-  previous Spruce `94723e5` 883/883 result is historical and must not be presented as Zircon proof.
+* **Evidence:** 53/53 static checks, including real C# grammar and 1,452 XAML bindings, plus the owner's
+  Zircon Windows result **`ALL GREEN - 883 of 883`** in 1 m 10 s. PT-08 WPF remains separate; this does not
+  prove Aurora or its 892-case suite. The previous Spruce `94723e5` result is older historical evidence.
 
 ### What v0.35.19 changes — physical-testing repairs and explicit counter pricing
 
@@ -450,8 +463,9 @@ needs a fresh report from that version. The Desktop installer still needs its ow
 
 ## 4. What is left — exactly
 
-**Immediate authorized task:** build Zircon on Windows and complete **PT-08** for the Phase-1 shell. Do not
-start Phase 2 or infer a WPF pass from the 53 static checks. The five existing 🟡 feature rows below remain
+**Immediate authorized task:** build Aurora on Windows, require **`ALL GREEN - 892 of 892`** and complete
+**PT-09** for Phase-2 field governance/schema. Do not start Phase 3 or infer a WPF pass from the 54 static
+checks. Zircon's 883/883 is previous-release evidence. The five existing 🟡 feature rows below remain
 separate owner-action evidence; their counts are not changed by this redesign.
 
 **No feature is ⬜.** The five 🟡 rows are code-complete and await **one action in the real shop**:
@@ -502,12 +516,12 @@ WPF cannot decode `.webp` photos; cloud sync is optional and never deletes a row
 git clone https://github.com/Dr-Adil-Abdullah/AREA11a.git
 cd AREA11a                               # main is the default branch - the product is already here
 pip install --break-system-packages tree_sitter tree_sitter_c_sharp   # gives the real C# grammar
-python3 tools/check_repo.py              # must end: OK - 53 checks, no problems
+python3 tools/check_repo.py              # must end: OK - 54 checks, no problems
 python3 tools/build_rules_matrix.py --check
 ```
 
 Then read, in this order: this file → `AGENTS.md` → `docs/PROGRESS.md` (the board) → `HANDOFF.md` §4
-(the walk-throughs) → `docs/OWNER-DECISIONS.md` (at least D-77, D-88 … D-96) → the code you are about
+(the walk-throughs) → `docs/OWNER-DECISIONS.md` (at least D-77, D-88 … D-97) → the code you are about
 to touch.
 
 **How work reaches `main` from now on.** `main` is protected only by habit, not by a rule: work on a
@@ -597,7 +611,7 @@ docs/PROGRESS.md                     ← the board row: state, files, test, "don
 ```
 
 `Area11.Tests` may reference **only `Area11.Core`** — tests must use public code. `TestDatabase` is a
-temporary SQLite database with all 28 migrations and seed data; `TestData` opens a drawer so that every
+temporary SQLite database with all 29 migrations and seed data; `TestData` opens a drawer so that every
 bill in the suite goes through the real galla door.
 
 ---

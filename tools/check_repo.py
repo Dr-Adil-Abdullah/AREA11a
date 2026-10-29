@@ -4790,6 +4790,79 @@ def check_phase_one_shell() -> None:
 
 
 # ---------------------------------------------------------------------------
+def check_phase_two_fields() -> None:
+    """Phase-2 field metadata must stay centralized and non-destructive."""
+    policy_path = DOTNET / "Area11.Core/Services/FieldGovernance.cs"
+    model_path = DOTNET / "Area11.Core/Models/CustomFieldModels.cs"
+    service_path = DOTNET / "Area11.Core/Services/CustomFieldService.cs"
+    migration_path = DOTNET / "Area11.Core/Data/Migrations/029_field_governance.sql"
+    admin_path = DOTNET / "Area11.Desktop/Views/CustomFieldsView.xaml"
+    editor_path = DOTNET / "Area11.Desktop/ViewModels/CustomFieldsEditorViewModel.cs"
+    tests_path = DOTNET / "Area11.Tests/FieldGovernanceTests.cs"
+    paths = (policy_path, model_path, service_path, migration_path, admin_path, editor_path, tests_path)
+    if not all(path.exists() for path in paths):
+        fail("Phase-2 field governance is incomplete: policy, migration, UI or regression file is missing")
+        return
+
+    policy = policy_path.read_text(encoding="utf-8-sig")
+    model = model_path.read_text(encoding="utf-8-sig")
+    service = service_path.read_text(encoding="utf-8-sig")
+    migration = migration_path.read_text(encoding="utf-8-sig")
+    admin = admin_path.read_text(encoding="utf-8-sig")
+    editor = editor_path.read_text(encoding="utf-8-sig")
+    tests = tests_path.read_text(encoding="utf-8-sig")
+
+    for needle, reason in (
+        ("public static string KeyFor", "stable field keys have no central generator"),
+        ("public static string? DefinitionError", "definition validation is not centralized"),
+        ("public static bool Normalize", "answer normalization is not centralized"),
+        ("double.IsFinite", "non-finite custom numbers are not refused"),
+        ("MaxHelpTextLength", "field guidance has no bound"),
+    ):
+        if needle not in policy:
+            fail(f"Phase-2 FieldGovernance: {reason}")
+
+    for needle, reason in (
+        ("field_key AS fieldKey", "the service does not read stable keys"),
+        ("help_text AS helpText", "the service does not read field guidance"),
+        ("FieldGovernance.Normalize(field, raw, photoCount", "the old service bypasses central normalization"),
+        ("FieldGovernance.KeyFor(key, id)", "new fields are not assigned stable keys"),
+        ("help_text = @helpText", "field guidance is not saved"),
+    ):
+        if needle not in service:
+            fail(f"Phase-2 CustomFieldService: {reason}")
+
+    for needle, reason in (
+        ("ADD COLUMN field_key", "the schema has no stable key column"),
+        ("ADD COLUMN help_text", "the schema has no guidance column"),
+        ("LOWER(TRIM(entity)) || '.custom.' || id", "legacy keys are not deterministically backfilled"),
+        ("CREATE UNIQUE INDEX", "stable keys are not unique"),
+    ):
+        if needle not in migration:
+            fail(f"Phase-2 migration: {reason}")
+    if "DELETE FROM custom_values" in migration or "DROP TABLE custom_fields" in migration:
+        fail("Phase-2 migration must not delete custom answers or rebuild their table")
+
+    for needle, path, text in (
+        ("SelectedFieldKey", admin_path, admin),
+        ("HelpText", admin_path, admin),
+        ("Field.HelpText", editor_path, editor),
+        ("RenameKeepsTheKeyAndAnswer", tests_path, tests),
+        ("FieldGovernanceMigration_BackfillsStableKeysAndKeepsAnswers", DOTNET / "Area11.Tests/MigrationTests.cs",
+         (DOTNET / "Area11.Tests/MigrationTests.cs").read_text(encoding="utf-8-sig")),
+    ):
+        if needle not in text:
+            fail(f"Phase-2 field governance evidence is missing: {rel(path)} ({needle})")
+
+    if "FieldKey" not in model or "public string Key =>" not in model:
+        fail("Phase-2 model does not expose a stable key with a legacy fallback")
+
+    REPORT.append(
+        "Phase 2 fields: central definition/value policy, stable rename-safe keys, bounded guidance, "
+        "non-destructive migration 029 and focused regression coverage")
+
+
+# ---------------------------------------------------------------------------
 def check_docs() -> None:
     docs = [ROOT / "README.md", ROOT / "HANDOFF.md", ROOT / "AGENTS.md", ROOT / "dotnet/README.md"]
     docs += sorted((ROOT / "docs").glob("*.md"))
@@ -5294,6 +5367,7 @@ def main() -> int:
     check_run_trail()
     check_shop_clock()
     check_phase_one_shell()
+    check_phase_two_fields()
     check_checklist()
     check_audit_recovery()
     check_report_chart()

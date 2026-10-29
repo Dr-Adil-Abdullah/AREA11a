@@ -3,7 +3,7 @@
 > **یہ فائل کیا ہے؟** مالک (ڈاکٹر عادل عبداللہ) کی ہر ہدایت، فیصلہ اور ترجیح یہاں نمبر کے ساتھ محفوظ ہوتی ہے۔
 > کوئی بات زبانی نہیں رہتی۔ نئی ہدایت = نیا نمبر۔ پرانی ہدایت کوئی ایجنٹ خاموشی سے نہیں بدل سکتا۔
 >
-> **آخری اپ ڈیٹ:** 29 اکتوبر 2026 · **ورژن:** v0.36.0 Zircon `#3E5C76` — Phase-1 global shell/navigation source کے ساتھ **883 written cases in 68 files** اور **53 static checks** ہیں۔ Windows xUnit **883/883** صرف پچھلے Spruce `94723e5` پر **1 منٹ 19 سیکنڈ** میں PASS ہے؛ Zircon کا Windows build، xUnit اور PT-08 WPF walk-through ابھی باقی ہے۔ D-96 میں fixed Area11 header، contextual navigation اور بعد کے phases کی اجازت نہ ہونے کا فیصلہ درج ہے۔ D-93 stock اور PR cancellation کے same-batch stock-only/no-payment/no-financial-reversal قواعد برقرار ہیں۔ WPF، genuine physical، real Excel اور cloud verification الگ باقی ہیں۔
+> **آخری اپ ڈیٹ:** 29 اکتوبر 2026 · **ورژن:** v0.37.0 Aurora `#5B4B8A` — Phase-2 central field governance/schema source کے ساتھ **892 written cases in 69 files** اور **54 static checks** ہیں۔ Zircon v0.36.0 پر Windows xUnit **883/883، 1 منٹ 10 سیکنڈ** کی owner verification محفوظ ہے؛ Aurora کا Windows build/xUnit اور PT-09 physical walk-through ابھی باقی ہے۔ D-97 میں Phase 2 کی اجازت، central validation، stable keys اور migration 029 درج ہیں۔ D-93 stock اور PR cancellation کے same-batch stock-only/no-payment/no-financial-reversal قواعد برقرار ہیں۔ WPF، genuine physical، real Excel اور cloud verification الگ باقی ہیں۔
 > **سند (Authority):** `AREA11-MASTER-SPEC.md` (37 حصے + Appendix A) — اور جہاں مالک نے بعد میں کوئی نیا حکم دیا، وہی چلے گا (Spec §1.2.2)۔
 
 ---
@@ -995,6 +995,22 @@ rules → Loyalty points** سے خود آن کرتا ہے، اور وہیں تی
 
 **دوبارہ نہ ہو:** Version اب **0.13.0 · Deep Sea `#0C4A6E`** ہے (پچھلا Mocha `#6B4F3A`)۔
 
+
+### D-97 — **Zircon automated verification اور Phase 2 field governance/schema کی اجازت** (29 اکتوبر 2026)
+
+مالک نے Zircon کا Windows test output بھیجا: **Failed 0، Passed 883، Skipped 0، Total 883، مدت 1 منٹ 10 سیکنڈ**
+اور runner نے **`ALL GREEN - 883 of 883 cases passed, failed: 0`** دیا۔ یہ Spruce کا historical نتیجہ نہیں،
+Zircon v0.36.0 کا automated ثبوت ہے؛ PT-08 کی WPF/navigation physical verification اس سے الگ رہے گی۔
+
+اس کے بعد مالک نے **“phase 2 start now”** کہہ کر اگلے مرحلے کی اجازت دی۔ Phase 2 کا کام central field
+governance/schema پر ہے: stable field identity، ایک centralized definition/value policy، محفوظ append-only
+schema migration اور Own fields کی واضح guidance۔ Packaging/variants/purchasing/search، histories/profit،
+Print/WhatsApp اور offline-first sync اگلے phases ہیں اور اس اجازت میں شامل نہیں۔
+
+**نفاذ اور evidence boundary:** v0.37.0 Aurora میں migration 029، rename-safe `entity.custom.id` keys، optional
+one-line help اور 9 نئے regressions شامل ہیں؛ inventory **892 cases in 69 files** اور local static gate **54/54** ہے۔
+یہ written/static evidence ہے، Aurora کا Windows build/xUnit یا physical PASS نہیں۔ Custom values، historical
+documents، stock quantities، prices، payment rules اور existing permissions نہیں بدلے۔
 
 ### D-96 — **Global shell اور navigation: صرف Phase 1 کی اجازت** (29 اکتوبر 2026)
 
@@ -2573,6 +2589,7 @@ restart نہیں (Spec 8.4.3)۔
 
 | تاریخ | کیا |
 |---|---|
+| 29 اکتوبر 2026 | **D-97 / Zircon verification + Phase-2 authorization — v0.37.0 Aurora `#5B4B8A`**: Zircon Windows xUnit **883/883، 1m10s** موصول؛ مالک نے Phase 2 شروع کرنے کی اجازت دی۔ Central field policy، stable keys، guidance اور migration 029؛ **892 written cases، 54/54 static checks**، Aurora Windows/physical evidence pending۔ |
 | 29 اکتوبر 2026 | **D-96 / Phase-1 global shell — v0.36.0 Zircon `#3E5C76`**: fixed Area11 title، expanded dark header، clickable modules/contextual pages، header Settings sections، Products category picker، 44×44 bell اور user/version popup؛ sidebar/folding retired۔ Permissions، routes، alerts اور financial/stock/schema rules محفوظ؛ **53/53 static checks**، Windows build/xUnit/PT-08 pending۔ بعد کے phases غیر منظور۔ |
 | 27 اکتوبر 2026 | **D-95 / CAT-01, NAV-01, UNIT-01, PHOTO-01 source batch**: primary+filter tags، managed units، descriptive strength، rename-safe whole-only quantity rule (migration 028)، thumbnails/fallbacks اور filtered Dashboard/category/company drill-downs لکھے گئے۔ Box 10 × 50 mL = 10 injection units؛ mL strength ہے، stock division نہیں۔ **883 written cases in 68 files، 52 static checks؛ Windows xUnit 883/883 `94723e5` پر PASS**؛ WPF/genuine physical verification باقی، feature counts 52/5/0 برقرار۔ |
 | 27 اکتوبر 2026 | **Physical-testing repairs — v0.35.19 Spruce `#175E54`**: مالک کے «fix the things» authorization پر backup/shift/alert کے بعد PRICE-01/SALE-01 code۔ Explicit discount ہمیشہ full retail/selling-price total پر؛ پرانا margin mode inert، discount کے ساتھ special-rate stacking نہیں۔ Zero discount پر VIP/Doctor کے لیے Yes/No، default No = retail۔ Actual cart rate Owner/Manager custom override کے ساتھ، hold/resume پر محفوظ؛ cashier bypass اور below-cost lock کے ساتھ batch cost سے کم line مسترد۔ Successful commit کے بعد optional non-blocking Done/invoice/change card، الگ auto-print اور persisted Settings key۔ **877 written cases، 52 static checks**؛ Windows build/xUnit اور genuine-sale/isolated-restore verification باقی۔ Reported `AlertKindTests` scope error `aedb65d` میں fix۔ دوبارہ نہ ہو: کوئی test یا financial safeguard ہٹانے کے بجائے نئے regression cases؛ Obsidian کا 860/860 صرف پرانا owner-verified evidence ہے۔ |

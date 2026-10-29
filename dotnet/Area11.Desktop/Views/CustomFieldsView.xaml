@@ -106,12 +106,20 @@
                         <TextBlock Text="Name on the form" Style="{StaticResource FieldLabel}" Margin="0,10,0,0" />
                         <TextBox Text="{Binding LabelText, UpdateSourceTrigger=PropertyChanged}" />
 
+                        <TextBlock Text="Stable key (kept when the name changes)" Style="{StaticResource FieldLabel}" Margin="0,10,0,0" />
+                        <TextBlock Text="{Binding SelectedFieldKey}" Style="{StaticResource FieldHint}"
+                                   TextWrapping="Wrap" />
+
                         <TextBlock Text="Kind of answer" Style="{StaticResource FieldLabel}" Margin="0,10,0,0" />
                         <ComboBox ItemsSource="{Binding Types}" DisplayMemberPath="Label"
                                   SelectedItem="{Binding SelectedType, Mode=TwoWay}" />
 
                         <TextBlock Text="{Binding TypeHint}" Style="{StaticResource FieldHint}" TextWrapping="Wrap"
                                    Margin="0,4,0,0" />
+
+                        <TextBlock Text="Help on the record form (optional)" Style="{StaticResource FieldLabel}" Margin="0,10,0,0" />
+                        <TextBox Text="{Binding HelpText, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="One line, up to 160 characters. It guides the person; it is not a validation script." />
 
                         <StackPanel Visibility="{Binding NeedsOptions, Converter={StaticResource BoolToVis}}">
                             <TextBlock Text="Choices (separated by commas)" Style="{StaticResource FieldLabel}" />

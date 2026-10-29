@@ -140,24 +140,24 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.36.0 (Zircon `#3E5C76`) - Phase-1 global shell source; 883 written cases in 68 files and 53 static checks.**
+> **v0.37.0 (Aurora `#5B4B8A`) - Phase-2 field governance/schema source; 892 written cases in 69 files and 54 static checks.**
 >
-> * **Current Phase-1 source:** fixed Area11 title, expanded dark two-row header, permission-filtered modules,
->   contextual pages, shell-owned Settings sections, a separate Products category picker and a 44×44 bell.
->   The left sidebar/folding controls are retired. D-96 authorizes only this shell phase; later redesign phases
->   remain unauthorized. No financial, stock, schema, printing, WhatsApp or sync rule changed.
-> * **Verification boundary:** all **53/53 static checks** pass with real C# grammar and XAML binding checks.
->   There is no local .NET SDK/WPF runtime, so the owner must build Zircon, run **`ALL GREEN - 883 of 883`**,
->   and complete PT-08 in `PHYSICAL-TESTING.md`. Do not call the new shell physically tested yet.
-> * **Latest prior Windows xUnit proof:** Failed 0, Passed 883, Skipped 0, Total 883 in **1 m 19 s** on
->   Spruce `94723e5`; the runner printed **`ALL GREEN - 883 of 883 cases passed, failed: 0`**.
->   This verifies the Windows build and suite, not every WPF or genuine physical workflow.
+> * **Current Phase-2 source:** `FieldGovernance` centralizes custom-field definition and answer rules;
+>   migration 029 adds stable rename-safe keys and optional one-line guidance without rewriting answers.
+>   Own fields shows the key/help, and the existing permissions, seven types, required-field atomicity and
+>   photo gallery remain. Phase 3 packaging/search and later phases are not authorized by this work.
+> * **Verification boundary:** all **54/54 static checks** pass with real C# grammar and XAML binding checks.
+>   There is no local .NET SDK/WPF runtime, so the owner must build Aurora, run **`ALL GREEN - 892 of 892`**,
+>   and complete PT-09 in `PHYSICAL-TESTING.md`. Do not call the new schema physically tested yet.
+> * **Latest prior Windows xUnit proof:** Zircon v0.36.0 reported Failed 0, Passed 883, Skipped 0, Total 883
+>   in **1 m 10 s** on 29 October 2026. This verifies that release's Windows suite, not Aurora, every WPF
+>   page or genuine physical workflow.
 >
 > * **The correct Obsidian commit `cb2e321` passed on the owner's Windows PC:** Failed 0, Passed 860,
 >   Skipped 0, Total 860, in 1 m 17 s. The banner was v0.35.18 and the runner printed
 >   **`ALL GREEN - 860 of 860 cases passed, failed: 0`**. This closed the earlier xUnit gate and verifies
 >   both workbook fixture repairs together with the retained PR allocation repair. This is earlier
->   **860-case** evidence; the current Spruce result is 883/883 above. Recording these results changes no code.
+>   **860-case** evidence; the later Zircon result is 883/883 above. Recording these results changes no code.
 >
 > * **Green tests do not close the separate live checks.** The board remains 52/57 done with five
 >   owner-action rows, and the matrix remains 92 done / 4 partial. Keep T-10 🟡 until real Excel
@@ -167,16 +167,17 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >
 > * **Earlier verification is not backfilled.** Paprika really reported **837 passed / 14 failed / 851
 >   total**, and Quasar's 853-case target was not executed. Cypress 789/789 is now an earlier green
->   run, not the latest. The current 883-case requirement is achieved; do not start another feature
->   stage unless the owner writes `next`.
+>   run, not the latest. The current **892-case** suite is written but still awaits its Aurora owner
+>   run; do not start another feature stage unless the owner writes `next`.
 >
-> * **Physical testing and authorized repairs are in progress.** PT-01 passed; PT-02 is PARTIAL, with
->   product saves and Black-box entries confirmed. All findings, owner decisions and PT-03/PT-04
->   instructions live in **`PHYSICAL-TESTING.md`**. On 27 October the owner said **“fix the things”**,
->   authorizing the recorded fixes in safety order. Backup destination/recovery, shift cash/alert,
->   rate/sale feedback and the CAT-01/NAV-01/UNIT-01/PHOTO-01 source batch have changed; the written
->   suite is **883 in 68 files**, all **52 static checks** pass, and the owner has run **883/883** on
->   Windows (`94723e5`). `aedb65d` fixes the owner's reported AlertKindTests compile error. Prove the new
+> * **Physical testing and authorized repairs are in progress.** PT-01 passed; PT-02 is **PASS — owner
+>   confirmed 29 October**, with product saves and Black-box entries confirmed. All findings, owner
+>   decisions and PT-03/PT-04 instructions live in **`PHYSICAL-TESTING.md`**. On 27 October the owner
+>   said **“fix the things”**, authorizing the recorded fixes in safety order. Backup destination/recovery,
+>   shift cash/alert, rate/sale feedback and the CAT-01/NAV-01/UNIT-01/PHOTO-01 source batch changed; at
+>   that Spruce checkpoint the written suite was **883 in 68 files**, all **52 static checks** passed,
+>   and the owner ran **883/883** on Windows (`94723e5`). Those are historical results, not Aurora proof.
+>   `aedb65d` fixes the owner's reported AlertKindTests compile error. Prove the new
 >   catalog/unit/navigation/photo workflows with genuine transactions and keep each physical verification
 >   separate. The POS blank/dashes report still needs exact reproduction evidence. **next** still means
 >   the next test portion.

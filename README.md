@@ -39,19 +39,20 @@ four settings in Area11, then push / look / bring.
 Live counts are in [`docs/PROGRESS.md`](docs/PROGRESS.md) (features) and
 [`docs/RULES-MATRIX.md`](docs/RULES-MATRIX.md) (the owner's 116 numbered rules).
 
-**Current redesign source — v0.36.0 Zircon `#3E5C76`:** Phase 1 replaces the left sidebar with an expanded
-dark Area11 header: clickable permission-filtered modules, contextual pages, shell-owned Settings sections,
-a searchable Products category picker and a 44×44 alert bell. Existing routes, alerts, session/fault states
-and financial rules remain. **53/53 static checks pass; Windows build, xUnit and PT-08 WPF verification are
-still pending.** Later redesign phases are not authorized yet (D-96).
+**Current redesign source — v0.37.0 Aurora `#5B4B8A`:** Phase 2 adds central field governance and
+append-only schema migration 029. Custom fields now have stable rename-safe keys, one shared definition/value
+validation policy and optional one-line guidance on record forms; existing answers are preserved. The Phase-1
+Area11 header and all financial rules remain. **54/54 static checks pass with 892 written cases; Aurora's
+Windows build/xUnit and PT-09 physical verification are still pending.** Zircon's owner-verified 883/883 is
+previous-release evidence, not an Aurora result. Phase 3 and later redesign phases require separate review.
 
 **Honest note:** the agent's build machine is Linux with no .NET SDK, so nothing in `dotnet/` is
 compiled there. Every change is checked statically (C# parses, explicit usings, XAML, resources,
 every binding against its view model, every SQL statement against the real schema, every mapped
 column against its model, migrations executed on SQLite). The owner's Windows machine built the prior
-**v0.35.19 Spruce** source and verified **883/883 xUnit cases in 1 m 19 s** on `94723e5`; that is not
-backfilled onto the current Zircon shell. WPF walk-throughs, genuine transactions, isolated restore,
-real Excel and optional real-cloud proof remain separate. See [`docs/VERSIONS.md`](docs/VERSIONS.md)
+**v0.36.0 Zircon** source and verified **883/883 xUnit cases in 1 m 10 s** on 29 October 2026; that is not
+backfilled onto the current Aurora field-governance release. WPF walk-throughs, genuine transactions,
+isolated restore, real Excel and optional real-cloud proof remain separate. See [`docs/VERSIONS.md`](docs/VERSIONS.md)
 for release history and [`PHYSICAL-TESTING.md`](PHYSICAL-TESTING.md) for the running evidence log.
 
 ---

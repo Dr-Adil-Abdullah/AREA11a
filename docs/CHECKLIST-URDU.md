@@ -1,6 +1,6 @@
 # Area11 — مکمل فیچر ٹک لسٹ (پرنٹ کرنے کے لیے)
 
-**ورژن:** v0.36.0 (Zircon `#3E5C76`) · **تاریخ:** 2026-10-29
+**ورژن:** v0.37.0 (Aurora `#5B4B8A`) · **تاریخ:** 2026-10-29
 
 > یہ فائل **خودکار** بنتی ہے: `python3 tools/make_checklist.py`۔ ہاتھ سے نہ بدلیں۔
 > اصلی فیصلہ `docs/PROGRESS.md` کے بورڈ میں ہوتا ہے، اور `tools/check_repo.py` اُس سے میل
@@ -31,7 +31,7 @@
 | ☐ | نمبر | فیچر | حالت |
 |---|---|---|---|
 | ☐ | F-01 | Solution with three projects | ✅ مکمل |
-| ☐ | F-02 | Exact database schema, migrations 001-028, 37 business tables + ledger/provisional... | ✅ مکمل |
+| ☐ | F-02 | Exact database schema, migrations 001-029, 37 business tables + ledger/provisional... | ✅ مکمل |
 | ☐ | F-03 | Settings service, 123 keys, every owner-visible change audited, saved in one transa... | ✅ مکمل |
 | ☐ | F-04 | Audit black box (old -> new values, never deleted) | 🟡 جاری |
 | ☐ | F-05 | Sign-in: owner password, staff PIN, 5 tries -> 2 minute lock | ✅ مکمل |

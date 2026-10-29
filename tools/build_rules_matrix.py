@@ -94,7 +94,7 @@ STATUS: dict[str, tuple[str, str, str]] = {
     "E-02": ("DONE", "store branding (`store.*`) remains editable for receipts; D-96 fixes the Area11 product title and retires the header app-name control", "SettingsTests.*"),
     "E-03": ("DONE", "`ReceiptService` prints `store.*` on every bill", "ReceiptTests.*"),
     "E-04": ("DONE", "`ProductService` + Products → Manage categories and companies: create, rename, two-level parents, order, soft put-away/restore and unlink-only product references; Core permissions and old/new audit; migration 026 orders companies", "CatalogTests.*"),
-    "E-05": ("DONE", "`CustomFieldService` + SYSTEM → Own fields (F-42): text, number, amount, date, list, yes/no, photo", "CustomFieldTests"),
+    "E-05": ("DONE", "`FieldGovernance` + `CustomFieldService` + SYSTEM → Own fields (F-42): text, number, amount, date, list, yes/no, photo; stable `entity.custom.id` keys, optional help and central validation", "CustomFieldTests + FieldGovernanceTests"),
     "E-06": ("DONE", "`products.box_strips` / `strip_tablets`", "SaleTests (unit multiplier)"),
     "E-07": ("DONE", "the three bands are read from `expiry.levels` (fixed in v0.3.10, F-29)", "ExpiryTests.*"),
     "E-08": ("DONE", "editable tier prices + `SaleInput.UseSpecialRate`, `discount.maxPercent*`, and `sale.successPopup`; explicit discount always uses full retail", "SaleTests.*Discount*, SaleTests.SpecialRate_*"),
