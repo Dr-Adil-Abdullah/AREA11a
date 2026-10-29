@@ -55,7 +55,8 @@ rejected even if it "works".
 9. **Never modify the original Next.js app** (`Dr-Adil-Abdullah/Area11`) - it is only a behaviour
    reference.
 10. **Everything editable** (E-01): no hard-coded shop name, discount limit, printer width, wording or
-    colour. Settings come from the `settings` table via `SettingsService`.
+    colour. Settings come from the `settings` table via `SettingsService`. **D-96 exception:** the product
+    title is fixed to **Area11** in the shell/login; the shop's own receipt/settings branding remains editable.
 
 ## 3. Layout you must respect
 
@@ -69,8 +70,9 @@ tools/                   check_repo.py, build_rules_matrix.py
 
 Three projects only (owner's D-17). Do not add a fourth.
 
-Wiring a new screen: service → property on `AppServices` → entry in `ShellViewModel.NavItems` guarded
-by `_services.Permissions.Can(user, Modules.X)` → `DataTemplate` in `ShellWindow.xaml` → view + view-model.
+Wiring a new screen: service → property on `AppServices` → stable page entry in `ShellViewModel.NavItems`
+(and its permitted module/context collections) guarded by `_services.Permissions.Can(user, Modules.X)` →
+`DataTemplate` in `ShellWindow.xaml` → view + view-model. The Phase-1 header has no left-sidebar fold state.
 
 ## 4. Verify before you claim anything works
 
@@ -138,9 +140,16 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.35.19 (Spruce `#175E54`) - 883 written cases in 68 files; owner-verified 883/883 on `94723e5`.**
+> **v0.36.0 (Zircon `#3E5C76`) - Phase-1 global shell source; 883 written cases in 68 files and 53 static checks.**
 >
-> * **Latest Windows xUnit proof:** Failed 0, Passed 883, Skipped 0, Total 883 in **1 m 19 s** on
+> * **Current Phase-1 source:** fixed Area11 title, expanded dark two-row header, permission-filtered modules,
+>   contextual pages, shell-owned Settings sections, a separate Products category picker and a 44×44 bell.
+>   The left sidebar/folding controls are retired. D-96 authorizes only this shell phase; later redesign phases
+>   remain unauthorized. No financial, stock, schema, printing, WhatsApp or sync rule changed.
+> * **Verification boundary:** all **53/53 static checks** pass with real C# grammar and XAML binding checks.
+>   There is no local .NET SDK/WPF runtime, so the owner must build Zircon, run **`ALL GREEN - 883 of 883`**,
+>   and complete PT-08 in `PHYSICAL-TESTING.md`. Do not call the new shell physically tested yet.
+> * **Latest prior Windows xUnit proof:** Failed 0, Passed 883, Skipped 0, Total 883 in **1 m 19 s** on
 >   Spruce `94723e5`; the runner printed **`ALL GREEN - 883 of 883 cases passed, failed: 0`**.
 >   This verifies the Windows build and suite, not every WPF or genuine physical workflow.
 >

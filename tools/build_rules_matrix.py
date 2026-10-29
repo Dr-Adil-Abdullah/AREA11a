@@ -50,7 +50,7 @@ STATUS: dict[str, tuple[str, str, str]] = {
     "U-07": ("DONE", "Dapper, Microsoft.Data.Sqlite, WPF, xUnit", "-"),
     "U-08": ("DUTY", "one Compute() for quote+save, shared helpers", "-"),
     "U-09": ("DONE", "personal use, MIT-style dependencies only", "-"),
-    "U-10": ("DONE", "`Services/SettingsService.cs` + the Settings page (122 keys)", "-"),
+    "U-10": ("DONE", "`Services/SettingsService.cs` + editable shop/catalog data; the fixed Area11 product title is the D-96 exception", "-"),
     "U-11": ("DONE", "services write straight to SQLite, no second copy", "-"),
     "U-12": ("DONE", "this matrix", "-"),
     "U-13": ("DONE", "HANDOFF.md + AGENTS.md + docs/PROGRESS.md + this file", "`tools/check_repo.py`"),
@@ -90,8 +90,8 @@ STATUS: dict[str, tuple[str, str, str]] = {
     "R-10": ("DONE", "`docs/PORT-PLAN.md` + this matrix", "-"),
 
     # ---- E: everything editable ------------------------------------------
-    "E-01": ("DONE", "the `settings` table + `SettingsService` (122 keys) and the Settings page; nothing in the shop is hard-coded", "SettingsTests.*"),
-    "E-02": ("DONE", "branding keys (`store.*`, `brand.*`) edited on Settings -> Shop", "SettingsTests.*"),
+    "E-01": ("DONE", "the `settings` table + `SettingsService` and the Settings page; shop data stays editable, while D-96 fixes only the Area11 product title", "SettingsTests.*"),
+    "E-02": ("DONE", "store branding (`store.*`) remains editable for receipts; D-96 fixes the Area11 product title and retires the header app-name control", "SettingsTests.*"),
     "E-03": ("DONE", "`ReceiptService` prints `store.*` on every bill", "ReceiptTests.*"),
     "E-04": ("DONE", "`ProductService` + Products → Manage categories and companies: create, rename, two-level parents, order, soft put-away/restore and unlink-only product references; Core permissions and old/new audit; migration 026 orders companies", "CatalogTests.*"),
     "E-05": ("DONE", "`CustomFieldService` + SYSTEM → Own fields (F-42): text, number, amount, date, list, yes/no, photo", "CustomFieldTests"),

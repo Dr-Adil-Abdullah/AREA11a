@@ -60,19 +60,19 @@ features and the four phases.
 > v0.29.0 moved **F-12 (the dashboard)** to ✅ after giving it 20 tests; the mock database used for
 > them was rebuilt from all 23 migrations and every SQL statement was run on it before shipping.
 
-## Where we stand (v0.35.19 Spruce + current working tree)
+## Where we stand (v0.36.0 Zircon + current working tree)
 
 | Question | Number | What it means |
 |---|---|---|
 | Features in the board | **57** | **52 ✅ done (91.2%)**, **5 🟡 written but only the shop PC can prove them (8.8%)**, 0 ⬜ not started |
-| Code | **286 C# files**, **40 XAML files** | Windows build and xUnit passed on `94723e5`; WPF proof remains pending |
-| The shop's rules | **52 service files** in `Area11.Core`, **44 model files**, **37 business tables** over 28 migrations | migrations 027–028 add managed units, filter-only tags, descriptive strength and rename-safe whole-only rules without touching stock/history |
-| Screens | **38 views** including the managed-unit window | bindings are statically checked; WPF navigation and thumbnails still need owner proof |
-| Tests | **883 written cases** in 68 files | **883/883 owner-verified on Windows (`94723e5`, 1 m 19 s)** |
-| Static gates | **52 checks** in `tools/check_repo.py` | ~12 seconds; not a compiler - see the warning at the end |
+| Code | **287 C# files**, **40 XAML files** | Zircon static grammar passes; prior Windows build/xUnit passed on Spruce `94723e5`, current WPF proof pending |
+| The shop's rules | **52 service files** in `Area11.Core`, **44 model files**, **37 business tables** over 28 migrations | Phase-1 shell changes do not touch migrations, stock or history |
+| Screens | **38 views** including the managed-unit window | bindings are statically checked; Zircon navigation, Settings sections and category picker need owner proof |
+| Tests | **883 written cases** in 68 files | **883/883 owner-verified on prior Spruce (`94723e5`, 1 m 19 s)**; Zircon run pending |
+| Static gates | **53 checks** in `tools/check_repo.py` | ~12 seconds; not a compiler - see the warning at the end |
 | Reporting a fault | **one file** - `tools\SEND-REPORT.cmd` (v0.30.3, D-78) | build, SDK, git state, shop folder (no rows), whole crash report, last build/test output |
-| Versions shipped | 0.1.0 -> **0.35.19 Spruce** | current CAT/UNIT/PHOTO/NAV edits have no new release colour yet |
-| Owner decisions recorded | **D-00 … D-95** | `docs/OWNER-DECISIONS.md`, in Urdu |
+| Versions shipped | 0.1.0 -> **0.36.0 Zircon** | Phase-1 shell release colour `#3E5C76`; no later redesign phase started |
+| Owner decisions recorded | **D-00 … D-96** | `docs/OWNER-DECISIONS.md`, in Urdu |
 
 **What is actually left.** Nothing in the feature list is unbuilt, and as of v0.31.0 that sentence is
 true in the strict sense it was always meant: the last gap the *specification* admitted in its own text -
@@ -95,6 +95,18 @@ solution compiled with `0 Warning(s), 0 Error(s)`, the window opened, and `app-2
 `Signed in: Owner` at 13:53:31. **Each of the five closes the moment the owner does the thing once and
 says it worked.** The demo shop was removed on his word (D-77), so there is now one program and one set
 of books.
+
+---
+
+## Redesign Phase 1 - global shell and navigation (D-96 / v0.36.0 Zircon)
+
+| Area | State | Where | Verification / done when |
+|---|---|---|---|
+| Expanded dark header | **Code complete — physical pending** | `dotnet/Area11.Desktop/Views/ShellWindow.xaml`, `Resources/Theme.xaml` | Fixed Area11 only, no shop-name header or left sidebar; reusable header styles and compact page margins. Owner checks common desktop sizes and keyboard focus |
+| Modules and routes | **Code complete — physical pending** | `ViewModels/ShellViewModel.cs`, `NavItem.cs` | Permission-filtered primary modules, contextual pages, stable label keys, lazy `PageGuard` and existing drill-downs; every permitted page remains reachable and owner-only routes stay protected |
+| Settings sections | **Code complete — physical pending** | `HeaderMenuItem.cs`, `SettingsView.xaml`, `SettingsViewModel.cs` | Six existing sections are shell controls; `SelectedTabIndex` and unsaved section edits survive section switches, with no second in-content tab strip. System pages remain reachable while Settings is open |
+| Products category picker and alert action | **Code complete — physical pending** | `ProductsViewModel.cs`, `ShellViewModel.cs`, `ShellWindow.xaml` | Searchable/dropdown category filter is separate from the editor's category; put-away filters clear. The 44×44 bell retains count, three severities, tooltip and Alerts page |
+| Evidence | **53/53 static checks PASS** | `tools/check_repo.py`, `PHYSICAL-TESTING.md` PT-08 | 287 C# files parsed, 1,452 XAML bindings checked, 883-case inventory retained. **Not compiled or physically tested here:** owner must run Windows build, `ALL GREEN - 883 of 883`, and PT-08. Later redesign phases remain unauthorized |
 
 ---
 

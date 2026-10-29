@@ -39,14 +39,20 @@ four settings in Area11, then push / look / bring.
 Live counts are in [`docs/PROGRESS.md`](docs/PROGRESS.md) (features) and
 [`docs/RULES-MATRIX.md`](docs/RULES-MATRIX.md) (the owner's 116 numbered rules).
 
+**Current redesign source — v0.36.0 Zircon `#3E5C76`:** Phase 1 replaces the left sidebar with an expanded
+dark Area11 header: clickable permission-filtered modules, contextual pages, shell-owned Settings sections,
+a searchable Products category picker and a 44×44 alert bell. Existing routes, alerts, session/fault states
+and financial rules remain. **53/53 static checks pass; Windows build, xUnit and PT-08 WPF verification are
+still pending.** Later redesign phases are not authorized yet (D-96).
+
 **Honest note:** the agent's build machine is Linux with no .NET SDK, so nothing in `dotnet/` is
 compiled there. Every change is checked statically (C# parses, explicit usings, XAML, resources,
 every binding against its view model, every SQL statement against the real schema, every mapped
-column against its model, migrations executed on SQLite). The owner's Windows machine has built the
-current **v0.35.19 Spruce** source and verified **883/883 xUnit cases in 1 m 19 s** on `94723e5`.
-WPF walk-throughs, genuine transactions, isolated restore, real Excel and optional real-cloud proof
-remain separate; no old result is backfilled. See [`docs/VERSIONS.md`](docs/VERSIONS.md) for which
-build he has and [`PHYSICAL-TESTING.md`](PHYSICAL-TESTING.md) for the running evidence log.
+column against its model, migrations executed on SQLite). The owner's Windows machine built the prior
+**v0.35.19 Spruce** source and verified **883/883 xUnit cases in 1 m 19 s** on `94723e5`; that is not
+backfilled onto the current Zircon shell. WPF walk-throughs, genuine transactions, isolated restore,
+real Excel and optional real-cloud proof remain separate. See [`docs/VERSIONS.md`](docs/VERSIONS.md)
+for release history and [`PHYSICAL-TESTING.md`](PHYSICAL-TESTING.md) for the running evidence log.
 
 ---
 

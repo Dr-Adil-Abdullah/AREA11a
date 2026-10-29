@@ -42,7 +42,7 @@ Product, process and the owner's direct orders.
 | **U-07** | Whatever code, library, framework feature or repository already exists — use that. | ✅ done | Dapper, Microsoft.Data.Sqlite, WPF, xUnit | - | - |
 | **U-08** | Write as little code as possible. | 🔁 standing rule | one Compute() for quote+save, shared helpers | - | - |
 | **U-09** | Personal use — no license restriction (condition: mature code). | ✅ done | personal use, MIT-style dependencies only | - | - |
-| **U-10** | Everything must be editable — app name, logo, categories… nothing is final (see E). | ✅ done | `Services/SettingsService.cs` + the Settings page (122 keys) | - | - |
+| **U-10** | Everything must be editable — app name, logo, categories… nothing is final (see E). | ✅ done | `Services/SettingsService.cs` + editable shop/catalog data; the fixed Area11 product title is the D-96 exception | - | - |
 | **U-11** | A change made on the front end must automatically reach the back end/data (see S). | ✅ done | services write straight to SQLite, no second copy | - | - |
 | **U-12** | Every point is written numbered, so nothing is missed. | ✅ done | this matrix | - | - |
 | **U-13** | One link is enough: giving only the repository link must allow any new agent to understand what is done and what remains. HANDOFF.md and AGENTS.md are always kept current. (Order of 1 Oct 2026.) | ✅ done | HANDOFF.md + AGENTS.md + docs/PROGRESS.md + this file | `tools/check_repo.py` | - |
@@ -92,8 +92,8 @@ Nothing hard-coded; every label, price and rule from settings.
 
 | Rule | Requirement | State | Where it lives | Test | Phase |
 |---|---|---|---|---|---|
-| **E-01** | Nothing is hard-coded — everything comes from data/settings. | ✅ done | the `settings` table + `SettingsService` (122 keys) and the Settings page; nothing in the shop is hard-coded | SettingsTests.* | - |
-| **E-02** | Branding: app name, logo, colour/theme — changeable from Settings. | ✅ done | branding keys (`store.*`, `brand.*`) edited on Settings -> Shop | SettingsTests.* | - |
+| **E-01** | Nothing is hard-coded — everything comes from data/settings. | ✅ done | the `settings` table + `SettingsService` and the Settings page; shop data stays editable, while D-96 fixes only the Area11 product title | SettingsTests.* | - |
+| **E-02** | Branding: app name, logo, colour/theme — changeable from Settings. | ✅ done | store branding (`store.*`) remains editable for receipts; D-96 fixes the Area11 product title and retires the header app-name control | SettingsTests.* | - |
 | **E-03** | Shop information: name, address, phone, terms — printed on the receipt. | ✅ done | `ReceiptService` prints `store.*` on every bill | ReceiptTests.* | Phase 1 |
 | **E-04** | Categories: create, change, delete, order (unlimited + sub-categories). | ✅ done | `ProductService` + Products → Manage categories and companies: create, rename, two-level parents, order, soft put-away/restore and unlink-only product references; Core permissions and old/new audit; migration 026 orders companies | CatalogTests.* | - |
 | **E-05** | Custom fields: owner makes them — text / number / amount / photo (Spec §2.2). | ✅ done | `CustomFieldService` + SYSTEM → Own fields (F-42): text, number, amount, date, list, yes/no, photo | CustomFieldTests | Phase 4 |

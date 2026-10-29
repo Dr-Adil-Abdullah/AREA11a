@@ -3,14 +3,14 @@
                     xmlns:conv="clr-namespace:Area11.Desktop.Converters"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
-    <!-- ============ Palette (the owner can change the brand colour in Settings) ============ -->
+    <!-- ============ Palette (the release colour is fixed by BuildInfo) ============ -->
     <!-- Brand colour = THE COLOUR OF THIS VERSION (see Area11.Core/Utils/BuildInfo.cs and
          docs/VERSIONS.md). The owner tests every build on his own PC and finds the new one by its
          colour, so a code change is always shipped with a new colour. White text sits on these
          brushes - keep the shade at 4.5:1 or better against white. -->
-    <SolidColorBrush x:Key="BrandBrush" Color="#175E54" />
-    <SolidColorBrush x:Key="BrandDarkBrush" Color="#103F39" />
-    <SolidColorBrush x:Key="BrandSoftBrush" Color="#EAF4F1" />
+    <SolidColorBrush x:Key="BrandBrush" Color="#3E5C76" />
+    <SolidColorBrush x:Key="BrandDarkBrush" Color="#263B4D" />
+    <SolidColorBrush x:Key="BrandSoftBrush" Color="#EDF2F7" />
     <SolidColorBrush x:Key="CanvasBrush" Color="#F3F5F7" />
     <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF" />
     <SolidColorBrush x:Key="SidebarBrush" Color="#0F172A" />
@@ -163,8 +163,7 @@
         </Style.Triggers>
     </Style>
 
-    <!-- The shop name at the top of the sidebar: it LOOKS like text, it BEHAVES like a button
-         (D-50 - clicking it opens the shop settings). Same for the person's name at the bottom. -->
+    <!-- Quiet buttons on the dark shell: the fixed Area11 wordmark, current user and alert bell. -->
     <Style x:Key="SidebarBrandButton" TargetType="Button">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
@@ -189,40 +188,46 @@
         </Style.Triggers>
     </Style>
 
-    <!-- The bell. A toggle, because it opens and closes the same small panel. -->
-    <Style x:Key="BellButton" TargetType="ToggleButton">
-        <Setter Property="Cursor" Value="Hand" />
+    <!-- Shared dark-header button. ShellWindow adds the active-module/page/settings triggers;
+         keyboard focus remains visible and every target has comfortable counter-friendly height. -->
+    <Style x:Key="HeaderNavButton" TargetType="Button">
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Width" Value="34" />
-        <Setter Property="Height" Value="30" />
+        <Setter Property="Foreground" Value="#CBD5E1" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="12,9" />
+        <Setter Property="Margin" Value="2,1" />
+        <Setter Property="MinHeight" Value="38" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="ToggleButton">
-                    <Border x:Name="BellSurface" Background="{TemplateBinding Background}" CornerRadius="7"
-                            Padding="0">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                <ControlTemplate TargetType="Button">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="6" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          RecognizesAccessKey="True" />
                     </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="BellSurface" Property="Background"
-                                    Value="{StaticResource SidebarItemBrush}" />
-                        </Trigger>
-                        <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="BellSurface" Property="Background"
-                                    Value="{StaticResource BrandBrush}" />
-                        </Trigger>
-                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
-    </Style>
-
-    <!-- The small capital heading that groups menu rows ("SELL", "CUSTOMERS & SUPPLIERS"). -->
-    <Style x:Key="SidebarGroupHeader" TargetType="TextBlock">
-        <Setter Property="Foreground" Value="#64748B" />
-        <Setter Property="FontSize" Value="9.5" />
-        <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="Margin" Value="10,12,0,4" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource SidebarItemBrush}" />
+                <Setter Property="Foreground" Value="White" />
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter Property="BorderBrush" Value="#93C5FD" />
+                <Setter Property="BorderThickness" Value="1" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.45" />
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <!-- ============ Inputs ============ -->

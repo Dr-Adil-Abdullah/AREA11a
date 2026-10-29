@@ -3,7 +3,7 @@
 > **یہ فائل کیا ہے؟** مالک (ڈاکٹر عادل عبداللہ) کی ہر ہدایت، فیصلہ اور ترجیح یہاں نمبر کے ساتھ محفوظ ہوتی ہے۔
 > کوئی بات زبانی نہیں رہتی۔ نئی ہدایت = نیا نمبر۔ پرانی ہدایت کوئی ایجنٹ خاموشی سے نہیں بدل سکتا۔
 >
-> **آخری اپ ڈیٹ:** 27 اکتوبر 2026 · **ورژن:** v0.35.19 Spruce `#175E54` — owner-authorized physical-testing fixes کے ساتھ **883 written cases in 68 files** اور **52 static checks** ہیں؛ Windows xUnit **883/883** `94723e5` پر **1 منٹ 19 سیکنڈ** میں PASS ہے۔ D-95 میں CAT/NAV/UNIT/PHOTO اور counter/cash/alert decisions درج ہیں۔ PRICE-01 میں explicit discount full retail پر، special rate صرف Yes پر، No پر normal retail؛ SALE-01 میں optional Done/invoice/change card۔ D-93 stock اور PR cancellation کے same-batch stock-only/no-payment/no-financial-reversal قواعد برقرار ہیں۔ WPF، genuine physical، real Excel اور cloud verification الگ باقی ہیں۔
+> **آخری اپ ڈیٹ:** 29 اکتوبر 2026 · **ورژن:** v0.36.0 Zircon `#3E5C76` — Phase-1 global shell/navigation source کے ساتھ **883 written cases in 68 files** اور **53 static checks** ہیں۔ Windows xUnit **883/883** صرف پچھلے Spruce `94723e5` پر **1 منٹ 19 سیکنڈ** میں PASS ہے؛ Zircon کا Windows build، xUnit اور PT-08 WPF walk-through ابھی باقی ہے۔ D-96 میں fixed Area11 header، contextual navigation اور بعد کے phases کی اجازت نہ ہونے کا فیصلہ درج ہے۔ D-93 stock اور PR cancellation کے same-batch stock-only/no-payment/no-financial-reversal قواعد برقرار ہیں۔ WPF، genuine physical، real Excel اور cloud verification الگ باقی ہیں۔
 > **سند (Authority):** `AREA11-MASTER-SPEC.md` (37 حصے + Appendix A) — اور جہاں مالک نے بعد میں کوئی نیا حکم دیا، وہی چلے گا (Spec §1.2.2)۔
 
 ---
@@ -995,6 +995,29 @@ rules → Loyalty points** سے خود آن کرتا ہے، اور وہیں تی
 
 **دوبارہ نہ ہو:** Version اب **0.13.0 · Deep Sea `#0C4A6E`** ہے (پچھلا Mocha `#6B4F3A`)۔
 
+
+### D-96 — **Global shell اور navigation: صرف Phase 1 کی اجازت** (29 اکتوبر 2026)
+
+مالک نے موجودہ .NET 10 WPF ایپ میں **Phase 1 global shell/navigation** کی اجازت دی ہے؛ بعد کے phases ابھی
+منظور نہیں۔ یہ فیصلہ layout اور رسائی کے لیے ہے، مالیاتی یا stock rules بدلنے کے لیے نہیں۔
+
+1. اوپر expanded dark header میں product title صرف **Area11** ہوگا؛ shop name header میں نہیں، وہ receipt/settings
+   کا اپنا data رہے گا۔ Login اور window title بھی Area11 رہیں گے۔
+2. Primary modules clickable ہوں گے، active module کے pages contextual row میں ہوں گے، اور Settings کے چھ sections
+   header controls ہوں گے۔ Settings کے دوران System کے عام pages بھی دستیاب رہیں گے تاکہ کوئی route پھنس نہ جائے۔
+   بائیں sidebar اور اس کے folding controls ہٹائے جا رہے ہیں۔
+3. Alert bell تقریباً **44×44** ہوگا، لیکن موجودہ count، red/yellow/green severity، tooltip اور Alerts page behavior
+   برقرار رہے گا۔ Products کے لیے compact searchable/dropdown category/folder picker ہوگا؛ یہ product editor کے
+   category field سے الگ filter ہے۔
+4. Permissions، owner-only routes، stable page routes، user settings/sign-out، session warning، fault banner،
+   empty-page hints اور POS کے موجودہ steps محفوظ رہیں گے۔ Financial، stock، schema، printing، WhatsApp اور sync
+   logic میں تبدیلی نہیں۔
+5. ترتیب صرف **Phase 1 shell → Phase 2 field governance/schema → Phase 3 packaging/search → Phase 4 histories/profit
+   → Phase 5 Print/WhatsApp → Phase 6 offline-first sync** ہے؛ ہر اگلے phase کے لیے owner review لازم ہے۔
+
+**Evidence boundary:** Zircon source پر 53/53 static checks پاس ہیں؛ یہ compilation یا physical WPF proof نہیں۔
+مالک کے Windows پر build، **883/883** xUnit اور `PHYSICAL-TESTING.md` کا PT-08 walk-through باقی ہے۔ Spruce
+`94723e5` کا 883/883 نتیجہ تاریخی proof ہے، Zircon پر منتقل نہیں کیا گیا۔
 
 ### D-95 — **Physical-testing میں catalog، units، navigation، photos اور counter کے فیصلے** (27 اکتوبر 2026)
 
@@ -2550,6 +2573,7 @@ restart نہیں (Spec 8.4.3)۔
 
 | تاریخ | کیا |
 |---|---|
+| 29 اکتوبر 2026 | **D-96 / Phase-1 global shell — v0.36.0 Zircon `#3E5C76`**: fixed Area11 title، expanded dark header، clickable modules/contextual pages، header Settings sections، Products category picker، 44×44 bell اور user/version popup؛ sidebar/folding retired۔ Permissions، routes، alerts اور financial/stock/schema rules محفوظ؛ **53/53 static checks**، Windows build/xUnit/PT-08 pending۔ بعد کے phases غیر منظور۔ |
 | 27 اکتوبر 2026 | **D-95 / CAT-01, NAV-01, UNIT-01, PHOTO-01 source batch**: primary+filter tags، managed units، descriptive strength، rename-safe whole-only quantity rule (migration 028)، thumbnails/fallbacks اور filtered Dashboard/category/company drill-downs لکھے گئے۔ Box 10 × 50 mL = 10 injection units؛ mL strength ہے، stock division نہیں۔ **883 written cases in 68 files، 52 static checks؛ Windows xUnit 883/883 `94723e5` پر PASS**؛ WPF/genuine physical verification باقی، feature counts 52/5/0 برقرار۔ |
 | 27 اکتوبر 2026 | **Physical-testing repairs — v0.35.19 Spruce `#175E54`**: مالک کے «fix the things» authorization پر backup/shift/alert کے بعد PRICE-01/SALE-01 code۔ Explicit discount ہمیشہ full retail/selling-price total پر؛ پرانا margin mode inert، discount کے ساتھ special-rate stacking نہیں۔ Zero discount پر VIP/Doctor کے لیے Yes/No، default No = retail۔ Actual cart rate Owner/Manager custom override کے ساتھ، hold/resume پر محفوظ؛ cashier bypass اور below-cost lock کے ساتھ batch cost سے کم line مسترد۔ Successful commit کے بعد optional non-blocking Done/invoice/change card، الگ auto-print اور persisted Settings key۔ **877 written cases، 52 static checks**؛ Windows build/xUnit اور genuine-sale/isolated-restore verification باقی۔ Reported `AlertKindTests` scope error `aedb65d` میں fix۔ دوبارہ نہ ہو: کوئی test یا financial safeguard ہٹانے کے بجائے نئے regression cases؛ Obsidian کا 860/860 صرف پرانا owner-verified evidence ہے۔ |
 | 26 اکتوبر 2026 | **مالک کی حقیقی جانچ — v0.35.18 Obsidian `#27323A` مکمل کامیاب**: درست commit `cb2e321` پر **Failed 0، Passed 860، Skipped 0، Total 860، مدت 1 منٹ 17 سیکنڈ** اور runner کا **`ALL GREEN - 860 of 860`** نتیجہ آیا۔ موجودہ xUnit gate مکمل ہے؛ دونوں workbook fixture repairs اور محفوظ PR reconciliation repair اب owner-run میں ثابت ہیں۔ نتیجہ محفوظ کرنے پر کوئی code، test count، schema یا business rule نہیں بدلا۔ Real Excel، Z-05، E-12/S-05 اور optional real Supabase جانچ الگ باقی ہیں؛ انھیں green tests سے خودکار مکمل نہیں لکھا گیا۔ |

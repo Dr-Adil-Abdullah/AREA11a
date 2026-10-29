@@ -9,30 +9,41 @@
         Background="{StaticResource CanvasBrush}"
         PreviewMouseDown="OnActivity" PreviewKeyDown="OnActivity">
 
-    <!--
-        The frame as the owner drew it (D-51):
-
-          ┌───────────────────────────────────────────────────────────────┐
-          │ A · Area11 ................ [Shop name] (badge) ⋯ 🔔  (photo)│  <- 46px, small
-          ├───────────┬───────────────────────────────────────────────────┤
-          │ SELL    ▾ │                                                   │
-          │  Counter  │                 the page                          │
-          │  Returns  │                                                   │
-          │ ...       │                                                   │
-          │ (me) sign │                                                   │
-          └───────────┴───────────────────────────────────────────────────┘
-
-        · The word **Area11 is small**: it is a mark, not a title, so the header costs 46 pixels
-          instead of the 56 the previous version spent on a large one.
-        · The **shop name sits in the centre** and opens the shop's Settings page.
-        · The **bell sits beside the shop name**, showing how many alerts are live. It opens the
-          alerts page (no sliding panel over the work) and it is the only door to that page.
-        · The **signed-in person's photo is in the left bar**, at the bottom, beside the version
-          label. Clicking it opens their own menu: their settings and "Sign out".
-        · Every heading (SELL, STOCK ...) is a fold (D-51): one click puts its pages away and the
-          fold is remembered for the next start.
-    -->
+    <!-- Phase-1 frame: fixed Area11 wordmark, permission-filtered modules, a large top-right bell,
+         and one contextual row for module pages / Settings sections / Product categories. There is
+         no left sidebar. Existing page templates, alert state, session notice and fault cards stay. -->
     <Window.Resources>
+        <Style x:Key="ModuleButton" TargetType="Button" BasedOn="{StaticResource HeaderNavButton}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsCurrentModule}" Value="True">
+                    <Setter Property="Background" Value="{StaticResource BrandBrush}" />
+                    <Setter Property="Foreground" Value="White" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="ContextPageButton" TargetType="Button" BasedOn="{StaticResource HeaderNavButton}">
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="MinHeight" Value="32" />
+            <Setter Property="FontSize" Value="11.5" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsCurrentPage}" Value="True">
+                    <Setter Property="Background" Value="{StaticResource BrandBrush}" />
+                    <Setter Property="Foreground" Value="White" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="SettingsSectionButton" TargetType="Button" BasedOn="{StaticResource HeaderNavButton}">
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="MinHeight" Value="32" />
+            <Setter Property="FontSize" Value="11.5" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                    <Setter Property="Background" Value="{StaticResource BrandBrush}" />
+                    <Setter Property="Foreground" Value="White" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
         <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
             <views:DashboardView />
         </DataTemplate>
@@ -123,65 +134,88 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="46" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="176" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
 
-        <!-- ===================== Header (46 px, one line) ===================== -->
-        <Border Grid.Row="0" Grid.ColumnSpan="2" Background="{StaticResource SidebarBrush}">
-            <Grid Margin="12,0,12,0">
+        <!-- ===================== Main dark header ===================== -->
+        <Border Grid.Row="0" Background="{StaticResource SidebarBrush}">
+            <Grid Margin="14,5">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="176" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="176" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <!-- The wordmark. Small on purpose: the shop's name is what people recognise. -->
+                <!-- The application title is deliberately fixed: no shop name or editable alias. -->
                 <Button Grid.Column="0" Style="{StaticResource SidebarBrandButton}"
-                        Command="{Binding GoHomeCommand}" ToolTip="{DynamicResource AppLabel.dashboard}">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Width="24" Height="24" CornerRadius="6" Background="{StaticResource BrandBrush}">
-                            <TextBlock Text="A11" Foreground="White" FontSize="8.5" FontWeight="Bold"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <TextBlock Text="{Binding AppName}" Foreground="#E2E8F0" FontSize="12.5"
-                                   FontWeight="SemiBold" VerticalAlignment="Center" Margin="8,0,0,0" />
-                    </StackPanel>
+                        Command="{Binding GoHomeCommand}" ToolTip="{DynamicResource AppLabel.dashboard}"
+                        Padding="6,3" Margin="0,0,12,0" VerticalAlignment="Center"
+                        AutomationProperties.Name="Area11 - Dashboard">
+                    <TextBlock Text="Area11" Foreground="White" FontSize="22"
+                               FontWeight="Bold" VerticalAlignment="Center" />
                 </Button>
 
-                <!-- The shop name, in the middle, opening Settings. The bell sits right beside it,
-                     so "where am I" and "is anything wrong" are one glance and two clicks. -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center"
-                            VerticalAlignment="Center">
-                    <Button Style="{StaticResource SidebarBrandButton}"
-                            Padding="10,5"
-                            Command="{Binding OpenSettingsCommand}"
-                            IsEnabled="{Binding CanOpenSettings}"
-                            ToolTip="Shop settings">
-                        <TextBlock Text="{Binding StoreName}" Foreground="#F1F5F9" FontSize="12"
-                                   FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxWidth="330" />
+                <!-- Dashboard + permission-filtered module headings. WrapPanel keeps every module
+                     reachable on a narrower PC instead of clipping the row. -->
+                <ItemsControl Grid.Column="1" ItemsSource="{Binding ModuleItems}"
+                              VerticalAlignment="Center">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Style="{StaticResource ModuleButton}"
+                                    Content="{Binding Title}"
+                                    ToolTip="{Binding Tooltip}"
+                                    Command="{Binding DataContext.OpenModuleCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    CommandParameter="{Binding}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- The person precedes the bell, so Alerts remains the extreme top-right action. -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button x:Name="UserChip" Style="{StaticResource SidebarBrandButton}"
+                            Command="{Binding OpenUserMenuCommand}"
+                            HorizontalContentAlignment="Stretch" Padding="7,4" Margin="0,0,8,0"
+                            ToolTip="My settings and sign out"
+                            AutomationProperties.Name="Current user">
+                        <DockPanel>
+                            <Border DockPanel.Dock="Left" Width="30" Height="30" CornerRadius="15"
+                                    Background="{StaticResource BrandBrush}">
+                                <TextBlock Text="{Binding Initials}" Foreground="White" FontWeight="Bold"
+                                           FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <StackPanel Margin="7,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding UserName}" Foreground="White" FontSize="11.5"
+                                           FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxWidth="115" />
+                                <TextBlock Text="{Binding RoleText}" Foreground="#94A3B8" FontSize="9" />
+                            </StackPanel>
+                        </DockPanel>
                     </Button>
 
                     <Button x:Name="Bell" Command="{Binding OpenAlertsCommand}"
-                            ToolTip="{Binding BellSummaryText}" Margin="2,0,0,0">
+                            ToolTip="{Binding BellSummaryText}" Width="44" Height="44" Padding="0"
+                            VerticalAlignment="Center" HorizontalContentAlignment="Center"
+                            AutomationProperties.Name="Alerts"
+                            AutomationProperties.HelpText="{Binding BellSummaryText}">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource SidebarBrandButton}">
-                                <Setter Property="Padding" Value="5,4" />
+                                <Setter Property="Padding" Value="0" />
                                 <Style.Triggers>
-                                    <!-- Lit while the alerts page is open, so the bell says
-                                         "this is the page you are on" as well as "this is the door". -->
                                     <DataTrigger Binding="{Binding IsShowingAlerts}" Value="True">
                                         <Setter Property="Background" Value="{StaticResource BrandBrush}" />
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </Button.Style>
-                        <Grid Width="26" Height="22">
-                            <TextBlock Text="&#xE7ED;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                        <Grid Width="34" Height="34">
+                            <TextBlock Text="&#xE7ED;" FontFamily="Segoe MDL2 Assets" FontSize="22"
                                        HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
@@ -200,11 +234,8 @@
                                     </Style>
                                 </TextBlock.Style>
                             </TextBlock>
-                            <!-- Light chip, dark figure: readable on the dark bar AND on the brand
-                                 colour (a dark red chip would disappear into the brand brush). -->
-                            <Border CornerRadius="7" MinWidth="14" Height="14" Padding="3,0"
-                                    HorizontalAlignment="Right" VerticalAlignment="Top"
-                                    Margin="0,-5,-6,0"
+                            <Border CornerRadius="9" MinWidth="18" Height="18" Padding="4,0"
+                                    HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-1,-2,0"
                                     Visibility="{Binding HasBellAlerts, Converter={StaticResource BoolToVis}}">
                                 <Border.Style>
                                     <Style TargetType="Border">
@@ -222,178 +253,94 @@
                                         </Style.Triggers>
                                     </Style>
                                 </Border.Style>
-                                <TextBlock Text="{Binding BellBadgeText}" Foreground="#111827" FontSize="8.5"
+                                <TextBlock Text="{Binding BellBadgeText}" Foreground="#111827" FontSize="9.5"
                                            FontWeight="Bold" HorizontalAlignment="Center"
                                            VerticalAlignment="Center" />
                             </Border>
                         </Grid>
                     </Button>
-                    <!-- The session warning (v0.35.0, D-92). Amber on the dark bar, and it says which
-                         clock it is: touching the counter postpones the idle limit and does nothing
-                         about the 12-hour one. -->
-                    <TextBlock Text="{Binding SessionNotice}" Foreground="#FCD34D" FontSize="11"
-                               VerticalAlignment="Center" Margin="10,0,0,0" MaxWidth="380"
-                               TextWrapping="Wrap"
-                               Visibility="{Binding HasSessionNotice, Converter={StaticResource BoolToVis}}" />
                 </StackPanel>
-
-                <!-- The right third is left empty on purpose: the signed-in person lives in the
-                     left bar now (D-51), and an empty third keeps the shop name in the true centre
-                     instead of being pushed right by a row of icons. -->
             </Grid>
         </Border>
 
-        <!-- ===================== Sidebar ===================== -->
-        <Border Grid.Row="1" Grid.Column="0" Background="{StaticResource SidebarBrush}">
-            <Grid Margin="10,8,10,10">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
+        <!-- ===================== Contextual dark header ===================== -->
+        <Border Grid.Row="1" Background="#111C30" BorderBrush="#263449" BorderThickness="0,0,0,1"
+                Padding="12,3" Visibility="{Binding HasContextNavigation, Converter={StaticResource BoolToVis}}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-                <ListBox Grid.Row="0"
-                         ItemsSource="{Binding NavItems}"
-                         SelectedItem="{Binding SelectedNav, Mode=TwoWay}"
-                         Background="Transparent"
-                         BorderThickness="0"
-                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                         ScrollViewer.VerticalScrollBarVisibility="Auto">
-                    <ListBox.ItemContainerStyle>
-                        <Style TargetType="ListBoxItem">
-                            <!-- A folded row is hidden, never removed: a rebuilt list loses the
-                                 selected row, and with it the page the operator is reading. -->
-                            <Setter Property="Visibility"
-                                    Value="{Binding IsVisible, Converter={StaticResource BoolToVis}}" />
-                            <Setter Property="Padding" Value="9,6" />
-                            <Setter Property="Margin" Value="0,1" />
-                            <Setter Property="Foreground" Value="#E2E8F0" />
-                            <Setter Property="Cursor" Value="Hand" />
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="ListBoxItem">
-                                        <Border x:Name="ItemBackground" Background="Transparent" CornerRadius="6"
-                                                Padding="{TemplateBinding Padding}">
-                                            <ContentPresenter />
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="ItemBackground" Property="Background"
-                                                        Value="{StaticResource SidebarItemBrush}" />
-                                            </Trigger>
-                                            <Trigger Property="IsSelected" Value="True">
-                                                <Setter TargetName="ItemBackground" Property="Background"
-                                                        Value="{StaticResource BrandBrush}" />
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsHeader}" Value="True">
-                                    <!-- The heading's own padding moves inside the button (below), so
-                                         the button covers the whole row and every pixel of it folds
-                                         the group. The item itself must stay hit-testable or the
-                                         button inside it would stop receiving clicks too. -->
-                                    <Setter Property="Padding" Value="0" />
-                                    <Setter Property="Focusable" Value="False" />
-                                    <Setter Property="Cursor" Value="Arrow" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ListBox.ItemContainerStyle>
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <Grid>
-                                <!-- A page: its title only. The subtitle is the tooltip, so the menu
-                                     stays one line high inside 176 pixels. -->
-                                <TextBlock Text="{Binding Title}" FontSize="12" FontWeight="SemiBold"
-                                           TextTrimming="CharacterEllipsis"
-                                           ToolTip="{Binding Tooltip}"
-                                           Visibility="{Binding IsPage, Converter={StaticResource BoolToVis}}" />
+                <StackPanel Grid.Column="0">
+                    <ItemsControl ItemsSource="{Binding SubNavItems}"
+                                  Visibility="{Binding HasSubNavigation, Converter={StaticResource BoolToVis}}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource ContextPageButton}"
+                                        Content="{Binding Title}" ToolTip="{Binding Tooltip}"
+                                        Command="{Binding DataContext.OpenPageCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
 
-                                <!-- A heading: the row is a button that folds its pages. It never
-                                     opens a page. -->
-                                <Button Style="{StaticResource SidebarBrandButton}"
-                                        Padding="9,6"
-                                        IsEnabled="{Binding DataContext.CanFoldMenu,
-                                                    RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                        HorizontalAlignment="Stretch"
-                                        HorizontalContentAlignment="Stretch"
-                                        Command="{Binding DataContext.ToggleGroupCommand,
-                                                  RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                        CommandParameter="{Binding}"
-                                        Visibility="{Binding IsHeader, Converter={StaticResource BoolToVis}}">
-                                    <Button.ToolTip>
-                                        <TextBlock Text="Click to put these pages away (Settings can keep every group open)" />
-                                    </Button.ToolTip>
-                                    <DockPanel>
-                                        <TextBlock DockPanel.Dock="Left" Text="{Binding Chevron}"
-                                                   FontSize="8" Foreground="#94A3B8"
-                                                   VerticalAlignment="Center" Margin="0,1,6,0" />
-                                        <TextBlock Text="{Binding Title}" FontSize="9.5"
-                                                   FontWeight="SemiBold" Foreground="#94A3B8"
-                                                   VerticalAlignment="Center"
-                                                   TextTrimming="CharacterEllipsis" />
-                                    </DockPanel>
-                                </Button>
-                            </Grid>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-
-                <StackPanel Grid.Row="1" Margin="0,8,0,0">
-                    <!-- The person: photo, name, role - and the way out of the app. -->
-                    <Button x:Name="UserChip"
-                            Style="{StaticResource SidebarBrandButton}"
-                            Command="{Binding OpenUserMenuCommand}"
-                            HorizontalContentAlignment="Stretch"
-                            Padding="6,6"
-                            ToolTip="My settings and sign out">
-                        <DockPanel>
-                            <Border DockPanel.Dock="Left" Width="26" Height="26" CornerRadius="13"
-                                    Background="{StaticResource BrandBrush}">
-                                <TextBlock Text="{Binding Initials}" Foreground="White" FontWeight="Bold"
-                                           FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </Border>
-                            <StackPanel Margin="7,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding UserName}" Foreground="White" FontSize="11.5"
-                                           FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                                <TextBlock Text="{Binding RoleText}" Foreground="#94A3B8" FontSize="9" />
-                            </StackPanel>
-                        </DockPanel>
-                    </Button>
-
-                    <TextBlock Text="{x:Static utils:BuildInfo.Label}" Foreground="#64748B" FontSize="9"
-                               Margin="2,6,0,0" />
+                    <!-- Settings keeps its existing six contents, but their clickable section controls
+                         live here rather than consuming a second in-content tab strip. The ordinary
+                         SYSTEM destinations stay above this row so Settings never traps navigation. -->
+                    <ItemsControl ItemsSource="{Binding SettingsTabItems}" Margin="0,3,0,0"
+                                  Visibility="{Binding IsShowingSettings, Converter={StaticResource BoolToVis}}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource SettingsSectionButton}"
+                                        Content="{Binding Title}" ToolTip="{Binding Title}"
+                                        Command="{Binding DataContext.OpenSettingsTabCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                 </StackPanel>
+
+                <!-- Type-ahead category/folder picker. Its id drives the existing Products filter;
+                     the product editor's SelectedCategory is deliberately not bound here. -->
+                <ComboBox Grid.Column="1" ItemsSource="{Binding ProductCategories}"
+                          SelectedItem="{Binding SelectedProductCategory, Mode=TwoWay}"
+                          DisplayMemberPath="DisplayName"
+                          IsTextSearchEnabled="True" TextSearch.TextPath="DisplayName"
+                          Width="250" Height="34" Margin="10,2,0,2"
+                          Background="#F8FAFC" Foreground="{StaticResource TextBrush}"
+                          HorizontalAlignment="Right" VerticalAlignment="Center"
+                          ToolTip="Product folder / category - type letters to find one"
+                          Visibility="{Binding IsShowingProducts, Converter={StaticResource BoolToVis}}"
+                          AutomationProperties.Name="Product category filter" />
             </Grid>
+        </Border>
+
+        <!-- Session warnings stay visible without displacing Alerts from the top-right. -->
+        <Border Grid.Row="2" Background="{StaticResource SidebarBrush}" Padding="16,0,16,8"
+                Visibility="{Binding HasSessionNotice, Converter={StaticResource BoolToVis}}">
+            <TextBlock Text="{Binding SessionNotice}" Foreground="#FCD34D" FontSize="11.5"
+                       TextWrapping="Wrap" />
         </Border>
 
         <!-- ===================== The page ===================== -->
-        <!--
-            The page, and under it one sentence explaining an empty one (v0.33.0, D-89).
-
-            Why here and not in every view: the frame already knows which page is on the screen, and
-            the page already knows why it is empty. Putting the sentence in twenty-six views would
-            mean twenty-six chances to forget it; here it is one card, drawn from the page's own
-            answer, and a page that has rows leaves it collapsed with nothing to hide.
-        -->
-        <Grid Grid.Row="1" Grid.Column="1" Margin="20,16,20,18">
+        <Grid Grid.Row="3" Margin="14,12,14,14">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!--
-                One failed button, said out loud, without touching the page (v0.34.0, D-90).
-
-                Why a thin line and not a box: a message box stops the till and has to be dismissed
-                before the next customer is billed, and it teaches the operator to click OK without
-                reading. This line names the button, says the page is still open, names the report
-                file, and goes away with one click - the work underneath is never rebuilt, so a
-                half-typed bill survives the failure.
-            -->
             <Border Grid.Row="0" Background="{StaticResource DangerSoftBrush}"
                     BorderBrush="{StaticResource DangerBrush}" BorderThickness="1"
                     CornerRadius="8" Padding="12,8" Margin="0,0,0,10"
@@ -427,12 +374,9 @@
 
         <!-- ===================== The person's own menu ===================== -->
         <Popup IsOpen="{Binding UserMenuOpen, Mode=TwoWay}"
-               StaysOpen="False"
-               AllowsTransparency="True"
-               Placement="Top"
-               PlacementTarget="{Binding ElementName=UserChip}"
-               VerticalOffset="-4"
-               PopupAnimation="Fade">
+               StaysOpen="False" AllowsTransparency="True"
+               Placement="Bottom" PlacementTarget="{Binding ElementName=UserChip}"
+               VerticalOffset="6" PopupAnimation="Fade">
             <Border Background="{StaticResource SurfaceBrush}" CornerRadius="10"
                     BorderBrush="{StaticResource LineBrush}" BorderThickness="1"
                     Padding="12" Width="220">
@@ -449,15 +393,12 @@
                         </Border>
                         <StackPanel Margin="8,0,0,0" VerticalAlignment="Center">
                             <TextBlock Text="{Binding UserName}" FontSize="12" FontWeight="SemiBold"
-                                       Foreground="{StaticResource TextBrush}"
-                                       TextTrimming="CharacterEllipsis" />
+                                       Foreground="{StaticResource TextBrush}" TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="{Binding RoleText}" FontSize="10"
                                        Foreground="{StaticResource MutedBrush}" />
                         </StackPanel>
                     </DockPanel>
 
-                    <!-- A fixed width, because the shared ghost template centres its content: with
-                         the button exactly as wide as the card's inner column, the words sit left. -->
                     <Button Style="{StaticResource GhostButton}"
                             Width="196" HorizontalAlignment="Left"
                             Padding="9,6" Margin="0,0,0,6"
@@ -468,12 +409,14 @@
 
                     <Button Style="{StaticResource GhostButton}"
                             Width="196" HorizontalAlignment="Left"
-                            Padding="9,6"
-                            Foreground="{StaticResource DangerBrush}"
+                            Padding="9,6" Foreground="{StaticResource DangerBrush}"
                             BorderBrush="{StaticResource DangerBrush}"
                             Command="{Binding LogoutCommand}">
                         <TextBlock Text="Sign out" />
                     </Button>
+
+                    <TextBlock Text="{x:Static utils:BuildInfo.Label}" Foreground="{StaticResource MutedBrush}"
+                               FontSize="9" Margin="2,10,0,0" />
                 </StackPanel>
             </Border>
         </Popup>

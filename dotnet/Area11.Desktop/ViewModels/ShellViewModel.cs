@@ -8,21 +8,15 @@ using Area11.Core.Utils;
 namespace Area11.Desktop.ViewModels;
 
 /// <summary>
-/// The window frame (D-51): a **46-pixel bar across the top** and a 176-pixel menu on the left.
+/// The window frame for the Phase-1 shell: one expanded dark header and no left sidebar.
 ///
-/// The bar carries exactly three things, because the owner counted the cost of every extra pixel:
-///   • **Area11, small**, top left - a mark, not a title; a click goes back to the Dashboard;
-///   • the **shop name in the centre** - a click opens Settings, Shop tab;
-///   • the **bell beside it** - the live count and the only door to the alerts page.
+/// The first row carries only the fixed **Area11** wordmark, permission-filtered modules, the signed-
+/// in person and a large bell at the top-right. The second row is contextual: it shows the open
+/// module's pages, Settings sections when Settings is open, and the category picker on Products.
+/// The shop name remains receipt/settings data, not a second application title.
 ///
-/// Everything else moved down into the left bar: the **signed-in person** (photo, name, role) at the
-/// bottom with their own menu (settings, sign out), and the menu itself, grouped under five headings.
-/// Each heading is a fold: one click puts its pages away and the choice is remembered next morning.
-///
-/// The menu is built from the permissions of the signed-in person, but hiding a menu is never the
-/// security - every service checks the permission again (Spec 7.2.5).
-///
-/// Folding hides rows; it never removes a page, a permission or the page already on the screen.
+/// Navigation still uses the same stable label keys, lazy page factories and PageGuard path. Hiding
+/// a module is never the security boundary - every service checks permission again (Spec 7.2.5).
 /// </summary>
 public sealed class ShellViewModel : ObservableObject
 {
@@ -32,15 +26,12 @@ public sealed class ShellViewModel : ObservableObject
 
     private NavItem? _selectedNav;
     private ObservableObject? _currentViewModel;
-    private string _storeName = string.Empty;
-    private string _appName = string.Empty;
     private SettingsViewModel? _settingsPage;
     private AlertsViewModel? _alertsPage;
     private bool _isShowingAlerts;
     private string _currentPageTitle = string.Empty;
     private bool _showingDrawingFault;
     private bool _userMenuOpen;
-    private bool _menuPinned;
     private bool _hasBellAlerts;
     private AlertSeverity _bellSeverity = AlertSeverity.None;
     private string _bellBadgeText = string.Empty;
@@ -49,21 +40,21 @@ public sealed class ShellViewModel : ObservableObject
     private bool _hasFaultBanner;
     private readonly DispatcherTimer _sessionTimer;
     private string _sessionNotice = string.Empty;
+    private HeaderCategoryItem? _selectedProductCategory;
+    private bool _syncingProductCategory;
 
     public ShellViewModel(AppServices services, User user)
     {
         _services = services;
         _user = user;
 
-        StoreName = services.Settings.GetString("store.name");
-        AppName = services.Settings.GetString("brand.appName");
-
         LogoutCommand = new RelayCommand(Logout);
-        OpenSettingsCommand = new RelayCommand(() => ShowSettings(0));
         OpenOwnerSettingsCommand = new RelayCommand(() => ShowSettings(4));
         OpenAlertsCommand = new RelayCommand(ShowAlerts);
         GoHomeCommand = new RelayCommand(GoHome);
-        ToggleGroupCommand = new RelayCommand<NavItem>(ToggleGroup);
+        OpenModuleCommand = new RelayCommand<NavItem>(OpenModule);
+        OpenPageCommand = new RelayCommand<NavItem>(OpenContextPage);
+        OpenSettingsTabCommand = new RelayCommand<SettingsTabItem>(OpenSettingsTab);
         OpenUserMenuCommand = new RelayCommand(() => UserMenuOpen = true);
         CloseUserMenuCommand = new RelayCommand(() => UserMenuOpen = false);
         DismissFaultCommand = new RelayCommand(DismissFault);
@@ -73,6 +64,7 @@ public sealed class ShellViewModel : ObservableObject
         // that closes must not keep answering for a shell nobody is looking at.
         CommandGuard.Failed += OnCommandFailed;
 
+        BuildSettingsTabs();
         BuildNavigation();
         RefreshAlerts();
 
@@ -222,11 +214,22 @@ public sealed class ShellViewModel : ObservableObject
         HasFaultBanner = false;
     }
 
+    /// <summary>Every permitted destination, retained for stable-key navigation and existing drill-downs.</summary>
     public ObservableCollection<NavItem> NavItems { get; } = new();
 
-    public RelayCommand LogoutCommand { get; }
+    /// <summary>Dashboard plus the visible module headings in the top row.</summary>
+    public ObservableCollection<NavItem> ModuleItems { get; } = new();
 
-    public RelayCommand OpenSettingsCommand { get; }
+    /// <summary>Pages belonging to the open module in the contextual second row.</summary>
+    public ObservableCollection<NavItem> SubNavItems { get; } = new();
+
+    /// <summary>The six existing Settings sections, presented by the shell instead of a tab strip.</summary>
+    public ObservableCollection<SettingsTabItem> SettingsTabItems { get; } = new();
+
+    /// <summary>All/categories for the open Products page; the id is the only filter identity.</summary>
+    public ObservableCollection<HeaderCategoryItem> ProductCategories { get; } = new();
+
+    public RelayCommand LogoutCommand { get; }
 
     public RelayCommand OpenOwnerSettingsCommand { get; }
 
@@ -236,8 +239,14 @@ public sealed class ShellViewModel : ObservableObject
     /// <summary>The small logo: back to the dashboard from anywhere.</summary>
     public RelayCommand GoHomeCommand { get; }
 
-    /// <summary>Takes the clicked heading as its parameter and puts its pages away or back.</summary>
-    public ICommand ToggleGroupCommand { get; }
+    /// <summary>Opens a module's current page, or its first page when entering that module.</summary>
+    public ICommand OpenModuleCommand { get; }
+
+    /// <summary>Opens the clicked contextual page through the same guarded SelectedNav route.</summary>
+    public ICommand OpenPageCommand { get; }
+
+    /// <summary>Opens Settings and selects the clicked existing Settings section.</summary>
+    public ICommand OpenSettingsTabCommand { get; }
 
     public RelayCommand OpenUserMenuCommand { get; }
 
@@ -247,8 +256,25 @@ public sealed class ShellViewModel : ObservableObject
     public bool IsShowingAlerts
     {
         get => _isShowingAlerts;
-        private set => SetProperty(ref _isShowingAlerts, value);
+        private set
+        {
+            if (SetProperty(ref _isShowingAlerts, value))
+            {
+                NotifyContextVisibility();
+            }
+        }
     }
+
+    public bool IsShowingSettings =>
+        !IsShowingAlerts && string.Equals(_selectedNav?.LabelKey, "settings", StringComparison.Ordinal);
+
+    public bool IsShowingProducts =>
+        !IsShowingAlerts && CurrentViewModel is ProductsViewModel
+        && string.Equals(_selectedNav?.LabelKey, "products", StringComparison.Ordinal);
+
+    public bool HasSubNavigation => SubNavItems.Count > 0 && !IsShowingAlerts;
+
+    public bool HasContextNavigation => HasSubNavigation || IsShowingSettings;
 
     /// <summary>True while the small "me" menu (settings / sign out) is open.</summary>
     public bool UserMenuOpen
@@ -285,18 +311,6 @@ public sealed class ShellViewModel : ObservableObject
         private set => SetProperty(ref _bellSummaryText, value);
     }
 
-    public string StoreName
-    {
-        get => _storeName;
-        private set => SetProperty(ref _storeName, value);
-    }
-
-    public string AppName
-    {
-        get => _appName;
-        private set => SetProperty(ref _appName, value);
-    }
-
     public string UserName => _user.Name;
 
     public string RoleText => _user.RoleLabel;
@@ -314,15 +328,34 @@ public sealed class ShellViewModel : ObservableObject
         _services.Permissions.Can(_user, Modules.Settings)
         || _services.Permissions.Can(_user, Modules.Staff);
 
-    /// <summary>False while the owner has ticked "keep every group open" in Settings (D-51).</summary>
-    public bool CanFoldMenu => !_menuPinned;
+    /// <summary>
+    /// The header category choice. Collection refreshes set the backing field under a guard so WPF
+    /// cannot accidentally clear a real filter while the dropdown is being rebuilt.
+    /// </summary>
+    public HeaderCategoryItem? SelectedProductCategory
+    {
+        get => _selectedProductCategory;
+        set
+        {
+            if (!SetProperty(ref _selectedProductCategory, value)
+                || _syncingProductCategory || value is null)
+            {
+                return;
+            }
+
+            if (CurrentViewModel is ProductsViewModel products)
+            {
+                products.ApplyFilter(categoryId: value.Id);
+            }
+        }
+    }
 
     public NavItem? SelectedNav
     {
         get => _selectedNav;
         set
         {
-            // A heading is not a page: its row toggles the fold instead of opening anything.
+            // A module heading is not a page: only a concrete page can become the selection.
             if (value is { IsHeader: true })
             {
                 return;
@@ -334,6 +367,7 @@ public sealed class ShellViewModel : ObservableObject
             }
 
             IsShowingAlerts = false;
+            UpdateHeaderNavigation();
             CurrentViewModel = value is null ? null : OpenPage(value);
 
             // Move around the app and the bell refreshes itself; no timer, no background thread.
@@ -365,6 +399,11 @@ public sealed class ShellViewModel : ObservableObject
                 {
                     oldCounter.OpenShiftRequested -= GoToShift;
                 }
+
+                if (previous is ProductsViewModel oldProducts)
+                {
+                    oldProducts.Categories.CollectionChanged -= OnProductCategoriesChanged;
+                }
             }
 
             if (value is not null)
@@ -372,6 +411,22 @@ public sealed class ShellViewModel : ObservableObject
                 value.PropertyChanged += OnPageChanged;
             }
 
+            if (value is ProductsViewModel products)
+            {
+                products.Categories.CollectionChanged += OnProductCategoriesChanged;
+                RebuildProductCategories(products);
+            }
+            else
+            {
+                ClearProductCategories();
+            }
+
+            if (value is SettingsViewModel)
+            {
+                SyncSettingsTabSelection();
+            }
+
+            OnPropertyChanged(nameof(IsShowingProducts));
             OnPropertyChanged(nameof(EmptyHint));
         }
     }
@@ -397,8 +452,22 @@ public sealed class ShellViewModel : ObservableObject
     }
 
     /// <summary>A page changed something - a search, a save, a list reloaded - so ask it again.</summary>
-    private void OnPageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) =>
+    private void OnPageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (sender is SettingsViewModel && e.PropertyName == nameof(SettingsViewModel.SelectedTabIndex))
+        {
+            SyncSettingsTabSelection();
+        }
+
+        if (sender is ProductsViewModel
+            && (e.PropertyName == nameof(ProductsViewModel.FilterText)
+                || e.PropertyName == nameof(ProductsViewModel.CategoryFilterId)))
+        {
+            SyncSelectedProductCategory();
+        }
+
         OnPropertyChanged(nameof(EmptyHint));
+    }
 
     /// <summary>
     /// The menu, short and grouped. Only the owner sees the owner's pages, and a heading is drawn
@@ -438,10 +507,13 @@ public sealed class ShellViewModel : ObservableObject
         // the owner grants one person at a time (F-48, D-66).
         var canSync = _services.Cloud.CanSync(_user);
 
-        NavItems.Add(new NavItem(_services.AppLabels.Get("dashboard"), "Today at a glance", () => new DashboardViewModel(_services, _user, NavigateDashboard))
+        var dashboard = new NavItem(_services.AppLabels.Get("dashboard"), "Today at a glance",
+            () => new DashboardViewModel(_services, _user, NavigateDashboard))
         {
             LabelKey = "dashboard"
-        });
+        };
+        NavItems.Add(dashboard);
+        ModuleItems.Add(dashboard);
 
         // ---- SELL: the counter and what comes back from it ----
         if (canSell || canReturn || canBills)
@@ -607,7 +679,6 @@ public sealed class ShellViewModel : ObservableObject
         }
 
         RefreshLabels();
-        ApplyMenuState();
     }
 
     /// <summary>Applies the saved words without rebuilding pages, selections or open windows.</summary>
@@ -616,6 +687,11 @@ public sealed class ShellViewModel : ObservableObject
         foreach (var item in NavItems.Where(item => item.LabelKey.Length > 0))
         {
             item.SetTitle(_services.AppLabels.Get(item.LabelKey));
+        }
+
+        foreach (var tab in SettingsTabItems.Where(item => item.LabelKey.Length > 0))
+        {
+            tab.SetTitle(_services.AppLabels.Get(tab.LabelKey));
         }
 
         // Fault cards and the run trail must follow the same visible page without using that text
@@ -630,34 +706,27 @@ public sealed class ShellViewModel : ObservableObject
         }
     }
 
-    /// <summary>
-    /// Reads what the menu should look like: either the owner's tick says "always open", or each
-    /// group comes back the way it was left. The state lives in the settings table, so it survives a
-    /// restart - and a cashier's fold on the till never travels to the owner's laptop.
-    /// </summary>
-    private void ApplyMenuState()
+    /// <summary>The existing six Settings tab indices, now acted on by the shell header.</summary>
+    private void BuildSettingsTabs()
     {
-        _menuPinned = _services.Settings.GetBool("menu.pinnedOpen");
-
-        var folded = _menuPinned
-            ? new List<string>()
-            : _services.Settings.GetList<string>("menu.collapsedGroups");
-
-        foreach (var group in _groups)
-        {
-            SetCollapsed(group, folded.Contains(group.Key, StringComparer.Ordinal));
-        }
+        SettingsTabItems.Add(new SettingsTabItem(0, "Shop"));
+        SettingsTabItems.Add(new SettingsTabItem(1, "Printing"));
+        SettingsTabItems.Add(new SettingsTabItem(2, "Sales rules"));
+        SettingsTabItems.Add(new SettingsTabItem(3, _services.AppLabels.Get("cloud"), "cloud"));
+        SettingsTabItems.Add(new SettingsTabItem(4, "Staff & permissions"));
+        SettingsTabItems.Add(new SettingsTabItem(5, "App words"));
     }
 
-    /// <summary>Adds a foldable heading. It is only created when a page follows it (see BuildNavigation).</summary>
+    /// <summary>Adds a top-row module heading only when at least one permitted page follows it.</summary>
     private void AddGroup(string key)
     {
         var header = NavItem.Header(_services.AppLabels.Get(key));
         header.GroupKey = key;
         header.LabelKey = key;
 
-        _groups.Add(new NavGroup(key, header));
+        _groups.Add(new NavGroup(key));
         NavItems.Add(header);
+        ModuleItems.Add(header);
     }
 
     /// <summary>Adds one page under an existing heading; display text never identifies the page.</summary>
@@ -755,53 +824,177 @@ public sealed class ShellViewModel : ObservableObject
         CrashLog.Write("opening the " + pageTitle + " page", exception,
             "The page could not be opened. The rest of the program kept working.");
 
-    /// <summary>
-    /// Opens or closes a heading. The rows are hidden, not removed: rebuilding the list would drop
-    /// the selected row (and with it the page the operator is reading).
-    ///
-    /// A page that disappears into a fold stays where it is - the operator asked to tidy the menu,
-    /// not to be thrown off the screen.
-    /// </summary>
-    private void ToggleGroup(NavItem? header)
+    /// <summary>Opens a top-row module without discarding the page already open inside it.</summary>
+    private void OpenModule(NavItem? module)
     {
-        if (header is null || !header.IsHeader)
+        if (module is null)
         {
             return;
         }
 
-        var group = _groups.FirstOrDefault(item => item.Key == header.GroupKey);
+        if (module.IsPage)
+        {
+            SelectedNav = module;
+            return;
+        }
 
-        // The owner's tick wins over a stray click: with "keep every group open" the headings are
-        // furniture, not buttons.
-        if (group is null || _menuPinned)
+        var group = _groups.FirstOrDefault(item => item.Key == module.GroupKey);
+        if (group is null || group.Pages.Count == 0)
         {
             return;
         }
 
-        SetCollapsed(group, !header.IsCollapsed);
-        SaveMenuState();
+        var current = _selectedNav is { IsPage: true } page
+                      && string.Equals(page.GroupKey, module.GroupKey, StringComparison.Ordinal)
+            ? _selectedNav
+            : null;
+
+        SelectedNav = current ?? group.Pages[0];
+    }
+
+    private void OpenContextPage(NavItem? page)
+    {
+        if (page is { IsPage: true })
+        {
+            SelectedNav = page;
+        }
+    }
+
+    private void OpenSettingsTab(SettingsTabItem? tab)
+    {
+        if (tab is not null)
+        {
+            ShowSettings(tab.Index);
+        }
     }
 
     /// <summary>
-    /// Remembers the folds. It goes in by the quiet door (<c>SetUiOnly</c>): folding the menu is not a
-    /// business change, and it must not fill the black box.
+    /// Keeps the two header rows on the same stable navigation state. Collection changes never open
+    /// a page; only an explicit button/command or an existing drill-down can do that.
     /// </summary>
-    private void SaveMenuState()
+    private void UpdateHeaderNavigation()
     {
-        var folded = _groups.Where(group => group.Header.IsCollapsed)
-            .Select(group => group.Key)
-            .ToList();
+        var selected = _selectedNav;
 
-        _services.Settings.SetUiOnly("menu.collapsedGroups", folded);
+        foreach (var module in ModuleItems)
+        {
+            module.IsCurrentModule = selected is not null
+                                     && (module.IsPage
+                                         ? ReferenceEquals(module, selected)
+                                         : selected.IsPage && string.Equals(
+                                             selected.GroupKey, module.GroupKey, StringComparison.Ordinal));
+        }
+
+        foreach (var page in NavItems.Where(item => item.IsPage))
+        {
+            page.IsCurrentPage = ReferenceEquals(page, selected);
+        }
+
+        var group = selected is { IsPage: true }
+            ? _groups.FirstOrDefault(item => item.Key == selected.GroupKey)
+            : null;
+
+        SubNavItems.Clear();
+        if (group is not null)
+        {
+            // Keep the module's ordinary pages available even while Settings is open. Otherwise
+            // clicking SYSTEM would simply reselect Settings and the other owner pages would need
+            // a needless trip through Dashboard. Settings sections are a second contextual row.
+            foreach (var page in group.Pages)
+            {
+                SubNavItems.Add(page);
+            }
+        }
+
+        SyncSettingsTabSelection();
+        NotifyContextVisibility();
     }
 
-    private static void SetCollapsed(NavGroup group, bool collapsed)
+    private void NotifyContextVisibility()
     {
-        group.Header.IsCollapsed = collapsed;
+        OnPropertyChanged(nameof(IsShowingSettings));
+        OnPropertyChanged(nameof(IsShowingProducts));
+        OnPropertyChanged(nameof(HasSubNavigation));
+        OnPropertyChanged(nameof(HasContextNavigation));
+    }
 
-        foreach (var page in group.Pages)
+    private void SyncSettingsTabSelection()
+    {
+        var selectedIndex = _settingsPage?.SelectedTabIndex ?? 0;
+        foreach (var tab in SettingsTabItems)
         {
-            page.IsVisible = !collapsed;
+            tab.IsCurrent = IsShowingSettings && tab.Index == selectedIndex;
+        }
+    }
+
+    private void OnProductCategoriesChanged(
+        object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+    {
+        if (CurrentViewModel is ProductsViewModel products)
+        {
+            RebuildProductCategories(products);
+        }
+    }
+
+    /// <summary>Rebuilds only the header choices; it never reloads products or changes their filter.</summary>
+    private void RebuildProductCategories(ProductsViewModel products)
+    {
+        _syncingProductCategory = true;
+        try
+        {
+            ProductCategories.Clear();
+            ProductCategories.Add(new HeaderCategoryItem(null, "All categories"));
+
+            foreach (var category in products.Categories)
+            {
+                var displayName = string.IsNullOrWhiteSpace(category.ParentName)
+                    ? category.Name
+                    : category.ParentName + "  ›  " + category.Name;
+                ProductCategories.Add(new HeaderCategoryItem(category.Id, displayName));
+            }
+
+            var selected = ProductCategories.FirstOrDefault(item => item.Id == products.CategoryFilterId)
+                           ?? ProductCategories.First();
+            SetProperty(ref _selectedProductCategory, selected, nameof(SelectedProductCategory));
+        }
+        finally
+        {
+            _syncingProductCategory = false;
+        }
+    }
+
+    private void ClearProductCategories()
+    {
+        _syncingProductCategory = true;
+        try
+        {
+            ProductCategories.Clear();
+            SetProperty<HeaderCategoryItem?>(ref _selectedProductCategory, null, nameof(SelectedProductCategory));
+        }
+        finally
+        {
+            _syncingProductCategory = false;
+        }
+    }
+
+    /// <summary>Reflects dashboard/row drill-downs in the header without applying the filter twice.</summary>
+    private void SyncSelectedProductCategory()
+    {
+        if (CurrentViewModel is not ProductsViewModel products || ProductCategories.Count == 0)
+        {
+            return;
+        }
+
+        _syncingProductCategory = true;
+        try
+        {
+            var selected = ProductCategories.FirstOrDefault(item => item.Id == products.CategoryFilterId)
+                           ?? ProductCategories.First();
+            SetProperty(ref _selectedProductCategory, selected, nameof(SelectedProductCategory));
+        }
+        finally
+        {
+            _syncingProductCategory = false;
         }
     }
 
@@ -811,11 +1004,6 @@ public sealed class ShellViewModel : ObservableObject
         if (page is null)
         {
             return;
-        }
-        var group = _groups.FirstOrDefault(item => item.Key == page.GroupKey);
-        if (group is not null && group.Header.IsCollapsed)
-        {
-            SetCollapsed(group, false);
         }
         SelectedNav = page;
     }
@@ -901,8 +1089,8 @@ public sealed class ShellViewModel : ObservableObject
     private ObservableObject CreateSettingsPage()
     {
         // Settings reads the whole settings table twice (once to build the page, once to refresh
-        // it), so it is the page most able to fail on a half-written file - and it is opened by
-        // clicking the shop's own name, which the owner does without thinking (D-88).
+        // it), so it is the page most able to fail on a half-written file. It is opened by the
+        // shell's Settings destination or the signed-in person's own settings shortcut (D-88).
         DismissFault();
         _currentPageTitle = _services.AppLabels.Get("settings");
         RunTrail.Step("page: " + _currentPageTitle);
@@ -936,9 +1124,9 @@ public sealed class ShellViewModel : ObservableObject
         new BackupViewModel(_services, _user, AppRestart.Restart);
 
     /// <summary>
-    /// Opens Settings on a tab: 0 = Shop (the shop name was clicked), 4 = Staff &amp; permissions
-    /// (the person's name was clicked). The page is created on the way, because the menu row may not
-    /// have been opened yet in this session.
+    /// Opens Settings on a section: 0 = Shop, 4 = Staff &amp; permissions (the person's shortcut).
+    /// The page is created on the way, because the Settings destination may not have been opened yet
+    /// in this session.
     /// </summary>
     private void ShowSettings(int tab)
     {
@@ -956,17 +1144,9 @@ public sealed class ShellViewModel : ObservableObject
             return;
         }
 
-        // If the SYSTEM group was folded away, the Settings row is hidden - open the group first, or
-        // the selection would point at a row the operator cannot see.
-        var group = _groups.FirstOrDefault(item => item.Key == page.GroupKey);
-
-        if (group is not null && group.Header.IsCollapsed)
-        {
-            SetCollapsed(group, false);
-        }
-
         SelectedNav = page;
         _settingsPage?.ShowTab(tab);
+        SyncSettingsTabSelection();
     }
 
     /// <summary>
@@ -994,8 +1174,9 @@ public sealed class ShellViewModel : ObservableObject
             return page;
         }, _services.Log, RecordPageFault);
 
-        // No menu row belongs to this page, so the list clears itself (the bell stays lit).
+        // No module owns Alerts: the two navigation rows clear while the large bell stays lit.
         SetProperty(ref _selectedNav, null, nameof(SelectedNav));
+        UpdateHeaderNavigation();
         CurrentViewModel = opened.Ok ? opened.Page! : new PageFaultViewModel(opened.Fault!);
         IsShowingAlerts = true;
     }
@@ -1017,16 +1198,9 @@ public sealed class ShellViewModel : ObservableObject
 
     private void RefreshHeader()
     {
-        StoreName = _services.Settings.GetString("store.name");
-        AppName = _services.Settings.GetString("brand.appName");
         LabelResources.Apply(_services.AppLabels);
         RefreshLabels();
-
-        // The owner may have just ticked (or unticked) "keep every group open" on the Settings page
-        // he was taken to by clicking the shop name. Apply it here, or the fold would keep working
-        // until the next restart.
-        ApplyMenuState();
-        OnPropertyChanged(nameof(CanFoldMenu));
+        UpdateHeaderNavigation();
     }
 
     private void Logout()
@@ -1040,18 +1214,15 @@ public sealed class ShellViewModel : ObservableObject
         LoggedOut?.Invoke();
     }
 
-    /// <summary>One foldable group of menu rows: the heading that opens and closes it, and its pages.</summary>
+    /// <summary>One module's stable key and its permitted lazy page destinations.</summary>
     private sealed class NavGroup
     {
-        public NavGroup(string key, NavItem header)
+        public NavGroup(string key)
         {
             Key = key;
-            Header = header;
         }
 
         public string Key { get; }
-
-        public NavItem Header { get; }
 
         public List<NavItem> Pages { get; } = new();
     }

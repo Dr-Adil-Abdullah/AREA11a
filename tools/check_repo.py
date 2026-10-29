@@ -4693,6 +4693,103 @@ def check_run_trail() -> None:
 
 
 # ---------------------------------------------------------------------------
+def check_phase_one_shell() -> None:
+    """The expanded dark header must not silently fall back to the old sidebar or split filters.
+
+    WPF cannot be launched in the Linux build area, so this gate checks the structural contracts
+    whose failure previously produced a blank control: every header collection has a command and a
+    view-model source, Settings has one (shell-owned) section row, and the category filter is not the
+    product editor's SelectedCategory. Physical placement and keyboard walk-through remain owner
+    evidence in PHYSICAL-TESTING.md rather than something this check claims to prove.
+    """
+    window_path = DOTNET / "Area11.Desktop/Views/ShellWindow.xaml"
+    shell_path = DOTNET / "Area11.Desktop/ViewModels/ShellViewModel.cs"
+    settings_path = DOTNET / "Area11.Desktop/Views/SettingsView.xaml"
+    products_path = DOTNET / "Area11.Desktop/ViewModels/ProductsViewModel.cs"
+    nav_path = DOTNET / "Area11.Desktop/ViewModels/NavItem.cs"
+    header_items_path = DOTNET / "Area11.Desktop/ViewModels/HeaderMenuItem.cs"
+
+    for path in (window_path, shell_path, settings_path, products_path, nav_path, header_items_path):
+        if not path.exists():
+            fail(f"Phase-1 shell is incomplete: {rel(path)} is missing")
+    if not all(path.exists() for path in
+               (window_path, shell_path, settings_path, products_path, nav_path, header_items_path)):
+        return
+
+    window = window_path.read_text(encoding="utf-8-sig")
+    shell = shell_path.read_text(encoding="utf-8-sig")
+    settings = settings_path.read_text(encoding="utf-8-sig")
+    products = products_path.read_text(encoding="utf-8-sig")
+    nav = nav_path.read_text(encoding="utf-8-sig")
+
+    for needle, reason in (
+        ('Text="Area11"', "the fixed Area11 wordmark is missing"),
+        ('ItemsSource="{Binding ModuleItems}"', "top-row modules are not bound"),
+        ('ItemsSource="{Binding SubNavItems}"', "contextual module pages are not bound"),
+        ('ItemsSource="{Binding SettingsTabItems}"', "Settings sections are not in the shell"),
+        ('ItemsSource="{Binding ProductCategories}"', "Product categories are not in the shell"),
+        ('Command="{Binding GoHomeCommand}"', "the Area11 dashboard route is missing"),
+        ('Width="44" Height="44"', "the alert target is no longer the approved 44x44 size"),
+        ('Command="{Binding OpenAlertsCommand}"', "the alert bell lost its page route"),
+        ('ContentControl Grid.Row="1" Content="{Binding CurrentViewModel}"',
+         "the expanded header no longer leaves a content host"),
+    ):
+        if needle not in window:
+            fail(f"Phase-1 ShellWindow: {reason} ({needle})")
+
+    for forbidden, reason in (
+        ('Width="176"', "the old fixed sidebar width has returned"),
+        ('{Binding StoreName}', "the shop name is again a second application title"),
+        ('{Binding AppName}', "the application title is editable again instead of fixed Area11"),
+    ):
+        if forbidden in window:
+            fail(f"Phase-1 ShellWindow: {reason}")
+
+    for needle, reason in (
+        ("OpenModuleCommand = new RelayCommand<NavItem>(OpenModule)", "module clicks have no command"),
+        ("OpenPageCommand = new RelayCommand<NavItem>(OpenContextPage)", "page clicks have no command"),
+        ("OpenSettingsTabCommand = new RelayCommand<SettingsTabItem>(OpenSettingsTab)",
+         "Settings section clicks have no command"),
+        ("ModuleItems.Add(dashboard)", "Dashboard is absent from the top row"),
+        ("ModuleItems.Add(header)", "permission-filtered groups are absent from the top row"),
+        ("UpdateHeaderNavigation();", "active module/page state is not synchronized"),
+        ("products.ApplyFilter(categoryId: value.Id)", "the header category does not use the existing filter"),
+        ("_services.Permissions.Can", "navigation no longer starts from permissions"),
+    ):
+        if needle not in shell:
+            fail(f"Phase-1 ShellViewModel: {reason} ({needle})")
+
+    if shell.count("SettingsTabItems.Add(new SettingsTabItem(") != 6:
+        fail("Phase-1 shell must expose exactly the existing six Settings sections")
+
+    for obsolete in ("menu.collapsedGroups", "menu.pinnedOpen", "ToggleGroup", "SetCollapsed"):
+        if obsolete in shell:
+            fail(f"Phase-1 ShellViewModel still lets the retired sidebar fold control navigation: {obsolete}")
+
+    for needle, reason in (
+        ('ContentSource="SelectedContent"', "Settings would draw a second tab strip or lose its content"),
+        ('SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}"',
+         "shell sections no longer select the existing Settings content"),
+    ):
+        if needle not in settings:
+            fail(f"Phase-1 SettingsView: {reason} ({needle})")
+
+    for obsolete in ("MenuPinnedOpen", "Application name (top of the window)"):
+        if obsolete in settings:
+            fail(f"Phase-1 SettingsView still shows a retired sidebar/application-title setting: {obsolete}")
+
+    if "public int? CategoryFilterId => _categoryFilter;" not in products:
+        fail("Products no longer exposes a read-only filter id for header synchronization")
+    if "public bool IsCurrentModule" not in nav or "public bool IsCurrentPage" not in nav:
+        fail("NavItem no longer exposes distinct active module and active page states")
+
+    REPORT.append(
+        "Phase 1 shell: fixed Area11, 44px top-right bell, permission-filtered top modules, "
+        "contextual pages, six shell-owned Settings sections and a separate Products category filter; "
+        "no left-sidebar fold or editable application title")
+
+
+# ---------------------------------------------------------------------------
 def check_docs() -> None:
     docs = [ROOT / "README.md", ROOT / "HANDOFF.md", ROOT / "AGENTS.md", ROOT / "dotnet/README.md"]
     docs += sorted((ROOT / "docs").glob("*.md"))
@@ -5196,6 +5293,7 @@ def main() -> int:
     check_empty_page()
     check_run_trail()
     check_shop_clock()
+    check_phase_one_shell()
     check_checklist()
     check_audit_recovery()
     check_report_chart()

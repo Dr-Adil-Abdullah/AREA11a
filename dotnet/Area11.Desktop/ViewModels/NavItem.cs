@@ -1,20 +1,19 @@
 namespace Area11.Desktop.ViewModels;
 
 /// <summary>
-/// One entry of the left menu. Resolve() creates the page only when it is opened.
+/// One destination in the shell's dark header. Resolve() creates the page only when it is opened.
 ///
-/// An entry is either a **page** (clickable) or a **section heading** such as "MONEY". A heading now
-/// has a second job (D-51): clicking it puts its pages away, so a shop that never uses, say,
-/// Stock-take can keep the menu to the things it does use. Nothing is deleted - the heading stays,
-/// one click brings the pages back.
+/// An entry is either a **page** (Counter, Products, Bills ...) or a **module heading** (SELL,
+/// STOCK ...). A heading opens its group's current/first page; it never resolves a page itself.
+/// Editable labels are presentation only: GroupKey and LabelKey remain the stable identities.
 /// </summary>
 public sealed class NavItem : ObservableObject
 {
     private readonly Func<ObservableObject>? _resolve;
 
     private string _title;
-    private bool _isCollapsed;
-    private bool _isVisible = true;
+    private bool _isCurrentModule;
+    private bool _isCurrentPage;
 
     public NavItem(string title, string subtitle, Func<ObservableObject> resolve)
     {
@@ -30,7 +29,7 @@ public sealed class NavItem : ObservableObject
         IsHeader = true;
     }
 
-    /// <summary>A heading over a group of pages. It is not a page and never opens one.</summary>
+    /// <summary>A module heading over a group of pages. It is not a page and never opens one itself.</summary>
     public static NavItem Header(string title) => new(title);
 
     public string Title => _title;
@@ -49,47 +48,32 @@ public sealed class NavItem : ObservableObject
 
     public string Subtitle { get; }
 
-    /// <summary>True = a section heading, not a page.</summary>
+    /// <summary>True = a module heading, not a page.</summary>
     public bool IsHeader { get; }
 
     /// <summary>The opposite, written out so a binding or a test can say what it means.</summary>
     public bool IsPage => !IsHeader;
 
-    /// <summary>Which group this entry belongs to ("sell", "money" ...). Empty for the dashboard.</summary>
+    /// <summary>Which module this entry belongs to ("sell", "money" ...). Empty for Dashboard.</summary>
     public string GroupKey { get; set; } = string.Empty;
 
-    /// <summary>
-    /// A heading is "collapsed" when its pages are put away. Only headings use it; the arrow on the
-    /// screen reads it, so a collapse has to tell the binding it changed.
-    /// </summary>
-    public bool IsCollapsed
+    /// <summary>True on the top-row module that owns the open page.</summary>
+    public bool IsCurrentModule
     {
-        get => _isCollapsed;
-        set
-        {
-            if (SetProperty(ref _isCollapsed, value))
-            {
-                OnPropertyChanged(nameof(Chevron));
-            }
-        }
+        get => _isCurrentModule;
+        set => SetProperty(ref _isCurrentModule, value);
     }
 
-    /// <summary>The little arrow: down when the pages are showing, right when they are away.</summary>
-    public string Chevron => _isCollapsed ? "\u25B8" : "\u25BE";
-
-    /// <summary>
-    /// False = the row is hidden because its group is collapsed. The menu list is never rebuilt (a
-    /// rebuild would drop the selected row), so hiding a row is how a group closes.
-    /// </summary>
-    public bool IsVisible
+    /// <summary>True only on the exact open page in the contextual second row.</summary>
+    public bool IsCurrentPage
     {
-        get => _isVisible;
-        set => SetProperty(ref _isVisible, value);
+        get => _isCurrentPage;
+        set => SetProperty(ref _isCurrentPage, value);
     }
 
-    /// <summary>The small line under a menu row, shown as a tooltip to keep the sidebar narrow.</summary>
+    /// <summary>The page explanation stays in a tooltip so the header remains compact.</summary>
     public string Tooltip => IsHeader ? Title : Title + " - " + Subtitle;
 
     public ObservableObject Resolve() =>
-        _resolve?.Invoke() ?? throw new InvalidOperationException("A section heading has no page.");
+        _resolve?.Invoke() ?? throw new InvalidOperationException("A module heading has no page.");
 }

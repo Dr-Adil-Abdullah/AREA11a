@@ -13,9 +13,9 @@
 
 ## موجودہ build اور automated ثبوت
 
-- Build: **v0.35.19 Spruce `#175E54`** (current source؛ latest Windows xUnit evidence نیچے ہے)
-- Owner xUnit: **860 passed / 0 failed / 0 skipped / 860 total — ALL GREEN** (صرف tested Obsidian `cb2e321`)
-- موجودہ source: **883 written cases in 68 files**؛ **52/52 static checks PASS** (real C# grammar سمیت)۔ Latest gate: **28 migrations / 37 business tables / 825 prepared SQL statements / 123 settings keys**۔ Windows xUnit **883/883 PASS** (27 اکتوبر، `94723e5`، 1 منٹ 19 سیکنڈ)؛ WPF اور genuine physical workflows کی verification الگ باقی ہے۔
+- Build: **v0.36.0 Zircon `#3E5C76`** (Phase-1 header source؛ Windows/WPF verification ابھی باقی ہے)
+- Owner xUnit: **883 passed / 0 failed / 0 skipped / 883 total — ALL GREEN** (صرف tested Spruce `94723e5`؛ Zircon پر backfill نہیں)
+- موجودہ source: **883 written cases in 68 files**؛ **53/53 static checks PASS** (real C# grammar سمیت)۔ Latest gate: **287 C# files / 1,452 XAML bindings / 28 migrations / 37 business tables / 825 prepared SQL statements / 123 settings keys**۔ Zircon کے dedicated Phase-1 shell check میں fixed Area11، 44px bell، header modules/pages، چھ Settings sections اور الگ Products category filter محفوظ ہیں۔ Windows build، xUnit اور PT-08 physical walk-through ابھی باقی ہیں۔
 - Windows build report میں `AlertKindTests.cs(121,19)` کا `productId` scope compile error ملا؛ وہ `aedb65d` میں ٹھیک push ہو چکا ہے۔ بعد کا build xUnit تک پہنچا؛ حتمی 883/883 نتیجہ نیچے محفوظ ہے۔
 - تازہ Windows build report میں `PosViewModel.cs(924,21)` کا **CS0103: `MessageBoxDefaultButton` does not exist** ملا۔ WPF کے صحیح overload کے لیے اسے **`MessageBoxResult.No`** سے بدلا گیا ہے، اس لیے default جواب No/normal retail رہتا ہے۔ Static gate دوبارہ PASS ہے؛ اگلا Windows build xUnit تک پہنچا، مگر اس وقت full green نہیں ہوا؛ حتمی نتیجہ نیچے محفوظ ہے۔
 - تازہ Windows xUnit run: **879 passed / 4 failed / 883 total**۔ Reported HoldCart errors میں below-cost fixtures تھے: Brufen کی test retail cost سے کم تھی، اور ایک custom strip rate پورے strip کی cost سے کم تھا۔ ان غیرمتعلق HoldCart/Return fixtures کو درست rates دیے گئے ہیں؛ production below-cost lock اور اس کے dedicated refusal tests نہیں بدلے۔ اس وقت full run باقی تھا؛ حتمی 883/883 نتیجہ نیچے محفوظ ہے۔
@@ -37,6 +37,40 @@
 | **PT-05 — Returns، PR اور cancellation** | Pending | الگ test copy کے ساتھ محفوظ جانچ |
 | **PT-06 — Shift، ledgers، permissions اور audit** | Pending | مالیاتی اور user workflows |
 | **PT-07 — Excel، restore، printer اور scanner** | Pending | Hardware اور data workflows |
+| **PT-08 — Redesign Phase 1: dark header اور navigation** | **CODE READY — Windows/WPF verification pending** | Zircon header، Settings sections، category filter، keyboard اور permissions |
+
+---
+
+# PT-08 — Redesign Phase 1: expanded dark header
+
+**حالت:** Code changed — مالک کی Windows/WPF verification pending
+
+**اہمیت:** تمام modules کا مشترکہ راستہ؛ کوئی page یا permission نظرانداز نہیں ہونا چاہیے۔
+
+**حدود:** صرف shell/navigation بدلا گیا ہے۔ Sale، purchase، stock, payment، return، printing، WhatsApp، schema اور cloud rules نہیں بدلے۔
+
+## Automated ثبوت
+
+- **53/53 static checks PASS**، real C# grammar سمیت۔
+- **1,452 XAML bindings** resolve؛ تمام existing 883 cases بطور inventory موجود ہیں، مگر Zircon پر Windows run ابھی نہیں ہوا۔
+- Dedicated check retired 176px sidebar/editable shell title کو واپس آنے سے روکتا ہے اور header collections/commands/Settings/category separation کی حفاظت کرتا ہے۔
+
+## مالک کی physical checklist
+
+1. **Build اور automated suite:** `START-AREA11.bat` سے Zircon کھولیں، پھر `tools\RUN-TESTS.cmd` چلائیں۔ مطلوبہ: **`ALL GREEN - 883 of 883`**۔ Build یا test failure ہو تو وہی error/report بھیجیں؛ کسی نتیجے کو pass نہ لکھیں۔
+2. **Header identity:** اوپر صرف **Area11** نظر آئے؛ shop name مرکز میں نہ ہو۔ **Zircon رنگ** نئی copy کی پہچان کرے۔
+3. **Bell:** سب سے دائیں اوپر بڑا bell ہو۔ اس کے تینوں موجودہ colours/count کو expiry/low-stock یا کسی محفوظ genuine alert سے جانچیں؛ click سے Alerts page کھلے اور واپسی پر previous module دوبارہ منتخب ہو سکے۔
+4. **Modules اور submodules:** Dashboard، SELL، STOCK، CUSTOMERS & SUPPLIERS، MONEY اور SYSTEM کلک کریں۔ ہر module کا پہلا page کھلے؛ واپس آنے پر اس module کا موجودہ page برقرار رہے۔ Active module اور active page واضح ہوں۔
+5. **Settings sections:** SYSTEM → Settings کھولیں۔ Shop، Printing، Sales rules، Cloud sync، Staff & permissions، App words چھوں اوپر clickable ہوں، اندرونِ صفحہ دوسری tab strip نہ ہو۔ System کے عام pages بھی دستیاب رہیں تاکہ Settings سے سیدھا Backup/Audit یا دوسرا page کھولا جا سکے۔ ایک section میں غیر محفوظ text لکھ کر دوسرا section اور واپسی کریں؛ text ضائع نہ ہو۔ Save صرف ایک بار اور موجودہ rules کے مطابق ہو۔
+6. **Products folder/category:** STOCK → Products میں header کا category dropdown کھولیں، keyboard سے نام لکھ کر category منتخب کریں، اور نتیجہ وہی products دکھائے۔ All categories پر واپس آئیں۔ Dashboard/category row سے آنے پر header میں وہی category منتخب نظر آئے۔
+7. **Editor/filter separation:** کسی product کی editor category نوٹ کریں، پھر header سے دوسری category filter کریں؛ editor کا unsaved category field نہیں بدلنا چاہیے۔
+8. **Put-away edge case:** الگ test copy میں filter کی گئی category کو Manage categories سے put away کریں؛ filter All categories پر صاف ہو، پرانا invisible filter باقی نہ رہے۔ اصل books میں destructive test نہیں۔
+9. **Permissions:** Cashier/limited test user سے sign in کر کے confirm کریں کہ صرف permitted modules/pages دکھیں اور owner-only routes نہ کھلیں۔ کیونکہ header میں چھپانا security نہیں، existing service refusal بھی برقرار رہنا چاہیے۔
+10. **Keyboard اور screen fit:** Tab/Enter سے modules، Settings اور bell تک پہنچیں؛ focus واضح ہو۔ 1240×760 اور اپنی screen resolution پر کوئی button clip/overlap نہ ہو؛ SYSTEM کے تمام pages قابلِ رسائی ہوں۔
+11. **Existing safeguards:** Alerts، session warning، empty-page message اور کسی page کے failed-button/fault card کو موجودہ محفوظ طریقے سے جانچیں۔ Header کی وجہ سے page content یا half-typed bill ضائع نہیں ہونا چاہیے۔
+12. **Version menu:** current-user menu سے My settings اور Sign out کھلیں، اور صحیح **v0.36.0 · Zircon** نظر آئے۔
+
+**Owner result:** Pending — کوئی physical PASS ابھی record نہیں۔
 
 ---
 

@@ -1,6 +1,6 @@
 # Area11 — مکمل فیچر ٹک لسٹ (پرنٹ کرنے کے لیے)
 
-**ورژن:** v0.35.19 (Spruce `#175E54`) · **تاریخ:** 2026-10-27
+**ورژن:** v0.36.0 (Zircon `#3E5C76`) · **تاریخ:** 2026-10-29
 
 > یہ فائل **خودکار** بنتی ہے: `python3 tools/make_checklist.py`۔ ہاتھ سے نہ بدلیں۔
 > اصلی فیصلہ `docs/PROGRESS.md` کے بورڈ میں ہوتا ہے، اور `tools/check_repo.py` اُس سے میل
@@ -31,8 +31,8 @@
 | ☐ | نمبر | فیچر | حالت |
 |---|---|---|---|
 | ☐ | F-01 | Solution with three projects | ✅ مکمل |
-| ☐ | F-02 | Exact database schema, migrations 001-026, 35 business tables + provisional report... | ✅ مکمل |
-| ☐ | F-03 | Settings service, 122 keys, every owner-visible change audited, saved in one transa... | ✅ مکمل |
+| ☐ | F-02 | Exact database schema, migrations 001-028, 37 business tables + ledger/provisional... | ✅ مکمل |
+| ☐ | F-03 | Settings service, 123 keys, every owner-visible change audited, saved in one transa... | ✅ مکمل |
 | ☐ | F-04 | Audit black box (old -> new values, never deleted) | 🟡 جاری |
 | ☐ | F-05 | Sign-in: owner password, staff PIN, 5 tries -> 2 minute lock | ✅ مکمل |
 | ☐ | F-06 | Per-person permissions stored in the database | ✅ مکمل |
@@ -176,4 +176,4 @@
 اور اُس کا پیمانہ اوپر لکھا ہے۔ جب آپ کوئی عمل کر لیں اور کہیں کہ «ہو گیا»، تو اُس فیچر کا نشان اگلی دوڑ میں
 ✅ ہو جائے گا — اِس فائل میں خود بخود۔
 
-*بنایا گیا: 2026-10-27 · `tools/make_checklist.py`*
+*بنایا گیا: 2026-10-29 · `tools/make_checklist.py`*

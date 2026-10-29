@@ -7,7 +7,7 @@ namespace Area11.Core.Utils;
 /// glance, that he opened the new one - not an old copy from an earlier download. So every version
 /// carries a name and a colour; the colour is painted on the brand brushes in
 /// <c>Area11.Desktop/Resources/Theme.xaml</c> and the label is shown on the sign-in window and in
-/// the sidebar.
+/// the current-user menu.
 ///
 /// The rule for the team (AGENTS.md section 9): **whenever the code changes, bump <see cref="Version"/>,
 /// pick the next colour, and add the row to `docs/VERSIONS.md`.** `tools/check_repo.py` fails the
@@ -19,21 +19,21 @@ namespace Area11.Core.Utils;
 public static class BuildInfo
 {
     /// <summary>Version shown in the window title and on the sign-in screen.</summary>
-    public const string Version = "0.35.19";
+    public const string Version = "0.36.0";
 
     /// <summary>The colour of this version, in one word - also the name of the release.</summary>
-    public const string CodeName = "Spruce";
+    public const string CodeName = "Zircon";
 
     /// <summary>The exact brand colour of this version (must equal BrandBrush in Theme.xaml).</summary>
-    public const string BrandHex = "#175E54";
+    public const string BrandHex = "#3E5C76";
 
     /// <summary>Hover / pressed shade of the same colour.</summary>
-    public const string BrandDarkHex = "#103F39";
+    public const string BrandDarkHex = "#263B4D";
 
     /// <summary>Very light tint used for stripes and badges.</summary>
-    public const string BrandSoftHex = "#EAF4F1";
+    public const string BrandSoftHex = "#EDF2F7";
 
-    public const string ReleasedOn = "2026-10-27";
+    public const string ReleasedOn = "2026-10-29";
 
     /// <summary>"v0.2.0 · Purple" - the label the owner looks for.</summary>
     public static string Label => $"v{Version} · {CodeName}";

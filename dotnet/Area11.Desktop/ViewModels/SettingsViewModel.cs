@@ -12,7 +12,7 @@ namespace Area11.Desktop.ViewModels;
 /// Settings (F-17) — the screen the owner asked for when he said printing must be a choice
 /// ("in setting there is an option for auto or manu[a]l printing", D-26).
 ///
-/// Six tabs, one save button:
+/// Six shell-selected sections, one save button:
 ///   • Shop        — name, address, phone, the note at the bottom of the receipt.
 ///   • Printing    — printer, 58 / 80 mm, automatic or manual, cut, copies.
 ///   • Sales       — discount limits, tax, and the D-93 non-negative stock rule.
@@ -34,8 +34,6 @@ public sealed class SettingsViewModel : ObservableObject
     private string _storeAddress = string.Empty;
     private string _storePhone = string.Empty;
     private string _footerNote = string.Empty;
-    private string _appName = string.Empty;
-    private bool _menuPinnedOpen;
 
     private string _printerName = string.Empty;
     private PaperOption? _selectedPaper;
@@ -204,22 +202,6 @@ public sealed class SettingsViewModel : ObservableObject
     {
         get => _footerNote;
         set => SetProperty(ref _footerNote, value);
-    }
-
-    /// <summary>
-    /// The owner's tick (D-51): every menu group stays open and the headings stop folding. A cashier
-    /// who keeps the whole menu in use sets this once and never thinks about it again.
-    /// </summary>
-    public bool MenuPinnedOpen
-    {
-        get => _menuPinnedOpen;
-        set => SetProperty(ref _menuPinnedOpen, value);
-    }
-
-    public string AppName
-    {
-        get => _appName;
-        set => SetProperty(ref _appName, value);
     }
 
     // ----------------------------- Printing -----------------------------
@@ -476,8 +458,6 @@ public sealed class SettingsViewModel : ObservableObject
         StoreAddress = settings.GetString("store.address");
         StorePhone = settings.GetString("store.phone");
         FooterNote = settings.GetString("store.footerNote");
-        AppName = settings.GetString("brand.appName");
-        MenuPinnedOpen = settings.GetBool("menu.pinnedOpen");
         LoadLabels();
 
         var idleHours = settings.GetInt("session.idleHours", 2);
@@ -529,13 +509,9 @@ public sealed class SettingsViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Called every time the page is opened, so a value changed elsewhere (the printing switch on
-    /// the counter screen writes the same key) is shown here too.
-    /// </summary>
-    /// <summary>
-    /// Which tab is open: 0 Shop, 1 Printing, 2 Sales rules, 3 Cloud sync, 4 Staff, 5 App words.
-    /// Bound two-way, so the shop name in the sidebar can open Shop and a person's name can open the
-    /// staff tab (D-50) - the two questions the owner actually clicks.
+    /// Which section is open: 0 Shop, 1 Printing, 2 Sales rules, 3 Cloud sync, 4 Staff, 5 App words.
+    /// Bound two-way so the shell's dark-header section buttons and the person's staff shortcut can
+    /// select the same existing content without rebuilding it.
     /// </summary>
     public int SelectedTabIndex
     {
@@ -552,6 +528,10 @@ public sealed class SettingsViewModel : ObservableObject
     /// </summary>
     public void ShowTab(int index) => SelectedTabIndex = index;
 
+    /// <summary>
+    /// Called every time the page is opened, so a value changed elsewhere (the printing switch on
+    /// the counter screen writes the same key) is shown here too. Section changes do not call this.
+    /// </summary>
     public void Refresh()
     {
         Load();
@@ -725,8 +705,6 @@ public sealed class SettingsViewModel : ObservableObject
             ["store.address"] = StoreAddress.Trim(),
             ["store.phone"] = StorePhone.Trim(),
             ["store.footerNote"] = FooterNote.Trim(),
-            ["brand.appName"] = AppName.Trim().Length == 0 ? "Area11" : AppName.Trim(),
-            ["menu.pinnedOpen"] = MenuPinnedOpen,
 
             ["printer.name"] = PrinterName.Trim(),
             ["printer.width"] = paper.Width,

@@ -7,10 +7,10 @@
 > اِس فائل میں یہ سب ہے: پروگرام کیا ہے، ابھی کہاں کھڑا ہے، **کیا باقی ہے**، کیا **کبھی نہیں** کرنا،
 > اور ایک نیا ورژن کیسے نکالنا ہے۔ آپ کے لیے چھوٹی اردو فائل: [`docs/HANDOVER-FOR-OWNER-URDU.md`](docs/HANDOVER-FOR-OWNER-URDU.md)۔
 
-**Status:** v0.35.19 · Spruce · `#175E54` — **default branch `main`**; this repair is on the current
+**Status:** v0.36.0 · Zircon · `#3E5C76` — **default branch `main`**; this Phase-1 shell is on the current
 working branch `arena/60395e95-area11a` until its pull request is merged.
 
-*Last updated: 27 October 2026. The current authorized-fix tree has **883 written cases and 52 green static checks**, and the owner verified **883/883 Windows xUnit cases on Spruce `94723e5`** with 0 failed/skipped in **1 m 19 s**. The earlier **v0.35.18 Obsidian** result (`cb2e321`, 860/860 in 1 m 17 s) remains historical. The feature board remains 52 done / 5 owner-action rows and the matrix has four partial rules. Real Excel, WPF, physical-restore and optional real-cloud evidence remain separate.*
+*Last updated: 29 October 2026. D-96 authorizes only the Phase-1 global shell/navigation redesign. The current tree has **883 written cases and 53 green static checks**; the owner verified **883/883 Windows xUnit cases on the prior Spruce `94723e5`** with 0 failed/skipped in **1 m 19 s**, not on Zircon. The feature board remains 52 done / 5 owner-action rows and the matrix has four partial rules. Zircon's Windows build, xUnit, PT-08 WPF, real Excel, physical-restore and optional real-cloud evidence remain separate.*
 
 ---
 
@@ -39,7 +39,7 @@ repository is a **behaviour reference only** — never modify it, never copy its
 |---|---|
 | Physical test results, owner feedback and requested changes | **`PHYSICAL-TESTING.md`** — append-only physical-testing log |
 | What is done, what is next, per feature (ID, files, test, "done when") | **`docs/PROGRESS.md`** — the board |
-| What the owner decided, in his own language (D-00 … D-95) | **`docs/OWNER-DECISIONS.md`** (Urdu, authoritative) |
+| What the owner decided, in his own language (D-00 … D-96) | **`docs/OWNER-DECISIONS.md`** (Urdu, authoritative) |
 | His 116 numbered rules and where each is implemented | `docs/RULES-MATRIX.md` |
 | The blueprint (rules, data, pricing, billing, printing, rebuild protocol) | `docs/AREA11-MASTER-SPEC.md` |
 | Every table and column | `docs/SCHEMA-REFERENCE.md` |
@@ -57,15 +57,15 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 
 ## 3. Where it stands right now (read this twice)
 
-**Current source: v0.35.19 "Spruce" contains the owner-authorized physical-testing repairs and 883 written cases in 68 files. Backup/recovery, shift cash continuity/alert severity, explicit full-retail discount, opt-in VIP/Doctor rates, guarded custom rates, held-rate restoration and the optional sale-success card are changed. The CAT-01/NAV-01/UNIT-01/PHOTO-01 batch adds primary-plus-tag filtering, managed units with a rename-safe whole-only rule and descriptive strength, product/counter thumbnails and dashboard/category/company drill-downs, with migrations 027–028 and six new regression cases. The reported AlertKindTests compile error is fixed separately in `aedb65d`. All 52 static checks pass locally, and the owner verified **883/883 Windows xUnit cases on `94723e5` in 1 m 19 s**. WPF and genuine physical checks remain separate. Obsidian `cb2e321` remains an earlier owner-verified full green source at 860/860 in 1 m 17 s; do not backfill that result onto Spruce. T-10, Z-05, E-12 and S-05 remain partial, the five owner-action feature rows remain open, and PT02-POS-01 still needs exact reproduction.**
+**Current source: v0.36.0 "Zircon" contains D-96 Phase-1 global shell/navigation changes and 883 written cases in 68 files. The fixed Area11 title, expanded dark two-row header, permission-filtered modules, contextual pages, shell-owned Settings sections, separate Products category picker and 44×44 bell are implemented. The left sidebar/folding controls are retired; existing routes, alerts, session/fault/empty states and financial rules remain. All 53 static checks pass locally. The owner verified **883/883 Windows xUnit cases on the prior Spruce `94723e5` in 1 m 19 s**, not on this shell; Zircon's Windows build, xUnit and PT-08 WPF walk-through are still required. Obsidian `cb2e321` remains earlier owner-verified full green source at 860/860 in 1 m 17 s. T-10, Z-05, E-12 and S-05 remain partial, the five owner-action feature rows remain open, and PT02-POS-01 still needs exact reproduction. Later redesign phases are unauthorized.**
 
 | | |
 |---|---|
 | Test cases written | **883** in 68 files (`tools\\RUN-TESTS.cmd` compares the run against `EXPECTED=883`) |
-| Static checks | **52**, all green: `OK - 52 checks, no problems` |
+| Static checks | **53**, all green: `OK - 53 checks, no problems` |
 | Owner's numbered rules | **116 - 92 ✅ done, 4 🟡 partial, 0 ⬜, 20 standing** - see §4 |
 | Feature board | **57 features — 52 ✅ done, 5 🟡 one shop action each, 0 ⬜ not started** (91.2 % / 8.8 %) |
-| Code size | 286 C# files + 40 XAML files; 52 services, 43 view models |
+| Code size | 287 C# files + 40 XAML files; 52 services, 38 view models |
 | Database | 28 migrations → **37 business tables + ledger/provisional report view**, append-only, existing `area11.db` opens unchanged |
 
 ### What the owner's own PC has already proved
@@ -84,6 +84,25 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 * On **v0.35.19 Spruce `94723e5`** his Windows build reported **Failed 0, Passed 883, Skipped 0,
   Total 883 in 1 m 19 s — ALL GREEN**. This is the latest full xUnit proof; it does not by itself
   prove a fresh WPF-window walk-through, real Excel or real Supabase. The earlier Obsidian 860/860 result remains historical.
+
+### What v0.36.0 changes — D-96 Phase-1 global shell
+
+* `ShellWindow.xaml` now uses an expanded dark header rather than a 176 px left sidebar. The fixed Area11
+  wordmark, permission-filtered module buttons, active module/page states and a top-right 44×44 alert bell
+  are in the shell; the signed-in person's settings/sign-out/version controls remain in a popup.
+* `ShellViewModel.cs` keeps the existing stable label keys, lazy `PageGuard` route and drill-downs while
+  maintaining separate module, page, Settings-section and Products-category state. Settings keeps its six
+  existing contents and non-reloading tab indices; System's ordinary pages remain reachable beside the
+  Settings sections. `HeaderMenuItem.cs` contains the small shell-only choice models.
+* `SettingsView.xaml` is headerless but still uses `SelectedTabIndex`; its in-content tab strip is not a
+  second navigation system. `ProductsViewModel.CategoryFilterId` is read-only and separate from the product
+  editor's `SelectedCategory`; a put-away filtered category clears rather than becoming invisible.
+* The old application-name/menu-fold controls are retired from Settings. The product title is fixed Area11,
+  while shop/receipt branding remains store data. Shared header spacing, typography and button styles live
+  in `Theme.xaml`; no financial, stock, schema, printing, WhatsApp or sync rule changed.
+* **Evidence:** 53/53 static checks, including real C# grammar and 1,452 XAML bindings. No local .NET SDK/WPF
+  runtime exists, so the owner must build Zircon, run **`ALL GREEN - 883 of 883`** and complete PT-08. The
+  previous Spruce `94723e5` 883/883 result is historical and must not be presented as Zircon proof.
 
 ### What v0.35.19 changes — physical-testing repairs and explicit counter pricing
 
@@ -431,6 +450,10 @@ needs a fresh report from that version. The Desktop installer still needs its ow
 
 ## 4. What is left — exactly
 
+**Immediate authorized task:** build Zircon on Windows and complete **PT-08** for the Phase-1 shell. Do not
+start Phase 2 or infer a WPF pass from the 53 static checks. The five existing 🟡 feature rows below remain
+separate owner-action evidence; their counts are not changed by this redesign.
+
 **No feature is ⬜.** The five 🟡 rows are code-complete and await **one action in the real shop**:
 
 | ID | Feature | The single action that closes it |
@@ -479,12 +502,12 @@ WPF cannot decode `.webp` photos; cloud sync is optional and never deletes a row
 git clone https://github.com/Dr-Adil-Abdullah/AREA11a.git
 cd AREA11a                               # main is the default branch - the product is already here
 pip install --break-system-packages tree_sitter tree_sitter_c_sharp   # gives the real C# grammar
-python3 tools/check_repo.py              # must end: OK - 49 checks, no problems
+python3 tools/check_repo.py              # must end: OK - 53 checks, no problems
 python3 tools/build_rules_matrix.py --check
 ```
 
 Then read, in this order: this file → `AGENTS.md` → `docs/PROGRESS.md` (the board) → `HANDOFF.md` §4
-(the walk-throughs) → `docs/OWNER-DECISIONS.md` (at least D-77, D-88 … D-93) → the code you are about
+(the walk-throughs) → `docs/OWNER-DECISIONS.md` (at least D-77, D-88 … D-96) → the code you are about
 to touch.
 
 **How work reaches `main` from now on.** `main` is protected only by habit, not by a rule: work on a

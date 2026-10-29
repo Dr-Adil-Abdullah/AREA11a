@@ -300,6 +300,12 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         set => SetProperty(ref _reorderText, value);
     }
 
+    /// <summary>
+    /// The grid filter used by the shell header. This is deliberately separate from SelectedCategory,
+    /// which belongs to the product editor and must never change when the list is filtered.
+    /// </summary>
+    public int? CategoryFilterId => _categoryFilter;
+
     public Category? SelectedCategory
     {
         get => _selectedCategory;
@@ -361,6 +367,15 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
             {
                 Categories.Add(category);
             }
+        }
+
+        // A category put away in the management window cannot remain an invisible active filter.
+        // Clear it here as well as in the header, so "All categories" never hides an old category id.
+        if (_categoryFilter is not null && Categories.All(row => row.Id != _categoryFilter))
+        {
+            _categoryFilter = null;
+            OnPropertyChanged(nameof(CategoryFilterId));
+            OnPropertyChanged(nameof(HasFilter));
         }
 
         CategoryTagOptions.Clear();
@@ -578,6 +593,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         _lowStockOnly = lowStockOnly;
         _strengthFilter = (strength ?? string.Empty).Trim();
         _searchText = string.Empty;
+        OnPropertyChanged(nameof(CategoryFilterId));
         OnPropertyChanged(nameof(SearchText));
         OnPropertyChanged(nameof(FilterText));
         OnPropertyChanged(nameof(HasFilter));
