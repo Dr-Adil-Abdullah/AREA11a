@@ -31,7 +31,7 @@
 | Test | حالت | مختصر نتیجہ |
 |---|---|---|
 | **PT-01 — Startup, backup اور UI smoke** | **PASS — improvements logged** | ایپ کھلی، photos کے ساتھ backup بنا، اور تمام مقررہ pages کھلے |
-| **PT-02 — حقیقی medicine اور product details** | **PARTIAL — owner feedback logged** | Save product اور Black box کی تصدیق؛ باقی checklist اور نئے مسائل کھلے ہیں |
+| **PT-02 — حقیقی medicine اور product details** | **PASS — owner confirmed 29 Oct 2026** | مالک نے “2 is ok” کی تصدیق کی؛ الگ logged feedback items اپنی اپنی حالت میں رہیں گے |
 | **PT-03 — حقیقی purchase، batch، expiry اور payable** | **PARTIAL — owner feedback logged، report pending** | ابھی تفصیلی PINV/stock/payable evidence موصول نہیں ہوا؛ PASS نہیں لکھا گیا |
 | **PT-04 — Sale، cash/khata، receipt اور drawer** | **INSTRUCTIONS READY** | حقیقی فروخت، price/cart، receipt اور completion feedback |
 | **PT-05 — Returns، PR اور cancellation** | Pending | الگ test copy کے ساتھ محفوظ جانچ |
@@ -244,6 +244,7 @@
 - Categories، units، rates، photos، navigation، shift اور sale completion پر نئی درخواستیں ملی ہیں۔
 - Product selection/cart کے ساتھ blank/dashes والا مسئلہ بھی report ہوا، مگر اس کا exact reproduction ابھی درکار ہے۔
 - **PT-02: PARTIAL — تفصیلی items نیچے درج ہیں؛ production fixes کا انتظار مالک کے OK اور واضح choices پر ہے۔**
+- **29 اکتوبر 2026 کی نئی owner confirmation:** مالک نے “2 is ok” لکھا ہے۔ اس تصدیق کی بنیاد پر PT-02 کا مجموعی physical نتیجہ **PASS / OWNER CONFIRMED** ہے۔ نیچے کے الگ logged items کو خودکار طور پر fixed یا rejected نہیں سمجھا جائے؛ جہاں الگ verification یا reproduction لکھا ہے وہ اپنی جگہ برقرار ہے۔
 
 ---
 
@@ -444,7 +445,7 @@ Bell کی رنگت موجودہ سب سے سنگین active alert کے مطاب�
 **مقصد:** حقیقی delivery سے stock اور supplier حساب درست بننا۔
 **شرط:** اصل دکان میں صرف حقیقی delivery درج کریں۔ آزمائشی purchase کے لیے الگ test copy استعمال کریں۔
 
-**حالت — 29 اکتوبر 2026:** **PARTIAL** — مالک نے PT-03 کو PARTIAL بتایا ہے اور تفصیلی report بھیجنے کا کہا ہے۔ Report آنے تک PINV، stock conversion، batch/expiry، paid/payable اور Black box کے نتائج خالی رکھیں؛ کسی کو PASS یا fixed نہ لکھیں۔ PT-02 بھی PARTIAL ہی رہے گا۔
+**حالت — 29 اکتوبر 2026:** **PARTIAL** — مالک نے PT-03 کو PARTIAL بتایا ہے اور تفصیلی report بھیجنے کا کہا ہے۔ Report آنے تک PINV، stock conversion، batch/expiry، paid/payable اور Black box کے نتائج خالی رکھیں؛ کسی کو PASS یا fixed نہ لکھیں۔ PT-02 کی نئی owner confirmation الگ سے اوپر محفوظ ہے۔
 
 ## شروع کرنے سے پہلے لکھ لیں
 
