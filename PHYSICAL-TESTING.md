@@ -13,9 +13,9 @@
 
 ## موجودہ build اور automated ثبوت
 
-- Build: **v0.36.0 Zircon `#3E5C76`** (Phase-1 header source؛ Windows/WPF verification ابھی باقی ہے)
-- Owner xUnit: **883 passed / 0 failed / 0 skipped / 883 total — ALL GREEN** (صرف tested Spruce `94723e5`؛ Zircon پر backfill نہیں)
-- موجودہ source: **883 written cases in 68 files**؛ **53/53 static checks PASS** (real C# grammar سمیت)۔ Latest gate: **287 C# files / 1,452 XAML bindings / 28 migrations / 37 business tables / 825 prepared SQL statements / 123 settings keys**۔ Zircon کے dedicated Phase-1 shell check میں fixed Area11، 44px bell، header modules/pages، چھ Settings sections اور الگ Products category filter محفوظ ہیں۔ Windows build، xUnit اور PT-08 physical walk-through ابھی باقی ہیں۔
+- Build: **v0.36.0 Zircon `#3E5C76`** (Windows xUnit verified؛ PT-08 WPF/navigation verification الگ باقی ہے)
+- Owner xUnit: **883 passed / 0 failed / 0 skipped / 883 total — ALL GREEN**، **Zircon**، 29 اکتوبر 2026، مدت **1 منٹ 10 سیکنڈ**۔ یہ current Zircon source کا ثبوت ہے؛ Spruce `94723e5` کا نتیجہ historical ہے۔
+- موجودہ source: **883 written cases in 68 files**؛ **53/53 static checks PASS** (real C# grammar سمیت)۔ Latest gate: **287 C# files / 1,452 XAML bindings / 28 migrations / 37 business tables / 825 prepared SQL statements / 123 settings keys**۔ Zircon کے dedicated Phase-1 shell check میں fixed Area11، 44px bell، header modules/pages، چھ Settings sections اور الگ Products category filter محفوظ ہیں۔ **Windows xUnit 883/883 PASS**؛ PT-08 physical WPF walk-through ابھی باقی ہے۔
 - Windows build report میں `AlertKindTests.cs(121,19)` کا `productId` scope compile error ملا؛ وہ `aedb65d` میں ٹھیک push ہو چکا ہے۔ بعد کا build xUnit تک پہنچا؛ حتمی 883/883 نتیجہ نیچے محفوظ ہے۔
 - تازہ Windows build report میں `PosViewModel.cs(924,21)` کا **CS0103: `MessageBoxDefaultButton` does not exist** ملا۔ WPF کے صحیح overload کے لیے اسے **`MessageBoxResult.No`** سے بدلا گیا ہے، اس لیے default جواب No/normal retail رہتا ہے۔ Static gate دوبارہ PASS ہے؛ اگلا Windows build xUnit تک پہنچا، مگر اس وقت full green نہیں ہوا؛ حتمی نتیجہ نیچے محفوظ ہے۔
 - تازہ Windows xUnit run: **879 passed / 4 failed / 883 total**۔ Reported HoldCart errors میں below-cost fixtures تھے: Brufen کی test retail cost سے کم تھی، اور ایک custom strip rate پورے strip کی cost سے کم تھا۔ ان غیرمتعلق HoldCart/Return fixtures کو درست rates دیے گئے ہیں؛ production below-cost lock اور اس کے dedicated refusal tests نہیں بدلے۔ اس وقت full run باقی تھا؛ حتمی 883/883 نتیجہ نیچے محفوظ ہے۔
@@ -37,13 +37,13 @@
 | **PT-05 — Returns، PR اور cancellation** | Pending | الگ test copy کے ساتھ محفوظ جانچ |
 | **PT-06 — Shift، ledgers، permissions اور audit** | Pending | مالیاتی اور user workflows |
 | **PT-07 — Excel، restore، printer اور scanner** | Pending | Hardware اور data workflows |
-| **PT-08 — Redesign Phase 1: dark header اور navigation** | **CODE READY — Windows/WPF verification pending** | Zircon header، Settings sections، category filter، keyboard اور permissions |
+| **PT-08 — Redesign Phase 1: dark header اور navigation** | **883/883 ZIRCON xUNIT PASS — WPF verification pending** | Automated suite کامیاب؛ header، Settings sections، category filter، keyboard اور permissions کی physical جانچ باقی |
 
 ---
 
 # PT-08 — Redesign Phase 1: expanded dark header
 
-**حالت:** Code changed — مالک کی Windows/WPF verification pending
+**حالت:** Zircon Windows xUnit **883/883 PASS** (29 اکتوبر 2026، 1 منٹ 10 سیکنڈ) — مالک کی WPF/navigation verification pending
 
 **اہمیت:** تمام modules کا مشترکہ راستہ؛ کوئی page یا permission نظرانداز نہیں ہونا چاہیے۔
 
