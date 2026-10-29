@@ -204,7 +204,8 @@ INSERT INTO categories(name, sort_order, active, created_at) VALUES('UNIQUE cate
         {
             if (!Path.GetFileName(source).StartsWith("026_", StringComparison.Ordinal)
                 && !Path.GetFileName(source).StartsWith("027_", StringComparison.Ordinal)
-                && !Path.GetFileName(source).StartsWith("028_", StringComparison.Ordinal))
+                && !Path.GetFileName(source).StartsWith("028_", StringComparison.Ordinal)
+                && !Path.GetFileName(source).StartsWith("029_", StringComparison.Ordinal))
             {
                 File.Copy(source, Path.Combine(legacyFolder, Path.GetFileName(source)));
             }
@@ -225,7 +226,7 @@ INSERT INTO products(id, name, company_id, base_unit, cost_paisa, retail_paisa, 
 VALUES(1, 'Old product', 1, 'tablet', 100, 200, '2026-01-01', '2026-01-01');");
             });
 
-            Assert.Equal(3, runner.ApplyPending(TestDatabase.MigrationsFolder)); // 026 catalog + 027 units/tags + 028 quantity rules
+            Assert.Equal(4, runner.ApplyPending(TestDatabase.MigrationsFolder)); // 026 catalog + 027 units/tags + 028 quantity rules + 029 field governance
             using var connection = database.Open();
             var row = database.QuerySingle<CatalogMigrationRow>(connection, @"
 SELECT c.name, c.phone, c.notes, c.sort_order AS sortOrder, p.company_id AS companyId
