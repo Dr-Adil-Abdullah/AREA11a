@@ -65,10 +65,10 @@ features and the four phases.
 | Question | Number | What it means |
 |---|---|---|
 | Features in the board | **57** | **52 ✅ done (91.2%)**, **5 🟡 written but only the shop PC can prove them (8.8%)**, 0 ⬜ not started |
-| Code | **291 C# files**, **40 XAML files** | Cobalt static grammar passes; Zircon Windows xUnit passed, current Cobalt/WPF proof pending |
+| Code | **291 C# files**, **40 XAML files** | Cobalt static grammar and owner Windows xUnit pass; current PT-10/WPF proof pending |
 | The shop's rules | **54 service/policy files** in `Area11.Core`, **44 model files**, **37 business tables** over 29 migrations | Phase-3 adds a pure packaging/search policy without a migration; stock, money and history stay intact |
 | Screens | **38 views** including the managed-unit window | bindings are statically checked; pack editing/search and PT-10 need owner proof; PT-09 remains separate |
-| Tests | **900 written cases** in 70 files | **883/883 owner-verified on Zircon v0.36.0 (1 m 10 s)**; Cobalt 900-case run pending |
+| Tests | **900 written and Windows-verified cases** in 70 files | **900/900 owner-verified on Cobalt v0.38.0 (1 m 4 s)**, zero failed/skipped; PT-10 remains pending |
 | Static gates | **55 checks** in `tools/check_repo.py` | ~10 seconds here; not a compiler - see the warning at the end |
 | Reporting a fault | **one file** - `tools\SEND-REPORT.cmd` (v0.30.3, D-78) | build, SDK, git state, shop folder (no rows), whole crash report, last build/test output |
 | Versions shipped | 0.1.0 -> **0.38.0 Cobalt** | Phase-3 packaging/search release colour `#315C8C`; Phase 4 not authorized |
@@ -129,7 +129,7 @@ of books.
 | Products and SQL discovery | **Code complete — physical pending** | `ProductService.Search`, `SearchSmart` | Pack `50ml` matches `50 mL`; brand, room, category/tags, company and base unit join existing name/generic/barcode/strength discovery. Exact pack hits return before the separately labelled fuzzy name/generic fallback |
 | Counter and Purchase discovery | **Code complete — physical pending** | `PackagingPolicy.Matches`, `PosViewModel.cs`, `PurchasesViewModel.cs`, both views | Both in-memory pages use the shared matcher. Counter still supplies every active extra barcode; Purchase selection shows strength + pack so equal-named variants retain their separate product IDs |
 | Stock and financial safeguards | **Unchanged — regression written** | `Models/Product.cs`, `PackagingSearchTests.cs` | Pack text is descriptive only. Base-unit stock, box/strip/base conversion, rates, batches, payments, documents, historical rows and D-93/D-97 rules are not rewritten |
-| Evidence | **55/55 static checks PASS; Windows/PT-10 pending** | `tools/check_repo.py`, `PackagingSearchTests.cs`, `PHYSICAL-TESTING.md` PT-10 | 900 written cases in 70 files, including 8 Phase-3 regressions; actual search SQL passed a targeted 7/7 SQLite development probe. Cobalt Windows build, **`ALL GREEN - 900 of 900`** and PT-10 are pending. Zircon/Aurora evidence is not backfilled; Phase 4 is not authorized |
+| Evidence | **55/55 static checks + Cobalt 900/900 Windows xUnit PASS; PT-10 pending** | `tools/check_repo.py`, `PackagingSearchTests.cs`, `PHYSICAL-TESTING.md` PT-10 | Owner reported **900 passed / 0 failed / 0 skipped in 1 m 4 s** and **`ALL GREEN - 900 of 900`** on 29 Oct 2026. Actual search SQL also passed a targeted 7/7 SQLite development probe. WPF/genuine pack editing, discovery, variant selection and conversion checks remain pending; Phase 4 is not authorized |
 
 ---
 
@@ -252,6 +252,7 @@ of books.
 | The three script banners match the build | `python3 tools/check_repo.py` | ✅ 3 files |
 | The board and the printable tick-list agree | `python3 tools/make_checklist.py` + the checker | ✅ 57 / 52 / 5 / 0 |
 | **Printer prints (owner's code 6)** | SYSTEM -> *Printer & scanner*, pick the printer, **Print test slip** | 🟡 v0.22.1 fixes the cause (the program opened the print server, not the default printer) - the owner's next slip is the proof |
+| **900 tests written and owner-verified on Cobalt** | `dotnet test` / `tools\\RUN-TESTS.cmd` | ✅ **900/900 passed on the owner's Windows PC, 0 failed/skipped in 1 m 4 s on 29 Oct 2026.** The runner printed `ALL GREEN - 900 of 900`; all 55 static checks also pass. PT-10 WPF/genuine packaging workflows and the other physical checks remain separate. |
 | **883 tests written and owner-verified on Spruce** | `dotnet test` / `tools\\RUN-TESTS.cmd` | ✅ **883/883 passed on the owner's Windows PC (`94723e5`), 0 failed/skipped in 1 m 19 s.** The runner printed `ALL GREEN - 883 of 883`; all 52 static checks also pass. This does not close the separate WPF, genuine-transaction, real-Excel or cloud checks. |
 | **860 tests written and owner-verified on Obsidian** | `dotnet test` (or `tools\\RUN-TESTS.cmd`) | ✅ **The correct v0.35.18 commit `cb2e321` really passed 860/860 on the owner's Windows PC: 0 failed, 0 skipped, in 1 m 17 s.** The runner printed `ALL GREEN - 860 of 860 cases passed, failed: 0`; this is earlier full xUnit proof and supersedes Eclipse's 858/860. All 52 static checks also pass. This does not close the separate live checks: T-10 still needs real Excel open/edit/preview/apply/re-import, Z-05 and E-12/S-05 need their Windows walk-throughs, and optional real-cloud proof must use a separate test Shop id/table and database copy. No real Supabase endpoint was used. |
 | **Label storage rehearsal** | real SQLite schema + the service's UPSERT/audit transaction shapes | ✅ **6/6 groups:** upgrade defaults, Unicode persistence, five invalid batches, unknown keys, audited reset and rollback. Not a C#/xUnit substitute. |

@@ -44,16 +44,16 @@ existing pack/variant label editable and searchable in Products, Counter and Pur
 strength/pack text so equal-named variants remain separate products. One shared search policy covers pack
 metadata without changing product IDs, base-unit stock, box/strip conversion, barcodes, prices or financial
 rules; no new variant table or migration was needed. Phase-2 field governance and the Phase-1 Area11 header
-remain. **55/55 static checks pass with 900 written cases; Cobalt's Windows build/xUnit and PT-10 physical
-verification are still pending.** Zircon's owner-verified 883/883 is previous-release evidence, not a Cobalt
-result. Phase 4 and later redesign phases still require separate owner approval.
+remain. **55/55 static checks pass, and the owner verified Cobalt on Windows: 900/900 xUnit cases in
+1 m 4 s with zero failed/skipped. PT-10 physical verification is still pending.** Zircon's 883/883 is
+previous-release evidence. Phase 4 and later redesign phases still require separate owner approval.
 
 **Honest note:** the agent's build machine is Linux with no .NET SDK, so nothing in `dotnet/` is
 compiled there. Every change is checked statically (C# parses, explicit usings, XAML, resources,
 every binding against its view model, every SQL statement against the real schema, every mapped
-column against its model, migrations executed on SQLite). The owner's Windows machine built the prior
-**v0.36.0 Zircon** source and verified **883/883 xUnit cases in 1 m 10 s** on 29 October 2026; that is not
-backfilled onto the current Cobalt packaging/search release. WPF walk-throughs, genuine transactions,
+column against its model, migrations executed on SQLite). The owner's Windows machine built the current
+**v0.38.0 Cobalt** source and verified **900/900 xUnit cases in 1 m 4 s** on 29 October 2026; the earlier
+Zircon 883/883 result remains previous-release evidence. WPF walk-throughs, genuine transactions,
 isolated restore, real Excel and optional real-cloud proof remain separate. See [`docs/VERSIONS.md`](docs/VERSIONS.md)
 for release history and [`PHYSICAL-TESTING.md`](PHYSICAL-TESTING.md) for the running evidence log.
 

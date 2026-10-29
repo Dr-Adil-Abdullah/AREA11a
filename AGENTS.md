@@ -148,18 +148,19 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >   extra barcodes remain. No migration or replacement variant model was added. Phase-2 field governance and
 >   Phase-1 shell remain; Phase 4 and later phases are not authorized by this work.
 > * **Verification boundary:** all **55/55 static checks** pass with real C# grammar and XAML binding checks;
->   the actual search SQL also passed a targeted 7/7 SQLite development probe. There is no local .NET SDK/WPF
->   runtime, so the owner must build Cobalt, run **`ALL GREEN - 900 of 900`**, and complete PT-10 in
->   `PHYSICAL-TESTING.md`. Do not call the new packaging workflow physically tested yet.
-> * **Latest prior Windows xUnit proof:** Zircon v0.36.0 reported Failed 0, Passed 883, Skipped 0, Total 883
->   in **1 m 10 s** on 29 October 2026. This verifies that release's Windows suite, not Cobalt, every WPF
->   page or genuine physical workflow.
+>   the actual search SQL also passed a targeted 7/7 SQLite development probe. The owner built Cobalt on
+>   Windows and reported **Failed 0, Passed 900, Skipped 0, Total 900 in 1 m 4 s**, with
+>   **`ALL GREEN - 900 of 900`**. PT-10 in `PHYSICAL-TESTING.md` remains: do not call the new packaging
+>   workflow physically tested yet.
+> * **Previous Windows xUnit proof:** Zircon v0.36.0 reported Failed 0, Passed 883, Skipped 0, Total 883
+>   in **1 m 10 s** on 29 October 2026. This is previous-release evidence, not a substitute for Cobalt or
+>   any WPF/genuine physical workflow.
 >
 > * **The correct Obsidian commit `cb2e321` passed on the owner's Windows PC:** Failed 0, Passed 860,
 >   Skipped 0, Total 860, in 1 m 17 s. The banner was v0.35.18 and the runner printed
 >   **`ALL GREEN - 860 of 860 cases passed, failed: 0`**. This closed the earlier xUnit gate and verifies
 >   both workbook fixture repairs together with the retained PR allocation repair. This is earlier
->   **860-case** evidence; the later Zircon result is 883/883 above. Recording these results changes no code.
+>   **860-case** evidence; the later Zircon/Cobalt results are above. Recording these results changes no code.
 >
 > * **Green tests do not close the separate live checks.** The board remains 52/57 done with five
 >   owner-action rows, and the matrix remains 92 done / 4 partial. Keep T-10 🟡 until real Excel
@@ -169,8 +170,8 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >
 > * **Earlier verification is not backfilled.** Paprika really reported **837 passed / 14 failed / 851
 >   total**, and Quasar's 853-case target was not executed. Cypress 789/789 is now an earlier green
->   run, not the latest. The current **900-case** suite is written but still awaits its Cobalt owner
->   run; do not start Phase 4 or another feature stage unless the owner writes `next`.
+>   run, not the latest. The current **900-case** Cobalt suite is now owner-verified on Windows; PT-10
+>   remains separate. Do not start Phase 4 or another feature stage unless the owner writes `next`.
 >
 > * **Physical testing and authorized repairs are in progress.** PT-01 passed; PT-02 is **PASS — owner
 >   confirmed 29 October**, with product saves and Black-box entries confirmed. All findings, owner

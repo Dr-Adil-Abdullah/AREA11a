@@ -166,6 +166,10 @@ table below** - currently Obsidian `#27323A`; a shade listed there has been used
 ## Notes for the next agent
 
 - **Do not** edit an old row. The table is a record, like the audit log.
+- **Post-release verification:** on 29 Oct 2026 the owner's v0.38.0 Cobalt run reported
+  **Failed 0, Passed 900, Skipped 0, Total 900 in 1 m 4 s** and
+  **`ALL GREEN - 900 of 900 cases passed, failed: 0`**. This verifies the Windows build/xUnit suite;
+  PT-10 WPF/genuine packaging workflows remain pending. The release row stays unchanged.
 - **Post-release verification:** on 26 Oct 2026 the owner's correct v0.35.18 Obsidian commit
   `cb2e321` reported **Failed 0, Passed 860, Skipped 0, Total 860 in 1 m 17 s** and
   **`ALL GREEN - 860 of 860`**. This is owner xUnit evidence, not real Excel or real Supabase proof;
