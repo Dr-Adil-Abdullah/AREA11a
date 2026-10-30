@@ -11,7 +11,7 @@
 
         <DockPanel Grid.Row="0" Margin="0,0,0,10">
             <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                <TextBlock Text="No bill (rush return)" Style="{StaticResource PageTitle}" />
+                <TextBlock Text="{DynamicResource AppLabel.provisional}" Style="{StaticResource PageTitle}" />
                 <TextBlock Text="The customer has no paper bill. Refund now, put the goods on the shelf, keep the PR number - the bill comes later."
                            Style="{StaticResource PageSubtitle}" />
             </StackPanel>

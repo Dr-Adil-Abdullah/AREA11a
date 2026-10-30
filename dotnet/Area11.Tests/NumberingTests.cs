@@ -1,3 +1,4 @@
+using Area11.Core.Data;
 using Area11.Core.Services;
 using Area11.Core.Utils;
 using Xunit;
@@ -114,6 +115,55 @@ public sealed class NumberingTests
         var second = TestData.Sales(test).Create(TestData.Cart(productId), TestData.Owner);
 
         Assert.Equal("INV-0002", second.Value!.Code);
+    }
+
+    [Fact]
+    public void ASecondSettingsInstanceReadsTheCommittedCounterNotItsStartupCopy()
+    {
+        using var test = new TestDatabase();
+        var secondDatabase = new Database(test.Database.FilePath, pooling: false, durable: false);
+        var secondSettings = new SettingsService(secondDatabase,
+            new AuditService(secondDatabase, test.Log), test.Log);
+        var firstNumbering = new NumberingService(test.Settings);
+        var secondNumbering = new NumberingService(secondSettings);
+
+        Assert.Equal("INV-0001", test.Database.Tx(connection => firstNumbering.Take(connection, "sale")));
+        Assert.Equal("INV-0002", secondDatabase.Tx(connection => secondNumbering.Take(connection, "sale")));
+        Assert.Equal("INV-0003", test.Database.Tx(connection => firstNumbering.Take(connection, "sale")));
+        Assert.Equal(4L, NextSaleNumber(test));
+    }
+
+    [Fact]
+    public void ARolledBackTransactionDoesNotLeaveTheNextNumberInMemory()
+    {
+        using var test = new TestDatabase();
+        var numbering = new NumberingService(test.Settings);
+
+        Assert.Throws<InvalidOperationException>(() => test.Database.Tx(connection =>
+        {
+            _ = numbering.Take(connection, "sale");
+            throw new InvalidOperationException("Make the document roll back.");
+        }));
+
+        Assert.Equal(1L, NextSaleNumber(test));
+        Assert.Equal("INV-0001", Take(test, numbering, "sale"));
+        Assert.Equal(2L, NextSaleNumber(test));
+    }
+
+    [Fact]
+    public void RepeatedNumbersInsideOneTransactionSeeTheEarlierIncrement()
+    {
+        using var test = new TestDatabase();
+        var numbering = new NumberingService(test.Settings);
+
+        var codes = test.Database.Tx(connection => new[]
+        {
+            numbering.Take(connection, "quarantine"),
+            numbering.Take(connection, "quarantine"),
+            numbering.Take(connection, "quarantine")
+        });
+
+        Assert.Equal(new[] { "Q-0001", "Q-0002", "Q-0003" }, codes);
     }
 
     // ============================== helpers ==============================

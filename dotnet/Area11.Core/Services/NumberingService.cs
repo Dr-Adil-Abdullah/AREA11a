@@ -37,10 +37,15 @@ public sealed class NumberingService
             throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown document kind.");
         }
 
-        var next = _settings.GetInt(keys.CounterKey, 1);
+        var next = _settings.ReadCounter(connection, keys.CounterKey);
         if (next < 1)
         {
             next = 1;
+        }
+
+        if (next == long.MaxValue)
+        {
+            throw new InvalidOperationException("The document number limit has been reached.");
         }
 
         var prefix = _settings.GetString(keys.PrefixKey);

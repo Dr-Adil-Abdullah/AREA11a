@@ -130,7 +130,7 @@ Full permission matrix: Section 7.4.
 
 3.1.19 **[U-19]** **Photos live in a folder** (`data/photos/`), the database stores only the file name — keeps the database light. (5 Oct 2026)
 
-3.1.20 **[U-20]** **The basis of discount is chosen by the owner**: on profit or on retail — **both are built**, switchable in Settings. (5 Oct 2026)
+3.1.20 **[U-20]** **Current rule (27 Oct 2026 physical-testing decision):** an explicit discount percentage applies to the **full retail/selling-price total**. This supersedes the 5 Oct margin/retail choice for new sales; the legacy `discount.mode` value is retained only so old databases open safely and does not change the calculation.
 
 3.1.21 **[U-21]** **Medicine room/almari + camera photo**: each medicine carries "where it is kept" and a photo — both. (5 Oct 2026)
 
@@ -151,6 +151,8 @@ Full permission matrix: Section 7.4.
 3.1.29 **[U-29]** **Instant notice at the counter**: a stock problem or price change message appears on the billing screen **at that moment** (toast + top alert bar). (6 Oct 2026, Spec 4)
 
 3.1.30 **[U-30]** **Negative stock must never stop any work**: supplier return, stock adjust, write-off — anywhere the quantity exceeds available stock, **no error, only an alert (warning)**; the work completes even if stock goes negative. (6 Oct 2026)
+
+3.1.30A **D-93 supersedes U-25/U-26/U-30 for every new transaction (26 Oct 2026).** No sale or other stock decrement may take a batch or active product total below zero, regardless of the legacy setting or owner role. The whole operation is validated cumulatively and rolls back atomically. Historical negative quantities and their alerts remain unchanged until a read-only review, physical count and audited stock-take correction; no migration silently zeroes them.
 
 3.1.31 **[U-31]** **Every alert is dismissed only by the owner, by writing a reason**: any alert (negative stock, no-bill return, etc.) can be "ended" only by the **Owner** and a **reason is compulsory**; the reason is stored and logged. Until the owner dismisses it with a reason, the alert shows on every page. (6 Oct 2026)
 
@@ -202,7 +204,7 @@ Full permission matrix: Section 7.4.
 
 3.3.7 **[E-07]** **Expiry levels**: days + colour from settings (levels 1/2/3).
 
-3.3.8 **[E-08]** **Rates and discount**: kinds of rate, method of discount (margin/retail), limit — all from settings.
+3.3.8 **[E-08]** **Rates and discount**: retail/VIP/Doctor rates remain editable guidance; a special rate requires an explicit counter **Yes**, while **No** keeps retail. Explicit discount is a percentage of full retail, with role limits from Settings (27 Oct 2026 clarification).
 
 3.3.9 **[E-09]** **Round-off, tax, invoice format, printer size (58/80 mm)** — from settings.
 
@@ -373,7 +375,7 @@ Full permission matrix: Section 7.4.
 | Question | Owner's decision | What was built |
 |---|---|---|
 | What does "room" of a medicine mean? | **Both** — rack/room box **and** camera photo | migration `006_product_room` + photo upload (`U-21`) |
-| On what is discount applied? | **Both** — owner chooses in Settings (profit **or** retail) | `discount.mode` = `margin` / `retail` (`U-20`) |
+| On what is discount applied? | Original 5 Oct answer: both. **Superseded 27 Oct: explicit discount is always on full retail** | `SaleService` full-retail calculation; legacy `discount.mode` is inert (`U-20`) |
 | Where do photos live? | **Files in a folder** (not in the database) | `data/photos/` + photo service (`U-19`) |
 | Where are filters wanted? | **All three places** — medicines, customers, bills | filters + sorting in all three lists (`U-22`) |
 | What does "enlarge/reduce folders" mean? | **Simple group** — by category/company/room, not a tree | collapsible groups in the product list (`U-22`) |
@@ -478,6 +480,8 @@ Full permission matrix: Section 7.4.
 
 5.1.2 **Quantities = base units.** Stock is always stored in the smallest unit (tablet/capsule/ml/piece) as `qty_base` `[Spec §4.1.1]`. Boxes and strips are only a way of typing/displaying quantity.
 
+5.1.2A **Managed-unit clarification (D-95, 27 Oct 2026):** the base-unit list is editable and canonical. A unit marked **whole-only** requires whole stock/sale quantities even after it is renamed; the rule is stored on the unit row, not inferred from the word `injection`. Strength/volume is descriptive only: `1 box = 10 injections`, each `50 mL`, means **10 injection units**, not 500 mL of stock. The 10/50/100 mL variants remain separate products. Historical REAL quantities and documents are not rewritten.
+
 5.1.3 **Dates and times** are local shop time (Asia/Karachi), stored as local text (`datetime('now','localtime')` in SQLite). "Today" = `date(date) = date('now','localtime')`. Expiry is stored as year-month (`YYYY-MM`, e.g. `2027-03`).
 
 5.1.4 **Transactions**: every multi-row write runs inside one transaction (`tx()`); all-or-nothing (also for Excel import and for sync apply).
@@ -527,9 +531,9 @@ Full permission matrix: Section 7.4.
 
 5.3.2 **users** [orig concept] — name, role (owner/manager/cashier), password hash (owner) or PIN hash (staff), active flag. Default owner seeded at first start.
 
-5.3.3 **categories** — name, optional parent (max 2 levels), active. Five categories are seeded at first start (the specification's examples: Medicine, Surgical, Cosmetics, General, Baby Care).
+5.3.3 **categories** — name, optional parent (max 2 levels), owner-defined sort order, active. Five categories are seeded at first start (the specification's examples: Medicine, Surgical, Cosmetics, General, Baby Care).
 
-5.3.4 **companies** — name, active.
+5.3.4 **companies** — name, phone, notes, medical-representative name/phone/visit day, owner-defined sort order, active.
 
 5.3.5 **products** — name, generic/salt/formula, brand, barcode, category, company, room, rack, reorder level (minimum quantity), photo file name, `boxStrips`, `stripTablets`, cost, retail, VIP and doctor rates, active, custom-field values.
 
@@ -625,10 +629,11 @@ Full permission matrix: Section 7.4.
 | Key | Meaning |
 |---|---|
 | `discount.enabled` | Discount on/off |
-| `discount.mode` (`margin` default / `retail`) | The limit applies to profit margin or to the retail price `[U-20] [Q-08]` |
+| `discount.mode` (legacy, inert) | Old databases may contain `margin` or `retail`; new sales always use full retail `[U-20]` |
 | `discount.maxPercentCashier` (5) | Cashier maximum % |
 | `discount.maxPercentManager` (20) | Manager maximum % (owner unlimited) |
 | `discount.blockBelowCost` (on) | Nobody may discount below purchase cost `[Spec §7.3.1]` |
+| `sale.successPopup` (on) | Optional post-commit Done/invoice/cash-change card on the Counter |
 
 ### 6.7 Expiry, reorder, loyalty
 
@@ -673,8 +678,8 @@ Full permission matrix: Section 7.4.
 
 | Key | Meaning |
 |---|---|
-| `stock.allowNegative` (default **ON**) | ON = sales continue even if stock is 0/low (only the big red alert); OFF = a sale that exceeds stock is refused with an Urdu/English message |
-| `stock.warnNegative` | Show the big alert for negative stock |
+| `stock.allowNegative` | Legacy compatibility key only. D-93 has no production reader, Settings checkbox or owner bypass; every new decrement is guarded regardless of its stored value. |
+| `stock.warnNegative` | Legacy compatibility key only. Historical negative-stock alerts follow the actual stored quantities and remain available for reconciliation. |
 | `returns.requireInvoice` (ON) | A return without the original bill number is not allowed |
 | `returns.maxDays` (0 = no limit) | Return window in days (e.g. 7) |
 
@@ -771,9 +776,9 @@ Full permission matrix: Section 7.4.
 
 ### 8.1 Products (`/products`, `/products/[id]`)
 
-8.1.1 **Product fields**: name (required), generic name / salt / formula, brand, barcode, category, company, **room / almari** `[U-21]`, **rack / shelf number** (e.g. "Rack B-12") `[Spec §11.1.4]`, **minimum (reorder) quantity**, photo (file or camera), pack formula, rates, custom fields `[U-17]`.
+8.1.1 **Product fields**: name (required), generic name / salt / formula, brand, barcode, **one primary category plus optional filter-only tags**, company, **room / almari** `[U-21]`, **rack / shelf number** (e.g. "Rack B-12") `[Spec §11.1.4]`, **minimum (reorder) quantity**, photo (file or camera) with Products/Counter thumbnail, managed base unit, optional descriptive strength, pack formula, rates, custom fields `[U-17]`.
 
-8.1.2 **Pack formula** `[Spec §4.2]`: configured once per product: `1 Box = X Strips = Y Tablets` (e.g. 1 Box = 2 Strips = 20 Tablets, or 1 Box = 10 Strips = 100 Tablets; stored as `boxStrips` and `stripTablets`). The base unit is always the smallest (tablet/capsule/ml/piece). Entering "5 Boxes" in a purchase automatically adds 100 tablets (when 1 Box = 20 tablets). Non-tablet products (syrups, creams) use the base unit as "piece/ml".
+8.1.2 **Pack formula** `[Spec §4.2]`: configured once per product: `1 Box = X Strips = Y Tablets` (e.g. 1 Box = 2 Strips = 20 Tablets, or 1 Box = 10 Strips = 100 Tablets; stored as `boxStrips` and `stripTablets`). The base unit comes from the managed list. Entering "5 Boxes" in a purchase automatically adds 100 tablets (when 1 Box = 20 tablets). Non-tablet products (syrups, creams) use the appropriate base unit. Under D-95, a whole-only injection/ampoule row stays whole after rename; `10 injections × 50 mL` is 10 base units and `50 mL` is only the variant's descriptive strength.
 
 8.1.3 **Rates**: purchase cost; **normal retail**; **VIP rate**; **Doctor/institutional rate** `[Spec §7.1]`. Typed in rupees, stored as paisa. Rates are also kept per batch (see 10.1) so an old batch keeps its own cost.
 
@@ -797,15 +802,17 @@ Full permission matrix: Section 7.4.
 
 8.2.1 Unlimited categories **and sub-categories** `[Spec §2.1]` — original supports two levels (e.g. `Medicines › Pain/Fever`). Choosing a parent in a filter includes all children.
 
-8.2.2 Create, rename, delete; **deleting only unlinks products, never deletes them**; old records remain safe `[E-14]`.
+8.2.2 Create, rename, order, put away and bring back; **putting away only unlinks current product references, never deletes them**. Child categories and all historical records remain; bringing a row back does not invent old product links `[E-14]`.
 
 8.2.3 Seeded at first start: five categories (Medicine, Surgical, Cosmetics, General, Baby Care).
 
+8.2.4 **Primary plus tags (D-95):** financial category reports read only `products.category_id`, once per sale line. `product_category_tags` is exclusively for catalog counts and search/filter inclusion; a primary/tag conflict is refused and a filtered product appears once.
+
 ### 8.3 Companies and representatives
 
-8.3.1 Company create / rename / delete (delete unlinks only).
+8.3.1 Company create / rename / order / put away / bring back (put-away unlinks only). Phone, notes and medical-representative fields remain intact, and restore does not recreate product links.
 
-8.3.2 Clicking a company shows **all its medicines** `[Spec §10.3.1]`.
+8.3.2 Clicking a company shows **all its medicines** `[Spec §10.3.1]`; category links use the corresponding primary/tag filter. Dashboard cards open their actual detail pages, with Bills/Sales/Profit forced to Today and Credit/Payable filtered to owing rows (D-95).
 
 8.3.3 Spec §10.3.2 also asks for the **medical representative / salesman**: name, phone number, **visit day** — not evident in the original; required in the rebuild.
 
@@ -853,7 +860,7 @@ Full permission matrix: Section 7.4.
 
 9.3.1 Reasons: expired, damaged, wrong goods. Each line names the batch (or falls back to FEFO). The stock leaves, and what the shop owes is reduced (or a **credit note** is created that is deducted from the next invoice).
 
-9.3.2 **Rule U-30**: if the quantity returned exceeds the stock in the batch, the return **still completes**; stock goes negative and the response carries a warning ("stock MINUS (-10) gone"). (Original defect: "Batch has only N" stopped the work.)
+9.3.2 **D-93 (supersedes U-30 for new returns):** if the cumulative quantity returned exceeds the selected batch or active product total, the whole supplier return is refused with available-versus-requested detail. Header, credit/payment effect, stock rows, audit and `SR` number roll back together. A credit note larger than the payable is still allowed when the physical stock really exists.
 
 9.3.3 Expired batches ticked on the alerts page can be **sent back to the supplier in one click**.
 
@@ -885,7 +892,7 @@ Full permission matrix: Section 7.4.
 
 10.2.4 **Expired batches cannot be sold** at the counter `[Spec §6.2.2]`; they are available only for supplier return or write-off (and, under U-34, from quarantine "if wanted").
 
-10.2.5 If no batch has enough stock and `stock.allowNegative` is ON, the **last batch** is cut so that stock really goes negative `[U-26]`; book and reality never silently differ.
+10.2.5 **D-93:** only positive, unexpired batch quantities are sellable. Repeated cart lines reserve their FEFO allocations cumulatively. If the requested product total or sellable allocations are insufficient, the sale is refused; there is no last-batch negative fallback. Book and reality are reconciled by purchase/return or audited physical count, never by overselling.
 
 ### 10.3 Stock movement ledger
 
@@ -919,19 +926,19 @@ Full permission matrix: Section 7.4.
 
 11.1.1 Normal retail rate; **VIP rate**; **Doctor / institutional rate** (clinics, hospitals, doctors).
 
-11.1.2 Choosing a customer applies the matching rate **automatically** (customer category → rate). A toast says "VIP/DOCTOR rate applied — Rs 20" `[U-29]`.
+11.1.2 Choosing a customer does **not** silently change the selling rate (27 Oct 2026 decision). With no explicit discount and an applicable VIP/Doctor rate, the Counter asks **Yes/No**: Yes uses the special rate; No keeps ordinary retail. A manually edited line rate remains the final explicit override, but arbitrary custom rates are Owner/Manager only and cannot bypass the cost lock. `[U-29]`
 
 ### 11.2 Discount engine `[Spec §7.2] [U-20]`
 
-11.2.1 **Margin method**: the percentage applies **only to the profit margin**. Example: cost Rs 200, retail Rs 300 (margin 100); 10 % discount = Rs 10; final price Rs 290.
+11.2.1 **Current full-retail method**: the percentage applies to the line's full retail/selling-price total. Example: cost Rs 200, retail Rs 300; 10 % discount = Rs 30; final price Rs 270.
 
-11.2.2 **Retail method**: the traditional discount on the retail price or the whole bill.
+11.2.2 **No stacking with a special rate**: when an explicit discount is present, the sale follows retail plus that discount; a VIP/Doctor rate is not included in the percentage calculation. An editable custom line rate is the selling-price base when one was explicitly entered.
 
-11.2.3 The owner chooses the method in Settings (`discount.mode`); both are built.
+11.2.3 The legacy `discount.mode` setting may remain in an old database, but it no longer selects a margin method. This supersedes the former dual-method rule for new sales.
 
 11.2.4 Discount may be typed in rupees or as a percentage.
 
-11.2.5 **Role limits**: cashier 5 %, manager 20 %, owner unlimited (editable). **The limits are enforced on the server side** — no UI can exceed them. Percent limits measure against the margin or the retail value according to `discount.mode`.
+11.2.5 **Role limits**: cashier 5 %, manager 20 %, owner unlimited (editable). **The limits are enforced on the server side** — no UI can exceed them. The percentage always measures against the full retail/selling-price total.
 
 11.2.6 **Hard lock**: no discount may take the price below purchase cost (`discount.blockBelowCost`) — checked per line and per bill `[Spec §7.3.1]`.
 
@@ -971,11 +978,11 @@ Full permission matrix: Section 7.4.
 
 12.1.6 **Payment area**: methods from settings (default cash / credit), **split pad** (see 13.3), **cash-tendered box with live change calculator** and quick buttons (Exact, 100, 500, 1000, 2000, 5000), change shown on screen and on the receipt.
 
-12.1.7 **Shift reminder**: a small amber strip when no cash shift is open. **Offline banner**: amber strip "internet is off" (billing continues).
+12.1.7 **Drawer gate and offline notice**: a closed drawer (galla) prevents a new sale and the counter offers **Open a galla now** without clearing the cart. The offline banner remains amber; billing continues without internet.
 
-12.1.8 **Instant notices `[U-29]`**: toasts when a medicine is added with problems — "stock 0 — sale will go ahead but stock will go MINUS", "only 5 available — this quantity takes stock negative", "VIP/DOCTOR rate applied", discount/round-off applied; a **sticky red alert bar** at the top stays while the problem exists; the line itself shows "⚠ stock will go minus (−7)".
+12.1.8 **Instant notices `[U-29]`**: low/zero-stock and cumulative-shortage messages explain available versus requested quantity before saving; VIP/Doctor rate, discount and round-off notices remain. A shortage refuses the bill and preserves the cart rather than promising a negative sale. Historical negative quantities keep their existing alert and Stock minus entries.
 
-12.1.9 After saving, the server's warnings appear in the big alert at the top (not hidden in small text) and the receipt opens for printing (auto-print).
+12.1.9 After a successful save, its warnings appear in the big alert at the top (not hidden in small text) and the receipt opens for printing (auto-print). A refused sale has no receipt or success alert and leaves the entered cart intact.
 
 ### 12.2 Sale creation algorithm (REQUIRED order)
 
@@ -991,11 +998,11 @@ Full permission matrix: Section 7.4.
 
 12.2.6 Apply loyalty redemption if used (13.6).
 
-12.2.7 Deduct stock in base units, write movements; if stock is insufficient and `stock.allowNegative` is ON, continue and cut the last batch (stock goes negative), record a `negative_sale` audit event with old → new quantity and return `negativeItems`; if OFF, refuse with a clear message "Settings › Stock to allow".
+12.2.7 Before invoice numbering, validate the whole cart cumulatively by product and reserve shared FEFO batches. During the same immediate transaction, deduct every allocation through `StockPolicy.Decrease`, whose conditional SQL guards both selected batch and active product total. Any shortage rolls back the sale, payments, stock movements, audit rows and number; the legacy setting and owner role are not bypasses.
 
 12.2.8 Create the sale (code `INV-nnnn`), lines, payments, change; update customer balance/points; earn loyalty points (if enabled).
 
-12.2.9 Write audit rows; return the sale code, warnings and `negativeItems`.
+12.2.9 Write the ordinary audit rows and return the sale code plus warnings. A refused operation writes no partial history and no new `negative_sale` event; historical negative-sale audit rows remain readable.
 
 12.2.10 All of this happens in **one transaction**.
 
@@ -1119,7 +1126,7 @@ Full permission matrix: Section 7.4.
 
 15.4.2 Fields: `disposition` — `quarantine` (in quarantine) → `restocked` (back to stock) / `expired` (expired-damaged write-off) / `sold` (sold on); with time, note and user.
 
-15.4.3 The owner/manager decides each item with three buttons: **back in stock / damaged-expired / sold**. Only "back in stock" increases stock. The negative-stock rule applies here too.
+15.4.3 The owner/manager decides each item with three buttons: **back in stock / damaged-expired / sold**. Restocked and sold-on outcomes return the quantity to the shelf; expired-damaged does not add and remove it again. "Sold" is not a stock-decrement endpoint: the goods must then be rung through the normal counter, where D-93 guards the sale.
 
 15.4.4 **As long as goods are in quarantine the alert keeps going** (and the owner can dismiss it with a reason, 16.4).
 
@@ -1149,9 +1156,11 @@ Full permission matrix: Section 7.4.
 
 ### 16.1 Principle
 
-16.1.1 **Stock negativity never stops any work** — sale, supplier return, write-off, adjust all continue. Only a warning/alert is produced. (Two counters selling the last item together on a dead network also fall under this `[Spec §1.2.5]`: the system must not crash; it shows stock as minus and raises the alert.)
+16.1.1 **D-93: new work never takes stock below zero.** Sales, write-offs/count-short adjustments, owner goods drawings, supplier returns and PR cancellation use one central transactional policy guarding both selected batch and active product total. Repeated products and shared batches are validated cumulatively; a shortage refuses the whole operation with available-versus-requested detail and preserves the form/cart, financial history and document number. Two counters cannot use a network failure as an oversell bypass: the conditional database update remains the final guard.
 
-16.1.2 `stock.allowNegative` can be switched OFF; then a sale exceeding stock is refused with a clear message.
+16.1.2 The legacy `stock.allowNegative` row is retained only for database compatibility. It has no production reader, no Settings checkbox and no owner-only bypass. Existing negative quantities remain visible in alerts and the read-only Stock minus report, then require a physical count and audited stock-take correction; migration never silently zeroes them.
+
+16.1.3 Exact zero is a successful outcome, including fractional `REAL` quantities. Planning may ignore only tiny binary floating-point residue; the SQL `qty_base >= requested` guard stays strict. Historical sales, returns, receipts and reports remain readable, and a historical return may increase a negative batch towards zero.
 
 ### 16.2 Where alerts are shown
 
@@ -1159,13 +1168,13 @@ Full permission matrix: Section 7.4.
 
 16.2.2 `/alerts` has a top card "Stock MINUS" (how many medicines, how much).
 
-16.2.3 `/stock` shows write-off warnings in a big red alert box.
+16.2.3 `/stock` shows a clear red validation error before a write-off would exceed available stock; the typed form stays intact and nothing is saved.
 
-16.2.4 Each cart line shows a red mark; the post-bill alert stays in the top bar.
+16.2.4 Cart lines may show low/zero-stock warnings. A cumulative shortage prevents saving; it does not create a new negative-stock alert. Alerts for historical negative rows remain in the top bar until their existing owner-dismissal/reconciliation rules are met.
 
 ### 16.3 What is recorded
 
-16.3.1 Every negative sale is stored in the black box as `negative_sale` with "who · when · old value → new value".
+16.3.1 Historical negative-sale records remain readable in the black box and historical audit exports. D-93 refusals are failed operations, not new negative sales: they create no partial stock, payment or `negative_sale` history. Successful guarded operations retain their ordinary stock/audit entries.
 
 ### 16.4 Alert dismissal `[U-31]`
 
@@ -1183,7 +1192,7 @@ Full permission matrix: Section 7.4.
 
 16.5.1 Negative stock per product; pending / linked no-bill returns (`PR-…`); items in quarantine (`Q-…`); overpayment to a supplier (informational, recorded in the black box). Each has a stable alert key used by the dismissal table.
 
-16.5.2 During a stock-take apply, negative book stock is corrected automatically.
+16.5.2 During a stock-take apply, a historical negative book quantity is corrected to the finite, non-negative physical count with an audited adjustment. Counting zero is valid; leaving a row uncounted does not silently zero it.
 
 16.5.3 Cart-time toast rules: stock 0 / low / negative; VIP/Doctor rate applied; discount limit; round-off applied.
 
@@ -1255,7 +1264,7 @@ Full permission matrix: Section 7.4.
 
 19.1.1 One click to write off goods that are expired, broken/dropped, lost, or to correct a count. Value is computed at **purchase cost** (the real loss) and stored.
 
-19.1.2 Removing more than the available stock is **allowed with a big red warning** `[U-30]`.
+19.1.2 **D-93 (supersedes U-30 for new adjustments):** removing more than the available batch/product quantity is refused atomically with a clear available-versus-requested message. The form and any document number are preserved until a valid save. A physical stock-take is the correction path for a historical negative balance.
 
 ### 19.2 Stock-take / physical stock audit (`/stock-take`) `[Spec §15.2.4]` (stage-29)
 
@@ -1401,7 +1410,7 @@ create table if not exists public.area11_sync (
 
 25.4 The `/sync` page shows status, counts (medicines/customers/suppliers/sales/batches) and three buttons: **push** (send to cloud), **see from cloud** (preview, changes nothing), **bring and apply here** (writes the cloud data onto this computer — an automatic backup is made first; it **overwrites** tables, so use deliberately).
 
-25.5 **What is sent**: medicines, customers, suppliers, categories, companies, batches, and the last **90 days** of sales / purchases / payments / expenses. **Photos are not sent** (they travel in the zip backup).
+25.5 **What is sent**: medicines, customers, suppliers, categories, companies and batches whole; the last **90 days** of sales / purchases / provisional returns / payments / expenses, with their lines. A recent payment or provisional reconciliation can reference an older sale, purchase or provisional return: that referenced parent and all its lines are included as a small dependency closure, while unrelated old documents stay outside the window. Format **2** carries these **15 tables**; format 1 remains readable, and older builds must refuse format 2 rather than break its links. **Photos are not sent** (they travel in the zip backup). This is a partial mirror, not a full-machine backup.
 
 25.6 Error messages (documented): URL/key missing; 401 key wrong or old; 404 table name wrong or table not created; network error; "no data for this shop in the cloud — push first".
 
@@ -1527,11 +1536,11 @@ create table if not exists public.area11_sync (
 
 30.2.4 Item-total reconciliation (plain bill, loyalty only, round-off only, both; line sums equal bill total) and round-off with cost guard.
 
-30.2.5 Stock rules for negative stock (decisions for sale / supplier return / write-off; never blocks when allowed; blocks when `allowNegative` is OFF).
+30.2.5 D-93 stock rules for every decrement route (cumulative repeated products/shared batches, exact and fractional zero, finite inputs, legacy negative product totals, selected-batch guard, atomic rollback and no burned number).
 
 30.2.6 Audit diff (new record, deleted record, edited record = only changed fields, no-change = nothing).
 
-30.2.7 Alert key, dismissed alerts hidden, **reason compulsory**, **owner only**, negative stock does not block work.
+30.2.7 Alert key, dismissed alerts hidden, **reason compulsory**, **owner only**, historical negative-stock alerts/reconciliation remain readable, and no new decrement can bypass D-93.
 
 30.2.8 Report math (profit with restocked-return cost, margin; 5 tests).
 
@@ -1555,15 +1564,15 @@ create table if not exists public.area11_sync (
 
 ## 31. ACCEPTANCE SCENARIOS (verified live in the original — the rebuild must give the same results)
 
-31.1 **Negative stock sale**: stock 5, sell 12 → sale succeeds, code `INV-0001`, warning "stock MINUS (−7) gone", `negativeItems = [{inStock 5, sold 12, after −7}]`. Turn `stock.allowNegative` OFF and sell 3 more → refused (400) "stock only −7 … negative stock is off". Turn ON again → sale goes through, stock −10.
+31.1 **D-93 sale boundary**: stock 5, sell 12 → refused before `INV-0001` is taken; cart and stock 5 are unchanged, and no financial/audit rows are written. The legacy `stock.allowNegative` value does not change the result. Two lines for the same product, 3 + 2, succeed and leave exactly zero. A fractional sale `0.1 + 0.2` against stock `0.3` also leaves zero; the next positive decrement is refused.
 
-31.2 **Audit old → new**: batch quantity `5 → −7` logged as `negative_sale`; a return logs `refunded_so_far 0 → 8000`, `cash_back 8000`; CSV exports Old/New.
+31.2 **Historical minus and audited correction**: opening a database with legacy batch quantity −5 does not rewrite it. Catalog, Stock minus, old sale/return receipts and reports remain readable. A physical count of 7 applies an audited +12 adjustment; a physical count of 0 is also valid. No migration or background job silently zeroes the row.
 
 31.3 **Return validation**: 12 bikes sold → returning 100 refused ("now only 12 can be returned"); returning an item of another bill refused ("Item #2 is not on this bill (INV-0001)"); returning 4 allowed (refund 8000 paisa); then returning 9 more (13 > 12) refused ("4 already returned — now only 8").
 
 31.4 **Alert dismissal**: no reason → rejected; with reason → alert disappears, reason shown in `/alerts` and in the black box; a cashier attempting → "ending an alert is only the owner's job".
 
-31.5 **Supplier return with negative stock**: batch at −4, return 6 → completes, stock −10, response `warnings: ["…stock MINUS (−10) gone"]`.
+31.5 **D-93 supplier return**: batch 5, two return lines requesting 3 + 3 for the same product/batch → refused atomically with available/requested detail; no `SR` number, supplier financial effect, stock row or audit row survives. Correcting the form to a total of 5 succeeds and leaves exactly zero. A historical negative batch still cannot hide a product-level shortage.
 
 31.6 **No-bill return**: stock −7, 3 returned → stock **−4 immediately**; then link the bill → stock **stays −4** (no double add); the alert remains ("PR-0001 — bill (INV-0001) linked, owner's confirmation pending").
 
@@ -1589,7 +1598,7 @@ create table if not exists public.area11_sync (
 
 31.17 **Supplier overpayment**: payment when nothing is owed → payment accepted, alert "paid in advance", black-box row `overpaid: true`.
 
-31.18 **Price examples**: margin discount cost 200 / retail 300 / 10 % → Rs 290; round-off 545 → 540 and 556 → 550; 545 with cost 543 → 545; 545 with cost 500 → 540; below-cost discount refused.
+31.18 **Price examples**: full-retail discount cost 200 / retail 300 / 10 % → Rs 270; with the below-cost lock, a requested discount that crosses cost is capped at cost and warned, while a custom/special line rate already below batch cost is refused; round-off 545 → 540 and 556 → 550; 545 with cost 543 → 545; 545 with cost 500 → 540. VIP/Doctor rate applies only after explicit Yes; No keeps retail. Custom rates are Owner/Manager only.
 
 31.19 **Roles**: a cashier opening an owner/manager page is redirected to `/pos` (HTTP 307) and the API returns 403; a cashier cannot dismiss alerts, import data, run stock-take apply, or manage custom fields.
 
@@ -1619,7 +1628,7 @@ create table if not exists public.area11_sync (
 
 32.8 An empty shift auto-created at first start → removed (18.1.1).
 
-32.9 Supplier return stopped with "Batch has only N" → warning only (9.3.2, U-30).
+32.9 Supplier return originally stopped with "Batch has only N"; U-30 later allowed a negative batch instead. D-93 now resolves the defect without either extreme: the entered return is validated and either completes non-negatively or rolls back atomically with a useful available/requested message (9.3.2).
 
 32.10 Hidden settings (`bill.stockTakePrefix`, `provisionalPrefix`, `supplierReturnPrefix`, `discount.blockBelowCost`, `owner.name`) → shown (6.4.1).
 
@@ -1658,7 +1667,7 @@ create table if not exists public.area11_sync (
 | §1.2.1 offline | ✅ | keep |
 | §1.2.2 auto-sync on reconnect, §1.2.4 periodic sync | ❌ not built (manual push/pull only) | later, with sync/server |
 | §1.2.3 manual sync | ✅ | later |
-| §1.2.5 offline stock conflict | ✅ (negative stock + alert) | keep |
+| §1.2.5 offline stock conflict | ✅ (original used negative stock + alert) | D-93 conditional transactional guard for new work; preserve historical alerts and physical-count reconciliation |
 | §1.3.1 manual backup | ✅ | keep |
 | §1.3.2 scheduled backup | ✅ (daily, configurable) | keep |
 | §1.3.3 daily auto-send by e-mail/WhatsApp | ❌ (manual WhatsApp summary) | build |
@@ -1683,7 +1692,7 @@ create table if not exists public.area11_sync (
 | §14 financials | ✅ | keep |
 | §15.1 top / dead stock ✅; all-time highest/lowest day ❌ | | add |
 | §15.2.1 vendor return cutoff alert ❌; §15.2.2 write-off ✅; §15.2.3 alternative suggestion ❌; §15.2.4 stock-take ✅ | | build the ❌ ones |
-| Owner orders U-25…U-36 | ✅ | keep |
+| Owner orders U-25…U-36 | ✅ | keep, except D-93 supersedes U-25/U-26/U-30 overselling for new transactions; historical evidence remains |
 
 ### 33.3 Original remaining list (as of stage-43)
 
@@ -1761,7 +1770,7 @@ create table if not exists public.area11_sync (
 
 34.7 **Hardware last**: test the printer and the scanner at the real shop PC at the end; absence of devices must not stop the app.
 
-34.8 **Android later**: the owner does not want Android sync now but wants to add it later — possibly a separate Kotlin app (viewing data first; selling later). Because of the interface/DTO design (4.4) it will connect to the same data through the future server API (or the Supabase mirror). Phone selling brings two-device stock conflicts — handled by negative-stock + alert rules (Section 16) and server-side transactions.
+34.8 **Android later**: the owner does not want Android sync now but wants to add it later — possibly a separate Kotlin app (viewing data first; selling later). Because of the interface/DTO design (4.4) it will connect to the same data through the future server API (or the Supabase mirror). Any future phone sale must use the same server-side immediate transactions and central D-93 stock policy; a network conflict is never an oversell bypass, while historical negative rows remain reconcilable.
 
 34.9 **Second counter later**: one computer now; later a main PC runs `Area11.Server` (ASP.NET Core minimal API, same Core + same SQLite file) and the second counter's Desktop uses the HTTP implementation of the service interfaces. WAL mode and single-transaction operations prevent double-selling.
 
@@ -1917,6 +1926,8 @@ create table if not exists public.area11_sync (
 - 6.2.2 Separate isolation of expired goods: expired goods are blocked from counter sale and available only for "supplier return".
 
 ### SECTION 7: PRICES, PROFIT PROTECTION AND DISCOUNT ENGINE
+
+> **Historical source text below.** The owner's 27 Oct 2026 physical-testing decision supersedes 7.1.4 and 7.2 for new sales: special rates require explicit Yes, No keeps retail, and an explicit discount is always calculated from full retail. See §11.1–§11.2.
 
 **7.1 Multi-tier rates**
 - 7.1.1 Normal retail rate: for an ordinary customer.

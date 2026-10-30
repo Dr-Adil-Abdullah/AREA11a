@@ -13,7 +13,7 @@
         <!-- ================================ the heading ================================ -->
         <DockPanel Grid.Row="0" Margin="0,0,0,10">
             <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                <TextBlock Text="Reorder pad" Style="{StaticResource PageTitle}" />
+                <TextBlock Text="{DynamicResource AppLabel.reorder}" Style="{StaticResource PageTitle}" />
                 <TextBlock Text="What is running out, and the WhatsApp message that orders it - one supplier per message."
                            Style="{StaticResource PageSubtitle}" />
             </StackPanel>

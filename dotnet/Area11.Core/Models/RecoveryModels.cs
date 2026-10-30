@@ -98,9 +98,9 @@ public sealed class RecoveryRow
     public long BucketsTotalPaisa => Bucket0Paisa + Bucket1Paisa + Bucket2Paisa + Bucket3Paisa;
 
     /// <summary>
-    /// Udhaar the customer already owed when the shop moved to Area11 (F-37, migration 020). It is
-    /// part of what he owes, but it has no bill date - so it is **not** aged into a column. Pretending
-    /// it is 90 days old would be a guess; pretending it is fresh would hide it.
+    /// Carried-in udhaar still left after collections (F-37, migration 020). It is part of what the
+    /// customer owes, but it has no bill date - so it is **not** aged into a column. Pretending it
+    /// is 90 days old would be a guess; pretending it is fresh would hide it.
     /// </summary>
     public long OpeningPaisa { get; set; }
 
@@ -256,11 +256,16 @@ public sealed class RecoveryHit
 
     public long LeftPaisa { get; set; }
 
+    /// <summary>True for the undated balance carried into Area11, which is not given a fake bill.</summary>
+    public bool IsOpening { get; set; }
+
     public string PaidText => Money.Format(PaidPaisa);
 
     public string LeftText => Money.Format(LeftPaisa);
 
     /// <summary>"INV-0042 - 2026-06-02: Rs 1,000 paid, Rs 500 left".</summary>
-    public string Label => BillCode + " - " + (string.IsNullOrWhiteSpace(BillDate) ? "no date" : BillDate![..Math.Min(10, BillDate!.Length)])
-                           + ": " + PaidText + " paid, " + LeftText + " left";
+    public string Label => IsOpening
+        ? "Carried-in udhaar: " + PaidText + " paid, " + LeftText + " left"
+        : BillCode + " - " + (string.IsNullOrWhiteSpace(BillDate) ? "no date" : BillDate![..Math.Min(10, BillDate!.Length)])
+          + ": " + PaidText + " paid, " + LeftText + " left";
 }

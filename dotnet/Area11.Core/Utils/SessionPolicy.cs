@@ -98,7 +98,11 @@ public static class SessionPolicy
             };
         }
 
-        if (limit > 0)
+        // While the sign-in itself is ahead of the PC, the timeline is not trustworthy. Both
+        // elapsed values above are frozen at zero; do not let the shorter idle choice become the
+        // countdown (or its warning) until the clock catches up. The hard-cap answer is the safe
+        // full twelve hours in this state, and neither clock can expire the session.
+        if (limit > 0 && now >= signedInAt)
         {
             var toIdle = TimeSpan.FromHours(limit) - idle;
 

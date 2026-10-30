@@ -132,6 +132,33 @@ public sealed class ImportTests
     }
 
     [Fact]
+    public void ProductImport_RequiresAnActiveManagedUnit_AndRechecksAtApply()
+    {
+        using var test = new TestDatabase();
+        var imports = Imports(test);
+        var unknown = imports.PreviewProducts(
+            "Name,Base unit,Retail,Cost\r\nUnknown unit medicine,not-a-unit,120,90\r\n");
+        Assert.Equal(1, unknown.ErrorCount);
+        Assert.Contains("active managed list", unknown.Rows[0].Message);
+        Assert.Equal(0L, Count(test, "products"));
+
+        var products = new ProductService(test.Database, test.Audit, test.Log);
+        var unit = products.AddUnit(TestData.Owner, "vial").Value;
+        var preview = imports.PreviewProducts(
+            "Name,Base unit,Retail,Cost\r\nVial import,  VIAL  ,120,90\r\n");
+        Assert.True(preview.CanApply, preview.SummaryText);
+        Assert.True(products.SetUnitActive(TestData.Owner, unit, false).Ok);
+        var stale = imports.ApplyProducts(TestData.Owner, preview);
+        Assert.False(stale.Ok);
+        Assert.Equal(0L, Count(test, "products"));
+
+        Assert.True(products.SetUnitActive(TestData.Owner, unit, true).Ok);
+        var applied = imports.ApplyProducts(TestData.Owner, preview);
+        Assert.True(applied.Ok, applied.Error);
+        Assert.Equal("vial", Scalar(test, "SELECT base_unit FROM products WHERE name = 'Vial import';"));
+    }
+
+    [Fact]
     public void ASecondImportOfTheSameFile_AddsNothing()
     {
         using var test = new TestDatabase();

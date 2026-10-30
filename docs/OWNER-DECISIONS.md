@@ -3,7 +3,7 @@
 > **یہ فائل کیا ہے؟** مالک (ڈاکٹر عادل عبداللہ) کی ہر ہدایت، فیصلہ اور ترجیح یہاں نمبر کے ساتھ محفوظ ہوتی ہے۔
 > کوئی بات زبانی نہیں رہتی۔ نئی ہدایت = نیا نمبر۔ پرانی ہدایت کوئی ایجنٹ خاموشی سے نہیں بدل سکتا۔
 >
-> **آخری اپ ڈیٹ:** 24 اکتوبر 2026 · **ورژن:** D-01 سے D-92 تک (v0.35.0 Raspberry `#B3446C`) — اور اِسی تاریخ کو مالک کی v0.33.0 دوڑ **730 میں سے 730 پاس** ہوئی اور **سائن اِن ونڈو کھلی رہی**
+> **آخری اپ ڈیٹ:** 29 اکتوبر 2026 · **ورژن:** v0.38.0 Cobalt `#315C8C` — D-98 کے پہلے Phase-3 packaging/variant/search slice کے ساتھ **900 written cases in 70 files** اور **55 static checks** ہیں۔ مالک کے Windows پر Cobalt کے Core/Tests میں **900/900، 0 failed/skipped، 1 منٹ 4 سیکنڈ** اور **`ALL GREEN - 900 of 900`** verify ہوا؛ PT-10 WPF/genuine physical walk-through ابھی باقی ہے۔ Zircon 883/883 previous-release evidence اور Aurora PT-09 الگ ثبوت ہیں۔ Existing pack label، shared search اور variant-aware Purchase picker شامل ہیں؛ کوئی نیا variant/stock model یا migration نہیں۔ D-93 stock اور PR cancellation قواعد برقرار ہیں؛ Phase 4 کی اجازت نہیں۔ Real Excel اور cloud verification بھی الگ باقی ہیں۔
 > **سند (Authority):** `AREA11-MASTER-SPEC.md` (37 حصے + Appendix A) — اور جہاں مالک نے بعد میں کوئی نیا حکم دیا، وہی چلے گا (Spec §1.2.2)۔
 
 ---
@@ -995,6 +995,168 @@ rules → Loyalty points** سے خود آن کرتا ہے، اور وہیں تی
 
 **دوبارہ نہ ہو:** Version اب **0.13.0 · Deep Sea `#0C4A6E`** ہے (پچھلا Mocha `#6B4F3A`)۔
 
+
+### D-98 — **Phase 3 packaging/variants/search کی اجازت اور پہلا محدود slice** (29 اکتوبر 2026)
+
+مالک نے **“Phase 3 کر لو”** کہہ کر D-96 کی ترتیب کے تیسرے مرحلے کی اجازت دی۔ Actual-code review میں معلوم ہوا
+کہ `products.pack_size_label` پہلے سے schema، model، create/update اور import/export میں موجود ہے، مگر Desktop
+میں نظر نہیں آتا اور product discovery میں شامل نہیں۔ اس لیے پہلا slice نیا variant/stock نظام بنانے کے بجائے اسی
+موجودہ field کو مکمل استعمال کرتا ہے۔
+
+1. **Products** میں pack size / variant label load، edit، reset اور list column کے ساتھ آئے گا؛ create/update پر
+   whitespace normal ہوگی، multiline/control اور 100 characters سے بڑا text مسترد ہوگا۔
+2. **Products، Counter اور Purchase** میں pack/variant label سے تلاش ہوگی؛ `50ml` اور `50 mL` ایک search key
+   بناتے ہیں۔ Existing name/generic/barcode/strength search کے ساتھ brand، room، category/company اور base-unit
+   metadata بھی discovery میں ہے۔ Counter کے تمام active extra pack barcodes محفوظ ہیں، fuzzy fallback الگ اور
+   واضح رہے گا۔
+3. **Purchase picker** میں strength + pack text نظر آئے گا تاکہ ایک جیسے نام والی variants الگ منتخب ہوں۔ D-95 کے
+   مطابق 10/50/100 mL variants separate products رہیں گے؛ strength descriptive ہے، stock managed base units میں
+   ہے، اور product IDs نہیں ملائے جائیں گے۔
+4. Box/strip/base conversion، pack-specific barcode rules، batches، quantities، prices، payments، documents،
+   historical rows، financial rules اور Phase-2 custom-field governance نہیں بدلیں گے۔ اس slice میں کوئی migration
+   یا replacement variant table نہیں۔
+5. **Phase 4 histories/profit اور بعد کے phases اس اجازت میں شامل نہیں۔** Cobalt کے Core/Tests کا
+   **`ALL GREEN - 900 of 900`** 29 اکتوبر کو مل چکا؛ Desktop/WPF build/launch اور `PHYSICAL-TESTING.md` کا PT-10 genuine walk-through الگ باقی ہے۔
+
+**نفاذ اور evidence boundary:** v0.38.0 Cobalt میں 8 نئے focused regressions کے ساتھ inventory **900 cases in 70
+files**، local static gate **55/55** اور actual ProductService search SQL کا targeted **7/7 SQLite development probe**
+ہے۔ بعد میں مالک کے Windows output نے **900 passed / 0 failed / 0 skipped / 900 total، 1 منٹ 4 سیکنڈ** اور
+**`ALL GREEN - 900 of 900`** ثابت کیا۔ یہ Cobalt کے `Area11.Core` / `Area11.Tests` کا Windows xUnit PASS ہے؛ supplied log `Area11.Desktop` / WPF build یا launch ثابت نہیں کرتا، اور PT-10 WPF/genuine physical PASS بھی نہیں۔
+Zircon 883/883 اور Aurora کے سابقہ records الگ محفوظ ہیں۔
+
+### D-97 — **Zircon automated verification اور Phase 2 field governance/schema کی اجازت** (29 اکتوبر 2026)
+
+مالک نے Zircon کا Windows test output بھیجا: **Failed 0، Passed 883، Skipped 0، Total 883، مدت 1 منٹ 10 سیکنڈ**
+اور runner نے **`ALL GREEN - 883 of 883 cases passed, failed: 0`** دیا۔ یہ Spruce کا historical نتیجہ نہیں،
+Zircon v0.36.0 کا automated ثبوت ہے؛ PT-08 کی WPF/navigation physical verification اس سے الگ رہے گی۔
+
+اس کے بعد مالک نے **“phase 2 start now”** کہہ کر اگلے مرحلے کی اجازت دی۔ Phase 2 کا کام central field
+governance/schema پر ہے: stable field identity، ایک centralized definition/value policy، محفوظ append-only
+schema migration اور Own fields کی واضح guidance۔ Packaging/variants/purchasing/search، histories/profit،
+Print/WhatsApp اور offline-first sync اگلے phases ہیں اور اس اجازت میں شامل نہیں۔
+
+**نفاذ اور evidence boundary:** v0.37.0 Aurora میں migration 029، rename-safe `entity.custom.id` keys، optional
+one-line help اور 9 نئے regressions شامل ہیں؛ inventory **892 cases in 69 files** اور local static gate **54/54** ہے۔
+یہ written/static evidence ہے، Aurora کا Windows build/xUnit یا physical PASS نہیں۔ Custom values، historical
+documents، stock quantities، prices، payment rules اور existing permissions نہیں بدلے۔
+
+### D-96 — **Global shell اور navigation: صرف Phase 1 کی اجازت** (29 اکتوبر 2026)
+
+مالک نے موجودہ .NET 10 WPF ایپ میں **Phase 1 global shell/navigation** کی اجازت دی ہے؛ بعد کے phases ابھی
+منظور نہیں۔ یہ فیصلہ layout اور رسائی کے لیے ہے، مالیاتی یا stock rules بدلنے کے لیے نہیں۔
+
+1. اوپر expanded dark header میں product title صرف **Area11** ہوگا؛ shop name header میں نہیں، وہ receipt/settings
+   کا اپنا data رہے گا۔ Login اور window title بھی Area11 رہیں گے۔
+2. Primary modules clickable ہوں گے، active module کے pages contextual row میں ہوں گے، اور Settings کے چھ sections
+   header controls ہوں گے۔ Settings کے دوران System کے عام pages بھی دستیاب رہیں گے تاکہ کوئی route پھنس نہ جائے۔
+   بائیں sidebar اور اس کے folding controls ہٹائے جا رہے ہیں۔
+3. Alert bell تقریباً **44×44** ہوگا، لیکن موجودہ count، red/yellow/green severity، tooltip اور Alerts page behavior
+   برقرار رہے گا۔ Products کے لیے compact searchable/dropdown category/folder picker ہوگا؛ یہ product editor کے
+   category field سے الگ filter ہے۔
+4. Permissions، owner-only routes، stable page routes، user settings/sign-out، session warning، fault banner،
+   empty-page hints اور POS کے موجودہ steps محفوظ رہیں گے۔ Financial، stock، schema، printing، WhatsApp اور sync
+   logic میں تبدیلی نہیں۔
+5. ترتیب صرف **Phase 1 shell → Phase 2 field governance/schema → Phase 3 packaging/search → Phase 4 histories/profit
+   → Phase 5 Print/WhatsApp → Phase 6 offline-first sync** ہے؛ ہر اگلے phase کے لیے owner review لازم ہے۔
+
+**Evidence boundary:** Zircon source پر 53/53 static checks پاس ہیں؛ یہ compilation یا physical WPF proof نہیں۔
+مالک کے Windows پر build، **883/883** xUnit اور `PHYSICAL-TESTING.md` کا PT-08 walk-through باقی ہے۔ Spruce
+`94723e5` کا 883/883 نتیجہ تاریخی proof ہے، Zircon پر منتقل نہیں کیا گیا۔
+
+### D-95 — **Physical-testing میں catalog، units، navigation، photos اور counter کے فیصلے** (27 اکتوبر 2026)
+
+مالک نے **“fix the things”** کہہ کر درج شدہ اصلاحات کی اجازت دی۔ الگ سوالوں کے جوابات میں یہ واضح فیصلے کیے:
+
+1. **CAT-01:** ہر medicine کی ایک **primary category** ہوگی؛ financial sales/profit totals صرف اسی سے ایک بار
+   بنیں گے۔ اضافی categories **filter-only tags** ہیں، وہ sale، stock یا profit کو double-count نہیں کرتیں۔
+2. **NAV-01:** company/category links اور Dashboard کے cards صرف numbers نہیں رہیں گے؛ click پر متعلقہ
+   filtered product، bill، report، credit یا payable detail کھلے گی۔ Dashboard کے today cards today range پر جائیں گے۔
+3. **UNIT-01:** units کی managed، editable، case-insensitive canonical list ہوگی۔ **ایک box میں 10 injections،
+   ہر injection 50 mL** کا مطلب stock میں **10 injection units** ہے، 500 mL stock نہیں۔ mL الگ descriptive
+   strength ہے؛ 10/50/100 mL variants الگ products رہیں گی۔ Injection جیسے whole-only units میں fractional
+   stock/sale نہیں ہوگی۔ یہ quantity rule unit کے نام پر نہیں بلکہ managed row کے flag پر ہے، تاکہ rename کے
+   بعد بھی safeguard نہ ٹوٹے؛ تاریخی `REAL` quantities اور documents نہیں بدلتے۔
+4. **PHOTO-01:** Products اور Counter میں thumbnails ہوں گی؛ photo نہ ہو یا file missing ہو تو واضح placeholder
+   ہوگا اور search/sale رکے گا نہیں۔ موجودہ gallery، put-away history اور backup photo rules برقرار رہیں گے۔
+5. **SHIFT-01:** اگلے galla کا opening cash پچھلے counted closing cash سے پیش فرض ہوگا۔ Opening/closing میں
+   **Rs 1 بھی فرق** ہو تو reason لازم اور red financial alert ہوگا۔ Bell میں red = financial، yellow = medium
+   warning، green = ordinary reminder (مثلاً nearing expiry) ہوگا۔
+6. **PRICE-01/SALE-01:** explicit discount % full retail/selling-price total پر ہے؛ special rate کے ساتھ
+   stacking نہیں۔ بغیر discount کے applicable VIP/Doctor rate پر Yes/OK ہی special rate لگائے گا، **No = normal
+   retail**۔ Special rates adjustable guidance ہیں، mandatory default نہیں۔ Successful sale کے بعد optional
+   واضح Done/checkmark، invoice/change اور quick continuation card ہوگا؛ cost، role اور integer-paisa safeguards
+   برقرار رہیں گے۔
+
+یہ فیصلے source میں لکھے جا چکے ہیں اور **Windows build/883-case xUnit `94723e5` پر PASS** ہے؛ **WPF اور genuine physical verification الگ باقی ہیں**۔ PT02-POS-01 کے blank/dashes مسئلے کو reproduction کے بغیر fix یا reject نہیں لکھا جائے گا۔
+Feature board کو شواہد کے بغیر نہیں بدلا گیا: **52 done / 5 partial / 0 unstarted**۔
+
+### D-94 — **حقیقی Excel workbook، مگر کوئی نیا package نہیں** (T-10 / D-53 کی تکمیل)
+
+T-05 کے بعد مالک کے `next` پر T-10 کا actual-code دوبارہ جائزہ لیا گیا۔ صرف `.xlsx` writer غائب نہیں تھا:
+Master Spec §24.2 کا **آٹھ شیٹ all-data workbook اور before → after bulk update** بھی غائب تھا۔
+
+**اب کا فیصلہ/نفاذ:**
+
+1. D-53 کا package سے بچنے والا مقصد برقرار ہے، مگر اس کا «صرف CSV» نتیجہ نئے workbook workflows کے لیے
+   superseded ہے۔ .NET کے اپنے ZIP/XML ذرائع سے حقیقی Open XML `.xlsx` پڑھنا/لکھنا؛ کوئی NuGet spreadsheet
+   package، Excel interop یا migration نہیں۔
+2. Blank template میں Products، Customers، Suppliers اور Instructions؛ Download your data میں آٹھ
+   مقررہ sheets۔ موجودہ duplicate skip، opening batches/expiry اور opening balances برقرار؛ CSV بھی رہے گا۔
+3. Bulk update میں ہر تبدیلی پہلے نظر آئے، خالی cell = کوئی تبدیلی نہیں، `__CLEAR__` = جان بوجھ کر صاف۔
+   Stock، balances، protected links، secrets اور counters فائل سے نہیں بدلتے۔ Settings الگ tick اور JSON type
+   preservation کے ساتھ۔ Apply سے پہلے stale/current values اور cross-record rules دوبارہ جانچ، پھر ایک
+   audited transaction؛ repeated upload پر 0 changes۔
+4. اس کام کے لیے stock/money یا PR cancellation rules نہیں بدلے۔ Universal financial Undo شامل نہیں۔
+5. یہ written implementation ہے، live proof نہیں۔ T-10 تب تک 🟡 رہے گا جب تک مالک کے Windows پر
+   **`ALL GREEN - 851 of 851`** اور اصل Excel میں open/edit/preview/apply/re-import مکمل نہ ہو۔
+
+ورژن **v0.35.14 Paprika `#842E1B`**۔ 14 نئے facts؛ 49 static checks اور 5/5 guard injection/restoration
+نتائج۔ اس sandbox میں .NET SDK یا Excel نہیں، اس لیے compilation/xUnit/Excel interop کا دعویٰ نہیں۔
+
+**تصدیقی تکمیل — v0.35.15 Quasar:** Paprika درست commit پر compile اور open ہوا، مگر حقیقی نتیجہ
+**837/851 اور 14 failures** رہا؛ اسے green نہیں لکھا گیا۔ Products/Reorder اور Urdu audit کی ظاہر شدہ
+خرابیوں کی repair کے ساتھ دو نئے regression facts ہیں؛ Quasar کا 853-case ہدف یہاں run نہیں ہوا۔
+بعد کے Glaucous میں وہ cases شامل ہیں اور موجودہ ہدف **`ALL GREEN - 860 of 860`** ہے۔
+PR stock/payment rules اور D-94 کا workbook behavior نہیں بدلا۔ صرف چار failure names دستیاب ہیں؛ مکمل
+`test.log` اور اصل Excel walk-through ابھی لازم ہیں، اس لیے T-10 🟡 ہی رہے گا۔
+
+### D-93 — **Negative stock کا خاتمہ: نیا کام صفر سے نیچے نہیں** (completion plan)
+
+**فیصلہ (25 اکتوبر 2026):** مکمل source audit کے بعد app-completion plan پر بات ہوئی۔ آپ نے negative stock کے تین
+ممکنہ راستوں میں سے **«مکمل ختم کریں — تجویز کردہ»** منتخب کیا۔ یہ فیصلہ آئندہ transactions کے لیے پرانے
+U-25/U-30 اصول کو بدل دیتا ہے؛ پرانے اصول تاریخی record کے طور پر اپنے مقام پر رہیں گے۔
+
+| بات | نیا فیصلہ |
+|---|---|
+| نئے transactions | کوئی sale یا stock کم کرنے والا operation موجودہ stock کو صفر سے نیچے نہیں لے جا سکتا |
+| اطلاق کا دائرہ | صرف sale نہیں: stock adjustment/write-off، goods drawing، supplier return، provisional-return cancellation اور ہر نیا stock-decrement path |
+| پرانی negative quantities | پہلے read-only reconciliation report، پھر physical count اور audited correction؛ migration میں خاموشی سے صفر کرنا ممنوع |
+| پرانے business records | تاریخی sale، return، receipt اور report حذف یا دوبارہ لکھنا نہیں؛ ان کے حساب درست رہنے چاہیئں |
+| Setting / exception | retirement مکمل ہونے پر negative-stock checkbox نئے کام میں bypass نہیں ہوگا؛ owner-only exception منتخب نہیں کیا گیا |
+| ناکام operation | خاموش success نہیں؛ دستیاب quantity کی واضح خبر اور فارم/کارٹ محفوظ رہے |
+
+**ترتیب:** پہلے موجودہ Windows build/test baseline، پھر backup/migration safety، پھر ایک مرکزی stock policy اور
+تمام decrement paths پر enforcement۔ Negative-stock کے حساب والی پرانی defects کو صرف checkbox بند کر کے
+حل نہ سمجھا جائے گا؛ historical reads، returns اور reports کے tests بھی لازم ہیں۔
+
+**موجودہ حالت (26 اکتوبر 2026 — v0.35.9 Onyx `#2F3640`):** D-93 کا implementation مکمل ہے۔
+`StockPolicy` اب sale، write-off/count-short، owner goods drawing، supplier return اور PR cancellation —
+پانچوں ordinary decrement routes — میں selected batch اور active product total کو ایک ہی immediate
+transaction میں conditional atomic `UPDATE` سے محفوظ کرتا ہے۔ Legacy `stock.allowNegative` row پڑھی جا
+سکتی ہے مگر کوئی production rule اُسے استعمال نہیں کرتا؛ checkbox اور owner bypass دونوں نہیں ہیں۔
+
+Sale میں repeated products اور shared FEFO batches کی cumulative reservation invoice number لینے سے
+پہلے ہوتی ہے۔ Available-versus-requested خبر کے ساتھ ناکامی ہو تو cart/form برقرار رہتا ہے اور stock،
+مالیات، audit اور document number سب rollback ہوتے ہیں۔ Exact zero درست ہے، fractional `REAL` quantities
+بھی۔ PR cancellation صرف اُسی batch سے stock نکالتی ہے؛ کوئی payment، drawer inflow، منفی refund/cost
+cancellation row یا automatic repayment نہیں بنتی۔
+
+کوئی نئی migration نہیں: پرانی negative batch کو صفر نہیں کیا گیا۔ Catalog، Stock minus، تاریخی sale/return
+اور reports پڑھے جا سکتے ہیں، اور historical return stock بڑھا سکتی ہے۔ Reconciliation پہلے read-only
+report، پھر owner-only physical stock-take ہے جس میں finite، non-negative count اور audited adjustment
+ہوتا ہے۔ **814 written cases، 45 static checks، 7/7 SQLite rehearsal groups اور 500 guarded attempts**
+کامیاب ہیں۔ یہاں .NET SDK نہیں، اس لیے Windows build اور xUnit ابھی مالک چلائیں گے؛ مطلوبہ نتیجہ
+`ALL GREEN - 814 of 814` ہے۔ Cloud postponed ہے اور اگلے code stage کے لیے دوبارہ `next` لازم ہوگا۔
 
 ### D-92 — **ایک وقت پوری دکان کا، ایک سیشن جو خود بند ہو، اور گلا بند ہو تو بل نہیں** (v0.35.0)
 
@@ -2105,6 +2267,24 @@ Version اب **0.22.0 · Harbour `#3B5C7F`** ہے (پچھلا Ochre `#8F6400`)۔
 مانگتا ہے؛ 90 دن سے پرانا ڈیٹا نہیں جاتا؛ 401 / 404 / 429 / انٹرنیٹ — ہر ایک کا اپنا سیدھا جملہ ہے۔
 Version اب **0.21.0 · Ochre `#8F6400`** ہے (پچھلا Pebble `#57534E`)۔
 
+**تکنیکی اصلاح (26 اکتوبر 2026 — v0.35.16 Glaucous؛ مالک کے بعد کے `next` پر):** اصل code review اور
+SQLite rehearsal میں ثابت ہوا کہ حالیہ payment کسی 90 دن سے پرانے sale/purchase سے جُڑی ہو سکتی ہے، اور
+migration 024 کے بعد provisional return سے بھی۔ پرانا document parent نہ بھیجتا تو دوسرے database پر
+`FOREIGN KEY constraint failed` آتا۔ Link مٹانا یا payment چھپانا money کے اصول کی خلاف‌ورزی ہوتی، اس لیے وہ
+راستہ نہیں اپنایا گیا۔
+
+اب **format 2 / 15 tables** ہیں: حالیہ financial headers اور lines وہی 90 دن کے bulk reads سے، مگر جن
+پرانے parents کا حوالہ موجود ہو وہ اپنی تمام lines کے ساتھ شامل ہیں۔ غیر متعلقہ پرانا بل صرف پرانا ہونے
+کی وجہ سے نہیں جاتا۔ PR header، items اور sale-line allocations بھی سفر کرتے ہیں۔ Status، Preview اور
+Push ایک ہی dependency-complete document reader استعمال کرتے ہیں؛ format 1 پڑھنا برقرار ہے، پرانا Area11 format 2 کو apply کرنے کے بجائے
+اپڈیٹ مانگے گا۔ Switch/configuration/future format backup سے پہلے رد ہیں، NULL id نیا مقامی record نہیں
+بناتی، اور Refresh/Push پرانی preview کو apply سے ہٹا دیتا ہے۔
+
+D-66 کا اصل فیصلہ نہیں بدلا: مقامی database اصل ہے، ٹک + backup + ایک transaction لازم ہیں، کوئی row
+نہیں مٹتی، key خفیہ رہتی ہے۔ **Cloud مکمل machine backup نہیں**؛ مکمل restore کے لیے Area11 کا zip backup
+لازم ہے۔ **860 written cases، 51 static checks، 3 SQLite round-trips اور 5/5 guard injections** مقامی
+ثبوت ہیں؛ اصل Supabase یا Windows/xUnit نتیجہ نہیں۔ مطلوبہ موجودہ run **`ALL GREEN - 860 of 860`** ہے۔
+
 ### D-65 — پرنٹر اور سکینر کا ٹیسٹ، دکان کے اپنے کاغذ پر (F-46)
 
 **فیصلہ (26 اکتوبر 2026، v0.20.0 Pebble):** SYSTEM میں نیا صفحہ **Printer & scanner**۔ یہ صفحہ کوئی بل نہیں بناتا؛
@@ -2437,6 +2617,22 @@ restart نہیں (Spec 8.4.3)۔
 
 | تاریخ | کیا |
 |---|---|
+| 29 اکتوبر 2026 | **Cobalt Windows verification — v0.38.0**: مالک کے test output میں **900 passed / 0 failed / 0 skipped / 900 total، 1m4s** اور runner کا **`ALL GREEN - 900 of 900`** موصول ہوا۔ Current Cobalt build/xUnit PASS؛ PT-10 WPF/genuine physical verification pending۔ کوئی code/test count/version change نہیں، Phase 4 غیر منظور۔ |
+| 29 اکتوبر 2026 | **D-98 / Phase-3 authorization + first packaging/search slice — v0.38.0 Cobalt `#315C8C`**: مالک نے Phase 3 کی اجازت دی۔ Existing pack label اب Products editor/list اور Products/Counter/Purchase search میں؛ Purchase picker strength+pack دکھاتا ہے۔ Separate product IDs، base-unit stock، conversion، rates اور extra barcodes محفوظ؛ کوئی migration نہیں۔ **900 written cases، 55/55 static checks، 7/7 targeted SQLite search groups**؛ Cobalt 900/900 Windows xUnit verified، PT-10 pending، Phase 4 غیر منظور۔ |
+| 29 اکتوبر 2026 | **D-97 / Zircon verification + Phase-2 authorization — v0.37.0 Aurora `#5B4B8A`**: Zircon Windows xUnit **883/883، 1m10s** موصول؛ مالک نے Phase 2 شروع کرنے کی اجازت دی۔ Central field policy، stable keys، guidance اور migration 029؛ **892 written cases، 54/54 static checks**، Aurora Windows/physical evidence pending۔ |
+| 29 اکتوبر 2026 | **D-96 / Phase-1 global shell — v0.36.0 Zircon `#3E5C76`**: fixed Area11 title، expanded dark header، clickable modules/contextual pages، header Settings sections، Products category picker، 44×44 bell اور user/version popup؛ sidebar/folding retired۔ Permissions، routes، alerts اور financial/stock/schema rules محفوظ؛ **53/53 static checks**، Windows build/xUnit/PT-08 pending۔ بعد کے phases غیر منظور۔ |
+| 27 اکتوبر 2026 | **D-95 / CAT-01, NAV-01, UNIT-01, PHOTO-01 source batch**: primary+filter tags، managed units، descriptive strength، rename-safe whole-only quantity rule (migration 028)، thumbnails/fallbacks اور filtered Dashboard/category/company drill-downs لکھے گئے۔ Box 10 × 50 mL = 10 injection units؛ mL strength ہے، stock division نہیں۔ **883 written cases in 68 files، 52 static checks؛ Windows xUnit 883/883 `94723e5` پر PASS**؛ WPF/genuine physical verification باقی، feature counts 52/5/0 برقرار۔ |
+| 27 اکتوبر 2026 | **Physical-testing repairs — v0.35.19 Spruce `#175E54`**: مالک کے «fix the things» authorization پر backup/shift/alert کے بعد PRICE-01/SALE-01 code۔ Explicit discount ہمیشہ full retail/selling-price total پر؛ پرانا margin mode inert، discount کے ساتھ special-rate stacking نہیں۔ Zero discount پر VIP/Doctor کے لیے Yes/No، default No = retail۔ Actual cart rate Owner/Manager custom override کے ساتھ، hold/resume پر محفوظ؛ cashier bypass اور below-cost lock کے ساتھ batch cost سے کم line مسترد۔ Successful commit کے بعد optional non-blocking Done/invoice/change card، الگ auto-print اور persisted Settings key۔ **877 written cases، 52 static checks**؛ Windows build/xUnit اور genuine-sale/isolated-restore verification باقی۔ Reported `AlertKindTests` scope error `aedb65d` میں fix۔ دوبارہ نہ ہو: کوئی test یا financial safeguard ہٹانے کے بجائے نئے regression cases؛ Obsidian کا 860/860 صرف پرانا owner-verified evidence ہے۔ |
+| 26 اکتوبر 2026 | **مالک کی حقیقی جانچ — v0.35.18 Obsidian `#27323A` مکمل کامیاب**: درست commit `cb2e321` پر **Failed 0، Passed 860، Skipped 0، Total 860، مدت 1 منٹ 17 سیکنڈ** اور runner کا **`ALL GREEN - 860 of 860`** نتیجہ آیا۔ موجودہ xUnit gate مکمل ہے؛ دونوں workbook fixture repairs اور محفوظ PR reconciliation repair اب owner-run میں ثابت ہیں۔ نتیجہ محفوظ کرنے پر کوئی code، test count، schema یا business rule نہیں بدلا۔ Real Excel، Z-05، E-12/S-05 اور optional real Supabase جانچ الگ باقی ہیں؛ انھیں green tests سے خودکار مکمل نہیں لکھا گیا۔ |
+| 26 اکتوبر 2026 | **تصدیقی اصلاح — v0.35.18 Obsidian `#27323A`**: Eclipse کا حقیقی نتیجہ **858 passed / 2 failed / 860 total** رہا، یعنی PR reconciliation repair سے گیارہ مزید tests کامیاب ہوئے۔ باقی shared-string/date test کا ZIP stream اب expandable ہے؛ protected bulk-update test میں active pack اور edited base barcode اب **مختلف medicines** کے ہیں اور zero ready changes کی assertion بھی ہے۔ Production workbook/barcode/stock/account/PR rules نہیں بدلے، کوئی test نہیں ہٹا: **860 cases، 52 static checks، 2/2 fixture injections**۔ پہلی failure کا اصل error متن نہیں ملا تھا، اس لیے مکمل Obsidian rerun اور `ALL GREEN - 860 of 860` ابھی لازم ہیں؛ real Excel/Supabase proof الگ ہے۔ |
+| 26 اکتوبر 2026 | **تصدیقی اصلاح — v0.35.17 Eclipse `#3C4148`**: Glaucous کا حقیقی نتیجہ **847 passed / 13 failed / 860 total** رہا؛ صرف دو failure names بھیجی گئیں۔ دونوں میں PR allocation INSERT کو `@provisionalItemId` اور `@saleItemId` نہیں ملے کیونکہ anonymous object کے names Pascal-case تھے۔ Eclipse اب دونوں exact names explicitly bind کرتا ہے؛ quantity، paisa، stock، payment، refund، cancellation اور transaction کا اصول نہیں بدلا۔ **860 cases برقرار، 52 static checks، 1/1 injection/restoration**؛ باقی گیارہ failures کو خودکار طور پر fixed نہیں لکھا گیا۔ Eclipse کا `ALL GREEN - 860 of 860` اور مکمل log ابھی لازم ہے؛ کوئی migration نہیں۔ |
+| 26 اکتوبر 2026 | **D-66 follow-up — v0.35.16 Glaucous `#4F6D7A`**: cloud format 2 میں 15 tables؛ 90 دن کے financial rows کے ساتھ referenced older parents اور complete lines، PR headers/items/allocations، غیر متعلقہ پرانے documents نہیں۔ Format 1 readable؛ switch/format guards backup سے پہلے، NULL id محفوظ، stale preview ختم۔ **860 written cases، 51 static checks، 3 SQLite round-trips، 5/5 injections**؛ real Supabase/Windows proof باقی۔ Local truth، tick، backup، no-delete اور key secrecy نہیں بدلی؛ cloud مکمل zip backup کا بدل نہیں۔ |
+| 26 اکتوبر 2026 | **D-94 / T-10 implementation — v0.35.14 Paprika `#842E1B`**: D-53 کا package-free مقصد برقرار، مگر native Open XML `.xlsx` کے ساتھ «صرف CSV» نتیجہ نئے workflows کے لیے superseded۔ چار شیٹ template، native list downloads، آٹھ شیٹ all-data workbook، before → after preview، خالی cell/no change، `__CLEAR__`، protected stock/balances/links، الگ tick والی type-preserving Settings، stale-row recheck، ایک audited transaction اور repeat upload پر 0 changes۔ CSV اور opening batches/balances برقرار؛ کوئی package/migration نہیں۔ **851 written cases، 49 static checks، 5/5 guard outcomes**۔ Windows/xUnit اور real Excel proof باقی، اس لیے T-10 🟡؛ Cloud شروع نہیں ہوا۔ |
+| 26 اکتوبر 2026 | **Z-05 implementation — v0.35.12 Azure `#005A9C`**: Black box میں منتخب row کی مکمل پہلے/بعد کی حالت، context، details اور محفوظ correction راستہ۔ Raw old/new اور CSV نہیں بدلتے؛ JSON صرف پڑھنے کے لیے indented، Unicode/لمبا متن محفوظ، خراب JSON جوں کا توں۔ Refresh پر پرانا panel غائب، recorded-new کو live state نہیں کہا گیا۔ **Universal financial Undo جان بوجھ کر نہیں**: کوئی sale/payment/return/stock/PR rollback یا نیا payment نہیں۔ PR cancellation same batch سے stock-only، original financial effect کی reversal نہیں؛ Settings/master-data کی درستی نئی audited save سے۔ **834 written cases، 47 static checks، 4/4 guard injection/restoration outcomes**؛ Windows/xUnit اور live walk-through باقی، اس لیے Z-05 🟡۔ E-12/S-05 اور Merlot کے ثبوت الگ باقی؛ charts، native `.xlsx` اور cloud کام شروع نہیں کیا گیا۔ |
+| 26 اکتوبر 2026 | **E-12/S-05 implementation — v0.35.11 Topaz `#8A5A00`**: Settings → **App words** میں app کے 32 supported section labels؛ stable keys سے navigation/permissions/page resolution محفوظ، save پر menu، 26 page headings، Cloud sync tab اور Own fields panel heading فوراً بدلتے ہیں۔ پرانے database میں صرف missing defaults، کوئی migration نہیں۔ Unicode، trimming، non-empty/single-line/60-character validation، Settings permission، atomic old/new audit، direct-write guards اور دو clicks والا صرف labels کا reset۔ خراب blank stored row پر default واپس، receipts/عام sentences/history/document numbers نہیں بدلتے۔ **827 written cases، 46 static checks، 6/6 SQLite storage groups**؛ Windows/xUnit اور live walk-through باقی، اس لیے completion کا دعویٰ نہیں۔ Merlot log review پر positive total کے ساتھ legacy minus batch ہونے کی صورت میں physical stock-take guidance ٹھیک کی گئی؛ ordinary shortage کا پیغام اور stock/money قواعد نہیں بدلے، 3/3 guidance checks مکمل۔ پہلی Topaz build میں `AppLabelTests.cs(42)` پر CS1674 آیا کیونکہ Database قابلِ disposal type نہیں؛ plain-variable repair اور injection-checked static guard مکمل، rebuilt run باقی۔ Merlot rerun اور D-93 قواعد برقرار۔ |
+| 26 اکتوبر 2026 | **E-04 implementation — v0.35.10 Merlot `#722F37`**: Products میں category/company management؛ create، rename، order، soft put-away/restore، category parent کی دو سطحیں اور parent filter میں children۔ Migration 026 صرف company ordering جڑتی ہے۔ Put-away صرف current product link الگ کرتا ہے، کوئی product/batch/bill/stock row نہیں مٹتی، restore پرانا link خود نہیں بناتا؛ company کے phone/notes/rep/visit-day محفوظ۔ Core permission، case-insensitive uniqueness اور audit۔ **820 written cases، 45 static checks، 8/8 SQLite rehearsal groups**؛ Windows build/xUnit مالک کے لیے باقی، D-93 financial/stock rules برقرار۔ |
+| 26 اکتوبر 2026 | **D-93 implementation — v0.35.9 Onyx `#2F3640`**: پانچوں decrement routes پر مرکزی `StockPolicy`، cumulative cart/FEFO reservation، atomic refusal اور exact-zero success؛ legacy checkbox/owner bypass ختم، historical minus کو silent zero نہیں، physical stock-take audited correction، PR cancellation stock-only۔ **814 written cases، 45 static checks، 7/7 SQLite groups + 500 guarded attempts**؛ Windows build/xUnit مالک کے لیے باقی۔ |
+| 25 اکتوبر 2026 | **D-93 — Negative stock کا خاتمہ**: مالک نے مکمل retirement منتخب کی؛ نئے transactions صفر سے نیچے نہیں، ہر decrement path پر اطلاق، پرانی negatives کی physical/audited reconciliation، تاریخی rows کو خاموشی سے صفر نہیں کرنا۔ ابھی decision-only؛ v0.35.2 کا code اور رنگ نہیں بدلا۔ |
 | 24 اکتوبر 2026 | **D-92 — ایک وقت پوری دکان کا، سیشن خود بند، گلا بند تو بل نہیں**: `TimeSource` + `NtpTime` (آن لائن پہلے، کمپیوٹر بطور بیک اپ، ہر 20 منٹ، دو دن سے زیادہ کا جواب مسترد)، `SessionPolicy` + `SessionWatch` (سیٹنگز میں 1/2/4/6/12 گھنٹے، مگر **12 گھنٹے کی چھت ہر صورت**)، `SaleService` کا گلا گیٹ + کاؤنٹر پر کارڈ اور «Open a galla now»، `SessionHandover` کا نوٹ؛ 19 ٹیسٹ (769 کیس)، گیٹ #44 · **v0.35.0 Raspberry `#B3446C`** |
 | 24 اکتوبر 2026 | **D-91 — مالک کے ہاتھ میں پرنٹ شدہ ٹک لسٹ**: `docs/CHECKLIST-URDU.md` اور `.html` (A4، قلم سے ٹک لگانے والے خانے)، `PRINT-CHECKLIST.cmd`، اور `tools/make_checklist.py` جو اُسے بورڈ سے بناتا ہے؛ نیا گیٹ #43 تینوں گنتیاں میل کرواتا ہے · کوئی کوڈ نہیں بدلا، اِس لیے رنگ وہی **Smalt `#003399`** |
 | 23 اکتوبر 2026 | **D-90 — دل کی دھڑکن اور بٹن کی حفاظت (v0.34.0)**: پروگرام اب پہلی ونڈو سے پہلے `%TEMP%\Area11\last-run.txt` لکھتا ہے (ڈیٹابیس، سائن اِن، ہر صفحہ، خرابی، بند ہونے کا کوڈ؛ 140 سطر کی حد؛ کبھی exception نہیں)، اور ہر بٹن `CommandGuard` سے گزرتا ہے — ناکام بٹن صفحے کے اوپر ایک سرخ پٹی دکھاتا ہے، صفحہ اور کارٹ سلامت رہتے ہیں۔ **اسی دوڑ میں مالک کی تصدیق بھی ریکارڈ ہے:** v0.33.0 پر **730 میں سے 730 پاس (53 سیکنڈ)**، build میں 0 warning / 0 error، اور `app-2026-10-23.log` میں `13:53:31 Signed in: Owner` — **سائن اِن ونڈو پہلی بار کھلی رہی** (F-05 ✅) · **Smalt `#003399`** |

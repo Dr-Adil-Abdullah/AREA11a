@@ -85,15 +85,16 @@ VALUES(@productId, 'B-1', '2027-06-30', '2027-06', @qty, @cost, @retail, 0, 1, @
     }
 
     [Fact]
-    public void MarginDiscount_IsTenPercentOfProfit()
+    public void LegacyMarginSetting_DoesNotChangeTheFullRetailDiscount()
     {
         using var test = new TestDatabase();
+        test.Settings.Set("discount.mode", "margin", null);
         var (sales, productId, owner) = Build(test, costPaisa: 20000, retailPaisa: 30000);
 
         var result = sales.Create(One(productId, discount: 10), owner);
 
         Assert.True(result.Ok, result.Error);
-        Assert.Equal(29000L, result.Value!.TotalPaisa);
+        Assert.Equal(27000L, result.Value!.TotalPaisa);
     }
 
     [Fact]
@@ -108,6 +109,103 @@ VALUES(@productId, 'B-1', '2027-06-30', '2027-06', @qty, @cost, @retail, 0, 1, @
 
         Assert.True(result.Ok, result.Error);
         Assert.Equal(27000L, result.Value!.TotalPaisa);
+    }
+
+    [Fact]
+    public void FullRetailDiscount_StillCannotGoBelowCost()
+    {
+        using var test = new TestDatabase();
+        var (sales, productId, owner) = Build(test, costPaisa: 20000, retailPaisa: 30000);
+
+        var result = sales.Create(One(productId, discount: 50), owner);
+
+        Assert.True(result.Ok, result.Error);
+        Assert.Equal(20000L, result.Value!.TotalPaisa);
+        Assert.Equal(10000L, result.Value.DiscountPaisa);
+        Assert.Contains(result.Value.Warnings, warning => warning.Contains("below cost", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("vip", 25000L)]
+    [InlineData("doctor", 24000L)]
+    public void SpecialRate_IsAnExplicitChoice_AndNeverCombinesWithDiscount(string category, long specialRate)
+    {
+        using var test = new TestDatabase();
+        var (sales, productId, owner) = Build(test, costPaisa: 20000, retailPaisa: 30000);
+        var customerId = TestData.AddCustomer(test);
+
+        test.Database.Tx(connection =>
+        {
+            test.Database.Execute(connection,
+                "UPDATE products SET vip_paisa = 25000, doctor_paisa = 24000 WHERE id = @productId;",
+                new { productId });
+            test.Database.Execute(connection,
+                "UPDATE customers SET category = @category WHERE id = @customerId;",
+                new { category, customerId });
+        });
+
+        var normal = One(productId);
+        normal.CustomerId = customerId;
+        var normalQuote = sales.Quote(normal, owner);
+        Assert.True(normalQuote.Ok, normalQuote.Error);
+        Assert.Equal(30000L, normalQuote.Value!.TotalPaisa); // No = ordinary retail
+
+        var special = One(productId);
+        special.CustomerId = customerId;
+        special.UseSpecialRate = true;
+        var specialQuote = sales.Quote(special, owner);
+        Assert.True(specialQuote.Ok, specialQuote.Error);
+        Assert.Equal(specialRate, specialQuote.Value!.TotalPaisa); // Yes = explicit opt-in
+
+        var discounted = One(productId, discount: 10);
+        discounted.CustomerId = customerId;
+        discounted.UseSpecialRate = true;
+        var discountedQuote = sales.Quote(discounted, owner);
+        Assert.True(discountedQuote.Ok, discountedQuote.Error);
+        Assert.Equal(27000L, discountedQuote.Value!.TotalPaisa); // 10% of retail, not special
+
+        var custom = One(productId);
+        custom.CustomerId = customerId;
+        custom.UseSpecialRate = true;
+        custom.Lines[0].UnitPricePaisa = 28000;
+        var customQuote = sales.Quote(custom, owner);
+        Assert.True(customQuote.Ok, customQuote.Error);
+        Assert.Equal(28000L, customQuote.Value!.TotalPaisa); // adjustable actual rate survives
+
+        var saved = sales.Create(special, owner);
+        Assert.True(saved.Ok, saved.Error);
+        Assert.Equal(specialRate, saved.Value!.TotalPaisa);
+    }
+
+    [Fact]
+    public void CustomRate_CannotBypassTheCashiersRoleLimit()
+    {
+        using var test = new TestDatabase();
+        var (sales, productId, _) = Build(test, costPaisa: 20000, retailPaisa: 30000);
+        var cashier = TestData.Cashier(test);
+        var input = One(productId);
+        input.Lines[0].UnitPricePaisa = 25000;
+
+        var result = sales.Create(input, cashier);
+
+        Assert.False(result.Ok);
+        Assert.Contains("Only the owner or a manager", result.Error ?? string.Empty, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void CustomRate_BelowBatchCostIsRefusedWhenTheLockIsOn()
+    {
+        using var test = new TestDatabase();
+        var (sales, productId, owner) = Build(test, costPaisa: 20000, retailPaisa: 30000);
+        var input = One(productId);
+        input.Lines[0].UnitPricePaisa = 15000;
+
+        var quote = sales.Quote(input, owner);
+        var result = sales.Create(input, owner);
+
+        Assert.False(quote.Ok);
+        Assert.False(result.Ok);
+        Assert.Contains("below purchase cost", result.Error ?? string.Empty, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -156,22 +254,31 @@ VALUES(@productId, 'B-1', '2027-06-30', '2027-06', @qty, @cost, @retail, 0, 1, @
     }
 
     [Fact]
-    public void NegativeStock_DoesNotBlockTheSale_AndWarns()
+    public void NegativeStock_IsRefused_EvenWhenTheLegacySwitchIsOn()
     {
         using var test = new TestDatabase();
         var (sales, productId, owner) = Build(test, costPaisa: 20000, retailPaisa: 30000, batchQty: 5);
+        Assert.True(test.Settings.Set("stock.allowNegative", true, owner).Ok);
+
+        var quote = sales.Quote(One(productId, qty: 12), owner);
+        Assert.False(quote.Ok);
+        Assert.Contains("below zero", quote.Error ?? string.Empty);
 
         var result = sales.Create(One(productId, qty: 12), owner);
 
-        Assert.True(result.Ok, result.Error);
-        Assert.NotEmpty(result.Warnings);
+        Assert.False(result.Ok);
+        Assert.Contains("below zero", result.Error ?? string.Empty);
 
         using var connection = test.Database.Open();
         var stock = Convert.ToDouble(test.Database.Scalar(connection,
             "SELECT IFNULL(SUM(qty_base), 0) FROM batches WHERE product_id = @id;",
             new { id = productId }) ?? 0d);
 
-        Assert.Equal(-7d, stock, 3);
+        Assert.Equal(5d, stock, 3);
+        Assert.Equal(0L, Convert.ToInt64(test.Database.Scalar(connection,
+            "SELECT COUNT(1) FROM sales;") ?? 0L));
+        Assert.Equal(0L, Convert.ToInt64(test.Database.Scalar(connection,
+            "SELECT COUNT(1) FROM audit_logs WHERE action = 'negative_sale';") ?? 0L));
     }
 
     [Fact]

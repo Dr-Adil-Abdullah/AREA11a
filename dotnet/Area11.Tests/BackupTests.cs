@@ -1,5 +1,6 @@
 using System.IO;
 using System.IO.Compression;
+using System.Globalization;
 using Area11.Core.Models;
 using Area11.Core.Services;
 using Area11.Core.Utils;
@@ -72,6 +73,33 @@ public sealed class BackupTests
         using var zip = ZipFile.OpenRead(created.Value!.FullPath);
         Assert.DoesNotContain(zip.Entries, entry => entry.FullName.StartsWith("photos/", StringComparison.Ordinal));
         Assert.Contains(zip.Entries, entry => entry.FullName == "area11.db");
+    }
+
+    [Fact]
+    public void Create_BackUpAs_UsesTheChosenFolderWithoutMovingOrOverwritingAnything()
+    {
+        using var test = new TestDatabase();
+        using var folders = new TempFolders();
+
+        TestData.AddProduct(test, name: "Panadol 500mg");
+        var livePath = test.Database.FilePath;
+        var chosenFolder = Path.Combine(folders.BackupFolder, "USB stick");
+        var chosen = Path.Combine(chosenFolder, "shop before update.zip");
+        var service = folders.Backups(test);
+
+        var first = service.Create(TestData.Owner, destinationFile: chosen);
+        var second = service.Create(TestData.Owner, destinationFile: chosen);
+
+        Assert.True(first.Ok, first.Error);
+        Assert.True(second.Ok, second.Error);
+        Assert.Equal(chosen, first.Value!.FullPath);
+        Assert.NotEqual(first.Value.FullPath, second.Value!.FullPath);
+        Assert.True(File.Exists(first.Value.FullPath));
+        Assert.True(File.Exists(second.Value.FullPath));
+        Assert.True(File.Exists(livePath));
+        Assert.Equal(livePath, test.Database.FilePath);
+        Assert.Equal(1L, CountProducts(test));
+        Assert.Empty(service.List()); // a USB backup is not duplicated into the managed folder
     }
 
     [Fact]
@@ -152,15 +180,87 @@ public sealed class BackupTests
         Assert.True(made.Ok, made.Error);
 
         TestData.AddProduct(test, name: "Brufen 400mg");
+        folders.WritePhoto("after-backup.jpg", "this new photo must be recoverable");
 
-        var restored = folders.Backups(test).Restore(made.Value!.FullPath, TestData.Owner);
+        var service = folders.Backups(test);
+        var restored = service.Restore(made.Value!.FullPath, TestData.Owner);
         Assert.True(restored.Ok, restored.Error);
 
         var safety = Path.Combine(folders.BackupFolder, restored.Value!.SafetyCopy);
         Assert.True(File.Exists(safety), "the safety copy must exist before anything is replaced");
 
-        // The safety copy is the shop as it was a moment before the restore: both medicines.
+        // The safety zip is the shop as it was a moment before the restore: both medicines + photo.
         Assert.Equal(2L, CountProductsInFile(safety));
+        using (var zip = ZipFile.OpenRead(safety))
+        {
+            Assert.Contains(zip.Entries, entry => entry.FullName == "area11.db");
+            Assert.Contains(zip.Entries, entry => entry.FullName == "photos/after-backup.jpg");
+        }
+
+        var listed = Assert.Single(service.List(), file => file.IsSafetyCopy);
+        Assert.Equal(restored.Value.SafetyCopy, listed.FileName);
+        Assert.Equal("Before restore", listed.KindLabel);
+        Assert.Contains(restored.Value.SafetyCopy, test.Settings.GetString("backup.lastRestoreSummary"));
+
+        // Restore that recovery zip itself: the two newer medicines and their photo must return.
+        var recoveredPhoto = Path.Combine(folders.PhotoFolder, "after-backup.jpg");
+        File.Delete(recoveredPhoto);
+        var back = service.Restore(safety, TestData.Owner);
+        Assert.True(back.Ok, back.Error);
+        Assert.Equal(2L, CountProducts(test));
+        Assert.Equal("this new photo must be recoverable", File.ReadAllText(recoveredPhoto));
+    }
+
+    [Fact]
+    public void RestoreWarning_NamesNewerLiveWorkInsteadOfSilentlyDiscardingIt()
+    {
+        using var test = new TestDatabase();
+        using var folders = new TempFolders();
+
+        TestData.AddProduct(test, name: "Panadol 500mg");
+        var service = folders.Backups(test);
+        var made = service.Create(TestData.Owner);
+        Assert.True(made.Ok, made.Error);
+        var file = service.List().Single(item => item.FullPath == made.Value!.FullPath);
+        var later = TimeSource.Now.AddMinutes(5).ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+
+        test.Database.Tx(connection => test.Database.Execute(connection, @"
+INSERT INTO audit_logs(at, user_name, action, module, details)
+VALUES(@at, 'owner', 'test_new_work', 'Products', 'work after the backup');",
+            new { at = later }));
+
+        var warning = service.RestoreWarning(file);
+
+        Assert.Contains("Newer work", warning, StringComparison.Ordinal);
+        Assert.Contains(later, warning, StringComparison.Ordinal);
+        Assert.Contains("recovery zip", warning, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Restore_RefusesAPhotoPathThatEscapesBeforeTheLiveShopIsTouched()
+    {
+        using var test = new TestDatabase();
+        using var folders = new TempFolders();
+
+        TestData.AddProduct(test, name: "Panadol 500mg");
+        var service = folders.Backups(test);
+        var made = service.Create(TestData.Owner);
+        Assert.True(made.Ok, made.Error);
+        TestData.AddProduct(test, name: "Brufen 400mg");
+
+        using (var zip = ZipFile.Open(made.Value!.FullPath, ZipArchiveMode.Update))
+        {
+            var entry = zip.CreateEntry("photos/../escaped.txt");
+            using var writer = new StreamWriter(entry.Open());
+            writer.Write("must never escape");
+        }
+
+        var restored = service.Restore(made.Value.FullPath, TestData.Owner);
+
+        Assert.False(restored.Ok);
+        Assert.Contains("outside the photo folder", restored.Error, StringComparison.Ordinal);
+        Assert.Equal(2L, CountProducts(test));
+        Assert.False(File.Exists(Path.GetFullPath(Path.Combine(folders.PhotoFolder, "..", "escaped.txt"))));
     }
 
     [Fact]
@@ -299,23 +399,41 @@ public sealed class BackupTests
         test.Database.Tx(connection => test.Database.Scalar(connection,
             "SELECT name FROM products WHERE id = @id;", new { id = productId })?.ToString());
 
-    /// <summary>How many medicines a database FILE holds - used to inspect a safety copy.</summary>
+    /// <summary>How many medicines a safety zip holds, without changing the live test database.</summary>
     private static long CountProductsInFile(string path)
     {
-        var builder = new SqliteConnectionStringBuilder
+        var extracted = Path.Combine(Path.GetTempPath(), $"area11-test-safety-{Guid.NewGuid():N}.db");
+
+        try
         {
-            DataSource = path,
-            Mode = SqliteOpenMode.ReadOnly,
-            Pooling = false
-        };
+            using (var zip = ZipFile.OpenRead(path))
+            {
+                var database = zip.Entries.Single(entry => entry.FullName == "area11.db");
+                database.ExtractToFile(extracted);
+            }
 
-        using var connection = new SqliteConnection(builder.ToString());
-        connection.Open();
+            var builder = new SqliteConnectionStringBuilder
+            {
+                DataSource = extracted,
+                Mode = SqliteOpenMode.ReadOnly,
+                Pooling = false
+            };
 
-        using var command = connection.CreateCommand();
-        command.CommandText = "SELECT COUNT(1) FROM products;";
+            using var connection = new SqliteConnection(builder.ToString());
+            connection.Open();
 
-        return Convert.ToInt64(command.ExecuteScalar() ?? 0L);
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT COUNT(1) FROM products;";
+
+            return Convert.ToInt64(command.ExecuteScalar() ?? 0L);
+        }
+        finally
+        {
+            if (File.Exists(extracted))
+            {
+                File.Delete(extracted);
+            }
+        }
     }
 
     /// <summary>Two folders per test: the shop's photos and its backups. Deleting them is the test's job.</summary>

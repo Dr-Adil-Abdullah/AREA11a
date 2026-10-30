@@ -13,7 +13,7 @@
         <!-- ================================ the heading ================================ -->
         <DockPanel Grid.Row="0" Margin="0,0,0,10">
             <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                <TextBlock Text="Doctors &amp; reps" Style="{StaticResource PageTitle}" />
+                <TextBlock Text="{DynamicResource AppLabel.doctors}" Style="{StaticResource PageTitle}" />
                 <TextBlock Text="Which company's rep visits on which day, on whose prescription a bill was sold, and what each customer has earned the shop."
                            Style="{StaticResource PageSubtitle}" TextWrapping="Wrap" />
             </StackPanel>

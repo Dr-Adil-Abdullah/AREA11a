@@ -35,6 +35,7 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
     private CustomFieldTypeOption _selectedType;
     private string _labelText = string.Empty;
     private string _optionsText = string.Empty;
+    private string _helpText = string.Empty;
     private bool _required;
     private bool _isEditing;
     private int _editingId;
@@ -125,6 +126,7 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
 
             OnPropertyChanged(nameof(ToggleLabel));
             OnPropertyChanged(nameof(HasSelection));
+            OnPropertyChanged(nameof(SelectedFieldKey));
 
             if (value is not null)
             {
@@ -180,6 +182,15 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
         get => _optionsText;
         set => SetProperty(ref _optionsText, value);
     }
+
+    /// <summary>Optional one-line guidance; it is metadata, not a custom validation script.</summary>
+    public string HelpText
+    {
+        get => _helpText;
+        set => SetProperty(ref _helpText, value);
+    }
+
+    public string SelectedFieldKey => _selectedField?.Field.Key ?? "Assigned when the field is saved";
 
     public bool Required
     {
@@ -258,6 +269,7 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
 
         OnPropertyChanged(nameof(SelectedField));
         OnPropertyChanged(nameof(HasSelection));
+        OnPropertyChanged(nameof(SelectedFieldKey));
         OnPropertyChanged(nameof(ToggleLabel));
     }
 
@@ -271,10 +283,12 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
 
         OnPropertyChanged(nameof(SelectedField));
         OnPropertyChanged(nameof(HasSelection));
+        OnPropertyChanged(nameof(SelectedFieldKey));
         OnPropertyChanged(nameof(ToggleLabel));
 
         LabelText = string.Empty;
         OptionsText = string.Empty;
+        HelpText = string.Empty;
         Required = false;
         SelectedType = Types[0];
 
@@ -289,6 +303,7 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
         LabelText = field.Label;
         Required = field.Required;
         OptionsText = field.OptionsText;
+        HelpText = field.HelpText;
         SelectedType = Types.FirstOrDefault(option => option.Key == field.Type) ?? Types[0];
 
         SetStatus("Change the name, the kind or the required tick - or put the field away.", false);
@@ -301,12 +316,13 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
 
         if (_editingId > 0)
         {
-            result = _services.CustomFields.Update(_user, _editingId, LabelText, type, OptionsText, Required);
+            result = _services.CustomFields.Update(
+                _user, _editingId, LabelText, type, OptionsText, Required, HelpText);
         }
         else
         {
             var added = _services.CustomFields.Add(
-                _user, SelectedTab.Entity, LabelText, type, OptionsText, Required);
+                _user, SelectedTab.Entity, LabelText, type, OptionsText, Required, HelpText);
 
             result = added.Ok
                 ? ServiceResult.Success(added.Warnings.ToArray())

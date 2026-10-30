@@ -85,6 +85,7 @@ VIEW_MODEL_OF = {
     "CustomFieldsView.xaml": "CustomFieldsViewModel",
     "CustomFieldsEditorView.xaml": "CustomFieldsEditorViewModel",
     "BarcodeWindow.xaml": "BarcodeListViewModel",
+    "CatalogWindow.xaml": "CatalogWindowViewModel",
     "DoctorsView.xaml": "DoctorsViewModel",
     "LanView.xaml": "LanViewModel",
     "TaxView.xaml": "TaxViewModel",
@@ -192,6 +193,19 @@ def check_csharp() -> None:
     broken = 0
     for path in files:
         source = path.read_bytes()
+        text = source.decode("utf-8", errors="replace")
+
+        # Database owns short-lived connections but is not IDisposable itself. A using declaration
+        # here is CS1674, which a grammar-only parser quite correctly does not report as bad syntax.
+        lifetime = re.search(
+            r"\busing\s*\(?\s*(?:var|Database)\s+[A-Za-z_]\w*\s*=\s*new\s+Database\s*\(",
+            mask_csharp_noise(text))
+        if lifetime is not None:
+            broken += 1
+            line = text.count("\n", 0, lifetime.start()) + 1
+            fail(f"{rel(path)}:{line}: Database is not IDisposable; use a plain variable and dispose "
+                 "the connections returned by Database.Open() instead")
+            continue
 
         if parser is not None:
             tree = parser.parse(source)
@@ -201,7 +215,6 @@ def check_csharp() -> None:
                 fail(f"C# syntax error: {rel(path)}:{line}")
             continue
 
-        text = source.decode("utf-8", errors="replace")
         text = strip_csharp_noise(text)
         if text.count("{") != text.count("}") or text.count("(") != text.count(")"):
             broken += 1
@@ -1216,6 +1229,198 @@ def check_resources() -> None:
                      f"(XamlParseException when the window opens)")
 
     REPORT.append(f"Resources: {checked} StaticResource/DynamicResource key(s) all declared")
+
+
+# ---------------------------------------------------------------------------
+def check_app_labels() -> None:
+    """The editable words are one catalog, not three lists that can drift (E-12/S-05).
+
+    Resource existence alone cannot catch a forgotten page title, a theme default that differs from
+    Core, or navigation that starts using the editable text as its identity. This gate compares the
+    complete route: Core definitions -> settings/theme -> live page resources -> stable shell keys.
+    """
+    service = DOTNET / "Area11.Core/Services/AppLabelService.cs"
+    settings_service = DOTNET / "Area11.Core/Services/SettingsService.cs"
+    label_tests = DOTNET / "Area11.Tests/AppLabelTests.cs"
+    theme = DOTNET / "Area11.Desktop/Resources/Theme.xaml"
+    shell = DOTNET / "Area11.Desktop/ViewModels/ShellViewModel.cs"
+    nav_item = DOTNET / "Area11.Desktop/ViewModels/NavItem.cs"
+    settings_vm = DOTNET / "Area11.Desktop/ViewModels/SettingsViewModel.cs"
+    settings_view = DOTNET / "Area11.Desktop/Views/SettingsView.xaml"
+    partners_view = DOTNET / "Area11.Desktop/Views/PartnersView.xaml"
+    custom_fields_editor = DOTNET / "Area11.Desktop/Views/CustomFieldsEditorView.xaml"
+    shell_window = DOTNET / "Area11.Desktop/Views/ShellWindow.xaml"
+    app = DOTNET / "Area11.Desktop/App.xaml.cs"
+    needed = (service, settings_service, label_tests, theme, shell, nav_item,
+              settings_vm, settings_view, partners_view, custom_fields_editor, shell_window, app)
+
+    for path in needed:
+        if not path.exists():
+            fail(f"the application-label route is half-built: {rel(path)} is missing")
+    if not all(path.exists() for path in needed):
+        return
+
+    service_text = service.read_text(encoding="utf-8-sig")
+    matches = list(re.finditer(
+        r'new\s+AppLabelDefinition\("([^"]+)",\s*"([^"]*)"\)', service_text))
+    definitions = [(match.group(1), match.group(2)) for match in matches]
+    keys = [key for key, _ in definitions]
+    defaults = [text for _, text in definitions]
+
+    if not definitions:
+        fail("AppLabelService has no readable catalog definitions")
+        return
+
+    for values, what in ((keys, "keys"), (defaults, "default texts")):
+        duplicates = sorted({value for value in values if values.count(value) > 1})
+        if duplicates:
+            fail("AppLabelService has duplicate " + what + ": " + ", ".join(duplicates))
+
+    for key, text in definitions:
+        if not key or not text.strip() or len(text) > 60 or any(ord(char) < 32 for char in text):
+            fail(f"AppLabelService definition '{key}' has an invalid key/default")
+
+    for needle, reason in (
+        ("_permissions.Can(actor, Modules.Settings)", "label writes lost their Core Settings-permission check"),
+        ("return _settings.SetMany", "label writes no longer use the atomic audited settings route"),
+        ("text.Any(char.IsControl)", "label validation no longer rejects line/control characters"),
+    ):
+        if needle not in service_text:
+            fail("AppLabelService: " + reason)
+
+    settings_text = settings_service.read_text(encoding="utf-8-sig")
+    for needle, reason in (
+        ("foreach (var label in AppLabelService.Definitions)", "existing databases no longer receive catalog defaults"),
+        ("_permissions?.Can(actor, Modules.Settings) != true", "direct label writes no longer fail closed without Settings permission"),
+        ("return AppLabelService.GuardSetting(key, value);", "direct settings writes bypass the label validator"),
+        ("Application labels must be saved through the audited settings path.", "quiet UI writes can bypass label audit"),
+        ("return JsonSerializer.Serialize(TextValue(value), Json.WriterOptions);",
+         "direct label writes must trim and preserve readable Unicode before storage and audit"),
+    ):
+        if needle not in settings_text:
+            fail("SettingsService: " + reason)
+
+    test_text = label_tests.read_text(encoding="utf-8-sig")
+    for fact in ("CatalogDefaults_AreUniqueAndPersistedAsKnownSettings",
+                 "UnicodeRename_IsTrimmedPersistedAndAudited", "InvalidLabels_AreRefusedAtomically",
+                 "UnknownLabel_IsRefusedWithoutASettingsRow", "Cashier_CannotSaveOrResetThroughThePublicService",
+                 "Reset_RestoresEveryDefaultAndWritesTheAudit", "DirectSettingsWrite_CannotBypassTheLabelGuard"):
+        if fact not in test_text:
+            fail(f"AppLabelTests: required regression fact '{fact}' is missing")
+
+    catalog = dict(definitions)
+    theme_root = ET.parse(theme).getroot()
+    x_key = "{http://schemas.microsoft.com/winfx/2006/xaml}Key"
+    resources = {
+        element.attrib[x_key][len("AppLabel."):]: element.text or ""
+        for element in theme_root.iter()
+        if element.attrib.get(x_key, "").startswith("AppLabel.")
+    }
+
+    if set(resources) != set(catalog):
+        fail("AppLabel resources and Core catalog differ; missing resources: " +
+             (", ".join(sorted(set(catalog) - set(resources))) or "none") +
+             "; extra resources: " + (", ".join(sorted(set(resources) - set(catalog))) or "none"))
+
+    for key in sorted(set(resources) & set(catalog)):
+        if resources[key] != catalog[key]:
+            fail(f"AppLabel.{key}: Theme says '{resources[key]}' but Core ships '{catalog[key]}'")
+
+    used: set[str] = set()
+    headings: set[str] = set()
+    for path in (DOTNET / "Area11.Desktop").rglob("*.xaml"):
+        text = path.read_text(encoding="utf-8-sig")
+        for match in re.finditer(r"\{DynamicResource AppLabel\.([\w.]+)\}", text):
+            key = match.group(1)
+            used.add(key)
+            if key not in catalog:
+                fail(f"{rel(path)}: dynamic label '{key}' is not in the Core catalog")
+
+        # Count a heading only on an actual PageTitle TextBlock. Dashboard also has a tooltip, and
+        # counting that as its heading would hide a page title that had accidentally gone static.
+        for element in ET.parse(path).getroot().iter():
+            match = re.fullmatch(r"\{DynamicResource AppLabel\.([\w.]+)\}",
+                                 element.attrib.get("Text", ""))
+            if (match is not None
+                    and element.attrib.get("Style") == "{StaticResource PageTitle}"):
+                headings.add(match.group(1))
+
+    shell_text = shell.read_text(encoding="utf-8-sig")
+    header_keys = set(re.findall(r'AddGroup\("([^"]+)"', shell_text))
+    unknown_headers = sorted(header_keys - set(catalog))
+    if unknown_headers:
+        fail("navigation groups have no application-label definition: " + ", ".join(unknown_headers))
+
+    # Partners is deliberately a three-tab container: it has a menu title but no PageTitle of its
+    # own. Do not add a duplicate heading merely to make this set uniform.
+    titleless = {"partners"}
+    partners_text = partners_view.read_text(encoding="utf-8-sig")
+    if "PageTitle" in partners_text or "<views:CustomersView" not in partners_text:
+        fail("PartnersView is no longer the known titleless tab container; update the label route check")
+
+    expected_live = set(catalog) - header_keys - titleless
+    if headings != expected_live:
+        fail("live application-label headings differ from the catalog; missing: " +
+             (", ".join(sorted(expected_live - headings)) or "none") + "; unexpected: " +
+             (", ".join(sorted(headings - expected_live)) or "none"))
+    if 'ToolTip="{DynamicResource AppLabel.dashboard}"' not in shell_window.read_text(encoding="utf-8-sig"):
+        fail("ShellWindow: the Dashboard door no longer uses the live application label")
+
+    nav_key_list = re.findall(r'AddPage\(\s*"[^"]+",\s*"([^"]+)"', shell_text, re.S)
+    duplicate_nav_keys = sorted({key for key in nav_key_list if nav_key_list.count(key) > 1})
+    if duplicate_nav_keys:
+        fail("navigation pages reuse a stable catalog key: " + ", ".join(duplicate_nav_keys))
+    nav_keys = set(nav_key_list)
+    unknown_keys = sorted(nav_keys - set(catalog))
+    if unknown_keys:
+        fail("navigation pages have no stable catalog key: " + ", ".join(unknown_keys))
+    if "dashboard" in catalog:
+        nav_keys.add("dashboard")  # The ungrouped home row is declared directly in BuildNavigation.
+    expected_nav = set(catalog) - header_keys - {"alerts"}
+    if nav_keys != expected_nav:
+        fail("navigation coverage differs from the label catalog; missing: " +
+             (", ".join(sorted(expected_nav - nav_keys)) or "none") + "; extra: " +
+             (", ".join(sorted(nav_keys - expected_nav)) or "none"))
+
+    if "SetProperty(ref _title, title, nameof(Title))" not in nav_item.read_text(encoding="utf-8-sig"):
+        fail("NavItem.SetTitle must notify 'Title' explicitly; CallerMemberName would announce 'SetTitle' and leave the menu stale")
+
+    for needle, reason in (
+        ("LabelKey = labelKey", "AddPage no longer retains the stable key"),
+        ("new NavItem(_services.AppLabels.Get(labelKey)", "AddPage no longer resolves visible text by its stable key"),
+        ("NavItem.Header(_services.AppLabels.Get(key))", "group headers no longer resolve visible text by stable key"),
+        ('new NavItem(_services.AppLabels.Get("dashboard")', "Dashboard construction duplicated its display title"),
+        ('LabelKey = "dashboard"', "the ungrouped Dashboard row lost its stable key"),
+        ("item.SetTitle(_services.AppLabels.Get(item.LabelKey))", "the live menu is not refreshed by key"),
+        ('item.LabelKey == "shift"', "Shift navigation regressed to editable text"),
+        ('item.LabelKey == "settings"', "Settings navigation regressed to editable text"),
+        ("LabelResources.Apply(_services.AppLabels)", "saving does not refresh open dynamic resources"),
+    ):
+        if needle not in shell_text:
+            fail("ShellViewModel: " + reason)
+
+    if "LabelResources.Apply(_services.AppLabels)" not in app.read_text(encoding="utf-8-sig"):
+        fail("App startup does not apply saved labels before the first window")
+
+    vm_text = settings_vm.read_text(encoding="utf-8-sig")
+    for needle in ("_services.AppLabels.Validate", "AppLabelService.SettingKey",
+                   "_services.AppLabels.Reset(_user)", "_onSaved?.Invoke()"):
+        if needle not in vm_text:
+            fail(f"SettingsViewModel is missing the label save/reset route: {needle}")
+
+    view_text = settings_view.read_text(encoding="utf-8-sig")
+    for needle in ('Header="App words"', 'Header="{DynamicResource AppLabel.cloud}"',
+                   'ItemsSource="{Binding LabelRows}"', 'Command="{Binding ResetLabelsCommand}"'):
+        if needle not in view_text:
+            fail(f"SettingsView is missing the application-word editor route: {needle}")
+
+    if 'Text="{DynamicResource AppLabel.customFields}"' not in custom_fields_editor.read_text(encoding="utf-8-sig"):
+        fail("CustomFieldsEditorView: the Own fields panel heading no longer follows its live application label")
+
+    REPORT.append(
+        f"App labels: {len(catalog)} stable keys and matching theme defaults; "
+        f"{len(headings)} live page headings plus the bell, Cloud tab and Own fields panel, "
+        "stable-key navigation and guarded Settings save/reset")
 
 
 # ---------------------------------------------------------------------------
@@ -2538,6 +2743,18 @@ def check_tests() -> None:
     # The lookbehind matters: "GetRaw(" ends in "Raw(", and without it every reader of a setting
     # looks like a second declaration of it.
     keys = re.findall(r'(?<![A-Za-z0-9_])(?:Text|Number|Flag|Raw)\("([a-zA-Z0-9_.]+)"', settings)
+
+    # Application labels are deliberately generated from one Core catalog instead of repeating 32
+    # literal Text(...) calls. Count those real defaults too, and refuse a catalog that is no longer
+    # installed into the settings table.
+    label_source = (DOTNET / "Area11.Core/Services/AppLabelService.cs")
+    if label_source.exists():
+        label_keys = re.findall(r'new AppLabelDefinition\("([A-Za-z0-9]+)"',
+                                label_source.read_text(encoding="utf-8"))
+        if label_keys and "foreach (var label in AppLabelService.Definitions)" not in settings:
+            fail("AppLabelService has a catalog but SettingsService does not install its defaults")
+        keys.extend("labels." + key for key in label_keys)
+
     if len(keys) != len(set(keys)):
         duplicated = sorted({k for k in keys if keys.count(k) > 1})
         fail(f"duplicate settings keys: {duplicated}")
@@ -2890,6 +3107,87 @@ def _property_setters() -> dict[str, dict[str, bool]]:
                 room[name] = not setter or bool(setter.group(1))
 
     return found
+
+
+def check_stock_policy_gate() -> None:
+    """D-93: every ordinary stock decrement has one guarded, transactional door.
+
+    A source scan is useful here because a future bypass is otherwise just one harmless-looking
+    SQL line. Additions to stock remain ordinary additions. StockTakeService is the one exception
+    that assigns an absolute number: it is the owner-only, audited physical-count reconciliation,
+    not a decrement API. Historical negative rows are never rewritten by this gate or a migration.
+    """
+    services = DOTNET / "Area11.Core/Services"
+    policy = services / "StockPolicy.cs"
+    guarded_callers = (
+        "SaleService.cs",
+        "StockService.cs",
+        "ExpenseService.cs",
+        "SupplierLedgerService.cs",
+        "ProvisionalReturnService.cs",
+    )
+
+    if not policy.exists():
+        fail("D-93 StockPolicy.cs is missing; ordinary decrements have no central guard")
+        return
+
+    for name in guarded_callers:
+        path = services / name
+        if not path.exists():
+            fail(f"D-93 decrement service is missing: {rel(path)}")
+            continue
+
+        text = path.read_text(encoding="utf-8", errors="replace")
+        if "StockPolicy.Decrease(" not in text:
+            fail(f"{name} no longer calls StockPolicy.Decrease; a stock decrement can bypass D-93")
+
+    policy_text = policy.read_text(encoding="utf-8", errors="replace")
+    normalized_policy = re.sub(r"\s+", " ", policy_text)
+    if not re.search(r"SET qty_base = qty_base - @quantity", normalized_policy, re.IGNORECASE):
+        fail("StockPolicy lost its single guarded batch decrement")
+    if not re.search(r"qty_base >= @quantity", normalized_policy, re.IGNORECASE):
+        fail("StockPolicy's UPDATE no longer requires enough quantity in the selected batch")
+    if "WHERE b.product_id = @productId AND b.active = 1) >= @quantity" not in normalized_policy:
+        fail("StockPolicy's UPDATE no longer protects the active product total")
+    if "internal static class StockPolicy" not in policy_text:
+        fail("StockPolicy must stay an internal service boundary, not a public bypass API")
+
+    update_count = 0
+    for path in services.glob("*.cs"):
+        text = path.read_text(encoding="utf-8", errors="replace")
+        for match in re.finditer(r"UPDATE\s+batches\b", text, re.IGNORECASE):
+            update_count += 1
+            statement = re.sub(r"\s+", " ", text[match.start():match.start() + 700])
+
+            if path.name == "StockPolicy.cs":
+                continue  # the strict conditional decrement was checked above
+
+            if path.name == "StockTakeService.cs":
+                if not re.search(r"SET qty_base = @qty", statement, re.IGNORECASE):
+                    fail("StockTakeService may assign only the audited physical count to a batch")
+                continue
+
+            if not re.search(r"SET qty_base = qty_base \+ @qty", statement, re.IGNORECASE):
+                fail(f"{rel(path)} contains an unguarded batch decrement or absolute assignment; "
+                     "use StockPolicy.Decrease (stock-take is the sole absolute-count exception)")
+
+    stock_take = (services / "StockTakeService.cs").read_text(encoding="utf-8", errors="replace")
+    if "!double.IsFinite(counted) || counted < 0" not in stock_take:
+        fail("The physical-count exception no longer validates a finite, non-negative count")
+
+    legacy_readers = []
+    for tree in (DOTNET / "Area11.Core", DOTNET / "Area11.Desktop"):
+        for path in tree.rglob("*.cs"):
+            text = path.read_text(encoding="utf-8", errors="replace")
+            if re.search(r"GetBool\s*\(\s*[\"']stock\.allowNegative[\"']", text):
+                legacy_readers.append(rel(path))
+    if legacy_readers:
+        fail("the retired negative-stock bypass is still read by: " + ", ".join(legacy_readers))
+
+    REPORT.append(
+        f"Stock policy: {len(guarded_callers)} decrement services use the central guard, "
+        f"{update_count} batch updates are guarded/additions/physical counts, "
+        "and the legacy allow-negative setting has no production reader")
 
 
 def check_binding_modes() -> None:
@@ -3514,6 +3812,541 @@ def check_empty_page() -> None:
 
 
 # ---------------------------------------------------------------------------
+def check_audit_recovery() -> None:
+    """Z-05 shows an earlier state without becoming a financial rollback engine.
+
+    The black box may explain how to make a NEW audited correction, but a generic Undo on a completed
+    sale/payment/return/PR would invent money or stock movements. Keep this page a reader: selected
+    row -> complete snapshot -> existing correction screen. In particular, PR cancellation is not a
+    customer repayment and must never grow a reversal-inflow button here.
+    """
+    model_path = DOTNET / "Area11.Core/Models/AuditModels.cs"
+    vm_path = DOTNET / "Area11.Desktop/ViewModels/AuditViewModel.cs"
+    view_path = DOTNET / "Area11.Desktop/Views/AuditView.xaml"
+
+    missing = False
+
+    for path in (model_path, vm_path, view_path):
+        if not path.exists():
+            fail(f"Z-05 audit recovery file is missing: {rel(path)}")
+            missing = True
+
+    if missing:
+        return
+
+    model = model_path.read_text(encoding="utf-8", errors="replace")
+    vm = vm_path.read_text(encoding="utf-8", errors="replace")
+    view = view_path.read_text(encoding="utf-8", errors="replace")
+
+    snapshot = model.split("public sealed class AuditSnapshot", 1)[-1].split(
+        "public sealed class AuditFilter", 1)[0]
+
+    for needle in (
+        "public static AuditSnapshot For(AuditRow row)",
+        "EarlierRaw = row.OldValue",
+        "RecordedRaw = row.NewValue",
+        "CorrectionGuidance(row)",
+        "never creates a payment",
+        "does not reverse the original financial effect",
+    ):
+        if needle not in snapshot:
+            fail(f"Z-05 AuditSnapshot lost its read-only evidence/safety rule: {needle}")
+
+    for needle in ("Database", "SqliteConnection", "_db.", ".Execute(", ".Tx("):
+        if needle in snapshot:
+            fail(f"Z-05 AuditSnapshot must stay a pure reader, but contains {needle}")
+
+    for needle in (
+        "public AuditRow? Selected",
+        "public AuditSnapshot? Snapshot",
+        "AuditSnapshot.For(value)",
+        "Selected = null;",
+        "public bool HasSnapshot",
+    ):
+        if needle not in vm:
+            fail(f"Z-05 selected-row snapshot is not safely wired: {needle} is missing")
+
+    for command in ("Undo", "Restore", "Rollback", "Revert"):
+        if re.search(rf"public\s+(?:RelayCommand|ICommand)\s+{command}Command\b", vm):
+            fail(f"Z-05 Black box must not grow a universal {command}Command")
+        if re.search(rf'Command="\{{Binding\s+{command}(?:Command)?[,\}}]', view):
+            fail(f"Z-05 Black box view must not expose a {command} command")
+
+    for needle in (
+        'SelectedItem="{Binding Selected}"',
+        'Visibility="{Binding HasSnapshot, Converter={StaticResource BoolToVis}}"',
+        '{Binding Snapshot.EarlierText, Mode=OneWay}',
+        '{Binding Snapshot.RecordedText, Mode=OneWay}',
+        '{Binding Snapshot.DetailsText}',
+        '{Binding Snapshot.CorrectionText}',
+        "not a live query",
+    ):
+        if needle not in view:
+            fail(f"Z-05 earlier-state view is incomplete: {needle} is missing")
+
+    for line_number, line in enumerate(view.splitlines(), 1):
+        if "Text=\"{Binding Snapshot." in line and "TextBox" in line and 'IsReadOnly="True"' not in line:
+            fail(f"AuditView.xaml:{line_number}: snapshot text must be read-only")
+
+    REPORT.append(
+        "Audit recovery: selected row exposes complete read-only before/after values and safe "
+        "correction guidance; no universal undo/restore command")
+
+
+# ---------------------------------------------------------------------------
+def check_report_chart() -> None:
+    """T-05 is the existing native per-day chart, not a reason to add a web chart package.
+
+    Recharts/TanStack belong to the reference web app. The desktop port uses WPF bars and grids.
+    Keep the geometry separate from integer-paisa values, include quiet days, and never let the
+    per-day profit value leak to a manager. This guard protects that existing implementation; the
+    matrix must not claim that no chart exists merely because it does not use a JavaScript library.
+    """
+    model_path = DOTNET / "Area11.Core/Models/ReportModels.cs"
+    service_path = DOTNET / "Area11.Core/Services/ReportService.cs"
+    vm_path = DOTNET / "Area11.Desktop/ViewModels/ReportsViewModel.cs"
+    view_path = DOTNET / "Area11.Desktop/Views/ReportsView.xaml"
+    test_path = DOTNET / "Area11.Tests/ReportTests.cs"
+    paths = (model_path, service_path, vm_path, view_path, test_path)
+    missing = False
+
+    for path in paths:
+        if not path.exists():
+            fail(f"T-05 report chart file is missing: {rel(path)}")
+            missing = True
+
+    if missing:
+        return
+
+    model = model_path.read_text(encoding="utf-8", errors="replace")
+    service = service_path.read_text(encoding="utf-8", errors="replace")
+    vm = vm_path.read_text(encoding="utf-8", errors="replace")
+    view = view_path.read_text(encoding="utf-8", errors="replace")
+    tests = test_path.read_text(encoding="utf-8", errors="replace")
+    days = service.split("private List<ReportDayRow> ReadDays", 1)[-1].split(
+        "private List<ReportItemRow> ReadTop", 1)[0]
+
+    if "public double BarShare { get; set; }" not in model:
+        fail("T-05 ReportDayRow no longer exposes the bar's 0..1 share")
+
+    for needle in (
+        "for (var day = first; day <= last; day = day.AddDays(1))",
+        "var busiest = rows.Count == 0 ? 0 : rows.Max(row => row.SalesPaisa);",
+        "row.BarShare = busiest <= 0 ? 0 : (double)row.SalesPaisa / busiest;",
+        "ProfitPaisa = canSeeProfit ? salesPaisa - refundPaisa - (cost - restockCost) : 0",
+    ):
+        if needle not in days:
+            fail(f"T-05 per-day chart lost a quiet-day/scaling/permission rule: {needle}")
+
+    for needle in ("foreach (var day in value.Days)", "Days.Add(day);"):
+        if needle not in vm:
+            fail(f"T-05 report view-model no longer supplies the real day rows: {needle}")
+
+    for needle in (
+        '<ItemsControl ItemsSource="{Binding Days}">',
+        "<ProgressBar",
+        'Minimum="0" Maximum="1" Value="{Binding BarShare}"',
+        'Text="{Binding DayLabel}"',
+        'Text="{Binding SalesLabel}"',
+        'Text="{Binding ProfitLabel}"',
+        'ItemsSource="{Binding TopByQty}"',
+        'ItemsSource="{Binding Categories}"',
+    ):
+        if needle not in view:
+            fail(f"T-05 native chart/table wiring is missing: {needle}")
+
+    for test_name in (
+        "PerDay_HasEveryDayOfThePeriod_EvenTheQuietOnes",
+        "PerDayProfit_AddsUpToTheTotalProfit",
+        "PerDayChart_ScalesToTheBusiestDay_WithoutChangingTheMoney",
+        "PerDayChart_AllQuietWeekKeepsSevenZeroBars",
+        "PerDayChart_ManagerKeepsTheSalesBarButNotTheProfit",
+    ):
+        if test_name not in tests:
+            fail(f"T-05 regression fact is missing: {test_name}")
+
+    REPORT.append(
+        "Report chart: native per-day bars keep quiet days, scale to the busiest day, preserve "
+        "integer-paisa labels and hide profit without permission; named regression facts present")
+
+
+# ---------------------------------------------------------------------------
+def check_real_stock_projections() -> None:
+    """An empty product and a stocked product must expose the same SQLite numeric type.
+
+    IFNULL(SUM(REAL), 0) is integer zero when no batch exists and Double when a later product has
+    stock. Dapper can cache the first row's shape, so the live product/reorder lists failed with a
+    Double -> Int64 cast even though both C# properties were already double. Cast only the projected
+    fallback to REAL: qty_base stays REAL, fractional quantities stay fractional, and money is not
+    involved. The two facts keep the empty-first ordering that reproduces the owner's failure.
+    """
+    expression = (
+        "CAST(IFNULL((SELECT SUM(b.qty_base) FROM batches b "
+        "WHERE b.product_id = p.id AND b.active = 1), 0) AS REAL)"
+    )
+    targets = (
+        (DOTNET / "Area11.Core/Services/ProductService.cs", "stock_base"),
+        (DOTNET / "Area11.Core/Services/ReorderService.cs", "stockQty"),
+    )
+
+    for path, alias in targets:
+        if not path.exists():
+            fail(f"REAL stock projection file is missing: {rel(path)}")
+            continue
+
+        text = path.read_text(encoding="utf-8", errors="replace")
+        if f"{expression} AS {alias}" not in text:
+            fail(f"{rel(path)}: {alias} must CAST the empty/stocked SUM projection AS REAL")
+
+    product = DOTNET / "Area11.Core/Models/Product.cs"
+    if product.exists() and "public double StockBase { get; set; }" not in product.read_text(
+            encoding="utf-8", errors="replace"):
+        fail("Product.StockBase must remain double; do not repair SQLite materialization by truncation")
+
+    reorder = targets[1][0]
+    if reorder.exists() and "public double StockQty { get; set; }" not in reorder.read_text(
+            encoding="utf-8", errors="replace"):
+        fail("Reorder ProductRow.StockQty must remain double")
+
+    for path, fact in (
+        (DOTNET / "Area11.Tests/CatalogTests.cs", "ProductSearch_ReadsAnEmptyProductBeforeARealStockSum"),
+        (DOTNET / "Area11.Tests/ReorderTests.cs", "ReorderReport_ReadsAnEmptyProductBeforeARealStockSum"),
+    ):
+        if not path.exists() or fact not in path.read_text(encoding="utf-8", errors="replace"):
+            fail(f"Mixed empty/REAL stock regression fact is missing: {fact}")
+
+    REPORT.append(
+        "REAL stock projections: empty-first product and reorder reads stay double without casting "
+        "qty_base or quantities to INTEGER; both runtime regression facts present")
+
+
+# ---------------------------------------------------------------------------
+def check_pr_reconciliation_parameters() -> None:
+    """The PR allocation command must receive the exact names used in its SQL.
+
+    Microsoft.Data.Sqlite rejected the owner's real run because anonymous-member shorthand exposed
+    ProvisionalItemId/SaleItemId while the SQL requested @provisionalItemId/@saleItemId. Keep the
+    bindings explicit; the existing service-level facts prove the resulting allocation behavior.
+    """
+    service_path = DOTNET / "Area11.Core/Services/ProvisionalReturnService.cs"
+    test_paths = (
+        DOTNET / "Area11.Tests/ProvisionalReconciliationTests.cs",
+        DOTNET / "Area11.Tests/ProvisionalTests.cs",
+    )
+
+    if not service_path.exists() or any(not path.exists() for path in test_paths):
+        fail("PR reconciliation parameter guard needs its service and behavioral test files")
+        return
+
+    service = service_path.read_text(encoding="utf-8", errors="replace")
+    start = service.find("INSERT INTO provisional_return_allocations(")
+    end = service.find("UPDATE provisional_returns", start + 1) if start >= 0 else -1
+
+    if start < 0 or end < 0:
+        fail("PR reconciliation allocation INSERT could not be isolated")
+        return
+
+    block = service[start:end]
+    for needle in (
+        "@provisionalItemId, @saleItemId, @qtyBase, @expected, @refund, @at",
+        "provisionalItemId = line.ProvisionalItemId",
+        "saleItemId = line.SaleItemId",
+    ):
+        if needle not in block:
+            fail(f"PR allocation SQL and explicit parameter binding drifted apart: {needle}")
+
+    if re.search(r"(?m)^\s*line\.(?:ProvisionalItemId|SaleItemId),\s*$", block):
+        fail("PR allocation parameters must not use differently-cased anonymous-member shorthand")
+
+    for path, fact in (
+        (test_paths[0], "ExactLink_ConsumesQuantityAndValue_WithoutAnotherStockOrPaymentEvent"),
+        (test_paths[1], "AttachingTheBill_DoesNotAddTheStockTwice"),
+    ):
+        if fact not in path.read_text(encoding="utf-8", errors="replace"):
+            fail(f"PR allocation behavioral regression is missing: {fact}")
+
+    REPORT.append(
+        "PR reconciliation: allocation SQL receives exact provisional/sale-item parameter names; "
+        "existing facts retain stock/payment behavior")
+
+
+# ---------------------------------------------------------------------------
+def check_cloud_sync_closure() -> None:
+    """A 90-day cloud document must not cut off a recent row's financial parent.
+
+    Recent payments may belong to older sales/purchases, and migration 024 lets them reference a
+    provisional return. A no-bill reconciliation may in turn reference an old sale line. Keep those
+    dependencies and every selected document's lines in one shared document reader; never drop a link merely
+    to make the insert fit. Apply also needs its own switch/format/null-id guards because it is Core,
+    not just a button. The named xUnit facts are the behavioral evidence; these are source guards.
+    """
+    service_path = DOTNET / "Area11.Core/Services/SyncService.cs"
+    models_path = DOTNET / "Area11.Core/Models/SyncModels.cs"
+    view_model_path = DOTNET / "Area11.Desktop/ViewModels/CloudSyncViewModel.cs"
+    tests_path = DOTNET / "Area11.Tests/SyncTests.cs"
+    paths = (service_path, models_path, view_model_path, tests_path)
+
+    if any(not path.exists() for path in paths):
+        for path in paths:
+            if not path.exists():
+                fail(f"Cloud sync dependency guard file is missing: {rel(path)}")
+        return
+
+    service = service_path.read_text(encoding="utf-8", errors="replace")
+    models = models_path.read_text(encoding="utf-8", errors="replace")
+    view_model = view_model_path.read_text(encoding="utf-8", errors="replace")
+    tests = tests_path.read_text(encoding="utf-8", errors="replace")
+
+    order_match = re.search(r"public static readonly string\[\] Order\s*=\s*\{(.*?)\};", models,
+                            re.DOTALL)
+    if order_match is None:
+        fail("Cloud sync table order is missing")
+    else:
+        order = re.findall(r'"([^"]+)"', order_match.group(1))
+        for parent, child in (
+            ("sales", "sale_items"),
+            ("purchases", "purchase_items"),
+            ("provisional_returns", "provisional_items"),
+            ("provisional_items", "provisional_return_allocations"),
+            ("sale_items", "provisional_return_allocations"),
+            ("provisional_returns", "payments"),
+        ):
+            if parent not in order or child not in order or order.index(parent) >= order.index(child):
+                fail(f"Cloud sync must write {parent} before {child}")
+
+    format_match = re.search(r"CurrentFormat\s*=\s*(\d+)\s*;", models)
+    if format_match is None or int(format_match.group(1)) < 2:
+        fail("Cloud sync format must be 2 or newer so older builds refuse dependency-complete documents")
+
+    # Status, Build and Preview counts all use the same reader, not a second set of COUNT queries.
+    if service.count("var envelope = ReadLocal();") < 3 or "CountRows(" in service:
+        fail("Cloud sync page counts and push no longer share the dependency-complete document reader")
+
+    for pattern in (
+        r'payment,\s*"sale_id",\s*"sales"',
+        r'payment,\s*"purchase_id",\s*"purchases"',
+        r'payment,\s*\r?\n?\s*"provisional_return_id",\s*"provisional_returns"',
+        r'provisional,\s*"linked_sale_id",\s*"sales"',
+        r'allocation,\s*\r?\n?\s*"provisional_item_id",\s*"provisional_items"',
+        r'allocation,\s*\r?\n?\s*"sale_item_id",\s*"sale_items"',
+        r'line,\s*"sale_id",\s*"sales"',
+    ):
+        if not re.search(pattern, service):
+            fail(f"Cloud sync dependency edge is missing: {pattern}")
+
+    for query in (
+        "SELECT * FROM sale_items WHERE sale_id IN (SELECT id FROM sales WHERE date >= @since)",
+        "SELECT * FROM purchase_items WHERE purchase_id IN (SELECT id FROM purchases WHERE date >= @since)",
+        "SELECT * FROM provisional_items WHERE provisional_id IN (SELECT id FROM provisional_returns WHERE date >= @since)",
+        "item.provisional_id IN (SELECT id FROM provisional_returns WHERE date >= @since)",
+        "SELECT * FROM sale_items WHERE sale_id = @parent ORDER BY id",
+        "SELECT * FROM purchase_items WHERE purchase_id = @parent ORDER BY id",
+        "SELECT * FROM provisional_items WHERE provisional_id = @parent ORDER BY id",
+        "FROM provisional_return_allocations allocation",
+        "WHERE item.provisional_id = @parent",
+    ):
+        if query not in service:
+            fail(f"Cloud sync complete-child query is missing: {query}")
+
+    for table in ("sales", "purchases", "provisional_returns"):
+        needle = f'new HashSet<long>(ids["{table}"])'
+        required = 2 if table == "provisional_returns" else 1  # lines and allocations
+        if service.count(needle) < required:
+            fail(f"Cloud sync must mark bulk-loaded {table} lines complete to avoid N+1 recent reads")
+
+    apply_match = re.search(r"public ServiceResult<SyncApplyResult> Apply\(.*?\n    \}(?=\n\n    // =+ the write)",
+                            service, re.DOTALL)
+    if apply_match is None:
+        fail("Cloud sync Apply boundary could not be isolated for its safety guards")
+    else:
+        apply = apply_match.group(0)
+        backup = apply.find("_backup.Create(")
+        enabled = apply.find("if (!Enabled)")
+        future = apply.find("envelope.Format > SyncEnvelope.CurrentFormat")
+        if backup < 0 or enabled < 0 or enabled > backup:
+            fail("Cloud sync Apply must refuse a switched-off shop before taking a backup or writing")
+        if backup < 0 or future < 0 or future > backup:
+            fail("Cloud sync Apply must reject a future format before taking a backup or writing")
+
+    if "id is null" not in service or "!allowed.Contains(\"id\")" not in service:
+        fail("Cloud sync upsert must skip a missing/NULL id instead of letting SQLite auto-number it")
+
+    refresh = re.search(r"private void Refresh\(\).*?\n    \}", view_model, re.DOTALL)
+    push = re.search(r"private void Push\(\).*?\n    \}", view_model, re.DOTALL)
+    if refresh is None or "ClearPreview();" not in refresh.group(0):
+        fail("Cloud sync Refresh must invalidate an old applicable preview")
+    if push is None or "ClearPreview();" not in push.group(0):
+        fail("Cloud sync Push must invalidate the previously previewed cloud document")
+
+    for fact in (
+        "ARecentCollectionBringsItsOlderSaleAndAllTheSaleLines",
+        "ARecentSupplierPaymentBringsItsOlderPurchaseAndLines",
+        "ARecentProvisionalPaymentBringsTheWholeReconciliationChain",
+        "SwitchingCloudOffAfterPreviewAlsoClosesTheCoreWriteDoor",
+        "AFutureFormatCannotBypassPreviewAndReachTheWriter",
+        "ANullCloudIdIsSkippedInsteadOfBecomingANewLocalRow",
+        "AnOlderFormatOneDocumentCanStillBeReadAndApplied",
+    ):
+        if fact not in tests:
+            fail(f"Cloud sync regression fact is missing: {fact}")
+
+    REPORT.append(
+        "Cloud sync: shared 90-day/dependency-complete document reader, parent-before-child writes, "
+        "format-1 compatibility and future-format refusal, switch/null-id guards, stale-preview "
+        "invalidation and seven named regression facts")
+
+
+# ---------------------------------------------------------------------------
+def check_native_workbook() -> None:
+    """T-10 needs real Open XML and a safe bulk-update workflow, not a CSV renamed to .xlsx.
+
+    Keep this dependency-free (D-53's build-risk concern), retain CSV for the workflows that use it,
+    and make the all-data workbook safe: empty is no change, __CLEAR__ is explicit, stock/balances and
+    secrets stay locked, Settings needs its own tick, and every old value is checked again before the
+    single audited transaction. The tests exercise both our writer and ordinary Excel cell encodings.
+    """
+    codec_path = DOTNET / "Area11.Core/Models/XlsxWorkbook.cs"
+    model_path = DOTNET / "Area11.Core/Models/WorkbookModels.cs"
+    service_path = DOTNET / "Area11.Core/Services/WorkbookService.cs"
+    import_path = DOTNET / "Area11.Core/Services/ImportService.cs"
+    vm_path = DOTNET / "Area11.Desktop/ViewModels/ImportExportViewModel.cs"
+    view_path = DOTNET / "Area11.Desktop/Views/ImportExportView.xaml"
+    test_path = DOTNET / "Area11.Tests/WorkbookTests.cs"
+    paths = (codec_path, model_path, service_path, import_path, vm_path, view_path, test_path)
+    missing = False
+
+    for path in paths:
+        if not path.exists():
+            fail(f"T-10 native workbook file is missing: {rel(path)}")
+            missing = True
+
+    if missing:
+        return
+
+    codec = codec_path.read_text(encoding="utf-8", errors="replace")
+    service = service_path.read_text(encoding="utf-8", errors="replace")
+    imports = import_path.read_text(encoding="utf-8", errors="replace")
+    vm = vm_path.read_text(encoding="utf-8", errors="replace")
+    view = view_path.read_text(encoding="utf-8", errors="replace")
+    tests = test_path.read_text(encoding="utf-8", errors="replace")
+
+    for needle in (
+        "public static byte[] Write(XlsxWorkbook workbook)",
+        "public static XlsxWorkbook Read(byte[] bytes)",
+        'writer.WriteAttributeString("t", "inlineStr")',
+        "DtdProcessing = DtdProcessing.Prohibit",
+        "xl/sharedStrings.xml",
+        "DateTime.FromOADate(serial)",
+        "MaxTotalBytes = 64 * 1024 * 1024",
+    ):
+        if needle not in codec:
+            fail(f"T-10 Open XML codec lost a format/safety rule: {needle}")
+
+    for needle in (
+        'private const string ClearToken = "__CLEAR__";',
+        "if (text.Length == 0)",
+        "if (text == ClearToken)",
+        "VerifyCurrentRow(connection, record);",
+        "user is not null && user.CanManage && _permissions.Can(user, Modules.Import)",
+        "Snapshot = currentFingerprint",
+        "ReadRows(connection, schema, record.KeyValue)",
+        "Fingerprint(schema, current)",
+        "FROM product_barcodes",
+        "ValidateAcrossRows(connection, preview);",
+        "_db.Tx(connection =>",
+        "_audit.RecordChange(connection, user",
+        "_settings.PrepareBulk",
+        'Col("Quantity", "qty_base", CellKind.Quantity, editable: false',
+        'Col("Stock on shelf", "stock_base", CellKind.Quantity, editable: false',
+        'Col("Udhaar now", "balance_paisa", CellKind.Money, editable: false',
+        'Col("Payable now", "balance_paisa", CellKind.Money, editable: false',
+        'key.StartsWith("security.", StringComparison.Ordinal)',
+        'key.StartsWith("bill.next", StringComparison.Ordinal)',
+        'Name = "Products", Table = "products"',
+        'Name = "Customers", Table = "customers"',
+        'Name = "Suppliers", Table = "suppliers"',
+        'Name = "Categories", Table = "categories"',
+        'Name = "Companies", Table = "companies"',
+        'Name = "Batches", Table = "batches"',
+        'Name = "Settings"',
+        'Name = "Instructions"',
+    ):
+        if needle not in service:
+            fail(f"T-10 workbook preview/apply protection is missing: {needle}")
+
+    if "PreviewWorkbook(string kind, byte[] bytes)" not in imports:
+        fail("T-10 new-record import no longer accepts the matching native worksheet")
+
+    for needle in (
+        "_services.Import.PreviewWorkbook(Kind, bytes)",
+        "WorkbookService.Template()",
+        "_services.Workbooks.ExportAll(_user)",
+        "_services.Workbooks.PreviewBulk(_user, bytes, IncludeSettings)",
+        "_services.Workbooks.ApplyBulk(_user, _bulkPreview)",
+    ):
+        if needle not in vm:
+            fail(f"T-10 desktop workbook workflow is disconnected: {needle}")
+
+    for needle in (
+        'Command="{Binding DownloadAllCommand}"',
+        'Command="{Binding ChooseBulkFileCommand}"',
+        'Command="{Binding ApplyBulkCommand}"',
+        'ItemsSource="{Binding BulkRows}"',
+        'IsChecked="{Binding IncludeSettings, Mode=TwoWay}"',
+    ):
+        if needle not in view:
+            fail(f"T-10 workbook page binding is missing: {needle}")
+
+    for test_name in (
+        "XlsxRoundTrip_KeepsUnicodeLeadingZerosAndFormulaText",
+        "Reader_UnderstandsSharedStringsAndRealExcelDateCells",
+        "Template_HasFourSheets_AndWorkbookImportUsesTheMatchingOne",
+        "NativeListExport_IsRealXlsxWithTheSameRupeeValues",
+        "AllDataDownload_HasEightSheetsWithoutPhotosSecretsOrCounters",
+        "BulkApply_ShowsBeforeAfter_ClearsAndAuditsWithoutTouchingStock",
+        "BulkUpdate_UploadingTheAppliedFileAgainMeansZeroChanges",
+        "BulkUpdate_RefusesStockAndAccountBalanceChanges",
+        "BulkUpdate_SettingsNeedTheTick_AndKeepStringNumberAndArrayTypes",
+        "BulkUpdate_LockedSettingsCannotBeAddedByHand",
+        "BulkUpdate_CashierCannotDownloadPreviewOrApply",
+        "BulkApply_StaleLaterRowRollsBackTheEarlierValidRow",
+        "BulkUpdate_BatchExpiryAlsoUpdatesItsMonth_NotItsQuantity",
+        "BulkUpdate_CategoryCycleIsRefusedBeforeAnythingIsWritten",
+    ):
+        if test_name not in tests:
+            fail(f"T-10 workbook regression fact is missing: {test_name}")
+
+    reader_test = tests.split("Reader_UnderstandsSharedStringsAndRealExcelDateCells", 1)[-1].split(
+        "    [Fact]", 1)[0]
+    if "new MemoryStream(bytes);" in reader_test:
+        fail("T-10 ZIP mutation fixture must not use a fixed-size MemoryStream(byte[])")
+    for needle in (
+        "new MemoryStream(bytes.Length + 4096)",
+        "output.Write(bytes, 0, bytes.Length);",
+        "output.Position = 0;",
+    ):
+        if needle not in reader_test:
+            fail(f"T-10 expandable ZIP mutation fixture is incomplete: {needle}")
+
+    protected_test = tests.split("BulkUpdate_RefusesStockAndAccountBalanceChanges", 1)[-1].split(
+        "    [Fact]", 1)[0]
+    if "+ productId + \", 'PACK-999', 'box', 1);\"" not in protected_test \
+            or "+ otherId + \", 'PACK-999', 'box', 1);\"" in protected_test:
+        fail("T-10 active-pack fixture must put the pack and edited base barcode on DIFFERENT products")
+    if "Assert.Equal(0, preview.ChangeCount);" not in protected_test:
+        fail("T-10 protected-field test must prove that no invalid edit became a ready change")
+
+    for project in DOTNET.rglob("*.csproj"):
+        packages = project.read_text(encoding="utf-8", errors="replace")
+        if any(name in packages for name in ("ClosedXML", "EPPlus", "DocumentFormat.OpenXml")):
+            fail(f"T-10 added a spreadsheet package despite the dependency-free codec: {rel(project)}")
+
+    REPORT.append(
+        "Native workbook: dependency-free Open XML read/write, eight-sheet data/template workflows, "
+        "protected fields, Settings types/tick, stale-row checks and one audited transaction; 14 facts present")
+
+
+# ---------------------------------------------------------------------------
 def check_shop_clock() -> None:
     """One time for the shop, a session that ends by itself, and no bill without a drawer (D-92).
 
@@ -3857,6 +4690,272 @@ def check_run_trail() -> None:
                   "every page; one failed button is caught in its own button, reported on one line "
                   "and never reaches the dispatcher; the report tool prints both files and says what "
                   "an absent one means")
+
+
+# ---------------------------------------------------------------------------
+def check_phase_one_shell() -> None:
+    """The expanded dark header must not silently fall back to the old sidebar or split filters.
+
+    WPF cannot be launched in the Linux build area, so this gate checks the structural contracts
+    whose failure previously produced a blank control: every header collection has a command and a
+    view-model source, Settings has one (shell-owned) section row, and the category filter is not the
+    product editor's SelectedCategory. Physical placement and keyboard walk-through remain owner
+    evidence in PHYSICAL-TESTING.md rather than something this check claims to prove.
+    """
+    window_path = DOTNET / "Area11.Desktop/Views/ShellWindow.xaml"
+    shell_path = DOTNET / "Area11.Desktop/ViewModels/ShellViewModel.cs"
+    settings_path = DOTNET / "Area11.Desktop/Views/SettingsView.xaml"
+    products_path = DOTNET / "Area11.Desktop/ViewModels/ProductsViewModel.cs"
+    nav_path = DOTNET / "Area11.Desktop/ViewModels/NavItem.cs"
+    header_items_path = DOTNET / "Area11.Desktop/ViewModels/HeaderMenuItem.cs"
+
+    for path in (window_path, shell_path, settings_path, products_path, nav_path, header_items_path):
+        if not path.exists():
+            fail(f"Phase-1 shell is incomplete: {rel(path)} is missing")
+    if not all(path.exists() for path in
+               (window_path, shell_path, settings_path, products_path, nav_path, header_items_path)):
+        return
+
+    window = window_path.read_text(encoding="utf-8-sig")
+    shell = shell_path.read_text(encoding="utf-8-sig")
+    settings = settings_path.read_text(encoding="utf-8-sig")
+    products = products_path.read_text(encoding="utf-8-sig")
+    nav = nav_path.read_text(encoding="utf-8-sig")
+
+    for needle, reason in (
+        ('Text="Area11"', "the fixed Area11 wordmark is missing"),
+        ('ItemsSource="{Binding ModuleItems}"', "top-row modules are not bound"),
+        ('ItemsSource="{Binding SubNavItems}"', "contextual module pages are not bound"),
+        ('ItemsSource="{Binding SettingsTabItems}"', "Settings sections are not in the shell"),
+        ('ItemsSource="{Binding ProductCategories}"', "Product categories are not in the shell"),
+        ('Command="{Binding GoHomeCommand}"', "the Area11 dashboard route is missing"),
+        ('Width="44" Height="44"', "the alert target is no longer the approved 44x44 size"),
+        ('Command="{Binding OpenAlertsCommand}"', "the alert bell lost its page route"),
+        ('ContentControl Grid.Row="1" Content="{Binding CurrentViewModel}"',
+         "the expanded header no longer leaves a content host"),
+    ):
+        if needle not in window:
+            fail(f"Phase-1 ShellWindow: {reason} ({needle})")
+
+    for forbidden, reason in (
+        ('Width="176"', "the old fixed sidebar width has returned"),
+        ('{Binding StoreName}', "the shop name is again a second application title"),
+        ('{Binding AppName}', "the application title is editable again instead of fixed Area11"),
+    ):
+        if forbidden in window:
+            fail(f"Phase-1 ShellWindow: {reason}")
+
+    for needle, reason in (
+        ("OpenModuleCommand = new RelayCommand<NavItem>(OpenModule)", "module clicks have no command"),
+        ("OpenPageCommand = new RelayCommand<NavItem>(OpenContextPage)", "page clicks have no command"),
+        ("OpenSettingsTabCommand = new RelayCommand<SettingsTabItem>(OpenSettingsTab)",
+         "Settings section clicks have no command"),
+        ("ModuleItems.Add(dashboard)", "Dashboard is absent from the top row"),
+        ("ModuleItems.Add(header)", "permission-filtered groups are absent from the top row"),
+        ("UpdateHeaderNavigation();", "active module/page state is not synchronized"),
+        ("products.ApplyFilter(categoryId: value.Id)", "the header category does not use the existing filter"),
+        ("_services.Permissions.Can", "navigation no longer starts from permissions"),
+    ):
+        if needle not in shell:
+            fail(f"Phase-1 ShellViewModel: {reason} ({needle})")
+
+    if shell.count("SettingsTabItems.Add(new SettingsTabItem(") != 6:
+        fail("Phase-1 shell must expose exactly the existing six Settings sections")
+
+    for obsolete in ("menu.collapsedGroups", "menu.pinnedOpen", "ToggleGroup", "SetCollapsed"):
+        if obsolete in shell:
+            fail(f"Phase-1 ShellViewModel still lets the retired sidebar fold control navigation: {obsolete}")
+
+    for needle, reason in (
+        ('ContentSource="SelectedContent"', "Settings would draw a second tab strip or lose its content"),
+        ('SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}"',
+         "shell sections no longer select the existing Settings content"),
+    ):
+        if needle not in settings:
+            fail(f"Phase-1 SettingsView: {reason} ({needle})")
+
+    for obsolete in ("MenuPinnedOpen", "Application name (top of the window)"):
+        if obsolete in settings:
+            fail(f"Phase-1 SettingsView still shows a retired sidebar/application-title setting: {obsolete}")
+
+    if "public int? CategoryFilterId => _categoryFilter;" not in products:
+        fail("Products no longer exposes a read-only filter id for header synchronization")
+    if "public bool IsCurrentModule" not in nav or "public bool IsCurrentPage" not in nav:
+        fail("NavItem no longer exposes distinct active module and active page states")
+
+    REPORT.append(
+        "Phase 1 shell: fixed Area11, 44px top-right bell, permission-filtered top modules, "
+        "contextual pages, six shell-owned Settings sections and a separate Products category filter; "
+        "no left-sidebar fold or editable application title")
+
+
+# ---------------------------------------------------------------------------
+def check_phase_two_fields() -> None:
+    """Phase-2 field metadata must stay centralized and non-destructive."""
+    policy_path = DOTNET / "Area11.Core/Services/FieldGovernance.cs"
+    model_path = DOTNET / "Area11.Core/Models/CustomFieldModels.cs"
+    service_path = DOTNET / "Area11.Core/Services/CustomFieldService.cs"
+    migration_path = DOTNET / "Area11.Core/Data/Migrations/029_field_governance.sql"
+    admin_path = DOTNET / "Area11.Desktop/Views/CustomFieldsView.xaml"
+    editor_path = DOTNET / "Area11.Desktop/ViewModels/CustomFieldsEditorViewModel.cs"
+    tests_path = DOTNET / "Area11.Tests/FieldGovernanceTests.cs"
+    paths = (policy_path, model_path, service_path, migration_path, admin_path, editor_path, tests_path)
+    if not all(path.exists() for path in paths):
+        fail("Phase-2 field governance is incomplete: policy, migration, UI or regression file is missing")
+        return
+
+    policy = policy_path.read_text(encoding="utf-8-sig")
+    model = model_path.read_text(encoding="utf-8-sig")
+    service = service_path.read_text(encoding="utf-8-sig")
+    migration = migration_path.read_text(encoding="utf-8-sig")
+    admin = admin_path.read_text(encoding="utf-8-sig")
+    editor = editor_path.read_text(encoding="utf-8-sig")
+    tests = tests_path.read_text(encoding="utf-8-sig")
+
+    for needle, reason in (
+        ("public static string KeyFor", "stable field keys have no central generator"),
+        ("public static string? DefinitionError", "definition validation is not centralized"),
+        ("public static bool Normalize", "answer normalization is not centralized"),
+        ("double.IsFinite", "non-finite custom numbers are not refused"),
+        ("MaxHelpTextLength", "field guidance has no bound"),
+    ):
+        if needle not in policy:
+            fail(f"Phase-2 FieldGovernance: {reason}")
+
+    for needle, reason in (
+        ("field_key AS fieldKey", "the service does not read stable keys"),
+        ("help_text AS helpText", "the service does not read field guidance"),
+        ("FieldGovernance.Normalize(field, raw, photoCount", "the old service bypasses central normalization"),
+        ("FieldGovernance.KeyFor(key, id)", "new fields are not assigned stable keys"),
+        ("help_text = @helpText", "field guidance is not saved"),
+    ):
+        if needle not in service:
+            fail(f"Phase-2 CustomFieldService: {reason}")
+
+    for needle, reason in (
+        ("ADD COLUMN field_key", "the schema has no stable key column"),
+        ("ADD COLUMN help_text", "the schema has no guidance column"),
+        ("LOWER(TRIM(entity)) || '.custom.' || id", "legacy keys are not deterministically backfilled"),
+        ("CREATE UNIQUE INDEX", "stable keys are not unique"),
+    ):
+        if needle not in migration:
+            fail(f"Phase-2 migration: {reason}")
+    if "DELETE FROM custom_values" in migration or "DROP TABLE custom_fields" in migration:
+        fail("Phase-2 migration must not delete custom answers or rebuild their table")
+
+    for needle, path, text in (
+        ("SelectedFieldKey", admin_path, admin),
+        ("HelpText", admin_path, admin),
+        ("Field.HelpText", editor_path, editor),
+        ("RenameKeepsTheKeyAndAnswer", tests_path, tests),
+        ("FieldGovernanceMigration_BackfillsStableKeysAndKeepsAnswers", DOTNET / "Area11.Tests/MigrationTests.cs",
+         (DOTNET / "Area11.Tests/MigrationTests.cs").read_text(encoding="utf-8-sig")),
+    ):
+        if needle not in text:
+            fail(f"Phase-2 field governance evidence is missing: {rel(path)} ({needle})")
+
+    if "FieldKey" not in model or "public string Key =>" not in model:
+        fail("Phase-2 model does not expose a stable key with a legacy fallback")
+
+    REPORT.append(
+        "Phase 2 fields: central definition/value policy, stable rename-safe keys, bounded guidance, "
+        "non-destructive migration 029 and focused regression coverage")
+
+
+# ---------------------------------------------------------------------------
+def check_phase_three_packaging() -> None:
+    """Phase-3 pack labels must stay descriptive, editable and searchable on every agreed screen."""
+    policy_path = DOTNET / "Area11.Core/Services/PackagingPolicy.cs"
+    service_path = DOTNET / "Area11.Core/Services/ProductService.cs"
+    model_path = DOTNET / "Area11.Core/Models/Product.cs"
+    products_vm_path = DOTNET / "Area11.Desktop/ViewModels/ProductsViewModel.cs"
+    products_view_path = DOTNET / "Area11.Desktop/Views/ProductsView.xaml"
+    pos_vm_path = DOTNET / "Area11.Desktop/ViewModels/PosViewModel.cs"
+    pos_view_path = DOTNET / "Area11.Desktop/Views/PosView.xaml"
+    purchase_vm_path = DOTNET / "Area11.Desktop/ViewModels/PurchasesViewModel.cs"
+    purchase_view_path = DOTNET / "Area11.Desktop/Views/PurchasesView.xaml"
+    tests_path = DOTNET / "Area11.Tests/PackagingSearchTests.cs"
+    paths = (policy_path, service_path, model_path, products_vm_path, products_view_path,
+             pos_vm_path, pos_view_path, purchase_vm_path, purchase_view_path, tests_path)
+    if not all(path.exists() for path in paths):
+        fail("Phase-3 packaging/search is incomplete: policy, product editor, screen or regression file is missing")
+        return
+
+    policy = policy_path.read_text(encoding="utf-8-sig")
+    service = service_path.read_text(encoding="utf-8-sig")
+    model = model_path.read_text(encoding="utf-8-sig")
+    products_vm = products_vm_path.read_text(encoding="utf-8-sig")
+    products_view = products_view_path.read_text(encoding="utf-8-sig")
+    pos_vm = pos_vm_path.read_text(encoding="utf-8-sig")
+    pos_view = pos_view_path.read_text(encoding="utf-8-sig")
+    purchase_vm = purchase_vm_path.read_text(encoding="utf-8-sig")
+    purchase_view = purchase_view_path.read_text(encoding="utf-8-sig")
+    tests = tests_path.read_text(encoding="utf-8-sig")
+
+    for needle, reason in (
+        ("public static string CleanPackSize", "pack-label normalization is not centralized"),
+        ("public static string? PackSizeError", "pack-label validation is not centralized"),
+        ("public static string SearchKey", "spacing-insensitive pack search has no shared key"),
+        ("public static bool Matches", "Desktop pages have no shared exact product matcher"),
+        ("additionalBarcodes", "the shared matcher could drop pack-specific barcodes"),
+    ):
+        if needle not in policy:
+            fail(f"Phase-3 PackagingPolicy: {reason}")
+
+    for needle, reason in (
+        ("IFNULL(p.pack_size_label, '') LIKE @like", "SQL product search omits the pack label"),
+        ("keyLike", "SQL product search cannot match 50ml against 50 mL"),
+        ("packSizeLabel = NullIfEmpty(packSizeLabel)", "create does not save the normalized label"),
+        ("PackagingPolicy.CleanPackSize(patch.PackSizeLabel)", "update bypasses label normalization"),
+    ):
+        if needle not in service:
+            fail(f"Phase-3 ProductService: {reason}")
+    if service.count("PackagingPolicy.PackSizeError") < 2:
+        fail("Phase-3 ProductService: create and update do not both validate the pack label")
+
+    for needle, reason in (
+        ("public string PackSizeLabel", "the product editor has no pack-label property"),
+        ("PackSizeLabel = product.PackSizeLabel", "an existing label is not loaded into the editor"),
+        ("PackSizeLabel = PackSizeLabel", "the editor does not submit the label"),
+        ("PackSizeLabel = string.Empty", "a new product can inherit the previous label"),
+    ):
+        if needle not in products_vm:
+            fail(f"Phase-3 ProductsViewModel: {reason}")
+
+    for text, path, needles in (
+        (products_view, products_view_path,
+         ('{Binding PackSizeLabel, UpdateSourceTrigger=PropertyChanged}',
+          '{Binding PackSizeLabel, Mode=OneWay}')),
+        (pos_view, pos_view_path, ('{Binding PackSizeLabel, Mode=OneWay}',)),
+        (purchase_view, purchase_view_path, ('DisplayMemberPath="ProductChoiceLabel"',)),
+    ):
+        for needle in needles:
+            if needle not in text:
+                fail(f"Phase-3 {rel(path)}: required pack/variant binding is missing ({needle})")
+
+    if "PackagingPolicy.Matches(product, term, codes)" not in pos_vm:
+        fail("Phase-3 Counter no longer uses the shared matcher with its extra barcode map")
+    if "PackagingPolicy.Matches(product, term)" not in purchase_vm:
+        fail("Phase-3 Purchase no longer uses the shared product matcher")
+    if "public string ProductChoiceLabel" not in model or "public string VariantLabel" not in model:
+        fail("Phase-3 Product model cannot distinguish variants in the purchase picker")
+
+    for test_name in (
+        "PackLabelIsEditableNormalized_AndPartialUpdatePreservesOtherFields",
+        "PackLabelValidationRefusesMultilineAndOverlongTextWithoutWriting",
+        "PackSearchWithFlexibleSpacingFindsOnlyTheIntendedSeparateVariant",
+        "ProductSearchIncludesPackBrandRoomCategoryAndCompanyMetadata",
+        "SharedDesktopSearchMatchesPackagingAndEveryExistingBarcode",
+        "ProductChoiceLabelDistinguishesVariantsWithoutCreatingAnotherIdentity",
+        "PackLabelEditDoesNotChangeSaleConversionPriceOrStock",
+        "SmartSearchUsesExactPackHitBeforeFuzzy_AndBlankSearchRemainsSafe",
+    ):
+        if test_name not in tests:
+            fail(f"Phase-3 packaging regression fact is missing: {test_name}")
+
+    REPORT.append(
+        "Phase 3 packaging: existing descriptive pack label is edited, normalized and searchable in "
+        "Products/Counter/Purchase; variant picker text is unambiguous while IDs, units and prices stay intact")
 
 
 # ---------------------------------------------------------------------------
@@ -4336,6 +5435,7 @@ def main() -> int:
     check_constructor_arity()
     check_readonly_members()
     check_resources()
+    check_app_labels()
     check_x_static()
     check_service_methods()
     check_service_members()
@@ -4354,6 +5454,7 @@ def main() -> int:
     check_running_app()
     check_run_verdict()
     check_shift_report_gate()
+    check_stock_policy_gate()
     check_binding_modes()
     check_crash_report_honesty()
     check_report_tool()
@@ -4361,7 +5462,16 @@ def main() -> int:
     check_empty_page()
     check_run_trail()
     check_shop_clock()
+    check_phase_one_shell()
+    check_phase_two_fields()
+    check_phase_three_packaging()
     check_checklist()
+    check_audit_recovery()
+    check_report_chart()
+    check_real_stock_projections()
+    check_pr_reconciliation_parameters()
+    check_cloud_sync_closure()
+    check_native_workbook()
     check_csharp_grammar()
 
     if not quiet:

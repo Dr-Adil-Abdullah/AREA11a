@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using Area11.Core.Models;
+using Area11.Core.Services;
 using Area11.Core.Utils;
 
 namespace Area11.Desktop.ViewModels;
@@ -200,9 +201,7 @@ public sealed class PurchasesViewModel : ObservableObject
 
         foreach (var product in _catalog)
         {
-            if (term.Length == 0
-                || product.Name.Contains(term, StringComparison.OrdinalIgnoreCase)
-                || (product.Barcode ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase))
+            if (PackagingPolicy.Matches(product, term))
             {
                 FilteredProducts.Add(product);
             }

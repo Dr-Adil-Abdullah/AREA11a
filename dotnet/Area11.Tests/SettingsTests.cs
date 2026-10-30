@@ -105,13 +105,15 @@ public sealed class SettingsTests
         {
             ["store.name"] = "Al-Shifa Pharmacy",
             ["printer.width"] = 80,
-            ["printer.autoPrint"] = false
+            ["printer.autoPrint"] = false,
+            ["sale.successPopup"] = false
         }, Owner);
 
         Assert.True(result.Ok, result.Error);
         Assert.Equal("Al-Shifa Pharmacy", test.Settings.GetString("store.name"));
         Assert.Equal(80, test.Settings.GetInt("printer.width"));
         Assert.False(test.Settings.GetBool("printer.autoPrint"));
+        Assert.False(test.Settings.GetBool("sale.successPopup", true));
 
         using var connection = test.Database.Open();
         var audits = Convert.ToInt64(test.Database.Scalar(connection,

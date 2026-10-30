@@ -93,6 +93,26 @@ public sealed class ReorderTests
         Assert.Equal(20d, report.Value.Rows.Single(row => row.Name == "Brufen 400mg").SuggestQty);
     }
 
+    [Fact]
+    public void ReorderReport_ReadsAnEmptyProductBeforeARealStockSum()
+    {
+        using var test = new TestDatabase();
+        var empty = Add(test, "A empty product", level: 10, stock: 0);
+        var stocked = Add(test, "B stocked product", level: 10, stock: 3.5);
+
+        // A product that has never been received has no batch row, so its IFNULL fallback is the
+        // integer zero that used to poison Dapper's materializer for the following REAL stock sum.
+        test.Database.Tx(connection => test.Database.Execute(connection,
+            "DELETE FROM batches WHERE product_id = @id;", new { id = empty }));
+
+        var result = Pad(test).Report(TestData.Owner);
+
+        Assert.True(result.Ok, result.Error);
+        var rows = result.Value!.Rows;
+        Assert.Equal(0d, rows.Single(row => row.ProductId == empty).StockQty);
+        Assert.Equal(3.5d, rows.Single(row => row.ProductId == stocked).StockQty);
+    }
+
     // ============================== who to order from ==============================
 
     [Fact]

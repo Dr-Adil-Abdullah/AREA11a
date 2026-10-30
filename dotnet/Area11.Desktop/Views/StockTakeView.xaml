@@ -11,7 +11,7 @@
 
         <DockPanel Grid.Row="0" Margin="0,0,0,10">
             <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                <TextBlock Text="Stock-take" Style="{StaticResource PageTitle}" />
+                <TextBlock Text="{DynamicResource AppLabel.stockTake}" Style="{StaticResource PageTitle}" />
                 <TextBlock Text="The shop has closed. Open a session, count what is on the shelf, and apply once - the books follow the count."
                            Style="{StaticResource PageSubtitle}" />
             </StackPanel>

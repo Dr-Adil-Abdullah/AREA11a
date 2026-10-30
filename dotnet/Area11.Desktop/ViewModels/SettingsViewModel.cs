@@ -12,12 +12,13 @@ namespace Area11.Desktop.ViewModels;
 /// Settings (F-17) — the screen the owner asked for when he said printing must be a choice
 /// ("in setting there is an option for auto or manu[a]l printing", D-26).
 ///
-/// Five tabs, one save button:
+/// Six shell-selected sections, one save button:
 ///   • Shop        — name, address, phone, the note at the bottom of the receipt.
 ///   • Printing    — printer, 58 / 80 mm, automatic or manual, cut, copies.
-///   • Sales       — discount limits, tax, negative stock.
+///   • Sales       — discount limits, tax, and the D-93 non-negative stock rule.
 ///   • Cloud sync  — the Supabase address, key, table and shop id (F-48, Spec 25.3).
 ///   • Staff       — people, their role and one checkbox per module (D-03).
+///   • App words   — the shop's names for application sections (E-12/S-05).
 ///
 /// All rules live in Core: <see cref="SettingsService"/> refuses a bad width, a bad copy count or a
 /// cashier limit above the manager's, and <see cref="PermissionService"/> refuses a permission change
@@ -33,8 +34,6 @@ public sealed class SettingsViewModel : ObservableObject
     private string _storeAddress = string.Empty;
     private string _storePhone = string.Empty;
     private string _footerNote = string.Empty;
-    private string _appName = string.Empty;
-    private bool _menuPinnedOpen;
 
     private string _printerName = string.Empty;
     private PaperOption? _selectedPaper;
@@ -42,13 +41,13 @@ public sealed class SettingsViewModel : ObservableObject
     private bool _autoCut;
     private string _copiesText = "1";
     private bool _showDiscount;
+    private bool _saleSuccessPopup;
 
     private string _cashierLimitText = "5";
     private string _managerLimitText = "20";
     private bool _blockBelowCost;
     private bool _taxEnabled;
     private string _taxPercentText = "0";
-    private bool _allowNegativeStock;
 
     private string _expiry1Text = "365";
     private string _expiry2Text = "180";
@@ -84,6 +83,7 @@ public sealed class SettingsViewModel : ObservableObject
     private string _statusText = "Changes are saved when you press Save.";
     private bool _isStatusError;
     private bool _suppressPermissionSave;
+    private bool _confirmLabelReset;
 
     public SettingsViewModel(AppServices services, User user, Action? onSaved = null)
     {
@@ -94,6 +94,7 @@ public sealed class SettingsViewModel : ObservableObject
         SaveCommand = new RelayCommand(Save);
         AddStaffCommand = new RelayCommand(AddStaff);
         ResetPermissionsCommand = new RelayCommand(ResetPermissions);
+        ResetLabelsCommand = new RelayCommand(ResetLabels);
         ToggleActiveCommand = new RelayCommand(ToggleActive);
         RefreshStaffCommand = new RelayCommand(LoadUsers);
         ClearSyncKeyCommand = new RelayCommand(ClearSyncKey);
@@ -138,6 +139,8 @@ public sealed class SettingsViewModel : ObservableObject
 
     public ObservableCollection<User> Users { get; } = new();
 
+    public ObservableCollection<AppLabelEditRow> LabelRows { get; } = new();
+
     public ObservableCollection<PermissionToggle> Permissions { get; } = new();
 
     public IReadOnlyList<string> StaffRoles { get; } = new[] { "Manager", "Salesman", "Cashier" };
@@ -147,6 +150,10 @@ public sealed class SettingsViewModel : ObservableObject
     public RelayCommand AddStaffCommand { get; }
 
     public RelayCommand ResetPermissionsCommand { get; }
+
+    public RelayCommand ResetLabelsCommand { get; }
+
+    public string ResetLabelsText => _confirmLabelReset ? "Click again to restore all" : "Restore original words";
 
     public RelayCommand ToggleActiveCommand { get; }
 
@@ -197,22 +204,6 @@ public sealed class SettingsViewModel : ObservableObject
         set => SetProperty(ref _footerNote, value);
     }
 
-    /// <summary>
-    /// The owner's tick (D-51): every menu group stays open and the headings stop folding. A cashier
-    /// who keeps the whole menu in use sets this once and never thinks about it again.
-    /// </summary>
-    public bool MenuPinnedOpen
-    {
-        get => _menuPinnedOpen;
-        set => SetProperty(ref _menuPinnedOpen, value);
-    }
-
-    public string AppName
-    {
-        get => _appName;
-        set => SetProperty(ref _appName, value);
-    }
-
     // ----------------------------- Printing -----------------------------
 
     public string PrinterName
@@ -254,6 +245,13 @@ public sealed class SettingsViewModel : ObservableObject
 
     // ------------------------------ Sales -------------------------------
 
+    /// <summary>Optional post-commit checkmark/invoice/change card on the counter.</summary>
+    public bool SaleSuccessPopup
+    {
+        get => _saleSuccessPopup;
+        set => SetProperty(ref _saleSuccessPopup, value);
+    }
+
     public string CashierLimitText
     {
         get => _cashierLimitText;
@@ -282,12 +280,6 @@ public sealed class SettingsViewModel : ObservableObject
     {
         get => _taxPercentText;
         set => SetProperty(ref _taxPercentText, value);
-    }
-
-    public bool AllowNegativeStock
-    {
-        get => _allowNegativeStock;
-        set => SetProperty(ref _allowNegativeStock, value);
     }
 
     /// <summary>Level 1 is the farthest band (default a year), Level 3 the nearest (three months).</summary>
@@ -446,6 +438,18 @@ public sealed class SettingsViewModel : ObservableObject
 
     // ----------------------------- Loading ------------------------------
 
+    private void LoadLabels()
+    {
+        _confirmLabelReset = false;
+        OnPropertyChanged(nameof(ResetLabelsText));
+        LabelRows.Clear();
+
+        foreach (var label in _services.AppLabels.List())
+        {
+            LabelRows.Add(new AppLabelEditRow(label.Key, label.DefaultText, label.Text));
+        }
+    }
+
     private void Load()
     {
         var settings = _services.Settings;
@@ -454,8 +458,7 @@ public sealed class SettingsViewModel : ObservableObject
         StoreAddress = settings.GetString("store.address");
         StorePhone = settings.GetString("store.phone");
         FooterNote = settings.GetString("store.footerNote");
-        AppName = settings.GetString("brand.appName");
-        MenuPinnedOpen = settings.GetBool("menu.pinnedOpen");
+        LoadLabels();
 
         var idleHours = settings.GetInt("session.idleHours", 2);
         SelectedIdleHour = IdleHourOptions.FirstOrDefault(option => option.Hours == idleHours)
@@ -470,6 +473,7 @@ public sealed class SettingsViewModel : ObservableObject
         AutoCut = settings.GetBool("printer.autoCut", true);
         CopiesText = settings.GetLong("printer.copies", 1).ToString(CultureInfo.InvariantCulture);
         ShowDiscount = settings.GetBool("receipt.showDiscount", true);
+        SaleSuccessPopup = settings.GetBool("sale.successPopup", true);
 
         var width = settings.GetInt("printer.width", 58);
         SelectedPaper = PaperOptions.FirstOrDefault(option => option.Width == width) ?? PaperOptions[0];
@@ -479,7 +483,6 @@ public sealed class SettingsViewModel : ObservableObject
         BlockBelowCost = settings.GetBool("discount.blockBelowCost", true);
         TaxEnabled = settings.GetBool("tax.enabled");
         TaxPercentText = Text(settings.GetDouble("tax.percent"));
-        AllowNegativeStock = settings.GetBool("stock.allowNegative", true);
 
         var bands = settings.ExpiryBands;
         Expiry1Text = bands.Level1Days.ToString(CultureInfo.InvariantCulture);
@@ -506,18 +509,14 @@ public sealed class SettingsViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Called every time the page is opened, so a value changed elsewhere (the printing switch on
-    /// the counter screen writes the same key) is shown here too.
-    /// </summary>
-    /// <summary>
-    /// Which tab is open: 0 Shop, 1 Printing, 2 Sales rules, 3 Cloud sync, 4 Staff &amp; permissions.
-    /// Bound two-way, so the shop name in the sidebar can open Shop and a person's name can open the
-    /// staff tab (D-50) - the two questions the owner actually clicks.
+    /// Which section is open: 0 Shop, 1 Printing, 2 Sales rules, 3 Cloud sync, 4 Staff, 5 App words.
+    /// Bound two-way so the shell's dark-header section buttons and the person's staff shortcut can
+    /// select the same existing content without rebuilding it.
     /// </summary>
     public int SelectedTabIndex
     {
         get => _selectedTabIndex;
-        set => SetProperty(ref _selectedTabIndex, Math.Clamp(value, 0, 4));
+        set => SetProperty(ref _selectedTabIndex, Math.Clamp(value, 0, 5));
     }
 
     /// <summary>
@@ -529,6 +528,10 @@ public sealed class SettingsViewModel : ObservableObject
     /// </summary>
     public void ShowTab(int index) => SelectedTabIndex = index;
 
+    /// <summary>
+    /// Called every time the page is opened, so a value changed elsewhere (the printing switch on
+    /// the counter screen writes the same key) is shown here too. Section changes do not call this.
+    /// </summary>
     public void Refresh()
     {
         Load();
@@ -684,14 +687,24 @@ public sealed class SettingsViewModel : ObservableObject
             return;
         }
 
+        var labelValues = LabelRows.ToDictionary(
+            row => row.Key,
+            row => (string?)row.Text,
+            StringComparer.Ordinal);
+        var labelValidation = _services.AppLabels.Validate(labelValues);
+
+        if (!labelValidation.Ok)
+        {
+            SetStatus(labelValidation.Error ?? "The application labels could not be saved.", true);
+            return;
+        }
+
         var values = new Dictionary<string, object?>(StringComparer.Ordinal)
         {
             ["store.name"] = StoreName.Trim(),
             ["store.address"] = StoreAddress.Trim(),
             ["store.phone"] = StorePhone.Trim(),
             ["store.footerNote"] = FooterNote.Trim(),
-            ["brand.appName"] = AppName.Trim().Length == 0 ? "Area11" : AppName.Trim(),
-            ["menu.pinnedOpen"] = MenuPinnedOpen,
 
             ["printer.name"] = PrinterName.Trim(),
             ["printer.width"] = paper.Width,
@@ -699,13 +712,13 @@ public sealed class SettingsViewModel : ObservableObject
             ["printer.autoCut"] = AutoCut,
             ["printer.copies"] = copies,
             ["receipt.showDiscount"] = ShowDiscount,
+            ["sale.successPopup"] = SaleSuccessPopup,
 
             ["discount.maxPercentCashier"] = cashierLimit,
             ["discount.maxPercentManager"] = managerLimit,
             ["discount.blockBelowCost"] = BlockBelowCost,
             ["tax.enabled"] = TaxEnabled,
             ["tax.percent"] = taxPercent,
-            ["stock.allowNegative"] = AllowNegativeStock,
             ["expiry.levels"] = _services.Settings.ExpiryBands
                 .WithDays(expiry1, expiry2, expiry3)
                 .Bands
@@ -717,6 +730,11 @@ public sealed class SettingsViewModel : ObservableObject
             ["loyalty.vipThreshold"] = vipPoints,
             ["session.idleHours"] = SelectedIdleHour?.Hours ?? 2
         };
+
+        foreach (var pair in labelValues)
+        {
+            values[AppLabelService.SettingKey(pair.Key)] = pair.Value!.Trim();
+        }
 
         // Only a person the owner ticked for cloud sync writes these four keys: the key is a password
         // to the whole shop's mirror, and a manager's Settings tab must not be able to replace it.
@@ -754,6 +772,7 @@ public sealed class SettingsViewModel : ObservableObject
         SyncKey = string.Empty;
         _syncKeyCleared = false;
         RaiseSyncLabels();
+        LoadLabels();
 
         _onSaved?.Invoke();
 
@@ -928,6 +947,37 @@ public sealed class SettingsViewModel : ObservableObject
             : $"{person.Name} can sign in again.", false);
     }
 
+    private void ResetLabels()
+    {
+        if (!_services.Permissions.Can(_user, Modules.Settings))
+        {
+            SetStatus("Only a person who may change settings can restore the original application words.", true);
+            return;
+        }
+
+        if (!_confirmLabelReset)
+        {
+            _confirmLabelReset = true;
+            OnPropertyChanged(nameof(ResetLabelsText));
+            SetStatus("Press the restore button once more to put every application word back to its original. Nothing has changed yet.", false);
+            return;
+        }
+
+        var result = _services.AppLabels.Reset(_user);
+
+        if (!result.Ok)
+        {
+            _confirmLabelReset = false;
+            OnPropertyChanged(nameof(ResetLabelsText));
+            SetStatus(result.Error ?? "The original application words could not be restored.", true);
+            return;
+        }
+
+        LoadLabels();
+        _onSaved?.Invoke();
+        SetStatus("Original application words restored. The shell and open pages have been updated.", false);
+    }
+
     private void ResetPermissions()
     {
         if (_selectedUser is null)
@@ -1001,6 +1051,23 @@ public sealed class IdleHourOption
     public string Label { get; }
 
     public override string ToString() => Label;
+}
+
+/// <summary>One editable application word. Key stays stable while Text is typed in the box.</summary>
+public sealed class AppLabelEditRow
+{
+    public AppLabelEditRow(string key, string defaultText, string text)
+    {
+        Key = key;
+        DefaultText = defaultText;
+        Text = text;
+    }
+
+    public string Key { get; }
+
+    public string DefaultText { get; }
+
+    public string Text { get; set; }
 }
 
 public sealed class PaperOption

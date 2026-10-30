@@ -10,7 +10,7 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Margin="0,0,0,6">
-            <TextBlock Text="Returns" Style="{StaticResource PageTitle}" />
+            <TextBlock Text="{DynamicResource AppLabel.returns}" Style="{StaticResource PageTitle}" />
             <TextBlock Text="Never more than was sold · never more money than was collected · every return keeps its own number"
                        Style="{StaticResource PageSubtitle}" />
         </StackPanel>

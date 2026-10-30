@@ -12,8 +12,8 @@
         <!-- Header: title on the left, one Save button on the right -->
         <DockPanel Grid.Row="0" Margin="0,0,0,6">
             <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                <TextBlock Text="Settings" Style="{StaticResource PageTitle}" />
-                <TextBlock Text="Shop details, printing, sales rules, cloud sync and staff — no code change needed"
+                <TextBlock Text="{DynamicResource AppLabel.settings}" Style="{StaticResource PageTitle}" />
+                <TextBlock Text="Shop details, printing, sales rules, cloud sync, staff and application words — no code change needed"
                            Style="{StaticResource PageSubtitle}" />
             </StackPanel>
 
@@ -22,7 +22,14 @@
                     Command="{Binding SaveCommand}" />
         </DockPanel>
 
+        <!-- The shell owns the clickable section row. This headerless template keeps the existing
+             six tab contents and SelectedTabIndex semantics without drawing a second tab strip. -->
         <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
+            <TabControl.Template>
+                <ControlTemplate TargetType="TabControl">
+                    <ContentPresenter x:Name="PART_SelectedContentHost" ContentSource="SelectedContent" />
+                </ControlTemplate>
+            </TabControl.Template>
 
             <!-- ============================ 1. SHOP ============================ -->
             <TabItem Header="Shop">
@@ -32,7 +39,7 @@
                         <Border Style="{StaticResource SettingsGroup}">
                             <StackPanel>
                                 <TextBlock Text="Shop details" Style="{StaticResource SectionTitle}" />
-                                <TextBlock Text="This is printed at the top of every receipt and shown in the sidebar."
+                                <TextBlock Text="This is printed at the top of every receipt. The application header always says Area11."
                                            Style="{StaticResource FieldHint}" />
 
                                 <Grid Margin="0,6,0,0">
@@ -61,23 +68,6 @@
                                 <TextBlock Text="For example the return policy or your timing."
                                            Style="{StaticResource FieldHint}" />
 
-                                <TextBlock Text="Application name (top of the window)" Style="{StaticResource FieldLabel}" />
-                                <TextBox Text="{Binding AppName, UpdateSourceTrigger=PropertyChanged}" Width="260"
-                                         HorizontalAlignment="Left" />
-                            </StackPanel>
-                        </Border>
-
-                        <Border Style="{StaticResource SettingsGroup}">
-                            <StackPanel>
-                                <TextBlock Text="Left menu" Style="{StaticResource SectionTitle}" />
-                                <TextBlock Text="Each heading in the left bar (SELL, STOCK ...) can be folded with one click."
-                                           Style="{StaticResource FieldHint}" />
-
-                                <CheckBox Content="Keep every group open (no folding)"
-                                          IsChecked="{Binding MenuPinnedOpen, Mode=TwoWay}"
-                                          Margin="0,10,0,0" />
-                                <TextBlock Text="Tick this and the headings stop folding; every page is always on the screen. Leave it off and each group comes back the way you left it."
-                                           Style="{StaticResource FieldHint}" />
                             </StackPanel>
                         </Border>
 
@@ -218,6 +208,19 @@
                                           Margin="0,14,0,0" />
                                 <TextBlock Text="Recommended. A sale below cost is a real loss, not a discount."
                                            Style="{StaticResource FieldHint}" />
+                                <TextBlock Text="Discount % is of the full retail/selling-price total. With no discount, the Counter asks before using a VIP/Doctor rate; No keeps ordinary retail."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel>
+                                <TextBlock Text="Sale confirmation" Style="{StaticResource SectionTitle}" />
+                                <CheckBox Content="Show the Done / invoice / cash-change card after a saved sale"
+                                          IsChecked="{Binding SaleSuccessPopup, Mode=TwoWay}"
+                                          Margin="0,10,0,0" />
+                                <TextBlock Text="The card appears only after the bill is committed. Off = the existing status line still shows the saved invoice; printing is controlled separately above."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
                             </StackPanel>
                         </Border>
 
@@ -271,11 +274,10 @@
                             <StackPanel>
                                 <TextBlock Text="Stock" Style="{StaticResource SectionTitle}" />
 
-                                <CheckBox Content="Allow a bill when the stock count is short (negative stock)"
-                                          IsChecked="{Binding AllowNegativeStock, Mode=TwoWay}"
-                                          Margin="0,10,0,0" />
-                                <TextBlock Text="Recommended: a counter must never refuse a sale because the computer's count is wrong. The shortage shows on the stock report."
-                                           Style="{StaticResource FieldHint}" />
+                                <TextBlock Text="New work never takes stock below zero (D-93)"
+                                           Style="{StaticResource FieldLabel}" Margin="0,10,0,0" />
+                                <TextBlock TextWrapping="Wrap" Style="{StaticResource FieldHint}"
+                                           Text="Sales, write-offs, goods drawings, supplier returns and PR cancellations stop with a clear shortage message. There is no checkbox or owner bypass. Existing minus quantities stay visible in Stock minus until a physical stock-take reconciles them." />
 
                                 <Separator Margin="0,14,0,10" />
 
@@ -333,7 +335,7 @@
             </TabItem>
 
             <!-- ========================= 4. CLOUD SYNC ========================= -->
-            <TabItem Header="Cloud sync">
+            <TabItem Header="{DynamicResource AppLabel.cloud}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
 
@@ -510,6 +512,55 @@
                         </StackPanel>
                     </Border>
 
+                </Grid>
+            </TabItem>
+
+            <!-- ========================== 6. APP WORDS ========================== -->
+            <TabItem Header="App words">
+                <Grid Margin="0,4,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Margin="0,0,16,10">
+                            <TextBlock Text="Names used inside Area11" Style="{StaticResource SectionTitle}" />
+                            <TextBlock Style="{StaticResource FieldHint}" TextWrapping="Wrap"
+                                       Text="Type the words your shop uses. Save settings updates the top navigation and open page headings at once. This does not rewrite receipts, old records or other sentences." />
+                        </StackPanel>
+                        <Button Grid.Column="1" VerticalAlignment="Top" Style="{StaticResource GhostButton}"
+                                Content="{Binding ResetLabelsText}" Command="{Binding ResetLabelsCommand}" />
+                    </Grid>
+
+                    <Border Grid.Row="1" Style="{StaticResource SettingsGroup}" Margin="0">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding LabelRows}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,5">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="190" />
+                                                <ColumnDefinition Width="16" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Original word" Style="{StaticResource FieldHint}" Margin="0" />
+                                                <TextBlock Text="{Binding DefaultText}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                            <TextBox Grid.Column="2" VerticalContentAlignment="Center" MaxLength="60"
+                                                     Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
+                                                     ToolTip="Your word for this Area11 section. Use Restore original words to reset every section." />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
                 </Grid>
             </TabItem>
 

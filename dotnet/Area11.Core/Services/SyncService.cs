@@ -45,7 +45,11 @@ public sealed class SyncService
 
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = false };
 
-    /// <summary>One SELECT per table, written out so the repo checker prepares each one against the schema.</summary>
+    /// <summary>
+    /// The starting set: six lists whole and each financial document for 90 days, with recent child
+    /// lines read in bulk (no one-query-per-bill slowdown). A parent included later only as an older
+    /// dependency brings the same complete lines through the single-parent queries below.
+    /// </summary>
     private static readonly Dictionary<string, string> Selects = new(StringComparer.Ordinal)
     {
         ["categories"] = "SELECT * FROM categories ORDER BY id",
@@ -58,26 +62,38 @@ public sealed class SyncService
         ["sale_items"] = "SELECT * FROM sale_items WHERE sale_id IN (SELECT id FROM sales WHERE date >= @since) ORDER BY id",
         ["purchases"] = "SELECT * FROM purchases WHERE date >= @since ORDER BY id",
         ["purchase_items"] = "SELECT * FROM purchase_items WHERE purchase_id IN (SELECT id FROM purchases WHERE date >= @since) ORDER BY id",
+        ["provisional_returns"] = "SELECT * FROM provisional_returns WHERE date >= @since ORDER BY id",
+        ["provisional_items"] = "SELECT * FROM provisional_items WHERE provisional_id IN (SELECT id FROM provisional_returns WHERE date >= @since) ORDER BY id",
+        ["provisional_return_allocations"] = "SELECT allocation.* FROM provisional_return_allocations allocation JOIN provisional_items item ON item.id = allocation.provisional_item_id WHERE item.provisional_id IN (SELECT id FROM provisional_returns WHERE date >= @since) ORDER BY allocation.id",
         ["payments"] = "SELECT * FROM payments WHERE date >= @since ORDER BY id",
         ["expenses"] = "SELECT * FROM expenses WHERE date >= @since ORDER BY id"
     };
 
-    /// <summary>The same cut, but counting instead of reading - for the page and the preview.</summary>
-    private static readonly Dictionary<string, string> Counts = new(StringComparer.Ordinal)
+    /// <summary>A referenced parent may be older than 90 days; never cut its foreign key off.</summary>
+    private static readonly Dictionary<string, string> ParentById = new(StringComparer.Ordinal)
     {
-        ["categories"] = "SELECT COUNT(1) FROM categories",
-        ["companies"] = "SELECT COUNT(1) FROM companies",
-        ["suppliers"] = "SELECT COUNT(1) FROM suppliers",
-        ["customers"] = "SELECT COUNT(1) FROM customers",
-        ["products"] = "SELECT COUNT(1) FROM products",
-        ["batches"] = "SELECT COUNT(1) FROM batches",
-        ["sales"] = "SELECT COUNT(1) FROM sales WHERE date >= @since",
-        ["sale_items"] = "SELECT COUNT(1) FROM sale_items WHERE sale_id IN (SELECT id FROM sales WHERE date >= @since)",
-        ["purchases"] = "SELECT COUNT(1) FROM purchases WHERE date >= @since",
-        ["purchase_items"] = "SELECT COUNT(1) FROM purchase_items WHERE purchase_id IN (SELECT id FROM purchases WHERE date >= @since)",
-        ["payments"] = "SELECT COUNT(1) FROM payments WHERE date >= @since",
-        ["expenses"] = "SELECT COUNT(1) FROM expenses WHERE date >= @since"
+        ["sales"] = "SELECT * FROM sales WHERE id = @id",
+        ["sale_items"] = "SELECT * FROM sale_items WHERE id = @id",
+        ["purchases"] = "SELECT * FROM purchases WHERE id = @id",
+        ["provisional_returns"] = "SELECT * FROM provisional_returns WHERE id = @id",
+        ["provisional_items"] = "SELECT * FROM provisional_items WHERE id = @id"
     };
+
+    private const string SaleLinesForSale =
+        "SELECT * FROM sale_items WHERE sale_id = @parent ORDER BY id";
+
+    private const string PurchaseLinesForPurchase =
+        "SELECT * FROM purchase_items WHERE purchase_id = @parent ORDER BY id";
+
+    private const string ProvisionalLinesForReturn =
+        "SELECT * FROM provisional_items WHERE provisional_id = @parent ORDER BY id";
+
+    private const string AllocationsForReturn = @"
+SELECT allocation.*
+FROM provisional_return_allocations allocation
+JOIN provisional_items item ON item.id = allocation.provisional_item_id
+WHERE item.provisional_id = @parent
+ORDER BY allocation.id;";
 
     private readonly Database _db;
     private readonly SettingsService _settings;
@@ -189,15 +205,13 @@ public sealed class SyncService
 
         try
         {
-            var since = Clock.DateDaysAgo(RecentDays);
+            // Counts use the same dependency-complete selection a push would use, including older
+            // parents. A separate COUNT query per table previously made the page and document disagree.
+            var envelope = ReadLocal();
 
-            using var connection = _db.Open();
-
-            // Every table is counted the same way the push selects it, so "0 of 12 tables" on the page
-            // means the same thing as an empty section in the document.
             foreach (var table in SyncTables.Order)
             {
-                status.Counts.Add(new SyncTableCount(table, -1, CountRows(connection, table, since)));
+                status.Counts.Add(new SyncTableCount(table, -1, envelope.CountOf(table)));
             }
 
             return ServiceResult<SyncStatus>.Success(status);
@@ -211,7 +225,7 @@ public sealed class SyncService
         }
     }
 
-    /// <summary>The document that would be sent: the six lists whole, and the last 90 days of money.</summary>
+    /// <summary>The six lists whole, recent money, and every older parent/line those rows reference.</summary>
     public ServiceResult<SyncEnvelope> Build(User? user)
     {
         if (!CanSync(user))
@@ -234,35 +248,7 @@ public sealed class SyncService
 
         try
         {
-            var since = Clock.DateDaysAgo(RecentDays);
-
-            var envelope = new SyncEnvelope
-            {
-                Format = SyncEnvelope.CurrentFormat,
-                ShopId = ShopId,
-                ShopName = ShopName,
-                MadeAt = Clock.Now(),
-                Version = BuildInfo.Version
-            };
-
-            using var connection = _db.Open();
-
-            foreach (var table in SyncTables.Order)
-            {
-                var rows = ReadRows(connection, Selects[table], since);
-
-                if (rows.Count == 0)
-                {
-                    // An empty table is left out instead of sent as "": the document stays small, and the
-                    // apply never touches a table it was not given.
-                    continue;
-                }
-
-                foreach (var row in rows)
-                {
-                    envelope.Add(table, row);
-                }
-            }
+            var envelope = ReadLocal();
 
             // The size the owner sees is the size of the ROW that will be posted (the document plus the
             // five columns around it), because that is what his internet pays for.
@@ -277,6 +263,230 @@ public sealed class SyncService
             return ServiceResult<SyncEnvelope>.Fail(
                 "The shop's data could not be prepared for the cloud. " + exception.Message);
         }
+    }
+
+    /// <summary>
+    /// Read one local document for Build, Status and Preview. The 90-day cut applies to financial
+    /// headers, not to their references: a recent khata collection can belong to a sale from last year,
+    /// and a no-bill return can be reconciled against an old bill. Those parents and their complete
+    /// lines must travel too, or applying the payment would fail its foreign key (or lose the link).
+    /// </summary>
+    private SyncEnvelope ReadLocal()
+    {
+        var since = Clock.DateDaysAgo(RecentDays);
+
+        var envelope = new SyncEnvelope
+        {
+            Format = SyncEnvelope.CurrentFormat,
+            ShopId = ShopId,
+            ShopName = ShopName,
+            MadeAt = Clock.Now(),
+            Version = BuildInfo.Version
+        };
+
+        using var connection = _db.Open();
+
+        foreach (var table in SyncTables.Order)
+        {
+            foreach (var row in ReadRows(connection, Selects[table], since))
+            {
+                envelope.Add(table, row);
+            }
+        }
+
+        CompleteReferences(connection, envelope);
+
+        // Dependencies are discovered after the recent rows. Restore id order inside every table so
+        // two pushes of unchanged data remain diffable regardless of the discovery path.
+        foreach (var table in SyncTables.Order)
+        {
+            if (envelope.Tables.TryGetValue(table, out var rows))
+            {
+                rows.Sort((left, right) => IdOf(left, "id").GetValueOrDefault()
+                    .CompareTo(IdOf(right, "id").GetValueOrDefault()));
+            }
+        }
+
+        return envelope;
+    }
+
+    /// <summary>
+    /// Complete the small graph around the 90-day starting set. This is a fixed-point walk because an
+    /// allocation can pull in an old sale line, which pulls in its sale, which then pulls in all the
+    /// other lines on that bill. Every row comes from this local database; no cloud names reach SQL.
+    /// </summary>
+    private static void CompleteReferences(SqliteConnection connection, SyncEnvelope envelope)
+    {
+        var ids = new Dictionary<string, HashSet<long>>(StringComparer.Ordinal);
+
+        foreach (var table in SyncTables.Order)
+        {
+            ids[table] = new HashSet<long>(RowsOf(envelope, table)
+                .Select(row => IdOf(row, "id") ?? 0)
+                .Where(id => id > 0));
+        }
+
+        // The starting SELECTs already read these recent parents' lines in bulk. Only an older parent
+        // discovered below needs its own child query; a busy shop does not pay one query per recent bill.
+        var completedSales = new HashSet<long>(ids["sales"]);
+        var completedPurchases = new HashSet<long>(ids["purchases"]);
+        var completedProvisionals = new HashSet<long>(ids["provisional_returns"]);
+        var completedAllocations = new HashSet<long>(ids["provisional_returns"]);
+
+        while (true)
+        {
+            var added = false;
+
+            foreach (var payment in RowsOf(envelope, "payments"))
+            {
+                added |= EnsureParent(connection, envelope, ids, payment, "sale_id", "sales");
+                added |= EnsureParent(connection, envelope, ids, payment, "purchase_id", "purchases");
+                added |= EnsureParent(connection, envelope, ids, payment,
+                    "provisional_return_id", "provisional_returns");
+            }
+
+            foreach (var provisional in RowsOf(envelope, "provisional_returns"))
+            {
+                added |= EnsureParent(connection, envelope, ids, provisional, "linked_sale_id", "sales");
+            }
+
+            foreach (var item in RowsOf(envelope, "provisional_items"))
+            {
+                added |= EnsureParent(connection, envelope, ids, item,
+                    "provisional_id", "provisional_returns");
+            }
+
+            foreach (var allocation in RowsOf(envelope, "provisional_return_allocations"))
+            {
+                added |= EnsureParent(connection, envelope, ids, allocation,
+                    "provisional_item_id", "provisional_items");
+                added |= EnsureParent(connection, envelope, ids, allocation,
+                    "sale_item_id", "sale_items");
+            }
+
+            foreach (var line in RowsOf(envelope, "sale_items"))
+            {
+                added |= EnsureParent(connection, envelope, ids, line, "sale_id", "sales");
+            }
+
+            // Every selected document brings ALL its lines, not only lines that happen to be recent.
+            added |= EnsureChildren(connection, envelope, ids, "sales", "sale_items",
+                SaleLinesForSale, completedSales);
+            added |= EnsureChildren(connection, envelope, ids, "purchases", "purchase_items",
+                PurchaseLinesForPurchase, completedPurchases);
+            added |= EnsureChildren(connection, envelope, ids, "provisional_returns", "provisional_items",
+                ProvisionalLinesForReturn, completedProvisionals);
+            added |= EnsureChildren(connection, envelope, ids, "provisional_returns",
+                "provisional_return_allocations", AllocationsForReturn, completedAllocations);
+
+            if (!added)
+            {
+                break;
+            }
+        }
+    }
+
+    private static bool EnsureParent(
+        SqliteConnection connection,
+        SyncEnvelope envelope,
+        Dictionary<string, HashSet<long>> ids,
+        Dictionary<string, object?> row,
+        string field,
+        string parentTable)
+    {
+        var id = IdOf(row, field);
+
+        return id.HasValue && EnsureRow(connection, envelope, ids, parentTable, id.Value);
+    }
+
+    private static bool EnsureRow(
+        SqliteConnection connection,
+        SyncEnvelope envelope,
+        Dictionary<string, HashSet<long>> ids,
+        string table,
+        long id)
+    {
+        if (ids[table].Contains(id))
+        {
+            return false;
+        }
+
+        var rows = ReadRowsWithParameter(connection, ParentById[table], "@id", id);
+
+        if (rows.Count != 1)
+        {
+            // A local foreign key should make this impossible. Stop rather than send a document that
+            // looks successful but has silently lost the referenced financial event.
+            throw new InvalidOperationException(
+                "A local row references missing " + table + " id " + id.ToString(CultureInfo.InvariantCulture)
+                + ". Repair the local database before pushing.");
+        }
+
+        return AddRow(envelope, ids, table, rows[0]);
+    }
+
+    private static bool EnsureChildren(
+        SqliteConnection connection,
+        SyncEnvelope envelope,
+        Dictionary<string, HashSet<long>> ids,
+        string parentTable,
+        string childTable,
+        string sql,
+        HashSet<long> completed)
+    {
+        var added = false;
+
+        foreach (var parent in RowsOf(envelope, parentTable))
+        {
+            var id = IdOf(parent, "id");
+
+            if (!id.HasValue || !completed.Add(id.Value))
+            {
+                continue;
+            }
+
+            foreach (var child in ReadRowsWithParameter(connection, sql, "@parent", id.Value))
+            {
+                added |= AddRow(envelope, ids, childTable, child);
+            }
+        }
+
+        return added;
+    }
+
+    private static bool AddRow(
+        SyncEnvelope envelope,
+        Dictionary<string, HashSet<long>> ids,
+        string table,
+        Dictionary<string, object?> row)
+    {
+        var id = IdOf(row, "id");
+
+        if (!id.HasValue || id.Value <= 0)
+        {
+            throw new InvalidOperationException("A local " + table + " row has no positive integer id.");
+        }
+
+        if (!ids[table].Add(id.Value))
+        {
+            return false;
+        }
+
+        envelope.Add(table, row);
+        return true;
+    }
+
+    private static List<Dictionary<string, object?>> RowsOf(SyncEnvelope envelope, string table) =>
+        envelope.Tables.TryGetValue(table, out var rows) ? rows : new List<Dictionary<string, object?>>();
+
+    private static long? IdOf(Dictionary<string, object?> row, string field)
+    {
+        if (!row.TryGetValue(field, out var value) || value is null || value == DBNull.Value)
+        {
+            return null;
+        }
+
+        return Convert.ToInt64(value, CultureInfo.InvariantCulture);
     }
 
     /// <summary>Send the document. Reads the shop and writes the cloud - never the other way round.</summary>
@@ -409,7 +619,34 @@ public sealed class SyncService
                 "Only the owner can bring the cloud copy onto this computer.");
         }
 
-        if (envelope is null || envelope.RowCount == 0)
+        if (!Enabled)
+        {
+            return ServiceResult<SyncApplyResult>.Fail(
+                "Cloud sync is switched off. Turn it on in Settings -> Cloud sync before bringing data here.");
+        }
+
+        if (!IsConfigured)
+        {
+            return ServiceResult<SyncApplyResult>.Fail(
+                "Fill the cloud address, the key and the shop id in Settings -> Cloud sync first. Nothing was written.");
+        }
+
+        if (envelope is null)
+        {
+            return ServiceResult<SyncApplyResult>.Fail(
+                "Read the cloud copy first - there is nothing to bring.");
+        }
+
+        // Apply is a Core boundary, not merely a button. A caller cannot bypass ReadEnvelope and feed
+        // a future document straight into the writer after the preview has already validated it.
+        if (envelope.Format <= 0 || envelope.Format > SyncEnvelope.CurrentFormat)
+        {
+            return ServiceResult<SyncApplyResult>.Fail(
+                "The cloud copy was written by a different Area11 (format " + envelope.Format
+                + "). Update this computer first. Nothing was written.");
+        }
+
+        if (envelope.RowCount == 0)
         {
             return ServiceResult<SyncApplyResult>.Fail(
                 "Read the cloud copy first - there is nothing to bring.");
@@ -460,7 +697,7 @@ public sealed class SyncService
 
     /// <summary>
     /// Writes the document into the shop's database. Every row is filtered twice before it reaches SQL:
-    /// the table must be one of the twelve, and every column must exist in that table on this computer.
+    /// the table must be in SyncTables.Order, and every column must exist in that table on this computer.
     /// Why: the document comes from outside, and a column name is text that ends up in a statement.
     /// </summary>
     private ServiceResult<SyncApplyResult> Write(SyncEnvelope envelope)
@@ -538,8 +775,10 @@ public sealed class SyncService
         HashSet<string> allowed,
         Dictionary<string, object?> row)
     {
-        // The id is the key everything else hangs from; a row without it cannot be placed.
-        if (!row.ContainsKey("id"))
+        // The id is the key everything else hangs from; a row without it cannot be placed. A NULL id
+        // is not a real key either: SQLite would auto-number an INTEGER PRIMARY KEY and quietly create
+        // a different local row, so skip it just like a missing id.
+        if (!row.TryGetValue("id", out var id) || id is null || id == DBNull.Value || !allowed.Contains("id"))
         {
             return false;
         }
@@ -791,14 +1030,12 @@ public sealed class SyncService
     {
         try
         {
-            var since = Clock.DateDaysAgo(RecentDays);
+            var envelope = ReadLocal();
             var counts = new Dictionary<string, int>(StringComparer.Ordinal);
-
-            using var connection = _db.Open();
 
             foreach (var table in SyncTables.Order)
             {
-                counts[table] = CountRows(connection, table, since);
+                counts[table] = envelope.CountOf(table);
             }
 
             return counts;
@@ -808,19 +1045,6 @@ public sealed class SyncService
             _log.Error("The shop's rows could not be counted for the cloud preview.", exception);
             return null;
         }
-    }
-
-    private static int CountRows(SqliteConnection connection, string table, string since)
-    {
-        using var command = connection.CreateCommand();
-        command.CommandText = Counts[table];
-
-        if (Counts[table].Contains("@since", StringComparison.Ordinal))
-        {
-            command.Parameters.AddWithValue("@since", since);
-        }
-
-        return Convert.ToInt32(command.ExecuteScalar() ?? 0, CultureInfo.InvariantCulture);
     }
 
     private static List<Dictionary<string, object?>> ReadRows(
@@ -836,6 +1060,23 @@ public sealed class SyncService
             command.Parameters.AddWithValue("@since", since);
         }
 
+        return ReadRows(command);
+    }
+
+    private static List<Dictionary<string, object?>> ReadRowsWithParameter(
+        SqliteConnection connection,
+        string sql,
+        string name,
+        long value)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        command.Parameters.AddWithValue(name, value);
+        return ReadRows(command);
+    }
+
+    private static List<Dictionary<string, object?>> ReadRows(SqliteCommand command)
+    {
         var rows = new List<Dictionary<string, object?>>();
 
         using var reader = command.ExecuteReader();

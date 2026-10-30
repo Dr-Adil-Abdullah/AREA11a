@@ -8,11 +8,12 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <DockPanel Grid.Row="0" Margin="0,0,0,12">
             <StackPanel DockPanel.Dock="Left">
-                <TextBlock Text="Black box" Style="{StaticResource PageTitle}" />
+                <TextBlock Text="{DynamicResource AppLabel.audit}" Style="{StaticResource PageTitle}" />
                 <TextBlock Text="Every change, who made it, and what it was before."
                            Style="{StaticResource PageSubtitle}" />
             </StackPanel>
@@ -88,7 +89,8 @@
         </Border>
 
         <Border Grid.Row="2" Style="{StaticResource Card}">
-            <DataGrid ItemsSource="{Binding Rows}" IsReadOnly="True"
+            <DataGrid ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected}"
+                      IsReadOnly="True" SelectionMode="Single" SelectionUnit="FullRow"
                       AutoGenerateColumns="False" HeadersVisibility="Column"
                       GridLinesVisibility="Horizontal">
                 <DataGrid.Columns>
@@ -102,7 +104,51 @@
             </DataGrid>
         </Border>
 
-        <Grid Grid.Row="3" Margin="0,10,0,0">
+        <Border Grid.Row="3" Style="{StaticResource Card}" Margin="0,10,0,0" MaxHeight="360"
+                Visibility="{Binding HasSnapshot, Converter={StaticResource BoolToVis}}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Text="Earlier state &amp; safe correction" Style="{StaticResource SectionTitle}" />
+                    <TextBlock Style="{StaticResource PageSubtitle}" TextWrapping="Wrap"
+                               Text="Read-only. The right side is what this line recorded then, not a live query. No automatic Undo, restore, payment or stock movement happens here." />
+                    <TextBlock Text="{Binding Snapshot.ContextText}" Style="{StaticResource PageSubtitle}"
+                               TextWrapping="Wrap" Margin="0,6,0,0" />
+
+                    <Grid Margin="0,10,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="EARLIER STATE — BEFORE THIS LINE" Style="{StaticResource FieldLabel}" />
+                            <TextBox Text="{Binding Snapshot.EarlierText, Mode=OneWay}" IsReadOnly="True"
+                                     AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Disabled"
+                                     MinHeight="76" Padding="10" FontFamily="Consolas" FontSize="12"
+                                     Background="#F8FAFC" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="RECORDED NEW STATE — AFTER THIS LINE" Style="{StaticResource FieldLabel}" />
+                            <TextBox Text="{Binding Snapshot.RecordedText, Mode=OneWay}" IsReadOnly="True"
+                                     AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Disabled"
+                                     MinHeight="76" Padding="10" FontFamily="Consolas" FontSize="12"
+                                     Background="#F8FAFC" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" />
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Text="DETAILS" Style="{StaticResource FieldLabel}" Margin="0,10,0,4" />
+                    <TextBlock Text="{Binding Snapshot.DetailsText}" TextWrapping="Wrap" FontSize="12" />
+
+                    <Border Background="{StaticResource BrandSoftBrush}" CornerRadius="6" Padding="10" Margin="0,10,0,0">
+                        <TextBlock Text="{Binding Snapshot.CorrectionText}" TextWrapping="Wrap" FontSize="12" />
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <Grid Grid.Row="4" Margin="0,10,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />

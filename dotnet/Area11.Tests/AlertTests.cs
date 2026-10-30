@@ -13,15 +13,9 @@ public sealed class AlertTests
 {
     private static AlertService Alerts(TestDatabase test) => TestData.Alerts(test);
 
-    /// <summary>Sells more than the shelf holds, so the stock really goes negative.</summary>
-    private static int GoNegative(TestDatabase test, string name = "Panadol 500mg")
-    {
-        var product = TestData.AddProduct(test, batchQty: 2, name: name);
-        var sale = TestData.Sales(test).Create(TestData.Cart(product, qty: 5), TestData.Owner);
-        Assert.True(sale.Ok, sale.Error);
-
-        return product;
-    }
+    /// <summary>Seeds a legacy negative row; D-93 tests must not create one through a new sale.</summary>
+    private static int GoNegative(TestDatabase test, string name = "Panadol 500mg") =>
+        TestData.AddProduct(test, batchQty: -3, name: name);
 
     [Fact]
     public void AMinusStockMedicine_RaisesAnAlert()
@@ -134,9 +128,15 @@ public sealed class AlertTests
         Assert.True(Alerts(test).Dismiss(TestData.Owner, key, "counted, fine").Ok);
         Assert.False(Alerts(test).Report().HasLive);
 
-        // Another sale moves the same medicine; the old reason cannot cover the new shortage.
+        // A permitted count-extra moves the same legacy-minus medicine towards zero. The old reason
+        // cannot cover the new movement even though no new transaction may make the minus worse.
         System.Threading.Thread.Sleep(1100);      // the stamp has one-second resolution
-        var again = TestData.Sales(test).Create(TestData.Cart(product, qty: 1), TestData.Owner);
+        var stock = new StockService(test.Database, test.Audit, test.Settings,
+            TestData.Permissions(test), test.Log);
+        var again = stock.WriteOff(new WriteOffInput
+        {
+            ProductId = product, QtyEntered = 1, Unit = "unit", Reason = StockService.ReasonCountExtra
+        }, TestData.Owner);
         Assert.True(again.Ok, again.Error);
 
         Assert.True(Alerts(test).Report().HasLive);

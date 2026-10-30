@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
+using System.Windows;
 using Area11.Core.Models;
 using Area11.Core.Services;
 using Area11.Core.Utils;
@@ -60,6 +62,9 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     private string _lastBill = string.Empty;
     private int _lastSaleId;
     private bool _autoPrint;
+    private bool _showSaleSuccess;
+    private string _successChangeText = string.Empty;
+    private bool _hasSuccessChange;
     private bool _shiftClosed;
     private string _handoverNote = string.Empty;
     private string _blockedText = string.Empty;
@@ -74,8 +79,10 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         RemoveCommand = new RelayCommand(RemoveLast);
         ClearCommand = new RelayCommand(ClearCart);
         CompleteCommand = new RelayCommand(CompleteSale);
+        DoneCommand = new RelayCommand(() => ShowSaleSuccess = false);
         PrintLastCommand = new RelayCommand(PrintLast, () => _lastSaleId > 0);
         RefreshCommand = new RelayCommand(LoadLookups);
+        OpenProductPhotoCommand = new RelayCommand<int>(OpenProductPhoto);
         HoldCommand = new RelayCommand(HoldCart);
         RefreshHeldCommand = new RelayCommand(LoadHeldCarts);
         BeginAddCustomerCommand = new RelayCommand(BeginAddCustomer);
@@ -118,9 +125,14 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
     public RelayCommand CompleteCommand { get; }
 
+    /// <summary>Dismisses only the confirmation card; it never changes the committed bill or new cart.</summary>
+    public RelayCommand DoneCommand { get; }
+
     public RelayCommand PrintLastCommand { get; }
 
     public RelayCommand RefreshCommand { get; }
+
+    public RelayCommand<int> OpenProductPhotoCommand { get; }
 
     public RelayCommand HoldCommand { get; }
 
@@ -172,6 +184,9 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         UserRole.Manager => _services.Settings.GetInt("discount.maxPercentManager", 20),
         _ => _services.Settings.GetInt("discount.maxPercentCashier", 5)
     };
+
+    /// <summary>Arbitrary rates are owner/manager only; a cashier may still accept a configured special rate.</summary>
+    public bool CanEditRates => _user.CanManage;
 
     /// <summary>
     /// The sentence under the search box (F-50). Empty for an exact search; a "did you mean" line
@@ -425,6 +440,24 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         private set => SetProperty(ref _lastBill, value);
     }
 
+    public bool ShowSaleSuccess
+    {
+        get => _showSaleSuccess;
+        private set => SetProperty(ref _showSaleSuccess, value);
+    }
+
+    public string SuccessChangeText
+    {
+        get => _successChangeText;
+        private set => SetProperty(ref _successChangeText, value);
+    }
+
+    public bool HasSuccessChange
+    {
+        get => _hasSuccessChange;
+        private set => SetProperty(ref _hasSuccessChange, value);
+    }
+
     /// <summary>
     /// Quick creation at the counter (F-11, D-50). A customer walks in with no khata in the shop and
     /// still wants the bill on credit: without this card the cashier has to abandon the cart, open
@@ -503,13 +536,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
                 return "Pick a medicine";
             }
 
-            var units = Unit switch
-            {
-                "box" => SelectedProduct.UnitsPerBox,
-                "strip" => SelectedProduct.UnitsPerStrip,
-                _ => 1
-            };
-
+            var units = SelectedProduct.QuantityPerSelectedUnit(Unit);
             var price = SelectedProduct.RetailPaisa * units;
             return $"{Unit}: {Money.Format(Calc.Round(price))}";
         }
@@ -521,6 +548,10 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         _catalog.Clear();
         if (products.Ok && products.Value is not null)
         {
+            foreach (var product in products.Value)
+            {
+                product.PhotoPath = ResolvePhotoPath(product);
+            }
             _catalog.AddRange(products.Value);
         }
 
@@ -586,14 +617,8 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
         foreach (var product in _catalog)
         {
-            var codeMatches = _codesByProduct.TryGetValue(product.Id, out var codes)
-                              && codes.Any(code => code.Contains(term, StringComparison.OrdinalIgnoreCase));
-
-            if (term.Length == 0
-                || product.Name.Contains(term, StringComparison.OrdinalIgnoreCase)
-                || (product.Generic ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase)
-                || (product.Barcode ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase)
-                || codeMatches)
+            _codesByProduct.TryGetValue(product.Id, out var codes);
+            if (PackagingPolicy.Matches(product, term, codes))
             {
                 shown.Add(product);
             }
@@ -700,6 +725,80 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         }
     }
 
+    private static string? ResolvePhotoPath(Product product)
+    {
+        if (string.IsNullOrWhiteSpace(product.PhotoFileName))
+        {
+            return null;
+        }
+        var path = Path.Combine(AppPaths.PhotosFolder, product.PhotoFileName);
+        return File.Exists(path) ? path : null;
+    }
+
+    private void OpenProductPhoto(int productId)
+    {
+        var product = _catalog.FirstOrDefault(row => row.Id == productId);
+        if (product is null)
+        {
+            SetStatus("That medicine is no longer in the active catalog. Refresh and try again.", true);
+            return;
+        }
+        PhotoWindow.Show(_services, _user, PhotoEntity.Product, product.Id, product.Name);
+        LoadLookups();
+    }
+
+    /// <summary>
+    /// A cart always starts with the ordinary retail rate. An edited rate is passed to Core as the
+    /// existing integer-paisa override; leaving it equal to retail keeps the VIP/Doctor choice open.
+    /// </summary>
+    private PosCartLine NewCartLine(int productId, string name, string unit, double quantity, long savedRate)
+    {
+        var product = _catalog.FirstOrDefault(item => item.Id == productId);
+        var guideRate = product is null ? 0 : Calc.Round(product.RetailPaisa * product.QuantityPerSelectedUnit(unit));
+        var rate = savedRate > 0 ? savedRate : guideRate;
+        return new PosCartLine
+        {
+            ProductId = productId,
+            Name = name,
+            Unit = unit,
+            Quantity = quantity,
+            GuideRatePaisa = guideRate,
+            RateText = Money.Edit(rate),
+            RateChanged = Recalculate
+        };
+    }
+
+    private static long RateOverride(PosCartLine line)
+    {
+        if (!Money.TryParse(line.RateText, out var rupees))
+        {
+            return 0;
+        }
+
+        var rate = Money.ToPaisa(rupees);
+        return rate == line.GuideRatePaisa ? 0 : rate;
+    }
+
+    private bool RatesAreValid()
+    {
+        foreach (var line in Cart)
+        {
+            if (!Money.TryParse(line.RateText, out var rupees) || Money.ToPaisa(rupees) <= 0)
+            {
+                SetStatus($"{line.Name}: selling rate must be a number above zero.", true);
+                return false;
+            }
+
+            if (!_user.CanManage && RateOverride(line) != 0)
+            {
+                SetStatus($"{line.Name}: only the owner or a manager can enter a custom selling rate.", true);
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private void AddToCart()
     {
         if (IsBlocked)
@@ -713,6 +812,9 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             SetStatus("Pick a medicine first.", true);
             return;
         }
+
+        // Scanning/adding the next customer's first item is itself a quick continuation.
+        ShowSaleSuccess = false;
 
         if (!Qty.TryParse(Quantity, out var quantity) || quantity <= 0)
         {
@@ -728,13 +830,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         }
         else
         {
-            Cart.Add(new PosCartLine
-            {
-                ProductId = SelectedProduct.Id,
-                Name = SelectedProduct.Name,
-                Unit = Unit,
-                Quantity = quantity
-            });
+            Cart.Add(NewCartLine(SelectedProduct.Id, SelectedProduct.Name, Unit, quantity, 0));
         }
 
         Quantity = "1";
@@ -766,6 +862,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     {
         // Asked again here even though the page shows a card: the drawer can be closed from another
         // window while this cart is open, and the bill is the last place it may be discovered.
+        ShowSaleSuccess = false;
         CheckDrawer();
 
         if (IsBlocked)
@@ -780,13 +877,49 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             return;
         }
 
+        if (!RatesAreValid())
+        {
+            return;
+        }
+
         if (!Money.TryParse(TenderedText, out _))
         {
             SetStatus("Cash received must be a number.", true);
             return;
         }
 
-        var result = _services.Sales.Create(BuildInput(), _user);
+        var useSpecialRate = false;
+        if (!TryGetDiscount(out var discount))
+        {
+            SetStatus("Discount must be a number between 0 and " + MaxDiscountPercent + ".", true);
+            return;
+        }
+
+        // PRICE-01: with no explicit discount, an applicable special rate is a question, never a
+        // default. No keeps retail; Yes quotes and commits the customer's VIP/Doctor rate. Editing
+        // a line's actual rate remains the final explicit override inside SaleService.
+        var customerCategory = SelectedCustomer?.Category?.Trim().ToLowerInvariant();
+        if (discount == 0 && SelectedCustomer is { Id: > 0 } && customerCategory is "vip" or "doctor")
+        {
+            var specialQuote = _services.Sales.Quote(BuildInput(useSpecialRate: true), _user);
+            var normalQuote = _services.Sales.Quote(BuildInput(), _user);
+            if (specialQuote.Ok && specialQuote.Value is not null &&
+                normalQuote.Ok && normalQuote.Value is not null &&
+                specialQuote.Value.SubtotalPaisa != normalQuote.Value.SubtotalPaisa)
+            {
+                var categoryLabel = customerCategory == "doctor" ? "Doctor" : "VIP";
+                var answer = MessageBox.Show(
+                    $"{categoryLabel} special rate is available for {SelectedCustomer.Name}.\n\n" +
+                    $"Retail subtotal: {Money.Format(normalQuote.Value.SubtotalPaisa)}\n" +
+                    $"Special subtotal: {Money.Format(specialQuote.Value.SubtotalPaisa)}\n\n" +
+                    "Yes = apply the special rate.  No = keep ordinary retail.",
+                    "Special selling rate", MessageBoxButton.YesNo, MessageBoxImage.Question,
+                    MessageBoxResult.No);
+                useSpecialRate = answer == MessageBoxResult.Yes;
+            }
+        }
+
+        var result = _services.Sales.Create(BuildInput(useSpecialRate), _user);
         if (!result.Ok || result.Value is null)
         {
             SetStatus(result.Error ?? "The bill could not be saved.", true);
@@ -797,6 +930,11 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         LastBill = $"{sale.Code} · total {Money.Format(sale.TotalPaisa)}" +
                    (sale.ChangePaisa > 0 ? $" · change {Money.Format(sale.ChangePaisa)}" : string.Empty) +
                    (sale.DuePaisa > 0 ? $" · due {Money.Format(sale.DuePaisa)}" : string.Empty);
+
+        HasSuccessChange = sale.ChangePaisa > 0;
+        SuccessChangeText = HasSuccessChange
+            ? "Give this cash back: " + Money.Format(sale.ChangePaisa)
+            : string.Empty;
 
         var warnings = sale.Warnings.Count > 0 ? "  ⚠ " + string.Join(" ", sale.Warnings) : string.Empty;
         SetStatus($"Bill saved.{warnings}", sale.Warnings.Count > 0);
@@ -811,6 +949,9 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             Print(_lastSaleId);
         }
 
+        // Post-commit only: this lightweight card cannot save, undo, print, or duplicate anything.
+        ShowSaleSuccess = _services.Settings.GetBool("sale.successPopup", true);
+
         Cart.Clear();
         TenderedText = string.Empty;
         SecondAmountText = string.Empty;
@@ -818,7 +959,13 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         LoadLookups();
     }
 
-    private SaleInput BuildInput()
+    private bool TryGetDiscount(out decimal percent)
+    {
+        return decimal.TryParse(DiscountPercent, NumberStyles.Number, CultureInfo.InvariantCulture, out percent) &&
+               percent >= 0 && percent <= MaxDiscountPercent;
+    }
+
+    private SaleInput BuildInput(bool useSpecialRate = false)
     {
         decimal.TryParse(DiscountPercent, NumberStyles.Number, CultureInfo.InvariantCulture, out var percent);
 
@@ -854,6 +1001,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             CustomerId = SelectedCustomer is { Id: > 0 } ? SelectedCustomer.Id : null,
             DoctorId = SelectedDoctor is { Id: > 0 } ? SelectedDoctor.Id : null,
             DiscountPercent = percent,
+            UseSpecialRate = useSpecialRate,
             PaymentMethod = PaymentMethod,
             Payments = payments,
             RedeemPoints = redeem,
@@ -862,7 +1010,8 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             {
                 ProductId = line.ProductId,
                 Unit = line.Unit,
-                Quantity = line.Quantity
+                Quantity = line.Quantity,
+                UnitPricePaisa = RateOverride(line)
             }).ToList()
         };
     }
@@ -904,11 +1053,6 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         ChangeText = Money.Format(quote.Value.ChangePaisa);
         CashPartText = Money.Format(quote.Value.CashPartPaisa);
         CreditPartText = Money.Format(quote.Value.CreditPartPaisa);
-
-        if (quote.Value.GoesNegative)
-        {
-            SetStatus("⚠ This bill takes stock into MINUS. It will still be saved (owner rule U-30).", true);
-        }
     }
 
     private void PrintLast()
@@ -949,6 +1093,11 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         if (Cart.Count == 0)
         {
             SetStatus("The cart is empty - there is nothing to park.", true);
+            return;
+        }
+
+        if (!RatesAreValid())
+        {
             return;
         }
 
@@ -1010,13 +1159,9 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
         foreach (var line in cart.Lines)
         {
-            Cart.Add(new PosCartLine
-            {
-                ProductId = line.ProductId,
-                Name = line.Name,
-                Unit = line.Unit,
-                Quantity = line.Quantity
-            });
+            // The parked cart already stores integer-paisa custom rates; do not silently replace
+            // them with retail when the customer returns to the counter.
+            Cart.Add(NewCartLine(line.ProductId, line.Name, line.Unit, line.Quantity, line.UnitPricePaisa));
         }
 
         DiscountPercent = cart.DiscountPercent.ToString("0.##", CultureInfo.InvariantCulture);
@@ -1101,12 +1246,31 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 public sealed class PosCartLine : ObservableObject
 {
     private double _quantity;
+    private string _rateText = "0";
 
     public int ProductId { get; init; }
 
     public string Name { get; init; } = string.Empty;
 
     public string Unit { get; init; } = "base";
+
+    /// <summary>Ordinary retail in paisa, used only to distinguish untouched and custom rates.</summary>
+    public long GuideRatePaisa { get; init; }
+
+    /// <summary>Editable rupees per selected unit; SaleService converts and verifies the final rate.</summary>
+    public string RateText
+    {
+        get => _rateText;
+        set
+        {
+            if (SetProperty(ref _rateText, value))
+            {
+                RateChanged?.Invoke();
+            }
+        }
+    }
+
+    public Action? RateChanged { get; init; }
 
     public double Quantity
     {

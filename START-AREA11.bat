@@ -107,20 +107,21 @@ if errorlevel 1 (
     goto :build
 )
 
-rem  The product now lives on the default branch "main" (pull request #1 was merged on
-rem  24 Oct 2026). The old working branch "arena/a8a3b2e0-area11a" still holds the same code,
-rem  so both are accepted - but nothing else is: a stray branch would build an old version.
+rem  The product normally lives on "main". An Arena repair is delivered on the named working
+rem  branch until its pull request is merged, so that branch must be accepted explicitly too.
+rem  Anything else is refused: a stray branch can otherwise make an old copy look like an update.
+set "WORK_BRANCH=arena/60395e95-area11a"
 set "BRANCH="
 for /f "delims=" %%b in ('git rev-parse --abbrev-ref HEAD 2^>nul') do set "BRANCH=%%b"
 
-if not "%BRANCH%"=="main" if not "%BRANCH%"=="arena/a8a3b2e0-area11a" (
+if not "%BRANCH%"=="main" if not "%BRANCH%"=="%WORK_BRANCH%" (
     echo.
-    echo  [X]  This folder is on the branch "%BRANCH%", but the new code is on
-    echo       "main" ^(and the same code is on "arena/a8a3b2e0-area11a"^).
+    echo  [X]  This folder is on "%BRANCH%", which is not an approved code branch.
+    echo       Use "main" after the repair is merged, or "%WORK_BRANCH%" for this round.
     echo.
     echo       Fix it in one step:
-    echo         GitHub Desktop - click "Current Branch" at the top, pick
-    echo                          "main", then "Fetch origin" and "Pull origin".
+    echo         GitHub Desktop - click "Current Branch" at the top, pick the branch
+    echo                          you were given, then "Fetch origin" and "Pull origin".
     echo         Visual Studio  - the branch list is in the bottom right corner.
     echo         VS Code        - click the branch name in the bottom left corner.
     echo.
@@ -193,7 +194,7 @@ rem  and tools\check_repo.py fails if it disagrees with BuildInfo.cs - so it can
 rem  the owner is never told an old tree is the new one. Reading the number out of the source with
 rem  findstr printed "vunknown" on his PC (v0.30.0): the tokens did not line up, and a banner that
 rem  says nothing is worse than no banner, because it looks like a failure of the tree.
-set "BUILD=v0.35.2 (Tarragon)"
+set "BUILD=v0.38.0 (Cobalt)"
 
 echo        Code on this PC: %BUILD%
 

@@ -40,19 +40,23 @@ rejected even if it "works".
 2. **Bill total = sum of line totals.** Round once (`Money.RoundDownWithCostGuard`), then spread the
    difference over the last allocation. Never re-round the total afterwards.
 3. **Round down only, never below purchase cost** (Z-11).
-4. **Negative stock never blocks a sale or a stock operation**; it warns, records `negative_sale`, and
-   raises a persistent alert. It blocks only when `stock.allowNegative` is off (U-25/U-30).
+4. **Negative stock is retired by D-93 (implemented in v0.35.9 Onyx), superseding U-25/U-30 for new transactions.**
+   Every ordinary decrement must use `StockPolicy.Decrease` inside its immediate transaction; never add a raw
+   subtraction, settings bypass or owner bypass. Sales reserve repeated products/shared FEFO batches
+   cumulatively, exact zero is valid, and failures roll back completely. Historical negatives stay readable
+   and are reconciled only through finite physical counts and audited corrections, never silent zeroing.
 5. **Permissions are enforced in `Area11.Core`**, keyed on the signed-in `User`. Hiding a button is not
    a permission. Owner-only actions: dismissing alerts, applying stock-take, restoring backup.
 6. **Never delete business rows.** Use `active = 0`. Audit rows and sales are permanent.
 7. **Migrations are append-only**, run inside `BEGIN IMMEDIATE`, and re-check `_migrations` after the
-   lock is taken. Add `016_*.sql`; never edit an existing file.
+   lock is taken. Add `029_*.sql` for the next change; never edit an existing file.
 8. **Views contain no SQL and no business logic.** Services own every rule and every transaction; a
    service method takes `User` when the rule depends on permissions.
 9. **Never modify the original Next.js app** (`Dr-Adil-Abdullah/Area11`) - it is only a behaviour
    reference.
 10. **Everything editable** (E-01): no hard-coded shop name, discount limit, printer width, wording or
-    colour. Settings come from the `settings` table via `SettingsService`.
+    colour. Settings come from the `settings` table via `SettingsService`. **D-96 exception:** the product
+    title is fixed to **Area11** in the shell/login; the shop's own receipt/settings branding remains editable.
 
 ## 3. Layout you must respect
 
@@ -66,8 +70,9 @@ tools/                   check_repo.py, build_rules_matrix.py
 
 Three projects only (owner's D-17). Do not add a fourth.
 
-Wiring a new screen: service → property on `AppServices` → entry in `ShellViewModel.NavItems` guarded
-by `_services.Permissions.Can(user, Modules.X)` → `DataTemplate` in `ShellWindow.xaml` → view + view-model.
+Wiring a new screen: service → property on `AppServices` → stable page entry in `ShellViewModel.NavItems`
+(and its permitted module/context collections) guarded by `_services.Permissions.Can(user, Modules.X)` →
+`DataTemplate` in `ShellWindow.xaml` → view + view-model. The Phase-1 header has no left-sidebar fold state.
 
 ## 4. Verify before you claim anything works
 
@@ -135,7 +140,75 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.35.2 (Tarragon `#5A6B3B`) - one time for the shop, a session that ends by itself, and no bill without a galla (D-92).**
+> **v0.38.0 (Cobalt `#315C8C`) - first Phase-3 packaging/variant/search slice; 900 written cases in 70 files and 55 static checks.**
+>
+> * **Current Phase-3 source:** D-98 authorizes the phase. Its first slice reuses `pack_size_label` in the
+>   product editor and Products/Counter/Purchase search; Purchase distinguishes variants with strength/pack
+>   text. `PackagingPolicy` shares exact matching, and existing IDs, base-unit stock, conversion, prices and
+>   extra barcodes remain. No migration or replacement variant model was added. Phase-2 field governance and
+>   Phase-1 shell remain; Phase 4 and later phases are not authorized by this work.
+> * **Verification boundary:** all **55/55 static checks** pass with real C# grammar and XAML binding checks;
+>   the actual search SQL also passed a targeted 7/7 SQLite development probe. The owner ran Cobalt's `Area11.Core` / `Area11.Tests` suite on
+>   Windows and reported **Failed 0, Passed 900, Skipped 0, Total 900 in 1 m 4 s**, with
+>   **`ALL GREEN - 900 of 900`**. The supplied log does not separately prove Desktop/WPF build or launch.
+>   PT-10 in `PHYSICAL-TESTING.md` remains: do not call the new packaging
+>   workflow physically tested yet.
+> * **Previous Windows xUnit proof:** Zircon v0.36.0 reported Failed 0, Passed 883, Skipped 0, Total 883
+>   in **1 m 10 s** on 29 October 2026. This is previous-release evidence, not a substitute for Cobalt or
+>   any WPF/genuine physical workflow.
+>
+> * **The correct Obsidian commit `cb2e321` passed on the owner's Windows PC:** Failed 0, Passed 860,
+>   Skipped 0, Total 860, in 1 m 17 s. The banner was v0.35.18 and the runner printed
+>   **`ALL GREEN - 860 of 860 cases passed, failed: 0`**. This closed the earlier xUnit gate and verifies
+>   both workbook fixture repairs together with the retained PR allocation repair. This is earlier
+>   **860-case** evidence; the later Zircon/Cobalt results are above. Recording these results changes no code.
+>
+> * **Green tests do not close the separate live checks.** The board remains 52/57 done with five
+>   owner-action rows, and the matrix remains 92 done / 4 partial. Keep T-10 🟡 until real Excel
+>   open/edit/preview/apply/re-import proof; E-12/S-05/Z-05 still need their Windows walk-throughs,
+>   and real Supabase proof remains separate. No new WPF-window, real-Excel or real-cloud evidence is
+>   inferred from the test run. D-93 stock/money and PR cancellation rules are unchanged.
+>
+> * **Earlier verification is not backfilled.** Paprika really reported **837 passed / 14 failed / 851
+>   total**, and Quasar's 853-case target was not executed. Cypress 789/789 is now an earlier green
+>   run, not the latest. The current **900-case** Cobalt suite is now owner-verified on Windows; PT-10
+>   remains separate. Do not start Phase 4 or another feature stage unless the owner writes `next`.
+>
+> * **Physical testing and authorized repairs are in progress.** PT-01 passed; PT-02 is **PASS — owner
+>   confirmed 29 October**, with product saves and Black-box entries confirmed. All findings, owner
+>   decisions and PT-03/PT-04 instructions live in **`PHYSICAL-TESTING.md`**. On 27 October the owner
+>   said **“fix the things”**, authorizing the recorded fixes in safety order. Backup destination/recovery,
+>   shift cash/alert, rate/sale feedback and the CAT-01/NAV-01/UNIT-01/PHOTO-01 source batch changed; at
+>   that Spruce checkpoint the written suite was **883 in 68 files**, all **52 static checks** passed,
+>   and the owner ran **883/883** on Windows (`94723e5`). Those are historical results, not Aurora proof.
+>   `aedb65d` fixes the owner's reported AlertKindTests compile error. Prove the new
+>   catalog/unit/navigation/photo workflows with genuine transactions and keep each physical verification
+>   separate. The POS blank/dashes report still needs exact reproduction evidence. **next** still means
+>   the next test portion. Aurora's 892-case/54-check and Zircon's 883-case/53-check inventories are
+>   historical release evidence, not the current Cobalt inventory.
+>
+> * **v0.35.5 repairs one policy mismatch and two stale test fixtures.** The owner's v0.35.4 run proved
+>   the correct tree (**769 passed, 3 failed, 772 total**). A sign-in ahead of the PC clock now keeps
+>   the session on the safe hard-cap answer rather than the shorter idle countdown. Two Shift tests
+>   now open the drawer before billing instead of asking `TestData.Sales()` to open it and then opening
+>   it again; the production second-open refusal is unchanged. No schema or test-count change (772).
+>   Static checks pass, and the owner's Windows run then passed **772 of 772 in 56 s**.
+>
+> * **The old AlertService mapping report did not reproduce against current code.** `qty_base` is
+>   SQLite `REAL`, `ProblemRow.Qty` is C# `double`, and all seven alert sources have passing tests in
+>   that 772-case run (including low-stock REAL values 1.0 and 2.0). No cast or production file was
+>   changed. Do not "fix" it to `long`; a fresh v0.35.5+ crash report is needed if it recurs.
+>
+> * **v0.35.4 fixes the delivery gate, not a shop rule.** `START-AREA11.bat` accepted only `main` and
+>   a retired Arena branch, so it refused the correct current branch before building. The active
+>   `WORK_BRANCH` is now declared once and accepted beside `main`; other branches remain refused.
+>   No schema or test-count change (772 cases). It has not been compiled or executed here.
+>
+> * **v0.35.3 repairs cross-instance numbering and rollback.** `NumberingService` reads the counter on
+>   the caller's connection; `WriteCounter` no longer mutates memory that SQLite cannot roll back.
+>   Three public-service tests cover independent settings instances, rollback and repeated numbers in
+>   one transaction (772 cases). The schema did not change. **Not compiled or executed here:** the
+>   owner must run `tools\RUN-TESTS.cmd` and see `ALL GREEN - 772 of 772`.
 >
 > * **v0.35.2 fixed what the owner's run found.** (1) `RunTrail.Append` used `File.AppendAllText`, which
 >   writes **no line end**, so every step glued onto the previous one and the trail was one enormous
@@ -635,8 +708,9 @@ tests through the public service methods and a real bill in `TestDatabase`.
 > removed without touching a single real bill (D-76). Three more lessons from the owner's PC, all of
 > them my own tests being wrong about the shop:
 >
-> * **`discount.mode` ships as `margin`** (Spec 11.2.1). 10 % off a 600 bill whose goods cost 400 is
->   20, not 60. Never write a discount expectation without naming the method and the margin.
+> * **Historical, superseded 27 Oct:** v0.29.2 shipped `discount.mode = margin`. The owner's later
+>   physical-testing decision now requires explicit discount on full retail, so 10 % off a Rs 600 bill
+>   is Rs 60. The old release lesson remains here for provenance; it is not the current pricing rule.
 > * **Sales stay gross; profit nets the returns** (21.2 vs 21.6). The Reports page keeps *sales* and
 >   *refunds* as two cards. If the home screen netted them, one day would show two different numbers.
 > * **`SetMany` must receive typed values.** For `expiry.levels` the caller passes `List<ExpiryBand>`;

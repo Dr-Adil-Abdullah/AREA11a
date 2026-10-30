@@ -1,0 +1,1091 @@
+<!doctype html>
+<html lang="ur" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Area11 — Physical Testing اور Manual Instructions Tracker</title>
+<style>
+:root { --cobalt:#315C8C; --ink:#1f2937; --muted:#5b6472; --line:#cbd5e1; --paper:#ffffff; --soft:#f1f5f9; --green:#166534; }
+* { box-sizing:border-box; }
+html { background:#e8edf3; }
+body { direction:rtl; max-width:1120px; margin:24px auto; padding:38px 46px; background:var(--paper); color:var(--ink);
+       font-family:"Noto Nastaliq Urdu","Jameel Noori Nastaleeq","Noto Naskh Arabic","Segoe UI",Arial,sans-serif;
+       font-size:16px; line-height:1.85; box-shadow:0 3px 22px #1e293b22; }
+h1,h2,h3,h4 { color:var(--cobalt); line-height:1.55; break-after:avoid; page-break-after:avoid; }
+h1 { font-size:28px; margin:34px 0 18px; padding-bottom:10px; border-bottom:3px solid var(--cobalt); }
+body > h1:first-of-type { text-align:center; font-size:31px; margin-top:0; }
+h2 { font-size:22px; margin:28px 0 12px; border-bottom:1px solid #dbe4ee; padding-bottom:5px; }
+h3 { font-size:18px; margin:23px 0 9px; }
+h4 { font-size:16px; }
+p { margin:8px 0 12px; }
+ul,ol { padding-right:27px; padding-left:0; margin:7px 0 15px; }
+li { margin:4px 0; }
+li.task { list-style:none; margin-right:-22px; }
+li.done { color:var(--green); }
+strong { color:#172b45; }
+a { color:#1d4ed8; text-decoration:none; }
+blockquote { margin:15px 0; padding:11px 16px; border-right:5px solid var(--cobalt); background:#eef4fb; color:#26384e; }
+blockquote p { margin:0; }
+table { width:100%; border-collapse:collapse; margin:13px 0 22px; font-size:13px; line-height:1.65; }
+th { background:var(--cobalt); color:white; font-weight:700; }
+th,td { border:1px solid var(--line); padding:8px 9px; vertical-align:top; text-align:right; }
+tr:nth-child(even) td { background:#f8fafc; }
+tr { break-inside:avoid; page-break-inside:avoid; }
+code { font-family:"DejaVu Sans Mono","Consolas",monospace; direction:ltr; unicode-bidi:isolate; background:#f1f5f9; padding:1px 4px; border-radius:3px; font-size:.9em; }
+pre { direction:rtl; text-align:right; white-space:pre-wrap; overflow-wrap:anywhere; background:#f8fafc; border:1px solid var(--line); border-right:4px solid #7b93af; padding:13px 15px; border-radius:5px; line-height:1.7; break-inside:avoid; page-break-inside:avoid; }
+pre code { direction:rtl; unicode-bidi:plaintext; background:transparent; padding:0; }
+hr { border:0; border-top:1px solid var(--line); margin:26px 0; }
+.toolbar { display:flex; gap:10px; align-items:center; justify-content:space-between; background:#eef4fb; border:1px solid #c8d6e5; padding:10px 14px; margin-bottom:22px; }
+.toolbar button { border:0; border-radius:6px; background:var(--cobalt); color:white; padding:9px 18px; font:inherit; cursor:pointer; }
+.toolbar span { color:var(--muted); font-size:13px; }
+@page { size:A4; margin:13mm 12mm 15mm; }
+@media print {
+  html,body { background:white; }
+  body { max-width:none; margin:0; padding:0; box-shadow:none; font-size:10.4pt; line-height:1.65; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+  .no-print { display:none !important; }
+  h1 { font-size:20pt; break-before:page; page-break-before:always; margin-top:0; }
+  body > h1:first-of-type { break-before:auto; page-break-before:auto; font-size:22pt; }
+  h2 { font-size:15pt; }
+  h3 { font-size:12.5pt; }
+  table { font-size:8.4pt; line-height:1.45; }
+  th,td { padding:5px 6px; }
+  li { break-inside:avoid; page-break-inside:avoid; }
+  a { color:inherit; }
+}
+@media screen and (max-width:760px) {
+  body { margin:0; padding:22px 18px; }
+  table { display:block; overflow-x:auto; }
+}
+</style>
+</head>
+<body>
+<div class="toolbar no-print"><button onclick="window.print()">پرنٹ / PDF محفوظ کریں</button><span>پرنٹ پر خالی خانے tick کریں؛ editable نتائج Markdown اور دیے گئے سانچوں میں لکھیں۔</span></div>
+<h1 id="area11-physical-testing-manual-instructions-tracker">Area11 — مالک کی Physical Testing اور Manual Instructions Tracker</h1>
+<p><strong>Release:</strong> v0.38.0 Cobalt (<code>#315C8C</code>)<br />
+<strong>یہ snapshot:</strong> 29 اکتوبر 2026<br />
+<strong>ماخذ:</strong> <code>PHYSICAL-TESTING.md</code>، <code>docs/PROGRESS.md</code>، <code>docs/OWNER-DECISIONS.md</code> اور محفوظ شدہ owner evidence<br />
+<strong>مقصد:</strong> ایک پرنٹ ہونے والی فائل جس میں PT-01 تا PT-10، مکمل شدہ ثبوت، باقی checks اور manual instructions کا حساب ایک جگہ ہو۔</p>
+<blockquote>
+<p>یہ فائل نتائج لکھنے اور پرنٹ کرنے کے لیے ہے۔ مستند running feedback log <code>PHYSICAL-TESTING.md</code> ہی رہے گا۔ کسی phase کے مجموعی PASS سے اس کے نیچے الگ logged مسئلہ خودکار طور پر fixed، rejected یا closed نہیں ہوگا۔</p>
+</blockquote>
+<h2 id="_1">استعمال کا آسان طریقہ</h2>
+<ol>
+<li>ایک وقت میں ایک phase یا item آزمائیں؛ صرف وہ خانہ tick کریں جو واقعی آپ نے اپنے کمپیوٹر پر دیکھا ہو۔</li>
+<li>ہر session میں تاریخ، build، PT/item ID اور نتیجہ لکھیں: <strong>PASS / PARTIAL / FAIL</strong>۔</li>
+<li>ناکامی یا غیر واضح behaviour پر screenshot، error، اور ضرورت ہو تو <code>tools\SEND-REPORT.cmd</code> کا report منسلک کریں۔</li>
+<li>اصل books میں صرف حقیقی medicine، delivery، sale، return، payment یا adjustment درج کریں۔ Fake financial transaction، restore، fault injection، controlled shortage یا risky scenario کے لیے پہلے backup اور <strong>الگ test copy</strong> استعمال کریں۔</li>
+<li>Automated tests اور physical test الگ ثبوت ہیں۔ Automated PASS کو app کی ہر screen، printer، scanner، Excel یا genuine transaction کا PASS نہ لکھیں۔</li>
+<li><code>qty_base</code> <strong>REAL</strong> اور <code>ItemRow.Qty</code> <strong>double</strong> ہیں۔ Negative-stock retirement، D-93 اور PR cancellation کے financial rules اس testing میں نہیں بدلنے۔</li>
+<li>Development فی الحال paused ہے؛ Phase 4 یا نیا feature اس tracker کی تکمیل سے خود authorize نہیں ہوتا۔</li>
+</ol>
+<hr />
+<h1 id="1">1 — ثبوت کی موجودہ حد: کیا ثابت ہے اور کیا نہیں</h1>
+<h2 id="owner-windows-automated">Owner کے Windows پر حالیہ automated ثبوت</h2>
+<ul>
+<li class="task done">☑ <strong>29 اکتوبر 2026 — Cobalt:</strong> <code>Area11.Core</code> / <code>Area11.Tests</code> کے <strong>900 passed، 0 failed، 0 skipped</strong>، مدت <strong>1 منٹ 4 سیکنڈ</strong>۔</li>
+<li class="task done">☑ Runner کا نتیجہ: <strong><code>ALL GREEN - 900 of 900</code></strong>۔</li>
+<li class="task done">☑ Development gate: <strong>55/55 static checks PASS</strong>؛ 900 written cases، 70 test files۔</li>
+<li class="task done">☑ Development SQLite search rehearsal: <strong>7/7 groups PASS</strong> — <code>50ml</code>، <code>100 ML</code>، brand، room، category، company اور base unit۔</li>
+</ul>
+<h2 id="_2">جو اس ثبوت سے ثابت نہیں ہوتا</h2>
+<ul>
+<li class="task todo">☐ اوپر والا Cobalt log <strong>Core/Tests</strong> کا ہے؛ اس سے <code>Area11.Desktop</code> / WPF کا الگ build یا <code>START-AREA11.bat</code> سے current launch ثابت نہیں ہوتا۔</li>
+<li class="task todo">☐ PT-10 کے pack editor، Products/Counter/Purchase screens، barcode scanning، genuine stock conversion اور receipts کا physical PASS ابھی نہیں ملا۔</li>
+<li class="task todo">☐ PT-08 کی WPF/navigation verification اور PT-09 کی Aurora Windows/xUnit + physical verification الگ باقی ہیں۔</li>
+<li class="task todo">☐ Backup restore/fault injection، real Excel، USB scanner اور دیگر physical checks کا automated ہونا ان کا shop proof نہیں۔</li>
+<li class="task todo">☐ Cloud اصل PT-01 تا PT-10 کے موجودہ physical scope میں نہیں؛ اس کا real-cloud test الگ منظوری اور isolated test data چاہتا ہے۔</li>
+</ul>
+<h2 id="_3">پرانے نتائج</h2>
+<ul>
+<li><strong>Zircon:</strong> 883/883 Windows xUnit PASS، 29 اکتوبر 2026، 1 منٹ 10 سیکنڈ — یہ PT-08 کا automated ثبوت ہے، WPF navigation PASS نہیں۔</li>
+<li><strong>Aurora:</strong> 892 written cases تھے؛ owner سے Aurora کا 892/892 Windows run یا physical PASS محفوظ نہیں۔</li>
+<li>Obsidian، Spruce اور دیگر پرانے totals historical evidence ہیں؛ انہیں Cobalt یا کسی نئے phase پر apply نہیں کرنا۔</li>
+</ul>
+<hr />
+<h1 id="2-pt-01-pt-10">2 — PT-01 تا PT-10 ایک نظر میں</h1>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>موجودہ نتیجہ</th>
+<th>ثبوت اور باقی کام</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>PT-01</strong> Startup / Backup / UI</td>
+<td><strong>PASS، improvements الگ open</strong></td>
+<td>Startup/sign-in، photos سمیت backup zip اور pages owner نے دیکھے۔ Restore، recovery، Explorer/USB اور fault scenarios کا اپنا physical proof باقی۔</td>
+</tr>
+<tr>
+<td><strong>PT-02</strong> Product / medicine</td>
+<td><strong>PASS — owner confirmed 29 Oct</strong></td>
+<td>Save اور Black box پہلے confirm ہوئے؛ 29 Oct کو overall “2 is ok” ملا۔ نیچے الگ CAT/NAV/UNIT/PRICE/PHOTO/SHIFT/ALERT/POS/SALE items اپنے status پر ہیں۔</td>
+</tr>
+<tr>
+<td><strong>PT-03</strong> Purchase / Batch / Payable</td>
+<td><strong>PARTIAL</strong></td>
+<td>Owner نے PARTIAL بتایا؛ PINV، conversion، batch/expiry، paid/payable اور Black box کی detailed report ابھی درکار۔</td>
+</tr>
+<tr>
+<td><strong>PT-04</strong> Sale / Cash / Receipt</td>
+<td><strong>INSTRUCTIONS READY</strong></td>
+<td>Genuine simple sale کا کوئی itemized owner result ابھی محفوظ نہیں۔</td>
+</tr>
+<tr>
+<td><strong>PT-05</strong> Returns / PR / Q</td>
+<td><strong>PENDING</strong></td>
+<td>Genuine return اور isolated-copy PR/cancellation/negative-stock checks باقی۔</td>
+</tr>
+<tr>
+<td><strong>PT-06</strong> Stock / Expiry / Alerts</td>
+<td><strong>PENDING</strong></td>
+<td>Stock-take، write-off، supplier return، expiry اور D-93 safeguards کے physical نتائج باقی۔</td>
+</tr>
+<tr>
+<td><strong>PT-07</strong> Restore / Excel / Hardware</td>
+<td><strong>PENDING / partial hardware evidence</strong></td>
+<td>Printer-slip کا ایک حصہ 23 Oct کو confirm ہوا؛ USB scan/Black box، real Excel اور restore/fault proof باقی۔</td>
+</tr>
+<tr>
+<td><strong>PT-08</strong> Zircon shell</td>
+<td><strong>AUTOMATED PASS؛ WPF PENDING</strong></td>
+<td>883/883 محفوظ؛ modules، Settings، permissions، keyboard اور screen-fit owner checks باقی۔</td>
+</tr>
+<tr>
+<td><strong>PT-09</strong> Aurora own fields</td>
+<td><strong>CODE READY؛ VERIFICATION PENDING</strong></td>
+<td>Stable key، guidance، migration، validations، permissions اور no-side-effect checks باقی۔</td>
+</tr>
+<tr>
+<td><strong>PT-10</strong> Cobalt pack / variants / search</td>
+<td><strong>AUTOMATED PASS؛ PHYSICAL PENDING</strong></td>
+<td>900/900 محفوظ؛ current WPF/genuine یا isolated-copy checklist باقی۔</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_4">تجویز کردہ ترتیب — ایک مرحلہ مکمل کر کے اگلا</h2>
+<ol>
+<li><strong>PT-03 کی detailed report مکمل کریں</strong>، پھر genuine simple sale کے ساتھ <strong>PT-04</strong>۔</li>
+<li>Current release ہونے کی وجہ سے <strong>PT-10</strong> کی WPF/search/variant checklist کریں؛ automated 900/900 پہلے سے محفوظ ہے۔</li>
+<li>Data-safety کے لیے isolated copy میں <strong>PT01-BK-02/BK-03</strong> کا A/B/C اور fault evidence دیں۔</li>
+<li>Retained redesign/manual checks: <strong>PT-09، PT-08، E-12/S-05، Z-05، T-10</strong>۔</li>
+<li>پھر <strong>PT-05، PT-06، PT-07</strong> کے باقی genuine یا isolated scenarios۔ ہر phase کے بعد نتیجہ بھیجیں؛ نئی development الگ owner approval سے ہوگی۔</li>
+</ol>
+<hr />
+<h1 id="3-pt-01-startup-backup-ui-smoke">3 — PT-01: Startup، Backup اور UI smoke</h1>
+<p><strong>مجموعی owner نتیجہ: PASS — مگر backup/recovery improvements الگ کھلی ہیں۔</strong></p>
+<h2 id="owner">جو owner نے پہلے ہی آزمایا</h2>
+<ul>
+<li class="task done">☑ Startup اور sign-in ٹھیک رہا۔</li>
+<li class="task done">☑ Photos سمیت backup کامیابی سے zip بنا اور save ہوا۔</li>
+<li class="task done">☑ مقررہ pages کامیابی سے کھلے۔</li>
+<li class="task done">☑ PT-01 کو owner evidence پر PASS لکھا گیا؛ یہ restore/fault items کو close نہیں کرتا۔</li>
+</ul>
+<h2 id="pt01-bk-01-back-up-as-folder-explorer">PT01-BK-01 — Back up as…، folder اور Explorer</h2>
+<p><strong>Code میں موجود:</strong> owner منتخب <code>.zip</code> path بنا سکتا ہے؛ collision پر نیا suffix بنتا ہے؛ live database اپنی جگہ رہتا ہے؛ backup کے بعد Explorer میں نئی zip دکھانے کا راستہ موجود ہے۔</p>
+<p><strong>Physical checks باقی:</strong></p>
+<ul>
+<li class="task todo">☐ Default folder میں نیا backup بنائیں؛ zip کھلتی ہے اور database + منتخب photos موجود ہیں۔</li>
+<li class="task todo">☐ <strong>Back up as…</strong> سے دوسرا local folder منتخب کریں؛ مکمل path واضح ہے اور zip وہیں بنتی ہے۔</li>
+<li class="task todo">☐ USB/removable drive پر backup بنائیں؛ USB نکالنے یا permission نہ ہونے پر واضح error آئے۔</li>
+<li class="task todo">☐ ایک ہی destination دوبارہ منتخب کریں؛ پرانی zip overwrite نہ ہو، نیا suffix بنے۔</li>
+<li class="task todo">☐ <strong>Open the folder / Show this backup</strong> سے حقیقی Windows Explorer کھلے اور نئی zip منتخب یا واضح ہو۔</li>
+<li class="task todo">☐ Disk full یا folder unavailable ہو تو پرانا backup محفوظ رہے۔</li>
+<li class="task todo">☐ تمام صورتوں میں live <code>area11.db</code> کی جگہ اور کام کا data نہیں بدلنا چاہیے۔</li>
+</ul>
+<h2 id="pt01-bk-02-abc-restore">PT01-BK-02 — A/B/C restore اور نئے کام کی حفاظت</h2>
+<p><strong>Code میں موجود:</strong> restore confirmation میں date/version اور newer-work warning؛ restore سے پہلے database + photos کا لازمی recovery zip؛ <strong>Before restore</strong> فہرست؛ restart کے بعد recovery summary؛ recovery zip دوبارہ restore کرنے کا automated round-trip۔</p>
+<p><strong>یہ پورا scenario صرف isolated test copy پر کریں:</strong></p>
+<ul>
+<li class="task todo">☐ <strong>A:</strong> نمایاں record کے ساتھ backup A بنائیں؛ تاریخ/وقت اور path لکھیں۔</li>
+<li class="task todo">☐ <strong>B:</strong> اس کے بعد ایک مختلف recognizable record بنائیں؛ یہ pre-restore نیا کام ہے۔</li>
+<li class="task todo">☐ A restore کریں؛ confirmation میں backup کی date/version/عمر اور newer-work warning پڑھیں۔</li>
+<li class="task todo">☐ Restore سے پہلے <strong>Before restore / safety recovery zip</strong> بننے کی تصدیق کریں؛ safety copy ناکام ہو تو restore رکنا چاہیے۔</li>
+<li class="task todo">☐ Restart کے بعد <strong>Last restore and recovery</strong> میں restored backup، وقت اور safety copy کا راستہ نظر آئے۔</li>
+<li class="task todo">☐ <strong>C:</strong> restore کے بعد B سے مختلف recognizable record بنائیں۔</li>
+<li class="task todo">☐ نیا backup بنائیں اور اسے restore کر کے C اور اس وقت کا پورا live data verify کریں۔</li>
+<li class="task todo">☐ Pre-restore recovery zip سے B والا data واپس لانے کا راستہ آزمائیں؛ A، B، C یا safety copies میں کوئی خاموش overwrite نہ ہو۔</li>
+<li class="task todo">☐ Restore کے فوراً بعد نیا baseline backup کا واضح option دیکھیں۔</li>
+</ul>
+<p><strong>Fault checks — isolated copy:</strong></p>
+<ul>
+<li class="task todo">☐ Damaged zip reject ہو اور current data محفوظ رہے۔</li>
+<li class="task todo">☐ Locked file، disk full اور copy/photo step failure پر واضح error اور rollback/recovery ہو۔</li>
+<li class="task todo">☐ Hand-made zip میں <code>../</code> photo path reject ہو؛ کوئی file photos folder سے باہر نہ لکھی جائے۔</li>
+</ul>
+<h2 id="pt01-bk-03-photos-safety-copy-partial-restore">PT01-BK-03 — Photos، safety copy اور partial restore</h2>
+<p><strong>Code میں موجود:</strong> same-volume staged database replacement، photos کی پہلے validation، بعد کی ناکامی پر recovery zip سے rollback کی کوشش، path traversal refusal اور related regressions۔</p>
+<p><strong>Physical ثبوت باقی:</strong></p>
+<ul>
+<li class="task todo">☐ Existing same-name photos والی copy میں restore کریں؛ pre-restore photos قابلِ بازیابی رہیں۔</li>
+<li class="task todo">☐ Recovery/safety zip backup list میں <strong>Before restore</strong> کے نام سے ملے اور restore ہو سکے۔</li>
+<li class="task todo">☐ Database یا photo step کی ناکامی کو مکمل کامیابی نہ دکھایا جائے؛ partial حالت واضح ہو۔</li>
+<li class="task todo">☐ Restore کے بعد app restart، memory refresh اور recovery instructions درست رہیں۔</li>
+</ul>
+<h3 id="pt-01-bk-result">PT-01 / BK result</h3>
+<pre><code class="language-text">تاریخ اور build:
+Item: PT01-BK-01 / BK-02 / BK-03
+نتیجہ: PASS / PARTIAL / FAIL
+Test copy کا مقام:
+A / B / C backup کے نام اور paths:
+Default / local / USB / Explorer:
+Damaged zip / locked / disk-full / rollback:
+Restart کے بعد recovery information:
+مسئلہ، screenshot یا report:
+</code></pre>
+<hr />
+<h1 id="4-pt-02-medicine-product-details">4 — PT-02: حقیقی Medicine اور Product Details</h1>
+<p><strong>مجموعی owner نتیجہ: PASS / OWNER CONFIRMED — 29 اکتوبر 2026۔</strong></p>
+<ul>
+<li class="task done">☑ 27 اکتوبر: حقیقی product changes save ہوئیں اور Black box میں product changes ریکارڈ ہوئیں۔</li>
+<li class="task done">☑ 29 اکتوبر: owner نے <strong>“2 is ok”</strong> لکھا؛ اسی بنیاد پر PT-02 overall PASS ہے۔</li>
+<li class="task todo">☐ کوئی نیا regression یا اختلاف ملے تو نیا item ID بنا کر لکھیں؛ پرانے PASS کو خاموشی سے نہ بدلیں۔</li>
+</ul>
+<h2 id="original-pt-02-evidence-map">Original PT-02 evidence map</h2>
+<p>ان میں overall owner confirmation موجود ہے، مگر ہر sub-step کی الگ رپورٹ نہیں بھیجی گئی۔ دوبارہ جانچنا ہو تو یہی checklist استعمال کریں:</p>
+<ul>
+<li class="task todo">☐ Blank name پر refusal اور کوئی product نہ بننا۔</li>
+<li class="task todo">☐ حقیقی medicine ایک بار بننا؛ name/salt، rack/room، primary category/company، pack formula، base unit، cost/retail/reorder اور barcode درست ہونا۔</li>
+<li class="task todo">☐ Name، barcode یا rack سے search اور reopen پر تمام values برقرار ہونا۔</li>
+<li class="task todo">☐ Purchase سے پہلے stock 0؛ Products اور Reorder pad بغیر <code>Double -&gt; Int64</code> error کے کھلنا۔</li>
+<li class="task todo">☐ Margin معقول اور Black box میں درست medicine/user/time/new values ہونا۔</li>
+<li class="task todo">☐ Fields/buttons clip نہ ہوں اور pack formula سمجھ آئے۔</li>
+</ul>
+<h2 id="logged-pt-02-items-overall-pass-status">الگ logged PT-02 items — overall PASS کے باوجود اپنا status رکھتے ہیں</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Code/implementation</th>
+<th>اب بھی درکار owner evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>PT02-CAT-01</strong></td>
+<td>Primary category + filter-only tags؛ financial total صرف primary سے ایک بار۔</td>
+<td>Tags save/filter، primary/tag conflict، put-away اور no double-count۔</td>
+</tr>
+<tr>
+<td><strong>PT02-NAV-01</strong></td>
+<td>Products category/company links، Dashboard cards اور Clear filter۔</td>
+<td>درست records/counts، back/menu state، keyboard اور empty result۔</td>
+</tr>
+<tr>
+<td><strong>PT02-UNIT-01</strong></td>
+<td>Managed units، rename/put-away، strength search، whole-only guards؛ REAL/double برقرار۔</td>
+<td><code>1 box = 10 injections</code>، <code>50 ml</code> strength، fractional refusal، variants اور import/workbook۔</td>
+</tr>
+<tr>
+<td><strong>PT02-PRICE-01</strong></td>
+<td>Explicit discount full retail پر؛ zero discount پر opt-in VIP/Doctor؛ custom-rate role/cost guards۔</td>
+<td>Yes/No، No=retail، held rate، receipt، below-cost اور cashier refusal۔</td>
+</tr>
+<tr>
+<td><strong>PT02-PHOTO-01</strong></td>
+<td>Products/Counter 44px thumbnail یا No photo؛ gallery click۔</td>
+<td>Real/missing/band file، speed، gallery اور sale/search unaffected۔</td>
+</tr>
+<tr>
+<td><strong>PT02-SHIFT-01</strong></td>
+<td>Previous counted closing سے opening؛ Rs 0.01 فرق/reason؛ red alerts؛ کوئی auto payment نہیں۔</td>
+<td>Exact، Rs 1 short، Rs 1 over، handover، alert detail اور Black box۔</td>
+</tr>
+<tr>
+<td><strong>PT02-ALERT-01</strong></td>
+<td>Red/yellow/green severity mapping اور alert-board colors۔</td>
+<td>حقیقی active alerts پر bell کا سب سے سنگین رنگ، expiry reminder اور owner-only red dismissal۔</td>
+</tr>
+<tr>
+<td><strong>PT02-POS-01</strong></td>
+<td><strong>کوئی guessed fix نہیں؛ reproduction ہی باقی ہے۔</strong></td>
+<td>Exact page/product/stock/sequence، blank/dash field، expected behaviour، screenshot/video/report۔</td>
+</tr>
+<tr>
+<td><strong>PT02-SALE-01</strong></td>
+<td>Successful commit کے بعد Done/invoice/change card اور Settings option۔</td>
+<td>Settings persistence، keyboard/scan continuation، refused sale پر card نہ آنا، ایک click=ایک invoice۔</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>ان items کی تفصیلی manual-instructions حالت Section 13 میں بھی ہے۔ PT02-POS-01 کو موجودہ evidence سے reproduce یا fixed نہ لکھیں۔</p>
+</blockquote>
+<hr />
+<h1 id="5-pt-03-purchase-batch-expiry-supplier-payable">5 — PT-03: حقیقی Purchase، Batch، Expiry اور Supplier Payable</h1>
+<p><strong>موجودہ نتیجہ: PARTIAL — detailed report pending۔ کسی sub-check کو خود PASS نہ لکھیں۔</strong></p>
+<h2 id="_5">شروع سے پہلے</h2>
+<ul>
+<li>PT-02 medicine کا موجودہ stock: <code>____________________</code></li>
+<li>Supplier کا موجودہ payable: <code>____________________</code></li>
+<li>حقیقی delivery کی quantity / pack / batch / expiry: <code>____________________</code></li>
+</ul>
+<h2 id="genuine-delivery-checklist">Genuine delivery checklist</h2>
+<ul>
+<li class="task todo">☐ <strong>Purchases</strong> میں حقیقی supplier منتخب یا <strong>Add supplier</strong> سے بنایا۔</li>
+<li class="task todo">☐ PT-02 والی intended medicine/variant منتخب کی۔</li>
+<li class="task todo">☐ درست unit اور حقیقی quantity لکھی؛ expected base qty پہلے حساب کی۔</li>
+<li class="task todo">☐ حقیقی batch number اور expiry <code>YYYY-MM</code> درج کی۔</li>
+<li class="task todo">☐ Cost/Retail درست تھے؛ sample/bonus صرف حقیقی zero-cost sample پر tick ہوا۔</li>
+<li class="task todo">☐ <strong>Add line</strong> کے بعد quantity، batch، expiry اور cost دوبارہ پڑھے۔</li>
+<li class="task todo">☐ <strong>Paid now</strong> میں اصل رقم لکھی: full، partial یا <code>0</code>۔</li>
+<li class="task todo">☐ <strong>Save purchase (PINV)</strong> صرف ایک بار دبایا۔</li>
+</ul>
+<h2 id="pass">PASS کے لیے نتائج</h2>
+<ul>
+<li class="task todo">☐ ایک حقیقی PINV بنا؛ duplicate document نہیں۔</li>
+<li class="task todo">☐ Stock میں <code>quantity × pack conversion</code> کے برابر اضافہ ہوا۔</li>
+<li class="task todo">☐ Intended product/batch میں درست batch اور expiry نظر آئے۔</li>
+<li class="task todo">☐ <code>supplier payable = total − paid now</code> درست ہے۔</li>
+<li class="task todo">☐ Drawer/ledger میں صرف اصل paid cash آیا۔</li>
+<li class="task todo">☐ Products، Reorder، Purchases، Supplier ledger اور Black box کی تفصیل ایک جیسی ہے۔</li>
+<li class="task todo">☐ کوئی unclear conversion، blank/dash یا unintended stock/payment side effect نہیں۔</li>
+</ul>
+<h3 id="pt-03-result">PT-03 result — یہ فارم بھر کر بھیجیں</h3>
+<pre><code class="language-text">PT-03: PASS / PARTIAL / FAIL
+تاریخ اور build:
+Supplier اور PINV:
+پہلے stock -&gt; بعد کا stock:
+Unit × quantity = expected base qty:
+Batch / expiry:
+Purchase total / paid / payable:
+Products / Reorder / Supplier ledger:
+Black box:
+کوئی مسئلہ، blank/dash یا UI تبدیلی:
+Screenshot / error / report:
+</code></pre>
+<hr />
+<h1 id="6-pt-04-sale-cart-cash-change-receipt-completion">6 — PT-04: حقیقی Sale، Cart، Cash Change، Receipt اور Completion</h1>
+<p><strong>موجودہ نتیجہ: INSTRUCTIONS READY — itemized owner result pending۔</strong></p>
+<p><strong>حد:</strong> اصل books میں صرف حقیقی فروخت۔ پہلی sale simple cash ہو؛ fake customer/payment/credit test نہیں۔</p>
+<h2 id="_6">شروع سے پہلے</h2>
+<ul>
+<li>PT-03 کے بعد product stock: <code>____________________</code></li>
+<li class="task todo">☐ Drawer/shift کھلا ہے اور opening cash حقیقی counted رقم ہے۔</li>
+<li class="task todo">☐ Opening رقم PT02-SHIFT-01 کے ساتھ لکھی ہے۔</li>
+<li class="task todo">☐ پہلی simple sale میں discount، VIP/Doctor اور loyalty کو غیر ضروری complication نہیں بنایا۔</li>
+</ul>
+<h2 id="genuine-sale-checklist">Genuine sale checklist</h2>
+<ul>
+<li class="task todo">☐ <strong>Counter (POS)</strong> میں medicine کو name سے search کیا۔</li>
+<li class="task todo">☐ حقیقی barcode ہو تو scan + Enter آزمایا؛ intended product/unit آیا۔</li>
+<li class="task todo">☐ درست unit اور quantity کے ساتھ <strong>Add to cart</strong> کیا۔</li>
+<li class="task todo">☐ Add سے پہلے/بعد Retail-price blank یا dash نہیں؛ stock/unit/cart item/qty/rate/total درست ہیں۔</li>
+<li class="task todo">☐ حقیقی customer ہو تو منتخب کیا؛ سادہ cash sale میں customer لازم نہیں رکھا۔</li>
+<li class="task todo">☐ Payment <strong>Cash</strong> اور حقیقی <strong>Cash received</strong> درج کی۔</li>
+<li class="task todo">☐ Change درست ہے؛ received کم ہونے پر واضح refusal آتی ہے۔</li>
+<li class="task todo">☐ حقیقی receipt چاہیے تو auto-print استعمال کیا۔</li>
+<li class="task todo">☐ <strong>Complete sale (F4)</strong> صرف ایک بار دبایا۔</li>
+<li class="task todo">☐ Done/checkmark، invoice، change/due اور next-sale راستہ واضح ہے۔</li>
+</ul>
+<h2 id="pass_1">PASS کے لیے نتائج</h2>
+<ul>
+<li class="task todo">☐ ایک INV بنا اور cart کی رقم ہی final bill بنی۔</li>
+<li class="task todo">☐ Stock درست unit/qty سے کم ہوا؛ FEFO/batch behaviour درست رہا۔</li>
+<li class="task todo">☐ Total، received، change اور drawer فرق درست ہیں۔</li>
+<li class="task todo">☐ Printed receipt اور screen کے items/total ایک جیسے ہیں۔</li>
+<li class="task todo">☐ Black box میں sale، payment اور print/reprint entries درست ہیں۔</li>
+<li class="task todo">☐ <strong>Print last bill again</strong> سے وہی bill دوبارہ print ہوا؛ نئی sale/payment نہیں بنی۔</li>
+<li class="task todo">☐ حقیقی khata sale ہو تو customer balance قبل/بعد درست ہے؛ fake credit test نہیں بنایا۔</li>
+</ul>
+<h3 id="pt-04-result">PT-04 result</h3>
+<pre><code class="language-text">PT-04: PASS / PARTIAL / FAIL
+تاریخ اور build:
+INV:
+Cart price / stock / unit:
+Total / received / change:
+پہلے stock -&gt; بعد کا stock:
+Receipt اور reprint:
+Sale completion ظاہر ہوا:
+Black box:
+کوئی blank/dash یا دوسرا مسئلہ:
+Screenshot / error / report:
+</code></pre>
+<hr />
+<h1 id="7-pt-05-returns-provisional-return-pr-quarantine-q">7 — PT-05: Returns، Provisional Return (PR) اور Quarantine (Q)</h1>
+<p><strong>موجودہ نتیجہ: PENDING۔</strong><br />
+<strong>محفوظ طریقہ:</strong> حقیقی return اصل books میں ہو سکتی ہے؛ fake return، repeated/refund-limit، cancellation، insufficient-stock یا forced fault صرف isolated test copy میں۔</p>
+<h2 id="a-genuine-bill-return-ret">A. Genuine bill return (RET)</h2>
+<ul>
+<li class="task todo">☐ Returns میں اصل bill کو printed number سے تلاش کریں؛ ضرورت ہو تو phone/customer/medicine/date search بھی آزمائیں۔</li>
+<li class="task todo">☐ صرف اسی bill کی باقی return-able quantity/value منتخب کریں؛ guess یا unrelated bill نہ جوڑیں۔</li>
+<li class="task todo">☐ Return کی وجہ لکھیں اور RET محفوظ کریں؛ ایک permanent RET number بنے۔</li>
+<li class="task todo">☐ Stock صرف مقررہ quantity سے بڑھے، یا line مقررہ rule کے مطابق quarantine میں جائے۔</li>
+<li class="task todo">☐ Cash refund اور customer khata صرف اسی bill کے actual paid/due/refund rule کے مطابق بدلیں؛ دوسری bill کا balance نہ بدلے۔</li>
+<li class="task todo">☐ Repeated return پر cumulative quantity/value cap رکے؛ refusal کے بعد کوئی partial stock/payment row نہ بنے۔</li>
+<li class="task todo">☐ Return receipt پر RET، original INV، reason اور ہر line کا stock/quarantine واضح ہو۔</li>
+<li class="task todo">☐ Reprint پر وہی historical numbers رہیں؛ نئی payment یا stock movement نہ بنے۔</li>
+<li class="task todo">☐ Black box میں return، payment/refund اور print/reprint entries درست ہوں۔</li>
+</ul>
+<h2 id="b-no-bill-provisional-return-pr-isolated-copy">B. No-bill / Provisional Return (PR) — isolated copy</h2>
+<ul>
+<li class="task todo">☐ PR بنائیں، reason لکھیں اور status <strong>pending / unchecked</strong> رہنے دیں۔</li>
+<li class="task todo">☐ Pending PR کی refund/restock صرف ایک بار ہو؛ دوبارہ کھولنے یا save کرنے سے duplicate نہ بنے۔</li>
+<li class="task todo">☐ بعد میں PR کو اس کے حقیقی INV سے link کریں؛ linking پر <strong>کوئی دوسری stock movement، payment یا khata event نہ بنے</strong>۔</li>
+<li class="task todo">☐ Original bill کے sale lines کے ساتھ allocated quantities/refund درست ہوں؛ wrong product یا excessive quantity refuse ہو۔</li>
+<li class="task todo">☐ Split/repeated lines اور ایک سے زیادہ PRs کے بعد بھی RET caps اور over/under-refund واضح رہیں۔</li>
+<li class="task todo">☐ پرانا header-only link ہو تو صرف same-bill repair مانگے؛ unrelated bill سے repair نہ ہو۔</li>
+<li class="task todo">☐ PR reconcile/cancel کے بعد double return ممکن نہ ہو۔</li>
+</ul>
+<h2 id="c-pr-cancellation-financial-boundary">C. PR cancellation — financial boundary لازم</h2>
+<ul>
+<li class="task todo">☐ Valid reason کے ساتھ PR cancel کریں۔</li>
+<li class="task todo">☐ Cancellation <strong>صرف same batch کو stock-only rule سے بدلے</strong>۔</li>
+<li class="task todo">☐ Cancellation سے customer cash repayment، نیا positive payment، drawer inflow یا original-financial reversal/report-reversal row <strong>نہ بنے</strong>۔</li>
+<li class="task todo">☐ Insufficient stock ہو تو cancellation atomically refuse ہو، PR pending رہے، cart/form محفوظ رہے اور payment نہ بنے۔</li>
+<li class="task todo">☐ Black box میں reason، batch، stock result اور refusal/cancellation واضح ہوں۔</li>
+</ul>
+<h2 id="d-quarantine-q">D. Quarantine (Q)</h2>
+<ul>
+<li class="task todo">☐ Q کو permanent number ملے اور goods خود restock نہ ہوں۔</li>
+<li class="task todo">☐ Owner یا manager disposition کر سکے؛ صرف authorized role کو اجازت ہو۔</li>
+<li class="task todo">☐ Alert dismiss owner-only اور reason کے ساتھ ہو۔</li>
+<li class="task todo">☐ Disposition کے بعد history محفوظ رہے؛ کوئی silent delete نہ ہو۔</li>
+</ul>
+<h3 id="pt-05-result">PT-05 result</h3>
+<pre><code class="language-text">PT-05: PASS / PARTIAL / FAIL
+تاریخ اور build / real books یا isolated copy:
+Original INV / RET / Q / PR numbers:
+Quantity اور stock before -&gt; after:
+Cash / khata / payable before -&gt; after:
+PR link پر نیا stock/payment event ( ہونا چاہیے: نہیں ):
+PR cancel پر payment/drawer inflow ( ہونا چاہیے: نہیں ):
+Over-return / insufficient-stock refusal:
+Receipt / Black box:
+مسئلہ، screenshot یا report:
+</code></pre>
+<hr />
+<h1 id="8-pt-06-stock-take-write-off-supplier-return-expiry-alerts">8 — PT-06: Stock-take، Write-off، Supplier Return، Expiry اور Alerts</h1>
+<p><strong>موجودہ نتیجہ: PENDING۔</strong><br />
+Fake adjustment، controlled shortage، negative-stock یا destructive scenario کے لیے isolated test copy لازم ہے۔</p>
+<h2 id="a-stock-take-st">A. Stock-take (ST)</h2>
+<ul>
+<li class="task todo">☐ نیا stock-take شروع کریں؛ frozen book quantities اور count sheet محفوظ ہوں۔</li>
+<li class="task todo">☐ Book / counted / difference / value columns درست دکھیں۔</li>
+<li class="task todo">☐ کچھ rows intentionally uncounted چھوڑیں؛ apply پر وہ zero نہ ہوں۔</li>
+<li class="task todo">☐ Genuine یا isolated zero-count اور non-zero-count دونوں درج کریں۔</li>
+<li class="task todo">☐ Owner کے علاوہ apply refused ہو؛ owner apply صرف ایک بار ہو۔</li>
+<li class="task todo">☐ Apply کے بعد audited adjustment بنے، frozen cost رہے اور ST دوبارہ apply نہ ہو۔</li>
+<li class="task todo">☐ Found stock ہو تو مقررہ <code>GINTI</code> batch/rule کے مطابق آئے۔</li>
+<li class="task todo">☐ Historical minus کو physical count سے correct کیا جا سکے، مگر کوئی خاموش auto-zero نہ ہو۔</li>
+</ul>
+<h2 id="b-write-off-breakage-goods-drawing">B. Write-off / breakage / goods drawing</h2>
+<ul>
+<li class="task todo">☐ حقیقی breakage/expiry یا isolated example کی batch، quantity اور reason درج کریں۔</li>
+<li class="task todo">☐ Removal cost پر value ہو؛ sale price سے valuation نہ ہو۔</li>
+<li class="task todo">☐ Available سے زیادہ remove کرنے پر refusal میں available/requested واضح ہوں۔</li>
+<li class="task todo">☐ Refusal atomic ہو، typed form رہے، number ضائع نہ ہو اور کوئی partial stock row نہ بنے۔</li>
+<li class="task todo">☐ Stock، report اور Black box ایک جیسے نتیجہ دکھائیں۔</li>
+</ul>
+<h2 id="c-supplier-return-sr">C. Supplier return (SR)</h2>
+<ul>
+<li class="task todo">☐ Genuine supplier return یا isolated test میں supplier/batch/quantity منتخب کریں۔</li>
+<li class="task todo">☐ Credit note یا cash mode حقیقت کے مطابق ہو۔</li>
+<li class="task todo">☐ Stock کم اور supplier payable/cash درست بدلے؛ unrelated customer یا sale نہ بدلے۔</li>
+<li class="task todo">☐ Repeated lines shared batch سے زیادہ stock return نہ کر سکیں؛ failed attempt پر SR number ضائع نہ ہو۔</li>
+<li class="task todo">☐ SR receipt/ledger/Black box درست ہوں۔</li>
+</ul>
+<h2 id="d-d-93-negative-stock-retirement-isolated-copy">D. D-93 negative-stock retirement — isolated copy</h2>
+<ul>
+<li class="task todo">☐ Repeated cart lines کی combined quantity stock سے زیادہ ہو تو sale شروع ہونے سے پہلے refusal آئے۔</li>
+<li class="task todo">☐ Refusal available/requested بتائے، cart برقرار رہے اور اگلے valid bill میں number gap نہ آئے۔</li>
+<li class="task todo">☐ Exact zero تک sale کامیاب ہو؛ اگلی unit refused ہو۔</li>
+<li class="task todo">☐ Positive batch 5 اور legacy batch -3 کی fixture میں 3-unit sale refused ہو اور physical stock-take guidance ملے۔</li>
+<li class="task todo">☐ Ordinary shortage میں reduce/receive guidance رہے؛ wrong guidance نہ آئے۔</li>
+<li class="task todo">☐ Write-off، goods drawing، supplier return اور PR cancellation سب central stock guard سے رکیں۔</li>
+<li class="task todo">☐ Legacy negative rows تاریخ/reports/returns سے غائب نہ ہوں؛ صرف audited physical stock-take correction ہو۔</li>
+<li class="task todo">☐ Fractional quantity واقعی ضرورت ہو تو REAL/double behaviour درست رہے؛ کسی quantity کو INTEGER cast نہ کریں۔</li>
+</ul>
+<h2 id="e-expiry-low-stock-alert-board">E. Expiry، low-stock اور alert board</h2>
+<ul>
+<li class="task todo">☐ Settings کی expiry bands بدلنے پر colors/levels انھی settings سے بدلیں۔</li>
+<li class="task todo">☐ Nearing expiry nearest band میں light/green reminder ہو؛ expired stock کو ordinary green نہ لکھیں۔</li>
+<li class="task todo">☐ Low-stock، supplier-cutoff/quarantine warnings مقررہ severity اور detail دکھائیں۔</li>
+<li class="task todo">☐ Supplier return cutoff کی last acceptable date واضح ہو۔</li>
+<li class="task todo">☐ Stock-minus registry read-only رہے؛ monthly review صرف Black-box note ہو، stock change نہ ہو۔</li>
+<li class="task todo">☐ Dashboard/alert board low-stock کے ساتھ بغیر cast error کھلے۔</li>
+</ul>
+<h3 id="pt-06-result">PT-06 result</h3>
+<pre><code class="language-text">PT-06: PASS / PARTIAL / FAIL
+تاریخ اور build / real books یا isolated copy:
+ST / write-off / SR numbers:
+Book / counted / applied differences:
+Zero اور non-zero counts:
+Exact-zero / shortage / legacy-minus results:
+Stock / payable / drawer before -&gt; after:
+Expiry / alert colours:
+Black box:
+مسئلہ، screenshot یا report:
+</code></pre>
+<hr />
+<h1 id="9-pt-07-restore-real-excelcsv-printerusb-scanner">9 — PT-07: Restore، Real Excel/CSV اور Printer/USB Scanner</h1>
+<p><strong>موجودہ نتیجہ: PENDING؛ printer-slip کا ایک حصہ پہلے confirm ہے، باقی نہیں۔</strong></p>
+<h2 id="a-backup-clean-pc-recovery">A. Backup اور clean-PC recovery</h2>
+<ul>
+<li class="task todo">☐ PT01-BK-01 کا default/local/USB/Explorer checklist مکمل ہو۔</li>
+<li class="task todo">☐ PT01-BK-02 کا A/B/C اور PT01-BK-03 کا fault checklist isolated copy میں مکمل ہو۔</li>
+<li class="task todo">☐ ممکن ہو تو clean PC یا clean test profile پر database + photos restore کر کے product، bill اور photo کھولیں۔</li>
+<li class="task todo">☐ Restore کے بعد live data، version/migrations اور photos درست ہوں؛ پرانا backup overwrite نہ ہو۔</li>
+</ul>
+<h2 id="b-native-xlsx-csv-real-excel">B. Native <code>.xlsx</code> اور CSV — real Excel درکار</h2>
+<ul>
+<li class="task todo">☐ <strong>Excel / CSV -&gt; Import</strong> سے blank template save کر کے real Excel میں کھولیں۔</li>
+<li class="task todo">☐ <strong>Products، Customers، Suppliers، Instructions</strong> چاروں readable sheets ہوں۔</li>
+<li class="task todo">☐ ایک حقیقی یا isolated medicine کو opening stock اور expiry کے ساتھ preview/import کریں؛ opening stock real batch بنے۔</li>
+<li class="task todo">☐ Opening udhaar import ہو تو پہلی khata line بنے؛ preview کے بغیر apply نہ ہو۔</li>
+<li class="task todo">☐ Import کے بعد وہی file دوبارہ منتخب کریں؛ duplicate skip ہو، stock/udhaar دوبارہ نہ بڑھے۔</li>
+<li class="task todo">☐ <strong>Bulk update -&gt; Download your data</strong> میں آٹھ متوقع sheets ہوں؛ photos، secrets یا internal counters export نہ ہوں۔</li>
+<li class="task todo">☐ Medicine کا name/retail بدلیں؛ دوسری editable cell خالی چھوڑیں تو <strong>empty = no change</strong> رہے۔</li>
+<li class="task todo">☐ Allowed optional value کو <code>__CLEAR__</code> سے صاف کریں؛ apply سے پہلے ہر <strong>before -&gt; after</strong> line پڑھیں۔</li>
+<li class="task todo">☐ <code>Stock on shelf</code>، <code>Udhaar now</code> یا <code>Payable now</code> بدلنے کی کوشش پر پورا workbook refuse ہو؛ کوئی partial change نہ ہو۔</li>
+<li class="task todo">☐ Settings صرف الگ tick پر بدلیں اور string/number/array types برقرار رہیں۔</li>
+<li class="task todo">☐ Apply ایک transaction میں ہو؛ Black box rows درست آئیں۔</li>
+<li class="task todo">☐ وہی workbook دوبارہ upload کریں تو <strong>0 changes</strong> آئے۔</li>
+<li class="task todo">☐ Workbook سے stock یا account balance خود نہیں بدلنا چاہیے۔</li>
+<li class="task todo">☐ Managed unit spelling، stale/put-away unit اور apply-time revalidation کی refusal واضح ہو۔</li>
+</ul>
+<h2 id="c-printer-usb-scanner-f-46">C. Printer اور USB scanner — F-46</h2>
+<p><strong>محفوظ evidence:</strong> printer-slip والا حصہ owner نے 23 اکتوبر کو shop printer پر دیکھا تھا۔ <strong>USB scan سے medicine ملنا اور Black box record ابھی unconfirmed ہے۔</strong></p>
+<ul>
+<li class="task todo">☐ <strong>SYSTEM -&gt; Printer &amp; scanner</strong> میں Windows کے installed printers کی list سے درست printer منتخب کریں۔</li>
+<li class="task todo">☐ Test slip مقررہ 58 mm یا 80 mm paper پر print ہو۔</li>
+<li class="task todo">☐ Ruler کے تمام characters نظر آئیں: <strong>58 mm = 32، 80 mm = 48</strong>؛ آخری digit کٹے تو width setting دیکھیں۔</li>
+<li class="task todo">☐ Paper صاف cut/tear ہو۔</li>
+<li class="task todo">☐ USB scanner بغیر اضافی click کے box میں code type کر کے Enter دے۔</li>
+<li class="task todo">☐ Scan سے درست medicine اور pack ملے؛ unknown code ہو تو test record میں واضح distinguish ہو۔</li>
+<li class="task todo">☐ Counter سے ایک حقیقی bill print ہو؛ totals، khata line اور footer صاف ہوں۔</li>
+<li class="task todo">☐ چھ boxes tick کر کے <strong>Save the result</strong> کریں؛ missing tick ہو تو reason لکھیں۔</li>
+<li class="task todo">☐ Date، person، paper width اور <code>hardware_test</code> Black-box entry محفوظ ہوں۔</li>
+<li class="task todo">☐ Paper width بدلنے پر پرانے ticks stale ہوں اور نئی slip دوبارہ test ہو۔</li>
+</ul>
+<h3 id="pt-07-result">PT-07 result</h3>
+<pre><code class="language-text">PT-07: PASS / PARTIAL / FAIL
+تاریخ اور build:
+Restore / A-B-C / fault result:
+Excel version اور file type:
+Four template sheets / eight export sheets:
+Duplicate import / protected columns / repeated upload:
+Printer model اور paper width:
+Six checks: printed / fits / cut / scanner / found / bill:
+USB scan سے medicine اور pack:
+Black box hardware_test:
+مسئلہ، screenshot یا report:
+</code></pre>
+<hr />
+<h1 id="10-pt-08-redesign-phase-1-expanded-header-navigation">10 — PT-08: Redesign Phase 1 — Expanded Header / Navigation</h1>
+<p><strong>حالت:</strong> Zircon کے <strong>883/883 Windows xUnit</strong> محفوظ ہیں؛ WPF/navigation owner verification pending۔<br />
+<strong>Current build پر نوٹ:</strong> اب version Cobalt ہے۔ Current Cobalt پر یہ retained-shell checks کیے جا سکتے ہیں، مگر expected version <strong>v0.38.0 Cobalt</strong> ہوگی؛ 883 صرف historical Zircon total ہے۔ صرف Zircon reproduce کرنا ہو تو real books downgrade نہ کریں۔</p>
+<h2 id="automated">Automated ثبوت</h2>
+<ul>
+<li class="task done">☑ Zircon: 883 passed / 0 failed / 0 skipped، 1 منٹ 10 سیکنڈ۔</li>
+<li class="task done">☑ اس release کے static checks اور XAML binding checks محفوظ ہیں۔</li>
+<li class="task todo">☐ یہ WPF navigation کا physical PASS نہیں؛ نیچے کے خانے صرف نظر آنے والے نتیجے پر tick کریں۔</li>
+</ul>
+<h2 id="physical-checklist">مالک کی physical checklist</h2>
+<ul>
+<li class="task todo">☐ <strong>Launch/build الگ لکھیں:</strong> current copy <code>START-AREA11.bat</code> سے کھلی اور version/color درست تھی۔ کوئی error ہو تو build log/report منسلک کریں۔</li>
+<li class="task todo">☐ <strong>Header identity:</strong> اوپر صرف <strong>Area11</strong> ہے؛ shop name مرکز میں نہیں۔ Current copy کی پہچان Cobalt color/version سے ہو۔</li>
+<li class="task todo">☐ <strong>Bell:</strong> سب سے دائیں 44×44 bell، count اور severity color درست؛ click سے Alerts کھلیں اور واپسی پر previous module منتخب ہو سکے۔</li>
+<li class="task todo">☐ <strong>Modules:</strong> Dashboard، SELL، STOCK، CUSTOMERS &amp; SUPPLIERS، MONEY، SYSTEM کھولیں؛ ہر module کا پہلا page کھلے۔</li>
+<li class="task todo">☐ Module بدل کر واپس آنے پر اس module کا موجودہ page برقرار رہے؛ active module/page واضح ہوں۔</li>
+<li class="task todo">☐ <strong>Settings sections:</strong> Shop، Printing، Sales rules، Cloud sync، Staff &amp; permissions، App words اوپر clickable ہوں؛ اندرونِ صفحہ دوسری tab strip نہ ہو۔</li>
+<li class="task todo">☐ System کے عام pages دستیاب رہیں؛ Settings سے Backup/Audit یا دوسرا page کھولا جا سکے۔</li>
+<li class="task todo">☐ ایک Settings section میں غیر محفوظ text لکھ کر دوسرا section اور واپسی کریں؛ text ضائع نہ ہو؛ Save صرف ایک بار اور existing rules کے مطابق ہو۔</li>
+<li class="task todo">☐ <strong>Products category:</strong> header dropdown سے keyboard/type کر کے category منتخب کریں؛ وہی products اور count آئیں؛ All categories پر واپسی درست ہو۔</li>
+<li class="task todo">☐ Dashboard/category row سے آنے پر header میں وہی category منتخب نظر آئے۔</li>
+<li class="task todo">☐ <strong>Editor/filter separation:</strong> product editor کا unsaved category header filter بدلنے سے نہ بدلے۔</li>
+<li class="task todo">☐ <strong>Put-away edge — isolated copy:</strong> filtered category put away ہو تو filter All categories پر صاف ہو؛ invisible filter نہ رہے۔</li>
+<li class="task todo">☐ <strong>Permissions:</strong> cashier/limited user کو صرف permitted modules/pages دکھیں؛ owner-only route اور service-level refusal برقرار رہے۔</li>
+<li class="task todo">☐ <strong>Keyboard:</strong> Tab/Enter سے modules، Settings اور bell تک واضح focus کے ساتھ پہنچا جا سکے۔</li>
+<li class="task todo">☐ <strong>Screen fit:</strong> 1240×760 اور اپنی normal resolution پر button/text clip یا overlap نہ ہو؛ SYSTEM کے تمام pages قابلِ رسائی ہوں۔</li>
+<li class="task todo">☐ Alerts، session warning، empty-page message اور failed-button/fault card موجودہ محفوظ طریقے سے کام کریں۔</li>
+<li class="task todo">☐ Header بدلنے سے page content یا half-typed bill ضائع نہ ہو۔</li>
+<li class="task todo">☐ Current-user menu سے <strong>My settings</strong> اور <strong>Sign out</strong> کھلیں؛ version <strong>v0.38.0 · Cobalt</strong> ہو۔</li>
+</ul>
+<h3 id="pt-08-result">PT-08 result</h3>
+<pre><code class="language-text">PT-08: PASS / PARTIAL / FAIL
+تاریخ اور actual build/version:
+Automated evidence الگ: Zircon 883/883 historical
+Current launch/build log:
+Modules / back-state / Settings sections:
+Category filter / editor separation:
+Permissions / keyboard / screen fit:
+Bell / user menu / sign-out:
+مسئلہ، screenshot یا report:
+</code></pre>
+<hr />
+<h1 id="11-pt-09-redesign-phase-2-own-fields-governance">11 — PT-09: Redesign Phase 2 — Own Fields Governance</h1>
+<p><strong>حالت:</strong> Code ready؛ Aurora کا 892/892 Windows run اور owner physical PASS محفوظ نہیں۔ Current Cobalt میں یہ features retained ہیں؛ 892 کو current runner کا expected total نہ بنائیں۔</p>
+<h2 id="automateddevelopment">Automated/development ثبوت</h2>
+<ul>
+<li class="task done">☑ Aurora کے 892 written cases اور migration 029 کے automated/development checks محفوظ ہیں۔</li>
+<li class="task done">☑ Current Cobalt کے 900/900 Core/Tests owner-verified ہیں، مگر یہ PT-09 WPF physical proof نہیں۔</li>
+<li class="task todo">☐ Aurora-specific Windows run اور نیچے کے physical نتائج الگ درکار ہیں۔</li>
+</ul>
+<h2 id="_7">محفوظ شروعات</h2>
+<ul>
+<li class="task todo">☐ Existing database کھولنے سے پہلے backup لیا۔</li>
+<li class="task todo">☐ Migration کے بعد existing products، customers، suppliers اور custom answers موجود ہیں۔</li>
+<li class="task todo">☐ Required/invalid/legacy/fault scenarios کے لیے isolated test copy منتخب کی۔</li>
+</ul>
+<h2 id="physical-checklist_1">Physical checklist</h2>
+<ul>
+<li class="task todo">☐ <strong>نیا field:</strong> SYSTEM -&gt; Own fields -&gt; Medicines میں حقیقی optional text field بنائیں، مثلاً <code>Shelf note</code>۔</li>
+<li class="task todo">☐ <strong>Help on the record form</strong> میں سادہ یک سطری guidance لکھیں؛ save کے بعد stable key <code>product.custom.&lt;id&gt;</code> لکھ لیں۔</li>
+<li class="task todo">☐ Existing product کھولیں؛ نیا field اور guidance فوری نظر آئیں، rebuild/restart نہ چاہیے۔</li>
+<li class="task todo">☐ جواب لکھ کر <strong>Save extra fields</strong> کریں؛ product بند/دوبارہ کھولنے پر جواب اور guidance برقرار رہیں۔</li>
+<li class="task todo">☐ <strong>Rename-safe identity:</strong> نام <code>Rack note</code> بدلیں؛ stable key نہ بدلے، پرانا جواب رہے، Black box میں old -&gt; new definition آئے۔</li>
+<li class="task todo">☐ صرف guidance بدلیں؛ answer نہ بدلے، نئی guidance آئے، audit لکھے۔</li>
+<li class="task todo">☐ صرف نام/type بدلنے پر existing guidance خود نہ مٹی ہو۔</li>
+<li class="task todo">☐ <strong>Required atomic refusal — isolated copy:</strong> خالی required answer کے ساتھ optional answer بھر کر save کریں؛ field-named refusal آئے اور optional answer بھی partial save نہ ہو۔</li>
+<li class="task todo">☐ Valid answer دینے پر save کامیاب ہو۔</li>
+<li class="task todo">☐ <strong>سات types — isolated copy:</strong> text، number، amount، date، list، yes/no، photo کے safe examples reopen کے بعد درست ہوں۔</li>
+<li class="task todo">☐ Amount درست rupees، date canonical، list صرف defined choices، photo existing gallery rule پر ہو۔</li>
+<li class="task todo">☐ Number میں <code>NaN</code> / <code>Infinity</code>، name/help میں multiline/control text، list میں undefined choice refuse ہوں؛ خاموش <code>0</code> یا غلط stored value نہ بنے۔</li>
+<li class="task todo">☐ <strong>Put away / restore:</strong> field form سے ہٹے مگر answer database میں رہے؛ Show it on the form again پر وہی key اور پرانا answer واپس آئے۔</li>
+<li class="task todo">☐ Delete/undo جیسا خطرناک راستہ نہ ہو۔</li>
+<li class="task todo">☐ <strong>Permissions:</strong> cashier/limited login Own fields manage نہ کر سکے؛ record permission کے مطابق ہی answers ملیں؛ owner/manager management برقرار رہے۔</li>
+<li class="task todo">☐ <strong>Legacy upgrade — isolated pre-029 copy:</strong> existing field/answer کے ساتھ migration ایک بار لگے، key <code>entity.custom.id</code> بنے، answer unchanged رہے؛ restart پر duplicate migration/error نہ ہو۔</li>
+<li class="task todo">☐ <strong>No business side effect:</strong> اس testing میں کوئی PINV/INV/payment یا stock quantity نہ بدلے۔ فرق نظر آئے تو test روک کر report بھیجیں۔</li>
+</ul>
+<h3 id="pt-09-result">PT-09 result</h3>
+<pre><code class="language-text">PT-09: PASS / PARTIAL / FAIL
+تاریخ اور actual build/version:
+Windows xUnit (الگ automated evidence): total / failed / skipped / duration
+Migration 029 first start / restart:
+Entity + field id + stable key:
+Help text before -&gt; after:
+Rename before -&gt; after; key unchanged؟
+Answer before -&gt; after:
+Required/invalid refusal and atomicity:
+Seven types checked:
+Put away / restore:
+Permissions:
+Black box old -&gt; new:
+Stock/payment/document side effect ( ہونا چاہیے: نہیں ):
+Screenshots / error / test.log:
+</code></pre>
+<hr />
+<h1 id="12-pt-10-redesign-phase-3-packaging-variants-search">12 — PT-10: Redesign Phase 3 — Packaging، Variants اور Search</h1>
+<p><strong>حالت:</strong> Cobalt Core/Tests <strong>900/900 PASS</strong>؛ PT-10 WPF/genuine physical verification pending۔ Phase 4 اس میں شامل نہیں۔</p>
+<h2 id="automated-development">Automated اور development ثبوت</h2>
+<ul>
+<li class="task done">☑ 29 اکتوبر: <strong>900 total / 900 passed / 0 failed / 0 skipped / 1 m 4 s</strong>۔</li>
+<li class="task done">☑ <code>ALL GREEN - 900 of 900</code> موصول ہوا۔</li>
+<li class="task done">☑ 55/55 static checks اور 7/7 actual ProductService SQLite search groups کامیاب۔</li>
+<li class="task todo">☐ <code>Area11.Desktop</code> / WPF build اور <code>START-AREA11.bat</code> launch کو الگ evidence چاہیے؛ Core/Tests log کو اس کا ثبوت نہ لکھیں۔</li>
+<li class="task todo">☐ نیچے کے pack/search/barcode/conversion checks کا physical result ابھی pending ہے۔</li>
+</ul>
+<h2 id="data-boundary">Data boundary</h2>
+<ul>
+<li class="task todo">☐ اصل books میں صرف genuine medicines/delivery استعمال کی۔</li>
+<li class="task todo">☐ Fake variants، invalid input، controlled conversion یا risky financial side-effect check کے لیے backup کے ساتھ isolated copy استعمال کی۔</li>
+</ul>
+<h2 id="physical-checklist_2">Physical checklist</h2>
+<ul>
+<li class="task todo">☐ <strong>Current launch:</strong> actual app کھلی، <strong>v0.38.0 · Cobalt</strong> نظر آیا؛ build/launch result الگ لکھا۔</li>
+<li class="task todo">☐ <strong>دو الگ variants — isolated copy:</strong> ایک ہی نام کی دو medicines، مثلاً strength <code>5 ml</code> + pack <code>50 mL bottle</code> اور strength <code>10 ml</code> + pack <code>100 mL bottle</code>؛ base unit <code>injection</code>۔</li>
+<li class="task todo">☐ Save کے بعد الگ product rows/IDs رہیں؛ کوئی merge یا نیا stock unit نہ بنے۔</li>
+<li class="task todo">☐ <strong>Editor persistence:</strong> پہلی product بند/دوبارہ کھولنے پر pack/variant label اور Products grid کا <strong>Pack / variant</strong> column درست ہو۔</li>
+<li class="task todo">☐ New product کھولنے پر پرانا label خود copy نہ ہو۔</li>
+<li class="task todo">☐ <strong>Normalization:</strong> <code>50   mL bottle</code> save کریں؛ reopen پر <code>50 mL bottle</code> ہو۔</li>
+<li class="task todo">☐ Multiline/control label اور 100 characters سے لمبا label refuse ہو؛ پیغام واضح ہو۔</li>
+<li class="task todo">☐ Refusal پر name/rate/stock/formula میں کوئی partial change نہ ہو۔</li>
+<li class="task todo">☐ <strong>Products search:</strong> <code>50ml</code> سے صرف 50 mL variant اور <code>100 ML</code> سے صرف 100 mL variant آئے۔</li>
+<li class="task todo">☐ Brand، room، primary category اور company سے بھی intended product ملے۔</li>
+<li class="task todo">☐ Exact pack hit پر fuzzy suggestion نہ آئے؛ unknown نام پر existing fuzzy note الگ واضح رہے۔</li>
+<li class="task todo">☐ <strong>Counter search:</strong> وہی <code>50ml</code> / <code>100 ML</code> searches میں Pack / variant column اور selected row intended variant کی ہو۔</li>
+<li class="task todo">☐ Search صرف list filter کرے؛ کوئی medicine خود cart میں add نہ ہو۔</li>
+<li class="task todo">☐ <strong>Existing pack barcode:</strong> active strip اور box codes scan + Enter پر پہلے کی طرح درست product/pack unit add کریں؛ put-away code کام نہ کرے۔</li>
+<li class="task todo">☐ <strong>Purchase discovery:</strong> pack label، strength، brand یا barcode سے intended product ملے۔</li>
+<li class="task todo">☐ Dropdown میں <strong>name — strength · pack</strong> نظر آئے؛ ایک جیسے نام والی variants الگ ہوں؛ selected row وہی رہے۔</li>
+<li class="task todo">☐ <strong>Conversion — isolated copy:</strong> <code>1 box = 2 inner packs</code> اور <code>1 inner pack = 5 injections</code> پر ایک box کا quote <strong>10 base injections</strong> رہے۔</li>
+<li class="task todo">☐ صرف pack label بدلنے سے quantity، rate، batch cost/retail یا stock نہ بدلے۔</li>
+<li class="task todo">☐ <strong>No financial/history side effect:</strong> label edit سے پہلے/بعد existing PINV/INV، batches، balances اور payments یکساں رہیں۔</li>
+<li class="task todo">☐ کوئی نیا payment، drawer inflow، invoice، reversal یا stock adjustment نہ بنے؛ صرف expected product-edit Black-box entry ہو۔</li>
+<li class="task todo">☐ <strong>Keyboard/screen:</strong> Products editor، Counter grid اور Purchase dropdown میں Tab/Enter کام کرے؛ pack text سے Save، Add line یا control clip/overlap نہ ہو۔</li>
+</ul>
+<h3 id="pt-10-result">PT-10 result</h3>
+<pre><code class="language-text">Build: v0.38.0 Cobalt
+PT-10: PASS / PARTIAL / FAIL
+تاریخ:
+Windows Core/Tests: 900 total / 0 failed / 0 skipped / 1 m 4 s — owner verified 29 Oct 2026
+Desktop/WPF build اور START-AREA11.bat launch (الگ):
+Two variant product IDs and stock units:
+Pack label before -&gt; after reopen:
+Normalization / multiline / over-100 refusal:
+Products 50ml / 100 ML results:
+Counter 50ml / 100 ML and pack-column results:
+Strip / box extra-barcode scans:
+Purchase search and displayed variant choice:
+Box/strip/base conversion before -&gt; after label edit:
+Rates / batches / payments / documents side effect ( ہونا چاہیے: نہیں ):
+Black-box product edit:
+Keyboard / screen fit:
+Screenshots / error / test.log:
+</code></pre>
+<hr />
+<h1 id="13-manual-instructions-implement">13 — Manual Instructions: کیا implement ہوا اور کیا باقی ہے</h1>
+<p><strong>پڑھنے کا اصول:</strong> “Code میں موجود” کا مطلب source اور متعلقہ automated coverage موجود ہے؛ اس کا مطلب owner physical PASS نہیں۔ جہاں owner confirmation ملی ہے وہ الگ لکھی ہے۔</p>
+<h2 id="131-master-implementation-tracker">13.1 Master implementation tracker</h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Code / implemented حالت</th>
+<th>باقی یا independent owner action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>PT01-BK-01</strong></td>
+<td>Back up as…، chosen zip، unique suffix، live DB unchanged، Explorer/show-backup path۔</td>
+<td>Default/local/USB، Explorer selection، permission/disk-full اور no-overwrite physical proof۔</td>
+</tr>
+<tr>
+<td><strong>PT01-BK-02 / BK-03</strong></td>
+<td>Newer-work warning، full recovery zip، Before restore list، restart summary، staged replacement، photo validation/rollback اور traversal refusal۔</td>
+<td>Isolated A/B/C، B recovery، damaged/locked/disk-full/photo faults اور restart recovery proof۔</td>
+</tr>
+<tr>
+<td><strong>PT02-CAT-01</strong></td>
+<td>Primary category + additional filter-only tags؛ financial totals primary سے ایک بار۔</td>
+<td>Tag save/search/filter، conflict guard، put-away اور report no-double-count۔</td>
+</tr>
+<tr>
+<td><strong>PT02-NAV-01</strong></td>
+<td>Clickable category/company، Dashboard detail cards، Clear/empty filter states۔</td>
+<td>Actual records/counts، mouse/keyboard، back/menu state اور empty result۔</td>
+</tr>
+<tr>
+<td><strong>PT02-UNIT-01</strong></td>
+<td>Managed units، canonical spelling، rename/order/put-away، strength، whole-only flag، import guards؛ REAL/double محفوظ۔</td>
+<td>Whole injection، 50 ml variant، fractional refusal، rename/put-away، genuine stock اور real workbook checks۔</td>
+</tr>
+<tr>
+<td><strong>PT02-PRICE-01</strong></td>
+<td>Full-retail explicit discount، opt-in special rate، default No=retail، Owner/Manager custom rate، cost/role/paisa guards۔</td>
+<td>Yes/No popup، held custom rate، receipt/margin، below-cost اور cashier refusal۔</td>
+</tr>
+<tr>
+<td><strong>PT02-PHOTO-01</strong></td>
+<td>Products/Counter thumbnails، No photo fallback، gallery click؛ photo sale کی شرط نہیں۔</td>
+<td>Real/missing/closed file، loading، gallery اور sale/search unaffected۔</td>
+</tr>
+<tr>
+<td><strong>PT02-SHIFT-01</strong></td>
+<td>Previous counted opening، exact/paisa difference reason، opening/closing red alerts، audit؛ auto payment نہیں۔</td>
+<td>Exact، Rs 1 short/over، handover، next opening، detail link اور no automatic financial row۔</td>
+</tr>
+<tr>
+<td><strong>PT02-ALERT-01</strong></td>
+<td>Central red/yellow/green mapping، highest severity wins، alert-board colors، nearing-expiry reminder۔</td>
+<td>حقیقی bell colors، expiry band، red owner review/reason اور dismissal behaviour۔</td>
+</tr>
+<tr>
+<td><strong>PT02-POS-01</strong></td>
+<td><strong>Needs reproduction؛ کوئی guessed diagnosis/fix نہیں۔</strong></td>
+<td>Exact page، product/stock/batch، sequence، blank/dash field، expected/actual، screenshot/video اور report۔</td>
+</tr>
+<tr>
+<td><strong>PT02-SALE-01</strong></td>
+<td>Committed sale کے بعد Done/invoice/change/due card؛ setting OFF؛ next scan/card dismiss؛ auto-print الگ۔</td>
+<td>Persistence، keyboard/scan، exact change، refused sale پر no card، one click=one invoice۔</td>
+</tr>
+<tr>
+<td><strong>D-96 / PT-08</strong></td>
+<td>Expanded dark header، fixed Area11، modules/context pages، Settings sections، 44×44 bell۔</td>
+<td>Retained WPF navigation، permissions، unsaved state، keyboard اور screen fit۔</td>
+</tr>
+<tr>
+<td><strong>D-97 / PT-09</strong></td>
+<td>Central field contract، stable keys، guidance، validation، migration 029۔</td>
+<td>Aurora evidence الگ؛ current WPF fields/rename/help/types/permissions/legacy/no-side-effect proof۔</td>
+</tr>
+<tr>
+<td><strong>D-98 / PT-10</strong></td>
+<td>Editable normalized pack label، shared Products/Counter/Purchase search، separate variants؛ 8 focused regressions۔</td>
+<td>Core/Tests 900/900 کے علاوہ Desktop launch، WPF selection، barcodes، conversion اور no-side-effect proof۔</td>
+</tr>
+<tr>
+<td><strong>E-04</strong></td>
+<td>Category/company create/rename/order/put-away/restore، two-level guard، rep/visit fields، permissions۔</td>
+<td>Live parent/child، third-level refusal، linked put-away/restore، audit اور cashier refusal۔</td>
+</tr>
+<tr>
+<td><strong>E-12 / S-05</strong></td>
+<td>32 App words، stable navigation keys، live menu/page headings، Unicode/atomic audit/reset۔</td>
+<td>Rename/restart/reset، current heading، Cloud/Own fields labels، blank refusal، old bill unchanged۔</td>
+</tr>
+<tr>
+<td><strong>Z-05</strong></td>
+<td>Read-only Black-box earlier/recorded-new reader، Unicode/details/guidance اور module correction route۔</td>
+<td>Actual selected rows، PR guidance، filter clearing، copy-only behaviour، no business/audit mutation۔</td>
+</tr>
+<tr>
+<td><strong>T-05</strong></td>
+<td>Native per-day chart پہلے سے موجود؛ matrix میں <strong>DONE</strong>؛ duplicate engine نہیں بنایا۔</td>
+<td>صرف retained visual check تجویز شدہ؛ اسے نیا unfinished feature نہ سمجھیں۔</td>
+</tr>
+<tr>
+<td><strong>T-10</strong></td>
+<td>Native <code>.xlsx</code> codec، four-sheet template، eight-sheet export، preview/atomic bulk update/protected balances۔</td>
+<td>Real Excel، duplicate import، <code>__CLEAR__</code>، protected refusal، types، audit اور repeated 0 changes۔</td>
+</tr>
+<tr>
+<td><strong>D-93</strong></td>
+<td>Central StockPolicy، repeated-line/shared-batch reservation، exact zero، atomic refusals، historical-minus preservation۔</td>
+<td>Isolated physical shortage scenarios، stock-take correction، write-off/drawing/SR/PR cancel guards۔</td>
+</tr>
+<tr>
+<td><strong>Lapis PR reconciliation</strong></td>
+<td>PR lines original sale lines سے allocate؛ link پر no new stock/payment؛ RET caps/over-under warnings۔</td>
+<td>Actual PR/INV link، split/repeated lines، same-bill repair، no double return اور cancellation boundary۔</td>
+</tr>
+<tr>
+<td><strong>Paprika / Quasar repairs</strong></td>
+<td>REAL stock projections، Unicode settings audit، REAL PR/RET reads اور detailed link errors۔</td>
+<td>Isolated <code>A empty</code>/<code>B stocked</code> 3.5، Urdu audit، PR attach/no duplicate event؛ error ہو تو تفصیل بھیجیں۔</td>
+</tr>
+<tr>
+<td><strong>Merlot follow-up</strong></td>
+<td>Low-stock alert read اور PR reconciliation read repairs۔</td>
+<td>Dashboard low-stock fold/no cast error اور pending PR link without another stock/payment event۔</td>
+</tr>
+<tr>
+<td><strong>F-46 hardware</strong></td>
+<td>Printer list/selection، test slip/ruler، six checks، scanner lookup، saved audit record۔</td>
+<td>Slip half 23 Oct confirmed؛ USB scan -&gt; medicine، real bill، saved Black box اور width-change retest باقی۔</td>
+</tr>
+<tr>
+<td><strong>Cloud sync</strong></td>
+<td>Format-2 push/preview/backup-first pull code موجود؛ partial mirror ہے۔</td>
+<td>موجودہ PT scope سے باہر؛ real Supabase test صرف الگ منظوری، test Shop id/table اور isolated copy پر۔</td>
+</tr>
+</tbody>
+</table>
+<h2 id="132-e-12-s-05-app-words-retained-physical-walk-through">13.2 E-12 / S-05 — App words کا retained physical walk-through</h2>
+<ul>
+<li class="task todo">☐ Settings -&gt; <strong>App words</strong> میں Counter (POS) کو <code>ریکاؤنٹر</code> اور Settings کو <code>Choices</code> لکھ کر Save کریں۔</li>
+<li class="task todo">☐ Save کے فوراً بعد menu rows اور موجودہ Settings heading بدلیں۔</li>
+<li class="task todo">☐ Counter کھول کر اس کی heading دیکھیں۔</li>
+<li class="task todo">☐ Dashboard کو <code>Home</code> کریں؛ menu row اور page heading دونوں بدلیں۔</li>
+<li class="task todo">☐ Cloud sync کا نام بدلیں تو اس کا Settings tab بدلے۔</li>
+<li class="task todo">☐ Own fields والے record پر panel heading نئے Own fields label سے آئے۔</li>
+<li class="task todo">☐ App restart کے بعد custom words برقرار رہیں۔</li>
+<li class="task todo">☐ Blank label کے ساتھ Save کریں؛ پوری save refuse ہو اور دوسری settings نہ بدلیں۔</li>
+<li class="task todo">☐ <strong>Restore original words</strong> کو دو بار استعمال کریں؛ تمام 32 defaults واپس آئیں۔</li>
+<li class="task todo">☐ Black box میں <code>labels.*</code> کے old/new rows اور Urdu Unicode صاف پڑھے جا سکیں۔</li>
+<li class="task todo">☐ پرانا bill reprint کریں؛ INV number اور historical wording rewrite نہ ہو۔</li>
+<li class="task todo">☐ Custom labels سے routes، permissions، Shift/Settings shortcuts یا page resolution نہ ٹوٹیں۔</li>
+</ul>
+<h2 id="133-z-05-black-box-earlier-state-reader">13.3 Z-05 — Black box earlier-state reader</h2>
+<ul>
+<li class="task todo">☐ Black box میں ایسی settings change منتخب کریں جس کے old/new JSON ہوں۔</li>
+<li class="task todo">☐ Complete earlier value، recorded-new value، Unicode، details اور guidance پڑھیں۔</li>
+<li class="task todo">☐ Text copy ہو سکے مگر edit/Undo/Restore command موجود نہ ہو۔</li>
+<li class="task todo">☐ PR cancellation row پر guidance ہو: same-batch stock-only، no payment، no original-financial reversal۔</li>
+<li class="task todo">☐ Search/filter بدلنے پر پرانا selected snapshot غائب ہو۔</li>
+<li class="task todo">☐ Reader کھولنے/copy کرنے سے کوئی business یا audit row نہ بدلے۔</li>
+<li class="task todo">☐ Recorded-new کو غلطی سے “اب کی live value” نہ سمجھا جائے۔</li>
+</ul>
+<h2 id="134-e-04-category-company-management">13.4 E-04 — Category / Company management</h2>
+<ul>
+<li class="task todo">☐ Parent اور child category بنائیں؛ rename/reorder محفوظ ہو۔</li>
+<li class="task todo">☐ Third level refused ہو۔</li>
+<li class="task todo">☐ Linked category/company put away کریں؛ product اور old records باقی رہیں، صرف current link clear ہو۔</li>
+<li class="task todo">☐ Put-away audit میں affected count درست ہو۔</li>
+<li class="task todo">☐ Restore پر پرانا link خود invent نہ ہو۔</li>
+<li class="task todo">☐ Company rep، phone، notes اور visit-day محفوظ رہیں۔</li>
+<li class="task todo">☐ Cashier write refused ہو۔</li>
+<li class="task todo">☐ Primary/tag filter اور financial count double-count نہ کرے۔</li>
+</ul>
+<h2 id="135-paprika-quasar-merlot-retained-checks-isolated-copy">13.5 Paprika / Quasar / Merlot retained checks — isolated copy</h2>
+<ul>
+<li class="task todo">☐ Never-received <code>A empty</code> اور 3.5 base units والی <code>B stocked</code> بنائیں۔</li>
+<li class="task todo">☐ Products اور Reorder pad دونوں کھلیں؛ بالترتیب 0 اور 3.5 نظر آئیں، <code>Double -&gt; Int64</code> error نہ آئے۔</li>
+<li class="task todo">☐ Urdu app label save کر کے Black box میں readable Unicode دیکھیں۔</li>
+<li class="task todo">☐ Pending PR کو INV سے attach کریں؛ کوئی second stock/payment event یا double return نہ ہو۔</li>
+<li class="task todo">☐ Link fail ہو تو error میں technical detail آئے؛ screenshot/report بھیجیں۔</li>
+<li class="task todo">☐ ایک medicine reorder level پر یا نیچے رکھ کر Dashboard کھولیں؛ alert board low-stock row fold کرے، cast error نہ آئے۔</li>
+</ul>
+<h2 id="136-t-05-chart-optional-retained-check">13.6 T-05 — پہلے سے موجود chart کا optional retained check</h2>
+<p>یہ matrix میں DONE ہے؛ نیچے کا visual check regression روکنے کے لیے ہے، نیا feature یا reopened item نہیں۔</p>
+<ul>
+<li class="task todo">☐ Isolated copy میں Last 7 days کے مختلف دنوں کی Rs 160 / Rs 320 / Rs 480 sales کے bars تقریباً one-third / two-thirds / full ہوں۔</li>
+<li class="task todo">☐ Quiet days نظر آئیں اور exact money labels unchanged رہیں۔</li>
+<li class="task todo">☐ Manager کو profit نہ دکھے۔</li>
+</ul>
+<h2 id="137-t-10-f-46-d-93-pr">13.7 T-10 / F-46 / D-93 / PR کی تفصیل کہاں ہے</h2>
+<ul>
+<li><strong>Real Excel:</strong> PT-07 Section 9-B۔</li>
+<li><strong>Printer اور USB scanner:</strong> PT-07 Section 9-C۔</li>
+<li><strong>D-93 stock safeguards:</strong> PT-06 Section 8-D۔</li>
+<li><strong>PR linking/cancellation:</strong> PT-05 Section 7-B اور 7-C۔</li>
+</ul>
+<hr />
+<h1 id="14-feature-board-owner-action-rows">14 — Feature board کے پانچ owner-action rows</h1>
+<p><strong>Board:</strong> 52/57 done، 5 in progress، 0 not started۔ یہ پانچ rows صرف owner evidence کی وجہ سے partial ہیں؛ اس فائل میں ان کا راستہ یہ ہے:</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>کیوں ابھی partial</th>
+<th>کونسا evidence مکمل کرے گا</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>F-04 Audit black box</strong></td>
+<td>“Every module writes” کے لیے running physical evidence مکمل کرنا ہے۔</td>
+<td>PT-01 تا PT-10 کے Black-box checks + Z-05 reader walk-through۔</td>
+</tr>
+<tr>
+<td><strong>F-08 Products</strong></td>
+<td>Catalog/pack/search code کے باوجود genuine/physical proof چاہیے۔</td>
+<td>PT-02 + PT-03 + PT-10، tags/units/thumbnails اور no cast error۔</td>
+</tr>
+<tr>
+<td><strong>F-09 Purchases</strong></td>
+<td>ایک genuine intended-variant delivery کا detailed result چاہیے۔</td>
+<td>PT-03 PINV/conversion/batch/payable + PT-10 Purchase picker۔</td>
+</tr>
+<tr>
+<td><strong>F-10 Counter</strong></td>
+<td>Genuine bill اور pricing/completion/stock safeguards کا physical result چاہیے۔</td>
+<td>PT-04 + PRICE/SALE + D-93 isolated checks + POS reproduction اگر مسئلہ رہے۔</td>
+</tr>
+<tr>
+<td><strong>F-46 Printer &amp; scanner</strong></td>
+<td>Slip half confirmed؛ scan half اور saved record unconfirmed۔</td>
+<td>PT-07 چھ checks، USB scan -&gt; medicine، real bill اور <code>hardware_test</code> Black box۔</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>کسی row کو صرف اس لیے DONE نہ لکھیں کہ current automated suite green ہے۔ Owner confirmation آنے پر running log اور board الگ update ہوں گے۔</p>
+</blockquote>
+<hr />
+<h1 id="15">15 — مالک کے نتائج بھیجنے کے سانچے</h1>
+<h2 id="151-test">15.1 ہر test کے لیے مختصر جواب</h2>
+<pre><code class="language-text">تاریخ:
+Build/version:
+PT یا item ID:
+نتیجہ: PASS / PARTIAL / FAIL
+اصل books یا isolated test copy:
+کیا آزمایا:
+کیا توقع تھی:
+حقیقت میں کیا ہوا:
+باقی مسئلہ یا مطلوبہ تبدیلی:
+Screenshot / error / report file:
+</code></pre>
+<h2 id="152-automated-test-run">15.2 Automated test run کا الگ جواب</h2>
+<pre><code class="language-text">تاریخ اور build:
+Command: tools\RUN-TESTS.cmd
+Project(s):
+Total / passed / failed / skipped:
+Duration:
+Runner کی آخری ALL GREEN یا error line:
+کیا Area11.Desktop/WPF الگ build اور launch ہوا؟ ہاں / نہیں
+اگر ہاں تو version اور launch result:
+test.log / build.log / error:
+</code></pre>
+<h2 id="153-pt02-pos-01-reproduction-guessed-fix">15.3 PT02-POS-01 reproduction — guessed fix سے پہلے لازم</h2>
+<pre><code class="language-text">کونسے page سے شروع کیا: Products / Counter / دوسرا:
+Medicine کا نام اور product ID:
+اس کا stock / batch / unit:
+Select یا Add to cart سے پہلے کے exact steps:
+کونسا field blank یا — ہوا:
+پہلے کیا ہوتا تھا:
+اب کیا ہونا چاہیے:
+کیا مسئلہ ہر بار آتا ہے؟ ہاں / نہیں / کبھی کبھار
+Screenshot یا مختصر video:
+SEND-REPORT.cmd report / error:
+</code></pre>
+<h2 id="154-phase-sign-off">15.4 Phase sign-off — پرنٹ پر لکھنے کے لیے</h2>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>تاریخ</th>
+<th>PASS / PARTIAL / FAIL</th>
+<th>Owner initials / مختصر نوٹ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PT-01</td>
+<td>__________</td>
+<td>__________</td>
+<td>______________________________</td>
+</tr>
+<tr>
+<td>PT-02</td>
+<td>29 Oct 2026</td>
+<td>PASS — owner confirmed</td>
+<td>الگ items اپنی حالت پر</td>
+</tr>
+<tr>
+<td>PT-03</td>
+<td>__________</td>
+<td>PARTIAL — report pending</td>
+<td>______________________________</td>
+</tr>
+<tr>
+<td>PT-04</td>
+<td>__________</td>
+<td>__________</td>
+<td>______________________________</td>
+</tr>
+<tr>
+<td>PT-05</td>
+<td>__________</td>
+<td>__________</td>
+<td>______________________________</td>
+</tr>
+<tr>
+<td>PT-06</td>
+<td>__________</td>
+<td>__________</td>
+<td>______________________________</td>
+</tr>
+<tr>
+<td>PT-07</td>
+<td>__________</td>
+<td>__________</td>
+<td>______________________________</td>
+</tr>
+<tr>
+<td>PT-08</td>
+<td>__________</td>
+<td>__________</td>
+<td>______________________________</td>
+</tr>
+<tr>
+<td>PT-09</td>
+<td>__________</td>
+<td>__________</td>
+<td>______________________________</td>
+</tr>
+<tr>
+<td>PT-10</td>
+<td>__________</td>
+<td>__________</td>
+<td>Automated 900/900؛ physical الگ</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_8">حتمی بندش کا اصول</h2>
+<ul>
+<li>کسی PT کا overall PASS الگ logged feedback item کو silently close نہیں کرے گا۔</li>
+<li>Automated evidence، physical evidence اور owner decision الگ لکھے جائیں گے۔</li>
+<li>PT02-POS-01 exact reproduction کے بغیر fixed نہیں لکھا جائے گا۔</li>
+<li>Negative-stock retirement، REAL/double quantities، D-93 اور PR cancellation کے no-repayment/no-drawer-inflow rules نہیں بدلیں گے۔</li>
+<li>Phase 4+ یا کوئی نئی development صرف owner کی الگ منظوری پر شروع ہوگی۔</li>
+<li>تمام مطلوبہ phases اور separately logged items کا نتیجہ آنے کے بعد بھی حتمی completion owner کی واضح تصدیق سے لکھی جائے گی۔</li>
+</ul>
+<hr />
+<p><strong>اگلا مختصر قدم:</strong> PT-03 کا detailed result بھیجیں؛ اگر اس کے بجائے current Cobalt UI آزما رہے ہیں تو PT-10 کا پہلا launch خانہ اور pack/search checks بھریں۔ نتیجہ اوپر کے مختصر سانچے میں بھیج دیں۔</p>
+</body>
+</html>

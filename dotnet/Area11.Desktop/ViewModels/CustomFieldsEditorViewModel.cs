@@ -48,8 +48,6 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
 
     public RelayCommand SaveCommand { get; }
 
-    public string Title => "Own fields";
-
     public string Subtitle => "Questions the owner added for the " + EntityWord + " form.";
 
     /// <summary>True when the owner may fill the panel; a reader only sees what is already there.</summary>
@@ -239,9 +237,11 @@ public sealed class CustomInputRow
     /// <summary>The name the form shows; a required field carries a star so the person knows.</summary>
     public string Label => Field.Required ? Field.Label + " *" : Field.Label;
 
-    public string Hint => Field.IsPhoto
-        ? "Use the Photos… button on this page - the picture is the answer."
-        : Field.TypeLabel + (Field.Required ? " · required" : string.Empty);
+    public string Hint => !string.IsNullOrWhiteSpace(Field.HelpText)
+        ? Field.HelpText
+        : Field.IsPhoto
+            ? "Use the Photos… button on this page - the picture is the answer."
+            : Field.TypeLabel + (Field.Required ? " · required" : string.Empty);
 
     public bool IsText { get; }
 

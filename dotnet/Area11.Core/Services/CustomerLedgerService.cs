@@ -450,7 +450,8 @@ SELECT p.id AS id, p.date AS date, p.method AS method, p.amount_paisa AS amountP
        IFNULL(c.opening_balance_paisa, 0) AS openingPaisa, c.balance_paisa AS balancePaisa
 FROM payments p
 JOIN customers c ON c.id = p.customer_id
-WHERE p.id = @id AND p.sale_id IS NULL AND p.purchase_id IS NULL;", new { id = paymentId });
+WHERE p.id = @id AND p.sale_id IS NULL AND p.purchase_id IS NULL
+  AND p.provisional_return_id IS NULL;", new { id = paymentId });
 
             if (payment is null || payment.CustomerId <= 0)
             {
@@ -708,6 +709,7 @@ SELECT p.date AS date, 'collection' AS kind,
        'Money received' AS note, p.method AS method
 FROM payments p
 WHERE p.customer_id = @id AND p.sale_id IS NULL AND p.purchase_id IS NULL
+  AND p.provisional_return_id IS NULL
 ORDER BY p.date, p.id;", new { id = customerId });
 
         foreach (var collection in collections)

@@ -10,8 +10,8 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Margin="0,0,0,10">
-            <TextBlock Text="Excel / CSV" Style="{StaticResource PageTitle}" />
-            <TextBlock Text="Bring the old stock list and the khata in, take anything out, or change every price at once — nothing is written until you press the button."
+            <TextBlock Text="{DynamicResource AppLabel.importExport}" Style="{StaticResource PageTitle}" />
+            <TextBlock Text="Bring the old stock list and khata in, download real Excel workbooks, update rows with a before → after preview, or change prices — nothing is written until you press the button."
                        Style="{StaticResource PageSubtitle}" />
         </StackPanel>
 
@@ -127,7 +127,7 @@
                         <Border Style="{StaticResource Card}" Padding="16">
                             <StackPanel>
                                 <TextBlock Text="Take the lists out" Style="{StaticResource SectionTitle}" />
-                                <TextBlock Text="Each button writes a CSV file that opens in Excel with the names and the rupee amounts as they are on the screen. The photo folder is not included — photos travel in the backup zip."
+                                <TextBlock Text="Each button writes a real .xlsx workbook with the names and rupee amounts as they are on the screen. No package or Excel installation is needed. Photos are not included — they travel in the backup zip."
                                            Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
 
                                 <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
@@ -143,8 +143,8 @@
 
                         <Border Style="{StaticResource Card}" Padding="16">
                             <StackPanel>
-                                <TextBlock Text="How to make a CSV in Excel" Style="{StaticResource SectionTitle}" />
-                                <TextBlock Text="1. Open your old list in Excel.  2. File → Save As.  3. Choose the type “CSV UTF-8 (comma delimited)” — not the plain “CSV”.  4. Save, then come back to the Import tab.  If you press Save As and Excel warns that some features are lost, say yes: a CSV keeps the numbers and the names, which is all the import needs."
+                                <TextBlock Text="Workbook or CSV — both are accepted for new records" Style="{StaticResource SectionTitle}" />
+                                <TextBlock Text="Save a blank template to get Products, Customers, Suppliers and Instructions in one .xlsx file. Fill the matching sheet and choose it on the Import tab. An existing CSV UTF-8 still works too: open the old list in Excel, File → Save As → CSV UTF-8, then choose that file. Duplicate and opening-stock rules are identical for both formats."
                                            Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
                             </StackPanel>
                         </Border>
@@ -152,7 +152,102 @@
                 </ScrollViewer>
             </TabItem>
 
-            <!-- ============================== 3. PRICES ============================== -->
+            <!-- ============================== 3. BULK UPDATE ============================== -->
+            <TabItem Header="Bulk update">
+                <Grid Margin="0,10,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Style="{StaticResource Card}" Padding="16">
+                        <StackPanel>
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Left" Text="Download, edit, check, then apply"
+                                           Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <Button Content="Download your data" Style="{StaticResource GhostButton}"
+                                            Margin="0,0,8,0" Command="{Binding DownloadAllCommand}" />
+                                    <Button Content="Choose edited workbook…" Style="{StaticResource PrimaryButton}"
+                                            Command="{Binding ChooseBulkFileCommand}" />
+                                </StackPanel>
+                            </DockPanel>
+
+                            <TextBlock Margin="0,10,0,0" Style="{StaticResource FieldHint}" TextWrapping="Wrap"
+                                       Text="The workbook contains Products, Customers, Suppliers, Categories, Companies, Batches, Settings and Instructions — without photos. Empty cell = no change; type __CLEAR__ to clear an allowed value. Stock, balances, secrets and numbering counters stay protected." />
+                            <CheckBox Margin="0,10,0,0" IsChecked="{Binding IncludeSettings, Mode=TwoWay}"
+                                      Content="Include Settings changes (separate confirmation; JSON types are preserved)" />
+                            <TextBlock Text="{Binding BulkFileNameText}" Margin="0,10,0,0"
+                                       Foreground="{StaticResource TextBrush}" FontWeight="SemiBold" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="1" Style="{StaticResource Card}" Padding="0" Margin="0,10,0,0">
+                        <Grid>
+                            <ListBox ItemsSource="{Binding BulkRows}" BorderThickness="0" Background="Transparent"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <DockPanel Margin="4,5">
+                                            <Border DockPanel.Dock="Left" Width="64" CornerRadius="4"
+                                                    Padding="0,3" Margin="0,0,10,0" VerticalAlignment="Top">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="{StaticResource BrandSoftBrush}" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsSkipped}" Value="True">
+                                                                <Setter Property="Background" Value="{StaticResource WarningSoftBrush}" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsError}" Value="True">
+                                                                <Setter Property="Background" Value="{StaticResource DangerSoftBrush}" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <TextBlock Text="{Binding StateLabel}" FontSize="10" FontWeight="SemiBold"
+                                                           HorizontalAlignment="Center">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="{StaticResource BrandDarkBrush}" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsSkipped}" Value="True">
+                                                                    <Setter Property="Foreground" Value="{StaticResource WarningBrush}" />
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding IsError}" Value="True">
+                                                                    <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Border>
+                                            <TextBlock Text="{Binding Caption}" FontSize="11.5" TextWrapping="Wrap"
+                                                       Foreground="{StaticResource TextBrush}" />
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+
+                            <TextBlock Text="{Binding BulkSummary}" Style="{StaticResource FieldHint}"
+                                       TextWrapping="Wrap" MaxWidth="520" Margin="24"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Visibility="{Binding HasNoBulkPreview, Converter={StaticResource BoolToVis}}" />
+                        </Grid>
+                    </Border>
+
+                    <DockPanel Grid.Row="2" Margin="0,10,0,0">
+                        <Button DockPanel.Dock="Right" Content="Apply these changes" Style="{StaticResource PrimaryButton}"
+                                Command="{Binding ApplyBulkCommand}" IsEnabled="{Binding CanApplyBulk}" />
+                        <Button DockPanel.Dock="Right" Content="Clear" Style="{StaticResource GhostButton}"
+                                Margin="0,0,8,0" Command="{Binding ClearBulkCommand}" />
+                        <TextBlock Text="{Binding BulkSummary}" Style="{StaticResource FieldHint}"
+                                   VerticalAlignment="Center" TextWrapping="Wrap" />
+                    </DockPanel>
+                </Grid>
+            </TabItem>
+
+            <!-- ============================== 4. PRICES ============================== -->
             <TabItem Header="Prices">
                 <Grid Margin="0,10,0,0">
                     <Grid.RowDefinitions>

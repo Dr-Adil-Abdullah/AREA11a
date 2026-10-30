@@ -34,7 +34,6 @@ public sealed class ExpenseService
 
     private readonly Database _db;
     private readonly AuditService _audit;
-    private readonly SettingsService _settings;
     private readonly PermissionService _permissions;
     private readonly LogService _log;
 
@@ -43,7 +42,6 @@ public sealed class ExpenseService
     {
         _db = db;
         _audit = audit;
-        _settings = settings;
         _permissions = permissions;
         _log = log;
     }
@@ -211,7 +209,7 @@ VALUES(@at, 'cash', @amount, @note, @userId, @at);",
 
     /// <summary>
     /// Medicine taken by the owner: stock leaves the chosen batch, valued at **cost**, and no money
-    /// moves. Negative stock is allowed with a warning, exactly like a write-off (U-30).
+    /// moves. D-93 refuses a quantity that would take the batch or product below zero.
     /// </summary>
     private ServiceResult<DrawingResult> AddGoodsDrawing(User user, DrawingInput input)
     {
@@ -275,36 +273,20 @@ ORDER BY (expiry_date IS NULL OR expiry_date = '') ASC, expiry_date ASC, id ASC 
         var perUnit = Packs.PerUnit(product.BoxStrips, product.StripTablets, input.Unit);
         var qtyBase = Calc.ToBase(input.QtyEntered, perUnit);
 
-        if (qtyBase <= 0)
+        if (!double.IsFinite(qtyBase) || qtyBase <= 0)
         {
-            throw new ValidationException("The quantity must be more than zero.");
+            throw new ValidationException("The quantity must be a real number more than zero.");
         }
 
         var costPaisa = batch.CostPaisa > 0 ? batch.CostPaisa : product.CostPaisa;
         var valuePaisa = Calc.Round(qtyBase * costPaisa);
-        var stockAfter = batch.QtyBase - qtyBase;
-        var warnings = new List<string>();
-
-        if (stockAfter < -0.0005)
-        {
-            if (!_settings.GetBool("stock.allowNegative", true))
-            {
-                throw new ValidationException(
-                    product.Name + ": only " + Qty.Format(batch.QtyBase) + " " + product.BaseUnit
-                    + " in batch " + batch.BatchNo + ". Negative stock is switched off in Settings.");
-            }
-
-            warnings.Add(product.Name + ": stock MINUS (" + Qty.Format(stockAfter) + " " + product.BaseUnit
-                + ") after this drawing.");
-        }
-
         var stamp = Clock.Now();
         var note = Qty.Format(input.QtyEntered) + " " + (input.Unit ?? product.BaseUnit) + " "
                    + product.Name + " (" + batch.BatchNo + ")"
                    + (string.IsNullOrWhiteSpace(input.Note) ? string.Empty : " - " + input.Note!.Trim());
 
-        _db.Execute(connection, "UPDATE batches SET qty_base = qty_base - @qty WHERE id = @id;",
-            new { qty = qtyBase, id = batch.Id });
+        var stockAfter = StockPolicy.Decrease(_db, connection, product.Id, batch.Id, qtyBase,
+            product.Name, product.BaseUnit, "take as a goods drawing");
 
         _db.Execute(connection, @"
 INSERT INTO stock_movements(product_id, batch_id, type, qty_base, ref_type, ref_code, note, user_id, created_at)
@@ -343,8 +325,6 @@ VALUES(@at, 'goods', @value, @note, @userId, @at);",
             QtyBase = qtyBase,
             StockAfterBase = stockAfter
         };
-
-        saved.Warnings.AddRange(warnings);
 
         return ServiceResult<DrawingResult>.Success(saved);
     }
