@@ -148,9 +148,10 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >   extra barcodes remain. No migration or replacement variant model was added. Phase-2 field governance and
 >   Phase-1 shell remain; Phase 4 and later phases are not authorized by this work.
 > * **Verification boundary:** all **55/55 static checks** pass with real C# grammar and XAML binding checks;
->   the actual search SQL also passed a targeted 7/7 SQLite development probe. The owner built Cobalt on
+>   the actual search SQL also passed a targeted 7/7 SQLite development probe. The owner ran Cobalt's `Area11.Core` / `Area11.Tests` suite on
 >   Windows and reported **Failed 0, Passed 900, Skipped 0, Total 900 in 1 m 4 s**, with
->   **`ALL GREEN - 900 of 900`**. PT-10 in `PHYSICAL-TESTING.md` remains: do not call the new packaging
+>   **`ALL GREEN - 900 of 900`**. The supplied log does not separately prove Desktop/WPF build or launch.
+>   PT-10 in `PHYSICAL-TESTING.md` remains: do not call the new packaging
 >   workflow physically tested yet.
 > * **Previous Windows xUnit proof:** Zircon v0.36.0 reported Failed 0, Passed 883, Skipped 0, Total 883
 >   in **1 m 10 s** on 29 October 2026. This is previous-release evidence, not a substitute for Cobalt or

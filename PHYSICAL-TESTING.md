@@ -2,6 +2,8 @@
 
 یہ مالک کی عملی ٹیسٹنگ، تجاویز اور درخواست کردہ تبدیلیوں کی مستقل فائل ہے۔ ہر نتیجہ اور نئی بات اسی فائل میں شامل ہوگی تاکہ testing کے اختتام پر کوئی نکتہ نہ بھولے۔
 
+**مالک کا consolidated printable tracker:** [PDF](docs/AREA11-TESTING-TRACKER-URDU.pdf) · [RTL HTML](docs/AREA11-TESTING-TRACKER-URDU.html) · [editable Markdown](docs/AREA11-TESTING-TRACKER-URDU.md)۔ وہ snapshot PT-01 تا PT-10 اور manual instructions کے لیے ہے؛ running feedback کا ماخذ یہی فائل رہے گی۔
+
 ## کام کا اصول
 
 - Testing کے دوران پہلے واقعہ، توقع، حقیقی نتیجہ اور مطلوبہ تبدیلی **record** ہوگی۔
@@ -13,8 +15,8 @@
 
 ## موجودہ build اور automated ثبوت
 
-- Build: **v0.38.0 Cobalt `#315C8C`** (پہلا Phase-3 packaging/variant/search slice؛ مالک کے Windows build/xUnit کی تصدیق مل گئی، PT-10 physical verification ابھی باقی ہے)
-- Latest owner xUnit: **900 passed / 0 failed / 0 skipped / 900 total — ALL GREEN**، **Cobalt v0.38.0**، 29 اکتوبر 2026، مدت **1 منٹ 4 سیکنڈ**۔ Runner نے **`ALL GREEN - 900 of 900 cases passed, failed: 0`** دیا۔ یہ current Cobalt کا Windows build/xUnit ثبوت ہے؛ PT-10 WPF/genuine physical evidence نہیں۔
+- Build: **v0.38.0 Cobalt `#315C8C`** (پہلا Phase-3 packaging/variant/search slice؛ مالک کے Windows پر Core/Tests xUnit کی تصدیق مل گئی، Desktop/WPF launch اور PT-10 physical verification ابھی باقی ہے)
+- Latest owner xUnit: **900 passed / 0 failed / 0 skipped / 900 total — ALL GREEN**، **Cobalt v0.38.0**، 29 اکتوبر 2026، مدت **1 منٹ 4 سیکنڈ**۔ Runner نے **`ALL GREEN - 900 of 900 cases passed, failed: 0`** دیا۔ یہ current Cobalt کے `Area11.Core` / `Area11.Tests` Windows xUnit ثبوت ہے؛ `Area11.Desktop` / WPF build یا launch اور PT-10 WPF/genuine physical evidence نہیں۔
 - Previous owner xUnit: **883 passed / 0 failed / 0 skipped / 883 total — ALL GREEN**، **Zircon v0.36.0**، 29 اکتوبر 2026، مدت **1 منٹ 10 سیکنڈ**۔ یہ previous-release evidence ہے۔
 - موجودہ source: **900 written cases in 70 files**؛ **55/55 static checks PASS** (real C# grammar سمیت)۔ Latest gate: **291 C# files / 1,457 XAML bindings / 29 migrations / 37 business tables / 834 prepared SQL statements / 123 settings keys**۔ Phase-3 check pack editor، shared Products/Counter/Purchase search، extra barcodes اور variant picker کی حفاظت کرتا ہے؛ actual search SQL کا targeted **7/7 SQLite development probe** بھی کامیاب ہے۔ **Cobalt Windows xUnit مکمل ہے؛ PT-10 physical walk-through باقی ہے**؛ Aurora PT-09 اور Zircon PT-08 الگ evidence ہیں۔
 - Windows build report میں `AlertKindTests.cs(121,19)` کا `productId` scope compile error ملا؛ وہ `aedb65d` میں ٹھیک push ہو چکا ہے۔ بعد کا build xUnit تک پہنچا؛ حتمی 883/883 نتیجہ نیچے محفوظ ہے۔
@@ -147,7 +149,7 @@ Screenshots / error / test.log:
 
 ## مالک کی physical checklist
 
-1. **Build اور suite — 29 اکتوبر کو owner-verified:** `START-AREA11.bat` اور `tools\\RUN-TESTS.cmd` سے **v0.38.0 · Cobalt** پر **900 total / 0 failed / 0 skipped**، مدت **1 منٹ 4 سیکنڈ** اور **`ALL GREEN - 900 of 900`** موصول ہوا۔ یہ automated قدم مکمل ہے؛ اسے PT-10 کا WPF physical PASS نہ سمجھیں۔
+1. **Automated suite — 29 اکتوبر کو owner-verified:** `tools\\RUN-TESTS.cmd` سے **v0.38.0 · Cobalt** کے `Area11.Core` / `Area11.Tests` میں **900 total / 0 failed / 0 skipped**، مدت **1 منٹ 4 سیکنڈ** اور **`ALL GREEN - 900 of 900`** موصول ہوا۔ supplied log `Area11.Desktop` / WPF build یا `START-AREA11.bat` launch الگ ثابت نہیں کرتا؛ اسے PT-10 کا WPF physical PASS بھی نہ سمجھیں۔
 2. **محفوظ data boundary:** اصل books میں صرف genuine medicines/delivery استعمال کریں۔ Invalid-input، controlled stock conversion یا کوئی risky financial side-effect check الگ test copy میں کریں؛ پہلے backup لیں۔
 3. **دو الگ variants بنائیں:** isolated copy میں ایک ہی نام کی دو medicines بنائیں، مثلاً strength `5 ml` + pack `50 mL bottle` اور strength `10 ml` + pack `100 mL bottle`۔ Base unit `injection` رکھیں۔ Save کے بعد دونوں کی الگ product rows/IDs رہیں؛ کوئی merge یا نیا stock unit نہ بنے۔
 4. **Editor persistence:** پہلی product بند کر کے دوبارہ کھولیں۔ Pack size / variant label اور Products grid کا **Pack / variant** column درست دکھے۔ New product کھولنے پر پرانا label خود copy نہ ہو۔

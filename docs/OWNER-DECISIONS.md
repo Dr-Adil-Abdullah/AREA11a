@@ -3,7 +3,7 @@
 > **یہ فائل کیا ہے؟** مالک (ڈاکٹر عادل عبداللہ) کی ہر ہدایت، فیصلہ اور ترجیح یہاں نمبر کے ساتھ محفوظ ہوتی ہے۔
 > کوئی بات زبانی نہیں رہتی۔ نئی ہدایت = نیا نمبر۔ پرانی ہدایت کوئی ایجنٹ خاموشی سے نہیں بدل سکتا۔
 >
-> **آخری اپ ڈیٹ:** 29 اکتوبر 2026 · **ورژن:** v0.38.0 Cobalt `#315C8C` — D-98 کے پہلے Phase-3 packaging/variant/search slice کے ساتھ **900 written cases in 70 files** اور **55 static checks** ہیں۔ مالک کے Windows پر Cobalt **900/900، 0 failed/skipped، 1 منٹ 4 سیکنڈ** اور **`ALL GREEN - 900 of 900`** verify ہوا؛ PT-10 WPF/genuine physical walk-through ابھی باقی ہے۔ Zircon 883/883 previous-release evidence اور Aurora PT-09 الگ ثبوت ہیں۔ Existing pack label، shared search اور variant-aware Purchase picker شامل ہیں؛ کوئی نیا variant/stock model یا migration نہیں۔ D-93 stock اور PR cancellation قواعد برقرار ہیں؛ Phase 4 کی اجازت نہیں۔ Real Excel اور cloud verification بھی الگ باقی ہیں۔
+> **آخری اپ ڈیٹ:** 29 اکتوبر 2026 · **ورژن:** v0.38.0 Cobalt `#315C8C` — D-98 کے پہلے Phase-3 packaging/variant/search slice کے ساتھ **900 written cases in 70 files** اور **55 static checks** ہیں۔ مالک کے Windows پر Cobalt کے Core/Tests میں **900/900، 0 failed/skipped، 1 منٹ 4 سیکنڈ** اور **`ALL GREEN - 900 of 900`** verify ہوا؛ PT-10 WPF/genuine physical walk-through ابھی باقی ہے۔ Zircon 883/883 previous-release evidence اور Aurora PT-09 الگ ثبوت ہیں۔ Existing pack label، shared search اور variant-aware Purchase picker شامل ہیں؛ کوئی نیا variant/stock model یا migration نہیں۔ D-93 stock اور PR cancellation قواعد برقرار ہیں؛ Phase 4 کی اجازت نہیں۔ Real Excel اور cloud verification بھی الگ باقی ہیں۔
 > **سند (Authority):** `AREA11-MASTER-SPEC.md` (37 حصے + Appendix A) — اور جہاں مالک نے بعد میں کوئی نیا حکم دیا، وہی چلے گا (Spec §1.2.2)۔
 
 ---
@@ -1015,13 +1015,13 @@ rules → Loyalty points** سے خود آن کرتا ہے، اور وہیں تی
 4. Box/strip/base conversion، pack-specific barcode rules، batches، quantities، prices، payments، documents،
    historical rows، financial rules اور Phase-2 custom-field governance نہیں بدلیں گے۔ اس slice میں کوئی migration
    یا replacement variant table نہیں۔
-5. **Phase 4 histories/profit اور بعد کے phases اس اجازت میں شامل نہیں۔** Cobalt کا Windows build اور
-   **`ALL GREEN - 900 of 900`** 29 اکتوبر کو مل چکا؛ `PHYSICAL-TESTING.md` کا PT-10 genuine walk-through الگ باقی ہے۔
+5. **Phase 4 histories/profit اور بعد کے phases اس اجازت میں شامل نہیں۔** Cobalt کے Core/Tests کا
+   **`ALL GREEN - 900 of 900`** 29 اکتوبر کو مل چکا؛ Desktop/WPF build/launch اور `PHYSICAL-TESTING.md` کا PT-10 genuine walk-through الگ باقی ہے۔
 
 **نفاذ اور evidence boundary:** v0.38.0 Cobalt میں 8 نئے focused regressions کے ساتھ inventory **900 cases in 70
 files**، local static gate **55/55** اور actual ProductService search SQL کا targeted **7/7 SQLite development probe**
 ہے۔ بعد میں مالک کے Windows output نے **900 passed / 0 failed / 0 skipped / 900 total، 1 منٹ 4 سیکنڈ** اور
-**`ALL GREEN - 900 of 900`** ثابت کیا۔ یہ Cobalt کا Windows build/xUnit PASS ہے، PT-10 WPF/genuine physical PASS نہیں۔
+**`ALL GREEN - 900 of 900`** ثابت کیا۔ یہ Cobalt کے `Area11.Core` / `Area11.Tests` کا Windows xUnit PASS ہے؛ supplied log `Area11.Desktop` / WPF build یا launch ثابت نہیں کرتا، اور PT-10 WPF/genuine physical PASS بھی نہیں۔
 Zircon 883/883 اور Aurora کے سابقہ records الگ محفوظ ہیں۔
 
 ### D-97 — **Zircon automated verification اور Phase 2 field governance/schema کی اجازت** (29 اکتوبر 2026)

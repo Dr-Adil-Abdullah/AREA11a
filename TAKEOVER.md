@@ -10,7 +10,7 @@
 **Status:** v0.38.0 · Cobalt · `#315C8C` — **default branch `main`**; this Phase-3 packaging/search release is on the current
 working branch `arena/60395e95-area11a` until its pull request is merged.
 
-*Last updated: 29 October 2026. D-98's first Phase-3 packaging/variant/search slice is implemented and Windows-verified. The current tree has **900 written cases and 55 green static checks**; the owner verified **900/900 Windows xUnit cases on Cobalt v0.38.0** with 0 failed/skipped in **1 m 4 s**. PT-10 WPF/genuine physical evidence is pending; Aurora PT-09 remains separate. The feature board remains 52 done / 5 owner-action rows and the matrix has four partial rules. Real Excel, physical-restore and optional real-cloud evidence remain separate.*
+*Last updated: 29 October 2026. D-98's first Phase-3 packaging/variant/search slice is implemented and its Core/Tests suite is Windows-verified. The current tree has **900 written cases and 55 green static checks**; the owner verified **900/900 Windows xUnit cases on Cobalt v0.38.0** with 0 failed/skipped in **1 m 4 s**. PT-10 WPF/genuine physical evidence is pending; Aurora PT-09 remains separate. The feature board remains 52 done / 5 owner-action rows and the matrix has four partial rules. Real Excel, physical-restore and optional real-cloud evidence remain separate.*
 
 ---
 
@@ -57,7 +57,7 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 
 ## 3. Where it stands right now (read this twice)
 
-**Current source: v0.38.0 "Cobalt" contains the first D-98 Phase-3 packaging/variant/search slice and 900 written cases in 70 files. The existing `pack_size_label` is editable and visible; Products, Counter and Purchase can discover it, and Purchase shows strength/pack text so equal-named variants remain distinct product IDs. `PackagingPolicy` and ProductService preserve exact/fuzzy boundaries and existing extra barcodes. No new variant/stock model or migration was added; base units, conversions, rates, payments and historical documents remain unchanged. Phase-2 field governance and Phase-1 shell remain. All 55 static checks pass locally, and the actual search SQL passed a 7/7 SQLite development probe. The owner built Cobalt on Windows and verified **900/900 xUnit cases in 1 m 4 s**; PT-10 WPF/genuine physical walk-through is still required. Phase 4 and later phases are not authorized. T-10, Z-05, E-12 and S-05 remain partial, the five owner-action feature rows remain open, and PT02-POS-01 still needs exact reproduction.**
+**Current source: v0.38.0 "Cobalt" contains the first D-98 Phase-3 packaging/variant/search slice and 900 written cases in 70 files. The existing `pack_size_label` is editable and visible; Products, Counter and Purchase can discover it, and Purchase shows strength/pack text so equal-named variants remain distinct product IDs. `PackagingPolicy` and ProductService preserve exact/fuzzy boundaries and existing extra barcodes. No new variant/stock model or migration was added; base units, conversions, rates, payments and historical documents remain unchanged. Phase-2 field governance and Phase-1 shell remain. All 55 static checks pass locally, and the actual search SQL passed a 7/7 SQLite development probe. The owner ran Cobalt's Core/Tests suite on Windows and verified **900/900 xUnit cases in 1 m 4 s**; the log does not separately prove Desktop/WPF build or launch; PT-10 WPF/genuine physical walk-through is still required. Phase 4 and later phases are not authorized. T-10, Z-05, E-12 and S-05 remain partial, the five owner-action feature rows remain open, and PT02-POS-01 still needs exact reproduction.**
 
 | | |
 |---|---|
@@ -82,9 +82,9 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
   **Failed: 0, Passed: 772, Total: 772 in 56 s — ALL GREEN**. This proves the numbering, session and
   Shift repairs together; it is not a claim that the Desktop installer or every page was exercised.
 
-* On **v0.38.0 Cobalt** his Windows build reported **Failed 0, Passed 900, Skipped 0,
-  Total 900 in 1 m 4 s — `ALL GREEN - 900 of 900`**. This is the latest full xUnit proof; it does not
-  by itself prove the PT-10 packaging/search walk-through, real Excel or real Supabase.
+* On **v0.38.0 Cobalt** his Core/Tests xUnit run reported **Failed 0, Passed 900, Skipped 0,
+  Total 900 in 1 m 4 s — `ALL GREEN - 900 of 900`**. This is the latest Core/Tests xUnit proof; it does
+  not separately prove an `Area11.Desktop`/WPF build or launcher run, PT-10, real Excel or real Supabase.
 * On **v0.36.0 Zircon** he previously reported **Failed 0, Passed 883, Skipped 0,
   Total 883 in 1 m 10 s — ALL GREEN**. Spruce `94723e5` (883/883 in 1 m 19 s) and Obsidian (860/860)
   remain earlier historical evidence.
@@ -102,9 +102,9 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 * **No replacement variant model:** equal-named variants remain separate product rows and IDs. No migration,
   batch/payment/document rewrite, new stock unit, pack-formula change or Phase-4 history/profit work exists.
 * **Evidence:** 55/55 static checks, 900 written cases in 70 files including 8 focused regressions, and a
-  targeted 7/7 SQLite execution of the actual search SQL. The owner has now built Cobalt and reported
-  **`ALL GREEN - 900 of 900`** in **1 m 4 s**, with zero failed/skipped. PT-10 WPF/genuine physical
-  verification remains pending; Zircon/Aurora evidence is not backfilled.
+  targeted 7/7 SQLite execution of the actual search SQL. The owner has now run Cobalt's Core/Tests suite and reported
+  **`ALL GREEN - 900 of 900`** in **1 m 4 s**, with zero failed/skipped. The supplied log does not separately prove
+  Desktop/WPF build or launch. PT-10 WPF/genuine physical verification remains pending; Zircon/Aurora evidence is not backfilled.
 
 ### What v0.37.0 changes — D-97 Phase-2 field governance/schema
 
@@ -484,7 +484,7 @@ needs a fresh report from that version. The Desktop installer still needs its ow
 ## 4. What is left — exactly
 
 **Immediate authorized task:** complete **PT-10** for the first Phase-3 packaging/variant/search slice.
-Cobalt's Windows build and **`ALL GREEN - 900 of 900`** result are already owner-verified in 1 m 4 s.
+Cobalt's Core/Tests **`ALL GREEN - 900 of 900`** result is already owner-verified in 1 m 4 s; Desktop/WPF build and launch remain separate evidence.
 Retain PT-09/PT-08 as separate evidence; do not start Phase 4 or infer a WPF pass from static/xUnit checks. The five existing 🟡 feature rows below remain
 separate owner-action evidence; their counts are not changed by this redesign.
 
