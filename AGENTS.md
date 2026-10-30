@@ -140,22 +140,28 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.38.0 (Cobalt `#315C8C`) - first Phase-3 packaging/variant/search slice; 900 written cases in 70 files and 55 static checks.**
+> **v0.38.1 (Malachite `#0B6E4F`) - PT01-BK-02/BK-03 backup/recovery fault hardening; 904 written cases in 70 files and 56 static checks.**
 >
-> * **Current Phase-3 source:** D-98 authorizes the phase. Its first slice reuses `pack_size_label` in the
+> * **Current backup-safety source:** staged restore keeps the live database and its SQLite sidecars
+>   untouched unless the same-volume replacement succeeds. Four public-service facts cover A/B/C and
+>   B recovery, damaged input, photo-copy rollback and a real Windows file-sharing lock. The full
+>   database+photos safety zip and automatic rollback remain. Malachite's Windows suite and the owner's
+>   isolated locked/disk-full/A/B/C checks are still pending; no disk-full or physical recovery is inferred.
+> * **Retained Phase-3 source:** D-98 authorizes the phase. Its first slice reuses `pack_size_label` in the
 >   product editor and Products/Counter/Purchase search; Purchase distinguishes variants with strength/pack
 >   text. `PackagingPolicy` shares exact matching, and existing IDs, base-unit stock, conversion, prices and
 >   extra barcodes remain. No migration or replacement variant model was added. Phase-2 field governance and
 >   Phase-1 shell remain; Phase 4 and later phases are not authorized by this work.
-> * **Verification boundary:** all **55/55 static checks** pass with real C# grammar and XAML binding checks;
->   the actual search SQL also passed a targeted 7/7 SQLite development probe. The owner ran Cobalt's `Area11.Core` / `Area11.Tests` suite on
->   Windows and reported **Failed 0, Passed 900, Skipped 0, Total 900 in 1 m 4 s**, with
->   **`ALL GREEN - 900 of 900`**. The supplied log does not separately prove Desktop/WPF build or launch.
->   PT-10 in `PHYSICAL-TESTING.md` remains: do not call the new packaging
->   workflow physically tested yet.
+> * **Verification boundary:** all **56/56 static checks** pass with real C# grammar and XAML binding checks.
+>   Malachite has **904 written cases**, but no local .NET/WPF runtime exists and its Windows build/xUnit run
+>   is pending. The owner previously ran Cobalt's `Area11.Core` / `Area11.Tests` suite and reported
+>   **Failed 0, Passed 900, Skipped 0, Total 900 in 1 m 4 s**, with **`ALL GREEN - 900 of 900`**;
+>   that is previous-release evidence, not a Malachite result or separate Desktop/WPF proof. The actual
+>   Phase-3 search SQL also passed a targeted 7/7 SQLite development probe. PT-01 isolated recovery/fault
+>   checks and PT-10 in `PHYSICAL-TESTING.md` remain: do not call either workflow physically tested yet.
 > * **Previous Windows xUnit proof:** Zircon v0.36.0 reported Failed 0, Passed 883, Skipped 0, Total 883
->   in **1 m 10 s** on 29 October 2026. This is previous-release evidence, not a substitute for Cobalt or
->   any WPF/genuine physical workflow.
+>   in **1 m 10 s** on 29 October 2026. This is previous-release evidence, not a substitute for Cobalt,
+>   Malachite or any WPF/genuine physical workflow.
 >
 > * **The correct Obsidian commit `cb2e321` passed on the owner's Windows PC:** Failed 0, Passed 860,
 >   Skipped 0, Total 860, in 1 m 17 s. The banner was v0.35.18 and the runner printed
@@ -171,8 +177,9 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >
 > * **Earlier verification is not backfilled.** Paprika really reported **837 passed / 14 failed / 851
 >   total**, and Quasar's 853-case target was not executed. Cypress 789/789 is now an earlier green
->   run, not the latest. The current **900-case** Cobalt suite is now owner-verified on Windows; PT-10
->   remains separate. Do not start Phase 4 or another feature stage unless the owner writes `next`.
+>   run, not the latest. Cobalt's **900-case** suite is owner-verified on Windows; the current Malachite
+>   **904-case** suite still needs its own run, and PT-01/PT-10 remain separate. Do not start Phase 4 or
+>   another feature stage unless the owner writes `next`.
 >
 > * **Physical testing and authorized repairs are in progress.** PT-01 passed; PT-02 is **PASS — owner
 >   confirmed 29 October**, with product saves and Black-box entries confirmed. All findings, owner
@@ -184,8 +191,8 @@ tests through the public service methods and a real bill in `TestDatabase`.
 >   `aedb65d` fixes the owner's reported AlertKindTests compile error. Prove the new
 >   catalog/unit/navigation/photo workflows with genuine transactions and keep each physical verification
 >   separate. The POS blank/dashes report still needs exact reproduction evidence. **next** still means
->   the next test portion. Aurora's 892-case/54-check and Zircon's 883-case/53-check inventories are
->   historical release evidence, not the current Cobalt inventory.
+>   the next test portion. Cobalt's 900-case/55-check, Aurora's 892-case/54-check and Zircon's
+>   883-case/53-check inventories are historical release evidence, not the current Malachite inventory.
 >
 > * **v0.35.5 repairs one policy mismatch and two stale test fixtures.** The owner's v0.35.4 run proved
 >   the correct tree (**769 passed, 3 failed, 772 total**). A sign-in ahead of the PC clock now keeps

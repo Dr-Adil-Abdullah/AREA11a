@@ -7,10 +7,9 @@
 > اِس فائل میں یہ سب ہے: پروگرام کیا ہے، ابھی کہاں کھڑا ہے، **کیا باقی ہے**، کیا **کبھی نہیں** کرنا،
 > اور ایک نیا ورژن کیسے نکالنا ہے۔ آپ کے لیے چھوٹی اردو فائل: [`docs/HANDOVER-FOR-OWNER-URDU.md`](docs/HANDOVER-FOR-OWNER-URDU.md)۔
 
-**Status:** v0.38.0 · Cobalt · `#315C8C` — **default branch `main`**; this Phase-3 packaging/search release is on the current
-working branch `arena/60395e95-area11a` until its pull request is merged.
+**Status:** v0.38.1 · Malachite · `#0B6E4F` — **default branch `main`**; this backup-safety release on the retained Phase-3 source is on the current working branch `arena/60395e95-area11a` until its pull request is merged.
 
-*Last updated: 29 October 2026. D-98's first Phase-3 packaging/variant/search slice is implemented and its Core/Tests suite is Windows-verified. The current tree has **900 written cases and 55 green static checks**; the owner verified **900/900 Windows xUnit cases on Cobalt v0.38.0** with 0 failed/skipped in **1 m 4 s**. PT-10 WPF/genuine physical evidence is pending; Aurora PT-09 remains separate. The feature board remains 52 done / 5 owner-action rows and the matrix has four partial rules. Real Excel, physical-restore and optional real-cloud evidence remain separate.*
+*Last updated: 30 October 2026. Malachite hardens PT01-BK-02/BK-03 staged restore failure behavior and adds four public-service regressions. The current tree has **904 written cases and 56 green static checks**; it has not been compiled or run here. The owner's **Cobalt v0.38.0 900/900 Windows xUnit** result with 0 failed/skipped in **1 m 4 s** is previous-release evidence. Malachite Windows/xUnit, isolated physical-restore/fault and PT-10 WPF/genuine evidence are pending; Aurora PT-09 remains separate. The feature board remains 52 done / 5 owner-action rows and the matrix has four partial rules. Real Excel and optional real-cloud evidence remain separate.*
 
 ---
 
@@ -57,13 +56,13 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 
 ## 3. Where it stands right now (read this twice)
 
-**Current source: v0.38.0 "Cobalt" contains the first D-98 Phase-3 packaging/variant/search slice and 900 written cases in 70 files. The existing `pack_size_label` is editable and visible; Products, Counter and Purchase can discover it, and Purchase shows strength/pack text so equal-named variants remain distinct product IDs. `PackagingPolicy` and ProductService preserve exact/fuzzy boundaries and existing extra barcodes. No new variant/stock model or migration was added; base units, conversions, rates, payments and historical documents remain unchanged. Phase-2 field governance and Phase-1 shell remain. All 55 static checks pass locally, and the actual search SQL passed a 7/7 SQLite development probe. The owner ran Cobalt's Core/Tests suite on Windows and verified **900/900 xUnit cases in 1 m 4 s**; the log does not separately prove Desktop/WPF build or launch; PT-10 WPF/genuine physical walk-through is still required. Phase 4 and later phases are not authorized. T-10, Z-05, E-12 and S-05 remain partial, the five owner-action feature rows remain open, and PT02-POS-01 still needs exact reproduction.**
+**Current source: v0.38.1 "Malachite" contains PT01-BK-02/BK-03 backup/recovery hardening and 904 written cases in 70 files. A failed staged database replacement no longer deletes the live database's SQLite sidecars; the full database+photos recovery zip and automatic rollback remain. Four public-service facts cover A/B/C/new-backup/B-recovery with photos, damaged-zip refusal, photo-copy rollback and a real Windows locked destination. Cobalt's D-98 pack/variant editing/search, Phase-2 field governance and Phase-1 shell remain; no variant/stock model, migration, base-unit conversion, rate, payment, historical document or Phase-4 rule changed. All 56 static checks pass locally, but Malachite has not been compiled or run here. The owner's Cobalt **900/900 xUnit in 1 m 4 s** is previous-release evidence. Require `ALL GREEN - 904 of 904`, then isolated PT-01 recovery/fault and PT-10 WPF/genuine walk-throughs. T-10, Z-05, E-12 and S-05 remain partial, the five owner-action feature rows remain open, and PT02-POS-01 still needs exact reproduction.**
 
 | | |
 |---|---|
-| Test cases written | **900** in 70 files (`tools\\RUN-TESTS.cmd` compares the run against `EXPECTED=900`) |
-| Static checks | **55**, all green: `OK - 55 checks, no problems` |
-| Latest Windows xUnit | **Cobalt 900/900**, 0 failed/skipped, **1 m 4 s**, owner-verified 29 Oct 2026 |
+| Test cases written | **904** in 70 files (`tools\\RUN-TESTS.cmd` compares the run against `EXPECTED=904`) |
+| Static checks | **56**, all green: `OK - 56 checks, no problems` |
+| Latest owner Windows xUnit (previous release) | **Cobalt 900/900**, 0 failed/skipped, **1 m 4 s**, owner-verified 29 Oct 2026; Malachite 904-case run pending |
 | Owner's numbered rules | **116 - 92 ✅ done, 4 🟡 partial, 0 ⬜, 20 standing** - see §4 |
 | Feature board | **57 features — 52 ✅ done, 5 🟡 one shop action each, 0 ⬜ not started** (91.2 % / 8.8 %) |
 | Code size | 291 C# files + 40 XAML files; 54 Core service/policy files, 38 views |
@@ -88,6 +87,21 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 * On **v0.36.0 Zircon** he previously reported **Failed 0, Passed 883, Skipped 0,
   Total 883 in 1 m 10 s — ALL GREEN**. Spruce `94723e5` (883/883 in 1 m 19 s) and Obsidian (860/860)
   remain earlier historical evidence.
+
+### What v0.38.1 changes — PT01-BK-02/BK-03 backup/recovery fault hardening
+
+* `BackupService.ReplaceDatabase` now removes old `-wal`, `-shm` and `-journal` companions only after the
+  same-volume move succeeds. A failed copy or locked destination therefore leaves the current SQLite
+  family intact instead of deleting sidecars while reporting that nothing was replaced.
+* The existing full database+photos pre-restore recovery zip, staged photo validation, automatic rollback,
+  newer-work warning and restart summary are retained; no backup destination or financial rule was redesigned.
+* Four public-service facts cover A/B/C and a fresh C backup, B recovery and photos; a truncated zip leaving
+  live data untouched; a forced photo-copy failure rolling back database and previous photos; and a real
+  Windows file-sharing lock preserving live sidecars/data. The lock case is not a disk-full simulation.
+* **Evidence:** 56/56 static checks and 904 written cases in 70 files; the guard rejected 3/3 injected
+  old-ordering/rollback/fact regressions and passed restored source. No .NET/WPF runtime exists here, so
+  these are not Malachite xUnit or physical results. Require `ALL GREEN - 904 of 904`, then the isolated
+  committed-WAL/locked-file, disk-full, A/B/C and restart checks. Cobalt's 900/900 remains previous evidence.
 
 ### What v0.38.0 changes — D-98 Phase-3 packaging/variants/search, first slice
 

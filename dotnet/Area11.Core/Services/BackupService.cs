@@ -601,17 +601,27 @@ public sealed class BackupService
             ?? throw new InvalidOperationException("The live database has no containing folder.");
         var staged = Path.Combine(folder, $".area11-live-{Guid.NewGuid():N}.db");
 
+        var replaced = false;
+
         try
         {
             SqliteConnection.ClearAllPools();
             File.Copy(sourcePath, staged, overwrite: true);
-            RemoveSidecars(_db.FilePath);
             File.Move(staged, _db.FilePath, overwrite: true);
+            replaced = true;
         }
         finally
         {
             TryDelete(staged);
-            RemoveSidecars(_db.FilePath);
+
+            // A failed copy or locked destination must leave the CURRENT database and its WAL /
+            // journal companions untouched. Only after the same-volume swap succeeds are those
+            // companions stale: deleting them earlier could discard committed work while the
+            // restore error still says that nothing in the live shop was replaced.
+            if (replaced)
+            {
+                RemoveSidecars(_db.FilePath);
+            }
         }
     }
 

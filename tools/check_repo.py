@@ -4347,6 +4347,74 @@ def check_native_workbook() -> None:
 
 
 # ---------------------------------------------------------------------------
+def check_backup_restore_gate() -> None:
+    """Keep the live SQLite family intact when a staged restore cannot replace it.
+
+    The main database, -wal and -journal are one logical state. Deleting the companions before a
+    successful same-volume swap can lose committed work even when the restore reports that nothing
+    was replaced. The public-service facts also retain A/B/C recovery, damaged-input refusal and
+    automatic rollback after a photo fault; the Windows fact supplies a real file-sharing lock.
+    """
+    service_path = DOTNET / "Area11.Core/Services/BackupService.cs"
+    tests_path = DOTNET / "Area11.Tests/BackupTests.cs"
+
+    if not service_path.exists() or not tests_path.exists():
+        fail("Backup restore safety guard requires BackupService.cs and BackupTests.cs")
+        return
+
+    service = service_path.read_text(encoding="utf-8", errors="replace")
+    tests = tests_path.read_text(encoding="utf-8", errors="replace")
+    replacement = re.search(
+        r"    private void ReplaceDatabase\(string sourcePath\)(.*?)(?=\n    private bool TryRollback)",
+        service, re.DOTALL)
+
+    if replacement is None:
+        fail("Backup restore safety guard could not isolate ReplaceDatabase")
+    else:
+        method = replacement.group(0)
+        move = method.find("File.Move(staged, _db.FilePath, overwrite: true);")
+        sidecars = [match.start() for match in re.finditer(
+            r"RemoveSidecars\(_db\.FilePath\);", method)]
+
+        if move < 0 or "replaced = true;" not in method[move:]:
+            fail("Backup database replacement must record success only after the same-volume move")
+        if len(sidecars) != 1 or (sidecars and sidecars[0] < move):
+            fail("Backup restore must not remove live SQLite sidecars before a successful replacement")
+        if not re.search(
+                r"finally\s*\{.*?TryDelete\(staged\);.*?if \(replaced\)\s*"
+                r"\{\s*RemoveSidecars\(_db\.FilePath\);\s*\}", method, re.DOTALL):
+            fail("Backup restore sidecar cleanup must be conditional on a successful replacement")
+
+    restore = re.search(
+        r"    public ServiceResult<RestoreResult> Restore\(.*?(?=\n    /// <summary>Same-volume)",
+        service, re.DOTALL)
+    if restore is None:
+        fail("Backup restore safety guard could not isolate the public Restore method")
+    else:
+        body = restore.group(0)
+        safety = body.find("var safety = Create(user, includePhotos: true")
+        replacement_call = body.find("ReplaceDatabase(unpacked);")
+        rollback = body.find("TryRollback(safetyPath, databaseReplaced, photosTouched, previousPhotos)")
+        if safety < 0 or replacement_call < 0 or safety > replacement_call:
+            fail("Backup restore must make a full safety copy before replacing the live database")
+        if rollback < 0:
+            fail("Backup restore failure path must retain the automatic recovery attempt")
+
+    for fact in (
+        "Restore_ABCSequence_NewBackupContainsCAndSafetyRetainsB",
+        "Restore_DamagedZip_LeavesTheLiveShopAlone",
+        "Restore_WhenPhotoCopyFails_RollsBackTheDatabaseAndPreviousPhotos",
+        "Restore_WhenTheLiveDatabaseIsLocked_PreservesItsSidecarsAndData",
+    ):
+        if re.search(rf"public void {re.escape(fact)}\(\)", tests) is None:
+            fail(f"Backup restore regression fact is missing: {fact}")
+
+    REPORT.append(
+        "Backup restore: full pre-swap recovery, sidecars preserved until successful replacement, "
+        "rollback retained, and A/B/C + damaged-zip + photo-fault + Windows-lock facts present")
+
+
+# ---------------------------------------------------------------------------
 def check_shop_clock() -> None:
     """One time for the shop, a session that ends by itself, and no bill without a drawer (D-92).
 
@@ -5472,6 +5540,7 @@ def main() -> int:
     check_pr_reconciliation_parameters()
     check_cloud_sync_closure()
     check_native_workbook()
+    check_backup_restore_gate()
     check_csharp_grammar()
 
     if not quiet:

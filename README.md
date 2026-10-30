@@ -43,24 +43,25 @@ four settings in Area11, then push / look / bring.
 Live counts are in [`docs/PROGRESS.md`](docs/PROGRESS.md) (features) and
 [`docs/RULES-MATRIX.md`](docs/RULES-MATRIX.md) (the owner's 116 numbered rules).
 
-**Current redesign source — v0.38.0 Cobalt `#315C8C`:** the first authorized Phase-3 slice makes the
-existing pack/variant label editable and searchable in Products, Counter and Purchase. Purchase also shows
-strength/pack text so equal-named variants remain separate products. One shared search policy covers pack
-metadata without changing product IDs, base-unit stock, box/strip conversion, barcodes, prices or financial
-rules; no new variant table or migration was needed. Phase-2 field governance and the Phase-1 Area11 header
-remain. **55/55 static checks pass, and the owner verified Cobalt's Core/Tests xUnit run on Windows:
-900/900 cases in 1 m 4 s with zero failed/skipped. Desktop/WPF launch and PT-10 physical
-verification are still separate/pending.** Zircon's 883/883 is
-previous-release evidence. Phase 4 and later redesign phases still require separate owner approval.
+**Current source — v0.38.1 Malachite `#0B6E4F`:** Cobalt's authorized Phase-3 pack/variant label and
+Products/Counter/Purchase search remain, with separate product IDs, base-unit stock, conversion, barcodes,
+prices and financial rules unchanged. Malachite hardens PT01-BK-02/BK-03 restore safety: live SQLite
+sidecars are no longer deleted when a staged database replacement fails, and four regressions cover A/B/C
+recovery, damaged input, photo-copy rollback and a Windows locked destination. **56/56 static checks pass;
+904 cases are written but Malachite has not been compiled or run here.** The owner's Cobalt Core/Tests
+900/900 run in 1 m 4 s is previous-release evidence. Malachite's Windows suite, isolated restore/fault
+checks, Desktop/WPF launch and PT-10 physical verification remain separate/pending. Phase 4 and later
+redesign phases still require separate owner approval.
 
 **Honest note:** the agent's build machine is Linux with no .NET SDK, so nothing in `dotnet/` is
 compiled there. Every change is checked statically (C# parses, explicit usings, XAML, resources,
 every binding against its view model, every SQL statement against the real schema, every mapped
-column against its model, migrations executed on SQLite). The owner's Windows machine compiled and ran the current
+column against its model, migrations executed on SQLite). The owner's Windows machine compiled and ran the previous
 **v0.38.0 Cobalt** Core/Tests suite, verifying **900/900 xUnit cases in 1 m 4 s** on 29 October 2026.
-The supplied log does not separately prove an `Area11.Desktop`/WPF build or launcher run; the earlier
-Zircon 883/883 result remains previous-release evidence. WPF walk-throughs, genuine transactions,
-isolated restore, real Excel and optional real-cloud proof remain separate. See [`docs/VERSIONS.md`](docs/VERSIONS.md)
+That log does not prove the current Malachite source or separately prove an `Area11.Desktop`/WPF build or
+launcher run; the earlier Zircon 883/883 result remains historical evidence. Malachite's 904-case Windows
+run, WPF walk-throughs, genuine transactions, isolated restore/fault checks, real Excel and optional
+real-cloud proof remain separate. See [`docs/VERSIONS.md`](docs/VERSIONS.md)
 for release history and [`PHYSICAL-TESTING.md`](PHYSICAL-TESTING.md) for the running evidence log.
 
 ---

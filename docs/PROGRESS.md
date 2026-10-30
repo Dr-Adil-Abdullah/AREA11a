@@ -60,18 +60,18 @@ features and the four phases.
 > v0.29.0 moved **F-12 (the dashboard)** to ✅ after giving it 20 tests; the mock database used for
 > them was rebuilt from all 23 migrations and every SQL statement was run on it before shipping.
 
-## Where we stand (v0.38.0 Cobalt + current working tree)
+## Where we stand (v0.38.1 Malachite + current working tree)
 
 | Question | Number | What it means |
 |---|---|---|
 | Features in the board | **57** | **52 ✅ done (91.2%)**, **5 🟡 written but only the shop PC can prove them (8.8%)**, 0 ⬜ not started |
-| Code | **291 C# files**, **40 XAML files** | Cobalt static grammar and owner Windows xUnit pass; current PT-10/WPF proof pending |
+| Code | **291 C# files**, **40 XAML files** | Malachite static grammar passes; Cobalt owner Windows xUnit is previous evidence, Malachite and PT-10/WPF proof pending |
 | The shop's rules | **54 service/policy files** in `Area11.Core`, **44 model files**, **37 business tables** over 29 migrations | Phase-3 adds a pure packaging/search policy without a migration; stock, money and history stay intact |
 | Screens | **38 views** including the managed-unit window | bindings are statically checked; pack editing/search and PT-10 need owner proof; PT-09 remains separate |
-| Tests | **900 written and Windows-verified cases** in 70 files | **900/900 owner-verified on Cobalt v0.38.0 (1 m 4 s)**, zero failed/skipped; PT-10 remains pending |
-| Static gates | **55 checks** in `tools/check_repo.py` | ~10 seconds here; not a compiler - see the warning at the end |
+| Tests | **904 written cases** in 70 files | **Malachite Windows run pending**; previous Cobalt v0.38.0 was owner-verified 900/900 in 1 m 4 s, zero failed/skipped |
+| Static gates | **56 checks** in `tools/check_repo.py` | ~13 seconds here; not a compiler - see the warning at the end |
 | Reporting a fault | **one file** - `tools\SEND-REPORT.cmd` (v0.30.3, D-78) | build, SDK, git state, shop folder (no rows), whole crash report, last build/test output |
-| Versions shipped | 0.1.0 -> **0.38.0 Cobalt** | Phase-3 packaging/search release colour `#315C8C`; Phase 4 not authorized |
+| Versions shipped | 0.1.0 -> **0.38.1 Malachite** | Backup/recovery safety colour `#0B6E4F`; retained Phase-3 work and Phase-4 boundary unchanged |
 | Owner decisions recorded | **D-00 … D-98** | `docs/OWNER-DECISIONS.md`, in Urdu |
 
 **What is actually left.** Nothing in the feature list is unbuilt, and as of v0.31.0 that sentence is
@@ -130,6 +130,17 @@ of books.
 | Counter and Purchase discovery | **Code complete — physical pending** | `PackagingPolicy.Matches`, `PosViewModel.cs`, `PurchasesViewModel.cs`, both views | Both in-memory pages use the shared matcher. Counter still supplies every active extra barcode; Purchase selection shows strength + pack so equal-named variants retain their separate product IDs |
 | Stock and financial safeguards | **Unchanged — regression written** | `Models/Product.cs`, `PackagingSearchTests.cs` | Pack text is descriptive only. Base-unit stock, box/strip/base conversion, rates, batches, payments, documents, historical rows and D-93/D-97 rules are not rewritten |
 | Evidence | **55/55 static checks + Cobalt 900/900 Windows xUnit PASS; PT-10 pending** | `tools/check_repo.py`, `PackagingSearchTests.cs`, `PHYSICAL-TESTING.md` PT-10 | Owner reported **900 passed / 0 failed / 0 skipped in 1 m 4 s** and **`ALL GREEN - 900 of 900`** on 29 Oct 2026. Actual search SQL also passed a targeted 7/7 SQLite development probe. WPF/genuine pack editing, discovery, variant selection and conversion checks remain pending; Phase 4 is not authorized |
+
+---
+
+## Backup/recovery fault hardening (PT01-BK-02/BK-03 / v0.38.1 Malachite)
+
+| Area | State | Where | Verification / done when |
+|---|---|---|---|
+| Failed replacement preserves live state | **Code fixed — Windows/physical pending** | `dotnet/Area11.Core/Services/BackupService.cs` | `ReplaceDatabase` removes old `-wal`, `-shm` and `-journal` companions only after the same-volume move succeeds; a copy/lock failure no longer deletes them while reporting that nothing was replaced |
+| Recovery behavior retained | **Code complete — isolated proof pending** | `BackupService.Restore`, `TryRollback` | Full database+photos safety zip still precedes replacement; staged photo validation, automatic rollback, newer-work warning and restart summary remain |
+| Regression coverage | **4 facts written — not executed here** | `dotnet/Area11.Tests/BackupTests.cs` | A/B/C/new-backup/B-recovery with photos; damaged zip refusal; forced photo-copy rollback; real Windows open-handle lock preserving sidecars/data. The lock fact is not a disk-full simulation |
+| Evidence | **56/56 static checks PASS; guard 3/3 injections rejected; Malachite Windows xUnit pending** | `tools/check_repo.py`, `PHYSICAL-TESTING.md` PT-01 | Old sidecar ordering, missing rollback and a missing fact were rejected before byte-restored source passed. **904 written cases in 70 files**. Owner must see `ALL GREEN - 904 of 904`, then perform isolated A/B/C, committed-WAL/locked-file, disk-full, photo-failure and restart recovery checks. Cobalt 900/900 is previous-release evidence; no financial/stock/PR rule or Phase-4 scope changed |
 
 ---
 
@@ -248,11 +259,12 @@ of books.
 | Empty-first Product/Reorder quantities stay REAL/double | `python3 tools/check_repo.py` | ✅ static gate #50; both projections and both empty-before-fractional-stock regression facts are required; no quantity is cast to INTEGER |
 | Cloud 90-day dependency closure and Apply boundaries | `python3 tools/check_repo.py` | ✅ static gate #51; 15-table format 2, bulk recent lines plus referenced older parents, switch/format/null-id guards and stale-preview invalidation; 5/5 injections rejected, seven facts written but not executed here |
 | T-05 native per-day chart scaling, quiet days, exact values and profit permission | `python3 tools/check_repo.py` | ✅ static gate #48; scaling, bar binding and permission injections rejected, restored source passed (4/4 outcomes); existing chart itself unchanged |
-| Every binding matches its view-model (**1,393 bindings**) | `python3 tools/check_repo.py` | ✅ |
+| Every binding matches its view-model (**1,457 bindings**) | `python3 tools/check_repo.py` | ✅ |
 | The three script banners match the build | `python3 tools/check_repo.py` | ✅ 3 files |
 | The board and the printable tick-list agree | `python3 tools/make_checklist.py` + the checker | ✅ 57 / 52 / 5 / 0 |
 | **Printer prints (owner's code 6)** | SYSTEM -> *Printer & scanner*, pick the printer, **Print test slip** | 🟡 v0.22.1 fixes the cause (the program opened the print server, not the default printer) - the owner's next slip is the proof |
-| **900 tests written and owner-verified on Cobalt** | `dotnet test` / `tools\\RUN-TESTS.cmd` | ✅ **900/900 passed on the owner's Windows PC, 0 failed/skipped in 1 m 4 s on 29 Oct 2026.** The runner printed `ALL GREEN - 900 of 900`; all 55 static checks also pass. PT-10 WPF/genuine packaging workflows and the other physical checks remain separate. |
+| **904 tests written on Malachite — Windows run pending** | `dotnet test` / `tools\\RUN-TESTS.cmd` | 🟡 **56/56 static checks pass locally; no Malachite .NET/WPF execution has happened here.** Require `ALL GREEN - 904 of 904`, then the isolated PT-01 recovery/fault checks. The four new backup facts are written, not claimed as xUnit passes. |
+| **900 tests written and owner-verified on Cobalt** | `dotnet test` / `tools\\RUN-TESTS.cmd` | ✅ **900/900 passed on the owner's Windows PC, 0 failed/skipped in 1 m 4 s on 29 Oct 2026.** The runner printed `ALL GREEN - 900 of 900`; all 55 static checks also pass. This is previous-release evidence; PT-10 WPF/genuine packaging workflows and the other physical checks remain separate. |
 | **883 tests written and owner-verified on Spruce** | `dotnet test` / `tools\\RUN-TESTS.cmd` | ✅ **883/883 passed on the owner's Windows PC (`94723e5`), 0 failed/skipped in 1 m 19 s.** The runner printed `ALL GREEN - 883 of 883`; all 52 static checks also pass. This does not close the separate WPF, genuine-transaction, real-Excel or cloud checks. |
 | **860 tests written and owner-verified on Obsidian** | `dotnet test` (or `tools\\RUN-TESTS.cmd`) | ✅ **The correct v0.35.18 commit `cb2e321` really passed 860/860 on the owner's Windows PC: 0 failed, 0 skipped, in 1 m 17 s.** The runner printed `ALL GREEN - 860 of 860 cases passed, failed: 0`; this is earlier full xUnit proof and supersedes Eclipse's 858/860. All 52 static checks also pass. This does not close the separate live checks: T-10 still needs real Excel open/edit/preview/apply/re-import, Z-05 and E-12/S-05 need their Windows walk-throughs, and optional real-cloud proof must use a separate test Shop id/table and database copy. No real Supabase endpoint was used. |
 | **Label storage rehearsal** | real SQLite schema + the service's UPSERT/audit transaction shapes | ✅ **6/6 groups:** upgrade defaults, Unicode persistence, five invalid batches, unknown keys, audited reset and rollback. Not a C#/xUnit substitute. |
@@ -261,6 +273,7 @@ of books.
 
 | Date | What |
 |---|---|
+| 30 Oct 2026 | **v0.38.1 Malachite - backup/recovery failure-boundary repair.** Live SQLite sidecars are preserved until staged database replacement succeeds; the full recovery zip and rollback remain. Four public-service facts add A/B/C + B recovery, damaged-zip, photo-rollback and Windows locked-destination coverage. **904 written cases in 70 files; 56 static checks pass locally.** Malachite Windows build/xUnit and isolated physical recovery/disk-full checks remain pending; Cobalt 900/900 is previous evidence, and no stock/money/PR or Phase-4 rule changed. |
 | 27 Oct 2026 | **v0.35.19 Spruce - owner-authorized physical-testing repairs and explicit counter pricing.** Backup/recovery and shift/alert changes remain subject to isolated/genuine Windows checks. Explicit discount now uses full retail even with legacy margin mode; VIP/Doctor pricing is Yes/No opt-in with No=retail and no special-rate stacking during discount. The Counter shows and holds actual rates, Core limits custom rates to Owner/Manager and refuses below-batch-cost lines when the lock is on, and an optional post-commit Done/invoice/change card is controlled by `sale.successPopup`. The reported AlertKindTests `productId` scope error is fixed in `aedb65d`. **877 written cases in 67 files; 52 static checks; no full Windows build/xUnit/WPF result yet.** Require `ALL GREEN - 877 of 877`; Obsidian 860/860 stays historical, feature counts remain 52 done / 5 partial, and PT02-POS-01 remains unreproduced. |
 | 26 Oct 2026 | **v0.35.18 Obsidian owner verification - `ALL GREEN - 860 of 860`.** The correct commit `cb2e321` compiled Core and Tests on the owner's Windows PC and reported **Failed 0, Passed 860, Skipped 0, Total 860 in 1 m 17 s**. This closes the current xUnit gate and verifies both workbook fixture repairs with the retained PR allocation repair. No code, test count, schema or business rule changed when recording the result. The 52-done / 5-owner-action feature board and 92-done / 4-partial rules matrix are unchanged: real Excel, Z-05, E-12/S-05 and optional real-cloud evidence remain separate. |
 | 27 Oct 2026 | **Current working tree after Spruce - CAT-01/NAV-01/UNIT-01/PHOTO-01 source batch.** Migrations 027–028 add managed units, filter-only category tags, descriptive strength and rename-safe whole-only quantity rules; primary category remains the only financial grouping. Products and Counter have thumbnails/fallbacks, Products has tag/strength filters and drill-downs, and dashboard cards open filtered detail pages. Sale, purchase, stock-take, central decrement and import paths reject fractional quantities for units marked whole-only; the rule survives unit renames. **883/883 Windows xUnit cases passed on `94723e5` in 1 m 19 s; WPF and genuine owner verification remain pending.** Feature counts stay 52 done / 5 partial; PT02-POS-01 remains unreproduced. |

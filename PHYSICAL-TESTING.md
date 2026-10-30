@@ -15,10 +15,10 @@
 
 ## موجودہ build اور automated ثبوت
 
-- Build: **v0.38.0 Cobalt `#315C8C`** (پہلا Phase-3 packaging/variant/search slice؛ مالک کے Windows پر Core/Tests xUnit کی تصدیق مل گئی، Desktop/WPF launch اور PT-10 physical verification ابھی باقی ہے)
-- Latest owner xUnit: **900 passed / 0 failed / 0 skipped / 900 total — ALL GREEN**، **Cobalt v0.38.0**، 29 اکتوبر 2026، مدت **1 منٹ 4 سیکنڈ**۔ Runner نے **`ALL GREEN - 900 of 900 cases passed, failed: 0`** دیا۔ یہ current Cobalt کے `Area11.Core` / `Area11.Tests` Windows xUnit ثبوت ہے؛ `Area11.Desktop` / WPF build یا launch اور PT-10 WPF/genuine physical evidence نہیں۔
+- Build: **v0.38.1 Malachite `#0B6E4F`** (PT01-BK-02/BK-03 backup/recovery fault hardening؛ اس release کا Windows build/xUnit ابھی owner سے طلب ہے)
+- Latest owner xUnit: **900 passed / 0 failed / 0 skipped / 900 total — ALL GREEN**، **Cobalt v0.38.0**، 29 اکتوبر 2026، مدت **1 منٹ 4 سیکنڈ**۔ Runner نے **`ALL GREEN - 900 of 900 cases passed, failed: 0`** دیا۔ یہ **previous-release Cobalt** کے `Area11.Core` / `Area11.Tests` Windows xUnit ثبوت ہے؛ Malachite، `Area11.Desktop` / WPF build یا launch اور PT-10 WPF/genuine physical evidence نہیں۔
 - Previous owner xUnit: **883 passed / 0 failed / 0 skipped / 883 total — ALL GREEN**، **Zircon v0.36.0**، 29 اکتوبر 2026، مدت **1 منٹ 10 سیکنڈ**۔ یہ previous-release evidence ہے۔
-- موجودہ source: **900 written cases in 70 files**؛ **55/55 static checks PASS** (real C# grammar سمیت)۔ Latest gate: **291 C# files / 1,457 XAML bindings / 29 migrations / 37 business tables / 834 prepared SQL statements / 123 settings keys**۔ Phase-3 check pack editor، shared Products/Counter/Purchase search، extra barcodes اور variant picker کی حفاظت کرتا ہے؛ actual search SQL کا targeted **7/7 SQLite development probe** بھی کامیاب ہے۔ **Cobalt Windows xUnit مکمل ہے؛ PT-10 physical walk-through باقی ہے**؛ Aurora PT-09 اور Zircon PT-08 الگ evidence ہیں۔
+- موجودہ source: **904 written cases in 70 files**؛ **56/56 static checks PASS** (real C# grammar سمیت)۔ Latest gate: **291 C# files / 1,457 XAML bindings / 29 migrations / 37 business tables / 835 prepared SQL statements / 123 settings keys**۔ نیا backup guard full pre-restore recovery، successful replacement سے پہلے sidecars کا تحفظ، rollback اور چار named fault/recovery facts چیک کرتا ہے؛ پرانی ordering، missing rollback اور missing fact کی **3/3 injections** reject ہوئیں، restored source pass ہوا۔ Phase-3 search کا previous targeted **7/7 SQLite development probe** بھی محفوظ ہے۔ **Malachite Windows build/xUnit اور PT-01 isolated A/B/C/locked/disk-full verification باقی ہے؛ Cobalt 900/900 صرف پچھلا automated ثبوت ہے**؛ PT-10، Aurora PT-09 اور Zircon PT-08 کے physical checks الگ باقی ہیں۔
 - Windows build report میں `AlertKindTests.cs(121,19)` کا `productId` scope compile error ملا؛ وہ `aedb65d` میں ٹھیک push ہو چکا ہے۔ بعد کا build xUnit تک پہنچا؛ حتمی 883/883 نتیجہ نیچے محفوظ ہے۔
 - تازہ Windows build report میں `PosViewModel.cs(924,21)` کا **CS0103: `MessageBoxDefaultButton` does not exist** ملا۔ WPF کے صحیح overload کے لیے اسے **`MessageBoxResult.No`** سے بدلا گیا ہے، اس لیے default جواب No/normal retail رہتا ہے۔ Static gate دوبارہ PASS ہے؛ اگلا Windows build xUnit تک پہنچا، مگر اس وقت full green نہیں ہوا؛ حتمی نتیجہ نیچے محفوظ ہے۔
 - تازہ Windows xUnit run: **879 passed / 4 failed / 883 total**۔ Reported HoldCart errors میں below-cost fixtures تھے: Brufen کی test retail cost سے کم تھی، اور ایک custom strip rate پورے strip کی cost سے کم تھا۔ ان غیرمتعلق HoldCart/Return fixtures کو درست rates دیے گئے ہیں؛ production below-cost lock اور اس کے dedicated refusal tests نہیں بدلے۔ اس وقت full run باقی تھا؛ حتمی 883/883 نتیجہ نیچے محفوظ ہے۔
@@ -33,7 +33,7 @@
 
 | Test | حالت | مختصر نتیجہ |
 |---|---|---|
-| **PT-01 — Startup, backup اور UI smoke** | **PASS — improvements logged** | ایپ کھلی، photos کے ساتھ backup بنا، اور تمام مقررہ pages کھلے |
+| **PT-01 — Startup, backup اور UI smoke** | **PASS — improvements logged** | ایپ کھلی، photos کے ساتھ backup بنا، اور تمام مقررہ pages کھلے؛ Malachite restore hardening لکھا گیا، isolated A/B/C/fault proof باقی |
 | **PT-02 — حقیقی medicine اور product details** | **PASS — owner confirmed 29 Oct 2026** | مالک نے “2 is ok” کی تصدیق کی؛ الگ logged feedback items اپنی اپنی حالت میں رہیں گے |
 | **PT-03 — حقیقی purchase، batch، expiry اور payable** | **PARTIAL — owner feedback logged، report pending** | ابھی تفصیلی PINV/stock/payable evidence موصول نہیں ہوا؛ PASS نہیں لکھا گیا |
 | **PT-04 — Sale، cash/khata، receipt اور drawer** | **INSTRUCTIONS READY** | حقیقی فروخت، price/cart، receipt اور completion feedback |
@@ -280,6 +280,12 @@ Screenshots / error / test.log:
 - Restore کے بعد recovery summary setting میں محفوظ ہوتی ہے، اس لیے restart کے بعد **Last restore and recovery** میں نظر آئے گی۔
 - یہ بدلاو automated source/test coverage ہے؛ اصل A/B/C، damaged zip، locked file اور disk-full physical proof ابھی نہیں ملا۔
 
+### 30 اکتوبر Malachite code update
+
+- نیا public-service regression اب پورا **A → B → A restore → C → نیا backup → C restore** sequence photos کے ساتھ لکھتا ہے، پھر pre-A safety zip سے **B** recover کرتا ہے اور C backup کو دوبارہ restore کر کے ثابت کرتا ہے کہ B/C الجھتے نہیں۔
+- Damaged zip کا regression live products/photo کو unchanged رہنے اور safety/replace step سے پہلے refusal لکھتا ہے۔
+- یہ **written automated coverage** ہے، owner کے Windows پر چلنے یا isolated physical A/B/C PASS کا بدل نہیں۔ Malachite کے **904 written cases** چلانا اور نیچے دیا physical scenario isolated copy میں کرنا ابھی باقی ہے۔
+
 ## PT01-BK-03 — متعلقہ code-review نکات: safety copy کی نمائش اور photos
 
 **حالت:** Code changed — restore/fault verification pending
@@ -311,6 +317,10 @@ Screenshots / error / test.log:
 3. ہر fix کے ساتھ automated regression، پھر اوپر والا physical A/B/C scenario۔
 
 27 اکتوبر کو backup production code بدلا گیا ہے: database replacement same-volume staged file سے ہوتا ہے، photos پہلے staging میں validate ہوتی ہیں، اور بعد کی ناکامی پر safety zip سے database/photos rollback کی کوشش ہوتی ہے۔ Hand-made zip کا `../` photo path اب reject ہوتا ہے۔ تین نئے backup regressions سمیت written suite **863** ہے اور **52 static checks PASS** ہیں؛ locked-file/disk-full fault injection اور Windows A/B/C ابھی owner verification میں ہیں۔
+
+30 اکتوبر **v0.38.1 Malachite** میں code review نے ایک محدود failure boundary ٹھیک کی ہے: پہلے copy یا locked destination پر replacement ناکام ہو تو بھی `finally` میں live `-wal` / `-shm` / `-journal` حذف ہو سکتے تھے۔ اب یہ companions صرف same-volume `File.Move` کے کامیاب ہونے کے بعد صاف ہوتے ہیں؛ ناکام replacement پر موجودہ database family نہیں چھڑی جاتی۔ یہ owner-reported data-loss incident نہیں، محدود code-path defect تھا۔
+
+چار public-service regressions شامل ہیں: مکمل A/B/C + photos + B recovery، damaged zip refusal، photo-copy failure کے بعد database/previous-photo rollback، اور Windows میں Delete-sharing کے بغیر real open-handle lock پر live sidecars/data preservation۔ نیا static guard اس ordering اور rollback door کو بھی محفوظ رکھتا ہے۔ موجودہ inventory **904 written cases / 56 static checks** ہے، مگر Malachite کا Windows xUnit ابھی نہیں چلا۔ Locked-file regression **disk-full simulation نہیں**؛ real locked-file، committed-WAL، disk-full، restart اور A/B/C physical checks PT01-BK-02/BK-03 میں کھلے رہیں گے۔
 
 ---
 

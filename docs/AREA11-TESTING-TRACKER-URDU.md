@@ -1,8 +1,11 @@
 # Area11 — مالک کی Physical Testing اور Manual Instructions Tracker
 
-**Release:** v0.38.0 Cobalt (`#315C8C`)  
-**یہ snapshot:** 29 اکتوبر 2026  
-**ماخذ:** `PHYSICAL-TESTING.md`، `docs/PROGRESS.md`، `docs/OWNER-DECISIONS.md` اور محفوظ شدہ owner evidence  
+**Release:** v0.38.1 Malachite (`#0B6E4F`)
+
+**یہ snapshot:** 30 اکتوبر 2026
+
+**ماخذ:** `PHYSICAL-TESTING.md`، `docs/PROGRESS.md`، `docs/OWNER-DECISIONS.md` اور محفوظ شدہ owner evidence
+
 **مقصد:** ایک پرنٹ ہونے والی فائل جس میں PT-01 تا PT-10، مکمل شدہ ثبوت، باقی checks اور manual instructions کا حساب ایک جگہ ہو۔
 
 > یہ فائل نتائج لکھنے اور پرنٹ کرنے کے لیے ہے۔ مستند running feedback log `PHYSICAL-TESTING.md` ہی رہے گا۔ کسی phase کے مجموعی PASS سے اس کے نیچے الگ logged مسئلہ خودکار طور پر fixed، rejected یا closed نہیں ہوگا۔
@@ -15,22 +18,24 @@
 4. اصل books میں صرف حقیقی medicine، delivery، sale، return، payment یا adjustment درج کریں۔ Fake financial transaction، restore، fault injection، controlled shortage یا risky scenario کے لیے پہلے backup اور **الگ test copy** استعمال کریں۔
 5. Automated tests اور physical test الگ ثبوت ہیں۔ Automated PASS کو app کی ہر screen، printer، scanner، Excel یا genuine transaction کا PASS نہ لکھیں۔
 6. `qty_base` **REAL** اور `ItemRow.Qty` **double** ہیں۔ Negative-stock retirement، D-93 اور PR cancellation کے financial rules اس testing میں نہیں بدلنے۔
-7. Development فی الحال paused ہے؛ Phase 4 یا نیا feature اس tracker کی تکمیل سے خود authorize نہیں ہوتا۔
+7. Development صرف مالک کی ہدایت والے محدود حصے پر ہوتی ہے؛ Phase 4 یا نیا feature اس tracker کی تکمیل سے خود authorize نہیں ہوتا۔
 
 ---
 
 # 1 — ثبوت کی موجودہ حد: کیا ثابت ہے اور کیا نہیں
 
-## Owner کے Windows پر حالیہ automated ثبوت
+## Automated ثبوت — owner Windows اور development gate الگ
 
-- [x] **29 اکتوبر 2026 — Cobalt:** `Area11.Core` / `Area11.Tests` کے **900 passed، 0 failed، 0 skipped**، مدت **1 منٹ 4 سیکنڈ**۔
-- [x] Runner کا نتیجہ: **`ALL GREEN - 900 of 900`**۔
-- [x] Development gate: **55/55 static checks PASS**؛ 900 written cases، 70 test files۔
-- [x] Development SQLite search rehearsal: **7/7 groups PASS** — `50ml`، `100 ML`، brand، room، category، company اور base unit۔
+- [x] **29 اکتوبر 2026 — previous Cobalt:** `Area11.Core` / `Area11.Tests` کے **900 passed، 0 failed، 0 skipped**، مدت **1 منٹ 4 سیکنڈ**۔
+- [x] Cobalt runner کا نتیجہ: **`ALL GREEN - 900 of 900`**۔
+- [x] Cobalt development gate: **55/55 static checks PASS**؛ 900 written cases، 70 test files۔
+- [x] Previous development SQLite search rehearsal: **7/7 groups PASS** — `50ml`، `100 ML`، brand، room، category، company اور base unit۔
+- [x] **30 اکتوبر — current Malachite source gate:** **56/56 static checks PASS**؛ **904 written cases**، 70 test files۔ یہ compile/xUnit result نہیں۔
+- [ ] **Malachite Windows run باقی:** `tools\RUN-TESTS.cmd` پر **904 total / 0 failed / 0 skipped** اور **`ALL GREEN - 904 of 904`** درکار ہے۔
 
 ## جو اس ثبوت سے ثابت نہیں ہوتا
 
-- [ ] اوپر والا Cobalt log **Core/Tests** کا ہے؛ اس سے `Area11.Desktop` / WPF کا الگ build یا `START-AREA11.bat` سے current launch ثابت نہیں ہوتا۔
+- [ ] اوپر والا Cobalt log **previous Core/Tests** کا ہے؛ اس سے Malachite compile/xUnit، `Area11.Desktop` / WPF کا الگ build یا `START-AREA11.bat` سے current launch ثابت نہیں ہوتا۔
 - [ ] PT-10 کے pack editor، Products/Counter/Purchase screens، barcode scanning، genuine stock conversion اور receipts کا physical PASS ابھی نہیں ملا۔
 - [ ] PT-08 کی WPF/navigation verification اور PT-09 کی Aurora Windows/xUnit + physical verification الگ باقی ہیں۔
 - [ ] Backup restore/fault injection، real Excel، USB scanner اور دیگر physical checks کا automated ہونا ان کا shop proof نہیں۔
@@ -62,8 +67,8 @@
 ## تجویز کردہ ترتیب — ایک مرحلہ مکمل کر کے اگلا
 
 1. **PT-03 کی detailed report مکمل کریں**، پھر genuine simple sale کے ساتھ **PT-04**۔
-2. Current release ہونے کی وجہ سے **PT-10** کی WPF/search/variant checklist کریں؛ automated 900/900 پہلے سے محفوظ ہے۔
-3. Data-safety کے لیے isolated copy میں **PT01-BK-02/BK-03** کا A/B/C اور fault evidence دیں۔
+2. Current **Malachite** کا 904-case Windows run کریں، پھر data-safety کے لیے isolated copy میں **PT01-BK-02/BK-03** کا A/B/C اور fault evidence دیں۔
+3. Retained **PT-10** کی WPF/search/variant checklist کریں؛ Cobalt automated 900/900 previous evidence ہے۔
 4. Retained redesign/manual checks: **PT-09، PT-08، E-12/S-05، Z-05، T-10**۔
 5. پھر **PT-05، PT-06، PT-07** کے باقی genuine یا isolated scenarios۔ ہر phase کے بعد نتیجہ بھیجیں؛ نئی development الگ owner approval سے ہوگی۔
 
@@ -98,6 +103,8 @@
 
 **Code میں موجود:** restore confirmation میں date/version اور newer-work warning؛ restore سے پہلے database + photos کا لازمی recovery zip؛ **Before restore** فہرست؛ restart کے بعد recovery summary؛ recovery zip دوبارہ restore کرنے کا automated round-trip۔
 
+**Malachite development update:** مکمل A/B/C + photos + نیا C backup + B recovery اور damaged-zip refusal کے public-service regressions لکھے گئے ہیں۔ یہ written coverage ہے؛ Malachite Windows run اور نیچے physical ticks ابھی باقی ہیں۔
+
 **یہ پورا scenario صرف isolated test copy پر کریں:**
 
 - [ ] **A:** نمایاں record کے ساتھ backup A بنائیں؛ تاریخ/وقت اور path لکھیں۔
@@ -119,6 +126,8 @@
 ## PT01-BK-03 — Photos، safety copy اور partial restore
 
 **Code میں موجود:** same-volume staged database replacement، photos کی پہلے validation، بعد کی ناکامی پر recovery zip سے rollback کی کوشش، path traversal refusal اور related regressions۔
+
+**Malachite safety correction:** failed copy/locked destination پر live `-wal` / `-shm` / `-journal` اب نہیں ہٹائے جاتے؛ cleanup صرف successful database replacement کے بعد ہوتی ہے۔ Photo-copy rollback اور Windows open-handle lock کے regressions لکھے گئے ہیں۔ Locked-file test disk-full یا owner physical recovery کا بدل نہیں۔
 
 **Physical ثبوت باقی:**
 
@@ -473,7 +482,7 @@ Black box hardware_test:
 # 10 — PT-08: Redesign Phase 1 — Expanded Header / Navigation
 
 **حالت:** Zircon کے **883/883 Windows xUnit** محفوظ ہیں؛ WPF/navigation owner verification pending۔  
-**Current build پر نوٹ:** اب version Cobalt ہے۔ Current Cobalt پر یہ retained-shell checks کیے جا سکتے ہیں، مگر expected version **v0.38.0 Cobalt** ہوگی؛ 883 صرف historical Zircon total ہے۔ صرف Zircon reproduce کرنا ہو تو real books downgrade نہ کریں۔
+**Current build پر نوٹ:** اب version Malachite ہے۔ Current Malachite پر یہ retained-shell checks کیے جا سکتے ہیں، مگر expected version **v0.38.1 Malachite** ہوگی؛ 883 صرف historical Zircon total ہے۔ صرف Zircon reproduce کرنا ہو تو real books downgrade نہ کریں۔
 
 ## Automated ثبوت
 
@@ -484,7 +493,7 @@ Black box hardware_test:
 ## مالک کی physical checklist
 
 - [ ] **Launch/build الگ لکھیں:** current copy `START-AREA11.bat` سے کھلی اور version/color درست تھی۔ کوئی error ہو تو build log/report منسلک کریں۔
-- [ ] **Header identity:** اوپر صرف **Area11** ہے؛ shop name مرکز میں نہیں۔ Current copy کی پہچان Cobalt color/version سے ہو۔
+- [ ] **Header identity:** اوپر صرف **Area11** ہے؛ shop name مرکز میں نہیں۔ Current copy کی پہچان Malachite color/version سے ہو۔
 - [ ] **Bell:** سب سے دائیں 44×44 bell، count اور severity color درست؛ click سے Alerts کھلیں اور واپسی پر previous module منتخب ہو سکے۔
 - [ ] **Modules:** Dashboard، SELL، STOCK، CUSTOMERS & SUPPLIERS، MONEY، SYSTEM کھولیں؛ ہر module کا پہلا page کھلے۔
 - [ ] Module بدل کر واپس آنے پر اس module کا موجودہ page برقرار رہے؛ active module/page واضح ہوں۔
@@ -500,7 +509,7 @@ Black box hardware_test:
 - [ ] **Screen fit:** 1240×760 اور اپنی normal resolution پر button/text clip یا overlap نہ ہو؛ SYSTEM کے تمام pages قابلِ رسائی ہوں۔
 - [ ] Alerts، session warning، empty-page message اور failed-button/fault card موجودہ محفوظ طریقے سے کام کریں۔
 - [ ] Header بدلنے سے page content یا half-typed bill ضائع نہ ہو۔
-- [ ] Current-user menu سے **My settings** اور **Sign out** کھلیں؛ version **v0.38.0 · Cobalt** ہو۔
+- [ ] Current-user menu سے **My settings** اور **Sign out** کھلیں؛ version **v0.38.1 · Malachite** ہو۔
 
 ### PT-08 result
 
@@ -520,12 +529,12 @@ Bell / user menu / sign-out:
 
 # 11 — PT-09: Redesign Phase 2 — Own Fields Governance
 
-**حالت:** Code ready؛ Aurora کا 892/892 Windows run اور owner physical PASS محفوظ نہیں۔ Current Cobalt میں یہ features retained ہیں؛ 892 کو current runner کا expected total نہ بنائیں۔
+**حالت:** Code ready؛ Aurora کا 892/892 Windows run اور owner physical PASS محفوظ نہیں۔ Current Malachite میں یہ features retained ہیں؛ 892 کو current runner کا expected total نہ بنائیں۔
 
 ## Automated/development ثبوت
 
 - [x] Aurora کے 892 written cases اور migration 029 کے automated/development checks محفوظ ہیں۔
-- [x] Current Cobalt کے 900/900 Core/Tests owner-verified ہیں، مگر یہ PT-09 WPF physical proof نہیں۔
+- [x] Previous Cobalt کے 900/900 Core/Tests owner-verified ہیں، مگر یہ current Malachite یا PT-09 WPF physical proof نہیں۔
 - [ ] Aurora-specific Windows run اور نیچے کے physical نتائج الگ درکار ہیں۔
 
 ## محفوظ شروعات
@@ -578,7 +587,7 @@ Screenshots / error / test.log:
 
 # 12 — PT-10: Redesign Phase 3 — Packaging، Variants اور Search
 
-**حالت:** Cobalt Core/Tests **900/900 PASS**؛ PT-10 WPF/genuine physical verification pending۔ Phase 4 اس میں شامل نہیں۔
+**حالت:** Previous Cobalt Core/Tests **900/900 PASS**؛ current Malachite میں feature retained ہے، اس کا 904-case run اور PT-10 WPF/genuine physical verification pending۔ Phase 4 اس میں شامل نہیں۔
 
 ## Automated اور development ثبوت
 
@@ -595,7 +604,7 @@ Screenshots / error / test.log:
 
 ## Physical checklist
 
-- [ ] **Current launch:** actual app کھلی، **v0.38.0 · Cobalt** نظر آیا؛ build/launch result الگ لکھا۔
+- [ ] **Current launch:** actual app کھلی، **v0.38.1 · Malachite** نظر آیا؛ build/launch result الگ لکھا۔
 - [ ] **دو الگ variants — isolated copy:** ایک ہی نام کی دو medicines، مثلاً strength `5 ml` + pack `50 mL bottle` اور strength `10 ml` + pack `100 mL bottle`؛ base unit `injection`۔
 - [ ] Save کے بعد الگ product rows/IDs رہیں؛ کوئی merge یا نیا stock unit نہ بنے۔
 - [ ] **Editor persistence:** پہلی product بند/دوبارہ کھولنے پر pack/variant label اور Products grid کا **Pack / variant** column درست ہو۔
@@ -620,10 +629,11 @@ Screenshots / error / test.log:
 ### PT-10 result
 
 ```text
-Build: v0.38.0 Cobalt
+Build: v0.38.1 Malachite (retained PT-10 checks)
 PT-10: PASS / PARTIAL / FAIL
 تاریخ:
-Windows Core/Tests: 900 total / 0 failed / 0 skipped / 1 m 4 s — owner verified 29 Oct 2026
+Current Windows Core/Tests: 904 total / failed / skipped / duration — pending
+Previous Cobalt evidence: 900 total / 0 failed / 0 skipped / 1 m 4 s — owner verified 29 Oct 2026
 Desktop/WPF build اور START-AREA11.bat launch (الگ):
 Two variant product IDs and stock units:
 Pack label before -> after reopen:
@@ -649,7 +659,7 @@ Screenshots / error / test.log:
 | Item | Code / implemented حالت | باقی یا independent owner action |
 |---|---|---|
 | **PT01-BK-01** | Back up as…، chosen zip، unique suffix، live DB unchanged، Explorer/show-backup path۔ | Default/local/USB، Explorer selection، permission/disk-full اور no-overwrite physical proof۔ |
-| **PT01-BK-02 / BK-03** | Newer-work warning، full recovery zip، Before restore list، restart summary، staged replacement، photo validation/rollback اور traversal refusal۔ | Isolated A/B/C، B recovery، damaged/locked/disk-full/photo faults اور restart recovery proof۔ |
+| **PT01-BK-02 / BK-03** | Newer-work warning، full recovery zip، Before restore list، restart summary، staged replacement، successful-swap-only sidecar cleanup، photo validation/rollback، traversal refusal اور چار new written fault/recovery facts۔ | Malachite 904-case run؛ isolated A/B/C، B recovery، committed-WAL/locked/disk-full/photo faults اور restart recovery proof۔ |
 | **PT02-CAT-01** | Primary category + additional filter-only tags؛ financial totals primary سے ایک بار۔ | Tag save/search/filter، conflict guard، put-away اور report no-double-count۔ |
 | **PT02-NAV-01** | Clickable category/company، Dashboard detail cards، Clear/empty filter states۔ | Actual records/counts، mouse/keyboard، back/menu state اور empty result۔ |
 | **PT02-UNIT-01** | Managed units، canonical spelling، rename/order/put-away، strength، whole-only flag، import guards؛ REAL/double محفوظ۔ | Whole injection، 50 ml variant، fractional refusal، rename/put-away، genuine stock اور real workbook checks۔ |
@@ -824,4 +834,4 @@ SEND-REPORT.cmd report / error:
 
 ---
 
-**اگلا مختصر قدم:** PT-03 کا detailed result بھیجیں؛ اگر اس کے بجائے current Cobalt UI آزما رہے ہیں تو PT-10 کا پہلا launch خانہ اور pack/search checks بھریں۔ نتیجہ اوپر کے مختصر سانچے میں بھیج دیں۔
+**اگلا مختصر قدم:** current Malachite کا **904-case** Windows result بھیجیں؛ پھر isolated copy میں PT01-BK-02/BK-03 کا A/B/C اور fault خانہ بھریں۔ PT-03 detailed report اور retained PT-10 physical checks اپنی الگ ترتیب میں جاری رہیں گے۔
