@@ -43,26 +43,26 @@ four settings in Area11, then push / look / bring.
 Live counts are in [`docs/PROGRESS.md`](docs/PROGRESS.md) (features) and
 [`docs/RULES-MATRIX.md`](docs/RULES-MATRIX.md) (the owner's 116 numbered rules).
 
-**Current source — v0.38.1 Malachite `#0B6E4F`:** Cobalt's authorized Phase-3 pack/variant label and
-Products/Counter/Purchase search remain, with separate product IDs, base-unit stock, conversion, barcodes,
-prices and financial rules unchanged. Malachite hardens PT01-BK-02/BK-03 restore safety: live SQLite
-sidecars are no longer deleted when a staged database replacement fails, and four regressions cover A/B/C
-recovery, damaged input, photo-copy rollback and a Windows locked destination. **56/56 static checks pass;
-904 cases are written but Malachite has not been compiled or run here.** The owner's Cobalt Core/Tests
-900/900 run in 1 m 4 s is previous-release evidence. Malachite's Windows suite, isolated restore/fault
-checks, Desktop/WPF launch and PT-10 physical verification remain separate/pending. Phase 4 and later
-redesign phases still require separate owner approval.
+**Current source — v0.39.0 Tourmaline `#7A1F5C`:** the owner-approved master checklist **Phase 1**
+adds migration 030 and typed contracts for native fields/acknowledged overrides, local-only drafts,
+managed generic formulas/brands, preferred-plus-historical suppliers, opening/closing drawer
+discrepancies, later-phase print/profit/sync settings, cloud format 3 parent ordering, and a guarded
+isolated-test rebuild with an automatic technical snapshot. Existing generic/brand text, quantities,
+money, documents and D-93/PR rules stay intact. **57/57 static checks pass with real C# grammar/member
+resolution, 918 cases are written, and 17/17 raw SQLite rehearsal groups pass.** Tourmaline has not
+been compiled or run here. No bulk-print/WhatsApp/profit UI or automatic-sync scheduler is claimed;
+master Phases 2–7 require separate approval. Cobalt 900/900 remains previous-release evidence.
 
 **Honest note:** the agent's build machine is Linux with no .NET SDK, so nothing in `dotnet/` is
 compiled there. Every change is checked statically (C# parses, explicit usings, XAML, resources,
 every binding against its view model, every SQL statement against the real schema, every mapped
 column against its model, migrations executed on SQLite). The owner's Windows machine compiled and ran the previous
 **v0.38.0 Cobalt** Core/Tests suite, verifying **900/900 xUnit cases in 1 m 4 s** on 29 October 2026.
-That log does not prove the current Malachite source or separately prove an `Area11.Desktop`/WPF build or
-launcher run; the earlier Zircon 883/883 result remains historical evidence. Malachite's 904-case Windows
-run, WPF walk-throughs, genuine transactions, isolated restore/fault checks, real Excel and optional
-real-cloud proof remain separate. See [`docs/VERSIONS.md`](docs/VERSIONS.md)
-for release history and [`PHYSICAL-TESTING.md`](PHYSICAL-TESTING.md) for the running evidence log.
+That log does not prove Tourmaline, `Area11.Desktop`/WPF, or a launcher run. Require
+**`ALL GREEN - 918 of 918`** on Windows, then complete PT-11's isolated schema/upgrade/rebuild checks;
+genuine transactions, WPF, real Excel, printer and optional real-cloud proof remain separate. See
+[`docs/VERSIONS.md`](docs/VERSIONS.md) for release history and
+[`PHYSICAL-TESTING.md`](PHYSICAL-TESTING.md) for the running evidence log.
 
 ---
 
@@ -138,13 +138,13 @@ Step-by-step help, including what to do when the build fails: [`docs/BUILD-ON-WI
 ## Database
 
 `dotnet/Area11.Core/Data/Migrations/` holds the **original 13 migrations verbatim** plus the
-append-only Area11 migrations `014`-`029` (permissions, photos, stock detail, barcodes, provisional
+append-only Area11 migrations `014`-`030` (permissions, photos, stock detail, barcodes, provisional
 money, reconciliation, catalog ordering, managed units, filter-only category tags, descriptive strength,
-rename-safe quantity rules and custom-field governance). They create **37 business tables** plus the
-`provisional_report_lines` view, and run inside `BEGIN IMMEDIATE`, so an existing `area11.db` opens
-unchanged and no data is lost when the app is updated. The migration runner keeps the separate `_migrations` ledger. Migrations 027–029 do not change batch quantities,
-sales, payments or historical documents. D-93 adds no migration and never rewrites a
-historical negative quantity to zero.
+rename-safe quantity rules, custom-field governance and master-foundation contracts). They create
+**42 application tables** plus the `_migrations` ledger and two views, and run inside `BEGIN IMMEDIATE`.
+Migration 030 preserves existing generic/brand text and adds nullable managed links without a guessed
+backfill; quantities, sales, payments and historical documents are not rewritten. D-93 never rewrites
+a historical negative quantity to zero. Local drafts do not create financial rows or travel to cloud sync.
 
 ## The rules that shape the code
 

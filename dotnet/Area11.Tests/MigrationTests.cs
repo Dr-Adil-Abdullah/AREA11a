@@ -46,7 +46,9 @@ public sealed class MigrationTests
                      "settings", "users", "products", "batches", "sales", "sale_items", "purchases",
                      "suppliers", "customers", "payments", "stock_movements", "shifts", "sale_returns",
                      "provisional_returns", "provisional_return_allocations", "supplier_returns", "stock_takes", "audit_logs",
-                     "alert_dismissals", "user_permissions", "photos", "units", "product_category_tags", "_migrations"
+                     "alert_dismissals", "user_permissions", "photos", "units", "product_category_tags",
+                     "form_field_definitions", "document_drafts", "generic_formulas", "brands", "shift_discrepancies",
+                     "_migrations"
                  })
         {
             var exists = Convert.ToInt64(test.Database.Scalar(connection,
@@ -154,7 +156,8 @@ public sealed class MigrationTests
                 && !name.StartsWith("026_", StringComparison.Ordinal)
                 && !name.StartsWith("027_", StringComparison.Ordinal)
                 && !name.StartsWith("028_", StringComparison.Ordinal)
-                && !name.StartsWith("029_", StringComparison.Ordinal))
+                && !name.StartsWith("029_", StringComparison.Ordinal)
+                && !name.StartsWith("030_", StringComparison.Ordinal))
             {
                 File.Copy(source, Path.Combine(legacyFolder, name));
             }
@@ -188,7 +191,7 @@ VALUES(1, 1, 1, 1, 1, 1, 'tablet', '2026-10-20 10:00:00'),
       (2, 1, 2, 2, 2, 2, 'tablet', '2026-10-20 10:00:00');");
             });
 
-            Assert.Equal(6, runner.ApplyPending(TestDatabase.MigrationsFolder)); // 024 money + 025 reconciliation + 026 catalog + 027 units/tags + 028 quantity rules + 029 field governance
+            Assert.Equal(7, runner.ApplyPending(TestDatabase.MigrationsFolder)); // 024 money + 025 reconciliation + 026 catalog + 027 units/tags + 028 quantity rules + 029 field governance + 030 master foundation
 
             using var connection = database.Open();
             var lines = database.Query<MigrationMoneyRow>(connection,
@@ -221,7 +224,8 @@ VALUES(1, 1, 1, 1, 1, 1, 'tablet', '2026-10-20 10:00:00'),
 
         foreach (var source in Directory.GetFiles(TestDatabase.MigrationsFolder, "*.sql"))
         {
-            if (!Path.GetFileName(source).StartsWith("029_", StringComparison.Ordinal))
+            if (!Path.GetFileName(source).StartsWith("029_", StringComparison.Ordinal)
+                && !Path.GetFileName(source).StartsWith("030_", StringComparison.Ordinal))
             {
                 File.Copy(source, Path.Combine(legacyFolder, Path.GetFileName(source)));
             }

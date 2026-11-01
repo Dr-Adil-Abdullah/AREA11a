@@ -7,9 +7,9 @@
 > اِس فائل میں یہ سب ہے: پروگرام کیا ہے، ابھی کہاں کھڑا ہے، **کیا باقی ہے**، کیا **کبھی نہیں** کرنا،
 > اور ایک نیا ورژن کیسے نکالنا ہے۔ آپ کے لیے چھوٹی اردو فائل: [`docs/HANDOVER-FOR-OWNER-URDU.md`](docs/HANDOVER-FOR-OWNER-URDU.md)۔
 
-**Status:** v0.38.1 · Malachite · `#0B6E4F` — **default branch `main`**; this backup-safety release on the retained Phase-3 source is on the current working branch `arena/60395e95-area11a` until its pull request is merged.
+**Status:** v0.39.0 · Tourmaline · `#7A1F5C` — **default branch `main`**; this master-checklist Phase-1 source is on working branch `arena/60395e95-area11a` until its pull request is merged.
 
-*Last updated: 30 October 2026. Malachite hardens PT01-BK-02/BK-03 staged restore failure behavior and adds four public-service regressions. The current tree has **904 written cases and 56 green static checks**; it has not been compiled or run here. The owner's **Cobalt v0.38.0 900/900 Windows xUnit** result with 0 failed/skipped in **1 m 4 s** is previous-release evidence. Malachite Windows/xUnit, isolated physical-restore/fault and PT-10 WPF/genuine evidence are pending; Aurora PT-09 remains separate. The feature board remains 52 done / 5 owner-action rows and the matrix has four partial rules. Real Excel and optional real-cloud evidence remain separate.*
+*Last updated: 1 November 2026. D-99 authorizes **schema/data contracts only**. The current tree has migration 030, format-3 catalog dependencies, 130 settings and guarded isolated-test rebuild support: **918 written cases in 71 files, 57 green static checks with real C# grammar/members, and 17/17 raw SQLite rehearsal groups**. It has not been compiled or run here. Cobalt's **900/900 Windows xUnit in 1 m 4 s** is previous-release evidence. Require `ALL GREEN - 918 of 918`, then PT-11; retained PT-01/PT-10 and real-cloud evidence remain separate. No bulk-print/WhatsApp/profit UI or automatic-sync scheduler exists, and Phases 2–7 need separate approval. The legacy feature board remains 52 done / 5 owner-action rows; D-93/PR rules and PT02-POS-01's unreproduced status are unchanged.*
 
 ---
 
@@ -38,7 +38,7 @@ repository is a **behaviour reference only** — never modify it, never copy its
 |---|---|
 | Physical test results, owner feedback and requested changes | **`PHYSICAL-TESTING.md`** — append-only physical-testing log |
 | What is done, what is next, per feature (ID, files, test, "done when") | **`docs/PROGRESS.md`** — the board |
-| What the owner decided, in his own language (D-00 … D-98) | **`docs/OWNER-DECISIONS.md`** (Urdu, authoritative) |
+| What the owner decided, in his own language (D-00 … D-99) | **`docs/OWNER-DECISIONS.md`** (Urdu, authoritative) |
 | His 116 numbered rules and where each is implemented | `docs/RULES-MATRIX.md` |
 | The blueprint (rules, data, pricing, billing, printing, rebuild protocol) | `docs/AREA11-MASTER-SPEC.md` |
 | Every table and column | `docs/SCHEMA-REFERENCE.md` |
@@ -56,17 +56,17 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 
 ## 3. Where it stands right now (read this twice)
 
-**Current source: v0.38.1 "Malachite" contains PT01-BK-02/BK-03 backup/recovery hardening and 904 written cases in 70 files. A failed staged database replacement no longer deletes the live database's SQLite sidecars; the full database+photos recovery zip and automatic rollback remain. Four public-service facts cover A/B/C/new-backup/B-recovery with photos, damaged-zip refusal, photo-copy rollback and a real Windows locked destination. Cobalt's D-98 pack/variant editing/search, Phase-2 field governance and Phase-1 shell remain; no variant/stock model, migration, base-unit conversion, rate, payment, historical document or Phase-4 rule changed. All 56 static checks pass locally, but Malachite has not been compiled or run here. The owner's Cobalt **900/900 xUnit in 1 m 4 s** is previous-release evidence. Require `ALL GREEN - 904 of 904`, then isolated PT-01 recovery/fault and PT-10 WPF/genuine walk-throughs. T-10, Z-05, E-12 and S-05 remain partial, the five owner-action feature rows remain open, and PT02-POS-01 still needs exact reproduction.**
+**Current source: v0.39.0 "Tourmaline" implements D-99 master Phase 1 only. Migration 030 adds native-field definitions with acknowledged critical overrides, local JSON drafts, generic-formula/brand masters, nullable product links, preferred+historical supplier view, and opening/closing drawer discrepancies. Seven later-phase setting contracts and cloud format 3 are present; drafts stay local and parents precede products. `IsolatedTestCopyService` rebuilds only a confirmed, marked local `area11-test.db` after a persistent SQLite technical snapshot—no demo generator, production menu or genuine-book reset. There are **918 written cases in 71 files**, **57/57 static checks**, and **17/17 raw SQLite groups**, but no local .NET/WPF execution. Require `ALL GREEN - 918 of 918` and PT-11. Printing/WhatsApp/profit UI, automatic sync and Phases 2–7 remain unimplemented/unapproved; Cobalt 900/900 is previous evidence, and PT02-POS-01 still needs exact reproduction.**
 
 | | |
 |---|---|
-| Test cases written | **904** in 70 files (`tools\\RUN-TESTS.cmd` compares the run against `EXPECTED=904`) |
-| Static checks | **56**, all green: `OK - 56 checks, no problems` |
-| Latest owner Windows xUnit (previous release) | **Cobalt 900/900**, 0 failed/skipped, **1 m 4 s**, owner-verified 29 Oct 2026; Malachite 904-case run pending |
+| Test cases written | **918** in 71 files (`tools\\RUN-TESTS.cmd` compares the run against `EXPECTED=918`) |
+| Static checks | **57**, all green: `OK - 57 checks, no problems` (real C# grammar/member resolution) |
+| Latest owner Windows xUnit (previous release) | **Cobalt 900/900**, 0 failed/skipped, **1 m 4 s**, owner-verified 29 Oct 2026; Tourmaline 918-case run pending |
 | Owner's numbered rules | **116 - 92 ✅ done, 4 🟡 partial, 0 ⬜, 20 standing** - see §4 |
 | Feature board | **57 features — 52 ✅ done, 5 🟡 one shop action each, 0 ⬜ not started** (91.2 % / 8.8 %) |
-| Code size | 291 C# files + 40 XAML files; 54 Core service/policy files, 38 views |
-| Database | 29 migrations → **37 business tables + ledger/provisional report view**, append-only, existing `area11.db` opens unchanged |
+| Code size | 294 C# files + 40 XAML files; 55 Core service/policy files, 45 models, 38 views |
+| Database | 30 migrations → **42 application tables + ledger and two views**, append-only, legacy text/quantities/money/documents preserved |
 
 ### What the owner's own PC has already proved
 
@@ -87,6 +87,27 @@ decision file owns the owner's word; `VERSIONS.md` owns the release history. Eve
 * On **v0.36.0 Zircon** he previously reported **Failed 0, Passed 883, Skipped 0,
   Total 883 in 1 m 10 s — ALL GREEN**. Spruce `94723e5` (883/883 in 1 m 19 s) and Obsidian (860/860)
   remain earlier historical evidence.
+
+### What v0.39.0 changes — D-99 master checklist Phase 1, schema/data contracts only
+
+* Migration `030_master_foundation.sql` adds five application tables and three nullable product links.
+  Native critical overrides need named acknowledgement; drafts require JSON objects and cannot create
+  financial documents by themselves. Formula/brand keys are unique; the supplier view keeps preferred
+  and genuine purchase-history rows; drawer differences enforce opening/closing arithmetic and reasons.
+* Cloud document format 3 adds managed units/native fields/formulas/brands and writes all new parents
+  before products. Formats 1/2 remain readable; local drafts are not in `SyncTables.Order`. No real
+  Supabase call or automatic-sync scheduler was made.
+* Seven settings bring the total to 130. They are contracts for separately approved print/WhatsApp/
+  profit/sync work, not evidence that those screens or behaviors exist. Q3's no-expense-allocation
+  choice and profit-OFF preservation of cost snapshots remain later-phase requirements.
+* `IsolatedTestCopyService` is not registered in `AppServices`: exact confirmation, a dedicated marker,
+  live/unmarked/network/reparse-point refusal, an untrimmed `VACUUM INTO` snapshot, staged migrations,
+  quick/FK checks and a recovery path protect rebuilds. It seeds only the ordinary empty-install baseline,
+  never demo sales/purchases/payments/stock. Fault tests run solely in temporary isolated folders.
+* **Evidence:** 918 written cases in 71 files, 57/57 static checks with real C# grammar and member
+  resolution, 887 prepared SQL statements, and 17/17 raw SQLite rehearsal groups (30 migrations, 42
+  application tables + ledger, two views, REAL quantities). No .NET SDK/WPF runtime exists here. Require
+  **`ALL GREEN - 918 of 918`** and PT-11; Cobalt 900/900 is previous-release evidence. Phases 2–7 are not authorized.
 
 ### What v0.38.1 changes — PT01-BK-02/BK-03 backup/recovery fault hardening
 
@@ -555,7 +576,7 @@ python3 tools/build_rules_matrix.py --check
 ```
 
 Then read, in this order: this file → `AGENTS.md` → `docs/PROGRESS.md` (the board) → `HANDOFF.md` §4
-(the walk-throughs) → `docs/OWNER-DECISIONS.md` (at least D-77, D-88 … D-98) → the code you are about
+(the walk-throughs) → `docs/OWNER-DECISIONS.md` (at least D-77, D-88 … D-99) → the code you are about
 to touch.
 
 **How work reaches `main` from now on.** `main` is protected only by habit, not by a rule: work on a

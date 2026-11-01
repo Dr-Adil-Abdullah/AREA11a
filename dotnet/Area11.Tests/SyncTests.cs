@@ -59,6 +59,59 @@ public sealed class SyncTests
         Assert.True(envelope.SizeBytes > 0);
     }
 
+    [Fact]
+    public void MasterCatalogAndPreferredSupplierTravelBeforeTheProduct()
+    {
+        using var source = new TestDatabase();
+        Configure(source);
+        source.Database.Tx(connection =>
+        {
+            source.Database.Execute(connection, "INSERT INTO companies(id, name) VALUES(901, 'Sync company');");
+            source.Database.Execute(connection,
+                "INSERT INTO generic_formulas(id, name, name_key) VALUES(901, 'Sync salt', 'sync salt');");
+            source.Database.Execute(connection, @"
+INSERT INTO brands(id, company_id, name, name_key)
+VALUES(901, 901, 'Sync brand', 'sync brand');");
+            source.Database.Execute(connection,
+                "INSERT INTO suppliers(id, name) VALUES(901, 'Sync preferred supplier');");
+            source.Database.Execute(connection, @"
+INSERT INTO form_field_definitions
+    (id, field_key, section_key, label, data_type, input_method, safe_required, required, critical)
+VALUES(901, 'purchase.expiry', 'purchase', 'Expiry', 'date', 'month_calendar', 1, 1, 1);");
+            source.Database.Execute(connection, @"
+INSERT INTO products(id, name, generic_formula_id, brand_id, preferred_supplier_id)
+VALUES(901, 'Sync medicine', 901, 901, 901);");
+        });
+
+        var envelope = Cloud(source, new FakeCloud()).Build(TestData.Owner).Value!;
+
+        Assert.Equal(3, envelope.Format);
+        Assert.True(Array.IndexOf(SyncTables.Order, "companies") < Array.IndexOf(SyncTables.Order, "brands"));
+        Assert.True(Array.IndexOf(SyncTables.Order, "generic_formulas") < Array.IndexOf(SyncTables.Order, "products"));
+        Assert.True(Array.IndexOf(SyncTables.Order, "suppliers") < Array.IndexOf(SyncTables.Order, "products"));
+        Assert.Equal(1, envelope.CountOf("form_field_definitions"));
+        Assert.Equal(1, envelope.CountOf("generic_formulas"));
+        Assert.Equal(1, envelope.CountOf("brands"));
+        Assert.DoesNotContain("document_drafts", SyncTables.Order);
+
+        using var target = new TestDatabase();
+        Configure(target);
+        var applied = Cloud(target, new FakeCloud()).Apply(TestData.Owner, envelope, confirmed: true);
+
+        Assert.True(applied.Ok, applied.Error);
+        Assert.Equal(1, Count(target, "form_field_definitions"));
+        Assert.Equal(1, Count(target, "generic_formulas"));
+        Assert.Equal(1, Count(target, "brands"));
+        Assert.Equal(901L, Convert.ToInt64(Scalar(target,
+            "SELECT generic_formula_id FROM products WHERE id = 901;")));
+        Assert.Equal(901L, Convert.ToInt64(Scalar(target,
+            "SELECT brand_id FROM products WHERE id = 901;")));
+        Assert.Equal(901L, Convert.ToInt64(Scalar(target,
+            "SELECT preferred_supplier_id FROM products WHERE id = 901;")));
+        Assert.Equal(1L, Convert.ToInt64(Scalar(target,
+            "SELECT is_preferred FROM product_supplier_directory WHERE product_id = 901 AND supplier_id = 901;")));
+    }
+
     // ============================== dependencies around the 90-day cut ==============================
 
     [Fact]

@@ -3,7 +3,7 @@
 > **یہ فائل کیا ہے؟** مالک (ڈاکٹر عادل عبداللہ) کی ہر ہدایت، فیصلہ اور ترجیح یہاں نمبر کے ساتھ محفوظ ہوتی ہے۔
 > کوئی بات زبانی نہیں رہتی۔ نئی ہدایت = نیا نمبر۔ پرانی ہدایت کوئی ایجنٹ خاموشی سے نہیں بدل سکتا۔
 >
-> **آخری اپ ڈیٹ:** 30 اکتوبر 2026 · **ورژن:** v0.38.1 Malachite `#0B6E4F` — PT01-BK-02/BK-03 staged-restore safety correction اور چار backup/fault regressions کے ساتھ **904 written cases in 70 files** اور **56 static checks** ہیں؛ Malachite Windows build/xUnit ابھی pending ہے۔ مالک کے Windows پر previous Cobalt کے Core/Tests میں **900/900، 0 failed/skipped، 1 منٹ 4 سیکنڈ** اور **`ALL GREEN - 900 of 900`** verify ہوا تھا؛ اسے Malachite یا PT-10 WPF/genuine physical proof نہیں لکھنا۔ Isolated A/B/C/locked/disk-full/recovery checks باقی ہیں۔ D-98 Phase-3 pack label/search، D-93 stock اور PR cancellation قواعد برقرار ہیں؛ کوئی نیا variant/stock model، migration یا Phase 4 اجازت نہیں۔ Real Excel اور cloud verification بھی الگ باقی ہیں۔
+> **آخری اپ ڈیٹ:** 1 نومبر 2026 · **ورژن:** v0.39.0 Tourmaline `#7A1F5C` — D-99 کے مطابق صرف نئے master checklist کا **Phase 1 schema/data contracts** لکھا گیا ہے۔ Migration 030، format-3 sync parents، سات later-phase settings اور guarded isolated-test rebuild کے ساتھ **918 written cases in 71 files**، **57/57 static checks (real C# grammar/members سمیت)** اور **17/17 raw SQLite rehearsal groups** ہیں۔ یہ Windows compile/xUnit، WPF، real cloud، printer یا physical PASS نہیں؛ مطلوبہ owner run **`ALL GREEN - 918 of 918`** ہے۔ Cobalt 900/900 previous-release evidence ہے۔ Q1=A، Q2=C، Q3=A، Q4=C محفوظ ہیں؛ Phases 2–7 الگ approval کے بغیر شروع نہیں ہوئے، کوئی bulk-print/WhatsApp/profit UI یا automatic-sync scheduler نہیں بنا۔ D-77 کے fake demo bills واپس نہیں آئے، genuine books اور D-93/PR rules نہیں بدلے۔
 > **سند (Authority):** `AREA11-MASTER-SPEC.md` (37 حصے + Appendix A) — اور جہاں مالک نے بعد میں کوئی نیا حکم دیا، وہی چلے گا (Spec §1.2.2)۔
 
 ---
@@ -995,6 +995,46 @@ rules → Loyalty points** سے خود آن کرتا ہے، اور وہیں تی
 
 **دوبارہ نہ ہو:** Version اب **0.13.0 · Deep Sea `#0C4A6E`** ہے (پچھلا Mocha `#6B4F3A`)۔
 
+
+### D-99 — **نئے master checklist کے چار فیصلے اور صرف Phase 1 کی اجازت** (1 نومبر 2026)
+
+مالک نے نئے master checklist کے Urdu MCQs میں **Q1=A، Q2=C، Q3=A، Q4=C** منتخب کیے اور **APPROVE**
+لکھ کر صرف **schema-first Phase 1** کی اجازت دی۔ یہ پرانے D-96/D-97/D-98 redesign phases سے الگ سات
+مرحلوں والا plan ہے؛ کسی پرانی phase completion کو نئی approval نہیں سمجھنا۔
+
+1. **Q1=A — Draft-only:** critical field خالی ہو تو incomplete Sale/Purchase صرف local draft محفوظ ہو۔
+   وہ final-post، invoice، stock movement، payment، balance یا report نہیں بن سکتا۔ Owner Override میں
+   critical safe-required field کو optional کرنے سے پہلے واضح risk warning اور explicit named confirmation
+   لازم ہے۔ Phase 1 میں schema/typed contracts ہیں؛ بعد کی form/posting UI الگ approval چاہے گی۔
+2. **Q2=C — Suppliers:** product کا ایک preferred supplier اور genuine purchase lines سے آنے والے تمام
+   historical suppliers ایک directory میں ہوں۔ Preferred کے بغیر خرید history سے preferred تخمینہ نہیں لگایا
+   جائے گا، اور ایک supplier کو منتخب کرنا باقی history نہیں مٹائے گا۔
+3. **Q3=A — Profit definition:** sale − cost-at-sale − applicable discounts/returns، بغیر expenses allocate
+   کیے۔ Phase 1 صرف visibility setting کا contract رکھتا ہے؛ نیا profit display/report ابھی نہیں بنا، اور
+   existing cost snapshots مٹانے یا profit permission بچانے کا rule نہیں بدلا۔
+4. **Q4=C — Sync:** manual اور automatic دونوں configurable منظور ہیں۔ Phase 1 میں format-3 dependency
+   metadata/parent ordering اور setting contracts ہیں؛ automatic default OFF ہے اور scheduler/background UI
+   ابھی نہیں بنا۔
+
+**Phase 1 کا دائرہ:** native/custom field-definition contracts، local drafts، managed generic
+formulas/brands، preferred+historical supplier links، later-phase print/profit/sync settings، opening/closing
+Cash Drawer discrepancy records، cloud dependency order، اور **صرف marker والی isolated test copy** کا
+schema rebuild جس سے پہلے automatic technical snapshot ہو۔ Demo/testing میں test data reset قابلِ قبول ہے،
+مگر D-77 کا fake demo shop واپس نہیں آئے گا: کوئی invented bill، purchase، payment یا stock row نہیں۔
+Genuine books میں صرف genuine transactions، اور destructive/fault tests صرف isolated copies میں۔
+
+**ابھی غیر منظور Phases 2–7:** (2) header/navigation/product workspace، (3) central dynamic field
+governance + expiry picker، (4) catalog/packaging/salts/brands/suppliers/tokenized search، (5) native
+WhatsApp + prepared PDF + universal/bulk printing، (6) product/customer history + profit + Cash Drawer
+details، (7) hybrid sync hardening/final baseline/full regression۔ ان میں سے کوئی بھی Phase 1 approval سے
+خودکار منظور نہیں۔
+
+**نفاذ اور evidence boundary:** v0.39.0 Tourmaline میں migration 030، پانچ نئی application tables، تین
+nullable product links، supplier view، typed models، 130 settings defaults، format 3، اور unconnected
+isolated-test service لکھی گئی ہے۔ **918 written cases in 71 files، 57/57 static checks (real C#
+grammar/members)، 30 migrations → 42 application tables + ledger + 2 views، اور 17/17 raw SQLite rehearsal
+groups** ہیں۔ .NET SDK/WPF runtime یہاں نہیں، اس لیے Windows build، **`ALL GREEN - 918 of 918`**، real
+Supabase اور owner physical verification ابھی باقی ہیں؛ Cobalt 900/900 کو Tourmaline evidence نہیں لکھنا۔
 
 ### D-98 — **Phase 3 packaging/variants/search کی اجازت اور پہلا محدود slice** (29 اکتوبر 2026)
 
@@ -2617,6 +2657,7 @@ restart نہیں (Spec 8.4.3)۔
 
 | تاریخ | کیا |
 |---|---|
+| 1 نومبر 2026 | **D-99 / Master checklist Phase 1 — v0.39.0 Tourmaline `#7A1F5C`**: مالک نے **Q1=A / Q2=C / Q3=A / Q4=C + APPROVE** سے صرف schema/data contracts کی اجازت دی۔ Migration 030، local drafts، managed catalog/supplier/drawer contracts، format 3، 130 settings اور guarded isolated-test rebuild + technical snapshot؛ **918 written cases، 57/57 static checks، 17/17 raw SQLite groups**۔ Windows/xUnit/WPF/real cloud/physical pending؛ Phases 2–7 غیر منظور، fake demo shop واپس نہیں۔ |
 | 29 اکتوبر 2026 | **Cobalt Windows verification — v0.38.0**: مالک کے test output میں **900 passed / 0 failed / 0 skipped / 900 total، 1m4s** اور runner کا **`ALL GREEN - 900 of 900`** موصول ہوا۔ Current Cobalt build/xUnit PASS؛ PT-10 WPF/genuine physical verification pending۔ کوئی code/test count/version change نہیں، Phase 4 غیر منظور۔ |
 | 29 اکتوبر 2026 | **D-98 / Phase-3 authorization + first packaging/search slice — v0.38.0 Cobalt `#315C8C`**: مالک نے Phase 3 کی اجازت دی۔ Existing pack label اب Products editor/list اور Products/Counter/Purchase search میں؛ Purchase picker strength+pack دکھاتا ہے۔ Separate product IDs، base-unit stock، conversion، rates اور extra barcodes محفوظ؛ کوئی migration نہیں۔ **900 written cases، 55/55 static checks، 7/7 targeted SQLite search groups**؛ Cobalt 900/900 Windows xUnit verified، PT-10 pending، Phase 4 غیر منظور۔ |
 | 29 اکتوبر 2026 | **D-97 / Zircon verification + Phase-2 authorization — v0.37.0 Aurora `#5B4B8A`**: Zircon Windows xUnit **883/883، 1m10s** موصول؛ مالک نے Phase 2 شروع کرنے کی اجازت دی۔ Central field policy، stable keys، guidance اور migration 029؛ **892 written cases، 54/54 static checks**، Aurora Windows/physical evidence pending۔ |

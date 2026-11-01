@@ -429,6 +429,18 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
             case "printer.copies":
                 return number is >= 1 and <= 3 ? null : "The number of copies must be 1, 2 or 3.";
 
+            case "printer.bulkFormat":
+                var bulkFormat = TextValue(value);
+                return bulkFormat is MasterFoundationSettings.SeparateReceipts or MasterFoundationSettings.A4List
+                    ? null
+                    : "Choose separate receipts or an A4 list for bulk printing.";
+
+            case "whatsapp.exportDirectory":
+                var exportDirectory = TextValue(value);
+                return exportDirectory.Length <= 260 && !exportDirectory.Any(char.IsControl)
+                    ? null
+                    : "The WhatsApp PDF folder must be one path of 260 characters or fewer.";
+
             case "discount.maxPercentCashier":
             case "discount.maxPercentManager":
             {
@@ -511,6 +523,11 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
 
             case "sync.shopId":
                 return CleanName(TextValue(value), "The shop id", allowDash: true, 64);
+
+            case "sync.automaticMinutes":
+                return number is >= 5 and <= 1440 && number.Value == Math.Floor(number.Value)
+                    ? null
+                    : "Automatic sync must be a whole number of minutes from 5 to 1440.";
 
             // Session (v0.35.0, D-92). The idle limit must be one of the choices printed on the page:
             // a number typed wrongly (200) would silently become "never", which is the exact fault the
@@ -609,6 +626,9 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Flag("printer.autoCut", true);
         Number("printer.copies", 1);
         Flag("printer.autoPrint", true);
+        // Master Phase 1 contracts. Phase 5 owns the actual individual/bulk print actions.
+        Flag("printer.defaultBulk", false);
+        Text("printer.bulkFormat", MasterFoundationSettings.SeparateReceipts);
         Flag("sale.successPopup", true);
 
         // The hardware test (F-46): the owner's ticks, the date, the person and the paper width they
@@ -724,7 +744,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         // Recovery remains visible after the automatic restart that follows a restore.
         Text("backup.lastRestoreSummary", string.Empty);
 
-        // ---- Cloud sync (later phase) ----
+        // ---- Cloud sync (manual is always available; Q4=C also permits configurable automatic sync) ----
         Flag("sync.enabled", false);
         Text("sync.url", string.Empty);
         Text("sync.key", string.Empty);
@@ -732,6 +752,14 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Text("sync.shopId", "shop-1");
         Text("sync.status", "not_configured");
         Text("sync.lastSyncAt", string.Empty);
+        // Safe Phase 1 default: no background timer until the separately approved Phase 7 enables it.
+        Flag("sync.automaticEnabled", false);
+        Number("sync.automaticMinutes", 15);
+
+        // ---- Master Phase 1 communication/reporting contracts (behavior in Phases 5 and 6) ----
+        Flag("whatsapp.preparePdf", true);
+        Text("whatsapp.exportDirectory", string.Empty);
+        Flag("profit.showMargins", true);
 
         // ---- Menu (D-51) ----
         // The folded groups, by key ("stock", "money" ...). A menu fold is a preference, not a

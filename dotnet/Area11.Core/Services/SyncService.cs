@@ -46,14 +46,18 @@ public sealed class SyncService
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = false };
 
     /// <summary>
-    /// The starting set: six lists whole and each financial document for 90 days, with recent child
-    /// lines read in bulk (no one-query-per-bill slowdown). A parent included later only as an older
+    /// The starting set: managed catalog/master lists whole and each financial document for 90 days,
+    /// with recent child lines read in bulk (no one-query-per-bill slowdown). A parent included later as an older
     /// dependency brings the same complete lines through the single-parent queries below.
     /// </summary>
     private static readonly Dictionary<string, string> Selects = new(StringComparer.Ordinal)
     {
+        ["units"] = "SELECT * FROM units ORDER BY id",
+        ["form_field_definitions"] = "SELECT * FROM form_field_definitions ORDER BY id",
         ["categories"] = "SELECT * FROM categories ORDER BY id",
         ["companies"] = "SELECT * FROM companies ORDER BY id",
+        ["generic_formulas"] = "SELECT * FROM generic_formulas ORDER BY id",
+        ["brands"] = "SELECT * FROM brands ORDER BY id",
         ["suppliers"] = "SELECT * FROM suppliers ORDER BY id",
         ["customers"] = "SELECT * FROM customers ORDER BY id",
         ["products"] = "SELECT * FROM products ORDER BY id",
@@ -225,7 +229,7 @@ ORDER BY allocation.id;";
         }
     }
 
-    /// <summary>The six lists whole, recent money, and every older parent/line those rows reference.</summary>
+    /// <summary>The managed master lists whole, recent money, and every older parent/line those rows reference.</summary>
     public ServiceResult<SyncEnvelope> Build(User? user)
     {
         if (!CanSync(user))

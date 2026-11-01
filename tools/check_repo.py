@@ -5027,6 +5027,145 @@ def check_phase_three_packaging() -> None:
 
 
 # ---------------------------------------------------------------------------
+def check_master_foundation() -> None:
+    """Approved master Phase 1 adds contracts only, without weakening posting or financial rules.
+
+    This guard keeps the schema-only boundary honest: native critical overrides need an acknowledged
+    owner, drafts stay local and unposted, quantities remain REAL, preferred and historical suppliers
+    share one directory, and the new catalog parents travel before a product that references them.
+    """
+    migration_path = DOTNET / "Area11.Core/Data/Migrations/030_master_foundation.sql"
+    models_path = DOTNET / "Area11.Core/Models/MasterFoundationModels.cs"
+    sync_models_path = DOTNET / "Area11.Core/Models/SyncModels.cs"
+    sync_service_path = DOTNET / "Area11.Core/Services/SyncService.cs"
+    settings_path = DOTNET / "Area11.Core/Services/SettingsService.cs"
+    reset_path = DOTNET / "Area11.Core/Services/IsolatedTestCopyService.cs"
+    app_services_path = DOTNET / "Area11.Desktop/AppServices.cs"
+    tests_path = DOTNET / "Area11.Tests/MasterFoundationTests.cs"
+    sync_tests_path = DOTNET / "Area11.Tests/SyncTests.cs"
+    paths = (migration_path, models_path, sync_models_path, sync_service_path, settings_path,
+             reset_path, app_services_path, tests_path, sync_tests_path)
+    if any(not path.exists() for path in paths):
+        for path in paths:
+            if not path.exists():
+                fail(f"Master Phase-1 foundation file is missing: {rel(path)}")
+        return
+
+    migration = migration_path.read_text(encoding="utf-8-sig")
+    models = models_path.read_text(encoding="utf-8-sig")
+    sync_models = sync_models_path.read_text(encoding="utf-8-sig")
+    sync_service = sync_service_path.read_text(encoding="utf-8-sig")
+    settings = settings_path.read_text(encoding="utf-8-sig")
+    reset = reset_path.read_text(encoding="utf-8-sig")
+    app_services = app_services_path.read_text(encoding="utf-8-sig")
+    tests = tests_path.read_text(encoding="utf-8-sig")
+    sync_tests = sync_tests_path.read_text(encoding="utf-8-sig")
+
+    for table in ("form_field_definitions", "document_drafts", "generic_formulas", "brands",
+                  "shift_discrepancies"):
+        if not re.search(rf"CREATE TABLE IF NOT EXISTS {table}\s*\(", migration):
+            fail(f"Master Phase-1 migration does not create {table}")
+
+    for needle, reason in (
+        ("critical = 0 OR safe_required = 0 OR required = 1",
+         "a critical safe-required field can become optional without acknowledgement"),
+        ("json_valid(payload_json) AND json_type(payload_json) = 'object'",
+         "draft payloads are not constrained to valid JSON objects"),
+        ("status <> 'posted' OR (posted_document_id IS NOT NULL AND posted_at IS NOT NULL)",
+         "a draft can be marked posted without a resulting document"),
+        ("CREATE VIEW product_supplier_directory", "preferred/historical supplier directory is missing"),
+        ("difference_paisa = counted_paisa - expected_paisa",
+         "drawer difference arithmetic is not guarded"),
+        ("UNIQUE(shift_id, stage)", "one shift can have duplicate opening/closing discrepancy rows"),
+        ("ALTER TABLE products ADD COLUMN preferred_supplier_id",
+         "the preferred supplier has no nullable product link"),
+    ):
+        if needle not in migration:
+            fail(f"Master Phase-1 migration: {reason}")
+
+    for needle in ("public const string Quantity = \"quantity\"",
+                   "public const string MonthCalendar = \"month_calendar\"",
+                   "public bool RequiresOverrideAcknowledgement",
+                   "public const string Opening = \"opening\"",
+                   "public const string Closing = \"closing\"",
+                   "public const string Draft = \"draft\""):
+        if needle not in models:
+            fail(f"Master Phase-1 typed contract is missing: {needle}")
+
+    order_match = re.search(r"public static readonly string\[\] Order\s*=\s*\{(.*?)\};",
+                            sync_models, re.DOTALL)
+    if order_match is None:
+        fail("Master Phase-1 cannot inspect cloud table order")
+    else:
+        order = re.findall(r'"([^"]+)"', order_match.group(1))
+        for parent in ("companies", "generic_formulas", "brands", "suppliers"):
+            if parent not in order or "products" not in order or order.index(parent) >= order.index("products"):
+                fail(f"Cloud format 3 must write {parent} before products")
+        if "document_drafts" in order:
+            fail("Local unposted drafts must never enter the cloud document")
+
+    format_match = re.search(r"CurrentFormat\s*=\s*(\d+)\s*;", sync_models)
+    if format_match is None or int(format_match.group(1)) < 3:
+        fail("Master catalog links need cloud format 3 so older builds refuse an incomplete apply")
+    for table in ("units", "form_field_definitions", "generic_formulas", "brands"):
+        if f'["{table}"] = "SELECT * FROM {table} ORDER BY id"' not in sync_service:
+            fail(f"Cloud local reader has no query for {table}")
+
+    for key in ("printer.defaultBulk", "printer.bulkFormat", "profit.showMargins",
+                "whatsapp.preparePdf", "whatsapp.exportDirectory", "sync.automaticEnabled",
+                "sync.automaticMinutes"):
+        if f'"{key}"' not in settings:
+            fail(f"Master Phase-1 setting contract is missing: {key}")
+
+    for needle, reason in (
+        ('ConfirmationPhrase = "REBUILD ISOLATED TEST COPY"',
+         "isolated rebuild has no exact confirmation barrier"),
+        ('DatabaseFileName = "area11-test.db"',
+         "test rebuild must never target the genuine area11.db filename"),
+        ("IsProtectedLiveFolder(workspace)", "the genuine data-folder guard is not called"),
+        ("ShopConfig.IsUnc(workspace)", "network-share rebuild is not refused"),
+        ("backups.SafetyCopy(\"test-rebuild\")", "an untrimmed technical snapshot is not made"),
+        ("File.Move(staged, databasePath, overwrite: true)", "fresh schema is not staged before replacement"),
+        ("PRAGMA quick_check;", "staged test database is not checked"),
+        ("TryRecoverPrevious(databasePath, technicalBackupPath", "post-replacement failure has no snapshot recovery path"),
+        ("The previous isolated copy was not replaced.", "pre-replacement failure state is not explicit"),
+        ("The database state is uncertain", "failed recovery could falsely claim the database was untouched"),
+        ("test_schema_rebuild", "fresh test copy does not record its rebuild audit row"),
+    ):
+        if needle not in reset:
+            fail(f"Master Phase-1 isolated rebuild: {reason}")
+    if reset.index("backups.SafetyCopy") > reset.index("File.Move(staged, databasePath"):
+        fail("Master Phase-1 isolated rebuild replaces the test database before its technical backup")
+    if "IsolatedTestCopyService" in app_services:
+        fail("The isolated test rebuild must not become a genuine-shop desktop service or demo mode")
+
+    for fact in (
+        "FreshSchema_ContainsMasterContracts_AndKeepsQuantitiesReal",
+        "NativeFields_SupportMonthCalendarAndRealQuantityContracts",
+        "CriticalFieldCannotBecomeOptionalWithoutNamedOwnerAcknowledgement",
+        "DraftsValidateJsonAndNeverBecomeFinancialDocumentsByThemselves",
+        "FormulaAndBrandMastersRejectBlankNamesAndDuplicateNormalizedKeys",
+        "SupplierDirectoryContainsBothPreferredAndEveryHistoricalSupplier",
+        "DrawerDiscrepanciesRequireOpeningClosingArithmeticAndARealReason",
+        "MasterSettings_DefaultToSinglePrintManualSyncAndVisibleProfit",
+        "MasterSettings_RefuseInvalidBulkFormatAndAutomaticInterval",
+        "Migration030_PreservesLegacyProductTextAndAddsHistoryWithoutGuessingLinks",
+        "IsolatedTestRebuild_AlwaysBacksUpBeforeReplacingAndStartsWithoutBusinessRows",
+        "IsolatedTestRebuild_RefusesWrongConfirmationAndUnmarkedExistingFolders",
+        "IsolatedTestRebuild_BackupFaultLeavesTheOriginalIsolatedCopyUntouched",
+    ):
+        if fact not in tests:
+            fail(f"Master Phase-1 regression fact is missing: {fact}")
+    if "MasterCatalogAndPreferredSupplierTravelBeforeTheProduct" not in sync_tests:
+        fail("Master Phase-1 cloud round-trip regression is missing")
+
+    REPORT.append(
+        "Master Phase 1: native override/draft/catalog/supplier/drawer contracts, REAL quantities, "
+        "local-only drafts, format-3 parent ordering, guarded isolated rebuild/technical backup and "
+        "fourteen focused regression facts")
+
+
+# ---------------------------------------------------------------------------
 def check_docs() -> None:
     docs = [ROOT / "README.md", ROOT / "HANDOFF.md", ROOT / "AGENTS.md", ROOT / "dotnet/README.md"]
     docs += sorted((ROOT / "docs").glob("*.md"))
@@ -5533,6 +5672,7 @@ def main() -> int:
     check_phase_one_shell()
     check_phase_two_fields()
     check_phase_three_packaging()
+    check_master_foundation()
     check_checklist()
     check_audit_recovery()
     check_report_chart()

@@ -63,6 +63,7 @@ Preview کے بعد Settings میں cloud بند کر دیں تو Core بھی ap
 | جاتا ہے | نہیں جاتا |
 |---|---|
 | دوائیں، بیچ، گاہک، سپلائر، کیٹگری، کمپنی — **پوری فہرست** | تصاویر (وہ زپ بیک اپ میں جاتی ہیں) |
+| managed units، native field definitions، generic formulas اور brands — **پوری فہرست** | local-only document drafts؛ وہ cloud میں نہیں جاتے |
 | بل، خریداری، no-bill return، ادائیگی، خرچ — **آخری 90 دن** | 90 دن سے پرانے غیر منسلک documents |
 | منتخب بل، خریداری اور no-bill return کی **تمام لائنیں** | صارفین کے پاس ورڈ/PIN، سیٹنگز، آڈٹ لاگ |
 | حالیہ payment یا reconciliation کا پرانا parent اور اُس کی لائنیں — صرف ربط مکمل رکھنے کے لیے | تصاویر، shifts اور مکمل مشین کا backup |
@@ -71,6 +72,11 @@ Preview کے بعد Settings میں cloud بند کر دیں تو Core بھی ap
 بل کی لائن سے جُڑتی ہے، تو وہ parent اور اُس کے document کی تمام لائنیں بھی دستاویز میں جائیں گی۔ کسی غیر متعلقہ
 پرانے بل کو صرف اس لیے نہیں بھیجا جاتا کہ وہ پرانا ہے۔ Payment کا `sale_id`، `purchase_id` یا
 `provisional_return_id` خالی کر کے یا financial row چھپا کر خرابی نہیں چھپائی جاتی۔
+
+Format 3 میں companies، generic formulas، brands اور suppliers products سے پہلے لکھے جاتے ہیں تاکہ
+managed links کا parent موجود ہو۔ فی الحال یہ **manual Push / Preview / Bring** ہی ہیں: Phase-1 settings
+میں automatic-sync کی مستقبل کی contract values ہیں، مگر کوئی background scheduler یا automatic-sync UI
+ابھی نہیں بنایا گیا۔
 
 ---
 
@@ -85,15 +91,15 @@ Supabase کا ٹیبل `area11_sync` ایک ہی قطار رکھتا ہے، او
 | `shop_id` | آپ کا shop id (`shop-1`) — اسی پر پرانی قطار بدلی جاتی ہے |
 | `shop_name` | دکان کا نام (وہی جو رسید پر چھپتا ہے) |
 | `sent_at` | بھیجنے کا وقت، دکان کی گھڑی اور اُس کا آفسیٹ (`+05:00`) |
-| `version` | **دستاویز کی شکل** کا نمبر (آج `2`) — پروگرام کا ورژن نہیں |
-| `payload` | پورا Area11 دستاویز، جس میں 15 ٹیبل اور `version` میں پروگرام کا ورژن (`0.35.19`) |
+| `version` | **دستاویز کی شکل** کا نمبر (آج `3`) — پروگرام کا ورژن نہیں |
+| `payload` | پورا Area11 دستاویز، جس میں 19 ٹیبل اور `version` میں پروگرام کا ورژن (`0.39.0`) |
 
 `payload` کے اندر جو `version` ہے وہ **پروگرام** کا ہے؛ باہر والا `version` صرف دستاویز کی شکل کا نمبر ہے۔
-یہ فرق جان بوجھ کر ہے: `version` کالم `int` ہے، اور "0.35.19" جیسا متن اُس میں نہیں بیٹھ سکتا۔
-نیا Area11 پرانا **format 1** پڑھ سکتا ہے۔ پرانا Area11 نیا **format 2** لکھنے کے بجائے اپڈیٹ مانگے گا، تاکہ
-no-bill return اور financial links کے نئے قواعد کو نظر انداز کر کے ادھورا apply نہ کرے۔ اپڈیٹ کے بعد **Bring سے
-پہلے نیا Push** کریں: پرانی format-1 copy میں ضروری parent پہلے سے missing ہو تو نیا reader اُسے ظاہر کر سکتا
-ہے مگر missing row ایجاد نہیں کر سکتا؛ ایسی ادھوری copy apply نہیں ہوگی۔
+یہ فرق جان بوجھ کر ہے: `version` کالم `int` ہے، اور "0.39.0" جیسا متن اُس میں نہیں بیٹھ سکتا۔
+نیا Area11 پرانا **format 1 اور format 2** پڑھ سکتا ہے۔ پرانا Area11 نیا **format 3** لکھنے کے بجائے اپڈیٹ
+مانگے گا، تاکہ managed catalog/native-field parents کو نظر انداز کر کے ادھورا apply نہ کرے۔ اپڈیٹ کے بعد
+**Bring سے پہلے نیا Push** کریں: پرانی copy میں ضروری parent پہلے سے missing ہو تو نیا reader اُسے ظاہر
+کر سکتا ہے مگر missing row ایجاد نہیں کر سکتا؛ format 1/2 پڑھنا managed links خود بنانا نہیں ہے۔
 
 ---
 
@@ -106,7 +112,7 @@ no-bill return اور financial links کے نئے قواعد کو نظر اند�
 > **اصول:** روزمرہ کام میں صرف **Push**۔ "Bring" صرف جب آپ جان بوجھ کر یہی partial rows لانا چاہیں۔
 > مکمل نئی مشین بحال کرنے کے لیے cloud نہیں، Area11 کا مکمل zip backup استعمال کریں۔
 
-**یہ مکمل backup نہیں ہے۔** Cloud میں صرف اوپر بتائی گئی 15 tables اور 90 دن + ضروری linked parents ہیں۔
+**یہ مکمل backup نہیں ہے۔** Cloud میں صرف اوپر بتائی گئی 19 tables اور 90 دن + ضروری linked parents ہیں۔
 پوری مشین، تصاویر، settings، audit، users، shifts اور باقی history بحال کرنے کے لیے Area11 کا معمول کا
 مکمل zip backup استعمال کریں۔ Cloud کی نقل کو مکمل restore سمجھ کر اصل دکان پر apply نہ کریں۔
 
@@ -139,16 +145,18 @@ Key کبھی آڈٹ میں نہیں لکھی جاتی؛ صفحہ بھی اُس �
 
 ---
 
-## 7. اصل Supabase پر محتاط جانچ (v0.35.19)
+## 7. اصل Supabase پر محتاط جانچ (v0.39.0)
 
-پہلے Windows پر `tools\RUN-TESTS.cmd` چلائیں: مطلوبہ نتیجہ **`ALL GREEN - 860 of 860`** ہے۔
+پہلے Windows پر `tools\RUN-TESTS.cmd` چلائیں: مطلوبہ نتیجہ **`ALL GREEN - 918 of 918`** ہے۔
 پھر اصل cloud جانچ کے لیے الگ **test Shop id / table** اور آزمائشی database نقل استعمال کریں۔ اصل دکان کا
 ڈیٹا یا key چیٹ میں نہ بھیجیں؛ key صرف Settings کے خانے میں لکھیں۔
 
 1. 90 دن سے پرانا credit بل بنائیں اور آج اُس کی payment کریں؛ ایسی ہی پرانی خریداری پر آج supplier payment کریں۔
 2. پرانے بل سے منسلک no-bill return reconciliation رکھیں جس میں PR payment، PR line اور sale-line allocation موجود ہو۔
-3. **Push** کے جواب میں format-2 کے منتخب rows اور کامیابی دیکھیں (خالی table شامل نہیں ہوتی)؛ **Preview** میں 15-table موازنہ دیکھیں۔
-4. صرف آزمائشی نقل پر ٹک اور **Bring** کریں۔ پہلے backup بننا چاہیے؛ پرانے parents، ان کی تمام lines، PR allocations
-   اور payments موجود ہوں، اور کوئی unrelated پرانا بل صرف dependency کے نام پر شامل نہ ہوا ہو۔
-5. Preview کے بعد Refresh/Push پر پرانی copy apply نہ ہو؛ Settings میں switch بند کر کے بھی apply رد ہو۔
-6. اصل نتیجہ، HTTP status اور پورا error متن محفوظ کریں۔ صرف fake-wire tests کو اصل Supabase کامیابی نہ لکھیں۔
+3. Test copy میں company + generic formula + brand + supplier بنائیں اور product کے managed/preferred links دیں۔
+   ایک local draft بھی رکھیں؛ وہ cloud document میں شامل نہیں ہونا چاہیے۔
+4. **Push** کے جواب میں format-3 کے منتخب rows اور کامیابی دیکھیں (خالی table شامل نہیں ہوتی)؛ **Preview** میں 19-table موازنہ دیکھیں۔
+5. صرف آزمائشی نقل پر ٹک اور **Bring** کریں۔ پہلے backup بننا چاہیے؛ managed parents product سے پہلے apply ہوں،
+   پرانے financial parents/lines، PR allocations اور payments موجود ہوں، اور unrelated پرانا بل شامل نہ ہو۔
+6. Preview کے بعد Refresh/Push پر پرانی copy apply نہ ہو؛ Settings میں switch بند کر کے بھی apply رد ہو۔
+7. اصل نتیجہ، HTTP status اور پورا error متن محفوظ کریں۔ صرف fake-wire tests کو اصل Supabase کامیابی نہ لکھیں۔

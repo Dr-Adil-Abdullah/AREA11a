@@ -15,10 +15,10 @@
 
 ## موجودہ build اور automated ثبوت
 
-- Build: **v0.38.1 Malachite `#0B6E4F`** (PT01-BK-02/BK-03 backup/recovery fault hardening؛ اس release کا Windows build/xUnit ابھی owner سے طلب ہے)
+- Build: **v0.39.0 Tourmaline `#7A1F5C`** (D-99 master checklist Phase 1 schema/data contracts؛ اس release کا Windows build/xUnit ابھی owner سے طلب ہے)
 - Latest owner xUnit: **900 passed / 0 failed / 0 skipped / 900 total — ALL GREEN**، **Cobalt v0.38.0**، 29 اکتوبر 2026، مدت **1 منٹ 4 سیکنڈ**۔ Runner نے **`ALL GREEN - 900 of 900 cases passed, failed: 0`** دیا۔ یہ **previous-release Cobalt** کے `Area11.Core` / `Area11.Tests` Windows xUnit ثبوت ہے؛ Malachite، `Area11.Desktop` / WPF build یا launch اور PT-10 WPF/genuine physical evidence نہیں۔
 - Previous owner xUnit: **883 passed / 0 failed / 0 skipped / 883 total — ALL GREEN**، **Zircon v0.36.0**، 29 اکتوبر 2026، مدت **1 منٹ 10 سیکنڈ**۔ یہ previous-release evidence ہے۔
-- موجودہ source: **904 written cases in 70 files**؛ **56/56 static checks PASS** (real C# grammar سمیت)۔ Latest gate: **291 C# files / 1,457 XAML bindings / 29 migrations / 37 business tables / 835 prepared SQL statements / 123 settings keys**۔ نیا backup guard full pre-restore recovery، successful replacement سے پہلے sidecars کا تحفظ، rollback اور چار named fault/recovery facts چیک کرتا ہے؛ پرانی ordering، missing rollback اور missing fact کی **3/3 injections** reject ہوئیں، restored source pass ہوا۔ Phase-3 search کا previous targeted **7/7 SQLite development probe** بھی محفوظ ہے۔ **Malachite Windows build/xUnit اور PT-01 isolated A/B/C/locked/disk-full verification باقی ہے؛ Cobalt 900/900 صرف پچھلا automated ثبوت ہے**؛ PT-10، Aurora PT-09 اور Zircon PT-08 کے physical checks الگ باقی ہیں۔
+- موجودہ source: **918 written cases in 71 files**؛ **57/57 static checks PASS** (real C# grammar اور static-member resolution سمیت)۔ Latest gate: **294 C# files / 1,457 XAML bindings / 30 migrations / 42 application tables + ledger / 2 views / 887 prepared SQL statements / 130 settings keys**۔ اس کے علاوہ **17/17 raw SQLite rehearsal groups** کامیاب ہیں: pre-030 upgrade، critical acknowledgement، draft/no-financials، catalog uniqueness، preferred+historical suppliers، drawer constraints، REAL quantities اور isolated snapshot/replacement۔ یہ raw SQL development evidence ہے، .NET/xUnit/WPF یا real-cloud execution نہیں۔ **Tourmaline Windows build اور `ALL GREEN - 918 of 918` باقی ہے؛ Cobalt 900/900 صرف پچھلا automated ثبوت ہے**۔ PT-11 کے ساتھ PT-01، PT-10، Aurora PT-09 اور Zircon PT-08 کے retained physical checks الگ باقی ہیں۔
 - Windows build report میں `AlertKindTests.cs(121,19)` کا `productId` scope compile error ملا؛ وہ `aedb65d` میں ٹھیک push ہو چکا ہے۔ بعد کا build xUnit تک پہنچا؛ حتمی 883/883 نتیجہ نیچے محفوظ ہے۔
 - تازہ Windows build report میں `PosViewModel.cs(924,21)` کا **CS0103: `MessageBoxDefaultButton` does not exist** ملا۔ WPF کے صحیح overload کے لیے اسے **`MessageBoxResult.No`** سے بدلا گیا ہے، اس لیے default جواب No/normal retail رہتا ہے۔ Static gate دوبارہ PASS ہے؛ اگلا Windows build xUnit تک پہنچا، مگر اس وقت full green نہیں ہوا؛ حتمی نتیجہ نیچے محفوظ ہے۔
 - تازہ Windows xUnit run: **879 passed / 4 failed / 883 total**۔ Reported HoldCart errors میں below-cost fixtures تھے: Brufen کی test retail cost سے کم تھی، اور ایک custom strip rate پورے strip کی cost سے کم تھا۔ ان غیرمتعلق HoldCart/Return fixtures کو درست rates دیے گئے ہیں؛ production below-cost lock اور اس کے dedicated refusal tests نہیں بدلے۔ اس وقت full run باقی تھا؛ حتمی 883/883 نتیجہ نیچے محفوظ ہے۔
@@ -43,6 +43,92 @@
 | **PT-08 — Redesign Phase 1: dark header اور navigation** | **883/883 ZIRCON xUNIT PASS — WPF verification pending** | Automated suite کامیاب؛ header، Settings sections، category filter، keyboard اور permissions کی physical جانچ باقی |
 | **PT-09 — Redesign Phase 2: field governance اور schema** | **CODE READY — Aurora Windows/WPF verification pending** | Stable keys، central validation، guidance، migration 029 اور existing answers |
 | **PT-10 — Redesign Phase 3: packaging، variants اور search** | **900/900 COBALT xUNIT PASS — WPF verification pending** | Windows suite کامیاب؛ pack editing، Products/Counter/Purchase discovery، separate variant selection اور unchanged stock conversion کی physical جانچ باقی |
+| **PT-11 — Master Phase 1: schema، contracts اور isolated rebuild** | **CODE/STATIC/RAW-SQL READY — Windows xUnit/owner verification pending** | Migration 030، format 3، draft/catalog/supplier/drawer contracts اور technical-snapshot rebuild؛ کوئی later-phase UI یا physical PASS نہیں |
+
+---
+
+# PT-11 — Master checklist Phase 1: Fresh Schema & Data Contracts
+
+**حالت:** Code/static/raw-SQLite evidence موجود — Tourmaline Windows build/xUnit اور owner verification pending
+
+**مقصد:** نئے master plan کی صرف بنیاد محفوظ کرنا: native/custom field contracts، local drafts، managed
+formulas/brands/suppliers، drawer discrepancies، sync dependencies اور isolated test rebuild۔
+
+**حدود:** Q1=A، Q2=C، Q3=A، Q4=C اور صرف Phase 1 منظور ہے۔ Bulk printing، WhatsApp workflow، نیا profit
+UI، automatic-sync scheduler اور Phases 2–7 اس release میں نہیں ہیں۔ D-77 کا fake demo shop واپس نہیں آیا۔
+Genuine books میں صرف genuine transactions؛ destructive/fault checks صرف tests کی temporary isolated copies میں۔
+
+## Automated اور development ثبوت
+
+- **57/57 static checks PASS**، real C# grammar اور static members سمیت؛ **918 written cases in 71 files**۔
+- **17/17 raw SQLite rehearsal groups PASS:** 30 migrations، 42 application tables + ledger، 2 views،
+  `quick_check`/`foreign_key_check`، REAL quantities، negative constraints، upgrade preservation اور snapshot۔
+- یہ دونوں development evidence ہیں۔ **Tourmaline کا .NET build، xUnit، WPF، real Supabase، printer یا
+  physical PASS ابھی نہیں**؛ Cobalt 900/900 previous-release evidence ہے۔
+
+## مالک کی verification checklist
+
+1. **Backup پہلے:** Tourmaline کھولنے سے پہلے موجودہ genuine shop کا معمول کا مکمل ZIP backup لیں۔ Upgrade
+   کے بعد کوئی صاف/reset action genuine database پر نہیں کرنا۔ Test-reset کی اجازت صرف isolated test data ہے۔
+2. **Build اور full suite:** `START-AREA11.bat` سے **v0.39.0 · Tourmaline** build کریں، پھر
+   `tools\RUN-TESTS.cmd` چلائیں۔ مطلوبہ **`ALL GREEN - 918 of 918`**، failed/skipped 0۔ Compile یا test
+   failure ہو تو `test.log` اور `tools\SEND-REPORT.cmd` کا report بھیجیں؛ کسی نتیجے کو pass نہ لکھیں۔
+3. **Named Phase-1 tests:** log میں `MasterFoundationTests` کے 13 facts اور
+   `SyncTests.MasterCatalogAndPreferredSupplierTravelBeforeTheProduct` شامل ہوں۔ یہی 14 focused regressions
+   upgrade، schema، settings audit، sync order اور isolated rebuild/fault paths cover کرتے ہیں۔
+4. **Genuine upgrade کا read-only موازنہ:** backup کے بعد Tourmaline کھولیں۔ کسی existing product کا
+   generic/brand text، کونٹ، پرانا PINV/INV، payment اور batch quantity پہلے جیسا ہو۔ Migration 030 کوئی
+   managed formula/brand/preferred link تخمینے سے نہیں بناتی؛ nullable links خالی رہ سکتے ہیں۔
+5. **Draft boundary:** automated test میں invalid JSON اور بغیر document/timestamp کے posted-draft refusal
+   ہو، اور draft سے sale/purchase/payment/stock movement صفر رہے۔ فی الحال draft save/posting کی WPF screen
+   نہیں ہے؛ اس غیر موجود UI کو PT-11 failure یا PASS نہ لکھیں، یہ later phase ہے۔
+6. **Catalog/supplier/drawer contracts:** tests میں duplicate normalized key، blank name، wrong drawer
+   arithmetic، zero discrepancy اور duplicate shift/stage reject ہوں۔ Preferred کے ساتھ historical supplier
+   اور fractional `2.5` REAL quantity برقرار رہے۔ ان contracts کی management/detail UI ابھی نہیں بنی۔
+7. **Critical Owner Override:** بغیر named acknowledgement کے critical safe-required field optional نہ ہو؛
+   acknowledgement کے ساتھ contract قبول ہو۔ اصل risk-warning + explicit-confirmation screen Phase 3 میں ہے،
+   اس لیے یہاں صرف schema/test evidence لیں، UI completion کا دعویٰ نہیں۔
+8. **Guarded isolated rebuild:** تین rebuild facts میں پہلا empty schema، دوسرے rebuild سے پہلے persistent
+   `.db` technical snapshot، نئے copy میں disposable row کا خاتمہ اور پرانے snapshot میں اس کا موجود رہنا،
+   wrong-confirmation/unmarked refusal، اور backup-directory fault پر original isolated row کا تحفظ جانچا
+   گیا ہے۔ Genuine `%ProgramData%\Area11` میں `area11-test.db` یا test marker نہیں بننا چاہیے، اور production
+   menu/`--demo` route موجود نہیں۔ Genuine folder میں خود marker ہرگز نہ بنائیں۔
+9. **Settings versus behavior:** 130 defaults میں نئی print/WhatsApp/profit/sync contract keys ہیں، مگر
+   automatic sync OFF رہے اور کوئی background push نہ چلے۔ نیا bulk-print/WhatsApp/profit UI نہ ملنا اس
+   Phase کی حد ہے؛ اسے implemented نہ لکھیں۔ Existing owner-visible settings کا old → new audit برقرار رہے۔
+10. **Cloud حد:** format-3 round-trip fake transport پر ہے۔ Local drafts sync order میں نہیں، اور managed
+    parents product سے پہلے ہیں۔ Real Supabase test نہ چلائیں جب تک الگ test Shop id/table، isolated database
+    اور owner approval نہ ہو؛ fake-wire PASS کو real-cloud PASS نہیں لکھنا۔
+11. **Financial safeguards:** upgrade/rebuild tests کے دوران genuine stock، sale، purchase، payment، balance،
+    invoice number یا drawer میں کوئی automatic row نہ بنے۔ PR cancellation سے positive payment/drawer inflow
+    بنانے کا قاعدہ نہیں بدلا؛ negative-stock retirement اور `qty_base REAL` بھی unchanged ہیں۔
+12. **باقی retained checks:** PT-01 isolated restore/fault، PT-10 pack/search/variant، PT-09 governance اور
+    PT-08 navigation کے اپنے evidence الگ مکمل کریں۔ PT02-POS-01 ابھی unreproduced ہے؛ بغیر exact evidence
+    کے fixed/rejected نہ لکھیں۔
+
+## نتیجہ
+
+```text
+Build: v0.39.0 Tourmaline
+PT-11: PASS / PARTIAL / FAIL
+Windows build errors/warnings:
+Windows xUnit: total / failed / skipped / duration:
+Runner line (expected ALL GREEN - 918 of 918):
+13 MasterFoundationTests + 1 Sync master round-trip present:
+Genuine backup filename before upgrade:
+Existing generic/brand text and historical documents preserved:
+Draft creates no financial/stock rows (test evidence):
+Preferred + historical supplier and REAL quantity (test evidence):
+Critical acknowledgement / drawer negative paths (test evidence):
+Isolated snapshot-before-rebuild and backup-fault preservation (test evidence):
+Genuine folder has no area11-test.db / marker / demo route:
+No bulk-print/WhatsApp/profit UI or automatic scheduler claimed:
+Stock/payment/document side effect on genuine upgrade (must be none):
+Real Supabase run? (No, unless separately approved/isolated):
+Screenshots / error / test.log / support report:
+```
+
+**Owner result:** Pending — کوئی Tourmaline Windows/xUnit یا PT-11 physical PASS ابھی record نہیں۔
 
 ---
 

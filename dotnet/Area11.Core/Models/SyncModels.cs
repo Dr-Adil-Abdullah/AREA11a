@@ -12,7 +12,8 @@ public static class SyncTables
     /// <summary>The tables that travel, in the order they are written (parents before children).</summary>
     public static readonly string[] Order =
     {
-        "categories", "companies", "suppliers", "customers", "products", "batches",
+        "units", "form_field_definitions", "categories", "companies", "generic_formulas", "brands",
+        "suppliers", "customers", "products", "batches",
         "sales", "sale_items", "purchases", "purchase_items",
         "provisional_returns", "provisional_items", "provisional_return_allocations",
         "payments", "expenses"
@@ -38,6 +39,10 @@ public static class SyncTables
         "suppliers" => "Suppliers",
         "categories" => "Categories",
         "companies" => "Companies",
+        "units" => "Managed units",
+        "form_field_definitions" => "Native form fields",
+        "generic_formulas" => "Salts / generic formulas",
+        "brands" => "Brands",
         "sales" => "Bills (90 days)",
         "sale_items" => "Bill lines",
         "purchases" => "Purchases (90 days)",
@@ -111,10 +116,11 @@ public sealed class SyncTableCount
 public sealed class SyncEnvelope
 {
     /// <summary>
-    /// Format 2 adds no-bill returns and dependency-complete financial documents. Format 1 remains
-    /// readable; an older Area11 refuses format 2 instead of trying to apply links it does not know.
+    /// Format 2 added no-bill returns and dependency-complete financial documents. Format 3 adds the
+    /// managed master catalog/native-field contracts required by migration 030. Formats 1 and 2 remain
+    /// readable; an older Area11 refuses format 3 instead of dropping parents its schema does not know.
     /// </summary>
-    public const int CurrentFormat = 2;
+    public const int CurrentFormat = 3;
 
     [JsonPropertyName("format")]
     public int Format { get; set; } = CurrentFormat;
@@ -173,7 +179,7 @@ public sealed class SyncEnvelope
 /// Posting the document directly asked PostgREST for a `format` column the table does not have, so a
 /// real push was refused with "Could not find the 'format' column" (repaired in v0.26.0).
 ///
-/// `version` here is the **document format** (2 today), not the program's version: the table was made
+/// `version` here is the **document format** (3 today), not the program's version: the table was made
 /// for a schema number, and the program version travels inside the document where it can be any text -
 /// "0.26.0" cannot be written into an int column, and a cloud copy must still be readable years later.
 /// </summary>
