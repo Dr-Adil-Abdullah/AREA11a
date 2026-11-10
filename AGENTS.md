@@ -1,11 +1,11 @@
 # AGENTS.md - how to work in this repository
 
-> **WIP handoff, 24 Oct 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/60395e95-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/60395e95-area11a). Portion 4 finished in v0.44.0 Henna (Windows/physical pending); Portion 5 approved next, then 6; new Portion 18 after 6; Portion 17 paused. Older status and approval statements below are historical. This branch is not a tested release.
+> **WIP handoff, 24 Oct 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/60395e95-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/60395e95-area11a). Portion 5 finished in v0.45.0 Sienna (Windows/physical pending); Portion 6 approved next; new Portion 18 after 6; Portion 17 paused. Older status and approval statements below are historical. This branch is not a tested release.
 
 
-## Latest handoff — v0.44.0 Henna
+## Latest handoff — v0.45.0 Sienna
 
-Portion 4 finished per D-100: owner-choice required/optional for every field, staged-photo picker with atomic attach/rollback cleanup, names always-required. **976 written cases, 57/57 static; Windows build/xUnit and physical checks pending.** Portion 5 (shared drafts) next, then 6; new Portion 18 after 6; Portion 17 paused.
+Portion 5 finished: safe local sale/purchase drafts, shared across permitted staff (D-100) — save/open/update/discard/final-post, draft-only until a separately validated final post through the existing guarded Create entry points, double post impossible. **988 written cases, 57/57 static; Windows build/xUnit and physical checks pending.** Portion 6 next; new Portion 18 after 6; Portion 17 paused.
 
 
 ## Latest handoff — v0.43.0 Umber

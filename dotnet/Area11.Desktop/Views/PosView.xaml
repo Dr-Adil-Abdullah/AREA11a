@@ -321,6 +321,16 @@
                                 Margin="0,6,0,0" Command="{Binding HoldCommand}"
                                 ToolTip="Nothing is sold. The cart is kept in the database until you bring it back." />
 
+                        <TextBlock Text="Showing an open draft. Complete the sale to post it."
+                                   Style="{StaticResource FieldHint}" Margin="0,8,0,0" TextWrapping="Wrap"
+                                   Visibility="{Binding HasOpenDraft, Converter={StaticResource BoolToVis}}" />
+                        <Button Content="Save as draft" Style="{StaticResource GhostButton}"
+                                Margin="0,6,0,0" Command="{Binding SaveDraftCommand}"
+                                ToolTip="Park this cart as a shared draft. Nothing is sold; anyone with the counter permission can open and post it." />
+                        <Button Content="Open drafts" Style="{StaticResource GhostButton}"
+                                Margin="0,6,0,0" Command="{Binding DraftsCommand}"
+                                ToolTip="Open, post or discard shared sale drafts." />
+
                         <Button Content="Print last bill again" Style="{StaticResource GhostButton}"
                                 Margin="0,6,0,0" Command="{Binding PrintLastCommand}" />
 
