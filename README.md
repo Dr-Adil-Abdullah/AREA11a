@@ -1,5 +1,8 @@
 # Area11 — pharmacy POS + inventory for Windows
 
+**Current source: v0.42.0 Kyanite `#3B526C` — master Portion 3 code written.** The product editor reloads complete tag IDs; primary category and filter-only tags are shown separately and explicit tag sets need a primary. Category-less products without tags and untouched legacy tag-only data remain; no guessed backfill. **929 tests written, 57/57 static; Windows build/xUnit and PT-14 physical verification pending.** Workbook category changes recheck tags; CSV import creates products without tags. Category put-away can leave other tags and remains for owner review. Baltic 921/921 is prior Core/Tests evidence. Portions 4–15 require approval.
+
+
 **Current source: v0.41.0 Siderite `#594D32`.** Owner-requested Dashboard fallback and Portion 2 Product workspace are written; **922 tests written, 57/57 static checks**, but Windows build/xUnit and PT-13 physical verification remain pending. Prior Baltic Core/Tests **921/921 PASS** is separate evidence. Portions 3–15 remain to be approved.
 
 

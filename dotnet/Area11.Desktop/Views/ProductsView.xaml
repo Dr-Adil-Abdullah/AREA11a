@@ -72,7 +72,7 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                         <DataGridTextColumn Header="Medicine" Binding="{Binding Name}" Width="2*" />
-                        <DataGridTemplateColumn Header="Category" Width="1.1*">
+                        <DataGridTemplateColumn Header="Primary category" Width="1.1*">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Button Content="{Binding CategoryLabel}" Command="{Binding DataContext.OpenCategoryFilterCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
@@ -81,6 +81,7 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Additional categories" Binding="{Binding CategoryTags, Mode=OneWay}" Width="1.2*" />
                         <DataGridTemplateColumn Header="Company" Width="1.1*">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>

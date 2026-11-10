@@ -459,8 +459,17 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
             return;
         }
 
-        LoadForm(product);
-        Editor.Load(product.Id);
+        // Search rows carry display text but not CategoryTagIds. Fetch the complete record before
+        // editing; otherwise an ordinary save would silently replace its existing tags with none.
+        var full = _services.Products.Get(product.Id);
+        if (!full.Ok || full.Value is null || !full.Value.Active)
+        {
+            SetStatus(full.Error ?? "That medicine is no longer active. Refresh and try again.", true);
+            return;
+        }
+
+        LoadForm(full.Value);
+        Editor.Load(full.Value.Id);
         ProductEditorDoor.Show(this);
     }
 

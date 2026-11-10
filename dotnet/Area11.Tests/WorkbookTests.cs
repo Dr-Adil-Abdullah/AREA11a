@@ -402,6 +402,76 @@ VALUES(@id, 'import', 1), (@id, 'settings', 1);", new { id = cashier.Id }));
     }
 
     [Fact]
+    public void BulkCategoryChangeRefusesClearingOrPromotingAnExistingTag()
+    {
+        using var test = new TestDatabase();
+        var id = TestData.AddProduct(test);
+        var primary = Convert.ToInt32(Scalar(test, "SELECT id FROM categories WHERE active = 1 ORDER BY id LIMIT 1;"));
+        var tag = Convert.ToInt32(Scalar(test, "SELECT id FROM categories WHERE active = 1 ORDER BY id LIMIT 1 OFFSET 1;"));
+        Execute(test, $"UPDATE products SET category_id = {primary} WHERE id = {id};");
+        Execute(test, $"INSERT INTO product_category_tags(product_id, category_id) VALUES({id}, {tag});");
+        var workbook = Download(test);
+        var sheet = workbook.Sheet("Products")!;
+        var row = RowWithId(sheet, id);
+        var service = Workbooks(test);
+
+        Set(sheet, row, "Category Id", "__CLEAR__");
+        var clear = service.PreviewBulk(TestData.Owner, XlsxFile.Write(workbook), false).Value!;
+        Assert.False(clear.CanApply);
+        Assert.Contains(clear.Rows, entry => entry.IsError && entry.Message.Contains("primary category"));
+        Set(sheet, row, "Category Id", tag.ToString(CultureInfo.InvariantCulture));
+        var duplicate = service.PreviewBulk(TestData.Owner, XlsxFile.Write(workbook), false).Value!;
+        Assert.False(duplicate.CanApply);
+        Assert.Contains(duplicate.Rows, entry => entry.IsError && entry.Message.Contains("additional category tag"));
+        Assert.Equal((long)primary, Convert.ToInt64(Scalar(test, "SELECT category_id FROM products WHERE id = " + id + ";")));
+        Assert.Equal(1L, Count(test, "product_category_tags WHERE product_id = " + id));
+        Assert.Equal(0L, Count(test, "audit_logs WHERE action = 'workbook_update'"));
+    }
+
+    [Fact]
+    public void BulkCategoryClearWithoutTagsSucceedsAndIsAudited()
+    {
+        using var test = new TestDatabase();
+        var id = TestData.AddProduct(test);
+        var primary = Convert.ToInt32(Scalar(test, "SELECT id FROM categories WHERE active = 1 ORDER BY id LIMIT 1;"));
+        Execute(test, $"UPDATE products SET category_id = {primary} WHERE id = {id};");
+        var workbook = Download(test);
+        var sheet = workbook.Sheet("Products")!;
+        Set(sheet, RowWithId(sheet, id), "Category Id", "__CLEAR__");
+        var service = Workbooks(test);
+        var preview = service.PreviewBulk(TestData.Owner, XlsxFile.Write(workbook), false).Value!;
+        Assert.True(preview.CanApply, preview.SummaryText);
+        var applied = service.ApplyBulk(TestData.Owner, preview);
+        Assert.True(applied.Ok, applied.Error);
+        Assert.Null(Scalar(test, "SELECT category_id FROM products WHERE id = " + id + ";"));
+        Assert.Equal(1L, Count(test, "audit_logs WHERE action = 'workbook_update'"));
+    }
+
+    [Fact]
+    public void BulkCategoryClearRechecksTagsAddedAfterPreview()
+    {
+        using var test = new TestDatabase();
+        var id = TestData.AddProduct(test);
+        var primary = Convert.ToInt32(Scalar(test, "SELECT id FROM categories WHERE active = 1 ORDER BY id LIMIT 1;"));
+        var tag = Convert.ToInt32(Scalar(test, "SELECT id FROM categories WHERE active = 1 ORDER BY id LIMIT 1 OFFSET 1;"));
+        Execute(test, $"UPDATE products SET category_id = {primary} WHERE id = {id};");
+        var workbook = Download(test);
+        var sheet = workbook.Sheet("Products")!;
+        Set(sheet, RowWithId(sheet, id), "Category Id", "__CLEAR__");
+        var service = Workbooks(test);
+        var preview = service.PreviewBulk(TestData.Owner, XlsxFile.Write(workbook), false).Value!;
+        Assert.True(preview.CanApply, preview.SummaryText);
+        // Simulate a tag appearing after preview without changing the exported product columns.
+        Execute(test, $"INSERT INTO product_category_tags(product_id, category_id) VALUES({id}, {tag});");
+        var applied = service.ApplyBulk(TestData.Owner, preview);
+        Assert.False(applied.Ok);
+        Assert.Contains("primary category", applied.Error ?? string.Empty);
+        Assert.Equal((long)primary, Convert.ToInt64(Scalar(test, "SELECT category_id FROM products WHERE id = " + id + ";")));
+        Assert.Equal(1L, Count(test, "product_category_tags WHERE product_id = " + id));
+        Assert.Equal(0L, Count(test, "audit_logs WHERE action = 'workbook_update'"));
+    }
+
+    [Fact]
     public void BulkUpdate_CategoryCycleIsRefusedBeforeAnythingIsWritten()
     {
         using var test = new TestDatabase();

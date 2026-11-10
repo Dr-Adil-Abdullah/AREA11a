@@ -1,5 +1,10 @@
 # TAKEOVER — the complete brief for a new agent
 
+## Latest handoff — v0.42.0 Kyanite
+
+Portion 3 code fetches full product tag IDs before edit, shows primary/extra categories separately, and guards new/replaced tag sets requiring a primary. It does not guess/rewrite legacy links; unrelated updates preserve legacy tag-only records. **929 written cases, 57/57 static; Windows build/xUnit and PT-14 pending.** A raw SQLite possible tag-only Uncategorised case is not proof of the owner's precise sequence. Workbook category changes recheck tags on preview/apply; CSV import creates products without tags. Category put-away intentionally unlinks the primary and can leave other tags; owner review remains pending. Baltic owner 921/921 is previous evidence; portions 4–15 require separate approval.
+
+
 ## Latest handoff — v0.41.0 Siderite
 
 Owner's Baltic Windows Core/Tests 921/921 passed. Owner then approved Portion 2: full-width Products grid with New, Edit and row double-click opening a guarded modal editor; no-Counter startup now selects Dashboard. **922 tests written, 57/57 static; Siderite Windows/WPF build and xUnit plus PT-13/PT-12 owner verification pending.** Portions 3–15 require separate approval. Keep prior evidence and PT02-POS-01 unreproduced.

@@ -1,5 +1,10 @@
 # PROGRESS - the feature board (what is done, what is next)
 
+## Latest — v0.42.0 Kyanite: master Portion 3 categories/tags
+
+Editor now fetches the full product before editing, preserving the tag IDs omitted by list projection. Primary category and additional filter tags are separately displayed; create or explicit tag replacement without a primary is refused atomically, while category-less products without tags and untouched legacy tag-only data remain supported. No guessed promotion or financial-history rewrite; reports still count primary only. A raw SQLite probe reproduced a possible tag-only/Uncategorised state, not the owner's exact sequence. Workbook category changes recheck tags on preview/apply; CSV import creates products without tags. Category put-away intentionally unlinks the primary and can leave other tags; owner review remains pending. **929 written cases, 57/57 static; Windows build/xUnit and PT-14 owner verification pending.** Baltic 921/921 remains previous-release evidence. Portions 4–15 require approval; PT02-POS-01 remains unreproduced.
+
+
 ## Latest — v0.41.0 Siderite: master Portion 2 and Dashboard fallback
 
 Owner chose Dashboard when the signed-in user lacks Counter permission; the startup policy now prefers the existing Dashboard in that case without granting permissions. Product list has a full-width grid, compact thumbnail, top New and both explicit Edit and row double-click. Both open one modal editor; default-No confirmation guards close/put-away, and separately saved custom fields remain independent. New-product save keeps its returned ID for subsequent updates. **922 written cases, 57/57 static checks; no local .NET/WPF run.** Owner's prior Baltic Windows Core/Tests were **921/921 PASS**; Siderite Windows build/xUnit and PT-13/PT-12 physical verification remain pending. Master portions 3–15 need separate approval; see `MASTER-CHECKLIST-ROADMAP.md`.

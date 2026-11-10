@@ -1,5 +1,10 @@
 # AGENTS.md - how to work in this repository
 
+## Latest handoff — v0.42.0 Kyanite
+
+Owner approved master Portion 3. A list projection omits tag IDs; the product editor now fetches the complete product before editing, so an ordinary save does not silently remove tags. ProductService refuses creating/replacing nonempty tags without a primary while allowing no-category/no-tag and untouched legacy tag-only records. Primary-only financial reports, genuine data and quantities remain unchanged. **929 written tests, 57/57 static; Windows build/xUnit and PT-14 WPF/owner proof pending.** A raw SQLite tag-only/Uncategorised scenario is not the owner's exact reproduction. Workbook category changes recheck tags on preview/apply; CSV import creates products without tags. Category put-away intentionally unlinks the primary and can leave other tags; owner review remains pending. Baltic owner 921/921 is previous evidence; portions 4–15 need approval.
+
+
 ## Latest handoff — v0.41.0 Siderite
 
 Owner approved Portion 2 via NEXT and selected both Edit button/double-click; lack of Counter permission now selects Dashboard, not Baltic's first permitted page. Product editor is modal, uses existing ProductService, protects unsaved form/extra answers with explicit default-No close/put-away warnings, and keeps a created ID after save. **922 written cases, 57/57 static checks; Windows build/xUnit and PT-13/PT-12 WPF checks pending.** Owner's Baltic 921/921 Core/Tests is prior evidence only. Portions 3–15 await separate approval; do not treat PT02-POS-01 as fixed.

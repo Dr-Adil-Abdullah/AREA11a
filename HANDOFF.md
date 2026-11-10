@@ -1,5 +1,10 @@
 # HANDOFF - read this first
 
+## Latest handoff — v0.42.0 Kyanite
+
+Master Portion 3 fixes the edit-list tag-ID loss, distinguishes primary/extra categories, and refuses a new/replaced tag set without explicit primary; untouched legacy tag-only records and no-category/no-tag products remain. **929 written cases and 57/57 static only; Windows build/xUnit/PT-14 pending.** Raw SQLite demonstrates one possible Uncategorised situation, not the owner's exact UI evidence. Workbook category changes recheck tags on preview/apply; CSV import creates products without tags. Category put-away intentionally unlinks the primary and can leave other tags; owner review remains pending. Portions 4–15 require approval.
+
+
 ## Latest handoff — v0.41.0 Siderite
 
 Portion 2 Product workspace and owner-requested Dashboard fallback are written. Modal editor uses both Edit and double-click, with close/put-away warnings and independent extra-field saving; existing rules remain. **922 written cases; 57/57 static only.** Baltic had owner Core/Tests **921/921 PASS**, not Siderite/WPF proof. Windows build, 922/922 and PT-13/PT-12 pending; portions 3–15 require approval.

@@ -530,10 +530,27 @@ WHERE active = 1 AND product_id <> @id AND LOWER(TRIM(barcode)) = LOWER(@code);"
                 }
             }
 
-            if (changed.Contains("category_id") && after["category_id"] is not null
-                && !ReferenceExists(connection, "categories", after["category_id"], activeOnly: true))
+            if (changed.Contains("category_id"))
             {
-                return "Choose a category that exists and is active.";
+                var categoryId = after["category_id"];
+                if (categoryId is not null && !ReferenceExists(connection, "categories", categoryId, activeOnly: true))
+                {
+                    return "Choose a category that exists and is active.";
+                }
+
+                var tagCount = Convert.ToInt64(_db.Scalar(connection,
+                    "SELECT COUNT(1) FROM product_category_tags WHERE product_id = @id;",
+                    new { id = after[KeyAlias] }) ?? 0L);
+                if (categoryId is null && tagCount > 0)
+                {
+                    return "A product with additional category tags needs a primary category; remove its tags first.";
+                }
+                if (categoryId is not null && Convert.ToInt64(_db.Scalar(connection,
+                    "SELECT COUNT(1) FROM product_category_tags WHERE product_id = @id AND category_id = @categoryId;",
+                    new { id = after[KeyAlias], categoryId }) ?? 0L) > 0)
+                {
+                    return "The primary category cannot also be an additional category tag.";
+                }
             }
 
             if (changed.Contains("company_id") && after["company_id"] is not null
@@ -926,7 +943,15 @@ WHERE active = 1 AND product_id <> @id AND LOWER(TRIM(barcode)) = LOWER(@code);"
             }
 
             var changed = record.Fields.Select(field => field.SqlName).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var validation = ValidateRecord(connection, schema, record.RowAfter, changed);
+            // RowAfter deliberately excludes the internal key alias, while reference checks need it
+            // (for example to check this product's tags). Rebuild the proposed row on the just-read
+            // current row, retaining its verified key, before revalidating inside the transaction.
+            var after = new Dictionary<string, object?>(current, StringComparer.OrdinalIgnoreCase);
+            foreach (var pair in record.RowAfter)
+            {
+                after[pair.Key] = pair.Value;
+            }
+            var validation = ValidateRecord(connection, schema, after, changed);
             if (validation is not null)
             {
                 throw new ValidationException(record.Sheet + ": " + validation);

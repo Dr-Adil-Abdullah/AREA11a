@@ -127,6 +127,114 @@ public sealed class CatalogUnitTests
     }
 
     [Fact]
+    public void AdditionalTagsWithoutPrimaryAreRefusedAtomically_ButUncategorisedWithoutTagsIsAllowed()
+    {
+        using var test = new TestDatabase();
+        var products = Service(test);
+        var tag = products.AddCategory(TestData.Owner, "Filter only").Value;
+        var rejected = products.Create(TestData.Owner, new ProductPatch
+        {
+            Name = "Tag without primary", BaseUnit = "tablet", CategoryTagIds = new List<int> { tag }
+        });
+        Assert.False(rejected.Ok);
+        Assert.Contains("primary category", rejected.Error ?? string.Empty);
+        using var connection = test.Database.Open();
+        Assert.Equal(0L, Convert.ToInt64(test.Database.Scalar(connection,
+            "SELECT COUNT(1) FROM products WHERE name = 'Tag without primary';") ?? 0L));
+        Assert.Equal(0L, Convert.ToInt64(test.Database.Scalar(connection,
+            "SELECT COUNT(1) FROM product_category_tags;") ?? 0L));
+        Assert.Equal(0L, Convert.ToInt64(test.Database.Scalar(connection,
+            "SELECT COUNT(1) FROM audit_logs WHERE action = 'product_create';") ?? 0L));
+
+        var plain = products.Create(TestData.Owner, new ProductPatch { Name = "No category", BaseUnit = "tablet" });
+        Assert.True(plain.Ok, plain.Error);
+        Assert.Null(products.Get(plain.Value).Value!.CategoryId);
+    }
+
+    [Fact]
+    public void UpdatingTagsRequiresPrimary_AndFailedUpdatePreservesProductAndAudit()
+    {
+        using var test = new TestDatabase();
+        var products = Service(test);
+        var primary = products.AddCategory(TestData.Owner, "Primary chosen").Value;
+        var tag = products.AddCategory(TestData.Owner, "Extra chosen").Value;
+        var id = Create(products, "Original medicine", null);
+        var rejected = products.Update(TestData.Owner, id, new ProductPatch
+        {
+            Name = "Should not persist", CategoryTagIds = new List<int> { tag }
+        });
+        Assert.False(rejected.Ok);
+        Assert.Contains("primary category", rejected.Error ?? string.Empty);
+        var unchanged = products.Get(id).Value!;
+        Assert.Equal("Original medicine", unchanged.Name);
+        Assert.Null(unchanged.CategoryId);
+        Assert.Empty(unchanged.CategoryTagIds);
+        using var connection = test.Database.Open();
+        Assert.Equal(0L, Convert.ToInt64(test.Database.Scalar(connection,
+            "SELECT COUNT(1) FROM audit_logs WHERE action = 'product_edit' AND entity_id = @entity;",
+            new { entity = id.ToString() }) ?? 0L));
+
+        var accepted = products.Update(TestData.Owner, id, new ProductPatch
+        {
+            CategoryId = primary, CategoryTagIds = new List<int> { tag }
+        });
+        Assert.True(accepted.Ok, accepted.Error);
+        var saved = products.Get(id).Value!;
+        Assert.Equal(primary, saved.CategoryId);
+        Assert.Equal(new[] { tag }, saved.CategoryTagIds);
+        Assert.Single(products.Search(categoryId: tag).Value!.Where(row => row.Id == id));
+    }
+
+    [Fact]
+    public void LegacyTagsWithoutPrimaryRemainReadableAndUnrelatedUpdatesPreserveThem()
+    {
+        using var test = new TestDatabase();
+        var products = Service(test);
+        var primary = products.AddCategory(TestData.Owner, "Chosen primary").Value;
+        var tag = products.AddCategory(TestData.Owner, "Legacy extra").Value;
+        var id = Create(products, "Legacy tagged item", null);
+        test.Database.Tx(connection => test.Database.Execute(connection,
+            "INSERT INTO product_category_tags(product_id, category_id) VALUES(@id, @tag);", new { id, tag }));
+
+        var legacy = products.Get(id).Value!;
+        Assert.Null(legacy.CategoryId);
+        Assert.Equal(new[] { tag }, legacy.CategoryTagIds);
+        Assert.True(products.Update(TestData.Owner, id, new ProductPatch { RackNo = "B2" }).Ok);
+        Assert.Equal(new[] { tag }, products.Get(id).Value!.CategoryTagIds);
+        var refused = products.Update(TestData.Owner, id, new ProductPatch { CategoryTagIds = new List<int> { tag } });
+        Assert.False(refused.Ok);
+        Assert.Equal(new[] { tag }, products.Get(id).Value!.CategoryTagIds);
+        Assert.True(products.Update(TestData.Owner, id, new ProductPatch
+        {
+            CategoryId = primary, CategoryTagIds = new List<int> { tag }
+        }).Ok);
+        var repaired = products.Get(id).Value!;
+        Assert.Equal(primary, repaired.CategoryId);
+        Assert.Equal(new[] { tag }, repaired.CategoryTagIds);
+    }
+
+    [Fact]
+    public void FullProductReadReturnsTagIdsForTheEditorAndSearchShowsTagLabels()
+    {
+        using var test = new TestDatabase();
+        var products = Service(test);
+        var primary = products.AddCategory(TestData.Owner, "Medicine group").Value;
+        var tag = products.AddCategory(TestData.Owner, "Shelf group").Value;
+        var id = Create(products, "Two category item", primary, tag);
+        var listed = products.Search().Value!.Single(row => row.Id == id);
+        Assert.Contains("Shelf group", listed.CategoryTags ?? string.Empty);
+        var full = products.Get(id);
+        Assert.True(full.Ok, full.Error);
+        Assert.Equal(primary, full.Value!.CategoryId);
+        Assert.Equal(new[] { tag }, full.Value.CategoryTagIds);
+        Assert.True(products.Update(TestData.Owner, id, new ProductPatch
+        {
+            Name = "Renamed item", CategoryId = full.Value.CategoryId, CategoryTagIds = full.Value.CategoryTagIds
+        }).Ok);
+        Assert.Equal(new[] { tag }, products.Get(id).Value!.CategoryTagIds);
+    }
+
+    [Fact]
     public void UnitRenamePropagatesCurrentLabels_AndPutAwayRefusesUsage()
     {
         using var test = new TestDatabase();

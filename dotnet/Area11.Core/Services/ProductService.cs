@@ -1228,6 +1228,13 @@ FROM units u WHERE u.id = @id;", new { id });
         }
 
         var clean = tagIds.Where(id => id > 0).Distinct().ToList();
+        // Extra categories are filter tags, not a financial category. Refuse a new tag set without
+        // a primary rather than guessing which tag should own historical/reporting totals. Products
+        // without any categories remain valid; untouched legacy tag sets are never auto-rewritten.
+        if (primaryCategoryId is null && clean.Count > 0)
+        {
+            throw new ValidationException("Choose a primary category before adding additional category tags.");
+        }
         if (primaryCategoryId is int primary && clean.Contains(primary))
         {
             throw new ValidationException("The primary category is already included; choose only additional category tags.");

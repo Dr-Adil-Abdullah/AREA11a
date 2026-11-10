@@ -1,5 +1,10 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## تازہ status — Master Portion 3، v0.42.0 Kyanite
+
+مالک نے NEXT سے primary category / additional tags Portion 3 کی اجازت دی۔ Code review میں product-list projection سے editor کھولنے پر tag IDs خالی آنے اور save سے tags ضائع ہونے کا خطرہ ملا؛ editor اب مکمل record پڑھتا ہے۔ اضافی tags کے لیے primary واضح منتخب ہوگا؛ tags نہ ہوں تو category خالی رہ سکتی ہے۔ پرانے tag-only records پر کوئی guessed primary یا خودکار rewrite نہیں۔ Raw SQLite نے ایک ممکنہ tag-only/Uncategorised حالت دکھائی، مگر مالک کے اصل واقعہ کی exact reproduction نہیں۔ Workbook category updates پر preview/apply guard ہے؛ CSV import tag links نہیں بناتا۔ Category put-away primary unlink کر کے دوسرے tags چھوڑ سکتا ہے؛ مالک کا جائزہ باقی ہے۔ **929 written cases، 57/57 static؛ Windows/xUnit اور PT-14 pending**۔ Portions 4–15 الگ approval مانگتے ہیں۔
+
+
 ## تازہ status — Master Portion 2، v0.41.0 Siderite
 
 مالک نے Product editing کے لیے **Edit Product button اور row double-click دونوں** منتخب کیے اور NEXT کہا۔ مالک کے فیصلے کے مطابق Counter کی اجازت نہ ہونے پر Dashboard fallback کا code بھی لکھا گیا؛ permissions نہیں بڑھیں۔ Portion 2 میں full-width product list، thumbnail، New اور modal editor، default-No close/put-away warning اور separately saved extra fields کی حفاظت لکھی گئی۔ **922 written cases، 57/57 static؛ Siderite Windows/WPF build، xUnit اور PT-13 physical verification pending**۔ Baltic کا owner Windows Core/Tests 921/921 PASS پہلے والا ثبوت ہے۔ Portions 3–15 کو الگ اجازت درکار ہے۔

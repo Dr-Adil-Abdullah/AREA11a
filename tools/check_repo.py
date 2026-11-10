@@ -5078,6 +5078,37 @@ def check_phase_three_packaging() -> None:
     if 'keys.FirstOrDefault(key => key == "dashboard")' not in start_policy:
         fail("Startup without Counter must prefer the existing Dashboard route")
 
+    # The list projection carries category display text, not the edit form's tag IDs.
+    # Loading an edit directly from a list row silently wipes existing tags on Save.
+    for needle in ("_services.Products.Get(product.Id)", "LoadForm(full.Value)", "Editor.Load(full.Value.Id)"):
+        if needle not in products_vm:
+            fail(f"Product editing must load the complete record and category IDs: {needle}")
+    for needle in ("primaryCategoryId is null && clean.Count > 0", "Choose a primary category before adding additional category tags."):
+        if needle not in service:
+            fail(f"Product additional tags must not silently acquire an implied primary: {needle}")
+    if 'Binding="{Binding CategoryTags, Mode=OneWay}"' not in products_view:
+        fail("Products list must show its additional category tags separately")
+    if 'Text="Primary category"' not in product_editor or 'Choose a primary category before selecting additional tags.' not in product_editor:
+        fail("Product editor must explain the primary versus filter-only category relationship")
+    workbook = (DOTNET / "Area11.Core/Services/WorkbookService.cs").read_text(encoding="utf-8-sig")
+    workbook_tests = (DOTNET / "Area11.Tests/WorkbookTests.cs").read_text(encoding="utf-8-sig")
+    for needle in ("A product with additional category tags needs a primary category",
+                   "new Dictionary<string, object?>(current, StringComparer.OrdinalIgnoreCase)",
+                   "ValidateRecord(connection, schema, after, changed)"):
+        if needle not in workbook:
+            fail(f"Workbook category preview/apply must recheck tags with the real row key: {needle}")
+    for fact in ("BulkCategoryChangeRefusesClearingOrPromotingAnExistingTag",
+                 "BulkCategoryClearWithoutTagsSucceedsAndIsAudited", "BulkCategoryClearRechecksTagsAddedAfterPreview"):
+        if fact not in workbook_tests:
+            fail(f"Workbook category safety regression is missing: {fact}")
+    category_tests = (DOTNET / "Area11.Tests/CatalogUnitTests.cs").read_text(encoding="utf-8-sig")
+    for fact in ("AdditionalTagsWithoutPrimaryAreRefusedAtomically_ButUncategorisedWithoutTagsIsAllowed",
+                 "UpdatingTagsRequiresPrimary_AndFailedUpdatePreservesProductAndAudit",
+                 "LegacyTagsWithoutPrimaryRemainReadableAndUnrelatedUpdatesPreserveThem",
+                 "FullProductReadReturnsTagIdsForTheEditorAndSearchShowsTagLabels"):
+        if fact not in category_tests:
+            fail(f"Category safety regression is missing: {fact}")
+
     REPORT.append(
         "Phase 3 packaging: existing descriptive pack label is edited, normalized and searchable in "
         "Products/Counter/Purchase; variant picker text is unambiguous while IDs, units and prices stay intact")
