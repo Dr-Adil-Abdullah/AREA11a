@@ -1,5 +1,9 @@
 # PROGRESS - the feature board (what is done, what is next)
 
+## Owner evidence and Portion 4 start
+
+Owner supplied v0.41.0 Siderite Windows Core/Tests **922 passed, 0 failed, 0 skipped, 922 total (1m 21s)**. This is not a Desktop/WPF or physical pass, and not the v0.42.0 Kyanite 929-case run. PT-12/PT-13 physical verification and Kyanite Windows/PT-14 remain pending. Owner approved starting Portion 4. Initial review: migration 030 has native-field metadata and acknowledgement constraints but no populated native definitions or native policy service; existing Settings custom-field screen covers Product/Customer/Supplier. A central UI must not promise optional built-in behavior before form and safe posting paths actually honor it. Portion 5 drafts and Portion 6 expiry picker remain separately approved work; keep final-post safeguards intact.
+
 ## Latest — v0.42.0 Kyanite: master Portion 3 categories/tags
 
 Editor now fetches the full product before editing, preserving the tag IDs omitted by list projection. Primary category and additional filter tags are separately displayed; create or explicit tag replacement without a primary is refused atomically, while category-less products without tags and untouched legacy tag-only data remain supported. No guessed promotion or financial-history rewrite; reports still count primary only. A raw SQLite probe reproduced a possible tag-only/Uncategorised state, not the owner's exact sequence. Workbook category changes recheck tags on preview/apply; CSV import creates products without tags. Category put-away intentionally unlinks the primary and can leave other tags; owner review remains pending. **929 written cases, 57/57 static; Windows build/xUnit and PT-14 owner verification pending.** Baltic 921/921 remains previous-release evidence. Portions 4–15 require approval; PT02-POS-01 remains unreproduced.

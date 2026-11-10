@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## مالک کا Siderite Windows test — Portion 2
+
+مالک کے فراہم کردہ v0.41.0 Siderite output میں **922 passed، 0 failed، 0 skipped، 922 total، 1 منٹ 21 سیکنڈ؛ ALL GREEN - 922 of 922** ہے۔ Log صرف Area11.Core اور Area11.Tests دکھاتا ہے؛ Desktop/WPF build، launch اور PT-12/PT-13 physical walkthrough اس سے ثابت نہیں ہوتے۔ یہ نتیجہ Kyanite v0.42.0 کے 929 tests کا نتیجہ نہیں؛ اس کا Windows run اور PT-14 باقی ہیں۔ مالک نے اگلا حصہ شروع کرنے کی ہدایت دی ہے۔
+
 ## PT-14 — Master Portion 3: primary category اور additional tags
 
 **حالت: code/static تیار؛ v0.42.0 Kyanite Windows build، 929-case xUnit اور owner physical verification باقی۔** Product list کے search rows tag names دکھاتے تھے مگر `CategoryTagIds` نہیں رکھتے تھے؛ اسی row سے editor لوڈ اور save پر tags ضائع ہو سکتے تھے۔ اب editor کھولنے سے پہلے مکمل record پڑھتا ہے۔ فہرست primary اور اضافی categories الگ دکھاتی ہے۔ نئی/بدلی گئی tags کے لیے explicit primary درکار ہے، مگر بغیر tags والا product uncategorised رہ سکتا ہے۔ کوئی tag خود primary نہیں بنتا۔
@@ -8,12 +12,12 @@ Raw SQLite probe سے ایک **ممکنہ** tag-only product کی primary label 
 
 **صرف isolated test copy میں چیک کریں:** (1) دو categories بنائیں؛ product پر ایک primary اور دوسری extra tag رکھ کر save؛ (2) editor دوبارہ کھولیں، tag checked ہو، صرف نام/ریٹ بدل کر save کریں، دوبارہ کھولنے پر tag برقرار؛ (3) دونوں category filters سے وہ product ایک مرتبہ ملے؛ (4) primary کے بغیر tag save پر واضح refusal اور کوئی جزوی mutation/audit نہ ہو؛ (5) primary اور tag دونوں نہ ہوں تو product allowed؛ (6) primary-only financial report میں sale دوبار شمار نہ ہو؛ fake sale صرف isolated copy میں؛ (7) پرانا tag-only record خود نہ بدلے؛ مالک primary منتخب کرے؛ (8) Windows build اور `ALL GREEN - 929 of 929`؛ (9) Excel preview/apply میں tags والے product کی primary clear یا tag کو primary بنانے کی کوشش رد ہو، جبکہ بغیر tags کے clear کامیاب ہو؛ preview کے بعد tag شامل ہونے پر apply بھی رد ہو؛ (10) category put-away سے primary ہٹنے اور دیگر tags باقی رہنے کے رویے کا جائزہ لیں؛ (11) اگر اصل Uncategorized مسئلہ دوبارہ آئے تو exact product، categories، steps اور screenshot بھیجیں۔
 
-PT-13 Siderite WPF/product-editor checks اور PT-12 navigation بھی الگ pending ہیں۔ PT02-POS-01 unreproduced ہے۔ Portions 4–15 الگ approval کے منتظر ہیں۔
+PT-13 Siderite WPF/product-editor checks اور PT-12 navigation بھی الگ pending ہیں۔ PT02-POS-01 unreproduced ہے۔ Portion 4 کی اجازت مل گئی ہے؛ Portions 5–15 الگ approval کے منتظر ہیں۔
 
 
 ## PT-13 — Master Portion 2: Product workspace اور Dashboard fallback
 
-**حالت: code/static تیار؛ v0.41.0 Siderite Windows build، 922-case xUnit اور WPF/owner physical verification باقی۔** Baltic v0.40.0 پر مالک کے Core/Tests **921/921 PASS** ہیں؛ اس نتیجے کو Siderite پر منتقل نہ کریں۔ مالک کے فیصلے کے مطابق Counter permission نہ ہو تو Dashboard startup کا code لکھا گیا؛ کوئی نئی permission نہیں دی گئی۔
+**حالت: v0.41.0 Siderite Core/Tests Windows 922/922 PASS؛ Desktop/WPF build اور owner physical verification باقی۔** Baltic v0.40.0 پر مالک کے Core/Tests **921/921 PASS** الگ نتیجہ ہے۔ مالک کے فیصلے کے مطابق Counter permission نہ ہو تو Dashboard startup کا code لکھا گیا؛ کوئی نئی permission نہیں دی گئی۔
 
 **Isolated test copy میں جانچیں:**
 1. Owner یا Counter-allowed user login پر Counter دیکھے؛ Counter permission کے بغیر user پر Dashboard کھلے اور sensitive/profit data اپنی موجودہ permissions کے مطابق رہے۔
