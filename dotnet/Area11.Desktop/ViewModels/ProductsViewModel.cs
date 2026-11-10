@@ -44,6 +44,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     private string _strengthFilter = string.Empty;
     private int? _categoryFilter;
     private int? _companyFilter;
+    private int? _supplierFilter;
     private bool _lowStockOnly;
     private string _boxStripsText = "0";
     private string _stripTabletsText = "0";
@@ -60,6 +61,11 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     private BrandDefinition? _selectedBrand;
     private string _newFormulaName = string.Empty;
     private string _newBrandName = string.Empty;
+    private Supplier? _selectedPreferredSupplier;
+    private string _preferredSupplierHint = string.Empty;
+    private string _supplierHistoryText = string.Empty;
+    private int? _preferredSupplierId;
+    private bool _clearPreferredSupplier;
     private string _formulaLinkHint = string.Empty;
     private string _brandLinkHint = string.Empty;
     private int? _formulaLinkId;
@@ -84,6 +90,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         AddCompanyCommand = new RelayCommand(AddCompany);
         AddFormulaCommand = new RelayCommand(AddFormula);
         AddBrandCommand = new RelayCommand(AddBrand);
+        ClearPreferredSupplierCommand = new RelayCommand(ClearPreferredSupplier);
         UnlinkFormulaCommand = new RelayCommand(UnlinkFormula);
         UnlinkBrandCommand = new RelayCommand(UnlinkBrand);
         ManageCatalogCommand = new RelayCommand(ManageCatalog);
@@ -110,6 +117,10 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     public ObservableCollection<GenericFormula> Formulas { get; } = new();
 
     public ObservableCollection<BrandDefinition> Brands { get; } = new();
+
+    public ObservableCollection<Supplier> Suppliers { get; } = new();
+
+    public ObservableCollection<ProductSupplierOption> SupplierFilterOptions { get; } = new();
 
     /// <summary>Active managed units; the service validates the same names again on save.</summary>
     public ObservableCollection<string> BaseUnits { get; } = new();
@@ -150,6 +161,8 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     public RelayCommand UnlinkFormulaCommand { get; }
 
     public RelayCommand UnlinkBrandCommand { get; }
+
+    public RelayCommand ClearPreferredSupplierCommand { get; }
 
     public RelayCommand ManageCatalogCommand { get; }
 
@@ -311,6 +324,10 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
             {
                 parts.Add("company: " + (Companies.FirstOrDefault(row => row.Id == companyId)?.Name ?? companyId.ToString()));
             }
+            if (_supplierFilter is int supplierId)
+            {
+                parts.Add("supplier: " + (SupplierFilterOptions.FirstOrDefault(row => row.SupplierId == supplierId)?.Name ?? supplierId.ToString()));
+            }
             if (_lowStockOnly)
             {
                 parts.Add("low stock");
@@ -323,7 +340,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         }
     }
 
-    public bool HasFilter => _categoryFilter.HasValue || _companyFilter.HasValue || _lowStockOnly || !string.IsNullOrWhiteSpace(_strengthFilter);
+    public bool HasFilter => _categoryFilter.HasValue || _companyFilter.HasValue || _supplierFilter.HasValue || _lowStockOnly || !string.IsNullOrWhiteSpace(_strengthFilter);
 
     public string BoxStripsText
     {
@@ -472,6 +489,38 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         private set => SetProperty(ref _brandLinkHint, value);
     }
 
+    public Supplier? SelectedPreferredSupplier
+    {
+        get => _selectedPreferredSupplier;
+        set
+        {
+            if (!SetProperty(ref _selectedPreferredSupplier, value))
+            {
+                return;
+            }
+
+            _preferredSupplierId = value?.Id;
+            if (value is not null)
+            {
+                _clearPreferredSupplier = false;
+            }
+
+            UpdatePreferredHint();
+        }
+    }
+
+    public string PreferredSupplierHint
+    {
+        get => _preferredSupplierHint;
+        private set => SetProperty(ref _preferredSupplierHint, value);
+    }
+
+    public ProductSupplierOption? SelectedSupplierFilter
+    {
+        get => SupplierFilterOptions.FirstOrDefault(option => option.SupplierId == _supplierFilter);
+        set => ApplyFilter(supplierId: value?.SupplierId);
+    }
+
     public string StatusMessage
     {
         get => _statusMessage;
@@ -576,6 +625,36 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         UpdateFormulaHint();
         UpdateBrandHint();
 
+        var preferredId = _preferredSupplierId;
+        var suppliers = _services.Partners.GetSuppliers();
+        Suppliers.Clear();
+        if (suppliers.Ok && suppliers.Value is not null)
+        {
+            foreach (var supplier in suppliers.Value)
+            {
+                Suppliers.Add(supplier);
+            }
+        }
+
+        SelectedPreferredSupplier = Suppliers.FirstOrDefault(row => row.Id == preferredId);
+        if (SelectedPreferredSupplier is null)
+        {
+            _preferredSupplierId = null;
+        }
+
+        var options = _services.Products.GetProductSupplierOptions();
+        SupplierFilterOptions.Clear();
+        if (options.Ok && options.Value is not null)
+        {
+            foreach (var option in options.Value)
+            {
+                SupplierFilterOptions.Add(option);
+            }
+        }
+
+        OnPropertyChanged(nameof(SelectedSupplierFilter));
+        UpdatePreferredHint();
+
         var units = _services.Products.GetUnits();
         BaseUnits.Clear();
         if (units.Ok && units.Value is not null)
@@ -599,7 +678,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     private void Load()
     {
         // F-50: exact first; when nothing matches, the closest medicines with a sentence saying so.
-        var result = _services.Products.SearchSmart(SearchText, _categoryFilter, _companyFilter, _lowStockOnly, _strengthFilter);
+        var result = _services.Products.SearchSmart(SearchText, _categoryFilter, _companyFilter, _lowStockOnly, _strengthFilter, _supplierFilter);
 
         if (!result.Ok || result.Value is null)
         {
@@ -691,6 +770,11 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         SelectedBrand = null;
         UpdateFormulaHint();
         UpdateBrandHint();
+        _preferredSupplierId = null;
+        _clearPreferredSupplier = false;
+        _supplierHistoryText = string.Empty;
+        SelectedPreferredSupplier = null;
+        UpdatePreferredHint();
 
         OnPropertyChanged(nameof(HeaderText));
         SetStatus("New product — fill the name and rates.", false);
@@ -704,6 +788,9 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         _brandLinkId = null;
         _unlinkFormula = false;
         _unlinkBrand = false;
+        _preferredSupplierId = null;
+        _clearPreferredSupplier = false;
+        _supplierHistoryText = string.Empty;
         Name = product.Name;
         Generic = product.Generic ?? string.Empty;
         Brand = product.Brand ?? string.Empty;
@@ -739,6 +826,11 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         _unlinkBrand = false;
         UpdateFormulaHint();
         UpdateBrandHint();
+        SelectedPreferredSupplier = Suppliers.FirstOrDefault(row => row.Id == product.PreferredSupplierId);
+        _preferredSupplierId = SelectedPreferredSupplier?.Id;
+        _clearPreferredSupplier = false;
+        LoadSupplierHistory(product.Id);
+        UpdatePreferredHint();
 
         OnPropertyChanged(nameof(HeaderText));
         SetStatus($"Editing {product.Name}.", false);
@@ -789,6 +881,8 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
             BrandId = _brandLinkId,
             ClearGenericFormula = _unlinkFormula,
             ClearBrand = _unlinkBrand,
+            PreferredSupplierId = _preferredSupplierId,
+            ClearPreferredSupplier = _clearPreferredSupplier,
             RackNo = RackNo,
             Room = Room,
             PackSizeLabel = PackSizeLabel,
@@ -847,14 +941,17 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         int? categoryId = null,
         int? companyId = null,
         bool lowStockOnly = false,
-        string? strength = null)
+        string? strength = null,
+        int? supplierId = null)
     {
         _categoryFilter = categoryId is > 0 ? categoryId : null;
         _companyFilter = companyId is > 0 ? companyId : null;
+        _supplierFilter = supplierId is > 0 ? supplierId : null;
         _lowStockOnly = lowStockOnly;
         _strengthFilter = (strength ?? string.Empty).Trim();
         _searchText = string.Empty;
         OnPropertyChanged(nameof(CategoryFilterId));
+        OnPropertyChanged(nameof(SelectedSupplierFilter));
         OnPropertyChanged(nameof(SearchText));
         OnPropertyChanged(nameof(FilterText));
         OnPropertyChanged(nameof(HasFilter));
@@ -1043,6 +1140,47 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     private static bool LinkTextMatches(string? linked, string? typed) =>
         string.Equals((linked ?? string.Empty).Trim(), (typed ?? string.Empty).Trim(),
             StringComparison.OrdinalIgnoreCase);
+
+    private void ClearPreferredSupplier()
+    {
+        if (_preferredSupplierId is null && !_clearPreferredSupplier)
+        {
+            SetStatus("No preferred supplier is set; purchase history is untouched.", false);
+            return;
+        }
+
+        _preferredSupplierId = null;
+        _clearPreferredSupplier = _editingId is not null;
+        SelectedPreferredSupplier = null;
+        UpdatePreferredHint();
+        SetStatus("Preferred supplier cleared. Purchase history is untouched; save to keep it that way.", false);
+    }
+
+    private void LoadSupplierHistory(int productId)
+    {
+        _supplierHistoryText = string.Empty;
+        var history = _services.Products.GetProductSuppliers(productId);
+        if (!history.Ok || history.Value is null)
+        {
+            return;
+        }
+
+        var names = history.Value
+            .Where(row => !row.IsPreferred && !string.IsNullOrWhiteSpace(row.SupplierName))
+            .Select(row => row.SupplierName!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (names.Count > 0)
+        {
+            _supplierHistoryText = " Bought before from: " + string.Join(", ", names) + ".";
+        }
+    }
+
+    private void UpdatePreferredHint() =>
+        PreferredSupplierHint = (_preferredSupplierId is null
+            ? "No preferred supplier — pick one above. History never picks for you."
+            : "Preferred supplier: " + (SelectedPreferredSupplier?.Name ?? string.Empty) + ".")
+            + _supplierHistoryText;
 
     private void AddCompany()
     {

@@ -28,6 +28,9 @@ public sealed class Product
     /// <summary>Explicit brand link, or null for legacy typed text. Never guessed from the text.</summary>
     public int? BrandId { get; set; }
 
+    /// <summary>Explicit preferred supplier, or null. Purchase history never sets this (P9).</summary>
+    public int? PreferredSupplierId { get; set; }
+
     public string? CategoryName { get; set; }
 
     /// <summary>Additional filter-only tags; never joined into financial category totals.</summary>
@@ -191,6 +194,12 @@ public sealed class ProductPatch
 
     /// <summary>True drops the brand link and keeps the typed text.</summary>
     public bool ClearBrand { get; set; }
+
+    /// <summary>Link this product to a preferred supplier, or null to leave it unchanged.</summary>
+    public int? PreferredSupplierId { get; set; }
+
+    /// <summary>True drops the preferred supplier. History rows are never touched.</summary>
+    public bool ClearPreferredSupplier { get; set; }
 
     public string? RackNo { get; set; }
 

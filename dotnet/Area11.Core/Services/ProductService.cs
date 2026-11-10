@@ -15,7 +15,7 @@ public sealed class ProductService
 {
     private const string SelectSql = @"
 SELECT p.id, p.name, p.generic, p.brand, p.barcode, p.category_id, p.company_id,
-       p.generic_formula_id, p.brand_id,
+       p.generic_formula_id, p.brand_id, p.preferred_supplier_id,
        p.rack_no, p.room, p.pack_size_label, p.base_unit, p.box_strips, p.strip_tablets,
        p.strength_value, p.strength_unit,
        p.cost_paisa, p.retail_paisa, p.vip_paisa, p.doctor_paisa, p.reorder_level,
@@ -61,7 +61,8 @@ LEFT JOIN companies co ON co.id = p.company_id
         int? categoryId = null,
         int? companyId = null,
         bool lowStockOnly = false,
-        string? strength = null)
+        string? strength = null,
+        int? supplierId = null)
     {
         try
         {
@@ -99,6 +100,9 @@ WHERE p.active = 1
       WHERE pct.product_id = p.id
         AND (pct.category_id = @categoryId OR tagged.parent_id = @categoryId)))
   AND (@companyId IS NULL OR p.company_id = @companyId)
+  AND (@supplierId IS NULL OR EXISTS (
+      SELECT 1 FROM product_supplier_directory directory
+      WHERE directory.product_id = p.id AND directory.supplier_id = @supplierId))
   AND (@strength = '' OR
        lower(trim(p.strength_unit)) = @strength OR
        (p.strength_value > 0 AND printf('%g', p.strength_value) = @strength) OR
@@ -115,6 +119,7 @@ ORDER BY p.name COLLATE NOCASE;",
                     keyLike = $"%{searchKey}%",
                     categoryId,
                     companyId,
+                    supplierId,
                     strength = strengthText,
                     lowStock = lowStockOnly ? 1 : 0
                 });
@@ -144,11 +149,12 @@ ORDER BY p.name COLLATE NOCASE;",
         int? categoryId = null,
         int? companyId = null,
         bool lowStockOnly = false,
-        string? strength = null)
+        string? strength = null,
+        int? supplierId = null)
     {
         var typed = (term ?? string.Empty).Trim();
 
-        var exact = Search(typed, categoryId, companyId, lowStockOnly, strength);
+        var exact = Search(typed, categoryId, companyId, lowStockOnly, strength, supplierId);
 
         if (!exact.Ok || exact.Value is null)
         {
@@ -165,7 +171,7 @@ ORDER BY p.name COLLATE NOCASE;",
 
         // Nothing exact: look for the neighbourhood. The filters still apply, because a person who
         // narrowed the list to one company does not want a suggestion from another one.
-        var all = Search(null, categoryId, companyId, lowStockOnly, strength);
+        var all = Search(null, categoryId, companyId, lowStockOnly, strength, supplierId);
 
         if (!all.Ok || all.Value is null)
         {
@@ -288,6 +294,7 @@ ORDER BY p.name COLLATE NOCASE;",
                     if (required is not null) throw new ValidationException(required);
                 }
                 EnsureActiveCatalogLinks(connection, input.CategoryId, input.CompanyId, input.GenericFormulaId, input.BrandId);
+                EnsureActiveSupplier(connection, input.PreferredSupplierId);
                 EnsureActiveUnit(connection, baseUnit);
                 if (strengthValue > 0)
                 {
@@ -297,13 +304,13 @@ ORDER BY p.name COLLATE NOCASE;",
                 _db.Execute(connection, @"
 INSERT INTO products
     (name, generic, brand, barcode, category_id, company_id, generic_formula_id, brand_id,
-     rack_no, room, pack_size_label,
+     preferred_supplier_id, rack_no, room, pack_size_label,
      base_unit, strength_value, strength_unit, box_strips, strip_tablets,
      cost_paisa, retail_paisa, vip_paisa, doctor_paisa,
      reorder_level, track_expiry, active, created_at, updated_at)
 VALUES
     (@name, @generic, @brand, @barcode, @categoryId, @companyId, @formulaId, @brandId,
-     @rackNo, @room, @packSizeLabel,
+     @preferredSupplierId, @rackNo, @room, @packSizeLabel,
      @baseUnit, @strengthValue, @strengthUnit, @boxStrips, @stripTablets,
      @costPaisa, @retailPaisa, @vipPaisa, @doctorPaisa,
      @reorderLevel, @trackExpiry, 1, @at, @at);",
@@ -314,6 +321,7 @@ VALUES
                         brand = linkedBrand,
                         formulaId = input.GenericFormulaId,
                         brandId = input.BrandId,
+                        preferredSupplierId = input.PreferredSupplierId,
                         barcode = NullIfEmpty(input.Barcode),
                         categoryId = input.CategoryId,
                         companyId = input.CompanyId,
@@ -412,6 +420,7 @@ VALUES
                     new { id }).ToList();
 
                 EnsureActiveCatalogLinks(connection, patch.CategoryId, patch.CompanyId, patch.GenericFormulaId, patch.BrandId);
+                EnsureActiveSupplier(connection, patch.PreferredSupplierId);
                 var effectiveCategoryId = patch.CategoryId ?? before.CategoryId;
                 var effectiveTagIds = patch.CategoryTagIds ?? before.CategoryTagIds;
                 if (effectiveCategoryId is int primary && effectiveTagIds.Contains(primary))
@@ -535,6 +544,15 @@ VALUES
                 if (patch.CompanyId is not null)
                 {
                     Set("company_id", patch.CompanyId, "companyId");
+                }
+
+                if (patch.PreferredSupplierId is not null)
+                {
+                    Set("preferred_supplier_id", patch.PreferredSupplierId, "preferredSupplierId");
+                }
+                else if (patch.ClearPreferredSupplier)
+                {
+                    Set("preferred_supplier_id", null, "preferredSupplierId");
                 }
 
                 if (patch.RackNo is not null)
@@ -1099,6 +1117,7 @@ INSERT INTO companies(name, sort_order, active) VALUES(@name, @sortOrder, 1);",
                 }
 
                 var unlinkedIds = new List<int>();
+                var unlinkedBrandIds = new List<int>();
                 if (!active)
                 {
                     unlinkedIds = _db.Query<int>(connection,
@@ -1106,14 +1125,19 @@ INSERT INTO companies(name, sort_order, active) VALUES(@name, @sortOrder, 1);",
                     _db.Execute(connection, @"
 UPDATE products SET company_id = NULL, updated_at = @at WHERE company_id = @id;",
                         new { at = Clock.Now(), id });
+                    unlinkedBrandIds = _db.Query<int>(connection,
+                        "SELECT id FROM brands WHERE company_id = @id ORDER BY id;", new { id });
+                    _db.Execute(connection, @"
+UPDATE brands SET company_id = NULL, updated_at = @at WHERE company_id = @id;",
+                        new { at = Clock.Now(), id });
                 }
 
                 _db.Execute(connection, "UPDATE companies SET active = @active WHERE id = @id;",
                     new { active, id });
                 var after = FindCompany(connection, id);
                 var details = active
-                    ? "Brought back. Former product links were not recreated."
-                    : $"Put away; unlinked {unlinkedIds.Count} product(s) [{string.Join(", ", unlinkedIds)}]. No product or historical record was deleted.";
+                    ? "Brought back. Former product and brand links were not recreated."
+                    : $"Put away; unlinked {unlinkedIds.Count} product(s) [{string.Join(", ", unlinkedIds)}] and {unlinkedBrandIds.Count} brand(s) [{string.Join(", ", unlinkedBrandIds)}]. No product or historical record was deleted.";
                 _audit.RecordChange(connection, actor, "Inventory",
                     active ? "company_restore" : "company_put_away", "companies", id.ToString(),
                     before, after, details);
@@ -1156,10 +1180,12 @@ FROM generic_formulas f
         {
             using var connection = _db.Open();
             var rows = _db.Query<BrandDefinition>(connection, @"
-SELECT b.id, b.company_id AS companyId, b.name, b.name_key AS nameKey, b.active,
+SELECT b.id, b.company_id AS companyId, co.name AS companyName,
+       b.name, b.name_key AS nameKey, b.active,
        b.sort_order AS sortOrder, b.created_at AS createdAt, b.updated_at AS updatedAt,
        (SELECT COUNT(1) FROM products p WHERE p.brand_id = b.id) AS productCount
 FROM brands b
+LEFT JOIN companies co ON co.id = b.company_id
 " + (activeOnly ? "WHERE b.active = 1 " : string.Empty)
                 + "ORDER BY b.sort_order, b.name COLLATE NOCASE, b.id;");
             return ServiceResult<List<BrandDefinition>>.Success(rows);
@@ -1516,6 +1542,119 @@ UPDATE products SET brand_id = NULL, updated_at = @at WHERE brand_id = @id;",
         }
     }
 
+    /// <summary>
+    /// Portion 9 (#11): links a brand to its company, or clears the link with a null company.
+    /// The company name is display metadata; no product row is rewritten.
+    /// </summary>
+    public ServiceResult SetBrandCompany(User actor, int brandId, int? companyId)
+    {
+        if (!actor.CanManage)
+        {
+            return ServiceResult.Fail("Only the owner or a manager can change brands.");
+        }
+
+        if (brandId <= 0)
+        {
+            return ServiceResult.Fail("Pick a brand first.");
+        }
+
+        try
+        {
+            return _db.Tx(connection =>
+            {
+                var before = FindBrand(connection, brandId);
+                if (before is null)
+                {
+                    return ServiceResult.Fail("That brand no longer exists.");
+                }
+
+                string? companyName = null;
+                if (companyId is not null)
+                {
+                    var company = FindCompany(connection, companyId.Value);
+                    if (company is null || !company.Active)
+                    {
+                        return ServiceResult.Fail("Choose a company that is on the active list.");
+                    }
+
+                    companyName = company.Name;
+                }
+
+                if (before.CompanyId == companyId)
+                {
+                    return ServiceResult.Success();
+                }
+
+                _db.Execute(connection, @"
+UPDATE brands SET company_id = @companyId, updated_at = @at WHERE id = @brandId;",
+                    new { companyId, at = Clock.Now(), brandId });
+                _audit.RecordChange(connection, actor, "Inventory", "brand_update", "brands",
+                    brandId.ToString(), before, FindBrand(connection, brandId),
+                    companyId is null
+                        ? "Company link cleared; the brand keeps its name and products."
+                        : "Company set to " + companyName + "; no product row was rewritten.");
+                return ServiceResult.Success();
+            });
+        }
+        catch (Exception exception)
+        {
+            _log.Error($"Brand {brandId} company could not be changed.", exception);
+            return ServiceResult.Fail("The brand company could not be changed. " + exception.Message);
+        }
+    }
+
+    /// <summary>
+    /// Portion 9 (#11): one product's directory rows — the preferred supplier plus every genuine
+    /// purchase-history supplier. Preferred first, then by name. History is read, never written.
+    /// </summary>
+    public ServiceResult<List<ProductSupplierDirectoryRow>> GetProductSuppliers(int productId)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            var rows = _db.Query<ProductSupplierDirectoryRow>(connection, @"
+SELECT d.product_id AS productId, d.supplier_id AS supplierId, s.name AS supplierName,
+       d.is_preferred AS isPreferred, d.last_purchased_at AS lastPurchasedAt
+FROM product_supplier_directory d
+JOIN suppliers s ON s.id = d.supplier_id
+WHERE d.product_id = @productId
+ORDER BY d.is_preferred DESC, s.name COLLATE NOCASE, s.id;",
+                new { productId });
+            return ServiceResult<List<ProductSupplierDirectoryRow>>.Success(rows);
+        }
+        catch (Exception exception)
+        {
+            _log.Error($"Supplier directory for product {productId} could not be loaded.", exception);
+            return ServiceResult<List<ProductSupplierDirectoryRow>>.Fail("The supplier directory could not be loaded.");
+        }
+    }
+
+    /// <summary>
+    /// Portion 9 (#11): every supplier the product filter can offer — preferred and/or genuine
+    /// history, including put-away suppliers with history, counting active products only.
+    /// </summary>
+    public ServiceResult<List<ProductSupplierOption>> GetProductSupplierOptions()
+    {
+        try
+        {
+            using var connection = _db.Open();
+            var rows = _db.Query<ProductSupplierOption>(connection, @"
+SELECT s.id AS supplierId, s.name,
+       COUNT(DISTINCT p.id) AS productCount
+FROM product_supplier_directory d
+JOIN suppliers s ON s.id = d.supplier_id
+JOIN products p ON p.id = d.product_id AND p.active = 1
+GROUP BY s.id, s.name
+ORDER BY s.name COLLATE NOCASE, s.id;");
+            return ServiceResult<List<ProductSupplierOption>>.Success(rows);
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The supplier filter list could not be loaded.", exception);
+            return ServiceResult<List<ProductSupplierOption>>.Fail("The supplier filter list could not be loaded.");
+        }
+    }
+
     /// <summary>Managed units used by product stock and descriptive strength fields.</summary>
     public ServiceResult<List<Unit>> GetUnits(bool activeOnly = true)
     {
@@ -1767,6 +1906,23 @@ FROM units u WHERE u.id = @id;", new { id });
             _db.Execute(connection,
                 "INSERT INTO product_category_tags(product_id, category_id) VALUES(@productId, @tagId);",
                 new { productId, tagId });
+        }
+    }
+
+    /// <summary>Portion 9: the preferred supplier is an explicit pick of a live supplier row.</summary>
+    private void EnsureActiveSupplier(SqliteConnection connection, int? supplierId)
+    {
+        if (supplierId is null)
+        {
+            return;
+        }
+
+        var exists = Convert.ToInt32(_db.Scalar(connection,
+            "SELECT COUNT(1) FROM suppliers WHERE id = @supplierId AND active = 1;",
+            new { supplierId }) ?? 0);
+        if (exists == 0)
+        {
+            throw new ValidationException("Choose a supplier that is on the active list.");
         }
     }
 

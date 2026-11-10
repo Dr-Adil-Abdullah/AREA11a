@@ -140,6 +140,21 @@
                                     Command="{Binding AddCompanyCommand}" />
                         </Grid>
 
+                        <TextBlock Text="Preferred supplier (optional — history never picks for you)" Style="{StaticResource FieldLabel}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ComboBox Grid.Column="0" ItemsSource="{Binding Suppliers}" DisplayMemberPath="Name"
+                                      SelectedItem="{Binding SelectedPreferredSupplier, Mode=TwoWay}" />
+                            <Button Grid.Column="2" Content="Clear" Style="{StaticResource GhostButton}"
+                                    Command="{Binding ClearPreferredSupplierCommand}"
+                                    ToolTip="Drop the preferred supplier. Purchase history is untouched." />
+                        </Grid>
+                        <TextBlock Text="{Binding PreferredSupplierHint}" Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,4,0,0" />
+
                         <Button Content="Manage catalogs…"
                                 Style="{StaticResource GhostButton}" Margin="0,8,0,0"
                                 Command="{Binding ManageCatalogCommand}"

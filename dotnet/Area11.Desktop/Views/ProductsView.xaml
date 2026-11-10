@@ -27,6 +27,9 @@
                              ToolTip="Name, pack / variant, strength, salt, barcode, brand, rack, category or company" />
                     <TextBox Width="110" Margin="6,0,0,0" Text="{Binding StrengthFilter, UpdateSourceTrigger=PropertyChanged}"
                              ToolTip="Optional exact strength filter: 50 ml, 50ml, 50 or ml" />
+                    <ComboBox Width="150" Margin="6,0,0,0" ItemsSource="{Binding SupplierFilterOptions}" DisplayMemberPath="Name"
+                              SelectedItem="{Binding SelectedSupplierFilter, Mode=TwoWay}"
+                              ToolTip="Filter by supplier: preferred or purchase history" />
                     <Button Content="New product" Style="{StaticResource GhostButton}" Command="{Binding NewCommand}"
                             Margin="8,0,0,0" />
                     <Button Content="Edit product" Style="{StaticResource GhostButton}" Command="{Binding EditCommand}"

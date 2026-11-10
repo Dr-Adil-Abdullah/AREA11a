@@ -17,6 +17,8 @@ public sealed class CatalogWindowViewModel : ObservableObject
     private Company? _selectedCompany;
     private GenericFormula? _selectedFormula;
     private BrandDefinition? _selectedBrand;
+    private Company? _selectedBrandCompany;
+    private int? _brandCompanyId;
     private Category? _selectedParent;
     private string _categoryName = string.Empty;
     private string _companyName = string.Empty;
@@ -51,6 +53,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
         NewBrandCommand = new RelayCommand(NewBrand);
         SaveBrandCommand = new RelayCommand(SaveBrand);
         ToggleBrandCommand = new RelayCommand(ToggleBrand);
+        ClearBrandCompanyCommand = new RelayCommand(ClearBrandCompany);
         RefreshCommand = new RelayCommand(Refresh);
 
         Load();
@@ -65,6 +68,8 @@ public sealed class CatalogWindowViewModel : ObservableObject
     public ObservableCollection<GenericFormula> Formulas { get; } = new();
 
     public ObservableCollection<BrandDefinition> Brands { get; } = new();
+
+    public ObservableCollection<Company> ActiveCompanies { get; } = new();
 
     public RelayCommand NewCategoryCommand { get; }
 
@@ -89,6 +94,8 @@ public sealed class CatalogWindowViewModel : ObservableObject
     public RelayCommand SaveBrandCommand { get; }
 
     public RelayCommand ToggleBrandCommand { get; }
+
+    public RelayCommand ClearBrandCompanyCommand { get; }
 
     public RelayCommand RefreshCommand { get; }
 
@@ -178,6 +185,12 @@ public sealed class CatalogWindowViewModel : ObservableObject
 
             FillBrandEditor(value);
         }
+    }
+
+    public Company? SelectedBrandCompany
+    {
+        get => _selectedBrandCompany;
+        set => SetProperty(ref _selectedBrandCompany, value);
     }
 
     public Category? SelectedParent
@@ -363,6 +376,12 @@ public sealed class CatalogWindowViewModel : ObservableObject
                 Brands.Add(row);
             }
 
+            ActiveCompanies.Clear();
+            foreach (var row in companyResult.Value.Where(row => row.Active))
+            {
+                ActiveCompanies.Add(row);
+            }
+
             SelectedCategory = Categories.FirstOrDefault(row => row.Id == categoryId)
                                ?? Categories.FirstOrDefault();
             SelectedCompany = Companies.FirstOrDefault(row => row.Id == companyId)
@@ -417,6 +436,8 @@ public sealed class CatalogWindowViewModel : ObservableObject
     {
         BrandName = value?.Name ?? string.Empty;
         BrandOrderText = value?.SortOrder.ToString() ?? "0";
+        _brandCompanyId = value?.CompanyId;
+        SelectedBrandCompany = ActiveCompanies.FirstOrDefault(row => row.Id == _brandCompanyId);
     }
 
     private void Refresh()
@@ -645,6 +666,8 @@ public sealed class CatalogWindowViewModel : ObservableObject
     private void NewBrand()
     {
         SelectedBrand = null;
+        _brandCompanyId = null;
+        SelectedBrandCompany = null;
         BrandName = string.Empty;
         BrandOrderText = NextOrder(Brands.Select(row => row.SortOrder));
         SetStatus("New brand: enter a name and order, then Save.", false);
@@ -681,10 +704,31 @@ public sealed class CatalogWindowViewModel : ObservableObject
             }
         }
 
+        var wantCompanyId = SelectedBrandCompany?.Id;
+        if (wantCompanyId != _brandCompanyId)
+        {
+            var linked = _services.Products.SetBrandCompany(_user, id, wantCompanyId);
+            if (!linked.Ok)
+            {
+                if (Load(null, null, null, id))
+                {
+                    SetStatus("Brand saved, but the company link failed: " + (linked.Error ?? "unknown error"), true);
+                }
+
+                return;
+            }
+        }
+
         if (Load(null, null, null, id))
         {
             SetStatus("Brand saved. Linked products show the current spelling; typed text elsewhere was not rewritten.", false);
         }
+    }
+
+    private void ClearBrandCompany()
+    {
+        SelectedBrandCompany = null;
+        SetStatus("Company cleared from this form. Save the brand to keep it that way.", false);
     }
 
     private void ToggleBrand()

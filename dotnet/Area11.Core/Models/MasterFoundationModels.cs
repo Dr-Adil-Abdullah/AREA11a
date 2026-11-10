@@ -211,6 +211,9 @@ public sealed class BrandDefinition
     /// <summary>Current products explicitly linked to this brand (legacy typed text is not counted).</summary>
     public int ProductCount { get; set; }
 
+    /// <summary>Display name of the linked company, or null when the brand stands alone (P9).</summary>
+    public string? CompanyName { get; set; }
+
     public string ActiveLabel => Active ? "Active" : "Put away";
 
     public string? CreatedAt { get; set; }
@@ -225,9 +228,23 @@ public sealed class ProductSupplierDirectoryRow
 
     public int SupplierId { get; set; }
 
+    public string? SupplierName { get; set; }
+
     public bool IsPreferred { get; set; }
 
     public string? LastPurchasedAt { get; set; }
+}
+
+/// <summary>One supplier offered by the product filter: preferred and/or genuine history (P9).</summary>
+public sealed class ProductSupplierOption
+{
+    public int SupplierId { get; set; }
+
+    public string Name { get; set; } = string.Empty;
+
+    public int ProductCount { get; set; }
+
+    public override string ToString() => Name;
 }
 
 public static class DrawerStage
