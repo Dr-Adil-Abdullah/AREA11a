@@ -75,6 +75,8 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         _services = services;
         _user = user;
         NewCustomerEditor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Customer, saveWithParent: true);
+        DocEditor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Sale, saveWithParent: true);
+        DocEditor.LoadNew();
 
         AddCommand = new RelayCommand(AddToCart);
         ScanCommand = new RelayCommand(ScanBarcode);
@@ -101,6 +103,9 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     }
 
     public CustomFieldsEditorViewModel NewCustomerEditor { get; }
+
+    /// <summary>The owner's own bill questions (Portion 18). Saved with the bill, cleared after it.</summary>
+    public CustomFieldsEditorViewModel DocEditor { get; }
 
     public ObservableCollection<Product> Products { get; } = new();
 
@@ -869,6 +874,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         DiscountPercent = "0";
         _openDraftId = 0;
         OnPropertyChanged(nameof(HasOpenDraft));
+        DocEditor.LoadNew();
         SetStatus("Cart cleared.", false);
         Recalculate();
     }
@@ -977,6 +983,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         DiscountPercent = "0";
         _openDraftId = 0;
         OnPropertyChanged(nameof(HasOpenDraft));
+        DocEditor.LoadNew();
         LoadLookups();
     }
 
@@ -1033,7 +1040,8 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
                 Unit = line.Unit,
                 Quantity = line.Quantity,
                 UnitPricePaisa = RateOverride(line)
-            }).ToList()
+            }).ToList(),
+            CustomAnswers = DocEditor.AnswerValues().ToDictionary(pair => pair.Key, pair => pair.Value)
         };
     }
 
@@ -1195,6 +1203,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
         _openDraftId = draftId;
         OnPropertyChanged(nameof(HasOpenDraft));
+        DocEditor.SetAnswers(input.CustomAnswers);
         Recalculate();
         SetStatus(skipped == 0
             ? "Draft opened. Review and complete the sale."
@@ -1228,6 +1237,10 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         TenderedText = string.Empty;
         SecondAmountText = string.Empty;
         DiscountPercent = "0";
+        // A parked cart keeps lines, rates, customer and discount - but not the bill's own answers:
+        // those ride with drafts, the durable vehicle. Clearing here stops them leaking into the
+        // next customer's bill.
+        DocEditor.LoadNew();
         Recalculate();
         LoadHeldCarts();
         SetStatus($"{code} parked. The counter is free for the next customer.", false);

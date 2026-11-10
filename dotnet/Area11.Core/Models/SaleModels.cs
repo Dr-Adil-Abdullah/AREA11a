@@ -67,6 +67,13 @@ public sealed class SaleInput
     public int RedeemPoints { get; set; }
 
     public string? Notes { get; set; }
+
+    /// <summary>
+    /// The owner's own bill questions (Portion 18): field id to answer, as the counter panel
+    /// collects them. Saved atomically with the bill; a missing required answer refuses the post.
+    /// Drafts carry these along, so a parked cart keeps its answers too.
+    /// </summary>
+    public Dictionary<int, string?> CustomAnswers { get; set; } = new();
 }
 
 /// <summary>What the counter shows before saving — computed by the same code that saves.</summary>

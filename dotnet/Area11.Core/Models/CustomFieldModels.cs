@@ -5,28 +5,40 @@ using Area11.Core.Utils;
 namespace Area11.Core.Models;
 
 /// <summary>
-/// The three forms a custom field can be added to (migration 005). The strings are the values the
+/// The forms a custom field can be added to (migration 005). The strings are the values the
 /// `custom_fields.entity` column already holds, so an older database needs no conversion.
+/// Portion 18 added the three document forms: the values table keys on (entity, entity_id), so
+/// answers for bills, purchases and expenses needed no migration either - only these names.
 /// </summary>
 public static class CustomFieldEntity
 {
     public const string Product = "product";
     public const string Customer = "customer";
     public const string Supplier = "supplier";
+    public const string Sale = "sale";
+    public const string Purchase = "purchase";
+    public const string Expense = "expense";
 
-    public static readonly string[] All = { Product, Customer, Supplier };
+    public static readonly string[] All = { Product, Customer, Supplier, Sale, Purchase, Expense };
+
+    /// <summary>True for the three document forms, whose records are never edited or put away.</summary>
+    public static bool IsDocument(string? entity) =>
+        Clean(entity) is Sale or Purchase or Expense;
 
     public static bool IsKnown(string? entity) =>
         !string.IsNullOrWhiteSpace(entity) && All.Contains(Clean(entity));
 
     public static string Clean(string? entity) => (entity ?? string.Empty).Trim().ToLowerInvariant();
 
-    /// <summary>"Medicine", "Customer", "Supplier" - the word the screen shows.</summary>
+    /// <summary>"Medicine", "Customer", "Supplier", "Bill", "Purchase", "Expense" - the screen word.</summary>
     public static string LabelFor(string? entity) => Clean(entity) switch
     {
         Product => "Medicine",
         Customer => "Customer",
         Supplier => "Supplier",
+        Sale => "Bill",
+        Purchase => "Purchase",
+        Expense => "Expense",
         _ => "Record"
     };
 
@@ -35,6 +47,9 @@ public static class CustomFieldEntity
     {
         Product => "products",
         Supplier => "suppliers",
+        Sale => "pos",
+        Purchase => "purchases",
+        Expense => "cash",
         _ => "customers"
     };
 }
@@ -194,6 +209,18 @@ public sealed class CustomField
 
     /// <summary>"CNIC · Text · required" - the one line the manager list shows.</summary>
     public string Summary => Label + " · " + TypeLabel + (Required ? " · required" : string.Empty);
+}
+
+/// <summary>One answered question with its label, for the history screens. Inactive fields keep their stored answers, so their lines still show.</summary>
+public sealed class CustomAnswerLine
+{
+    public int FieldId { get; set; }
+
+    public string Label { get; set; } = string.Empty;
+
+    public string Value { get; set; } = string.Empty;
+
+    public string Display => Label + ": " + Value;
 }
 
 /// <summary>One stored answer. A field that is switched off keeps its value for ever.</summary>

@@ -31,6 +31,9 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
     private readonly User _user;
 
     private CustomFieldTab _selectedTab;
+    private readonly IReadOnlyList<CustomFieldTypeOption> _typesAll;
+    private readonly IReadOnlyList<CustomFieldTypeOption> _typesDocuments;
+    private readonly IReadOnlyList<CustomFieldSuggestion> _suggestionsDocuments;
     private CustomFieldAdminRow? _selectedField;
     private CustomFieldTypeOption _selectedType;
     private string _labelText = string.Empty;
@@ -52,11 +55,23 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
         {
             new(CustomFieldEntity.Product, "Medicines"),
             new(CustomFieldEntity.Customer, "Customers"),
-            new(CustomFieldEntity.Supplier, "Suppliers")
+            new(CustomFieldEntity.Supplier, "Suppliers"),
+            new(CustomFieldEntity.Sale, "Bills"),
+            new(CustomFieldEntity.Purchase, "Purchases"),
+            new(CustomFieldEntity.Expense, "Expenses")
         };
 
-        Types = CustomFieldType.All
+        // Documents have no photo gallery, so their kind list and quick-add leave photo out
+        // (Portion 18). The service refuses a photo definition on a document form as well, so an
+        // older window or a direct call cannot sneak one in either.
+        _typesAll = CustomFieldType.All
             .Select(type => new CustomFieldTypeOption(type, CustomFieldType.LabelFor(type)))
+            .ToList();
+        _typesDocuments = _typesAll
+            .Where(option => option.Key != CustomFieldType.Photo)
+            .ToList();
+        _suggestionsDocuments = CustomFieldSuggestion.All
+            .Where(suggestion => suggestion.Type != CustomFieldType.Photo)
             .ToList();
 
         _selectedTab = Tabs[0];
@@ -75,9 +90,12 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
 
     public IReadOnlyList<CustomFieldTab> Tabs { get; }
 
-    public IReadOnlyList<CustomFieldTypeOption> Types { get; }
+    /// <summary>The kind list and quick-add follow the tab: no photo on a document form.</summary>
+    public IReadOnlyList<CustomFieldTypeOption> Types =>
+        CustomFieldEntity.IsDocument(SelectedTab.Entity) ? _typesDocuments : _typesAll;
 
-    public IReadOnlyList<CustomFieldSuggestion> Suggestions { get; } = CustomFieldSuggestion.All;
+    public IReadOnlyList<CustomFieldSuggestion> Suggestions =>
+        CustomFieldEntity.IsDocument(SelectedTab.Entity) ? _suggestionsDocuments : CustomFieldSuggestion.All;
 
     public ObservableCollection<CustomFieldAdminRow> Fields { get; } = new();
 
@@ -109,6 +127,10 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
                 return;
             }
 
+            OnPropertyChanged(nameof(Types));
+            OnPropertyChanged(nameof(Suggestions));
+            OnPropertyChanged(nameof(DocumentTabNote));
+            OnPropertyChanged(nameof(HasDocumentTabNote));
             BeginNew();
             Load();
         }
@@ -159,6 +181,13 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
 
     /// <summary>A list needs choices; every other kind of answer does not.</summary>
     public bool NeedsOptions => CustomFieldType.NeedsOptions(SelectedType.Key);
+
+    /// <summary>Why the kind list on a document tab has no photo: documents have no gallery.</summary>
+    public bool HasDocumentTabNote => CustomFieldEntity.IsDocument(SelectedTab.Entity);
+
+    public string DocumentTabNote =>
+        "Bills, purchases and expenses carry text, number, amount, date, list and yes/no answers. " +
+        "Photos stay on medicines, customers and suppliers, which have galleries.";
 
     public string TypeHint => SelectedType.Key switch
     {
@@ -417,7 +446,7 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
     }
 }
 
-/// <summary>One of the three forms, as the tab row shows it.</summary>
+/// <summary>One of the six forms (three master, three document), as the tab row shows it.</summary>
 public sealed class CustomFieldTab
 {
     public CustomFieldTab(string entity, string label)

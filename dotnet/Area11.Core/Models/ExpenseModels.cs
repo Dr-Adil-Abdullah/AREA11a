@@ -44,6 +44,12 @@ public sealed class ExpenseInput
     public long AmountPaisa { get; set; }
 
     public string? Note { get; set; }
+
+    /// <summary>
+    /// The owner's own expense questions (Portion 18): field id to answer. Saved atomically with
+    /// the expense; a missing required answer refuses the save.
+    /// </summary>
+    public Dictionary<int, string?> CustomAnswers { get; set; } = new();
 }
 
 /// <summary>
@@ -150,6 +156,14 @@ public sealed class CashOutRow
     };
 
     public string DetailLabel => string.IsNullOrWhiteSpace(Note) ? Title : Title + " - " + Note;
+
+    /// <summary>
+    /// The owner's own answered questions, one line ("Vehicle no: RIK-123 · ..."). Empty when the
+    /// expense has no answers. Filled by ExpenseService.List, never stored.
+    /// </summary>
+    public string ExtraLabel { get; set; } = string.Empty;
+
+    public bool HasExtra => ExtraLabel.Length > 0;
 
     public string WhoLabel => string.IsNullOrWhiteSpace(UserName) ? "-" : UserName!;
 

@@ -55,6 +55,9 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
         _services = services;
         _user = user;
 
+        DocEditor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Expense, saveWithParent: true);
+        DocEditor.LoadNew();
+
         SaveExpenseCommand = new RelayCommand(SaveExpense);
         SaveDrawingCommand = new RelayCommand(SaveDrawing);
         SearchCommand = new RelayCommand(Search);
@@ -77,6 +80,9 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
     public IReadOnlyList<string> DrawingKinds { get; } = new[] { "Cash", "Goods" };
 
     public IReadOnlyList<string> Units { get; } = new[] { "unit", "strip", "box" };
+
+    /// <summary>The owner's own expense questions (Portion 18). Saved with the expense, cleared after it.</summary>
+    public CustomFieldsEditorViewModel DocEditor { get; }
 
     public RelayCommand SaveExpenseCommand { get; }
 
@@ -264,7 +270,8 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
             Category = Category.Key,
             Title = Title,
             AmountPaisa = Money.ToPaisa(rupees),
-            Note = ExpenseNote
+            Note = ExpenseNote,
+            CustomAnswers = DocEditor.AnswerValues().ToDictionary(pair => pair.Key, pair => pair.Value)
         };
 
         var result = _services.CashOut.AddExpense(_user, input);
@@ -280,6 +287,7 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
         Title = string.Empty;
         AmountText = string.Empty;
         ExpenseNote = string.Empty;
+        DocEditor.LoadNew();
 
         Load();
 

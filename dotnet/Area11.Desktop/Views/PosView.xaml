@@ -314,6 +314,8 @@
                             </StackPanel>
                         </Border>
 
+                        <views:CustomFieldsEditorView DataContext="{Binding DocEditor}" />
+
                         <Button Content="Complete sale  (F4)" Style="{StaticResource PrimaryButton}" Height="40"
                                 Margin="0,12,0,0" Command="{Binding CompleteCommand}" />
 

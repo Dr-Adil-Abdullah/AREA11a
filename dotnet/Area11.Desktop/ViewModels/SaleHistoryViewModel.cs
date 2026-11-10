@@ -45,6 +45,7 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
     private string _totalLabel = "-";
     private string _paidLabel = "-";
     private string _dueLabel = "-";
+    private string _extraFieldsText = string.Empty;
     private bool _hasDiscount;
     private bool _hasTax;
     private bool _hasRoundOff;
@@ -249,6 +250,21 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
         private set => SetProperty(ref _dueLabel, value);
     }
 
+    /// <summary>The owner's answered bill questions, one per line. Empty when the bill has none.</summary>
+    public string ExtraFieldsText
+    {
+        get => _extraFieldsText;
+        private set
+        {
+            if (SetProperty(ref _extraFieldsText, value))
+            {
+                OnPropertyChanged(nameof(HasExtraFields));
+            }
+        }
+    }
+
+    public bool HasExtraFields => ExtraFieldsText.Length > 0;
+
     public bool HasDiscount
     {
         get => _hasDiscount;
@@ -403,6 +419,13 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
         HasReturns = detail.HasReturns;
         HasPayments = detail.HasPayments;
 
+        // The owner's own answers travel with the bill (Portion 18). A read failure hides the
+        // section instead of blocking the paper: the bill itself is already on screen.
+        var extras = _services.CustomFields.DescribeValues(_user, CustomFieldEntity.Sale, Selected!.Id);
+        ExtraFieldsText = extras.Ok && extras.Value is not null
+            ? string.Join("\n", extras.Value.Select(line => line.Display))
+            : string.Empty;
+
         PreviewText = BuildPreview();
     }
 
@@ -529,6 +552,7 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
         TotalLabel = "-";
         PaidLabel = "-";
         DueLabel = "-";
+        ExtraFieldsText = string.Empty;
         HasDiscount = false;
         HasTax = false;
         HasRoundOff = false;

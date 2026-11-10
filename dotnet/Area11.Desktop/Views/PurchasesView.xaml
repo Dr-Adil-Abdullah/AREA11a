@@ -200,6 +200,8 @@
                         <TextBlock Text="Paid now (Rs)" Style="{StaticResource FieldLabel}" />
                         <TextBox Text="{Binding PaidText, UpdateSourceTrigger=PropertyChanged}" />
 
+                        <views:CustomFieldsEditorView DataContext="{Binding DocEditor}" />
+
                         <Button Content="Save purchase (PINV)" Style="{StaticResource PrimaryButton}" Height="38"
                                 Margin="0,10,0,0" Command="{Binding SaveCommand}" />
 

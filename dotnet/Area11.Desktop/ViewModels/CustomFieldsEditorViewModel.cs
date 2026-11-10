@@ -270,6 +270,30 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
         return values;
     }
 
+    /// <summary>
+    /// Puts answers back into the panel - the mirror of <see cref="AnswerValues"/> for a draft that
+    /// is opened on the page. Unknown field ids are ignored: the question may have been put away
+    /// since the draft was parked, and the post will say so if it is required.
+    /// </summary>
+    public void SetAnswers(IReadOnlyDictionary<int, string?>? values)
+    {
+        if (values is null) return;
+
+        foreach (var row in Rows)
+        {
+            if (!values.TryGetValue(row.FieldId, out var stored)) continue;
+
+            if (row.IsCheck)
+            {
+                row.BoolValue = CustomFieldType.AsBool(stored);
+            }
+            else if (!row.IsPhoto)
+            {
+                row.Text = stored ?? string.Empty;
+            }
+        }
+    }
+
     private void RaiseListState() => OnPropertyChanged(nameof(HasFields));
 
     private void RaiseStagedState()
@@ -380,6 +404,12 @@ public sealed class CustomInputRow : ObservableObject
         }
     }
 
-    /// <summary>The tick box of a yes/no field.</summary>
-    public bool BoolValue { get; set; }
+    private bool _boolValue;
+
+    /// <summary>The tick box of a yes/no field. Notifies, so a restored draft ticks the box on screen.</summary>
+    public bool BoolValue
+    {
+        get => _boolValue;
+        set => SetProperty(ref _boolValue, value);
+    }
 }

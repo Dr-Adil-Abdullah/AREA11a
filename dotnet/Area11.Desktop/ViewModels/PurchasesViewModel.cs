@@ -44,6 +44,8 @@ public sealed class PurchasesViewModel : ObservableObject
         _user = user;
         NewSupplierEditor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Supplier, saveWithParent: true);
         NewSupplierEditor.LoadNew();
+        DocEditor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Purchase, saveWithParent: true);
+        DocEditor.LoadNew();
 
         AddLineCommand = new RelayCommand(AddLine);
         RemoveLineCommand = new RelayCommand(RemoveLast);
@@ -60,6 +62,9 @@ public sealed class PurchasesViewModel : ObservableObject
     }
 
     public CustomFieldsEditorViewModel NewSupplierEditor { get; }
+
+    /// <summary>The owner's own purchase questions (Portion 18). Saved with the purchase, cleared after it.</summary>
+    public CustomFieldsEditorViewModel DocEditor { get; }
 
     public ObservableCollection<Supplier> Suppliers { get; } = new();
 
@@ -439,6 +444,7 @@ public sealed class PurchasesViewModel : ObservableObject
         {
             SupplierId = SelectedSupplier.Id,
             PaidPaisa = Money.ToPaisa(paid),
+            CustomAnswers = DocEditor.AnswerValues().ToDictionary(pair => pair.Key, pair => pair.Value),
             Lines = Lines.Select(line => new PurchaseLineInput
             {
                 ProductId = line.ProductId,
@@ -471,6 +477,7 @@ public sealed class PurchasesViewModel : ObservableObject
         PaidText = string.Empty;
         _openDraftId = 0;
         OnPropertyChanged(nameof(HasOpenDraft));
+        DocEditor.LoadNew();
         OnPropertyChanged(nameof(TotalText));
         LoadLookups();
     }
@@ -497,6 +504,7 @@ public sealed class PurchasesViewModel : ObservableObject
         {
             SupplierId = SelectedSupplier?.Id ?? 0,
             PaidPaisa = Money.ToPaisa(paid),
+            CustomAnswers = DocEditor.AnswerValues().ToDictionary(pair => pair.Key, pair => pair.Value),
             Lines = Lines.Select(line => new PurchaseLineInput
             {
                 ProductId = line.ProductId,
@@ -585,6 +593,7 @@ public sealed class PurchasesViewModel : ObservableObject
 
         _openDraftId = draftId;
         OnPropertyChanged(nameof(HasOpenDraft));
+        DocEditor.SetAnswers(input.CustomAnswers);
         OnPropertyChanged(nameof(TotalText));
         SetStatus(SelectedSupplier is null
             ? "Draft opened - choose a supplier, review the lines, then save."

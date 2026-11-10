@@ -1,11 +1,11 @@
 # AGENTS.md - how to work in this repository
 
-> **WIP handoff, 24 Oct 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/60395e95-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/60395e95-area11a). Portion 6 finished in v0.46.0 Rust (Windows/physical pending); new Portion 18 approved next; Portion 17 paused. Older status and approval statements below are historical. This branch is not a tested release.
+> **WIP handoff, 24 Oct 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/60395e95-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/60395e95-area11a). Portion 18 finished in v0.47.0 Moss (Windows/physical pending); batch order (5, 6, 18) complete; Portion 17 paused. Older status and approval statements below are historical. This branch is not a tested release.
 
 
-## Latest handoff — v0.46.0 Rust
+## Latest handoff — v0.47.0 Moss
 
-Portion 6 finished: expiry picker on the purchase page — month/year drop-downs + calendar, typing and blank unchanged, live stored-form hint, strip form `06/27` accepted. **996 written cases, 57/57 static; Windows build/xUnit and physical checks pending.** New Portion 18 (fields on documents) next; Portion 17 paused.
+Portion 18 finished: custom fields on sale/purchase/expense documents — define per form, answer at posting, atomic with the post, drafts carry answers, shown on bill history + expense list. **1010 written cases, 57/57 static; Windows build/xUnit and physical checks pending.** Batch order (5, 6, 18) complete; Portion 17 paused.
 
 
 ## Latest handoff — v0.43.0 Umber
