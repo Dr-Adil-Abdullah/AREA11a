@@ -1,11 +1,11 @@
 # TAKEOVER — the complete brief for a new agent
 
-> **WIP handoff, 10 Nov 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/b4b7bf7b-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/b4b7bf7b-area11a). Portion 10 finished in v0.51.0 Coffee (Windows/physical pending); v0.50.0 Windows 1055/1055 green; batch order (5, 6, 18) complete; Portion 17 paused; next is 11 per roadmap unless the owner says otherwise. Older status and approval statements below are historical. This branch is not a tested release.
+> **WIP handoff, 10 Nov 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/b4b7bf7b-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/b4b7bf7b-area11a). Portion 11 finished in v0.52.0 Espresso (Windows/physical pending); v0.50.0 Windows 1055/1055 green; batch order (5, 6, 18) complete; Portion 17 paused; next is 12 per roadmap unless the owner says otherwise. Older status and approval statements below are historical. This branch is not a tested release.
 
 
-## Latest handoff — v0.51.0 Coffee
+## Latest handoff — v0.52.0 Espresso
 
-Portion 10 finished: tokenized keyword-plus-unit search (#3) — one shared tokenizer + every-word-must-match on Products/Counter/Purchases (`panadol 100ml` narrows to the 100ml variant, any order, split units); one-word queries byte-identical; fuzzy fallback untouched; variant labels already everywhere. **1070 written cases, 57/57 static; Windows build/xUnit and physical checks pending.** v0.50.0 Windows 1055/1055 green. Batch order (5, 6, 18) complete; Portion 17 paused; next is 11 per roadmap unless the owner says otherwise.
+Portion 11 finished: universal and bulk printing (#5) — new slips for Reorder pad, Reports, StockTake sheet, Purchase invoice (auto-print after Save) and Expense voucher; multi-select bulk on Bills/Customers/Suppliers with `printer.defaultBulk` switching the main Print button and `printer.bulkFormat` (separate receipts / A4 list); atomic bulk builders with black-box reprint lines; preview window showing exact paper text; every print path read-only. **1086 written cases, 57/57 static; Windows build/xUnit and physical checks pending.** v0.50.0 Windows 1055/1055 green. Batch order (5, 6, 18) complete; Portion 17 paused; next is 12 per roadmap unless the owner says otherwise.
 
 
 ## Latest handoff — v0.43.0 Umber

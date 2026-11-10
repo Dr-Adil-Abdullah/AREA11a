@@ -176,6 +176,27 @@
 
                         <Border Style="{StaticResource SettingsGroup}">
                             <StackPanel>
+                                <TextBlock Text="Printing several at once" Style="{StaticResource SectionTitle}" />
+                                <TextBlock Text="On the history, customer and supplier pages several rows can be ticked and printed as one set."
+                                           Style="{StaticResource FieldHint}" />
+
+                                <CheckBox Content="The Print button prints every ticked row"
+                                          IsChecked="{Binding DefaultBulk, Mode=TwoWay}"
+                                          Margin="0,12,0,0" />
+                                <TextBlock Text="On = one press prints the whole ticked set. Off = it prints the one open row, and the set stays behind its own 'Print selected' button."
+                                           Style="{StaticResource FieldHint}" />
+
+                                <TextBlock Text="What a bulk print looks like" Style="{StaticResource FieldLabel}" />
+                                <ComboBox ItemsSource="{Binding BulkFormatOptions}"
+                                          SelectedItem="{Binding SelectedBulkFormat, Mode=TwoWay}"
+                                          Width="430" HorizontalAlignment="Left" />
+                                <TextBlock Text="Separate receipts = one slip per bill, each cut on its own. One A4 list = the summary page only, for the file."
+                                           Style="{StaticResource FieldHint}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel>
                                 <TextBlock Text="Copies" Style="{StaticResource SectionTitle}" />
 
                                 <TextBlock Text="How many copies of one receipt" Style="{StaticResource FieldLabel}" />

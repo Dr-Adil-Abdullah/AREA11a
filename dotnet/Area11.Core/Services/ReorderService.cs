@@ -225,6 +225,78 @@ UPDATE products SET reorder_level = @level, updated_at = @at WHERE id = @id;",
     // ------------------------------------------------------------------ text
 
     /// <summary>
+    /// Portion 11: the ticked pad on paper, next to the WhatsApp message. Same lines, same order,
+    /// same "one supplier at a time" rule - the page already enforces it before calling.
+    /// </summary>
+    public ServiceResult<ReceiptDocument> BuildPadDocument(
+        IEnumerable<ReorderLine> lines, string? supplierName = null)
+    {
+        var chosen = lines.Where(line => line.Quantity > 0).ToList();
+        if (chosen.Count == 0)
+        {
+            return ServiceResult<ReceiptDocument>.Fail("Tick at least one medicine with a quantity first.");
+        }
+
+        try
+        {
+            var width = ReceiptService.ColumnsForMillimetres(_settings.GetInt("printer.width", 58));
+            var document = new ReceiptDocument
+            {
+                Title = "Order pad",
+                Width = width,
+                AutoCut = _settings.GetBool("printer.autoCut", true),
+                Copies = 1
+            };
+
+            void Add(string text, ReceiptAlign align = ReceiptAlign.Left, bool bold = false, bool big = false) =>
+                document.Lines.Add(new ReceiptLine(ReceiptService.Fit(text, width), align, bold, big));
+
+            var shop = _settings.GetString("store.name");
+            if (!string.IsNullOrWhiteSpace(shop))
+            {
+                Add(shop!.Trim(), ReceiptAlign.Center, bold: true);
+            }
+
+            Add("ORDER PAD", ReceiptAlign.Center, bold: true, big: true);
+            if (!string.IsNullOrWhiteSpace(supplierName))
+            {
+                Add("To: " + supplierName!.Trim(), ReceiptAlign.Center);
+            }
+
+            Add("Date: " + Clock.Today());
+            document.Lines.Add(ReceiptLine.Sep(width));
+
+            var index = 1;
+            foreach (var line in chosen)
+            {
+                var extra = new[] { line.Company, line.Generic }
+                    .Where(part => !string.IsNullOrWhiteSpace(part))
+                    .Select(part => part!.Trim())
+                    .ToList();
+                var head = index + ". " + line.Name.Trim();
+                if (extra.Count > 0)
+                {
+                    head += " (" + string.Join(" - ", extra) + ")";
+                }
+
+                Add(head, ReceiptAlign.Left, bold: true);
+                Add("    " + line.QuantityLabel);
+                index++;
+            }
+
+            document.Lines.Add(ReceiptLine.Sep(width));
+            Add("Total: " + chosen.Count + " item(s).", ReceiptAlign.Right, bold: true);
+            Add("Please confirm the items and the rate.");
+            return ServiceResult<ReceiptDocument>.Success(document);
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The order pad could not be prepared.", exception);
+            return ServiceResult<ReceiptDocument>.Fail("The order pad could not be prepared. " + exception.Message);
+        }
+    }
+
+    /// <summary>
     /// The message a supplier reads. Plain English with one line per medicine, because the shop's
     /// screens and slips are English (D-00) and a supplier's manager may not read Urdu script.
     /// </summary>

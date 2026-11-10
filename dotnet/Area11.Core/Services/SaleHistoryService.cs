@@ -233,6 +233,98 @@ ORDER BY r.id;", new { id = saleId }));
     }
 
     /// <summary>
+    /// Portion 11: one bulk job for several picked bills. Every bill must build, or none does:
+    /// a missing bill names itself and nothing is prepared, so a bulk print can never silently
+    /// drop a page. The summary lists code, date and total for the a4_list format.
+    /// </summary>
+    public ServiceResult<BulkPrintJob> BuildBulkBills(User? user, IReadOnlyList<int> ids)
+    {
+        if (!CanLook(user))
+        {
+            return ServiceResult<BulkPrintJob>.Fail(
+                "Only a person who may look at the sales can print bills.");
+        }
+
+        var clean = ids.Where(id => id > 0).Distinct().OrderBy(id => id).ToList();
+        if (clean.Count == 0)
+        {
+            return ServiceResult<BulkPrintJob>.Fail("Pick at least one bill first.");
+        }
+
+        try
+        {
+            var documents = new List<ReceiptDocument>();
+            foreach (var id in clean)
+            {
+                var built = _receipts.Build(id);
+                if (!built.Ok || built.Value is null)
+                {
+                    return ServiceResult<BulkPrintJob>.Fail(
+                        "Bill " + id + " could not be prepared; nothing was printed.");
+                }
+
+                documents.Add(built.Value);
+            }
+
+            using var connection = _db.Open();
+            var rows = new List<BulkBillRow>();
+            foreach (var id in clean)
+            {
+                var row = _db.QuerySingle<BulkBillRow>(connection,
+                    "SELECT code AS Code, date AS Date, total_paisa AS TotalPaisa FROM sales WHERE id = @id;",
+                    new { id });
+                if (row is not null)
+                {
+                    rows.Add(row);
+                }
+            }
+
+            var width = _receipts.PaperWidth;
+            var summary = new ReceiptDocument
+            {
+                Title = "Bills (" + rows.Count + ")",
+                Width = width,
+                AutoCut = _receipts.AutoCut,
+                Copies = 1
+            };
+            summary.Lines.Add(new ReceiptLine(ReceiptService.Fit("BILLS (" + rows.Count + ")", width), ReceiptAlign.Center, bold: true));
+            summary.Lines.Add(ReceiptLine.Sep(width));
+            foreach (var row in rows)
+            {
+                var date = (row.Date ?? string.Empty).Length >= 10 ? row.Date![..10] : (row.Date ?? string.Empty);
+                summary.Lines.Add(new ReceiptLine(
+                    ReceiptService.TwoColumns(row.Code + " " + date, Money.Format(row.TotalPaisa), width)));
+            }
+
+            summary.Lines.Add(ReceiptLine.Sep(width));
+            summary.Lines.Add(new ReceiptLine(
+                ReceiptService.TwoColumns("TOTAL", Money.Format(rows.Sum(row => row.TotalPaisa)), width),
+                ReceiptAlign.Left, bold: true));
+
+            return ServiceResult<BulkPrintJob>.Success(new BulkPrintJob
+            {
+                Title = "Bills (" + rows.Count + ")",
+                Documents = documents,
+                Summary = summary
+            });
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The bulk bills could not be prepared.", exception);
+            return ServiceResult<BulkPrintJob>.Fail("The bulk bills could not be prepared. " + exception.Message);
+        }
+    }
+
+    private sealed class BulkBillRow
+    {
+        public string Code { get; set; } = string.Empty;
+
+        public string? Date { get; set; }
+
+        public long TotalPaisa { get; set; }
+    }
+
+    /// <summary>
     /// Called after the print really happened. The bill is named in the black box with its total, so a
     /// copy that appears in a customer's hand can always be traced to the minute it was printed.
     /// </summary>

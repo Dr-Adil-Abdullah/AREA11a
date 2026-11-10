@@ -58,6 +58,7 @@ public sealed class ReorderViewModel : ObservableObject, IEmptyPage
         SaveLevelCommand = new RelayCommand(SaveLevel);
         CopyCommand = new RelayCommand(CopyText);
         OpenWhatsAppCommand = new RelayCommand(OpenWhatsApp);
+        PrintPadCommand = new RelayCommand(PrintPad);
         TickAllCommand = new RelayCommand(() => SetAllTicked(true));
         UntickAllCommand = new RelayCommand(() => SetAllTicked(false));
 
@@ -71,6 +72,9 @@ public sealed class ReorderViewModel : ObservableObject, IEmptyPage
     public RelayCommand CopyCommand { get; }
 
     public RelayCommand OpenWhatsAppCommand { get; }
+
+    /// <summary>Portion 11: the ticked lines as a printed order pad for the file or the agent.</summary>
+    public RelayCommand PrintPadCommand { get; }
 
     public RelayCommand TickAllCommand { get; }
 
@@ -481,6 +485,34 @@ public sealed class ReorderViewModel : ObservableObject, IEmptyPage
             // The clipboard can be held by another program; the text is still on the screen.
             SetStatus("The text could not be copied (" + exception.Message + "). Select it by hand.", true);
         }
+    }
+
+    /// <summary>
+    /// The same ticked lines as the WhatsApp message, on paper. Same "one supplier at a time"
+    /// rule - a pad that mixes two agents is an order neither of them can fill.
+    /// </summary>
+    private void PrintPad()
+    {
+        if (!CanSend)
+        {
+            SetStatus(HasMixedSuppliers
+                ? "One order, one supplier. Untick the other supplier's medicines first."
+                : "Tick at least one medicine with a quantity.", true);
+            return;
+        }
+
+        var lines = Rows.Where(line => line.IsSelected && line.OrderQty > 0).Select(line => line.ToLine()).ToList();
+        var document = _services.Reorder.BuildPadDocument(lines, TickedSupplier());
+        if (!document.Ok || document.Value is null)
+        {
+            SetStatus(document.Error ?? "The order pad could not be prepared.", true);
+            return;
+        }
+
+        var printed = _services.Printer.Print(document.Value);
+        SetStatus(printed.Ok
+            ? "Order pad sent to the printer (" + lines.Count + " item(s))."
+            : "The printer did not answer: " + printed.Error, !printed.Ok);
     }
 
     private void OpenWhatsApp()

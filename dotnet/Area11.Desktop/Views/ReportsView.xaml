@@ -10,9 +10,13 @@
                     <TextBlock Text="{DynamicResource AppLabel.reports}" Style="{StaticResource PageTitle}" />
                     <TextBlock Text="{Binding PeriodLabel}" Style="{StaticResource PageSubtitle}" />
                 </StackPanel>
-                <Button Content="Refresh" Style="{StaticResource GhostButton}"
-                        HorizontalAlignment="Right" VerticalAlignment="Center"
-                        Command="{Binding RefreshCommand}" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Content="Print report" Style="{StaticResource GhostButton}" Margin="0,0,8,0"
+                            Command="{Binding PrintCommand}"
+                            ToolTip="Print this period's sales report" />
+                    <Button Content="Refresh" Style="{StaticResource GhostButton}"
+                            Command="{Binding RefreshCommand}" />
+                </StackPanel>
             </DockPanel>
 
             <!-- The four periods of Spec 21.1. Each button says exactly what it counts. -->

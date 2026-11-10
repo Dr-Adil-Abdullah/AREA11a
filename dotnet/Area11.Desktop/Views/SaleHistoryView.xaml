@@ -82,9 +82,10 @@
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0" Style="{StaticResource Card}">
-                <DataGrid ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected, Mode=TwoWay}"
+                <DataGrid x:Name="BillsGrid" ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected, Mode=TwoWay}"
                           IsReadOnly="True" AutoGenerateColumns="False" HeadersVisibility="Column"
-                          GridLinesVisibility="Horizontal" SelectionMode="Single">
+                          GridLinesVisibility="Horizontal" SelectionMode="Extended"
+                          SelectionChanged="BillsGrid_SelectionChanged">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Bill" Binding="{Binding Code}" Width="110" />
                         <DataGridTextColumn Header="When" Binding="{Binding WhenLabel, Mode=OneWay}" Width="150" />
@@ -170,6 +171,14 @@
                             <Button Content="Print this bill again" Style="{StaticResource PrimaryButton}"
                                     Command="{Binding PrintCommand}" IsEnabled="{Binding CanPrint}"
                                     Margin="0,10,0,0" />
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <Button Content="Print selected…" Style="{StaticResource GhostButton}"
+                                        Command="{Binding PrintSelectionCommand}" IsEnabled="{Binding CanPrintSelection}"
+                                        ToolTip="Print every ticked bill (hold Ctrl and click to tick several)" />
+                                <Button Content="Preview" Style="{StaticResource GhostButton}" Margin="8,0,0,0"
+                                        Command="{Binding PreviewCommand}" IsEnabled="{Binding CanPrint}"
+                                        ToolTip="See the exact paper text on the screen before it prints" />
+                            </StackPanel>
                         </StackPanel>
                     </Border>
 

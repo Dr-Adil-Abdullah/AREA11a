@@ -433,6 +433,79 @@ VALUES(@at, @method, @amount, @customerId, @userId, @note);",
     /// the day. The "before" figure is that plus the amount received, because a collection moves the
     /// khata by exactly its own amount.
     /// </summary>
+    /// <summary>
+    /// Portion 11: one bulk job for several picked customers. Full statements only (the month
+    /// statement stays a single print); every customer must build or none does. The summary
+    /// lists name, phone and balance for the a4_list format.
+    /// </summary>
+    public ServiceResult<BulkPrintJob> BuildBulkStatements(IReadOnlyList<int> ids)
+    {
+        var clean = ids.Where(id => id > 0).Distinct().OrderBy(id => id).ToList();
+        if (clean.Count == 0)
+        {
+            return ServiceResult<BulkPrintJob>.Fail("Pick at least one customer first.");
+        }
+
+        try
+        {
+            var documents = new List<ReceiptDocument>();
+            var summaries = new List<CustomerSummary>();
+            foreach (var id in clean)
+            {
+                var page = Page(id);
+                if (!page.Ok || page.Value is null)
+                {
+                    return ServiceResult<BulkPrintJob>.Fail(
+                        "Customer " + id + " could not be prepared; nothing was printed.");
+                }
+
+                var built = Statement(id);
+                if (!built.Ok || built.Value is null)
+                {
+                    return ServiceResult<BulkPrintJob>.Fail(
+                        "Customer " + id + " could not be prepared; nothing was printed.");
+                }
+
+                documents.Add(built.Value);
+                summaries.Add(page.Value.Summary);
+            }
+
+            var width = ReceiptService.ColumnsForMillimetres(_settings.GetInt("printer.width", 58));
+            var summary = new ReceiptDocument
+            {
+                Title = "Customers (" + summaries.Count + ")",
+                Width = width,
+                AutoCut = _settings.GetBool("printer.autoCut", true),
+                Copies = 1
+            };
+            summary.Lines.Add(new ReceiptLine(ReceiptService.Fit("CUSTOMERS (" + summaries.Count + ")", width), ReceiptAlign.Center, bold: true));
+            summary.Lines.Add(ReceiptLine.Sep(width));
+            foreach (var row in summaries)
+            {
+                summary.Lines.Add(new ReceiptLine(ReceiptService.Fit(row.Name, width), ReceiptAlign.Left, bold: true));
+                summary.Lines.Add(new ReceiptLine(ReceiptService.TwoColumns(
+                    (row.Phone ?? string.Empty).Trim(), Money.Format(row.BalancePaisa), width)));
+            }
+
+            summary.Lines.Add(ReceiptLine.Sep(width));
+            summary.Lines.Add(new ReceiptLine(
+                ReceiptService.TwoColumns("TOTAL OWED", Money.Format(summaries.Sum(row => row.BalancePaisa)), width),
+                ReceiptAlign.Left, bold: true));
+
+            return ServiceResult<BulkPrintJob>.Success(new BulkPrintJob
+            {
+                Title = "Customers (" + summaries.Count + ")",
+                Documents = documents,
+                Summary = summary
+            });
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The bulk statements could not be prepared.", exception);
+            return ServiceResult<BulkPrintJob>.Fail("The bulk statements could not be prepared. " + exception.Message);
+        }
+    }
+
     public ServiceResult<ReceiptDocument> PaymentReceipt(User? user, int paymentId)
     {
         if (!_permissions.Can(user, Modules.Customers))

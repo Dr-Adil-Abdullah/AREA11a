@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## تازہ status — Portion 11 مکمل، v0.52.0 Espresso
+
+ہر جگہ پرنٹ: Reorder پیڈ، Sales رپورٹ، StockTake شیٹ، Purchase انوائس (Save پر خودکار) اور Expense واؤچر — نئی پرچیاں؛ Bills/Customers/Suppliers پر کئی قطاریں ٹک کر کے ایک ساتھ پرنٹ (`defaultBulk` سے مین بٹن، `bulkFormat` سے الگ پرچیاں یا ایک A4 فہرست)؛ چھاپنے سے پہلے پیش نظارہ (preview)؛ ہر پرنٹ صرف پڑھتا ہے، کچھ بدلتا نہیں۔ **1086 written cases، 57/57 static؛ Windows/xUnit اور physical pending** (v0.50.0 کی Windows 1055/1055 گرین ہو چکی)۔ طے شدہ ترتیب (5، 6، 18) مکمل؛ اگلا 12 ہے جب تک مالک کچھ اور نہ کہے؛ Portion 17 paused۔
+
 ## تازہ status — Portion 10 مکمل، v0.51.0 Coffee
 
 لفظوں والی تلاش: تینوں صفحوں (Products، Counter، Purchase) پر ایک ہی اصول — ہر لفظ کہیں نہ کہیں ملنا چاہیے، ترتیب کوئی بھی ہو؛ «panadol 100ml» صرف 100ml والی نکالے؛ «50 ml» اور «50ml» ایک ہی؛ ایک لفظ کی تلاش پہلے جیسی؛ کچھ نہ ملے تبھی تجویز۔ **1070 written cases، 57/57 static؛ Windows/xUnit اور physical pending** (v0.50.0 کی Windows 1055/1055 گرین ہو چکی)۔ طے شدہ ترتیب (5، 6، 18) مکمل؛ اگلا 11 ہے جب تک مالک کچھ اور نہ کہے؛ Portion 17 paused۔
@@ -2709,6 +2713,7 @@ restart نہیں (Spec 8.4.3)۔
 | تاریخ | کیا |
 |---|---|
 | 10 نومبر 2026 | **لفظوں والی تلاش — v0.51.0 Coffee `#4B3621`**: ایک ہی ٹوکن اصول تینوں صفحوں پر، ہر لفظ لازم، ترتیب آزاد، «50 ml» = «50ml»، ایک لفظ پہلے جیسا، تجویز صرف مکمل ناکامی پر؛ **1070 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
+| 10 نومبر 2026 | **ہر جگہ پرنٹ + بلک — v0.52.0 Espresso `#3B2314`**: پیڈ/رپورٹ/شیٹ/انوائس/واؤچر، ٹک-کر-پرنٹ تین صفحوں پر، `defaultBulk`/`bulkFormat` سیٹنگز، preview ونڈو، ہر پرنٹ read-only؛ **1086 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
 | 10 نومبر 2026 | **سپلائر + فلٹر — v0.50.0 Walnut `#4E3B2C`**: برانڈ کے ساتھ اختیاری کمپنی، ایک پسندیدہ سپلائر صرف چننے سے (تاریخ سے اندازہ نہیں)، پسندیدہ + اصل تاریخ پر فلٹر، ایڈیٹر میں چناؤ + Clear + تاریخ کی سطر؛ **1055 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
 | 10 نومبر 2026 | **نمک + برانڈ فہرستیں — v0.49.0 Mahogany `#5C2E1F`**: مرکزی CRUD، ایک درست ہجے، صرف چننے سے لنک (اندازہ کبھی نہیں)، نام صرف جڑی rows پر، ہٹانے پر لنک ٹوٹے متن رہے، 4 خانوں والی Catalogs کھڑکی، ایڈیٹر میں چناؤ + اضافہ + Unlink + hint؛ **1040 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
 | 10 نومبر 2026 | **پیکنگ، اکائیاں اور variants — v0.48.0 Russet `#80461B`**: ایک ہی box/strip/unit حساب ہر راستے پر، ساتوں خانوں میں «unit»، رسید/history میں «unit» (پرانی «base» بھی چلے)، گاہک + بلا-بل واپسی میں whole-only انکار، ایک ہی نام پر variants بتا کر انتباہ، stock-take تلاش میں strength + pack؛ **1025 written cases، 57/57 static**؛ Windows/xUnit/physical pending |

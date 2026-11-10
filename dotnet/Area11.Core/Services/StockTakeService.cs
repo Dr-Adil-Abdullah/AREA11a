@@ -2,6 +2,7 @@ using Area11.Core.Data;
 using Area11.Core.Models;
 using Area11.Core.Utils;
 using Microsoft.Data.Sqlite;
+using System.Globalization;
 
 namespace Area11.Core.Services;
 
@@ -32,6 +33,7 @@ public sealed class StockTakeService
     private readonly Database _db;
     private readonly AuditService _audit;
     private readonly NumberingService _numbering;
+    private readonly SettingsService _settings;
     private readonly PermissionService _permissions;
     private readonly LogService _log;
 
@@ -39,12 +41,14 @@ public sealed class StockTakeService
         Database db,
         AuditService audit,
         NumberingService numbering,
+        SettingsService settings,
         PermissionService permissions,
         LogService log)
     {
         _db = db;
         _audit = audit;
         _numbering = numbering;
+        _settings = settings;
         _permissions = permissions;
         _log = log;
     }
@@ -613,6 +617,93 @@ ORDER BY p.name COLLATE NOCASE, b.expiry_date, i.id;", new { sessionId });
         {
             _log.Error("The sheet of stock-take " + sessionId + " could not be read.", exception);
             return new List<StockTakeLine>();
+        }
+    }
+
+    /// <summary>
+    /// Portion 11: the sheet on paper. Book next to counted, the difference bolded, the value at the
+    /// foot - so the owner walks the shop with the sheet in hand and ticks it off.
+    /// </summary>
+    public ServiceResult<ReceiptDocument> BuildSheetDocument(int sessionId, User? user, bool differencesOnly = false)
+    {
+        if (!_permissions.Can(user, Modules.StockTake))
+        {
+            return ServiceResult<ReceiptDocument>.Fail("You do not have permission to see the stock-take.");
+        }
+
+        try
+        {
+            using var connection = _db.Open();
+            var session = LoadSession(connection, sessionId);
+            if (session is null)
+            {
+                return ServiceResult<ReceiptDocument>.Fail("That stock-take session no longer exists.");
+            }
+
+            var lines = Sheet(sessionId, differencesOnly);
+            var width = ReceiptService.ColumnsForMillimetres(_settings.GetInt("printer.width", 58));
+            var document = new ReceiptDocument
+            {
+                Title = "Stock-take " + session.Code,
+                Width = width,
+                AutoCut = _settings.GetBool("printer.autoCut", true),
+                Copies = 1
+            };
+
+            void Add(string text, ReceiptAlign align = ReceiptAlign.Left, bool bold = false, bool big = false) =>
+                document.Lines.Add(new ReceiptLine(ReceiptService.Fit(text, width), align, bold, big));
+
+            void Pair(string left, string right, bool bold = false) =>
+                document.Lines.Add(new ReceiptLine(ReceiptService.TwoColumns(left, right, width), ReceiptAlign.Left, bold));
+
+            var shop = _settings.GetString("store.name");
+            if (!string.IsNullOrWhiteSpace(shop))
+            {
+                Add(shop!.Trim(), ReceiptAlign.Center, bold: true);
+            }
+
+            Add("STOCK-TAKE", ReceiptAlign.Center, bold: true, big: true);
+            Add(session.Code + (string.IsNullOrWhiteSpace(session.Date) ? string.Empty : "  " + session.Date), ReceiptAlign.Center);
+            if (!string.IsNullOrWhiteSpace(session.Room))
+            {
+                Add(session.Room!.Trim(), ReceiptAlign.Center);
+            }
+
+            if (differencesOnly)
+            {
+                Add("differences only", ReceiptAlign.Center);
+            }
+
+            document.Lines.Add(ReceiptLine.Sep(width));
+
+            long valueTotal = 0;
+            var differenceCount = 0;
+            foreach (var line in lines)
+            {
+                Add(line.ProductName);
+                Add("    " + line.WhereLabel);
+                Pair("    book " + line.BookLabel, "counted " + line.CountedLabel, line.HasDifference);
+                if (line.ValuePaisa is not null)
+                {
+                    valueTotal += line.ValuePaisa.Value;
+                }
+
+                if (line.HasDifference)
+                {
+                    differenceCount++;
+                }
+            }
+
+            document.Lines.Add(ReceiptLine.Sep(width));
+            Pair("Lines", lines.Count.ToString(CultureInfo.InvariantCulture));
+            Pair("Differences", differenceCount.ToString(CultureInfo.InvariantCulture), differenceCount > 0);
+            Pair("Value", Money.Format(valueTotal), bold: true);
+            return ServiceResult<ReceiptDocument>.Success(document);
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The stock-take sheet could not be prepared.", exception);
+            return ServiceResult<ReceiptDocument>.Fail("The stock-take sheet could not be prepared. " + exception.Message);
         }
     }
 

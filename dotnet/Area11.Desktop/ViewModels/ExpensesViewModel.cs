@@ -45,6 +45,7 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
     private string _stockPreview = string.Empty;
     private Product? _selectedProduct;
     private BatchRow? _selectedBatch;
+    private CashOutRow? _selectedRow;
 
     private string _todayText = "Rs 0";
     private string _statusText = "Type what was spent, or what the owner took, then press Save.";
@@ -62,6 +63,7 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
         SaveDrawingCommand = new RelayCommand(SaveDrawing);
         SearchCommand = new RelayCommand(Search);
         RefreshCommand = new RelayCommand(Load);
+        PrintVoucherCommand = new RelayCommand(PrintVoucher);
 
         Load();
     }
@@ -91,6 +93,49 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
     public RelayCommand SearchCommand { get; }
 
     public RelayCommand RefreshCommand { get; }
+
+    /// <summary>Portion 11: the picked entry as a printed voucher for the file.</summary>
+    public RelayCommand PrintVoucherCommand { get; }
+
+    /// <summary>The entry picked in the "what went out" list; null until the owner picks one.</summary>
+    public CashOutRow? SelectedRow
+    {
+        get => _selectedRow;
+        set
+        {
+            if (SetProperty(ref _selectedRow, value))
+            {
+                OnPropertyChanged(nameof(CanPrintVoucher));
+            }
+        }
+    }
+
+    public bool CanPrintVoucher => SelectedRow is not null;
+
+    /// <summary>
+    /// The picked entry on paper - an expense voucher or an owner-drawing slip. The paper is read
+    /// back from the database, so it always matches the black box, and printing changes nothing.
+    /// </summary>
+    private void PrintVoucher()
+    {
+        if (SelectedRow is null)
+        {
+            SetStatus("Pick an entry in the list first.", true);
+            return;
+        }
+
+        var document = _services.CashOut.BuildVoucherDocument(SelectedRow.Kind, SelectedRow.Id, _user);
+        if (!document.Ok || document.Value is null)
+        {
+            SetStatus(document.Error ?? "The voucher could not be prepared.", true);
+            return;
+        }
+
+        var printed = _services.Printer.Print(document.Value);
+        SetStatus(printed.Ok
+            ? "Voucher sent to the printer."
+            : "The printer did not answer: " + printed.Error, !printed.Ok);
+    }
 
     /// <summary>Recording an expense is money going out of the till, so it needs the Cash permission.</summary>
     public bool CanRecord => _services.Permissions.Can(_user, Modules.Cash);

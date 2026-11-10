@@ -62,6 +62,7 @@ public sealed class ReportsViewModel : ObservableObject, IEmptyPage
         Month30Command = new RelayCommand(() => Select(ReportRange.Last30));
         MonthCommand = new RelayCommand(() => Select(ReportRange.ThisMonth));
         RefreshCommand = new RelayCommand(Load);
+        PrintCommand = new RelayCommand(PrintReport);
 
         Load();
     }
@@ -85,6 +86,9 @@ public sealed class ReportsViewModel : ObservableObject, IEmptyPage
     public RelayCommand MonthCommand { get; }
 
     public RelayCommand RefreshCommand { get; }
+
+    /// <summary>Portion 11: the open period as a printed sales report.</summary>
+    public RelayCommand PrintCommand { get; }
 
     public string PeriodLabel
     {
@@ -232,6 +236,27 @@ public sealed class ReportsViewModel : ObservableObject, IEmptyPage
     {
         _range = range;
         Load();
+    }
+
+    /// <summary>
+    /// The open period on paper. The profit lines travel only for eyes the service allows -
+    /// the document builder honours the same `profit` permission the screen does.
+    /// </summary>
+    private void PrintReport()
+    {
+        var document = _services.Reports.BuildDocument(_range, _user);
+        if (!document.Ok || document.Value is null)
+        {
+            IsStatusError = true;
+            StatusText = document.Error ?? "The report could not be prepared.";
+            return;
+        }
+
+        var printed = _services.Printer.Print(document.Value);
+        IsStatusError = !printed.Ok;
+        StatusText = printed.Ok
+            ? "Sales report sent to the printer (" + Area11.Core.Services.ReportService.RangeLabel(_range) + ")."
+            : "The printer did not answer: " + printed.Error;
     }
 
     private void Load()

@@ -44,6 +44,9 @@
                     <DockPanel Grid.Row="1" Margin="0,8,0,8">
                         <CheckBox DockPanel.Dock="Left" Content="Only rows with a difference"
                                   IsChecked="{Binding DifferencesOnly, Mode=TwoWay}" VerticalAlignment="Center" />
+                        <Button DockPanel.Dock="Right" Content="Print count sheet" Style="{StaticResource GhostButton}"
+                                HorizontalAlignment="Right" Command="{Binding PrintSheetCommand}"
+                                ToolTip="Print the sheet to walk the shop with" />
                     </DockPanel>
 
                     <DataGrid Grid.Row="2" ItemsSource="{Binding Lines}"

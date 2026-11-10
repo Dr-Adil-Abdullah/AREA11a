@@ -28,12 +28,14 @@ public sealed class ReportService
     public const int TopCount = 10;
 
     private readonly Database _db;
+    private readonly SettingsService _settings;
     private readonly PermissionService _permissions;
     private readonly LogService _log;
 
-    public ReportService(Database db, PermissionService permissions, LogService log)
+    public ReportService(Database db, SettingsService settings, PermissionService permissions, LogService log)
     {
         _db = db;
+        _settings = settings;
         _permissions = permissions;
         _log = log;
     }
@@ -131,6 +133,94 @@ public sealed class ReportService
     }
 
     /// <summary>One row per day, for a future printed sheet. Opens and closes its own connection.</summary>
+    /// <summary>
+    /// Portion 11: the sales report on paper. Totals, best/worst day and the top sellers; profit
+    /// lines appear only when the report itself may show them (the owner's permission gate).
+    /// </summary>
+    public ServiceResult<ReceiptDocument> BuildDocument(ReportRange range, User? user)
+    {
+        var built = Build(range, user);
+        if (!built.Ok || built.Value is null)
+        {
+            return ServiceResult<ReceiptDocument>.Fail(built.Error ?? "The report could not be prepared.");
+        }
+
+        try
+        {
+            var report = built.Value;
+            var width = ReceiptService.ColumnsForMillimetres(_settings.GetInt("printer.width", 58));
+            var document = new ReceiptDocument
+            {
+                Title = "Sales report " + report.Period.Title,
+                Width = width,
+                AutoCut = _settings.GetBool("printer.autoCut", true),
+                Copies = 1
+            };
+
+            void Add(string text, ReceiptAlign align = ReceiptAlign.Left, bool bold = false, bool big = false) =>
+                document.Lines.Add(new ReceiptLine(ReceiptService.Fit(text, width), align, bold, big));
+
+            void Pair(string left, string right, bool bold = false) =>
+                document.Lines.Add(new ReceiptLine(ReceiptService.TwoColumns(left, right, width), ReceiptAlign.Left, bold));
+
+            var shop = _settings.GetString("store.name");
+            if (!string.IsNullOrWhiteSpace(shop))
+            {
+                Add(shop!.Trim(), ReceiptAlign.Center, bold: true);
+            }
+
+            Add("SALES REPORT", ReceiptAlign.Center, bold: true, big: true);
+            Add(report.Period.Title + ": " + report.Period.FromDate + " - " + report.Period.ToDate, ReceiptAlign.Center);
+            document.Lines.Add(ReceiptLine.Sep(width));
+
+            var totals = report.Totals;
+            Pair("Bills", totals.Bills.ToString(CultureInfo.InvariantCulture));
+            Pair("Sales", Money.Format(totals.SalesPaisa), bold: true);
+            if (totals.DiscountPaisa != 0)
+            {
+                Pair("Discount", Money.Format(totals.DiscountPaisa));
+            }
+
+            if (totals.RefundPaisa != 0)
+            {
+                Pair("Refunds", Money.Format(totals.RefundPaisa));
+            }
+
+            if (report.CanSeeProfit)
+            {
+                Pair("Profit", Money.Format(totals.ProfitPaisa), bold: true);
+            }
+
+            Pair("Cash in", Money.Format(totals.CashPaisa));
+            if (totals.CreditPaisa != 0)
+            {
+                Pair("On credit", Money.Format(totals.CreditPaisa));
+            }
+
+            document.Lines.Add(ReceiptLine.Sep(width));
+            Add("Best day: " + report.BestDayLabel);
+            Add("Worst day: " + report.WorstDayLabel);
+
+            if (report.HasTop)
+            {
+                document.Lines.Add(ReceiptLine.Sep(width));
+                Add("TOP SELLERS", ReceiptAlign.Center, bold: true);
+                foreach (var row in report.TopByQty.Take(TopCount))
+                {
+                    Add(row.Rank + ". " + row.Name);
+                    Pair("    " + Qty.Format(row.QtyBase) + " sold", Money.Format(row.SalesPaisa));
+                }
+            }
+
+            return ServiceResult<ReceiptDocument>.Success(document);
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The sales report could not be prepared.", exception);
+            return ServiceResult<ReceiptDocument>.Fail("The sales report could not be prepared. " + exception.Message);
+        }
+    }
+
     public List<ReportDayRow> Days(ReportRange range)
     {
         using var connection = _db.Open();

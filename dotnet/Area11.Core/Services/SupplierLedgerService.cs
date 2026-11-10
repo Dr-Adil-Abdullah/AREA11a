@@ -311,6 +311,78 @@ VALUES(@at, @method, @amount, @supplierId, @userId, @note);",
     // ------------------------------------------------------------------ statement
 
     /// <summary>The supplier's statement on the same 58 / 80 mm pipeline as every other slip.</summary>
+    /// <summary>
+    /// Portion 11: one bulk job for several picked suppliers. Every supplier must build or none
+    /// does. The summary lists name, phone and what the shop owes for the a4_list format.
+    /// </summary>
+    public ServiceResult<BulkPrintJob> BuildBulkStatements(IReadOnlyList<int> ids)
+    {
+        var clean = ids.Where(id => id > 0).Distinct().OrderBy(id => id).ToList();
+        if (clean.Count == 0)
+        {
+            return ServiceResult<BulkPrintJob>.Fail("Pick at least one supplier first.");
+        }
+
+        try
+        {
+            var documents = new List<ReceiptDocument>();
+            var summaries = new List<SupplierSummary>();
+            foreach (var id in clean)
+            {
+                var page = Page(id);
+                if (!page.Ok || page.Value is null)
+                {
+                    return ServiceResult<BulkPrintJob>.Fail(
+                        "Supplier " + id + " could not be prepared; nothing was printed.");
+                }
+
+                var built = Statement(id);
+                if (!built.Ok || built.Value is null)
+                {
+                    return ServiceResult<BulkPrintJob>.Fail(
+                        "Supplier " + id + " could not be prepared; nothing was printed.");
+                }
+
+                documents.Add(built.Value);
+                summaries.Add(page.Value.Summary);
+            }
+
+            var width = ReceiptService.ColumnsForMillimetres(_settings.GetInt("printer.width", 58));
+            var summary = new ReceiptDocument
+            {
+                Title = "Suppliers (" + summaries.Count + ")",
+                Width = width,
+                AutoCut = _settings.GetBool("printer.autoCut", true),
+                Copies = 1
+            };
+            summary.Lines.Add(new ReceiptLine(ReceiptService.Fit("SUPPLIERS (" + summaries.Count + ")", width), ReceiptAlign.Center, bold: true));
+            summary.Lines.Add(ReceiptLine.Sep(width));
+            foreach (var row in summaries)
+            {
+                summary.Lines.Add(new ReceiptLine(ReceiptService.Fit(row.Name, width), ReceiptAlign.Left, bold: true));
+                summary.Lines.Add(new ReceiptLine(ReceiptService.TwoColumns(
+                    (row.Phone ?? string.Empty).Trim(), Money.Format(row.PayablePaisa), width)));
+            }
+
+            summary.Lines.Add(ReceiptLine.Sep(width));
+            summary.Lines.Add(new ReceiptLine(
+                ReceiptService.TwoColumns("TOTAL OWED", Money.Format(summaries.Sum(row => row.PayablePaisa)), width),
+                ReceiptAlign.Left, bold: true));
+
+            return ServiceResult<BulkPrintJob>.Success(new BulkPrintJob
+            {
+                Title = "Suppliers (" + summaries.Count + ")",
+                Documents = documents,
+                Summary = summary
+            });
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The bulk statements could not be prepared.", exception);
+            return ServiceResult<BulkPrintJob>.Fail("The bulk statements could not be prepared. " + exception.Message);
+        }
+    }
+
     public ServiceResult<ReceiptDocument> Statement(int supplierId)
     {
         var page = Page(supplierId);

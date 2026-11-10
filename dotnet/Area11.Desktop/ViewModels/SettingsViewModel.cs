@@ -41,6 +41,8 @@ public sealed class SettingsViewModel : ObservableObject
     private PaperOption? _selectedPaper;
     private bool _autoPrint;
     private bool _autoCut;
+    private bool _defaultBulk;
+    private BulkFormatOption? _selectedBulkFormat;
     private string _copiesText = "1";
     private bool _showDiscount;
     private bool _saleSuccessPopup;
@@ -112,6 +114,12 @@ public sealed class SettingsViewModel : ObservableObject
             new(80, "80 mm  —  48 characters per line (wide printer)")
         };
 
+        BulkFormatOptions = new ObservableCollection<BulkFormatOption>
+        {
+            new("separate_receipts", "Separate receipts — one slip per bill, each cut on its own"),
+            new("a4_list", "One A4 list — the summary page only, for the file")
+        };
+
         IdleHourOptions = new ObservableCollection<IdleHourOption>
         {
             new(0, "Never - only the 12-hour limit"),
@@ -131,6 +139,9 @@ public sealed class SettingsViewModel : ObservableObject
     public CustomFieldsViewModel ExtraFields { get; }
 
     public ObservableCollection<PaperOption> PaperOptions { get; }
+
+    /// <summary>Portion 11: the two shapes a bulk print can take.</summary>
+    public ObservableCollection<BulkFormatOption> BulkFormatOptions { get; }
 
     /// <summary>The sign-out choices (v0.35.0, D-92). 12 hours is also the ceiling for every choice.</summary>
     public ObservableCollection<IdleHourOption> IdleHourOptions { get; }
@@ -271,6 +282,22 @@ public sealed class SettingsViewModel : ObservableObject
     {
         get => _autoCut;
         set => SetProperty(ref _autoCut, value);
+    }
+
+    /// <summary>
+    /// Portion 11: on, the Print button prints every ticked row; off, it prints the one open row
+    /// and the bulk set stays behind its own "Print selected" button.
+    /// </summary>
+    public bool DefaultBulk
+    {
+        get => _defaultBulk;
+        set => SetProperty(ref _defaultBulk, value);
+    }
+
+    public BulkFormatOption? SelectedBulkFormat
+    {
+        get => _selectedBulkFormat;
+        set => SetProperty(ref _selectedBulkFormat, value);
     }
 
     public string CopiesText
@@ -526,6 +553,10 @@ public sealed class SettingsViewModel : ObservableObject
         PrinterName = settings.GetString("printer.name");
         AutoPrint = settings.GetBool("printer.autoPrint", true);
         AutoCut = settings.GetBool("printer.autoCut", true);
+        DefaultBulk = settings.GetBool("printer.defaultBulk", false);
+        SelectedBulkFormat = BulkFormatOptions.FirstOrDefault(option =>
+                string.Equals(option.Key, settings.GetString("printer.bulkFormat"), StringComparison.OrdinalIgnoreCase))
+            ?? BulkFormatOptions[0];
         CopiesText = settings.GetLong("printer.copies", 1).ToString(CultureInfo.InvariantCulture);
         ShowDiscount = settings.GetBool("receipt.showDiscount", true);
         SaleSuccessPopup = settings.GetBool("sale.successPopup", true);
@@ -767,6 +798,8 @@ public sealed class SettingsViewModel : ObservableObject
             ["printer.width"] = paper.Width,
             ["printer.autoPrint"] = AutoPrint,
             ["printer.autoCut"] = AutoCut,
+            ["printer.defaultBulk"] = DefaultBulk,
+            ["printer.bulkFormat"] = SelectedBulkFormat?.Key ?? "separate_receipts",
             ["printer.copies"] = copies,
             ["receipt.showDiscount"] = ShowDiscount,
             ["sale.successPopup"] = SaleSuccessPopup,
@@ -1125,6 +1158,22 @@ public sealed class AppLabelEditRow
     public string DefaultText { get; }
 
     public string Text { get; set; }
+}
+
+/// <summary>Portion 11: one shape a bulk print can take - the key is what `printer.bulkFormat` stores.</summary>
+public sealed class BulkFormatOption
+{
+    public BulkFormatOption(string key, string label)
+    {
+        Key = key;
+        Label = label;
+    }
+
+    public string Key { get; }
+
+    public string Label { get; }
+
+    public override string ToString() => Label;
 }
 
 public sealed class PaperOption

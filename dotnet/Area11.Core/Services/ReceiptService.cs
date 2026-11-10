@@ -32,6 +32,8 @@ public sealed class ReceiptService
     /// <summary>Paper width in characters: 32 for 58 mm, 48 for 80 mm.</summary>
     public int PaperWidth => ColumnsForMillimetres(_settings.GetInt("printer.width", 58));
 
+    public bool AutoCut => _settings.GetBool("printer.autoCut", true);
+
     /// <summary>
     /// The one place that turns millimetres into characters. The receipt and the hardware test slip
     /// must agree, or the slip would prove a width the bills do not use (F-46).

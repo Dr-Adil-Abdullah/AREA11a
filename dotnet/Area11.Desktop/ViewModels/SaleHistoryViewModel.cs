@@ -27,6 +27,8 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
 
     private SaleHistoryRow? _selected;
     private SaleHistoryReturn? _selectedReturn;
+    private List<SaleHistoryRow> _printSelection = new();
+    private bool _canPrintSelection;
     private string _searchText = string.Empty;
     private string _fromText = string.Empty;
     private string _toText = string.Empty;
@@ -71,6 +73,8 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
         MonthCommand = new RelayCommand(() => SetRange(30));
         ClearCommand = new RelayCommand(Clear);
         PrintCommand = new RelayCommand(PrintAgain);
+        PrintSelectionCommand = new RelayCommand(PrintSelection);
+        PreviewCommand = new RelayCommand(Preview);
         PrintReturnCommand = new RelayCommand(PrintSelectedReturn);
 
         Load();
@@ -101,6 +105,12 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
     public RelayCommand ClearCommand { get; }
 
     public RelayCommand PrintCommand { get; }
+
+    /// <summary>Portion 11: the ticked bills, as one bulk job (the "Print selected" button).</summary>
+    public RelayCommand PrintSelectionCommand { get; }
+
+    /// <summary>Portion 11: the exact paper text on the screen before anything prints.</summary>
+    public RelayCommand PreviewCommand { get; }
 
     /// <summary>Prints the return receipt of the row picked in the returns list.</summary>
     public RelayCommand PrintReturnCommand { get; }
@@ -153,6 +163,23 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
     {
         get => _canPrint;
         private set => SetProperty(ref _canPrint, value);
+    }
+
+    /// <summary>True when two or more bills are ticked for the bulk buttons.</summary>
+    public bool CanPrintSelection
+    {
+        get => _canPrintSelection;
+        private set => SetProperty(ref _canPrintSelection, value);
+    }
+
+    /// <summary>
+    /// The grid's ticked rows, carried over by the code-behind (a grid cannot bind its own
+    /// multi-selection). Only ids are kept: the paper is rebuilt from the database at print time.
+    /// </summary>
+    public void SetPrintSelection(IEnumerable<SaleHistoryRow> rows)
+    {
+        _printSelection = (rows ?? Enumerable.Empty<SaleHistoryRow>()).Where(row => row is not null).Distinct().ToList();
+        CanPrintSelection = _printSelection.Count > 1;
     }
 
     /// <summary>The return picked in the bill's return list; null when the bill has none.</summary>
@@ -445,6 +472,14 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
 
     private void PrintAgain()
     {
+        // Portion 11: with `printer.defaultBulk` on and several bills ticked, the main button prints
+        // the whole ticked set; otherwise it prints the one open bill, as it always has.
+        if (_printSelection.Count > 1 && _services.Settings.GetBool("printer.defaultBulk", false))
+        {
+            PrintBulk(_printSelection.Select(row => row.Id).ToList());
+            return;
+        }
+
         if (Selected is null)
         {
             SetStatus("Pick a bill first.", true);
@@ -475,6 +510,85 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
             "Printed " + Selected.Code + " again (" + Selected.TotalLabel + ")."
             + (noted.Ok ? string.Empty : " The black box did not record it: " + noted.Error),
             !noted.Ok);
+    }
+
+    /// <summary>The explicit bulk button: always the ticked bills, whatever the setting says.</summary>
+    private void PrintSelection()
+    {
+        if (_printSelection.Count < 2)
+        {
+            SetStatus("Tick two or more bills first (hold Ctrl and click).", true);
+            return;
+        }
+
+        PrintBulk(_printSelection.Select(row => row.Id).ToList());
+    }
+
+    private void PrintBulk(List<int> ids)
+    {
+        var job = _services.History.BuildBulkBills(_user, ids);
+        if (!job.Ok || job.Value is null)
+        {
+            SetStatus(job.Error ?? "The bills could not be prepared.", true);
+            return;
+        }
+
+        var printed = _services.Printer.PrintBulk(job.Value);
+        if (!printed.Ok)
+        {
+            SetStatus(printed.Error ?? "The printer did not answer.", true);
+            return;
+        }
+
+        // Every copy in the set is a reprint of its own bill, so every one is written to the black
+        // box; a paper that went out unrecorded is the copy nobody can trace.
+        var unrecorded = new List<string>();
+        foreach (var id in ids)
+        {
+            var noted = _services.History.RecordReprint(_user, id);
+            if (!noted.Ok)
+            {
+                unrecorded.Add(id.ToString());
+            }
+        }
+
+        SetStatus("Printed " + ids.Count + " bills."
+            + (unrecorded.Count == 0 ? string.Empty : " The black box did not record: " + string.Join(", ", unrecorded) + "."),
+            unrecorded.Count > 0);
+    }
+
+    /// <summary>
+    /// The paper text on the screen first: the ticked set when several are ticked, else the open bill.
+    /// </summary>
+    private void Preview()
+    {
+        if (_printSelection.Count > 1)
+        {
+            var job = _services.History.BuildBulkBills(_user, _printSelection.Select(row => row.Id).ToList());
+            if (!job.Ok || job.Value is null)
+            {
+                SetStatus(job.Error ?? "The bills could not be prepared.", true);
+                return;
+            }
+
+            PrintPreviewDoor.ShowBulk(_services, job.Value);
+            return;
+        }
+
+        if (Selected is null)
+        {
+            SetStatus("Pick a bill first.", true);
+            return;
+        }
+
+        var document = _services.History.BuildReceipt(_user, Selected.Id);
+        if (!document.Ok || document.Value is null)
+        {
+            SetStatus(document.Error ?? "The bill could not be prepared.", true);
+            return;
+        }
+
+        PrintPreviewDoor.Show(_services, document.Value);
     }
 
     private void PrintSelectedReturn()

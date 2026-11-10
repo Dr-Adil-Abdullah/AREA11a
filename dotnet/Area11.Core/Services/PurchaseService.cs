@@ -15,6 +15,7 @@ public sealed class PurchaseService
     private readonly Database _db;
     private readonly AuditService _audit;
     private readonly NumberingService _numbering;
+    private readonly SettingsService _settings;
     private readonly PermissionService _permissions;
     private readonly LogService _log;
 
@@ -22,12 +23,14 @@ public sealed class PurchaseService
         Database db,
         AuditService audit,
         NumberingService numbering,
+        SettingsService settings,
         PermissionService permissions,
         LogService log)
     {
         _db = db;
         _audit = audit;
         _numbering = numbering;
+        _settings = settings;
         _permissions = permissions;
         _log = log;
     }
@@ -57,6 +60,113 @@ public sealed class PurchaseService
         {
             _log.Error("The purchase could not be saved.", exception);
             return ServiceResult<PurchaseResult>.Fail("The purchase could not be saved. Please try again.");
+        }
+    }
+
+    /// <summary>
+    /// Portion 11: the saved purchase as an invoice for the file. Read from the database, so a
+    /// reprint never depends on the lines still sitting on the screen; read-only, changes nothing.
+    /// </summary>
+    public ServiceResult<ReceiptDocument> BuildInvoiceDocument(int purchaseId, User user)
+    {
+        if (!_permissions.Can(user, Modules.Purchases))
+        {
+            return ServiceResult<ReceiptDocument>.Fail("You do not have permission to see the purchases.");
+        }
+
+        try
+        {
+            using var connection = _db.Open();
+            var header = _db.QuerySingle<PurchaseInvoiceHeader>(connection, @"
+SELECT p.code AS code, p.supplier_invoice_no AS supplierInvoiceNo, p.date AS date,
+       p.total_paisa AS totalPaisa, p.paid_paisa AS paidPaisa, p.due_paisa AS duePaisa,
+       s.name AS supplierName
+FROM purchases p
+JOIN suppliers s ON s.id = p.supplier_id
+WHERE p.id = @id;", new { id = purchaseId });
+            if (header is null)
+            {
+                return ServiceResult<ReceiptDocument>.Fail("That purchase no longer exists.");
+            }
+
+            var lines = _db.Query<PurchaseInvoiceLine>(connection, @"
+SELECT p.name AS productName, i.qty_entered AS qtyEntered, i.unit AS unit,
+       i.batch_no AS batchNo, i.expiry_date AS expiryDate,
+       i.line_total_paisa AS lineTotalPaisa,
+       CASE WHEN b.is_sample = 1 THEN 1 ELSE 0 END AS isSample
+FROM purchase_items i
+JOIN products p ON p.id = i.product_id
+LEFT JOIN batches b ON b.id = i.batch_id
+WHERE i.purchase_id = @id
+ORDER BY i.id;", new { id = purchaseId });
+
+            var width = ReceiptService.ColumnsForMillimetres(_settings.GetInt("printer.width", 58));
+            var document = new ReceiptDocument
+            {
+                Title = "Purchase " + header.Code,
+                Width = width,
+                AutoCut = _settings.GetBool("printer.autoCut", true),
+                Copies = 1
+            };
+
+            void Add(string text, ReceiptAlign align = ReceiptAlign.Left, bool bold = false, bool big = false) =>
+                document.Lines.Add(new ReceiptLine(ReceiptService.Fit(text, width), align, bold, big));
+
+            void Pair(string left, string right, bool bold = false) =>
+                document.Lines.Add(new ReceiptLine(ReceiptService.TwoColumns(left, right, width), ReceiptAlign.Left, bold));
+
+            var shop = _settings.GetString("store.name");
+            if (!string.IsNullOrWhiteSpace(shop))
+            {
+                Add(shop!.Trim(), ReceiptAlign.Center, bold: true);
+            }
+
+            Add("PURCHASE INVOICE", ReceiptAlign.Center, bold: true, big: true);
+            Add(header.Code, ReceiptAlign.Center, bold: true);
+            Add("Supplier: " + header.SupplierName);
+            if (!string.IsNullOrWhiteSpace(header.SupplierInvoiceNo))
+            {
+                Add("Their bill: " + header.SupplierInvoiceNo!.Trim());
+            }
+
+            if (!string.IsNullOrWhiteSpace(header.Date))
+            {
+                Add("Date: " + header.Date!.Trim());
+            }
+
+            document.Lines.Add(ReceiptLine.Sep(width));
+
+            foreach (var line in lines)
+            {
+                var head = line.ProductName + (line.IsSample ? " (free)" : string.Empty);
+                Add(head, ReceiptAlign.Left, bold: true);
+                Pair("    " + line.QtyLabel, Money.Format(line.LineTotalPaisa));
+                var where = (line.BatchNo ?? string.Empty).Trim();
+                if (!string.IsNullOrWhiteSpace(line.ExpiryDate))
+                {
+                    where += (where.Length == 0 ? string.Empty : "  ") + "exp " + line.ExpiryDate!.Trim();
+                }
+
+                if (where.Length > 0)
+                {
+                    Add("    " + where);
+                }
+            }
+
+            document.Lines.Add(ReceiptLine.Sep(width));
+            Pair("Total", Money.Format(header.TotalPaisa), bold: true);
+            if (header.PaidPaisa > 0)
+            {
+                Pair("Paid", Money.Format(header.PaidPaisa));
+                Pair("Due", Money.Format(header.DuePaisa), header.DuePaisa > 0);
+            }
+
+            return ServiceResult<ReceiptDocument>.Success(document);
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The purchase invoice could not be prepared.", exception);
+            return ServiceResult<ReceiptDocument>.Fail("The purchase invoice could not be prepared. " + exception.Message);
         }
     }
 
@@ -278,6 +388,23 @@ VALUES(@at, 'cash', @amount, @purchaseId, @supplierId, @userId, @note);",
             Units = totalUnits,
             Warnings = warnings
         }, warnings.ToArray());
+    }
+
+    private sealed class PurchaseInvoiceHeader
+    {
+        public string Code { get; set; } = string.Empty;
+
+        public string? SupplierInvoiceNo { get; set; }
+
+        public string? Date { get; set; }
+
+        public long TotalPaisa { get; set; }
+
+        public long PaidPaisa { get; set; }
+
+        public long DuePaisa { get; set; }
+
+        public string SupplierName { get; set; } = string.Empty;
     }
 
     private sealed class ProductRow

@@ -403,6 +403,102 @@ GROUP BY v.entity_id;");
         }
     }
 
+    /// <summary>
+    /// Portion 11: the expense (or drawing) as a voucher for the file. Expenses and drawings live in
+    /// two tables with their own ids, so the kind picks the table; read-only, changes nothing.
+    /// </summary>
+    public ServiceResult<ReceiptDocument> BuildVoucherDocument(string kind, int id, User? user)
+    {
+        if (!_permissions.Can(user, Modules.Cash))
+        {
+            return ServiceResult<ReceiptDocument>.Fail("You do not have permission to see the cash-out.");
+        }
+
+        var what = (kind ?? string.Empty).Trim().ToLowerInvariant();
+        if (what is not (KindExpense or KindDrawingCash or KindDrawingGoods))
+        {
+            return ServiceResult<ReceiptDocument>.Fail("That cash-out entry is not valid.");
+        }
+
+        try
+        {
+            using var connection = _db.Open();
+            CashOutVoucher? voucher = what == KindExpense
+                ? _db.QuerySingle<CashOutVoucher>(connection, @"
+SELECT e.title AS title, e.amount_paisa AS amountPaisa, e.category AS category,
+       e.date AS date, e.note AS note, IFNULL(u.name, '') AS userName
+FROM expenses e
+LEFT JOIN users u ON u.id = e.user_id
+WHERE e.id = @id;", new { id })
+                : _db.QuerySingle<CashOutVoucher>(connection, @"
+SELECT 'Owner drawing' AS title, d.amount_paisa AS amountPaisa, d.type AS category,
+       d.date AS date, d.note AS note, IFNULL(u.name, '') AS userName
+FROM owner_drawings d
+LEFT JOIN users u ON u.id = d.user_id
+WHERE d.id = @id
+  AND d.type = @type;", new { id, type = what == KindDrawingGoods ? "goods" : "cash" });
+            if (voucher is null)
+            {
+                return ServiceResult<ReceiptDocument>.Fail("That cash-out entry no longer exists.");
+            }
+
+            var width = ReceiptService.ColumnsForMillimetres(_settings.GetInt("printer.width", 58));
+            var drawing = what != KindExpense;
+            var document = new ReceiptDocument
+            {
+                Title = (drawing ? "Drawing " : "Expense ") + "#" + id,
+                Width = width,
+                AutoCut = _settings.GetBool("printer.autoCut", true),
+                Copies = 1
+            };
+
+            void Add(string text, ReceiptAlign align = ReceiptAlign.Left, bool bold = false, bool big = false) =>
+                document.Lines.Add(new ReceiptLine(ReceiptService.Fit(text, width), align, bold, big));
+
+            void Pair(string left, string right, bool bold = false) =>
+                document.Lines.Add(new ReceiptLine(ReceiptService.TwoColumns(left, right, width), ReceiptAlign.Left, bold));
+
+            var shop = _settings.GetString("store.name");
+            if (!string.IsNullOrWhiteSpace(shop))
+            {
+                Add(shop!.Trim(), ReceiptAlign.Center, bold: true);
+            }
+
+            Add(drawing ? "OWNER DRAWING" : "EXPENSE VOUCHER", ReceiptAlign.Center, bold: true, big: true);
+            Add("#" + id, ReceiptAlign.Center, bold: true);
+            if (!string.IsNullOrWhiteSpace(voucher.Date))
+            {
+                Add(voucher.Date!.Trim(), ReceiptAlign.Center);
+            }
+
+            document.Lines.Add(ReceiptLine.Sep(width));
+            Add(voucher.Title, ReceiptAlign.Left, bold: true);
+            if (!string.IsNullOrWhiteSpace(voucher.Category))
+            {
+                Add(drawing ? "Type: " + voucher.Category!.Trim() : "Category: " + CategoryLabel(voucher.Category));
+            }
+
+            if (!string.IsNullOrWhiteSpace(voucher.Note))
+            {
+                Add("Note: " + voucher.Note!.Trim());
+            }
+
+            if (!string.IsNullOrWhiteSpace(voucher.UserName))
+            {
+                Add("By: " + voucher.UserName!.Trim());
+            }
+
+            document.Lines.Add(ReceiptLine.Sep(width));
+            Pair("Amount", Money.Format(voucher.AmountPaisa), bold: true);
+            return ServiceResult<ReceiptDocument>.Success(document);
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The cash-out voucher could not be prepared.", exception);
+            return ServiceResult<ReceiptDocument>.Fail("The cash-out voucher could not be prepared. " + exception.Message);
+        }
+    }
+
     /// <summary>Today's totals for the top of the screen.</summary>
     public CashOutToday Today()
     {
@@ -455,6 +551,21 @@ SELECT
         public int StripTablets { get; set; }
 
         public long CostPaisa { get; set; }
+    }
+
+    private sealed class CashOutVoucher
+    {
+        public string Title { get; set; } = string.Empty;
+
+        public long AmountPaisa { get; set; }
+
+        public string? Category { get; set; }
+
+        public string? Date { get; set; }
+
+        public string? Note { get; set; }
+
+        public string? UserName { get; set; }
     }
 
     private sealed class BatchDbRow

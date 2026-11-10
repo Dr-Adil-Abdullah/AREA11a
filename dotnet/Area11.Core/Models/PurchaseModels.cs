@@ -1,3 +1,5 @@
+using Area11.Core.Utils;
+
 namespace Area11.Core.Models;
 
 public sealed class PurchaseLineInput
@@ -51,6 +53,26 @@ public sealed class PurchaseResult
     public double Units { get; init; }
 
     public List<string> Warnings { get; init; } = new();
+}
+
+/// <summary>One line of a saved purchase invoice, for the printed copy.</summary>
+public sealed class PurchaseInvoiceLine
+{
+    public string ProductName { get; set; } = string.Empty;
+
+    public double QtyEntered { get; set; }
+
+    public string Unit { get; set; } = string.Empty;
+
+    public string? BatchNo { get; set; }
+
+    public string? ExpiryDate { get; set; }
+
+    public long LineTotalPaisa { get; set; }
+
+    public bool IsSample { get; set; }
+
+    public string QtyLabel => Qty.Format(QtyEntered) + " " + Unit;
 }
 
 /// <summary>A batch as the counter sees it (nearest expiry first).</summary>

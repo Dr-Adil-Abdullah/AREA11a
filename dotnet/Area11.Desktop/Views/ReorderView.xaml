@@ -206,6 +206,9 @@
                                         Command="{Binding CopyCommand}" />
                                 <Button Content="Open WhatsApp" Style="{StaticResource PrimaryButton}"
                                         Command="{Binding OpenWhatsAppCommand}" IsEnabled="{Binding CanSend}" />
+                                <Button Content="Print order pad" Style="{StaticResource GhostButton}" Margin="8,0,0,0"
+                                        Command="{Binding PrintPadCommand}" IsEnabled="{Binding CanSend}"
+                                        ToolTip="Print the ticked lines as an order pad" />
                             </StackPanel>
 
                             <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap" FontSize="11.5" Margin="0,8,0,0">

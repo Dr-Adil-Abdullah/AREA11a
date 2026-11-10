@@ -59,6 +59,8 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
     private string _trayTotalText = "Rs 0";
     private string _batchHint = "Search a medicine, then pick a batch.";
     private SupplierSummary? _selected;
+    private List<SupplierSummary> _printSelection = new();
+    private bool _canPrintSelection;
     private Product? _selectedProduct;
     private BatchRow? _selectedBatch;
     private ExpiredBatchRow? _selectedExpired;
@@ -76,6 +78,8 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
         Editor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Supplier);
         PayCommand = new RelayCommand(Pay);
         StatementCommand = new RelayCommand(PrintStatement);
+        PrintSelectionCommand = new RelayCommand(PrintSelection);
+        PreviewCommand = new RelayCommand(Preview);
         ProductSearchCommand = new RelayCommand(SearchProducts);
         AddLineCommand = new RelayCommand(AddLine);
         RemoveLineCommand = new RelayCommand(RemoveLine);
@@ -115,6 +119,12 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
     public RelayCommand PayCommand { get; }
 
     public RelayCommand StatementCommand { get; }
+
+    /// <summary>Portion 11: the ticked suppliers, as one bulk job (the "Print selected" button).</summary>
+    public RelayCommand PrintSelectionCommand { get; }
+
+    /// <summary>Portion 11: the exact paper text on the screen before anything prints.</summary>
+    public RelayCommand PreviewCommand { get; }
 
     public RelayCommand ProductSearchCommand { get; }
 
@@ -510,8 +520,33 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
                   + Money.Format(payment.NewBalancePaisa) + ".", false);
     }
 
+    /// <summary>True when two or more suppliers are ticked for the bulk buttons.</summary>
+    public bool CanPrintSelection
+    {
+        get => _canPrintSelection;
+        private set => SetProperty(ref _canPrintSelection, value);
+    }
+
+    /// <summary>
+    /// The list's ticked rows, carried over by the code-behind (a list cannot bind its own
+    /// multi-selection). Only ids are kept: the paper is rebuilt from the database at print time.
+    /// </summary>
+    public void SetPrintSelection(IEnumerable<SupplierSummary> rows)
+    {
+        _printSelection = (rows ?? Enumerable.Empty<SupplierSummary>()).Where(row => row is not null).Distinct().ToList();
+        CanPrintSelection = _printSelection.Count > 1;
+    }
+
     private void PrintStatement()
     {
+        // Portion 11: with `printer.defaultBulk` on and several suppliers ticked, the main button
+        // prints the whole ticked set; otherwise it prints the open supplier, as it always has.
+        if (_printSelection.Count > 1 && _services.Settings.GetBool("printer.defaultBulk", false))
+        {
+            PrintBulk(_printSelection.Select(row => row.Id).ToList());
+            return;
+        }
+
         if (Selected is null)
         {
             SetStatus("Pick a supplier first.", true);
@@ -532,6 +567,68 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
         SetStatus(printed.Ok
             ? "Statement for " + Selected.Name + " sent to the printer."
             : "The printer did not answer: " + printed.Error, !printed.Ok);
+    }
+
+    /// <summary>The explicit bulk button: always the ticked suppliers, whatever the setting says.</summary>
+    private void PrintSelection()
+    {
+        if (_printSelection.Count < 2)
+        {
+            SetStatus("Tick two or more suppliers first (hold Ctrl and click).", true);
+            return;
+        }
+
+        PrintBulk(_printSelection.Select(row => row.Id).ToList());
+    }
+
+    private void PrintBulk(List<int> ids)
+    {
+        var job = _services.SupplierLedger.BuildBulkStatements(ids);
+        if (!job.Ok || job.Value is null)
+        {
+            SetStatus(job.Error ?? "The statements could not be prepared.", true);
+            return;
+        }
+
+        var printed = _services.Printer.PrintBulk(job.Value);
+        SetStatus(printed.Ok
+            ? "Printed " + ids.Count + " statements."
+            : "The printer did not answer: " + printed.Error, !printed.Ok);
+    }
+
+    /// <summary>
+    /// The paper text on the screen first: the ticked set when several are ticked, else the open
+    /// supplier's statement.
+    /// </summary>
+    private void Preview()
+    {
+        if (_printSelection.Count > 1)
+        {
+            var job = _services.SupplierLedger.BuildBulkStatements(_printSelection.Select(row => row.Id).ToList());
+            if (!job.Ok || job.Value is null)
+            {
+                SetStatus(job.Error ?? "The statements could not be prepared.", true);
+                return;
+            }
+
+            PrintPreviewDoor.ShowBulk(_services, job.Value);
+            return;
+        }
+
+        if (Selected is null)
+        {
+            SetStatus("Pick a supplier first.", true);
+            return;
+        }
+
+        var statement = _services.SupplierLedger.Statement(Selected.Id);
+        if (!statement.Ok || statement.Value is null)
+        {
+            SetStatus(statement.Error ?? "The statement could not be prepared.", true);
+            return;
+        }
+
+        PrintPreviewDoor.Show(_services, statement.Value);
     }
 
     private void SearchProducts()

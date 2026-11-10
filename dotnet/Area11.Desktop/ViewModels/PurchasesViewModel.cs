@@ -468,6 +468,10 @@ public sealed class PurchasesViewModel : ObservableObject
         SetStatus($"{purchase.Code} saved{(wasDraft ? " - its draft is posted" : string.Empty)} — {Money.Format(purchase.TotalPaisa)}.{warnings}",
             purchase.Warnings.Count > 0);
 
+        // Portion 11: the saved purchase prints its own invoice, like a sale prints its bill (Z-07).
+        // The paper is a copy for the file; a silent printer must never unsave the purchase.
+        PrintInvoice(purchase.PurchaseId, purchase.Code);
+
         Lines.Clear();
         PaidText = string.Empty;
         _openDraftId = 0;
@@ -475,6 +479,27 @@ public sealed class PurchasesViewModel : ObservableObject
         DocEditor.LoadNew();
         OnPropertyChanged(nameof(TotalText));
         LoadLookups();
+    }
+
+    private void PrintInvoice(int purchaseId, string code)
+    {
+        if (!_services.Settings.GetBool("printer.autoPrint", true))
+        {
+            return;
+        }
+
+        var document = _services.Purchases.BuildInvoiceDocument(purchaseId, _user);
+        if (!document.Ok || document.Value is null)
+        {
+            SetStatus(code + " is saved, but its invoice could not be prepared: " + (document.Error ?? "unknown reason"), true);
+            return;
+        }
+
+        var printed = _services.Printer.Print(document.Value);
+        if (!printed.Ok)
+        {
+            SetStatus($"{code} is saved. The printer did not answer: {printed.Error}", true);
+        }
     }
 
     /// <summary>

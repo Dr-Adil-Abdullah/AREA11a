@@ -31,7 +31,7 @@ public sealed class AppServices
         Ledger = new CustomerLedgerService(Database, Audit, Settings, Permissions, Log);
         SupplierLedger = new SupplierLedgerService(Database, Audit, Numbering, Settings, Permissions, Log);
         Sales = new SaleService(Database, Audit, Numbering, Settings, Permissions, Log);
-        Purchases = new PurchaseService(Database, Audit, Numbering, Permissions, Log);
+        Purchases = new PurchaseService(Database, Audit, Numbering, Settings, Permissions, Log);
         Holds = new HoldCartService(Database, Audit, Numbering, Permissions, Sales, Log);
         Drafts = new DraftService(Database, Audit, Sales, Purchases, Permissions, Log);
         Returns = new ReturnService(Database, Audit, Numbering, Settings, Permissions, Log);
@@ -42,11 +42,11 @@ public sealed class AppServices
         Alert = new AlertService(Database, Settings, Audit, Permissions, Log);
         Provisional = new ProvisionalReturnService(Database, Audit, Numbering, Permissions, Log);
         Stock = new StockService(Database, Audit, Settings, Permissions, Log);
-        StockTake = new StockTakeService(Database, Audit, Numbering, Permissions, Log);
+        StockTake = new StockTakeService(Database, Audit, Numbering, Settings, Permissions, Log);
         Shifts = new ShiftService(Database, Audit, Permissions, Log);
         CashOut = new ExpenseService(Database, Audit, Settings, Permissions, Log);
         Recovery = new RecoveryService(Database, Audit, Settings, Permissions, Log);
-        Reports = new ReportService(Database, Permissions, Log);
+        Reports = new ReportService(Database, Settings, Permissions, Log);
         Tax = new TaxService(Database, Settings, Permissions, Log);
         AuditHistory = new AuditHistoryService(Database, Permissions, Log);
         ProvisionalReceipts = new ProvisionalReceiptService(Provisional, Settings, Log);

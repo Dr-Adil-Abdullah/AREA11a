@@ -17,7 +17,7 @@ public sealed class PackagingUnitsTests
     private static ProductService Products(TestDatabase test) => new(test.Database, test.Audit, test.Log);
 
     private static StockTakeService Takes(TestDatabase test) =>
-        new(test.Database, test.Audit, new NumberingService(test.Settings),
+        new(test.Database, test.Audit, new NumberingService(test.Settings), test.Settings,
             new PermissionService(test.Database, test.Log, test.Audit), test.Log);
 
     private static int Create(
