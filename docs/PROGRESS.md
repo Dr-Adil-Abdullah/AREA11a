@@ -2,7 +2,7 @@
 
 ## Urgent owner report: login crash — unresolved
 
-Owner reports the app closes after password/Enter. Same-run crash report, run trail and exact source revision needed; PT-15 in `PHYSICAL-TESTING.md`. Owner supplied Windows Core/Tests **973 passed, 0 failed, 0 skipped, 1m14s**, v0.42.0 banner; this is separate from prior 929 result and does not establish Desktop/WPF or login. Investigate before continuing normal Portion 4 work; never reset real shop data or assume a cause.
+Owner reports the app closes after password/Enter; screenshot shows XamlParseException at line 72 position 31. A likely invalid DataGrid RowHeight="Auto" on Counter and Products is corrected to NaN in WIP, but the complete inner exception and Windows WPF retest are still needed; PT-15/PT-16 in `PHYSICAL-TESTING.md`. Owner supplied Windows Core/Tests **973 passed, 0 failed, 0 skipped, 1m14s**, v0.42.0 banner; this is separate from prior 929 result and does not establish Desktop/WPF or login. Investigate before continuing normal Portion 4 work; never reset real shop data or assume a cause.
 
 
 ## Owner priority: finish Portion 4 first — IN PROGRESS, not released

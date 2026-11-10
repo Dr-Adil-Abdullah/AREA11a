@@ -1660,7 +1660,15 @@ def check_xml() -> None:
     broken = 0
     for path in sorted(set(targets)):
         try:
-            ET.parse(path)
+            root = ET.parse(path).getroot()
+            if path.suffix == ".xaml":
+                for element in root.iter():
+                    if element.tag.rsplit("}", 1)[-1] == "DataGrid" and element.get("RowHeight", "").strip().lower() == "auto":
+                        fail(f"{rel(path)}: DataGrid.RowHeight is a double; Auto is invalid. Use NaN for content sizing.")
+                    if (element.tag.rsplit("}", 1)[-1] == "Setter"
+                        and element.get("Property", "").split(".")[-1] == "RowHeight"
+                        and element.get("Value", "").strip().lower() == "auto"):
+                        fail(f"{rel(path)}: RowHeight setter cannot convert Auto to double; use NaN.")
         except ET.ParseError as error:
             broken += 1
             fail(f"XML error in {rel(path)}: {error}")

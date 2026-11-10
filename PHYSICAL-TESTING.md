@@ -1,5 +1,11 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-16 — Login/Counter XAML parse: owner screenshot, candidate repair pending Windows verification
+
+مالک کی تصویر: `XamlParseException`, `TypeConverterMarkupExtension`, **line 72, position 31**؛ دکھائی گئی crash file `C:\ProgramData\Area11\logs\crash-2026-11-10_083528.txt` ہے۔ تصویر exception کی اندرونی وجہ یا متعلقہ XAML file نہیں دکھاتی، لہٰذا مکمل crash file ابھی بھی ضروری ہے۔ Counter `PosView.xaml` کی line 72 پر `DataGrid.RowHeight="Auto"` ملا؛ Products grid میں بھی یہی لکھا تھا۔ WPF source کے مطابق `DataGrid.RowHeight` ایک `double` ہے، اس کا auto-sizing default `double.NaN` ہے اور اس property پر Auto text converter موجود نہیں؛ .NET `DoubleConverter` عدد parse کرتا ہے۔ یہ owner error سے مطابقت رکھنے والا مضبوط ممکنہ سبب ہے، مگر screenshot اکیلا مکمل ثبوت نہیں۔
+
+دونوں جگہ `RowHeight="NaN"` رکھا گیا ہے تاکہ theme کی 30px fixed row کو override کر کے thumbnail content کے مطابق height بنے؛ static checker میں DataGrid/Setter پر `RowHeight="Auto"` کا guard شامل کیا گیا ہے۔ Windows WPF build، login، Counter اور Products rendering اور medium/large thumbnails کی تصدیق **ابھی باقی** ہے؛ اسے physical fix/pass مت لکھیں۔ Owner کا 973/973 Core/Tests run اس XAML کو verify نہیں کرتا۔ متعلقہ run کی پوری crash file بھیجیں، خاص طور پر inner exception اور stack trace، کوئی password/database نہ بھیجیں۔
+
 ## PT-15 — Login کے بعد ایپ بند ہونے کی اطلاع (تحقیق جاری)
 
 مالک نے بتایا کہ password درج کرکے Enter دبانے پر app crash/بند ہو جاتی ہے۔ یہ مسئلہ **غیر حل شدہ، ابھی reproduce یا diagnose نہیں ہوا**؛ crash report، درست وقت، login کے بعد نظر آنے والا پیغام، run trail اور عین commit کی تصدیق درکار ہے۔ اسے test-suite pass یا پچھلے ورژن کی کامیابی سے رد نہ سمجھیں۔ Password، database یا حقیقی مریض/مالی معلومات نہ مانگیں۔

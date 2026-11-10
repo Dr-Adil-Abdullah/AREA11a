@@ -69,7 +69,7 @@
                         <TextBlock Text="{Binding PriceHint}" Style="{StaticResource MetricLabel}" Margin="0,0,0,8" />
                     </StackPanel>
 
-                    <DataGrid Grid.Row="1" RowHeight="Auto" ItemsSource="{Binding Products}"
+                    <DataGrid Grid.Row="1" RowHeight="NaN" ItemsSource="{Binding Products}"
                               SelectedItem="{Binding SelectedProduct, Mode=TwoWay}">
                         <DataGrid.Columns>
                             <DataGridTemplateColumn Header="Photo" Width="90">

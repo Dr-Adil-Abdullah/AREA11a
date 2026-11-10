@@ -13,7 +13,7 @@
 
 ## NEW priority: login crash reported — unresolved
 
-Owner reports app closes/crashes after entering password and pressing Enter. Investigate before ordinary Portion 4 work; obtain the **same run's** crash report, `%TEMP%\Area11\last-run.txt`, actual branch/commit, time and exact visible behavior. Do not guess, ask for credentials, reset the genuine database, or mark fixed based on green Core tests. See PT-15 in `PHYSICAL-TESTING.md`. Owner supplied a separate Windows Core/Tests log with v0.42.0 banner, **973 passed / 0 failed / 0 skipped in 1m14s**; it does not include Desktop/WPF, does not prove this exact commit, and does not explain the crash. The 929/929 Kyanite result below is earlier and remains separate.
+Owner reports app closes/crashes after entering password and pressing Enter. Screenshot shows XamlParseException at line 72 position 31; a probable RowHeight="Auto" conversion fault was corrected to NaN in Counter and Products, but the inner exception and Windows retest remain pending (PT-16). Investigate before ordinary Portion 4 work; obtain the **same run's** crash report, `%TEMP%\Area11\last-run.txt`, actual branch/commit, time and exact visible behavior. Do not guess, ask for credentials, reset the genuine database, or mark fixed based on green Core tests. See PT-15 in `PHYSICAL-TESTING.md`. Owner supplied a separate Windows Core/Tests log with v0.42.0 banner, **973 passed / 0 failed / 0 skipped in 1m14s**; it does not include Desktop/WPF, does not prove this exact commit, and does not explain the crash. The 929/929 Kyanite result below is earlier and remains separate.
 
 ## Owner instruction / مالک کی ہدایت
 
