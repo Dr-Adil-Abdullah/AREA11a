@@ -4,7 +4,7 @@
 
 مالک نے products کی متعدد تصاویر میں سے نظر آنے والی اہم تصویر منتخب کرنے، customers، doctors اور staff کی تصاویر، top-right staff photo، Settings میں app icon، اور Sales/Stock میں قدرے بڑے rounded photos کے medium/large انتخاب کی درخواست کی ہے۔ اس کام کو اب ترجیح دینے کی اجازت دی گئی؛ Portion 4 نامکمل محفوظ ہے۔ Product cover منتخب کرنے کی ابتدائی code اور دو tests جاری worktree میں لکھے گئے ہیں؛ ابھی release یا Windows-tested نہیں۔ Customer/doctor/staff، icon، size settings، backup/sync اور Windows verification مکمل نہیں؛ کسی چیز کو physical PASS نہ سمجھا جائے۔
 
-مالک نے دوبارہ بتایا کہ v0.42.0 Kyanite کے **929 پاس اور صفر فیل** ہوئے۔ تفصیلی runner log، WPF اور practical tests الگ pending ہیں۔
+مالک کا مفصل Kyanite log موصول: **929 پاس، صفر فیل، صفر skipped، 1 منٹ 15 سیکنڈ**؛ یہ Portion 17 کا test نہیں۔ WPF اور practical tests الگ pending ہیں۔
 
 ## Launch اور tests تک آسان رسائی — Windows verification pending
 
@@ -14,21 +14,21 @@
 
 ## مالک کا Kyanite test نتیجہ اور آئندہ طریقۂ کار
 
-مالک نے اطلاع دی: **v0.42.0 Kyanite کے تمام 929 tests پاس، کوئی fail نہیں**۔ یہ مالک کی فراہم کردہ test اطلاع ہے؛ تفصیلی runner log، skipped count، Desktop/WPF build/launch اور PT-14 physical walkthrough اس اطلاع سے ثابت نہیں ہوتے اور جہاں ثبوت نہیں ملا وہاں pending ہیں۔ Siderite 922/922 پہلے سے OK ہے، مگر اس کا WPF/physical ثبوت بھی الگ pending ہے۔
+مالک نے مکمل runner log فراہم کیا: **v0.42.0 Kyanite — 929 passed، 0 failed، 0 skipped، total 929، duration 1 منٹ 15 سیکنڈ؛ ALL GREEN - 929 of 929**۔ Log میں صرف Area11.Core اور Area11.Tests build/run ہیں؛ Desktop/WPF build/launch اور PT-14 physical walkthrough الگ pending ہیں۔ Siderite 922/922 پہلے سے OK ہے، مگر اس کا WPF/physical ثبوت بھی الگ pending ہے۔
 
 ہر مکمل portion کے ساتھ اس کی تبدیلیاں، خصوصی test steps اور اگلا portion بتایا جائے گا۔ مالک کے NEXT پر اگلا portion شروع کیا جائے گا؛ دیر سے آنے والے results متعلقہ version/portion کے تحت درج ہوں گے، physical delay بذاتِ خود کام نہیں روکے گی۔ سنگین data، stock، money، security یا backup مسئلہ ترجیح سے دیکھا جائے گا۔
 
 ## مالک کا Siderite Windows test — Portion 2
 
-مالک کے فراہم کردہ v0.41.0 Siderite output میں **922 passed، 0 failed، 0 skipped، 922 total، 1 منٹ 21 سیکنڈ؛ ALL GREEN - 922 of 922** ہے۔ Log صرف Area11.Core اور Area11.Tests دکھاتا ہے؛ Desktop/WPF build، launch اور PT-12/PT-13 physical walkthrough اس سے ثابت نہیں ہوتے۔ یہ نتیجہ Kyanite v0.42.0 کے 929 tests کا نتیجہ نہیں؛ اس کا Windows run اور PT-14 باقی ہیں۔ مالک نے اگلا حصہ شروع کرنے کی ہدایت دی ہے۔
+مالک کے فراہم کردہ v0.41.0 Siderite output میں **922 passed، 0 failed، 0 skipped، 922 total، 1 منٹ 21 سیکنڈ؛ ALL GREEN - 922 of 922** ہے۔ Log صرف Area11.Core اور Area11.Tests دکھاتا ہے؛ Desktop/WPF build، launch اور PT-12/PT-13 physical walkthrough اس سے ثابت نہیں ہوتے۔ یہ نتیجہ Kyanite v0.42.0 کے 929 tests کا نتیجہ نہیں؛ Kyanite کا اپنا 929/929 Windows Core/Tests log بعد میں موصول ہوا ہے، PT-14 ابھی باقی ہے۔ مالک نے اگلا حصہ شروع کرنے کی ہدایت دی ہے۔
 
 ## PT-14 — Master Portion 3: primary category اور additional tags
 
-**حالت: code/static تیار؛ v0.42.0 Kyanite کے 929/929 tests مالک کی اطلاع کے مطابق پاس؛ Desktop/WPF build اور owner physical verification باقی۔** Product list کے search rows tag names دکھاتے تھے مگر `CategoryTagIds` نہیں رکھتے تھے؛ اسی row سے editor لوڈ اور save پر tags ضائع ہو سکتے تھے۔ اب editor کھولنے سے پہلے مکمل record پڑھتا ہے۔ فہرست primary اور اضافی categories الگ دکھاتی ہے۔ نئی/بدلی گئی tags کے لیے explicit primary درکار ہے، مگر بغیر tags والا product uncategorised رہ سکتا ہے۔ کوئی tag خود primary نہیں بنتا۔
+**حالت: code/static تیار؛ v0.42.0 Kyanite Core/Tests کے 929/929 Windows tests مکمل log کے مطابق پاس؛ Desktop/WPF build اور owner physical verification باقی۔** Product list کے search rows tag names دکھاتے تھے مگر `CategoryTagIds` نہیں رکھتے تھے؛ اسی row سے editor لوڈ اور save پر tags ضائع ہو سکتے تھے۔ اب editor کھولنے سے پہلے مکمل record پڑھتا ہے۔ فہرست primary اور اضافی categories الگ دکھاتی ہے۔ نئی/بدلی گئی tags کے لیے explicit primary درکار ہے، مگر بغیر tags والا product uncategorised رہ سکتا ہے۔ کوئی tag خود primary نہیں بنتا۔
 
 Raw SQLite probe سے ایک **ممکنہ** tag-only product کی primary label `Uncategorised` ہونا ثابت ہوا؛ یہ مالک کے اصل UI واقعہ کی مکمل reproduction نہیں۔ پرانے tag-only records خودکار rewrite نہیں ہوتے؛ غیر متعلقہ partial service updates انہیں برقرار رکھتے ہیں۔ Workbook category clear/tag-promotion اب preview اور apply دونوں پر check ہوتے ہیں؛ CSV import نئے products بناتا ہے اور tags import نہیں کرتا۔ Category put-away اب بھی primary unlink کر کے دوسرے tags چھوڑ سکتا ہے؛ اس رویے پر مالک کا جائزہ باقی ہے، اس لیے app-wide مکمل حل کا دعویٰ نہیں۔ مالی reports صرف primary category گنتی ہیں؛ پرانی financial history نہیں بدلی۔
 
-**صرف isolated test copy میں چیک کریں:** (1) دو categories بنائیں؛ product پر ایک primary اور دوسری extra tag رکھ کر save؛ (2) editor دوبارہ کھولیں، tag checked ہو، صرف نام/ریٹ بدل کر save کریں، دوبارہ کھولنے پر tag برقرار؛ (3) دونوں category filters سے وہ product ایک مرتبہ ملے؛ (4) primary کے بغیر tag save پر واضح refusal اور کوئی جزوی mutation/audit نہ ہو؛ (5) primary اور tag دونوں نہ ہوں تو product allowed؛ (6) primary-only financial report میں sale دوبار شمار نہ ہو؛ fake sale صرف isolated copy میں؛ (7) پرانا tag-only record خود نہ بدلے؛ مالک primary منتخب کرے؛ (8) Windows build اور `ALL GREEN - 929 of 929`؛ (9) Excel preview/apply میں tags والے product کی primary clear یا tag کو primary بنانے کی کوشش رد ہو، جبکہ بغیر tags کے clear کامیاب ہو؛ preview کے بعد tag شامل ہونے پر apply بھی رد ہو؛ (10) category put-away سے primary ہٹنے اور دیگر tags باقی رہنے کے رویے کا جائزہ لیں؛ (11) اگر اصل Uncategorized مسئلہ دوبارہ آئے تو exact product، categories، steps اور screenshot بھیجیں۔
+**صرف isolated test copy میں چیک کریں:** (1) دو categories بنائیں؛ product پر ایک primary اور دوسری extra tag رکھ کر save؛ (2) editor دوبارہ کھولیں، tag checked ہو، صرف نام/ریٹ بدل کر save کریں، دوبارہ کھولنے پر tag برقرار؛ (3) دونوں category filters سے وہ product ایک مرتبہ ملے؛ (4) primary کے بغیر tag save پر واضح refusal اور کوئی جزوی mutation/audit نہ ہو؛ (5) primary اور tag دونوں نہ ہوں تو product allowed؛ (6) primary-only financial report میں sale دوبار شمار نہ ہو؛ fake sale صرف isolated copy میں؛ (7) پرانا tag-only record خود نہ بدلے؛ مالک primary منتخب کرے؛ (8) Core/Tests `ALL GREEN - 929 of 929` موصول؛ Desktop/WPF build اور launch الگ جانچیں؛ (9) Excel preview/apply میں tags والے product کی primary clear یا tag کو primary بنانے کی کوشش رد ہو، جبکہ بغیر tags کے clear کامیاب ہو؛ preview کے بعد tag شامل ہونے پر apply بھی رد ہو؛ (10) category put-away سے primary ہٹنے اور دیگر tags باقی رہنے کے رویے کا جائزہ لیں؛ (11) اگر اصل Uncategorized مسئلہ دوبارہ آئے تو exact product، categories، steps اور screenshot بھیجیں۔
 
 PT-13 Siderite WPF/product-editor checks اور PT-12 navigation بھی الگ pending ہیں۔ PT02-POS-01 unreproduced ہے۔ Portion 4 کی اجازت مل گئی ہے؛ Portions 5–15 الگ approval کے منتظر ہیں۔
 
