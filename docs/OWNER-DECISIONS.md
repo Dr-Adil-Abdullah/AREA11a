@@ -2,7 +2,7 @@
 
 ## تازہ status — Portion 11 مکمل، v0.52.0 Espresso
 
-ہر جگہ پرنٹ: Reorder پیڈ، Sales رپورٹ، StockTake شیٹ، Purchase انوائس (Save پر خودکار) اور Expense واؤچر — نئی پرچیاں؛ Bills/Customers/Suppliers پر کئی قطاریں ٹک کر کے ایک ساتھ پرنٹ (`defaultBulk` سے مین بٹن، `bulkFormat` سے الگ پرچیاں یا ایک A4 فہرست)؛ چھاپنے سے پہلے پیش نظارہ (preview)؛ ہر پرنٹ صرف پڑھتا ہے، کچھ بدلتا نہیں۔ **1086 written cases، 57/57 static؛ Windows/xUnit اور physical pending** (v0.50.0 کی Windows 1055/1055 گرین ہو چکی)۔ طے شدہ ترتیب (5، 6، 18) مکمل؛ اگلا 12 ہے جب تک مالک کچھ اور نہ کہے؛ Portion 17 paused۔
+ہر جگہ پرنٹ: Reorder پیڈ، Sales رپورٹ، StockTake شیٹ، Purchase انوائس (Save پر خودکار) اور Expense واؤچر — نئی پرچیاں؛ Bills/Customers/Suppliers پر کئی قطاریں ٹک کر کے ایک ساتھ پرنٹ (`defaultBulk` سے مین بٹن، `bulkFormat` سے الگ پرچیاں یا ایک A4 فہرست)؛ چھاپنے سے پہلے پیش نظارہ (preview)؛ ہر پرنٹ صرف پڑھتا ہے، کچھ بدلتا نہیں۔ **1086 written cases، 57/57 static؛ Windows 1086/1086 گرین (10 نومبر 2026)، physical pending**۔ طے شدہ ترتیب (5، 6، 18) مکمل؛ اگلا 12 ہے جب تک مالک کچھ اور نہ کہے؛ Portion 17 paused۔
 
 ## تازہ status — Portion 10 مکمل، v0.51.0 Coffee
 
