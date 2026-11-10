@@ -569,7 +569,10 @@ ORDER BY allocation.id;";
 
             var envelope = built.Value;
 
-            if (envelope.RowCount == 0)
+            // A fresh shop is never row-zero (7 units + 5 categories, +12 native field definitions
+            // on a real PC), so "nothing to send" means no shop work yet - seeds travel free with
+            // the first real push instead of causing pushes of their own.
+            if (!envelope.HasWork)
             {
                 // An empty shop has nothing to retry: stamp it like an attempt so the automatic
                 // path waits the full interval instead of rebuilding every tick.

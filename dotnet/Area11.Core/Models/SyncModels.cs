@@ -24,6 +24,15 @@ public static class SyncTables
     /// its lines are also included when a recent payment or provisional reconciliation references it;
     /// that small dependency closure keeps the document valid instead of breaking its financial links.
     /// </summary>
+    /// <summary>
+    /// Tables whose rows may all be first-start seeds (7 managed units, 5 example categories, 12
+    /// native field definitions). Alone they are not worth a push; they travel with the first work.
+    /// </summary>
+    public static readonly string[] Seeds =
+    {
+        "units", "categories", "form_field_definitions"
+    };
+
     public static readonly string[] Recent =
     {
         "sales", "sale_items", "purchases", "purchase_items",
@@ -148,6 +157,14 @@ public sealed class SyncEnvelope
 
     [JsonIgnore]
     public int RowCount => Tables.Sum(pair => pair.Value.Count);
+
+    /// <summary>
+    /// Repair (first Windows run, v0.58.0): a fresh shop is never row-zero, so "nothing to send"
+    /// cannot mean <see cref="RowCount"/> zero - it means no row outside the seed tables.
+    /// </summary>
+    [JsonIgnore]
+    public bool HasWork => Tables.Any(pair =>
+        pair.Value.Count > 0 && !SyncTables.Seeds.Contains(pair.Key, StringComparer.Ordinal));
 
     [JsonIgnore]
     public string SizeLabel => SizeBytes >= 1024 * 1024

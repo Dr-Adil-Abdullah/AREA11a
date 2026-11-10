@@ -77,7 +77,9 @@ public sealed class ProductHistoryTests
     public void TheTotalsAddUp()
     {
         using var test = new TestDatabase();
-        var productId = TestData.AddProduct(test, name: "Panadol 500mg");
+        // batchQty 0: the bought batch is the only stock, so the sale costs at 10000 (the seed batch
+        // costs 20000 and FIFO would price the sale below its 15000 rate - rightly refused).
+        var productId = TestData.AddProduct(test, batchQty: 0, name: "Panadol 500mg");
         Buy(test, productId);
         Sell(test, productId, null);
 
@@ -92,7 +94,9 @@ public sealed class ProductHistoryTests
     public void ProfitIsLineTotalMinusCostAtSale()
     {
         using var test = new TestDatabase();
-        var productId = TestData.AddProduct(test, name: "Panadol 500mg");
+        // batchQty 0: the bought batch is the only stock, so the sale costs at 10000 (the seed batch
+        // costs 20000 and FIFO would price the sale below its 15000 rate - rightly refused).
+        var productId = TestData.AddProduct(test, batchQty: 0, name: "Panadol 500mg");
         Buy(test, productId);
         Sell(test, productId, null);
 
@@ -172,7 +176,9 @@ public sealed class ProductHistoryTests
     public void ThePaperHidesProfitFromRefusedEyes()
     {
         using var test = new TestDatabase();
-        var productId = TestData.AddProduct(test, name: "Panadol 500mg");
+        // batchQty 0: the bought batch is the only stock, so the sale costs at 10000 (the seed batch
+        // costs 20000 and FIFO would price the sale below its 15000 rate - rightly refused).
+        var productId = TestData.AddProduct(test, batchQty: 0, name: "Panadol 500mg");
         Buy(test, productId);
         Sell(test, productId, null);
         var manager = TestData.AddUser(test, "manager");
@@ -190,7 +196,9 @@ public sealed class ProductHistoryTests
     public void TheCsvCarriesPlainNumbers()
     {
         using var test = new TestDatabase();
-        var productId = TestData.AddProduct(test, name: "Panadol 500mg");
+        // batchQty 0: the bought batch is the only stock, so the sale costs at 10000 (the seed batch
+        // costs 20000 and FIFO would price the sale below its 15000 rate - rightly refused).
+        var productId = TestData.AddProduct(test, batchQty: 0, name: "Panadol 500mg");
         Buy(test, productId);
         var sale = Sell(test, productId, null);
 
@@ -205,7 +213,9 @@ public sealed class ProductHistoryTests
     public void TheCsvHidesProfitFromRefusedEyes()
     {
         using var test = new TestDatabase();
-        var productId = TestData.AddProduct(test, name: "Panadol 500mg");
+        // batchQty 0: the bought batch is the only stock, so the sale costs at 10000 (the seed batch
+        // costs 20000 and FIFO would price the sale below its 15000 rate - rightly refused).
+        var productId = TestData.AddProduct(test, batchQty: 0, name: "Panadol 500mg");
         Buy(test, productId);
         Sell(test, productId, null);
         var manager = TestData.AddUser(test, "manager");
