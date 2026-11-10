@@ -1,5 +1,10 @@
 # PROGRESS - the feature board (what is done, what is next)
 
+## Latest — v0.40.0 Baltic, master checklist Portion 1
+
+Code written: Counter-first startup among already permitted pages (fallback first permitted ordinary page, then Dashboard), Dashboard accessible by Area11 wordmark without a separate module, and existing Returns/Partners/Doctors/Import-Export section controls moved to the shell header while their original tab contents and permission visibility remain. Settings sections were already in the header. Three startup-policy facts: **921 written cases**. **57/57 static checks** only; Desktop/WPF build, `ALL GREEN - 921 of 921`, PT-12 and owner fallback confirmation remain pending. Owner reported 918/918 without an identifiable version/banner; Tourmaline's earlier 916/918 is retained. No financial, stock, permission, schema or posting change. Portions 2–15 await separate approval; details in `MASTER-CHECKLIST-ROADMAP.md`.
+
+
 ## Latest owner evidence and repair — v0.39.1 Admiralty
 
 The owner ran Tourmaline Core/Tests on Windows: **916 passed, 2 failed, 0 skipped / 918**, 1m16s; this is not a green run or WPF evidence. Admiralty corrects the 029+030 pending migration assertion and binds the draft test's `@id` exactly, additionally checking the SQLite constraint and unchanged draft. No production rule or migration changed. **57/57 static checks pass; Windows xUnit rerun (918/918), Desktop/WPF and PT-11 remain pending.** Owner permits proceeding with an approved next portion while physical results arrive later; urgent financial/data-safety failures take priority. Part 1 is header/navigation; its exact new master-checklist requirements still need clarification before UI changes.

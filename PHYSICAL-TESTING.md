@@ -1,5 +1,18 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-12 — Master checklist Portion 1: header/navigation and Counter startup
+
+**حالت: code/static تیار — Windows build، 921-case xUnit اور WPF/owner verification باقی۔** مالک نے Portion 1 کے لیے NEXT کہا۔ v0.40.0 Baltic `#33566B` میں Area11 wordmark سے Dashboard برقرار مگر الگ Dashboard module ہٹایا گیا ہے؛ اجازت یافتہ Counter ابتدائی page، ورنہ پہلا permitted ordinary page، اور کوئی ordinary page نہ ہو تو Dashboard fallback ہے۔ یہ fallback مالک کی الگ تصدیق کا منتظر ہے؛ اجازتیں نہیں بڑھائی گئیں۔ Returns، Customers/Suppliers، Doctors اور Import/Export کے موجودہ tab contents اصل controls میں ہیں اور ان کے section buttons dark header میں ہیں؛ Settings پہلے سے header میں تھا۔
+
+**مالک کی الگ جانچ:** (1) build اور `ALL GREEN - 921 of 921`؛ (2) login پر Counter، پھر Area11 wordmark سے Dashboard، اور الگ Dashboard tab نہ ہو؛ (3) محدود users، خاص طور پر Counter کے بغیر، درست fallback اور hidden sections؛ (4) Returns، Partners، Doctors، Import/Export اور Settings کے ہر مجاز section کو header سے کھولیں، text/forms محفوظ رہیں؛ (5) keyboard، چھوٹی screen، 44px bell، alerts، category filter، session/fault cards؛ (6) PT-08 navigation اور آدھے درج bill کے سلسلے میں کسی data-loss observation کی الگ اطلاع دیں۔ Genuine books میں fake financial test نہ کریں۔ یہ checklist physical PASS نہیں۔
+
+مالک نے 918/918 کی اطلاع دی، مگر اس run کا version/banner ابھی غیر مصدقہ ہے؛ سابق Tourmaline 916/918 evidence برقرار ہے۔ Parts 2–15 باقی ہیں اور ہر ایک کی الگ اجازت درکار ہے۔
+
+
+## نئے 918/918 نتیجے کی اطلاع — version تصدیق باقی
+
+مالک نے بتایا کہ تازہ run میں **918/918 tests پاس** ہوئے۔ اس اطلاع کو محفوظ رکھا گیا ہے؛ اس run کا مکمل runner output اور build/version ابھی فراہم نہیں ہوا، اس لیے اسے کسی خاص version، Desktop/WPF build یا physical verification سے منسوب نہیں کیا گیا۔ مالک سے banner اور نتیجے کی تصدیق درکار ہے۔ سابقہ Tourmaline کا 916/918 نتیجہ نیچے برقرار ہے۔ مالک کی مکمل 12 نکاتی master checklist اور مجوزہ 15 portions `docs/MASTER-CHECKLIST-ROADMAP.md` میں محفوظ ہیں؛ planning ہے، code approval نہیں۔
+
 ## تازہ owner evidence — Tourmaline test failures اور Admiralty repair
 
 مالک نے v0.39.0 Tourmaline کا Windows Core/Tests run بھیجا: **916 passed، 2 failed، 0 skipped، 918 total، 1m 16s**۔ یہ green نہیں اور Desktop/WPF build یا physical PASS نہیں۔

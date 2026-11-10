@@ -1,5 +1,8 @@
 # Area11 — pharmacy POS + inventory for Windows
 
+**Current source: v0.40.0 Baltic `#33566B` — Portion 1 code written, not yet Windows/WPF verified.** Counter-first permitted startup, wordmark-only Dashboard navigation and header-hosted existing page sections are included; 921 tests are written, 57 static checks pass. Owner's separately reported 918/918 run has no confirmed version. Run Windows Desktop build and `ALL GREEN - 921 of 921`; PT-12 remains pending. Master-checklist portions 2–15 await approval; see `docs/MASTER-CHECKLIST-ROADMAP.md`.
+
+
 **Latest verification and repair — v0.39.1 Admiralty `#274A68`:** the owner ran v0.39.0 Tourmaline Core/Tests on Windows and reported **916 passed / 2 failed / 0 skipped / 918**. The two test repairs are in source; **a Windows rerun (918/918), Desktop/WPF and PT-11 remain pending**. Static checks are not compilation. See `PHYSICAL-TESTING.md` for the failure details; Part 1 header/navigation requirements still need clarification.
 
 

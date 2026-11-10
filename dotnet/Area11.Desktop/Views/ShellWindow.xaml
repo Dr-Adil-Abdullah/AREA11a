@@ -1,4 +1,4 @@
-<Window x:Class="Area11.Desktop.Views.ShellWindow"
+<Window x:Class="Area11.Desktop.Views.ShellWindow" x:Name="ShellRoot"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:Area11.Desktop.ViewModels"
@@ -158,7 +158,7 @@
                                FontWeight="Bold" VerticalAlignment="Center" />
                 </Button>
 
-                <!-- Dashboard + permission-filtered module headings. WrapPanel keeps every module
+                <!-- Permission-filtered module headings. WrapPanel keeps every module
                      reachable on a narrower PC instead of clipping the row. -->
                 <ItemsControl Grid.Column="1" ItemsSource="{Binding ModuleItems}"
                               VerticalAlignment="Center">
@@ -286,6 +286,34 @@
                                         Content="{Binding Title}" ToolTip="{Binding Tooltip}"
                                         Command="{Binding DataContext.OpenPageCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                         CommandParameter="{Binding}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Existing page tabs remain in their own TabControl; only these header
+                         buttons select them. Their visibility/enabled state follows the real tab. -->
+                    <ItemsControl ItemsSource="{Binding HeaderSections, ElementName=ShellRoot}" Margin="0,3,0,0">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Content="{Binding Tab.Header}" Visibility="{Binding Tab.Visibility}"
+                                        IsEnabled="{Binding Tab.IsEnabled}" Click="OnHeaderSectionClick">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource HeaderNavButton}">
+                                            <Setter Property="Padding" Value="10,6" />
+                                            <Setter Property="MinHeight" Value="32" />
+                                            <Setter Property="FontSize" Value="11.5" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Tab.IsSelected}" Value="True">
+                                                    <Setter Property="Background" Value="{StaticResource BrandBrush}" />
+                                                    <Setter Property="Foreground" Value="White" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>

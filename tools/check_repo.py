@@ -1814,6 +1814,10 @@ def check_bindings() -> None:
 
         legal = set(_BINDABLE_RE.findall(vm_text)) | set(ITEM_PROPERTIES)
         legal |= set(re.findall(r"public\s+ICommand\s+(\w+)", vm_text))
+        # These bindings deliberately target ShellWindow and its HeaderSectionItem wrappers,
+        # not the ShellViewModel. Their exact implementation is guarded by check_phase_one_shell.
+        if view_name == "ShellWindow.xaml":
+            legal |= {"HeaderSections", "Tab"}
 
         for _, collection in _bindings_in(text):
             if not re.fullmatch(r"[A-Za-z_]\w*", collection):
@@ -4818,7 +4822,7 @@ def check_phase_one_shell() -> None:
         ("OpenPageCommand = new RelayCommand<NavItem>(OpenContextPage)", "page clicks have no command"),
         ("OpenSettingsTabCommand = new RelayCommand<SettingsTabItem>(OpenSettingsTab)",
          "Settings section clicks have no command"),
-        ("ModuleItems.Add(dashboard)", "Dashboard is absent from the top row"),
+        ("StartPagePolicy.Choose(", "startup does not select a permitted counter/fallback"),
         ("ModuleItems.Add(header)", "permission-filtered groups are absent from the top row"),
         ("UpdateHeaderNavigation();", "active module/page state is not synchronized"),
         ("products.ApplyFilter(categoryId: value.Id)", "the header category does not use the existing filter"),
@@ -4826,6 +4830,31 @@ def check_phase_one_shell() -> None:
     ):
         if needle not in shell:
             fail(f"Phase-1 ShellViewModel: {reason} ({needle})")
+
+    if "ModuleItems.Add(dashboard)" in shell or "NavItems.Add(dashboard)" not in shell:
+        fail("Dashboard must remain a wordmark route but not be a standalone module")
+    bridge = DOTNET / "Area11.Desktop/Views/HeaderSectionTabs.cs"
+    codebehind = DOTNET / "Area11.Desktop/Views/ShellWindow.xaml.cs"
+    if not bridge.exists() or not codebehind.exists():
+        fail("Header section-tab bridge is missing")
+    else:
+        bridge_text = bridge.read_text(encoding="utf-8-sig")
+        code_text = codebehind.read_text(encoding="utf-8-sig")
+        for needle in ("HeaderSectionItem", "tabs.Loaded += OnLoaded", "tabs.Unloaded += OnUnloaded"):
+            if needle not in bridge_text:
+                fail(f"Header section-tab bridge missing {needle}")
+        for needle in ("ReferenceEquals(_headerTabs, tabs)", "item.Tab.Visibility == Visibility.Visible",
+                       "item.Tab.IsEnabled", "_headerTabs.Items.Contains(item.Tab)"):
+            if needle not in code_text:
+                fail(f"Header section-tab selection guard missing {needle}")
+    for name in ("PartnersView.xaml", "ReturnsView.xaml", "DoctorsView.xaml", "ImportExportView.xaml"):
+        page = (DOTNET / "Area11.Desktop/Views" / name).read_text(encoding="utf-8-sig")
+        if 'HeaderSectionTabs.InHeader="True"' not in page or 'ContentSource="SelectedContent"' not in page:
+            fail(f"{name} must host its existing tab contents with shell header controls")
+    for needle in ("HeaderSections, ElementName=ShellRoot", "Tab.Visibility", "Tab.IsEnabled",
+                   "Tab.IsSelected", "OnHeaderSectionClick"):
+        if needle not in window:
+            fail(f"Shell header section binding missing {needle}")
 
     if shell.count("SettingsTabItems.Add(new SettingsTabItem(") != 6:
         fail("Phase-1 shell must expose exactly the existing six Settings sections")
@@ -4852,7 +4881,7 @@ def check_phase_one_shell() -> None:
         fail("NavItem no longer exposes distinct active module and active page states")
 
     REPORT.append(
-        "Phase 1 shell: fixed Area11, 44px top-right bell, permission-filtered top modules, "
+        "Shell: fixed Area11, 44px bell, permission-filtered modules, Counter-first startup, "
         "contextual pages, six shell-owned Settings sections and a separate Products category filter; "
         "no left-sidebar fold or editable application title")
 

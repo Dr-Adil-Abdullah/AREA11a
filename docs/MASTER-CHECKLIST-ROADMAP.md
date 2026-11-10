@@ -1,0 +1,55 @@
+# Master checklist — owner requirements and 15-portion roadmap
+
+This planning document records the owner's 12-point master checklist and a proposed implementation order. It does not authorize code: the owner approved Portion 1 by saying “next”; later portions need their own approval. The owner will test progressively; a delayed physical result does not by itself block another approved portion. Log all results and prioritize serious data/financial safety issues immediately.
+
+## Evidence and status rules
+
+- ✅ Code already present, not necessarily owner-verified; distinguish physical evidence.
+- 🟡 Partly implemented or schema/setting only; remaining workflow and verification are explicit.
+- ⬜ New requested behavior not yet implemented.
+- The owner reported a new **918/918 successful test run**. Exact build/version and the full runner result have not yet been supplied; do not attribute it to Admiralty or claim a Desktop/WPF or physical pass without confirmation. The earlier explicitly reported Tourmaline run was 916 passed / 2 failed / 918.
+- Phase-1 v0.39.0 schema/contracts and v0.39.1 two-test repair exist; migrations 029/030, cloud format 3, isolated-test rebuild service and the 130-setting inventory do not by themselves implement later UI.
+- Existing legacy feature-board green marks do not prove new master-checklist enhancements or current physical checks.
+
+## Owner's complete 12-point requirements and code review
+
+1. **Global header and navigation — 🟡:** fixed Area11 wordmark, 44×44 top-right bell, module/contextual buttons, Settings sections and Products category picker already exist in the dark header. Check all other folder tabs and responsive/keyboard/permission behavior; PT-08 is pending. Do not claim all app-wide tabs moved without auditing every view.
+2. **Central dynamic field management — 🟡:** seven-type existing custom fields, stable keys/validation (029) and native field/override and local-draft contracts (030) exist. Central native/custom Settings workflow, warning and named explicit confirmation, safe draft-only saving/posting and expiry picker remain. Owner may relax a critical field, but incomplete sale/purchase cannot final-post.
+3. **Packaging, units and search — 🟡:** managed units, pack conversions, distinct product IDs, strength and pack label editing/search have existing code. Verify the owner's fixed one-box presentation, all 50ml/100ml cases and global tokenized keyword-plus-unit behavior in Products/Counter/Purchase; PT-10 physical verification remains.
+4. **Native WhatsApp text/PDF — 🟡:** legacy reorder text uses `wa.me`; seven-setting foundation includes PDF preferences. Native `whatsapp://send`, PDF generation/preparation, triggers for profiles, invoices, ledgers/accounts and admin reports, and missing-Desktop handling remain. Owner manually attaches and sends; opening is not evidence of delivery.
+5. **Universal and bulk print — 🟡:** existing receipt and some document print paths and print settings exist. Complete direct Print alongside WhatsApp on each applicable report, ledger, invoice and history view; configurable individual/autocut and multi-selection/bulk formats, including contacts and bills, remain to implement and physically verify.
+6. **Product/customer history and profit — 🟡:** existing customer ledger/profit functionality and margin setting contract exist; product purchase/sales histories (supplier, historical rate and buyer), complete chronological customer purchase/dues and Print/WhatsApp, and the global visibility toggle must be implemented/audited. Approved definition is sale minus cost-at-sale minus applicable discounts/returns, no expense allocation; existing permissions and cost snapshots remain.
+7. **Schema, hybrid sync and test/demo — 🟡:** fresh schema migration 030, format-3 parent ordering, local drafts and guarded isolated test rebuild/technical backup exist, plus existing manual cloud sync. Automatic scheduler, configuration UX, robust offline/reconnect/failure handling, real-cloud proof and any explicitly approved safe test interface remain. Current WPF app uses SQLite; Dexie is not automatically required. Genuine books may contain genuine transactions only; destructive/fault/fake tests use an isolated marked copy. No fake sample shop is reinstated.
+8. **Drawer discrepancies — 🟡:** existing shift UI and service handle opening/closing differences with reasons and alerts; migration 030 adds discrepancy data contract. Audit and complete the requested Cash Drawer opening/closing detail presentation, reason and alerts; short and over are both handled. No automatic payment or drawer inflow.
+9. **Salts/generic formula — 🟡:** managed formula schema exists, but Products still uses free-text Generic. Implement central management and selectable dropdown, uniqueness/permissions/audit and preserve old free text without guessed links.
+10. **Product UI and multi-category — 🟡:** top New button, 44px thumbnails, primary category and additional filter tags exist; product editor remains persistently visible. Implement the requested space-saving Edit/double-click flow, verify thumbnail appearance, reproduce/fix or document Uncategorized report based on evidence, and retain primary-only financial totals. PT-02 overall pass does not verify every feedback item.
+11. **Supplier and brand/company — 🟡:** company dropdown exists; Brand is still free text. Migration 030 holds brand/preferred supplier links and a directory combining preferred and genuine purchase-history suppliers. Implement managed brand/company selection, supplier dropdown and supplier-to-products filter; never erase history or guess a preferred supplier.
+12. **Dashboard/default sales — 🟡:** Area11 wordmark already opens Dashboard. Dashboard is still a standalone module and current initial route is first page (Dashboard). Remove the standalone tab, default to permitted Sales/Counter, retain the wordmark dashboard access, decide safe fallback when user lacks sale permission, and test routes without losing unsaved work. The optional Sales-page link is not required if wordmark access satisfies the owner's either/or instruction.
+
+## Proposed 15 portions, in dependency order
+
+1. **Global header, navigation and startup — CODE WRITTEN, Windows verification pending** (#1, #12): existing Returns, Partners, Doctors and Import/Export sections are wired to the header, standalone Dashboard module removed, permitted Counter preferred, Area11 opens Dashboard; fallback is first permitted ordinary page, Dashboard if none. Static verification passed; keyboard, permission visibility, state and WPF/owner checks remain.
+2. **Product workspace and editor** (#10): compact photos, top New, space-saving explicit Edit or row double-click, prevent unsaved-edit loss.
+3. **Categories and product tags** (#10): primary category plus filter-only tags; reproduce/resolve Uncategorized case without double-counting.
+4. **Central field management** (#2): native/custom field policies, types, settings UI, named owner warning/confirmation and auditing.
+5. **Safe local sale/purchase drafts** (#2): save/open/complete/validate/final-post; incomplete records create no financial/stock documents.
+6. **Expiry picker** (#2): calendar/month selection in applicable forms while preserving stored expiry semantics.
+7. **Packaging, units and variants** (#3): one-box UX, quantities/conversions, distinct 50ml/100ml products and REAL quantities.
+8. **Salts and brands** (#9, #11): managed catalogs, dropdowns, uniqueness, audit and preserved legacy text.
+9. **Suppliers and product filtering** (#11): one preferred plus all purchase-history suppliers, dropdown and filter, no guessed links.
+10. **Keyword-plus-unit search** (#3): tokenized search in relevant Products/Counter/Purchase contexts with variant identification.
+11. **Universal and bulk printing** (#5): audit all target views, preview/individual print and selected bill/contact bulk, printer errors and no financial side effects.
+12. **WhatsApp and prepared PDF** (#4): shared PDF and `whatsapp://send` flow across specified views; owner manually attaches/sends; missing-app error.
+13. **History, ledgers and profit** (#6): product histories, customer chronology, profit definition/permissions/toggle and export integration.
+14. **Cash Drawer details and alerts** (#8): opening/closing short/over, reasons, person/shift history and alert links without money mutations.
+15. **Hybrid sync hardening and safe test workflow** (#7): manual/automatic scheduler, settings, offline/retry/ordering, isolation and real-cloud testing.
+
+Final end-to-end regression, physical devices, database safety/backup, complete owner acceptance and release are a separate final gate, not another feature portion. PT-01 restore/fault, PT-03–PT-11 as applicable and PT02-POS-01 reproduction remain separately tracked. Each implementation release has its own version/color, written tests and explicit Windows/physical status; future version numbers are not preassigned.
+
+## Open clarifications before affected portions
+
+- Confirm the version/banner and exact full result for the owner's new 918/918 run.
+- For users without Counter/Sales permission, which permitted page should be the startup fallback? Never grant permissions just to force a route.
+- For Product editing, choose explicit Edit, double-click, or both; specify how unsaved changes should be protected.
+- Supplier filter scope: proposed union of preferred and genuine historical suppliers, consistent with owner decision Q2=C; confirm before implementing.
+- Inventory applicable report/ledger/invoice/history/contact views before universal Print/WhatsApp; ask about any ambiguous document formats or bulk grouping instead of assuming a nonexistent paid/automatic attachment API.

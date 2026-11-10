@@ -1,4 +1,6 @@
+using System.Collections.ObjectModel;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using Area11.Desktop.ViewModels;
 
@@ -17,6 +19,38 @@ public partial class ShellWindow : Window
     public ShellWindow()
     {
         InitializeComponent();
+    }
+
+    private TabControl? _headerTabs;
+
+    public ObservableCollection<HeaderSectionItem> HeaderSections { get; } = new();
+
+    internal void ShowHeaderSections(TabControl tabs)
+    {
+        _headerTabs = tabs;
+        HeaderSections.Clear();
+        foreach (var item in tabs.Items)
+        {
+            if (item is TabItem tab) HeaderSections.Add(new HeaderSectionItem(tab));
+        }
+    }
+
+    internal void HideHeaderSections(TabControl tabs)
+    {
+        // An old page can unload after the next page loaded; never clear the new page's controls.
+        if (!ReferenceEquals(_headerTabs, tabs)) return;
+        _headerTabs = null;
+        HeaderSections.Clear();
+    }
+
+    private void OnHeaderSectionClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { DataContext: HeaderSectionItem item } && _headerTabs is not null
+            && _headerTabs.Items.Contains(item.Tab) && item.Tab.Visibility == Visibility.Visible
+            && item.Tab.IsEnabled)
+        {
+            _headerTabs.SelectedItem = item.Tab;
+        }
     }
 
     private void OnActivity(object sender, InputEventArgs e) =>

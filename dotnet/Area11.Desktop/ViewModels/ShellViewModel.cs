@@ -72,10 +72,10 @@ public sealed class ShellViewModel : ObservableObject
         // and never blocks the till: a failed backup is a line in the log and a note on the page.
         _services.Backup.RunAutomaticIfDue();
 
-        // The home screen is the first page of the menu (F-12). There is no special start page any
-        // more: the demo shop was removed from the product on the owner's word (D-77), so every start
-        // is the same start, in the shop's own books.
-        SelectedNav = NavItems.FirstOrDefault(item => item.IsPage);
+        // Counter is preferred only if already permitted. Never grant a permission for startup:
+        // otherwise use the first permitted ordinary page, or Dashboard when no such page exists.
+        var startKey = StartPagePolicy.Choose(NavItems.Where(item => item.IsPage).Select(item => item.LabelKey));
+        SelectedNav = NavItems.FirstOrDefault(item => item.IsPage && item.LabelKey == startKey);
 
         // The two clocks of the session (v0.35.0, D-92). Started here, at the sign-in, and stopped
         // when this window goes - a timer that outlives its window is a timer that signs somebody
@@ -217,7 +217,7 @@ public sealed class ShellViewModel : ObservableObject
     /// <summary>Every permitted destination, retained for stable-key navigation and existing drill-downs.</summary>
     public ObservableCollection<NavItem> NavItems { get; } = new();
 
-    /// <summary>Dashboard plus the visible module headings in the top row.</summary>
+    /// <summary>Permission-filtered module headings; Dashboard is reached through the Area11 wordmark.</summary>
     public ObservableCollection<NavItem> ModuleItems { get; } = new();
 
     /// <summary>Pages belonging to the open module in the contextual second row.</summary>
@@ -512,8 +512,8 @@ public sealed class ShellViewModel : ObservableObject
         {
             LabelKey = "dashboard"
         };
+        // Keep the route for the Area11 wordmark without offering a separate Dashboard tab.
         NavItems.Add(dashboard);
-        ModuleItems.Add(dashboard);
 
         // ---- SELL: the counter and what comes back from it ----
         if (canSell || canReturn || canBills)

@@ -1,5 +1,10 @@
 # TAKEOVER — the complete brief for a new agent
 
+## Latest handoff — v0.40.0 Baltic
+
+Master checklist Portion 1 is code-written: Counter-first permitted startup, first permitted ordinary page fallback (owner confirmation pending), Dashboard by Area11 wordmark rather than separate module, header-hosted Returns/Partners/Doctors/Import-Export sections, Settings existing. **921 written cases and 57/57 static; Windows build/xUnit and PT-12 are pending.** Owner reported 918/918 but version not confirmed. See `docs/MASTER-CHECKLIST-ROADMAP.md`: portions 2–15 need separate approval; late owner tests do not block approved work, except urgent safety issues.
+
+
 ## Latest handoff — v0.39.1 Admiralty
 
 The owner ran Tourmaline Core/Tests on Windows: **916 passed, 2 failed, 0 skipped, 918 total**. Admiralty repairs two test fixtures: 029+030 pending migration count/ledger and exact `@id` parameter for the draft constraint. No production rule or migration was changed. **57/57 static checks; no .NET/xUnit execution here.** The owner must rerun for 918/918; Desktop/WPF and PT-11 remain separate. The owner allows approved next portions while test results arrive later, with urgent safety faults prioritized. Part 1 header/navigation has been requested but exact master-checklist changes are not in the available summary; clarify before inventing a design.

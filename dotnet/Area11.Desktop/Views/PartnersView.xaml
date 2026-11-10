@@ -9,7 +9,12 @@
         that chases the first side. Each tab holds the SAME view the old menu line opened, so no rule
         was copied - only the address changed.
     -->
-    <TabControl SelectedIndex="{Binding SelectedTab, Mode=TwoWay}" Background="Transparent" BorderThickness="0">
+    <TabControl views:HeaderSectionTabs.InHeader="True" SelectedIndex="{Binding SelectedTab, Mode=TwoWay}" Background="Transparent" BorderThickness="0">
+            <TabControl.Template>
+                <ControlTemplate TargetType="TabControl">
+                    <ContentPresenter x:Name="PART_SelectedContentHost" ContentSource="SelectedContent" />
+                </ControlTemplate>
+            </TabControl.Template>
 
         <TabItem Header="Customers"
                  Visibility="{Binding HasCustomers, Converter={StaticResource BoolToVis}}">

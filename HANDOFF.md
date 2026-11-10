@@ -1,5 +1,10 @@
 # HANDOFF - read this first
 
+## Latest handoff — v0.40.0 Baltic
+
+Portion 1 code written: Counter-first permitted startup, wordmark Dashboard route without standalone module and header controls for Returns/Partners/Doctors/Import-Export sections. **921 written cases, 57/57 static only; Windows build/xUnit and PT-12 pending.** The owner's 918/918 report lacks a confirmed version. Owner confirmation of first-permitted-page fallback is pending. See `docs/MASTER-CHECKLIST-ROADMAP.md`; portions 2–15 require separate approval.
+
+
 ## Latest handoff — v0.39.1 Admiralty
 
 Owner's Tourmaline Core/Tests Windows run was **916 passed / 2 failed / 918**, not green. Admiralty repairs the migration fixture expectation and exact draft `@id` binding, without altering production rules. Static gate 57/57; Windows **918/918 rerun**, WPF and PT-11 pending. Owner allows working on an approved next portion while tests arrive later; urgent safety errors take priority. Part 1 header/navigation is next but its precise master-checklist changes need the owner's clarification.

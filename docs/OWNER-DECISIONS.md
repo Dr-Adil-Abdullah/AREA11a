@@ -1,5 +1,10 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## تازہ status — Master checklist Portion 1, v0.40.0 Baltic
+
+مالک نے NEXT سے header/navigation Portion 1 شروع کرنے کی اجازت دی۔ Code میں permitted Counter پر startup، ورنہ پہلا permitted عام page (مالک سے fallback تصدیق باقی)، Area11 سے Dashboard مگر الگ Dashboard tab نہیں، اور Returns/Partners/Doctors/Import-Export کے section controls header میں رکھے گئے ہیں۔ Settings controls پہلے موجود تھے۔ **921 written cases، 57/57 static؛ Windows/WPF build، xUnit اور PT-12 ابھی pending ہیں۔** مالک کا بتایا ہوا 918/918 نتیجہ version/banner کے بغیر محفوظ ہے؛ اسے خودکار طور پر کسی version سے نہ جوڑیں۔ Portions 2–15 کی الگ منظوری درکار ہے۔
+
+
 ## تازہ owner feedback — Tourmaline 916/918، repair اور delayed testing
 
 مالک کے Windows Core/Tests run میں **916 پاس، 2 فیل، 918 کل، skipped صفر** آئے۔ v0.39.1 Admiralty میں migration fixture اور draft `@id` binding درست کی گئی؛ Windows rerun اور PT-11 باقی ہیں۔ مالک نے ہدایت دی کہ اس کی physical testing کے نتائج دیر سے آئیں تو اگلا منظور شدہ portion جاری رکھا جائے، بعد کا feedback درج اور حل ہو؛ سنگین مالی/data-safety خطرات کو فوری ترجیح دی جائے۔ مالک نے repair کے بعد Part 1 header/navigation شروع کرنے کو کہا؛ اس کی اصل checklist کی تفصیلی مطلوبہ تبدیلیاں واضح کرنا باقی ہے، اس لیے UI کو اندازے سے نہ بدلا جائے۔
