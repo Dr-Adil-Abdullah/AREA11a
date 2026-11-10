@@ -2,7 +2,7 @@
 
 ## تازہ status — Portion 17 مکمل، v0.58.0 Burgundy
 
-تصاویر کا جائزہ + ہر چننے والی فہرست پر کور: مالک نے Portion 17 کا pause ختم کیا اور سب لائنوں پر تصویر مانگی؛ پرانی گیلریاں/کور/سائز درست نکلے اور وہی رہے؛ ایک کور فارمولا + ایک سوال میں پوری فہرست کی تصویریں؛ Purchases، stock-take، Returns اور Reorder سب پر دوا کی تصویر؛ لوگوں کی تصویریں اجازت سے بندھی؛ بیک اپ میں تصویریں، cloud میں کبھی نہیں؛ نئی اردو دستاویز `docs/PHOTOS.md`۔ **1163 written cases، 57/57 static؛ Windows/xUnit اور physical pending** (v0.52.0 کی Windows 1086/1086 گرین ہو چکی)۔ تمام master portions 4-18 code-complete؛ صرف Windows/physical تصدیق باقی۔
+تصاویر کا جائزہ + ہر چننے والی فہرست پر کور: مالک نے Portion 17 کا pause ختم کیا اور سب لائنوں پر تصویر مانگی؛ پرانی گیلریاں/کور/سائز درست نکلے اور وہی رہے؛ ایک کور فارمولا + ایک سوال میں پوری فہرست کی تصویریں؛ Purchases، stock-take، Returns اور Reorder سب پر دوا کی تصویر؛ لوگوں کی تصویریں اجازت سے بندھی؛ بیک اپ میں تصویریں، cloud میں کبھی نہیں؛ نئی اردو دستاویز `docs/PHOTOS.md`۔ **1163 written cases، 57/57 static؛ Windows 1163/1163 گرین (10 نومبر 2026)، physical pending**۔ تمام master portions 4-18 code-complete؛ صرف Windows/physical تصدیق باقی۔
 
 ## تازہ status — Portion 16 مکمل، v0.57.0 Harbor
 
