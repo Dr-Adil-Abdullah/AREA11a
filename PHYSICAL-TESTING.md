@@ -1,5 +1,11 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-15 — Portion 17: فوٹوز اور app icon — کام شروع، جانچ pending
+
+مالک نے products کی متعدد تصاویر میں سے نظر آنے والی اہم تصویر منتخب کرنے، customers، doctors اور staff کی تصاویر، top-right staff photo، Settings میں app icon، اور Sales/Stock میں قدرے بڑے rounded photos کے medium/large انتخاب کی درخواست کی ہے۔ اس کام کو اب ترجیح دینے کی اجازت دی گئی؛ Portion 4 نامکمل محفوظ ہے۔ Product cover منتخب کرنے کی ابتدائی code اور دو tests جاری worktree میں لکھے گئے ہیں؛ ابھی release یا Windows-tested نہیں۔ Customer/doctor/staff، icon، size settings، backup/sync اور Windows verification مکمل نہیں؛ کسی چیز کو physical PASS نہ سمجھا جائے۔
+
+مالک نے دوبارہ بتایا کہ v0.42.0 Kyanite کے **929 پاس اور صفر فیل** ہوئے۔ تفصیلی runner log، WPF اور practical tests الگ pending ہیں۔
+
 ## Launch اور tests تک آسان رسائی — Windows verification pending
 
 مالک کی درخواست پر مرکزی folder میں `START-AREA11.bat` کے ساتھ `RUN-TESTS.bat` شامل کیا گیا ہے؛ دوسرا موجودہ `tools\RUN-TESTS.cmd` ہی چلاتا ہے اور `test.log` وہیں رہتا ہے۔ App شروع کرنے سے tests خود نہیں چلتے۔ پہلے start پر اسی folder میں Area11 logo والے `! START AREA11` اور `! RUN TESTS` shortcuts بنانے کی کوشش ہوتی ہے؛ failure سے app start نہیں رکتا اور موجودہ shortcuts overwrite نہیں ہوتے۔ File Explorer کی Large icons setting سے ان کا سائز بڑا کیا جا سکتا ہے۔ Folder منتقل ہو تو دونوں پرانے shortcuts حذف کر کے start دوبارہ کریں۔

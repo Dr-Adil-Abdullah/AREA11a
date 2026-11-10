@@ -1,6 +1,6 @@
-# Master checklist — owner requirements and 16-portion roadmap
+# Master checklist — owner requirements and 17-portion roadmap
 
-This planning document records the owner's 12-point master checklist and a proposed implementation order. It does not authorize code: the owner approved Portion 1 by saying “next”; later portions need their own approval. The owner has approved Portions 1–4 individually; Portions 5–16 still require their turn. The owner will test progressively; a delayed physical result does not by itself block another approved portion. Log all results and prioritize serious data/financial safety issues immediately.
+This planning document records the owner's 12-point master checklist and a proposed implementation order. It does not authorize code: the owner approved Portion 1 by saying “next”; later portions need their own approval. The owner has approved Portions 1–4 individually; Portions 5–16 still require their turn; Portion 17 is explicitly approved to start now. The owner will test progressively; a delayed physical result does not by itself block another approved portion. Log all results and prioritize serious data/financial safety issues immediately.
 
 ## Evidence and status rules
 
@@ -29,7 +29,7 @@ This planning document records the owner's 12-point master checklist and a propo
 11. **Supplier and brand/company — 🟡:** company dropdown exists; Brand is still free text. Migration 030 holds brand/preferred supplier links and a directory combining preferred and genuine purchase-history suppliers. Implement managed brand/company selection, supplier dropdown and supplier-to-products filter; never erase history or guess a preferred supplier.
 12. **Dashboard/default sales — 🟡:** Area11 wordmark already opens Dashboard. Dashboard is still a standalone module and current initial route is first page (Dashboard). Remove the standalone tab, default to permitted Sales/Counter, retain the wordmark dashboard access, decide safe fallback when user lacks sale permission, and test routes without losing unsaved work. The optional Sales-page link is not required if wordmark access satisfies the owner's either/or instruction.
 
-## Proposed 16 portions, in dependency order
+## Proposed 17 portions, in dependency order
 
 1. **Global header, navigation and startup — CODE WRITTEN, Windows verification pending** (#1, #12): existing Returns, Partners, Doctors and Import/Export sections are wired to the header, standalone Dashboard module removed, permitted Counter preferred, Area11 opens Dashboard; fallback is first permitted ordinary page, Dashboard if none. Static verification passed; keyboard, permission visibility, state and WPF/owner checks remain.
 2. **Product workspace and editor — CODE WRITTEN; Windows/physical proof pending** (#10): full-width list and compact thumbnails, top New, explicit Edit **and** row double-click open the same modal editor; close and put-away warnings, service permissions and separately saved extra fields preserved. PT-13 remains pending.
@@ -48,6 +48,8 @@ This planning document records the owner's 12-point master checklist and a propo
 15. **Hybrid sync hardening and safe test workflow** (#7): manual/automatic scheduler, settings, offline/retry/ordering, isolation and real-cloud testing.
 
 16. **Windows startup and protected close — REQUESTED, not implemented**: Owner Settings chooses (1) manual start and normal close; (2) launch automatically when the Windows user signs in and allow normal close; or (3) automatic launch with close restricted to owner password or a staff member explicitly permitted in Staff & Permissions. Confirm exact minimize behavior, pre-login authorization, Windows account scope and safe recovery when this portion is reached. Never claim ordinary WPF close interception prevents Task Manager, OS shutdown, power loss or a Windows administrator from ending the process; preserve unsaved-work guards and test on Windows. This is a request for the roadmap, not approval to implement out of order.
+
+17. **Photos and app icon — OWNER REQUESTED, APPROVED TO START NOW**: multiple product photos with a clearly chosen primary thumbnail; customer and doctor photos; staff photos including the top-right staff/profile control; owner-controlled app icon in Settings; larger, gently rounded Sales/Stock thumbnails with medium and large size settings while retaining full-size viewing. Review privacy and permission boundaries, photo backup/restore and cloud behavior before implementation; preserve existing files and avoid assuming customer/doctor/staff gallery requirements beyond what the owner confirmed. The owner has asked to prioritize this now; Portion 4 work remains incomplete and preserved. Product-cover selection and two tests are in the working tree only and are not yet released or Windows-tested; the rest remains to implement. Windows/WPF, devices and owner acceptance are separate.
 
 Final end-to-end regression, physical devices, database safety/backup, complete owner acceptance and release are a separate final gate, not another feature portion. PT-01 restore/fault, PT-03–PT-11 as applicable and PT02-POS-01 reproduction remain separately tracked. Each implementation release has its own version/color, written tests and explicit Windows/physical status; future version numbers are not preassigned.
 
