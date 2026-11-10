@@ -331,8 +331,8 @@ public sealed class DraftTests
         test.Database.Tx(connection =>
         {
             test.Database.Execute(connection,
-                "UPDATE document_drafts SET status = 'posted', posted_document_id = -1 WHERE id = @id;",
-                new { id = saved.Value!.Id });
+                "UPDATE document_drafts SET status = 'posted', posted_document_id = -1, posted_at = @at WHERE id = @id;",
+                new { id = saved.Value!.Id, at = "2026-01-01 10:00:00" });
         });
 
         var id = saved.Value!.Id;
