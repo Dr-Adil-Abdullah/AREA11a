@@ -255,27 +255,9 @@ public static class DrawerStage
     public static readonly string[] All = { Opening, Closing };
 }
 
-/// <summary>One non-zero opening or closing drawer difference, including its mandatory reason.</summary>
-public sealed class ShiftDiscrepancy
-{
-    public int Id { get; set; }
-
-    public int ShiftId { get; set; }
-
-    public string Stage { get; set; } = DrawerStage.Opening;
-
-    public long ExpectedPaisa { get; set; }
-
-    public long CountedPaisa { get; set; }
-
-    public long DifferencePaisa { get; set; }
-
-    public string Reason { get; set; } = string.Empty;
-
-    public string? AlertedAt { get; set; }
-
-    public string? CreatedAt { get; set; }
-}
+// The drawer-difference row lives in ShiftModels.cs (Portion 14); this file keeps only
+// DrawerStage, which the foundation tests still use. A second copy here broke the build
+// (CS0101) because the static checker cannot see duplicate definitions.
 
 /// <summary>
 /// Receipt for an isolated schema-only rebuild. A first copy has no previous database and therefore
