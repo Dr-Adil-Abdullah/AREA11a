@@ -34,6 +34,7 @@ public sealed class ExpenseService
 
     private readonly Database _db;
     private readonly AuditService _audit;
+    private readonly SettingsService _settings;
     private readonly PermissionService _permissions;
     private readonly LogService _log;
 
@@ -42,6 +43,7 @@ public sealed class ExpenseService
     {
         _db = db;
         _audit = audit;
+        _settings = settings;
         _permissions = permissions;
         _log = log;
     }
