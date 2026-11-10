@@ -274,12 +274,12 @@ public sealed class SupplierLinkTests
         var supplier = TestData.AddSupplier(test, "Combo Depot");
         var other = TestData.AddSupplier(test, "Other Depot");
         var id = CreateProduct(products, "Combo syrup", new ProductPatch { PreferredSupplierId = supplier });
-        CreateProduct(products, "Combo tablet", new ProductPatch { PreferredSupplierId = other });
+        CreateProduct(products, "Combo drops", new ProductPatch { PreferredSupplierId = other });
 
         var found = products.Search("syrup", supplierId: supplier).Value!;
 
         Assert.Equal(id, Assert.Single(found).Id);
-        Assert.Empty(products.Search("tablet", supplierId: supplier).Value!);
+        Assert.Empty(products.Search("drops", supplierId: supplier).Value!);
     }
 
     [Fact]
