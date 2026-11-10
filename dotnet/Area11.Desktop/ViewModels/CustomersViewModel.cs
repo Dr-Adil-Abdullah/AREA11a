@@ -505,7 +505,11 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
         PointsText = Selected.PointsLabel;
         BillsText = Selected.BillsCount.ToString();
         LifetimeText = Selected.LifetimeText;
-        ProfitText = Selected.ProfitText;
+        // Portion 13: the customer's profit was visible to everyone who opened this page. Now the
+        // same gate as every other margin: the `profit` permission plus the global switch.
+        ProfitText = ProfitPolicy.CanSee(_services.Permissions, _services.Settings, _user)
+            ? Selected.ProfitText
+            : "hidden";
         ReturnsText = Selected.ReturnsText;
         LastBillText = Selected.LastBillLabel;
         BalanceText = Selected.BalanceText;

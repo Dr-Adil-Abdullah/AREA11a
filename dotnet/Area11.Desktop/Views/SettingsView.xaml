@@ -274,6 +274,17 @@
 
                         <Border Style="{StaticResource SettingsGroup}">
                             <StackPanel>
+                                <TextBlock Text="Profit visibility" Style="{StaticResource SectionTitle}" />
+                                <CheckBox Content="Show profit and margins"
+                                          IsChecked="{Binding ShowMargins, Mode=TwoWay}"
+                                          Margin="0,10,0,0" />
+                                <TextBlock Text="Off hides every margin - dashboard, reports, customer pages, doctors, history - even from the owner, until it is switched back on. No number is changed."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel>
                                 <TextBlock Text="Sale confirmation" Style="{StaticResource SectionTitle}" />
                                 <CheckBox Content="Show the Done / invoice / cash-change card after a saved sale"
                                           IsChecked="{Binding SaleSuccessPopup, Mode=TwoWay}"

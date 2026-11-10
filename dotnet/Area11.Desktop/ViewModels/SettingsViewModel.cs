@@ -52,6 +52,7 @@ public sealed class SettingsViewModel : ObservableObject
     private string _cashierLimitText = "5";
     private string _managerLimitText = "20";
     private bool _blockBelowCost;
+    private bool _showMargins;
     private bool _taxEnabled;
     private string _taxPercentText = "0";
 
@@ -322,6 +323,16 @@ public sealed class SettingsViewModel : ObservableObject
         set => SetProperty(ref _copiesText, value);
     }
 
+    /// <summary>
+    /// Portion 13: the global profit switch. Off hides every margin - dashboard, reports, customer
+    /// pages, doctors, history - even from the owner, until it is switched back on.
+    /// </summary>
+    public bool ShowMargins
+    {
+        get => _showMargins;
+        set => SetProperty(ref _showMargins, value);
+    }
+
     public bool ShowDiscount
     {
         get => _showDiscount;
@@ -585,6 +596,7 @@ public sealed class SettingsViewModel : ObservableObject
         CashierLimitText = Text(settings.GetDouble("discount.maxPercentCashier", 5));
         ManagerLimitText = Text(settings.GetDouble("discount.maxPercentManager", 20));
         BlockBelowCost = settings.GetBool("discount.blockBelowCost", true);
+        ShowMargins = settings.GetBool("profit.showMargins", true);
         TaxEnabled = settings.GetBool("tax.enabled");
         TaxPercentText = Text(settings.GetDouble("tax.percent"));
 
@@ -827,6 +839,7 @@ public sealed class SettingsViewModel : ObservableObject
             ["discount.maxPercentCashier"] = cashierLimit,
             ["discount.maxPercentManager"] = managerLimit,
             ["discount.blockBelowCost"] = BlockBelowCost,
+            ["profit.showMargins"] = ShowMargins,
             ["tax.enabled"] = TaxEnabled,
             ["tax.percent"] = taxPercent,
             ["expiry.levels"] = _services.Settings.ExpiryBands

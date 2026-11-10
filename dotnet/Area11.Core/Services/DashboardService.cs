@@ -75,7 +75,7 @@ public sealed class DashboardService
 
         try
         {
-            var canSeeProfit = _permissions.Can(user, Modules.Profit);
+            var canSeeProfit = ProfitPolicy.CanSee(_permissions, _settings, user);
 
             using var connection = _db.Open();
 

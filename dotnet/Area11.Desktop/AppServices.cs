@@ -57,12 +57,13 @@ public sealed class AppServices
         Import = new ImportService(Database, Audit, Permissions, Log);
         Workbooks = new WorkbookService(Database, Audit, Permissions, Settings, Log, Import);
         Reorder = new ReorderService(Database, Audit, Settings, Permissions, Log);
+        ProductHistory = new ProductHistoryService(Database, Settings, Permissions, Log);
         StockMinus = new StockMinusService(Database, Audit, Permissions, Log);
         Photos = new PhotoService(Database, Audit, Permissions, Log);
         CustomFields = new CustomFieldService(Database, Audit, Permissions, Log);
         NativeFields = new NativeFieldPolicyService(Database, Audit, Log);
         Barcodes = new BarcodeService(Database, Audit, Permissions, Log);
-        Reps = new RepService(Database, Audit, Permissions, Log);
+        Reps = new RepService(Database, Audit, Settings, Permissions, Log);
         Hardware = new HardwareService(Settings, Audit, Permissions, Log);
         // The one service that talks to the internet. Its rules are in Core; the wire is a
         // replaceable piece so every test runs without a network (F-48).
@@ -168,6 +169,9 @@ public sealed class AppServices
     public BackupService Backup { get; }
 
     public ReorderService Reorder { get; }
+
+    /// <summary>Portion 13: every purchase and sale of one medicine, with honest totals.</summary>
+    public ProductHistoryService ProductHistory { get; }
 
     public StockMinusService StockMinus { get; }
 

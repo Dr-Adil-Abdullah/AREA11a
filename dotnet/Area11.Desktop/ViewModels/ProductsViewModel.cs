@@ -101,6 +101,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         OpenProductPhotoCommand = new RelayCommand<int>(OpenProductPhoto);
         PhotosCommand = new RelayCommand(OpenPhotos);
         BarcodesCommand = new RelayCommand(OpenBarcodes);
+        HistoryCommand = new RelayCommand(OpenHistory);
 
         Editor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Product, saveWithParent: true);
 
@@ -147,6 +148,9 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
 
     /// <summary>The several printed codes of this medicine (F-43). Needs a saved product.</summary>
     public RelayCommand BarcodesCommand { get; }
+
+    /// <summary>Portion 13: every purchase and sale of the medicine on the form.</summary>
+    public RelayCommand HistoryCommand { get; }
 
     /// <summary>The owner's own questions for a medicine (F-42) - drawn only if he made any.</summary>
     public CustomFieldsEditorViewModel Editor { get; }
@@ -1008,6 +1012,18 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         }
 
         BarcodeWindowDoor.Show(_services, _user, id, Name);
+    }
+
+    /// <summary>The history of the medicine on the form. A new, unsaved medicine has no story yet.</summary>
+    private void OpenHistory()
+    {
+        if (_editingId is not int id || id <= 0)
+        {
+            SetStatus("Save the medicine first - a new row has no history yet.", true);
+            return;
+        }
+
+        ProductHistoryDoor.Show(_services, _user, id, Name);
     }
 
     /// <summary>Photo gallery for the medicine on the form. A new, unsaved medicine has no id yet.</summary>

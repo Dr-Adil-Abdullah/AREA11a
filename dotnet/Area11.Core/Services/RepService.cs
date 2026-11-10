@@ -23,13 +23,15 @@ public sealed class RepService
 
     private readonly Database _db;
     private readonly AuditService _audit;
+    private readonly SettingsService _settings;
     private readonly PermissionService _permissions;
     private readonly LogService _log;
 
-    public RepService(Database db, AuditService audit, PermissionService permissions, LogService log)
+    public RepService(Database db, AuditService audit, SettingsService settings, PermissionService permissions, LogService log)
     {
         _db = db;
         _audit = audit;
+        _settings = settings;
         _permissions = permissions;
         _log = log;
     }
@@ -183,7 +185,7 @@ WHERE id = @companyId;",
     /// </summary>
     public ServiceResult<List<CustomerProfitRow>> ListCustomerProfit(User? user)
     {
-        if (!_permissions.Can(user, Modules.Profit))
+        if (!ProfitPolicy.CanSee(_permissions, _settings, user))
         {
             return ServiceResult<List<CustomerProfitRow>>.Fail(
                 "Only the owner can see what a customer has earned the shop.");

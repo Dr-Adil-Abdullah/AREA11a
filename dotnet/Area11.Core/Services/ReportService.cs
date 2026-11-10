@@ -98,7 +98,7 @@ public sealed class ReportService
 
         try
         {
-            var canSeeProfit = _permissions.Can(user, Modules.Profit);
+            var canSeeProfit = ProfitPolicy.CanSee(_permissions, _settings, user);
             var period = Period(range);
 
             using var connection = _db.Open();

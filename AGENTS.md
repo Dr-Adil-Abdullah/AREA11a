@@ -1,11 +1,11 @@
 # AGENTS.md - how to work in this repository
 
-> **WIP handoff, 10 Nov 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/b4b7bf7b-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/b4b7bf7b-area11a). Portion 12 finished in v0.53.0 Midnight (Windows/physical pending); v0.52.0 Windows 1086/1086 green; batch order (5, 6, 18) complete; Portion 17 paused; next is 13 per roadmap unless the owner says otherwise. Older status and approval statements below are historical. This branch is not a tested release.
+> **WIP handoff, 10 Nov 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/b4b7bf7b-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/b4b7bf7b-area11a). Portion 13 finished in v0.54.0 Dusk (Windows/physical pending); v0.52.0 Windows 1086/1086 green; batch order (5, 6, 18) complete; Portion 17 paused; next is 14 per roadmap unless the owner says otherwise. Older status and approval statements below are historical. This branch is not a tested release.
 
 
-## Latest handoff — v0.53.0 Midnight
+## Latest handoff — v0.54.0 Dusk
 
-Portion 12 finished: WhatsApp and prepared PDF (#4) — shared `WhatsAppService` (03xx → 92 normalization, native `whatsapp://send` + wa.me fallback, profile nudges, `PreparePdf`) with a dependency-free A4 `PdfWriter`; one `WhatsAppFlow.Send` (prepare file, open app, name the file, missing-app error); triggers on Reorder/Bills/Customers/Suppliers/Reports/Purchases/Shift; Settings WhatsApp+PDF section; every share read-only. **1102 written cases, 57/57 static; Windows build/xUnit and physical checks pending.** v0.52.0 Windows 1086/1086 green. Batch order (5, 6, 18) complete; Portion 17 paused; next is 13 per roadmap unless the owner says otherwise.
+Portion 13 finished: history, ledgers and profit (#6) — new `ProductHistoryService` (purchases/sales oldest first, rates-as-was, profit = line-total minus cost-at-sale) with a History window on the product editor (Print + WhatsApp + Save CSV); global `profit.showMargins` switch via one `ProfitPolicy` gate on Reports/Dashboard/Doctors/Customers/history; Customers profit leak fixed; definition audited at every site. **1116 written cases, 57/57 static; Windows build/xUnit and physical checks pending.** v0.52.0 Windows 1086/1086 green. Batch order (5, 6, 18) complete; Portion 17 paused; next is 14 per roadmap unless the owner says otherwise.
 
 
 ## Latest handoff — v0.43.0 Umber

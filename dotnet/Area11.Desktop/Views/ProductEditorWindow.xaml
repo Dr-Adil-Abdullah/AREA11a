@@ -262,6 +262,12 @@
                                 Command="{Binding BarcodesCommand}"
                                 ToolTip="One code per pack: the strip, the box, a carton. A box code adds a box at the counter." />
 
+                        <Button Content="History of this medicine…"
+                                Style="{StaticResource GhostButton}"
+                                Margin="0,8,0,0"
+                                Command="{Binding HistoryCommand}"
+                                ToolTip="Every purchase and every sale: when, from whom, to whom, at what rate." />
+
                         <Button Content="Remove selected (history kept)"
                                 Style="{StaticResource GhostButton}"
                                 Margin="0,8,0,0"
