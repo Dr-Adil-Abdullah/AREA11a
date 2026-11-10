@@ -1,5 +1,7 @@
 # AGENTS.md - how to work in this repository
 
+**Latest owner evidence:** Baltic v0.40.0 Windows Core/Tests **921 passed / 0 failed / 0 skipped / 921**, 1m14s, ALL GREEN. This does not prove Desktop/WPF build or PT-12. Owner selected Dashboard as fallback without Counter permission; existing Baltic code needs adjustment. For Portion 2, owner selected both an Edit Product button and row double-click; coding approval remains separate.
+
 ## Latest handoff — v0.40.0 Baltic, master Portion 1
 
 Owner approved Portion 1 via NEXT. Counter-first selection is permission-filtered; fallback is first permitted ordinary page, then Dashboard (owner confirmation pending). Dashboard remains accessible by Area11 wordmark, not a standalone module. Returns/Partners/Doctors/Import-Export page tabs use header controls over the original tab items; Settings was already hosted. 921 cases written; 57/57 static checks pass. **No Windows/WPF build, 921-case run or PT-12 owner verification here.** Owner reported 918/918 without identifying the build; do not attribute it to a version. Remaining portions 2–15 require approval; retain later testing feedback and prioritize safety. Roadmap: `docs/MASTER-CHECKLIST-ROADMAP.md`.

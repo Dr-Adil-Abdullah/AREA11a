@@ -1,5 +1,7 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+**Latest owner evidence:** Baltic v0.40.0 Windows Core/Tests **921 passed / 0 failed / 0 skipped / 921**, 1m14s, ALL GREEN. This does not prove Desktop/WPF build or PT-12. Owner selected Dashboard as fallback without Counter permission; existing Baltic code needs adjustment. For Portion 2, owner selected both an Edit Product button and row double-click; coding approval remains separate.
+
 ## تازہ status — Master checklist Portion 1, v0.40.0 Baltic
 
 مالک نے NEXT سے header/navigation Portion 1 شروع کرنے کی اجازت دی۔ Code میں permitted Counter پر startup، ورنہ پہلا permitted عام page (مالک سے fallback تصدیق باقی)، Area11 سے Dashboard مگر الگ Dashboard tab نہیں، اور Returns/Partners/Doctors/Import-Export کے section controls header میں رکھے گئے ہیں۔ Settings controls پہلے موجود تھے۔ **921 written cases، 57/57 static؛ Windows/WPF build، xUnit اور PT-12 ابھی pending ہیں۔** مالک کا بتایا ہوا 918/918 نتیجہ version/banner کے بغیر محفوظ ہے؛ اسے خودکار طور پر کسی version سے نہ جوڑیں۔ Portions 2–15 کی الگ منظوری درکار ہے۔

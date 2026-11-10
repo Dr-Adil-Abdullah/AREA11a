@@ -4,6 +4,9 @@ This planning document records the owner's 12-point master checklist and a propo
 
 ## Evidence and status rules
 
+- Owner-supplied v0.40.0 Baltic Windows Core/Tests log: **921 passed, 0 failed, 0 skipped / 921**, 1m14s, `ALL GREEN - 921 of 921`. Desktop/WPF build and PT-12 physical walkthrough remain separate and unproven.
+- Owner chose **both** an explicit Edit Product button and row double-click for Portion 2; implementation requires approval. Owner chose Dashboard startup when Counter permission is absent; current Baltic fallback differs and adjustment remains pending.
+
 - ✅ Code already present, not necessarily owner-verified; distinguish physical evidence.
 - 🟡 Partly implemented or schema/setting only; remaining workflow and verification are explicit.
 - ⬜ New requested behavior not yet implemented.
@@ -29,7 +32,7 @@ This planning document records the owner's 12-point master checklist and a propo
 ## Proposed 15 portions, in dependency order
 
 1. **Global header, navigation and startup — CODE WRITTEN, Windows verification pending** (#1, #12): existing Returns, Partners, Doctors and Import/Export sections are wired to the header, standalone Dashboard module removed, permitted Counter preferred, Area11 opens Dashboard; fallback is first permitted ordinary page, Dashboard if none. Static verification passed; keyboard, permission visibility, state and WPF/owner checks remain.
-2. **Product workspace and editor** (#10): compact photos, top New, space-saving explicit Edit or row double-click, prevent unsaved-edit loss.
+2. **Product workspace and editor** (#10): compact photos, top New, space-saving explicit Edit button **and** row double-click (owner chose both), prevent unsaved-edit loss.
 3. **Categories and product tags** (#10): primary category plus filter-only tags; reproduce/resolve Uncategorized case without double-counting.
 4. **Central field management** (#2): native/custom field policies, types, settings UI, named owner warning/confirmation and auditing.
 5. **Safe local sale/purchase drafts** (#2): save/open/complete/validate/final-post; incomplete records create no financial/stock documents.
@@ -49,7 +52,7 @@ Final end-to-end regression, physical devices, database safety/backup, complete 
 ## Open clarifications before affected portions
 
 - Confirm the version/banner and exact full result for the owner's new 918/918 run.
-- For users without Counter/Sales permission, which permitted page should be the startup fallback? Never grant permissions just to force a route.
-- For Product editing, choose explicit Edit, double-click, or both; specify how unsaved changes should be protected.
+- Owner clarified: for users without Counter/Sales permission, startup should open Dashboard. Baltic currently chooses the first permitted ordinary page; this change is **pending**, not verified. Never grant permissions to force a route; retain Dashboard data/profit permission guards.
+- Product editing: owner chose both an explicit Edit button and row double-click. Specify safe behavior for unsaved changes before implementation.
 - Supplier filter scope: proposed union of preferred and genuine historical suppliers, consistent with owner decision Q2=C; confirm before implementing.
 - Inventory applicable report/ledger/invoice/history/contact views before universal Print/WhatsApp; ask about any ambiguous document formats or bulk grouping instead of assuming a nonexistent paid/automatic attachment API.

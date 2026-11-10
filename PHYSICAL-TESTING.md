@@ -1,10 +1,20 @@
 # Area11 — Real-life Physical Testing Log
 
+## مالک کا مصدقہ Baltic Windows test اور Product Edit کا فیصلہ
+
+مالک کی فراہم کردہ v0.40.0 Baltic Windows test output: **921 passed، 0 failed، 0 skipped، 921 total، 1 منٹ 14 سیکنڈ؛ `ALL GREEN - 921 of 921 cases passed, failed: 0`**۔ Log میں `Area11.Core` اور `Area11.Tests` build/run دکھتے ہیں؛ اس سے Desktop/WPF build، launch یا PT-12 physical walkthrough ثابت نہیں ہوتے۔ پہلے کی 918/918 کی اطلاع کے version کا ثبوت اب بھی الگ غیر مصدقہ ہے۔
+
+مالک نے Product editing کے لیے **مخصوص Edit Product button اور product row پر double-click دونوں** منتخب کیے ہیں۔ Portion 2 ابھی implement یا approved-for-coding نہیں ہوا۔ Counter permission نہ ہونے پر Dashboard startup کا نیا فیصلہ بھی موجودہ Baltic code میں بدلنا باقی ہے۔
+
+## PT-12 — مالک کی نئی ہدایت: Counter کی اجازت کے بغیر Dashboard
+
+مالک نے واضح کیا کہ اگر login کرنے والے user کو Sales/Counter کی اجازت نہ ہو تو startup پر **Dashboard** کھلے۔ Baltic کا موجودہ fallback پہلا permitted ordinary page ہے، اس لیے یہ owner decision ابھی اس سے مختلف ہے اور **code adjustment باقی ہے**؛ اسے fixed یا verified نہ لکھیں۔ Counter اجازت اور موجودہ Dashboard کے data/profit permission guards برقرار رہیں۔ مالک نے Baltic کے 921/921 test result کی تصدیق بھیج دی ہے۔ Product editing کے لیے **مخصوص Edit Product button اور row پر double-click دونوں** منتخب کیے ہیں؛ Portion 2 کی coding ابھی باقی ہے۔
+
 ## PT-12 — Master checklist Portion 1: header/navigation and Counter startup
 
-**حالت: code/static تیار — Windows build، 921-case xUnit اور WPF/owner verification باقی۔** مالک نے Portion 1 کے لیے NEXT کہا۔ v0.40.0 Baltic `#33566B` میں Area11 wordmark سے Dashboard برقرار مگر الگ Dashboard module ہٹایا گیا ہے؛ اجازت یافتہ Counter ابتدائی page، ورنہ پہلا permitted ordinary page، اور کوئی ordinary page نہ ہو تو Dashboard fallback ہے۔ یہ fallback مالک کی الگ تصدیق کا منتظر ہے؛ اجازتیں نہیں بڑھائی گئیں۔ Returns، Customers/Suppliers، Doctors اور Import/Export کے موجودہ tab contents اصل controls میں ہیں اور ان کے section buttons dark header میں ہیں؛ Settings پہلے سے header میں تھا۔
+**حالت: Baltic Core/Tests Windows xUnit 921/921 PASS — Desktop/WPF اور owner physical verification باقی۔** مالک نے Portion 1 کے لیے NEXT کہا۔ v0.40.0 Baltic `#33566B` میں Area11 wordmark سے Dashboard برقرار مگر الگ Dashboard module ہٹایا گیا ہے؛ اجازت یافتہ Counter ابتدائی page، ورنہ پہلا permitted ordinary page، اور کوئی ordinary page نہ ہو تو Dashboard fallback ہے۔ مالک نے بعد میں Dashboard fallback منتخب کیا؛ اس کے مطابق code adjustment باقی ہے، اجازتیں نہیں بڑھائی جائیں گی۔ Returns، Customers/Suppliers، Doctors اور Import/Export کے موجودہ tab contents اصل controls میں ہیں اور ان کے section buttons dark header میں ہیں؛ Settings پہلے سے header میں تھا۔
 
-**مالک کی الگ جانچ:** (1) build اور `ALL GREEN - 921 of 921`؛ (2) login پر Counter، پھر Area11 wordmark سے Dashboard، اور الگ Dashboard tab نہ ہو؛ (3) محدود users، خاص طور پر Counter کے بغیر، درست fallback اور hidden sections؛ (4) Returns، Partners، Doctors، Import/Export اور Settings کے ہر مجاز section کو header سے کھولیں، text/forms محفوظ رہیں؛ (5) keyboard، چھوٹی screen، 44px bell، alerts، category filter، session/fault cards؛ (6) PT-08 navigation اور آدھے درج bill کے سلسلے میں کسی data-loss observation کی الگ اطلاع دیں۔ Genuine books میں fake financial test نہ کریں۔ یہ checklist physical PASS نہیں۔
+**مالک کی الگ جانچ:** (1) Core/Tests `ALL GREEN - 921 of 921` پاس؛ Desktop/WPF build اور launch الگ باقی؛ (2) login پر Counter، پھر Area11 wordmark سے Dashboard، اور الگ Dashboard tab نہ ہو؛ (3) محدود users، خاص طور پر Counter کے بغیر، درست fallback اور hidden sections؛ (4) Returns، Partners، Doctors، Import/Export اور Settings کے ہر مجاز section کو header سے کھولیں، text/forms محفوظ رہیں؛ (5) keyboard، چھوٹی screen، 44px bell، alerts، category filter، session/fault cards؛ (6) PT-08 navigation اور آدھے درج bill کے سلسلے میں کسی data-loss observation کی الگ اطلاع دیں۔ Genuine books میں fake financial test نہ کریں۔ یہ checklist physical PASS نہیں۔
 
 مالک نے 918/918 کی اطلاع دی، مگر اس run کا version/banner ابھی غیر مصدقہ ہے؛ سابق Tourmaline 916/918 evidence برقرار ہے۔ Parts 2–15 باقی ہیں اور ہر ایک کی الگ اجازت درکار ہے۔
 

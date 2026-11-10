@@ -1,5 +1,7 @@
 # TAKEOVER — the complete brief for a new agent
 
+**Latest owner evidence:** Baltic v0.40.0 Windows Core/Tests **921 passed / 0 failed / 0 skipped / 921**, 1m14s, ALL GREEN. This does not prove Desktop/WPF build or PT-12. Owner selected Dashboard as fallback without Counter permission; existing Baltic code needs adjustment. For Portion 2, owner selected both an Edit Product button and row double-click; coding approval remains separate.
+
 ## Latest handoff — v0.40.0 Baltic
 
 Master checklist Portion 1 is code-written: Counter-first permitted startup, first permitted ordinary page fallback (owner confirmation pending), Dashboard by Area11 wordmark rather than separate module, header-hosted Returns/Partners/Doctors/Import-Export sections, Settings existing. **921 written cases and 57/57 static; Windows build/xUnit and PT-12 are pending.** Owner reported 918/918 but version not confirmed. See `docs/MASTER-CHECKLIST-ROADMAP.md`: portions 2–15 need separate approval; late owner tests do not block approved work, except urgent safety issues.

@@ -1,5 +1,7 @@
 # HANDOFF - read this first
 
+**Latest owner evidence:** Baltic v0.40.0 Windows Core/Tests **921 passed / 0 failed / 0 skipped / 921**, 1m14s, ALL GREEN. This does not prove Desktop/WPF build or PT-12. Owner selected Dashboard as fallback without Counter permission; existing Baltic code needs adjustment. For Portion 2, owner selected both an Edit Product button and row double-click; coding approval remains separate.
+
 ## Latest handoff — v0.40.0 Baltic
 
 Portion 1 code written: Counter-first permitted startup, wordmark Dashboard route without standalone module and header controls for Returns/Partners/Doctors/Import-Export sections. **921 written cases, 57/57 static only; Windows build/xUnit and PT-12 pending.** The owner's 918/918 report lacks a confirmed version. Owner confirmation of first-permitted-page fallback is pending. See `docs/MASTER-CHECKLIST-ROADMAP.md`; portions 2–15 require separate approval.
