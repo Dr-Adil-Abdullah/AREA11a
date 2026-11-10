@@ -1,5 +1,14 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-15 — Login کے بعد ایپ بند ہونے کی اطلاع (تحقیق جاری)
+
+مالک نے بتایا کہ password درج کرکے Enter دبانے پر app crash/بند ہو جاتی ہے۔ یہ مسئلہ **غیر حل شدہ، ابھی reproduce یا diagnose نہیں ہوا**؛ crash report، درست وقت، login کے بعد نظر آنے والا پیغام، run trail اور عین commit کی تصدیق درکار ہے۔ اسے test-suite pass یا پچھلے ورژن کی کامیابی سے رد نہ سمجھیں۔ Password، database یا حقیقی مریض/مالی معلومات نہ مانگیں۔
+
+مالک نے الگ Windows log فراہم کیا: banner **v0.42.0 Kyanite**, expected 973, **973 passed، 0 failed، 0 skipped، 1m 14s**؛ log میں صرف Area11.Core اور Area11.Tests build/run ہیں۔ 973 کا runner موجودہ mixed WIP سے مطابقت رکھتا ہے، مگر banner دوبارہ استعمال ہوا ہے اور log خود exact Git commit ثابت نہیں کرتا۔ یہ Desktop/WPF build، login success، physical PASS یا crash fix ثابت نہیں کرتا۔ پچھلے Kyanite 929/929 کو الگ نتیجے کے طور پر برقرار رکھیں۔
+
+اگلا قدم: اسی crash والے run کے فوراً بعد `tools\SEND-REPORT.cmd` سے report لیں، یا تازہ crash report اور `%TEMP%\Area11\last-run.txt` لیں؛ تاریخ/وقت ملا کر stale log استعمال نہ کریں۔ File share کرنے سے پہلے مالک حساس ذاتی تفصیل ہٹا سکتا ہے، مگر exception/stack trace، وقت اور build/commit باقی رکھے۔ App process واقعی بند ہوتی ہے یا window غائب/پیغام آتا ہے، اور Sign in button بمقابلہ Enter کا فرق پوچھیں۔ رپورٹ موجود نہ ہو تو یہ بات بھی درج کریں۔ وجہ ثابت ہونے تک کوئی guessed fix نہ کریں؛ حقیقی data reset نہ کروائیں۔
+
+
 ## PT-15 — Portion 17: فوٹوز اور app icon — کام شروع، جانچ pending
 
 مالک نے products کی متعدد تصاویر میں سے نظر آنے والی اہم تصویر منتخب کرنے، customers، doctors اور staff کی تصاویر، top-right staff photo، Settings میں app icon، اور Sales/Stock میں قدرے بڑے rounded photos کے medium/large انتخاب کی درخواست کی ہے۔ اس کام کو اب ترجیح دینے کی اجازت دی گئی؛ Portion 4 نامکمل محفوظ ہے۔ Product cover منتخب کرنے کی ابتدائی code اور دو tests جاری worktree میں لکھے گئے ہیں؛ ابھی release یا Windows-tested نہیں۔ Customer/doctor/staff، icon، size settings، backup/sync اور Windows verification مکمل نہیں؛ کسی چیز کو physical PASS نہ سمجھا جائے۔
