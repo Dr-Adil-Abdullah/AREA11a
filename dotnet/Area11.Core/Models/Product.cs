@@ -22,6 +22,12 @@ public sealed class Product
 
     public int? CompanyId { get; set; }
 
+    /// <summary>Explicit salt link, or null for legacy typed text. Never guessed from the text.</summary>
+    public int? GenericFormulaId { get; set; }
+
+    /// <summary>Explicit brand link, or null for legacy typed text. Never guessed from the text.</summary>
+    public int? BrandId { get; set; }
+
     public string? CategoryName { get; set; }
 
     /// <summary>Additional filter-only tags; never joined into financial category totals.</summary>
@@ -173,6 +179,18 @@ public sealed class ProductPatch
     public List<int>? CategoryTagIds { get; set; }
 
     public int? CompanyId { get; set; }
+
+    /// <summary>Link this product to a salt, or null to leave the link unchanged.</summary>
+    public int? GenericFormulaId { get; set; }
+
+    /// <summary>Link this product to a brand, or null to leave the link unchanged.</summary>
+    public int? BrandId { get; set; }
+
+    /// <summary>True drops the salt link and keeps the typed text (re-linking sets the id instead).</summary>
+    public bool ClearGenericFormula { get; set; }
+
+    /// <summary>True drops the brand link and keeps the typed text.</summary>
+    public bool ClearBrand { get; set; }
 
     public string? RackNo { get; set; }
 

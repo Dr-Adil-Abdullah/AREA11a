@@ -15,6 +15,7 @@ public sealed class ProductService
 {
     private const string SelectSql = @"
 SELECT p.id, p.name, p.generic, p.brand, p.barcode, p.category_id, p.company_id,
+       p.generic_formula_id, p.brand_id,
        p.rack_no, p.room, p.pack_size_label, p.base_unit, p.box_strips, p.strip_tablets,
        p.strength_value, p.strength_unit,
        p.cost_paisa, p.retail_paisa, p.vip_paisa, p.doctor_paisa, p.reorder_level,
@@ -273,10 +274,12 @@ ORDER BY p.name COLLATE NOCASE;",
         {
             var id = _db.Tx(connection =>
             {
+                var linkedGeneric = LinkedCatalogText(connection, "generic_formulas", input.GenericFormulaId, input.Generic, "salt");
+                var linkedBrand = LinkedCatalogText(connection, "brands", input.BrandId, input.Brand, "brand");
                 foreach (var (key, label, value) in new[]
                 {
-                    ("product.generic", "Generic / salt", input.Generic),
-                    ("product.brand", "Brand", input.Brand),
+                    ("product.generic", "Generic / salt", linkedGeneric),
+                    ("product.brand", "Brand", linkedBrand),
                     ("product.rack", "Rack / shelf", input.RackNo),
                     ("product.pack", "Pack description", input.PackSizeLabel)
                 })
@@ -284,7 +287,7 @@ ORDER BY p.name COLLATE NOCASE;",
                     var required = NativeFieldPolicyService.RequiredTextError(_db, connection, key, label, value);
                     if (required is not null) throw new ValidationException(required);
                 }
-                EnsureActiveCatalogLinks(connection, input.CategoryId, input.CompanyId);
+                EnsureActiveCatalogLinks(connection, input.CategoryId, input.CompanyId, input.GenericFormulaId, input.BrandId);
                 EnsureActiveUnit(connection, baseUnit);
                 if (strengthValue > 0)
                 {
@@ -293,20 +296,24 @@ ORDER BY p.name COLLATE NOCASE;",
 
                 _db.Execute(connection, @"
 INSERT INTO products
-    (name, generic, brand, barcode, category_id, company_id, rack_no, room, pack_size_label,
+    (name, generic, brand, barcode, category_id, company_id, generic_formula_id, brand_id,
+     rack_no, room, pack_size_label,
      base_unit, strength_value, strength_unit, box_strips, strip_tablets,
      cost_paisa, retail_paisa, vip_paisa, doctor_paisa,
      reorder_level, track_expiry, active, created_at, updated_at)
 VALUES
-    (@name, @generic, @brand, @barcode, @categoryId, @companyId, @rackNo, @room, @packSizeLabel,
+    (@name, @generic, @brand, @barcode, @categoryId, @companyId, @formulaId, @brandId,
+     @rackNo, @room, @packSizeLabel,
      @baseUnit, @strengthValue, @strengthUnit, @boxStrips, @stripTablets,
      @costPaisa, @retailPaisa, @vipPaisa, @doctorPaisa,
      @reorderLevel, @trackExpiry, 1, @at, @at);",
                     new
                     {
                         name,
-                        generic = NullIfEmpty(input.Generic),
-                        brand = NullIfEmpty(input.Brand),
+                        generic = linkedGeneric,
+                        brand = linkedBrand,
+                        formulaId = input.GenericFormulaId,
+                        brandId = input.BrandId,
                         barcode = NullIfEmpty(input.Barcode),
                         categoryId = input.CategoryId,
                         companyId = input.CompanyId,
@@ -404,7 +411,7 @@ VALUES
                     "SELECT category_id FROM product_category_tags WHERE product_id = @id ORDER BY category_id;",
                     new { id }).ToList();
 
-                EnsureActiveCatalogLinks(connection, patch.CategoryId, patch.CompanyId);
+                EnsureActiveCatalogLinks(connection, patch.CategoryId, patch.CompanyId, patch.GenericFormulaId, patch.BrandId);
                 var effectiveCategoryId = patch.CategoryId ?? before.CategoryId;
                 var effectiveTagIds = patch.CategoryTagIds ?? before.CategoryTagIds;
                 if (effectiveCategoryId is int primary && effectiveTagIds.Contains(primary))
@@ -457,14 +464,62 @@ VALUES
                     Set("name", name, "name");
                 }
 
-                if (patch.Generic is not null)
+                if (patch.GenericFormulaId is not null)
                 {
-                    Set("generic", NullIfEmpty(patch.Generic), "generic");
+                    var catalogGeneric = LinkedCatalogText(connection, "generic_formulas",
+                        patch.GenericFormulaId, patch.Generic ?? before.Generic, "salt");
+                    Set("generic_formula_id", patch.GenericFormulaId, "formulaId");
+                    Set("generic", catalogGeneric, "generic");
+                }
+                else if (patch.ClearGenericFormula)
+                {
+                    Set("generic_formula_id", null, "formulaId");
+                    if (patch.Generic is not null)
+                    {
+                        Set("generic", NullIfEmpty(patch.Generic), "generic");
+                    }
+                }
+                else
+                {
+                    if (patch.Generic is not null)
+                    {
+                        Set("generic", NullIfEmpty(patch.Generic), "generic");
+                    }
+
+                    if (before.GenericFormulaId is int linkedFormula && patch.Generic is not null
+                        && !LinkedNameMatches(connection, "generic_formulas", linkedFormula, patch.Generic))
+                    {
+                        Set("generic_formula_id", null, "formulaId");
+                    }
                 }
 
-                if (patch.Brand is not null)
+                if (patch.BrandId is not null)
                 {
-                    Set("brand", NullIfEmpty(patch.Brand), "brand");
+                    var catalogBrand = LinkedCatalogText(connection, "brands",
+                        patch.BrandId, patch.Brand ?? before.Brand, "brand");
+                    Set("brand_id", patch.BrandId, "brandId");
+                    Set("brand", catalogBrand, "brand");
+                }
+                else if (patch.ClearBrand)
+                {
+                    Set("brand_id", null, "brandId");
+                    if (patch.Brand is not null)
+                    {
+                        Set("brand", NullIfEmpty(patch.Brand), "brand");
+                    }
+                }
+                else
+                {
+                    if (patch.Brand is not null)
+                    {
+                        Set("brand", NullIfEmpty(patch.Brand), "brand");
+                    }
+
+                    if (before.BrandId is int linkedBrand && patch.Brand is not null
+                        && !LinkedNameMatches(connection, "brands", linkedBrand, patch.Brand))
+                    {
+                        Set("brand_id", null, "brandId");
+                    }
                 }
 
                 if (patch.Barcode is not null)
@@ -1072,6 +1127,395 @@ UPDATE products SET company_id = NULL, updated_at = @at WHERE company_id = @id;"
         }
     }
 
+    /// <summary>Managed salts for the product editor dropdown (Portion 8, #9).</summary>
+    public ServiceResult<List<GenericFormula>> GetFormulas(bool activeOnly = true)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            var rows = _db.Query<GenericFormula>(connection, @"
+SELECT f.id, f.name, f.name_key AS nameKey, f.active, f.sort_order AS sortOrder,
+       f.created_at AS createdAt, f.updated_at AS updatedAt,
+       (SELECT COUNT(1) FROM products p WHERE p.generic_formula_id = f.id) AS productCount
+FROM generic_formulas f
+" + (activeOnly ? "WHERE f.active = 1 " : string.Empty)
+                + "ORDER BY f.sort_order, f.name COLLATE NOCASE, f.id;");
+            return ServiceResult<List<GenericFormula>>.Success(rows);
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The salt list could not be loaded.", exception);
+            return ServiceResult<List<GenericFormula>>.Fail("The salt list could not be loaded.");
+        }
+    }
+
+    /// <summary>Managed brands for the product editor dropdown (Portion 8, #11).</summary>
+    public ServiceResult<List<BrandDefinition>> GetBrands(bool activeOnly = true)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            var rows = _db.Query<BrandDefinition>(connection, @"
+SELECT b.id, b.company_id AS companyId, b.name, b.name_key AS nameKey, b.active,
+       b.sort_order AS sortOrder, b.created_at AS createdAt, b.updated_at AS updatedAt,
+       (SELECT COUNT(1) FROM products p WHERE p.brand_id = b.id) AS productCount
+FROM brands b
+" + (activeOnly ? "WHERE b.active = 1 " : string.Empty)
+                + "ORDER BY b.sort_order, b.name COLLATE NOCASE, b.id;");
+            return ServiceResult<List<BrandDefinition>>.Success(rows);
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The brand list could not be loaded.", exception);
+            return ServiceResult<List<BrandDefinition>>.Fail("The brand list could not be loaded.");
+        }
+    }
+
+    public ServiceResult<int> AddFormula(User actor, string? name, int? sortOrder = null)
+    {
+        if (!actor.CanManage)
+        {
+            return ServiceResult<int>.Fail("Only the owner or a manager can change salts.");
+        }
+
+        var clean = CleanDisplayName(name);
+        if (clean.Length == 0)
+        {
+            return ServiceResult<int>.Fail("Enter a salt name, for example Paracetamol.");
+        }
+        if (clean.Length > MaxCatalogNameLength)
+        {
+            return ServiceResult<int>.Fail("Keep the salt name under 120 characters.");
+        }
+        if (sortOrder is not null && !IsValidSortOrder(sortOrder.Value))
+        {
+            return ServiceResult<int>.Fail(SortOrderError);
+        }
+
+        try
+        {
+            return _db.Tx(connection =>
+            {
+                var key = CatalogKeyOf(clean);
+                if (CatalogKeyTaken(connection, "generic_formulas", key, 0))
+                {
+                    return ServiceResult<int>.Fail("That salt is already on the list, including a salt put away.");
+                }
+
+                var order = sortOrder ?? NextSortOrder(connection, "generic_formulas");
+                if (!IsValidSortOrder(order))
+                {
+                    return ServiceResult<int>.Fail(SortOrderError);
+                }
+
+                _db.Execute(connection, @"
+INSERT INTO generic_formulas(name, name_key, sort_order, active) VALUES(@name, @key, @sortOrder, 1);",
+                    new { name = clean, key, sortOrder = order });
+                var id = Convert.ToInt32(_db.Scalar(connection,
+                    "SELECT id FROM generic_formulas WHERE rowid = last_insert_rowid();") ?? 0);
+                _audit.RecordChange(connection, actor, "Inventory", "formula_create", "generic_formulas",
+                    id.ToString(), null, FindFormula(connection, id));
+                return ServiceResult<int>.Success(id);
+            });
+        }
+        catch (Exception exception)
+        {
+            _log.Error($"Salt '{clean}' could not be added.", exception);
+            return ServiceResult<int>.Fail("The salt could not be saved. " + exception.Message);
+        }
+    }
+
+    public ServiceResult<int> AddBrand(User actor, string? name, int? sortOrder = null)
+    {
+        if (!actor.CanManage)
+        {
+            return ServiceResult<int>.Fail("Only the owner or a manager can change brands.");
+        }
+
+        var clean = CleanDisplayName(name);
+        if (clean.Length == 0)
+        {
+            return ServiceResult<int>.Fail("Enter a brand name, for example GSK.");
+        }
+        if (clean.Length > MaxCatalogNameLength)
+        {
+            return ServiceResult<int>.Fail("Keep the brand name under 120 characters.");
+        }
+        if (sortOrder is not null && !IsValidSortOrder(sortOrder.Value))
+        {
+            return ServiceResult<int>.Fail(SortOrderError);
+        }
+
+        try
+        {
+            return _db.Tx(connection =>
+            {
+                var key = CatalogKeyOf(clean);
+                if (CatalogKeyTaken(connection, "brands", key, 0))
+                {
+                    return ServiceResult<int>.Fail("That brand is already on the list, including a brand put away.");
+                }
+
+                var order = sortOrder ?? NextSortOrder(connection, "brands");
+                if (!IsValidSortOrder(order))
+                {
+                    return ServiceResult<int>.Fail(SortOrderError);
+                }
+
+                // company_id stays NULL: brand-to-company assignment is a later portion.
+                _db.Execute(connection, @"
+INSERT INTO brands(name, name_key, sort_order, active) VALUES(@name, @key, @sortOrder, 1);",
+                    new { name = clean, key, sortOrder = order });
+                var id = Convert.ToInt32(_db.Scalar(connection,
+                    "SELECT id FROM brands WHERE rowid = last_insert_rowid();") ?? 0);
+                _audit.RecordChange(connection, actor, "Inventory", "brand_create", "brands",
+                    id.ToString(), null, FindBrand(connection, id));
+                return ServiceResult<int>.Success(id);
+            });
+        }
+        catch (Exception exception)
+        {
+            _log.Error($"Brand '{clean}' could not be added.", exception);
+            return ServiceResult<int>.Fail("The brand could not be saved. " + exception.Message);
+        }
+    }
+
+    /// <summary>Rename relabels explicitly linked products; legacy typed text is never touched.</summary>
+    public ServiceResult UpdateFormula(User actor, int id, string? name, int sortOrder)
+    {
+        if (!actor.CanManage)
+        {
+            return ServiceResult.Fail("Only the owner or a manager can change salts.");
+        }
+
+        var clean = CleanDisplayName(name);
+        if (id <= 0 || clean.Length == 0)
+        {
+            return ServiceResult.Fail("Pick a salt and enter its name.");
+        }
+        if (clean.Length > MaxCatalogNameLength)
+        {
+            return ServiceResult.Fail("Keep the salt name under 120 characters.");
+        }
+        if (!IsValidSortOrder(sortOrder))
+        {
+            return ServiceResult.Fail(SortOrderError);
+        }
+
+        try
+        {
+            return _db.Tx(connection =>
+            {
+                var before = FindFormula(connection, id);
+                if (before is null)
+                {
+                    return ServiceResult.Fail("That salt no longer exists.");
+                }
+
+                var key = CatalogKeyOf(clean);
+                if (CatalogKeyTaken(connection, "generic_formulas", key, id))
+                {
+                    return ServiceResult.Fail("That salt name is already used, including by a salt put away.");
+                }
+
+                var relabelled = 0;
+                if (!string.Equals(before.Name, clean, StringComparison.Ordinal))
+                {
+                    relabelled = Convert.ToInt32(_db.Scalar(connection,
+                        "SELECT COUNT(1) FROM products WHERE generic_formula_id = @id;", new { id }) ?? 0);
+                    _db.Execute(connection, @"
+UPDATE products SET generic = @clean, updated_at = @at WHERE generic_formula_id = @id;",
+                        new { clean, at = Clock.Now(), id });
+                }
+
+                _db.Execute(connection, @"
+UPDATE generic_formulas SET name = @clean, name_key = @key, sort_order = @order, updated_at = @at
+WHERE id = @id;", new { clean, key, order = sortOrder, at = Clock.Now(), id });
+                _audit.RecordChange(connection, actor, "Inventory", "formula_update", "generic_formulas",
+                    id.ToString(), before, FindFormula(connection, id),
+                    relabelled + " linked product(s) relabelled; legacy typed text untouched.");
+                return ServiceResult.Success();
+            });
+        }
+        catch (Exception exception)
+        {
+            _log.Error($"Salt {id} could not be updated.", exception);
+            return ServiceResult.Fail("The salt could not be saved. " + exception.Message);
+        }
+    }
+
+    /// <summary>Rename relabels explicitly linked products; legacy typed text is never touched.</summary>
+    public ServiceResult UpdateBrand(User actor, int id, string? name, int sortOrder)
+    {
+        if (!actor.CanManage)
+        {
+            return ServiceResult.Fail("Only the owner or a manager can change brands.");
+        }
+
+        var clean = CleanDisplayName(name);
+        if (id <= 0 || clean.Length == 0)
+        {
+            return ServiceResult.Fail("Pick a brand and enter its name.");
+        }
+        if (clean.Length > MaxCatalogNameLength)
+        {
+            return ServiceResult.Fail("Keep the brand name under 120 characters.");
+        }
+        if (!IsValidSortOrder(sortOrder))
+        {
+            return ServiceResult.Fail(SortOrderError);
+        }
+
+        try
+        {
+            return _db.Tx(connection =>
+            {
+                var before = FindBrand(connection, id);
+                if (before is null)
+                {
+                    return ServiceResult.Fail("That brand no longer exists.");
+                }
+
+                var key = CatalogKeyOf(clean);
+                if (CatalogKeyTaken(connection, "brands", key, id))
+                {
+                    return ServiceResult.Fail("That brand name is already used, including by a brand put away.");
+                }
+
+                var relabelled = 0;
+                if (!string.Equals(before.Name, clean, StringComparison.Ordinal))
+                {
+                    relabelled = Convert.ToInt32(_db.Scalar(connection,
+                        "SELECT COUNT(1) FROM products WHERE brand_id = @id;", new { id }) ?? 0);
+                    _db.Execute(connection, @"
+UPDATE products SET brand = @clean, updated_at = @at WHERE brand_id = @id;",
+                        new { clean, at = Clock.Now(), id });
+                }
+
+                _db.Execute(connection, @"
+UPDATE brands SET name = @clean, name_key = @key, sort_order = @order, updated_at = @at
+WHERE id = @id;", new { clean, key, order = sortOrder, at = Clock.Now(), id });
+                _audit.RecordChange(connection, actor, "Inventory", "brand_update", "brands",
+                    id.ToString(), before, FindBrand(connection, id),
+                    relabelled + " linked product(s) relabelled; legacy typed text untouched.");
+                return ServiceResult.Success();
+            });
+        }
+        catch (Exception exception)
+        {
+            _log.Error($"Brand {id} could not be updated.", exception);
+            return ServiceResult.Fail("The brand could not be saved. " + exception.Message);
+        }
+    }
+
+    /// <summary>Put-away unlinks current products but keeps their typed text; nothing is deleted.</summary>
+    public ServiceResult SetFormulaActive(User actor, int id, bool active)
+    {
+        if (!actor.CanManage)
+        {
+            return ServiceResult.Fail("Only the owner or a manager can change salts.");
+        }
+
+        try
+        {
+            return _db.Tx(connection =>
+            {
+                var before = FindFormula(connection, id);
+                if (before is null)
+                {
+                    return ServiceResult.Fail("That salt no longer exists.");
+                }
+                if (before.Active == active)
+                {
+                    return ServiceResult.Success();
+                }
+                if (active && CatalogKeyTaken(connection, "generic_formulas", before.NameKey, id))
+                {
+                    return ServiceResult.Fail("Another salt uses this name. Rename one before bringing it back.");
+                }
+
+                var unlinked = 0;
+                if (!active)
+                {
+                    unlinked = Convert.ToInt32(_db.Scalar(connection,
+                        "SELECT COUNT(1) FROM products WHERE generic_formula_id = @id;", new { id }) ?? 0);
+                    _db.Execute(connection, @"
+UPDATE products SET generic_formula_id = NULL, updated_at = @at WHERE generic_formula_id = @id;",
+                        new { at = Clock.Now(), id });
+                }
+
+                _db.Execute(connection, "UPDATE generic_formulas SET active = @active WHERE id = @id;",
+                    new { active, id });
+                var details = active
+                    ? "Brought back. Former product links were not recreated."
+                    : "Put away; unlinked " + unlinked + " product(s). Typed salt text was kept; no product or historical record was deleted.";
+                _audit.RecordChange(connection, actor, "Inventory",
+                    active ? "formula_restore" : "formula_put_away", "generic_formulas", id.ToString(),
+                    before, FindFormula(connection, id), details);
+                return ServiceResult.Success();
+            });
+        }
+        catch (Exception exception)
+        {
+            _log.Error($"Salt {id} active state could not be changed.", exception);
+            return ServiceResult.Fail("The salt could not be changed. " + exception.Message);
+        }
+    }
+
+    /// <summary>Put-away unlinks current products but keeps their typed text; nothing is deleted.</summary>
+    public ServiceResult SetBrandActive(User actor, int id, bool active)
+    {
+        if (!actor.CanManage)
+        {
+            return ServiceResult.Fail("Only the owner or a manager can change brands.");
+        }
+
+        try
+        {
+            return _db.Tx(connection =>
+            {
+                var before = FindBrand(connection, id);
+                if (before is null)
+                {
+                    return ServiceResult.Fail("That brand no longer exists.");
+                }
+                if (before.Active == active)
+                {
+                    return ServiceResult.Success();
+                }
+                if (active && CatalogKeyTaken(connection, "brands", before.NameKey, id))
+                {
+                    return ServiceResult.Fail("Another brand uses this name. Rename one before bringing it back.");
+                }
+
+                var unlinked = 0;
+                if (!active)
+                {
+                    unlinked = Convert.ToInt32(_db.Scalar(connection,
+                        "SELECT COUNT(1) FROM products WHERE brand_id = @id;", new { id }) ?? 0);
+                    _db.Execute(connection, @"
+UPDATE products SET brand_id = NULL, updated_at = @at WHERE brand_id = @id;",
+                        new { at = Clock.Now(), id });
+                }
+
+                _db.Execute(connection, "UPDATE brands SET active = @active WHERE id = @id;",
+                    new { active, id });
+                var details = active
+                    ? "Brought back. Former product links were not recreated."
+                    : "Put away; unlinked " + unlinked + " product(s). Typed brand text was kept; no product or historical record was deleted.";
+                _audit.RecordChange(connection, actor, "Inventory",
+                    active ? "brand_restore" : "brand_put_away", "brands", id.ToString(),
+                    before, FindBrand(connection, id), details);
+                return ServiceResult.Success();
+            });
+        }
+        catch (Exception exception)
+        {
+            _log.Error($"Brand {id} active state could not be changed.", exception);
+            return ServiceResult.Fail("The brand could not be changed. " + exception.Message);
+        }
+    }
+
     /// <summary>Managed units used by product stock and descriptive strength fields.</summary>
     public ServiceResult<List<Unit>> GetUnits(bool activeOnly = true)
     {
@@ -1326,7 +1770,7 @@ FROM units u WHERE u.id = @id;", new { id });
         }
     }
 
-    private void EnsureActiveCatalogLinks(SqliteConnection connection, int? categoryId, int? companyId)
+    private void EnsureActiveCatalogLinks(SqliteConnection connection, int? categoryId, int? companyId, int? formulaId = null, int? brandId = null)
     {
         if (categoryId is not null)
         {
@@ -1349,6 +1793,28 @@ FROM units u WHERE u.id = @id;", new { id });
                 throw new ValidationException("Choose a company that is on the active list.");
             }
         }
+
+        if (formulaId is not null)
+        {
+            var exists = Convert.ToInt32(_db.Scalar(connection,
+                "SELECT COUNT(1) FROM generic_formulas WHERE id = @formulaId AND active = 1;",
+                new { formulaId }) ?? 0);
+            if (exists == 0)
+            {
+                throw new ValidationException("Choose a salt that is on the active list.");
+            }
+        }
+
+        if (brandId is not null)
+        {
+            var exists = Convert.ToInt32(_db.Scalar(connection,
+                "SELECT COUNT(1) FROM brands WHERE id = @brandId AND active = 1;",
+                new { brandId }) ?? 0);
+            if (exists == 0)
+            {
+                throw new ValidationException("Choose a brand that is on the active list.");
+            }
+        }
     }
 
     private Category? FindCategory(SqliteConnection connection, int id) =>
@@ -1361,6 +1827,73 @@ FROM categories WHERE id = @id;", new { id });
 SELECT id, name, phone, notes, rep_name AS repName, rep_phone AS repPhone,
        visit_day AS visitDay, sort_order AS sortOrder, active
 FROM companies WHERE id = @id;", new { id });
+
+    private bool CatalogKeyTaken(SqliteConnection connection, string table, string key, int exceptId)
+    {
+        // Only four fixed callers pass a table name; never accept a table name from the UI.
+        var sql = table == "generic_formulas"
+            ? "SELECT COUNT(1) FROM generic_formulas WHERE name_key = @key AND id <> @exceptId;"
+            : "SELECT COUNT(1) FROM brands WHERE name_key = @key AND id <> @exceptId;";
+        return Convert.ToInt32(_db.Scalar(connection, sql, new { key, exceptId }) ?? 0) > 0;
+    }
+
+    private GenericFormula? FindFormula(SqliteConnection connection, int id) =>
+        _db.QuerySingle<GenericFormula>(connection, @"
+SELECT f.id, f.name, f.name_key AS nameKey, f.active, f.sort_order AS sortOrder,
+       f.created_at AS createdAt, f.updated_at AS updatedAt,
+       (SELECT COUNT(1) FROM products p WHERE p.generic_formula_id = f.id) AS productCount
+FROM generic_formulas f WHERE f.id = @id;", new { id });
+
+    private BrandDefinition? FindBrand(SqliteConnection connection, int id) =>
+        _db.QuerySingle<BrandDefinition>(connection, @"
+SELECT b.id, b.company_id AS companyId, b.name, b.name_key AS nameKey, b.active,
+       b.sort_order AS sortOrder, b.created_at AS createdAt, b.updated_at AS updatedAt,
+       (SELECT COUNT(1) FROM products p WHERE p.brand_id = b.id) AS productCount
+FROM brands b WHERE b.id = @id;", new { id });
+
+    private string CatalogNameOf(SqliteConnection connection, string table, int id) =>
+        Convert.ToString(_db.Scalar(connection,
+            table == "generic_formulas"
+                ? "SELECT name FROM generic_formulas WHERE id = @id;"
+                : "SELECT name FROM brands WHERE id = @id;", new { id }) ?? string.Empty) ?? string.Empty;
+
+    /// <summary>
+    /// Portion 8: a link always wins over typing. Empty text is filled from the catalog; text that
+    /// names a different salt/brand is refused instead of guessed. Returns the text to store.
+    /// </summary>
+    private string? LinkedCatalogText(SqliteConnection connection, string table, int? id, string? typed, string label)
+    {
+        if (id is null)
+        {
+            return NullIfEmpty(typed);
+        }
+
+        var name = CatalogNameOf(connection, table, id.Value);
+        if (name.Length == 0)
+        {
+            throw new ValidationException("The picked " + label + " is no longer on the list.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(typed) && CatalogKeyOf(typed) != CatalogKeyOf(name))
+        {
+            throw new ValidationException(
+                "The typed " + label + " does not match the picked " + label + " '" + name +
+                "'. Pick again, or clear the typed text and let the pick fill it.");
+        }
+
+        return name;
+    }
+
+    private bool LinkedNameMatches(SqliteConnection connection, string table, int id, string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return false;
+        }
+
+        var name = CatalogNameOf(connection, table, id);
+        return name.Length > 0 && CatalogKeyOf(text) == CatalogKeyOf(name);
+    }
 
     private string? CategoryParentError(
         SqliteConnection connection,
@@ -1417,12 +1950,22 @@ FROM companies WHERE id = @id;", new { id });
             "categories" => "SELECT IFNULL(MAX(sort_order), 0) + 10 FROM categories;",
             "companies" => "SELECT IFNULL(MAX(sort_order), 0) + 10 FROM companies;",
             "units" => "SELECT IFNULL(MAX(sort_order), 0) + 10 FROM units;",
+            "generic_formulas" => "SELECT IFNULL(MAX(sort_order), 0) + 10 FROM generic_formulas;",
+            "brands" => "SELECT IFNULL(MAX(sort_order), 0) + 10 FROM brands;",
             _ => throw new ArgumentOutOfRangeException(nameof(table))
         };
         return Convert.ToInt32(_db.Scalar(connection, sql) ?? 10);
     }
 
     private static string CleanCatalogName(string? name) => (name ?? string.Empty).Trim();
+
+    /// <summary>Display spelling: trimmed with single spaces, original casing kept.</summary>
+    private static string CleanDisplayName(string? value) =>
+        string.Join(" ", (value ?? string.Empty).Trim()
+            .Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+
+    /// <summary>Uniqueness key: trimmed, single-spaced, lowercased. The schema stores it as name_key.</summary>
+    private static string CatalogKeyOf(string? value) => NormalizeUnitName(value);
 
     private static bool IsValidSortOrder(int value) => value is >= 0 and <= MaxCatalogSortOrder;
 

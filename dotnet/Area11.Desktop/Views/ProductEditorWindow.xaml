@@ -14,7 +14,30 @@
                         <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
 
                         <TextBlock Text="Salt / formula / generic" Style="{StaticResource FieldLabel}" />
-                        <TextBox Text="{Binding Generic, UpdateSourceTrigger=PropertyChanged}" />
+                        <ComboBox ItemsSource="{Binding Formulas}" DisplayMemberPath="Name"
+                                  SelectedItem="{Binding SelectedFormula, Mode=TwoWay}" />
+                        <Grid Margin="0,4,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding Generic, UpdateSourceTrigger=PropertyChanged}" />
+                            <Button Grid.Column="2" Content="Unlink" Style="{StaticResource GhostButton}"
+                                    Command="{Binding UnlinkFormulaCommand}" ToolTip="Keep the typed text, drop the salt link." />
+                        </Grid>
+                        <TextBlock Text="{Binding FormulaLinkHint}" Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                        <Grid Margin="0,4,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding NewFormulaName, UpdateSourceTrigger=PropertyChanged}"
+                                     ToolTip="New salt" />
+                            <Button Grid.Column="2" Content="Add" Style="{StaticResource GhostButton}"
+                                    Command="{Binding AddFormulaCommand}" />
+                        </Grid>
 
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -24,7 +47,30 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0">
                                 <TextBlock Text="Brand" Style="{StaticResource FieldLabel}" />
-                                <TextBox Text="{Binding Brand, UpdateSourceTrigger=PropertyChanged}" />
+                                <ComboBox ItemsSource="{Binding Brands}" DisplayMemberPath="Name"
+                                          SelectedItem="{Binding SelectedBrand, Mode=TwoWay}" />
+                                <Grid Margin="0,4,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0" Text="{Binding Brand, UpdateSourceTrigger=PropertyChanged}" />
+                                    <Button Grid.Column="2" Content="Unlink" Style="{StaticResource GhostButton}"
+                                            Command="{Binding UnlinkBrandCommand}" ToolTip="Keep the typed text, drop the brand link." />
+                                </Grid>
+                                <TextBlock Text="{Binding BrandLinkHint}" Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                                <Grid Margin="0,4,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0" Text="{Binding NewBrandName, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="New brand" />
+                                    <Button Grid.Column="2" Content="Add" Style="{StaticResource GhostButton}"
+                                            Command="{Binding AddBrandCommand}" />
+                                </Grid>
                             </StackPanel>
                             <StackPanel Grid.Column="2">
                                 <TextBlock Text="Barcode" Style="{StaticResource FieldLabel}" />
@@ -94,10 +140,10 @@
                                     Command="{Binding AddCompanyCommand}" />
                         </Grid>
 
-                        <Button Content="Manage categories and companies…"
+                        <Button Content="Manage catalogs…"
                                 Style="{StaticResource GhostButton}" Margin="0,8,0,0"
                                 Command="{Binding ManageCatalogCommand}"
-                                ToolTip="Rename, order, put away or bring back. Products and historical records are never deleted." />
+                                ToolTip="Rename, order, put away or bring back categories, companies, salts and brands. Products and historical records are never deleted." />
                         <Button Content="Manage units…" Style="{StaticResource GhostButton}" Margin="0,6,0,0"
                                 Command="{Binding ManageUnitsCommand}"
                                 ToolTip="Add, rename or put away unused units. Used units cannot disappear from products or history." />

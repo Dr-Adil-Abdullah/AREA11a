@@ -1,11 +1,11 @@
 # AGENTS.md - how to work in this repository
 
-> **WIP handoff, 24 Oct 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/60395e95-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/60395e95-area11a). Portion 7 finished in v0.48.0 Russet (Windows/physical pending); batch order (5, 6, 18) complete; Portion 17 paused; next is the owner's call (8 per roadmap, or 17). Older status and approval statements below are historical. This branch is not a tested release.
+> **WIP handoff, 10 Nov 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/b4b7bf7b-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/b4b7bf7b-area11a). Portion 8 finished in v0.49.0 Mahogany (Windows/physical pending); batch order (5, 6, 18) complete; Portion 17 paused; next is 9 per roadmap unless the owner says otherwise. Older status and approval statements below are historical. This branch is not a tested release.
 
 
-## Latest handoff — v0.48.0 Russet
+## Latest handoff — v0.49.0 Mahogany
 
-Portion 7 finished: packaging, units and variants — one shared box/strip/unit conversion on every quantity path; 'unit' on all seven quantity boxes; whole-only refusals on customer + no-bill returns; distinct 50ml/100ml variants with a same-name warning; stock-take finder shows strength + pack. **1025 written cases, 57/57 static; Windows build/xUnit and physical checks pending.** Batch order (5, 6, 18) complete; Portion 17 paused; next is the owner's call (8 per roadmap, or 17).
+Portion 8 finished: managed salts + brands catalogs (#9, #11) — central CRUD with one canonical spelling each, explicit product links that are never guessed from typed text, rename propagation to linked rows only, put-away that unlinks but keeps typed words; Catalogs window restructured into 4 tabs; product editor pick-combos + inline add + Unlink + hint. **1040 written cases, 57/57 static; Windows build/xUnit and physical checks pending.** Batch order (5, 6, 18) complete; Portion 17 paused; next is 9 per roadmap unless the owner says otherwise.
 
 
 ## Latest handoff — v0.43.0 Umber

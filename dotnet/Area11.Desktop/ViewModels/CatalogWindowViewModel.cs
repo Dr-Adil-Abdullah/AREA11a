@@ -15,13 +15,21 @@ public sealed class CatalogWindowViewModel : ObservableObject
     private bool _loading;
     private Category? _selectedCategory;
     private Company? _selectedCompany;
+    private GenericFormula? _selectedFormula;
+    private BrandDefinition? _selectedBrand;
     private Category? _selectedParent;
     private string _categoryName = string.Empty;
     private string _companyName = string.Empty;
+    private string _formulaName = string.Empty;
+    private string _brandName = string.Empty;
     private string _categoryOrderText = "0";
     private string _companyOrderText = "0";
+    private string _formulaOrderText = "0";
+    private string _brandOrderText = "0";
     private string _categoryCountText = "no categories";
     private string _companyCountText = "no companies";
+    private string _formulaCountText = "no salts";
+    private string _brandCountText = "no brands";
     private string _statusText = "Pick a row to edit, or choose New. Nothing is deleted.";
     private bool _isStatusError;
 
@@ -37,6 +45,12 @@ public sealed class CatalogWindowViewModel : ObservableObject
         NewCompanyCommand = new RelayCommand(NewCompany);
         SaveCompanyCommand = new RelayCommand(SaveCompany);
         ToggleCompanyCommand = new RelayCommand(ToggleCompany);
+        NewFormulaCommand = new RelayCommand(NewFormula);
+        SaveFormulaCommand = new RelayCommand(SaveFormula);
+        ToggleFormulaCommand = new RelayCommand(ToggleFormula);
+        NewBrandCommand = new RelayCommand(NewBrand);
+        SaveBrandCommand = new RelayCommand(SaveBrand);
+        ToggleBrandCommand = new RelayCommand(ToggleBrand);
         RefreshCommand = new RelayCommand(Refresh);
 
         Load();
@@ -47,6 +61,10 @@ public sealed class CatalogWindowViewModel : ObservableObject
     public ObservableCollection<Category> ParentOptions { get; } = new();
 
     public ObservableCollection<Company> Companies { get; } = new();
+
+    public ObservableCollection<GenericFormula> Formulas { get; } = new();
+
+    public ObservableCollection<BrandDefinition> Brands { get; } = new();
 
     public RelayCommand NewCategoryCommand { get; }
 
@@ -59,6 +77,18 @@ public sealed class CatalogWindowViewModel : ObservableObject
     public RelayCommand SaveCompanyCommand { get; }
 
     public RelayCommand ToggleCompanyCommand { get; }
+
+    public RelayCommand NewFormulaCommand { get; }
+
+    public RelayCommand SaveFormulaCommand { get; }
+
+    public RelayCommand ToggleFormulaCommand { get; }
+
+    public RelayCommand NewBrandCommand { get; }
+
+    public RelayCommand SaveBrandCommand { get; }
+
+    public RelayCommand ToggleBrandCommand { get; }
 
     public RelayCommand RefreshCommand { get; }
 
@@ -108,6 +138,48 @@ public sealed class CatalogWindowViewModel : ObservableObject
         }
     }
 
+    public GenericFormula? SelectedFormula
+    {
+        get => _selectedFormula;
+        set
+        {
+            if (!SetProperty(ref _selectedFormula, value))
+            {
+                return;
+            }
+
+            OnPropertyChanged(nameof(CanToggleFormula));
+            OnPropertyChanged(nameof(FormulaActionLabel));
+            if (_loading)
+            {
+                return;
+            }
+
+            FillFormulaEditor(value);
+        }
+    }
+
+    public BrandDefinition? SelectedBrand
+    {
+        get => _selectedBrand;
+        set
+        {
+            if (!SetProperty(ref _selectedBrand, value))
+            {
+                return;
+            }
+
+            OnPropertyChanged(nameof(CanToggleBrand));
+            OnPropertyChanged(nameof(BrandActionLabel));
+            if (_loading)
+            {
+                return;
+            }
+
+            FillBrandEditor(value);
+        }
+    }
+
     public Category? SelectedParent
     {
         get => _selectedParent;
@@ -126,6 +198,18 @@ public sealed class CatalogWindowViewModel : ObservableObject
         set => SetProperty(ref _companyName, value);
     }
 
+    public string FormulaName
+    {
+        get => _formulaName;
+        set => SetProperty(ref _formulaName, value);
+    }
+
+    public string BrandName
+    {
+        get => _brandName;
+        set => SetProperty(ref _brandName, value);
+    }
+
     public string CategoryOrderText
     {
         get => _categoryOrderText;
@@ -138,6 +222,18 @@ public sealed class CatalogWindowViewModel : ObservableObject
         set => SetProperty(ref _companyOrderText, value);
     }
 
+    public string FormulaOrderText
+    {
+        get => _formulaOrderText;
+        set => SetProperty(ref _formulaOrderText, value);
+    }
+
+    public string BrandOrderText
+    {
+        get => _brandOrderText;
+        set => SetProperty(ref _brandOrderText, value);
+    }
+
     public string CategoryCountText
     {
         get => _categoryCountText;
@@ -148,6 +244,18 @@ public sealed class CatalogWindowViewModel : ObservableObject
     {
         get => _companyCountText;
         private set => SetProperty(ref _companyCountText, value);
+    }
+
+    public string FormulaCountText
+    {
+        get => _formulaCountText;
+        private set => SetProperty(ref _formulaCountText, value);
+    }
+
+    public string BrandCountText
+    {
+        get => _brandCountText;
+        private set => SetProperty(ref _brandCountText, value);
     }
 
     public string StatusText
@@ -166,15 +274,27 @@ public sealed class CatalogWindowViewModel : ObservableObject
 
     public bool HasNoCompanies => Companies.Count == 0;
 
+    public bool HasNoFormulas => Formulas.Count == 0;
+
+    public bool HasNoBrands => Brands.Count == 0;
+
     public bool CanToggleCategory => CanEdit && SelectedCategory is not null;
 
     public bool CanToggleCompany => CanEdit && SelectedCompany is not null;
+
+    public bool CanToggleFormula => CanEdit && SelectedFormula is not null;
+
+    public bool CanToggleBrand => CanEdit && SelectedBrand is not null;
 
     public string CategoryActionLabel => SelectedCategory is { Active: false } ? "Bring back" : "Put away";
 
     public string CompanyActionLabel => SelectedCompany is { Active: false } ? "Bring back" : "Put away";
 
-    private bool Load(int? selectCategory = null, int? selectCompany = null)
+    public string FormulaActionLabel => SelectedFormula is { Active: false } ? "Bring back" : "Put away";
+
+    public string BrandActionLabel => SelectedBrand is { Active: false } ? "Bring back" : "Put away";
+
+    private bool Load(int? selectCategory = null, int? selectCompany = null, int? selectFormula = null, int? selectBrand = null)
     {
         var categoryResult = _services.Products.GetCategories(activeOnly: false);
         if (!categoryResult.Ok || categoryResult.Value is null)
@@ -190,11 +310,27 @@ public sealed class CatalogWindowViewModel : ObservableObject
             return false;
         }
 
+        var formulaResult = _services.Products.GetFormulas(activeOnly: false);
+        if (!formulaResult.Ok || formulaResult.Value is null)
+        {
+            SetStatus(formulaResult.Error ?? "Salts could not be loaded.", true);
+            return false;
+        }
+
+        var brandResult = _services.Products.GetBrands(activeOnly: false);
+        if (!brandResult.Ok || brandResult.Value is null)
+        {
+            SetStatus(brandResult.Error ?? "Brands could not be loaded.", true);
+            return false;
+        }
+
         _loading = true;
         try
         {
             var categoryId = selectCategory ?? SelectedCategory?.Id;
             var companyId = selectCompany ?? SelectedCompany?.Id;
+            var formulaId = selectFormula ?? SelectedFormula?.Id;
+            var brandId = selectBrand ?? SelectedBrand?.Id;
 
             ParentOptions.Clear();
             ParentOptions.Add(new Category { Id = 0, Name = "Top level", Active = true });
@@ -215,10 +351,26 @@ public sealed class CatalogWindowViewModel : ObservableObject
                 Companies.Add(row);
             }
 
+            Formulas.Clear();
+            foreach (var row in formulaResult.Value)
+            {
+                Formulas.Add(row);
+            }
+
+            Brands.Clear();
+            foreach (var row in brandResult.Value)
+            {
+                Brands.Add(row);
+            }
+
             SelectedCategory = Categories.FirstOrDefault(row => row.Id == categoryId)
                                ?? Categories.FirstOrDefault();
             SelectedCompany = Companies.FirstOrDefault(row => row.Id == companyId)
                               ?? Companies.FirstOrDefault();
+            SelectedFormula = Formulas.FirstOrDefault(row => row.Id == formulaId)
+                              ?? Formulas.FirstOrDefault();
+            SelectedBrand = Brands.FirstOrDefault(row => row.Id == brandId)
+                            ?? Brands.FirstOrDefault();
         }
         finally
         {
@@ -228,10 +380,16 @@ public sealed class CatalogWindowViewModel : ObservableObject
         // The selection was assigned while loading, so fill the editors once after the guard lifts.
         FillCategoryEditor(SelectedCategory);
         FillCompanyEditor(SelectedCompany);
+        FillFormulaEditor(SelectedFormula);
+        FillBrandEditor(SelectedBrand);
         CategoryCountText = CountLabel(Categories.Count, Categories.Count(row => !row.Active), "category");
         CompanyCountText = CountLabel(Companies.Count, Companies.Count(row => !row.Active), "company");
+        FormulaCountText = CountLabel(Formulas.Count, Formulas.Count(row => !row.Active), "salt");
+        BrandCountText = CountLabel(Brands.Count, Brands.Count(row => !row.Active), "brand");
         OnPropertyChanged(nameof(HasNoCategories));
         OnPropertyChanged(nameof(HasNoCompanies));
+        OnPropertyChanged(nameof(HasNoFormulas));
+        OnPropertyChanged(nameof(HasNoBrands));
         return true;
     }
 
@@ -247,6 +405,18 @@ public sealed class CatalogWindowViewModel : ObservableObject
     {
         CompanyName = value?.Name ?? string.Empty;
         CompanyOrderText = value?.SortOrder.ToString() ?? "0";
+    }
+
+    private void FillFormulaEditor(GenericFormula? value)
+    {
+        FormulaName = value?.Name ?? string.Empty;
+        FormulaOrderText = value?.SortOrder.ToString() ?? "0";
+    }
+
+    private void FillBrandEditor(BrandDefinition? value)
+    {
+        BrandName = value?.Name ?? string.Empty;
+        BrandOrderText = value?.SortOrder.ToString() ?? "0";
     }
 
     private void Refresh()
@@ -298,7 +468,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
             }
         }
 
-        if (Load(id, null))
+        if (Load(id, null, null, null))
         {
             SetStatus("Category saved. Product and report reads use the current name.", false);
         }
@@ -322,7 +492,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
             return;
         }
 
-        if (Load(id, null))
+        if (Load(id, null, null, null))
         {
             SetStatus(bringBack
                 ? name + " is back. Former product links were not recreated."
@@ -369,7 +539,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
             }
         }
 
-        if (Load(null, id))
+        if (Load(null, id, null, null))
         {
             SetStatus("Company saved. Phone, notes and medical-rep fields were not rewritten.", false);
         }
@@ -393,11 +563,153 @@ public sealed class CatalogWindowViewModel : ObservableObject
             return;
         }
 
-        if (Load(null, id))
+        if (Load(null, id, null, null))
         {
             SetStatus(bringBack
                 ? name + " is back. Former product links were not recreated."
                 : name + " is put away. Product links were removed; every historical record remains.", false);
+        }
+    }
+
+    private void NewFormula()
+    {
+        SelectedFormula = null;
+        FormulaName = string.Empty;
+        FormulaOrderText = NextOrder(Formulas.Select(row => row.SortOrder));
+        SetStatus("New salt: enter a name and order, then Save.", false);
+    }
+
+    private void SaveFormula()
+    {
+        if (!TryOrder(FormulaOrderText, out var order))
+        {
+            SetStatus("Salt order must be a whole number.", true);
+            return;
+        }
+
+        int id;
+        if (SelectedFormula is null)
+        {
+            var added = _services.Products.AddFormula(_user, FormulaName, order);
+            if (!added.Ok)
+            {
+                SetStatus(added.Error ?? "The salt could not be saved.", true);
+                return;
+            }
+
+            id = added.Value;
+        }
+        else
+        {
+            id = SelectedFormula.Id;
+            var updated = _services.Products.UpdateFormula(_user, id, FormulaName, order);
+            if (!updated.Ok)
+            {
+                SetStatus(updated.Error ?? "The salt could not be saved.", true);
+                return;
+            }
+        }
+
+        if (Load(null, null, id, null))
+        {
+            SetStatus("Salt saved. Linked products show the current spelling; typed text elsewhere was not rewritten.", false);
+        }
+    }
+
+    private void ToggleFormula()
+    {
+        if (SelectedFormula is null)
+        {
+            SetStatus("Pick a salt first.", true);
+            return;
+        }
+
+        var id = SelectedFormula.Id;
+        var name = SelectedFormula.Name;
+        var bringBack = !SelectedFormula.Active;
+        var result = _services.Products.SetFormulaActive(_user, id, bringBack);
+        if (!result.Ok)
+        {
+            SetStatus(result.Error ?? "The salt could not be changed.", true);
+            return;
+        }
+
+        if (Load(null, null, id, null))
+        {
+            SetStatus(bringBack
+                ? name + " is back. Former product links were not recreated."
+                : name + " is put away. Product links were removed; typed salt text was kept.", false);
+        }
+    }
+
+    private void NewBrand()
+    {
+        SelectedBrand = null;
+        BrandName = string.Empty;
+        BrandOrderText = NextOrder(Brands.Select(row => row.SortOrder));
+        SetStatus("New brand: enter a name and order, then Save.", false);
+    }
+
+    private void SaveBrand()
+    {
+        if (!TryOrder(BrandOrderText, out var order))
+        {
+            SetStatus("Brand order must be a whole number.", true);
+            return;
+        }
+
+        int id;
+        if (SelectedBrand is null)
+        {
+            var added = _services.Products.AddBrand(_user, BrandName, order);
+            if (!added.Ok)
+            {
+                SetStatus(added.Error ?? "The brand could not be saved.", true);
+                return;
+            }
+
+            id = added.Value;
+        }
+        else
+        {
+            id = SelectedBrand.Id;
+            var updated = _services.Products.UpdateBrand(_user, id, BrandName, order);
+            if (!updated.Ok)
+            {
+                SetStatus(updated.Error ?? "The brand could not be saved.", true);
+                return;
+            }
+        }
+
+        if (Load(null, null, null, id))
+        {
+            SetStatus("Brand saved. Linked products show the current spelling; typed text elsewhere was not rewritten.", false);
+        }
+    }
+
+    private void ToggleBrand()
+    {
+        if (SelectedBrand is null)
+        {
+            SetStatus("Pick a brand first.", true);
+            return;
+        }
+
+        var id = SelectedBrand.Id;
+        var name = SelectedBrand.Name;
+        var bringBack = !SelectedBrand.Active;
+        var result = _services.Products.SetBrandActive(_user, id, bringBack);
+        if (!result.Ok)
+        {
+            SetStatus(result.Error ?? "The brand could not be changed.", true);
+            return;
+        }
+
+        if (Load(null, null, null, id))
+        {
+            SetStatus(bringBack
+                ? name + " is back. Former product links were not recreated."
+                : name + " is put away. Product links were removed; typed brand text was kept.", false);
         }
     }
 

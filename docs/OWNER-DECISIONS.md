@@ -1,8 +1,8 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
-## تازہ status — Portion 7 مکمل، v0.48.0 Russet
+## تازہ status — Portion 8 مکمل، v0.49.0 Mahogany
 
-پیکنگ، اکائیاں اور variants: ہر quantity راستے پر ایک ہی box/strip/unit حساب (بغیر box والی دوا کا «1 box» اب ہر جگہ ایک ہی گنا جائے، کہیں 10 کہیں 1 نہیں)؛ ساتوں quantity خانوں میں اکائی کا لفظ «unit» (رسید، history اور ٹوکری میں «unit» نظر آئے، پرانی «base» اندراجات بھی چلیں گی)؛ گاہک واپسی اور بلا-بل واپسی میں whole-only انکار (آدھا injection ناممکن، آدھا ml جائز، پرانی پوری بچی واپسی جائز)؛ 50ml/100ml الگ products رہیں اور ایک ہی نام دہرانے پر موجود variants بتا کر انتباہ؛ stock-take تلاش میں strength + pack نظر آئے۔ **1025 written cases، 57/57 static؛ Windows/xUnit اور physical pending**۔ طے شدہ ترتیب (5، 6، 18) مکمل؛ اگلا portion مالک بتائے گا (8 یا 17)؛ Portion 17 paused۔ ٹوکن والا سرچ Portion 10 میں آئے گا۔
+نمک (salt) اور برانڈ کی باقاعدہ فہرستیں: ہر نام کی ایک ہی درست ہجے؛ لنک صرف چننے سے لگے، لکھے متن سے اندازہ کبھی نہیں؛ نام بدلنے پر صرف جڑی products بدلیں، پرانا لکھا متن نہ بدلے؛ ہٹانے پر لنک ٹوٹے مگر لکھے الفاظ رہیں؛ Catalogs کھڑکی میں 4 خانے (زمرے، کمپنیاں، نمک، برانڈ)؛ product ایڈیٹر میں چناؤ، نیا اضافہ، Unlink اور حالت بتانے والی سطر۔ **1040 written cases، 57/57 static؛ Windows/xUnit اور physical pending**۔ طے شدہ ترتیب (5، 6، 18) مکمل؛ اگلا 9 ہے جب تک مالک کچھ اور نہ کہے؛ Portion 17 paused۔ Preferred supplier اور supplier ڈائریکٹری Portion 9 میں آئے گی۔
 
 ## تازہ status — Master Portion 6 مکمل، v0.46.0 Rust
 
@@ -2708,6 +2708,7 @@ restart نہیں (Spec 8.4.3)۔
 
 | تاریخ | کیا |
 |---|---|
+| 10 نومبر 2026 | **نمک + برانڈ فہرستیں — v0.49.0 Mahogany `#5C2E1F`**: مرکزی CRUD، ایک درست ہجے، صرف چننے سے لنک (اندازہ کبھی نہیں)، نام صرف جڑی rows پر، ہٹانے پر لنک ٹوٹے متن رہے، 4 خانوں والی Catalogs کھڑکی، ایڈیٹر میں چناؤ + اضافہ + Unlink + hint؛ **1040 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
 | 10 نومبر 2026 | **پیکنگ، اکائیاں اور variants — v0.48.0 Russet `#80461B`**: ایک ہی box/strip/unit حساب ہر راستے پر، ساتوں خانوں میں «unit»، رسید/history میں «unit» (پرانی «base» بھی چلے)، گاہک + بلا-بل واپسی میں whole-only انکار، ایک ہی نام پر variants بتا کر انتباہ، stock-take تلاش میں strength + pack؛ **1025 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
 | 10 نومبر 2026 | **D-100 / دستاویزات پر اپنے خانے — v0.47.0 Moss `#4A5D23`**: بل/خرید/اخراجات کے الگ فارم (تصویر انکار — گیلری نہیں)، جواب post کے ساتھ atomic، لازمی چھوٹے تو نام بتا کر انکار، drafts ساتھ رکھیں، بل history + اخراجات فہرست میں نمائش؛ **1010 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
 | 10 نومبر 2026 | **Expiry picker — v0.46.0 Rust `#B7410E`**: خرید صفحے پر مہینہ/سال + کیلنڈر، لکھنا/خالی ویسے ہی، زندہ stored-form لائن، `MM/YY` ہمیشہ 2000–2099، پرانی صورتیں بعینہ؛ **996 written cases، 57/57 static**؛ Windows/xUnit/physical pending |

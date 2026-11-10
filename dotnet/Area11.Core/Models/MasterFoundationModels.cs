@@ -183,6 +183,11 @@ public sealed class GenericFormula
 
     public int SortOrder { get; set; }
 
+    /// <summary>Current products explicitly linked to this salt (legacy typed text is not counted).</summary>
+    public int ProductCount { get; set; }
+
+    public string ActiveLabel => Active ? "Active" : "Put away";
+
     public string? CreatedAt { get; set; }
 
     public string? UpdatedAt { get; set; }
@@ -202,6 +207,11 @@ public sealed class BrandDefinition
     public bool Active { get; set; } = true;
 
     public int SortOrder { get; set; }
+
+    /// <summary>Current products explicitly linked to this brand (legacy typed text is not counted).</summary>
+    public int ProductCount { get; set; }
+
+    public string ActiveLabel => Active ? "Active" : "Put away";
 
     public string? CreatedAt { get; set; }
 
