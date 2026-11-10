@@ -132,8 +132,8 @@ VALUES(@userId, @at, @openingFloat, 'open', @note);",
 
             _audit.Record(connection, user, "Cash", "shift_open", "shifts", id.ToString(),
                 newValue: Money.Format(openingFloatPaisa),
-                details: previous?.ActualPaisa is long previousCash
-                    ? $"Previous counted {Money.Format(previousCash)}; opening " +
+                details: previous?.ActualPaisa is long previousCounted
+                    ? $"Previous counted {Money.Format(previousCounted)}; opening " +
                       $"{ShiftWords.Difference(openingDifference)}; reason: {cleanNote ?? "(not required)"}"
                     : cleanNote);
 
