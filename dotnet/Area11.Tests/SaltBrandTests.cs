@@ -1,5 +1,6 @@
 using Area11.Core.Models;
 using Area11.Core.Services;
+using Area11.Core.Utils;
 using Xunit;
 
 namespace Area11.Tests;

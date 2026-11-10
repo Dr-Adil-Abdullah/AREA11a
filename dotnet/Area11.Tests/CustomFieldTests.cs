@@ -602,6 +602,8 @@ BEGIN SELECT RAISE(ABORT, 'audit unavailable'); END;"));
 
         public string PhotoFolder { get; }
 
+        public string SourceFolder { get; }
+
         public string SourceFile(string name, string text = "pretend this is a picture")
         {
             var path = Path.Combine(SourceFolder, name);
