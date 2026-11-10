@@ -115,7 +115,7 @@ if errorlevel 1 (
 rem  The product normally lives on "main". An Arena repair is delivered on the named working
 rem  branch until its pull request is merged, so that branch must be accepted explicitly too.
 rem  Anything else is refused: a stray branch can otherwise make an old copy look like an update.
-set "WORK_BRANCH=arena/60395e95-area11a"
+set "WORK_BRANCH=arena/b4b7bf7b-area11a"
 set "BRANCH="
 for /f "delims=" %%b in ('git rev-parse --abbrev-ref HEAD 2^>nul') do set "BRANCH=%%b"
 
