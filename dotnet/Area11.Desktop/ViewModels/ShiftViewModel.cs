@@ -64,6 +64,9 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
 
     public ObservableCollection<ShiftMoney> History { get; } = new();
 
+    /// <summary>Portion 14: every difference that needed a reason - stage, numbers, who, why.</summary>
+    public ObservableCollection<ShiftDiscrepancy> Discrepancies { get; } = new();
+
     /// <summary>Everybody who could take the drawer - the signed-in person is not in this list.</summary>
     public ObservableCollection<User> NextPeople { get; } = new();
 
@@ -304,6 +307,13 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
         foreach (var row in _services.Shifts.History())
         {
             History.Add(row);
+        }
+
+        Discrepancies.Clear();
+
+        foreach (var row in _services.Shifts.Discrepancies())
+        {
+            Discrepancies.Add(row);
         }
     }
 

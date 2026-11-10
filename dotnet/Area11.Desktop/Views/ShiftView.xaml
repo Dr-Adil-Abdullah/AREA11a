@@ -193,6 +193,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
                     <StackPanel Grid.Row="0" Margin="0,0,0,8">
@@ -215,8 +216,33 @@
                         </DataGrid.Columns>
                     </DataGrid>
 
-                    <!-- ================= who counted, and how it landed (F-56) ================= -->
+                    <!-- ================= drawer differences that needed a reason (P14) ================= -->
                     <Border Grid.Row="2" Margin="0,12,0,0" Padding="0,10,0,0"
+                            BorderThickness="0,1,0,0" BorderBrush="{StaticResource LineBrush}">
+                        <StackPanel>
+                            <TextBlock Text="Drawer differences" Style="{StaticResource SectionTitle}" />
+                            <TextBlock Text="Every opening and closing difference that needed a reason, newest first. Short and over are both here; exact drawers never made a row."
+                                       Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,0,0,6" />
+
+                            <DataGrid ItemsSource="{Binding Discrepancies}" IsReadOnly="True"
+                                      AutoGenerateColumns="False" HeadersVisibility="Column"
+                                      GridLinesVisibility="Horizontal" MaxHeight="190" MinHeight="90">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Shift" Binding="{Binding ShiftId}" Width="60" />
+                                    <DataGridTextColumn Header="Stage" Binding="{Binding StageLabel, Mode=OneWay}" Width="80" />
+                                    <DataGridTextColumn Header="Expected" Binding="{Binding ExpectedLabel, Mode=OneWay}" Width="105" />
+                                    <DataGridTextColumn Header="Counted" Binding="{Binding CountedLabel, Mode=OneWay}" Width="105" />
+                                    <DataGridTextColumn Header="Difference" Binding="{Binding DifferenceLabel, Mode=OneWay}" Width="140" />
+                                    <DataGridTextColumn Header="Reason" Binding="{Binding Reason}" Width="2*" />
+                                    <DataGridTextColumn Header="By" Binding="{Binding OpenedBy}" Width="*" />
+                                    <DataGridTextColumn Header="When" Binding="{Binding WhenLabel, Mode=OneWay}" Width="130" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ================= who counted, and how it landed (F-56) ================= -->
+                    <Border Grid.Row="3" Margin="0,12,0,0" Padding="0,10,0,0"
                             BorderThickness="0,1,0,0" BorderBrush="{StaticResource LineBrush}"
                             Visibility="{Binding CanSeePeople, Converter={StaticResource BoolToVis}}">
                         <StackPanel>

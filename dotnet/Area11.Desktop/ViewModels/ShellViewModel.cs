@@ -1199,7 +1199,7 @@ public sealed class ShellViewModel : ObservableObject
         {
             if (_alertsPage is null)
             {
-                _alertsPage = new AlertsViewModel(_services, _user, RefreshAlerts);
+                _alertsPage = new AlertsViewModel(_services, _user, RefreshAlerts, row => GoToShift());
             }
 
             var page = _alertsPage;

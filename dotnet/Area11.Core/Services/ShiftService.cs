@@ -107,18 +107,28 @@ public sealed class ShiftService
                     $"by {Money.Format(Math.Abs(openingDifference))}. Write the reason before opening the shift.");
             }
 
+            var at = Clock.Now();
+
             _db.Execute(connection, @"
 INSERT INTO shifts(user_id, opened_at, opening_float_paisa, status, note)
 VALUES(@userId, @at, @openingFloat, 'open', @note);",
                 new
                 {
                     userId = user.Id,
-                    at = Clock.Now(),
+                    at,
                     openingFloat = openingFloatPaisa,
                     note = cleanNote
                 });
 
             var id = (int)_db.NextId(connection);
+
+            // Portion 14: the opening difference gets its own contract row (migration 030) - the
+            // reason stops hiding inside a general note. Exact floats leave no row.
+            if (openingDifference != 0 && previous?.ActualPaisa is long previousCash)
+            {
+                RecordDiscrepancy(connection, id, "opening", previousCash, openingFloatPaisa,
+                    openingDifference, cleanNote ?? string.Empty, at);
+            }
 
             _audit.Record(connection, user, "Cash", "shift_open", "shifts", id.ToString(),
                 newValue: Money.Format(openingFloatPaisa),
@@ -218,6 +228,14 @@ WHERE id = @id;",
                     Difference = shift.DifferencePaisa
                 },
                 cleanNote);
+
+            // Portion 14: the closing difference gets its own contract row (migration 030), next to
+            // the audit line. An exact count leaves no row.
+            if (shift.DifferencePaisa != 0)
+            {
+                RecordDiscrepancy(connection, shift.Id, "closing", shift.ExpectedPaisa, actualPaisa,
+                    shift.DifferencePaisa.Value, cleanNote ?? string.Empty, closedAt);
+            }
 
             return ServiceResult<ShiftMoney>.Success(shift);
         }
@@ -361,6 +379,15 @@ VALUES(@userId, @at, @openingFloat, 'open', @note, @fromId);",
                 _audit.Record(connection, user, "Cash", "shift_open", "shifts", nextShiftId.ToString(),
                     newValue: Money.Format(countedPaisa) + " from drawer " + shift.Id);
 
+                // Portion 14: the handed-over drawer's difference gets its own contract row, inside
+                // the same transaction. The new shift starts with the counted cash, so it never
+                // owes an opening row of its own. An exact count leaves no row.
+                if (shift.DifferencePaisa != 0)
+                {
+                    RecordDiscrepancy(connection, shift.Id, "closing", shift.ExpectedPaisa, countedPaisa,
+                        shift.DifferencePaisa.Value, cleanNote ?? string.Empty, at);
+                }
+
                 var closedShift = ReadShift(connection, shift.Id) ?? shift;
 
                 // The stored row keeps the expected/actual/difference, but the six lines that
@@ -496,6 +523,34 @@ WHERE s.status = 'closed'
         }
     }
 
+    /// <summary>
+    /// Portion 14: every drawer difference that needed a reason, newest first, with who counted
+    /// and why. Short and over are both here; exact drawers never made a row. Read-only.
+    /// </summary>
+    public List<ShiftDiscrepancy> Discrepancies(int limit = 60)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            return _db.Query<ShiftDiscrepancy>(connection, @"
+SELECT d.id AS id, d.shift_id AS shiftId, d.stage AS stage,
+       d.expected_paisa AS expectedPaisa, d.counted_paisa AS countedPaisa,
+       d.difference_paisa AS differencePaisa, d.reason AS reason,
+       d.alerted_at AS alertedAt, d.created_at AS createdAt,
+       IFNULL(u.name, '(removed)') AS openedBy, s.opened_at AS openedAt
+FROM shift_discrepancies d
+JOIN shifts s ON s.id = d.shift_id
+LEFT JOIN users u ON u.id = s.user_id
+ORDER BY d.id DESC
+LIMIT @limit;", new { limit });
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The drawer differences could not be read.", exception);
+            return new List<ShiftDiscrepancy>();
+        }
+    }
+
     /// <summary>The last shifts, newest first - the day-by-day record of the drawer.</summary>
     public List<ShiftMoney> History(int limit = 60)
     {
@@ -524,6 +579,31 @@ LIMIT @limit;",
 
     private static bool HasDifferenceReason(string? note) =>
         !string.IsNullOrWhiteSpace(note) && note.Trim().Length >= 3;
+
+    /// <summary>
+    /// Portion 14: one row in the `shift_discrepancies` contract (migration 030). Called only when
+    /// the difference is non-zero and a reason was already demanded, so the CHECKs cannot fail;
+    /// `alerted_at` marks the moment the alert board can see it.
+    /// </summary>
+    private void RecordDiscrepancy(
+        Microsoft.Data.Sqlite.SqliteConnection connection, int shiftId, string stage, long expectedPaisa,
+        long countedPaisa, long differencePaisa, string reason, string at)
+    {
+        _db.Execute(connection, @"
+INSERT INTO shift_discrepancies(shift_id, stage, expected_paisa, counted_paisa, difference_paisa,
+                               reason, alerted_at)
+VALUES(@shiftId, @stage, @expected, @counted, @difference, @reason, @at);",
+            new
+            {
+                shiftId,
+                stage,
+                expected = expectedPaisa,
+                counted = countedPaisa,
+                difference = differencePaisa,
+                reason,
+                at
+            });
+    }
 
     private ShiftMoney? ReadLastCounted(Microsoft.Data.Sqlite.SqliteConnection connection) =>
         _db.QuerySingle<ShiftMoney>(connection, @"

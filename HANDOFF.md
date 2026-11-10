@@ -1,11 +1,11 @@
 # HANDOFF - read this first
 
-> **WIP handoff, 10 Nov 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/b4b7bf7b-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/b4b7bf7b-area11a). Portion 13 finished in v0.54.0 Dusk (Windows/physical pending); v0.52.0 Windows 1086/1086 green; batch order (5, 6, 18) complete; Portion 17 paused; next is 14 per roadmap unless the owner says otherwise. Older status and approval statements below are historical. This branch is not a tested release.
+> **WIP handoff, 10 Nov 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/b4b7bf7b-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/b4b7bf7b-area11a). Portion 14 finished in v0.55.0 Ember (Windows/physical pending); v0.52.0 Windows 1086/1086 green; batch order (5, 6, 18) complete; Portion 17 paused; next is 15 per roadmap unless the owner says otherwise. Older status and approval statements below are historical. This branch is not a tested release.
 
 
 ## Latest handoff — v0.54.0 Dusk
 
-Portion 13 finished: history, ledgers and profit (#6) — new `ProductHistoryService` (purchases/sales oldest first, rates-as-was, profit = line-total minus cost-at-sale) with a History window on the product editor (Print + WhatsApp + Save CSV); global `profit.showMargins` switch via one `ProfitPolicy` gate on Reports/Dashboard/Doctors/Customers/history; Customers profit leak fixed; definition audited at every site. **1116 written cases, 57/57 static; Windows build/xUnit and physical checks pending.** v0.52.0 Windows 1086/1086 green. Batch order (5, 6, 18) complete; Portion 17 paused; next is 14 per roadmap unless the owner says otherwise.
+Portion 14 finished: cash drawer details and alerts (#8) — `shift_discrepancies` written in Open/Close/Handover (same transaction, non-zero only, short + over, reason + alerted_at); `Discrepancies()` read newest-first with who/why; Shift page Drawer-differences grid; Alerts page Open-the-Shift-page card via the dashboard callback pattern; no backfill, alerts red-only. **1130 written cases, 57/57 static; Windows build/xUnit and physical checks pending.** v0.52.0 Windows 1086/1086 green. Batch order (5, 6, 18) complete; Portion 17 paused; next is 15 per roadmap unless the owner says otherwise.
 
 
 ## Latest handoff — v0.43.0 Umber
