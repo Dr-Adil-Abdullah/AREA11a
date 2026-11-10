@@ -1,12 +1,13 @@
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Windows;
 using Area11.Core.Models;
 using Area11.Core.Utils;
 
 namespace Area11.Desktop.ViewModels;
 
 /// <summary>
-/// Catalog screen. The right-hand form creates or edits one product; the grid on the left is
+/// Catalog screen. A modal editor creates or edits one product; the full-width grid is
 /// the live list. All rules (permission, validation, audit, partial update) live in
 /// ProductService — this class only moves text between the screen and that service.
 /// </summary>
@@ -64,7 +65,8 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         _user = user;
 
         SaveCommand = new RelayCommand(Save);
-        NewCommand = new RelayCommand(NewProduct);
+        NewCommand = new RelayCommand(BeginNewProduct);
+        EditCommand = new RelayCommand(BeginEditProduct);
         DeleteCommand = new RelayCommand(DeactivateSelected);
         RefreshCommand = new RelayCommand(Load);
         AddCategoryCommand = new RelayCommand(AddCategory);
@@ -98,6 +100,11 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     public RelayCommand SaveCommand { get; }
 
     public RelayCommand NewCommand { get; }
+
+    public RelayCommand EditCommand { get; }
+
+    /// <summary>Closes the editor after an existing product has been put away.</summary>
+    public event Action? EditorSaved;
 
     public RelayCommand DeleteCommand { get; }
 
@@ -148,20 +155,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         get => _selectedProduct;
         set
         {
-            if (!SetProperty(ref _selectedProduct, value))
-            {
-                return;
-            }
-
-            if (value is not null)
-            {
-                LoadForm(value);
-                Editor.Load(value.Id);
-            }
-            else
-            {
-                Editor.Load(0);
-            }
+            SetProperty(ref _selectedProduct, value);
         }
     }
 
@@ -450,6 +444,26 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         SetStatus(result.Value.SummaryLabel, result.Value.IsEmpty && !result.Value.IsFuzzy);
     }
 
+    private void BeginNewProduct()
+    {
+        NewProduct();
+        ProductEditorDoor.Show(this);
+    }
+
+    private void BeginEditProduct()
+    {
+        var product = SelectedProduct;
+        if (product is null)
+        {
+            SetStatus("Select a medicine first, then choose Edit product.", true);
+            return;
+        }
+
+        LoadForm(product);
+        Editor.Load(product.Id);
+        ProductEditorDoor.Show(this);
+    }
+
     private void NewProduct()
     {
         _editingId = null;
@@ -576,20 +590,35 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
             ReorderLevel = reorder
         };
 
-        var result = _editingId is null
-            ? _services.Products.Create(_user, patch)
-            : _services.Products.Update(_user, _editingId.Value, patch);
-
-        if (!result.Ok)
+        var isNew = _editingId is null;
+        if (isNew)
         {
-            SetStatus(result.Error ?? "The product could not be saved.", true);
-            return;
+            var created = _services.Products.Create(_user, patch);
+            if (!created.Ok || created.Value <= 0)
+            {
+                SetStatus(created.Error ?? "The product could not be saved.", true);
+                return;
+            }
+            _editingId = created.Value;
+            // A newly saved product can now have its own extra fields, photos and barcodes.
+            Editor.Load(created.Value);
+            OnPropertyChanged(nameof(HeaderText));
+        }
+        else
+        {
+            var updated = _services.Products.Update(_user, _editingId!.Value, patch);
+            if (!updated.Ok)
+            {
+                SetStatus(updated.Error ?? "The product could not be saved.", true);
+                return;
+            }
+            // Do not reload the extra-fields editor: it may contain separately unsaved answers.
         }
 
-        var message = _editingId is null ? "Product added." : "Product updated.";
         Load();
-        NewProduct();
-        SetStatus(message, false);
+        SetStatus(isNew
+            ? "Product added. Extra fields are saved separately; close when finished."
+            : "Product updated. Extra fields are saved separately; close when finished.", false);
     }
 
     /// <summary>One predictable doorway for category, company, dashboard and strength links.</summary>
@@ -654,47 +683,52 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     /// <summary>The barcode list of the medicine on the form. A new, unsaved medicine has no id yet.</summary>
     private void OpenBarcodes()
     {
-        if (SelectedProduct is null || SelectedProduct.Id <= 0)
+        if (_editingId is not int id || id <= 0)
         {
             SetStatus("Save the medicine first, then add its barcodes.", true);
             return;
         }
 
-        BarcodeWindowDoor.Show(_services, _user, SelectedProduct.Id, SelectedProduct.Name);
+        BarcodeWindowDoor.Show(_services, _user, id, Name);
     }
 
     /// <summary>Photo gallery for the medicine on the form. A new, unsaved medicine has no id yet.</summary>
     private void OpenPhotos()
     {
-        if (SelectedProduct is null || SelectedProduct.Id <= 0)
+        if (_editingId is not int id || id <= 0)
         {
             SetStatus("Save the medicine first, then add its photos.", true);
             return;
         }
 
-        PhotoWindow.Show(_services, _user, PhotoEntity.Product, SelectedProduct.Id, SelectedProduct.Name);
+        PhotoWindow.Show(_services, _user, PhotoEntity.Product, id, Name);
     }
 
     private void DeactivateSelected()
     {
-        if (SelectedProduct is null)
+        if (_editingId is not int id || id <= 0)
         {
-            SetStatus("Select a product in the list first.", true);
+            SetStatus("Save or edit an existing product first.", true);
             return;
         }
 
-        var name = SelectedProduct.Name;
-        var result = _services.Products.Deactivate(_user, SelectedProduct.Id);
-
+        var name = Name;
+        if (MessageBox.Show("Put away this product? Unsaved form and extra-field changes will be discarded. History is kept.",
+                "Remove product", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes)
+        {
+            return;
+        }
+        var result = _services.Products.Deactivate(_user, id);
         if (!result.Ok)
         {
             SetStatus(result.Error ?? "The product could not be removed.", true);
             return;
         }
 
-        SetStatus($"{name} was removed from the list (history is kept).", false);
         Load();
         NewProduct();
+        SetStatus($"{name} was removed from the list (history is kept).", false);
+        EditorSaved?.Invoke();
     }
 
     private void AddCategory()

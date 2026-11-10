@@ -21,7 +21,8 @@ internal static class BarcodeWindowDoor
         var viewModel = new BarcodeListViewModel(services, user, productId, productName);
         var window = new BarcodeWindow(viewModel);
 
-        var owner = Application.Current?.MainWindow;
+        var owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(candidate => candidate.IsActive)
+                    ?? Application.Current?.MainWindow;
 
         if (owner is not null && !ReferenceEquals(owner, window))
         {

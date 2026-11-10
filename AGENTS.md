@@ -1,5 +1,10 @@
 # AGENTS.md - how to work in this repository
 
+## Latest handoff — v0.41.0 Siderite
+
+Owner approved Portion 2 via NEXT and selected both Edit button/double-click; lack of Counter permission now selects Dashboard, not Baltic's first permitted page. Product editor is modal, uses existing ProductService, protects unsaved form/extra answers with explicit default-No close/put-away warnings, and keeps a created ID after save. **922 written cases, 57/57 static checks; Windows build/xUnit and PT-13/PT-12 WPF checks pending.** Owner's Baltic 921/921 Core/Tests is prior evidence only. Portions 3–15 await separate approval; do not treat PT02-POS-01 as fixed.
+
+
 **Latest owner evidence:** Baltic v0.40.0 Windows Core/Tests **921 passed / 0 failed / 0 skipped / 921**, 1m14s, ALL GREEN. This does not prove Desktop/WPF build or PT-12. Owner selected Dashboard as fallback without Counter permission; existing Baltic code needs adjustment. For Portion 2, owner selected both an Edit Product button and row double-click; coding approval remains separate.
 
 ## Latest handoff — v0.40.0 Baltic, master Portion 1

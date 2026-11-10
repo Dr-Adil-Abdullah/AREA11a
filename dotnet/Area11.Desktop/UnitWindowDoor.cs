@@ -10,7 +10,8 @@ internal static class UnitWindowDoor
     public static void Show(AppServices services, User user)
     {
         var window = new UnitWindow(new UnitWindowViewModel(services, user));
-        var owner = Application.Current?.MainWindow;
+        var owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(candidate => candidate.IsActive)
+                    ?? Application.Current?.MainWindow;
         if (owner is not null && !ReferenceEquals(owner, window))
         {
             window.Owner = owner;

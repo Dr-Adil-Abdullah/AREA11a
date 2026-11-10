@@ -1,5 +1,10 @@
 # PROGRESS - the feature board (what is done, what is next)
 
+## Latest — v0.41.0 Siderite: master Portion 2 and Dashboard fallback
+
+Owner chose Dashboard when the signed-in user lacks Counter permission; the startup policy now prefers the existing Dashboard in that case without granting permissions. Product list has a full-width grid, compact thumbnail, top New and both explicit Edit and row double-click. Both open one modal editor; default-No confirmation guards close/put-away, and separately saved custom fields remain independent. New-product save keeps its returned ID for subsequent updates. **922 written cases, 57/57 static checks; no local .NET/WPF run.** Owner's prior Baltic Windows Core/Tests were **921/921 PASS**; Siderite Windows build/xUnit and PT-13/PT-12 physical verification remain pending. Master portions 3–15 need separate approval; see `MASTER-CHECKLIST-ROADMAP.md`.
+
+
 ## Latest — v0.40.0 Baltic, master checklist Portion 1
 
 Code written: Counter-first startup among already permitted pages (fallback first permitted ordinary page, then Dashboard), Dashboard accessible by Area11 wordmark without a separate module, and existing Returns/Partners/Doctors/Import-Export section controls moved to the shell header while their original tab contents and permission visibility remain. Settings sections were already in the header. Three startup-policy facts: **921 written cases**. **57/57 static checks** passed; owner later supplied Baltic Windows Core/Tests **921/921 PASS**, zero failed/skipped, 1m14s. Desktop/WPF build and PT-12 remain pending. Owner chose Dashboard as the no-Counter fallback; the code adjustment remains pending. Owner reported 918/918 without an identifiable version/banner; Tourmaline's earlier 916/918 is retained. No financial, stock, permission, schema or posting change. Portions 2–15 await separate approval; details in `MASTER-CHECKLIST-ROADMAP.md`.

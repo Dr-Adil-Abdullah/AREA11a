@@ -73,7 +73,7 @@ public sealed class ShellViewModel : ObservableObject
         _services.Backup.RunAutomaticIfDue();
 
         // Counter is preferred only if already permitted. Never grant a permission for startup:
-        // otherwise use the first permitted ordinary page, or Dashboard when no such page exists.
+        // otherwise use Dashboard, or a permitted page only if Dashboard is unavailable.
         var startKey = StartPagePolicy.Choose(NavItems.Where(item => item.IsPage).Select(item => item.LabelKey));
         SelectedNav = NavItems.FirstOrDefault(item => item.IsPage && item.LabelKey == startKey);
 

@@ -60,6 +60,7 @@ VIEW_MODEL_OF = {
     "ShellWindow.xaml": "ShellViewModel",
     "DashboardView.xaml": "DashboardViewModel",
     "ProductsView.xaml": "ProductsViewModel",
+    "ProductEditorWindow.xaml": "ProductsViewModel",
     "PosView.xaml": "PosViewModel",
     "PageFaultView.xaml": "PageFaultViewModel",
     "PurchasesView.xaml": "PurchasesViewModel",
@@ -4967,12 +4968,13 @@ def check_phase_three_packaging() -> None:
     model_path = DOTNET / "Area11.Core/Models/Product.cs"
     products_vm_path = DOTNET / "Area11.Desktop/ViewModels/ProductsViewModel.cs"
     products_view_path = DOTNET / "Area11.Desktop/Views/ProductsView.xaml"
+    product_editor_path = DOTNET / "Area11.Desktop/Views/ProductEditorWindow.xaml"
     pos_vm_path = DOTNET / "Area11.Desktop/ViewModels/PosViewModel.cs"
     pos_view_path = DOTNET / "Area11.Desktop/Views/PosView.xaml"
     purchase_vm_path = DOTNET / "Area11.Desktop/ViewModels/PurchasesViewModel.cs"
     purchase_view_path = DOTNET / "Area11.Desktop/Views/PurchasesView.xaml"
     tests_path = DOTNET / "Area11.Tests/PackagingSearchTests.cs"
-    paths = (policy_path, service_path, model_path, products_vm_path, products_view_path,
+    paths = (policy_path, service_path, model_path, products_vm_path, products_view_path, product_editor_path,
              pos_vm_path, pos_view_path, purchase_vm_path, purchase_view_path, tests_path)
     if not all(path.exists() for path in paths):
         fail("Phase-3 packaging/search is incomplete: policy, product editor, screen or regression file is missing")
@@ -4983,6 +4985,7 @@ def check_phase_three_packaging() -> None:
     model = model_path.read_text(encoding="utf-8-sig")
     products_vm = products_vm_path.read_text(encoding="utf-8-sig")
     products_view = products_view_path.read_text(encoding="utf-8-sig")
+    product_editor = product_editor_path.read_text(encoding="utf-8-sig")
     pos_vm = pos_vm_path.read_text(encoding="utf-8-sig")
     pos_view = pos_view_path.read_text(encoding="utf-8-sig")
     purchase_vm = purchase_vm_path.read_text(encoding="utf-8-sig")
@@ -5020,9 +5023,8 @@ def check_phase_three_packaging() -> None:
             fail(f"Phase-3 ProductsViewModel: {reason}")
 
     for text, path, needles in (
-        (products_view, products_view_path,
-         ('{Binding PackSizeLabel, UpdateSourceTrigger=PropertyChanged}',
-          '{Binding PackSizeLabel, Mode=OneWay}')),
+        (product_editor, product_editor_path, ('{Binding PackSizeLabel, UpdateSourceTrigger=PropertyChanged}',)),
+        (products_view, products_view_path, ('{Binding PackSizeLabel, Mode=OneWay}',)),
         (pos_view, pos_view_path, ('{Binding PackSizeLabel, Mode=OneWay}',)),
         (purchase_view, purchase_view_path, ('DisplayMemberPath="ProductChoiceLabel"',)),
     ):
@@ -5049,6 +5051,32 @@ def check_phase_three_packaging() -> None:
     ):
         if test_name not in tests:
             fail(f"Phase-3 packaging regression fact is missing: {test_name}")
+
+    # Product workspace: an explicit New/Edit and real row double-click open the same modal form.
+    editor_code = (DOTNET / "Area11.Desktop/Views/ProductEditorWindow.xaml.cs").read_text(encoding="utf-8-sig")
+    view_code = (DOTNET / "Area11.Desktop/Views/ProductsView.xaml.cs").read_text(encoding="utf-8-sig")
+    door_code = (DOTNET / "Area11.Desktop/ProductEditorDoor.cs").read_text(encoding="utf-8-sig")
+    for needle in ('Command="{Binding NewCommand}"', 'Command="{Binding EditCommand}"',
+                   'MouseDoubleClick="OnProductDoubleClick"'):
+        if needle not in products_view:
+            fail(f"Product workspace is missing {needle}")
+    for needle in ("if (node is ButtonBase) return;", "DataGridRow { Item: Product product }",
+                   "vm.EditCommand.Execute(null)"):
+        if needle not in view_code:
+            fail(f"Product double-click needs a real row and must not hijack row buttons: {needle}")
+    for needle in ("window.ShowDialog()",):
+        if needle not in door_code:
+            fail(f"Product form must remain modal: {needle}")
+    for needle in ("MessageBoxResult.No", "ConfirmEditorClosing", "_viewModel.EditorSaved -= OnEditorSaved"):
+        if needle not in editor_code:
+            fail(f"Product form is missing a safe close/unsubscribe guard: {needle}")
+    for needle in ("ProductEditorDoor.Show(this)", "_editingId = created.Value", "Editor.Load(created.Value)",
+                   "Extra fields are saved separately", "MessageBoxResult.No"):
+        if needle not in products_vm:
+            fail(f"Product editor lost a save, dialog or removal guard: {needle}")
+    start_policy = (DOTNET / "Area11.Core/Utils/StartPagePolicy.cs").read_text(encoding="utf-8-sig")
+    if 'keys.FirstOrDefault(key => key == "dashboard")' not in start_policy:
+        fail("Startup without Counter must prefer the existing Dashboard route")
 
     REPORT.append(
         "Phase 3 packaging: existing descriptive pack label is edited, normalized and searchable in "

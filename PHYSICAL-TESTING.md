@@ -1,5 +1,20 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-13 — Master Portion 2: Product workspace اور Dashboard fallback
+
+**حالت: code/static تیار؛ v0.41.0 Siderite Windows build، 922-case xUnit اور WPF/owner physical verification باقی۔** Baltic v0.40.0 پر مالک کے Core/Tests **921/921 PASS** ہیں؛ اس نتیجے کو Siderite پر منتقل نہ کریں۔ مالک کے فیصلے کے مطابق Counter permission نہ ہو تو Dashboard startup کا code لکھا گیا؛ کوئی نئی permission نہیں دی گئی۔
+
+**Isolated test copy میں جانچیں:**
+1. Owner یا Counter-allowed user login پر Counter دیکھے؛ Counter permission کے بغیر user پر Dashboard کھلے اور sensitive/profit data اپنی موجودہ permissions کے مطابق رہے۔
+2. Products کی full-width list، چھوٹی image اور missing-photo placeholder دیکھیں۔ Top **New product** سے editor کھلے؛ ایک نئی test medicine محفوظ کریں، پھر دوبارہ Save سے دوسری product row نہ بنے۔
+3. ایک row منتخب کر کے **Edit product**، پھر editor بند کر کے اسی row پر **double-click**: دونوں اسی medicine کے editor میں جائیں۔ خالی جگہ/header اور photo/category/company buttons double-click سے غلط product edit نہ ہو۔
+4. Editor میں unsaved changes کے بعد Cancel/X پر default No warning: No سے کام قائم رہے؛ Yes سے صرف غیر محفوظ values ضائع ہوں۔ Save کے بعد editor کھلا رہے؛ extra fields الگ Save ہوتے ہیں اور product Save ان کے غیر محفوظ values نہ مٹائے۔ Photo/barcode اور catalog/units کی nested windows اور ان سے واپسی چیک کریں۔
+5. Remove/put-away پر default No confirmation اور history protection چیک کریں؛ صرف isolated test data میں۔ Keyboard، چھوٹی screen، user permissions، validation errors اور نام/pack/category/strength/rates/edit کے مطابق service audit چیک کریں۔
+6. Windows build اور `tools\RUN-TESTS.cmd` میں **ALL GREEN - 922 of 922** بھیجیں؛ failure پر اصل log بھیجیں۔ PT-12 header sections، bell اور fallback کا physical proof بھی الگ باقی ہے۔
+
+ہر Save genuine database میں حقیقی record بدلتا ہے؛ fake medicine یا put-away صرف isolated copy میں۔ PT02-POS-01 unreproduced ہے؛ اسے اس کام سے fixed نہ لکھیں۔ Portions 3–15 الگ approval کے منتظر ہیں۔
+
+
 ## مالک کا مصدقہ Baltic Windows test اور Product Edit کا فیصلہ
 
 مالک کی فراہم کردہ v0.40.0 Baltic Windows test output: **921 passed، 0 failed، 0 skipped، 921 total، 1 منٹ 14 سیکنڈ؛ `ALL GREEN - 921 of 921 cases passed, failed: 0`**۔ Log میں `Area11.Core` اور `Area11.Tests` build/run دکھتے ہیں؛ اس سے Desktop/WPF build، launch یا PT-12 physical walkthrough ثابت نہیں ہوتے۔ پہلے کی 918/918 کی اطلاع کے version کا ثبوت اب بھی الگ غیر مصدقہ ہے۔

@@ -1,5 +1,10 @@
 # TAKEOVER — the complete brief for a new agent
 
+## Latest handoff — v0.41.0 Siderite
+
+Owner's Baltic Windows Core/Tests 921/921 passed. Owner then approved Portion 2: full-width Products grid with New, Edit and row double-click opening a guarded modal editor; no-Counter startup now selects Dashboard. **922 tests written, 57/57 static; Siderite Windows/WPF build and xUnit plus PT-13/PT-12 owner verification pending.** Portions 3–15 require separate approval. Keep prior evidence and PT02-POS-01 unreproduced.
+
+
 **Latest owner evidence:** Baltic v0.40.0 Windows Core/Tests **921 passed / 0 failed / 0 skipped / 921**, 1m14s, ALL GREEN. This does not prove Desktop/WPF build or PT-12. Owner selected Dashboard as fallback without Counter permission; existing Baltic code needs adjustment. For Portion 2, owner selected both an Edit Product button and row double-click; coding approval remains separate.
 
 ## Latest handoff — v0.40.0 Baltic

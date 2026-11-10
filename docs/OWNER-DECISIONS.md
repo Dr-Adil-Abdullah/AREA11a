@@ -1,5 +1,10 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## تازہ status — Master Portion 2، v0.41.0 Siderite
+
+مالک نے Product editing کے لیے **Edit Product button اور row double-click دونوں** منتخب کیے اور NEXT کہا۔ مالک کے فیصلے کے مطابق Counter کی اجازت نہ ہونے پر Dashboard fallback کا code بھی لکھا گیا؛ permissions نہیں بڑھیں۔ Portion 2 میں full-width product list، thumbnail، New اور modal editor، default-No close/put-away warning اور separately saved extra fields کی حفاظت لکھی گئی۔ **922 written cases، 57/57 static؛ Siderite Windows/WPF build، xUnit اور PT-13 physical verification pending**۔ Baltic کا owner Windows Core/Tests 921/921 PASS پہلے والا ثبوت ہے۔ Portions 3–15 کو الگ اجازت درکار ہے۔
+
+
 **Latest owner evidence:** Baltic v0.40.0 Windows Core/Tests **921 passed / 0 failed / 0 skipped / 921**, 1m14s, ALL GREEN. This does not prove Desktop/WPF build or PT-12. Owner selected Dashboard as fallback without Counter permission; existing Baltic code needs adjustment. For Portion 2, owner selected both an Edit Product button and row double-click; coding approval remains separate.
 
 ## تازہ status — Master checklist Portion 1, v0.40.0 Baltic

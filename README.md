@@ -1,5 +1,8 @@
 # Area11 — pharmacy POS + inventory for Windows
 
+**Current source: v0.41.0 Siderite `#594D32`.** Owner-requested Dashboard fallback and Portion 2 Product workspace are written; **922 tests written, 57/57 static checks**, but Windows build/xUnit and PT-13 physical verification remain pending. Prior Baltic Core/Tests **921/921 PASS** is separate evidence. Portions 3–15 remain to be approved.
+
+
 **Latest owner evidence:** Baltic v0.40.0 Windows Core/Tests **921 passed / 0 failed / 0 skipped / 921**, 1m14s, ALL GREEN. This does not prove Desktop/WPF build or PT-12. Owner selected Dashboard as fallback without Counter permission; existing Baltic code needs adjustment. For Portion 2, owner selected both an Edit Product button and row double-click; coding approval remains separate.
 
 **Current source: v0.40.0 Baltic `#33566B` — Portion 1 code written, not yet Windows/WPF verified.** Counter-first permitted startup, wordmark-only Dashboard navigation and header-hosted existing page sections are included; 921 tests are written, 57 static checks pass. Owner's separately reported 918/918 run has no confirmed version. Run Windows Desktop build and `ALL GREEN - 921 of 921`; PT-12 remains pending. Master-checklist portions 2–15 await approval; see `docs/MASTER-CHECKLIST-ROADMAP.md`.

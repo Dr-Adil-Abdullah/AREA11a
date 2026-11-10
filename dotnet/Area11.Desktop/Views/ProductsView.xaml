@@ -27,11 +27,16 @@
                              ToolTip="Name, pack / variant, strength, salt, barcode, brand, rack, category or company" />
                     <TextBox Width="110" Margin="6,0,0,0" Text="{Binding StrengthFilter, UpdateSourceTrigger=PropertyChanged}"
                              ToolTip="Optional exact strength filter: 50 ml, 50ml, 50 or ml" />
-                    <Button Content="New" Style="{StaticResource GhostButton}" Command="{Binding NewCommand}"
+                    <Button Content="New product" Style="{StaticResource GhostButton}" Command="{Binding NewCommand}"
                             Margin="8,0,0,0" />
+                    <Button Content="Edit product" Style="{StaticResource GhostButton}" Command="{Binding EditCommand}"
+                            Margin="8,0,0,0" ToolTip="Select a medicine, then edit it" />
                     <Button Content="Refresh" Style="{StaticResource GhostButton}" Command="{Binding RefreshCommand}"
                             Margin="8,0,0,0" />
                 </StackPanel>
+
+                <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" MaxWidth="420"
+                           Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Right" Margin="0,4,0,0" />
 
                 <!-- F-50: the grid below is a guess, and the page says so before a row is picked. -->
                 <TextBlock Text="{Binding SearchNote}" TextWrapping="Wrap" MaxWidth="360" FontWeight="Bold"
@@ -42,14 +47,8 @@
         </DockPanel>
 
         <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1.75*" />
-                <ColumnDefinition Width="14" />
-                <ColumnDefinition Width="1.05*" />
-            </Grid.ColumnDefinitions>
-
             <Border Grid.Column="0" Style="{StaticResource Card}" Padding="10">
-                <DataGrid ItemsSource="{Binding Items}"
+                <DataGrid x:Name="ProductGrid" MouseDoubleClick="OnProductDoubleClick" ItemsSource="{Binding Items}"
                           SelectedItem="{Binding SelectedProduct, Mode=TwoWay}">
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="Photo" Width="62">
@@ -58,12 +57,16 @@
                                     <Button Command="{Binding DataContext.OpenProductPhotoCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                             CommandParameter="{Binding Id}" Padding="2" BorderThickness="0" Background="Transparent"
                                             ToolTip="Open this medicine's photo gallery">
-                                        <Grid Width="44" Height="44">
-                                            <Image Source="{Binding PhotoPath}" Stretch="UniformToFill" />
-                                            <TextBlock Text="No photo" FontSize="9" TextWrapping="Wrap" TextAlignment="Center"
-                                                       VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}"
-                                                       Visibility="{Binding HasNoPhoto, Converter={StaticResource BoolToVis}}" />
-                                        </Grid>
+                                        <Border Width="44" Height="44" CornerRadius="5" BorderThickness="1"
+                                                BorderBrush="{StaticResource LineBrush}" Background="{StaticResource CanvasBrush}"
+                                                ClipToBounds="True">
+                                            <Grid>
+                                                <Image Source="{Binding PhotoPath}" Stretch="UniformToFill" />
+                                                <TextBlock Text="No photo" FontSize="9" TextWrapping="Wrap" TextAlignment="Center"
+                                                           VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}"
+                                                           Visibility="{Binding HasNoPhoto, Converter={StaticResource BoolToVis}}" />
+                                            </Grid>
+                                        </Border>
                                     </Button>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
@@ -99,221 +102,7 @@
                 </DataGrid>
             </Border>
 
-            <Border Grid.Column="2" Style="{StaticResource Card}" Padding="14">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
-                        <TextBlock Text="{Binding HeaderText}" Style="{StaticResource SectionTitle}" />
 
-                        <TextBlock Text="Name *" Style="{StaticResource FieldLabel}" />
-                        <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
-
-                        <TextBlock Text="Salt / formula / generic" Style="{StaticResource FieldLabel}" />
-                        <TextBox Text="{Binding Generic, UpdateSourceTrigger=PropertyChanged}" />
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="8" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="Brand" Style="{StaticResource FieldLabel}" />
-                                <TextBox Text="{Binding Brand, UpdateSourceTrigger=PropertyChanged}" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="Barcode" Style="{StaticResource FieldLabel}" />
-                                <TextBox Text="{Binding Barcode, UpdateSourceTrigger=PropertyChanged}" />
-                            </StackPanel>
-                        </Grid>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="8" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="Rack / shelf" Style="{StaticResource FieldLabel}" />
-                                <TextBox Text="{Binding RackNo, UpdateSourceTrigger=PropertyChanged}" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="Room / almari" Style="{StaticResource FieldLabel}" />
-                                <TextBox Text="{Binding Room, UpdateSourceTrigger=PropertyChanged}" />
-                            </StackPanel>
-                        </Grid>
-
-                        <TextBlock Text="Category" Style="{StaticResource FieldLabel}" />
-                        <ComboBox ItemsSource="{Binding Categories}" DisplayMemberPath="Name"
-                                  SelectedItem="{Binding SelectedCategory, Mode=TwoWay}" />
-                        <TextBlock Text="Additional category tags (filter only; never extra financial totals)"
-                                   Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,6,0,0" />
-                        <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="5" Padding="5" MaxHeight="110">
-                            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                <ItemsControl ItemsSource="{Binding CategoryTagOptions}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected, Mode=TwoWay}" Margin="2" />
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </ScrollViewer>
-                        </Border>
-
-                        <Grid Margin="0,4,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="8" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBox Grid.Column="0" Text="{Binding NewCategoryName, UpdateSourceTrigger=PropertyChanged}"
-                                     ToolTip="New category" />
-                            <Button Grid.Column="2" Content="Add" Style="{StaticResource GhostButton}"
-                                    Command="{Binding AddCategoryCommand}" />
-                        </Grid>
-
-                        <TextBlock Text="Company / brand owner" Style="{StaticResource FieldLabel}" />
-                        <ComboBox ItemsSource="{Binding Companies}" DisplayMemberPath="Name"
-                                  SelectedItem="{Binding SelectedCompany, Mode=TwoWay}" />
-
-                        <Grid Margin="0,4,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="8" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBox Grid.Column="0" Text="{Binding NewCompanyName, UpdateSourceTrigger=PropertyChanged}"
-                                     ToolTip="New company" />
-                            <Button Grid.Column="2" Content="Add" Style="{StaticResource GhostButton}"
-                                    Command="{Binding AddCompanyCommand}" />
-                        </Grid>
-
-                        <Button Content="Manage categories and companies…"
-                                Style="{StaticResource GhostButton}" Margin="0,8,0,0"
-                                Command="{Binding ManageCatalogCommand}"
-                                ToolTip="Rename, order, put away or bring back. Products and historical records are never deleted." />
-                        <Button Content="Manage units…" Style="{StaticResource GhostButton}" Margin="0,6,0,0"
-                                Command="{Binding ManageUnitsCommand}"
-                                ToolTip="Add, rename or put away unused units. Used units cannot disappear from products or history." />
-
-                        <TextBlock Text="Strength / volume (description only — never a stock conversion)" Style="{StaticResource FieldLabel}" />
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="8" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <TextBox Grid.Column="0" Text="{Binding StrengthText, UpdateSourceTrigger=PropertyChanged}"
-                                     ToolTip="Example: 50 for a 50 mL injection" />
-                            <ComboBox Grid.Column="2" ItemsSource="{Binding BaseUnits}" SelectedItem="{Binding StrengthUnit, Mode=TwoWay}" />
-                        </Grid>
-                        <TextBlock Text="Example: base unit injection + strength 50 ml + pack 1 x 10 = 10 injections per box. Sell whole injections, not mL."
-                                   Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,4,0,0" />
-
-                        <TextBlock Text="Pack size / variant label (searchable description only)" Style="{StaticResource FieldLabel}" />
-                        <TextBox Text="{Binding PackSizeLabel, UpdateSourceTrigger=PropertyChanged}"
-                                 ToolTip="Examples: 50 mL bottle, 10 x 10 tablets, or 100 mL syrup. This does not change stock or conversion." />
-                        <TextBlock Text="Keep each strength / pack variant as its own product. Use the formula below for box, strip and base-unit conversion."
-                                   Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,4,0,0" />
-
-                        <TextBlock Text="Pack formula — 1 box = ? inner packs, 1 inner pack = ? base units" Style="{StaticResource FieldLabel}" />
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="8" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="8" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBox Text="{Binding BoxStripsText, UpdateSourceTrigger=PropertyChanged}" />
-                                <TextBlock Text="strips / box" Style="{StaticResource MetricLabel}" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBox Text="{Binding StripTabletsText, UpdateSourceTrigger=PropertyChanged}" />
-                                <TextBlock Text="tablets / strip" Style="{StaticResource MetricLabel}" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="4">
-                                <ComboBox ItemsSource="{Binding BaseUnits}" SelectedItem="{Binding BaseUnit, Mode=TwoWay}" />
-                                <TextBlock Text="base unit" Style="{StaticResource MetricLabel}" />
-                            </StackPanel>
-                        </Grid>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="8" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="Cost (Rs)" Style="{StaticResource FieldLabel}" />
-                                <TextBox Text="{Binding CostText, UpdateSourceTrigger=PropertyChanged}" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="Retail (Rs)" Style="{StaticResource FieldLabel}" />
-                                <TextBox Text="{Binding RetailText, UpdateSourceTrigger=PropertyChanged}" />
-                            </StackPanel>
-                        </Grid>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="8" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="VIP rate (Rs)" Style="{StaticResource FieldLabel}" />
-                                <TextBox Text="{Binding VipText, UpdateSourceTrigger=PropertyChanged}" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="Doctor rate (Rs)" Style="{StaticResource FieldLabel}" />
-                                <TextBox Text="{Binding DoctorText, UpdateSourceTrigger=PropertyChanged}" />
-                            </StackPanel>
-                        </Grid>
-
-                        <TextBlock Text="Reorder level (base units)" Style="{StaticResource FieldLabel}" />
-                        <TextBox Text="{Binding ReorderText, UpdateSourceTrigger=PropertyChanged}" />
-
-                        <Button Content="Save product"
-                                Style="{StaticResource PrimaryButton}"
-                                Height="38"
-                                Margin="0,16,0,0"
-                                Command="{Binding SaveCommand}" />
-
-                        <Button Content="Photos of this medicine…"
-                                Style="{StaticResource GhostButton}"
-                                Margin="0,8,0,0"
-                                Command="{Binding PhotosCommand}"
-                                ToolTip="Two or three pictures: the box, the strip, the rack. Nothing is deleted - a wrong one is put away." />
-
-                        <Button Content="Barcodes of this medicine…"
-                                Style="{StaticResource GhostButton}"
-                                Margin="0,8,0,0"
-                                Command="{Binding BarcodesCommand}"
-                                ToolTip="One code per pack: the strip, the box, a carton. A box code adds a box at the counter." />
-
-                        <Button Content="Remove selected (history kept)"
-                                Style="{StaticResource GhostButton}"
-                                Margin="0,8,0,0"
-                                Command="{Binding DeleteCommand}" />
-
-                        <!-- the owner's own questions (F-42): shown only when he has made any -->
-                        <views:CustomFieldsEditorView DataContext="{Binding Editor}" />
-
-                        <TextBlock Text="{Binding StatusMessage}" FontSize="11" TextWrapping="Wrap" Margin="0,12,0,0">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsStatusError}" Value="True">
-                                            <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </StackPanel>
-                </ScrollViewer>
-            </Border>
         </Grid>
     </Grid>
 </UserControl>

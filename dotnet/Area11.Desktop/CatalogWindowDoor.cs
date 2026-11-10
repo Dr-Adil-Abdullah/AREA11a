@@ -12,7 +12,8 @@ internal static class CatalogWindowDoor
     {
         var viewModel = new CatalogWindowViewModel(services, user);
         var window = new CatalogWindow(viewModel);
-        var owner = Application.Current?.MainWindow;
+        var owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(candidate => candidate.IsActive)
+                    ?? Application.Current?.MainWindow;
 
         if (owner is not null && !ReferenceEquals(owner, window))
         {

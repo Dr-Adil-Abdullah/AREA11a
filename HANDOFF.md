@@ -1,5 +1,10 @@
 # HANDOFF - read this first
 
+## Latest handoff — v0.41.0 Siderite
+
+Portion 2 Product workspace and owner-requested Dashboard fallback are written. Modal editor uses both Edit and double-click, with close/put-away warnings and independent extra-field saving; existing rules remain. **922 written cases; 57/57 static only.** Baltic had owner Core/Tests **921/921 PASS**, not Siderite/WPF proof. Windows build, 922/922 and PT-13/PT-12 pending; portions 3–15 require approval.
+
+
 **Latest owner evidence:** Baltic v0.40.0 Windows Core/Tests **921 passed / 0 failed / 0 skipped / 921**, 1m14s, ALL GREEN. This does not prove Desktop/WPF build or PT-12. Owner selected Dashboard as fallback without Counter permission; existing Baltic code needs adjustment. For Portion 2, owner selected both an Edit Product button and row double-click; coding approval remains separate.
 
 ## Latest handoff — v0.40.0 Baltic

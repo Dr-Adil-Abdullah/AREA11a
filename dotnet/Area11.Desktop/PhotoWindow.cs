@@ -29,7 +29,8 @@ internal static class PhotoWindow
         var viewModel = new PhotoGalleryViewModel(services, user, PhotoEntity.Clean(entity), entityId, title);
         var window = new PhotoGalleryWindow(viewModel);
 
-        var owner = Application.Current?.MainWindow;
+        var owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(candidate => candidate.IsActive)
+                    ?? Application.Current?.MainWindow;
 
         if (owner is not null && !ReferenceEquals(owner, window))
         {
