@@ -2,6 +2,8 @@
 
 ## PT-16 — Login/Counter XAML parse: owner screenshot, candidate repair pending Windows verification
 
+مالک نے 973/973، 0 failed، 0 skipped، 1m14s والا Core/Tests output دوبارہ بھیجا ہے۔ یہ متن پہلے والے نتیجے سے یکساں ہے؛ اس میں commit، run date یا login کا نتیجہ نہیں، اس لیے اسے fix `9d02546` کے بعد کا نیا run یا Windows/WPF PASS فرض نہ کریں۔ Pull/commit اور login کا نتیجہ پوچھنا باقی ہے۔
+
 مالک کی تصویر: `XamlParseException`, `TypeConverterMarkupExtension`, **line 72, position 31**؛ دکھائی گئی crash file `C:\ProgramData\Area11\logs\crash-2026-11-10_083528.txt` ہے۔ تصویر exception کی اندرونی وجہ یا متعلقہ XAML file نہیں دکھاتی، لہٰذا مکمل crash file ابھی بھی ضروری ہے۔ Counter `PosView.xaml` کی line 72 پر `DataGrid.RowHeight="Auto"` ملا؛ Products grid میں بھی یہی لکھا تھا۔ WPF source کے مطابق `DataGrid.RowHeight` ایک `double` ہے، اس کا auto-sizing default `double.NaN` ہے اور اس property پر Auto text converter موجود نہیں؛ .NET `DoubleConverter` عدد parse کرتا ہے۔ یہ owner error سے مطابقت رکھنے والا مضبوط ممکنہ سبب ہے، مگر screenshot اکیلا مکمل ثبوت نہیں۔
 
 دونوں جگہ `RowHeight="NaN"` رکھا گیا ہے تاکہ theme کی 30px fixed row کو override کر کے thumbnail content کے مطابق height بنے؛ static checker میں DataGrid/Setter پر `RowHeight="Auto"` کا guard شامل کیا گیا ہے۔ Windows WPF build، login، Counter اور Products rendering اور medium/large thumbnails کی تصدیق **ابھی باقی** ہے؛ اسے physical fix/pass مت لکھیں۔ Owner کا 973/973 Core/Tests run اس XAML کو verify نہیں کرتا۔ متعلقہ run کی پوری crash file بھیجیں، خاص طور پر inner exception اور stack trace، کوئی password/database نہ بھیجیں۔
