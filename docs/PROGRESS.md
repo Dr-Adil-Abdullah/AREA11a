@@ -1,8 +1,12 @@
 # PROGRESS - the feature board (what is done, what is next)
 
+## Portion 4 complete — v0.43.0 Umber (code + written tests; Windows/physical pending)
+
+Owner decision implemented: **a photo is never required.** `FieldGovernance.DefinitionError` refuses required photo definitions; `Normalize` never fails a photo field; creation saves parent plus answers atomically with photos joining the gallery afterwards; legacy required-photo rows are never rewritten and block nothing. Own-fields form locks the Required tick for photos with an explanatory hint; photo rows show no required star. Coverage review finished: native phone/agency/generic/brand/rack/pack policies enforced on direct create/edit, CSV preview/apply and workbook preview/apply with legacy-blank preservation; CSV refuses required extra answers it cannot supply at preview and apply; workbook only updates existing rows and never writes answers, so no bypass. **974 written cases (2 new photo regressions), 57/57 static.** No local .NET/WPF run: require Windows `ALL GREEN - 974 of 974` plus Portion 4 physical checks (test copy). **Discovered gap, not in scope:** no supplier-edit path exists (`UpdateSupplier` absent), so supplier answers after creation use the separate editor only — candidate for a separate portion if the owner wants it. Portion 5 (safe local drafts) is approved next; Portion 17 stays paused.
+
 ## Owner update: login screen and reported error
 
-The owner says the login screen now opens and the reported error is gone after the candidate fix. This is a positive owner report, not proof that all screens, Counter/Products thumbnails or financial workflows passed. Original inner exception not received; see PT-16 in `PHYSICAL-TESTING.md`. The owner supplied Windows Core/Tests **973 passed, 0 failed, 0 skipped, 1m14s**, v0.42.0 banner; the log does not establish exact commit. Portion 4 remains incomplete; finish it before Portion 5, then 6–7. Portion 17 remains paused. Latest next-agent status is in `INCOMPLETE-WORK-HANDOFF.md`.
+The owner says the login screen now opens and the reported error is gone after the candidate fix. This is a positive owner report, not proof that all screens, Counter/Products thumbnails or financial workflows passed. Original inner exception not received; see PT-16 in `PHYSICAL-TESTING.md`. The owner supplied Windows Core/Tests **973 passed, 0 failed, 0 skipped, 1m14s**, v0.42.0 banner; the log does not establish exact commit. Portion 4 is code-complete in v0.43.0 (Windows/physical pending); Portion 5 is approved next, then 6–7. Portion 17 remains paused. Latest next-agent status is in `INCOMPLETE-WORK-HANDOFF.md`.
 
 ## Owner priority: finish Portion 4 first — IN PROGRESS, not released
 

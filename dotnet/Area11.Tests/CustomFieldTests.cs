@@ -501,17 +501,49 @@ BEGIN SELECT RAISE(ABORT, 'audit unavailable'); END;"));
     }
 
     [Fact]
-    public void RequiredPhotoOnNewProductExplainsWhyItCannotYetBeAttached()
+    public void APhotoFieldCanNeverBeMarkedRequired()
     {
         using var test = new TestDatabase();
         var fields = Fields(test);
-        Assert.True(fields.Add(TestData.Owner, CustomFieldEntity.Product, "Box photo",
-            CustomFieldType.Photo, null, true).Ok);
-        var result = new ProductService(test.Database, test.Audit, test.Log)
+
+        var refused = fields.Add(TestData.Owner, CustomFieldEntity.Product, "Box photo",
+            CustomFieldType.Photo, null, true);
+        Assert.False(refused.Ok);
+        Assert.Contains("never be required", refused.Error);
+
+        var added = fields.Add(TestData.Owner, CustomFieldEntity.Product, "Box photo",
+            CustomFieldType.Photo, null, false);
+        Assert.True(added.Ok, added.Error);
+
+        var updateRefused = fields.Update(TestData.Owner, added.Value!.Id, "Box photo",
+            CustomFieldType.Photo, null, true);
+        Assert.False(updateRefused.Ok);
+        Assert.Contains("never be required", updateRefused.Error);
+
+        // Every other kind of field may still be required.
+        var text = fields.Add(TestData.Owner, CustomFieldEntity.Product, "Shelf note",
+            CustomFieldType.Text, null, true);
+        Assert.True(text.Ok, text.Error);
+    }
+
+    [Fact]
+    public void ALegacyRequiredPhotoRowNeverBlocksCreationOrSave()
+    {
+        using var test = new TestDatabase();
+        var fields = Fields(test);
+        test.Database.Tx(connection => test.Database.Execute(connection, @"
+INSERT INTO custom_fields(entity, field_key, label, type, options_json, help_text, required, active, sort, created_at)
+VALUES('product', 'product.custom.9001', 'Old box photo', 'photo', NULL, '', 1, 1, 1, '2026-01-01');"));
+
+        // The old row stays untouched in the database - no rewrite - yet nothing is blocked.
+        var created = new ProductService(test.Database, test.Audit, test.Log)
             .Create(TestData.Owner, new ProductPatch { Name = "New medicine" });
-        Assert.False(result.Ok);
-        Assert.Contains("cannot yet", result.Error);
-        Assert.Equal(0L, Rows(test, "SELECT COUNT(*) FROM products;"));
+        Assert.True(created.Ok, created.Error);
+
+        var legacy = fields.List(TestData.Owner, CustomFieldEntity.Product).Value!.Single();
+        Assert.True(fields.SaveValues(TestData.Owner, CustomFieldEntity.Product, created.Value,
+            new Dictionary<int, string?> { [legacy.Id] = null }).Ok);
+        Assert.Equal(1L, Rows(test, "SELECT required FROM custom_fields WHERE label = 'Old box photo';"));
     }
 
     // ============================== helpers ==============================

@@ -18,8 +18,8 @@ namespace Area11.Desktop.ViewModels;
 /// draw (text, number, amount, date, list, tick, photo) and asks
 /// <see cref="CustomFieldService"/> to save them in one go.
 ///
-/// Product answers are saved with the product in one transaction; customer and supplier answers
-/// still use their separate save button until their form integration is implemented.
+/// Product, customer and supplier answers are saved with their record in one transaction on the
+/// new/edit panels; the separate save button remains for the read panel of existing records.
 /// </summary>
 public sealed class CustomFieldsEditorViewModel : ObservableObject
 {
@@ -256,8 +256,9 @@ public sealed class CustomInputRow : ObservableObject
 
     public int FieldId => Field.Id;
 
-    /// <summary>The name the form shows; a required field carries a star so the person knows.</summary>
-    public string Label => Field.Required ? Field.Label + " *" : Field.Label;
+    /// <summary>The name the form shows; a required field carries a star so the person knows.
+    /// A photo never carries one - it is never required, even on a legacy row.</summary>
+    public string Label => Field.Required && !IsPhoto ? Field.Label + " *" : Field.Label;
 
     public string Hint => !string.IsNullOrWhiteSpace(Field.HelpText)
         ? Field.HelpText

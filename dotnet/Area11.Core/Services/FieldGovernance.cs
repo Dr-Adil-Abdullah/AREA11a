@@ -38,7 +38,8 @@ public static class FieldGovernance
         string? label,
         string? type,
         string? optionsText,
-        string? helpText = null)
+        string? helpText = null,
+        bool required = false)
     {
         // Update already loaded its row from the database; a null entity means that existing row's
         // entity was checked by the caller. Add always passes an entity and therefore cannot skip this.
@@ -80,6 +81,20 @@ public static class FieldGovernance
             return "Choose what kind of answer this field takes.";
         }
 
+        // Owner decision: a photo is never required. The gallery lives beside the record, so a
+        // required photo could only block creation - and a blocked creation saves nothing at all.
+        if (required && cleanType == CustomFieldType.Photo)
+        {
+            return "A photo field can never be required - create the record first, then add its photo with the Photos… button.";
+        }
+
+        // Owner decision: a photo is never required. The gallery lives beside the record, so a
+        // required photo could only block creation - and a blocked creation saves nothing at all.
+        if (required && cleanType == CustomFieldType.Photo)
+        {
+            return "A photo field can never be required - create the record first, then add its photo with the Photos… button.";
+        }
+
         if (CustomFieldType.NeedsOptions(cleanType))
         {
             var options = CustomFieldType.ParseOptions(CustomFieldType.BuildOptions(optionsText));
@@ -117,13 +132,9 @@ public static class FieldGovernance
 
         if (type == CustomFieldType.Photo)
         {
-            // A photo field has no value of its own: the gallery is the answer.
-            if (field.Required && photoCount <= 0)
-            {
-                error = "\"" + field.Label + "\" needs at least one photo - use the Photos… button first.";
-                return false;
-            }
-
+            // A photo field has no value of its own: the gallery is the answer. It is never
+            // required - not even for a legacy row that still carries required = 1 - so saving an
+            // answer, or creating a record, can never be blocked by a missing picture.
             return true;
         }
 

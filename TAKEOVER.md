@@ -1,6 +1,11 @@
 # TAKEOVER — the complete brief for a new agent
 
-> **WIP handoff, 24 Oct 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/60395e95-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/60395e95-area11a). Portion 4 is incomplete; portions 5–7 are approved next; Portion 17 is paused. Older status and approval statements below are historical. This branch is not a tested release.
+> **WIP handoff, 24 Oct 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/60395e95-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/60395e95-area11a). Portion 4 code-complete in v0.43.0 Umber (Windows/physical pending); Portion 5 is approved next; Portion 17 is paused. Older status and approval statements below are historical. This branch is not a tested release.
+
+
+## Latest handoff — v0.43.0 Umber
+
+Portion 4 code complete: photo-never-required decision implemented across definition, validation, creation and UI layers; legacy rows untouched and non-blocking; workbook reviewed safe. **974 written cases, 57/57 static; Windows build/xUnit and physical checks pending.** Portion 5 approved next; Portion 17 paused.
 
 
 ## Latest handoff — v0.42.0 Kyanite

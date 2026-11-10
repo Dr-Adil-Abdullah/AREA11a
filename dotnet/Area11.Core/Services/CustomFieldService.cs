@@ -126,7 +126,7 @@ ORDER BY sort, id;",
         var cleanLabel = (label ?? string.Empty).Trim();
 
         var cleanHelp = FieldGovernance.CleanHelpText(helpText);
-        var problem = FieldGovernance.DefinitionError(key, cleanLabel, cleanType, optionsText, cleanHelp);
+        var problem = FieldGovernance.DefinitionError(key, cleanLabel, cleanType, optionsText, cleanHelp, required);
 
         if (problem is not null)
         {
@@ -220,7 +220,7 @@ VALUES(@entity, NULL, @label, @type, @optionsJson, @helpText, @required, 1, @sor
         var cleanType = CustomFieldType.Clean(type);
         var cleanLabel = (label ?? string.Empty).Trim();
         var cleanHelp = helpText is null ? null : FieldGovernance.CleanHelpText(helpText);
-        var problem = FieldGovernance.DefinitionError(null, cleanLabel, cleanType, optionsText, cleanHelp);
+        var problem = FieldGovernance.DefinitionError(null, cleanLabel, cleanType, optionsText, cleanHelp, required);
 
         if (problem is not null)
         {
@@ -250,7 +250,7 @@ VALUES(@entity, NULL, @label, @type, @optionsJson, @helpText, @required, 1, @sor
 
                 var effectiveHelp = cleanHelp ?? field.HelpText ?? string.Empty;
                 var entityProblem = FieldGovernance.DefinitionError(
-                    field.Entity, cleanLabel, cleanType, optionsText, effectiveHelp);
+                    field.Entity, cleanLabel, cleanType, optionsText, effectiveHelp, required);
                 if (entityProblem is not null)
                 {
                     return ServiceResult.Fail(entityProblem);
@@ -495,17 +495,12 @@ WHERE entity = @entity AND entity_id = @entityId;",
         }
     }
 
-    // Photos live in a gallery keyed by the parent id. Until staged photos are supported, refuse
-    // rather than silently creating a record that violates the owner's required-photo rule.
+    // The owner decided a photo is never required, so creating a record can never be blocked
+    // by a missing picture: the record and its answers are saved together, and the photo joins
+    // the gallery afterwards. Kept as a separate step so the three creators share one path.
     internal ServiceResult SaveNewRecordValuesInTransaction(Microsoft.Data.Sqlite.SqliteConnection connection,
         User actor, string entity, int id, IReadOnlyDictionary<int, string?>? values)
     {
-        var photo = _db.QuerySingle<string>(connection, @"
-SELECT label FROM custom_fields WHERE entity = @entity AND active = 1 AND required = 1
-  AND LOWER(type) = 'photo' ORDER BY sort, id LIMIT 1;", new { entity });
-        if (photo is not null)
-            return ServiceResult.Fail("The required photo field \"" + photo +
-                "\" cannot yet be supplied before creating a record. Ask the owner to make it optional, create the record and add its photo.");
         return SaveValuesInTransaction(connection, actor, entity, id, values ?? new Dictionary<int, string?>());
     }
 

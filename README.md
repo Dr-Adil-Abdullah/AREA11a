@@ -1,6 +1,9 @@
 # Area11 — pharmacy POS + inventory for Windows
 
-> **WIP handoff, 24 Oct 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/60395e95-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/60395e95-area11a). Portion 4 is incomplete; portions 5–7 are approved next; Portion 17 is paused. Older status and approval statements below are historical. This branch is not a tested release.
+> **WIP handoff, 24 Oct 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/60395e95-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/60395e95-area11a). Portion 4 code-complete in v0.43.0 Umber (Windows/physical pending); Portion 5 is approved next; Portion 17 is paused. Older status and approval statements below are historical. This branch is not a tested release.
+
+
+**Current source: v0.43.0 Umber `#5C3A21` — master Portion 4 code complete.** Owner decision: a photo is never required — required-photo definitions are refused, missing pictures never block answers or record creation, legacy required-photo rows stay untouched and block nothing. Own-fields form locks the Required tick for photos; bulk-workbook path reviewed safe (existing rows only, never writes answers). **974 tests written, 57/57 static; Windows build/xUnit and Portion 4 physical verification pending.** Prior 973/973 WIP evidence is separate. Portion 5 (safe drafts) is approved next; Portion 17 remains paused.
 
 
 **Current source: v0.42.0 Kyanite `#3B526C` — master Portion 3 code written.** The product editor reloads complete tag IDs; primary category and filter-only tags are shown separately and explicit tag sets need a primary. Category-less products without tags and untouched legacy tag-only data remain; no guessed backfill. **929 tests written, 57/57 static; Windows build/xUnit and PT-14 physical verification pending.** Workbook category changes recheck tags; CSV import creates products without tags. Category put-away can leave other tags and remains for owner review. Baltic 921/921 is prior Core/Tests evidence. Portions 4–15 require approval.

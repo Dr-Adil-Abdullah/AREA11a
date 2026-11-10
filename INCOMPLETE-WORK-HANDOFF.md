@@ -17,7 +17,7 @@ The owner reported an XamlParseException after entering the password; screenshot
 
 ## Owner instruction / مالک کی ہدایت
 
-- Finish **Portion 4 first**, then start and finish **Portion 5**, then proceed to 6 and 7 sequentially. The owner has explicitly authorized this sequence; **“Next” is permission to proceed**, not a request to stop after a tiny edit and ask for approval again. Ask only questions that genuinely block safe implementation. Address the owner in Urdu and give an ordered done/remaining/current/next status. When a portion is complete, explain changes and targeted test steps.
+- **Portion 4 is code-complete (v0.43.0 Umber).** Start and finish **Portion 5** next, then proceed to 6 and 7 sequentially. The owner has explicitly authorized this sequence; **“Next” is permission to proceed**, not a request to stop after a tiny edit and ask for approval again. Ask only questions that genuinely block safe implementation. Address the owner in Urdu and give an ordered done/remaining/current/next status. When a portion is complete, explain changes and targeted test steps.
 - Portion 17 was started at the owner's request but is **paused, not abandoned**. Its WIP is preserved in this same branch. Do not mistake it for finished work or discard it. Do not prioritize it over 4–7 without a newer owner direction.
 - Keep `PHYSICAL-TESTING.md` as the feedback ledger; record results against their real versions. Test results arriving later do not by themselves block continued work; urgent data, money, stock, security and backup risks do take priority.
 - Decisions: incomplete financial records are drafts only (Q1=A); supplier directory combines one preferred supplier and all historical suppliers (Q2=C); profit is sale minus cost at sale and applicable discounts/returns, without expense allocation (Q3=A); sync is configurable manual plus automatic (Q4=C). WhatsApp PDF is prepared locally and the owner attaches/sends it; opening WhatsApp is not proof of delivery.
@@ -28,8 +28,8 @@ The owner reported an XamlParseException after entering the password; screenshot
 1. Header/navigation/default Sales: code delivered. Dashboard is the fallback when Counter is not permitted; never grant permissions to force a route. Physical verification pending.
 2. Product workspace: code delivered. Both the explicit Edit Product button and product-row double-click are required. Windows/WPF and physical checks pending.
 3. Categories/tags: Kyanite code delivered; Core/Tests owner result below. Category put-away may leave tag-only products; owner review and physical checks remain.
-4. **Central built-in and custom field policies — INCOMPLETE, highest priority.** Details and next actions below.
-5. **Safe local Sale/Purchase drafts — NOT COMPLETE.** Begin immediately after finishing 4. Incomplete transactions must remain draft-only, excluded from sync, and create no sale, purchase, payment, stock movement or financial effect until a separately validated final post. Existing posting guards must not be weakened.
+4. **Central built-in and custom field policies — CODE COMPLETE in v0.43.0 Umber; Windows/physical verification pending.** Photo-never-required decision implemented; coverage review finished; 974 written cases, 57/57 static.
+5. **Safe local Sale/Purchase drafts — NEXT, highest priority.** Begin immediately. Incomplete transactions must remain draft-only, excluded from sync, and create no sale, purchase, payment, stock movement or financial effect until a separately validated final post. Existing posting guards must not be weakened.
 6. Expiry calendar/picker — pending.
 7. Packaging, units and distinct variants — pending beyond existing descriptive pack foundation.
 8. Generic/salt and brand management — pending.
@@ -43,7 +43,11 @@ The owner reported an XamlParseException after entering the password; screenshot
 16. Windows startup/close modes — planned, not implemented. Owner requested manual/normal close, auto-start/normal close, and auto-start/protected close with owner password or specifically permitted staff; clarify minimize, pre-login and recovery when relevant.
 17. Comprehensive photos/avatar/icon — WIP preserved and paused. Product cover, customer/doctor/staff gallery, own avatar, thumbnail size and owner-selected runtime icon have unverified code; stock screens, privacy, backup/restore, cloud and icon behavior still need review.
 
-## Portion 4: exact WIP and next work
+## Portion 4: complete in v0.43.0 — what was done
+
+Owner decision closed the only blocker: **a photo is never required.** Required-photo definitions are refused with guidance; photo validation never fails; product/customer/supplier creation saves parent plus answers atomically; legacy required-photo rows are never rewritten and block nothing. The Own-fields form locks the Required tick for photos and photo rows show no star. Native policies (customer/supplier phone, supplier agency, product generic/brand/rack/pack) are enforced on direct create/edit, CSV preview/apply and workbook preview/apply with legacy-blank preservation; CSV refuses required extra answers at preview and apply; workbook only updates existing rows and never writes answers (reviewed safe, no bypass). Two new photo regressions: 974 written cases, 57/57 static. No local .NET/WPF run: require Windows `ALL GREEN - 974 of 974` and Portion 4 physical checks in a test copy. **Discovered gap:** no supplier-edit path exists; supplier answers after creation use the separate editor only. Historical WIP notes below are superseded.
+
+## Portion 4: historical WIP notes (superseded)
 
 Re-read actual source before changing it; the following is a guide, not proof of correct behavior:
 
@@ -67,6 +71,6 @@ Useful entry points: `dotnet/Area11.Core/Services/{NativeFieldPolicyService,Cust
 ## First actions for the next agent
 
 1. Confirm the right branch/PR and inspect Git status and this file, `docs/PROGRESS.md`, `docs/MASTER-CHECKLIST-ROADMAP.md`, `PHYSICAL-TESTING.md`, and the actual changed code. Preserve all WIP and any newer user edits.
-2. Continue **Portion 4**, prioritizing required-photo usability and complete, transactionally safe field behavior across real forms and import paths. Add targeted regression tests and run all available checks, including Windows builds/tests when available.
+2. Portion 4 is code-complete: run Windows build plus `ALL GREEN - 974 of 974`, then Portion 4 physical checks in a test copy. Then start **Portion 5** (safe local drafts) without another routine approval request.
 3. Explain exact completion and tests in Urdu; then start **Portion 5** without another routine approval request. Keep draft/final-post financial boundaries intact.
 4. Update this file and the progress/physical-test documents as the facts change; distinguish implemented, reviewed, compiled, automated-tested, physically tested and owner-accepted status.
