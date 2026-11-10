@@ -82,6 +82,10 @@ genuine transactions, WPF, real Excel, printer and optional real-cloud proof rem
 
 ## Build and run (Windows 10/11)
 
+**Two easy files in the main AREA11a folder:** double-click `START-AREA11.bat` to start the app, or `RUN-TESTS.bat` to run tests and copy the result. Tests do not run automatically when you open the app. The root test file calls the same `tools\RUN-TESTS.cmd`, which still saves `test.log` in the main folder.
+
+After you start once, Windows normally creates two optional shortcuts in that same folder: `! START AREA11` and `! RUN TESTS`, both with the Area11 logo. They sort near the top by name. In File Explorer choose **View → Large icons** or **Extra large icons** to make them easier to see; icon size is a Windows folder-view choice. If Windows cannot create them, the `.bat` files still work. Shortcuts are specific to this folder's location: if you move the folder, delete those two shortcuts and start `START-AREA11.bat` once to recreate them. They are not uploaded to Git.
+
 **Easiest (while the code is being worked on):** double-click **`START-AREA11.bat`** — it checks the
 folder, updates, builds and starts the app. [Urdu steps](docs/HOW-TO-RUN-URDU.md).
 

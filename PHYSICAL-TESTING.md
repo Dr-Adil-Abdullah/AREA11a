@@ -1,5 +1,11 @@
 # Area11 — Real-life Physical Testing Log
 
+## Launch اور tests تک آسان رسائی — Windows verification pending
+
+مالک کی درخواست پر مرکزی folder میں `START-AREA11.bat` کے ساتھ `RUN-TESTS.bat` شامل کیا گیا ہے؛ دوسرا موجودہ `tools\RUN-TESTS.cmd` ہی چلاتا ہے اور `test.log` وہیں رہتا ہے۔ App شروع کرنے سے tests خود نہیں چلتے۔ پہلے start پر اسی folder میں Area11 logo والے `! START AREA11` اور `! RUN TESTS` shortcuts بنانے کی کوشش ہوتی ہے؛ failure سے app start نہیں رکتا اور موجودہ shortcuts overwrite نہیں ہوتے۔ File Explorer کی Large icons setting سے ان کا سائز بڑا کیا جا سکتا ہے۔ Folder منتقل ہو تو دونوں پرانے shortcuts حذف کر کے start دوبارہ کریں۔
+
+**Pending Windows check:** نئی branch pull کریں؛ root سے دونوں BAT چلائیں؛ start پر دونوں logo shortcuts بنیں اور صحیح target چلائیں؛ folder میں space والے path پر چیک کریں؛ `test.log` اور result درست رہیں؛ shortcut generation ناکام ہو تو app پھر بھی چلے۔ یہ ابھی Windows پر تصدیق شدہ نہیں۔ Portion 4 کا جاری کام الگ ہے۔
+
 ## مالک کا Kyanite test نتیجہ اور آئندہ طریقۂ کار
 
 مالک نے اطلاع دی: **v0.42.0 Kyanite کے تمام 929 tests پاس، کوئی fail نہیں**۔ یہ مالک کی فراہم کردہ test اطلاع ہے؛ تفصیلی runner log، skipped count، Desktop/WPF build/launch اور PT-14 physical walkthrough اس اطلاع سے ثابت نہیں ہوتے اور جہاں ثبوت نہیں ملا وہاں pending ہیں۔ Siderite 922/922 پہلے سے OK ہے، مگر اس کا WPF/physical ثبوت بھی الگ pending ہے۔

@@ -8,6 +8,11 @@ setlocal
 title Area11
 cd /d "%~dp0"
 
+rem Make optional, clearly named logo shortcuts in this folder; never block startup.
+if exist "tools\MAKE-LAUNCHER-ICONS.ps1" (
+    powershell -NoProfile -ExecutionPolicy Bypass -File "tools\MAKE-LAUNCHER-ICONS.ps1" >nul 2>&1
+)
+
 echo.
 echo  ==========================================================
 echo    AREA11 - pharmacy POS
