@@ -1,5 +1,8 @@
 # Master checklist — owner requirements and 17-portion roadmap
 
+> **Current owner direction and status (supersedes historical planning statements below):** Portions 1–3 were delivered at code level, with physical acceptance still pending. Portion 4 is incomplete and is the current priority. The owner has authorized proceeding directly to Portions 5, 6 and 7 in order after 4; “Next” is permission to proceed. Portion 17 was started but is now paused. The owner reports the login screen opens and the error is gone after the candidate XAML fix; full application verification remains pending. Current status and the next-agent brief are in [`../INCOMPLETE-WORK-HANDOFF.md`](../INCOMPLETE-WORK-HANDOFF.md); feedback is in [`../PHYSICAL-TESTING.md`](../PHYSICAL-TESTING.md). Historical checklists below are not proof of current implementation, approval, or tests.
+
+
 This planning document records the owner's 12-point master checklist and a proposed implementation order. It does not authorize code: the owner approved Portion 1 by saying “next”; later portions need their own approval. The owner has approved Portions 1–4 individually; Portions 5–16 still require their turn; Portion 17 is explicitly approved to start now. The owner will test progressively; a delayed physical result does not by itself block another approved portion. Log all results and prioritize serious data/financial safety issues immediately.
 
 ## Evidence and status rules

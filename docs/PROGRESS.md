@@ -1,9 +1,8 @@
 # PROGRESS - the feature board (what is done, what is next)
 
-## Urgent owner report: login crash — unresolved
+## Owner update: login screen and reported error
 
-Owner reports the app closes after password/Enter; screenshot shows XamlParseException at line 72 position 31. A likely invalid DataGrid RowHeight="Auto" on Counter and Products is corrected to NaN in WIP, but the complete inner exception and Windows WPF retest are still needed; PT-15/PT-16 in `PHYSICAL-TESTING.md`. Owner supplied Windows Core/Tests **973 passed, 0 failed, 0 skipped, 1m14s**, v0.42.0 banner; this is separate from prior 929 result and does not establish Desktop/WPF or login. Investigate before continuing normal Portion 4 work; never reset real shop data or assume a cause.
-
+The owner says the login screen now opens and the reported error is gone after the candidate fix. This is a positive owner report, not proof that all screens, Counter/Products thumbnails or financial workflows passed. Original inner exception not received; see PT-16 in `PHYSICAL-TESTING.md`. The owner supplied Windows Core/Tests **973 passed, 0 failed, 0 skipped, 1m14s**, v0.42.0 banner; the log does not establish exact commit. Portion 4 remains incomplete; finish it before Portion 5, then 6–7. Portion 17 remains paused. Latest next-agent status is in `INCOMPLETE-WORK-HANDOFF.md`.
 
 ## Owner priority: finish Portion 4 first — IN PROGRESS, not released
 
