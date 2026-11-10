@@ -39,7 +39,7 @@
 
                     <StackPanel Grid.Row="0">
                         <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                 ToolTip="Name, pack / variant, strength, salt or barcode. A scanner types the code and presses Enter by itself.">
+                                 ToolTip="Name, pack / variant, strength, salt or barcode. Several words narrow the list: every word must match. A scanner types the code and presses Enter by itself.">
                             <TextBox.InputBindings>
                                 <KeyBinding Key="Enter" Command="{Binding ScanCommand}" />
                             </TextBox.InputBindings>

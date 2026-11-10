@@ -3,6 +3,8 @@ using Area11.Core.Models;
 using Area11.Core.Utils;
 using Dapper;
 using Microsoft.Data.Sqlite;
+using System.Dynamic;
+using System.Text;
 
 namespace Area11.Core.Services;
 
@@ -34,6 +36,29 @@ FROM products p
 LEFT JOIN categories c ON c.id = p.category_id
 LEFT JOIN companies co ON co.id = p.company_id
 ";
+
+    /// <summary>Portion 10: the non-text facets shared by the one-word and multi-word searches.</summary>
+    private const string FilterTailSql = @"
+  AND (@categoryId IS NULL OR p.category_id = @categoryId OR EXISTS (
+      SELECT 1 FROM categories child
+      WHERE child.id = p.category_id AND child.parent_id = @categoryId)
+       OR EXISTS (
+      SELECT 1 FROM product_category_tags pct
+      JOIN categories tagged ON tagged.id = pct.category_id AND tagged.active = 1
+      WHERE pct.product_id = p.id
+        AND (pct.category_id = @categoryId OR tagged.parent_id = @categoryId)))
+  AND (@companyId IS NULL OR p.company_id = @companyId)
+  AND (@supplierId IS NULL OR EXISTS (
+      SELECT 1 FROM product_supplier_directory directory
+      WHERE directory.product_id = p.id AND directory.supplier_id = @supplierId))
+  AND (@strength = '' OR
+       lower(trim(p.strength_unit)) = @strength OR
+       (p.strength_value > 0 AND printf('%g', p.strength_value) = @strength) OR
+       (p.strength_value > 0 AND replace(lower(printf('%g', p.strength_value) || ' ' || trim(p.strength_unit)), ' ', '') = replace(@strength, ' ', '')))
+  AND (@lowStock = 0 OR
+       (IFNULL((SELECT SUM(b.qty_base) FROM batches b WHERE b.product_id = p.id AND b.active = 1), 0) >= 0
+        AND IFNULL((SELECT SUM(b.qty_base) FROM batches b WHERE b.product_id = p.id AND b.active = 1), 0) <= p.reorder_level))
+ORDER BY p.name COLLATE NOCASE;";
 
     private const int MaxCatalogNameLength = 120;
     private const int MaxCatalogSortOrder = 1_000_000_000;
@@ -71,7 +96,10 @@ LEFT JOIN companies co ON co.id = p.company_id
             var strengthText = NormalizeStrengthFilter(strength);
 
             using var connection = _db.Open();
-            var products = _db.Query<Product>(connection, SelectSql + @"
+            var tokens = PackagingPolicy.Tokens(text);
+            var products = tokens.Length > 1
+                ? SearchTokenized(connection, tokens, categoryId, companyId, lowStockOnly, strengthText, supplierId)
+                : _db.Query<Product>(connection, SelectSql + @"
 WHERE p.active = 1
   AND (@term = '' OR p.name LIKE @like OR IFNULL(p.generic, '') LIKE @like
        OR IFNULL(p.brand, '') LIKE @like OR IFNULL(p.barcode, '') LIKE @like
@@ -91,26 +119,7 @@ WHERE p.active = 1
                   JOIN categories search_category ON search_category.id = search_tags.category_id
                   WHERE search_tags.product_id = p.id AND search_category.active = 1
                     AND search_category.name LIKE @like))
-  AND (@categoryId IS NULL OR p.category_id = @categoryId OR EXISTS (
-      SELECT 1 FROM categories child
-      WHERE child.id = p.category_id AND child.parent_id = @categoryId)
-       OR EXISTS (
-      SELECT 1 FROM product_category_tags pct
-      JOIN categories tagged ON tagged.id = pct.category_id AND tagged.active = 1
-      WHERE pct.product_id = p.id
-        AND (pct.category_id = @categoryId OR tagged.parent_id = @categoryId)))
-  AND (@companyId IS NULL OR p.company_id = @companyId)
-  AND (@supplierId IS NULL OR EXISTS (
-      SELECT 1 FROM product_supplier_directory directory
-      WHERE directory.product_id = p.id AND directory.supplier_id = @supplierId))
-  AND (@strength = '' OR
-       lower(trim(p.strength_unit)) = @strength OR
-       (p.strength_value > 0 AND printf('%g', p.strength_value) = @strength) OR
-       (p.strength_value > 0 AND replace(lower(printf('%g', p.strength_value) || ' ' || trim(p.strength_unit)), ' ', '') = replace(@strength, ' ', '')))
-  AND (@lowStock = 0 OR
-       (IFNULL((SELECT SUM(b.qty_base) FROM batches b WHERE b.product_id = p.id AND b.active = 1), 0) >= 0
-        AND IFNULL((SELECT SUM(b.qty_base) FROM batches b WHERE b.product_id = p.id AND b.active = 1), 0) <= p.reorder_level))
-ORDER BY p.name COLLATE NOCASE;",
+" + FilterTailSql,
                 new
                 {
                     term = text,
@@ -131,6 +140,53 @@ ORDER BY p.name COLLATE NOCASE;",
             _log.Error("The product list could not be loaded.", exception);
             return ServiceResult<List<Product>>.Fail("The product list could not be loaded.");
         }
+    }
+
+    /// <summary>
+    /// Portion 10: the multi-word search. Every word must land in some field (AND), in any order,
+    /// so "panadol 100ml" narrows to the 100ml variant while "panadol" alone still lists every one.
+    /// One-word queries keep the historical statement above byte for byte.
+    /// </summary>
+    private List<Product> SearchTokenized(
+        SqliteConnection connection,
+        string[] tokens,
+        int? categoryId,
+        int? companyId,
+        bool lowStockOnly,
+        string strengthText,
+        int? supplierId)
+    {
+        var where = new StringBuilder("WHERE p.active = 1\n");
+        IDictionary<string, object?> args = new ExpandoObject();
+        for (var i = 0; i < tokens.Length; i++)
+        {
+            where.Append("  AND (p.name LIKE @like").Append(i).Append(" OR IFNULL(p.generic, '') LIKE @like").Append(i)
+                .Append(" OR IFNULL(p.brand, '') LIKE @like").Append(i)
+                .Append(" OR IFNULL(p.barcode, '') LIKE @like").Append(i)
+                .Append(" OR IFNULL(p.rack_no, '') LIKE @like").Append(i)
+                .Append(" OR IFNULL(p.room, '') LIKE @like").Append(i)
+                .Append(" OR IFNULL(p.pack_size_label, '') LIKE @like").Append(i)
+                .Append(" OR IFNULL(p.base_unit, '') LIKE @like").Append(i)
+                .Append(" OR IFNULL(c.name, '') LIKE @like").Append(i)
+                .Append(" OR IFNULL(co.name, '') LIKE @like").Append(i)
+                .Append(" OR IFNULL(p.strength_unit, '') LIKE @like").Append(i)
+                .Append(" OR (p.strength_value > 0 AND printf('%g', p.strength_value) LIKE @like").Append(i).Append(')')
+                .Append(" OR (p.strength_value > 0 AND (printf('%g', p.strength_value) || ' ' || p.strength_unit) LIKE @like").Append(i).Append(')')
+                .Append(" OR replace(replace(lower(IFNULL(p.pack_size_label, '')), ' ', ''), '×', 'x') LIKE @keyLike").Append(i)
+                .Append(" OR (p.strength_value > 0 AND replace(replace(lower(printf('%g', p.strength_value) || ' ' || IFNULL(p.strength_unit, '')), ' ', ''), '×', 'x') LIKE @keyLike").Append(i).Append(')')
+                .Append(" OR EXISTS (SELECT 1 FROM product_barcodes pb WHERE pb.product_id = p.id AND pb.active = 1 AND pb.barcode LIKE @like").Append(i).Append(')')
+                .Append(" OR EXISTS (SELECT 1 FROM product_category_tags search_tags JOIN categories search_category ON search_category.id = search_tags.category_id WHERE search_tags.product_id = p.id AND search_category.active = 1 AND search_category.name LIKE @like").Append(i).Append("))\n");
+            args["like" + i] = "%" + tokens[i] + "%";
+            args["keyLike" + i] = "%" + PackagingPolicy.SearchKey(tokens[i]) + "%";
+        }
+
+        where.Append(FilterTailSql);
+        args["categoryId"] = categoryId;
+        args["companyId"] = companyId;
+        args["supplierId"] = supplierId;
+        args["strength"] = strengthText;
+        args["lowStock"] = lowStockOnly ? 1 : 0;
+        return _db.Query<Product>(connection, SelectSql + where.ToString(), args);
     }
 
     /// <summary>

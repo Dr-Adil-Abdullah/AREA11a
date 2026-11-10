@@ -24,7 +24,7 @@
             <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal">
                     <TextBox Width="190" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                             ToolTip="Name, pack / variant, strength, salt, barcode, brand, rack, category or company" />
+                             ToolTip="Name, pack / variant, strength, salt, barcode, brand, rack, category or company. Several words narrow the list: every word must match." />
                     <TextBox Width="110" Margin="6,0,0,0" Text="{Binding StrengthFilter, UpdateSourceTrigger=PropertyChanged}"
                              ToolTip="Optional exact strength filter: 50 ml, 50ml, 50 or ml" />
                     <ComboBox Width="150" Margin="6,0,0,0" ItemsSource="{Binding SupplierFilterOptions}" DisplayMemberPath="Name"
