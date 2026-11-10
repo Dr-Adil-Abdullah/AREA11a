@@ -42,11 +42,11 @@
 
                 <Border Grid.Row="0" Style="{StaticResource Card}" Padding="14" Margin="0,0,0,10"
                         Visibility="{Binding IsNotAllowed, Converter={StaticResource BoolToVis}}">
-                    <TextBlock Text="Only the owner or a manager can add or change these fields. Ask the owner to switch on the Settings permission for this login."
+                    <TextBlock Text="Only the owner can manage field definitions. Staff can still answer fields for forms they are permitted to use."
                                TextWrapping="Wrap" Foreground="{StaticResource WarningBrush}" />
                 </Border>
 
-                <Border Grid.Row="1" Style="{StaticResource Card}" Padding="12">
+                <Border Grid.Row="1" Style="{StaticResource Card}" Padding="12" IsEnabled="{Binding CanManage}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -98,7 +98,7 @@
             </Grid>
 
             <!-- ================================ the form ================================ -->
-            <Border Grid.Column="2" Style="{StaticResource Card}" Padding="14">
+            <Border Grid.Column="2" Style="{StaticResource Card}" Padding="14" IsEnabled="{Binding CanManage}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
                         <TextBlock Text="{Binding FormTitle}" Style="{StaticResource SectionTitle}" />

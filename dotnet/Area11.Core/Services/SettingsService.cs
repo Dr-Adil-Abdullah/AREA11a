@@ -188,6 +188,10 @@ public sealed class SettingsService
         {
             return ServiceResult.Fail("Application labels must be saved through the audited settings path.");
         }
+        if (key.StartsWith("appearance.", StringComparison.Ordinal))
+        {
+            return ServiceResult.Fail("Application appearance must be saved through the audited settings path.");
+        }
 
         try
         {
@@ -235,6 +239,17 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
             && _permissions?.Can(actor, Modules.Settings) != true)
         {
             return ServiceResult.Fail("You are not allowed to change the application labels.");
+        }
+
+        if (values.ContainsKey("appearance.productPhotoSize")
+            && _permissions?.Can(actor, Modules.Settings) != true)
+        {
+            return ServiceResult.Fail("You are not allowed to change the product photo size.");
+        }
+
+        if (values.ContainsKey("appearance.iconFileName") && actor?.IsOwner != true)
+        {
+            return ServiceResult.Fail("Only the owner can change the application icon.");
         }
 
         var preparation = PrepareBulk(values);
@@ -405,6 +420,18 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
 
         switch (key)
         {
+            case "appearance.iconFileName":
+                var iconName = TextValue(value);
+                return iconName.Length == 0 || (iconName.Length == 48
+                    && iconName.StartsWith("area11-icon-", StringComparison.Ordinal)
+                    && iconName.EndsWith(".ico", StringComparison.Ordinal)
+                    && Guid.TryParseExact(iconName.Substring(12, 32), "N", out _))
+                    ? null : "The application icon name is invalid.";
+
+            case "appearance.productPhotoSize":
+                return TextValue(value) is "medium" or "large"
+                    ? null : "Choose medium or large product photos.";
+
             case "printer.width":
                 return number is 58 or 80 ? null : "The paper width must be 58 or 80 mm.";
 
@@ -638,6 +665,10 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Text("hardware.note", string.Empty);
         Number("hardware.testedWidth", 0);
         Text("hardware.passed", string.Empty);
+
+        // Medium and large are deliberately bounded so product grids remain usable.
+        Text("appearance.productPhotoSize", "medium");
+        Text("appearance.iconFileName", string.Empty);
 
         // ---- Store and branding (E-02, E-03) ----
         Text("store.name", "Area11 Pharmacy");

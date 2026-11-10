@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
+using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Area11.Core.Models;
 using Area11.Core.Services;
@@ -64,6 +66,8 @@ public sealed class ShellViewModel : ObservableObject
         // that closes must not keep answering for a shell nobody is looking at.
         CommandGuard.Failed += OnCommandFailed;
 
+        ApplyProductPhotoSize();
+        RefreshUserPhoto();
         BuildSettingsTabs();
         BuildNavigation();
         RefreshAlerts();
@@ -309,6 +313,34 @@ public sealed class ShellViewModel : ObservableObject
     {
         get => _bellSummaryText;
         private set => SetProperty(ref _bellSummaryText, value);
+    }
+
+    private BitmapImage? _userPhoto;
+
+    public BitmapImage? UserPhoto
+    {
+        get => _userPhoto;
+        private set
+        {
+            if (SetProperty(ref _userPhoto, value)) OnPropertyChanged(nameof(HasUserPhoto));
+        }
+    }
+
+    public bool HasUserPhoto => UserPhoto is not null;
+
+    private void RefreshUserPhoto()
+    {
+        var result = _services.Photos.OwnAvatar(_user);
+        try
+        {
+            UserPhoto = result.Ok && result.Value is not null
+                ? PhotoGalleryViewModel.Decode(result.Value, 96) : null;
+        }
+        catch (Exception exception)
+        {
+            _services.Log.Warn("The profile photo could not be shown: " + exception.Message);
+            UserPhoto = null;
+        }
     }
 
     public string UserName => _user.Name;
@@ -715,6 +747,7 @@ public sealed class ShellViewModel : ObservableObject
         SettingsTabItems.Add(new SettingsTabItem(3, _services.AppLabels.Get("cloud"), "cloud"));
         SettingsTabItems.Add(new SettingsTabItem(4, "Staff & permissions"));
         SettingsTabItems.Add(new SettingsTabItem(5, "App words"));
+        SettingsTabItems.Add(new SettingsTabItem(6, "Fields"));
     }
 
     /// <summary>Adds a top-row module heading only when at least one permitted page follows it.</summary>
@@ -1196,8 +1229,19 @@ public sealed class ShellViewModel : ObservableObject
         BellSummaryText = report.BellText;
     }
 
+    private void ApplyProductPhotoSize()
+    {
+        if (Application.Current is { } app)
+        {
+            app.Resources["ProductThumbnailSize"] =
+                _services.Settings.GetString("appearance.productPhotoSize") == "large" ? 72d : 54d;
+        }
+    }
+
     private void RefreshHeader()
     {
+        ApplyProductPhotoSize();
+        RefreshUserPhoto();
         LabelResources.Apply(_services.AppLabels);
         RefreshLabels();
         UpdateHeaderNavigation();

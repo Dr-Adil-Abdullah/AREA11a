@@ -48,24 +48,21 @@
 
         <Grid Grid.Row="1">
             <Border Grid.Column="0" Style="{StaticResource Card}" Padding="10">
-                <DataGrid x:Name="ProductGrid" MouseDoubleClick="OnProductDoubleClick" ItemsSource="{Binding Items}"
+                <DataGrid RowHeight="Auto" x:Name="ProductGrid" MouseDoubleClick="OnProductDoubleClick" ItemsSource="{Binding Items}"
                           SelectedItem="{Binding SelectedProduct, Mode=TwoWay}">
                     <DataGrid.Columns>
-                        <DataGridTemplateColumn Header="Photo" Width="62">
+                        <DataGridTemplateColumn Header="Photo" Width="90">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Button Command="{Binding DataContext.OpenProductPhotoCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                             CommandParameter="{Binding Id}" Padding="2" BorderThickness="0" Background="Transparent"
                                             ToolTip="Open this medicine's photo gallery">
-                                        <Border Width="44" Height="44" CornerRadius="5" BorderThickness="1"
-                                                BorderBrush="{StaticResource LineBrush}" Background="{StaticResource CanvasBrush}"
-                                                ClipToBounds="True">
-                                            <Grid>
-                                                <Image Source="{Binding PhotoPath}" Stretch="UniformToFill" />
-                                                <TextBlock Text="No photo" FontSize="9" TextWrapping="Wrap" TextAlignment="Center"
-                                                           VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}"
-                                                           Visibility="{Binding HasNoPhoto, Converter={StaticResource BoolToVis}}" />
-                                            </Grid>
+                                        <Border Width="{DynamicResource ProductThumbnailSize}" Height="{DynamicResource ProductThumbnailSize}"
+                                                CornerRadius="12" BorderThickness="1" BorderBrush="{StaticResource LineBrush}">
+                                            <Border.Background><ImageBrush ImageSource="{Binding PhotoPath}" Stretch="UniformToFill" /></Border.Background>
+                                            <TextBlock Text="No photo" FontSize="9" TextWrapping="Wrap" TextAlignment="Center"
+                                                       VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}"
+                                                       Visibility="{Binding HasNoPhoto, Converter={StaticResource BoolToVis}}" />
                                         </Border>
                                     </Button>
                                 </DataTemplate>

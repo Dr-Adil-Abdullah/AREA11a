@@ -1,5 +1,8 @@
 # HANDOFF - read this first
 
+> **WIP handoff, 24 Oct 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/60395e95-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/60395e95-area11a). Portion 4 is incomplete; portions 5–7 are approved next; Portion 17 is paused. Older status and approval statements below are historical. This branch is not a tested release.
+
+
 ## Latest handoff — v0.42.0 Kyanite
 
 Master Portion 3 fixes the edit-list tag-ID loss, distinguishes primary/extra categories, and refuses a new/replaced tag set without explicit primary; untouched legacy tag-only records and no-category/no-tag products remain. **929 written cases and 57/57 static only; Windows build/xUnit/PT-14 pending.** Raw SQLite demonstrates one possible Uncategorised situation, not the owner's exact UI evidence. Workbook category changes recheck tags on preview/apply; CSV import creates products without tags. Category put-away intentionally unlinks the primary and can leave other tags; owner review remains pending. Portions 4–15 require approval.

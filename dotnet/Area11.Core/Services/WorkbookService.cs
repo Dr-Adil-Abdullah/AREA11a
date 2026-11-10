@@ -511,6 +511,20 @@ public sealed class WorkbookService
     {
         if (schema.Name == "Products")
         {
+            foreach (var (column, key, label) in new[]
+            {
+                ("generic", "product.generic", "Generic / salt"),
+                ("brand", "product.brand", "Brand"),
+                ("rack_no", "product.rack", "Rack / shelf"),
+                ("pack_size_label", "product.pack", "Pack description")
+            })
+            {
+                if (!changed.Contains(column)) continue;
+                var error = NativeFieldPolicyService.RequiredTextError(_db, connection, key, label,
+                    Convert.ToString(after[column], CultureInfo.InvariantCulture));
+                if (error is not null) return error;
+            }
+
             var cost = Convert.ToInt64(after["cost_paisa"], CultureInfo.InvariantCulture);
             var retail = Convert.ToInt64(after["retail_paisa"], CultureInfo.InvariantCulture);
             if (retail < cost)
@@ -570,10 +584,25 @@ WHERE active = 1 AND product_id <> @id AND LOWER(TRIM(barcode)) = LOWER(@code);"
         }
         else if (schema.Name == "Customers")
         {
+            if (changed.Contains("phone") && string.IsNullOrWhiteSpace(Convert.ToString(after["phone"], CultureInfo.InvariantCulture))
+                && NativeFieldPolicyService.IsRequired(_db, connection, "customer.phone"))
+                return "Customer phone is required by the owner's field settings.";
             var category = Convert.ToString(after["category"], CultureInfo.InvariantCulture)?.ToLowerInvariant();
             if (category is not ("normal" or "vip" or "doctor"))
             {
                 return "Customer Category must be normal, vip or doctor.";
+            }
+        }
+        else if (schema.Name == "Suppliers")
+        {
+            if (changed.Contains("phone") && string.IsNullOrWhiteSpace(Convert.ToString(after["phone"], CultureInfo.InvariantCulture))
+                && NativeFieldPolicyService.IsRequired(_db, connection, "supplier.phone"))
+                return "Supplier phone is required by the owner's field settings.";
+            if (changed.Contains("agency"))
+            {
+                var agencyError = NativeFieldPolicyService.RequiredTextError(_db, connection, "supplier.agency",
+                    "Supplier agency", Convert.ToString(after["agency"], CultureInfo.InvariantCulture));
+                if (agencyError is not null) return agencyError;
             }
         }
         else if (schema.Name == "Categories" && after["parent_id"] is not null)
@@ -1288,7 +1317,7 @@ WHERE active = 1 AND product_id <> @id AND LOWER(TRIM(barcode)) = LOWER(@code);"
         || key.StartsWith("bill.next", StringComparison.Ordinal)
         || key.StartsWith("sync.", StringComparison.Ordinal)
         || key.StartsWith("hardware.", StringComparison.Ordinal)
-        || key is "brand.logoDataUrl" or "stock.allowNegative" or "stock.warnNegative"
+        || key is "appearance.iconFileName" or "brand.logoDataUrl" or "stock.allowNegative" or "stock.warnNegative"
             or "backup.lastRunAt" or "backup.lastFile" or "session.handoverAt" or "session.handoverBy"
             or "menu.collapsedGroups";
 

@@ -1,4 +1,4 @@
-<Window x:Class="Area11.Desktop.Views.CatalogWindow"
+<Window Icon="{DynamicResource Area11WindowIcon}" x:Class="Area11.Desktop.Views.CatalogWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Categories and companies - Area11" Height="720" Width="1100"

@@ -208,7 +208,7 @@ ORDER BY p.name COLLATE NOCASE;",
         }
     }
 
-    public ServiceResult<int> Create(User actor, ProductPatch input)
+    public ServiceResult<int> Create(User actor, ProductPatch input, IReadOnlyDictionary<int, string?>? customValues = null)
     {
         if (!actor.CanManage)
         {
@@ -250,6 +250,17 @@ ORDER BY p.name COLLATE NOCASE;",
         {
             var id = _db.Tx(connection =>
             {
+                foreach (var (key, label, value) in new[]
+                {
+                    ("product.generic", "Generic / salt", input.Generic),
+                    ("product.brand", "Brand", input.Brand),
+                    ("product.rack", "Rack / shelf", input.RackNo),
+                    ("product.pack", "Pack description", input.PackSizeLabel)
+                })
+                {
+                    var required = NativeFieldPolicyService.RequiredTextError(_db, connection, key, label, value);
+                    if (required is not null) throw new ValidationException(required);
+                }
                 EnsureActiveCatalogLinks(connection, input.CategoryId, input.CompanyId);
                 EnsureActiveUnit(connection, baseUnit);
                 if (strengthValue > 0)
@@ -294,6 +305,9 @@ VALUES
                     });
 
                 var newId = (int)_db.NextId(connection);
+                var custom = new CustomFieldService(_db, _audit, new PermissionService(_db, _log, _audit), _log);
+                var answers = custom.SaveNewRecordValuesInTransaction(connection, actor, CustomFieldEntity.Product, newId, customValues);
+                if (!answers.Ok) throw new ValidationException(answers.Error ?? "Product extra fields could not be saved.");
                 SaveCategoryTags(connection, newId, input.CategoryId, input.CategoryTagIds);
 
                 _audit.Record(connection, actor, "Inventory", "product_create", "products", newId.ToString(),
@@ -323,7 +337,7 @@ VALUES
     /// Partial update (Spec 8.1.4.1): only non-null fields are written, so changing the retail
     /// rate can never wipe the cost, the pack formula, the rack or the reorder level.
     /// </summary>
-    public ServiceResult Update(User actor, int id, ProductPatch patch)
+    public ServiceResult Update(User actor, int id, ProductPatch patch, IReadOnlyDictionary<int, string?>? customValues = null)
     {
         if (!actor.CanManage)
         {
@@ -338,6 +352,21 @@ VALUES
                 if (before is null)
                 {
                     throw new ValidationException("That product no longer exists.");
+                }
+
+                // Do not strand old records that already lack a newly required field. Reject only
+                // an explicit attempt to clear a value that already existed.
+                foreach (var (key, label, oldValue, newValue) in new[]
+                {
+                    ("product.generic", "Generic / salt", before.Generic, patch.Generic),
+                    ("product.brand", "Brand", before.Brand, patch.Brand),
+                    ("product.rack", "Rack / shelf", before.RackNo, patch.RackNo),
+                    ("product.pack", "Pack description", before.PackSizeLabel, patch.PackSizeLabel)
+                })
+                {
+                    if (newValue is null || string.IsNullOrWhiteSpace(oldValue)) continue;
+                    var required = NativeFieldPolicyService.RequiredTextError(_db, connection, key, label, newValue);
+                    if (required is not null) throw new ValidationException(required);
                 }
 
                 before.CategoryTagIds = _db.Query<int>(connection,
@@ -503,6 +532,13 @@ VALUES
                 if (patch.CategoryTagIds is not null)
                 {
                     SaveCategoryTags(connection, id, effectiveCategoryId, patch.CategoryTagIds);
+                }
+
+                if (customValues is not null)
+                {
+                    var custom = new CustomFieldService(_db, _audit, new PermissionService(_db, _log, _audit), _log);
+                    var answers = custom.SaveValuesInTransaction(connection, actor, CustomFieldEntity.Product, id, customValues);
+                    if (!answers.Ok) throw new ValidationException(answers.Error ?? "Product extra fields could not be saved.");
                 }
 
                 if (sets.Count == 0 && patch.CategoryTagIds is null)

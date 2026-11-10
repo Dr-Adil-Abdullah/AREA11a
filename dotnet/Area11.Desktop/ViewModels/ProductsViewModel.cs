@@ -80,7 +80,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         PhotosCommand = new RelayCommand(OpenPhotos);
         BarcodesCommand = new RelayCommand(OpenBarcodes);
 
-        Editor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Product);
+        Editor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Product, saveWithParent: true);
 
         LoadLookups();
         Load();
@@ -478,7 +478,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         _editingId = null;
         _selectedProduct = null;
         OnPropertyChanged(nameof(SelectedProduct));
-        Editor.Load(0);
+        Editor.LoadNew();
 
         Name = string.Empty;
         Generic = string.Empty;
@@ -599,10 +599,16 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
             ReorderLevel = reorder
         };
 
+        if (!Editor.LoadedSuccessfully)
+        {
+            SetStatus("Extra fields could not be loaded. Reopen the editor before saving.", true);
+            return;
+        }
+        var answers = Editor.AnswerValues();
         var isNew = _editingId is null;
         if (isNew)
         {
-            var created = _services.Products.Create(_user, patch);
+            var created = _services.Products.Create(_user, patch, answers);
             if (!created.Ok || created.Value <= 0)
             {
                 SetStatus(created.Error ?? "The product could not be saved.", true);
@@ -615,19 +621,19 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         }
         else
         {
-            var updated = _services.Products.Update(_user, _editingId!.Value, patch);
+            var updated = _services.Products.Update(_user, _editingId!.Value, patch, answers);
             if (!updated.Ok)
             {
                 SetStatus(updated.Error ?? "The product could not be saved.", true);
                 return;
             }
-            // Do not reload the extra-fields editor: it may contain separately unsaved answers.
+            Editor.Load(_editingId.Value);
         }
 
         Load();
         SetStatus(isNew
-            ? "Product added. Extra fields are saved separately; close when finished."
-            : "Product updated. Extra fields are saved separately; close when finished.", false);
+            ? "Product and extra fields saved."
+            : "Product and extra fields saved.", false);
     }
 
     /// <summary>One predictable doorway for category, company, dashboard and strength links.</summary>

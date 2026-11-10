@@ -15,7 +15,8 @@
 
                 <Button DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center"
                         Content="Save extra fields" Style="{StaticResource PrimaryButton}"
-                        Command="{Binding SaveCommand}" IsEnabled="{Binding CanEdit}" />
+                        Command="{Binding SaveCommand}" IsEnabled="{Binding CanEdit}"
+                        Visibility="{Binding ShowSeparateSave, Converter={StaticResource BoolToVis}}" />
             </DockPanel>
 
             <ItemsControl ItemsSource="{Binding Rows}" Margin="0,4,0,0">
@@ -28,6 +29,11 @@
                                  each one may contain -->
                             <TextBox Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                      Visibility="{Binding IsPlain, Converter={StaticResource BoolToVis}}" />
+
+                            <DatePicker SelectedDate="{Binding PickedDate, Mode=TwoWay}"
+                                        Visibility="{Binding IsDate, Converter={StaticResource BoolToVis}}"
+                                        ToolTip="Pick a date from the calendar, or type it in the box above. Clear the box to remove it."
+                                        HorizontalAlignment="Left" Margin="0,4,0,0" />
 
                             <ComboBox ItemsSource="{Binding Options}"
                                       SelectedItem="{Binding Text, Mode=TwoWay}"

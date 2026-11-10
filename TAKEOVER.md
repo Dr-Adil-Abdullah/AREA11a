@@ -1,5 +1,8 @@
 # TAKEOVER — the complete brief for a new agent
 
+> **WIP handoff, 24 Oct 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/60395e95-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/60395e95-area11a). Portion 4 is incomplete; portions 5–7 are approved next; Portion 17 is paused. Older status and approval statements below are historical. This branch is not a tested release.
+
+
 ## Latest handoff — v0.42.0 Kyanite
 
 Portion 3 code fetches full product tag IDs before edit, shows primary/extra categories separately, and guards new/replaced tag sets requiring a primary. It does not guess/rewrite legacy links; unrelated updates preserve legacy tag-only records. **929 written cases, 57/57 static; Windows build/xUnit and PT-14 pending.** A raw SQLite possible tag-only Uncategorised case is not proof of the owner's precise sequence. Workbook category changes recheck tags on preview/apply; CSV import creates products without tags. Category put-away intentionally unlinks the primary and can leave other tags; owner review remains pending. Baltic owner 921/921 is previous evidence; portions 4–15 require separate approval.

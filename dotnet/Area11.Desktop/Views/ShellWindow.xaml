@@ -1,4 +1,4 @@
-<Window x:Class="Area11.Desktop.Views.ShellWindow" x:Name="ShellRoot"
+<Window Icon="{DynamicResource Area11WindowIcon}" x:Class="Area11.Desktop.Views.ShellWindow" x:Name="ShellRoot"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:Area11.Desktop.ViewModels"
@@ -188,8 +188,13 @@
                         <DockPanel>
                             <Border DockPanel.Dock="Left" Width="30" Height="30" CornerRadius="15"
                                     Background="{StaticResource BrandBrush}">
-                                <TextBlock Text="{Binding Initials}" Foreground="White" FontWeight="Bold"
-                                           FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                <Grid>
+                                    <TextBlock Text="{Binding Initials}" Foreground="White" FontWeight="Bold"
+                                               FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    <Ellipse Visibility="{Binding HasUserPhoto, Converter={StaticResource BoolToVis}}">
+                                        <Ellipse.Fill><ImageBrush ImageSource="{Binding UserPhoto}" Stretch="UniformToFill" /></Ellipse.Fill>
+                                    </Ellipse>
+                                </Grid>
                             </Border>
                             <StackPanel Margin="7,0,0,0" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding UserName}" Foreground="White" FontSize="11.5"
@@ -413,11 +418,15 @@
                 </Border.Effect>
                 <StackPanel>
                     <DockPanel Margin="0,0,0,10">
-                        <Border DockPanel.Dock="Left" Width="30" Height="30" CornerRadius="15"
+                        <Border DockPanel.Dock="Left" Width="54" Height="54" CornerRadius="27"
                                 Background="{StaticResource BrandSoftBrush}">
-                            <TextBlock Text="{Binding Initials}" Foreground="{StaticResource BrandDarkBrush}"
-                                       FontWeight="Bold" HorizontalAlignment="Center"
-                                       VerticalAlignment="Center" />
+                            <Grid>
+                                <TextBlock Text="{Binding Initials}" Foreground="{StaticResource BrandDarkBrush}"
+                                           FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                <Ellipse Visibility="{Binding HasUserPhoto, Converter={StaticResource BoolToVis}}">
+                                    <Ellipse.Fill><ImageBrush ImageSource="{Binding UserPhoto}" Stretch="UniformToFill" /></Ellipse.Fill>
+                                </Ellipse>
+                            </Grid>
                         </Border>
                         <StackPanel Margin="8,0,0,0" VerticalAlignment="Center">
                             <TextBlock Text="{Binding UserName}" FontSize="12" FontWeight="SemiBold"

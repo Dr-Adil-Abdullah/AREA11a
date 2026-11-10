@@ -268,6 +268,86 @@ public sealed class ImportTests
         Assert.True(report.Value.BooksMatch);
     }
 
+    [Theory]
+    [InlineData("product.generic", "", "brand", "rack", "pack")]
+    [InlineData("product.brand", "salt", "", "rack", "pack")]
+    [InlineData("product.rack", "salt", "brand", "", "pack")]
+    [InlineData("product.pack", "salt", "brand", "rack", "")]
+    public void ProductTextPolicyIsRecheckedBeforeImport(string key, string generic, string brand, string rack, string pack)
+    {
+        using var test = new TestDatabase();
+        var policy = new NativeFieldPolicyService(test.Database, test.Audit, test.Log);
+        Assert.True(policy.EnsureDefaults().Ok);
+        var field = policy.List(TestData.Owner).Value!.Single(item => item.FieldKey == key);
+        var imports = Imports(test);
+        var csv = "Name,Generic,Brand,Rack,Pack,Cost,Retail\r\nTest medicine," + generic + "," + brand + "," + rack + "," + pack + ",0,0\r\n";
+        var preview = imports.PreviewProducts(csv);
+        Assert.True(preview.CanApply, preview.SummaryText);
+        Assert.True(policy.SetRequired(TestData.Owner, field.Id, true, false).Ok);
+        Assert.False(imports.ApplyProducts(TestData.Owner, preview).Ok);
+        Assert.Equal(0L, Count(test, "products"));
+        Assert.False(imports.PreviewProducts(csv).CanApply);
+    }
+
+    [Theory]
+    [InlineData(CustomFieldEntity.Customer)]
+    [InlineData(CustomFieldEntity.Supplier)]
+    public void PartnerCsvCannotBypassNewRequiredCustomFieldAfterPreview(string entity)
+    {
+        using var test = new TestDatabase();
+        var imports = Imports(test);
+        var csv = entity == CustomFieldEntity.Customer
+            ? "Name,Opening udhaar\r\nNew person,0\r\n"
+            : "Name,Opening payable\r\nNew person,0\r\n";
+        var preview = entity == CustomFieldEntity.Customer ? imports.PreviewCustomers(csv) : imports.PreviewSuppliers(csv);
+        Assert.True(preview.CanApply, preview.SummaryText);
+        var fields = new CustomFieldService(test.Database, test.Audit, TestData.Permissions(test), test.Log);
+        Assert.True(fields.Add(TestData.Owner, entity, "Licence number", CustomFieldType.Text, null, true).Ok);
+        var result = entity == CustomFieldEntity.Customer
+            ? imports.ApplyCustomers(TestData.Owner, preview) : imports.ApplySuppliers(TestData.Owner, preview);
+        Assert.False(result.Ok);
+        Assert.Contains("Licence number", result.Error);
+        Assert.Equal(0L, Count(test, entity == CustomFieldEntity.Customer ? "customers" : "suppliers"));
+        var newPreview = entity == CustomFieldEntity.Customer ? imports.PreviewCustomers(csv) : imports.PreviewSuppliers(csv);
+        Assert.False(newPreview.CanApply);
+    }
+
+    [Fact]
+    public void ProductCsvCannotBypassNewRequiredCustomFieldAfterPreview()
+    {
+        using var test = new TestDatabase();
+        var imports = Imports(test);
+        const string csv = "Name,Cost,Retail\r\nNew medicine,0,0\r\n";
+        var preview = imports.PreviewProducts(csv);
+        Assert.True(preview.CanApply, preview.SummaryText);
+        var fields = new CustomFieldService(test.Database, test.Audit, TestData.Permissions(test), test.Log);
+        Assert.True(fields.Add(TestData.Owner, CustomFieldEntity.Product, "Licence number", CustomFieldType.Text, null, true).Ok);
+        var result = imports.ApplyProducts(TestData.Owner, preview);
+        Assert.False(result.Ok);
+        Assert.Contains("Licence number", result.Error);
+        Assert.Equal(0L, Count(test, "products"));
+        Assert.False(imports.PreviewProducts(csv).CanApply);
+    }
+
+    [Fact]
+    public void CustomerPhonePolicyIsCheckedAtPreviewAndAgainAtImport()
+    {
+        using var test = new TestDatabase();
+        var policy = new NativeFieldPolicyService(test.Database, test.Audit, test.Log);
+        Assert.True(policy.EnsureDefaults().Ok);
+        var phone = policy.List(TestData.Owner).Value!.Single(field => field.FieldKey == "customer.phone");
+        var imports = Imports(test);
+        const string csv = "Name,Phone,Opening udhaar\r\nWithout Phone,,100\r\n";
+        var preview = imports.PreviewCustomers(csv);
+        Assert.True(preview.CanApply, preview.SummaryText);
+        Assert.True(policy.SetRequired(TestData.Owner, phone.Id, true, false).Ok);
+        Assert.False(imports.ApplyCustomers(TestData.Owner, preview).Ok);
+        Assert.Equal(0L, Count(test, "customers"));
+        var again = imports.PreviewCustomers(csv);
+        Assert.False(again.CanApply);
+        Assert.Contains(again.Rows, row => row.Message.Contains("phone"));
+    }
+
     [Fact]
     public void APhoneThatAlreadyHasAKhata_IsSkipped()
     {
@@ -281,6 +361,42 @@ public sealed class ImportTests
         Assert.Equal(1, preview.ReadyCount);
         Assert.Equal(1, preview.SkippedCount);
         Assert.Contains("0300-1234567", preview.Rows[0].Message);
+    }
+
+    [Fact]
+    public void SupplierPhonePolicyIsCheckedBeforeAndAfterPreview()
+    {
+        using var test = new TestDatabase();
+        var policy = new NativeFieldPolicyService(test.Database, test.Audit, test.Log);
+        Assert.True(policy.EnsureDefaults().Ok);
+        var field = policy.List(TestData.Owner).Value!.Single(row => row.FieldKey == "supplier.phone");
+        var imports = Imports(test);
+        const string csv = "Name,Phone,Opening payable\r\nNew Supplier,,500\r\n";
+        var preview = imports.PreviewSuppliers(csv);
+        Assert.True(preview.CanApply, preview.SummaryText);
+        Assert.True(policy.SetRequired(TestData.Owner, field.Id, true, false).Ok);
+        Assert.False(imports.ApplySuppliers(TestData.Owner, preview).Ok);
+        Assert.Equal(0L, Count(test, "suppliers"));
+        var again = imports.PreviewSuppliers(csv);
+        Assert.False(again.CanApply);
+        Assert.Contains(again.Rows, row => row.Message.Contains("phone"));
+    }
+
+    [Fact]
+    public void SupplierAgencyPolicyIsCheckedBeforeAndAfterPreview()
+    {
+        using var test = new TestDatabase();
+        var policy = new NativeFieldPolicyService(test.Database, test.Audit, test.Log);
+        Assert.True(policy.EnsureDefaults().Ok);
+        var field = policy.List(TestData.Owner).Value!.Single(row => row.FieldKey == "supplier.agency");
+        var imports = Imports(test);
+        const string csv = "Name,Agency,Opening payable\r\nNew Supplier,,500\r\n";
+        var preview = imports.PreviewSuppliers(csv);
+        Assert.True(preview.CanApply, preview.SummaryText);
+        Assert.True(policy.SetRequired(TestData.Owner, field.Id, true, false).Ok);
+        Assert.False(imports.ApplySuppliers(TestData.Owner, preview).Ok);
+        Assert.Equal(0L, Count(test, "suppliers"));
+        Assert.False(imports.PreviewSuppliers(csv).CanApply);
     }
 
     [Fact]

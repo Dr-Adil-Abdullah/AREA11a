@@ -39,6 +39,7 @@ REPORT: list[str] = []
 # XAML files bind both to their page view-model and to row items inside DataGrid/ItemsControl.
 # These names belong to the item type, not to the page view-model, so they are not checked.
 ITEM_PROPERTIES = {
+    "SectionKey", "DataType", "InputMethod", "Required", "Critical", "PickedDate",
     "Title", "Subtitle", "Name", "Generic", "RackNo", "StockLabel", "RetailText", "CostText",
     "MarginLabel", "UnitLabel", "QuantityText", "BatchNo", "Expiry", "ProductName", "Category",
     "Company", "Photo", "Phone", "BalanceText", "Stars", "CategoryLabel", "ActiveLabel",
@@ -56,6 +57,7 @@ ITEM_PROPERTIES = {
 }
 
 VIEW_MODEL_OF = {
+    "NativeFieldsView.xaml": "NativeFieldsViewModel",
     "LoginWindow.xaml": "LoginViewModel",
     "ShellWindow.xaml": "ShellViewModel",
     "DashboardView.xaml": "DashboardViewModel",
@@ -4857,8 +4859,8 @@ def check_phase_one_shell() -> None:
         if needle not in window:
             fail(f"Shell header section binding missing {needle}")
 
-    if shell.count("SettingsTabItems.Add(new SettingsTabItem(") != 6:
-        fail("Phase-1 shell must expose exactly the existing six Settings sections")
+    if shell.count("SettingsTabItems.Add(new SettingsTabItem(") != 7:
+        fail("Settings shell must expose the original sections and the Fields section")
 
     for obsolete in ("menu.collapsedGroups", "menu.pinnedOpen", "ToggleGroup", "SetCollapsed"):
         if obsolete in shell:
@@ -5071,7 +5073,7 @@ def check_phase_three_packaging() -> None:
         if needle not in editor_code:
             fail(f"Product form is missing a safe close/unsubscribe guard: {needle}")
     for needle in ("ProductEditorDoor.Show(this)", "_editingId = created.Value", "Editor.Load(created.Value)",
-                   "Extra fields are saved separately", "MessageBoxResult.No"):
+                   "Product and extra fields saved.", "MessageBoxResult.No"):
         if needle not in products_vm:
             fail(f"Product editor lost a save, dialog or removal guard: {needle}")
     start_policy = (DOTNET / "Area11.Core/Utils/StartPagePolicy.cs").read_text(encoding="utf-8-sig")
@@ -5101,6 +5103,49 @@ def check_phase_three_packaging() -> None:
                  "BulkCategoryClearWithoutTagsSucceedsAndIsAudited", "BulkCategoryClearRechecksTagsAddedAfterPreview"):
         if fact not in workbook_tests:
             fail(f"Workbook category safety regression is missing: {fact}")
+    # Owner-managed contact rules must be checked both when creating directly and again when
+    # an import or workbook preview is applied; stale previews must not bypass a changed policy.
+    partner = (DOTNET / "Area11.Core/Services/PartnerService.cs").read_text(encoding="utf-8-sig")
+    imports = (DOTNET / "Area11.Core/Services/ImportService.cs").read_text(encoding="utf-8-sig")
+    for field in ("customer.phone", "supplier.phone", "supplier.agency"):
+        for source, name, minimum in ((partner, "partner saves", 1), (imports, "CSV preview/apply", 2),
+                                      (workbook, "workbook preview/apply", 1)):
+            if source.count('"' + field + '"') < minimum:
+                fail(f"Missing {field} safety guard in {name}")
+    custom_fields = (DOTNET / "Area11.Core/Services/CustomFieldService.cs").read_text(encoding="utf-8-sig")
+    for signature in ("public ServiceResult<CustomField> Add(", "public ServiceResult Update(",
+                      "public ServiceResult SetActive(", "public ServiceResult Move("):
+        start = custom_fields.find(signature)
+        if start < 0 or "user is null || !user.IsOwner" not in custom_fields[start:start + 600]:
+            fail(f"Custom field definition management must be owner-only: {signature}")
+    if "(manage || includeInactive) && (user is null || !user.IsOwner)" not in custom_fields:
+        fail("Custom field management/inactive listing must be owner-only")
+    custom_tests = (DOTNET / "Area11.Tests/CustomFieldTests.cs").read_text(encoding="utf-8-sig")
+    if "OnlyOwnerMayManageDefinitionsEvenWhenManagerHasSettingsPermission" not in custom_tests:
+        fail("Custom field owner-only management regression is missing")
+    for entity in ("Customer", "Supplier"):
+        if f"SaveNewRecordValuesInTransaction(connection, actor, CustomFieldEntity.{entity}, newId" not in partner:
+            fail(f"{entity} and new custom answers must share a transaction")
+    for fact in ("NewPartnerAndRequiredAnswerAreSavedAtomically", "NewPartnerAndAnswerRollBackWhenAuditFails",
+                 "CustomerAndExtraAnswersUpdateTogetherOrRollback"):
+        if fact not in custom_tests:
+            fail(f"Partner custom answer transaction regression missing: {fact}")
+    product_service = (DOTNET / "Area11.Core/Services/ProductService.cs").read_text(encoding="utf-8-sig")
+    for needle in ("SaveNewRecordValuesInTransaction(connection, actor, CustomFieldEntity.Product, newId",
+                   "SaveValuesInTransaction(connection, actor, CustomFieldEntity.Product, id, customValues)",
+                   "if (!answers.Ok) throw new ValidationException"):
+        if needle not in product_service:
+            fail(f"Product and custom answers must share a transaction: {needle}")
+    for fact in ("ProductAndRequiredAnswersAreCreatedTogetherOrNotAtAll",
+                 "ProductAndAnswersUpdateTogetherAndRejectStaleOrInvalidAnswers",
+                 "ProductAndAnswersRollBackWhenAnswerAuditFails"):
+        if fact not in custom_tests:
+            fail(f"Product custom answer transaction regression missing: {fact}")
+    for field in ("product.generic", "product.brand", "product.rack", "product.pack"):
+        for source, name, minimum in ((product_service, "product create/update", 2),
+                                      (imports, "CSV preview/apply", 2), (workbook, "workbook revalidation", 1)):
+            if source.count('"' + field + '"') < minimum:
+                fail(f"Missing {field} safety guard in {name}")
     category_tests = (DOTNET / "Area11.Tests/CatalogUnitTests.cs").read_text(encoding="utf-8-sig")
     for fact in ("AdditionalTagsWithoutPrimaryAreRefusedAtomically_ButUncategorisedWithoutTagsIsAllowed",
                  "UpdatingTagsRequiresPrimary_AndFailedUpdatePreservesProductAndAudit",

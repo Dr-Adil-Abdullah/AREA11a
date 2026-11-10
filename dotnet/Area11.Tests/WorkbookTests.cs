@@ -401,6 +401,103 @@ VALUES(@id, 'import', 1), (@id, 'settings', 1);", new { id = cashier.Id }));
         Assert.Equal(100d, Convert.ToDouble(Scalar(test, "SELECT qty_base FROM batches WHERE id = " + batchId + ";")));
     }
 
+    [Theory]
+    [InlineData("product.generic", "Generic")]
+    [InlineData("product.brand", "Brand")]
+    [InlineData("product.rack", "Rack")]
+    [InlineData("product.pack", "Pack")]
+    public void ProductTextPolicyIsRecheckedAtWorkbookApply(string key, string heading)
+    {
+        using var test = new TestDatabase();
+        var id = TestData.AddProduct(test);
+        Execute(test, $"UPDATE products SET generic = 'salt', brand = 'brand', rack_no = 'rack', pack_size_label = 'pack' WHERE id = {id};");
+        var policy = new NativeFieldPolicyService(test.Database, test.Audit, test.Log);
+        Assert.True(policy.EnsureDefaults().Ok);
+        var field = policy.List(TestData.Owner).Value!.Single(item => item.FieldKey == key);
+        var workbook = Download(test);
+        var sheet = workbook.Sheet("Products")!;
+        Set(sheet, RowWithId(sheet, id), heading, "__CLEAR__");
+        var service = Workbooks(test);
+        var preview = service.PreviewBulk(TestData.Owner, XlsxFile.Write(workbook), false).Value!;
+        Assert.True(preview.CanApply, preview.SummaryText);
+        Assert.True(policy.SetRequired(TestData.Owner, field.Id, true, false).Ok);
+        var result = service.ApplyBulk(TestData.Owner, preview);
+        Assert.False(result.Ok);
+        Assert.Contains("required", result.Error ?? string.Empty);
+        Assert.Equal(0L, Count(test, "audit_logs WHERE action = 'workbook_update'"));
+        Assert.False(service.PreviewBulk(TestData.Owner, XlsxFile.Write(workbook), false).Value!.CanApply);
+    }
+
+    [Fact]
+    public void SupplierAgencyPolicyIsRecheckedAtWorkbookApply()
+    {
+        using var test = new TestDatabase();
+        var id = TestData.AddSupplier(test);
+        var policy = new NativeFieldPolicyService(test.Database, test.Audit, test.Log);
+        Assert.True(policy.EnsureDefaults().Ok);
+        var field = policy.List(TestData.Owner).Value!.Single(row => row.FieldKey == "supplier.agency");
+        var workbook = Download(test);
+        var sheet = workbook.Sheet("Suppliers")!;
+        Set(sheet, RowWithId(sheet, id), "Agency", "__CLEAR__");
+        var service = Workbooks(test);
+        var preview = service.PreviewBulk(TestData.Owner, XlsxFile.Write(workbook), false).Value!;
+        Assert.True(preview.CanApply, preview.SummaryText);
+        Assert.True(policy.SetRequired(TestData.Owner, field.Id, true, false).Ok);
+        var result = service.ApplyBulk(TestData.Owner, preview);
+        Assert.False(result.Ok);
+        Assert.Contains("agency", result.Error ?? string.Empty);
+        Assert.Equal("GSK", Convert.ToString(Scalar(test, "SELECT agency FROM suppliers WHERE id = " + id + ";")));
+        Assert.False(service.PreviewBulk(TestData.Owner, XlsxFile.Write(workbook), false).Value!.CanApply);
+    }
+
+    [Fact]
+    public void SupplierPhonePolicyIsRecheckedAtWorkbookPreviewAndApply()
+    {
+        using var test = new TestDatabase();
+        var id = TestData.AddSupplier(test);
+        var policy = new NativeFieldPolicyService(test.Database, test.Audit, test.Log);
+        Assert.True(policy.EnsureDefaults().Ok);
+        var field = policy.List(TestData.Owner).Value!.Single(row => row.FieldKey == "supplier.phone");
+        var workbook = Download(test);
+        var sheet = workbook.Sheet("Suppliers")!;
+        Set(sheet, RowWithId(sheet, id), "Phone", "__CLEAR__");
+        var service = Workbooks(test);
+        var preview = service.PreviewBulk(TestData.Owner, XlsxFile.Write(workbook), false).Value!;
+        Assert.True(preview.CanApply, preview.SummaryText);
+        Assert.True(policy.SetRequired(TestData.Owner, field.Id, true, false).Ok);
+        var applied = service.ApplyBulk(TestData.Owner, preview);
+        Assert.False(applied.Ok);
+        Assert.Contains("phone", applied.Error ?? string.Empty);
+        Assert.Equal("042-1112233", Convert.ToString(Scalar(test, "SELECT phone FROM suppliers WHERE id = " + id + ";")));
+        var again = service.PreviewBulk(TestData.Owner, XlsxFile.Write(workbook), false).Value!;
+        Assert.False(again.CanApply);
+        Assert.Contains(again.Rows, row => row.IsError && row.Message.Contains("phone"));
+    }
+
+    [Fact]
+    public void CustomerPhonePolicyIsRecheckedAtWorkbookPreviewAndApply()
+    {
+        using var test = new TestDatabase();
+        var id = TestData.AddCustomer(test, phone: "03001234567");
+        var policy = new NativeFieldPolicyService(test.Database, test.Audit, test.Log);
+        Assert.True(policy.EnsureDefaults().Ok);
+        var field = policy.List(TestData.Owner).Value!.Single(item => item.FieldKey == "customer.phone");
+        var workbook = Download(test);
+        var sheet = workbook.Sheet("Customers")!;
+        Set(sheet, RowWithId(sheet, id), "Phone", "__CLEAR__");
+        var service = Workbooks(test);
+        var preview = service.PreviewBulk(TestData.Owner, XlsxFile.Write(workbook), false).Value!;
+        Assert.True(preview.CanApply, preview.SummaryText);
+        Assert.True(policy.SetRequired(TestData.Owner, field.Id, true, false).Ok);
+        var applied = service.ApplyBulk(TestData.Owner, preview);
+        Assert.False(applied.Ok);
+        Assert.Contains("phone", applied.Error ?? string.Empty);
+        Assert.Equal("03001234567", Convert.ToString(Scalar(test, "SELECT phone FROM customers WHERE id = " + id + ";")));
+        var again = service.PreviewBulk(TestData.Owner, XlsxFile.Write(workbook), false).Value!;
+        Assert.False(again.CanApply);
+        Assert.Contains(again.Rows, row => row.IsError && row.Message.Contains("phone"));
+    }
+
     [Fact]
     public void BulkCategoryChangeRefusesClearingOrPromotingAnExistingTag()
     {

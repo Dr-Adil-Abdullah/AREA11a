@@ -243,6 +243,91 @@ public sealed class PhotoTests
 
     // ============================== helpers ==============================
 
+    [Fact]
+    public void ProductCoverReordersWithoutDeletingFilesAndRestoringOldPhotoDoesNotStealIt()
+    {
+        using var test = new TestDatabase();
+        using var folders = new PhotoFolders();
+        var product = TestData.AddProduct(test);
+        var photos = folders.Photos(test);
+        var first = photos.Add(TestData.Owner, PhotoEntity.Product, product, folders.SourceFile("first.jpg")).Value!;
+        var second = photos.Add(TestData.Owner, PhotoEntity.Product, product, folders.SourceFile("second.jpg")).Value!;
+        var third = photos.Add(TestData.Owner, PhotoEntity.Product, product, folders.SourceFile("third.jpg")).Value!;
+        Assert.True(photos.Hide(TestData.Owner, first.Id).Ok);
+        Assert.True(photos.SetProductCover(TestData.Owner, third.Id).Ok);
+        Assert.True(photos.Restore(TestData.Owner, first.Id).Ok);
+        var result = photos.List(TestData.Owner, PhotoEntity.Product, product).Value!;
+        Assert.Equal(new[] { third.Id, first.Id, second.Id }, result.Select(row => row.Id).ToArray());
+        Assert.Equal(3, Directory.GetFiles(folders.PhotoFolder).Length);
+        Assert.Equal(1L, folders.Rows(test, "SELECT COUNT(*) FROM audit_logs WHERE action = 'photo_cover_changed';"));
+        Assert.True(photos.SetProductCover(TestData.Owner, third.Id).Ok);
+        Assert.Equal(1L, folders.Rows(test, "SELECT COUNT(*) FROM audit_logs WHERE action = 'photo_cover_changed';"));
+    }
+
+    [Fact]
+    public void ProductCoverRejectsUnauthorizedHiddenMissingAndOtherEntityPhotos()
+    {
+        using var test = new TestDatabase();
+        using var folders = new PhotoFolders();
+        var product = TestData.AddProduct(test);
+        var customer = TestData.AddCustomer(test);
+        var photos = folders.Photos(test);
+        var first = photos.Add(TestData.Owner, PhotoEntity.Product, product, folders.SourceFile("first.jpg")).Value!;
+        var second = photos.Add(TestData.Owner, PhotoEntity.Product, product, folders.SourceFile("second.jpg")).Value!;
+        var person = photos.Add(TestData.Owner, PhotoEntity.Customer, customer, folders.SourceFile("customer.jpg")).Value!;
+        Assert.False(photos.SetProductCover(TestData.Cashier(test), second.Id).Ok);
+        Assert.False(photos.SetProductCover(TestData.Owner, person.Id).Ok);
+        Assert.True(photos.Hide(TestData.Owner, second.Id).Ok);
+        Assert.False(photos.SetProductCover(TestData.Owner, second.Id).Ok);
+        Assert.True(photos.Restore(TestData.Owner, second.Id).Ok);
+        File.Delete(second.FullPath);
+        Assert.False(photos.SetProductCover(TestData.Owner, second.Id).Ok);
+        Assert.Equal(first.Id, photos.List(TestData.Owner, PhotoEntity.Product, product).Value![0].Id);
+        Assert.Equal(0L, folders.Rows(test, "SELECT COUNT(*) FROM audit_logs WHERE action = 'photo_cover_changed';"));
+    }
+
+    [Fact]
+    public void StaffPhotosRequireStaffPermissionButOwnAvatarIsVisibleToSignedInPerson()
+    {
+        using var test = new TestDatabase();
+        using var folders = new PhotoFolders();
+        var cashier = TestData.Cashier(test);
+        var other = TestData.AddUser(test, "salesman");
+        var photos = folders.Photos(test);
+        var added = photos.Add(TestData.Owner, PhotoEntity.User, cashier.Id, folders.SourceFile("staff.jpg"));
+        Assert.True(added.Ok, added.Error);
+        Assert.Equal(added.Value!.FullPath, photos.OwnAvatar(cashier).Value);
+        Assert.False(photos.List(cashier, PhotoEntity.User, other.Id).Ok);
+        Assert.False(photos.List(cashier, PhotoEntity.User, cashier.Id).Ok);
+        Assert.False(photos.Add(cashier, PhotoEntity.User, other.Id, folders.SourceFile("other.jpg")).Ok);
+        Assert.False(photos.OwnAvatar(other).Ok);
+        Assert.True(photos.Hide(TestData.Owner, added.Value.Id).Ok);
+        Assert.False(photos.OwnAvatar(cashier).Ok);
+        Assert.True(File.Exists(added.Value.FullPath));
+    }
+
+    [Fact]
+    public void StaffAvatarRejectsInactiveAccountsAndUnsafeOrMissingFiles()
+    {
+        using var test = new TestDatabase();
+        using var folders = new PhotoFolders();
+        var cashier = TestData.Cashier(test);
+        var photos = folders.Photos(test);
+        var added = photos.Add(TestData.Owner, PhotoEntity.User, cashier.Id, folders.SourceFile("staff.jpg")).Value!;
+        test.Database.Tx(connection => test.Database.Execute(connection,
+            "UPDATE photos SET file_name = '../other.jpg' WHERE id = @id;", new { id = added.Id }));
+        Assert.False(photos.OwnAvatar(cashier).Ok);
+        test.Database.Tx(connection => test.Database.Execute(connection,
+            "UPDATE photos SET file_name = @name WHERE id = @id;", new { name = added.FileName, id = added.Id }));
+        File.Delete(added.FullPath);
+        Assert.False(photos.OwnAvatar(cashier).Ok);
+        File.WriteAllText(added.FullPath, "restored for inactive-account check");
+        Assert.True(photos.OwnAvatar(cashier).Ok);
+        test.Database.Tx(connection => test.Database.Execute(connection,
+            "UPDATE users SET active = 0 WHERE id = @id;", new { id = cashier.Id }));
+        Assert.False(photos.OwnAvatar(cashier).Ok);
+    }
+
     /// <summary>One throw-away photo folder and one source folder per test.</summary>
     private sealed class PhotoFolders : IDisposable
     {

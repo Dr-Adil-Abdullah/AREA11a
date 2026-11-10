@@ -15,6 +15,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Resource Include="Resources\area11.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Area11.Core\Area11.Core.csproj" />
   </ItemGroup>
 

@@ -95,7 +95,7 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
 
     public RelayCommand<CustomFieldSuggestion> UseSuggestionCommand { get; }
 
-    public bool CanManage => _services.Permissions.Can(_user, Modules.Settings);
+    public bool CanManage => _user.IsOwner;
 
     public bool IsNotAllowed => !CanManage;
 

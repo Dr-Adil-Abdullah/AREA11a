@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using Microsoft.Win32;
 using Area11.Core.Models;
 using Area11.Core.Services;
 using Area11.Core.Utils;
@@ -31,6 +32,7 @@ public sealed class SettingsViewModel : ObservableObject
     private readonly Action? _onSaved;
 
     private string _storeName = string.Empty;
+    private string _productPhotoSize = "medium";
     private string _storeAddress = string.Empty;
     private string _storePhone = string.Empty;
     private string _footerNote = string.Empty;
@@ -90,6 +92,8 @@ public sealed class SettingsViewModel : ObservableObject
         _services = services;
         _user = user;
         _onSaved = onSaved;
+        NativeFields = new NativeFieldsViewModel(services, user);
+        ExtraFields = new CustomFieldsViewModel(services, user);
 
         SaveCommand = new RelayCommand(Save);
         AddStaffCommand = new RelayCommand(AddStaff);
@@ -97,6 +101,9 @@ public sealed class SettingsViewModel : ObservableObject
         ResetLabelsCommand = new RelayCommand(ResetLabels);
         ToggleActiveCommand = new RelayCommand(ToggleActive);
         RefreshStaffCommand = new RelayCommand(LoadUsers);
+        StaffPhotosCommand = new RelayCommand(OpenStaffPhotos);
+        ChooseAppIconCommand = new RelayCommand(ChooseAppIcon);
+        ResetAppIconCommand = new RelayCommand(ResetAppIcon);
         ClearSyncKeyCommand = new RelayCommand(ClearSyncKey);
 
         PaperOptions = new ObservableCollection<PaperOption>
@@ -118,6 +125,10 @@ public sealed class SettingsViewModel : ObservableObject
         Load();
         LoadUsers();
     }
+
+    public NativeFieldsViewModel NativeFields { get; }
+
+    public CustomFieldsViewModel ExtraFields { get; }
 
     public ObservableCollection<PaperOption> PaperOptions { get; }
 
@@ -159,6 +170,29 @@ public sealed class SettingsViewModel : ObservableObject
 
     public RelayCommand RefreshStaffCommand { get; }
 
+    public RelayCommand StaffPhotosCommand { get; }
+
+    public RelayCommand ChooseAppIconCommand { get; }
+
+    public RelayCommand ResetAppIconCommand { get; }
+
+    public bool CanChangeAppIcon => _user.IsOwner;
+
+    private void ChooseAppIcon()
+    {
+        if (!CanChangeAppIcon) { SetStatus("Only the owner can change the icon.", true); return; }
+        var dialog = new OpenFileDialog { Title = "Choose application icon", Filter = "Windows icon (*.ico)|*.ico", CheckFileExists = true };
+        if (dialog.ShowDialog() != true) return;
+        var result = IconAssets.Choose(_services, _user, dialog.FileName);
+        SetStatus(result.Ok ? "Window icon changed. Existing Windows shortcuts keep their own icon." : result.Error ?? "Icon change failed.", !result.Ok);
+    }
+
+    private void ResetAppIcon()
+    {
+        var result = IconAssets.Reset(_services, _user);
+        SetStatus(result.Ok ? "The default window icon is restored." : result.Error ?? "Icon reset failed.", !result.Ok);
+    }
+
     /// <summary>Takes the saved key off this computer (it takes effect when Save is pressed).</summary>
     public RelayCommand ClearSyncKeyCommand { get; }
 
@@ -179,6 +213,14 @@ public sealed class SettingsViewModel : ObservableObject
     }
 
     // ------------------------------- Shop -------------------------------
+
+    public IReadOnlyList<string> ProductPhotoSizes { get; } = new[] { "medium", "large" };
+
+    public string ProductPhotoSize
+    {
+        get => _productPhotoSize;
+        set => SetProperty(ref _productPhotoSize, value);
+    }
 
     public string StoreName
     {
@@ -388,6 +430,17 @@ public sealed class SettingsViewModel : ObservableObject
 
     // ------------------------------ Staff -------------------------------
 
+    private void OpenStaffPhotos()
+    {
+        if (!CanManageStaff || _selectedUser is not { Active: true } person)
+        {
+            SetStatus("Choose an active staff member first.", true);
+            return;
+        }
+        PhotoWindow.Show(_services, _user, PhotoEntity.User, person.Id, person.Name);
+        _onSaved?.Invoke(); // refresh the signed-in person's header after a photo is changed
+    }
+
     public User? SelectedUser
     {
         get => _selectedUser;
@@ -454,6 +507,8 @@ public sealed class SettingsViewModel : ObservableObject
     {
         var settings = _services.Settings;
 
+        var photoSize = settings.GetString("appearance.productPhotoSize");
+        ProductPhotoSize = photoSize is "large" ? "large" : "medium";
         StoreName = settings.GetString("store.name");
         StoreAddress = settings.GetString("store.address");
         StorePhone = settings.GetString("store.phone");
@@ -516,7 +571,7 @@ public sealed class SettingsViewModel : ObservableObject
     public int SelectedTabIndex
     {
         get => _selectedTabIndex;
-        set => SetProperty(ref _selectedTabIndex, Math.Clamp(value, 0, 5));
+        set => SetProperty(ref _selectedTabIndex, Math.Clamp(value, 0, 6));
     }
 
     /// <summary>
@@ -536,6 +591,7 @@ public sealed class SettingsViewModel : ObservableObject
     {
         Load();
         LoadUsers();
+        NativeFields.Refresh();
     }
 
     public void LoadUsers()
@@ -701,6 +757,7 @@ public sealed class SettingsViewModel : ObservableObject
 
         var values = new Dictionary<string, object?>(StringComparer.Ordinal)
         {
+            ["appearance.productPhotoSize"] = ProductPhotoSize,
             ["store.name"] = StoreName.Trim(),
             ["store.address"] = StoreAddress.Trim(),
             ["store.phone"] = StorePhone.Trim(),

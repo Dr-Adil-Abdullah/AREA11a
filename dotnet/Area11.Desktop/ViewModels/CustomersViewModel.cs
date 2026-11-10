@@ -84,6 +84,8 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
         PhotosCommand = new RelayCommand(OpenPhotos);
 
         Editor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Customer);
+        NewEditor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Customer, saveWithParent: true);
+        EditEditor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Customer, saveWithParent: true);
         CollectCommand = new RelayCommand(Collect);
         StatementCommand = new RelayCommand(PrintStatement);
         MonthStatementCommand = new RelayCommand(PrintMonthStatement);
@@ -111,6 +113,8 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
 
     /// <summary>The owner's own questions for a customer (F-42) - drawn only if he made any.</summary>
     public CustomFieldsEditorViewModel Editor { get; }
+    public CustomFieldsEditorViewModel NewEditor { get; }
+    public CustomFieldsEditorViewModel EditEditor { get; }
 
     public RelayCommand CollectCommand { get; }
 
@@ -645,6 +649,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
             return;
         }
 
+        NewEditor.LoadNew();
         NewName = string.Empty;
         NewPhone = string.Empty;
         NewCategory = "Normal";
@@ -673,7 +678,12 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
             return;
         }
 
-        var result = _services.Partners.CreateCustomer(_user, NewName, NewPhone, NewCategory);
+        if (!NewEditor.LoadedSuccessfully)
+        {
+            SetStatus("Extra fields could not be loaded. Reopen the new customer form.", true);
+            return;
+        }
+        var result = _services.Partners.CreateCustomer(_user, NewName, NewPhone, NewCategory, NewEditor.AnswerValues());
 
         if (!result.Ok)
         {
@@ -708,6 +718,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
         }
 
         IsAdding = false;
+        EditEditor.Load(Selected.Id);
         EditName = Selected.Name;
         EditPhone = Selected.Phone ?? string.Empty;
         EditCategory = Selected.CategoryLabel;
@@ -755,7 +766,12 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
             CreditLimitPaisa = limit
         };
 
-        var result = _services.Partners.UpdateCustomer(_user, edit);
+        if (!EditEditor.LoadedSuccessfully)
+        {
+            SetStatus("Extra fields could not be loaded. Reopen the customer editor.", true);
+            return;
+        }
+        var result = _services.Partners.UpdateCustomer(_user, edit, EditEditor.AnswerValues());
 
         if (!result.Ok || result.Value is null)
         {

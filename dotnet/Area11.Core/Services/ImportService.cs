@@ -293,6 +293,10 @@ ORDER BY s.name COLLATE NOCASE;");
         var existingNames = ReadExistingProductNames();
         var existingBarcodes = ReadExistingBarcodes();
         var activeUnits = ReadActiveUnits();
+        using var policyConnection = _db.Open();
+        var requiredCustomProduct = _db.QuerySingle<string>(policyConnection, @"
+SELECT label FROM custom_fields WHERE entity = 'product' AND active = 1 AND required = 1
+ORDER BY sort, id LIMIT 1;");
 
         for (var index = 1; index < table.Count; index++)
         {
@@ -318,6 +322,23 @@ ORDER BY s.name COLLATE NOCASE;");
             if (existingNames.Contains(name))
             {
                 preview.Rows.Add(Skipped(line, name, "already in the shop"));
+                continue;
+            }
+
+            if (requiredCustomProduct is not null)
+            {
+                preview.Rows.Add(Error(line, name, "CSV cannot supply required extra field \"" + requiredCustomProduct
+                    + "\". Create this product in the product editor instead."));
+                continue;
+            }
+
+            var productFieldError = NativeFieldPolicyService.RequiredTextError(_db, policyConnection, "product.generic", "Generic / salt", Field("generic"))
+                ?? NativeFieldPolicyService.RequiredTextError(_db, policyConnection, "product.brand", "Brand", Field("brand"))
+                ?? NativeFieldPolicyService.RequiredTextError(_db, policyConnection, "product.rack", "Rack / shelf", Field("rack"))
+                ?? NativeFieldPolicyService.RequiredTextError(_db, policyConnection, "product.pack", "Pack description", Field("pack"));
+            if (productFieldError is not null)
+            {
+                preview.Rows.Add(Error(line, name, productFieldError));
                 continue;
             }
 
@@ -456,6 +477,17 @@ ORDER BY s.name COLLATE NOCASE;");
 
                 foreach (var item in preview.Products)
                 {
+                    var requiredCustom = _db.QuerySingle<string>(connection, @"
+SELECT label FROM custom_fields WHERE entity = 'product' AND active = 1 AND required = 1
+ORDER BY sort, id LIMIT 1;");
+                    if (requiredCustom is not null)
+                        throw new ValidationException("CSV cannot supply required extra field \"" + requiredCustom
+                            + "\". Preview again or create products in the product editor.");
+                    var required = NativeFieldPolicyService.RequiredTextError(_db, connection, "product.generic", "Generic / salt", item.Generic)
+                        ?? NativeFieldPolicyService.RequiredTextError(_db, connection, "product.brand", "Brand", item.Brand)
+                        ?? NativeFieldPolicyService.RequiredTextError(_db, connection, "product.rack", "Rack / shelf", item.RackNo)
+                        ?? NativeFieldPolicyService.RequiredTextError(_db, connection, "product.pack", "Pack description", item.PackLabel);
+                    if (required is not null) throw new ValidationException(required + " Preview again.");
                     var categoryId = CategoryId(connection, item.Category, categoryIds);
                     var baseUnit = NormalizeUnitName(item.BaseUnit);
                     if (!ActiveUnitExists(connection, baseUnit))
@@ -586,6 +618,9 @@ VALUES(@productId, @batchId, 'import', @qty, 'import', 'Opening stock (import)',
 
         var phones = ReadExistingPhones();
         var names = ReadExistingCustomerNames();
+        using var policyConnection = _db.Open();
+        var phoneRequired = NativeFieldPolicyService.IsRequired(_db, policyConnection, "customer.phone");
+        var requiredCustom = RequiredCustomField(policyConnection, "customer");
 
         for (var index = 1; index < table.Count; index++)
         {
@@ -608,7 +643,19 @@ VALUES(@productId, @batchId, 'import', @qty, 'import', 'Opening stock (import)',
                 continue;
             }
 
+            if (requiredCustom is not null)
+            {
+                preview.Rows.Add(Error(line, name, "CSV cannot supply required extra field \"" + requiredCustom
+                    + "\". Create this customer in its form instead."));
+                continue;
+            }
+
             var phone = Field("phone");
+            if (string.IsNullOrWhiteSpace(phone) && phoneRequired)
+            {
+                preview.Rows.Add(Error(line, name, "Customer phone is required by the owner's field settings."));
+                continue;
+            }
 
             if (phone.Length > 0 && phones.Contains(phone))
             {
@@ -696,6 +743,16 @@ VALUES(@productId, @batchId, 'import', @qty, 'import', 'Opening stock (import)',
             var outcome = _db.Tx(connection =>
             {
                 var result = new ImportOutcome { Kind = "Customers", Skipped = preview.SkippedCount };
+                var requiredCustom = RequiredCustomField(connection, "customer");
+                if (requiredCustom is not null && preview.Customers.Count > 0)
+                    throw new ValidationException("CSV cannot supply required extra field \"" + requiredCustom
+                        + "\". Preview again or create records in the form.");
+
+                // The setting may have changed since preview. Recheck inside the single import
+                // transaction so no customer, opening balance or audit row is partially written.
+                if (NativeFieldPolicyService.IsRequired(_db, connection, "customer.phone")
+                    && preview.Customers.Any(item => string.IsNullOrWhiteSpace(item.Phone)))
+                    throw new ValidationException("Customer phone is required by the owner's field settings. Preview again.");
 
                 foreach (var item in preview.Customers)
                 {
@@ -735,6 +792,11 @@ VALUES(@name, @phone, @category, @limit, @opening, @opening, 0, 1, 1, @at);",
         }
     }
 
+    private string? RequiredCustomField(Microsoft.Data.Sqlite.SqliteConnection connection, string entity) =>
+        _db.QuerySingle<string>(connection, @"
+SELECT label FROM custom_fields WHERE entity = @entity AND active = 1 AND required = 1
+ORDER BY sort, id LIMIT 1;", new { entity });
+
     // =========================== Supplier import ===========================
 
     public ImportPreview PreviewSuppliers(string csvText)
@@ -758,6 +820,9 @@ VALUES(@name, @phone, @category, @limit, @opening, @opening, 0, 1, 1, @at);",
         }
 
         var names = ReadExistingSupplierNames();
+        using var policyConnection = _db.Open();
+        var phoneRequired = NativeFieldPolicyService.IsRequired(_db, policyConnection, "supplier.phone");
+        var requiredCustom = RequiredCustomField(policyConnection, "supplier");
 
         for (var index = 1; index < table.Count; index++)
         {
@@ -786,9 +851,30 @@ VALUES(@name, @phone, @category, @limit, @opening, @opening, 0, 1, 1, @at);",
                 continue;
             }
 
+            if (requiredCustom is not null)
+            {
+                preview.Rows.Add(Error(line, name, "CSV cannot supply required extra field \"" + requiredCustom
+                    + "\". Create this supplier in its form instead."));
+                continue;
+            }
+
             if (!Money.TryParse(Field("openingpayable"), out var opening) || opening < 0)
             {
                 preview.Rows.Add(Error(line, name, "Opening payable is not an amount of money."));
+                continue;
+            }
+
+            if (phoneRequired && string.IsNullOrWhiteSpace(Field("phone")))
+            {
+                preview.Rows.Add(Error(line, name, "Supplier phone is required by the owner's field settings."));
+                continue;
+            }
+
+            var agencyError = NativeFieldPolicyService.RequiredTextError(_db, policyConnection,
+                "supplier.agency", "Supplier agency", Field("agency"));
+            if (agencyError is not null)
+            {
+                preview.Rows.Add(Error(line, name, agencyError));
                 continue;
             }
 
@@ -835,9 +921,20 @@ VALUES(@name, @phone, @category, @limit, @opening, @opening, 0, 1, 1, @at);",
             var outcome = _db.Tx(connection =>
             {
                 var result = new ImportOutcome { Kind = "Suppliers", Skipped = preview.SkippedCount };
+                var requiredCustom = RequiredCustomField(connection, "supplier");
+                if (requiredCustom is not null && preview.Suppliers.Count > 0)
+                    throw new ValidationException("CSV cannot supply required extra field \"" + requiredCustom
+                        + "\". Preview again or create records in the form.");
+
+                if (NativeFieldPolicyService.IsRequired(_db, connection, "supplier.phone")
+                    && preview.Suppliers.Any(item => string.IsNullOrWhiteSpace(item.Phone)))
+                    throw new ValidationException("Supplier phone is required by the owner's field settings. Preview again.");
 
                 foreach (var item in preview.Suppliers)
                 {
+                    var agencyError = NativeFieldPolicyService.RequiredTextError(_db, connection,
+                        "supplier.agency", "Supplier agency", item.Agency);
+                    if (agencyError is not null) throw new ValidationException(agencyError + " Preview again.");
                     _db.Execute(connection, @"
 INSERT INTO suppliers(name, phone, agency, opening_balance_paisa, balance_paisa, active, created_at)
 VALUES(@name, @phone, @agency, @opening, @opening, 1, @at);",

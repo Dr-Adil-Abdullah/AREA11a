@@ -26,6 +26,7 @@ public partial class App : Application
         {
             _services = AppServices.Create();
             LabelResources.Apply(_services.AppLabels);
+            IconAssets.Apply(_services);
 
             // Every button that fails writes one line to the same log the rest of the program uses
             // (v0.34.0, D-90). Set once, here, because this is the first moment the log exists.

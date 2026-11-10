@@ -265,10 +265,103 @@ VALUES(@entity, @entityId, @fileName, @sortOrder, 1, @at);",
         return ChangeActive(user, photoId, false);
     }
 
+    /// <summary>
+    /// Makes an active product photo the first thumbnail without deleting or copying any file.
+    /// All order changes and the audit row share the same transaction. Hidden photos remain hidden.
+    /// </summary>
+    public ServiceResult SetProductCover(User? user, int photoId)
+    {
+        if (!_permissions.Can(user, Modules.Products))
+        {
+            return ServiceResult.Fail("You do not have permission to change product photos.");
+        }
+
+        try
+        {
+            return _db.Tx(connection =>
+            {
+                var selected = _db.QuerySingle<PhotoItem>(connection, @"
+SELECT id, entity, entity_id AS entityId, file_name AS fileName,
+       sort_order AS sortOrder, IFNULL(active, 1) AS isActive
+FROM photos WHERE id = @id;", new { id = photoId });
+                if (selected is null || selected.Entity != PhotoEntity.Product || !selected.IsActive)
+                {
+                    return ServiceResult.Fail("Choose an active product photo.");
+                }
+                if (!File.Exists(Path.Combine(PhotosFolder, selected.FileName)))
+                {
+                    return ServiceResult.Fail("That photo file is missing; choose an available photo.");
+                }
+
+                var rows = _db.Query<PhotoItem>(connection, @"
+SELECT id, sort_order AS sortOrder, IFNULL(active, 1) AS isActive FROM photos
+WHERE entity = @entity AND entity_id = @entityId ORDER BY sort_order, id;",
+                    new { entity = PhotoEntity.Product, entityId = selected.EntityId });
+                var firstActive = rows.FirstOrDefault(row => row.IsActive);
+                if (firstActive?.Id == selected.Id)
+                {
+                    return ServiceResult.Success();
+                }
+
+                // Put the selected photo before every row, including hidden photos: restoring an
+                // older hidden item must not silently steal the cover. Keep the rest in their order.
+                var ordered = rows.OrderBy(row => row.Id == selected.Id ? 0 : 1).ToList();
+                for (var index = 0; index < ordered.Count; index++)
+                {
+                    _db.Execute(connection, "UPDATE photos SET sort_order = @sort WHERE id = @id;",
+                        new { sort = index + 1, id = ordered[index].Id });
+                }
+                _audit.Record(connection, user, Modules.Products, "photo_cover_changed", "photos",
+                    selected.Id.ToString(), oldValue: firstActive?.Id.ToString(),
+                    newValue: selected.Id.ToString(), details: "Product " + selected.EntityId);
+                return ServiceResult.Success();
+            });
+        }
+        catch (Exception exception)
+        {
+            _log.Error($"The product photo {photoId} could not be made the cover.", exception);
+            return ServiceResult.Fail("The cover photo could not be changed.");
+        }
+    }
+
     /// <summary>Puts a hidden photo back in the gallery - the same row, the same file.</summary>
     public ServiceResult Restore(User? user, int photoId)
     {
         return ChangeActive(user, photoId, true);
+    }
+
+    /// <summary>
+    /// Only the signed-in person's own avatar, not an arbitrary user's gallery. Staff administrators
+    /// manage user photos through List/Add/Hide; ordinary staff cannot enumerate those galleries.
+    /// An inactive account and a missing or unsafe file both fall back to initials in the shell.
+    /// </summary>
+    public ServiceResult<string> OwnAvatar(User? user)
+    {
+        if (user is null || user.Id <= 0)
+        {
+            return ServiceResult<string>.Fail("Sign in to see your photo.");
+        }
+        try
+        {
+            using var connection = _db.Open();
+            var file = _db.QuerySingle<string>(connection, @"
+SELECT p.file_name FROM photos p JOIN users u ON u.id = p.entity_id AND u.active = 1
+WHERE p.entity = 'user' AND p.entity_id = @id AND IFNULL(p.active, 1) = 1
+ORDER BY p.sort_order, p.id LIMIT 1;", new { id = user.Id });
+            if (string.IsNullOrWhiteSpace(file) || file.IndexOfAny(new[] { '/', '\\' }) >= 0
+                || file.Contains("..", StringComparison.Ordinal))
+            {
+                return ServiceResult<string>.Fail("No available profile photo.");
+            }
+            var path = Path.Combine(PhotosFolder, file);
+            return File.Exists(path) ? ServiceResult<string>.Success(path)
+                : ServiceResult<string>.Fail("No available profile photo.");
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The signed-in person's photo could not be loaded.", exception);
+            return ServiceResult<string>.Fail("The profile photo could not be loaded.");
+        }
     }
 
     /// <summary>The file to show or print. Refuses a path that escaped the photo folder.</summary>
@@ -393,6 +486,7 @@ FROM photos WHERE id = @id;", new { id = photoId });
             PhotoEntity.Product => "products",
             PhotoEntity.Customer => "customers",
             PhotoEntity.Supplier => "suppliers",
+            PhotoEntity.User => "users",
             _ => string.Empty
         };
 

@@ -1,5 +1,8 @@
 # AGENTS.md - how to work in this repository
 
+> **WIP handoff, 24 Oct 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/60395e95-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/60395e95-area11a). Portion 4 is incomplete; portions 5–7 are approved next; Portion 17 is paused. Older status and approval statements below are historical. This branch is not a tested release.
+
+
 ## Latest handoff — v0.42.0 Kyanite
 
 Owner approved master Portion 3. A list projection omits tag IDs; the product editor now fetches the complete product before editing, so an ordinary save does not silently remove tags. ProductService refuses creating/replacing nonempty tags without a primary while allowing no-category/no-tag and untouched legacy tag-only records. Primary-only financial reports, genuine data and quantities remain unchanged. **929 written tests, 57/57 static; Windows build/xUnit and PT-14 WPF/owner proof pending.** A raw SQLite tag-only/Uncategorised scenario is not the owner's exact reproduction. Workbook category changes recheck tags on preview/apply; CSV import creates products without tags. Category put-away intentionally unlinks the primary and can leave other tags; owner review remains pending. Baltic owner 921/921 is previous evidence; portions 4–15 need approval.

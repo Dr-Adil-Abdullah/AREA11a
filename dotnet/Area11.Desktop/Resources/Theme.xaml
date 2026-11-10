@@ -3,6 +3,9 @@
                     xmlns:conv="clr-namespace:Area11.Desktop.Converters"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
+    <sys:Double x:Key="ProductThumbnailSize">54</sys:Double>
+    <BitmapImage x:Key="Area11WindowIcon" UriSource="/Area11;component/Resources/area11.ico" />
+
     <!-- ============ Palette (the release colour is fixed by BuildInfo) ============ -->
     <!-- Brand colour = THE COLOUR OF THIS VERSION (see Area11.Core/Utils/BuildInfo.cs and
          docs/VERSIONS.md). The owner tests every build on his own PC and finds the new one by its

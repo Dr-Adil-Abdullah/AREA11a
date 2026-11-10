@@ -1,5 +1,6 @@
 using Area11.Core.Models;
 using Area11.Core.Services;
+using Area11.Core.Utils;
 using Xunit;
 
 namespace Area11.Tests;
@@ -317,6 +318,34 @@ VALUES('product', @id, 'product-1-20261022-090000-000.jpg', 1, 1, '2026-10-22 09
     }
 
     [Fact]
+    public void OnlyOwnerMayManageDefinitionsEvenWhenManagerHasSettingsPermission()
+    {
+        using var test = new TestDatabase();
+        var fields = Fields(test);
+        var manager = TestData.AddUser(test, "manager");
+        var product = TestData.AddProduct(test);
+        Assert.True(TestData.Permissions(test).Can(manager, Modules.Settings));
+        var added = fields.Add(TestData.Owner, CustomFieldEntity.Product, "Owner field",
+            CustomFieldType.Text, null, false);
+        Assert.True(added.Ok, added.Error);
+        var id = added.Value!.Id;
+
+        Assert.True(fields.List(manager, CustomFieldEntity.Product).Ok);
+        Assert.True(fields.SaveValues(manager, CustomFieldEntity.Product, product,
+            new Dictionary<int, string?> { [id] = "answer" }).Ok);
+        Assert.False(fields.List(manager, CustomFieldEntity.Product, manage: true).Ok);
+        Assert.False(fields.List(manager, CustomFieldEntity.Product, includeInactive: true).Ok);
+        Assert.False(fields.Add(manager, CustomFieldEntity.Product, "Other field", CustomFieldType.Text, null, false).Ok);
+        Assert.False(fields.Update(manager, id, "Changed field", CustomFieldType.Text, null, true).Ok);
+        Assert.False(fields.SetActive(manager, id, false).Ok);
+        Assert.False(fields.Move(manager, id, 1).Ok);
+        var retained = fields.List(TestData.Owner, CustomFieldEntity.Product, manage: true).Value!.Single();
+        Assert.Equal("Owner field", retained.Label);
+        Assert.True(retained.Active);
+        Assert.False(retained.Required);
+    }
+
+    [Fact]
     public void AnUnknownFieldOrRecordIsRefused()
     {
         using var test = new TestDatabase();
@@ -335,6 +364,154 @@ VALUES('product', @id, 'product-1-20261022-090000-000.jpg', 1, 1, '2026-10-22 09
 
         Assert.False(fields.Add(TestData.Owner, "spaceship", "Deck", CustomFieldType.Text, null, false).Ok);
         Assert.Equal(0L, Rows(test, "SELECT COUNT(1) FROM custom_values;"));
+    }
+
+    [Theory]
+    [InlineData(CustomFieldEntity.Customer)]
+    [InlineData(CustomFieldEntity.Supplier)]
+    public void NewPartnerAndRequiredAnswerAreSavedAtomically(string entity)
+    {
+        using var test = new TestDatabase();
+        var fields = Fields(test);
+        var required = fields.Add(TestData.Owner, entity, "Licence number", CustomFieldType.Text, null, true).Value!;
+        var partners = TestData.Partners(test);
+        ServiceResult<int> Create(IReadOnlyDictionary<int, string?>? values) => entity == CustomFieldEntity.Customer
+            ? partners.CreateCustomer(TestData.Owner, "New person", null, "normal", values)
+            : partners.CreateSupplier(TestData.Owner, "New person", null, null, values);
+        var table = entity == CustomFieldEntity.Customer ? "customers" : "suppliers";
+        var missing = Create(null);
+        Assert.False(missing.Ok);
+        Assert.Contains("Licence number", missing.Error);
+        Assert.Equal(0L, Rows(test, "SELECT COUNT(*) FROM " + table));
+        var saved = Create(new Dictionary<int, string?> { [required.Id] = "ABC-123" });
+        Assert.True(saved.Ok, saved.Error);
+        Assert.Equal("ABC-123", fields.Values(TestData.Owner, entity, saved.Value).Value![required.Id]);
+        Assert.Equal(1L, Rows(test, "SELECT COUNT(*) FROM " + table));
+    }
+
+    [Fact]
+    public void CustomerAndExtraAnswersUpdateTogetherOrRollback()
+    {
+        using var test = new TestDatabase();
+        var customer = TestData.AddCustomer(test);
+        var required = Fields(test).Add(TestData.Owner, CustomFieldEntity.Customer, "Licence number",
+            CustomFieldType.Text, null, true).Value!;
+        var partners = TestData.Partners(test);
+        var original = partners.GetCustomers().Value!.Single(row => row.Id == customer).Name;
+        var edit = new CustomerEditInput { Id = customer, Name = "Changed name", Category = "normal" };
+        var refused = partners.UpdateCustomer(TestData.Owner, edit,
+            new Dictionary<int, string?> { [required.Id] = "" });
+        Assert.False(refused.Ok);
+        Assert.Equal(original, partners.GetCustomers().Value!.Single(row => row.Id == customer).Name);
+        Assert.Equal(0L, Rows(test, "SELECT COUNT(*) FROM custom_values;"));
+        var saved = partners.UpdateCustomer(TestData.Owner, edit,
+            new Dictionary<int, string?> { [required.Id] = "ABC-123" });
+        Assert.True(saved.Ok, saved.Error);
+        Assert.Equal("Changed name", partners.GetCustomers().Value!.Single(row => row.Id == customer).Name);
+        Assert.Equal("ABC-123", Fields(test).Values(TestData.Owner, CustomFieldEntity.Customer, customer).Value![required.Id]);
+    }
+
+    [Theory]
+    [InlineData(CustomFieldEntity.Customer)]
+    [InlineData(CustomFieldEntity.Supplier)]
+    public void NewPartnerAndAnswerRollBackWhenAuditFails(string entity)
+    {
+        using var test = new TestDatabase();
+        var required = Fields(test).Add(TestData.Owner, entity, "Licence number", CustomFieldType.Text, null, true).Value!;
+        test.Database.Tx(connection => test.Database.Execute(connection, @"
+CREATE TRIGGER fail_custom_value_audit BEFORE INSERT ON audit_logs
+WHEN NEW.action = 'custom_value_set'
+BEGIN SELECT RAISE(ABORT, 'audit unavailable'); END;"));
+        var partners = TestData.Partners(test);
+        var answers = new Dictionary<int, string?> { [required.Id] = "ABC-123" };
+        var result = entity == CustomFieldEntity.Customer
+            ? partners.CreateCustomer(TestData.Owner, "New person", null, "normal", answers)
+            : partners.CreateSupplier(TestData.Owner, "New person", null, null, answers);
+        Assert.False(result.Ok);
+        var table = entity == CustomFieldEntity.Customer ? "customers" : "suppliers";
+        Assert.Equal(0L, Rows(test, "SELECT COUNT(*) FROM " + table));
+        Assert.Equal(0L, Rows(test, "SELECT COUNT(*) FROM custom_values"));
+    }
+
+    [Fact]
+    public void ProductAndRequiredAnswersAreCreatedTogetherOrNotAtAll()
+    {
+        using var test = new TestDatabase();
+        var fields = Fields(test);
+        var required = fields.Add(TestData.Owner, CustomFieldEntity.Product, "Licence number",
+            CustomFieldType.Text, null, true).Value!;
+        var products = new ProductService(test.Database, test.Audit, test.Log);
+        var patch = new ProductPatch { Name = "New medicine" };
+
+        var missing = products.Create(TestData.Owner, patch);
+        Assert.False(missing.Ok);
+        Assert.Contains("Licence number", missing.Error);
+        Assert.Equal(0L, Rows(test, "SELECT COUNT(*) FROM products;"));
+        Assert.Equal(0L, Rows(test, "SELECT COUNT(*) FROM custom_values;"));
+        Assert.Equal(0L, Rows(test, "SELECT COUNT(*) FROM audit_logs WHERE action = 'product_create';"));
+
+        var saved = products.Create(TestData.Owner, patch,
+            new Dictionary<int, string?> { [required.Id] = "ABC-123" });
+        Assert.True(saved.Ok, saved.Error);
+        Assert.Equal("ABC-123", fields.Values(TestData.Owner, CustomFieldEntity.Product, saved.Value).Value![required.Id]);
+        Assert.Equal(1L, Rows(test, "SELECT COUNT(*) FROM audit_logs WHERE action = 'product_create';"));
+    }
+
+    [Fact]
+    public void ProductAndAnswersUpdateTogetherAndRejectStaleOrInvalidAnswers()
+    {
+        using var test = new TestDatabase();
+        var fields = Fields(test);
+        var product = TestData.AddProduct(test);
+        var required = fields.Add(TestData.Owner, CustomFieldEntity.Product, "Licence number",
+            CustomFieldType.Text, null, true).Value!;
+        var products = new ProductService(test.Database, test.Audit, test.Log);
+        var rejected = products.Update(TestData.Owner, product, new ProductPatch { Name = "Changed name" },
+            new Dictionary<int, string?> { [required.Id] = "" });
+        Assert.False(rejected.Ok);
+        Assert.NotEqual("Changed name", products.Get(product).Value!.Name);
+        Assert.Equal(0L, Rows(test, "SELECT COUNT(*) FROM custom_values;"));
+        Assert.True(products.Update(TestData.Owner, product, new ProductPatch { Name = "Changed name" },
+            new Dictionary<int, string?> { [required.Id] = "ABC-123" }).Ok);
+        Assert.Equal("Changed name", products.Get(product).Value!.Name);
+        Assert.Equal("ABC-123", fields.Values(TestData.Owner, CustomFieldEntity.Product, product).Value![required.Id]);
+        Assert.True(fields.SetActive(TestData.Owner, required.Id, false).Ok);
+        Assert.False(products.Update(TestData.Owner, product, new ProductPatch { Name = "Stale name" },
+            new Dictionary<int, string?> { [required.Id] = "different" }).Ok);
+        Assert.Equal("Changed name", products.Get(product).Value!.Name);
+    }
+
+    [Fact]
+    public void ProductAndAnswersRollBackWhenAnswerAuditFails()
+    {
+        using var test = new TestDatabase();
+        var required = Fields(test).Add(TestData.Owner, CustomFieldEntity.Product, "Licence number",
+            CustomFieldType.Text, null, true).Value!;
+        test.Database.Tx(connection => test.Database.Execute(connection, @"
+CREATE TRIGGER fail_custom_value_audit BEFORE INSERT ON audit_logs
+WHEN NEW.action = 'custom_value_set'
+BEGIN SELECT RAISE(ABORT, 'audit unavailable'); END;"));
+        var result = new ProductService(test.Database, test.Audit, test.Log).Create(TestData.Owner,
+            new ProductPatch { Name = "New medicine" },
+            new Dictionary<int, string?> { [required.Id] = "ABC-123" });
+        Assert.False(result.Ok);
+        Assert.Equal(0L, Rows(test, "SELECT COUNT(*) FROM products;"));
+        Assert.Equal(0L, Rows(test, "SELECT COUNT(*) FROM custom_values;"));
+        Assert.Equal(0L, Rows(test, "SELECT COUNT(*) FROM audit_logs WHERE action = 'custom_value_set';"));
+    }
+
+    [Fact]
+    public void RequiredPhotoOnNewProductExplainsWhyItCannotYetBeAttached()
+    {
+        using var test = new TestDatabase();
+        var fields = Fields(test);
+        Assert.True(fields.Add(TestData.Owner, CustomFieldEntity.Product, "Box photo",
+            CustomFieldType.Photo, null, true).Ok);
+        var result = new ProductService(test.Database, test.Audit, test.Log)
+            .Create(TestData.Owner, new ProductPatch { Name = "New medicine" });
+        Assert.False(result.Ok);
+        Assert.Contains("cannot yet", result.Error);
+        Assert.Equal(0L, Rows(test, "SELECT COUNT(*) FROM products;"));
     }
 
     // ============================== helpers ==============================

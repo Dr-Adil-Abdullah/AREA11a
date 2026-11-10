@@ -73,6 +73,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     {
         _services = services;
         _user = user;
+        NewCustomerEditor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Customer, saveWithParent: true);
 
         AddCommand = new RelayCommand(AddToCart);
         ScanCommand = new RelayCommand(ScanBarcode);
@@ -95,6 +96,8 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         LoadLookups();
         LoadHeldCarts();
     }
+
+    public CustomFieldsEditorViewModel NewCustomerEditor { get; }
 
     public ObservableCollection<Product> Products { get; } = new();
 
@@ -1201,6 +1204,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             return;
         }
 
+        NewCustomerEditor.LoadNew();
         NewCustomerName = string.Empty;
         NewCustomerPhone = string.Empty;
         IsAddingCustomer = true;
@@ -1216,7 +1220,12 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
     private void SaveNewCustomer()
     {
-        var saved = _services.Partners.CreateCustomer(_user, NewCustomerName, NewCustomerPhone, "normal");
+        if (!NewCustomerEditor.LoadedSuccessfully)
+        {
+            SetStatus("Extra fields could not be loaded. Reopen the new customer form.", true);
+            return;
+        }
+        var saved = _services.Partners.CreateCustomer(_user, NewCustomerName, NewCustomerPhone, "normal", NewCustomerEditor.AnswerValues());
 
         if (!saved.Ok)
         {

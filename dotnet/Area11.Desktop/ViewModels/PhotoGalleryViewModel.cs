@@ -47,6 +47,7 @@ public sealed class PhotoGalleryViewModel : ObservableObject
         AddCommand = new RelayCommand(Add);
         TakePhotoCommand = new RelayCommand(TakePhoto);
         HideCommand = new RelayCommand(Hide);
+        SetCoverCommand = new RelayCommand(SetCover);
         RestoreCommand = new RelayCommand(Restore);
         OpenCommand = new RelayCommand(OpenFile);
         RefreshCommand = new RelayCommand(Load);
@@ -68,6 +69,12 @@ public sealed class PhotoGalleryViewModel : ObservableObject
     public RelayCommand TakePhotoCommand { get; }
 
     public RelayCommand HideCommand { get; }
+
+    public RelayCommand SetCoverCommand { get; }
+
+    public bool IsProduct => Entity == PhotoEntity.Product;
+
+    public bool CanSetCover => IsProduct && CanEdit && _selected is { IsActive: true };
 
     public RelayCommand RestoreCommand { get; }
 
@@ -105,6 +112,7 @@ public sealed class PhotoGalleryViewModel : ObservableObject
             LoadPreview(value);
             OnPropertyChanged(nameof(CanHide));
             OnPropertyChanged(nameof(CanRestore));
+            OnPropertyChanged(nameof(CanSetCover));
             OnPropertyChanged(nameof(SelectedCaption));
             OnPropertyChanged(nameof(SelectedWhen));
             OnPropertyChanged(nameof(SelectedMissing));
@@ -214,9 +222,10 @@ public sealed class PhotoGalleryViewModel : ObservableObject
         var hidden = all.Count - active;
 
         Photos.Clear();
+        var coverId = Entity == PhotoEntity.Product ? all.FirstOrDefault(photo => photo.IsActive)?.Id : null;
         foreach (var photo in all)
         {
-            Photos.Add(new PhotoRow(photo));
+            Photos.Add(new PhotoRow(photo, photo.Id == coverId));
         }
 
         CountText = PhotoItem.CountLabel(active);
@@ -242,6 +251,7 @@ public sealed class PhotoGalleryViewModel : ObservableObject
         OnPropertyChanged(nameof(HasNoPhotos));
         OnPropertyChanged(nameof(CanHide));
         OnPropertyChanged(nameof(CanRestore));
+        OnPropertyChanged(nameof(CanSetCover));
     }
 
     private void LoadPreview(PhotoRow? row)
@@ -357,6 +367,23 @@ public sealed class PhotoGalleryViewModel : ObservableObject
         }
     }
 
+    private void SetCover()
+    {
+        if (_selected is null || !CanSetCover)
+        {
+            SetStatus("Choose an active product photo first.", true);
+            return;
+        }
+        var result = _services.Photos.SetProductCover(_user, _selected.Item.Id);
+        if (!result.Ok)
+        {
+            SetStatus(result.Error ?? "The cover photo could not be changed.", true);
+            return;
+        }
+        Load();
+        SetStatus("Cover selected. It will be shown in product lists after refresh.", false);
+    }
+
     private void Hide()
     {
         if (_selected is null)
@@ -443,9 +470,10 @@ public sealed class PhotoGalleryViewModel : ObservableObject
 /// </summary>
 public sealed class PhotoRow
 {
-    public PhotoRow(PhotoItem item)
+    public PhotoRow(PhotoItem item, bool isCover = false)
     {
         Item = item;
+        IsCover = isCover;
 
         try
         {
@@ -461,12 +489,14 @@ public sealed class PhotoRow
 
     public PhotoItem Item { get; }
 
+    public bool IsCover { get; }
+
     /// <summary>True while the photo is on the shelf; false for one the owner put away.</summary>
     public bool IsActive => Item.IsActive;
 
     public BitmapImage? Thumbnail { get; }
 
-    public string Caption => Item.Caption;
+    public string Caption => (IsCover ? "★ Cover · " : string.Empty) + Item.Caption;
 
     public string StateLabel => Item.Exists ? Item.StateLabel : Item.StateLabel + " - file missing";
 }
