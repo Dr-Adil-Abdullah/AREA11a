@@ -462,6 +462,48 @@ WHERE entity = @entity AND entity_id = @entityId;",
     }
 
     /// <summary>
+    /// The answered questions of one record with their labels, in the owner's order, for the
+    /// history screens. Fields are joined including switched-off ones: an answer outlives its
+    /// question, and the paper must still say what it meant.
+    /// </summary>
+    public ServiceResult<List<CustomAnswerLine>> DescribeValues(User? user, string entity, int entityId)
+    {
+        if (!CustomFieldEntity.IsKnown(entity))
+        {
+            return ServiceResult<List<CustomAnswerLine>>.Fail("That form has no extra fields.");
+        }
+
+        var key = CustomFieldEntity.Clean(entity);
+
+        if (!_permissions.Can(user, CustomFieldEntity.ModuleFor(key)))
+        {
+            return ServiceResult<List<CustomAnswerLine>>.Fail(
+                "You do not have permission to see these fields.");
+        }
+
+        try
+        {
+            using var connection = _db.Open();
+
+            var lines = _db.Query<CustomAnswerLine>(connection, @"
+SELECT v.field_id AS fieldId, IFNULL(f.label, '') AS label, IFNULL(v.value, '') AS value
+FROM custom_values v
+LEFT JOIN custom_fields f ON f.id = v.field_id
+WHERE v.entity = @entity AND v.entity_id = @entityId
+  AND IFNULL(v.value, '') <> ''
+ORDER BY IFNULL(f.sort, 0), v.field_id;",
+                new { entity = key, entityId });
+
+            return ServiceResult<List<CustomAnswerLine>>.Success(lines);
+        }
+        catch (Exception exception)
+        {
+            _log.Error($"The custom answers of {key} {entityId} could not be read.", exception);
+            return ServiceResult<List<CustomAnswerLine>>.Fail("The answers could not be loaded.");
+        }
+    }
+
+    /// <summary>
     /// Saves every answer of one record in one transaction: **either all of them are written or none
     /// is**. A required field left empty stops the whole save with the field's own name, because
     /// "something is missing" is not a message a shopkeeper can act on.
@@ -495,17 +537,12 @@ WHERE entity = @entity AND entity_id = @entityId;",
         }
     }
 
-    // Photos live in a gallery keyed by the parent id. Until staged photos are supported, refuse
-    // rather than silently creating a record that violates the owner's required-photo rule.
+    // The creator attaches the staged photo first, so a required photo field sees the gallery
+    // row when the answers are validated. Kept as a separate step so the three creators share
+    // one path; whether a photo is required is the owner's choice on the field itself.
     internal ServiceResult SaveNewRecordValuesInTransaction(Microsoft.Data.Sqlite.SqliteConnection connection,
         User actor, string entity, int id, IReadOnlyDictionary<int, string?>? values)
     {
-        var photo = _db.QuerySingle<string>(connection, @"
-SELECT label FROM custom_fields WHERE entity = @entity AND active = 1 AND required = 1
-  AND LOWER(type) = 'photo' ORDER BY sort, id LIMIT 1;", new { entity });
-        if (photo is not null)
-            return ServiceResult.Fail("The required photo field \"" + photo +
-                "\" cannot yet be supplied before creating a record. Ask the owner to make it optional, create the record and add its photo.");
         return SaveValuesInTransaction(connection, actor, entity, id, values ?? new Dictionary<int, string?>());
     }
 
@@ -644,6 +681,9 @@ FROM custom_fields WHERE id = @id;", new { id = fieldId });
             CustomFieldEntity.Product => "products",
             CustomFieldEntity.Customer => "customers",
             CustomFieldEntity.Supplier => "suppliers",
+            CustomFieldEntity.Sale => "sales",
+            CustomFieldEntity.Purchase => "purchases",
+            CustomFieldEntity.Expense => "expenses",
             _ => string.Empty
         };
 
@@ -652,10 +692,14 @@ FROM custom_fields WHERE id = @id;", new { id = fieldId });
             return false;
         }
 
+        // Documents have no active column - a posted bill is never put away - so existence is the
+        // whole check; master records must additionally still be switched on.
+        var sql = CustomFieldEntity.IsDocument(entity)
+            ? "SELECT COUNT(1) FROM " + table + " WHERE id = @id;"
+            : "SELECT COUNT(1) FROM " + table + " WHERE id = @id AND active = 1;";
+
         // The table name comes from this file's own list, never from the caller; the id is a parameter.
-        return Convert.ToInt32(_db.Scalar(connection,
-            "SELECT COUNT(1) FROM " + table + " WHERE id = @id AND active = 1;",
-            new { id = entityId }) ?? 0) > 0;
+        return Convert.ToInt32(_db.Scalar(connection, sql, new { id = entityId }) ?? 0) > 0;
     }
 
     private static string Describe(

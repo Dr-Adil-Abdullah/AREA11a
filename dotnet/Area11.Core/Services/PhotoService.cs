@@ -131,17 +131,45 @@ ORDER BY sort_order, id;",
 
         var source = (sourcePath ?? string.Empty).Trim();
 
+        var sourceError = ValidateSource(sourcePath);
+
+        if (sourceError is not null)
+        {
+            return ServiceResult<PhotoItem>.Fail(sourceError);
+        }
+
+        string? copiedPath = null;
+
+        try
+        {
+            return _db.Tx(connection =>
+                AddInTransaction(connection, user, key, entityId, source, out copiedPath));
+        }
+        catch (Exception exception)
+        {
+            // The copy is already on the disk; a row that never happened must not leave it there.
+            DiscardCopy(copiedPath);
+
+            _log.Error($"A photo of {key} {entityId} could not be added.", exception);
+            return ServiceResult<PhotoItem>.Fail("The photo could not be added. " + exception.Message);
+        }
+    }
+
+    /// <summary>File checks only: the picture exists, is a picture, is not empty, fits the limit.</summary>
+    internal string? ValidateSource(string? sourcePath)
+    {
+        var source = (sourcePath ?? string.Empty).Trim();
+
         if (source.Length == 0 || !File.Exists(source))
         {
-            return ServiceResult<PhotoItem>.Fail("That file is not there any more. Choose it again.");
+            return "That file is not there any more. Choose it again.";
         }
 
         var extension = Path.GetExtension(source).ToLowerInvariant();
 
         if (!Allowed.Contains(extension))
         {
-            return ServiceResult<PhotoItem>.Fail(
-                "Only a picture can be added (" + string.Join(", ", Allowed) + ").");
+            return "Only a picture can be added (" + string.Join(", ", Allowed) + ").";
         }
 
         long size;
@@ -152,107 +180,118 @@ ORDER BY sort_order, id;",
         }
         catch (Exception exception)
         {
-            return ServiceResult<PhotoItem>.Fail("The file could not be read. " + exception.Message);
+            return "The file could not be read. " + exception.Message;
         }
 
         if (size <= 0)
         {
-            return ServiceResult<PhotoItem>.Fail("That file is empty.");
+            return "That file is empty.";
         }
 
         if (size > MaxBytes)
         {
-            return ServiceResult<PhotoItem>.Fail(
-                "That picture is " + (size / (1024 * 1024)) + " MB - the limit is "
-                + (MaxBytes / (1024 * 1024)) + " MB. Take it again at a smaller size.");
+            return "That picture is " + (size / (1024 * 1024)) + " MB - the limit is "
+                + (MaxBytes / (1024 * 1024)) + " MB. Take it again at a smaller size.";
         }
 
-        string destination = string.Empty;
+        return null;
+    }
 
-        try
+    // Caller owns the transaction: the staged photo of a new record shares the creator's commit,
+    // so a failed creation rolls the photo row back with the parent. The copied file is reported
+    // through copiedPath; the caller must pass it to DiscardCopy when the transaction fails,
+    // because a file is not rolled back by SQLite.
+    internal ServiceResult<PhotoItem> AddInTransaction(
+        Microsoft.Data.Sqlite.SqliteConnection connection,
+        User? user, string key, int entityId, string source, out string? copiedPath)
+    {
+        copiedPath = null;
+
+        if (!_permissions.Can(user, PhotoEntity.ModuleFor(key)))
         {
-            return _db.Tx(connection =>
-            {
-                var recordExists = RecordExists(connection, key, entityId);
+            return ServiceResult<PhotoItem>.Fail("You do not have permission to add a photo.");
+        }
 
-                if (!recordExists)
-                {
-                    return ServiceResult<PhotoItem>.Fail(
-                        PhotoEntity.LabelFor(key) + " is not in the list any more, so a photo cannot be attached.");
-                }
+        var recordExists = RecordExists(connection, key, entityId);
 
-                var activeCount = Convert.ToInt32(_db.Scalar(connection, @"
+        if (!recordExists)
+        {
+            return ServiceResult<PhotoItem>.Fail(
+                PhotoEntity.LabelFor(key) + " is not in the list any more, so a photo cannot be attached.");
+        }
+
+        var activeCount = Convert.ToInt32(_db.Scalar(connection, @"
 SELECT COUNT(1) FROM photos
 WHERE entity = @entity AND entity_id = @entityId AND IFNULL(active, 1) = 1;",
-                    new { entity = key, entityId }) ?? 0);
+            new { entity = key, entityId }) ?? 0);
 
-                if (activeCount >= MaxPerRecord)
-                {
-                    return ServiceResult<PhotoItem>.Fail(
-                        "This " + PhotoEntity.LabelFor(key).ToLowerInvariant() + " already has "
-                        + MaxPerRecord + " photos. Put one away first.");
-                }
+        if (activeCount >= MaxPerRecord)
+        {
+            return ServiceResult<PhotoItem>.Fail(
+                "This " + PhotoEntity.LabelFor(key).ToLowerInvariant() + " already has "
+                + MaxPerRecord + " photos. Put one away first.");
+        }
 
-                var nextOrder = Convert.ToInt32(_db.Scalar(connection, @"
+        var nextOrder = Convert.ToInt32(_db.Scalar(connection, @"
 SELECT IFNULL(MAX(sort_order), 0) + 1 FROM photos WHERE entity = @entity AND entity_id = @entityId;",
-                    new { entity = key, entityId }) ?? 1);
+            new { entity = key, entityId }) ?? 1);
 
-                // A stamped name can never collide with an older file, even when two people add a
-                // photo in the same minute on a second counter.
-                var name = key + "-" + entityId + "-"
-                           + TimeSource.Now.ToString("yyyyMMdd-HHmmss-fff", System.Globalization.CultureInfo.InvariantCulture)
-                           + extension;
+        // A stamped name can never collide with an older file, even when two people add a
+        // photo in the same minute on a second counter.
+        var name = key + "-" + entityId + "-"
+                   + TimeSource.Now.ToString("yyyyMMdd-HHmmss-fff", System.Globalization.CultureInfo.InvariantCulture)
+                   + extension;
 
-                destination = Path.Combine(PhotosFolder, name);
+        var destination = Path.Combine(PhotosFolder, name);
 
-                if (File.Exists(destination))
-                {
-                    // Same millisecond twice: one more suffix, still readable.
-                    name = Path.GetFileNameWithoutExtension(name) + "-b" + extension;
-                    destination = Path.Combine(PhotosFolder, name);
-                }
+        if (File.Exists(destination))
+        {
+            // Same millisecond twice: one more suffix, still readable.
+            name = Path.GetFileNameWithoutExtension(name) + "-b" + extension;
+            destination = Path.Combine(PhotosFolder, name);
+        }
 
-                File.Copy(source, destination, overwrite: false);
+        File.Copy(source, destination, overwrite: false);
+        copiedPath = destination;
 
-                _db.Execute(connection, @"
+        _db.Execute(connection, @"
 INSERT INTO photos(entity, entity_id, file_name, sort_order, active, created_at)
 VALUES(@entity, @entityId, @fileName, @sortOrder, 1, @at);",
-                    new
-                    {
-                        entity = key,
-                        entityId,
-                        fileName = name,
-                        sortOrder = nextOrder,
-                        at = Clock.Now()
-                    });
-
-                var photoId = (int)_db.NextId(connection);
-
-                _audit.Record(connection, user, PhotoEntity.ModuleFor(key), "photo_add",
-                    "photos", photoId.ToString(), newValue: name,
-                    details: PhotoEntity.LabelFor(key) + " " + entityId);
-
-                return ServiceResult<PhotoItem>.Success(new PhotoItem
-                {
-                    Id = photoId,
-                    Entity = key,
-                    EntityId = entityId,
-                    FileName = name,
-                    SortOrder = nextOrder,
-                    IsActive = true,
-                    CreatedAt = Clock.Now(),
-                    FullPath = destination,
-                    Exists = true
-                });
+            new
+            {
+                entity = key,
+                entityId,
+                fileName = name,
+                sortOrder = nextOrder,
+                at = Clock.Now()
             });
-        }
-        catch (Exception exception)
-        {
-            // The copy is already on the disk; a row that never happened must not leave it there.
-            TryDelete(destination);
 
-            _log.Error($"A photo of {key} {entityId} could not be added.", exception);
-            return ServiceResult<PhotoItem>.Fail("The photo could not be added. " + exception.Message);
+        var photoId = (int)_db.NextId(connection);
+
+        _audit.Record(connection, user, PhotoEntity.ModuleFor(key), "photo_add",
+            "photos", photoId.ToString(), newValue: name,
+            details: PhotoEntity.LabelFor(key) + " " + entityId);
+
+        return ServiceResult<PhotoItem>.Success(new PhotoItem
+        {
+            Id = photoId,
+            Entity = key,
+            EntityId = entityId,
+            FileName = name,
+            SortOrder = nextOrder,
+            IsActive = true,
+            CreatedAt = Clock.Now(),
+            FullPath = destination,
+            Exists = true
+        });
+    }
+
+    /// <summary>Removes a staged copy after a rolled-back transaction. Never touches the gallery.</summary>
+    internal void DiscardCopy(string? path)
+    {
+        if (!string.IsNullOrEmpty(path))
+        {
+            TryDelete(path);
         }
     }
 

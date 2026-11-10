@@ -41,13 +41,19 @@ LEFT JOIN companies co ON co.id = p.company_id
     private readonly Database _db;
     private readonly AuditService _audit;
     private readonly LogService _log;
+    private readonly string? _photosFolder;
 
-    public ProductService(Database db, AuditService audit, LogService log)
+    /// <param name="photosFolder">Tests pass their own folder; the shop uses %ProgramData%\Area11\photos.</param>
+    public ProductService(Database db, AuditService audit, LogService log, string? photosFolder = null)
     {
         _db = db;
         _audit = audit;
         _log = log;
+        _photosFolder = photosFolder;
     }
+
+    private PhotoService Photos() =>
+        new(_db, _audit, new PermissionService(_db, _log, _audit), _log, _photosFolder);
 
     public ServiceResult<List<Product>> Search(
         string? term = null,
@@ -208,7 +214,13 @@ ORDER BY p.name COLLATE NOCASE;",
         }
     }
 
-    public ServiceResult<int> Create(User actor, ProductPatch input, IReadOnlyDictionary<int, string?>? customValues = null)
+    /// <summary>
+    /// A new product with its answers and, optionally, a photo chosen on the same form. The photo
+    /// is copied and recorded inside the same transaction, before the answers are validated, so a
+    /// required photo field sees it; a failed creation leaves neither a row nor a copied file.
+    /// </summary>
+    public ServiceResult<int> Create(User actor, ProductPatch input, IReadOnlyDictionary<int, string?>? customValues = null,
+        string? stagedPhotoPath = null)
     {
         if (!actor.CanManage)
         {
@@ -233,6 +245,16 @@ ORDER BY p.name COLLATE NOCASE;",
         }
         var packSizeLabel = PackagingPolicy.CleanPackSize(input.PackSizeLabel);
 
+        var staged = string.IsNullOrWhiteSpace(stagedPhotoPath) ? null : stagedPhotoPath.Trim();
+        if (staged is not null)
+        {
+            var stagedError = Photos().ValidateSource(staged);
+            if (stagedError is not null)
+            {
+                return ServiceResult<int>.Fail(stagedError);
+            }
+        }
+
         var baseUnit = NormalizeUnitName(input.BaseUnit) is { Length: > 0 } cleanBase ? cleanBase : "tablet";
         var strengthUnit = NormalizeUnitName(input.StrengthUnit);
         var strengthValue = input.StrengthValue ?? 0;
@@ -246,6 +268,7 @@ ORDER BY p.name COLLATE NOCASE;",
             strengthUnit = string.Empty;
         }
 
+        string? stagedCopy = null;
         try
         {
             var id = _db.Tx(connection =>
@@ -305,6 +328,11 @@ VALUES
                     });
 
                 var newId = (int)_db.NextId(connection);
+                if (staged is not null)
+                {
+                    var attached = Photos().AddInTransaction(connection, actor, PhotoEntity.Product, newId, staged, out stagedCopy);
+                    if (!attached.Ok) throw new ValidationException(attached.Error ?? "The photo could not be attached.");
+                }
                 var custom = new CustomFieldService(_db, _audit, new PermissionService(_db, _log, _audit), _log);
                 var answers = custom.SaveNewRecordValuesInTransaction(connection, actor, CustomFieldEntity.Product, newId, customValues);
                 if (!answers.Ok) throw new ValidationException(answers.Error ?? "Product extra fields could not be saved.");
@@ -320,14 +348,17 @@ VALUES
         }
         catch (ValidationException exception)
         {
+            Photos().DiscardCopy(stagedCopy);
             return ServiceResult<int>.Fail(exception.Message);
         }
         catch (SqliteException exception) when (exception.Message.Contains("UNIQUE", StringComparison.OrdinalIgnoreCase))
         {
+            Photos().DiscardCopy(stagedCopy);
             return ServiceResult<int>.Fail("That barcode already belongs to another product.");
         }
         catch (Exception exception)
         {
+            Photos().DiscardCopy(stagedCopy);
             _log.Error("A product could not be created.", exception);
             return ServiceResult<int>.Fail("The product could not be saved.");
         }

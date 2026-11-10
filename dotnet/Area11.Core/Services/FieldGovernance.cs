@@ -80,6 +80,18 @@ public static class FieldGovernance
             return "Choose what kind of answer this field takes.";
         }
 
+        // A photo field stores nothing of its own: the record's gallery IS the answer. Bills,
+        // purchases and expenses have no gallery, so a photo question there could never be
+        // answered - it is refused at definition time instead of failing every post for ever.
+        // (D-100 still rules the six working kinds: required-or-optional is the owner's choice.)
+        if (entity is not null && CustomFieldEntity.IsDocument(entity) && cleanType == CustomFieldType.Photo)
+        {
+            return "Photos belong to medicines, customers and suppliers. Bills, purchases and expenses " +
+                "carry text, number, amount, date, list and yes/no fields.";
+        }
+
+
+
         if (CustomFieldType.NeedsOptions(cleanType))
         {
             var options = CustomFieldType.ParseOptions(CustomFieldType.BuildOptions(optionsText));
@@ -120,7 +132,7 @@ public static class FieldGovernance
             // A photo field has no value of its own: the gallery is the answer.
             if (field.Required && photoCount <= 0)
             {
-                error = "\"" + field.Label + "\" needs at least one photo - use the Photos… button first.";
+                error = "\"" + field.Label + "\" needs at least one photo - choose one on this form or add it with the Photos… button.";
                 return false;
             }
 

@@ -87,6 +87,58 @@ public static class DraftStatus
     public static readonly string[] All = { Draft, Posted, Discarded };
 }
 
+public static class DraftType
+{
+    public const string Sale = "sale";
+    public const string Purchase = "purchase";
+
+    public static readonly string[] All = { Sale, Purchase };
+
+    public static bool IsKnown(string? type) =>
+        !string.IsNullOrWhiteSpace(type) && All.Contains(type.Trim().ToLowerInvariant());
+
+    public static string Clean(string? type) => (type ?? string.Empty).Trim().ToLowerInvariant();
+
+    public static string ModuleFor(string? type) => Clean(type) switch
+    {
+        Purchase => "purchases",
+        _ => "pos"
+    };
+
+    public static string LabelFor(string? type) => Clean(type) switch
+    {
+        Purchase => "Purchase",
+        _ => "Sale"
+    };
+}
+
+/// <summary>One row of the drafts list: who parked it, when, how many lines, for whom.</summary>
+public sealed class DraftSummary
+{
+    public int Id { get; set; }
+
+    public string DraftKey { get; set; } = string.Empty;
+
+    public string DraftType { get; set; } = string.Empty;
+
+    public string CreatedByName { get; set; } = string.Empty;
+
+    public string? UpdatedAt { get; set; }
+
+    public int Lines { get; set; }
+
+    public string PartnerName { get; set; } = string.Empty;
+
+    /// <summary>True when a previous post was interrupted after the pre-mark; see DraftService.</summary>
+    public bool NeedsPostCheck { get; set; }
+
+    public string TypeLabel => DraftType.LabelFor(DraftType);
+
+    public string Headline =>
+        DraftKey + " · " + Lines + (Lines == 1 ? " line" : " lines")
+        + (PartnerName.Length > 0 ? " · " + PartnerName : string.Empty);
+}
+
 /// <summary>
 /// Q1=A: a local, unposted draft. A row here is not a sale/purchase and never changes stock, money,
 /// balances, numbering or reports. Final posting remains a separate validated transaction.

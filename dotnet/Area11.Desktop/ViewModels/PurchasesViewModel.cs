@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using Area11.Core.Models;
 using Area11.Core.Services;
 using Area11.Core.Utils;
@@ -27,12 +28,15 @@ public sealed class PurchasesViewModel : ObservableObject
     private string _quantity = "1";
     private string _batchNo = string.Empty;
     private string _expiry = string.Empty;
+    private ExpiryMonth? _selectedExpiryMonth;
+    private int? _selectedExpiryYear;
     private string _costText = string.Empty;
     private string _retailText = string.Empty;
     private bool _isSample;
     private string _paidText = string.Empty;
     private string _statusMessage = "Enter a delivery and add lines.";
     private bool _isStatusError;
+    private int _openDraftId;
 
     public PurchasesViewModel(AppServices services, User user)
     {
@@ -40,17 +44,27 @@ public sealed class PurchasesViewModel : ObservableObject
         _user = user;
         NewSupplierEditor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Supplier, saveWithParent: true);
         NewSupplierEditor.LoadNew();
+        DocEditor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Purchase, saveWithParent: true);
+        DocEditor.LoadNew();
 
         AddLineCommand = new RelayCommand(AddLine);
         RemoveLineCommand = new RelayCommand(RemoveLast);
         SaveCommand = new RelayCommand(Save);
+        SaveDraftCommand = new RelayCommand(SavePurchaseDraft);
+        DraftsCommand = new RelayCommand(OpenDrafts);
         AddSupplierCommand = new RelayCommand(AddSupplier);
         RefreshCommand = new RelayCommand(LoadLookups);
+
+        foreach (var month in Area11.Core.Utils.Expiry.MonthOptions()) ExpiryMonths.Add(month);
+        foreach (var year in Area11.Core.Utils.Expiry.YearOptions(TimeSource.Now.Year, 13)) ExpiryYears.Add(year);
 
         LoadLookups();
     }
 
     public CustomFieldsEditorViewModel NewSupplierEditor { get; }
+
+    /// <summary>The owner's own purchase questions (Portion 18). Saved with the purchase, cleared after it.</summary>
+    public CustomFieldsEditorViewModel DocEditor { get; }
 
     public ObservableCollection<Supplier> Suppliers { get; } = new();
 
@@ -65,6 +79,13 @@ public sealed class PurchasesViewModel : ObservableObject
     public RelayCommand RemoveLineCommand { get; }
 
     public RelayCommand SaveCommand { get; }
+
+    public RelayCommand SaveDraftCommand { get; }
+
+    public RelayCommand DraftsCommand { get; }
+
+    /// <summary>True while the page shows an open draft; saving it posts the draft.</summary>
+    public bool HasOpenDraft => _openDraftId > 0;
 
     public RelayCommand AddSupplierCommand { get; }
 
@@ -140,7 +161,91 @@ public sealed class PurchasesViewModel : ObservableObject
     public string Expiry
     {
         get => _expiry;
-        set => SetProperty(ref _expiry, value);
+        set
+        {
+            if (SetProperty(ref _expiry, value))
+            {
+                OnPropertyChanged(nameof(ExpiryHint));
+                OnPropertyChanged(nameof(IsExpiryHintError));
+                OnPropertyChanged(nameof(PickedExpiryDate));
+            }
+        }
+    }
+
+    /// <summary>
+    /// The month and year drop-downs (Portion 6): medicine strips print a month, not a day.
+    /// Choosing both writes "yyyy-MM" into the box; typing stays free and blank stays allowed.
+    /// </summary>
+    public ObservableCollection<ExpiryMonth> ExpiryMonths { get; } = new();
+
+    public ObservableCollection<int> ExpiryYears { get; } = new();
+
+    public ExpiryMonth? SelectedExpiryMonth
+    {
+        get => _selectedExpiryMonth;
+        set
+        {
+            if (SetProperty(ref _selectedExpiryMonth, value))
+            {
+                ApplyMonthYear();
+            }
+        }
+    }
+
+    public int? SelectedExpiryYear
+    {
+        get => _selectedExpiryYear;
+        set
+        {
+            if (SetProperty(ref _selectedExpiryYear, value))
+            {
+                ApplyMonthYear();
+            }
+        }
+    }
+
+    /// <summary>
+    /// The calendar aid for an exact printed day. Month forms and legacy text read back as null,
+    /// so the calendar never fights what was typed - picking a day writes "yyyy-MM-dd".
+    /// </summary>
+    public DateTime? PickedExpiryDate
+    {
+        get
+        {
+            var formats = new[] { "yyyy-MM-dd", "yyyy/MM/dd", "dd-MM-yyyy", "dd/MM/yyyy" };
+            return DateTime.TryParseExact(Expiry.Trim(), formats, CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var date) ? date : null;
+        }
+        set
+        {
+            if (value is null) return;
+            SelectedExpiryMonth = null;
+            SelectedExpiryYear = null;
+            Expiry = value.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        }
+    }
+
+    /// <summary>Live line under the box: what the text means and exactly what would be stored.</summary>
+    public string ExpiryHint =>
+        Area11.Core.Utils.Expiry.TryDescribe(Expiry, out var description)
+            ? description
+            : "Use 2027-06, 06/27 or 2027-06-30.";
+
+    public bool IsExpiryHintError => !Area11.Core.Utils.Expiry.TryDescribe(Expiry, out _);
+
+    private void ApplyMonthYear()
+    {
+        if (SelectedExpiryMonth is null || SelectedExpiryYear is null) return;
+        Expiry = SelectedExpiryYear.Value.ToString(CultureInfo.InvariantCulture) + "-"
+            + SelectedExpiryMonth.Number.ToString("00", CultureInfo.InvariantCulture);
+    }
+
+    private void ClearExpiryPicks()
+    {
+        // Either pick on its own never writes the box (ApplyMonthYear needs both), so clearing
+        // through the properties is safe and keeps the drop-downs in sync.
+        SelectedExpiryMonth = null;
+        SelectedExpiryYear = null;
     }
 
     public string CostText
@@ -232,7 +337,7 @@ public sealed class PurchasesViewModel : ObservableObject
             return;
         }
         var result = _services.Partners.CreateSupplier(_user, NewSupplierName, NewSupplierPhone, NewSupplierAgency,
-            NewSupplierEditor.AnswerValues());
+            NewSupplierEditor.AnswerValues(), NewSupplierEditor.StagedPhotoForSave());
         if (!result.Ok)
         {
             SetStatus(result.Error ?? "The supplier could not be saved.", true);
@@ -270,7 +375,7 @@ public sealed class PurchasesViewModel : ObservableObject
 
         if (Expiry.Trim().Length > 0 && !Area11.Core.Utils.Expiry.TryNormalize(Expiry, out _, out _))
         {
-            SetStatus("Expiry must look like 2027-06 or 2027-06-30.", true);
+            SetStatus("Expiry must look like 2027-06, 06/27 or 2027-06-30.", true);
             return;
         }
 
@@ -297,6 +402,7 @@ public sealed class PurchasesViewModel : ObservableObject
 
         BatchNo = string.Empty;
         Expiry = string.Empty;
+        ClearExpiryPicks();
         Quantity = "1";
         IsSample = false;
         OnPropertyChanged(nameof(TotalText));
@@ -338,6 +444,7 @@ public sealed class PurchasesViewModel : ObservableObject
         {
             SupplierId = SelectedSupplier.Id,
             PaidPaisa = Money.ToPaisa(paid),
+            CustomAnswers = DocEditor.AnswerValues().ToDictionary(pair => pair.Key, pair => pair.Value),
             Lines = Lines.Select(line => new PurchaseLineInput
             {
                 ProductId = line.ProductId,
@@ -351,7 +458,10 @@ public sealed class PurchasesViewModel : ObservableObject
             }).ToList()
         };
 
-        var result = _services.Purchases.Create(input, _user);
+        var wasDraft = _openDraftId > 0;
+        var result = wasDraft
+            ? _services.Drafts.PostPurchase(_user, _openDraftId, input)
+            : _services.Purchases.Create(input, _user);
         if (!result.Ok || result.Value is null)
         {
             SetStatus(result.Error ?? "The purchase could not be saved.", true);
@@ -360,13 +470,137 @@ public sealed class PurchasesViewModel : ObservableObject
 
         var purchase = result.Value;
         var warnings = purchase.Warnings.Count > 0 ? "  ⚠ " + string.Join(" ", purchase.Warnings) : string.Empty;
-        SetStatus($"{purchase.Code} saved — {Money.Format(purchase.TotalPaisa)}.{warnings}",
+        SetStatus($"{purchase.Code} saved{(wasDraft ? " - its draft is posted" : string.Empty)} — {Money.Format(purchase.TotalPaisa)}.{warnings}",
             purchase.Warnings.Count > 0);
 
         Lines.Clear();
         PaidText = string.Empty;
+        _openDraftId = 0;
+        OnPropertyChanged(nameof(HasOpenDraft));
+        DocEditor.LoadNew();
         OnPropertyChanged(nameof(TotalText));
         LoadLookups();
+    }
+
+    /// <summary>
+    /// Parks the delivery as a shared draft. The supplier may be unchosen and quantities rough:
+    /// finishing is the next person's job, not saving's.
+    /// </summary>
+    private void SavePurchaseDraft()
+    {
+        if (Lines.Count == 0)
+        {
+            SetStatus("Add at least one line.", true);
+            return;
+        }
+
+        if (!Money.TryParse(PaidText, out var paid))
+        {
+            SetStatus("Paid amount must be a number.", true);
+            return;
+        }
+
+        var input = new PurchaseInput
+        {
+            SupplierId = SelectedSupplier?.Id ?? 0,
+            PaidPaisa = Money.ToPaisa(paid),
+            CustomAnswers = DocEditor.AnswerValues().ToDictionary(pair => pair.Key, pair => pair.Value),
+            Lines = Lines.Select(line => new PurchaseLineInput
+            {
+                ProductId = line.ProductId,
+                Unit = line.Unit,
+                Quantity = line.Quantity,
+                BatchNo = line.BatchNo,
+                Expiry = line.Expiry,
+                CostPaisa = line.CostPaisa,
+                RetailPaisa = line.RetailPaisa,
+                IsSample = line.IsSample
+            }).ToList()
+        };
+
+        var saved = _openDraftId > 0
+            ? _services.Drafts.SavePurchaseDraft(_user, input, _openDraftId)
+            : _services.Drafts.SavePurchaseDraft(_user, input);
+        if (!saved.Ok || saved.Value is null)
+        {
+            SetStatus(saved.Error ?? "The draft could not be saved.", true);
+            return;
+        }
+
+        _openDraftId = saved.Value.Id;
+        OnPropertyChanged(nameof(HasOpenDraft));
+        SetStatus("Draft saved as " + saved.Value.DraftKey + ".", false);
+    }
+
+    private void OpenDrafts() =>
+        DraftsWindowDoor.Show(_services, _user, DraftType.Purchase, OpenPurchaseDraft);
+
+    /// <summary>
+    /// Loads a draft onto the page for review. Choosing the supplier and correcting lines happen
+    /// here; saving posts the draft through the same guarded Create.
+    /// </summary>
+    public void OpenPurchaseDraft(int draftId)
+    {
+        if (Lines.Count > 0)
+        {
+            SetStatus("Save or remove the current lines before opening a draft.", true);
+            return;
+        }
+
+        var opened = _services.Drafts.OpenPurchase(_user, draftId);
+        if (!opened.Ok || opened.Value is null)
+        {
+            SetStatus(opened.Error ?? "The draft could not be opened.", true);
+            return;
+        }
+
+        var input = opened.Value;
+        SelectedSupplier = input.SupplierId > 0
+            ? Suppliers.FirstOrDefault(supplier => supplier.Id == input.SupplierId)
+            : null;
+        PaidText = input.PaidPaisa > 0 ? Money.Edit(input.PaidPaisa) : string.Empty;
+
+        var skipped = 0;
+        Lines.Clear();
+        foreach (var line in input.Lines)
+        {
+            var product = _catalog.FirstOrDefault(item => item.Id == line.ProductId);
+            var name = product?.Name ?? "Unknown product";
+            var unitsPerSelected = product is null ? 1 : line.Unit switch
+            {
+                "box" => product.UnitsPerBox,
+                "strip" => product.UnitsPerStrip,
+                _ => 1
+            };
+            if (product is null)
+            {
+                skipped++;
+            }
+            Lines.Add(new PurchaseLineRow
+            {
+                ProductId = line.ProductId,
+                ProductName = name,
+                Unit = line.Unit,
+                Quantity = line.Quantity,
+                QtyBase = line.Quantity * unitsPerSelected,
+                BatchNo = line.BatchNo,
+                Expiry = line.Expiry,
+                CostPaisa = line.CostPaisa,
+                RetailPaisa = line.RetailPaisa,
+                IsSample = line.IsSample
+            });
+        }
+
+        _openDraftId = draftId;
+        OnPropertyChanged(nameof(HasOpenDraft));
+        DocEditor.SetAnswers(input.CustomAnswers);
+        OnPropertyChanged(nameof(TotalText));
+        SetStatus(SelectedSupplier is null
+            ? "Draft opened - choose a supplier, review the lines, then save."
+            : skipped == 0
+                ? "Draft opened. Review the lines, then save."
+                : "Draft opened, but " + skipped + " line(s) carry an unknown product - check before saving.",
+            skipped > 0);
     }
 
     private void SetStatus(string message, bool isError)

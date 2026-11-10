@@ -219,6 +219,14 @@ VALUES(@code, @date, @customerId, @doctorId, @userId, @subtotal, @discount,
             });
 
         var saleId = (int)_db.NextId(connection);
+
+        // The owner's own bill questions (Portion 18): validated and stored in the same
+        // transaction as the bill, so a missing required answer refuses the whole post.
+        var billFields = new CustomFieldService(_db, _audit, _permissions, _log);
+        var billAnswers = billFields.SaveNewRecordValuesInTransaction(
+            connection, user, CustomFieldEntity.Sale, saleId, input.CustomAnswers);
+        if (!billAnswers.Ok) throw new ValidationException(billAnswers.Error ?? "The bill's extra answers could not be saved.");
+
         var saleItemIds = new List<int>();
 
         // Points spent are written as a NEGATIVE `loyalty` row (Spec 13.6.1: 5 points = -500 paisa),

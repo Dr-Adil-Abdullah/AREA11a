@@ -101,6 +101,13 @@ VALUES(@at, @category, @title, @amount, @note, @userId, @at);",
 
                 var id = (int)_db.NextId(connection);
 
+                // The owner's own expense questions (Portion 18): validated and stored in the
+                // same transaction as the expense, so a missing required answer refuses the save.
+                var expenseFields = new CustomFieldService(_db, _audit, _permissions, _log);
+                var expenseAnswers = expenseFields.SaveNewRecordValuesInTransaction(
+                    connection, user!, CustomFieldEntity.Expense, id, input.CustomAnswers);
+                if (!expenseAnswers.Ok) throw new ValidationException(expenseAnswers.Error ?? "The expense's extra answers could not be saved.");
+
                 _audit.Record(connection, user, "Cash", "expense", "expenses", id.ToString(),
                     newValue: Money.Format(input.AmountPaisa) + " (" + CategoryLabel(category) + ": " + title + ")");
 
@@ -121,6 +128,10 @@ VALUES(@at, @category, @title, @amount, @note, @userId, @at);",
             });
 
             return ServiceResult<ExpenseResult>.Success(result);
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult<ExpenseResult>.Fail(exception.Message);
         }
         catch (Exception exception)
         {
@@ -359,6 +370,30 @@ ORDER BY date DESC, sortKind, id DESC
 LIMIT @limit;",
                 new { limit });
 
+            // The owner's answered questions, one query for the whole page (Portion 18): each
+            // expense row carries its answers as a single display line. Drawings have no fields.
+            var extras = _db.Query<ExpenseExtra>(connection, @"
+SELECT v.entity_id AS expenseId,
+       GROUP_CONCAT(IFNULL(f.label, '') || ': ' || IFNULL(v.value, ''), ' · ') AS line
+FROM custom_values v
+LEFT JOIN custom_fields f ON f.id = v.field_id
+WHERE v.entity = 'expense' AND IFNULL(v.value, '') <> ''
+GROUP BY v.entity_id;");
+
+            var byExpense = new Dictionary<int, string>();
+            foreach (var extra in extras)
+            {
+                byExpense[extra.ExpenseId] = extra.Line ?? string.Empty;
+            }
+
+            foreach (var row in rows)
+            {
+                if (row.Kind == "expense" && byExpense.TryGetValue(row.Id, out var line))
+                {
+                    row.ExtraLabel = line;
+                }
+            }
+
             return rows;
         }
         catch (Exception exception)
@@ -431,5 +466,12 @@ SELECT
         public double QtyBase { get; set; }
 
         public long CostPaisa { get; set; }
+    }
+
+    private sealed class ExpenseExtra
+    {
+        public int ExpenseId { get; set; }
+
+        public string? Line { get; set; }
     }
 }

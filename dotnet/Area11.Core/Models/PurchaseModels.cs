@@ -32,6 +32,12 @@ public sealed class PurchaseInput
     public long PaidPaisa { get; set; }
 
     public string? Notes { get; set; }
+
+    /// <summary>
+    /// The owner's own purchase questions (Portion 18): field id to answer. Saved atomically with
+    /// the purchase; a missing required answer refuses the post. Drafts carry these along.
+    /// </summary>
+    public Dictionary<int, string?> CustomAnswers { get; set; } = new();
 }
 
 public sealed class PurchaseResult

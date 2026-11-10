@@ -1,8 +1,10 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
 using Area11.Core.Models;
 using Area11.Core.Services;
 using Area11.Core.Utils;
+using Microsoft.Win32;
 
 // empty-page: none - this is a dialog opened from a record card, not a page of the window
 // frame, so no card of the frame is drawn for it; its own list says "no field yet".
@@ -18,8 +20,8 @@ namespace Area11.Desktop.ViewModels;
 /// draw (text, number, amount, date, list, tick, photo) and asks
 /// <see cref="CustomFieldService"/> to save them in one go.
 ///
-/// Product answers are saved with the product in one transaction; customer and supplier answers
-/// still use their separate save button until their form integration is implemented.
+/// Product, customer and supplier answers are saved with their record in one transaction on the
+/// new/edit panels; the separate save button remains for the read panel of existing records.
 /// </summary>
 public sealed class CustomFieldsEditorViewModel : ObservableObject
 {
@@ -32,6 +34,10 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
     private string _statusText = string.Empty;
     private bool _isStatusError;
     private bool _canEdit;
+    private bool _stagedMode;
+    private bool _hasPhotoField;
+    private string _stagedPhotoPath = string.Empty;
+    private string _stagedPhotoName = string.Empty;
 
     public CustomFieldsEditorViewModel(AppServices services, User user, string entity, bool saveWithParent = false)
     {
@@ -43,11 +49,30 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
         _canEdit = services.Permissions.Can(user, CustomFieldEntity.ModuleFor(_entity));
 
         SaveCommand = new RelayCommand(Save);
+        ChooseStagedPhotoCommand = new RelayCommand(ChooseStagedPhoto);
+        ClearStagedPhotoCommand = new RelayCommand(ClearStagedPhoto);
     }
 
     public ObservableCollection<CustomInputRow> Rows { get; } = new();
 
     public RelayCommand SaveCommand { get; }
+
+    public RelayCommand ChooseStagedPhotoCommand { get; }
+
+    public RelayCommand ClearStagedPhotoCommand { get; }
+
+    /// <summary>
+    /// True on a new-record panel whose form has a photo field: the picture is chosen here and
+    /// saved together with the record. Existing records use their photo gallery instead.
+    /// </summary>
+    public bool ShowStagedPhoto => _stagedMode && _hasPhotoField;
+
+    public bool HasStagedPhoto => _stagedPhotoPath.Length > 0;
+
+    public string StagedPhotoName => HasStagedPhoto ? _stagedPhotoName : "No photo chosen yet.";
+
+    /// <summary>The chosen file for the creator, or null when the owner chose nothing.</summary>
+    public string? StagedPhotoForSave() => HasStagedPhoto ? _stagedPhotoPath : null;
 
     public string Subtitle => "Questions the owner added for the " + EntityWord + " form."
         + (_saveWithParent ? " Saved together with the record." : " Saved separately.");
@@ -107,6 +132,10 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
     {
         LoadedSuccessfully = false;
         _entityId = entityId;
+        _stagedMode = forNewRecord;
+        _hasPhotoField = false;
+        _stagedPhotoPath = string.Empty;
+        _stagedPhotoName = string.Empty;
         Rows.Clear();
         StatusText = string.Empty;
         IsStatusError = false;
@@ -114,6 +143,7 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
         if (entityId <= 0 && !forNewRecord)
         {
             RaiseListState();
+            RaiseStagedState();
             return;
         }
 
@@ -145,11 +175,38 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
         {
             answers.TryGetValue(field.Id, out var stored);
             Rows.Add(new CustomInputRow(field, stored));
+            if (field.IsPhoto) _hasPhotoField = true;
         }
 
         LoadedSuccessfully = true;
         CanEdit = _services.Permissions.Can(_user, CustomFieldEntity.ModuleFor(_entity));
         RaiseListState();
+        RaiseStagedState();
+    }
+
+    private void ChooseStagedPhoto()
+    {
+        if (!CanEdit || !ShowStagedPhoto) return;
+        var dialog = new OpenFileDialog
+        {
+            Title = "Choose a photo for this new record",
+            Filter = "Pictures (*.jpg;*.jpeg;*.png;*.bmp;*.gif)|*.jpg;*.jpeg;*.png;*.bmp;*.gif|All files (*.*)|*.*",
+            CheckFileExists = true,
+            Multiselect = false
+        };
+        var pictures = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
+        if (Directory.Exists(pictures)) dialog.InitialDirectory = pictures;
+        if (dialog.ShowDialog() != true || string.IsNullOrWhiteSpace(dialog.FileName)) return;
+        _stagedPhotoPath = dialog.FileName;
+        _stagedPhotoName = Path.GetFileName(dialog.FileName);
+        RaiseStagedState();
+    }
+
+    private void ClearStagedPhoto()
+    {
+        _stagedPhotoPath = string.Empty;
+        _stagedPhotoName = string.Empty;
+        RaiseStagedState();
     }
 
     /// <summary>
@@ -213,7 +270,38 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
         return values;
     }
 
+    /// <summary>
+    /// Puts answers back into the panel - the mirror of <see cref="AnswerValues"/> for a draft that
+    /// is opened on the page. Unknown field ids are ignored: the question may have been put away
+    /// since the draft was parked, and the post will say so if it is required.
+    /// </summary>
+    public void SetAnswers(IReadOnlyDictionary<int, string?>? values)
+    {
+        if (values is null) return;
+
+        foreach (var row in Rows)
+        {
+            if (!values.TryGetValue(row.FieldId, out var stored)) continue;
+
+            if (row.IsCheck)
+            {
+                row.BoolValue = CustomFieldType.AsBool(stored);
+            }
+            else if (!row.IsPhoto)
+            {
+                row.Text = stored ?? string.Empty;
+            }
+        }
+    }
+
     private void RaiseListState() => OnPropertyChanged(nameof(HasFields));
+
+    private void RaiseStagedState()
+    {
+        OnPropertyChanged(nameof(ShowStagedPhoto));
+        OnPropertyChanged(nameof(HasStagedPhoto));
+        OnPropertyChanged(nameof(StagedPhotoName));
+    }
 
     private void SetStatus(string text, bool isError)
     {
@@ -316,6 +404,12 @@ public sealed class CustomInputRow : ObservableObject
         }
     }
 
-    /// <summary>The tick box of a yes/no field.</summary>
-    public bool BoolValue { get; set; }
+    private bool _boolValue;
+
+    /// <summary>The tick box of a yes/no field. Notifies, so a restored draft ticks the box on screen.</summary>
+    public bool BoolValue
+    {
+        get => _boolValue;
+        set => SetProperty(ref _boolValue, value);
+    }
 }

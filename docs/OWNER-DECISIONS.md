@@ -1,5 +1,21 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## تازہ status — نیا Portion 18 مکمل، v0.47.0 Moss
+
+بل، خرید اور اخراجات پر مالک کے اپنے سوالات: ہر فارم کے لیے الگ تعریف (تصویر نہیں — دستاویز کی گیلری نہیں ہوتی)؛ جواب post کے ساتھ ہی محفوظ، لازمی جواب چھوٹے تو پوری post انکار (کھانے کا نام بتا کر)؛ drafts جوابات ساتھ رکھتے ہیں؛ بل کی history اور اخراجات کی فہرست میں نظر آتے ہیں۔ خرید کے جوابات محفوظ/لاگو/audited، اسکرین history بعد میں (صفحہ موجود نہیں)۔ **1010 written cases، 57/57 static؛ Windows/xUnit اور physical pending**۔ طے شدہ ترتیب (5، 6، 18) مکمل؛ اگلا portion مالک بتائے گا (7 یا 17)؛ Portion 17 paused۔
+
+## تازہ status — Master Portion 6 مکمل، v0.46.0 Rust
+
+خرید والے صفحے پر expiry چننے کا انتظام: مہینہ + سال کے خانے اور کیلنڈر؛ لکھنا اور خالی چھوڑنا ویسے ہی؛ نیچے زندہ لائن بتاتی ہے کیا محفوظ ہوگا (`June 2027 · stored as 2027-06-30`)، غلط لکھنے پر سرخ رہنمائی۔ پٹی پر چھپی صورت `06/27` اب ویسے ہی پڑھی جاتی ہے (ہمیشہ 2000–2099)؛ پرانی صورتیں اور محفوظ شدہ expiry ویسے ہی۔ **996 written cases، 57/57 static؛ Windows/xUnit اور physical pending**۔ نیا Portion 18 (دستاویزات پر اپنے خانے) اگلا منظورشدہ؛ Portion 17 paused۔
+
+## تازہ status — Master Portion 5 مکمل، v0.45.0 Sienna (D-100)
+
+محفوظ مقامی drafts تیار: بل اور خرید دونوں کے ادھورے کام کا مسودہ محفوظ/کھول/مکمل/post ہو سکتا ہے۔ مسودہ رہنے تک **کوئی بل، خرید، ادائیگی، اسٹاک یا مالی اثر نہیں** اور sync میں بھی نہیں جاتا۔ حتمی post وہی پرانا guarded راستہ چلاتی ہے، کوئی guard کمزور نہیں۔ دوہرا post ناممکن (پہلے نشان، پھر دستاویز)؛ ناکام post پر مسودہ بحال؛ درمیان میں رکنے والا مسودہ صرف تصدیق کے بعد discard۔ Drafts ہر مجاز شخص کے لیے **مشترکہ**، discard وجہ اور audit کے ساتھ۔ **988 written cases، 57/57 static؛ Windows/xUnit اور physical pending**۔ Portion 6 (expiry picker) اگلا منظورشدہ؛ Portion 18 اس کے بعد؛ Portion 17 paused۔
+
+## تازہ status — Master Portion 4 مکمل، v0.44.0 Henna (D-100)
+
+مالک کی وضاحت: **ہر خانہ لازمی ہو یا اختیاری، یہ اس کا اپنا اختیار ہے** — تصویر، نام، کوئی بھی چیز۔ v0.43.0 والی "تصویر کبھی لازمی نہیں" پابندی واپس؛ لازمی تصویر والا خانہ بن سکتا ہے، اور نئے ریکارڈ والے فارم (دوا، گاہک بشمول کاؤنٹر quick-add، سپلائر) میں تصویر چننے کا بٹن ہے — چنی ہوئی تصویر اسی transaction میں محفوظ ہوتی ہے، ناکامی پر واپس بھی مٹتی ہے۔ **نام ہمیشہ لازمی** رہیں گے (مالک کا فیصلہ)۔ Drafts **مشترکہ** ہوں گے۔ سپلائر-edit کی ضرورت نہیں۔ بل/خرید/اخراجات پر اپنے خانے نیا الگ Portion 18 ہوگا (Portion 6 کے بعد)۔ **976 written cases، 57/57 static؛ Windows/xUnit اور physical pending**۔
+
 ## Owner request — Portion 16 startup and close modes
 
 Owner describes three Settings modes: manual start/normal close; automatic start on Windows sign-in/normal close; automatic start with closing authorized by owner password or staff explicitly granted the close permission in Staff & Permissions. The exact minimize behavior and pre-login/recovery cases need confirmation when designing Portion 16. A regular application cannot guarantee prevention of OS shutdown, power loss or forced termination. Requested for later, not implemented.
@@ -1021,6 +1037,15 @@ rules → Loyalty points** سے خود آن کرتا ہے، اور وہیں تی
 
 **دوبارہ نہ ہو:** Version اب **0.13.0 · Deep Sea `#0C4A6E`** ہے (پچھلا Mocha `#6B4F3A`)۔
 
+
+### D-100 — **ہر خانے کا لازمی/اختیاری مالک کا اختیار + staged تصویر + مشترکہ drafts** (10 نومبر 2026)
+
+1. **اختیار مالک کا:** تصویر ہو یا کوئی بھی خانہ، لازمی/اختیاری Settings سے مالک طے کرے گا۔ v0.43.0 کی "تصویر کبھی لازمی نہیں" پابندی مالک کی وضاحت پر واپس لی گئی۔
+2. **Staged تصویر:** لازمی تصویر رکاوٹ نہ بنے — نئے ریکارڈ کے فارم میں تصویر چننے کا بٹن؛ save پر ریکارڈ + تصویر ایک transaction میں، ناکامی پر دونوں واپس (نقل فائل سمیت)۔
+3. **نام ہمیشہ لازمی:** گاہک/سپلائر/دوا کا نام toggle نہیں ہوگا — خالی نام بل، کھاتہ اور تلاش توڑ دیتا ہے (ایجنٹ کے مشورے پر مالک کا فیصلہ)۔
+4. **Drafts مشترکہ:** Portion 5 کے drafts ہر مجاز شخص کھول کر مکمل کر سکے گا۔
+5. **سپلائر-edit نہیں:** سپلائر میں ترمیم کی سہولت نہیں چاہیے؛ الگ portion نہیں بنے گا۔
+6. **نیا Portion 18:** بل/خرید/اخراجات پر بھی اپنے خانے — بڑا کام، الگ portion، Portion 6 کے بعد۔
 
 ### D-99 — **نئے master checklist کے چار فیصلے اور صرف Phase 1 کی اجازت** (1 نومبر 2026)
 
@@ -2683,6 +2708,10 @@ restart نہیں (Spec 8.4.3)۔
 
 | تاریخ | کیا |
 |---|---|
+| 10 نومبر 2026 | **D-100 / دستاویزات پر اپنے خانے — v0.47.0 Moss `#4A5D23`**: بل/خرید/اخراجات کے الگ فارم (تصویر انکار — گیلری نہیں)، جواب post کے ساتھ atomic، لازمی چھوٹے تو نام بتا کر انکار، drafts ساتھ رکھیں، بل history + اخراجات فہرست میں نمائش؛ **1010 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
+| 10 نومبر 2026 | **Expiry picker — v0.46.0 Rust `#B7410E`**: خرید صفحے پر مہینہ/سال + کیلنڈر، لکھنا/خالی ویسے ہی، زندہ stored-form لائن، `MM/YY` ہمیشہ 2000–2099، پرانی صورتیں بعینہ؛ **996 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
+| 10 نومبر 2026 | **D-100 / محفوظ مشترکہ drafts — v0.45.0 Sienna `#A0522D`**: بل اور خرید دونوں کے مسودے (save/open/update/discard/final-post)، مسودہ رہنے تک کوئی مالی/اسٹاک/sync اثر نہیں، حتمی post وہی guarded Create، دوہرا post ناممکن، ناکام post پر بحالی، مشترکہ visibility، وجہ+audited discard؛ **988 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
+| 10 نومبر 2026 | **D-100 / ہر خانے کا اختیار مالک کا + staged تصویر + مشترکہ drafts — v0.44.0 Henna `#7A3B1F`**: لازمی تصویر definable، نئے ریکارڈ فارموں میں staged-photo picker (atomic attach، rollback پر نقل صاف)، نام ہمیشہ لازمی، drafts مشترکہ، سپلائر-edit نہیں، بل/خرید/اخراجات کے خانے نیا Portion 18 (Portion 6 کے بعد)؛ **976 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
 | 1 نومبر 2026 | **D-99 / Master checklist Phase 1 — v0.39.0 Tourmaline `#7A1F5C`**: مالک نے **Q1=A / Q2=C / Q3=A / Q4=C + APPROVE** سے صرف schema/data contracts کی اجازت دی۔ Migration 030، local drafts، managed catalog/supplier/drawer contracts، format 3، 130 settings اور guarded isolated-test rebuild + technical snapshot؛ **918 written cases، 57/57 static checks، 17/17 raw SQLite groups**۔ Windows/xUnit/WPF/real cloud/physical pending؛ Phases 2–7 غیر منظور، fake demo shop واپس نہیں۔ |
 | 29 اکتوبر 2026 | **Cobalt Windows verification — v0.38.0**: مالک کے test output میں **900 passed / 0 failed / 0 skipped / 900 total، 1m4s** اور runner کا **`ALL GREEN - 900 of 900`** موصول ہوا۔ Current Cobalt build/xUnit PASS؛ PT-10 WPF/genuine physical verification pending۔ کوئی code/test count/version change نہیں، Phase 4 غیر منظور۔ |
 | 29 اکتوبر 2026 | **D-98 / Phase-3 authorization + first packaging/search slice — v0.38.0 Cobalt `#315C8C`**: مالک نے Phase 3 کی اجازت دی۔ Existing pack label اب Products editor/list اور Products/Counter/Purchase search میں؛ Purchase picker strength+pack دکھاتا ہے۔ Separate product IDs، base-unit stock، conversion، rates اور extra barcodes محفوظ؛ کوئی migration نہیں۔ **900 written cases، 55/55 static checks، 7/7 targeted SQLite search groups**؛ Cobalt 900/900 Windows xUnit verified، PT-10 pending، Phase 4 غیر منظور۔ |

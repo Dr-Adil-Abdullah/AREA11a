@@ -107,8 +107,39 @@
                                 <TextBox Text="{Binding BatchNo, UpdateSourceTrigger=PropertyChanged}" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
-                                <TextBlock Text="Expiry (2027-06)" Style="{StaticResource FieldLabel}" />
-                                <TextBox Text="{Binding Expiry, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock Text="Expiry" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding Expiry, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="Type it as printed: 2027-06, 06/27 or 2027-06-30. Blank means no expiry." />
+                                <Grid Margin="0,4,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="4" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox Grid.Column="0" ItemsSource="{Binding ExpiryMonths}"
+                                              SelectedItem="{Binding SelectedExpiryMonth, Mode=TwoWay}"
+                                              DisplayMemberPath="Label"
+                                              ToolTip="Pick the month printed on the strip." />
+                                    <ComboBox Grid.Column="2" ItemsSource="{Binding ExpiryYears}" Width="76"
+                                              SelectedItem="{Binding SelectedExpiryYear, Mode=TwoWay}"
+                                              ToolTip="Pick the year printed on the strip." />
+                                </Grid>
+                                <DatePicker SelectedDate="{Binding PickedExpiryDate, Mode=TwoWay}"
+                                            Margin="0,4,0,0" HorizontalAlignment="Left"
+                                            ToolTip="Calendar for an exact printed day. The month boxes above cover the usual strip form." />
+                                <TextBlock Text="{Binding ExpiryHint}" TextWrapping="Wrap" FontSize="11" Margin="0,4,0,0">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsExpiryHintError}" Value="True">
+                                                    <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                                                    <Setter Property="FontWeight" Value="Bold" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
                             </StackPanel>
                         </Grid>
 
@@ -169,8 +200,20 @@
                         <TextBlock Text="Paid now (Rs)" Style="{StaticResource FieldLabel}" />
                         <TextBox Text="{Binding PaidText, UpdateSourceTrigger=PropertyChanged}" />
 
+                        <views:CustomFieldsEditorView DataContext="{Binding DocEditor}" />
+
                         <Button Content="Save purchase (PINV)" Style="{StaticResource PrimaryButton}" Height="38"
                                 Margin="0,10,0,0" Command="{Binding SaveCommand}" />
+
+                        <TextBlock Text="Showing an open draft. Save the purchase to post it."
+                                   Style="{StaticResource FieldHint}" Margin="0,8,0,0" TextWrapping="Wrap"
+                                   Visibility="{Binding HasOpenDraft, Converter={StaticResource BoolToVis}}" />
+                        <Button Content="Save as draft" Style="{StaticResource GhostButton}"
+                                Margin="0,6,0,0" Command="{Binding SaveDraftCommand}"
+                                ToolTip="Park this delivery as a shared draft. Nothing is bought; anyone with the purchase permission can open and post it." />
+                        <Button Content="Open drafts" Style="{StaticResource GhostButton}"
+                                Margin="0,6,0,0" Command="{Binding DraftsCommand}"
+                                ToolTip="Open, post or discard shared purchase drafts." />
 
                         <TextBlock Text="{Binding StatusMessage}" FontSize="11" TextWrapping="Wrap" Margin="0,10,0,0">
                             <TextBlock.Style>

@@ -125,6 +125,10 @@ public sealed class FieldGovernanceTests
 
         Assert.NotNull(FieldGovernance.DefinitionError(
             CustomFieldEntity.Product, "Bad list", CustomFieldType.Select, "A", null));
+
+        // A photo field is the owner's choice like any other kind: required or optional.
+        Assert.Null(FieldGovernance.DefinitionError(
+            CustomFieldEntity.Product, "Box photo", CustomFieldType.Photo, null));
     }
 
     [Fact]

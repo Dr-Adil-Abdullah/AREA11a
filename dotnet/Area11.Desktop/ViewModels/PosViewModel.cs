@@ -61,6 +61,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     private bool _isStatusError;
     private string _lastBill = string.Empty;
     private int _lastSaleId;
+    private int _openDraftId;
     private bool _autoPrint;
     private bool _showSaleSuccess;
     private string _successChangeText = string.Empty;
@@ -74,6 +75,8 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         _services = services;
         _user = user;
         NewCustomerEditor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Customer, saveWithParent: true);
+        DocEditor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Sale, saveWithParent: true);
+        DocEditor.LoadNew();
 
         AddCommand = new RelayCommand(AddToCart);
         ScanCommand = new RelayCommand(ScanBarcode);
@@ -85,6 +88,8 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         RefreshCommand = new RelayCommand(LoadLookups);
         OpenProductPhotoCommand = new RelayCommand<int>(OpenProductPhoto);
         HoldCommand = new RelayCommand(HoldCart);
+        SaveDraftCommand = new RelayCommand(SaveSaleDraft);
+        DraftsCommand = new RelayCommand(OpenDrafts);
         RefreshHeldCommand = new RelayCommand(LoadHeldCarts);
         BeginAddCustomerCommand = new RelayCommand(BeginAddCustomer);
         CancelAddCustomerCommand = new RelayCommand(CancelAddCustomer);
@@ -98,6 +103,9 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     }
 
     public CustomFieldsEditorViewModel NewCustomerEditor { get; }
+
+    /// <summary>The owner's own bill questions (Portion 18). Saved with the bill, cleared after it.</summary>
+    public CustomFieldsEditorViewModel DocEditor { get; }
 
     public ObservableCollection<Product> Products { get; } = new();
 
@@ -138,6 +146,13 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     public RelayCommand<int> OpenProductPhotoCommand { get; }
 
     public RelayCommand HoldCommand { get; }
+
+    public RelayCommand SaveDraftCommand { get; }
+
+    public RelayCommand DraftsCommand { get; }
+
+    /// <summary>True while the cart shows an open draft; completing it posts the draft.</summary>
+    public bool HasOpenDraft => _openDraftId > 0;
 
     public RelayCommand RefreshHeldCommand { get; }
 
@@ -857,6 +872,9 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         Cart.Clear();
         TenderedText = string.Empty;
         DiscountPercent = "0";
+        _openDraftId = 0;
+        OnPropertyChanged(nameof(HasOpenDraft));
+        DocEditor.LoadNew();
         SetStatus("Cart cleared.", false);
         Recalculate();
     }
@@ -922,7 +940,11 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             }
         }
 
-        var result = _services.Sales.Create(BuildInput(useSpecialRate), _user);
+        var input = BuildInput(useSpecialRate);
+        var wasDraft = _openDraftId > 0;
+        var result = wasDraft
+            ? _services.Drafts.PostSale(_user, _openDraftId, input)
+            : _services.Sales.Create(input, _user);
         if (!result.Ok || result.Value is null)
         {
             SetStatus(result.Error ?? "The bill could not be saved.", true);
@@ -940,7 +962,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             : string.Empty;
 
         var warnings = sale.Warnings.Count > 0 ? "  ⚠ " + string.Join(" ", sale.Warnings) : string.Empty;
-        SetStatus($"Bill saved.{warnings}", sale.Warnings.Count > 0);
+        SetStatus($"Bill saved.{(wasDraft ? " Its draft is posted." : string.Empty)}{warnings}", sale.Warnings.Count > 0);
 
         // Owner rules D-05 / D-23: printing is instant, with no dialog. The bill is already saved,
         // so a printer problem is a warning on this screen - never a lost sale (Z-07).
@@ -959,6 +981,9 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         TenderedText = string.Empty;
         SecondAmountText = string.Empty;
         DiscountPercent = "0";
+        _openDraftId = 0;
+        OnPropertyChanged(nameof(HasOpenDraft));
+        DocEditor.LoadNew();
         LoadLookups();
     }
 
@@ -1015,7 +1040,8 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
                 Unit = line.Unit,
                 Quantity = line.Quantity,
                 UnitPricePaisa = RateOverride(line)
-            }).ToList()
+            }).ToList(),
+            CustomAnswers = DocEditor.AnswerValues().ToDictionary(pair => pair.Key, pair => pair.Value)
         };
     }
 
@@ -1090,6 +1116,101 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
     // ------------------------------ Held carts ------------------------------
 
+    /// <summary>
+    /// Parks the cart as a shared draft. Unlike Hold, a draft may be incomplete (no customer, no
+    /// tendered cash) and anyone with the counter permission can open and post it.
+    /// </summary>
+    private void SaveSaleDraft()
+    {
+        if (Cart.Count == 0)
+        {
+            SetStatus("The cart is empty - nothing to save.", true);
+            return;
+        }
+
+        var saved = _openDraftId > 0
+            ? _services.Drafts.SaveSaleDraft(_user, BuildInput(), _openDraftId)
+            : _services.Drafts.SaveSaleDraft(_user, BuildInput());
+        if (!saved.Ok || saved.Value is null)
+        {
+            SetStatus(saved.Error ?? "The draft could not be saved.", true);
+            return;
+        }
+
+        _openDraftId = saved.Value.Id;
+        OnPropertyChanged(nameof(HasOpenDraft));
+        SetStatus("Draft saved as " + saved.Value.DraftKey + ".", false);
+    }
+
+    private void OpenDrafts() =>
+        DraftsWindowDoor.Show(_services, _user, DraftType.Sale, OpenSaleDraft);
+
+    /// <summary>
+    /// Loads a draft into the cart for review. Nothing is posted by opening; completing the sale
+    /// posts the draft through the same guarded path, with rates re-read where untouched.
+    /// </summary>
+    public void OpenSaleDraft(int draftId)
+    {
+        if (Cart.Count > 0)
+        {
+            SetStatus("Complete or clear the current cart before opening a draft.", true);
+            return;
+        }
+
+        var opened = _services.Drafts.OpenSale(_user, draftId);
+        if (!opened.Ok || opened.Value is null)
+        {
+            SetStatus(opened.Error ?? "The draft could not be opened.", true);
+            return;
+        }
+
+        var input = opened.Value;
+        SelectedCustomer = input.CustomerId is > 0
+            ? Customers.FirstOrDefault(customer => customer.Id == input.CustomerId)
+            : null;
+        SelectedDoctor = input.DoctorId is > 0
+            ? Doctors.FirstOrDefault(doctor => doctor.Id == input.DoctorId)
+            : null;
+        DiscountPercent = input.DiscountPercent.ToString("0.##", CultureInfo.InvariantCulture);
+        PaymentMethod = string.IsNullOrWhiteSpace(input.PaymentMethod) ? "cash" : input.PaymentMethod;
+        TenderedText = input.TenderedPaisa > 0 ? Money.Edit(input.TenderedPaisa) : string.Empty;
+        var split = input.Payments.FirstOrDefault();
+        if (split is not null)
+        {
+            SecondMethod = split.Method;
+            SecondAmountText = split.AmountPaisa > 0 ? Money.Edit(split.AmountPaisa) : string.Empty;
+        }
+        else
+        {
+            SecondAmountText = string.Empty;
+        }
+        RedeemPointsText = input.RedeemPoints > 0
+            ? input.RedeemPoints.ToString(CultureInfo.InvariantCulture)
+            : string.Empty;
+
+        var skipped = 0;
+        Cart.Clear();
+        foreach (var line in input.Lines)
+        {
+            var product = _catalog.FirstOrDefault(item => item.Id == line.ProductId);
+            if (product is null)
+            {
+                skipped++;
+                continue;
+            }
+            Cart.Add(NewCartLine(line.ProductId, product.Name, line.Unit, line.Quantity, line.UnitPricePaisa));
+        }
+
+        _openDraftId = draftId;
+        OnPropertyChanged(nameof(HasOpenDraft));
+        DocEditor.SetAnswers(input.CustomAnswers);
+        Recalculate();
+        SetStatus(skipped == 0
+            ? "Draft opened. Review and complete the sale."
+            : "Draft opened, but " + skipped + " line(s) skipped - product no longer available.",
+            skipped > 0);
+    }
+
     /// <summary>Parks the cart so the next customer can be served (Spec 8.5.1). Nothing is sold.</summary>
     private void HoldCart()
     {
@@ -1116,6 +1237,10 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         TenderedText = string.Empty;
         SecondAmountText = string.Empty;
         DiscountPercent = "0";
+        // A parked cart keeps lines, rates, customer and discount - but not the bill's own answers:
+        // those ride with drafts, the durable vehicle. Clearing here stops them leaking into the
+        // next customer's bill.
+        DocEditor.LoadNew();
         Recalculate();
         LoadHeldCarts();
         SetStatus($"{code} parked. The counter is free for the next customer.", false);
@@ -1225,7 +1350,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             SetStatus("Extra fields could not be loaded. Reopen the new customer form.", true);
             return;
         }
-        var saved = _services.Partners.CreateCustomer(_user, NewCustomerName, NewCustomerPhone, "normal", NewCustomerEditor.AnswerValues());
+        var saved = _services.Partners.CreateCustomer(_user, NewCustomerName, NewCustomerPhone, "normal", NewCustomerEditor.AnswerValues(), NewCustomerEditor.StagedPhotoForSave());
 
         if (!saved.Ok)
         {

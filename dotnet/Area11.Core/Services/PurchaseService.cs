@@ -108,6 +108,14 @@ VALUES(@code, @supplierId, @invoiceNo, @date, 0, 0, 0, 0, 0, @notes, @userId, @c
             });
 
         var purchaseId = (int)_db.NextId(connection);
+
+        // The owner's own purchase questions (Portion 18): validated and stored in the same
+        // transaction as the purchase, so a missing required answer refuses the whole post.
+        var purchaseFields = new CustomFieldService(_db, _audit, _permissions, _log);
+        var purchaseAnswers = purchaseFields.SaveNewRecordValuesInTransaction(
+            connection, user, CustomFieldEntity.Purchase, purchaseId, input.CustomAnswers);
+        if (!purchaseAnswers.Ok) throw new ValidationException(purchaseAnswers.Error ?? "The purchase's extra answers could not be saved.");
+
         long totalPaisa = 0;
         double totalUnits = 0;
 

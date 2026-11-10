@@ -177,6 +177,11 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, @role, 1, @at);"
             permissions, sales ?? Sales(test), test.Log);
     }
 
+    /// <summary>Safe local sale/purchase drafts (master Portion 5). One factory, one constructor change.</summary>
+    public static DraftService Drafts(TestDatabase test) =>
+        new(test.Database, test.Audit, Sales(test), Purchases(test),
+            new PermissionService(test.Database, test.Log, test.Audit), test.Log);
+
     public static ReturnService Returns(TestDatabase test) =>
         new(test.Database, test.Audit, new NumberingService(test.Settings), test.Settings,
             new PermissionService(test.Database, test.Log, test.Audit), test.Log);

@@ -1,6 +1,16 @@
 # AGENTS.md - how to work in this repository
 
-> **WIP handoff, 24 Oct 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/60395e95-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/60395e95-area11a). Portion 4 is incomplete; portions 5–7 are approved next; Portion 17 is paused. Older status and approval statements below are historical. This branch is not a tested release.
+> **WIP handoff, 24 Oct 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/60395e95-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/60395e95-area11a). Portion 18 finished in v0.47.0 Moss (Windows/physical pending); batch order (5, 6, 18) complete; Portion 17 paused. Older status and approval statements below are historical. This branch is not a tested release.
+
+
+## Latest handoff — v0.47.0 Moss
+
+Portion 18 finished: custom fields on sale/purchase/expense documents — define per form, answer at posting, atomic with the post, drafts carry answers, shown on bill history + expense list. **1010 written cases, 57/57 static; Windows build/xUnit and physical checks pending.** Batch order (5, 6, 18) complete; Portion 17 paused.
+
+
+## Latest handoff — v0.43.0 Umber
+
+Portion 4 code complete: photo-never-required decision implemented across definition, validation, creation and UI layers; legacy rows untouched and non-blocking; workbook reviewed safe. **974 written cases, 57/57 static; Windows build/xUnit and physical checks pending.** Portion 5 approved next; Portion 17 paused.
 
 
 ## Latest handoff — v0.42.0 Kyanite

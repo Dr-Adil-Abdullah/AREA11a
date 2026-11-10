@@ -226,4 +226,154 @@ WHERE product_id = @productId;",
         Assert.True(after.Ok, after.Error);
         Assert.Equal(0, after.Value!.ExpiringSoon);
     }
+
+    // ------------------------------------------------------------------ Portion 6: the picker
+
+    [Fact]
+    public void WhatTheStripPrints_MeansThisCentury()
+    {
+        // A strip says "06/27", not "2027-06": the picker era reads it as typed.
+        Assert.True(Expiry.TryNormalize("06/27", out var date, out var ym));
+        Assert.Equal("2027-06-30", date);
+        Assert.Equal("2027-06", ym);
+
+        Assert.True(Expiry.TryNormalize("6/27", out date, out ym));
+        Assert.Equal("2027-06-30", date);
+
+        Assert.True(Expiry.TryNormalize("06-27", out date, out ym));
+        Assert.Equal("2027-06-30", date);
+
+        // No century pivot: two digits always mean 2000-2099, never the 1900s.
+        Assert.True(Expiry.TryNormalize("12/99", out date, out ym));
+        Assert.Equal("2099-12-31", date);
+        Assert.Equal("2099-12", ym);
+    }
+
+    [Fact]
+    public void SingleDigitMonths_AreAcceptedBothWaysRound()
+    {
+        Assert.True(Expiry.TryNormalize("6/2027", out var date, out var ym));
+        Assert.Equal("2027-06-30", date);
+        Assert.Equal("2027-06", ym);
+
+        Assert.True(Expiry.TryNormalize("2027-6", out date, out _));
+        Assert.Equal("2027-06-30", date);
+    }
+
+    [Fact]
+    public void TheOldForms_MeanExactlyWhatTheyAlwaysMeant()
+    {
+        Assert.True(Expiry.TryNormalize("2027-06", out var date, out var ym));
+        Assert.Equal("2027-06-30", date);
+        Assert.Equal("2027-06", ym);
+
+        Assert.True(Expiry.TryNormalize("2027/06", out date, out _));
+        Assert.Equal("2027-06-30", date);
+
+        Assert.True(Expiry.TryNormalize("06/2027", out date, out _));
+        Assert.Equal("2027-06-30", date);
+
+        Assert.True(Expiry.TryNormalize("2027-06-30", out date, out ym));
+        Assert.Equal("2027-06-30", date);
+        Assert.Equal("2027-06", ym);
+
+        Assert.True(Expiry.TryNormalize("30/06/2027", out date, out _));
+        Assert.Equal("2027-06-30", date);
+
+        // February still ends on the 28th (2027 is not a leap year).
+        Assert.True(Expiry.TryNormalize("02/27", out date, out _));
+        Assert.Equal("2027-02-28", date);
+    }
+
+    [Fact]
+    public void Nonsense_StillFails_Loudly()
+    {
+        string[] bad =
+        {
+            "13/27", "00/27", "06/2", "06/277", "27/06", "2027-13", "2027-00",
+            "2027-06-31", "30-02-2027", "abcd", "2027/06/30/1", "06//27"
+        };
+        foreach (var text in bad)
+        {
+            Assert.False(Expiry.TryNormalize(text, out _, out _), text);
+            Assert.False(Expiry.TryDescribe(text, out _), text);
+        }
+
+        // Blank is not nonsense: it means "no expiry", and the services treat it as none.
+        Assert.False(Expiry.TryNormalize(string.Empty, out _, out _));
+        Assert.False(Expiry.TryNormalize("   ", out _, out _));
+    }
+
+    [Fact]
+    public void TheLiveLine_SaysWhatWouldBeStored()
+    {
+        Assert.True(Expiry.TryDescribe(string.Empty, out var blank));
+        Assert.Equal("No expiry entered.", blank);
+
+        Assert.True(Expiry.TryDescribe("06/27", out var month));
+        Assert.Equal("June 2027 · stored as 2027-06-30", month);
+
+        Assert.True(Expiry.TryDescribe("2027-06", out var monthFirst));
+        Assert.Equal("June 2027 · stored as 2027-06-30", monthFirst);
+
+        Assert.True(Expiry.TryDescribe("2027-06-15", out var day));
+        Assert.Equal("15 June 2027 · stored as 2027-06-15", day);
+
+        Assert.False(Expiry.TryDescribe("junk", out _));
+    }
+
+    [Fact]
+    public void TheMonthList_HasTwelveNamedMonths()
+    {
+        var months = Expiry.MonthOptions();
+
+        Assert.Equal(12, months.Count);
+        Assert.Equal(6, months[5].Number);
+        Assert.Equal("06 — June", months[5].Label);
+        Assert.Equal("12 — December", months[11].Label);
+        Assert.Equal(Enumerable.Range(1, 12), months.Select(month => month.Number));
+    }
+
+    [Fact]
+    public void TheYearList_CountsFromTheGivenYear()
+    {
+        Assert.Equal(new[] { 2026, 2027, 2028 }, Expiry.YearOptions(2026, 3));
+        Assert.Equal(13, Expiry.YearOptions(2026, 13).Count);
+        Assert.Empty(Expiry.YearOptions(2026, 0));
+    }
+
+    [Fact]
+    public void APurchaseMayCarry_TheStripForm_EndToEnd()
+    {
+        using var test = new TestDatabase();
+        var supplier = TestData.AddSupplier(test);
+        var product = TestData.AddProduct(test, name: "Augmentin 625mg");
+
+        var purchase = TestData.Purchases(test).Create(new PurchaseInput
+        {
+            SupplierId = supplier,
+            Lines = new List<PurchaseLineInput>
+            {
+                new()
+                {
+                    ProductId = product,
+                    Unit = "base",
+                    Quantity = 2,
+                    CostPaisa = 10000,
+                    RetailPaisa = 15000,
+                    BatchNo = "B-7",
+                    Expiry = "06/27"
+                }
+            }
+        }, TestData.Owner);
+
+        Assert.True(purchase.Ok, purchase.Error);
+
+        // The batch carries the normalized pair, exactly like a "2027-06" line would.
+        using var connection = test.Database.Open();
+        var stored = test.Database.QuerySingle<string>(connection,
+            "SELECT expiry_date || '|' || expiry_ym FROM batches WHERE product_id = @id AND batch_no = 'B-7';",
+            new { id = product });
+        Assert.Equal("2027-06-30|2027-06", stored);
+    }
 }

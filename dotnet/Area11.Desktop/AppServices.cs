@@ -33,6 +33,7 @@ public sealed class AppServices
         Sales = new SaleService(Database, Audit, Numbering, Settings, Permissions, Log);
         Purchases = new PurchaseService(Database, Audit, Numbering, Permissions, Log);
         Holds = new HoldCartService(Database, Audit, Numbering, Permissions, Sales, Log);
+        Drafts = new DraftService(Database, Audit, Sales, Purchases, Permissions, Log);
         Returns = new ReturnService(Database, Audit, Numbering, Settings, Permissions, Log);
         Quarantine = new QuarantineService(Database, Audit, Permissions, Log);
         ReturnReceipts = new ReturnReceiptService(Database, Settings, Log);
@@ -110,6 +111,7 @@ public sealed class AppServices
     public PurchaseService Purchases { get; }
 
     public HoldCartService Holds { get; }
+    public DraftService Drafts { get; }
 
     public ReturnService Returns { get; }
 

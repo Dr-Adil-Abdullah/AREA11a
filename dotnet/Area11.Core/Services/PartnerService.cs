@@ -10,13 +10,19 @@ public sealed class PartnerService
     private readonly Database _db;
     private readonly AuditService _audit;
     private readonly LogService _log;
+    private readonly string? _photosFolder;
 
-    public PartnerService(Database db, AuditService audit, LogService log)
+    /// <param name="photosFolder">Tests pass their own folder; the shop uses %ProgramData%\Area11\photos.</param>
+    public PartnerService(Database db, AuditService audit, LogService log, string? photosFolder = null)
     {
         _db = db;
         _audit = audit;
         _log = log;
+        _photosFolder = photosFolder;
     }
+
+    private PhotoService Photos() =>
+        new(_db, _audit, new PermissionService(_db, _log, _audit), _log, _photosFolder);
 
     public ServiceResult<List<Customer>> GetCustomers(string? search = null)
     {
@@ -42,8 +48,13 @@ ORDER BY name COLLATE NOCASE;",
         }
     }
 
+    /// <summary>
+    /// A new customer with its answers and, optionally, a photo chosen on the same form. The photo
+    /// joins the gallery inside the same transaction, before the answers are validated; a failed
+    /// creation leaves neither a row nor a copied file.
+    /// </summary>
     public ServiceResult<int> CreateCustomer(User actor, string name, string? phone, string category,
-        IReadOnlyDictionary<int, string?>? customValues = null)
+        IReadOnlyDictionary<int, string?>? customValues = null, string? stagedPhotoPath = null)
     {
         var clean = (name ?? string.Empty).Trim();
         if (clean.Length < 2)
@@ -58,9 +69,20 @@ ORDER BY name COLLATE NOCASE;",
         }
 
         var cleanPhone = string.IsNullOrWhiteSpace(phone) ? null : phone.Trim();
+        var staged = string.IsNullOrWhiteSpace(stagedPhotoPath) ? null : stagedPhotoPath.Trim();
 
+        string? stagedCopy = null;
         try
         {
+            if (staged is not null)
+            {
+                var stagedError = Photos().ValidateSource(staged);
+                if (stagedError is not null)
+                {
+                    return ServiceResult<int>.Fail(stagedError);
+                }
+            }
+
             // A phone number is how the shop finds a person's khata. Two rows with the same number
             // split one family's debt in two, and at the counter nobody can tell which row to
             // collect from - so the second one is refused and the cashier is sent to the first
@@ -98,6 +120,11 @@ VALUES(@name, @phone, @category, 0, 0, 0, 1, 1, @at);",
                     });
 
                 var newId = (int)_db.NextId(connection);
+                if (staged is not null)
+                {
+                    var attached = Photos().AddInTransaction(connection, actor, PhotoEntity.Customer, newId, staged, out stagedCopy);
+                    if (!attached.Ok) throw new ValidationException(attached.Error ?? "The photo could not be attached.");
+                }
                 var custom = new CustomFieldService(_db, _audit, new PermissionService(_db, _log, _audit), _log);
                 var answers = custom.SaveNewRecordValuesInTransaction(connection, actor, CustomFieldEntity.Customer, newId, customValues);
                 if (!answers.Ok) throw new ValidationException(answers.Error ?? "Customer extra fields could not be saved.");
@@ -112,10 +139,12 @@ VALUES(@name, @phone, @category, 0, 0, 0, 1, 1, @at);",
         }
         catch (ValidationException exception)
         {
+            Photos().DiscardCopy(stagedCopy);
             return ServiceResult<int>.Fail(exception.Message);
         }
         catch (Exception exception)
         {
+            Photos().DiscardCopy(stagedCopy);
             _log.Error("A customer could not be created.", exception);
             return ServiceResult<int>.Fail("The customer could not be saved.");
         }
@@ -292,8 +321,13 @@ FROM suppliers WHERE active = 1 ORDER BY name COLLATE NOCASE;");
         }
     }
 
+    /// <summary>
+    /// A new supplier with its answers and, optionally, a photo chosen on the same form. The photo
+    /// joins the gallery inside the same transaction, before the answers are validated; a failed
+    /// creation leaves neither a row nor a copied file.
+    /// </summary>
     public ServiceResult<int> CreateSupplier(User actor, string name, string? phone, string? agency,
-        IReadOnlyDictionary<int, string?>? customValues = null)
+        IReadOnlyDictionary<int, string?>? customValues = null, string? stagedPhotoPath = null)
     {
         if (!actor.CanManage)
         {
@@ -306,6 +340,17 @@ FROM suppliers WHERE active = 1 ORDER BY name COLLATE NOCASE;");
             return ServiceResult<int>.Fail("Enter the supplier's name.");
         }
 
+        var staged = string.IsNullOrWhiteSpace(stagedPhotoPath) ? null : stagedPhotoPath.Trim();
+        if (staged is not null)
+        {
+            var stagedError = Photos().ValidateSource(staged);
+            if (stagedError is not null)
+            {
+                return ServiceResult<int>.Fail(stagedError);
+            }
+        }
+
+        string? stagedCopy = null;
         try
         {
             var id = _db.Tx(connection =>
@@ -326,6 +371,11 @@ VALUES(@name, @agency, @phone, 0, 1, @at);",
                     });
 
                 var newId = (int)_db.NextId(connection);
+                if (staged is not null)
+                {
+                    var attached = Photos().AddInTransaction(connection, actor, PhotoEntity.Supplier, newId, staged, out stagedCopy);
+                    if (!attached.Ok) throw new ValidationException(attached.Error ?? "The photo could not be attached.");
+                }
                 var custom = new CustomFieldService(_db, _audit, new PermissionService(_db, _log, _audit), _log);
                 var answers = custom.SaveNewRecordValuesInTransaction(connection, actor, CustomFieldEntity.Supplier, newId, customValues);
                 if (!answers.Ok) throw new ValidationException(answers.Error ?? "Supplier extra fields could not be saved.");
@@ -340,10 +390,12 @@ VALUES(@name, @agency, @phone, 0, 1, @at);",
         }
         catch (ValidationException exception)
         {
+            Photos().DiscardCopy(stagedCopy);
             return ServiceResult<int>.Fail(exception.Message);
         }
         catch (Exception exception)
         {
+            Photos().DiscardCopy(stagedCopy);
             _log.Error("A supplier could not be created.", exception);
             return ServiceResult<int>.Fail("The supplier could not be saved.");
         }

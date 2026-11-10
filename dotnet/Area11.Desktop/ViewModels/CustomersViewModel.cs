@@ -683,7 +683,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
             SetStatus("Extra fields could not be loaded. Reopen the new customer form.", true);
             return;
         }
-        var result = _services.Partners.CreateCustomer(_user, NewName, NewPhone, NewCategory, NewEditor.AnswerValues());
+        var result = _services.Partners.CreateCustomer(_user, NewName, NewPhone, NewCategory, NewEditor.AnswerValues(), NewEditor.StagedPhotoForSave());
 
         if (!result.Ok)
         {
