@@ -301,9 +301,17 @@ public sealed class ReorderViewModel : ObservableObject, IEmptyPage
         OnPropertyChanged(nameof(Supplier));
 
         _all.Clear();
+
+        // Portion 17: one cover query for the whole pad.
+        var covers = _services.Photos.CoversFor(_user, PhotoEntity.Product,
+            _report.Rows.Select(row => row.ProductId));
+
         foreach (var row in _report.Rows)
         {
-            _all.Add(new ReorderPadLine(row, BuildPreview));
+            _all.Add(new ReorderPadLine(row, BuildPreview)
+            {
+                PhotoPath = covers.TryGetValue(row.ProductId, out var path) ? path : null
+            });
         }
 
         ApplyFilter();
@@ -611,6 +619,11 @@ public sealed class ReorderPadLine : ObservableObject
     }
 
     public ReorderRow Row { get; }
+
+    /// <summary>Portion 17: the cover path, filled by the page - display only.</summary>
+    public string? PhotoPath { get; set; }
+
+    public bool HasNoPhoto => string.IsNullOrWhiteSpace(PhotoPath);
 
     public bool IsSelected
     {

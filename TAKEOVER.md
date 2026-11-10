@@ -1,11 +1,11 @@
 # TAKEOVER — the complete brief for a new agent
 
-> **WIP handoff, 10 Nov 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/b4b7bf7b-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/b4b7bf7b-area11a). Portion 16 finished in v0.57.0 Harbor (Windows/physical pending); v0.52.0 Windows 1086/1086 green; batch order (5, 6, 18) complete; only Portion 17 remains, paused pending the owner's word to unpause. Older status and approval statements below are historical. This branch is not a tested release.
+> **WIP handoff, 10 Nov 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/b4b7bf7b-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/b4b7bf7b-area11a). Portion 17 finished in v0.58.0 Burgundy (Windows/physical pending); v0.52.0 Windows 1086/1086 green; batch order (5, 6, 18) complete; all master portions 4-18 code-complete; Windows/physical verification pending. Older status and approval statements below are historical. This branch is not a tested release.
 
 
 ## Latest handoff — v0.54.0 Dusk
 
-Portion 16 finished: Windows startup and protected close — `startup.mode` (manual/auto/protected) with owner-only Settings picker; HKLM Run entry behind `IAutoStartStore` (registry first, rollback on refusal, admin sentence); `closeapp` permission; `VerifySecret` + `VerifyClose` (throttled, audited); who-is-closing dialog on both windows; SessionEnding passthrough; Shift recovery; `docs/STARTUP-CLOSE.md`. **1159 written cases, 57/57 static; Windows build/xUnit and physical checks pending.** v0.52.0 Windows 1086/1086 green. Batch order (5, 6, 18) complete; only Portion 17 remains, paused pending the owner's word to unpause.
+Portion 17 finished: photos review + cover thumbnails on every picker — one `CoverPath` formula + one-query `CoversFor` on the service; Purchases picker/lines, stock-take finder/sheet, Returns lines and Reorder pad show covers; product covers open, people covers gated like their galleries; backup carries photos, cloud never does; `docs/PHOTOS.md`. **1163 written cases, 57/57 static; Windows build/xUnit and physical checks pending.** v0.52.0 Windows 1086/1086 green. Batch order (5, 6, 18) complete; all master portions 4-18 code-complete; Windows/physical verification pending.
 
 
 ## Latest handoff — v0.43.0 Umber

@@ -241,6 +241,86 @@ public sealed class PhotoTests
         Assert.Equal(0L, folders.Rows(test, "SELECT COUNT(1) FROM photos;"));
     }
 
+    // ============================== portion 17: covers ==============================
+
+    [Fact]
+    public void CoverPathReturnsNullForEmptyOrMissingAndTheFullPathOtherwise()
+    {
+        using var test = new TestDatabase();
+        using var folders = new PhotoFolders();
+        var photos = folders.Photos(test);
+
+        Assert.Null(photos.CoverPath(null));
+        Assert.Null(photos.CoverPath(string.Empty));
+        Assert.Null(photos.CoverPath("   "));
+        Assert.Null(photos.CoverPath("gone.jpg"));
+
+        var product = TestData.AddProduct(test);
+        var added = photos.Add(TestData.Owner, PhotoEntity.Product, product, folders.SourceFile("box.jpg")).Value!;
+
+        Assert.Equal(added.FullPath, photos.CoverPath(added.FileName));
+    }
+
+    [Fact]
+    public void CoversForReturnsOneCoverPerProductInASingleCall()
+    {
+        using var test = new TestDatabase();
+        using var folders = new PhotoFolders();
+        var photos = folders.Photos(test);
+        var first = TestData.AddProduct(test, name: "First");
+        var second = TestData.AddProduct(test, name: "Second");
+        var bare = TestData.AddProduct(test, name: "Bare");
+
+        photos.Add(TestData.Owner, PhotoEntity.Product, first, folders.SourceFile("first-a.jpg"));
+        var cover = photos.Add(TestData.Owner, PhotoEntity.Product, first, folders.SourceFile("first-b.jpg")).Value!;
+        var single = photos.Add(TestData.Owner, PhotoEntity.Product, second, folders.SourceFile("second.jpg")).Value!;
+        Assert.True(photos.SetProductCover(TestData.Owner, cover.Id).Ok);
+
+        // Duplicates, blanks and strangers ride along; the answer holds only real covers.
+        var covers = photos.CoversFor(TestData.Owner, PhotoEntity.Product,
+            new[] { first, second, bare, first, 0, -5, 999999 });
+
+        Assert.Equal(2, covers.Count);
+        Assert.Equal(cover.FullPath, covers[first]);
+        Assert.Equal(single.FullPath, covers[second]);
+    }
+
+    [Fact]
+    public void CoversForSkipsPhotosWhoseFileIsGone()
+    {
+        using var test = new TestDatabase();
+        using var folders = new PhotoFolders();
+        var photos = folders.Photos(test);
+        var product = TestData.AddProduct(test);
+        var added = photos.Add(TestData.Owner, PhotoEntity.Product, product, folders.SourceFile("box.jpg")).Value!;
+
+        Assert.True(photos.CoversFor(TestData.Owner, PhotoEntity.Product, new[] { product })
+            .TryGetValue(product, out _));
+
+        File.Delete(added.FullPath);
+
+        Assert.Empty(photos.CoversFor(TestData.Owner, PhotoEntity.Product, new[] { product }));
+    }
+
+    [Fact]
+    public void CoversForKeepsTheGalleriesPermissionRuleForPeople()
+    {
+        using var test = new TestDatabase();
+        using var folders = new PhotoFolders();
+        var photos = folders.Photos(test);
+        var cashier = TestData.Cashier(test);
+        var staff = photos.Add(TestData.Owner, PhotoEntity.User, cashier.Id, folders.SourceFile("staff.jpg")).Value!;
+
+        // The owner sees the staff cover; the cashier has no staff gallery, so no staff covers.
+        Assert.Equal(staff.FullPath,
+            photos.CoversFor(TestData.Owner, PhotoEntity.User, new[] { cashier.Id })[cashier.Id]);
+        Assert.Empty(photos.CoversFor(cashier, PhotoEntity.User, new[] { cashier.Id }));
+
+        // Unknown kinds and empty asks answer empty - a list must never fail over decoration.
+        Assert.Empty(photos.CoversFor(TestData.Owner, "spaceship", new[] { cashier.Id }));
+        Assert.Empty(photos.CoversFor(TestData.Owner, PhotoEntity.Product, Array.Empty<int>()));
+    }
+
     // ============================== helpers ==============================
 
     [Fact]

@@ -221,9 +221,15 @@ public sealed class StockTakeViewModel : ObservableObject, IEmptyPage
         }
 
         var sessionId = _session.Id;
+        var sheet = _services.StockTake.Sheet(sessionId, DifferencesOnly);
 
-        foreach (var line in _services.StockTake.Sheet(sessionId, DifferencesOnly))
+        // Portion 17: one cover query for the whole sheet, then each line takes its own.
+        var covers = _services.Photos.CoversFor(_user, PhotoEntity.Product,
+            sheet.Select(line => line.ProductId));
+
+        foreach (var line in sheet)
         {
+            line.PhotoPath = covers.TryGetValue(line.ProductId, out var path) ? path : null;
             Lines.Add(line);
         }
 
@@ -404,6 +410,7 @@ public sealed class StockTakeViewModel : ObservableObject, IEmptyPage
 
         foreach (var product in _services.StockTake.NotOnSheet(_session.Id, FoundText))
         {
+            product.PhotoPath = _services.Photos.CoverPath(product.PhotoFileName);
             Found.Add(product);
         }
 

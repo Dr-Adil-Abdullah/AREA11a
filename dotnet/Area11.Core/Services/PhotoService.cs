@@ -1,4 +1,7 @@
+using System.Dynamic;
+using System.Globalization;
 using System.IO;
+using System.Text;
 using Area11.Core.Data;
 using Area11.Core.Models;
 using Area11.Core.Utils;
@@ -62,6 +65,101 @@ public sealed class PhotoService
     }
 
     public string PhotosFolder { get; }
+
+    /// <summary>
+    /// Portion 17: a stored file name becomes the full path the screen binds - or null when there
+    /// is no name or the file is gone. The one formula every thumbnail list delegates to (the
+    /// Counter and the Products list used to carry private copies of these three lines).
+    /// </summary>
+    public string? CoverPath(string? fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            return null;
+        }
+
+        var path = Path.Combine(PhotosFolder, fileName);
+
+        return File.Exists(path) ? path : null;
+    }
+
+    /// <summary>
+    /// Portion 17: the cover of many records in one query - the same cover rule the product list
+    /// uses (active, first by sort order), resolved to full paths, missing files skipped. Plain
+    /// dictionary, never a failure: thumbnails are decoration, and a list must never fail because
+    /// of them. Unknown entity, no permission, no ids - all answer empty, and the reason is logged.
+    ///
+    /// The reviewed privacy rule (P17): product covers are open to whoever sees the list (the
+    /// Counter has always shown them); customer, supplier and staff covers keep their module's
+    /// gate, exactly like their galleries.
+    /// </summary>
+    public Dictionary<int, string> CoversFor(User? user, string entity, IEnumerable<int> ids)
+    {
+        var covers = new Dictionary<int, string>();
+        var key = PhotoEntity.Clean(entity);
+
+        if (!PhotoEntity.IsKnown(key))
+        {
+            return covers;
+        }
+
+        if (key != PhotoEntity.Product && !_permissions.Can(user, PhotoEntity.ModuleFor(key)))
+        {
+            return covers;
+        }
+
+        var wanted = ids.Where(id => id > 0).Distinct().ToList();
+
+        if (wanted.Count == 0)
+        {
+            return covers;
+        }
+
+        try
+        {
+            using var connection = _db.Open();
+
+            // One row per record: the cover subquery is the same rule as the product list's.
+            // Expando carries a number of ids no anonymous object can spell (the P10 precedent).
+            var names = new List<string>();
+            IDictionary<string, object?> parameters = new ExpandoObject();
+            for (var index = 0; index < wanted.Count; index++)
+            {
+                var name = "id" + index.ToString(CultureInfo.InvariantCulture);
+                names.Add("@" + name);
+                parameters[name] = wanted[index];
+            }
+
+            parameters["entity"] = key;
+
+            // StringBuilder, not one literal: the id list is as long as the page (P10 precedent).
+            var sql = new StringBuilder(@"
+SELECT DISTINCT entity_id AS entityId, (SELECT ph.file_name FROM photos ph
+WHERE ph.entity = @entity AND ph.entity_id = photos.entity_id AND IFNULL(ph.active, 1) = 1
+ORDER BY ph.sort_order, ph.id LIMIT 1) AS fileName
+FROM photos WHERE entity = @entity AND entity_id IN (");
+            sql.Append(string.Join(", ", names));
+            sql.Append(");");
+
+            var rows = _db.Query<CoverRow>(connection, sql.ToString(), parameters);
+
+            foreach (var row in rows)
+            {
+                var path = CoverPath(row.FileName);
+
+                if (path is not null)
+                {
+                    covers[row.EntityId] = path;
+                }
+            }
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The covers could not be listed.", exception);
+        }
+
+        return covers;
+    }
 
     /// <summary>The photos of one record, in the order they were added. Hidden ones only if asked.</summary>
     public ServiceResult<List<PhotoItem>> List(
@@ -562,4 +660,12 @@ FROM photos WHERE id = @id;", new { id = photoId });
             _log.Info("A copied photo could not be removed after a failed save: " + path);
         }
     }
+}
+
+/// <summary>One cover answer: which record, and the stored file name (null when it has no active photo).</summary>
+internal sealed class CoverRow
+{
+    public int EntityId { get; set; }
+
+    public string? FileName { get; set; }
 }

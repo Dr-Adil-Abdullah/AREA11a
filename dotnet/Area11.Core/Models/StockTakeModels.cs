@@ -41,6 +41,13 @@ public sealed class StockTakeLine
 
     public string? Note { get; set; }
 
+    /// <summary>Portion 17: the cover thumbnail path, filled by the page - never stored.</summary>
+    public string? PhotoPath { get; set; }
+
+    public bool HasPhoto => !string.IsNullOrWhiteSpace(PhotoPath);
+
+    public bool HasNoPhoto => !HasPhoto;
+
     public bool IsCounted => CountedQtyBase is not null;
 
     public bool HasDifference => DiffQtyBase is not null && Math.Abs(DiffQtyBase.Value) > 0.0005;

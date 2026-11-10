@@ -1214,15 +1214,9 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         SetStatus("Company added.", false);
     }
 
-    private static string? ResolvePhotoPath(Product product)
-    {
-        if (string.IsNullOrWhiteSpace(product.PhotoFileName))
-        {
-            return null;
-        }
-        var path = Path.Combine(AppPaths.PhotosFolder, product.PhotoFileName);
-        return File.Exists(path) ? path : null;
-    }
+    private string? ResolvePhotoPath(Product product) =>
+        // Portion 17: the one formula lives on the service; this page only points at it.
+        _services.Photos.CoverPath(product.PhotoFileName);
 
     private void SetStatus(string message, bool isError)
     {

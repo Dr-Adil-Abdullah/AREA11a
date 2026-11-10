@@ -314,6 +314,12 @@ public sealed class PurchasesViewModel : ObservableObject
         if (products.Ok && products.Value is not null)
         {
             _catalog.AddRange(products.Value);
+
+            // Portion 17: the picker and the lines show the same covers as the Counter.
+            foreach (var product in _catalog)
+            {
+                product.PhotoPath = _services.Photos.CoverPath(product.PhotoFileName);
+            }
         }
 
         FilterProducts();
@@ -401,7 +407,8 @@ public sealed class PurchasesViewModel : ObservableObject
             Expiry = Expiry.Trim(),
             CostPaisa = Money.ToPaisa(cost),
             RetailPaisa = Money.ToPaisa(retail),
-            IsSample = IsSample
+            IsSample = IsSample,
+            PhotoPath = SelectedProduct.PhotoPath
         });
 
         BatchNo = string.Empty;
@@ -641,7 +648,8 @@ public sealed class PurchasesViewModel : ObservableObject
                 Expiry = line.Expiry,
                 CostPaisa = line.CostPaisa,
                 RetailPaisa = line.RetailPaisa,
-                IsSample = line.IsSample
+                IsSample = line.IsSample,
+                PhotoPath = product?.PhotoPath
             });
         }
 
@@ -685,6 +693,11 @@ public sealed class PurchaseLineRow
     public long RetailPaisa { get; init; }
 
     public bool IsSample { get; init; }
+
+    /// <summary>Portion 17: the cover copied from the picked catalog product - display only.</summary>
+    public string? PhotoPath { get; init; }
+
+    public bool HasNoPhoto => string.IsNullOrWhiteSpace(PhotoPath);
 
     public long LineTotalPaisa => IsSample ? 0 : Calc.Round(CostPaisa * QtyBase);
 
