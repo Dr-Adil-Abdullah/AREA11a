@@ -197,8 +197,8 @@ public sealed class DraftTests
 
         // The work is back as a draft; fixing the cart and posting again works.
         Assert.Equal("draft", DraftStatus(test, saved.Value.Id));
-        var fixed = drafts.SaveSaleDraft(TestData.Owner, TestData.Cart(product), saved.Value.Id);
-        Assert.True(fixed.Ok, fixed.Error);
+        var mended = drafts.SaveSaleDraft(TestData.Owner, TestData.Cart(product), saved.Value.Id);
+        Assert.True(mended.Ok, mended.Error);
         var retry = drafts.PostSale(TestData.Owner, saved.Value.Id);
         Assert.True(retry.Ok, retry.Error);
         Assert.Equal(1, Count(test, "sales"));
