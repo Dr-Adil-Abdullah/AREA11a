@@ -1,6 +1,11 @@
 # HANDOFF - read this first
 
-> **WIP handoff, 24 Oct 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/60395e95-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/60395e95-area11a). Portion 4 code-complete in v0.43.0 Umber (Windows/physical pending); Portion 5 is approved next; Portion 17 is paused. Older status and approval statements below are historical. This branch is not a tested release.
+> **WIP handoff, 24 Oct 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/60395e95-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/60395e95-area11a). Portion 4 finished in v0.44.0 Henna (Windows/physical pending); Portion 5 approved next, then 6; new Portion 18 after 6; Portion 17 paused. Older status and approval statements below are historical. This branch is not a tested release.
+
+
+## Latest handoff — v0.44.0 Henna
+
+Portion 4 finished per D-100: owner-choice required/optional for every field, staged-photo picker with atomic attach/rollback cleanup, names always-required. **976 written cases, 57/57 static; Windows build/xUnit and physical checks pending.** Portion 5 (shared drafts) next, then 6; new Portion 18 after 6; Portion 17 paused.
 
 
 ## Latest handoff — v0.43.0 Umber

@@ -1,3 +1,4 @@
+using System.IO;
 using Area11.Core.Models;
 using Area11.Core.Services;
 using Area11.Core.Utils;
@@ -197,7 +198,7 @@ public sealed class CustomFieldTests
     }
 
     [Fact]
-    public void APhotoFieldUsesTheGalleryAndStoresNoText()
+    public void ARequiredPhotoFieldIsTheOwnersChoiceAndUsesTheGallery()
     {
         using var test = new TestDatabase();
         var fields = Fields(test);
@@ -224,6 +225,86 @@ VALUES('product', @id, 'product-1-20261022-090000-000.jpg', 1, 1, '2026-10-22 09
 
         // The gallery is the answer: a photo field never writes a text value of its own.
         Assert.Equal(0L, Rows(test, "SELECT COUNT(1) FROM custom_values;"));
+    }
+
+    [Fact]
+    public void CreationWithAStagedPhotoSatisfiesARequiredPhotoField()
+    {
+        using var test = new TestDatabase();
+        using var folders = new StagedFolders();
+        var fields = Fields(test);
+        var added = fields.Add(TestData.Owner, CustomFieldEntity.Product, "Box photo",
+            CustomFieldType.Photo, null, required: true);
+        Assert.True(added.Ok, added.Error);
+
+        var products = new ProductService(test.Database, test.Audit, test.Log, folders.PhotoFolder);
+        var created = products.Create(TestData.Owner, new ProductPatch { Name = "New medicine" },
+            new Dictionary<int, string?> { [added.Value!.Id] = null }, folders.SourceFile("box.jpg"));
+
+        Assert.True(created.Ok, created.Error);
+        Assert.Equal(1L, Rows(test, "SELECT COUNT(*) FROM products;"));
+        Assert.Equal(1L, Rows(test, "SELECT COUNT(*) FROM photos;"));
+        Assert.Equal(1, folders.PhotoCopies());
+        Assert.Equal(1L, Rows(test, "SELECT COUNT(*) FROM audit_logs WHERE action = 'photo_add';"));
+        Assert.Equal(0L, Rows(test, "SELECT COUNT(*) FROM custom_values;"));
+    }
+
+    [Fact]
+    public void CreationWithoutAStagedPhotoFailsWhenPhotoRequired()
+    {
+        using var test = new TestDatabase();
+        using var folders = new StagedFolders();
+        var fields = Fields(test);
+        Assert.True(fields.Add(TestData.Owner, CustomFieldEntity.Product, "Box photo",
+            CustomFieldType.Photo, null, required: true).Ok);
+
+        var created = new ProductService(test.Database, test.Audit, test.Log, folders.PhotoFolder)
+            .Create(TestData.Owner, new ProductPatch { Name = "New medicine" });
+
+        Assert.False(created.Ok);
+        Assert.Contains("Box photo", created.Error);
+        Assert.Equal(0L, Rows(test, "SELECT COUNT(*) FROM products;"));
+        Assert.Equal(0L, Rows(test, "SELECT COUNT(*) FROM photos;"));
+    }
+
+    [Fact]
+    public void AnOptionalPhotoNeverBlocksCreation()
+    {
+        using var test = new TestDatabase();
+        using var folders = new StagedFolders();
+        var fields = Fields(test);
+        Assert.True(fields.Add(TestData.Owner, CustomFieldEntity.Product, "Box photo",
+            CustomFieldType.Photo, null, required: false).Ok);
+
+        var created = new ProductService(test.Database, test.Audit, test.Log, folders.PhotoFolder)
+            .Create(TestData.Owner, new ProductPatch { Name = "New medicine" });
+
+        Assert.True(created.Ok, created.Error);
+        Assert.Equal(0L, Rows(test, "SELECT COUNT(*) FROM photos;"));
+    }
+
+    [Fact]
+    public void AStagedCopyIsRemovedWhenCreationRollsBack()
+    {
+        using var test = new TestDatabase();
+        using var folders = new StagedFolders();
+        var fields = Fields(test);
+        var photo = fields.Add(TestData.Owner, CustomFieldEntity.Product, "Box photo",
+            CustomFieldType.Photo, null, required: true).Value!;
+        var text = fields.Add(TestData.Owner, CustomFieldEntity.Product, "Licence number",
+            CustomFieldType.Text, null, required: true).Value!;
+
+        // The photo is fine, but the missing text answer fails the whole creation.
+        var created = new ProductService(test.Database, test.Audit, test.Log, folders.PhotoFolder)
+            .Create(TestData.Owner, new ProductPatch { Name = "New medicine" },
+                new Dictionary<int, string?> { [photo.Id] = null, [text.Id] = "" },
+                folders.SourceFile("box.jpg"));
+
+        Assert.False(created.Ok);
+        Assert.Contains("Licence number", created.Error);
+        Assert.Equal(0L, Rows(test, "SELECT COUNT(*) FROM products;"));
+        Assert.Equal(0L, Rows(test, "SELECT COUNT(*) FROM photos;"));
+        Assert.Equal(0, folders.PhotoCopies());
     }
 
     // ============================== nothing is deleted ==============================
@@ -500,56 +581,41 @@ BEGIN SELECT RAISE(ABORT, 'audit unavailable'); END;"));
         Assert.Equal(0L, Rows(test, "SELECT COUNT(*) FROM audit_logs WHERE action = 'custom_value_set';"));
     }
 
-    [Fact]
-    public void APhotoFieldCanNeverBeMarkedRequired()
-    {
-        using var test = new TestDatabase();
-        var fields = Fields(test);
-
-        var refused = fields.Add(TestData.Owner, CustomFieldEntity.Product, "Box photo",
-            CustomFieldType.Photo, null, true);
-        Assert.False(refused.Ok);
-        Assert.Contains("never be required", refused.Error);
-
-        var added = fields.Add(TestData.Owner, CustomFieldEntity.Product, "Box photo",
-            CustomFieldType.Photo, null, false);
-        Assert.True(added.Ok, added.Error);
-
-        var updateRefused = fields.Update(TestData.Owner, added.Value!.Id, "Box photo",
-            CustomFieldType.Photo, null, true);
-        Assert.False(updateRefused.Ok);
-        Assert.Contains("never be required", updateRefused.Error);
-
-        // Every other kind of field may still be required.
-        var text = fields.Add(TestData.Owner, CustomFieldEntity.Product, "Shelf note",
-            CustomFieldType.Text, null, true);
-        Assert.True(text.Ok, text.Error);
-    }
-
-    [Fact]
-    public void ALegacyRequiredPhotoRowNeverBlocksCreationOrSave()
-    {
-        using var test = new TestDatabase();
-        var fields = Fields(test);
-        test.Database.Tx(connection => test.Database.Execute(connection, @"
-INSERT INTO custom_fields(entity, field_key, label, type, options_json, help_text, required, active, sort, created_at)
-VALUES('product', 'product.custom.9001', 'Old box photo', 'photo', NULL, '', 1, 1, 1, '2026-01-01');"));
-
-        // The old row stays untouched in the database - no rewrite - yet nothing is blocked.
-        var created = new ProductService(test.Database, test.Audit, test.Log)
-            .Create(TestData.Owner, new ProductPatch { Name = "New medicine" });
-        Assert.True(created.Ok, created.Error);
-
-        var legacy = fields.List(TestData.Owner, CustomFieldEntity.Product).Value!.Single();
-        Assert.True(fields.SaveValues(TestData.Owner, CustomFieldEntity.Product, created.Value,
-            new Dictionary<int, string?> { [legacy.Id] = null }).Ok);
-        Assert.Equal(1L, Rows(test, "SELECT required FROM custom_fields WHERE label = 'Old box photo';"));
-    }
 
     // ============================== helpers ==============================
 
     private static CustomFieldService Fields(TestDatabase test) =>
         new(test.Database, test.Audit, TestData.Permissions(test), test.Log);
+
+    private sealed class StagedFolders : IDisposable
+    {
+        private readonly string _root;
+
+        public StagedFolders()
+        {
+            _root = Path.Combine(Path.GetTempPath(), "area11-staged-tests", Guid.NewGuid().ToString("N"));
+            PhotoFolder = Path.Combine(_root, "photos");
+            SourceFolder = Path.Combine(_root, "source");
+            Directory.CreateDirectory(PhotoFolder);
+            Directory.CreateDirectory(SourceFolder);
+        }
+
+        public string PhotoFolder { get; }
+
+        public string SourceFile(string name, string text = "pretend this is a picture")
+        {
+            var path = Path.Combine(SourceFolder, name);
+            File.WriteAllText(path, text);
+            return path;
+        }
+
+        public int PhotoCopies() => Directory.GetFiles(PhotoFolder).Length;
+
+        public void Dispose()
+        {
+            try { Directory.Delete(_root, true); } catch { }
+        }
+    }
 
     private static long Rows(TestDatabase test, string sql)
     {

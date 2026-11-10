@@ -1225,7 +1225,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             SetStatus("Extra fields could not be loaded. Reopen the new customer form.", true);
             return;
         }
-        var saved = _services.Partners.CreateCustomer(_user, NewCustomerName, NewCustomerPhone, "normal", NewCustomerEditor.AnswerValues());
+        var saved = _services.Partners.CreateCustomer(_user, NewCustomerName, NewCustomerPhone, "normal", NewCustomerEditor.AnswerValues(), NewCustomerEditor.StagedPhotoForSave());
 
         if (!saved.Ok)
         {

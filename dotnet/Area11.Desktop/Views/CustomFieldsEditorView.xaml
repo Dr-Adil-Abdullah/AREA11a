@@ -48,6 +48,24 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
+            <!-- New record with a photo field: the picture is chosen here and saved together
+                 with the record. Existing records use their photo gallery instead. -->
+            <StackPanel Visibility="{Binding ShowStagedPhoto, Converter={StaticResource BoolToVis}}"
+                        Margin="0,8,0,0">
+                <TextBlock Text="Photo for this new record" Style="{StaticResource FieldLabel}" />
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="Choose…" Command="{Binding ChooseStagedPhotoCommand}"
+                            IsEnabled="{Binding CanEdit}" Style="{StaticResource GhostButton}"
+                            Padding="12,4" />
+                    <Button Content="Clear" Command="{Binding ClearStagedPhotoCommand}"
+                            IsEnabled="{Binding CanEdit}" Style="{StaticResource GhostButton}"
+                            Padding="12,4" Margin="6,0,0,0"
+                            Visibility="{Binding HasStagedPhoto, Converter={StaticResource BoolToVis}}" />
+                    <TextBlock Text="{Binding StagedPhotoName}" Style="{StaticResource FieldHint}"
+                               VerticalAlignment="Center" Margin="8,0,0,0" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+            </StackPanel>
+
             <TextBlock Text="Only the owner or a manager may fill these fields." Style="{StaticResource FieldHint}"
                        Visibility="{Binding IsReadOnly, Converter={StaticResource BoolToVis}}"
                        Margin="0,8,0,0" />

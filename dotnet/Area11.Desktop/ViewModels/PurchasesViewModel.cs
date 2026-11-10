@@ -232,7 +232,7 @@ public sealed class PurchasesViewModel : ObservableObject
             return;
         }
         var result = _services.Partners.CreateSupplier(_user, NewSupplierName, NewSupplierPhone, NewSupplierAgency,
-            NewSupplierEditor.AnswerValues());
+            NewSupplierEditor.AnswerValues(), NewSupplierEditor.StagedPhotoForSave());
         if (!result.Ok)
         {
             SetStatus(result.Error ?? "The supplier could not be saved.", true);

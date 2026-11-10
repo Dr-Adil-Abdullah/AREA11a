@@ -608,7 +608,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         var isNew = _editingId is null;
         if (isNew)
         {
-            var created = _services.Products.Create(_user, patch, answers);
+            var created = _services.Products.Create(_user, patch, answers, Editor.StagedPhotoForSave());
             if (!created.Ok || created.Value <= 0)
             {
                 SetStatus(created.Error ?? "The product could not be saved.", true);

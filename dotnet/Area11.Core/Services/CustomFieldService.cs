@@ -126,7 +126,7 @@ ORDER BY sort, id;",
         var cleanLabel = (label ?? string.Empty).Trim();
 
         var cleanHelp = FieldGovernance.CleanHelpText(helpText);
-        var problem = FieldGovernance.DefinitionError(key, cleanLabel, cleanType, optionsText, cleanHelp, required);
+        var problem = FieldGovernance.DefinitionError(key, cleanLabel, cleanType, optionsText, cleanHelp);
 
         if (problem is not null)
         {
@@ -220,7 +220,7 @@ VALUES(@entity, NULL, @label, @type, @optionsJson, @helpText, @required, 1, @sor
         var cleanType = CustomFieldType.Clean(type);
         var cleanLabel = (label ?? string.Empty).Trim();
         var cleanHelp = helpText is null ? null : FieldGovernance.CleanHelpText(helpText);
-        var problem = FieldGovernance.DefinitionError(null, cleanLabel, cleanType, optionsText, cleanHelp, required);
+        var problem = FieldGovernance.DefinitionError(null, cleanLabel, cleanType, optionsText, cleanHelp);
 
         if (problem is not null)
         {
@@ -250,7 +250,7 @@ VALUES(@entity, NULL, @label, @type, @optionsJson, @helpText, @required, 1, @sor
 
                 var effectiveHelp = cleanHelp ?? field.HelpText ?? string.Empty;
                 var entityProblem = FieldGovernance.DefinitionError(
-                    field.Entity, cleanLabel, cleanType, optionsText, effectiveHelp, required);
+                    field.Entity, cleanLabel, cleanType, optionsText, effectiveHelp);
                 if (entityProblem is not null)
                 {
                     return ServiceResult.Fail(entityProblem);
@@ -495,9 +495,9 @@ WHERE entity = @entity AND entity_id = @entityId;",
         }
     }
 
-    // The owner decided a photo is never required, so creating a record can never be blocked
-    // by a missing picture: the record and its answers are saved together, and the photo joins
-    // the gallery afterwards. Kept as a separate step so the three creators share one path.
+    // The creator attaches the staged photo first, so a required photo field sees the gallery
+    // row when the answers are validated. Kept as a separate step so the three creators share
+    // one path; whether a photo is required is the owner's choice on the field itself.
     internal ServiceResult SaveNewRecordValuesInTransaction(Microsoft.Data.Sqlite.SqliteConnection connection,
         User actor, string entity, int id, IReadOnlyDictionary<int, string?>? values)
     {

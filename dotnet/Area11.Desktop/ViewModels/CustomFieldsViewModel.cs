@@ -152,15 +152,8 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
                 return;
             }
 
-            // A photo is never required: the tick would only promise what the service refuses.
-            if (!RequiredEnabled && Required)
-            {
-                Required = false;
-            }
-
             OnPropertyChanged(nameof(NeedsOptions));
             OnPropertyChanged(nameof(TypeHint));
-            OnPropertyChanged(nameof(RequiredEnabled));
         }
     }
 
@@ -174,7 +167,7 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
         CustomFieldType.Date => "A date, for example 2026-10-22 or 22/10/2026.",
         CustomFieldType.Select => "Write the choices separated by commas: None, A, B, C.",
         CustomFieldType.Check => "A tick box. Required means it must be ticked.",
-        CustomFieldType.Photo => "The picture lives in the record's photo gallery - use the Photos… button on the form. A photo is never required.",
+        CustomFieldType.Photo => "The picture lives in the record's gallery - add it with the Photos… button, or choose one on the new-record form. Required means the record needs a picture.",
         _ => "Any words, up to " + CustomFieldService.MaxAnswerLength + " letters."
     };
 
@@ -205,8 +198,6 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
         set => SetProperty(ref _required, value);
     }
 
-    /// <summary>False for a photo: the service refuses a required photo, so the box is locked.</summary>
-    public bool RequiredEnabled => SelectedType.Key != CustomFieldType.Photo;
 
     /// <summary>True while an existing field is open; false while a new one is being written.</summary>
     public bool IsEditing
@@ -311,12 +302,10 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
         IsEditing = true;
 
         LabelText = field.Label;
+        Required = field.Required;
         OptionsText = field.OptionsText;
         HelpText = field.HelpText;
         SelectedType = Types.FirstOrDefault(option => option.Key == field.Type) ?? Types[0];
-        // A legacy row may still carry required = 1 on a photo; the form shows the truth - a
-        // photo is never required - instead of a tick the service would refuse to save.
-        Required = field.Required && RequiredEnabled;
 
         SetStatus("Change the name, the kind or the required tick - or put the field away.", false);
     }
