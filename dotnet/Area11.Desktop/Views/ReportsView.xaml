@@ -14,6 +14,9 @@
                     <Button Content="Print report" Style="{StaticResource GhostButton}" Margin="0,0,8,0"
                             Command="{Binding PrintCommand}"
                             ToolTip="Print this period's sales report" />
+                    <Button Content="WhatsApp…" Style="{StaticResource GhostButton}" Margin="0,0,8,0"
+                            Command="{Binding WhatsAppCommand}"
+                            ToolTip="Send this report on WhatsApp (PDF prepared for attaching by hand)" />
                     <Button Content="Refresh" Style="{StaticResource GhostButton}"
                             Command="{Binding RefreshCommand}" />
                 </StackPanel>

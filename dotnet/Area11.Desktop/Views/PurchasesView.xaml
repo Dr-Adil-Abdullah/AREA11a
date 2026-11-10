@@ -214,6 +214,9 @@
                         <Button Content="Open drafts" Style="{StaticResource GhostButton}"
                                 Margin="0,6,0,0" Command="{Binding DraftsCommand}"
                                 ToolTip="Open, post or discard shared purchase drafts." />
+                        <Button Content="WhatsApp last invoice…" Style="{StaticResource GhostButton}"
+                                Margin="0,6,0,0" Command="{Binding WhatsAppCommand}" IsEnabled="{Binding CanSendLastOnWhatsApp}"
+                                ToolTip="Send the just-saved invoice on WhatsApp (PDF prepared for attaching by hand)" />
 
                         <TextBlock Text="{Binding StatusMessage}" FontSize="11" TextWrapping="Wrap" Margin="0,10,0,0">
                             <TextBlock.Style>

@@ -75,6 +75,7 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
         PrintCommand = new RelayCommand(PrintAgain);
         PrintSelectionCommand = new RelayCommand(PrintSelection);
         PreviewCommand = new RelayCommand(Preview);
+        WhatsAppCommand = new RelayCommand(SendOnWhatsApp);
         PrintReturnCommand = new RelayCommand(PrintSelectedReturn);
 
         Load();
@@ -111,6 +112,9 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
 
     /// <summary>Portion 11: the exact paper text on the screen before anything prints.</summary>
     public RelayCommand PreviewCommand { get; }
+
+    /// <summary>Portion 12: the open bill as WhatsApp text plus a PDF the owner attaches by hand.</summary>
+    public RelayCommand WhatsAppCommand { get; }
 
     /// <summary>Prints the return receipt of the row picked in the returns list.</summary>
     public RelayCommand PrintReturnCommand { get; }
@@ -589,6 +593,31 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
         }
 
         PrintPreviewDoor.Show(_services, document.Value);
+    }
+
+    /// <summary>
+    /// The open bill to WhatsApp: the receipt text in the message, the same bill as a PDF file.
+    /// No phone is known here, so the owner picks the contact after the app opens.
+    /// </summary>
+    private void SendOnWhatsApp()
+    {
+        if (Selected is null)
+        {
+            SetStatus("Pick a bill first.", true);
+            return;
+        }
+
+        var document = _services.History.BuildReceipt(_user, Selected.Id);
+        if (!document.Ok || document.Value is null)
+        {
+            SetStatus(document.Error ?? "The bill could not be prepared.", true);
+            return;
+        }
+
+        var sent = WhatsAppFlow.Send(_services, null, document.Value.PlainText,
+            document.Value.Title, document.Value.Lines.Select(line => line.Text),
+            "bill-" + Selected.Code + ".pdf");
+        SetStatus(sent.Message, !sent.Ok);
     }
 
     private void PrintSelectedReturn()

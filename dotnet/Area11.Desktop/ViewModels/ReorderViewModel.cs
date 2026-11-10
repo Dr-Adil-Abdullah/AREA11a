@@ -528,21 +528,28 @@ public sealed class ReorderViewModel : ObservableObject, IEmptyPage
         // The audit names the supplier the MESSAGE names, not the one in the filter: the owner may
         // be looking at "All suppliers" while every ticked line belongs to one agent.
         var supplierName = TickedSupplier();
-        var link = ReorderService.BuildLink(PhoneText, OrderText);
-
-        try
+        var lines = Rows.Where(line => line.IsSelected && line.OrderQty > 0).Select(line => line.ToLine()).ToList();
+        var document = _services.Reorder.BuildPadDocument(lines, supplierName);
+        if (!document.Ok || document.Value is null)
         {
-            Process.Start(new ProcessStartInfo { FileName = link, UseShellExecute = true });
-
-            // Leaving the shop is a business event: who, how many, and when (Spec 22).
-            _services.Reorder.RecordOrder(_user, supplierName, SendableCount);
-
-            SetStatus("WhatsApp opened with the order. Send it from there.", false);
+            SetStatus(document.Error ?? "The order pad could not be prepared.", true);
+            return;
         }
-        catch (Exception exception)
+
+        // Portion 12: the native app opens with the order text, and the same pad is prepared as a
+        // PDF the owner attaches by hand; opening is not evidence of sending.
+        var sent = WhatsAppFlow.Send(_services, PhoneText, OrderText,
+            document.Value.Title, document.Value.Lines.Select(line => line.Text), "order-pad.pdf");
+        if (!sent.Ok)
         {
-            SetStatus("WhatsApp could not be opened (" + exception.Message + "). Copy the text instead.", true);
+            SetStatus(sent.Message, true);
+            return;
         }
+
+        // Leaving the shop is a business event: who, how many, and when (Spec 22).
+        _services.Reorder.RecordOrder(_user, supplierName, SendableCount);
+
+        SetStatus(sent.Message, false);
     }
 
     /// <summary>The single supplier behind the ticked, sendable rows - null when they are mixed or blank.</summary>

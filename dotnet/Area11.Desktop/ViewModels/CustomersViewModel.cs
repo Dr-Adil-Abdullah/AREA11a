@@ -92,6 +92,8 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
         StatementCommand = new RelayCommand(PrintStatement);
         PrintSelectionCommand = new RelayCommand(PrintSelection);
         PreviewCommand = new RelayCommand(Preview);
+        WhatsAppStatementCommand = new RelayCommand(SendStatementOnWhatsApp);
+        WhatsAppProfileCommand = new RelayCommand(SendProfileOnWhatsApp);
         MonthStatementCommand = new RelayCommand(PrintMonthStatement);
         ReceiptCommand = new RelayCommand(PrintReceipt);
         EditCommand = new RelayCommand(BeginEdit);
@@ -129,6 +131,12 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
 
     /// <summary>Portion 11: the exact paper text on the screen before anything prints.</summary>
     public RelayCommand PreviewCommand { get; }
+
+    /// <summary>Portion 12: the open statement as WhatsApp text plus a PDF the owner attaches by hand.</summary>
+    public RelayCommand WhatsAppStatementCommand { get; }
+
+    /// <summary>Portion 12: the short khata nudge (who owes what) as WhatsApp text, no file.</summary>
+    public RelayCommand WhatsAppProfileCommand { get; }
 
     public RelayCommand MonthStatementCommand { get; }
 
@@ -673,6 +681,47 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
         }
 
         PrintPreviewDoor.Show(_services, statement.Value);
+    }
+
+    /// <summary>
+    /// The open customer's statement to WhatsApp: the statement text in the message, the same
+    /// statement as a PDF file. The customer's own phone is dialled when the book has one.
+    /// </summary>
+    private void SendStatementOnWhatsApp()
+    {
+        if (Selected is null)
+        {
+            SetStatus("Pick a customer first.", true);
+            return;
+        }
+
+        var statement = _services.Ledger.Statement(Selected.Id);
+        if (!statement.Ok || statement.Value is null)
+        {
+            SetStatus(statement.Error ?? "The statement could not be prepared.", true);
+            return;
+        }
+
+        var sent = WhatsAppFlow.Send(_services, Selected.Phone, statement.Value.PlainText,
+            statement.Value.Title, statement.Value.Lines.Select(line => line.Text),
+            "statement-" + Selected.Name + ".pdf");
+        SetStatus(sent.Message, !sent.Ok);
+    }
+
+    /// <summary>The short khata nudge to WhatsApp: who owes what, in one message, no file.</summary>
+    private void SendProfileOnWhatsApp()
+    {
+        if (Selected is null)
+        {
+            SetStatus("Pick a customer first.", true);
+            return;
+        }
+
+        var text = _services.WhatsApp.BuildCustomerProfile(
+            Selected.Name, Selected.Phone, Selected.BalancePaisa, Selected.CreditLimitPaisa);
+        var sent = WhatsAppFlow.Send(_services, Selected.Phone, text,
+            "Profile", Enumerable.Empty<string>(), "profile.pdf", withPdf: false);
+        SetStatus(sent.Message, !sent.Ok);
     }
 
     /// <summary>The month's statement (F-49): one month between an opening and a closing balance.</summary>

@@ -56,6 +56,7 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
         CloseCommand = new RelayCommand(CloseShift);
         HandoverCommand = new RelayCommand(HandOver);
         PrintSlipCommand = new RelayCommand(PrintSlip);
+        WhatsAppCommand = new RelayCommand(SendSlipOnWhatsApp);
         RefreshCommand = new RelayCommand(Load);
 
         Load();
@@ -78,6 +79,9 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
 
     /// <summary>Print the last handover slip again - the paper gets lost, the record does not.</summary>
     public RelayCommand PrintSlipCommand { get; }
+
+    /// <summary>Portion 12: the handover slip as WhatsApp text plus a PDF the owner attaches by hand.</summary>
+    public RelayCommand WhatsAppCommand { get; }
 
     public RelayCommand RefreshCommand { get; }
 
@@ -418,6 +422,24 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
                 ? "The handover slip has gone to the printer again."
                 : "The slip could not be printed: " + printed.Error,
             !printed.Ok);
+    }
+
+    /// <summary>
+    /// The handover slip to WhatsApp: the slip text in the message, the same slip as a PDF file.
+    /// The slip is rebuilt from the recorded handover, so it always matches the black box.
+    /// </summary>
+    private void SendSlipOnWhatsApp()
+    {
+        if (_lastHandover is null)
+        {
+            SetStatus("Hand the drawer over first - there is no slip to send yet.", true);
+            return;
+        }
+
+        var document = _services.HandoverSlips.Build(_lastHandover);
+        var sent = WhatsAppFlow.Send(_services, null, document.PlainText,
+            document.Title, document.Lines.Select(line => line.Text), "handover-slip.pdf");
+        SetStatus(sent.Message, !sent.Ok);
     }
 
     private void OpenShift()

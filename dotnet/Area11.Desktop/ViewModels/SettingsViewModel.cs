@@ -43,6 +43,8 @@ public sealed class SettingsViewModel : ObservableObject
     private bool _autoCut;
     private bool _defaultBulk;
     private BulkFormatOption? _selectedBulkFormat;
+    private bool _whatsAppPreparePdf;
+    private string _whatsAppExportDirectory = string.Empty;
     private string _copiesText = "1";
     private bool _showDiscount;
     private bool _saleSuccessPopup;
@@ -300,6 +302,20 @@ public sealed class SettingsViewModel : ObservableObject
         set => SetProperty(ref _selectedBulkFormat, value);
     }
 
+    /// <summary>Portion 12: on, every WhatsApp send also prepares a PDF file for attaching by hand.</summary>
+    public bool WhatsAppPreparePdf
+    {
+        get => _whatsAppPreparePdf;
+        set => SetProperty(ref _whatsAppPreparePdf, value);
+    }
+
+    /// <summary>Portion 12: where the prepared PDFs land; empty means the shop's exports folder.</summary>
+    public string WhatsAppExportDirectory
+    {
+        get => _whatsAppExportDirectory;
+        set => SetProperty(ref _whatsAppExportDirectory, value);
+    }
+
     public string CopiesText
     {
         get => _copiesText;
@@ -554,6 +570,8 @@ public sealed class SettingsViewModel : ObservableObject
         AutoPrint = settings.GetBool("printer.autoPrint", true);
         AutoCut = settings.GetBool("printer.autoCut", true);
         DefaultBulk = settings.GetBool("printer.defaultBulk", false);
+        WhatsAppPreparePdf = settings.GetBool("whatsapp.preparePdf", true);
+        WhatsAppExportDirectory = settings.GetString("whatsapp.exportDirectory") ?? string.Empty;
         SelectedBulkFormat = BulkFormatOptions.FirstOrDefault(option =>
                 string.Equals(option.Key, settings.GetString("printer.bulkFormat"), StringComparison.OrdinalIgnoreCase))
             ?? BulkFormatOptions[0];
@@ -800,6 +818,8 @@ public sealed class SettingsViewModel : ObservableObject
             ["printer.autoCut"] = AutoCut,
             ["printer.defaultBulk"] = DefaultBulk,
             ["printer.bulkFormat"] = SelectedBulkFormat?.Key ?? "separate_receipts",
+            ["whatsapp.preparePdf"] = WhatsAppPreparePdf,
+            ["whatsapp.exportDirectory"] = WhatsAppExportDirectory.Trim(),
             ["printer.copies"] = copies,
             ["receipt.showDiscount"] = ShowDiscount,
             ["sale.successPopup"] = SaleSuccessPopup,

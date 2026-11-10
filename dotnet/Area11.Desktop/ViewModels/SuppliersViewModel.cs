@@ -80,6 +80,8 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
         StatementCommand = new RelayCommand(PrintStatement);
         PrintSelectionCommand = new RelayCommand(PrintSelection);
         PreviewCommand = new RelayCommand(Preview);
+        WhatsAppStatementCommand = new RelayCommand(SendStatementOnWhatsApp);
+        WhatsAppProfileCommand = new RelayCommand(SendProfileOnWhatsApp);
         ProductSearchCommand = new RelayCommand(SearchProducts);
         AddLineCommand = new RelayCommand(AddLine);
         RemoveLineCommand = new RelayCommand(RemoveLine);
@@ -125,6 +127,12 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
 
     /// <summary>Portion 11: the exact paper text on the screen before anything prints.</summary>
     public RelayCommand PreviewCommand { get; }
+
+    /// <summary>Portion 12: the open statement as WhatsApp text plus a PDF the owner attaches by hand.</summary>
+    public RelayCommand WhatsAppStatementCommand { get; }
+
+    /// <summary>Portion 12: the short payable note (what the shop owes) as WhatsApp text, no file.</summary>
+    public RelayCommand WhatsAppProfileCommand { get; }
 
     public RelayCommand ProductSearchCommand { get; }
 
@@ -629,6 +637,46 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
         }
 
         PrintPreviewDoor.Show(_services, statement.Value);
+    }
+
+    /// <summary>
+    /// The open supplier's statement to WhatsApp: the statement text in the message, the same
+    /// statement as a PDF file. The supplier's own phone is dialled when the book has one.
+    /// </summary>
+    private void SendStatementOnWhatsApp()
+    {
+        if (Selected is null)
+        {
+            SetStatus("Pick a supplier first.", true);
+            return;
+        }
+
+        var statement = _services.SupplierLedger.Statement(Selected.Id);
+        if (!statement.Ok || statement.Value is null)
+        {
+            SetStatus(statement.Error ?? "The statement could not be prepared.", true);
+            return;
+        }
+
+        var sent = WhatsAppFlow.Send(_services, Selected.Phone, statement.Value.PlainText,
+            statement.Value.Title, statement.Value.Lines.Select(line => line.Text),
+            "statement-" + Selected.Name + ".pdf");
+        SetStatus(sent.Message, !sent.Ok);
+    }
+
+    /// <summary>The short payable note to WhatsApp: what the shop owes, in one message, no file.</summary>
+    private void SendProfileOnWhatsApp()
+    {
+        if (Selected is null)
+        {
+            SetStatus("Pick a supplier first.", true);
+            return;
+        }
+
+        var text = _services.WhatsApp.BuildSupplierProfile(Selected.Name, Selected.Agency, Selected.PayablePaisa);
+        var sent = WhatsAppFlow.Send(_services, Selected.Phone, text,
+            "Profile", Enumerable.Empty<string>(), "profile.pdf", withPdf: false);
+        SetStatus(sent.Message, !sent.Ok);
     }
 
     private void SearchProducts()

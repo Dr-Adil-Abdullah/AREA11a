@@ -37,6 +37,8 @@ public sealed class PurchasesViewModel : ObservableObject
     private string _statusMessage = "Enter a delivery and add lines.";
     private bool _isStatusError;
     private int _openDraftId;
+    private int _lastPurchaseId;
+    private string _lastPurchaseCode = string.Empty;
 
     public PurchasesViewModel(AppServices services, User user)
     {
@@ -52,6 +54,7 @@ public sealed class PurchasesViewModel : ObservableObject
         SaveCommand = new RelayCommand(Save);
         SaveDraftCommand = new RelayCommand(SavePurchaseDraft);
         DraftsCommand = new RelayCommand(OpenDrafts);
+        WhatsAppCommand = new RelayCommand(SendLastOnWhatsApp);
         AddSupplierCommand = new RelayCommand(AddSupplier);
         RefreshCommand = new RelayCommand(LoadLookups);
 
@@ -84,8 +87,14 @@ public sealed class PurchasesViewModel : ObservableObject
 
     public RelayCommand DraftsCommand { get; }
 
+    /// <summary>Portion 12: the just-saved invoice as WhatsApp text plus a PDF the owner attaches by hand.</summary>
+    public RelayCommand WhatsAppCommand { get; }
+
     /// <summary>True while the page shows an open draft; saving it posts the draft.</summary>
     public bool HasOpenDraft => _openDraftId > 0;
+
+    /// <summary>Portion 12: the just-saved purchase can go to WhatsApp until the next save.</summary>
+    public bool CanSendLastOnWhatsApp => _lastPurchaseId > 0;
 
     public RelayCommand AddSupplierCommand { get; }
 
@@ -472,6 +481,11 @@ public sealed class PurchasesViewModel : ObservableObject
         // The paper is a copy for the file; a silent printer must never unsave the purchase.
         PrintInvoice(purchase.PurchaseId, purchase.Code);
 
+        // Portion 12: the same invoice can go to WhatsApp while it is still "the last save".
+        _lastPurchaseId = purchase.PurchaseId;
+        _lastPurchaseCode = purchase.Code;
+        OnPropertyChanged(nameof(CanSendLastOnWhatsApp));
+
         Lines.Clear();
         PaidText = string.Empty;
         _openDraftId = 0;
@@ -479,6 +493,31 @@ public sealed class PurchasesViewModel : ObservableObject
         DocEditor.LoadNew();
         OnPropertyChanged(nameof(TotalText));
         LoadLookups();
+    }
+
+    /// <summary>
+    /// The just-saved invoice to WhatsApp: the invoice text in the message, the same invoice as a
+    /// PDF file. The invoice is read back from the database, so it matches the black box.
+    /// </summary>
+    private void SendLastOnWhatsApp()
+    {
+        if (_lastPurchaseId <= 0)
+        {
+            SetStatus("Save a purchase first.", true);
+            return;
+        }
+
+        var document = _services.Purchases.BuildInvoiceDocument(_lastPurchaseId, _user);
+        if (!document.Ok || document.Value is null)
+        {
+            SetStatus(document.Error ?? "The invoice could not be prepared.", true);
+            return;
+        }
+
+        var sent = WhatsAppFlow.Send(_services, null, document.Value.PlainText,
+            document.Value.Title, document.Value.Lines.Select(line => line.Text),
+            "purchase-" + _lastPurchaseCode + ".pdf");
+        SetStatus(sent.Message, !sent.Ok);
     }
 
     private void PrintInvoice(int purchaseId, string code)

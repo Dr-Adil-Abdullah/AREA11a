@@ -254,6 +254,12 @@
                                     <Button Content="Preview" Style="{StaticResource GhostButton}" Margin="8,0,0,0"
                                             Command="{Binding PreviewCommand}"
                                             ToolTip="See the exact paper text on the screen before it prints" />
+                                    <Button Content="WhatsApp statement…" Style="{StaticResource GhostButton}" Margin="8,0,0,0"
+                                            Command="{Binding WhatsAppStatementCommand}"
+                                            ToolTip="Send this statement on WhatsApp (PDF prepared for attaching by hand)" />
+                                    <Button Content="WhatsApp nudge" Style="{StaticResource GhostButton}" Margin="8,0,0,0"
+                                            Command="{Binding WhatsAppProfileCommand}"
+                                            ToolTip="Send a short who-owes-what message on WhatsApp" />
                                 </StackPanel>
                         </StackPanel>
                         </Border>

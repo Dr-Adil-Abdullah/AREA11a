@@ -1,11 +1,11 @@
 # AGENTS.md - how to work in this repository
 
-> **WIP handoff, 10 Nov 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/b4b7bf7b-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/b4b7bf7b-area11a). Portion 11 finished in v0.52.0 Espresso (Windows/physical pending); v0.50.0 Windows 1055/1055 green; batch order (5, 6, 18) complete; Portion 17 paused; next is 12 per roadmap unless the owner says otherwise. Older status and approval statements below are historical. This branch is not a tested release.
+> **WIP handoff, 10 Nov 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/b4b7bf7b-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/b4b7bf7b-area11a). Portion 12 finished in v0.53.0 Midnight (Windows/physical pending); v0.52.0 Windows 1086/1086 green; batch order (5, 6, 18) complete; Portion 17 paused; next is 13 per roadmap unless the owner says otherwise. Older status and approval statements below are historical. This branch is not a tested release.
 
 
-## Latest handoff — v0.52.0 Espresso
+## Latest handoff — v0.53.0 Midnight
 
-Portion 11 finished: universal and bulk printing (#5) — new slips for Reorder pad, Reports, StockTake sheet, Purchase invoice (auto-print after Save) and Expense voucher; multi-select bulk on Bills/Customers/Suppliers with `printer.defaultBulk` switching the main Print button and `printer.bulkFormat` (separate receipts / A4 list); atomic bulk builders with black-box reprint lines; preview window showing exact paper text; every print path read-only. **1086 written cases, 57/57 static; Windows build/xUnit and physical checks pending.** v0.50.0 Windows 1055/1055 green. Batch order (5, 6, 18) complete; Portion 17 paused; next is 12 per roadmap unless the owner says otherwise.
+Portion 12 finished: WhatsApp and prepared PDF (#4) — shared `WhatsAppService` (03xx → 92 normalization, native `whatsapp://send` + wa.me fallback, profile nudges, `PreparePdf`) with a dependency-free A4 `PdfWriter`; one `WhatsAppFlow.Send` (prepare file, open app, name the file, missing-app error); triggers on Reorder/Bills/Customers/Suppliers/Reports/Purchases/Shift; Settings WhatsApp+PDF section; every share read-only. **1102 written cases, 57/57 static; Windows build/xUnit and physical checks pending.** v0.52.0 Windows 1086/1086 green. Batch order (5, 6, 18) complete; Portion 17 paused; next is 13 per roadmap unless the owner says otherwise.
 
 
 ## Latest handoff — v0.43.0 Umber

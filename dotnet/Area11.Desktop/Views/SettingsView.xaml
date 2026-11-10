@@ -197,6 +197,26 @@
 
                         <Border Style="{StaticResource SettingsGroup}">
                             <StackPanel>
+                                <TextBlock Text="WhatsApp + PDF" Style="{StaticResource SectionTitle}" />
+                                <TextBlock Text="Bills, statements, reports and slips can go to WhatsApp with a PDF file the owner attaches by hand."
+                                           Style="{StaticResource FieldHint}" />
+
+                                <CheckBox Content="Prepare a PDF file with every WhatsApp send"
+                                          IsChecked="{Binding WhatsAppPreparePdf, Mode=TwoWay}"
+                                          Margin="0,12,0,0" />
+                                <TextBlock Text="Off = only the message text goes; no file is prepared."
+                                           Style="{StaticResource FieldHint}" />
+
+                                <TextBlock Text="Folder for the prepared PDFs" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding WhatsAppExportDirectory, UpdateSourceTrigger=PropertyChanged}" Width="430"
+                                         HorizontalAlignment="Left" />
+                                <TextBlock Text="Leave it empty to use the shop's exports folder."
+                                           Style="{StaticResource FieldHint}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel>
                                 <TextBlock Text="Copies" Style="{StaticResource SectionTitle}" />
 
                                 <TextBlock Text="How many copies of one receipt" Style="{StaticResource FieldLabel}" />

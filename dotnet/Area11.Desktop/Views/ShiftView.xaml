@@ -151,6 +151,10 @@
                                     <Button Content="Print the slip again" Style="{StaticResource GhostButton}" Margin="8,0,0,0"
                                             Command="{Binding PrintSlipCommand}"
                                             Visibility="{Binding HasLastHandover, Converter={StaticResource BoolToVis}}" />
+                                    <Button Content="WhatsApp the slip…" Style="{StaticResource GhostButton}" Margin="8,0,0,0"
+                                            Command="{Binding WhatsAppCommand}"
+                                            Visibility="{Binding HasLastHandover, Converter={StaticResource BoolToVis}}"
+                                            ToolTip="Send the handover slip on WhatsApp (PDF prepared for attaching by hand)" />
                                 </StackPanel>
                             </StackPanel>
 

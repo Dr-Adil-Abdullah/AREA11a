@@ -178,6 +178,9 @@
                                 <Button Content="Preview" Style="{StaticResource GhostButton}" Margin="8,0,0,0"
                                         Command="{Binding PreviewCommand}" IsEnabled="{Binding CanPrint}"
                                         ToolTip="See the exact paper text on the screen before it prints" />
+                                <Button Content="WhatsApp…" Style="{StaticResource GhostButton}" Margin="8,0,0,0"
+                                        Command="{Binding WhatsAppCommand}" IsEnabled="{Binding CanPrint}"
+                                        ToolTip="Send this bill on WhatsApp (PDF prepared for attaching by hand)" />
                             </StackPanel>
                         </StackPanel>
                     </Border>

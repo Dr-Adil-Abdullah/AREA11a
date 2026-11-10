@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## تازہ status — Portion 12 مکمل، v0.53.0 Midnight
+
+واٹس ایپ + PDF: ہر صفحے سے ایک ہی طریقہ — موبائل نمبر خود درست (03xx → 92)، ایپ میں متن تیار، ساتھ PDF فائل جو مالک خود لگائے؛ ایپ نہ ہو تو صاف غلطی۔ ٹرگر: آرڈر پیڈ، بل، گاہک/سپلائر گوشوارہ + مختصر یاددہانی، سیل رپورٹ، خریداری انوائس، حوالگی پرچی۔ **1102 written cases، 57/57 static؛ Windows/xUnit اور physical pending** (v0.52.0 کی Windows 1086/1086 گرین ہو چکی)۔ طے شدہ ترتیب (5، 6، 18) مکمل؛ اگلا 13 ہے جب تک مالک کچھ اور نہ کہے؛ Portion 17 paused۔
+
 ## تازہ status — Portion 11 مکمل، v0.52.0 Espresso
 
 ہر جگہ پرنٹ: Reorder پیڈ، Sales رپورٹ، StockTake شیٹ، Purchase انوائس (Save پر خودکار) اور Expense واؤچر — نئی پرچیاں؛ Bills/Customers/Suppliers پر کئی قطاریں ٹک کر کے ایک ساتھ پرنٹ (`defaultBulk` سے مین بٹن، `bulkFormat` سے الگ پرچیاں یا ایک A4 فہرست)؛ چھاپنے سے پہلے پیش نظارہ (preview)؛ ہر پرنٹ صرف پڑھتا ہے، کچھ بدلتا نہیں۔ **1086 written cases، 57/57 static؛ Windows 1086/1086 گرین (10 نومبر 2026)، physical pending**۔ طے شدہ ترتیب (5، 6، 18) مکمل؛ اگلا 12 ہے جب تک مالک کچھ اور نہ کہے؛ Portion 17 paused۔
@@ -2714,6 +2718,7 @@ restart نہیں (Spec 8.4.3)۔
 |---|---|
 | 10 نومبر 2026 | **لفظوں والی تلاش — v0.51.0 Coffee `#4B3621`**: ایک ہی ٹوکن اصول تینوں صفحوں پر، ہر لفظ لازم، ترتیب آزاد، «50 ml» = «50ml»، ایک لفظ پہلے جیسا، تجویز صرف مکمل ناکامی پر؛ **1070 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
 | 10 نومبر 2026 | **ہر جگہ پرنٹ + بلک — v0.52.0 Espresso `#3B2314`**: پیڈ/رپورٹ/شیٹ/انوائس/واؤچر، ٹک-کر-پرنٹ تین صفحوں پر، `defaultBulk`/`bulkFormat` سیٹنگز، preview ونڈو، ہر پرنٹ read-only؛ **1086 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
+| 10 نومبر 2026 | **واٹس ایپ + PDF — v0.53.0 Midnight `#1B2A4A`**: مشترکہ لنک + اپنی PDF، ساتوں صفحوں پر ٹرگر، مالک خود فائل لگائے اور Send دبائے، ہر شیئر read-only؛ **1102 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
 | 10 نومبر 2026 | **سپلائر + فلٹر — v0.50.0 Walnut `#4E3B2C`**: برانڈ کے ساتھ اختیاری کمپنی، ایک پسندیدہ سپلائر صرف چننے سے (تاریخ سے اندازہ نہیں)، پسندیدہ + اصل تاریخ پر فلٹر، ایڈیٹر میں چناؤ + Clear + تاریخ کی سطر؛ **1055 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
 | 10 نومبر 2026 | **نمک + برانڈ فہرستیں — v0.49.0 Mahogany `#5C2E1F`**: مرکزی CRUD، ایک درست ہجے، صرف چننے سے لنک (اندازہ کبھی نہیں)، نام صرف جڑی rows پر، ہٹانے پر لنک ٹوٹے متن رہے، 4 خانوں والی Catalogs کھڑکی، ایڈیٹر میں چناؤ + اضافہ + Unlink + hint؛ **1040 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
 | 10 نومبر 2026 | **پیکنگ، اکائیاں اور variants — v0.48.0 Russet `#80461B`**: ایک ہی box/strip/unit حساب ہر راستے پر، ساتوں خانوں میں «unit»، رسید/history میں «unit» (پرانی «base» بھی چلے)، گاہک + بلا-بل واپسی میں whole-only انکار، ایک ہی نام پر variants بتا کر انتباہ، stock-take تلاش میں strength + pack؛ **1025 written cases، 57/57 static**؛ Windows/xUnit/physical pending |

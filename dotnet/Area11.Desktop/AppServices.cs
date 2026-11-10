@@ -52,6 +52,7 @@ public sealed class AppServices
         ProvisionalReceipts = new ProvisionalReceiptService(Provisional, Settings, Log);
         Receipts = new ReceiptService(Database, Settings, Log);
         Printer = new PrinterService(Settings, Log);
+        WhatsApp = new WhatsAppService(Settings, Log);
         Backup = new BackupService(Database, Settings, Audit, Permissions, Log);
         Import = new ImportService(Database, Audit, Permissions, Log);
         Workbooks = new WorkbookService(Database, Audit, Permissions, Settings, Log, Import);
@@ -157,6 +158,9 @@ public sealed class AppServices
     public ReceiptService Receipts { get; }
 
     public PrinterService Printer { get; }
+
+    /// <summary>Portion 12: the native-app link and the prepared PDF, shared by every page.</summary>
+    public WhatsAppService WhatsApp { get; }
 
     /// <summary>The handover slip - the same receipt object as the sale receipt, printed the same way.</summary>
     public HandoverSlipService HandoverSlips { get; }
