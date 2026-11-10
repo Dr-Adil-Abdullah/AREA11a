@@ -26,11 +26,12 @@ public static class Modules
     public const string Settings = "settings";
     public const string Staff = "staff";
     public const string Sync = "sync";
+    public const string CloseApp = "closeapp";
 
     public static readonly string[] All =
     {
         Pos, Sales, Returns, Customers, Products, Purchases, Suppliers, Stock, StockTake, Reorder,
-        Cash, Reports, Profit, Audit, Import, Backup, Settings, Staff, Sync
+        Cash, Reports, Profit, Audit, Import, Backup, Settings, Staff, Sync, CloseApp
     };
 
     public static string Label(string module) => module switch
@@ -54,6 +55,7 @@ public static class Modules
         Settings => "Settings",
         Staff => "Staff & permissions",
         Sync => "Cloud sync",
+        CloseApp => "Close the program",
         _ => module
     };
 }
@@ -82,7 +84,7 @@ public sealed class PermissionService
         // Cloud sync moves the whole shop out of the building, so a manager does not get it by
         // default - the owner ticks it for one person on purpose (F-48, D-66).
         UserRole.Manager => module is not (Modules.Profit or Modules.Audit or Modules.Backup
-            or Modules.Staff or Modules.Sync),
+            or Modules.Staff or Modules.Sync or Modules.CloseApp),
         UserRole.Salesman => module is Modules.Pos or Modules.Sales or Modules.Returns
             or Modules.Customers or Modules.Products,
         _ => module is Modules.Pos or Modules.Returns or Modules.Customers

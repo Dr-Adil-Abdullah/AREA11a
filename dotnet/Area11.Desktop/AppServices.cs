@@ -68,6 +68,9 @@ public sealed class AppServices
         // The one service that talks to the internet. Its rules are in Core; the wire is a
         // replaceable piece so every test runs without a network (F-48).
         Cloud = new SyncService(Database, Settings, Audit, Permissions, Log, Backup, new SupabaseTransport());
+        // Startup and protected close: the policy is Core, the registry entry is Windows-only, so
+        // the store is constructed here at the composition root (Portion 16).
+        Startup = new StartupService(Settings, Auth, Permissions, Audit, Log, new HklmRunStore());
         // The bill history and its reprint: the same ReceiptService that printed the original (F-52).
         History = new SaleHistoryService(Database, Receipts, ReturnReceipts, Audit, Permissions, Log);
         // Do the books add up? A read-only check over the shop's own rows (F-54).
@@ -145,6 +148,8 @@ public sealed class AppServices
 
     /// <summary>The Supabase mirror: push, look, bring (F-48).</summary>
     public SyncService Cloud { get; }
+
+    public StartupService Startup { get; }
 
     /// <summary>Find any bill and print it again (F-52).</summary>
     public SaleHistoryService History { get; }

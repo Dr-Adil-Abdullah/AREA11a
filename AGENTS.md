@@ -1,11 +1,11 @@
 # AGENTS.md - how to work in this repository
 
-> **WIP handoff, 10 Nov 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/b4b7bf7b-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/b4b7bf7b-area11a). Portion 15 finished in v0.56.0 Flint (Windows/physical pending); v0.52.0 Windows 1086/1086 green; batch order (5, 6, 18) complete; Portion 17 paused; next is 16 per roadmap unless the owner says otherwise. Older status and approval statements below are historical. This branch is not a tested release.
+> **WIP handoff, 10 Nov 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/b4b7bf7b-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/b4b7bf7b-area11a). Portion 16 finished in v0.57.0 Harbor (Windows/physical pending); v0.52.0 Windows 1086/1086 green; batch order (5, 6, 18) complete; only Portion 17 remains, paused pending the owner's word to unpause. Older status and approval statements below are historical. This branch is not a tested release.
 
 
 ## Latest handoff — v0.54.0 Dusk
 
-Portion 15 finished: hybrid sync hardening and safe test workflow (#7) — `IsAutomaticDue` + `RunAutomaticIfDue` (never throws, pushes only); one-push-at-a-time guard; failures stamp `sync.lastError` and retry next interval; Settings automatic tick + minutes; Cloud page automatic line; shell tick fires on a background thread; CLOUD-SYNC test workflow rewritten. **1144 written cases, 57/57 static; Windows build/xUnit, physical and real-cloud checks pending.** v0.52.0 Windows 1086/1086 green. Batch order (5, 6, 18) complete; Portion 17 paused; next is 16 per roadmap unless the owner says otherwise.
+Portion 16 finished: Windows startup and protected close — `startup.mode` (manual/auto/protected) with owner-only Settings picker; HKLM Run entry behind `IAutoStartStore` (registry first, rollback on refusal, admin sentence); `closeapp` permission; `VerifySecret` + `VerifyClose` (throttled, audited); who-is-closing dialog on both windows; SessionEnding passthrough; Shift recovery; `docs/STARTUP-CLOSE.md`. **1159 written cases, 57/57 static; Windows build/xUnit and physical checks pending.** v0.52.0 Windows 1086/1086 green. Batch order (5, 6, 18) complete; only Portion 17 remains, paused pending the owner's word to unpause.
 
 
 ## Latest handoff — v0.43.0 Umber

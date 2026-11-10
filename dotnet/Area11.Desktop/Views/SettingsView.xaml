@@ -126,6 +126,24 @@
                             </StackPanel>
                         </Border>
 
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel IsEnabled="{Binding CanChangeStartup}">
+                                <TextBlock Text="Windows start and protected close" Style="{StaticResource SectionTitle}" />
+                                <TextBlock Text="Owner only. Auto-start opens Area11 at every Windows sign-in on this PC (all accounts) and needs a Windows administrator to save. Protected also asks for the password on every × - on the shop screen and on the sign-in window."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+
+                                <TextBlock Text="How Area11 starts and closes" Style="{StaticResource FieldLabel}" />
+                                <ComboBox ItemsSource="{Binding StartupModeOptions}"
+                                          SelectedItem="{Binding SelectedStartupMode, Mode=TwoWay}"
+                                          DisplayMemberPath="Label" Width="380" HorizontalAlignment="Left" />
+
+                                <TextBlock Text="Who may close it in protected mode: the owner with the password or PIN, or a staff member you tick for Close the program on the Staff &amp; permissions tab. Hold Shift while starting to switch protection off again."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                <TextBlock Text="Honest limit: this stops casual closing, not a Windows administrator, Task Manager, shutdown or power loss. The shop's data survives all of those."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Border>
+
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>

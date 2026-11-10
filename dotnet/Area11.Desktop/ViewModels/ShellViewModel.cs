@@ -24,6 +24,9 @@ namespace Area11.Desktop.ViewModels;
 public sealed class ShellViewModel : ObservableObject
 {
     private readonly AppServices _services;
+
+    /// <summary>Portion 16: the frame needs the startup policy for the protected-close prompt.</summary>
+    public AppServices Services => _services;
     private readonly User _user;
     private readonly List<NavGroup> _groups = new();
 

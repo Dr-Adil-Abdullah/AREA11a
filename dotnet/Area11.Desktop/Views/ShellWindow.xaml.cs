@@ -19,6 +19,37 @@ public partial class ShellWindow : Window
     public ShellWindow()
     {
         InitializeComponent();
+        Closing += ConfirmShellClosing;
+    }
+
+    /// <summary>
+    /// Portion 16: one-shot pass. The app sets it before a close it ordered itself (sign-out,
+    /// session expiry) - those are not a person pressing ×, so they never see the prompt.
+    /// </summary>
+    public bool AllowClose { get; set; }
+
+    private void ConfirmShellClosing(object? sender, System.ComponentModel.CancelEventArgs e)
+    {
+        // Windows itself is going down, or the app ordered this close: never stand in the way.
+        if (App.IsSystemShutdown || AllowClose)
+        {
+            return;
+        }
+
+        if (DataContext is not ShellViewModel shell || !shell.Services.Startup.IsProtected)
+        {
+            return;
+        }
+
+        e.Cancel = true;
+
+        var dialog = new CloseUnlockWindow(shell.Services) { Owner = this };
+
+        if (dialog.ShowDialog() == true && dialog.Unlocked)
+        {
+            AllowClose = true;
+            Close();
+        }
     }
 
     private TabControl? _headerTabs;

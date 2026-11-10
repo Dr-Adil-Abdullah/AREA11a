@@ -70,6 +70,8 @@ public sealed class SettingsViewModel : ObservableObject
     private string _loyaltySummary = string.Empty;
 
     // ---- Cloud sync (F-48): the key is typed here but never read back onto the screen ----
+    private StartupModeOption? _selectedStartupMode;
+
     private bool _syncEnabled;
     private string _syncUrl = string.Empty;
     private string _syncTable = "area11_sync";
@@ -135,6 +137,13 @@ public sealed class SettingsViewModel : ObservableObject
             new(12, "After 12 hours without work")
         };
 
+        StartupModeOptions = new ObservableCollection<StartupModeOption>
+        {
+            new(StartupService.Manual, "By hand - start from the icon, close with ×"),
+            new(StartupService.Auto, "Start with Windows - × still closes it"),
+            new(StartupService.Protected, "Start with Windows - × asks for the password every time")
+        };
+
         Load();
         LoadUsers();
     }
@@ -150,6 +159,18 @@ public sealed class SettingsViewModel : ObservableObject
 
     /// <summary>The sign-out choices (v0.35.0, D-92). 12 hours is also the ceiling for every choice.</summary>
     public ObservableCollection<IdleHourOption> IdleHourOptions { get; }
+
+    /// <summary>Portion 16: the three ways Area11 may start and close. Owner only.</summary>
+    public ObservableCollection<StartupModeOption> StartupModeOptions { get; }
+
+    public StartupModeOption? SelectedStartupMode
+    {
+        get => _selectedStartupMode;
+        set => SetProperty(ref _selectedStartupMode, value);
+    }
+
+    /// <summary>Portion 16: only the owner picks how the program starts and closes.</summary>
+    public bool CanChangeStartup => _user.IsOwner;
 
     public IdleHourOption? SelectedIdleHour
     {
@@ -575,6 +596,10 @@ public sealed class SettingsViewModel : ObservableObject
         SelectedIdleHour = IdleHourOptions.FirstOrDefault(option => option.Hours == idleHours)
                            ?? IdleHourOptions[2];
 
+        var startupMode = settings.GetString(StartupService.ModeKey);
+        SelectedStartupMode = StartupModeOptions.FirstOrDefault(option => option.Key == startupMode)
+                              ?? StartupModeOptions[0];
+
         // The clock line (v0.35.0, D-92). It says where the time comes from and how far the two
         // clocks were apart when Area11 last looked - a shop whose PC is a day out must see it here.
         ClockText = TimeSource.DescribeForOwner();
@@ -924,9 +949,29 @@ public sealed class SettingsViewModel : ObservableObject
                     ? " Cloud sync is ready."
                     : " Cloud sync is switched on but still incomplete.";
 
+        // Startup and close (Portion 16): saved through the service, not the values above - the
+        // Windows entry must stick before the setting claims it. Unchanged means untouched: an
+        // ordinary save must not rewrite the registry or audit a choice nobody made.
+        var startupNote = string.Empty;
+
+        if (CanChangeStartup && SelectedStartupMode is not null
+            && SelectedStartupMode.Key != _services.Startup.Mode)
+        {
+            var startup = _services.Startup.SetMode(
+                _user, SelectedStartupMode.Key, Environment.ProcessPath ?? string.Empty);
+
+            if (!startup.Ok)
+            {
+                SetStatus(startup.Error ?? "The startup mode could not be saved.", true);
+                return;
+            }
+
+            startupNote = " Startup: " + _services.Startup.ModeLabel;
+        }
+
         SetStatus($"Saved. Paper {paper.Width} mm, printing " +
                   (AutoPrint ? "automatic." : "manual (use the button on the counter screen).") +
-                  cloudNote, false);
+                  cloudNote + startupNote, false);
     }
 
     // ---------------------------- Cloud sync ----------------------------
@@ -1197,6 +1242,22 @@ public sealed class SettingsViewModel : ObservableObject
 }
 
 /// <summary>One paper size in the drop-down. ToString() is what the ComboBox shows.</summary>
+/// <summary>Portion 16: one start-and-close choice on the Settings page. ToString is the label.</summary>
+public sealed class StartupModeOption
+{
+    public StartupModeOption(string key, string label)
+    {
+        Key = key;
+        Label = label;
+    }
+
+    public string Key { get; }
+
+    public string Label { get; }
+
+    public override string ToString() => Label;
+}
+
 /// <summary>One sign-out choice on the Settings page (v0.35.0, D-92).</summary>
 public sealed class IdleHourOption
 {

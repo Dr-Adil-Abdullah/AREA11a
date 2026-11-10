@@ -31,7 +31,22 @@ public sealed class AuthService
         _log = log;
     }
 
-    public ServiceResult<User> Login(string? name, string secret)
+    public ServiceResult<User> Login(string? name, string secret) =>
+        VerifyCore(name, secret, touchLogin: true, failedAction: "login_failed", okAction: "login",
+            systemError: "Sign-in is not possible right now. Please try again.");
+
+    /// <summary>
+    /// Portion 16: proves a name + password/PIN without signing in, for the protected-close prompt.
+    /// The same throttle, hashes and sentences as <see cref="Login"/> - guessing at the × is slowed
+    /// exactly like guessing at sign-in - but it touches no last_login and audits as an unlock, so
+    /// proving who may close never looks like a sign-in in the black box.
+    /// </summary>
+    public ServiceResult<User> VerifySecret(string? name, string secret) =>
+        VerifyCore(name, secret, touchLogin: false, failedAction: "unlock_failed", okAction: "unlock",
+            systemError: "The password could not be checked right now. Please try again.");
+
+    private ServiceResult<User> VerifyCore(
+        string? name, string secret, bool touchLogin, string failedAction, string okAction, string systemError)
     {
         var cleanName = (name ?? string.Empty).Trim();
 
@@ -62,7 +77,7 @@ public sealed class AuthService
             if (user is null)
             {
                 RegisterFailure(throttleKey);
-                _audit.Record(connection, null, "Auth", "login_failed", "users", null,
+                _audit.Record(connection, null, "Auth", failedAction, "users", null,
                     details: cleanName.Length == 0 ? "no owner account" : $"unknown user '{cleanName}'");
                 return ServiceResult<User>.Fail("No such user, or the account is switched off.");
             }
@@ -77,24 +92,27 @@ public sealed class AuthService
             if (!valid)
             {
                 RegisterFailure(throttleKey);
-                _audit.Record(connection, user, "Auth", "login_failed", "users", user.Id.ToString(),
+                _audit.Record(connection, user, "Auth", failedAction, "users", user.Id.ToString(),
                     details: "wrong password/PIN");
                 return ServiceResult<User>.Fail("The password or PIN is not correct.");
             }
 
             ClearFailures(throttleKey);
 
-            _db.Execute(connection, "UPDATE users SET last_login_at = @at WHERE id = @id;",
-                new { at = Clock.Now(), id = user.Id });
+            if (touchLogin)
+            {
+                _db.Execute(connection, "UPDATE users SET last_login_at = @at WHERE id = @id;",
+                    new { at = Clock.Now(), id = user.Id });
+            }
 
-            _audit.Record(connection, user, "Auth", "login", "users", user.Id.ToString());
+            _audit.Record(connection, user, "Auth", okAction, "users", user.Id.ToString());
 
             return ServiceResult<User>.Success(user);
         }
         catch (Exception exception)
         {
             _log.Error("Login failed because of a system error.", exception);
-            return ServiceResult<User>.Fail("Sign-in is not possible right now. Please try again.");
+            return ServiceResult<User>.Fail(systemError);
         }
     }
 

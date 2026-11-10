@@ -564,6 +564,13 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
                     ? null
                     : "The sign-out time must be 1, 2, 4, 6 or 12 hours (or 0 for the 12-hour limit only).";
 
+            // Startup and close (Portion 16). Three words only: anything else would silently become
+            // manual on read, and a mode that silently changes itself is worse than a refusal.
+            case "startup.mode":
+                return TextValue(value) is "manual" or "auto" or "protected"
+                    ? null
+                    : "The startup mode must be manual, auto or protected.";
+
             default:
                 return null;
         }
@@ -811,6 +818,11 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         // pending, so an old database opens with nothing to complain about.
         Text("session.handoverAt", string.Empty);
         Text("session.handoverBy", string.Empty);
+
+        // ---- Startup and close (Portion 16): manual starts and closes by hand; auto starts with
+        // Windows; protected also asks for the password on every close. Manual by default: the
+        // shop must opt into auto-start and protection on purpose.
+        Text("startup.mode", "manual");
 
         // ---- Application section labels (E-12/S-05) ----
         // One catalog supplies the defaults, the editor, the Core guard and the WPF resources.

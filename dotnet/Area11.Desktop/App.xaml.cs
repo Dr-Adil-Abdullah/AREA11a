@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Threading;
 using Area11.Core.Models;
 using Area11.Core.Utils;
@@ -13,6 +14,12 @@ public partial class App : Application
     private LoginWindow? _loginWindow;
     private bool _loggingOut;
 
+    /// <summary>
+    /// Portion 16: true once Windows announced it is going down. The protected-close prompt must
+    /// never block an OS shutdown - the honest limit is that it cannot, so it does not try.
+    /// </summary>
+    internal static bool IsSystemShutdown { get; private set; }
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -21,12 +28,28 @@ public partial class App : Application
         // crash file and print the same text on the console the batch file is watching.
         DispatcherUnhandledException += OnDispatcherException;
         AppDomain.CurrentDomain.UnhandledException += OnDomainException;
+        SessionEnding += (_, _) => IsSystemShutdown = true;
 
         try
         {
             _services = AppServices.Create();
             LabelResources.Apply(_services.AppLabels);
             IconAssets.Apply(_services);
+
+            // The Shift-at-startup recovery (Portion 16, owner's word): protection off, back to
+            // manual. Said out loud in a box, because a silent reset would read as a bug the next
+            // time × closes without asking.
+            if ((Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift))
+                && _services.Startup.IsProtected)
+            {
+                _services.Startup.ResetToManual();
+                RunTrail.Step("startup protection reset by Shift-at-startup");
+                MessageBox.Show(
+                    "Closing protection was switched off and Area11 is back to manual start. " +
+                    "This was written to the black box. Pick a mode again in Settings, Shop " +
+                    "when you are ready.",
+                    "Area11", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
 
             // Every button that fails writes one line to the same log the rest of the program uses
             // (v0.34.0, D-90). Set once, here, because this is the first moment the log exists.
@@ -136,6 +159,7 @@ public partial class App : Application
         {
             _loggingOut = true;
             ShowLogin();
+            shell.AllowClose = true;
             shell.Close();
             _loggingOut = false;
         };
@@ -146,11 +170,17 @@ public partial class App : Application
         {
             _loggingOut = true;
             ShowLogin();
+            shell.AllowClose = true;
             shell.Close();
             _loggingOut = false;
         };
 
-        _loginWindow?.Close();
+        if (_loginWindow is not null)
+        {
+            _loginWindow.AllowClose = true;
+            _loginWindow.Close();
+        }
+
         _loginWindow = null;
 
         MainWindow = shell;

@@ -17,6 +17,9 @@ public sealed class LoginViewModel : ObservableObject
         SignInCommand = new RelayCommand(() => SignIn(Secret));
     }
 
+    /// <summary>Portion 16: the sign-in window needs the startup policy for its own ×.</summary>
+    public AppServices Services => _services;
+
     public event Action<User>? SignedIn;
 
     public RelayCommand SignInCommand { get; }
