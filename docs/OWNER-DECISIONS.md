@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## تازہ status — Master Portion 6 مکمل، v0.46.0 Rust
+
+خرید والے صفحے پر expiry چننے کا انتظام: مہینہ + سال کے خانے اور کیلنڈر؛ لکھنا اور خالی چھوڑنا ویسے ہی؛ نیچے زندہ لائن بتاتی ہے کیا محفوظ ہوگا (`June 2027 · stored as 2027-06-30`)، غلط لکھنے پر سرخ رہنمائی۔ پٹی پر چھپی صورت `06/27` اب ویسے ہی پڑھی جاتی ہے (ہمیشہ 2000–2099)؛ پرانی صورتیں اور محفوظ شدہ expiry ویسے ہی۔ **996 written cases، 57/57 static؛ Windows/xUnit اور physical pending**۔ نیا Portion 18 (دستاویزات پر اپنے خانے) اگلا منظورشدہ؛ Portion 17 paused۔
+
 ## تازہ status — Master Portion 5 مکمل، v0.45.0 Sienna (D-100)
 
 محفوظ مقامی drafts تیار: بل اور خرید دونوں کے ادھورے کام کا مسودہ محفوظ/کھول/مکمل/post ہو سکتا ہے۔ مسودہ رہنے تک **کوئی بل، خرید، ادائیگی، اسٹاک یا مالی اثر نہیں** اور sync میں بھی نہیں جاتا۔ حتمی post وہی پرانا guarded راستہ چلاتی ہے، کوئی guard کمزور نہیں۔ دوہرا post ناممکن (پہلے نشان، پھر دستاویز)؛ ناکام post پر مسودہ بحال؛ درمیان میں رکنے والا مسودہ صرف تصدیق کے بعد discard۔ Drafts ہر مجاز شخص کے لیے **مشترکہ**، discard وجہ اور audit کے ساتھ۔ **988 written cases، 57/57 static؛ Windows/xUnit اور physical pending**۔ Portion 6 (expiry picker) اگلا منظورشدہ؛ Portion 18 اس کے بعد؛ Portion 17 paused۔
@@ -2700,6 +2704,7 @@ restart نہیں (Spec 8.4.3)۔
 
 | تاریخ | کیا |
 |---|---|
+| 10 نومبر 2026 | **Expiry picker — v0.46.0 Rust `#B7410E`**: خرید صفحے پر مہینہ/سال + کیلنڈر، لکھنا/خالی ویسے ہی، زندہ stored-form لائن، `MM/YY` ہمیشہ 2000–2099، پرانی صورتیں بعینہ؛ **996 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
 | 10 نومبر 2026 | **D-100 / محفوظ مشترکہ drafts — v0.45.0 Sienna `#A0522D`**: بل اور خرید دونوں کے مسودے (save/open/update/discard/final-post)، مسودہ رہنے تک کوئی مالی/اسٹاک/sync اثر نہیں، حتمی post وہی guarded Create، دوہرا post ناممکن، ناکام post پر بحالی، مشترکہ visibility، وجہ+audited discard؛ **988 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
 | 10 نومبر 2026 | **D-100 / ہر خانے کا اختیار مالک کا + staged تصویر + مشترکہ drafts — v0.44.0 Henna `#7A3B1F`**: لازمی تصویر definable، نئے ریکارڈ فارموں میں staged-photo picker (atomic attach، rollback پر نقل صاف)، نام ہمیشہ لازمی، drafts مشترکہ، سپلائر-edit نہیں، بل/خرید/اخراجات کے خانے نیا Portion 18 (Portion 6 کے بعد)؛ **976 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
 | 1 نومبر 2026 | **D-99 / Master checklist Phase 1 — v0.39.0 Tourmaline `#7A1F5C`**: مالک نے **Q1=A / Q2=C / Q3=A / Q4=C + APPROVE** سے صرف schema/data contracts کی اجازت دی۔ Migration 030، local drafts، managed catalog/supplier/drawer contracts، format 3، 130 settings اور guarded isolated-test rebuild + technical snapshot؛ **918 written cases، 57/57 static checks، 17/17 raw SQLite groups**۔ Windows/xUnit/WPF/real cloud/physical pending؛ Phases 2–7 غیر منظور، fake demo shop واپس نہیں۔ |

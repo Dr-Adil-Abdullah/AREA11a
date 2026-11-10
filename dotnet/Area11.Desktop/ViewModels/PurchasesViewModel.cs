@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using Area11.Core.Models;
 using Area11.Core.Services;
 using Area11.Core.Utils;
@@ -27,6 +28,8 @@ public sealed class PurchasesViewModel : ObservableObject
     private string _quantity = "1";
     private string _batchNo = string.Empty;
     private string _expiry = string.Empty;
+    private ExpiryMonth? _selectedExpiryMonth;
+    private int? _selectedExpiryYear;
     private string _costText = string.Empty;
     private string _retailText = string.Empty;
     private bool _isSample;
@@ -49,6 +52,9 @@ public sealed class PurchasesViewModel : ObservableObject
         DraftsCommand = new RelayCommand(OpenDrafts);
         AddSupplierCommand = new RelayCommand(AddSupplier);
         RefreshCommand = new RelayCommand(LoadLookups);
+
+        foreach (var month in Area11.Core.Utils.Expiry.MonthOptions()) ExpiryMonths.Add(month);
+        foreach (var year in Area11.Core.Utils.Expiry.YearOptions(TimeSource.Now.Year, 13)) ExpiryYears.Add(year);
 
         LoadLookups();
     }
@@ -150,7 +156,91 @@ public sealed class PurchasesViewModel : ObservableObject
     public string Expiry
     {
         get => _expiry;
-        set => SetProperty(ref _expiry, value);
+        set
+        {
+            if (SetProperty(ref _expiry, value))
+            {
+                OnPropertyChanged(nameof(ExpiryHint));
+                OnPropertyChanged(nameof(IsExpiryHintError));
+                OnPropertyChanged(nameof(PickedExpiryDate));
+            }
+        }
+    }
+
+    /// <summary>
+    /// The month and year drop-downs (Portion 6): medicine strips print a month, not a day.
+    /// Choosing both writes "yyyy-MM" into the box; typing stays free and blank stays allowed.
+    /// </summary>
+    public ObservableCollection<ExpiryMonth> ExpiryMonths { get; } = new();
+
+    public ObservableCollection<int> ExpiryYears { get; } = new();
+
+    public ExpiryMonth? SelectedExpiryMonth
+    {
+        get => _selectedExpiryMonth;
+        set
+        {
+            if (SetProperty(ref _selectedExpiryMonth, value))
+            {
+                ApplyMonthYear();
+            }
+        }
+    }
+
+    public int? SelectedExpiryYear
+    {
+        get => _selectedExpiryYear;
+        set
+        {
+            if (SetProperty(ref _selectedExpiryYear, value))
+            {
+                ApplyMonthYear();
+            }
+        }
+    }
+
+    /// <summary>
+    /// The calendar aid for an exact printed day. Month forms and legacy text read back as null,
+    /// so the calendar never fights what was typed - picking a day writes "yyyy-MM-dd".
+    /// </summary>
+    public DateTime? PickedExpiryDate
+    {
+        get
+        {
+            var formats = new[] { "yyyy-MM-dd", "yyyy/MM/dd", "dd-MM-yyyy", "dd/MM/yyyy" };
+            return DateTime.TryParseExact(Expiry.Trim(), formats, CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var date) ? date : null;
+        }
+        set
+        {
+            if (value is null) return;
+            SelectedExpiryMonth = null;
+            SelectedExpiryYear = null;
+            Expiry = value.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        }
+    }
+
+    /// <summary>Live line under the box: what the text means and exactly what would be stored.</summary>
+    public string ExpiryHint =>
+        Area11.Core.Utils.Expiry.TryDescribe(Expiry, out var description)
+            ? description
+            : "Use 2027-06, 06/27 or 2027-06-30.";
+
+    public bool IsExpiryHintError => !Area11.Core.Utils.Expiry.TryDescribe(Expiry, out _);
+
+    private void ApplyMonthYear()
+    {
+        if (SelectedExpiryMonth is null || SelectedExpiryYear is null) return;
+        Expiry = SelectedExpiryYear.Value.ToString(CultureInfo.InvariantCulture) + "-"
+            + SelectedExpiryMonth.Number.ToString("00", CultureInfo.InvariantCulture);
+    }
+
+    private void ClearExpiryPicks()
+    {
+        // Either pick on its own never writes the box (ApplyMonthYear needs both), so clearing
+        // through the properties is safe and keeps the drop-downs in sync.
+        SelectedExpiryMonth = null;
+        SelectedExpiryYear = null;
     }
 
     public string CostText
@@ -280,7 +370,7 @@ public sealed class PurchasesViewModel : ObservableObject
 
         if (Expiry.Trim().Length > 0 && !Area11.Core.Utils.Expiry.TryNormalize(Expiry, out _, out _))
         {
-            SetStatus("Expiry must look like 2027-06 or 2027-06-30.", true);
+            SetStatus("Expiry must look like 2027-06, 06/27 or 2027-06-30.", true);
             return;
         }
 
@@ -307,6 +397,7 @@ public sealed class PurchasesViewModel : ObservableObject
 
         BatchNo = string.Empty;
         Expiry = string.Empty;
+        ClearExpiryPicks();
         Quantity = "1";
         IsSample = false;
         OnPropertyChanged(nameof(TotalText));

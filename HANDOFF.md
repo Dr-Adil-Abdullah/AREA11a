@@ -1,11 +1,11 @@
 # HANDOFF - read this first
 
-> **WIP handoff, 24 Oct 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/60395e95-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/60395e95-area11a). Portion 5 finished in v0.45.0 Sienna (Windows/physical pending); Portion 6 approved next; new Portion 18 after 6; Portion 17 paused. Older status and approval statements below are historical. This branch is not a tested release.
+> **WIP handoff, 24 Oct 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/60395e95-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/60395e95-area11a). Portion 6 finished in v0.46.0 Rust (Windows/physical pending); new Portion 18 approved next; Portion 17 paused. Older status and approval statements below are historical. This branch is not a tested release.
 
 
-## Latest handoff — v0.45.0 Sienna
+## Latest handoff — v0.46.0 Rust
 
-Portion 5 finished: safe local sale/purchase drafts, shared across permitted staff (D-100) — save/open/update/discard/final-post, draft-only until a separately validated final post through the existing guarded Create entry points, double post impossible. **988 written cases, 57/57 static; Windows build/xUnit and physical checks pending.** Portion 6 next; new Portion 18 after 6; Portion 17 paused.
+Portion 6 finished: expiry picker on the purchase page — month/year drop-downs + calendar, typing and blank unchanged, live stored-form hint, strip form `06/27` accepted. **996 written cases, 57/57 static; Windows build/xUnit and physical checks pending.** New Portion 18 (fields on documents) next; Portion 17 paused.
 
 
 ## Latest handoff — v0.43.0 Umber

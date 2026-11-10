@@ -107,8 +107,39 @@
                                 <TextBox Text="{Binding BatchNo, UpdateSourceTrigger=PropertyChanged}" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
-                                <TextBlock Text="Expiry (2027-06)" Style="{StaticResource FieldLabel}" />
-                                <TextBox Text="{Binding Expiry, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock Text="Expiry" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding Expiry, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="Type it as printed: 2027-06, 06/27 or 2027-06-30. Blank means no expiry." />
+                                <Grid Margin="0,4,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="4" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox Grid.Column="0" ItemsSource="{Binding ExpiryMonths}"
+                                              SelectedItem="{Binding SelectedExpiryMonth, Mode=TwoWay}"
+                                              DisplayMemberPath="Label"
+                                              ToolTip="Pick the month printed on the strip." />
+                                    <ComboBox Grid.Column="2" ItemsSource="{Binding ExpiryYears}" Width="76"
+                                              SelectedItem="{Binding SelectedExpiryYear, Mode=TwoWay}"
+                                              ToolTip="Pick the year printed on the strip." />
+                                </Grid>
+                                <DatePicker SelectedDate="{Binding PickedExpiryDate, Mode=TwoWay}"
+                                            Margin="0,4,0,0" HorizontalAlignment="Left"
+                                            ToolTip="Calendar for an exact printed day. The month boxes above cover the usual strip form." />
+                                <TextBlock Text="{Binding ExpiryHint}" TextWrapping="Wrap" FontSize="11" Margin="0,4,0,0">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsExpiryHintError}" Value="True">
+                                                    <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                                                    <Setter Property="FontWeight" Value="Bold" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
                             </StackPanel>
                         </Grid>
 
