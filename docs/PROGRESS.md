@@ -1,5 +1,9 @@
 # PROGRESS - the feature board (what is done, what is next)
 
+## Owner update — Kyanite and next workflow
+
+Owner reports **v0.42.0 Kyanite: 929/929 tests passed, none failed**. Detailed runner output and skipped count were not supplied; do not infer Desktop/WPF or PT-14 physical pass. Portion 4 remains approved and in analysis/implementation planning, not finished. At each portion's completion supply exact changes, targeted checks and the next portion; late test feedback is logged by version and is not a routine blocker. Serious data/security/financial risks take priority. Owner requested a new Portion 16: manual/normal; auto-start/normal close; auto-start/protected close using owner password or explicitly permitted staff. Minimize semantics, pre-login behavior and recovery remain to clarify before implementation.
+
 ## Owner evidence and Portion 4 start
 
 Owner supplied v0.41.0 Siderite Windows Core/Tests **922 passed, 0 failed, 0 skipped, 922 total (1m 21s)**. This is not a Desktop/WPF or physical pass, and not the v0.42.0 Kyanite 929-case run. PT-12/PT-13 physical verification and Kyanite Windows/PT-14 remain pending. Owner approved starting Portion 4. Initial review: migration 030 has native-field metadata and acknowledgement constraints but no populated native definitions or native policy service; existing Settings custom-field screen covers Product/Customer/Supplier. A central UI must not promise optional built-in behavior before form and safe posting paths actually honor it. Portion 5 drafts and Portion 6 expiry picker remain separately approved work; keep final-post safeguards intact.

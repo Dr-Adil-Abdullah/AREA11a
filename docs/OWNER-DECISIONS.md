@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## Owner request — Portion 16 startup and close modes
+
+Owner describes three Settings modes: manual start/normal close; automatic start on Windows sign-in/normal close; automatic start with closing authorized by owner password or staff explicitly granted the close permission in Staff & Permissions. The exact minimize behavior and pre-login/recovery cases need confirmation when designing Portion 16. A regular application cannot guarantee prevention of OS shutdown, power loss or forced termination. Requested for later, not implemented.
+
 ## تازہ status — Master Portion 3، v0.42.0 Kyanite
 
 مالک نے NEXT سے primary category / additional tags Portion 3 کی اجازت دی۔ Code review میں product-list projection سے editor کھولنے پر tag IDs خالی آنے اور save سے tags ضائع ہونے کا خطرہ ملا؛ editor اب مکمل record پڑھتا ہے۔ اضافی tags کے لیے primary واضح منتخب ہوگا؛ tags نہ ہوں تو category خالی رہ سکتی ہے۔ پرانے tag-only records پر کوئی guessed primary یا خودکار rewrite نہیں۔ Raw SQLite نے ایک ممکنہ tag-only/Uncategorised حالت دکھائی، مگر مالک کے اصل واقعہ کی exact reproduction نہیں۔ Workbook category updates پر preview/apply guard ہے؛ CSV import tag links نہیں بناتا۔ Category put-away primary unlink کر کے دوسرے tags چھوڑ سکتا ہے؛ مالک کا جائزہ باقی ہے۔ **929 written cases، 57/57 static؛ Windows/xUnit اور PT-14 pending**۔ Portions 4–15 الگ approval مانگتے ہیں۔

@@ -1,12 +1,18 @@
 # Area11 — Real-life Physical Testing Log
 
+## مالک کا Kyanite test نتیجہ اور آئندہ طریقۂ کار
+
+مالک نے اطلاع دی: **v0.42.0 Kyanite کے تمام 929 tests پاس، کوئی fail نہیں**۔ یہ مالک کی فراہم کردہ test اطلاع ہے؛ تفصیلی runner log، skipped count، Desktop/WPF build/launch اور PT-14 physical walkthrough اس اطلاع سے ثابت نہیں ہوتے اور جہاں ثبوت نہیں ملا وہاں pending ہیں۔ Siderite 922/922 پہلے سے OK ہے، مگر اس کا WPF/physical ثبوت بھی الگ pending ہے۔
+
+ہر مکمل portion کے ساتھ اس کی تبدیلیاں، خصوصی test steps اور اگلا portion بتایا جائے گا۔ مالک کے NEXT پر اگلا portion شروع کیا جائے گا؛ دیر سے آنے والے results متعلقہ version/portion کے تحت درج ہوں گے، physical delay بذاتِ خود کام نہیں روکے گی۔ سنگین data، stock، money، security یا backup مسئلہ ترجیح سے دیکھا جائے گا۔
+
 ## مالک کا Siderite Windows test — Portion 2
 
 مالک کے فراہم کردہ v0.41.0 Siderite output میں **922 passed، 0 failed، 0 skipped، 922 total، 1 منٹ 21 سیکنڈ؛ ALL GREEN - 922 of 922** ہے۔ Log صرف Area11.Core اور Area11.Tests دکھاتا ہے؛ Desktop/WPF build، launch اور PT-12/PT-13 physical walkthrough اس سے ثابت نہیں ہوتے۔ یہ نتیجہ Kyanite v0.42.0 کے 929 tests کا نتیجہ نہیں؛ اس کا Windows run اور PT-14 باقی ہیں۔ مالک نے اگلا حصہ شروع کرنے کی ہدایت دی ہے۔
 
 ## PT-14 — Master Portion 3: primary category اور additional tags
 
-**حالت: code/static تیار؛ v0.42.0 Kyanite Windows build، 929-case xUnit اور owner physical verification باقی۔** Product list کے search rows tag names دکھاتے تھے مگر `CategoryTagIds` نہیں رکھتے تھے؛ اسی row سے editor لوڈ اور save پر tags ضائع ہو سکتے تھے۔ اب editor کھولنے سے پہلے مکمل record پڑھتا ہے۔ فہرست primary اور اضافی categories الگ دکھاتی ہے۔ نئی/بدلی گئی tags کے لیے explicit primary درکار ہے، مگر بغیر tags والا product uncategorised رہ سکتا ہے۔ کوئی tag خود primary نہیں بنتا۔
+**حالت: code/static تیار؛ v0.42.0 Kyanite کے 929/929 tests مالک کی اطلاع کے مطابق پاس؛ Desktop/WPF build اور owner physical verification باقی۔** Product list کے search rows tag names دکھاتے تھے مگر `CategoryTagIds` نہیں رکھتے تھے؛ اسی row سے editor لوڈ اور save پر tags ضائع ہو سکتے تھے۔ اب editor کھولنے سے پہلے مکمل record پڑھتا ہے۔ فہرست primary اور اضافی categories الگ دکھاتی ہے۔ نئی/بدلی گئی tags کے لیے explicit primary درکار ہے، مگر بغیر tags والا product uncategorised رہ سکتا ہے۔ کوئی tag خود primary نہیں بنتا۔
 
 Raw SQLite probe سے ایک **ممکنہ** tag-only product کی primary label `Uncategorised` ہونا ثابت ہوا؛ یہ مالک کے اصل UI واقعہ کی مکمل reproduction نہیں۔ پرانے tag-only records خودکار rewrite نہیں ہوتے؛ غیر متعلقہ partial service updates انہیں برقرار رکھتے ہیں۔ Workbook category clear/tag-promotion اب preview اور apply دونوں پر check ہوتے ہیں؛ CSV import نئے products بناتا ہے اور tags import نہیں کرتا۔ Category put-away اب بھی primary unlink کر کے دوسرے tags چھوڑ سکتا ہے؛ اس رویے پر مالک کا جائزہ باقی ہے، اس لیے app-wide مکمل حل کا دعویٰ نہیں۔ مالی reports صرف primary category گنتی ہیں؛ پرانی financial history نہیں بدلی۔
 
