@@ -1,5 +1,10 @@
 # HANDOFF - read this first
 
+## Latest handoff — v0.39.1 Admiralty
+
+Owner's Tourmaline Core/Tests Windows run was **916 passed / 2 failed / 918**, not green. Admiralty repairs the migration fixture expectation and exact draft `@id` binding, without altering production rules. Static gate 57/57; Windows **918/918 rerun**, WPF and PT-11 pending. Owner allows working on an approved next portion while tests arrive later; urgent safety errors take priority. Part 1 header/navigation is next but its precise master-checklist changes need the owner's clarification.
+
+
 > **New agent: read [`TAKEOVER.md`](TAKEOVER.md) first** - it is the whole handover on one page
 > (state, what is left, non-negotiables, release steps, traps). This file is the long manual behind it.
 >

@@ -1,5 +1,8 @@
 # Area11 — pharmacy POS + inventory for Windows
 
+**Latest verification and repair — v0.39.1 Admiralty `#274A68`:** the owner ran v0.39.0 Tourmaline Core/Tests on Windows and reported **916 passed / 2 failed / 0 skipped / 918**. The two test repairs are in source; **a Windows rerun (918/918), Desktop/WPF and PT-11 remain pending**. Static checks are not compilation. See `PHYSICAL-TESTING.md` for the failure details; Part 1 header/navigation requirements still need clarification.
+
+
 A native **Windows desktop** rebuild of the Area11 Smart Pharmacy & Retail POS + Inventory system,
 written in **C# / .NET 10 / WPF / SQLite**. It works with no internet, keeps the shop's whole
 database in one file, and prints bills instantly on a 58 mm or 80 mm thermal printer.

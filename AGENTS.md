@@ -1,5 +1,10 @@
 # AGENTS.md - how to work in this repository
 
+## Latest handoff — v0.39.1 Admiralty
+
+Owner Windows Tourmaline Core/Tests: **916/918 passed, 2 failed, 0 skipped**. Two test-only fixes correct the 029+030 migration count/ledger and `@id` binding in the draft constraint test; production rules remain unchanged. **57/57 static checks pass; Windows 918/918 rerun and PT-11 remain pending.** Owner permits proceeding on an approved portion while physical results arrive later; urgent financial/data-loss risks take priority. Part 1 header/navigation is next, but the exact new checklist requirements are missing and must be clarified; do not invent UI changes.
+
+
 This file is for **any AI coding agent** that is given only the repository link (the owner's rule
 U-13). Read it fully before touching code; it is short on purpose.
 

@@ -1,5 +1,15 @@
 # Area11 — Real-life Physical Testing Log
 
+## تازہ owner evidence — Tourmaline test failures اور Admiralty repair
+
+مالک نے v0.39.0 Tourmaline کا Windows Core/Tests run بھیجا: **916 passed، 2 failed، 0 skipped، 918 total، 1m 16s**۔ یہ green نہیں اور Desktop/WPF build یا physical PASS نہیں۔
+
+1. `MigrationTests.FieldGovernanceMigration_BackfillsStableKeysAndKeepsAnswers`: pre-029 fixture اب 029 اور 030 دونوں چلاتی ہے، مگر پرانا assertion صرف 1 مانگتا تھا۔ v0.39.1 میں 2، دونوں ledger IDs، idempotent rerun اور legacy answer preservation چیک ہیں۔
+2. `MasterFoundationTests.DraftsValidateJsonAndNeverBecomeFinancialDocumentsByThemselves`: `@id` کے لیے anonymous parameter `Id` کے بجائے exact `id` دے دیا گیا۔ اب SQLite constraint error code 19 اور draft کا unchanged/unposted رہنا بھی assert ہے۔ Schema یا posting guard نہیں بدلا۔
+
+**حالت:** v0.39.1 Admiralty repair لکھی گئی، Windows retest pending؛ **ALL GREEN - 918 of 918** اور PT-11 اب بھی درکار ہیں۔ یہاں .NET/xUnit یا WPF execute نہیں ہوا۔ مالک نے late physical results کے باوجود اگلا approved portion جاری رکھنے کی ہدایت دی؛ بعد کا feedback محفوظ اور حل ہوگا، مگر سنگین data/financial risk کو فوری ترجیح دی جائے گی۔ Part 1 header/navigation کی تفصیلی master-checklist scope ابھی مالک سے واضح ہونی ہے؛ کوئی UI change اس repair میں شامل نہیں۔
+
+
 یہ مالک کی عملی ٹیسٹنگ، تجاویز اور درخواست کردہ تبدیلیوں کی مستقل فائل ہے۔ ہر نتیجہ اور نئی بات اسی فائل میں شامل ہوگی تاکہ testing کے اختتام پر کوئی نکتہ نہ بھولے۔
 
 **مالک کا consolidated printable tracker:** [PDF](docs/AREA11-TESTING-TRACKER-URDU.pdf) · [RTL HTML](docs/AREA11-TESTING-TRACKER-URDU.html) · [editable Markdown](docs/AREA11-TESTING-TRACKER-URDU.md)۔ وہ snapshot PT-01 تا PT-10 اور manual instructions کے لیے ہے؛ running feedback کا ماخذ یہی فائل رہے گی۔

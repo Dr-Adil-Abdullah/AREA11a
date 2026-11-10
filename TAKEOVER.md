@@ -1,5 +1,10 @@
 # TAKEOVER — the complete brief for a new agent
 
+## Latest handoff — v0.39.1 Admiralty
+
+The owner ran Tourmaline Core/Tests on Windows: **916 passed, 2 failed, 0 skipped, 918 total**. Admiralty repairs two test fixtures: 029+030 pending migration count/ledger and exact `@id` parameter for the draft constraint. No production rule or migration was changed. **57/57 static checks; no .NET/xUnit execution here.** The owner must rerun for 918/918; Desktop/WPF and PT-11 remain separate. The owner allows approved next portions while test results arrive later, with urgent safety faults prioritized. Part 1 header/navigation has been requested but exact master-checklist changes are not in the available summary; clarify before inventing a design.
+
+
 > ## اردو میں، پہلے پانچ سطریں
 > یہ فائل اِس لیے ہے کہ آپ (مالک) ریپو کا لنک کسی **نئے ایجنٹ** کو دیں اور وہ **یہیں سے** کام شروع کرے۔
 > نئے ایجنٹ کو صرف یہی ایک فائل پڑھنی ہے؛ اِس کے بعد وہ خود `docs/PROGRESS.md` (کیا بنا، کیا باقی)،

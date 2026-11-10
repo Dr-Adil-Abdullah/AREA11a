@@ -5061,6 +5061,16 @@ def check_master_foundation() -> None:
     tests = tests_path.read_text(encoding="utf-8-sig")
     sync_tests = sync_tests_path.read_text(encoding="utf-8-sig")
 
+    # Owner Windows run exposed a provider-sensitive Dapper parameter case mismatch: keep the
+    # constraint test reaching SQLite rather than passing on a missing-parameter exception.
+    if 'new { id = draft.Id }' not in tests or 'error.SqliteErrorCode' not in tests:
+        fail("Draft negative test must bind @id exactly and verify a SQLite constraint error")
+    migration_tests = (DOTNET / "Area11.Tests/MigrationTests.cs").read_text(encoding="utf-8-sig")
+    if ('Assert.Equal(2, runner.ApplyPending(TestDatabase.MigrationsFolder))' not in migration_tests
+            or '030_master_foundation' not in migration_tests
+            or '029_field_governance' not in migration_tests):
+        fail("Pre-029 upgrade test must apply both 029 and 030 and verify the ledger")
+
     for table in ("form_field_definitions", "document_drafts", "generic_formulas", "brands",
                   "shift_discrepancies"):
         if not re.search(rf"CREATE TABLE IF NOT EXISTS {table}\s*\(", migration):

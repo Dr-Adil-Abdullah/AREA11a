@@ -119,9 +119,16 @@ public sealed class MasterFoundationTests
         }
 
         // A draft cannot even be marked posted without the resulting document id and timestamp.
-        Assert.Throws<SqliteException>(() => test.Database.Tx(connection =>
+        var error = Assert.Throws<SqliteException>(() => test.Database.Tx(connection =>
             test.Database.Execute(connection,
-                "UPDATE document_drafts SET status = 'posted' WHERE id = @id;", new { draft.Id })));
+                "UPDATE document_drafts SET status = 'posted' WHERE id = @id;", new { id = draft.Id })));
+        Assert.Equal(19, error.SqliteErrorCode); // SQLite constraint, not a missing parameter.
+        var unchanged = test.Database.QuerySingle<DocumentDraft>(connection,
+            "SELECT * FROM document_drafts WHERE id = @id;", new { id = draft.Id });
+        Assert.NotNull(unchanged);
+        Assert.Equal(DraftStatus.Draft, unchanged!.Status);
+        Assert.Null(unchanged.PostedDocumentId);
+        Assert.Null(unchanged.PostedAt);
     }
 
     [Fact]

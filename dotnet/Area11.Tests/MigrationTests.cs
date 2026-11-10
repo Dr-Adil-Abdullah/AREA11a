@@ -248,9 +248,14 @@ INSERT INTO custom_values(field_id, entity, entity_id, value, updated_at)
 VALUES(7, 'product', 42, 'keep this answer', '2026-01-01');");
             });
 
-            Assert.Equal(1, runner.ApplyPending(TestDatabase.MigrationsFolder));
+            // This pre-029 database must receive both the governance and master-foundation migrations.
+            Assert.Equal(2, runner.ApplyPending(TestDatabase.MigrationsFolder));
+            Assert.Equal(0, runner.ApplyPending(TestDatabase.MigrationsFolder));
 
             using var connection = database.Open();
+            var appliedIds = database.Query<string>(connection,
+                "SELECT id FROM _migrations WHERE id LIKE '029_%' OR id LIKE '030_%' ORDER BY id;");
+            Assert.Equal(new[] { "029_field_governance", "030_master_foundation" }, appliedIds);
             var row = database.QuerySingle<LegacyFieldRow>(connection, @"
 SELECT cf.field_key AS fieldKey, cf.help_text AS helpText, cv.value AS value
 FROM custom_fields cf JOIN custom_values cv ON cv.field_id = cf.id

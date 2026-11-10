@@ -1,5 +1,10 @@
 # PROGRESS - the feature board (what is done, what is next)
 
+## Latest owner evidence and repair — v0.39.1 Admiralty
+
+The owner ran Tourmaline Core/Tests on Windows: **916 passed, 2 failed, 0 skipped / 918**, 1m16s; this is not a green run or WPF evidence. Admiralty corrects the 029+030 pending migration assertion and binds the draft test's `@id` exactly, additionally checking the SQLite constraint and unchanged draft. No production rule or migration changed. **57/57 static checks pass; Windows xUnit rerun (918/918), Desktop/WPF and PT-11 remain pending.** Owner permits proceeding with an approved next portion while physical results arrive later; urgent financial/data-safety failures take priority. Part 1 is header/navigation; its exact new master-checklist requirements still need clarification before UI changes.
+
+
 **This is the file to read first if you are taking over.** It lists every feature of the rebuild
 with an ID, its state, the files that implement it, the test that proves it, and what "done" means.
 [`RULES-MATRIX.md`](RULES-MATRIX.md) covers the owner's 116 numbered rules; this file covers the
