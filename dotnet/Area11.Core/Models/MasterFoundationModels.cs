@@ -132,7 +132,7 @@ public sealed class DraftSummary
     /// <summary>True when a previous post was interrupted after the pre-mark; see DraftService.</summary>
     public bool NeedsPostCheck { get; set; }
 
-    public string TypeLabel => DraftType.LabelFor(DraftType);
+    public string TypeLabel => global::Area11.Core.Models.DraftType.LabelFor(DraftType);
 
     public string Headline =>
         DraftKey + " · " + Lines + (Lines == 1 ? " line" : " lines")
