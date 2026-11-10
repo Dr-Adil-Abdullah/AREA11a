@@ -69,11 +69,11 @@ public class ReturnLineOption
 
     public bool CanReturn => RemainingBase > 0.0005;
 
-    public string SoldLabel => $"{Utils.Qty.Format(QtyEntered)} {UnitSold}";
+    public string SoldLabel => $"{Utils.Qty.Format(QtyEntered)} {Utils.Packs.Display(UnitSold)}";
 
     public string ReturnedLabel => Utils.Qty.Format(AlreadyReturnedBase);
 
-    public string RemainingLabel => $"{Utils.Qty.Format(RemainingUnits)} {UnitSold}";
+    public string RemainingLabel => $"{Utils.Qty.Format(RemainingUnits)} {Utils.Packs.Display(UnitSold)}";
 
     public string RemainingMoneyLabel => Utils.Money.Format(RemainingPaisa);
 }
@@ -143,7 +143,7 @@ public sealed class QuarantineItem
 
     public string? DisposedNote { get; set; }
 
-    public string QuantityLabel => $"{Utils.Qty.Format(QtyEntered > 0 ? QtyEntered : QtyBase)} {UnitSold ?? "base"}";
+    public string QuantityLabel => $"{Utils.Qty.Format(QtyEntered > 0 ? QtyEntered : QtyBase)} {Utils.Packs.Display(UnitSold)}";
 
     public string DispositionLabel => Disposition switch
     {

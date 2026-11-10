@@ -141,7 +141,7 @@ WHERE sale_id = @id AND method <> 'credit' ORDER BY id;", new { id = saleId });
         foreach (var item in items)
         {
             var quantity = Qty.Format(item.QtyEntered);
-            var unit = string.IsNullOrWhiteSpace(item.UnitSold) ? "unit" : item.UnitSold;
+            var unit = Packs.Display(item.UnitSold);
             var amount = Money.Fixed(item.LineTotalPaisa);
 
             Add(item.NameSnapshot);

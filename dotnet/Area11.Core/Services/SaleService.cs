@@ -411,8 +411,10 @@ FROM products WHERE id = @id AND active = 1;",
 
             var requestedUnit = (lineInput.Unit ?? "base").Trim().ToLowerInvariant();
             // Older callers sometimes sent the actual base-unit label instead of the "base" token.
-            // Keep that harmless spelling, but never treat a different strength unit (ml) as stock.
+            // The screens now say "unit" for one loose single; both spellings mean the base token,
+            // but never treat a different strength unit (ml) as stock.
             var unit = requestedUnit.Equals(product.BaseUnit, StringComparison.OrdinalIgnoreCase)
+                || requestedUnit == "unit"
                 ? "base"
                 : requestedUnit;
             if (unit is not ("base" or "strip" or "box"))

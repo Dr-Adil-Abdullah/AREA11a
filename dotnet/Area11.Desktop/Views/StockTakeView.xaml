@@ -114,8 +114,17 @@
                             </DockPanel>
 
                             <ListBox ItemsSource="{Binding Found}" Height="90" Margin="0,6,0,0"
-                                     DisplayMemberPath="Name"
-                                     SelectedItem="{Binding FoundProduct, Mode=TwoWay}" />
+                                     SelectedItem="{Binding FoundProduct, Mode=TwoWay}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Name}" Width="170" />
+                                            <TextBlock Text="{Binding StrengthLabel, Mode=OneWay}" Width="70" Foreground="{StaticResource MutedBrush}" />
+                                            <TextBlock Text="{Binding PackSizeLabel, Mode=OneWay}" Foreground="{StaticResource MutedBrush}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
 
                             <Button Content="Add the selected medicine" Style="{StaticResource GhostButton}"
                                     HorizontalAlignment="Left" Margin="0,6,0,0" Command="{Binding AddFoundCommand}" />

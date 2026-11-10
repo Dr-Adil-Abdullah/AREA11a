@@ -252,9 +252,7 @@ public sealed class WriteOffViewModel : ObservableObject, IEmptyPage
             return;
         }
 
-        var perUnit = SelectedProduct.UnitsPerBox > 0 && Unit == "box"
-            ? SelectedProduct.UnitsPerBox
-            : Unit == "strip" ? SelectedProduct.UnitsPerStrip : 1;
+        var perUnit = Packs.PerUnit(SelectedProduct.BoxStrips, SelectedProduct.StripTablets, Unit);
 
         Qty.TryParse(QtyText, out var qty);
         var qtyBase = qty * perUnit;

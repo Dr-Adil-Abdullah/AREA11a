@@ -606,9 +606,11 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         }
         var answers = Editor.AnswerValues();
         var isNew = _editingId is null;
+        IReadOnlyList<string> saveWarnings = Array.Empty<string>();
         if (isNew)
         {
             var created = _services.Products.Create(_user, patch, answers, Editor.StagedPhotoForSave());
+            saveWarnings = created.Warnings;
             if (!created.Ok || created.Value <= 0)
             {
                 SetStatus(created.Error ?? "The product could not be saved.", true);
@@ -631,9 +633,8 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         }
 
         Load();
-        SetStatus(isNew
-            ? "Product and extra fields saved."
-            : "Product and extra fields saved.", false);
+        var warningText = saveWarnings.Count > 0 ? " ⚠ " + string.Join(" ", saveWarnings) : string.Empty;
+        SetStatus("Product and extra fields saved." + warningText, saveWarnings.Count > 0);
     }
 
     /// <summary>One predictable doorway for category, company, dashboard and strength links.</summary>

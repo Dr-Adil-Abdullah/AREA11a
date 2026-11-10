@@ -344,7 +344,7 @@ VALUES
                 return newId;
             });
 
-            return ServiceResult<int>.Success(id);
+            return ServiceResult<int>.Success(id, SameNameWarnings(id, name));
         }
         catch (ValidationException exception)
         {
@@ -1425,6 +1425,61 @@ FROM companies WHERE id = @id;", new { id });
     private static string CleanCatalogName(string? name) => (name ?? string.Empty).Trim();
 
     private static bool IsValidSortOrder(int value) => value is >= 0 and <= MaxCatalogSortOrder;
+
+    /// <summary>
+    /// Portion 7: two variants of one medicine share a name by design (50ml / 100ml), so a
+    /// repeated name is a warning, never a refusal. The message names the existing variants, so
+    /// the owner sees at a glance whether the new row is really a new variant or a double entry.
+    /// A warning must never fail a save, so a read problem here stays silent.
+    /// </summary>
+    private string[] SameNameWarnings(int newId, string name)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            var siblings = _db.Query<SiblingRow>(connection, @"
+SELECT strength_value AS strengthValue, strength_unit AS strengthUnit, pack_size_label AS packSizeLabel
+FROM products
+WHERE active = 1 AND id <> @id AND name = @name COLLATE NOCASE
+ORDER BY id
+LIMIT 4;", new { id = newId, name });
+            if (siblings.Count == 0)
+            {
+                return Array.Empty<string>();
+            }
+
+            var labels = siblings.Select(sibling =>
+            {
+                var parts = new List<string>();
+                if (sibling.StrengthValue > 0 && !string.IsNullOrWhiteSpace(sibling.StrengthUnit))
+                {
+                    parts.Add(Utils.Qty.Format(sibling.StrengthValue) + " " + sibling.StrengthUnit!.Trim());
+                }
+                if (!string.IsNullOrWhiteSpace(sibling.PackSizeLabel))
+                {
+                    parts.Add(sibling.PackSizeLabel.Trim());
+                }
+                return parts.Count == 0 ? "no strength or pack noted" : string.Join(", ", parts);
+            }).ToList();
+
+            return siblings.Count == 1
+                ? new[] { "Another medicine shares the name '" + name + "' (" + labels[0] + "). Check strength and pack before selling." }
+                : new[] { siblings.Count + " other medicines share the name '" + name + "' (" + string.Join("; ", labels) + "). Check strength and pack before selling." };
+        }
+        catch
+        {
+            return Array.Empty<string>();
+        }
+    }
+
+    private sealed class SiblingRow
+    {
+        public double StrengthValue { get; set; }
+
+        public string? StrengthUnit { get; set; }
+
+        public string? PackSizeLabel { get; set; }
+    }
 
     private static string? NullIfEmpty(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();

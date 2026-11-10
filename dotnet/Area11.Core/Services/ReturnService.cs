@@ -487,12 +487,18 @@ VALUES(@productId, @batchId, 'return_in', @qty, 'sale_return', @returnOf, @code,
             if (wanted.QtyBase > item.RemainingBase + 0.0005)
             {
                 throw new ValidationException(
-                    $"{item.Name}: this bill had {Qty.Format(item.QtyEntered)} {item.UnitSold}, " +
+                    $"{item.Name}: this bill had {Qty.Format(item.QtyEntered)} {Packs.Display(item.UnitSold)}, " +
                     $"{Qty.Format(item.AlreadyReturnedBase)} already returned - " +
-                    $"now only {Qty.Format(item.RemainingUnits)} {item.UnitSold} can be returned.");
+                    $"now only {Qty.Format(item.RemainingUnits)} {Packs.Display(item.UnitSold)} can be returned.");
             }
 
             var wholeRemainder = Math.Abs(wanted.QtyBase - item.RemainingBase) < 0.0005;
+
+            if (!wholeRemainder && UnitPolicy.RequiresWhole(_db, connection, item.BaseUnit) && !Qty.IsWhole(wanted.QtyBase))
+            {
+                throw new ValidationException(
+                    item.Name + ": a return uses whole " + (item.BaseUnit ?? "unit") + " units; strength is not a stock division.");
+            }
 
             var refund = wholeRemainder
                 ? item.RemainingPaisa
@@ -657,9 +663,10 @@ GROUP BY a.sale_item_id;", new { id = sale.Id })
             .ToDictionary(row => row.SaleItemId);
 
         var items = _db.Query<ItemRow>(connection, @"
-SELECT id AS saleItemId, product_id AS productId, batch_id AS batchId, name_snapshot AS name,
-       qty_base AS qtyBase, qty_entered AS qtyEntered, unit_sold AS unitSold, line_total_paisa AS lineTotalPaisa
-FROM sale_items WHERE sale_id = @id ORDER BY id;", new { id = sale.Id });
+SELECT si.id AS saleItemId, si.product_id AS productId, si.batch_id AS batchId, si.name_snapshot AS name,
+       si.qty_base AS qtyBase, si.qty_entered AS qtyEntered, si.unit_sold AS unitSold,
+       si.line_total_paisa AS lineTotalPaisa, p.base_unit AS baseUnit
+FROM sale_items si LEFT JOIN products p ON p.id = si.product_id WHERE si.sale_id = @id ORDER BY si.id;", new { id = sale.Id });
 
         foreach (var item in items)
         {
@@ -704,6 +711,8 @@ FROM sale_items WHERE sale_id = @id ORDER BY id;", new { id = sale.Id });
     private sealed class ItemRow : ReturnLineOption
     {
         public int? BatchId { get; set; }
+
+        public string? BaseUnit { get; set; }
     }
 
     private sealed class ReturnedRow

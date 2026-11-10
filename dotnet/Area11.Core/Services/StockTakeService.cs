@@ -628,7 +628,8 @@ ORDER BY p.name COLLATE NOCASE, b.expiry_date, i.id;", new { sessionId });
             return _db.Query<Product>(connection, @"
 SELECT p.id AS id, p.name AS name, p.base_unit AS baseUnit, p.box_strips AS boxStrips,
        p.strip_tablets AS stripTablets, p.cost_paisa AS costPaisa, p.retail_paisa AS retailPaisa,
-       p.reorder_level AS reorderLevel, p.active AS active
+       p.reorder_level AS reorderLevel, p.active AS active, p.strength_value AS strengthValue,
+       p.strength_unit AS strengthUnit, p.pack_size_label AS packSizeLabel
 FROM products p
 WHERE p.active = 1
   AND (@term = '' OR p.name LIKE @like)
@@ -673,19 +674,8 @@ LEFT JOIN users u ON u.id = t.user_id
 LEFT JOIN users a ON a.id = t.applied_by
 WHERE t.id = @id;", new { id });
 
-    private static double PerUnit(LineDbRow line, string? unit)
-    {
-        var word = (unit ?? string.Empty).Trim().ToLowerInvariant();
-        var perStrip = Math.Max(1, line.StripTablets);
-        var perBox = Math.Max(1, line.BoxStrips) * perStrip;
-
-        return word switch
-        {
-            "box" => line.BoxStrips > 0 ? perBox : 1,
-            "strip" => line.StripTablets > 0 ? perStrip : 1,
-            _ => 1
-        };
-    }
+    private static double PerUnit(LineDbRow line, string? unit) =>
+        Packs.PerUnit(line.BoxStrips, line.StripTablets, unit);
 
     // -------------------------------------------------------------------- types
 

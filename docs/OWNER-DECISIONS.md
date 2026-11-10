@@ -1,8 +1,8 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
-## تازہ status — نیا Portion 18 مکمل، v0.47.0 Moss
+## تازہ status — Portion 7 مکمل، v0.48.0 Russet
 
-بل، خرید اور اخراجات پر مالک کے اپنے سوالات: ہر فارم کے لیے الگ تعریف (تصویر نہیں — دستاویز کی گیلری نہیں ہوتی)؛ جواب post کے ساتھ ہی محفوظ، لازمی جواب چھوٹے تو پوری post انکار (کھانے کا نام بتا کر)؛ drafts جوابات ساتھ رکھتے ہیں؛ بل کی history اور اخراجات کی فہرست میں نظر آتے ہیں۔ خرید کے جوابات محفوظ/لاگو/audited، اسکرین history بعد میں (صفحہ موجود نہیں)۔ **1010 written cases، 57/57 static؛ Windows/xUnit اور physical pending**۔ طے شدہ ترتیب (5، 6، 18) مکمل؛ اگلا portion مالک بتائے گا (7 یا 17)؛ Portion 17 paused۔
+پیکنگ، اکائیاں اور variants: ہر quantity راستے پر ایک ہی box/strip/unit حساب (بغیر box والی دوا کا «1 box» اب ہر جگہ ایک ہی گنا جائے، کہیں 10 کہیں 1 نہیں)؛ ساتوں quantity خانوں میں اکائی کا لفظ «unit» (رسید، history اور ٹوکری میں «unit» نظر آئے، پرانی «base» اندراجات بھی چلیں گی)؛ گاہک واپسی اور بلا-بل واپسی میں whole-only انکار (آدھا injection ناممکن، آدھا ml جائز، پرانی پوری بچی واپسی جائز)؛ 50ml/100ml الگ products رہیں اور ایک ہی نام دہرانے پر موجود variants بتا کر انتباہ؛ stock-take تلاش میں strength + pack نظر آئے۔ **1025 written cases، 57/57 static؛ Windows/xUnit اور physical pending**۔ طے شدہ ترتیب (5، 6، 18) مکمل؛ اگلا portion مالک بتائے گا (8 یا 17)؛ Portion 17 paused۔ ٹوکن والا سرچ Portion 10 میں آئے گا۔
 
 ## تازہ status — Master Portion 6 مکمل، v0.46.0 Rust
 
@@ -2708,6 +2708,7 @@ restart نہیں (Spec 8.4.3)۔
 
 | تاریخ | کیا |
 |---|---|
+| 10 نومبر 2026 | **پیکنگ، اکائیاں اور variants — v0.48.0 Russet `#80461B`**: ایک ہی box/strip/unit حساب ہر راستے پر، ساتوں خانوں میں «unit»، رسید/history میں «unit» (پرانی «base» بھی چلے)، گاہک + بلا-بل واپسی میں whole-only انکار، ایک ہی نام پر variants بتا کر انتباہ، stock-take تلاش میں strength + pack؛ **1025 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
 | 10 نومبر 2026 | **D-100 / دستاویزات پر اپنے خانے — v0.47.0 Moss `#4A5D23`**: بل/خرید/اخراجات کے الگ فارم (تصویر انکار — گیلری نہیں)، جواب post کے ساتھ atomic، لازمی چھوٹے تو نام بتا کر انکار، drafts ساتھ رکھیں، بل history + اخراجات فہرست میں نمائش؛ **1010 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
 | 10 نومبر 2026 | **Expiry picker — v0.46.0 Rust `#B7410E`**: خرید صفحے پر مہینہ/سال + کیلنڈر، لکھنا/خالی ویسے ہی، زندہ stored-form لائن، `MM/YY` ہمیشہ 2000–2099، پرانی صورتیں بعینہ؛ **996 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
 | 10 نومبر 2026 | **D-100 / محفوظ مشترکہ drafts — v0.45.0 Sienna `#A0522D`**: بل اور خرید دونوں کے مسودے (save/open/update/discard/final-post)، مسودہ رہنے تک کوئی مالی/اسٹاک/sync اثر نہیں، حتمی post وہی guarded Create، دوہرا post ناممکن، ناکام post پر بحالی، مشترکہ visibility، وجہ+audited discard؛ **988 written cases، 57/57 static**؛ Windows/xUnit/physical pending |

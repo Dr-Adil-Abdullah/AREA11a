@@ -314,19 +314,8 @@ VALUES(@date, @productId, @batchId, @direction, @qtyBase, @unit, @qtyEntered,
 
     // ------------------------------------------------------------------ helpers
 
-    private static double PerUnit(ProductRow product, string? unit)
-    {
-        var word = (unit ?? string.Empty).Trim().ToLowerInvariant();
-        var perStrip = Math.Max(1, product.StripTablets);
-        var perBox = Math.Max(1, product.BoxStrips) * perStrip;
-
-        return word switch
-        {
-            "box" => product.BoxStrips > 0 ? perBox : 1,
-            "strip" => product.StripTablets > 0 ? perStrip : 1,
-            _ => 1
-        };
-    }
+    private static double PerUnit(ProductRow product, string? unit) =>
+        Packs.PerUnit(product.BoxStrips, product.StripTablets, unit);
 
     private static string ReasonLabel(string reason) => reason switch
     {

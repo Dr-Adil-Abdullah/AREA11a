@@ -142,7 +142,7 @@ WHERE i.provisional_id = @id
 ORDER BY i.id;", new { id = provisionalId });
 
             return rows.Select(row =>
-                $"{Qty.Format(row.QtyEntered)} {row.UnitEntered ?? "unit"} - {row.ProductName}").ToList();
+                $"{Qty.Format(row.QtyEntered)} {Packs.Display(row.UnitEntered)} - {row.ProductName}").ToList();
         }
         catch (Exception exception)
         {
@@ -530,6 +530,12 @@ VALUES(@code, @date, @phone, @name, @reason, @notes, @refund, 'pending', @userId
                 throw new ValidationException(product.Name + ": the quantity must be a finite number more than zero.");
             }
 
+            if (UnitPolicy.RequiresWhole(_db, connection, product.BaseUnit) && !Qty.IsWhole(qtyBase))
+            {
+                throw new ValidationException(
+                    product.Name + ": a return uses whole " + product.BaseUnit + " units; strength is not a stock division.");
+            }
+
             var batch = FindOrOpenBatch(connection, product, stamp);
             var batchId = batch.Id;
 
@@ -843,19 +849,8 @@ GROUP BY a.sale_item_id;", new { saleId })
     }
 
     /// <summary>How many base units one of the cashier's words holds (5.1.3).</summary>
-    private static double PerUnit(ProductRow product, string? unit)
-    {
-        var word = (unit ?? string.Empty).Trim().ToLowerInvariant();
-        var perStrip = Math.Max(1, product.StripTablets);
-        var perBox = Math.Max(1, product.BoxStrips) * perStrip;
-
-        return word switch
-        {
-            "box" => product.BoxStrips > 0 ? perBox : 1,
-            "strip" => product.StripTablets > 0 ? perStrip : 1,
-            _ => 1
-        };
-    }
+    private static double PerUnit(ProductRow product, string? unit) =>
+        Packs.PerUnit(product.BoxStrips, product.StripTablets, unit);
 
     /// <summary>
     /// Where the returned goods go. Nobody knows which batch they came from, so they join the newest

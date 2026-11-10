@@ -533,7 +533,7 @@ public sealed class ReturnLineRow : ObservableObject
 
         SaleItemId = line.SaleItemId;
         Name = line.Name;
-        UnitLabel = line.UnitSold;
+        UnitLabel = Packs.Display(line.UnitSold);
         SoldLabel = line.SoldLabel;
         ReturnedLabel = line.ReturnedLabel;
         RemainingLabel = line.RemainingLabel;

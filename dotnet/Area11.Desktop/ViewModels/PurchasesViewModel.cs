@@ -72,7 +72,7 @@ public sealed class PurchasesViewModel : ObservableObject
 
     public ObservableCollection<PurchaseLineRow> Lines { get; } = new();
 
-    public ObservableCollection<string> Units { get; } = new() { "box", "strip", "base" };
+    public ObservableCollection<string> Units { get; } = new() { "box", "strip", "unit" };
 
     public RelayCommand AddLineCommand { get; }
 
@@ -379,12 +379,7 @@ public sealed class PurchasesViewModel : ObservableObject
             return;
         }
 
-        var unitsPerSelected = Unit switch
-        {
-            "box" => SelectedProduct.UnitsPerBox,
-            "strip" => SelectedProduct.UnitsPerStrip,
-            _ => 1
-        };
+        var unitsPerSelected = SelectedProduct.QuantityPerSelectedUnit(Unit);
 
         Lines.Add(new PurchaseLineRow
         {
@@ -566,12 +561,7 @@ public sealed class PurchasesViewModel : ObservableObject
         {
             var product = _catalog.FirstOrDefault(item => item.Id == line.ProductId);
             var name = product?.Name ?? "Unknown product";
-            var unitsPerSelected = product is null ? 1 : line.Unit switch
-            {
-                "box" => product.UnitsPerBox,
-                "strip" => product.UnitsPerStrip,
-                _ => 1
-            };
+            var unitsPerSelected = product is null ? 1 : product.QuantityPerSelectedUnit(line.Unit);
             if (product is null)
             {
                 skipped++;
@@ -634,7 +624,7 @@ public sealed class PurchaseLineRow
 
     public long LineTotalPaisa => IsSample ? 0 : Calc.Round(CostPaisa * QtyBase);
 
-    public string QuantityText => $"{Qty.Format(Quantity)} {Unit}";
+    public string QuantityText => $"{Qty.Format(Quantity)} {Packs.Display(Unit)}";
 
     public string CostText => IsSample ? "sample" : Money.Format(LineTotalPaisa);
 }

@@ -116,7 +116,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     /// <summary>The doctors a bill may name (F-44); the first row is "(no prescription)".</summary>
     public ObservableCollection<Customer> Doctors { get; } = new();
 
-    public ObservableCollection<string> Units { get; } = new() { "base", "strip", "box" };
+    public ObservableCollection<string> Units { get; } = new() { "unit", "strip", "box" };
 
     public ObservableCollection<string> PaymentMethods { get; } = new() { "cash", "credit", "split" };
 
@@ -712,7 +712,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         // filter from selecting somebody else at the last moment.
         SearchText = string.Empty;
         SelectedProduct = product;
-        Unit = match.Pack is BarcodePack.Box or BarcodePack.Strip ? match.Pack : "base";
+        Unit = match.Pack is BarcodePack.Box or BarcodePack.Strip ? match.Pack : "unit";
         Quantity = "1";
 
         AddToCart();
@@ -1386,7 +1386,7 @@ public sealed class PosCartLine : ObservableObject
 
     public string Name { get; init; } = string.Empty;
 
-    public string Unit { get; init; } = "base";
+    public string Unit { get; init; } = "unit";
 
     /// <summary>Ordinary retail in paisa, used only to distinguish untouched and custom rates.</summary>
     public long GuideRatePaisa { get; init; }
@@ -1420,7 +1420,7 @@ public sealed class PosCartLine : ObservableObject
 
     public string QuantityText => Qty.Format(Quantity);
 
-    public string UnitLabel => Unit;
+    public string UnitLabel => Packs.Display(Unit);
 }
 
 /// <summary>

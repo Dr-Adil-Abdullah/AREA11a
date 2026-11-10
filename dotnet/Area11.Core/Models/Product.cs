@@ -109,14 +109,14 @@ public sealed class Product
 
     public double UnitsPerBox => Math.Max(1, BoxStrips) * Math.Max(1, StripTablets);
 
-    /// <summary>One shared box/strip/base conversion for screen quotes and the committed sale.</summary>
+    /// <summary>One shared box/strip/unit conversion for screen quotes and the committed sale.</summary>
     public double QuantityPerSelectedUnit(string? unit) =>
         QuantityPerSelectedUnit(unit, BoxStrips, StripTablets);
 
     public static double QuantityPerSelectedUnit(string? unit, int boxStrips, int stripTablets) =>
         unit?.Trim().ToLowerInvariant() switch
         {
-            "box" => (double)(Math.Max(1, boxStrips) * Math.Max(1, stripTablets)),
+            "box" => boxStrips > 0 ? (double)(Math.Max(1, boxStrips) * Math.Max(1, stripTablets)) : 1d,
             "strip" => (double)Math.Max(1, stripTablets),
             _ => 1d
         };

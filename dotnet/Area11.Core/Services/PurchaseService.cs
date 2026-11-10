@@ -134,7 +134,7 @@ VALUES(@code, @supplierId, @invoiceNo, @date, 0, 0, 0, 0, 0, @notes, @userId, @c
             var unit = (line.Unit ?? "box").Trim().ToLowerInvariant();
             var unitsPerSelected = unit switch
             {
-                "box" => (double)(Math.Max(1, product.BoxStrips) * Math.Max(1, product.StripTablets)),
+                "box" => product.BoxStrips > 0 ? (double)(Math.Max(1, product.BoxStrips) * Math.Max(1, product.StripTablets)) : 1d,
                 "strip" => (double)Math.Max(1, product.StripTablets),
                 _ => 1d
             };
