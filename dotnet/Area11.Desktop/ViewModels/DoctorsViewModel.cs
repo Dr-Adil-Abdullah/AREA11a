@@ -48,6 +48,7 @@ public sealed class DoctorsViewModel : ObservableObject, IEmptyPage
 
         RefreshCommand = new RelayCommand(Load);
         SaveRepCommand = new RelayCommand(SaveRep);
+        OpenDoctorPhotoCommand = new RelayCommand<int>(OpenDoctorPhoto);
 
         Load();
     }
@@ -55,6 +56,20 @@ public sealed class DoctorsViewModel : ObservableObject, IEmptyPage
     public RelayCommand RefreshCommand { get; }
 
     public RelayCommand SaveRepCommand { get; }
+
+    public RelayCommand<int> OpenDoctorPhotoCommand { get; }
+
+    private void OpenDoctorPhoto(int doctorId)
+    {
+        // Doctors are customers in this schema: use the SAME gallery, never make a duplicate record.
+        var doctor = Doctors.FirstOrDefault(row => row.DoctorId == doctorId);
+        if (doctor is null)
+        {
+            SetStatus("Choose a doctor in the list first.", true);
+            return;
+        }
+        PhotoWindow.Show(_services, _user, PhotoEntity.Customer, doctor.DoctorId, doctor.Name);
+    }
 
     // ------------------------------ the reps ------------------------------
 

@@ -11,7 +11,7 @@
 
         <DockPanel Grid.Row="0" Margin="0,0,0,10">
             <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                <TextBlock Text="Expenses and drawings" Style="{StaticResource PageTitle}" />
+                <TextBlock Text="{DynamicResource AppLabel.expenses}" Style="{StaticResource PageTitle}" />
                 <TextBlock Text="Money the shop paid out, and money or medicine the owner took. Both are kept separate from purchases."
                            Style="{StaticResource PageSubtitle}" />
             </StackPanel>

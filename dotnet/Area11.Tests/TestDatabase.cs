@@ -35,7 +35,8 @@ public sealed class TestDatabase : IDisposable
         Log = new LogService(Path.Combine(_folder, "logs"));
         Audit = new AuditService(Database, Log);
 
-        Settings = new SettingsService(Database, Audit, Log);
+        Settings = new SettingsService(Database, Audit, Log,
+            new PermissionService(Database, Log, Audit));
         Settings.EnsureDefaults();
         Settings.Reload();
 

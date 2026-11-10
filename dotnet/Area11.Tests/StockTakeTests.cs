@@ -177,20 +177,63 @@ public sealed class StockTakeTests
         Assert.Equal(200000L, Math.Abs(LineOf(service, opened.Id, product).ValuePaisa ?? 0L));
     }
 
-    [Fact]
-    public void NegativeBookStock_IsCorrectedByTheCount()
+    [Theory]
+    [InlineData(0d)]
+    [InlineData(7d)]
+    public void NegativeBookStock_IsCorrectedByThePhysicalCount(double physicalCount)
     {
         using var test = new TestDatabase();
-        var product = TestData.AddProduct(test, batchQty: -5);
+        var product = TestData.AddProduct(test, batchQty: -5); // direct legacy fixture, not a new sale
         var service = Takes(test);
         var opened = service.Open(TestData.Owner).Value!;
+        var minus = new StockMinusService(test.Database, test.Audit,
+            new PermissionService(test.Database, test.Log, test.Audit), test.Log);
 
         Assert.Equal(-5d, LineOf(service, opened.Id, product).SystemQtyBase);
+        var before = minus.Report(TestData.Owner);
+        Assert.True(before.Ok, before.Error);
+        Assert.Equal(-5d, Assert.Single(before.Value!.Rows).StockQty);
 
-        service.Count(TestData.Owner, LineOf(service, opened.Id, product).Id, 7, "unit", "found 7 on the shelf");
-        Assert.True(service.Apply(TestData.Owner, opened.Id).Ok);
+        var counted = service.Count(TestData.Owner, LineOf(service, opened.Id, product).Id,
+            physicalCount, "unit", "the physical shelf count");
+        Assert.True(counted.Ok, counted.Error);
+        var applied = service.Apply(TestData.Owner, opened.Id);
+        Assert.True(applied.Ok, applied.Error);
 
-        Assert.Equal(7d, StockOf(test, product));           // U-30: the count wins
+        Assert.Equal(physicalCount, StockOf(test, product));
+        Assert.Empty(minus.Report(TestData.Owner).Value!.Rows);
+
+        using var connection = test.Database.Open();
+        Assert.Equal(physicalCount + 5d, test.Database.QuerySingle<double>(connection,
+            "SELECT qty_base FROM stock_movements WHERE product_id = @p ORDER BY id DESC LIMIT 1;",
+            new { p = product }));
+        Assert.Equal("applied", test.Database.QuerySingle<string>(connection,
+            "SELECT status FROM stock_takes WHERE id = @id;", new { id = opened.Id }));
+    }
+
+    [Theory]
+    [InlineData(double.NaN)]
+    [InlineData(double.PositiveInfinity)]
+    [InlineData(double.NegativeInfinity)]
+    public void NonFinitePhysicalCounts_AreRefusedWithoutTouchingStock(double physicalCount)
+    {
+        using var test = new TestDatabase();
+        var product = TestData.AddProduct(test, batchQty: 10);
+        var service = Takes(test);
+        var opened = service.Open(TestData.Owner).Value!;
+        var line = LineOf(service, opened.Id, product);
+
+        var counted = service.Count(TestData.Owner, line.Id, physicalCount, "unit", null);
+
+        Assert.False(counted.Ok);
+        Assert.Equal(10d, StockOf(test, product));
+        Assert.False(service.Apply(TestData.Owner, opened.Id).Ok); // no counted row was accepted
+        Assert.Equal(10d, StockOf(test, product));
+
+        using var connection = test.Database.Open();
+        Assert.Equal(0L, Convert.ToInt64(test.Database.Scalar(connection,
+            "SELECT COUNT(1) FROM stock_movements WHERE product_id = @id AND type = 'adjust';",
+            new { id = product }) ?? 0L));
     }
 
     [Fact]

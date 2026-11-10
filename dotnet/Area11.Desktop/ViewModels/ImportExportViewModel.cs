@@ -43,6 +43,10 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
     private CategoryChoice? _priceCategory;
     private PricePreview? _pricePreview;
 
+    private BulkUpdatePreview? _bulkPreview;
+    private string _bulkFileName = string.Empty;
+    private bool _includeSettings;
+
     public ImportExportViewModel(AppServices services, User user)
     {
         _services = services;
@@ -55,6 +59,10 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
         ExportProductsCommand = new RelayCommand(() => Export("Products"));
         ExportCustomersCommand = new RelayCommand(() => Export("Customers"));
         ExportSuppliersCommand = new RelayCommand(() => Export("Suppliers"));
+        DownloadAllCommand = new RelayCommand(DownloadAll);
+        ChooseBulkFileCommand = new RelayCommand(ChooseBulkFile);
+        ApplyBulkCommand = new RelayCommand(ApplyBulk);
+        ClearBulkCommand = new RelayCommand(ClearBulk);
         PreviewPricesCommand = new RelayCommand(PreviewPrices);
         ApplyPricesCommand = new RelayCommand(ApplyPrices);
 
@@ -75,21 +83,31 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
 
     public RelayCommand ExportSuppliersCommand { get; }
 
+    public RelayCommand DownloadAllCommand { get; }
+
+    public RelayCommand ChooseBulkFileCommand { get; }
+
+    public RelayCommand ApplyBulkCommand { get; }
+
+    public RelayCommand ClearBulkCommand { get; }
+
     public RelayCommand PreviewPricesCommand { get; }
 
     public RelayCommand ApplyPricesCommand { get; }
 
     public ObservableCollection<ImportRow> Rows { get; } = new();
 
+    public ObservableCollection<BulkUpdateRow> BulkRows { get; } = new();
+
     public ObservableCollection<PriceChangeRow> PriceRows { get; } = new();
 
     public ObservableCollection<CategoryChoice> Categories { get; } = new();
 
-    /// <summary>0 = Import, 1 = Export, 2 = Prices.</summary>
+    /// <summary>0 = Import, 1 = Export, 2 = Bulk update, 3 = Prices.</summary>
     public int SelectedTabIndex
     {
         get => _tab;
-        set => SetProperty(ref _tab, Math.Clamp(value, 0, 2));
+        set => SetProperty(ref _tab, Math.Clamp(value, 0, 3));
     }
 
     public IReadOnlyList<string> Kinds { get; } = new[] { "Products", "Customers", "Suppliers" };
@@ -118,7 +136,7 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
     public string FileNameText => string.IsNullOrWhiteSpace(_fileName) ? "No file chosen yet." : _fileName;
 
     public string PreviewText => _preview is null
-        ? "Choose a CSV file made in Excel (File → Save As → CSV UTF-8)."
+        ? "Choose a real .xlsx workbook or a CSV UTF-8 file. Nothing is written before this preview."
         : _preview.SummaryText;
 
     public bool HasPreview => _preview is not null && _preview.Rows.Count > 0;
@@ -225,7 +243,7 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
             Title = "Choose the " + Kind.ToLowerInvariant() + " file",
-            Filter = "CSV file (*.csv)|*.csv|Text file (*.txt)|*.txt|All files (*.*)|*.*",
+            Filter = "Excel workbook (*.xlsx)|*.xlsx|CSV file (*.csv)|*.csv|Text file (*.txt)|*.txt|All files (*.*)|*.*",
             CheckFileExists = true
         };
 
@@ -236,20 +254,25 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
 
         try
         {
-            // Shared read/write: the owner may still have the file open in Excel, and refusing then
-            // is a support call. Excel holds its copy open, not this one.
-            using var stream = new FileStream(dialog.FileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
-
-            var text = reader.ReadToEnd();
-
+            var bytes = ReadSharedBytes(dialog.FileName);
             _fileName = Path.GetFileName(dialog.FileName);
-            _preview = Kind switch
+
+            if (string.Equals(Path.GetExtension(dialog.FileName), ".xlsx", StringComparison.OrdinalIgnoreCase))
             {
-                "Customers" => _services.Import.PreviewCustomers(text),
-                "Suppliers" => _services.Import.PreviewSuppliers(text),
-                _ => _services.Import.PreviewProducts(text)
-            };
+                _preview = _services.Import.PreviewWorkbook(Kind, bytes);
+            }
+            else
+            {
+                using var reader = new StreamReader(new MemoryStream(bytes, writable: false),
+                    Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+                var text = reader.ReadToEnd();
+                _preview = Kind switch
+                {
+                    "Customers" => _services.Import.PreviewCustomers(text),
+                    "Suppliers" => _services.Import.PreviewSuppliers(text),
+                    _ => _services.Import.PreviewProducts(text)
+                };
+            }
 
             FillRows();
 
@@ -260,10 +283,12 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
                     ? "Read the list, then press Import."
                     : "There is nothing new in this file.";
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        catch (Exception exception)
         {
+            _preview = null;
+            Rows.Clear();
             IsStatusError = true;
-            StatusText = "The file could not be read. Is it still open in Excel? (" + exception.Message + ")";
+            StatusText = "The file could not be read. " + exception.Message;
         }
 
         RaisePreviewState();
@@ -340,10 +365,10 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
     {
         var dialog = new Microsoft.Win32.SaveFileDialog
         {
-            Title = "Save the template",
-            FileName = "Area11-" + Kind.ToLowerInvariant() + "-template.csv",
-            DefaultExt = ".csv",
-            Filter = "CSV file (*.csv)|*.csv",
+            Title = "Save the native Excel template",
+            FileName = "Area11-import-template.xlsx",
+            DefaultExt = ".xlsx",
+            Filter = "Excel workbook (*.xlsx)|*.xlsx",
             AddExtension = true,
             OverwritePrompt = true
         };
@@ -355,10 +380,8 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
 
         try
         {
-            File.WriteAllText(dialog.FileName, ImportService.Template(Kind),
-                new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
-
-            SetStatus("Template saved. Fill it in Excel and save it as CSV UTF-8, then choose it here.", false);
+            File.WriteAllBytes(dialog.FileName, WorkbookService.Template());
+            SetStatus("Workbook saved. Fill the Products, Customers and/or Suppliers sheets, then choose it here.", false);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
@@ -372,10 +395,10 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
     {
         var dialog = new Microsoft.Win32.SaveFileDialog
         {
-            Title = "Save the " + kind.ToLowerInvariant() + " list",
-            FileName = "Area11-" + kind.ToLowerInvariant() + "-" + Clock.Today() + ".csv",
-            DefaultExt = ".csv",
-            Filter = "CSV file (*.csv)|*.csv",
+            Title = "Save the " + kind.ToLowerInvariant() + " workbook",
+            FileName = "Area11-" + kind.ToLowerInvariant() + "-" + Clock.Today() + ".xlsx",
+            DefaultExt = ".xlsx",
+            Filter = "Excel workbook (*.xlsx)|*.xlsx",
             AddExtension = true,
             OverwritePrompt = true
         };
@@ -385,13 +408,7 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
             return;
         }
 
-        var exported = kind switch
-        {
-            "Customers" => _services.Import.ExportCustomers(_user),
-            "Suppliers" => _services.Import.ExportSuppliers(_user),
-            _ => _services.Import.ExportProducts(_user)
-        };
-
+        var exported = _services.Workbooks.ExportList(_user, kind);
         if (!exported.Ok || exported.Value is null)
         {
             SetStatus(exported.Error ?? "The list could not be exported.", true);
@@ -400,16 +417,164 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
 
         try
         {
-            // UTF-8 WITH a BOM: Excel needs it, or the Urdu names arrive as gibberish.
-            File.WriteAllText(dialog.FileName, exported.Value,
-                new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
-
-            SetStatus("Saved to " + dialog.FileName, false);
+            File.WriteAllBytes(dialog.FileName, exported.Value);
+            SetStatus("Native Excel workbook saved to " + dialog.FileName, false);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             SetStatus("The file could not be written. Close it if it is open in Excel. (" + exception.Message + ")", true);
         }
+    }
+
+    // ------------------------------ Native all-data workbook ------------------------------
+
+    public bool IncludeSettings
+    {
+        get => _includeSettings;
+        set
+        {
+            if (SetProperty(ref _includeSettings, value))
+            {
+                // A preview made with the other answer must never be applied with this answer.
+                ClearBulk();
+            }
+        }
+    }
+
+    public string BulkFileNameText => string.IsNullOrWhiteSpace(_bulkFileName)
+        ? "No edited workbook chosen yet."
+        : _bulkFileName;
+
+    public string BulkSummary => _bulkPreview?.SummaryText
+        ?? "Download your data, edit the workbook, then choose it here for a before → after preview.";
+
+    public bool HasBulkPreview => BulkRows.Count > 0;
+
+    public bool HasNoBulkPreview => !HasBulkPreview;
+
+    public bool CanApplyBulk => _bulkPreview?.CanApply ?? false;
+
+    private void DownloadAll()
+    {
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "Download all shop data",
+            FileName = "Area11-data-" + Clock.Today() + ".xlsx",
+            DefaultExt = ".xlsx",
+            Filter = "Excel workbook (*.xlsx)|*.xlsx",
+            AddExtension = true,
+            OverwritePrompt = true
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        var exported = _services.Workbooks.ExportAll(_user);
+        if (!exported.Ok || exported.Value is null)
+        {
+            SetStatus(exported.Error ?? "The all-data workbook could not be written.", true);
+            return;
+        }
+
+        try
+        {
+            File.WriteAllBytes(dialog.FileName, exported.Value);
+            SetStatus("All-data workbook saved. Edit it, then choose it on this tab for the before → after preview.", false);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            SetStatus("The workbook could not be written. Close it if it is open in Excel. (" + exception.Message + ")", true);
+        }
+    }
+
+    private void ChooseBulkFile()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Choose the edited all-data workbook",
+            Filter = "Excel workbook (*.xlsx)|*.xlsx",
+            CheckFileExists = true
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
+        {
+            var bytes = ReadSharedBytes(dialog.FileName);
+            var result = _services.Workbooks.PreviewBulk(_user, bytes, IncludeSettings);
+            if (!result.Ok || result.Value is null)
+            {
+                _bulkPreview = null;
+                BulkRows.Clear();
+                SetStatus(result.Error ?? "The workbook could not be previewed.", true);
+                return;
+            }
+
+            _bulkFileName = Path.GetFileName(dialog.FileName);
+            _bulkPreview = result.Value;
+            BulkRows.Clear();
+            foreach (var row in _bulkPreview.Rows)
+            {
+                BulkRows.Add(row);
+            }
+
+            SetStatus(_bulkPreview.ErrorCount > 0
+                ? "Fix every red line and preview again. Nothing can be applied while an error remains."
+                : _bulkPreview.CanApply
+                    ? "Read every before → after line, then press Apply these changes."
+                    : "The workbook has no changes to apply.", _bulkPreview.ErrorCount > 0);
+        }
+        catch (Exception exception)
+        {
+            _bulkPreview = null;
+            BulkRows.Clear();
+            SetStatus("The workbook could not be read. " + exception.Message, true);
+        }
+        finally
+        {
+            RaiseBulkState();
+        }
+    }
+
+    private void ApplyBulk()
+    {
+        if (_bulkPreview is null || !_bulkPreview.CanApply)
+        {
+            SetStatus("Preview first, and fix every red line. There is nothing to apply.", true);
+            return;
+        }
+
+        var result = _services.Workbooks.ApplyBulk(_user, _bulkPreview);
+        if (!result.Ok || result.Value is null)
+        {
+            SetStatus(result.Error ?? "The workbook was not applied.", true);
+            return;
+        }
+
+        ClearBulk();
+        SetStatus(result.Value.SummaryText, false);
+    }
+
+    private void ClearBulk()
+    {
+        _bulkPreview = null;
+        _bulkFileName = string.Empty;
+        BulkRows.Clear();
+        RaiseBulkState();
+    }
+
+    private void RaiseBulkState()
+    {
+        OnPropertyChanged(nameof(BulkFileNameText));
+        OnPropertyChanged(nameof(BulkSummary));
+        OnPropertyChanged(nameof(HasBulkPreview));
+        OnPropertyChanged(nameof(HasNoBulkPreview));
+        OnPropertyChanged(nameof(CanApplyBulk));
     }
 
     // ------------------------------ Prices ------------------------------
@@ -493,6 +658,20 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
         OnPropertyChanged(nameof(CanApplyPrices));
         OnPropertyChanged(nameof(HasPriceRows));
         OnPropertyChanged(nameof(HasNoPriceRows));
+    }
+
+    private static byte[] ReadSharedBytes(string path)
+    {
+        // Excel may still have the workbook open. Read a shared snapshot, but never an unbounded file.
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        if (stream.Length > 20 * 1024 * 1024)
+        {
+            throw new InvalidDataException("The file is larger than the 20 MB import limit.");
+        }
+
+        using var memory = new MemoryStream();
+        stream.CopyTo(memory);
+        return memory.ToArray();
     }
 
     private void SetStatus(string text, bool isError)

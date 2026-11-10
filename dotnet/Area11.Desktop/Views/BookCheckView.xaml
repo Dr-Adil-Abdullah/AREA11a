@@ -13,7 +13,7 @@
         <!-- ================================ the heading ================================ -->
         <DockPanel Grid.Row="0" Margin="0,0,0,10">
             <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                <TextBlock Text="Do the books add up?" Style="{StaticResource PageTitle}" />
+                <TextBlock Text="{DynamicResource AppLabel.books}" Style="{StaticResource PageTitle}" />
                 <TextBlock Style="{StaticResource PageSubtitle}" TextWrapping="Wrap"
                            Text="Every total is compared with the rows it was built from. The check only reads: nothing is repaired, and nothing is changed (F-54)." />
             </StackPanel>

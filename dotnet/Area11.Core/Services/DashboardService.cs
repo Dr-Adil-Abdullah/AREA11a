@@ -172,14 +172,26 @@ WHERE date(s.date) = date('now','localtime') AND s.status IN ('paid','partial','
                 // A return belongs to the day the money went back, not the day of the bill - the same
                 // rule the drawer uses (Spec 15.6).
                 var refunds = Convert.ToInt64(_db.Scalar(connection, @"
-SELECT IFNULL(SUM(r.refund_paisa), 0) FROM sale_returns r
-WHERE date(r.date) = date('now','localtime');") ?? 0L);
+SELECT IFNULL(SUM(refund), 0)
+FROM (
+    SELECT r.refund_paisa AS refund FROM sale_returns r
+    WHERE date(r.date) = date('now','localtime')
+    UNION ALL
+    SELECT pr.refund_paisa FROM provisional_report_lines pr
+    WHERE date(pr.event_date) = date('now','localtime')
+);") ?? 0L);
 
                 var restockedCost = Convert.ToInt64(_db.Scalar(connection, @"
-SELECT CAST(IFNULL(SUM(r.qty_base * si.cost_paisa_at_sale), 0) AS INTEGER)
-FROM sale_returns r
-JOIN sale_items si ON si.id = r.sale_item_id
-WHERE r.restock = 1 AND date(r.date) = date('now','localtime');") ?? 0L);
+SELECT CAST(IFNULL(SUM(cost), 0) AS INTEGER)
+FROM (
+    SELECT r.qty_base * si.cost_paisa_at_sale AS cost
+    FROM sale_returns r
+    JOIN sale_items si ON si.id = r.sale_item_id
+    WHERE r.restock = 1 AND date(r.date) = date('now','localtime')
+    UNION ALL
+    SELECT pr.restock_cost_paisa FROM provisional_report_lines pr
+    WHERE date(pr.event_date) = date('now','localtime')
+);") ?? 0L);
 
                 todayProfit = sold - refunds - (costSold - restockedCost);
             }

@@ -59,6 +59,151 @@ public sealed class SyncTests
         Assert.True(envelope.SizeBytes > 0);
     }
 
+    [Fact]
+    public void MasterCatalogAndPreferredSupplierTravelBeforeTheProduct()
+    {
+        using var source = new TestDatabase();
+        Configure(source);
+        source.Database.Tx(connection =>
+        {
+            source.Database.Execute(connection, "INSERT INTO companies(id, name) VALUES(901, 'Sync company');");
+            source.Database.Execute(connection,
+                "INSERT INTO generic_formulas(id, name, name_key) VALUES(901, 'Sync salt', 'sync salt');");
+            source.Database.Execute(connection, @"
+INSERT INTO brands(id, company_id, name, name_key)
+VALUES(901, 901, 'Sync brand', 'sync brand');");
+            source.Database.Execute(connection,
+                "INSERT INTO suppliers(id, name) VALUES(901, 'Sync preferred supplier');");
+            source.Database.Execute(connection, @"
+INSERT INTO form_field_definitions
+    (id, field_key, section_key, label, data_type, input_method, safe_required, required, critical)
+VALUES(901, 'purchase.expiry', 'purchase', 'Expiry', 'date', 'month_calendar', 1, 1, 1);");
+            source.Database.Execute(connection, @"
+INSERT INTO products(id, name, generic_formula_id, brand_id, preferred_supplier_id)
+VALUES(901, 'Sync medicine', 901, 901, 901);");
+        });
+
+        var envelope = Cloud(source, new FakeCloud()).Build(TestData.Owner).Value!;
+
+        Assert.Equal(3, envelope.Format);
+        Assert.True(Array.IndexOf(SyncTables.Order, "companies") < Array.IndexOf(SyncTables.Order, "brands"));
+        Assert.True(Array.IndexOf(SyncTables.Order, "generic_formulas") < Array.IndexOf(SyncTables.Order, "products"));
+        Assert.True(Array.IndexOf(SyncTables.Order, "suppliers") < Array.IndexOf(SyncTables.Order, "products"));
+        Assert.Equal(1, envelope.CountOf("form_field_definitions"));
+        Assert.Equal(1, envelope.CountOf("generic_formulas"));
+        Assert.Equal(1, envelope.CountOf("brands"));
+        Assert.DoesNotContain("document_drafts", SyncTables.Order);
+
+        using var target = new TestDatabase();
+        Configure(target);
+        var applied = Cloud(target, new FakeCloud()).Apply(TestData.Owner, envelope, confirmed: true);
+
+        Assert.True(applied.Ok, applied.Error);
+        Assert.Equal(1, Count(target, "form_field_definitions"));
+        Assert.Equal(1, Count(target, "generic_formulas"));
+        Assert.Equal(1, Count(target, "brands"));
+        Assert.Equal(901L, Convert.ToInt64(Scalar(target,
+            "SELECT generic_formula_id FROM products WHERE id = 901;")));
+        Assert.Equal(901L, Convert.ToInt64(Scalar(target,
+            "SELECT brand_id FROM products WHERE id = 901;")));
+        Assert.Equal(901L, Convert.ToInt64(Scalar(target,
+            "SELECT preferred_supplier_id FROM products WHERE id = 901;")));
+        Assert.Equal(1L, Convert.ToInt64(Scalar(target,
+            "SELECT is_preferred FROM product_supplier_directory WHERE product_id = 901 AND supplier_id = 901;")));
+    }
+
+    // ============================== dependencies around the 90-day cut ==============================
+
+    [Fact]
+    public void ARecentCollectionBringsItsOlderSaleAndAllTheSaleLines()
+    {
+        using var source = new TestDatabase();
+        Configure(source);
+        var product = TestData.AddProduct(source, name: "Cloud sale medicine");
+        var batch = BatchOf(source, product);
+        var sale = Sale(source, "INV-OLD-COLLECTION", 200);
+        SaleLine(source, sale, product, batch, "Cloud sale medicine", 1);
+        SaleLine(source, sale, product, batch, "Cloud sale medicine", 2);
+        Payment(source, saleId: sale);
+
+        var envelope = Cloud(source, new FakeCloud()).Build(TestData.Owner).Value!;
+
+        Assert.Equal(1, envelope.CountOf("sales"));
+        Assert.Equal(2, envelope.CountOf("sale_items"));
+        Assert.Equal(1, envelope.CountOf("payments"));
+
+        using var target = new TestDatabase();
+        Configure(target);
+        var applied = Cloud(target, new FakeCloud()).Apply(TestData.Owner, envelope, confirmed: true);
+
+        Assert.True(applied.Ok, applied.Error);
+        Assert.Equal(1, Count(target, "sales"));
+        Assert.Equal(2, Count(target, "sale_items"));
+        Assert.Equal(1, Count(target, "payments"));
+    }
+
+    [Fact]
+    public void ARecentSupplierPaymentBringsItsOlderPurchaseAndLines()
+    {
+        using var source = new TestDatabase();
+        Configure(source);
+        var product = TestData.AddProduct(source, name: "Cloud purchase medicine");
+        var batch = BatchOf(source, product);
+        var purchase = Purchase(source, "PINV-OLD-PAYMENT", product, batch, daysAgo: 200);
+        Payment(source, purchaseId: purchase);
+
+        var envelope = Cloud(source, new FakeCloud()).Build(TestData.Owner).Value!;
+
+        Assert.Equal(1, envelope.CountOf("purchases"));
+        Assert.Equal(1, envelope.CountOf("purchase_items"));
+        Assert.Equal(1, envelope.CountOf("payments"));
+
+        using var target = new TestDatabase();
+        Configure(target);
+        var applied = Cloud(target, new FakeCloud()).Apply(TestData.Owner, envelope, confirmed: true);
+
+        Assert.True(applied.Ok, applied.Error);
+        Assert.Equal(1, Count(target, "purchases"));
+        Assert.Equal(1, Count(target, "purchase_items"));
+        Assert.Equal(1, Count(target, "payments"));
+    }
+
+    [Fact]
+    public void ARecentProvisionalPaymentBringsTheWholeReconciliationChain()
+    {
+        using var source = new TestDatabase();
+        Configure(source);
+        var product = TestData.AddProduct(source, name: "Cloud PR medicine");
+        var batch = BatchOf(source, product);
+        var sale = Sale(source, "INV-OLD-PR", 200);
+        var saleItem = SaleLine(source, sale, product, batch, "Cloud PR medicine", 1);
+        var provisional = Provisional(source, sale, saleItem, product, batch, daysAgo: 180);
+        Payment(source, provisionalId: provisional);
+
+        var envelope = Cloud(source, new FakeCloud()).Build(TestData.Owner).Value!;
+
+        Assert.Equal(1, envelope.CountOf("sales"));
+        Assert.Equal(1, envelope.CountOf("sale_items"));
+        Assert.Equal(1, envelope.CountOf("provisional_returns"));
+        Assert.Equal(1, envelope.CountOf("provisional_items"));
+        Assert.Equal(1, envelope.CountOf("provisional_return_allocations"));
+        Assert.Equal(1, envelope.CountOf("payments"));
+
+        using var target = new TestDatabase();
+        Configure(target);
+        var applied = Cloud(target, new FakeCloud()).Apply(TestData.Owner, envelope, confirmed: true);
+
+        Assert.True(applied.Ok, applied.Error);
+        foreach (var table in new[]
+                 {
+                     "sales", "sale_items", "provisional_returns", "provisional_items",
+                     "provisional_return_allocations", "payments"
+                 })
+        {
+            Assert.Equal(1, Count(target, table));
+        }
+    }
+
     // ============================== push ==============================
 
     [Fact]
@@ -227,6 +372,71 @@ public sealed class SyncTests
 
         Assert.False(refused.Ok);
         Assert.Contains("Tick", refused.Error);
+        Assert.Equal(0, Count(test, "products"));
+    }
+
+    [Fact]
+    public void SwitchingCloudOffAfterPreviewAlsoClosesTheCoreWriteDoor()
+    {
+        using var test = new TestDatabase();
+        Configure(test);
+        var backups = NewFolder();
+        var wire = new FakeCloud
+        {
+            FetchAnswer = SyncTransportResult.Success(200, CloudBody("shop-1", envelope =>
+                envelope.Add("products", Row(99, "Panadol Cloud"))))
+        };
+        var cloud = Cloud(test, wire, backups);
+        var preview = cloud.Preview(TestData.Owner).Value!;
+        Assert.True(test.Settings.SetUiOnly(SyncService.EnabledKey, false).Ok);
+
+        var refused = cloud.Apply(TestData.Owner, preview.Envelope, confirmed: true);
+
+        Assert.False(refused.Ok);
+        Assert.Contains("switched off", refused.Error);
+        Assert.Equal(0, Count(test, "products"));
+        Assert.Empty(Directory.GetFiles(backups));
+    }
+
+    [Fact]
+    public void AFutureFormatCannotBypassPreviewAndReachTheWriter()
+    {
+        using var test = new TestDatabase();
+        Configure(test);
+        var backups = NewFolder();
+        var envelope = new SyncEnvelope
+        {
+            Format = SyncEnvelope.CurrentFormat + 1,
+            ShopId = "shop-1"
+        };
+        envelope.Add("products", Row(99, "Future Panadol"));
+
+        var refused = Cloud(test, new FakeCloud(), backups)
+            .Apply(TestData.Owner, envelope, confirmed: true);
+
+        Assert.False(refused.Ok);
+        Assert.Contains("format", refused.Error);
+        Assert.Equal(0, Count(test, "products"));
+        Assert.Empty(Directory.GetFiles(backups));
+    }
+
+    [Fact]
+    public void ANullCloudIdIsSkippedInsteadOfBecomingANewLocalRow()
+    {
+        using var test = new TestDatabase();
+        Configure(test);
+        var envelope = new SyncEnvelope { ShopId = "shop-1" };
+        envelope.Add("products", new Dictionary<string, object?>(StringComparer.Ordinal)
+        {
+            ["id"] = null,
+            ["name"] = "Not a real keyed row"
+        });
+
+        var brought = Cloud(test, new FakeCloud()).Apply(TestData.Owner, envelope, confirmed: true);
+
+        Assert.True(brought.Ok, brought.Error);
+        Assert.Equal(0, brought.Value!.Rows);
+        Assert.Equal(1, brought.Value.Skipped);
         Assert.Equal(0, Count(test, "products"));
     }
 
@@ -451,7 +661,7 @@ public sealed class SyncTests
         var row = document.RootElement;
 
         Assert.True(row.GetProperty("version").TryGetInt32(out var format));
-        Assert.Equal(SyncEnvelope.CurrentFormat, format);       // 1, an int column (Spec 25.2)
+        Assert.Equal(SyncEnvelope.CurrentFormat, format);       // the format, as an int column
 
         Assert.Equal(BuildInfo.Version,
             row.GetProperty("payload").GetProperty("version").GetString());
@@ -508,6 +718,27 @@ public sealed class SyncTests
     // ============================== reading the cloud back ==============================
 
     [Fact]
+    public void AnOlderFormatOneDocumentCanStillBeReadAndApplied()
+    {
+        using var test = new TestDatabase();
+        Configure(test);
+        var wire = new FakeCloud
+        {
+            FetchAnswer = SyncTransportResult.Success(200, CloudBody("shop-1", envelope =>
+                envelope.Add("products", Row(99, "Format One Panadol")), format: 1))
+        };
+        var cloud = Cloud(test, wire);
+
+        var preview = cloud.Preview(TestData.Owner);
+        Assert.True(preview.Ok, preview.Error);
+        Assert.Equal(1, preview.Value!.Envelope!.Format);
+        var brought = cloud.Apply(TestData.Owner, preview.Value.Envelope, confirmed: true);
+
+        Assert.True(brought.Ok, brought.Error);
+        Assert.Equal("Format One Panadol", NameOf(test, 99));
+    }
+
+    [Fact]
     public void ThePreviewShowsTheProgramVersionAndNeverTheFormatNumber()
     {
         using var test = new TestDatabase();
@@ -516,7 +747,7 @@ public sealed class SyncTests
         var wire = new FakeCloud { FetchAnswer = SyncTransportResult.Success(200, CloudBody("shop-1", _ => { })) };
         var preview = Cloud(test, wire).Preview(TestData.Owner).Value!;
 
-        Assert.Equal("0.21.0", preview.Version);   // the document's text, not the row's int 1
+        Assert.Equal("0.21.0", preview.Version);   // the document's text, not the row's integer format
     }
 
     [Fact]
@@ -587,10 +818,14 @@ public sealed class SyncTests
         Assert.True(test.Settings.SetUiOnly("sync.shopId", shopId).Ok);
     }
 
-    private static string CloudBody(string shopId, Action<SyncEnvelope> fill)
+    private static string CloudBody(
+        string shopId,
+        Action<SyncEnvelope> fill,
+        int format = SyncEnvelope.CurrentFormat)
     {
         var envelope = new SyncEnvelope
         {
+            Format = format,
             ShopId = shopId,
             ShopName = "Area11 Pharmacy",
             MadeAt = Clock.Now(),
@@ -601,11 +836,108 @@ public sealed class SyncTests
 
         // The shape PostgREST returns: an array of rows, with the document inside `payload`.
         return "[{\"shop_name\":\"Area11 Pharmacy\",\"sent_at\":\"2026-10-20T10:00:00+05:00\","
-               + "\"version\":1,\"payload\":" + JsonSerializer.Serialize(envelope) + "}]";
+               + "\"version\":" + format.ToString(CultureInfo.InvariantCulture)
+               + ",\"payload\":" + JsonSerializer.Serialize(envelope) + "}]";
     }
 
     private static Dictionary<string, object?> Row(long id, string name) =>
         new(StringComparer.Ordinal) { ["id"] = id, ["name"] = name };
+
+    private static long BatchOf(TestDatabase test, int product)
+    {
+        using var connection = test.Database.Open();
+        return Convert.ToInt64(test.Database.Scalar(connection,
+            "SELECT id FROM batches WHERE product_id = @product;", new { product }) ?? 0L);
+    }
+
+    private static long Payment(
+        TestDatabase test,
+        long? saleId = null,
+        long? purchaseId = null,
+        long? provisionalId = null) =>
+        test.Database.Tx(connection =>
+        {
+            test.Database.Execute(connection, @"
+INSERT INTO payments(date, method, amount_paisa, sale_id, purchase_id, provisional_return_id)
+VALUES(@date, 'cash', 100, @saleId, @purchaseId, @provisionalId);",
+                new { date = Clock.Now(), saleId, purchaseId, provisionalId });
+
+            return test.Database.NextId(connection);
+        });
+
+    private static long SaleLine(
+        TestDatabase test,
+        long sale,
+        int product,
+        long batch,
+        string name,
+        double qty) =>
+        test.Database.Tx(connection =>
+        {
+            test.Database.Execute(connection, @"
+INSERT INTO sale_items(sale_id, product_id, batch_id, name_snapshot, qty_base, unit_sold,
+                       qty_entered, unit_price_paisa, line_total_paisa, cost_paisa_at_sale)
+VALUES(@sale, @product, @batch, @name, @qty, 'base', @qty, 30000, 30000, 20000);",
+                new { sale, product, batch, name, qty });
+
+            return test.Database.NextId(connection);
+        });
+
+    private static long Purchase(
+        TestDatabase test,
+        string code,
+        int product,
+        long batch,
+        int daysAgo) =>
+        test.Database.Tx(connection =>
+        {
+            var date = Clock.DateDaysAgo(daysAgo) + " 10:00:00";
+            test.Database.Execute(connection, @"
+INSERT INTO purchases(code, date, subtotal_paisa, total_paisa, paid_paisa, due_paisa, created_at)
+VALUES(@code, @date, 20000, 20000, 0, 20000, @date);",
+                new { code, date });
+            var purchase = test.Database.NextId(connection);
+
+            test.Database.Execute(connection, @"
+INSERT INTO purchase_items(purchase_id, product_id, batch_id, qty_entered, unit, qty_base,
+                           cost_paisa, retail_paisa, line_total_paisa, batch_no)
+VALUES(@purchase, @product, @batch, 1, 'base', 1, 20000, 30000, 20000, 'B-1');",
+                new { purchase, product, batch });
+
+            return purchase;
+        });
+
+    private static long Provisional(
+        TestDatabase test,
+        long sale,
+        long saleItem,
+        int product,
+        long batch,
+        int daysAgo) =>
+        test.Database.Tx(connection =>
+        {
+            var date = Clock.DateDaysAgo(daysAgo) + " 10:00:00";
+            test.Database.Execute(connection, @"
+INSERT INTO provisional_returns(code, date, refund_paisa, status, linked_sale_id, linked_at, created_at)
+VALUES(@code, @date, 30000, 'linked', @sale, @date, @date);",
+                new { code = "PR-OLD-" + sale.ToString(CultureInfo.InvariantCulture), date, sale });
+            var provisional = test.Database.NextId(connection);
+
+            test.Database.Execute(connection, @"
+INSERT INTO provisional_items(provisional_id, product_id, batch_id, qty_base, created_at,
+                              qty_entered, unit_entered, refund_paisa, cost_paisa_at_return)
+VALUES(@provisional, @product, @batch, 1, @date, 1, 'base', 30000, 20000);",
+                new { provisional, product, batch, date });
+            var provisionalItem = test.Database.NextId(connection);
+
+            test.Database.Execute(connection, @"
+INSERT INTO provisional_return_allocations(provisional_item_id, sale_item_id, qty_base,
+                                           expected_refund_paisa, refund_paisa, created_at)
+VALUES(@provisionalItem, @saleItem, 1, 30000, 30000, @date);",
+                new { provisionalItem, saleItem, date });
+
+            return provisional;
+        });
 
     private static long Sale(TestDatabase test, string code, int daysAgo) =>
         test.Database.Tx(connection =>

@@ -331,7 +331,7 @@ LIMIT 201;"));
             checkedRows, findings);
     }
 
-    /// <summary>Rule 11: every money row belongs to a bill, a purchase, a customer or a supplier.</summary>
+    /// <summary>Rule 11: every money row belongs to a bill, purchase, customer, supplier or no-bill return.</summary>
     private BookCheckRule MoneyRowsBelong(SqliteConnection connection)
     {
         var checkedRows = Convert.ToInt32(_db.Scalar(connection,
@@ -344,11 +344,12 @@ WHERE IFNULL(p.sale_id, 0) = 0
   AND IFNULL(p.purchase_id, 0) = 0
   AND IFNULL(p.customer_id, 0) = 0
   AND IFNULL(p.supplier_id, 0) = 0
+  AND IFNULL(p.provisional_return_id, 0) = 0
 ORDER BY p.id
 LIMIT 201;"));
 
         return Rule("Every rupee received belongs to someone",
-            "A money row with no bill, no purchase, no customer and no supplier is money that no page can explain.",
+            "A money row with no bill, purchase, customer, supplier or no-bill return is money that no page can explain.",
             checkedRows, findings);
     }
 

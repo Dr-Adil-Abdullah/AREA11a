@@ -1,5 +1,6 @@
 using System.IO;
 using System.IO.Compression;
+using System.Globalization;
 using Area11.Core.Models;
 using Area11.Core.Services;
 using Area11.Core.Utils;
@@ -72,6 +73,33 @@ public sealed class BackupTests
         using var zip = ZipFile.OpenRead(created.Value!.FullPath);
         Assert.DoesNotContain(zip.Entries, entry => entry.FullName.StartsWith("photos/", StringComparison.Ordinal));
         Assert.Contains(zip.Entries, entry => entry.FullName == "area11.db");
+    }
+
+    [Fact]
+    public void Create_BackUpAs_UsesTheChosenFolderWithoutMovingOrOverwritingAnything()
+    {
+        using var test = new TestDatabase();
+        using var folders = new TempFolders();
+
+        TestData.AddProduct(test, name: "Panadol 500mg");
+        var livePath = test.Database.FilePath;
+        var chosenFolder = Path.Combine(folders.BackupFolder, "USB stick");
+        var chosen = Path.Combine(chosenFolder, "shop before update.zip");
+        var service = folders.Backups(test);
+
+        var first = service.Create(TestData.Owner, destinationFile: chosen);
+        var second = service.Create(TestData.Owner, destinationFile: chosen);
+
+        Assert.True(first.Ok, first.Error);
+        Assert.True(second.Ok, second.Error);
+        Assert.Equal(chosen, first.Value!.FullPath);
+        Assert.NotEqual(first.Value.FullPath, second.Value!.FullPath);
+        Assert.True(File.Exists(first.Value.FullPath));
+        Assert.True(File.Exists(second.Value.FullPath));
+        Assert.True(File.Exists(livePath));
+        Assert.Equal(livePath, test.Database.FilePath);
+        Assert.Equal(1L, CountProducts(test));
+        Assert.Empty(service.List()); // a USB backup is not duplicated into the managed folder
     }
 
     [Fact]
@@ -152,15 +180,87 @@ public sealed class BackupTests
         Assert.True(made.Ok, made.Error);
 
         TestData.AddProduct(test, name: "Brufen 400mg");
+        folders.WritePhoto("after-backup.jpg", "this new photo must be recoverable");
 
-        var restored = folders.Backups(test).Restore(made.Value!.FullPath, TestData.Owner);
+        var service = folders.Backups(test);
+        var restored = service.Restore(made.Value!.FullPath, TestData.Owner);
         Assert.True(restored.Ok, restored.Error);
 
         var safety = Path.Combine(folders.BackupFolder, restored.Value!.SafetyCopy);
         Assert.True(File.Exists(safety), "the safety copy must exist before anything is replaced");
 
-        // The safety copy is the shop as it was a moment before the restore: both medicines.
+        // The safety zip is the shop as it was a moment before the restore: both medicines + photo.
         Assert.Equal(2L, CountProductsInFile(safety));
+        using (var zip = ZipFile.OpenRead(safety))
+        {
+            Assert.Contains(zip.Entries, entry => entry.FullName == "area11.db");
+            Assert.Contains(zip.Entries, entry => entry.FullName == "photos/after-backup.jpg");
+        }
+
+        var listed = Assert.Single(service.List(), file => file.IsSafetyCopy);
+        Assert.Equal(restored.Value.SafetyCopy, listed.FileName);
+        Assert.Equal("Before restore", listed.KindLabel);
+        Assert.Contains(restored.Value.SafetyCopy, test.Settings.GetString("backup.lastRestoreSummary"));
+
+        // Restore that recovery zip itself: the two newer medicines and their photo must return.
+        var recoveredPhoto = Path.Combine(folders.PhotoFolder, "after-backup.jpg");
+        File.Delete(recoveredPhoto);
+        var back = service.Restore(safety, TestData.Owner);
+        Assert.True(back.Ok, back.Error);
+        Assert.Equal(2L, CountProducts(test));
+        Assert.Equal("this new photo must be recoverable", File.ReadAllText(recoveredPhoto));
+    }
+
+    [Fact]
+    public void RestoreWarning_NamesNewerLiveWorkInsteadOfSilentlyDiscardingIt()
+    {
+        using var test = new TestDatabase();
+        using var folders = new TempFolders();
+
+        TestData.AddProduct(test, name: "Panadol 500mg");
+        var service = folders.Backups(test);
+        var made = service.Create(TestData.Owner);
+        Assert.True(made.Ok, made.Error);
+        var file = service.List().Single(item => item.FullPath == made.Value!.FullPath);
+        var later = TimeSource.Now.AddMinutes(5).ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+
+        test.Database.Tx(connection => test.Database.Execute(connection, @"
+INSERT INTO audit_logs(at, user_name, action, module, details)
+VALUES(@at, 'owner', 'test_new_work', 'Products', 'work after the backup');",
+            new { at = later }));
+
+        var warning = service.RestoreWarning(file);
+
+        Assert.Contains("Newer work", warning, StringComparison.Ordinal);
+        Assert.Contains(later, warning, StringComparison.Ordinal);
+        Assert.Contains("recovery zip", warning, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Restore_RefusesAPhotoPathThatEscapesBeforeTheLiveShopIsTouched()
+    {
+        using var test = new TestDatabase();
+        using var folders = new TempFolders();
+
+        TestData.AddProduct(test, name: "Panadol 500mg");
+        var service = folders.Backups(test);
+        var made = service.Create(TestData.Owner);
+        Assert.True(made.Ok, made.Error);
+        TestData.AddProduct(test, name: "Brufen 400mg");
+
+        using (var zip = ZipFile.Open(made.Value!.FullPath, ZipArchiveMode.Update))
+        {
+            var entry = zip.CreateEntry("photos/../escaped.txt");
+            using var writer = new StreamWriter(entry.Open());
+            writer.Write("must never escape");
+        }
+
+        var restored = service.Restore(made.Value.FullPath, TestData.Owner);
+
+        Assert.False(restored.Ok);
+        Assert.Contains("outside the photo folder", restored.Error, StringComparison.Ordinal);
+        Assert.Equal(2L, CountProducts(test));
+        Assert.False(File.Exists(Path.GetFullPath(Path.Combine(folders.PhotoFolder, "..", "escaped.txt"))));
     }
 
     [Fact]
@@ -283,7 +383,179 @@ public sealed class BackupTests
         Assert.NotNull(saved.Error);
     }
 
+    [Fact]
+    public void Restore_ABCSequence_NewBackupContainsCAndSafetyRetainsB()
+    {
+        using var test = new TestDatabase();
+        using var folders = new TempFolders();
+
+        TestData.AddProduct(test, name: "State A");
+        folders.WritePhoto("a.jpg", "photo A");
+        var service = folders.Backups(test);
+        var backupA = service.Create(TestData.Owner);
+        Assert.True(backupA.Ok, backupA.Error);
+
+        TestData.AddProduct(test, name: "State B");
+        folders.WritePhoto("b.jpg", "photo B");
+        Assert.True(service.Restore(backupA.Value!.FullPath, TestData.Owner).Ok);
+        Assert.Equal(new[] { "State A" }, ProductNames(test));
+        Assert.Equal("photo B", File.ReadAllText(Path.Combine(folders.PhotoFolder, "b.jpg")));
+        var recoveryB = Assert.Single(service.List(), file => file.IsSafetyCopy).FullPath;
+        AssertPhotosInZip(recoveryB, "photos/a.jpg", "photos/b.jpg");
+
+        TestData.AddProduct(test, name: "State C");
+        folders.WritePhoto("c.jpg", "photo C");
+        var backupC = service.Create(TestData.Owner);
+        Assert.True(backupC.Ok, backupC.Error);
+        AssertPhotosInZip(backupC.Value!.FullPath, "photos/a.jpg", "photos/b.jpg", "photos/c.jpg");
+
+        TestData.AddProduct(test, name: "State D");
+        folders.WritePhoto("d.jpg", "photo D");
+        Assert.True(service.Restore(backupC.Value.FullPath, TestData.Owner).Ok);
+        Assert.Equal(new[] { "State A", "State C" }, ProductNames(test));
+        Assert.Equal("photo A", File.ReadAllText(Path.Combine(folders.PhotoFolder, "a.jpg")));
+        Assert.Equal("photo C", File.ReadAllText(Path.Combine(folders.PhotoFolder, "c.jpg")));
+        Assert.Equal("photo B", File.ReadAllText(Path.Combine(folders.PhotoFolder, "b.jpg")));
+
+        // Photo restore is deliberately non-destructive: D was not in the C zip, but the live file
+        // is still retained. The zip itself, asserted above, is the exact C-time photo baseline.
+        Assert.Equal("photo D", File.ReadAllText(Path.Combine(folders.PhotoFolder, "d.jpg")));
+
+        // The zip made immediately before the first restore is the way back to B. Delete B's photo
+        // first so this really proves recovery rather than merely finding the retained copy.
+        File.Delete(Path.Combine(folders.PhotoFolder, "b.jpg"));
+        Assert.True(service.Restore(recoveryB, TestData.Owner).Ok);
+        Assert.Equal(new[] { "State A", "State B" }, ProductNames(test));
+        Assert.Equal("photo B", File.ReadAllText(Path.Combine(folders.PhotoFolder, "b.jpg")));
+        Assert.Equal("photo C", File.ReadAllText(Path.Combine(folders.PhotoFolder, "c.jpg")));
+
+        File.Delete(Path.Combine(folders.PhotoFolder, "c.jpg"));
+        Assert.True(service.Restore(backupC.Value.FullPath, TestData.Owner).Ok);
+        Assert.Equal(new[] { "State A", "State C" }, ProductNames(test));
+        Assert.Equal("photo C", File.ReadAllText(Path.Combine(folders.PhotoFolder, "c.jpg")));
+        Assert.Equal("photo B", File.ReadAllText(Path.Combine(folders.PhotoFolder, "b.jpg")));
+    }
+
+    [Fact]
+    public void Restore_DamagedZip_LeavesTheLiveShopAlone()
+    {
+        using var test = new TestDatabase();
+        using var folders = new TempFolders();
+
+        TestData.AddProduct(test, name: "In backup");
+        var service = folders.Backups(test);
+        var backup = service.Create(TestData.Owner);
+        Assert.True(backup.Ok, backup.Error);
+
+        TestData.AddProduct(test, name: "Still live");
+        folders.WritePhoto("keep.jpg", "keep me");
+        var bytes = File.ReadAllBytes(backup.Value!.FullPath);
+        Assert.True(bytes.Length > 32);
+        File.WriteAllBytes(backup.Value.FullPath, bytes[..^32]);
+
+        var restored = service.Restore(backup.Value.FullPath, TestData.Owner);
+
+        Assert.False(restored.Ok);
+        Assert.Equal(new[] { "In backup", "Still live" }, ProductNames(test));
+        Assert.Equal("keep me", File.ReadAllText(Path.Combine(folders.PhotoFolder, "keep.jpg")));
+        Assert.DoesNotContain(service.List(), file => file.IsSafetyCopy);
+    }
+
+    [Fact]
+    public void Restore_WhenPhotoCopyFails_RollsBackTheDatabaseAndPreviousPhotos()
+    {
+        using var test = new TestDatabase();
+        using var folders = new TempFolders();
+
+        TestData.AddProduct(test, name: "From backup");
+        folders.WritePhoto("blocked.jpg", "backup photo");
+        folders.WritePhoto("source-only.jpg", "must not survive rollback");
+        var service = folders.Backups(test);
+        var backup = service.Create(TestData.Owner);
+        Assert.True(backup.Ok, backup.Error);
+
+        TestData.AddProduct(test, name: "Still live");
+        folders.WritePhoto("keep.jpg", "previous live photo");
+        File.Delete(Path.Combine(folders.PhotoFolder, "source-only.jpg"));
+        File.Delete(Path.Combine(folders.PhotoFolder, "blocked.jpg"));
+
+        // A directory with the desired photo's name makes File.Copy fail on every supported OS.
+        // It was already part of the live folder, so a faithful rollback must leave it alone too.
+        Directory.CreateDirectory(Path.Combine(folders.PhotoFolder, "blocked.jpg"));
+
+        var restored = service.Restore(backup.Value!.FullPath, TestData.Owner);
+
+        Assert.False(restored.Ok);
+        Assert.Contains("original shop data was put back", restored.Error, StringComparison.Ordinal);
+        Assert.Equal(new[] { "From backup", "Still live" }, ProductNames(test));
+        Assert.Equal("previous live photo", File.ReadAllText(Path.Combine(folders.PhotoFolder, "keep.jpg")));
+        Assert.False(File.Exists(Path.Combine(folders.PhotoFolder, "source-only.jpg")));
+        Assert.True(Directory.Exists(Path.Combine(folders.PhotoFolder, "blocked.jpg")));
+    }
+
+    [Fact]
+    public void Restore_WhenTheLiveDatabaseIsLocked_PreservesItsSidecarsAndData()
+    {
+        // Windows denies replacement when an open handle did not share Delete. Unix permits the
+        // rename despite that handle, so only Windows can exercise this real locked-file boundary.
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        using var test = new TestDatabase();
+        using var folders = new TempFolders();
+
+        TestData.AddProduct(test, name: "From backup");
+        var service = folders.Backups(test);
+        var backup = service.Create(TestData.Owner);
+        Assert.True(backup.Ok, backup.Error);
+        TestData.AddProduct(test, name: "Still live");
+
+        var sidecars = new[] { "-wal", "-shm", "-journal" }
+            .Select(suffix => test.Database.FilePath + suffix)
+            .ToArray();
+        foreach (var sidecar in sidecars)
+        {
+            File.WriteAllBytes(sidecar, Array.Empty<byte>());
+        }
+
+        ServiceResult<RestoreResult> restored;
+        using (var liveLock = new FileStream(test.Database.FilePath, FileMode.Open, FileAccess.ReadWrite,
+                   FileShare.ReadWrite))
+        {
+            // ReadWrite sharing lets the safety copy read the live shop; withholding Delete makes
+            // the subsequent File.Move fail instead of silently replacing the locked database.
+            restored = service.Restore(backup.Value!.FullPath, TestData.Owner);
+        }
+
+        Assert.False(restored.Ok);
+        foreach (var sidecar in sidecars)
+        {
+            Assert.True(File.Exists(sidecar), $"A failed replacement deleted {Path.GetFileName(sidecar)}.");
+        }
+
+        Assert.Equal(new[] { "From backup", "Still live" }, ProductNames(test));
+        Assert.Single(service.List(), file => file.IsSafetyCopy);
+    }
+
     // ------------------------------ helpers ------------------------------
+
+    private static void AssertPhotosInZip(string path, params string[] expected)
+    {
+        using var zip = ZipFile.OpenRead(path);
+        var actual = zip.Entries
+            .Where(entry => entry.FullName.StartsWith("photos/", StringComparison.Ordinal))
+            .Select(entry => entry.FullName)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(expected.OrderBy(name => name, StringComparer.Ordinal).ToArray(), actual);
+    }
+
+    private static List<string> ProductNames(TestDatabase test) =>
+        test.Database.Tx(connection => test.Database.Query<string>(connection,
+            "SELECT name FROM products ORDER BY name;"));
 
     private static long CountProducts(TestDatabase test) =>
         test.Database.Tx(connection => Convert.ToInt64(
@@ -299,23 +571,41 @@ public sealed class BackupTests
         test.Database.Tx(connection => test.Database.Scalar(connection,
             "SELECT name FROM products WHERE id = @id;", new { id = productId })?.ToString());
 
-    /// <summary>How many medicines a database FILE holds - used to inspect a safety copy.</summary>
+    /// <summary>How many medicines a safety zip holds, without changing the live test database.</summary>
     private static long CountProductsInFile(string path)
     {
-        var builder = new SqliteConnectionStringBuilder
+        var extracted = Path.Combine(Path.GetTempPath(), $"area11-test-safety-{Guid.NewGuid():N}.db");
+
+        try
         {
-            DataSource = path,
-            Mode = SqliteOpenMode.ReadOnly,
-            Pooling = false
-        };
+            using (var zip = ZipFile.OpenRead(path))
+            {
+                var database = zip.Entries.Single(entry => entry.FullName == "area11.db");
+                database.ExtractToFile(extracted);
+            }
 
-        using var connection = new SqliteConnection(builder.ToString());
-        connection.Open();
+            var builder = new SqliteConnectionStringBuilder
+            {
+                DataSource = extracted,
+                Mode = SqliteOpenMode.ReadOnly,
+                Pooling = false
+            };
 
-        using var command = connection.CreateCommand();
-        command.CommandText = "SELECT COUNT(1) FROM products;";
+            using var connection = new SqliteConnection(builder.ToString());
+            connection.Open();
 
-        return Convert.ToInt64(command.ExecuteScalar() ?? 0L);
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT COUNT(1) FROM products;";
+
+            return Convert.ToInt64(command.ExecuteScalar() ?? 0L);
+        }
+        finally
+        {
+            if (File.Exists(extracted))
+            {
+                File.Delete(extracted);
+            }
+        }
     }
 
     /// <summary>Two folders per test: the shop's photos and its backups. Deleting them is the test's job.</summary>

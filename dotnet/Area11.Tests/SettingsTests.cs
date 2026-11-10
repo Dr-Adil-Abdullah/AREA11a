@@ -15,6 +15,35 @@ public sealed class SettingsTests
     private static readonly User Owner = new() { Id = 1, Name = "Owner", Role = "owner" };
 
     [Fact]
+    public void ProductPhotoSizeAcceptsOnlyMediumAndLargeAndRequiresSettingsPermission()
+    {
+        using var test = new TestDatabase();
+        Assert.Equal("medium", test.Settings.GetString("appearance.productPhotoSize"));
+        Assert.False(test.Settings.Set("appearance.productPhotoSize", "huge", Owner).Ok);
+        Assert.Equal("medium", test.Settings.GetString("appearance.productPhotoSize"));
+        Assert.False(test.Settings.Set("appearance.productPhotoSize", "large", TestData.Cashier(test)).Ok);
+        Assert.True(test.Settings.Set("appearance.productPhotoSize", "large", Owner).Ok);
+        test.Settings.Reload();
+        Assert.Equal("large", test.Settings.GetString("appearance.productPhotoSize"));
+        Assert.True(test.Settings.Set("appearance.productPhotoSize", "medium", Owner).Ok);
+    }
+
+    [Fact]
+    public void IconSettingRequiresOwnerAndGeneratedSafeFileName()
+    {
+        using var test = new TestDatabase();
+        var safe = "area11-icon-" + Guid.NewGuid().ToString("N") + ".ico";
+        var manager = TestData.AddUser(test, "manager");
+        Assert.False(test.Settings.Set("appearance.iconFileName", safe, manager).Ok);
+        Assert.False(test.Settings.Set("appearance.iconFileName", "../other.ico", Owner).Ok);
+        Assert.False(test.Settings.SetUiOnly("appearance.iconFileName", safe).Ok);
+        Assert.False(test.Settings.SetUiOnly("appearance.productPhotoSize", "large").Ok);
+        Assert.True(test.Settings.Set("appearance.iconFileName", safe, Owner).Ok);
+        Assert.Equal(safe, test.Settings.GetString("appearance.iconFileName"));
+        Assert.True(test.Settings.Set("appearance.iconFileName", "", Owner).Ok);
+    }
+
+    [Fact]
     public void BothPaperWidths_AreAccepted()
     {
         using var test = new TestDatabase();
@@ -105,13 +134,15 @@ public sealed class SettingsTests
         {
             ["store.name"] = "Al-Shifa Pharmacy",
             ["printer.width"] = 80,
-            ["printer.autoPrint"] = false
+            ["printer.autoPrint"] = false,
+            ["sale.successPopup"] = false
         }, Owner);
 
         Assert.True(result.Ok, result.Error);
         Assert.Equal("Al-Shifa Pharmacy", test.Settings.GetString("store.name"));
         Assert.Equal(80, test.Settings.GetInt("printer.width"));
         Assert.False(test.Settings.GetBool("printer.autoPrint"));
+        Assert.False(test.Settings.GetBool("sale.successPopup", true));
 
         using var connection = test.Database.Open();
         var audits = Convert.ToInt64(test.Database.Scalar(connection,

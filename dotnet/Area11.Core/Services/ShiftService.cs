@@ -56,6 +56,21 @@ public sealed class ShiftService
         }
     }
 
+    /// <summary>The most recent counted closing, used as the next galla's default opening cash.</summary>
+    public ShiftMoney? LastCounted()
+    {
+        try
+        {
+            using var connection = _db.Open();
+            return ReadLastCounted(connection);
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The previous counted drawer could not be read.", exception);
+            return null;
+        }
+    }
+
     /// <summary>Opens the drawer with a float. Refused while another shift is open.</summary>
     public ServiceResult<ShiftMoney> Open(User user, long openingFloatPaisa, string? note)
     {
@@ -79,6 +94,19 @@ public sealed class ShiftService
                     "A shift is already open. Close it before counting the drawer again.");
             }
 
+            var cleanNote = string.IsNullOrWhiteSpace(note) ? null : note!.Trim();
+            var previous = ReadLastCounted(connection);
+            var openingDifference = previous?.ActualPaisa is long counted
+                ? openingFloatPaisa - counted
+                : 0L;
+
+            if (openingDifference != 0 && !HasDifferenceReason(cleanNote))
+            {
+                return ServiceResult<ShiftMoney>.Fail(
+                    $"Opening cash differs from the previous counted {Money.Format(previous!.ActualPaisa!.Value)} " +
+                    $"by {Money.Format(Math.Abs(openingDifference))}. Write the reason before opening the shift.");
+            }
+
             _db.Execute(connection, @"
 INSERT INTO shifts(user_id, opened_at, opening_float_paisa, status, note)
 VALUES(@userId, @at, @openingFloat, 'open', @note);",
@@ -87,13 +115,17 @@ VALUES(@userId, @at, @openingFloat, 'open', @note);",
                     userId = user.Id,
                     at = Clock.Now(),
                     openingFloat = openingFloatPaisa,
-                    note = string.IsNullOrWhiteSpace(note) ? null : note!.Trim()
+                    note = cleanNote
                 });
 
             var id = (int)_db.NextId(connection);
 
             _audit.Record(connection, user, "Cash", "shift_open", "shifts", id.ToString(),
-                newValue: Money.Format(openingFloatPaisa));
+                newValue: Money.Format(openingFloatPaisa),
+                details: previous?.ActualPaisa is long previousCash
+                    ? $"Previous counted {Money.Format(previousCash)}; opening " +
+                      $"{ShiftWords.Difference(openingDifference)}; reason: {cleanNote ?? "(not required)"}"
+                    : cleanNote);
 
             var shift = ReadOpen(connection);
 
@@ -153,6 +185,13 @@ VALUES(@userId, @at, @openingFloat, 'open', @note);",
             shift.Status = "closed";
 
             var cleanNote = string.IsNullOrWhiteSpace(note) ? null : note!.Trim();
+
+            if (shift.DifferencePaisa != 0 && !HasDifferenceReason(cleanNote))
+            {
+                return ServiceResult<ShiftMoney>.Fail(
+                    $"The drawer is {shift.DifferenceLabel}. Write the reason before closing the shift; " +
+                    "even a Rs 1 difference needs one.");
+            }
 
             _db.Execute(connection, @"
 UPDATE shifts
@@ -267,6 +306,13 @@ WHERE id = @id;",
                 shift.DifferencePaisa = countedPaisa - shift.ExpectedPaisa;
                 shift.Status = "closed";
                 shift.HandedToName = next.Name.Trim();
+
+                if (shift.DifferencePaisa != 0 && !HasDifferenceReason(cleanNote))
+                {
+                    return ServiceResult<ShiftHandover>.Fail(
+                        $"The drawer is {shift.DifferenceLabel}. Write the reason before handing over; " +
+                        "the next shift will still start with the actual counted cash.");
+                }
 
                 _db.Execute(connection, @"
 UPDATE shifts
@@ -476,6 +522,22 @@ LIMIT @limit;",
         }
     }
 
+    private static bool HasDifferenceReason(string? note) =>
+        !string.IsNullOrWhiteSpace(note) && note.Trim().Length >= 3;
+
+    private ShiftMoney? ReadLastCounted(Microsoft.Data.Sqlite.SqliteConnection connection) =>
+        _db.QuerySingle<ShiftMoney>(connection, @"
+SELECT s.id AS id, s.user_id AS userId, s.opened_at AS openedAt, IFNULL(u.name, '') AS openedBy,
+       s.opening_float_paisa AS openingFloatPaisa, IFNULL(s.expected_paisa, 0) AS expectedPaisa,
+       s.actual_paisa AS actualPaisa, s.difference_paisa AS differencePaisa,
+       s.status AS status, s.note AS note, s.handed_to_name AS handedToName,
+       s.opened_from_shift_id AS openedFromShiftId
+FROM shifts s
+LEFT JOIN users u ON u.id = s.user_id
+WHERE s.status = 'closed' AND s.actual_paisa IS NOT NULL
+ORDER BY s.id DESC
+LIMIT 1;");
+
     private ShiftMoney? ReadOpen(Microsoft.Data.Sqlite.SqliteConnection connection) =>
         _db.QuerySingle<ShiftMoney>(connection, @"
 SELECT s.id AS id, s.user_id AS userId, s.opened_at AS openedAt, IFNULL(u.name, '') AS openedBy,
@@ -531,12 +593,16 @@ SELECT
             AND p.date >= @from AND p.date <= @to), 0) AS cashSalesPaisa,
   IFNULL((SELECT SUM(p.amount_paisa) FROM payments p
           WHERE p.method = 'cash' AND p.sale_id IS NULL AND p.customer_id IS NOT NULL
+            AND p.provisional_return_id IS NULL
             AND p.date >= @from AND p.date <= @to), 0) AS cashCollectionsPaisa,
   IFNULL((SELECT SUM(p.amount_paisa) FROM payments p
           WHERE p.method = 'cash' AND p.supplier_id IS NOT NULL
             AND p.date >= @from AND p.date <= @to), 0) AS supplierCashOutPaisa,
   IFNULL((SELECT SUM(r.cash_refund_paisa) FROM sale_returns r
-          WHERE r.date >= @from AND r.date <= @to), 0) AS cashRefundsPaisa,
+          WHERE r.date >= @from AND r.date <= @to), 0)
+  + IFNULL((SELECT -SUM(p.amount_paisa) FROM payments p
+            WHERE p.provisional_return_id IS NOT NULL AND p.amount_paisa < 0
+              AND p.date >= @from AND p.date <= @to), 0) AS cashRefundsPaisa,
   IFNULL((SELECT SUM(sr.total_paisa) FROM supplier_returns sr
           WHERE sr.settled = 1 AND sr.date >= @from AND sr.date <= @to), 0) AS supplierCashInPaisa,
   -- F-32: money the shop spent (rent, tea, a repair) and cash the owner took both left the till.

@@ -154,6 +154,142 @@ public sealed class AuditViewerTests
         Assert.Equal("0 line(s)", page.Value.CountLabel);
     }
 
+    // ------------------------------------------------------------------ Z-05 earlier-state reader
+
+    [Fact]
+    public void EarlierState_KeepsCompleteJsonAndUnicode_AndReadingNeverWritesHistory()
+    {
+        using var test = new TestDatabase();
+        var longNote = "ریکارڈ " + new string('ن', 600);
+        var oldValue = "{\"Name\":\"الشفاء\",\"Note\":\"" + longNote + "\",\"RetailPaisa\":3000}";
+        var newValue = "{\"Name\":\"الشفاء فارمیسی\",\"Note\":\"" + longNote + "\",\"RetailPaisa\":3500}";
+        Record(test, "Settings", "settings_change", "settings", "store.profile", oldValue, newValue);
+
+        var before = Viewer(test).Read(new AuditFilter(), TestData.Owner).Value!;
+        Assert.Single(before.Rows);
+        var snapshot = AuditSnapshot.For(before.Rows[0]);
+
+        Assert.Equal(oldValue, snapshot.EarlierRaw);       // the evidence itself is not normalised
+        Assert.Equal(newValue, snapshot.RecordedRaw);
+        Assert.Contains(longNote, snapshot.EarlierText);   // no grid-style truncation
+        Assert.Contains("الشفاء", snapshot.EarlierText);  // not a run of \u escapes
+        Assert.Contains("\n", snapshot.EarlierText);      // valid JSON is indented for reading
+        Assert.Contains("3500", snapshot.RecordedText);
+
+        var after = Viewer(test).Read(new AuditFilter(), TestData.Owner).Value!;
+        Assert.Equal(before.Total, after.Total);
+        Assert.Equal(oldValue, after.Rows[0].OldValue);
+        Assert.Equal(newValue, after.Rows[0].NewValue);
+    }
+
+    [Fact]
+    public void EarlierState_PlainTextAndBrokenJsonRemainVerbatim()
+    {
+        using var test = new TestDatabase();
+        Record(test, "Settings", "settings_change", "settings", "store.name", "Old Shop", "Al-Shifa");
+        Record(test, "Import", "product_import", "products", "7", "{\"Name\":", "[1,");
+
+        var rows = Viewer(test).Read(new AuditFilter(), TestData.Owner).Value!.Rows;
+        var plain = AuditSnapshot.For(rows.Single(row => row.Module == "Settings"));
+        var broken = AuditSnapshot.For(rows.Single(row => row.Module == "Import"));
+
+        Assert.Equal("Old Shop", plain.EarlierText);
+        Assert.Equal("Al-Shifa", plain.RecordedText);
+        Assert.Equal("{\"Name\":", broken.EarlierText);
+        Assert.Equal("[1,", broken.RecordedText);
+    }
+
+    [Fact]
+    public void EarlierState_CreateAndDeleteExplainTheMissingSide()
+    {
+        using var test = new TestDatabase();
+        Record(test, "POS", "sale_create", "sales", "1", null, "INV-0001");
+        Record(test, "Inventory", "product_deactivate", "products", "7", "{\"Name\":\"Panadol\"}", null);
+
+        var rows = Viewer(test).Read(new AuditFilter(), TestData.Owner).Value!.Rows;
+        var created = AuditSnapshot.For(rows.Single(row => row.Action == "sale_create"));
+        var deleted = AuditSnapshot.For(rows.Single(row => row.Action == "product_deactivate"));
+
+        Assert.False(created.HasEarlierState);
+        Assert.True(created.HasRecordedState);
+        Assert.Equal(AuditSnapshot.NoEarlierState, created.EarlierText);
+        Assert.Equal("INV-0001", created.RecordedText);
+
+        Assert.True(deleted.HasEarlierState);
+        Assert.False(deleted.HasRecordedState);
+        Assert.Contains("Panadol", deleted.EarlierText);
+        Assert.Equal(AuditSnapshot.NoRecordedState, deleted.RecordedText);
+    }
+
+    [Fact]
+    public void EarlierState_DetailsOnlyLineKeepsContextWithoutInventingAChange()
+    {
+        using var test = new TestDatabase();
+        Record(test, "Auth", "login", "users", "7", null, null, details: "2 failed attempts");
+
+        var row = Viewer(test).Read(new AuditFilter(), TestData.Owner).Value!.Rows[0];
+        var snapshot = AuditSnapshot.For(row);
+
+        Assert.False(snapshot.HasEarlierState);
+        Assert.False(snapshot.HasRecordedState);
+        Assert.Equal("2 failed attempts", snapshot.DetailsText);
+        Assert.Contains("login", snapshot.ContextText);
+        Assert.Contains("users #7", snapshot.ContextText);
+        Assert.Contains("Owner", snapshot.ContextText);
+    }
+
+    [Fact]
+    public void EarlierState_MoneyAndStockGuideToSeparateAuditedCorrections()
+    {
+        using var test = new TestDatabase();
+        Record(test, "POS", "sale_create", "sales", "1", null, "INV-0001");
+        Record(test, "StockTake", "stock_take_apply", "stock_takes", "ST-0001", "5", "3");
+
+        var rows = Viewer(test).Read(new AuditFilter(), TestData.Owner).Value!.Rows;
+        var sale = AuditSnapshot.For(rows.Single(row => row.Action == "sale_create"));
+        var stock = AuditSnapshot.For(rows.Single(row => row.Action == "stock_take_apply"));
+
+        Assert.Contains("Returns", sale.CorrectionText);
+        Assert.Contains("khata and drawer", sale.CorrectionText);
+        Assert.Contains("never delete the bill", sale.CorrectionText);
+        Assert.Contains("Stock-take", stock.CorrectionText);
+        Assert.Contains("physical batch", stock.CorrectionText);
+        Assert.Contains("new audited stock movement", stock.CorrectionText);
+    }
+
+    [Fact]
+    public void EarlierState_ProvisionalGuidanceNeverPromisesAPaymentOrFinancialReversal()
+    {
+        using var test = new TestDatabase();
+        Record(test, "Returns", "provisional_cancel", "provisional_returns", "PR-0001", "pending", "cancelled");
+
+        var row = Viewer(test).Read(new AuditFilter(), TestData.Owner).Value!.Rows[0];
+        var snapshot = AuditSnapshot.For(row);
+
+        Assert.Contains("same batch", snapshot.CorrectionText);
+        Assert.Contains("never creates a payment", snapshot.CorrectionText);
+        Assert.Contains("does not reverse the original financial effect", snapshot.CorrectionText);
+        Assert.DoesNotContain("refund", snapshot.CorrectionText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void EarlierState_SettingsAndMasterDataUseANewAuditedSaveNotHistoryRewrite()
+    {
+        using var test = new TestDatabase();
+        Record(test, "Settings", "settings_change", "settings", "store.name", "Old", "New");
+        Record(test, "Inventory", "product_edit", "products", "7", "Panadol", "Panadol Extra");
+
+        var rows = Viewer(test).Read(new AuditFilter(), TestData.Owner).Value!.Rows;
+        var settings = AuditSnapshot.For(rows.Single(row => row.Module == "Settings"));
+        var product = AuditSnapshot.For(rows.Single(row => row.Module == "Inventory"));
+
+        Assert.Contains("save the intended value again", settings.CorrectionText);
+        Assert.Contains("new audit line", settings.CorrectionText);
+        Assert.Contains("Products / Catalog", product.CorrectionText);
+        Assert.Contains("new audited change", product.CorrectionText);
+        Assert.Contains("Stock-take", product.CorrectionText);
+    }
+
     // ------------------------------------------------------------------ the CSV file
 
     [Fact]
@@ -210,11 +346,12 @@ public sealed class AuditViewerTests
         string entityId,
         string? oldValue,
         string? newValue,
-        string? at = null)
+        string? at = null,
+        string? details = null)
     {
         test.Database.Tx(connection => test.Database.Execute(connection, @"
-INSERT INTO audit_logs(at, user_id, user_name, action, module, entity, entity_id, old_value, new_value)
-VALUES(@at, @userId, @userName, @action, @module, @entity, @entityId, @oldValue, @newValue);",
+INSERT INTO audit_logs(at, user_id, user_name, action, module, entity, entity_id, old_value, new_value, details)
+VALUES(@at, @userId, @userName, @action, @module, @entity, @entityId, @oldValue, @newValue, @details);",
             new
             {
                 at = at ?? Clock.Now(),
@@ -225,7 +362,8 @@ VALUES(@at, @userId, @userName, @action, @module, @entity, @entityId, @oldValue,
                 entity,
                 entityId,
                 oldValue,
-                newValue
+                newValue,
+                details
             }));
     }
 }

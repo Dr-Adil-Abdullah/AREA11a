@@ -2,6 +2,7 @@ using System.Globalization;
 using Area11.Core.Data;
 using Area11.Core.Models;
 using Area11.Core.Utils;
+using Microsoft.Data.Sqlite;
 
 namespace Area11.Core.Services;
 
@@ -9,10 +10,9 @@ namespace Area11.Core.Services;
 /// Excel import, export and price change (F-37, Spec 24) - the bridge between the shop's old
 /// spreadsheet and this program.
 ///
-/// **Files are CSV, not XLSX, and that is a deliberate decision** (D-53 in the owner's file): Excel
-/// opens a CSV and saves one, and the app needs no extra package to read it. A pharmacy's old stock
-/// list is a plain table of columns; the one thing a CSV cannot carry is prettiness, and prettiness
-/// is not worth a build that might stop on the shop PC.
+/// Both real .xlsx workbooks and the original CSV workflow are accepted. The dependency-free Open
+/// XML codec and all-data/bulk-update rules live in <see cref="WorkbookService"/>; this service keeps
+/// the same new-record preview, duplicate, opening-stock and price-change rules for either format.
 ///
 /// The shape of every import is the same, because it is the shape that protects the shop:
 ///
@@ -77,6 +77,39 @@ public sealed class ImportService
         };
 
         return CsvWriter.Document(header, Array.Empty<IEnumerable<string?>>());
+    }
+
+    /// <summary>
+    /// Reads the matching worksheet from a real .xlsx file, then uses the exact same preview and
+    /// duplicate/opening-stock rules as CSV. A one-sheet workbook may have any sheet name.
+    /// </summary>
+    public ImportPreview PreviewWorkbook(string kind, byte[] bytes)
+    {
+        var workbook = XlsxFile.Read(bytes);
+        var sheet = workbook.Sheet(kind);
+        if (sheet is null)
+        {
+            var dataSheets = workbook.Sheets
+                .Where(candidate => !string.Equals(candidate.Name, "Instructions", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            if (dataSheets.Count == 1)
+            {
+                sheet = dataSheets[0];
+            }
+        }
+
+        if (sheet is null)
+        {
+            throw new InvalidDataException("The workbook has no '" + kind + "' worksheet.");
+        }
+
+        var text = XlsxFile.SheetAsCsv(sheet);
+        return kind switch
+        {
+            "Customers" => PreviewCustomers(text),
+            "Suppliers" => PreviewSuppliers(text),
+            _ => PreviewProducts(text)
+        };
     }
 
     /// <summary>
@@ -259,6 +292,11 @@ ORDER BY s.name COLLATE NOCASE;");
 
         var existingNames = ReadExistingProductNames();
         var existingBarcodes = ReadExistingBarcodes();
+        var activeUnits = ReadActiveUnits();
+        using var policyConnection = _db.Open();
+        var requiredCustomProduct = _db.QuerySingle<string>(policyConnection, @"
+SELECT label FROM custom_fields WHERE entity = 'product' AND active = 1 AND required = 1
+ORDER BY sort, id LIMIT 1;");
 
         for (var index = 1; index < table.Count; index++)
         {
@@ -284,6 +322,23 @@ ORDER BY s.name COLLATE NOCASE;");
             if (existingNames.Contains(name))
             {
                 preview.Rows.Add(Skipped(line, name, "already in the shop"));
+                continue;
+            }
+
+            if (requiredCustomProduct is not null)
+            {
+                preview.Rows.Add(Error(line, name, "CSV cannot supply required extra field \"" + requiredCustomProduct
+                    + "\". Create this product in the product editor instead."));
+                continue;
+            }
+
+            var productFieldError = NativeFieldPolicyService.RequiredTextError(_db, policyConnection, "product.generic", "Generic / salt", Field("generic"))
+                ?? NativeFieldPolicyService.RequiredTextError(_db, policyConnection, "product.brand", "Brand", Field("brand"))
+                ?? NativeFieldPolicyService.RequiredTextError(_db, policyConnection, "product.rack", "Rack / shelf", Field("rack"))
+                ?? NativeFieldPolicyService.RequiredTextError(_db, policyConnection, "product.pack", "Pack description", Field("pack"));
+            if (productFieldError is not null)
+            {
+                preview.Rows.Add(Error(line, name, productFieldError));
                 continue;
             }
 
@@ -334,6 +389,24 @@ ORDER BY s.name COLLATE NOCASE;");
                 continue;
             }
 
+            var baseUnit = NormalizeUnitName(Field("baseunit"));
+            if (baseUnit.Length == 0)
+            {
+                baseUnit = "tablet";
+            }
+            if (!activeUnits.TryGetValue(baseUnit, out var wholeOnly))
+            {
+                preview.Rows.Add(Error(line, name,
+                    "Base unit '" + baseUnit + "' is not on the active managed list. Add or restore it in Manage units first; nothing was imported."));
+                continue;
+            }
+            if (wholeOnly && !Qty.IsWhole(openingQty))
+            {
+                preview.Rows.Add(Error(line, name,
+                    "Opening " + baseUnit + " quantities must be whole units; ml is strength, not a stock division."));
+                continue;
+            }
+
             var item = new ProductImport
             {
                 Name = name,
@@ -343,7 +416,7 @@ ORDER BY s.name COLLATE NOCASE;");
                 Category = Empty(Field("category")),
                 RackNo = Empty(Field("rack")),
                 PackLabel = Empty(Field("pack")),
-                BaseUnit = Field("baseunit").Length == 0 ? "tablet" : Field("baseunit").ToLowerInvariant(),
+                BaseUnit = baseUnit,
                 BoxStrips = Whole(Field("boxstrips")),
                 StripTablets = Whole(Field("striptablets")),
                 CostPaisa = Money.ToPaisa(costRupees),
@@ -404,7 +477,29 @@ ORDER BY s.name COLLATE NOCASE;");
 
                 foreach (var item in preview.Products)
                 {
+                    var requiredCustom = _db.QuerySingle<string>(connection, @"
+SELECT label FROM custom_fields WHERE entity = 'product' AND active = 1 AND required = 1
+ORDER BY sort, id LIMIT 1;");
+                    if (requiredCustom is not null)
+                        throw new ValidationException("CSV cannot supply required extra field \"" + requiredCustom
+                            + "\". Preview again or create products in the product editor.");
+                    var required = NativeFieldPolicyService.RequiredTextError(_db, connection, "product.generic", "Generic / salt", item.Generic)
+                        ?? NativeFieldPolicyService.RequiredTextError(_db, connection, "product.brand", "Brand", item.Brand)
+                        ?? NativeFieldPolicyService.RequiredTextError(_db, connection, "product.rack", "Rack / shelf", item.RackNo)
+                        ?? NativeFieldPolicyService.RequiredTextError(_db, connection, "product.pack", "Pack description", item.PackLabel);
+                    if (required is not null) throw new ValidationException(required + " Preview again.");
                     var categoryId = CategoryId(connection, item.Category, categoryIds);
+                    var baseUnit = NormalizeUnitName(item.BaseUnit);
+                    if (!ActiveUnitExists(connection, baseUnit))
+                    {
+                        throw new ValidationException(
+                            "Base unit '" + baseUnit + "' is no longer active. Preview the file again after restoring or changing the unit; nothing was imported.");
+                    }
+                    if (UnitPolicy.RequiresWhole(_db, connection, baseUnit) && !Qty.IsWhole(item.OpeningQty))
+                    {
+                        throw new ValidationException(
+                            "Opening " + baseUnit + " quantities must be whole units; nothing was imported.");
+                    }
 
                     _db.Execute(connection, @"
 INSERT INTO products
@@ -424,7 +519,7 @@ VALUES
                             categoryId,
                             rackNo = item.RackNo,
                             packLabel = item.PackLabel,
-                            baseUnit = item.BaseUnit,
+                            baseUnit,
                             boxStrips = item.BoxStrips,
                             stripTablets = item.StripTablets,
                             costPaisa = item.CostPaisa,
@@ -523,6 +618,9 @@ VALUES(@productId, @batchId, 'import', @qty, 'import', 'Opening stock (import)',
 
         var phones = ReadExistingPhones();
         var names = ReadExistingCustomerNames();
+        using var policyConnection = _db.Open();
+        var phoneRequired = NativeFieldPolicyService.IsRequired(_db, policyConnection, "customer.phone");
+        var requiredCustom = RequiredCustomField(policyConnection, "customer");
 
         for (var index = 1; index < table.Count; index++)
         {
@@ -545,7 +643,19 @@ VALUES(@productId, @batchId, 'import', @qty, 'import', 'Opening stock (import)',
                 continue;
             }
 
+            if (requiredCustom is not null)
+            {
+                preview.Rows.Add(Error(line, name, "CSV cannot supply required extra field \"" + requiredCustom
+                    + "\". Create this customer in its form instead."));
+                continue;
+            }
+
             var phone = Field("phone");
+            if (string.IsNullOrWhiteSpace(phone) && phoneRequired)
+            {
+                preview.Rows.Add(Error(line, name, "Customer phone is required by the owner's field settings."));
+                continue;
+            }
 
             if (phone.Length > 0 && phones.Contains(phone))
             {
@@ -633,6 +743,16 @@ VALUES(@productId, @batchId, 'import', @qty, 'import', 'Opening stock (import)',
             var outcome = _db.Tx(connection =>
             {
                 var result = new ImportOutcome { Kind = "Customers", Skipped = preview.SkippedCount };
+                var requiredCustom = RequiredCustomField(connection, "customer");
+                if (requiredCustom is not null && preview.Customers.Count > 0)
+                    throw new ValidationException("CSV cannot supply required extra field \"" + requiredCustom
+                        + "\". Preview again or create records in the form.");
+
+                // The setting may have changed since preview. Recheck inside the single import
+                // transaction so no customer, opening balance or audit row is partially written.
+                if (NativeFieldPolicyService.IsRequired(_db, connection, "customer.phone")
+                    && preview.Customers.Any(item => string.IsNullOrWhiteSpace(item.Phone)))
+                    throw new ValidationException("Customer phone is required by the owner's field settings. Preview again.");
 
                 foreach (var item in preview.Customers)
                 {
@@ -672,6 +792,11 @@ VALUES(@name, @phone, @category, @limit, @opening, @opening, 0, 1, 1, @at);",
         }
     }
 
+    private string? RequiredCustomField(Microsoft.Data.Sqlite.SqliteConnection connection, string entity) =>
+        _db.QuerySingle<string>(connection, @"
+SELECT label FROM custom_fields WHERE entity = @entity AND active = 1 AND required = 1
+ORDER BY sort, id LIMIT 1;", new { entity });
+
     // =========================== Supplier import ===========================
 
     public ImportPreview PreviewSuppliers(string csvText)
@@ -695,6 +820,9 @@ VALUES(@name, @phone, @category, @limit, @opening, @opening, 0, 1, 1, @at);",
         }
 
         var names = ReadExistingSupplierNames();
+        using var policyConnection = _db.Open();
+        var phoneRequired = NativeFieldPolicyService.IsRequired(_db, policyConnection, "supplier.phone");
+        var requiredCustom = RequiredCustomField(policyConnection, "supplier");
 
         for (var index = 1; index < table.Count; index++)
         {
@@ -723,9 +851,30 @@ VALUES(@name, @phone, @category, @limit, @opening, @opening, 0, 1, 1, @at);",
                 continue;
             }
 
+            if (requiredCustom is not null)
+            {
+                preview.Rows.Add(Error(line, name, "CSV cannot supply required extra field \"" + requiredCustom
+                    + "\". Create this supplier in its form instead."));
+                continue;
+            }
+
             if (!Money.TryParse(Field("openingpayable"), out var opening) || opening < 0)
             {
                 preview.Rows.Add(Error(line, name, "Opening payable is not an amount of money."));
+                continue;
+            }
+
+            if (phoneRequired && string.IsNullOrWhiteSpace(Field("phone")))
+            {
+                preview.Rows.Add(Error(line, name, "Supplier phone is required by the owner's field settings."));
+                continue;
+            }
+
+            var agencyError = NativeFieldPolicyService.RequiredTextError(_db, policyConnection,
+                "supplier.agency", "Supplier agency", Field("agency"));
+            if (agencyError is not null)
+            {
+                preview.Rows.Add(Error(line, name, agencyError));
                 continue;
             }
 
@@ -772,9 +921,20 @@ VALUES(@name, @phone, @category, @limit, @opening, @opening, 0, 1, 1, @at);",
             var outcome = _db.Tx(connection =>
             {
                 var result = new ImportOutcome { Kind = "Suppliers", Skipped = preview.SkippedCount };
+                var requiredCustom = RequiredCustomField(connection, "supplier");
+                if (requiredCustom is not null && preview.Suppliers.Count > 0)
+                    throw new ValidationException("CSV cannot supply required extra field \"" + requiredCustom
+                        + "\". Preview again or create records in the form.");
+
+                if (NativeFieldPolicyService.IsRequired(_db, connection, "supplier.phone")
+                    && preview.Suppliers.Any(item => string.IsNullOrWhiteSpace(item.Phone)))
+                    throw new ValidationException("Supplier phone is required by the owner's field settings. Preview again.");
 
                 foreach (var item in preview.Suppliers)
                 {
+                    var agencyError = NativeFieldPolicyService.RequiredTextError(_db, connection,
+                        "supplier.agency", "Supplier agency", item.Agency);
+                    if (agencyError is not null) throw new ValidationException(agencyError + " Preview again.");
                     _db.Execute(connection, @"
 INSERT INTO suppliers(name, phone, agency, opening_balance_paisa, balance_paisa, active, created_at)
 VALUES(@name, @phone, @agency, @opening, @opening, 1, @at);",
@@ -1017,6 +1177,23 @@ WHERE id = @id;",
         return codes;
     }
 
+    private Dictionary<string, bool> ReadActiveUnits()
+    {
+        var units = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+        using var connection = _db.Open();
+        foreach (var row in _db.Query<Unit>(connection,
+            "SELECT name, whole_only AS wholeOnly FROM units WHERE active = 1;"))
+        {
+            units[NormalizeUnitName(row.Name)] = row.WholeOnly;
+        }
+        return units;
+    }
+
+    private bool ActiveUnitExists(SqliteConnection connection, string name) =>
+        name.Length > 0 && Convert.ToInt64(_db.Scalar(connection,
+            "SELECT COUNT(1) FROM units WHERE active = 1 AND name = @name COLLATE NOCASE;",
+            new { name }) ?? 0L) > 0;
+
     private HashSet<string> ReadExistingPhones()
     {
         var phones = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -1088,6 +1265,11 @@ WHERE id = @id;",
         int.TryParse((text ?? string.Empty).Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
             ? Math.Max(0, value)
             : 0;
+
+    private static string NormalizeUnitName(string? value) =>
+        string.Join(" ", (value ?? string.Empty).Trim()
+            .Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))
+            .ToLowerInvariant();
 
     // ---- the flat rows the export queries read ----
 

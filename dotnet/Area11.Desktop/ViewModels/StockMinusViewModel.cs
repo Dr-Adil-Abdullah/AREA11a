@@ -227,7 +227,7 @@ public sealed class StockMinusViewModel : ObservableObject, IEmptyPage
         // Load() moves the selection back to the same medicine, then this line replaces its status.
         Selected = Rows.FirstOrDefault(row => row.ProductId == keep) ?? Rows.FirstOrDefault();
 
-        SetStatus("Review saved for " + name + ". The stock is unchanged - correct it with a stock-take, a return or a write-off.", false);
+        SetStatus("Review saved for " + name + ". The stock is unchanged - reconcile it with a physical stock-take.", false);
     }
 
     private void SetStatus(string text, bool isError)

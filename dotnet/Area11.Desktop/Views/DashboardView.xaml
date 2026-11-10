@@ -6,7 +6,7 @@
         <StackPanel>
             <DockPanel Margin="0,0,0,16">
                 <StackPanel DockPanel.Dock="Left">
-                    <TextBlock Text="Dashboard" Style="{StaticResource PageTitle}" />
+                    <TextBlock Text="{DynamicResource AppLabel.dashboard}" Style="{StaticResource PageTitle}" />
                     <TextBlock Text="{Binding TodayText}" Style="{StaticResource PageSubtitle}" />
                 </StackPanel>
                 <Button Content="Refresh" Style="{StaticResource GhostButton}"
@@ -32,57 +32,80 @@
 
             <UniformGrid Columns="4" Margin="0,0,0,14">
                 <Border Style="{StaticResource Card}" Margin="0,0,6,0">
-                    <StackPanel>
-                        <TextBlock Text="TODAY'S BILLS" Style="{StaticResource MetricLabel}" />
-                        <TextBlock Text="{Binding BillsText}" Style="{StaticResource MetricValue}" />
-                    </StackPanel>
+                    <Button Command="{Binding OpenBillsCommand}" Background="Transparent" BorderThickness="0" Padding="0"
+                            HorizontalContentAlignment="Stretch" ToolTip="Open today's bills">
+                        <StackPanel>
+                            <TextBlock Text="TODAY'S BILLS" Style="{StaticResource MetricLabel}" />
+                            <TextBlock Text="{Binding BillsText}" Style="{StaticResource MetricValue}" />
+                        </StackPanel>
+                    </Button>
                 </Border>
                 <Border Style="{StaticResource Card}" Margin="6,0,6,0">
-                    <StackPanel>
-                        <TextBlock Text="TODAY'S SALES" Style="{StaticResource MetricLabel}" />
-                        <TextBlock Text="{Binding SalesText}" Style="{StaticResource MetricValue}"
+                    <Button Command="{Binding OpenSalesCommand}" Background="Transparent" BorderThickness="0" Padding="0"
+                            HorizontalContentAlignment="Stretch" ToolTip="Open today's sales report">
+                        <StackPanel>
+                            <TextBlock Text="TODAY'S SALES" Style="{StaticResource MetricLabel}" />
+                            <TextBlock Text="{Binding SalesText}" Style="{StaticResource MetricValue}"
                                    Foreground="{StaticResource BrandBrush}" />
                     </StackPanel>
+                    </Button>
                 </Border>
                 <Border Style="{StaticResource Card}" Margin="6,0,6,0"
                         Visibility="{Binding CanSeeProfit, Converter={StaticResource BoolToVis}}">
-                    <StackPanel>
-                        <TextBlock Text="TODAY'S PROFIT" Style="{StaticResource MetricLabel}" />
-                        <TextBlock Text="{Binding ProfitText}" Style="{StaticResource MetricValue}"
+                    <Button Command="{Binding OpenProfitCommand}" Background="Transparent" BorderThickness="0" Padding="0"
+                            HorizontalContentAlignment="Stretch" ToolTip="Open the profit report">
+                        <StackPanel>
+                            <TextBlock Text="TODAY'S PROFIT" Style="{StaticResource MetricLabel}" />
+                            <TextBlock Text="{Binding ProfitText}" Style="{StaticResource MetricValue}"
                                    Foreground="{StaticResource SuccessBrush}" />
                     </StackPanel>
+                    </Button>
                 </Border>
                 <Border Style="{StaticResource Card}" Margin="6,0,0,0">
-                    <StackPanel>
-                        <TextBlock Text="CUSTOMER CREDIT" Style="{StaticResource MetricLabel}" />
-                        <TextBlock Text="{Binding CreditText}" Style="{StaticResource MetricValue}" />
+                    <Button Command="{Binding OpenCreditCommand}" Background="Transparent" BorderThickness="0" Padding="0"
+                            HorizontalContentAlignment="Stretch" ToolTip="Open customer credit">
+                        <StackPanel>
+                            <TextBlock Text="CUSTOMER CREDIT" Style="{StaticResource MetricLabel}" />
+                            <TextBlock Text="{Binding CreditText}" Style="{StaticResource MetricValue}" />
                     </StackPanel>
+                    </Button>
                 </Border>
             </UniformGrid>
 
             <UniformGrid Columns="4">
                 <Border Style="{StaticResource Card}" Margin="0,0,6,0">
-                    <StackPanel>
-                        <TextBlock Text="PRODUCTS" Style="{StaticResource MetricLabel}" />
-                        <TextBlock Text="{Binding ProductsText}" Style="{StaticResource MetricValue}" />
+                    <Button Command="{Binding OpenProductsCommand}" Background="Transparent" BorderThickness="0" Padding="0"
+                            HorizontalContentAlignment="Stretch" ToolTip="Open all active products">
+                        <StackPanel>
+                            <TextBlock Text="PRODUCTS" Style="{StaticResource MetricLabel}" />
+                            <TextBlock Text="{Binding ProductsText}" Style="{StaticResource MetricValue}" />
                     </StackPanel>
+                    </Button>
                 </Border>
                 <Border Style="{StaticResource Card}" Margin="6,0,6,0">
-                    <StackPanel>
-                        <TextBlock Text="LOW STOCK" Style="{StaticResource MetricLabel}" />
-                        <TextBlock Text="{Binding LowStockText}" Style="{StaticResource MetricValue}"
+                    <Button Command="{Binding OpenLowStockCommand}" Background="Transparent" BorderThickness="0" Padding="0"
+                            HorizontalContentAlignment="Stretch" ToolTip="Open the low-stock product list">
+                        <StackPanel>
+                            <TextBlock Text="LOW STOCK" Style="{StaticResource MetricLabel}" />
+                            <TextBlock Text="{Binding LowStockText}" Style="{StaticResource MetricValue}"
                                    Foreground="{StaticResource WarningBrush}" />
                     </StackPanel>
+                    </Button>
                 </Border>
                 <Border Style="{StaticResource Card}" Margin="6,0,6,0">
-                    <StackPanel>
-                        <TextBlock Text="STOCK MINUS" Style="{StaticResource MetricLabel}" />
-                        <TextBlock Text="{Binding NegativeText}" Style="{StaticResource MetricValue}"
+                    <Button Command="{Binding OpenStockMinusCommand}" Background="Transparent" BorderThickness="0" Padding="0"
+                            HorizontalContentAlignment="Stretch" ToolTip="Open the stock-minus review">
+                        <StackPanel>
+                            <TextBlock Text="STOCK MINUS" Style="{StaticResource MetricLabel}" />
+                            <TextBlock Text="{Binding NegativeText}" Style="{StaticResource MetricValue}"
                                    Foreground="{StaticResource DangerBrush}" />
                     </StackPanel>
+                    </Button>
                 </Border>
                 <Border Style="{StaticResource Card}" Margin="6,0,0,0">
-                    <StackPanel>
+                    <Button Command="{Binding OpenExpiryCommand}" Background="Transparent" BorderThickness="0" Padding="0"
+                            HorizontalContentAlignment="Stretch" ToolTip="Open expiry alerts">
+                        <StackPanel>
                         <TextBlock Text="NEAR EXPIRY / EXPIRED" Style="{StaticResource MetricLabel}" />
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{Binding ExpiringText}" Style="{StaticResource MetricValue}"
@@ -95,6 +118,7 @@
                         <TextBlock Text="inside the nearest band / already past the date"
                                    Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
                     </StackPanel>
+                    </Button>
                 </Border>
             </UniformGrid>
 
@@ -102,8 +126,11 @@
                 <StackPanel>
                     <TextBlock Text="Cash drawer" Style="{StaticResource SectionTitle}" />
                     <TextBlock Text="{Binding ShiftText}" Style="{StaticResource PageSubtitle}" />
-                    <TextBlock Text="{Binding PayableText, StringFormat=Supplier payable: {0}}"
-                               Style="{StaticResource PageSubtitle}" Margin="0,6,0,0" />
+                    <Button Command="{Binding OpenPayableCommand}" Background="Transparent" BorderThickness="0" Padding="0"
+                            HorizontalContentAlignment="Left" Margin="0,6,0,0" ToolTip="Open supplier payables">
+                        <TextBlock Text="{Binding PayableText, StringFormat=Supplier payable: {0}}"
+                                   Style="{StaticResource PageSubtitle}" />
+                    </Button>
                 </StackPanel>
             </Border>
         </StackPanel>

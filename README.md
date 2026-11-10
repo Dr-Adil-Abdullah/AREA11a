@@ -1,5 +1,22 @@
 # Area11 — pharmacy POS + inventory for Windows
 
+> **WIP handoff, 24 Oct 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/60395e95-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/60395e95-area11a). Portion 4 is incomplete; portions 5–7 are approved next; Portion 17 is paused. Older status and approval statements below are historical. This branch is not a tested release.
+
+
+**Current source: v0.42.0 Kyanite `#3B526C` — master Portion 3 code written.** The product editor reloads complete tag IDs; primary category and filter-only tags are shown separately and explicit tag sets need a primary. Category-less products without tags and untouched legacy tag-only data remain; no guessed backfill. **929 tests written, 57/57 static; Windows build/xUnit and PT-14 physical verification pending.** Workbook category changes recheck tags; CSV import creates products without tags. Category put-away can leave other tags and remains for owner review. Baltic 921/921 is prior Core/Tests evidence. Portions 4–15 require approval.
+
+
+**Current source: v0.41.0 Siderite `#594D32`.** Owner-requested Dashboard fallback and Portion 2 Product workspace are written; **922 tests written, 57/57 static checks**, but Windows build/xUnit and PT-13 physical verification remain pending. Prior Baltic Core/Tests **921/921 PASS** is separate evidence. Portions 3–15 remain to be approved.
+
+
+**Latest owner evidence:** Baltic v0.40.0 Windows Core/Tests **921 passed / 0 failed / 0 skipped / 921**, 1m14s, ALL GREEN. This does not prove Desktop/WPF build or PT-12. Owner selected Dashboard as fallback without Counter permission; existing Baltic code needs adjustment. For Portion 2, owner selected both an Edit Product button and row double-click; coding approval remains separate.
+
+**Current source: v0.40.0 Baltic `#33566B` — Portion 1 code written, not yet Windows/WPF verified.** Counter-first permitted startup, wordmark-only Dashboard navigation and header-hosted existing page sections are included; 921 tests are written, 57 static checks pass. Owner's separately reported 918/918 run has no confirmed version. Run Windows Desktop build and `ALL GREEN - 921 of 921`; PT-12 remains pending. Master-checklist portions 2–15 await approval; see `docs/MASTER-CHECKLIST-ROADMAP.md`.
+
+
+**Latest verification and repair — v0.39.1 Admiralty `#274A68`:** the owner ran v0.39.0 Tourmaline Core/Tests on Windows and reported **916 passed / 2 failed / 0 skipped / 918**. The two test repairs are in source; **a Windows rerun (918/918), Desktop/WPF and PT-11 remain pending**. Static checks are not compilation. See `PHYSICAL-TESTING.md` for the failure details; Part 1 header/navigation requirements still need clarification.
+
+
 A native **Windows desktop** rebuild of the Area11 Smart Pharmacy & Retail POS + Inventory system,
 written in **C# / .NET 10 / WPF / SQLite**. It works with no internet, keeps the shop's whole
 database in one file, and prints bills instantly on a 58 mm or 80 mm thermal printer.
@@ -25,13 +42,17 @@ Ported from the original Next.js + SQLite web app (`Dr-Adil-Abdullah/Area11`) us
 > It has one line per feature with a mark - finished / one action left / not started - and an empty
 > box beside each line for the owner's pen. It is generated from the board below, so it cannot
 > drift: `python3 tools/make_checklist.py`.
+>
+> **Physical testing اور manual instructions کا مالک tracker:** [printable PDF](docs/AREA11-TESTING-TRACKER-URDU.pdf) ·
+> [RTL HTML](docs/AREA11-TESTING-TRACKER-URDU.html) · [editable Markdown](docs/AREA11-TESTING-TRACKER-URDU.md)۔
+> اس میں PT-01 تا PT-10 کے passed/pending checks اور نتائج بھیجنے کے سانچے ہیں؛ running log `PHYSICAL-TESTING.md` ہی رہے گا۔
 
 | Phase | Contents | State |
 |---|---|---|
 | **1** | Foundation, database, sign-in, products, purchases `PINV`, counter `INV`, receipt & instant print, settings screen, **hold cart, split payment** | ✅ written and compiled; needs one real walk-through by the owner |
 | **2** | Returns `RET` / provisional `PR` / quarantine `Q`, alert centre, write-off, stock-take `ST`, khata and supplier ledgers | ✅ written (v0.3.0 - v0.3.12) |
 | **3** | Shift & galla, expenses, udhaar recovery, reports, black box, **backup ZIP**, **Excel / CSV import+export**, **reorder + WhatsApp order**, **stock-minus registry** | ✅ written (v0.4.0 - v0.11.0) |
-| **4** | **Loyalty** ✅ (v0.12.0), **photos & camera** ✅ (v0.13.0), **own fields** ✅ (v0.14.0), **several barcodes** ✅ (v0.15.0), **doctors, reps & lifetime profit** ✅ (v0.16.0), **second counter over the LAN** ✅ (v0.17.0), **tax, receipts & monthly statements** ✅ (v0.18.0), **self-installing installer** ✅ (v0.19.0), **printer & scanner test** 🟡 (v0.20.0 - waits for the shop's own printer), **Supabase cloud sync** ✅ (v0.21.0, repaired v0.26.0), **bills page with reprint** ✅ (v0.22.0), **printer fixed (code 6) and printers listed** ✅ (v0.22.1), **sample shop for a new database** ✅ (v0.23.0), **misspelt-medicine search** ✅ (v0.24.0), **purchase / partner / numbering tests** ✅ (v0.25.0), **cloud push repaired + Settings → Cloud sync** ✅ (v0.26.0, build fix v0.26.1), **find a bill without its number** ✅ (v0.27.0), **two and a half months of demo shop** ✅ (v0.28.0, **deleted in v0.30.2 - D-77**), **do the books add up? - eleven read-only rules over the shop's own rows** ✅ (v0.30.4), **the drawer changes hands with a signed slip** ✅ (v0.30.6), **who was short - the drawer per person, short and over never netted** ✅ (v0.31.0), **a home screen that matches the pages it summarises** ✅ (v0.29.0), fuzzy search | 🟡 started (v0.12.0) |
+| **4** | **Loyalty** ✅ (v0.12.0), **photos & camera** ✅ (v0.13.0), **own fields** ✅ (v0.14.0), **several barcodes** ✅ (v0.15.0), **doctors, reps & lifetime profit** ✅ (v0.16.0), **second counter over the LAN** ✅ (v0.17.0), **tax, receipts & monthly statements** ✅ (v0.18.0), **self-installing installer** ✅ (v0.19.0), **printer & scanner test** 🟡 (v0.20.0 - waits for the shop's own printer), **Supabase cloud sync** ✅ (v0.21.0, repaired v0.26.0), **bills page with reprint** ✅ (v0.22.0), **printer fixed (code 6) and printers listed** ✅ (v0.22.1), **sample shop for a new database** ✅ (v0.23.0), **misspelt-medicine search** ✅ (v0.24.0), **purchase / partner / numbering tests** ✅ (v0.25.0), **cloud push repaired + Settings → Cloud sync** ✅ (v0.26.0, build fix v0.26.1), **find a bill without its number** ✅ (v0.27.0), **two and a half months of demo shop** ✅ (v0.28.0, **deleted in v0.30.2 - D-77**), **do the books add up? - eleven read-only rules over the shop's own rows** ✅ (v0.30.4), **the drawer changes hands with a signed slip** ✅ (v0.30.6), **who was short - the drawer per person, short and over never netted** ✅ (v0.31.0), **a home screen that matches the pages it summarises** ✅ (v0.29.0), **custom application labels** 🟡 (v0.35.11 - written, awaiting Windows/live proof), fuzzy search | 🟡 started (v0.12.0) |
 
 The cloud mirror is set up from [`docs/CLOUD-SYNC.md`](docs/CLOUD-SYNC.md) (Urdu): one SQL block in Supabase,
 four settings in Area11, then push / look / bring.
@@ -39,19 +60,34 @@ four settings in Area11, then push / look / bring.
 Live counts are in [`docs/PROGRESS.md`](docs/PROGRESS.md) (features) and
 [`docs/RULES-MATRIX.md`](docs/RULES-MATRIX.md) (the owner's 116 numbered rules).
 
+**Current source — v0.39.0 Tourmaline `#7A1F5C`:** the owner-approved master checklist **Phase 1**
+adds migration 030 and typed contracts for native fields/acknowledged overrides, local-only drafts,
+managed generic formulas/brands, preferred-plus-historical suppliers, opening/closing drawer
+discrepancies, later-phase print/profit/sync settings, cloud format 3 parent ordering, and a guarded
+isolated-test rebuild with an automatic technical snapshot. Existing generic/brand text, quantities,
+money, documents and D-93/PR rules stay intact. **57/57 static checks pass with real C# grammar/member
+resolution, 918 cases are written, and 17/17 raw SQLite rehearsal groups pass.** Tourmaline has not
+been compiled or run here. No bulk-print/WhatsApp/profit UI or automatic-sync scheduler is claimed;
+master Phases 2–7 require separate approval. Cobalt 900/900 remains previous-release evidence.
+
 **Honest note:** the agent's build machine is Linux with no .NET SDK, so nothing in `dotnet/` is
 compiled there. Every change is checked statically (C# parses, explicit usings, XAML, resources,
 every binding against its view model, every SQL statement against the real schema, every mapped
-column against its model, migrations executed on SQLite) and **769 test cases** are written for the
-Windows run. The owner's own machine has since built the whole solution and run the suite green -
-**730 of 730 in 53 s** on v0.33.0, `0 Warning(s), 0 Error(s)`, with the sign-in window open and
-`Signed in: Owner` in the log - and the newest release is tested by him with `tools\RUN-TESTS.cmd`
-(769 expected, printed at the end of every run). See
-[`docs/VERSIONS.md`](docs/VERSIONS.md) for which build he has.
+column against its model, migrations executed on SQLite). The owner's Windows machine compiled and ran the previous
+**v0.38.0 Cobalt** Core/Tests suite, verifying **900/900 xUnit cases in 1 m 4 s** on 29 October 2026.
+That log does not prove Tourmaline, `Area11.Desktop`/WPF, or a launcher run. Require
+**`ALL GREEN - 918 of 918`** on Windows, then complete PT-11's isolated schema/upgrade/rebuild checks;
+genuine transactions, WPF, real Excel, printer and optional real-cloud proof remain separate. See
+[`docs/VERSIONS.md`](docs/VERSIONS.md) for release history and
+[`PHYSICAL-TESTING.md`](PHYSICAL-TESTING.md) for the running evidence log.
 
 ---
 
 ## Build and run (Windows 10/11)
+
+**Two easy files in the main AREA11a folder:** double-click `START-AREA11.bat` to start the app, or `RUN-TESTS.bat` to run tests and copy the result. Tests do not run automatically when you open the app. The root test file calls the same `tools\RUN-TESTS.cmd`, which still saves `test.log` in the main folder.
+
+After you start once, Windows normally creates two optional shortcuts in that same folder: `! START AREA11` and `! RUN TESTS`, both with the Area11 logo. They sort near the top by name. In File Explorer choose **View → Large icons** or **Extra large icons** to make them easier to see; icon size is a Windows folder-view choice. If Windows cannot create them, the `.bat` files still work. Shortcuts are specific to this folder's location: if you move the folder, delete those two shortcuts and start `START-AREA11.bat` once to recreate them. They are not uploaded to Git.
 
 **Easiest (while the code is being worked on):** double-click **`START-AREA11.bat`** — it checks the
 folder, updates, builds and starts the app. [Urdu steps](docs/HOW-TO-RUN-URDU.md).
@@ -114,7 +150,7 @@ Step-by-step help, including what to do when the build fails: [`docs/BUILD-ON-WI
 | [`docs/PROGRESS.md`](docs/PROGRESS.md) | English | every feature: ID, state, files, test, "done when" |
 | [`docs/RULES-MATRIX.md`](docs/RULES-MATRIX.md) | English | 116 numbered owner rules → where each is implemented |
 | [`docs/AREA11-MASTER-SPEC.md`](docs/AREA11-MASTER-SPEC.md) | English | the blueprint (sections 3, 5, 11, 12, 14, 15, 34) |
-| [`docs/OWNER-DECISIONS.md`](docs/OWNER-DECISIONS.md) | **Urdu** | the owner's decisions D-01…D-75, phase plan, open questions |
+| [`docs/OWNER-DECISIONS.md`](docs/OWNER-DECISIONS.md) | **Urdu** | the owner's decisions D-01…D-93, phase plan, open questions |
 | [`docs/SCHEMA-REFERENCE.md`](docs/SCHEMA-REFERENCE.md) | English | column-by-column reference of every table |
 | [`docs/PORT-PLAN.md`](docs/PORT-PLAN.md) | English | the technical study: conflicts, module map, test map, port order |
 | [`docs/BUILD-ON-WINDOWS.md`](docs/BUILD-ON-WINDOWS.md) | English | build, run, test, and what to send back when something fails |
@@ -122,19 +158,21 @@ Step-by-step help, including what to do when the build fails: [`docs/BUILD-ON-WI
 
 ## Database
 
-`dotnet/Area11.Core/Data/Migrations/` holds the **original 13 migrations verbatim**, plus
-`014_user_permissions.sql` (per-person permissions) and `015_photos.sql` (several photos per product,
-supplier and customer), then Phase 2's `016`-`019` (held carts, return detail, no-bill detail, stock-take
-detail). They create **33 business tables** (plus the `_migrations` ledger) and run
-append-only inside `BEGIN IMMEDIATE`, so an existing `area11.db` opens unchanged and no data is lost
-when the app is updated.
+`dotnet/Area11.Core/Data/Migrations/` holds the **original 13 migrations verbatim** plus the
+append-only Area11 migrations `014`-`030` (permissions, photos, stock detail, barcodes, provisional
+money, reconciliation, catalog ordering, managed units, filter-only category tags, descriptive strength,
+rename-safe quantity rules, custom-field governance and master-foundation contracts). They create
+**42 application tables** plus the `_migrations` ledger and two views, and run inside `BEGIN IMMEDIATE`.
+Migration 030 preserves existing generic/brand text and adds nullable managed links without a guessed
+backfill; quantities, sales, payments and historical documents are not rewritten. D-93 never rewrites
+a historical negative quantity to zero. Local drafts do not create financial rows or travel to cloud sync.
 
 ## The rules that shape the code
 
 - Money is **integer paisa**; quantities are `double` (the schema stores REAL). Never `decimal`.
 - A bill's total always equals the sum of its line totals.
 - Rounding is **downward only**, and never below purchase cost.
-- Negative stock never stops a sale — it warns and raises an alert (owner's rule U-25).
+- **D-93:** no new sale, write-off, goods drawing, supplier return or PR cancellation may take a batch or product below zero. The legacy checkbox is not a bypass. Historical negatives stay readable and are reconciled by physical count plus audited correction, never silent zeroing.
 - Discounts are capped per role and can never sell below cost.
 - Permissions are enforced in the business layer, not by hiding buttons.
 - Nothing is hard-coded: shop name, wording, limits, printer width all come from `settings`.

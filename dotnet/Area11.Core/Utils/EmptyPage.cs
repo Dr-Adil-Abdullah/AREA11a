@@ -101,8 +101,8 @@ public static class EmptyPage
         ["Black box"] =
             "The black box is empty. Every change in the shop is written here - a new shop has none yet.",
         ["Excel / CSV"] =
-            "No file has been read yet. Choose a CSV file and press Preview; nothing is written "
-            + "until you press Import.",
+            "No file has been read yet. Choose a native .xlsx workbook or CSV file for its preview; "
+            + "nothing is written until you press Import or Apply.",
         ["Backup & restore"] =
             "No backup yet. Press 'Back up now' - one ZIP of the database and the photos.",
         ["Second counter (LAN)"] =

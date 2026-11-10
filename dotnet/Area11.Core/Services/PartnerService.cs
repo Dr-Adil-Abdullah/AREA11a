@@ -42,7 +42,8 @@ ORDER BY name COLLATE NOCASE;",
         }
     }
 
-    public ServiceResult<int> CreateCustomer(User actor, string name, string? phone, string category)
+    public ServiceResult<int> CreateCustomer(User actor, string name, string? phone, string category,
+        IReadOnlyDictionary<int, string?>? customValues = null)
     {
         var clean = (name ?? string.Empty).Trim();
         if (clean.Length < 2)
@@ -63,7 +64,7 @@ ORDER BY name COLLATE NOCASE;",
             // A phone number is how the shop finds a person's khata. Two rows with the same number
             // split one family's debt in two, and at the counter nobody can tell which row to
             // collect from - so the second one is refused and the cashier is sent to the first
-            // (D-50). Leaving the phone empty is always allowed.
+            // (D-50). Empty is allowed unless the owner requires this field.
             if (cleanPhone is not null)
             {
                 using var look = _db.Open();
@@ -83,6 +84,8 @@ LIMIT 1;",
 
             var id = _db.Tx(connection =>
             {
+                if (cleanPhone is null && NativeFieldPolicyService.IsRequired(_db, connection, "customer.phone"))
+                    throw new ValidationException("Customer phone is required by the owner's field settings.");
                 _db.Execute(connection, @"
 INSERT INTO customers(name, phone, category, credit_limit_paisa, balance_paisa, loyalty_points, stars, active, created_at)
 VALUES(@name, @phone, @category, 0, 0, 0, 1, 1, @at);",
@@ -95,6 +98,9 @@ VALUES(@name, @phone, @category, 0, 0, 0, 1, 1, @at);",
                     });
 
                 var newId = (int)_db.NextId(connection);
+                var custom = new CustomFieldService(_db, _audit, new PermissionService(_db, _log, _audit), _log);
+                var answers = custom.SaveNewRecordValuesInTransaction(connection, actor, CustomFieldEntity.Customer, newId, customValues);
+                if (!answers.Ok) throw new ValidationException(answers.Error ?? "Customer extra fields could not be saved.");
 
                 _audit.Record(connection, actor, "Customers", "create", "customers", newId.ToString(),
                     newValue: $"{{\"name\":\"{clean}\",\"category\":\"{type}\"}}");
@@ -103,6 +109,10 @@ VALUES(@name, @phone, @category, 0, 0, 0, 1, 1, @at);",
             });
 
             return ServiceResult<int>.Success(id);
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult<int>.Fail(exception.Message);
         }
         catch (Exception exception)
         {
@@ -123,7 +133,8 @@ VALUES(@name, @phone, @category, 0, 0, 0, 1, 1, @at);",
     ///   • **allowed with a warning, not blocked.** A limit below the udhaar, or a phone two
     ///     customers share, is the owner's business: it is saved and said out loud (U-30 spirit).
     /// </summary>
-    public ServiceResult<CustomerEditResult> UpdateCustomer(User actor, CustomerEditInput input)
+    public ServiceResult<CustomerEditResult> UpdateCustomer(User actor, CustomerEditInput input,
+        IReadOnlyDictionary<int, string?>? customValues = null)
     {
         if (input is null)
         {
@@ -152,7 +163,18 @@ VALUES(@name, @phone, @category, 0, 0, 0, 1, 1, @at);",
         try
         {
             return _db.Tx(connection =>
-                SaveCustomer(connection, actor, input, name, phone, category));
+            {
+                var result = SaveCustomer(connection, actor, input, name, phone, category);
+                if (!result.Ok || customValues is null) return result;
+                var custom = new CustomFieldService(_db, _audit, new PermissionService(_db, _log, _audit), _log);
+                var answers = custom.SaveValuesInTransaction(connection, actor, CustomFieldEntity.Customer, input.Id, customValues);
+                if (!answers.Ok) throw new ValidationException(answers.Error ?? "Customer extra fields could not be saved.");
+                return result;
+            });
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult<CustomerEditResult>.Fail(exception.Message);
         }
         catch (Exception exception)
         {
@@ -182,6 +204,12 @@ WHERE id = @id AND active = 1;",
         {
             return ServiceResult<CustomerEditResult>.Fail("That customer no longer exists - refresh the list.");
         }
+
+        // Preserve old customers who already lack a phone on an unrelated edit, but do not allow
+        // an existing phone to be removed once the owner has made the field required.
+        if (phone is null && !string.IsNullOrWhiteSpace(row.Phone)
+            && NativeFieldPolicyService.IsRequired(_db, connection, "customer.phone"))
+            return ServiceResult<CustomerEditResult>.Fail("Customer phone is required by the owner's field settings.");
 
         var result = new CustomerEditResult
         {
@@ -264,7 +292,8 @@ FROM suppliers WHERE active = 1 ORDER BY name COLLATE NOCASE;");
         }
     }
 
-    public ServiceResult<int> CreateSupplier(User actor, string name, string? phone, string? agency)
+    public ServiceResult<int> CreateSupplier(User actor, string name, string? phone, string? agency,
+        IReadOnlyDictionary<int, string?>? customValues = null)
     {
         if (!actor.CanManage)
         {
@@ -281,6 +310,10 @@ FROM suppliers WHERE active = 1 ORDER BY name COLLATE NOCASE;");
         {
             var id = _db.Tx(connection =>
             {
+                if (string.IsNullOrWhiteSpace(phone) && NativeFieldPolicyService.IsRequired(_db, connection, "supplier.phone"))
+                    throw new ValidationException("Supplier phone is required by the owner's field settings.");
+                var agencyError = NativeFieldPolicyService.RequiredTextError(_db, connection, "supplier.agency", "Supplier agency", agency);
+                if (agencyError is not null) throw new ValidationException(agencyError);
                 _db.Execute(connection, @"
 INSERT INTO suppliers(name, agency, phone, balance_paisa, active, created_at)
 VALUES(@name, @agency, @phone, 0, 1, @at);",
@@ -293,6 +326,9 @@ VALUES(@name, @agency, @phone, 0, 1, @at);",
                     });
 
                 var newId = (int)_db.NextId(connection);
+                var custom = new CustomFieldService(_db, _audit, new PermissionService(_db, _log, _audit), _log);
+                var answers = custom.SaveNewRecordValuesInTransaction(connection, actor, CustomFieldEntity.Supplier, newId, customValues);
+                if (!answers.Ok) throw new ValidationException(answers.Error ?? "Supplier extra fields could not be saved.");
 
                 _audit.Record(connection, actor, "Suppliers", "create", "suppliers", newId.ToString(),
                     newValue: $"{{\"name\":\"{clean}\"}}");
@@ -301,6 +337,10 @@ VALUES(@name, @agency, @phone, 0, 1, @at);",
             });
 
             return ServiceResult<int>.Success(id);
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult<int>.Fail(exception.Message);
         }
         catch (Exception exception)
         {

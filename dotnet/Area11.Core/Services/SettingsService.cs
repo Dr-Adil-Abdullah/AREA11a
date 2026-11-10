@@ -8,9 +8,9 @@ using Microsoft.Data.Sqlite;
 namespace Area11.Core.Services;
 
 /// <summary>
-/// The 75 settings of the shop: the 70 from the reference app, the five printer keys (D-23),
-/// the two cart/hold numbering keys, the return-restock flag, and the permission defaults.
-/// A key that is not in <see cref="Defaults"/> cannot be written - a typo becomes an error, not a
+/// The shop's settings: business rules, printing, receipt text, menu preferences and the catalog
+/// of application section labels. A key that is not in <see cref="Defaults"/> cannot be written -
+/// a typo becomes an error, not a
 /// silent second setting.
 /// Values are stored as JSON so a string stays a string, a number stays a number and a
 /// list stays a list (Spec 6.1). Every change is audited with old → new.
@@ -22,14 +22,16 @@ public sealed class SettingsService
     private readonly Database _db;
     private readonly AuditService _audit;
     private readonly LogService _log;
+    private readonly PermissionService? _permissions;
     private readonly Dictionary<string, string> _cache = new(StringComparer.Ordinal);
     private readonly object _gate = new();
 
-    public SettingsService(Database db, AuditService audit, LogService log)
+    public SettingsService(Database db, AuditService audit, LogService log, PermissionService? permissions = null)
     {
         _db = db;
         _audit = audit;
         _log = log;
+        _permissions = permissions;
         Reload();
     }
 
@@ -180,6 +182,17 @@ public sealed class SettingsService
             return ServiceResult.Fail($"Unknown setting '{key}'.");
         }
 
+        // Application words are owner-visible settings, not transient UI preferences. Keep them on
+        // the validated, permission-checked and audited SetMany/AppLabelService path.
+        if (key.StartsWith("labels.", StringComparison.Ordinal))
+        {
+            return ServiceResult.Fail("Application labels must be saved through the audited settings path.");
+        }
+        if (key.StartsWith("appearance.", StringComparison.Ordinal))
+        {
+            return ServiceResult.Fail("Application appearance must be saved through the audited settings path.");
+        }
+
         try
         {
             var json = JsonSerializer.Serialize(value);
@@ -219,19 +232,33 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
     /// </summary>
     public ServiceResult SetMany(IReadOnlyDictionary<string, object?> values, User? actor)
     {
-        foreach (var pair in values)
+        // Labels can also be saved as part of the Settings screen's larger atomic dictionary. Guard
+        // that real path here as well as AppLabelService.Save, so a direct Core caller cannot bypass
+        // the Settings permission. A manually constructed service without permissions fails closed.
+        if (values.Keys.Any(key => key.StartsWith("labels.", StringComparison.Ordinal))
+            && _permissions?.Can(actor, Modules.Settings) != true)
         {
-            if (!Defaults.ContainsKey(pair.Key))
-            {
-                return ServiceResult.Fail($"Unknown setting '{pair.Key}'.");
-            }
-
-            var refusal = Guard(pair.Key, pair.Value, values);
-            if (refusal is not null)
-            {
-                return ServiceResult.Fail(refusal);
-            }
+            return ServiceResult.Fail("You are not allowed to change the application labels.");
         }
+
+        if (values.ContainsKey("appearance.productPhotoSize")
+            && _permissions?.Can(actor, Modules.Settings) != true)
+        {
+            return ServiceResult.Fail("You are not allowed to change the product photo size.");
+        }
+
+        if (values.ContainsKey("appearance.iconFileName") && actor?.IsOwner != true)
+        {
+            return ServiceResult.Fail("Only the owner can change the application icon.");
+        }
+
+        var preparation = PrepareBulk(values);
+        if (!preparation.Ok || preparation.Value is null)
+        {
+            return ServiceResult.Fail(preparation.Error ?? "The settings could not be validated.");
+        }
+
+        var prepared = preparation.Value;
 
         try
         {
@@ -239,7 +266,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
             {
                 foreach (var pair in values)
                 {
-                    var json = Serialise(pair.Key, pair.Value);
+                    var json = prepared[pair.Key];
 
                     var old = _db.Scalar(connection,
                         "SELECT value FROM settings WHERE key = @key;", new { key = pair.Key })?.ToString();
@@ -257,7 +284,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
             {
                 foreach (var pair in values)
                 {
-                    _cache[pair.Key] = Serialise(pair.Key, pair.Value);
+                    _cache[pair.Key] = prepared[pair.Key];
                 }
             }
 
@@ -268,6 +295,35 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
             _log.Error($"Settings could not be saved ({string.Join(", ", values.Keys)}).", exception);
             return ServiceResult.Fail("The settings could not be saved.");
         }
+    }
+
+    /// <summary>
+    /// Validates and serialises settings without opening a transaction. The native workbook preview
+    /// uses this exact same guard, then applies the prepared values inside the workbook's ONE database
+    /// transaction. It is internal so an arbitrary UI cannot bypass the normal permission path.
+    /// </summary>
+    internal ServiceResult<IReadOnlyDictionary<string, string>> PrepareBulk(
+        IReadOnlyDictionary<string, object?> values)
+    {
+        var prepared = new Dictionary<string, string>(StringComparer.Ordinal);
+
+        foreach (var pair in values)
+        {
+            if (!Defaults.ContainsKey(pair.Key))
+            {
+                return ServiceResult<IReadOnlyDictionary<string, string>>.Fail($"Unknown setting '{pair.Key}'.");
+            }
+
+            var refusal = Guard(pair.Key, pair.Value, values);
+            if (refusal is not null)
+            {
+                return ServiceResult<IReadOnlyDictionary<string, string>>.Fail(refusal);
+            }
+
+            prepared[pair.Key] = Serialise(pair.Key, pair.Value);
+        }
+
+        return ServiceResult<IReadOnlyDictionary<string, string>>.Success(prepared);
     }
 
     /// <summary>The text of a setting exactly as it was typed, trimmed - never null.</summary>
@@ -313,11 +369,19 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
     /// </summary>
     private static string Serialise(string key, object? value)
     {
+        // AppLabelService already trims its own writes; keep the direct SettingsService route just
+        // as strict so the stored value and its old/new audit match the text the shell displays.
+        if (key.StartsWith("labels.", StringComparison.Ordinal))
+        {
+            return JsonSerializer.Serialize(TextValue(value), Json.WriterOptions);
+        }
+
         if (key == "expiry.levels")
         {
             var bands = value switch
             {
                 string text => ExpiryLevels.ParseBands(text),
+                JsonElement element => ExpiryLevels.ParseBands(element.GetRawText()),
                 IEnumerable<ExpiryBand> list => list.ToList(),
                 _ => null
             };
@@ -328,7 +392,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
             }
         }
 
-        return JsonSerializer.Serialize(value);
+        return JsonSerializer.Serialize(value, Json.WriterOptions);
     }
 
     /// <summary>
@@ -347,10 +411,27 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
             return GetDouble(otherKey, fallback);
         }
 
+        if (key.StartsWith("labels.", StringComparison.Ordinal))
+        {
+            return AppLabelService.GuardSetting(key, value);
+        }
+
         var number = ToNumber(value);
 
         switch (key)
         {
+            case "appearance.iconFileName":
+                var iconName = TextValue(value);
+                return iconName.Length == 0 || (iconName.Length == 48
+                    && iconName.StartsWith("area11-icon-", StringComparison.Ordinal)
+                    && iconName.EndsWith(".ico", StringComparison.Ordinal)
+                    && Guid.TryParseExact(iconName.Substring(12, 32), "N", out _))
+                    ? null : "The application icon name is invalid.";
+
+            case "appearance.productPhotoSize":
+                return TextValue(value) is "medium" or "large"
+                    ? null : "Choose medium or large product photos.";
+
             case "printer.width":
                 return number is 58 or 80 ? null : "The paper width must be 58 or 80 mm.";
 
@@ -362,6 +443,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
                 var bands = value switch
                 {
                     string json => ExpiryLevels.ParseBands(json),
+                    JsonElement element => ExpiryLevels.ParseBands(element.GetRawText()),
                     IEnumerable<ExpiryBand> list => list.ToList(),
                     _ => new List<ExpiryBand>()
                 };
@@ -373,6 +455,18 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
 
             case "printer.copies":
                 return number is >= 1 and <= 3 ? null : "The number of copies must be 1, 2 or 3.";
+
+            case "printer.bulkFormat":
+                var bulkFormat = TextValue(value);
+                return bulkFormat is MasterFoundationSettings.SeparateReceipts or MasterFoundationSettings.A4List
+                    ? null
+                    : "Choose separate receipts or an A4 list for bulk printing.";
+
+            case "whatsapp.exportDirectory":
+                var exportDirectory = TextValue(value);
+                return exportDirectory.Length <= 260 && !exportDirectory.Any(char.IsControl)
+                    ? null
+                    : "The WhatsApp PDF folder must be one path of 260 characters or fewer.";
 
             case "discount.maxPercentCashier":
             case "discount.maxPercentManager":
@@ -457,6 +551,11 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
             case "sync.shopId":
                 return CleanName(TextValue(value), "The shop id", allowDash: true, 64);
 
+            case "sync.automaticMinutes":
+                return number is >= 5 and <= 1440 && number.Value == Math.Floor(number.Value)
+                    ? null
+                    : "Automatic sync must be a whole number of minutes from 5 to 1440.";
+
             // Session (v0.35.0, D-92). The idle limit must be one of the choices printed on the page:
             // a number typed wrongly (200) would silently become "never", which is the exact fault the
             // rule exists to prevent. 0 is allowed and means "only the 12-hour limit".
@@ -499,8 +598,30 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
     }
 
     /// <summary>
+    /// Reads a counter on the caller's connection and inside its immediate transaction. A second
+    /// settings instance must see the committed database value, not the copy it cached at startup;
+    /// repeated numbers inside one transaction must also see the earlier uncommitted increment.
+    /// </summary>
+    internal long ReadCounter(SqliteConnection connection, string key)
+    {
+        if (!Defaults.ContainsKey(key))
+        {
+            throw new ArgumentOutOfRangeException(nameof(key), key, "Unknown counter setting.");
+        }
+
+        var raw = Convert.ToString(_db.Scalar(connection,
+            "SELECT value FROM settings WHERE key = @key;", new { key }), CultureInfo.InvariantCulture);
+
+        return long.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
+            ? value
+            : 0;
+    }
+
+    /// <summary>
     /// Counter advance used by the numbering service. Deliberately NOT audited: one audit row
-    /// per printed bill would bury the real events in the black box.
+    /// per printed bill would bury the real events in the black box. The cache is deliberately not
+    /// changed: the caller's transaction may roll back, and a memory write cannot roll back with it.
+    /// Every counter read therefore goes through <see cref="ReadCounter"/> on the live connection.
     /// </summary>
     internal void WriteCounter(SqliteConnection connection, string key, long value)
     {
@@ -515,11 +636,6 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
 INSERT INTO settings(key, value, updated_at) VALUES(@key, @value, @at)
 ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at;",
             new { key, value = json, at = Clock.Now() });
-
-        lock (_gate)
-        {
-            _cache[key] = json;
-        }
     }
 
     private static Dictionary<string, string> BuildDefaults()
@@ -537,6 +653,10 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Flag("printer.autoCut", true);
         Number("printer.copies", 1);
         Flag("printer.autoPrint", true);
+        // Master Phase 1 contracts. Phase 5 owns the actual individual/bulk print actions.
+        Flag("printer.defaultBulk", false);
+        Text("printer.bulkFormat", MasterFoundationSettings.SeparateReceipts);
+        Flag("sale.successPopup", true);
 
         // The hardware test (F-46): the owner's ticks, the date, the person and the paper width they
         // belong to. Five plain settings, so a shop that upgrades reads the same words a new shop does.
@@ -545,6 +665,10 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Text("hardware.note", string.Empty);
         Number("hardware.testedWidth", 0);
         Text("hardware.passed", string.Empty);
+
+        // Medium and large are deliberately bounded so product grids remain usable.
+        Text("appearance.productPhotoSize", "medium");
+        Text("appearance.iconFileName", string.Empty);
 
         // ---- Store and branding (E-02, E-03) ----
         Text("store.name", "Area11 Pharmacy");
@@ -583,9 +707,10 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Number("tax.percent", 0);
         Text("tax.label", "Sales Tax");
 
-        // ---- Discount (Q-08 margin default) ----
+        // ---- Discount (27-Oct owner decision: always full retail/selling price) ----
         Flag("discount.enabled", true);
-        Text("discount.mode", "margin");
+        // Legacy key retained for old databases; the 27-Oct owner rule always discounts full retail.
+        Text("discount.mode", "retail");
         Number("discount.maxPercentCashier", 5);
         Number("discount.maxPercentManager", 20);
         Flag("discount.blockBelowCost", true);
@@ -618,7 +743,9 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Raw("payment.methods", "[\"cash\",\"credit\"]");
         Text("payment.default", "cash");
 
-        // ---- Stock (U-25, U-30) ----
+        // ---- Stock ----
+        // Both legacy keys stay readable so an old database needs no destructive migration. D-93 removed
+        // the checkbox and no production rule reads either key; historical alerts follow actual stock.
         Flag("stock.allowNegative", true);
         Flag("stock.warnNegative", true);
 
@@ -645,8 +772,10 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         // black box (written with SetUiOnly) - the backup itself writes its own audit line.
         Text("backup.lastRunAt", string.Empty);
         Text("backup.lastFile", string.Empty);
+        // Recovery remains visible after the automatic restart that follows a restore.
+        Text("backup.lastRestoreSummary", string.Empty);
 
-        // ---- Cloud sync (later phase) ----
+        // ---- Cloud sync (manual is always available; Q4=C also permits configurable automatic sync) ----
         Flag("sync.enabled", false);
         Text("sync.url", string.Empty);
         Text("sync.key", string.Empty);
@@ -654,6 +783,14 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Text("sync.shopId", "shop-1");
         Text("sync.status", "not_configured");
         Text("sync.lastSyncAt", string.Empty);
+        // Safe Phase 1 default: no background timer until the separately approved Phase 7 enables it.
+        Flag("sync.automaticEnabled", false);
+        Number("sync.automaticMinutes", 15);
+
+        // ---- Master Phase 1 communication/reporting contracts (behavior in Phases 5 and 6) ----
+        Flag("whatsapp.preparePdf", true);
+        Text("whatsapp.exportDirectory", string.Empty);
+        Flag("profit.showMargins", true);
 
         // ---- Menu (D-51) ----
         // The folded groups, by key ("stock", "money" ...). A menu fold is a preference, not a
@@ -672,6 +809,14 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         // pending, so an old database opens with nothing to complain about.
         Text("session.handoverAt", string.Empty);
         Text("session.handoverBy", string.Empty);
+
+        // ---- Application section labels (E-12/S-05) ----
+        // One catalog supplies the defaults, the editor, the Core guard and the WPF resources.
+        foreach (var label in AppLabelService.Definitions)
+        {
+            Text(label.SettingKey, label.DefaultText);
+        }
+
         // ---- Owner ----
         Text("owner.name", "Owner");
 

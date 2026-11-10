@@ -119,7 +119,7 @@ VALUES(@code, @supplierId, @invoiceNo, @date, 0, 0, 0, 0, 0, @notes, @userId, @c
             }
 
             var product = _db.QuerySingle<ProductRow>(connection,
-                "SELECT id, name, box_strips, strip_tablets, cost_paisa, retail_paisa FROM products WHERE id = @id AND active = 1;",
+                "SELECT id, name, base_unit, box_strips, strip_tablets, cost_paisa, retail_paisa FROM products WHERE id = @id AND active = 1;",
                 new { id = line.ProductId })
                 ?? throw new ValidationException("A selected product no longer exists.");
 
@@ -132,6 +132,15 @@ VALUES(@code, @supplierId, @invoiceNo, @date, 0, 0, 0, 0, 0, @notes, @userId, @c
             };
 
             var qtyBase = Calc.ToBase(line.Quantity, unitsPerSelected);
+            if (!double.IsFinite(qtyBase) || qtyBase <= 0)
+            {
+                throw new ValidationException("Every purchase line needs a real quantity greater than zero.");
+            }
+            if (UnitPolicy.RequiresWhole(_db, connection, product.BaseUnit) && !Qty.IsWhole(qtyBase))
+            {
+                throw new ValidationException(
+                    $"{product.Name}: receive whole {product.BaseUnit} units; ml is strength, not a stock division.");
+            }
 
             var batchNo = (line.BatchNo ?? string.Empty).Trim();
             if (batchNo.Length == 0)
@@ -268,6 +277,8 @@ VALUES(@at, 'cash', @amount, @purchaseId, @supplierId, @userId, @note);",
         public int Id { get; set; }
 
         public string Name { get; set; } = string.Empty;
+
+        public string BaseUnit { get; set; } = "tablet";
 
         public int BoxStrips { get; set; }
 

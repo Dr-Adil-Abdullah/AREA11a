@@ -4,6 +4,19 @@ using Area11.Core.Utils;
 
 namespace Area11.Desktop.ViewModels;
 
+public enum DashboardLink
+{
+    Bills,
+    Sales,
+    Profit,
+    Credit,
+    Products,
+    LowStock,
+    StockMinus,
+    Expiry,
+    Payable
+}
+
 public sealed class DashboardViewModel : ObservableObject, IEmptyPage
 {
     /// <summary>
@@ -17,20 +30,42 @@ public sealed class DashboardViewModel : ObservableObject, IEmptyPage
 
     private readonly AppServices _services;
     private readonly User _user;
+    private readonly Action<DashboardLink>? _navigate;
     private string _statusMessage = string.Empty;
     private bool _hasAlert;
     private bool _canSeeProfit;
     private bool _isEmptyShop;
 
-    public DashboardViewModel(AppServices services, User user)
+    public DashboardViewModel(AppServices services, User user, Action<DashboardLink>? navigate = null)
     {
         _services = services;
         _user = user;
+        _navigate = navigate;
         RefreshCommand = new RelayCommand(Load);
+        OpenBillsCommand = new RelayCommand(() => Open(DashboardLink.Bills));
+        OpenSalesCommand = new RelayCommand(() => Open(DashboardLink.Sales));
+        OpenProfitCommand = new RelayCommand(() => Open(DashboardLink.Profit));
+        OpenCreditCommand = new RelayCommand(() => Open(DashboardLink.Credit));
+        OpenProductsCommand = new RelayCommand(() => Open(DashboardLink.Products));
+        OpenLowStockCommand = new RelayCommand(() => Open(DashboardLink.LowStock));
+        OpenStockMinusCommand = new RelayCommand(() => Open(DashboardLink.StockMinus));
+        OpenExpiryCommand = new RelayCommand(() => Open(DashboardLink.Expiry));
+        OpenPayableCommand = new RelayCommand(() => Open(DashboardLink.Payable));
         Load();
     }
 
     public RelayCommand RefreshCommand { get; }
+    public RelayCommand OpenBillsCommand { get; }
+    public RelayCommand OpenSalesCommand { get; }
+    public RelayCommand OpenProfitCommand { get; }
+    public RelayCommand OpenCreditCommand { get; }
+    public RelayCommand OpenProductsCommand { get; }
+    public RelayCommand OpenLowStockCommand { get; }
+    public RelayCommand OpenStockMinusCommand { get; }
+    public RelayCommand OpenExpiryCommand { get; }
+    public RelayCommand OpenPayableCommand { get; }
+
+    private void Open(DashboardLink link) => _navigate?.Invoke(link);
 
     public string StoreName => _services.Settings.GetString("store.name");
 
@@ -111,7 +146,7 @@ public sealed class DashboardViewModel : ObservableObject, IEmptyPage
         CanSeeProfit = snapshot.CanSeeProfit;
         ShiftText = snapshot.ShiftOpen ? "Shift is open" : "No shift open";
         StatusMessage = snapshot.NegativeStock > 0
-            ? $"Stock is MINUS on {snapshot.NegativeStock} medicine(s). Sales continue; fix by count or purchase."
+            ? $"Stock is MINUS on {snapshot.NegativeStock} medicine(s). New decrements are blocked; reconcile by physical count or receive stock."
             : string.Empty;
         HasAlert = snapshot.NegativeStock > 0;
 

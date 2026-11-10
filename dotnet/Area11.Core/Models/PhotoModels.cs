@@ -11,8 +11,9 @@ public static class PhotoEntity
     public const string Product = "product";
     public const string Customer = "customer";
     public const string Supplier = "supplier";
+    public const string User = "user";
 
-    public static readonly string[] All = { Product, Customer, Supplier };
+    public static readonly string[] All = { Product, Customer, Supplier, User };
 
     public static bool IsKnown(string? entity) =>
         !string.IsNullOrWhiteSpace(entity) && All.Contains(entity.Trim().ToLowerInvariant());
@@ -25,6 +26,7 @@ public static class PhotoEntity
         Product => "Medicine",
         Customer => "Customer",
         Supplier => "Supplier",
+        User => "Staff member",
         _ => "Record"
     };
 
@@ -33,6 +35,7 @@ public static class PhotoEntity
     {
         Product => "products",
         Supplier => "suppliers",
+        User => "staff",
         _ => "customers"
     };
 }

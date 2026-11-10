@@ -19,8 +19,8 @@ namespace Area11.Core.Services;
 /// truth, and a shop whose batches were created without movements would otherwise show a wrong count.
 ///
 /// **What a review is.** One line in the black box: who looked, when, and what he wrote. No row is
-/// edited and none is deleted (Spec 22), and a review does not change the stock - the stock changes
-/// only through a stock-take, a return or a write-off.
+/// edited and none is deleted (Spec 22), and a review never changes stock. D-93's reconciliation
+/// is the owner-only physical stock-take and its audited adjustment, not a silent edit on this page.
 /// </summary>
 public sealed class StockMinusService
 {
@@ -154,7 +154,8 @@ ORDER BY at DESC, id DESC;")
 
     /// <summary>
     /// Records the owner's look at one medicine: who, when, what he saw and what he wrote. The stock
-    /// itself is not touched - only a stock-take, a return or a write-off may move it (U-30, D-56).
+    /// itself is not touched. D-93's reconciliation path is a physical stock-take with its audited
+    /// adjustment; this registry remains the read-only report before that count.
     /// </summary>
     public ServiceResult Review(User? user, int productId, string? note)
     {

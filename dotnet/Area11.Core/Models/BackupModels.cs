@@ -16,6 +16,15 @@ public sealed class BackupFile
     /// <summary>True for the file the program made by itself (the daily one).</summary>
     public bool IsAutomatic { get; set; }
 
+    /// <summary>True for the full, visible recovery zip made immediately before a restore.</summary>
+    public bool IsSafetyCopy { get; set; }
+
+    /// <summary>Manifest time, when an old or hand-made zip supplies one.</summary>
+    public string MadeAt { get; set; } = string.Empty;
+
+    /// <summary>Area11 version that wrote the zip, so an old format is visible before restoring.</summary>
+    public string BackupVersion { get; set; } = string.Empty;
+
     public long SizeBytes { get; set; }
 
     /// <summary>"412 KB" - a number of bytes means nothing to a shopkeeper.</summary>
@@ -24,7 +33,7 @@ public sealed class BackupFile
         : $"{Math.Max(1, SizeBytes / 1024)} KB";
 
     /// <summary>How it was made, in the words the owner used: by hand or by the program.</summary>
-    public string KindLabel => IsAutomatic ? "Automatic" : "By hand";
+    public string KindLabel => IsSafetyCopy ? "Before restore" : IsAutomatic ? "Automatic" : "By hand";
 
     public string Caption => $"{Stamp}  ·  {SizeLabel}  ·  {KindLabel}";
 }

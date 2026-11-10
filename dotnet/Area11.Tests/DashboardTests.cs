@@ -183,21 +183,17 @@ VALUES('INV-9002', @at, @userId, 400000, 0, 0, 0, 400000, 0, 0, 'hold', 'cash', 
 
         var snapshot = Snapshot(test);
 
-        // The shop discounts its **margin**, not its price (Spec 11.2.1, `discount.mode` = margin by
-        // default): two strips bring Rs 600, they cost Rs 400, so the margin is Rs 200 - and 10 % of
-        // Rs 200 is Rs 20, leaving Rs 580. The example in the spec is the same rule one tablet at a
-        // time: cost 200, retail 300, 10 % off = 290.
-        //
-        // The first version of this test expected Rs 540, because it assumed the retail method. The
-        // owner's PC said 58000 and was right; the expectation, not the bill, was wrong.
-        Assert.Equal(58000L, sale.Value!.TotalPaisa);
-        Assert.Equal(58000L, snapshot.TodaySalesPaisa);
+        // Owner's 27-Oct physical-testing decision: 10% is of full retail, not only the margin.
+        // Two strips bring Rs 600, so the discount is Rs 60 and the bill is Rs 540. The old
+        // margin-only expectation (Rs 580) is deliberately superseded, not preserved as a second path.
+        Assert.Equal(54000L, sale.Value!.TotalPaisa);
+        Assert.Equal(54000L, snapshot.TodaySalesPaisa);
 
-        // Rs 580 in, Rs 400 of goods out: the day earned Rs 180, not the Rs 200 it would have earned
-        // without the discount. A dashboard that ignored the discount would overstate the profit.
-        Assert.Equal(18000L, snapshot.TodayProfitPaisa);
+        // Rs 540 in, Rs 400 of goods out: the day earned Rs 140. Ignoring the discount would
+        // overstate profit; the same full-retail rule also feeds this dashboard total.
+        Assert.Equal(14000L, snapshot.TodayProfitPaisa);
 
-        // The other method is built too, and must not be silently mixed up with this one.
+        // A legacy mode value cannot quietly bring the superseded margin calculation back.
         test.Settings.SetMany(
             new Dictionary<string, object?> { ["discount.mode"] = "retail" },
             TestData.Owner);
@@ -238,6 +234,26 @@ VALUES('INV-9002', @at, @userId, 400000, 0, 0, 0, 400000, 0, 0, 'hold', 'cash', 
         Assert.Equal(1, after.TodayBills);
         Assert.Equal(90000L, after.TodaySalesPaisa);
         Assert.Equal(20000L, after.TodayProfitPaisa);
+    }
+
+    [Fact]
+    public void AProvisionalRefund_IsIncludedInTheDashboardAndReportTogether()
+    {
+        using var test = new TestDatabase();
+        var product = TestData.AddProduct(test, costPaisa: 20000, retailPaisa: 30000);
+        var sale = TestData.Sales(test).Create(TestData.Cart(product, qty: 3), TestData.Owner);
+        Assert.True(sale.Ok, sale.Error);
+
+        var rush = TestData.Provisionals(test).Create(
+            TestData.RushReturn(product, qty: 1, unit: "base", refundPaisa: 30000), TestData.Owner);
+        Assert.True(rush.Ok, rush.Error);
+
+        var snapshot = Snapshot(test);
+        var report = TestData.Reports(test).Build(ReportRange.Today, TestData.Owner);
+        Assert.True(report.Ok, report.Error);
+        Assert.Equal(30000L, report.Value!.Totals.RefundPaisa);
+        Assert.Equal(report.Value.Totals.ProfitPaisa, snapshot.TodayProfitPaisa);
+        Assert.Equal(20000L, snapshot.TodayProfitPaisa);
     }
 
     [Fact]

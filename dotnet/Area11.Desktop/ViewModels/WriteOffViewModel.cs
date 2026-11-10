@@ -273,7 +273,7 @@ public sealed class WriteOffViewModel : ObservableObject, IEmptyPage
             ? "No batch on this medicine - a count correction will still record the truth."
             : "This batch: " + Qty.Format(stockBefore) + " now -> " + Qty.Format(stockAfter) + " after";
 
-        WillGoMinus = !isExtra && stockAfter < -0.0005;
+        WillGoMinus = !isExtra && stockAfter < 0;
     }
 
     private void Save()

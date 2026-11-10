@@ -74,7 +74,7 @@ public sealed class WriteOffResult
 
     public double QtyBase { get; set; }
 
-    /// <summary>The stock left in that batch after the write-off (may be minus).</summary>
+    /// <summary>The stock left after the write-off; new D-93 rows cannot be below zero.</summary>
     public double StockAfterBase { get; set; }
 
     public List<string> Warnings { get; init; } = new();

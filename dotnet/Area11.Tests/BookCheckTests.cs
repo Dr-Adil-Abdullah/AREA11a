@@ -317,6 +317,19 @@ VALUES(@at, 'cash', 7500, 'no owner');", new { at = Clock.Now() }));
     }
 
     [Fact]
+    public void AProvisionalMoneyRowBelongsToItsDocument()
+    {
+        using var test = new TestDatabase();
+        var product = TestData.AddProduct(test);
+        var saved = TestData.Provisionals(test).Create(TestData.RushReturn(product), TestData.Owner);
+        Assert.True(saved.Ok, saved.Error);
+
+        var report = Run(test);
+
+        Assert.True(Rule(report, "Every rupee received belongs to someone").Clean);
+    }
+
+    [Fact]
     public void TheCheckDoesNotRepairAnything()
     {
         using var test = new TestDatabase();

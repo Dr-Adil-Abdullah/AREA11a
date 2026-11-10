@@ -179,7 +179,7 @@ public sealed class TaxViewModel : ObservableObject, IEmptyPage
         TaxText = value.TaxTotalLabel;
         GrossText = value.GrossLabel;
         RefundText = value.RefundLabel;
-        HasRefunds = value.RefundPaisa > 0;
+        HasRefunds = value.RefundPaisa != 0;
         HasRoundOff = value.HasRoundOff;
         RoundOffText = value.HasRoundOff
             ? "Round-off down on the bills (Z-03): " + value.RoundOffLabel +

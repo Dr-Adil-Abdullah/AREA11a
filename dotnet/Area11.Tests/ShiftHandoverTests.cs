@@ -372,7 +372,7 @@ WHERE sale_id = (SELECT id FROM sales WHERE code = @code);", new { code = afterC
 
         Assert.True(Shifts(test).Open(TestData.Owner, 50000, null).Ok);
 
-        var handover = Shifts(test).Handover(TestData.Owner, bilal, 49950, null).Value!;
+        var handover = Shifts(test).Handover(TestData.Owner, bilal, 49950, "fifty paisa short").Value!;
         var slip = Slips(test).Build(handover);
 
         Assert.Equal(32, slip.Width);
@@ -407,7 +407,7 @@ WHERE sale_id = (SELECT id FROM sales WHERE code = @code);", new { code = afterC
         Assert.True(test.Settings.Set("printer.width", 80, TestData.Owner).Ok);
         Assert.True(Shifts(test).Open(TestData.Owner, 50000, null).Ok);
 
-        var handover = Shifts(test).Handover(TestData.Owner, bilal, 49950, null).Value!;
+        var handover = Shifts(test).Handover(TestData.Owner, bilal, 49950, "fifty paisa short").Value!;
         var slip = Slips(test).Build(handover);
 
         Assert.Equal(48, slip.Width);

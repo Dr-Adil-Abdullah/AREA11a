@@ -204,8 +204,10 @@ public sealed class ReturnsViewModel : ObservableObject, IEmptyPage
             Lines.Add(row);
         }
 
+        // The line total is not a cash promise: part may be khata, and later recoveries decide the
+        // split. The exact cash/khata amounts come from ReturnService.Quote for the chosen quantity.
         BillSummary = $"{BillCode.Trim().ToUpperInvariant()} · {Lines.Count} line(s) · " +
-                      $"refundable in cash today {Money.Format(lines.Value.Sum(line => line.RemainingPaisa))}";
+                      "enter quantities for the exact cash / khata refund";
         OnPropertyChanged(nameof(HasBill));
 
         SetStatus(Lines.Count == 0

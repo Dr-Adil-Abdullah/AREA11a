@@ -67,7 +67,12 @@ GROUP BY day
 ORDER BY day;", new { like = prefix + "%" });
 
             var refunds = Convert.ToInt64(_db.Scalar(connection, @"
-SELECT CAST(IFNULL(SUM(refund_paisa), 0) AS INTEGER) FROM sale_returns WHERE date LIKE @like;",
+SELECT CAST(IFNULL(SUM(refund), 0) AS INTEGER)
+FROM (
+    SELECT refund_paisa AS refund FROM sale_returns WHERE date LIKE @like
+    UNION ALL
+    SELECT refund_paisa FROM provisional_report_lines WHERE event_date LIKE @like
+);",
                 new { like = prefix + "%" }) ?? 0L);
 
             var report = new TaxReport
@@ -132,7 +137,7 @@ SELECT CAST(IFNULL(SUM(refund_paisa), 0) AS INTEGER) FROM sale_returns WHERE dat
                 + " - the total is not exactly sales before tax plus tax.");
         }
 
-        if (report.RefundPaisa > 0)
+        if (report.RefundPaisa != 0)
         {
             text.AppendLine();
             text.AppendLine("Refunds paid in this month (tax part not recorded): " + report.RefundLabel);

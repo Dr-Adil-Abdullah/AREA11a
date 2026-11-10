@@ -175,7 +175,7 @@ WHERE customer_id = @id AND sale_id IS NULL AND purchase_id IS NULL AND amount_p
     }
 
     [Fact]
-    public void AReturnBiggerThanWhatIsLeft_StopsTheKhataAtZero_AndTheBooksStillMatch()
+    public void AFullReturnAfterPartPayment_ReducesOnlyTheRemainingKhata_AndRefundsCollectedCash()
     {
         using var test = new TestDatabase();
         var product = TestData.AddProduct(test, retailPaisa: 30000, batchQty: 100);
@@ -187,10 +187,12 @@ WHERE customer_id = @id AND sale_id IS NULL AND purchase_id IS NULL AND amount_p
 
         var ret = TestData.Returns(test).Create(TestData.Return(bill, 2), TestData.Owner);
         Assert.True(ret.Ok, ret.Error);
-        Assert.Equal(60000L, ret.Value!.CreditReducedPaisa);
+        Assert.Equal(60000L, ret.Value!.RefundPaisa);
+        Assert.Equal(10000L, ret.Value.CreditReducedPaisa);
+        Assert.Equal(50000L, ret.Value.CashPaisa);
 
-        // MAX(0, ...) in ReturnService: the customer was not refunded more than the bill, and the
-        // khata cannot go below zero.
+        // The customer still owed only Rs 100. The Rs 500 already collected is cash back, not
+        // another khata reduction hidden by MAX(0, ...).
         Assert.Equal(0L, StoredBalance(test, customer));
 
         var page = Ledger(test).Page(customer);

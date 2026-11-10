@@ -12,7 +12,7 @@
         <!-- ================================ the heading ================================ -->
         <DockPanel Grid.Row="0" Margin="0,0,0,10">
             <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                <TextBlock Text="Stock minus" Style="{StaticResource PageTitle}" />
+                <TextBlock Text="{DynamicResource AppLabel.stockMinus}" Style="{StaticResource PageTitle}" />
                 <TextBlock Text="Shelves below zero, since when, and the owner's monthly review - a review changes no stock."
                            Style="{StaticResource PageSubtitle}" />
             </StackPanel>
@@ -173,6 +173,6 @@
 
         <!-- ================================ the footer line ================================ -->
         <TextBlock Grid.Row="2" Margin="0,8,0,0" Style="{StaticResource FieldHint}" TextWrapping="Wrap"
-                   Text="A minus shelf is corrected by a stock-take, a return or a write-off - never by a review. The review only records that you looked, who you are, and what you found." />
+                   Text="This is the read-only reconciliation report before D-93's physical count. A review never changes stock. Open Stock-take, count the real shelf (zero or more), and let the owner apply the audited correction; no migration or review silently zeroes a historical minus." />
     </Grid>
 </UserControl>

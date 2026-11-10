@@ -170,11 +170,20 @@ WHERE p.method = 'cash' AND s.date >= @from AND s.date < @until;",
         // A return belongs to the day the money went back, not to the day of the bill - the same rule
         // the drawer uses (Spec 15.6).
         var returns = _db.QuerySingle<ReturnsRow>(connection, @"
-SELECT IFNULL(SUM(r.refund_paisa), 0) AS refunds,
-       CAST(IFNULL(SUM(CASE WHEN r.restock = 1 THEN r.qty_base * si.cost_paisa_at_sale ELSE 0 END), 0) AS INTEGER) AS restockCost
-FROM sale_returns r
-JOIN sale_items si ON si.id = r.sale_item_id
-WHERE r.date >= @from AND r.date < @until;",
+WITH all_returns AS (
+    SELECT r.refund_paisa AS refunds,
+           CASE WHEN r.restock = 1 THEN r.qty_base * si.cost_paisa_at_sale ELSE 0 END AS restockCost
+    FROM sale_returns r
+    JOIN sale_items si ON si.id = r.sale_item_id
+    WHERE r.date >= @from AND r.date < @until
+    UNION ALL
+    SELECT pr.refund_paisa, pr.restock_cost_paisa
+    FROM provisional_report_lines pr
+    WHERE pr.event_date >= @from AND pr.event_date < @until
+)
+SELECT IFNULL(SUM(refunds), 0) AS refunds,
+       CAST(IFNULL(SUM(restockCost), 0) AS INTEGER) AS restockCost
+FROM all_returns;",
             new { from = period.FromStamp, until = period.UntilStamp }) ?? new ReturnsRow();
 
         var outflow = _db.QuerySingle<OutflowRow>(connection, @"
@@ -236,13 +245,23 @@ GROUP BY substr(s.date, 1, 10);",
             new { from = period.FromStamp, until = period.UntilStamp });
 
         var refunds = _db.Query<DayReturnRow>(connection, @"
-SELECT substr(r.date, 1, 10) AS date,
-       IFNULL(SUM(r.refund_paisa), 0) AS refunds,
-       CAST(IFNULL(SUM(CASE WHEN r.restock = 1 THEN r.qty_base * si.cost_paisa_at_sale ELSE 0 END), 0) AS INTEGER) AS restockCost
-FROM sale_returns r
-JOIN sale_items si ON si.id = r.sale_item_id
-WHERE r.date >= @from AND r.date < @until
-GROUP BY substr(r.date, 1, 10);",
+WITH all_returns AS (
+    SELECT r.date,
+           r.refund_paisa AS refunds,
+           CASE WHEN r.restock = 1 THEN r.qty_base * si.cost_paisa_at_sale ELSE 0 END AS restockCost
+    FROM sale_returns r
+    JOIN sale_items si ON si.id = r.sale_item_id
+    WHERE r.date >= @from AND r.date < @until
+    UNION ALL
+    SELECT pr.event_date, pr.refund_paisa, pr.restock_cost_paisa
+    FROM provisional_report_lines pr
+    WHERE pr.event_date >= @from AND pr.event_date < @until
+)
+SELECT substr(date, 1, 10) AS date,
+       IFNULL(SUM(refunds), 0) AS refunds,
+       CAST(IFNULL(SUM(restockCost), 0) AS INTEGER) AS restockCost
+FROM all_returns
+GROUP BY substr(date, 1, 10);",
             new { from = period.FromStamp, until = period.UntilStamp });
 
         var salesByDay = sales.ToDictionary(row => row.Date ?? string.Empty, row => row);
@@ -311,23 +330,37 @@ WITH sold AS (
     GROUP BY si.product_id
 ),
 came AS (
-    SELECT r.product_id AS productId,
-           SUM(CASE WHEN r.restock = 1 THEN r.qty_base ELSE 0 END) AS qty,
-           SUM(r.refund_paisa) AS refunds,
-           SUM(CASE WHEN r.restock = 1 THEN r.qty_base * si.cost_paisa_at_sale ELSE 0 END) AS restockCost
-    FROM sale_returns r
-    JOIN sale_items si ON si.id = r.sale_item_id
-    WHERE r.date >= @from AND r.date < @until
-    GROUP BY r.product_id
+    SELECT productId, SUM(qty) AS qty, SUM(refunds) AS refunds, SUM(restockCost) AS restockCost
+    FROM (
+        SELECT r.product_id AS productId,
+               CASE WHEN r.restock = 1 THEN r.qty_base ELSE 0 END AS qty,
+               r.refund_paisa AS refunds,
+               CASE WHEN r.restock = 1 THEN r.qty_base * si.cost_paisa_at_sale ELSE 0 END AS restockCost
+        FROM sale_returns r
+        JOIN sale_items si ON si.id = r.sale_item_id
+        WHERE r.date >= @from AND r.date < @until
+        UNION ALL
+        SELECT pr.product_id, pr.qty_base, pr.refund_paisa, pr.restock_cost_paisa
+        FROM provisional_report_lines pr
+        WHERE pr.event_date >= @from AND pr.event_date < @until
+    )
+    GROUP BY productId
+),
+keys AS (
+    SELECT productId FROM sold
+    UNION
+    SELECT productId FROM came
 )
-SELECT sold.productId AS productId,
-       IFNULL(p.name, 'Item #' || sold.productId) AS name,
-       CAST(sold.qty - IFNULL(came.qty, 0) AS INTEGER) AS qty,
-       CAST(sold.sales - IFNULL(came.refunds, 0) AS INTEGER) AS sales,
-       CAST((sold.sales - sold.cost) - (IFNULL(came.refunds, 0) - IFNULL(came.restockCost, 0)) AS INTEGER) AS profitPaisa
-FROM sold
-LEFT JOIN came ON came.productId = sold.productId
-LEFT JOIN products p ON p.id = sold.productId
+SELECT keys.productId AS productId,
+       IFNULL(p.name, 'Item #' || keys.productId) AS name,
+       IFNULL(sold.qty, 0) - IFNULL(came.qty, 0) AS qty,
+       CAST(IFNULL(sold.sales, 0) - IFNULL(came.refunds, 0) AS INTEGER) AS sales,
+       CAST((IFNULL(sold.sales, 0) - IFNULL(sold.cost, 0))
+            - (IFNULL(came.refunds, 0) - IFNULL(came.restockCost, 0)) AS INTEGER) AS profitPaisa
+FROM keys
+LEFT JOIN sold ON sold.productId = keys.productId
+LEFT JOIN came ON came.productId = keys.productId
+LEFT JOIN products p ON p.id = keys.productId
 ";
 
         const string byQuantity = soldAndCameBack + "ORDER BY qty DESC, sales DESC LIMIT @top;";
@@ -364,21 +397,36 @@ WITH net AS (
     FROM sale_items si
     JOIN sales s ON s.id = si.sale_id
     LEFT JOIN products p ON p.id = si.product_id
-    LEFT JOIN categories c ON c.id = p.category_id
+    LEFT JOIN categories c ON c.id = p.category_id AND c.active = 1
     WHERE s.status IN ('paid','partial','credit') AND s.date >= @from AND s.date < @until
     GROUP BY IFNULL(c.name, 'Uncategorised')
 ),
 back AS (
-    SELECT IFNULL(c.name, 'Uncategorised') AS name, SUM(r.refund_paisa) AS refunds
-    FROM sale_returns r
-    LEFT JOIN products p ON p.id = r.product_id
-    LEFT JOIN categories c ON c.id = p.category_id
-    WHERE r.date >= @from AND r.date < @until
-    GROUP BY IFNULL(c.name, 'Uncategorised')
+    SELECT name, SUM(refunds) AS refunds
+    FROM (
+        SELECT IFNULL(c.name, 'Uncategorised') AS name, r.refund_paisa AS refunds
+        FROM sale_returns r
+        LEFT JOIN products p ON p.id = r.product_id
+        LEFT JOIN categories c ON c.id = p.category_id AND c.active = 1
+        WHERE r.date >= @from AND r.date < @until
+        UNION ALL
+        SELECT IFNULL(c.name, 'Uncategorised'), pr.refund_paisa
+        FROM provisional_report_lines pr
+        LEFT JOIN products p ON p.id = pr.product_id
+        LEFT JOIN categories c ON c.id = p.category_id AND c.active = 1
+        WHERE pr.event_date >= @from AND pr.event_date < @until
+    )
+    GROUP BY name
+),
+keys AS (
+    SELECT name FROM net
+    UNION
+    SELECT name FROM back
 )
-SELECT net.name AS name, CAST(net.sales - IFNULL(back.refunds, 0) AS INTEGER) AS sales
-FROM net
-LEFT JOIN back ON back.name = net.name
+SELECT keys.name AS name, CAST(IFNULL(net.sales, 0) - IFNULL(back.refunds, 0) AS INTEGER) AS sales
+FROM keys
+LEFT JOIN net ON net.name = keys.name
+LEFT JOIN back ON back.name = keys.name
 ORDER BY sales DESC;",
             new { from = period.FromStamp, until = period.UntilStamp });
 
@@ -524,7 +572,7 @@ LIMIT 1;";
 
         public string? Name { get; set; }
 
-        public long Qty { get; set; }
+        public double Qty { get; set; }
 
         public long Sales { get; set; }
 

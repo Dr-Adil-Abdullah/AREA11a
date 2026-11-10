@@ -26,6 +26,7 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
 
     private bool _hasShift;
     private string _headerText = "The drawer is closed.";
+    private string _previousClosingText = string.Empty;
     private string _floatText = "Rs 0";
     private string _cashSalesText = "Rs 0";
     private string _collectionsText = "Rs 0";
@@ -145,6 +146,12 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
         private set => SetProperty(ref _peopleSummaryText, value);
     }
 
+    public string PreviousClosingText
+    {
+        get => _previousClosingText;
+        private set => SetProperty(ref _previousClosingText, value);
+    }
+
     public string HeaderText
     {
         get => _headerText;
@@ -256,9 +263,23 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
             ExpensesText = "Rs 0";
             DrawingsText = "Rs 0";
             ExpectedText = "Rs 0";
+
+            var previous = _services.Shifts.LastCounted();
+
+            if (previous?.ActualPaisa is long counted)
+            {
+                OpenFloatText = Money.Edit(counted);
+                PreviousClosingText = $"Previous counted closing: {Money.Format(counted)}. " +
+                                      "It is filled in below; changing it needs a reason.";
+            }
+            else
+            {
+                PreviousClosingText = "No previous counted closing yet. Type the actual opening cash.";
+            }
         }
         else
         {
+            PreviousClosingText = string.Empty;
             HeaderText = current.HeaderLabel;
             FloatText = current.FloatLabel;
             CashSalesText = current.CashSalesLabel;
@@ -380,7 +401,7 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
                 ? handover.Sentence + " The slip has gone to the printer - both signatures go on it."
                 : handover.Sentence + " The slip could not be printed (" + printed.Error
                   + "). The handover is recorded; use Print the slip again.",
-            !printed.Ok);
+            !printed.Ok || !handover.IsExact);
     }
 
     private void PrintSlip()
@@ -446,7 +467,7 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
         Load();
 
         SetStatus("Shift closed. Expected " + closed.ExpectedLabel + ", counted " + closed.ActualLabel
-                  + " - " + closed.DifferenceLabel + ".", closed.IsShort);
+                  + " - " + closed.DifferenceLabel + ".", !closed.IsExact);
     }
 
     private void SetStatus(string message, bool isError)

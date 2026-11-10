@@ -78,6 +78,8 @@ public sealed class SessionTests
 
         Assert.False(check.Expired);
         Assert.Equal(TimeSpan.FromHours(12), check.Left);
+        Assert.Equal(SessionEnd.HardCap, check.Next);
+        Assert.False(check.Warning);
     }
 
     [Fact]

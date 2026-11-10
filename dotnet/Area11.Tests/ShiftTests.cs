@@ -111,11 +111,14 @@ INSERT INTO users(name, role, active, created_at) VALUES('Cashier', 'cashier', 1
         var product = TestData.AddProduct(test, retailPaisa: 30000, batchQty: 100);
         var customer = TestData.AddCustomer(test);
 
+        // Open the drawer before the bill. TestData.Sales() also ensures that one is open; asking
+        // it to make the credit bill first and then calling Open() again is correctly refused.
+        var opened = Shifts(test).Open(TestData.Owner, 0, null);
+        Assert.True(opened.Ok, opened.Error);
+
         var credit = TestData.Sales(test).Create(
             TestData.Cart(product, qty: 2, method: "credit", customerId: customer), TestData.Owner);
         Assert.True(credit.Ok, credit.Error);
-
-        Assert.True(Shifts(test).Open(TestData.Owner, 0, null).Ok);
 
         var ledger = new CustomerLedgerService(test.Database, test.Audit, test.Settings,
             new PermissionService(test.Database, test.Log, test.Audit), test.Log);
@@ -136,10 +139,13 @@ INSERT INTO users(name, role, active, created_at) VALUES('Cashier', 'cashier', 1
         using var test = new TestDatabase();
         var product = TestData.AddProduct(test, retailPaisa: 30000, batchQty: 100);
 
+        // The sale and its refund must both belong to this already-open shift. In particular, do
+        // not rely on a same-second timestamp to pull a pre-opening sale into the drawer totals.
+        var opened = Shifts(test).Open(TestData.Owner, 0, null);
+        Assert.True(opened.Ok, opened.Error);
+
         var sale = TestData.Sales(test).Create(TestData.Cart(product, qty: 3, method: "cash"), TestData.Owner);
         Assert.True(sale.Ok, sale.Error);
-
-        Assert.True(Shifts(test).Open(TestData.Owner, 0, null).Ok);
 
         var returned = TestData.Returns(test).Create(TestData.Return(sale.Value!, 1), TestData.Owner);
         Assert.True(returned.Ok, returned.Error);
@@ -305,6 +311,74 @@ INSERT INTO users(name, role, active, created_at) VALUES('Cashier', 'cashier', 1
         Assert.Equal(0L, row.DifferencePaisa);
         Assert.Equal("Owner", row.OpenedBy);
         Assert.Equal("counted twice", row.NoteLabel);
+    }
+
+    [Theory]
+    [InlineData(599900)]
+    [InlineData(600100)]
+    public void OpeningDifference_OneRupeeNeedsAReasonAndCreatesARedAlert(int opening)
+    {
+        using var test = new TestDatabase();
+        var service = Shifts(test);
+
+        Assert.True(service.Open(TestData.Owner, 600000, null).Ok);
+        Assert.True(service.Close(TestData.Owner, 600000, null).Ok);
+        Assert.Equal(600000L, service.LastCounted()!.ActualPaisa);
+
+        var refused = service.Open(TestData.Owner, opening, null);
+
+        Assert.False(refused.Ok);
+        Assert.Contains("reason", refused.Error!, StringComparison.OrdinalIgnoreCase);
+        Assert.Null(service.Current());
+        Assert.Single(service.History());
+
+        var opened = service.Open(TestData.Owner, opening, "opening difference explained");
+        Assert.True(opened.Ok, opened.Error);
+
+        var alert = TestData.Alerts(test).Report().Live.Single(item =>
+            item.Type == AlertService.TypeShiftOpeningDifference);
+        Assert.Equal(AlertSeverity.Red, alert.Severity);
+        Assert.True(alert.IsCritical);
+        Assert.Equal(opened.Value!.Id, alert.EntityId);
+        Assert.Contains("Rs 1", alert.Detail, StringComparison.Ordinal);
+        Assert.Contains("opening difference explained", alert.Detail, StringComparison.Ordinal);
+        Assert.Contains("no automatic payment", alert.Detail, StringComparison.Ordinal);
+
+        using var connection = test.Database.Open();
+        var audit = test.Database.QuerySingle<string>(connection, @"
+SELECT details FROM audit_logs WHERE action = 'shift_open' ORDER BY id DESC LIMIT 1;");
+        Assert.Contains("Previous counted", audit, StringComparison.Ordinal);
+        Assert.Contains("opening difference explained", audit, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(99900)]
+    [InlineData(100100)]
+    public void ClosingDifference_OneRupeeNeedsAReasonAndCreatesARedAlert(int counted)
+    {
+        using var test = new TestDatabase();
+        var service = Shifts(test);
+
+        Assert.True(service.Open(TestData.Owner, 100000, null).Ok);
+        var refused = service.Close(TestData.Owner, counted, null);
+
+        Assert.False(refused.Ok);
+        Assert.Contains("reason", refused.Error!, StringComparison.OrdinalIgnoreCase);
+        Assert.True(service.Current()!.IsOpen);
+
+        var closed = service.Close(TestData.Owner, counted, "one rupee difference explained");
+        Assert.True(closed.Ok, closed.Error);
+
+        var report = TestData.Alerts(test).Report();
+        var alert = report.Live.Single(item => item.Type == AlertService.TypeShiftClosingDifference);
+        Assert.Equal(AlertSeverity.Red, alert.Severity);
+        Assert.Equal(AlertSeverity.Red, report.BellSeverity);
+        Assert.Contains("Rs 1", alert.Detail, StringComparison.Ordinal);
+        Assert.Contains("one rupee difference explained", alert.Detail, StringComparison.Ordinal);
+        Assert.False(TestData.Alerts(test).DismissLight(TestData.Cashier(test), alert.Key).Ok);
+
+        using var connection = test.Database.Open();
+        Assert.Equal(0, test.Database.QuerySingle<int>(connection, "SELECT COUNT(1) FROM payments;"));
     }
 
     /// <summary>The batch the purchase created, so the return takes the goods this shift received.</summary>

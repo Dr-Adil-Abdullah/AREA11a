@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using Area11.Core.Models;
+using Area11.Core.Services;
 using Area11.Core.Utils;
 
 namespace Area11.Desktop.ViewModels;
@@ -19,6 +20,7 @@ public sealed class PurchasesViewModel : ObservableObject
     private Supplier? _selectedSupplier;
     private string _newSupplierName = string.Empty;
     private string _newSupplierPhone = string.Empty;
+    private string _newSupplierAgency = string.Empty;
     private string _productSearch = string.Empty;
     private Product? _selectedProduct;
     private string _unit = "box";
@@ -36,6 +38,8 @@ public sealed class PurchasesViewModel : ObservableObject
     {
         _services = services;
         _user = user;
+        NewSupplierEditor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Supplier, saveWithParent: true);
+        NewSupplierEditor.LoadNew();
 
         AddLineCommand = new RelayCommand(AddLine);
         RemoveLineCommand = new RelayCommand(RemoveLast);
@@ -45,6 +49,8 @@ public sealed class PurchasesViewModel : ObservableObject
 
         LoadLookups();
     }
+
+    public CustomFieldsEditorViewModel NewSupplierEditor { get; }
 
     public ObservableCollection<Supplier> Suppliers { get; } = new();
 
@@ -80,6 +86,12 @@ public sealed class PurchasesViewModel : ObservableObject
     {
         get => _newSupplierPhone;
         set => SetProperty(ref _newSupplierPhone, value);
+    }
+
+    public string NewSupplierAgency
+    {
+        get => _newSupplierAgency;
+        set => SetProperty(ref _newSupplierAgency, value);
     }
 
     public string ProductSearch
@@ -200,9 +212,7 @@ public sealed class PurchasesViewModel : ObservableObject
 
         foreach (var product in _catalog)
         {
-            if (term.Length == 0
-                || product.Name.Contains(term, StringComparison.OrdinalIgnoreCase)
-                || (product.Barcode ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase))
+            if (PackagingPolicy.Matches(product, term))
             {
                 FilteredProducts.Add(product);
             }
@@ -216,7 +226,13 @@ public sealed class PurchasesViewModel : ObservableObject
 
     private void AddSupplier()
     {
-        var result = _services.Partners.CreateSupplier(_user, NewSupplierName, NewSupplierPhone, null);
+        if (!NewSupplierEditor.LoadedSuccessfully)
+        {
+            SetStatus("Supplier extra fields could not be loaded. Reopen the purchase page.", true);
+            return;
+        }
+        var result = _services.Partners.CreateSupplier(_user, NewSupplierName, NewSupplierPhone, NewSupplierAgency,
+            NewSupplierEditor.AnswerValues());
         if (!result.Ok)
         {
             SetStatus(result.Error ?? "The supplier could not be saved.", true);
@@ -225,6 +241,8 @@ public sealed class PurchasesViewModel : ObservableObject
 
         NewSupplierName = string.Empty;
         NewSupplierPhone = string.Empty;
+        NewSupplierAgency = string.Empty;
+        NewSupplierEditor.LoadNew();
         LoadLookups();
         SelectedSupplier = Suppliers.FirstOrDefault(supplier => supplier.Id == result.Value);
         SetStatus("Supplier added.", false);

@@ -1,5 +1,30 @@
 # AGENTS.md - how to work in this repository
 
+> **WIP handoff, 24 Oct 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/60395e95-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/60395e95-area11a). Portion 4 is incomplete; portions 5–7 are approved next; Portion 17 is paused. Older status and approval statements below are historical. This branch is not a tested release.
+
+
+## Latest handoff — v0.42.0 Kyanite
+
+Owner approved master Portion 3. A list projection omits tag IDs; the product editor now fetches the complete product before editing, so an ordinary save does not silently remove tags. ProductService refuses creating/replacing nonempty tags without a primary while allowing no-category/no-tag and untouched legacy tag-only records. Primary-only financial reports, genuine data and quantities remain unchanged. **929 written tests, 57/57 static; Windows build/xUnit and PT-14 WPF/owner proof pending.** A raw SQLite tag-only/Uncategorised scenario is not the owner's exact reproduction. Workbook category changes recheck tags on preview/apply; CSV import creates products without tags. Category put-away intentionally unlinks the primary and can leave other tags; owner review remains pending. Baltic owner 921/921 is previous evidence; portions 4–15 need approval.
+
+
+## Latest handoff — v0.41.0 Siderite
+
+Owner approved Portion 2 via NEXT and selected both Edit button/double-click; lack of Counter permission now selects Dashboard, not Baltic's first permitted page. Product editor is modal, uses existing ProductService, protects unsaved form/extra answers with explicit default-No close/put-away warnings, and keeps a created ID after save. **922 written cases, 57/57 static checks; Windows build/xUnit and PT-13/PT-12 WPF checks pending.** Owner's Baltic 921/921 Core/Tests is prior evidence only. Portions 3–15 await separate approval; do not treat PT02-POS-01 as fixed.
+
+
+**Latest owner evidence:** Baltic v0.40.0 Windows Core/Tests **921 passed / 0 failed / 0 skipped / 921**, 1m14s, ALL GREEN. This does not prove Desktop/WPF build or PT-12. Owner selected Dashboard as fallback without Counter permission; existing Baltic code needs adjustment. For Portion 2, owner selected both an Edit Product button and row double-click; coding approval remains separate.
+
+## Latest handoff — v0.40.0 Baltic, master Portion 1
+
+Owner approved Portion 1 via NEXT. Counter-first selection is permission-filtered; fallback is first permitted ordinary page, then Dashboard (owner confirmation pending). Dashboard remains accessible by Area11 wordmark, not a standalone module. Returns/Partners/Doctors/Import-Export page tabs use header controls over the original tab items; Settings was already hosted. 921 cases written; 57/57 static checks pass. **No Windows/WPF build, 921-case run or PT-12 owner verification here.** Owner reported 918/918 without identifying the build; do not attribute it to a version. Remaining portions 2–15 require approval; retain later testing feedback and prioritize safety. Roadmap: `docs/MASTER-CHECKLIST-ROADMAP.md`.
+
+
+## Latest handoff — v0.39.1 Admiralty
+
+Owner Windows Tourmaline Core/Tests: **916/918 passed, 2 failed, 0 skipped**. Two test-only fixes correct the 029+030 migration count/ledger and `@id` binding in the draft constraint test; production rules remain unchanged. **57/57 static checks pass; Windows 918/918 rerun and PT-11 remain pending.** Owner permits proceeding on an approved portion while physical results arrive later; urgent financial/data-loss risks take priority. Part 1 header/navigation is next, but the exact new checklist requirements are missing and must be clarified; do not invent UI changes.
+
+
 This file is for **any AI coding agent** that is given only the repository link (the owner's rule
 U-13). Read it fully before touching code; it is short on purpose.
 
@@ -40,19 +65,23 @@ rejected even if it "works".
 2. **Bill total = sum of line totals.** Round once (`Money.RoundDownWithCostGuard`), then spread the
    difference over the last allocation. Never re-round the total afterwards.
 3. **Round down only, never below purchase cost** (Z-11).
-4. **Negative stock never blocks a sale or a stock operation**; it warns, records `negative_sale`, and
-   raises a persistent alert. It blocks only when `stock.allowNegative` is off (U-25/U-30).
+4. **Negative stock is retired by D-93 (implemented in v0.35.9 Onyx), superseding U-25/U-30 for new transactions.**
+   Every ordinary decrement must use `StockPolicy.Decrease` inside its immediate transaction; never add a raw
+   subtraction, settings bypass or owner bypass. Sales reserve repeated products/shared FEFO batches
+   cumulatively, exact zero is valid, and failures roll back completely. Historical negatives stay readable
+   and are reconciled only through finite physical counts and audited corrections, never silent zeroing.
 5. **Permissions are enforced in `Area11.Core`**, keyed on the signed-in `User`. Hiding a button is not
    a permission. Owner-only actions: dismissing alerts, applying stock-take, restoring backup.
 6. **Never delete business rows.** Use `active = 0`. Audit rows and sales are permanent.
 7. **Migrations are append-only**, run inside `BEGIN IMMEDIATE`, and re-check `_migrations` after the
-   lock is taken. Add `016_*.sql`; never edit an existing file.
+   lock is taken. Add `029_*.sql` for the next change; never edit an existing file.
 8. **Views contain no SQL and no business logic.** Services own every rule and every transaction; a
    service method takes `User` when the rule depends on permissions.
 9. **Never modify the original Next.js app** (`Dr-Adil-Abdullah/Area11`) - it is only a behaviour
    reference.
 10. **Everything editable** (E-01): no hard-coded shop name, discount limit, printer width, wording or
-    colour. Settings come from the `settings` table via `SettingsService`.
+    colour. Settings come from the `settings` table via `SettingsService`. **D-96 exception:** the product
+    title is fixed to **Area11** in the shell/login; the shop's own receipt/settings branding remains editable.
 
 ## 3. Layout you must respect
 
@@ -66,8 +95,9 @@ tools/                   check_repo.py, build_rules_matrix.py
 
 Three projects only (owner's D-17). Do not add a fourth.
 
-Wiring a new screen: service → property on `AppServices` → entry in `ShellViewModel.NavItems` guarded
-by `_services.Permissions.Can(user, Modules.X)` → `DataTemplate` in `ShellWindow.xaml` → view + view-model.
+Wiring a new screen: service → property on `AppServices` → stable page entry in `ShellViewModel.NavItems`
+(and its permitted module/context collections) guarded by `_services.Permissions.Can(user, Modules.X)` →
+`DataTemplate` in `ShellWindow.xaml` → view + view-model. The Phase-1 header has no left-sidebar fold state.
 
 ## 4. Verify before you claim anything works
 
@@ -135,7 +165,80 @@ tests through the public service methods and a real bill in `TestDatabase`.
 
 ## 8. Current state (update this line if you finish a phase)
 
-> **v0.35.2 (Tarragon `#5A6B3B`) - one time for the shop, a session that ends by itself, and no bill without a galla (D-92).**
+> **v0.39.0 (Tourmaline `#7A1F5C`) - D-99 master checklist Phase 1 schema/data contracts; 918 written cases in 71 files and 57 static checks.**
+>
+> * **Approved scope:** Q1=A local draft-only incomplete records, Q2=C preferred+historical suppliers,
+>   Q3=A no-expense-allocation profit definition, Q4=C configurable manual/automatic sync. Only Phase 1
+>   is implemented: migration 030, typed native-field/draft/catalog/supplier/drawer contracts, seven
+>   later-phase settings and cloud format-3 parent ordering. Phases 2–7, bulk-print/WhatsApp/profit UI
+>   and the automatic-sync scheduler are not approved/implemented by this slice.
+> * **Isolated rebuild is not D-77's demo shop:** `IsolatedTestCopyService` is absent from `AppServices`.
+>   It needs exact confirmation, a dedicated marker and a local non-live folder; it refuses unmarked,
+>   network and reparse-point paths, takes an untrimmed SQLite technical snapshot, validates staged
+>   migrations and has a recovery path. It invents no bills, purchases, payments or stock. Destructive
+>   and fault tests stay in temporary isolated copies; genuine books and D-93/PR rules are untouched.
+> * **Verification boundary:** all **57/57 static checks** pass with real C# grammar/member resolution;
+>   887 SQL statements prepare and **17/17 raw SQLite rehearsal groups** pass (30 migrations, 42
+>   application tables + ledger, two views, REAL quantities). Tourmaline has **918 written cases**, but
+>   no local .NET/WPF runtime exists. Require **`ALL GREEN - 918 of 918`** and PT-11 on the owner's PC;
+>   do not call this compile, xUnit, real-cloud, printer or physical evidence.
+> * **Previous Windows xUnit proof:** Cobalt v0.38.0 reported Failed 0, Passed 900, Skipped 0, Total 900
+>   in **1 m 4 s** on 29 October 2026; Zircon previously passed 883/883 in 1 m 10 s. These are historical
+>   results, not Tourmaline, Desktop/WPF, PT-01, PT-10 or PT-11 proof. Retained physical checks remain open.
+>
+> * **The correct Obsidian commit `cb2e321` passed on the owner's Windows PC:** Failed 0, Passed 860,
+>   Skipped 0, Total 860, in 1 m 17 s. The banner was v0.35.18 and the runner printed
+>   **`ALL GREEN - 860 of 860 cases passed, failed: 0`**. This closed the earlier xUnit gate and verifies
+>   both workbook fixture repairs together with the retained PR allocation repair. This is earlier
+>   **860-case** evidence; the later Zircon/Cobalt results are above. Recording these results changes no code.
+>
+> * **Green tests do not close the separate live checks.** The board remains 52/57 done with five
+>   owner-action rows, and the matrix remains 92 done / 4 partial. Keep T-10 🟡 until real Excel
+>   open/edit/preview/apply/re-import proof; E-12/S-05/Z-05 still need their Windows walk-throughs,
+>   and real Supabase proof remains separate. No new WPF-window, real-Excel or real-cloud evidence is
+>   inferred from the test run. D-93 stock/money and PR cancellation rules are unchanged.
+>
+> * **Earlier verification is not backfilled.** Paprika really reported **837 passed / 14 failed / 851
+>   total**, and Quasar's 853-case target was not executed. Cypress 789/789 is now an earlier green
+>   run, not the latest. Cobalt's **900-case** suite is owner-verified on Windows; the current Tourmaline
+>   **918-case** suite still needs its own run, and PT-01/PT-10/PT-11 remain separate. Do not start master
+>   Phases 2–7 or another feature stage without the owner's separate approval.
+>
+> * **Physical testing and authorized repairs are in progress.** PT-01 passed; PT-02 is **PASS — owner
+>   confirmed 29 October**, with product saves and Black-box entries confirmed. All findings, owner
+>   decisions and PT-03/PT-04 instructions live in **`PHYSICAL-TESTING.md`**. On 27 October the owner
+>   said **“fix the things”**, authorizing the recorded fixes in safety order. Backup destination/recovery,
+>   shift cash/alert, rate/sale feedback and the CAT-01/NAV-01/UNIT-01/PHOTO-01 source batch changed; at
+>   that Spruce checkpoint the written suite was **883 in 68 files**, all **52 static checks** passed,
+>   and the owner ran **883/883** on Windows (`94723e5`). Those are historical results, not Aurora proof.
+>   `aedb65d` fixes the owner's reported AlertKindTests compile error. Prove the new
+>   catalog/unit/navigation/photo workflows with genuine transactions and keep each physical verification
+>   separate. The POS blank/dashes report still needs exact reproduction evidence. **next** still means
+>   the next test portion. Cobalt's 900-case/55-check, Aurora's 892-case/54-check and Zircon's
+>   883-case/53-check inventories are historical release evidence, not the current Tourmaline inventory.
+>
+> * **v0.35.5 repairs one policy mismatch and two stale test fixtures.** The owner's v0.35.4 run proved
+>   the correct tree (**769 passed, 3 failed, 772 total**). A sign-in ahead of the PC clock now keeps
+>   the session on the safe hard-cap answer rather than the shorter idle countdown. Two Shift tests
+>   now open the drawer before billing instead of asking `TestData.Sales()` to open it and then opening
+>   it again; the production second-open refusal is unchanged. No schema or test-count change (772).
+>   Static checks pass, and the owner's Windows run then passed **772 of 772 in 56 s**.
+>
+> * **The old AlertService mapping report did not reproduce against current code.** `qty_base` is
+>   SQLite `REAL`, `ProblemRow.Qty` is C# `double`, and all seven alert sources have passing tests in
+>   that 772-case run (including low-stock REAL values 1.0 and 2.0). No cast or production file was
+>   changed. Do not "fix" it to `long`; a fresh v0.35.5+ crash report is needed if it recurs.
+>
+> * **v0.35.4 fixes the delivery gate, not a shop rule.** `START-AREA11.bat` accepted only `main` and
+>   a retired Arena branch, so it refused the correct current branch before building. The active
+>   `WORK_BRANCH` is now declared once and accepted beside `main`; other branches remain refused.
+>   No schema or test-count change (772 cases). It has not been compiled or executed here.
+>
+> * **v0.35.3 repairs cross-instance numbering and rollback.** `NumberingService` reads the counter on
+>   the caller's connection; `WriteCounter` no longer mutates memory that SQLite cannot roll back.
+>   Three public-service tests cover independent settings instances, rollback and repeated numbers in
+>   one transaction (772 cases). The schema did not change. **Not compiled or executed here:** the
+>   owner must run `tools\RUN-TESTS.cmd` and see `ALL GREEN - 772 of 772`.
 >
 > * **v0.35.2 fixed what the owner's run found.** (1) `RunTrail.Append` used `File.AppendAllText`, which
 >   writes **no line end**, so every step glued onto the previous one and the trail was one enormous
@@ -635,8 +738,9 @@ tests through the public service methods and a real bill in `TestDatabase`.
 > removed without touching a single real bill (D-76). Three more lessons from the owner's PC, all of
 > them my own tests being wrong about the shop:
 >
-> * **`discount.mode` ships as `margin`** (Spec 11.2.1). 10 % off a 600 bill whose goods cost 400 is
->   20, not 60. Never write a discount expectation without naming the method and the margin.
+> * **Historical, superseded 27 Oct:** v0.29.2 shipped `discount.mode = margin`. The owner's later
+>   physical-testing decision now requires explicit discount on full retail, so 10 % off a Rs 600 bill
+>   is Rs 60. The old release lesson remains here for provenance; it is not the current pricing rule.
 > * **Sales stay gross; profit nets the returns** (21.2 vs 21.6). The Reports page keeps *sales* and
 >   *refunds* as two cards. If the home screen netted them, one day would show two different numbers.
 > * **`SetMany` must receive typed values.** For `expiry.levels` the caller passes `List<ExpiryBand>`;

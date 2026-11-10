@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using Area11.Core.Models;
 using Area11.Core.Services;
 using Area11.Core.Utils;
@@ -17,28 +18,28 @@ namespace Area11.Desktop.ViewModels;
 /// draw (text, number, amount, date, list, tick, photo) and asks
 /// <see cref="CustomFieldService"/> to save them in one go.
 ///
-/// **Why its own Save button.** A medicine is saved by the products page, a customer by the khata
-/// page, a supplier by the supplier page - three transactions with their own rules. Adding a second
-/// write inside each of them would mean three chances to leave half a record saved. The panel writes
-/// its own answers in one transaction of its own (D-59), and says so on the screen.
+/// Product answers are saved with the product in one transaction; customer and supplier answers
+/// still use their separate save button until their form integration is implemented.
 /// </summary>
 public sealed class CustomFieldsEditorViewModel : ObservableObject
 {
     private readonly AppServices _services;
     private readonly User _user;
     private readonly string _entity;
+    private readonly bool _saveWithParent;
 
     private int _entityId;
     private string _statusText = string.Empty;
     private bool _isStatusError;
     private bool _canEdit;
 
-    public CustomFieldsEditorViewModel(AppServices services, User user, string entity)
+    public CustomFieldsEditorViewModel(AppServices services, User user, string entity, bool saveWithParent = false)
     {
         _services = services;
         _user = user;
 
         _entity = CustomFieldEntity.Clean(entity);
+        _saveWithParent = saveWithParent;
         _canEdit = services.Permissions.Can(user, CustomFieldEntity.ModuleFor(_entity));
 
         SaveCommand = new RelayCommand(Save);
@@ -48,9 +49,11 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
 
     public RelayCommand SaveCommand { get; }
 
-    public string Title => "Own fields";
+    public string Subtitle => "Questions the owner added for the " + EntityWord + " form."
+        + (_saveWithParent ? " Saved together with the record." : " Saved separately.");
 
-    public string Subtitle => "Questions the owner added for the " + EntityWord + " form.";
+    public bool ShowSeparateSave => !_saveWithParent;
+    public bool LoadedSuccessfully { get; private set; }
 
     /// <summary>True when the owner may fill the panel; a reader only sees what is already there.</summary>
     public bool CanEdit
@@ -96,14 +99,19 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
     /// Loads the answers of one record. Called when the page's selection changes - and with 0 when
     /// there is no record, so a stale answer can never be saved onto the wrong medicine.
     /// </summary>
-    public void Load(int entityId)
+    public void Load(int entityId) => LoadCore(entityId, false);
+
+    public void LoadNew() => LoadCore(0, true);
+
+    private void LoadCore(int entityId, bool forNewRecord)
     {
+        LoadedSuccessfully = false;
         _entityId = entityId;
         Rows.Clear();
         StatusText = string.Empty;
         IsStatusError = false;
 
-        if (entityId <= 0)
+        if (entityId <= 0 && !forNewRecord)
         {
             RaiseListState();
             return;
@@ -119,22 +127,27 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
             return;
         }
 
-        var values = _services.CustomFields.Values(_user, _entity, entityId);
-
-        if (!values.Ok || values.Value is null)
+        var answers = new Dictionary<int, string>();
+        if (entityId > 0)
         {
-            CanEdit = false;
-            RaiseListState();
-            SetStatus(values.Error ?? "The answers could not be loaded.", true);
-            return;
+            var values = _services.CustomFields.Values(_user, _entity, entityId);
+            if (!values.Ok || values.Value is null)
+            {
+                CanEdit = false;
+                RaiseListState();
+                SetStatus(values.Error ?? "The answers could not be loaded.", true);
+                return;
+            }
+            answers = values.Value;
         }
 
         foreach (var field in fields.Value)
         {
-            values.Value.TryGetValue(field.Id, out var stored);
+            answers.TryGetValue(field.Id, out var stored);
             Rows.Add(new CustomInputRow(field, stored));
         }
 
+        LoadedSuccessfully = true;
         CanEdit = _services.Permissions.Can(_user, CustomFieldEntity.ModuleFor(_entity));
         RaiseListState();
     }
@@ -156,6 +169,24 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
             return;
         }
 
+        var values = AnswerValues();
+
+        var result = _services.CustomFields.SaveValues(_user, _entity, _entityId, values);
+
+        if (!result.Ok)
+        {
+            SetStatus(result.Error ?? "The answers could not be saved.", true);
+            return;
+        }
+
+        // Reload so the boxes show exactly what the database holds (1200.50 becomes 1200.5,
+        // 22/10/2026 becomes 2026-10-22).
+        Load(_entityId);
+        SetStatus("Saved.", false);
+    }
+
+    public IReadOnlyDictionary<int, string?> AnswerValues()
+    {
         var values = new Dictionary<int, string?>();
 
         foreach (var row in Rows)
@@ -179,18 +210,7 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
             }
         }
 
-        var result = _services.CustomFields.SaveValues(_user, _entity, _entityId, values);
-
-        if (!result.Ok)
-        {
-            SetStatus(result.Error ?? "The answers could not be saved.", true);
-            return;
-        }
-
-        // Reload so the boxes show exactly what the database holds (1200.50 becomes 1200.5,
-        // 22/10/2026 becomes 2026-10-22).
-        Load(_entityId);
-        SetStatus("Saved.", false);
+        return values;
     }
 
     private void RaiseListState() => OnPropertyChanged(nameof(HasFields));
@@ -206,7 +226,7 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
 /// One question in the panel. The row knows its kind of answer and holds the text the box shows; the
 /// rules (what a number is, what an amount becomes, what a required field means) are in the service.
 /// </summary>
-public sealed class CustomInputRow
+public sealed class CustomInputRow : ObservableObject
 {
     public CustomInputRow(CustomField field, string? stored)
     {
@@ -239,9 +259,11 @@ public sealed class CustomInputRow
     /// <summary>The name the form shows; a required field carries a star so the person knows.</summary>
     public string Label => Field.Required ? Field.Label + " *" : Field.Label;
 
-    public string Hint => Field.IsPhoto
-        ? "Use the Photos… button on this page - the picture is the answer."
-        : Field.TypeLabel + (Field.Required ? " · required" : string.Empty);
+    public string Hint => !string.IsNullOrWhiteSpace(Field.HelpText)
+        ? Field.HelpText
+        : Field.IsPhoto
+            ? "Use the Photos… button on this page - the picture is the answer."
+            : Field.TypeLabel + (Field.Required ? " · required" : string.Empty);
 
     public bool IsText { get; }
 
@@ -264,8 +286,35 @@ public sealed class CustomInputRow
 
     public IReadOnlyList<string> Options => Field.Options;
 
+    private string _text = string.Empty;
+
     /// <summary>What the person typed (or picked). The service turns it into the stored form.</summary>
-    public string Text { get; set; }
+    public string Text
+    {
+        get => _text;
+        set
+        {
+            if (SetProperty(ref _text, value ?? string.Empty)) OnPropertyChanged(nameof(PickedDate));
+        }
+    }
+
+    /// <summary>
+    /// Calendar is an optional input aid. Never erase an unparseable legacy value: it remains in
+    /// the text box for the existing service validation to explain on Save. Clear via the text box.
+    /// </summary>
+    public DateTime? PickedDate
+    {
+        get
+        {
+            var formats = new[] { "yyyy-MM-dd", "dd/MM/yyyy", "d/M/yyyy", "dd-MM-yyyy", "d-M-yyyy" };
+            return DateTime.TryParseExact(Text.Trim(), formats, CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var date) ? date : null;
+        }
+        set
+        {
+            if (value is not null) Text = value.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        }
+    }
 
     /// <summary>The tick box of a yes/no field.</summary>
     public bool BoolValue { get; set; }

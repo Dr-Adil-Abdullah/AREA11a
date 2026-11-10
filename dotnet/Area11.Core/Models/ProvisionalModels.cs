@@ -61,6 +61,16 @@ public sealed class ProvisionalRow
 
     public string? LinkedAt { get; set; }
 
+    /// <summary>
+    /// The remaining bill value of the returned quantities when the bill was reconciled. NULL on an
+    /// old status-only link is deliberate: the owner must reconcile that entry, not have quantities
+    /// guessed for it during a migration.
+    /// </summary>
+    public long? LinkedExpectedPaisa { get; set; }
+
+    /// <summary>Actual PR money that exceeded the remaining capacity of the matched sale lines.</summary>
+    public long? LinkedUnallocatedPaisa { get; set; }
+
     public string? CancelReason { get; set; }
 
     public string? CancelledAt { get; set; }
@@ -79,13 +89,49 @@ public sealed class ProvisionalRow
 
     public bool IsCancelled => string.Equals(Status, "cancelled", StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>An old linked header has no original-line allocations until the owner repairs it.</summary>
+    public bool NeedsReconciliation => IsLinked && LinkedExpectedPaisa is null;
+
+    public long? LinkVariancePaisa => LinkedExpectedPaisa is long expected
+        ? RefundPaisa - expected
+        : null;
+
+    public bool HasLinkVariance => IsLinked && !NeedsReconciliation
+        && (LinkVariancePaisa != 0 || (LinkedUnallocatedPaisa ?? 0) > 0);
+
     /// <summary>What the card says on the right. The blinking red is drawn by the screen.</summary>
     public string StatusLabel => Status switch
     {
+        "linked" when NeedsReconciliation => "bill linked - RECONCILE quantities",
+        "linked" when HasLinkVariance => "bill linked - refund difference",
         "linked" => "bill linked - waiting for the owner",
         "cancelled" => "cancelled",
         _ => "bill MISSING"
     };
+
+    public string ReconciliationLabel
+    {
+        get
+        {
+            if (NeedsReconciliation)
+            {
+                return "Attach the same bill again to allocate the quantities before another return.";
+            }
+
+            if (!IsLinked || LinkedExpectedPaisa is not long expected)
+            {
+                return string.Empty;
+            }
+
+            var difference = RefundPaisa - expected;
+            var suffix = difference == 0
+                ? "refund matches the bill-derived value"
+                : $"refund differs by {Area11.Core.Utils.Money.Format(Math.Abs(difference))} " +
+                  (difference > 0 ? "over" : "under");
+
+            return $"Bill value {Area11.Core.Utils.Money.Format(expected)}; {suffix}.";
+        }
+    }
 
     public string CustomerLabel
     {

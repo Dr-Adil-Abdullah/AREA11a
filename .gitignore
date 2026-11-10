@@ -35,3 +35,7 @@ Thumbs.db
 # Python cache from the repo checker
 __pycache__/
 *.pyc
+
+# Machine-local shortcuts generated on first launch; targets contain this PC's absolute path.
+/! START AREA11.lnk
+/! RUN TESTS.lnk

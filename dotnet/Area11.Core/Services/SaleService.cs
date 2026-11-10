@@ -8,13 +8,18 @@ namespace Area11.Core.Services;
 /// <summary>
 /// The counter (Spec 12.2). One transaction:
 ///   validate → FEFO batches → tier price → discount guard → tax → round down with cost guard →
-///   reconcile the lines → deduct stock (negative allowed, warning only) → sale + payments →
+///   reconcile the lines → deduct stock through the D-93 non-negative policy → sale + payments →
 ///   customer khata → black box.
 /// The same calculation produces both the live quote and the saved bill, so the cashier can
 /// never see a total different from the one stored.
 /// </summary>
 public sealed class SaleService
 {
+    // Planning tolerance is for binary residue only (for example 0.1 + 0.2 versus 0.3). It is
+    // relative to the requested quantity: a fixed absolute epsilon could silently under-allocate a
+    // very small line while charging for the whole request. StockPolicy's SQL remains strict.
+    private static double PlanningTolerance(double quantity) => Math.Abs(quantity) * 0.000000000001d;
+
     private readonly Database _db;
     private readonly AuditService _audit;
     private readonly NumberingService _numbering;
@@ -82,7 +87,6 @@ public sealed class SaleService
                 RedeemPoints = computed.RedeemPoints,
                 RedeemPaisa = computed.RedeemPaisa,
                 Units = computed.Lines.Sum(line => line.QtyBase),
-                GoesNegative = computed.WentNegative,
                 Warnings = warnings
             }, warnings.ToArray());
         }
@@ -270,12 +274,16 @@ VALUES(@saleId, @productId, @batchId, @name, @qtyBase, @unitSold, @qtyEntered,
 
             saleItemIds.Add((int)_db.NextId(connection));
 
-            if (line.BatchId is not null)
+            if (line.BatchId is not int batchId)
             {
-                _db.Execute(connection,
-                    "UPDATE batches SET qty_base = qty_base - @qty WHERE id = @id;",
-                    new { qty = line.QtyBase, id = line.BatchId.Value });
+                // New D-93 sales are fully allocated to real, unexpired batches. A null batch was
+                // the old negative-stock fallback; accepting it now would bypass the stock policy.
+                throw new ValidationException(
+                    line.Name + " has no sellable batch allocation. The bill was not saved; receive or count stock first.");
             }
+
+            StockPolicy.Decrease(_db, connection, line.ProductId, batchId, line.QtyBase,
+                line.Name, line.BaseUnit, "sell");
 
             _db.Execute(connection, @"
 INSERT INTO stock_movements(product_id, batch_id, type, qty_base, note, user_id, created_at)
@@ -328,12 +336,6 @@ VALUES(@at, @method, @amount, @saleId, @customerId, @userId, @note);",
         _audit.Record(connection, user, "POS", "sale_create", "sales", saleId.ToString(),
             newValue: $"{{\"code\":\"{code}\",\"total\":{computed.TotalPaisa},\"discount\":{computed.DiscountPaisa},\"round\":{computed.RoundPaisa},\"method\":\"{method}\"}}");
 
-        if (computed.WentNegative)
-        {
-            _audit.Record(connection, user, "POS", "negative_sale", "sales", saleId.ToString(),
-                details: string.Join(" | ", computed.Warnings));
-        }
-
         return ServiceResult<SaleResult>.Success(new SaleResult
         {
             SaleId = saleId,
@@ -380,13 +382,17 @@ VALUES(@at, @method, @amount, @saleId, @customerId, @userId, @note);",
         var customer = ResolveCustomer(connection, input.CustomerId);
         var warnings = new List<string>();
         var lines = new List<SaleDraftLine>();
-        var wentNegative = false;
+
+        // A cart can name the same medicine on several lines. Reserve each FEFO allocation for the
+        // next line; otherwise two individually-valid lines can collectively oversell one batch.
+        var reservedByBatch = new Dictionary<int, double>();
+        var requestedByProduct = new Dictionary<int, double>();
 
         foreach (var lineInput in input.Lines)
         {
-            if (lineInput.Quantity <= 0)
+            if (!double.IsFinite(lineInput.Quantity) || lineInput.Quantity <= 0)
             {
-                throw new ValidationException("Every line needs a quantity greater than zero.");
+                throw new ValidationException("Every line needs a real quantity greater than zero.");
             }
 
             var product = _db.QuerySingle<ProductRow>(connection, @"
@@ -395,28 +401,52 @@ FROM products WHERE id = @id AND active = 1;",
                 new { id = lineInput.ProductId })
                 ?? throw new ValidationException("A product in the cart no longer exists.");
 
-            var unit = (lineInput.Unit ?? "base").Trim().ToLowerInvariant();
+            var requestedUnit = (lineInput.Unit ?? "base").Trim().ToLowerInvariant();
+            // Older callers sometimes sent the actual base-unit label instead of the "base" token.
+            // Keep that harmless spelling, but never treat a different strength unit (ml) as stock.
+            var unit = requestedUnit.Equals(product.BaseUnit, StringComparison.OrdinalIgnoreCase)
+                ? "base"
+                : requestedUnit;
+            if (unit is not ("base" or "strip" or "box"))
+            {
+                throw new ValidationException(
+                    $"{product.Name}: choose box, strip or {product.BaseUnit}. Strength such as ml describes the variant and is not a selling unit.");
+            }
             // double, never int: the schema stores quantities as REAL and an int here made
             // Math.Round(long) ambiguous (CS0121) on the first Windows build.
-            var unitsPerSelected = unit switch
-            {
-                "box" => (double)(Math.Max(1, product.BoxStrips) * Math.Max(1, product.StripTablets)),
-                "strip" => (double)Math.Max(1, product.StripTablets),
-                _ => 1d
-            };
+            var unitsPerSelected = Product.QuantityPerSelectedUnit(unit, product.BoxStrips, product.StripTablets);
 
             var qtyBase = Calc.ToBase(lineInput.Quantity, unitsPerSelected);
-
-            var tierPrice = customer?.Category?.ToLowerInvariant() switch
+            if (!double.IsFinite(qtyBase) || qtyBase <= 0)
             {
-                "vip" => product.VipPaisa > 0 ? product.VipPaisa : product.RetailPaisa,
-                "doctor" => product.DoctorPaisa > 0 ? product.DoctorPaisa : product.RetailPaisa,
-                _ => product.RetailPaisa
-            };
+                throw new ValidationException("Every line needs a real quantity greater than zero.");
+            }
+            if (UnitPolicy.RequiresWhole(_db, connection, product.BaseUnit) && !Qty.IsWhole(qtyBase))
+            {
+                throw new ValidationException(
+                    $"{product.Name}: {product.BaseUnit} is stocked and sold as whole {product.BaseUnit} units; ml is strength, not a stock division.");
+            }
+
+            // Special rates are opt-in guidance, never a silent customer-category default. An
+            // explicit discount uses the retail-plus-discount path instead of stacking both rules.
+            var tierPrice = input.UseSpecialRate && input.DiscountPercent == 0
+                ? customer?.Category?.ToLowerInvariant() switch
+                {
+                    "vip" => product.VipPaisa > 0 ? product.VipPaisa : product.RetailPaisa,
+                    "doctor" => product.DoctorPaisa > 0 ? product.DoctorPaisa : product.RetailPaisa,
+                    _ => product.RetailPaisa
+                }
+                : product.RetailPaisa;
 
             if (tierPrice <= 0)
             {
                 throw new ValidationException($"{product.Name}: no retail rate is set.");
+            }
+
+            if (lineInput.UnitPricePaisa > 0 && !user.CanManage)
+            {
+                throw new ValidationException(
+                    "Only the owner or a manager can enter a custom selling rate. Use the allowed discount or the customer's special rate.");
             }
 
             var pricePerSelected = lineInput.UnitPricePaisa > 0
@@ -424,6 +454,35 @@ FROM products WHERE id = @id AND active = 1;",
                 : Calc.Round(tierPrice * unitsPerSelected);
 
             var gross = Calc.Round(pricePerSelected * lineInput.Quantity);
+
+            var previousForProduct = requestedByProduct.TryGetValue(product.Id, out var previous)
+                ? previous
+                : 0d;
+            var totalForProduct = previousForProduct + qtyBase;
+            requestedByProduct[product.Id] = totalForProduct;
+
+            var productStock = _db.QuerySingle<double>(connection, @"
+SELECT COALESCE(SUM(qty_base), 0) FROM batches
+WHERE product_id = @productId AND active = 1;", new { productId = product.Id });
+
+            if (totalForProduct - productStock > PlanningTolerance(totalForProduct))
+            {
+                var leftForLine = Math.Max(0, productStock - previousForProduct);
+                // A positive book total can still sit beside a historical minus batch (5 - 3 = 2).
+                // Diagnose the actual rows, not just the sign of their sum, so the owner is shown
+                // the physical-count reconciliation path that applies to this fixture.
+                var hasLegacyMinus = Convert.ToInt64(_db.Scalar(connection, @"
+SELECT EXISTS(SELECT 1 FROM batches
+WHERE product_id = @productId AND active = 1 AND qty_base < 0);",
+                    new { productId = product.Id }) ?? 0L) > 0;
+                var repair = hasLegacyMinus
+                    ? " Reconcile the historical minus with a physical stock-take before selling."
+                    : " Reduce the cart quantity or receive stock first.";
+                throw new ValidationException(
+                    $"{product.Name}: only {Qty.Format(leftForLine)} {product.BaseUnit} remains for this line; " +
+                    $"{Qty.Format(qtyBase)} was requested ({Qty.Format(totalForProduct)} across the cart, " +
+                    $"book total {Qty.Format(productStock)}). New sales cannot take stock below zero." + repair);
+            }
 
             var batches = _db.Query<BatchRow>(connection, @"
 SELECT id, batch_no, qty_base, cost_paisa
@@ -433,20 +492,29 @@ WHERE product_id = @productId AND active = 1 AND qty_base > 0
 ORDER BY CASE WHEN expiry_date IS NULL OR expiry_date = '' THEN 1 ELSE 0 END, expiry_date, id;",
                 new { productId = product.Id });
 
-            var available = batches.Sum(batch => batch.QtyBase);
-            var allowNegative = _settings.GetBool("stock.allowNegative");
+            var available = batches.Sum(batch => Math.Max(0,
+                batch.QtyBase - (reservedByBatch.TryGetValue(batch.Id, out var reservedForTotal) ? reservedForTotal : 0d)));
             var remaining = qtyBase;
             var allocated = 0.0;
             var lineDrafts = new List<SaleDraftLine>();
 
             foreach (var batch in batches)
             {
-                if (remaining <= 0.000001)
+                if (remaining <= 0)
                 {
                     break;
                 }
 
-                var take = Math.Min(batch.QtyBase, remaining);
+                var alreadyReserved = reservedByBatch.TryGetValue(batch.Id, out var reservedForLine)
+                    ? reservedForLine
+                    : 0d;
+                var batchAvailable = Math.Max(0, batch.QtyBase - alreadyReserved);
+                if (batchAvailable <= 0)
+                {
+                    continue;
+                }
+
+                var take = Math.Min(batchAvailable, remaining);
 
                 lineDrafts.Add(new SaleDraftLine
                 {
@@ -455,6 +523,7 @@ ORDER BY CASE WHEN expiry_date IS NULL OR expiry_date = '' THEN 1 ELSE 0 END, ex
                     BatchId = batch.Id,
                     BatchNo = batch.BatchNo,
                     UnitSold = unit,
+                    BaseUnit = product.BaseUnit,
                     QtyEntered = lineInput.Quantity * (take / qtyBase),
                     QtyBase = take,
                     UnitPricePaisa = Calc.Round((double)pricePerSelected / unitsPerSelected),
@@ -462,39 +531,18 @@ ORDER BY CASE WHEN expiry_date IS NULL OR expiry_date = '' THEN 1 ELSE 0 END, ex
                     GrossPaisa = 0
                 });
 
+                reservedByBatch[batch.Id] = alreadyReserved + take;
                 remaining -= take;
                 allocated += take;
             }
 
-            if (remaining > 0.000001)
+            if (remaining > PlanningTolerance(qtyBase) || lineDrafts.Count == 0)
             {
-                if (!allowNegative)
-                {
-                    throw new ValidationException(
-                        $"{product.Name}: only {Qty.Format(available)} in stock, {Qty.Format(qtyBase)} requested " +
-                        "(negative stock is switched off in Settings).");
-                }
-
-                var fallback = lineDrafts.LastOrDefault();
-
-                lineDrafts.Add(new SaleDraftLine
-                {
-                    ProductId = product.Id,
-                    Name = product.Name,
-                    BatchId = fallback?.BatchId,
-                    BatchNo = fallback?.BatchNo ?? string.Empty,
-                    UnitSold = unit,
-                    QtyEntered = lineInput.Quantity * (remaining / qtyBase),
-                    QtyBase = remaining,
-                    UnitPricePaisa = Calc.Round((double)pricePerSelected / unitsPerSelected),
-                    CostUnitPaisa = fallback?.CostUnitPaisa ?? 0,
-                    GrossPaisa = 0
-                });
-
-                wentNegative = true;
-                warnings.Add(
-                    $"{product.Name}: stock goes MINUS by {Qty.Format(remaining)} {product.BaseUnit} " +
-                    $"(available {Qty.Format(available)}, sold {Qty.Format(qtyBase)}).");
+                throw new ValidationException(
+                    $"{product.Name}: only {Qty.Format(available)} {product.BaseUnit} of unexpired stock " +
+                    $"remains after earlier cart lines; {Qty.Format(qtyBase)} was requested on this line " +
+                    $"({Qty.Format(totalForProduct)} across the cart). New sales cannot take stock below zero. " +
+                    "Reduce the cart quantity or receive sellable stock first.");
             }
 
             // Split the line's money over its batch allocations; the last one absorbs rounding.
@@ -513,15 +561,22 @@ ORDER BY CASE WHEN expiry_date IS NULL OR expiry_date = '' THEN 1 ELSE 0 END, ex
             lines.AddRange(lineDrafts);
         }
 
-        // Discount (margin or retail), never below cost when the lock is on.
-        var marginMode = !string.Equals(_settings.GetString("discount.mode"), "retail", StringComparison.OrdinalIgnoreCase);
+        // Owner's 27-Oct rule: an explicit percentage is of the full retail/selling-price total,
+        // not merely the profit margin. The below-cost lock and integer-paisa rounding still apply.
         var blockBelowCost = _settings.GetBool("discount.blockBelowCost");
+
+        // A custom/special rate is not a back door around the cost lock. Refuse before saving rather
+        // than clamping only the displayed total while the receipt keeps a contradictory unit rate.
+        if (blockBelowCost && lines.FirstOrDefault(line => line.GrossPaisa < line.LineCostPaisa) is { } belowCost)
+        {
+            throw new ValidationException(
+                $"{belowCost.Name}: the selling rate is below purchase cost. Increase the rate or ask the owner to correct it.");
+        }
 
         foreach (var line in lines)
         {
             var costs = line.LineCostPaisa;
-            var baseForDiscount = marginMode ? Math.Max(0, line.GrossPaisa - costs) : line.GrossPaisa;
-            var discount = Calc.RoundMoney(baseForDiscount * input.DiscountPercent / 100m);
+            var discount = Calc.RoundMoney(line.GrossPaisa * input.DiscountPercent / 100m);
 
             if (blockBelowCost && line.GrossPaisa - discount < costs)
             {
@@ -581,8 +636,7 @@ ORDER BY CASE WHEN expiry_date IS NULL OR expiry_date = '' THEN 1 ELSE 0 END, ex
             TotalPaisa = totalPaisa,
             RedeemPoints = redeem.Points,
             RedeemPaisa = redeem.Paisa,
-            Warnings = warnings,
-            WentNegative = wentNegative
+            Warnings = warnings
         };
     }
 
@@ -881,7 +935,5 @@ WHERE id = @id AND active = 1 AND LOWER(IFNULL(category, '')) = 'doctor';",
         public long RedeemPaisa { get; init; }
 
         public List<string> Warnings { get; init; } = new();
-
-        public bool WentNegative { get; init; }
     }
 }

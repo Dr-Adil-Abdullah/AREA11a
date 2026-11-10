@@ -50,7 +50,7 @@ public sealed class CloudSyncViewModel : ObservableObject, IEmptyPage
         PushCommand = new RelayCommand(Push);
         PreviewCommand = new RelayCommand(Preview);
         ApplyCommand = new RelayCommand(Apply);
-        RefreshCommand = new RelayCommand(Load);
+        RefreshCommand = new RelayCommand(Refresh);
 
         Load();
     }
@@ -199,6 +199,8 @@ public sealed class CloudSyncViewModel : ObservableObject, IEmptyPage
             return;
         }
 
+        // A push makes the previously previewed cloud document stale. It must not remain applicable.
+        ClearPreview();
         SetStatus("Sent. " + run.Value.SummaryLabel, false);
         Load();
     }
@@ -209,10 +211,7 @@ public sealed class CloudSyncViewModel : ObservableObject, IEmptyPage
 
         if (!preview.Ok || preview.Value is null)
         {
-            _preview = null;
-            HasPreview = false;
-            CloudRows.Clear();
-            SentText = string.Empty;
+            ClearPreview();
             SetStatus(preview.Error ?? "The cloud copy could not be read.", true);
             return;
         }
@@ -257,16 +256,29 @@ public sealed class CloudSyncViewModel : ObservableObject, IEmptyPage
             return;
         }
 
+        ClearPreview();
+
+        SetStatus("Done. " + result.Value.SummaryLabel
+                  + " Nothing was deleted - every row this computer had before is still here.", false);
+        Load();
+    }
+
+    private void Refresh()
+    {
+        // Refresh can follow a settings edit or another counter's work. The old comparison is not
+        // proof of what is in the cloud now, so require a fresh read before the next apply.
+        ClearPreview();
+        Load();
+    }
+
+    private void ClearPreview()
+    {
         _preview = null;
         HasPreview = false;
         ConfirmApply = false;
         CloudRows.Clear();
         SentText = string.Empty;
         PreviewText = "Nothing is loaded. Press \"See what the cloud has\" before the next pull.";
-
-        SetStatus("Done. " + result.Value.SummaryLabel
-                  + " Nothing was deleted - every row this computer had before is still here.", false);
-        Load();
     }
 
     private void SetStatus(string text, bool isError)

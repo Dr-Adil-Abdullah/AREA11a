@@ -20,9 +20,10 @@ public sealed class AppServices
         Config = ShopConfig.Current;
         Database = new Database();
         Audit = new AuditService(Database, Log);
-        Settings = new SettingsService(Database, Audit, Log);
-        Auth = new AuthService(Database, Audit, Settings, Log);
         Permissions = new PermissionService(Database, Log, Audit);
+        Settings = new SettingsService(Database, Audit, Log, Permissions);
+        Auth = new AuthService(Database, Audit, Settings, Log);
+        AppLabels = new AppLabelService(Settings, Permissions);
         Numbering = new NumberingService(Settings);
         Products = new ProductService(Database, Audit, Log);
         Dashboard = new DashboardService(Database, Settings, Permissions, Log);
@@ -52,10 +53,12 @@ public sealed class AppServices
         Printer = new PrinterService(Settings, Log);
         Backup = new BackupService(Database, Settings, Audit, Permissions, Log);
         Import = new ImportService(Database, Audit, Permissions, Log);
+        Workbooks = new WorkbookService(Database, Audit, Permissions, Settings, Log, Import);
         Reorder = new ReorderService(Database, Audit, Settings, Permissions, Log);
         StockMinus = new StockMinusService(Database, Audit, Permissions, Log);
         Photos = new PhotoService(Database, Audit, Permissions, Log);
         CustomFields = new CustomFieldService(Database, Audit, Permissions, Log);
+        NativeFields = new NativeFieldPolicyService(Database, Audit, Log);
         Barcodes = new BarcodeService(Database, Audit, Permissions, Log);
         Reps = new RepService(Database, Audit, Permissions, Log);
         Hardware = new HardwareService(Settings, Audit, Permissions, Log);
@@ -82,6 +85,9 @@ public sealed class AppServices
     public AuditService Audit { get; }
 
     public SettingsService Settings { get; }
+
+    /// <summary>Editable application section names (E-12/S-05), backed by the same settings table.</summary>
+    public AppLabelService AppLabels { get; }
 
     public AuthService Auth { get; }
 
@@ -170,6 +176,11 @@ public sealed class AppServices
 
     public ImportService Import { get; }
 
+    /// <summary>Native .xlsx templates, all-data download and safe bulk update (T-10).</summary>
+    public WorkbookService Workbooks { get; }
+
+    public NativeFieldPolicyService NativeFields { get; }
+
     public User? CurrentUser { get; private set; }
 
     public bool UsesDefaultOwnerPassword { get; private set; }
@@ -188,6 +199,8 @@ public sealed class AppServices
 
         services.Settings.EnsureDefaults();
         new SeedService(services.Database, services.Log).Seed();
+        var fieldDefaults = services.NativeFields.EnsureDefaults();
+        if (!fieldDefaults.Ok) throw new InvalidOperationException(fieldDefaults.Error);
         services.Settings.Reload();
 
         services.UsesDefaultOwnerPassword =

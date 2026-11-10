@@ -11,7 +11,7 @@
 
         <DockPanel Grid.Row="0" Margin="0,0,0,10">
             <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                <TextBlock Text="Shift (galla)" Style="{StaticResource PageTitle}" />
+                <TextBlock Text="{DynamicResource AppLabel.shift}" Style="{StaticResource PageTitle}" />
                 <TextBlock Text="Open the drawer with your float, work the day, count the cash and close it."
                            Style="{StaticResource PageSubtitle}" />
             </StackPanel>
@@ -117,7 +117,7 @@
                                 <TextBox Text="{Binding ActualText, UpdateSourceTrigger=PropertyChanged}" Width="200"
                                          HorizontalAlignment="Left" />
 
-                                <TextBlock Text="Note (optional - what was different, if anything)"
+                                <TextBlock Text="Reason / note (required for every short or over, even Rs 1)"
                                            Style="{StaticResource FieldLabel}" Margin="0,8,0,0" />
                                 <TextBox Text="{Binding NoteText, UpdateSourceTrigger=PropertyChanged}" />
 
@@ -156,13 +156,15 @@
 
                             <!-- no shift: the float that opens it -->
                             <StackPanel Visibility="{Binding NoShift, Converter={StaticResource BoolToVis}}">
-                                <TextBlock Text="Cash you start with (Rs)" Style="{StaticResource FieldLabel}" Margin="0,14,0,0" />
+                                <TextBlock Text="{Binding PreviousClosingText}" Style="{StaticResource FieldHint}"
+                                           TextWrapping="Wrap" Margin="0,12,0,0" />
+                                <TextBlock Text="Cash you start with (Rs)" Style="{StaticResource FieldLabel}" Margin="0,8,0,0" />
                                 <TextBox Text="{Binding OpenFloatText, UpdateSourceTrigger=PropertyChanged}" Width="200"
                                          HorizontalAlignment="Left" />
-                                <TextBlock Text="This is the change you keep in the drawer before the first bill."
-                                           Style="{StaticResource FieldHint}" />
+                                <TextBlock Text="The previous counted closing is filled in automatically. Any opening difference needs a reason and a red financial alert; no automatic money adjustment is made."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
 
-                                <TextBlock Text="Note (optional)" Style="{StaticResource FieldLabel}" Margin="0,8,0,0" />
+                                <TextBlock Text="Reason / note (required if opening differs)" Style="{StaticResource FieldLabel}" Margin="0,8,0,0" />
                                 <TextBox Text="{Binding NoteText, UpdateSourceTrigger=PropertyChanged}" />
 
                                 <StackPanel Orientation="Horizontal" Margin="0,12,0,0">

@@ -134,10 +134,10 @@ VALUES(@userId, datetime('now','localtime',@from), datetime('now','localtime',@a
 
         // The owner is short 100; Bilal is over 200.
         Assert.True(Shifts(test).Open(TestData.Owner, 10000, null).Ok);
-        Assert.True(Shifts(test).Close(TestData.Owner, 9900, null).Ok);
+        Assert.True(Shifts(test).Close(TestData.Owner, 9900, "intentional short fixture").Ok);
 
-        Assert.True(Shifts(test).Open(bilal, 50000, null).Ok);
-        Assert.True(Shifts(test).Close(bilal, 50200, null).Ok);
+        Assert.True(Shifts(test).Open(bilal, 50000, "new float supplied by owner").Ok);
+        Assert.True(Shifts(test).Close(bilal, 50200, "intentional over fixture").Ok);
 
         var report = Report(test);
 
@@ -227,7 +227,7 @@ VALUES(@userId, datetime('now','localtime',@from), datetime('now','localtime',@a
 
         Assert.True(Shifts(test).Open(TestData.Owner, 50000, null).Ok);
 
-        var handover = Shifts(test).Handover(TestData.Owner, bilal, 49500, null);
+        var handover = Shifts(test).Handover(TestData.Owner, bilal, 49500, "intentional short fixture");
         Assert.True(handover.Ok, handover.Error);
 
         var report = Report(test);

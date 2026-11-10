@@ -1,11 +1,13 @@
 using System.Collections.ObjectModel;
+using System.IO;
+using System.Windows;
 using Area11.Core.Models;
 using Area11.Core.Utils;
 
 namespace Area11.Desktop.ViewModels;
 
 /// <summary>
-/// Catalog screen. The right-hand form creates or edits one product; the grid on the left is
+/// Catalog screen. A modal editor creates or edits one product; the full-width grid is
 /// the live list. All rules (permission, validation, audit, partial update) live in
 /// ProductService — this class only moves text between the screen and that service.
 /// </summary>
@@ -18,7 +20,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     public EmptyHint? EmptyHint => EmptyPage.When(
         Items.Count == 0,
         "Products",
-        searched: SearchText.Trim().Length > 0);
+        searched: SearchText.Trim().Length > 0 || HasFilter);
 
     private readonly AppServices _services;
     private readonly User _user;
@@ -35,7 +37,14 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     private string _barcode = string.Empty;
     private string _rackNo = string.Empty;
     private string _room = string.Empty;
+    private string _packSizeLabel = string.Empty;
     private string _baseUnit = "tablet";
+    private string _strengthText = string.Empty;
+    private string _strengthUnit = "ml";
+    private string _strengthFilter = string.Empty;
+    private int? _categoryFilter;
+    private int? _companyFilter;
+    private bool _lowStockOnly;
     private string _boxStripsText = "0";
     private string _stripTabletsText = "0";
     private string _costText = "0";
@@ -56,15 +65,22 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         _user = user;
 
         SaveCommand = new RelayCommand(Save);
-        NewCommand = new RelayCommand(NewProduct);
+        NewCommand = new RelayCommand(BeginNewProduct);
+        EditCommand = new RelayCommand(BeginEditProduct);
         DeleteCommand = new RelayCommand(DeactivateSelected);
         RefreshCommand = new RelayCommand(Load);
         AddCategoryCommand = new RelayCommand(AddCategory);
         AddCompanyCommand = new RelayCommand(AddCompany);
+        ManageCatalogCommand = new RelayCommand(ManageCatalog);
+        ManageUnitsCommand = new RelayCommand(ManageUnits);
+        ClearFilterCommand = new RelayCommand(ClearFilter);
+        OpenCategoryFilterCommand = new RelayCommand<int>(id => ApplyFilter(categoryId: id));
+        OpenCompanyFilterCommand = new RelayCommand<int>(id => ApplyFilter(companyId: id));
+        OpenProductPhotoCommand = new RelayCommand<int>(OpenProductPhoto);
         PhotosCommand = new RelayCommand(OpenPhotos);
         BarcodesCommand = new RelayCommand(OpenBarcodes);
 
-        Editor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Product);
+        Editor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Product, saveWithParent: true);
 
         LoadLookups();
         Load();
@@ -76,11 +92,19 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
 
     public ObservableCollection<Company> Companies { get; } = new();
 
-    public ObservableCollection<string> BaseUnits { get; } = new() { "tablet", "capsule", "ml", "piece", "sachet" };
+    /// <summary>Active managed units; the service validates the same names again on save.</summary>
+    public ObservableCollection<string> BaseUnits { get; } = new();
+
+    public ObservableCollection<CategoryTagOption> CategoryTagOptions { get; } = new();
 
     public RelayCommand SaveCommand { get; }
 
     public RelayCommand NewCommand { get; }
+
+    public RelayCommand EditCommand { get; }
+
+    /// <summary>Closes the editor after an existing product has been put away.</summary>
+    public event Action? EditorSaved;
 
     public RelayCommand DeleteCommand { get; }
 
@@ -98,6 +122,19 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     public CustomFieldsEditorViewModel Editor { get; }
 
     public RelayCommand AddCompanyCommand { get; }
+
+    /// <summary>E-04: rename, order, put away and restore catalog rows in one small window.</summary>
+    public RelayCommand ManageCatalogCommand { get; }
+
+    public RelayCommand ManageUnitsCommand { get; }
+
+    public RelayCommand ClearFilterCommand { get; }
+
+    public RelayCommand<int> OpenCategoryFilterCommand { get; }
+
+    public RelayCommand<int> OpenCompanyFilterCommand { get; }
+
+    public RelayCommand<int> OpenProductPhotoCommand { get; }
 
     public string HeaderText => _editingId is null ? "New product" : "Editing product";
 
@@ -118,20 +155,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         get => _selectedProduct;
         set
         {
-            if (!SetProperty(ref _selectedProduct, value))
-            {
-                return;
-            }
-
-            if (value is not null)
-            {
-                LoadForm(value);
-                Editor.Load(value.Id);
-            }
-            else
-            {
-                Editor.Load(0);
-            }
+            SetProperty(ref _selectedProduct, value);
         }
     }
 
@@ -171,11 +195,70 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         set => SetProperty(ref _room, value);
     }
 
+    /// <summary>Optional descriptive pack/variant text; never a stock quantity or conversion.</summary>
+    public string PackSizeLabel
+    {
+        get => _packSizeLabel;
+        set => SetProperty(ref _packSizeLabel, value);
+    }
+
     public string BaseUnit
     {
         get => _baseUnit;
         set => SetProperty(ref _baseUnit, value);
     }
+
+    public string StrengthText
+    {
+        get => _strengthText;
+        set => SetProperty(ref _strengthText, value);
+    }
+
+    public string StrengthUnit
+    {
+        get => _strengthUnit;
+        set => SetProperty(ref _strengthUnit, value);
+    }
+
+    /// <summary>Optional exact strength filter, e.g. 50 ml; it does not change stock quantities.</summary>
+    public string StrengthFilter
+    {
+        get => _strengthFilter;
+        set
+        {
+            if (SetProperty(ref _strengthFilter, value))
+            {
+                Load();
+            }
+        }
+    }
+
+    public string FilterText
+    {
+        get
+        {
+            var parts = new List<string>();
+            if (_categoryFilter is int categoryId)
+            {
+                parts.Add("category: " + (Categories.FirstOrDefault(row => row.Id == categoryId)?.Name ?? categoryId.ToString()));
+            }
+            if (_companyFilter is int companyId)
+            {
+                parts.Add("company: " + (Companies.FirstOrDefault(row => row.Id == companyId)?.Name ?? companyId.ToString()));
+            }
+            if (_lowStockOnly)
+            {
+                parts.Add("low stock");
+            }
+            if (!string.IsNullOrWhiteSpace(_strengthFilter))
+            {
+                parts.Add("strength: " + _strengthFilter);
+            }
+            return parts.Count == 0 ? "All active medicines" : "Filtered — " + string.Join(" · ", parts);
+        }
+    }
+
+    public bool HasFilter => _categoryFilter.HasValue || _companyFilter.HasValue || _lowStockOnly || !string.IsNullOrWhiteSpace(_strengthFilter);
 
     public string BoxStripsText
     {
@@ -218,6 +301,12 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         get => _reorderText;
         set => SetProperty(ref _reorderText, value);
     }
+
+    /// <summary>
+    /// The grid filter used by the shell header. This is deliberately separate from SelectedCategory,
+    /// which belongs to the product editor and must never change when the list is filtered.
+    /// </summary>
+    public int? CategoryFilterId => _categoryFilter;
 
     public Category? SelectedCategory
     {
@@ -271,6 +360,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
 
     private void LoadLookups()
     {
+        var selectedTags = CategoryTagOptions.Where(row => row.IsSelected).Select(row => row.Id).ToHashSet();
         var categories = _services.Products.GetCategories();
         Categories.Clear();
         if (categories.Ok && categories.Value is not null)
@@ -279,6 +369,21 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
             {
                 Categories.Add(category);
             }
+        }
+
+        // A category put away in the management window cannot remain an invisible active filter.
+        // Clear it here as well as in the header, so "All categories" never hides an old category id.
+        if (_categoryFilter is not null && Categories.All(row => row.Id != _categoryFilter))
+        {
+            _categoryFilter = null;
+            OnPropertyChanged(nameof(CategoryFilterId));
+            OnPropertyChanged(nameof(HasFilter));
+        }
+
+        CategoryTagOptions.Clear();
+        foreach (var category in Categories)
+        {
+            CategoryTagOptions.Add(new CategoryTagOption(category.Id, category.Name, selectedTags.Contains(category.Id)));
         }
 
         var companies = _services.Products.GetCompanies();
@@ -290,12 +395,31 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
                 Companies.Add(company);
             }
         }
+
+        var units = _services.Products.GetUnits();
+        BaseUnits.Clear();
+        if (units.Ok && units.Value is not null)
+        {
+            foreach (var unit in units.Value)
+            {
+                BaseUnits.Add(unit.Name);
+            }
+        }
+        if (BaseUnits.Count > 0 && !BaseUnits.Contains(BaseUnit))
+        {
+            BaseUnit = BaseUnits[0];
+        }
+        if (BaseUnits.Count > 0 && !BaseUnits.Contains(StrengthUnit))
+        {
+            StrengthUnit = BaseUnits.Contains("ml") ? "ml" : BaseUnits[0];
+        }
+        OnPropertyChanged(nameof(FilterText));
     }
 
     private void Load()
     {
         // F-50: exact first; when nothing matches, the closest medicines with a sentence saying so.
-        var result = _services.Products.SearchSmart(SearchText);
+        var result = _services.Products.SearchSmart(SearchText, _categoryFilter, _companyFilter, _lowStockOnly, _strengthFilter);
 
         if (!result.Ok || result.Value is null)
         {
@@ -307,13 +431,46 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
 
         foreach (var product in result.Value.Items)
         {
+            product.PhotoPath = ResolvePhotoPath(product);
             Items.Add(product);
         }
 
+        OnPropertyChanged(nameof(FilterText));
+        OnPropertyChanged(nameof(HasFilter));
+        OnPropertyChanged(nameof(EmptyHint));
         SearchNote = result.Value.IsFuzzy ? result.Value.NoteLabel : string.Empty;
         IsSearchGuessing = result.Value.IsFuzzy;
 
         SetStatus(result.Value.SummaryLabel, result.Value.IsEmpty && !result.Value.IsFuzzy);
+    }
+
+    private void BeginNewProduct()
+    {
+        NewProduct();
+        ProductEditorDoor.Show(this);
+    }
+
+    private void BeginEditProduct()
+    {
+        var product = SelectedProduct;
+        if (product is null)
+        {
+            SetStatus("Select a medicine first, then choose Edit product.", true);
+            return;
+        }
+
+        // Search rows carry display text but not CategoryTagIds. Fetch the complete record before
+        // editing; otherwise an ordinary save would silently replace its existing tags with none.
+        var full = _services.Products.Get(product.Id);
+        if (!full.Ok || full.Value is null || !full.Value.Active)
+        {
+            SetStatus(full.Error ?? "That medicine is no longer active. Refresh and try again.", true);
+            return;
+        }
+
+        LoadForm(full.Value);
+        Editor.Load(full.Value.Id);
+        ProductEditorDoor.Show(this);
     }
 
     private void NewProduct()
@@ -321,7 +478,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         _editingId = null;
         _selectedProduct = null;
         OnPropertyChanged(nameof(SelectedProduct));
-        Editor.Load(0);
+        Editor.LoadNew();
 
         Name = string.Empty;
         Generic = string.Empty;
@@ -329,7 +486,14 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         Barcode = string.Empty;
         RackNo = string.Empty;
         Room = string.Empty;
-        BaseUnit = "tablet";
+        PackSizeLabel = string.Empty;
+        BaseUnit = BaseUnits.Contains("tablet") ? "tablet" : BaseUnits.FirstOrDefault() ?? "tablet";
+        StrengthText = string.Empty;
+        StrengthUnit = BaseUnits.Contains("ml") ? "ml" : BaseUnits.FirstOrDefault() ?? "ml";
+        foreach (var option in CategoryTagOptions)
+        {
+            option.IsSelected = false;
+        }
         BoxStripsText = "0";
         StripTabletsText = "0";
         CostText = "0";
@@ -354,7 +518,16 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         Barcode = product.Barcode ?? string.Empty;
         RackNo = product.RackNo ?? string.Empty;
         Room = product.Room ?? string.Empty;
+        PackSizeLabel = product.PackSizeLabel ?? string.Empty;
         BaseUnit = product.BaseUnit;
+        StrengthText = product.StrengthValue > 0 ? Qty.Edit(product.StrengthValue) : string.Empty;
+        StrengthUnit = string.IsNullOrWhiteSpace(product.StrengthUnit)
+            ? (BaseUnits.Contains("ml") ? "ml" : BaseUnits.FirstOrDefault() ?? "ml")
+            : product.StrengthUnit;
+        foreach (var option in CategoryTagOptions)
+        {
+            option.IsSelected = product.CategoryTagIds.Contains(option.Id);
+        }
         BoxStripsText = product.BoxStrips.ToString();
         StripTabletsText = product.StripTablets.ToString();
         CostText = Money.Edit(product.CostPaisa);
@@ -390,6 +563,17 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
             reorder = 0;
         }
 
+        if (!Qty.TryParse(StrengthText, out var strength) || !double.IsFinite(strength) || strength < 0)
+        {
+            SetStatus("Strength must be a number of zero or more, for example 50 with unit ml.", true);
+            return;
+        }
+        if (strength > 0 && string.IsNullOrWhiteSpace(StrengthUnit))
+        {
+            SetStatus("Choose a managed unit for the strength.", true);
+            return;
+        }
+
         var patch = new ProductPatch
         {
             Name = Name,
@@ -397,10 +581,15 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
             Brand = Brand,
             Barcode = Barcode,
             CategoryId = SelectedCategory?.Id,
+            CategoryTagIds = CategoryTagOptions.Where(option => option.IsSelected && option.Id != SelectedCategory?.Id)
+                .Select(option => option.Id).Distinct().ToList(),
             CompanyId = SelectedCompany?.Id,
             RackNo = RackNo,
             Room = Room,
+            PackSizeLabel = PackSizeLabel,
             BaseUnit = BaseUnit,
+            StrengthValue = strength,
+            StrengthUnit = strength > 0 ? StrengthUnit : string.Empty,
             BoxStrips = boxStrips,
             StripTablets = stripTablets,
             CostPaisa = Money.ToPaisa(cost),
@@ -410,66 +599,151 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
             ReorderLevel = reorder
         };
 
-        var result = _editingId is null
-            ? _services.Products.Create(_user, patch)
-            : _services.Products.Update(_user, _editingId.Value, patch);
-
-        if (!result.Ok)
+        if (!Editor.LoadedSuccessfully)
         {
-            SetStatus(result.Error ?? "The product could not be saved.", true);
+            SetStatus("Extra fields could not be loaded. Reopen the editor before saving.", true);
             return;
         }
+        var answers = Editor.AnswerValues();
+        var isNew = _editingId is null;
+        if (isNew)
+        {
+            var created = _services.Products.Create(_user, patch, answers);
+            if (!created.Ok || created.Value <= 0)
+            {
+                SetStatus(created.Error ?? "The product could not be saved.", true);
+                return;
+            }
+            _editingId = created.Value;
+            // A newly saved product can now have its own extra fields, photos and barcodes.
+            Editor.Load(created.Value);
+            OnPropertyChanged(nameof(HeaderText));
+        }
+        else
+        {
+            var updated = _services.Products.Update(_user, _editingId!.Value, patch, answers);
+            if (!updated.Ok)
+            {
+                SetStatus(updated.Error ?? "The product could not be saved.", true);
+                return;
+            }
+            Editor.Load(_editingId.Value);
+        }
 
-        var message = _editingId is null ? "Product added." : "Product updated.";
         Load();
-        NewProduct();
-        SetStatus(message, false);
+        SetStatus(isNew
+            ? "Product and extra fields saved."
+            : "Product and extra fields saved.", false);
+    }
+
+    /// <summary>One predictable doorway for category, company, dashboard and strength links.</summary>
+    public void ApplyFilter(
+        int? categoryId = null,
+        int? companyId = null,
+        bool lowStockOnly = false,
+        string? strength = null)
+    {
+        _categoryFilter = categoryId is > 0 ? categoryId : null;
+        _companyFilter = companyId is > 0 ? companyId : null;
+        _lowStockOnly = lowStockOnly;
+        _strengthFilter = (strength ?? string.Empty).Trim();
+        _searchText = string.Empty;
+        OnPropertyChanged(nameof(CategoryFilterId));
+        OnPropertyChanged(nameof(SearchText));
+        OnPropertyChanged(nameof(FilterText));
+        OnPropertyChanged(nameof(HasFilter));
+        Load();
+    }
+
+    private void ClearFilter() => ApplyFilter();
+
+    private void ManageUnits()
+    {
+        var selected = BaseUnit;
+        UnitWindowDoor.Show(_services, _user);
+        LoadLookups();
+        BaseUnit = BaseUnits.Contains(selected) ? selected : BaseUnits.FirstOrDefault() ?? selected;
+        Load();
+        SetStatus("Managed units refreshed; stock quantities were not changed.", false);
+    }
+
+    private void OpenProductPhoto(int productId)
+    {
+        var product = Items.FirstOrDefault(row => row.Id == productId);
+        if (product is null)
+        {
+            SetStatus("That medicine is no longer in the filtered list. Refresh and try again.", true);
+            return;
+        }
+        PhotoWindow.Show(_services, _user, PhotoEntity.Product, product.Id, product.Name);
+        Load();
+    }
+
+    private void ManageCatalog()
+    {
+        var categoryId = SelectedCategory?.Id;
+        var companyId = SelectedCompany?.Id;
+
+        CatalogWindowDoor.Show(_services, _user);
+
+        // Keep every other unsaved form field exactly as the person left it. A renamed id is
+        // selected again; a row just put away can no longer be linked by this form.
+        LoadLookups();
+        SelectedCategory = Categories.FirstOrDefault(row => row.Id == categoryId);
+        SelectedCompany = Companies.FirstOrDefault(row => row.Id == companyId);
+        Load();
+        SetStatus("Category and company lists refreshed; the product form was kept.", false);
     }
 
     /// <summary>The barcode list of the medicine on the form. A new, unsaved medicine has no id yet.</summary>
     private void OpenBarcodes()
     {
-        if (SelectedProduct is null || SelectedProduct.Id <= 0)
+        if (_editingId is not int id || id <= 0)
         {
             SetStatus("Save the medicine first, then add its barcodes.", true);
             return;
         }
 
-        BarcodeWindowDoor.Show(_services, _user, SelectedProduct.Id, SelectedProduct.Name);
+        BarcodeWindowDoor.Show(_services, _user, id, Name);
     }
 
     /// <summary>Photo gallery for the medicine on the form. A new, unsaved medicine has no id yet.</summary>
     private void OpenPhotos()
     {
-        if (SelectedProduct is null || SelectedProduct.Id <= 0)
+        if (_editingId is not int id || id <= 0)
         {
             SetStatus("Save the medicine first, then add its photos.", true);
             return;
         }
 
-        PhotoWindow.Show(_services, _user, PhotoEntity.Product, SelectedProduct.Id, SelectedProduct.Name);
+        PhotoWindow.Show(_services, _user, PhotoEntity.Product, id, Name);
     }
 
     private void DeactivateSelected()
     {
-        if (SelectedProduct is null)
+        if (_editingId is not int id || id <= 0)
         {
-            SetStatus("Select a product in the list first.", true);
+            SetStatus("Save or edit an existing product first.", true);
             return;
         }
 
-        var name = SelectedProduct.Name;
-        var result = _services.Products.Deactivate(_user, SelectedProduct.Id);
-
+        var name = Name;
+        if (MessageBox.Show("Put away this product? Unsaved form and extra-field changes will be discarded. History is kept.",
+                "Remove product", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes)
+        {
+            return;
+        }
+        var result = _services.Products.Deactivate(_user, id);
         if (!result.Ok)
         {
             SetStatus(result.Error ?? "The product could not be removed.", true);
             return;
         }
 
-        SetStatus($"{name} was removed from the list (history is kept).", false);
         Load();
         NewProduct();
+        SetStatus($"{name} was removed from the list (history is kept).", false);
+        EditorSaved?.Invoke();
     }
 
     private void AddCategory()
@@ -504,9 +778,42 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         SetStatus("Company added.", false);
     }
 
+    private static string? ResolvePhotoPath(Product product)
+    {
+        if (string.IsNullOrWhiteSpace(product.PhotoFileName))
+        {
+            return null;
+        }
+        var path = Path.Combine(AppPaths.PhotosFolder, product.PhotoFileName);
+        return File.Exists(path) ? path : null;
+    }
+
     private void SetStatus(string message, bool isError)
     {
         StatusMessage = message;
         IsStatusError = isError;
+    }
+}
+
+/// <summary>A checkbox row for additional filter-only category tags.</summary>
+public sealed class CategoryTagOption : ObservableObject
+{
+    private bool _isSelected;
+
+    public CategoryTagOption(int id, string name, bool selected = false)
+    {
+        Id = id;
+        Name = name;
+        _isSelected = selected;
+    }
+
+    public int Id { get; }
+
+    public string Name { get; }
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set => SetProperty(ref _isSelected, value);
     }
 }

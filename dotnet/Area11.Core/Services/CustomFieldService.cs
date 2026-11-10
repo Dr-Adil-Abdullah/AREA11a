@@ -23,12 +23,13 @@ namespace Area11.Core.Services;
 /// </summary>
 public sealed class CustomFieldService
 {
-    public const int MinLabelLength = 2;
+    // Kept as aliases for existing callers; the rules themselves live in FieldGovernance.
+    public const int MinLabelLength = FieldGovernance.MinLabelLength;
 
-    public const int MaxLabelLength = 40;
+    public const int MaxLabelLength = FieldGovernance.MaxLabelLength;
 
     /// <summary>A text answer longer than this is a note, not a field; notes belong on the khata.</summary>
-    public const int MaxAnswerLength = 200;
+    public const int MaxAnswerLength = FieldGovernance.MaxAnswerLength;
 
     private readonly Database _db;
     private readonly AuditService _audit;
@@ -49,7 +50,7 @@ public sealed class CustomFieldService
 
     /// <summary>
     /// The fields of one form, in the owner's order. <paramref name="manage"/> asks for the manager
-    /// page (switched-off fields included, and the `settings` permission); the forms ask for the
+    /// page (switched-off fields included, owner only); the forms ask for the
     /// record's own permission instead.
     /// </summary>
     public ServiceResult<List<CustomField>> List(
@@ -66,12 +67,14 @@ public sealed class CustomFieldService
         var key = CustomFieldEntity.Clean(entity);
         var module = manage ? Modules.Settings : CustomFieldEntity.ModuleFor(key);
 
+        if ((manage || includeInactive) && (user is null || !user.IsOwner))
+        {
+            return ServiceResult<List<CustomField>>.Fail("Only the owner can manage the extra fields.");
+        }
+
         if (!_permissions.Can(user, module))
         {
-            return ServiceResult<List<CustomField>>.Fail(
-                manage
-                    ? "Only the owner or a manager can change the extra fields."
-                    : "You do not have permission to see these fields.");
+            return ServiceResult<List<CustomField>>.Fail("You do not have permission to see these fields.");
         }
 
         try
@@ -79,8 +82,8 @@ public sealed class CustomFieldService
             using var connection = _db.Open();
 
             var rows = _db.Query<CustomField>(connection, @"
-SELECT id AS id, entity AS entity, label AS label, type AS type,
-       options_json AS optionsJson, required AS required, active AS active,
+SELECT id AS id, entity AS entity, field_key AS fieldKey, label AS label, type AS type,
+       options_json AS optionsJson, help_text AS helpText, required AS required, active AS active,
        sort AS sort, created_at AS createdAt
 FROM custom_fields
 WHERE entity = @entity AND (@includeInactive = 1 OR active = 1)
@@ -104,12 +107,13 @@ ORDER BY sort, id;",
         string? label,
         string? type,
         string? optionsText,
-        bool required)
+        bool required,
+        string? helpText = null)
     {
-        if (!_permissions.Can(user, Modules.Settings))
+        if (user is null || !user.IsOwner)
         {
             return ServiceResult<CustomField>.Fail(
-                "Only the owner or a manager can add a field.");
+                "Only the owner can add a field.");
         }
 
         if (!CustomFieldEntity.IsKnown(entity))
@@ -121,7 +125,8 @@ ORDER BY sort, id;",
         var cleanType = CustomFieldType.Clean(type);
         var cleanLabel = (label ?? string.Empty).Trim();
 
-        var problem = CheckLabel(cleanLabel) ?? CheckType(cleanType, optionsText);
+        var cleanHelp = FieldGovernance.CleanHelpText(helpText);
+        var problem = FieldGovernance.DefinitionError(key, cleanLabel, cleanType, optionsText, cleanHelp);
 
         if (problem is not null)
         {
@@ -147,32 +152,38 @@ ORDER BY sort, id;",
                     new { entity = key }) ?? 1);
 
                 _db.Execute(connection, @"
-INSERT INTO custom_fields(entity, label, type, options_json, required, active, sort, created_at)
-VALUES(@entity, @label, @type, @optionsJson, @required, 1, @sort, @at);",
+INSERT INTO custom_fields(entity, field_key, label, type, options_json, help_text, required, active, sort, created_at)
+VALUES(@entity, NULL, @label, @type, @optionsJson, @helpText, @required, 1, @sort, @at);",
                     new
                     {
                         entity = key,
                         label = cleanLabel,
                         type = cleanType,
                         optionsJson,
+                        helpText = cleanHelp,
                         required = required ? 1 : 0,
                         sort,
                         at = Clock.Now()
                     });
 
                 var id = (int)_db.NextId(connection);
+                var fieldKey = FieldGovernance.KeyFor(key, id);
+                _db.Execute(connection, "UPDATE custom_fields SET field_key = @fieldKey WHERE id = @id;",
+                    new { fieldKey, id });
 
                 _audit.Record(connection, user, Modules.Settings, "custom_field_add",
-                    "custom_fields", id.ToString(), newValue: Describe(cleanLabel, cleanType, optionsJson, required),
+                    "custom_fields", id.ToString(), newValue: Describe(cleanLabel, cleanType, optionsJson, required, cleanHelp),
                     details: CustomFieldEntity.LabelFor(key));
 
                 return ServiceResult<CustomField>.Success(new CustomField
                 {
                     Id = id,
                     Entity = key,
+                    FieldKey = fieldKey,
                     Label = cleanLabel,
                     Type = cleanType,
                     OptionsJson = optionsJson,
+                    HelpText = cleanHelp,
                     Required = required,
                     Active = true,
                     Sort = sort,
@@ -198,16 +209,18 @@ VALUES(@entity, @label, @type, @optionsJson, @required, 1, @sort, @at);",
         string? label,
         string? type,
         string? optionsText,
-        bool required)
+        bool required,
+        string? helpText = null)
     {
-        if (!_permissions.Can(user, Modules.Settings))
+        if (user is null || !user.IsOwner)
         {
-            return ServiceResult.Fail("Only the owner or a manager can change a field.");
+            return ServiceResult.Fail("Only the owner can change a field.");
         }
 
         var cleanType = CustomFieldType.Clean(type);
         var cleanLabel = (label ?? string.Empty).Trim();
-        var problem = CheckLabel(cleanLabel) ?? CheckType(cleanType, optionsText);
+        var cleanHelp = helpText is null ? null : FieldGovernance.CleanHelpText(helpText);
+        var problem = FieldGovernance.DefinitionError(null, cleanLabel, cleanType, optionsText, cleanHelp);
 
         if (problem is not null)
         {
@@ -235,14 +248,35 @@ VALUES(@entity, @label, @type, @optionsJson, @required, 1, @sort, @at);",
                         "There is already a field called \"" + cleanLabel + "\" on this form.");
                 }
 
-                var before = Describe(field.Label, field.Type, field.OptionsJson, field.Required);
-                var after = Describe(cleanLabel, cleanType, optionsJson, required);
+                var effectiveHelp = cleanHelp ?? field.HelpText ?? string.Empty;
+                var entityProblem = FieldGovernance.DefinitionError(
+                    field.Entity, cleanLabel, cleanType, optionsText, effectiveHelp);
+                if (entityProblem is not null)
+                {
+                    return ServiceResult.Fail(entityProblem);
+                }
+
+                var fieldKey = string.IsNullOrWhiteSpace(field.FieldKey)
+                    ? FieldGovernance.KeyFor(field.Entity, field.Id)
+                    : field.FieldKey;
+                var before = Describe(field.Label, field.Type, field.OptionsJson, field.Required, field.HelpText);
+                var after = Describe(cleanLabel, cleanType, optionsJson, required, effectiveHelp);
 
                 _db.Execute(connection, @"
 UPDATE custom_fields
-SET label = @label, type = @type, options_json = @optionsJson, required = @required
+SET field_key = @fieldKey, label = @label, type = @type, options_json = @optionsJson,
+    help_text = @helpText, required = @required
 WHERE id = @id;",
-                    new { label = cleanLabel, type = cleanType, optionsJson, required = required ? 1 : 0, id = fieldId });
+                    new
+                    {
+                        fieldKey,
+                        label = cleanLabel,
+                        type = cleanType,
+                        optionsJson,
+                        helpText = effectiveHelp,
+                        required = required ? 1 : 0,
+                        id = fieldId
+                    });
 
                 if (!string.Equals(before, after, StringComparison.Ordinal))
                 {
@@ -272,9 +306,9 @@ WHERE id = @id;",
     /// <summary>Switches a field off or on. The answers are never touched (D-00b).</summary>
     public ServiceResult SetActive(User? user, int fieldId, bool active)
     {
-        if (!_permissions.Can(user, Modules.Settings))
+        if (user is null || !user.IsOwner)
         {
-            return ServiceResult.Fail("Only the owner or a manager can switch a field off.");
+            return ServiceResult.Fail("Only the owner can switch a field on or off.");
         }
 
         try
@@ -315,9 +349,9 @@ WHERE id = @id;",
     /// <summary>Moves a field one place up (-1) or down (+1) - the order the form asks its questions.</summary>
     public ServiceResult Move(User? user, int fieldId, int direction)
     {
-        if (!_permissions.Can(user, Modules.Settings))
+        if (user is null || !user.IsOwner)
         {
-            return ServiceResult.Fail("Only the owner or a manager can reorder the fields.");
+            return ServiceResult.Fail("Only the owner can reorder the fields.");
         }
 
         if (direction is not (-1 or 1))
@@ -337,8 +371,8 @@ WHERE id = @id;",
                 }
 
                 var ordered = _db.Query<CustomField>(connection, @"
-SELECT id AS id, entity AS entity, label AS label, type AS type,
-       options_json AS optionsJson, required AS required, active AS active,
+SELECT id AS id, entity AS entity, field_key AS fieldKey, label AS label, type AS type,
+       options_json AS optionsJson, help_text AS helpText, required AS required, active AS active,
        sort AS sort, created_at AS createdAt
 FROM custom_fields
 WHERE entity = @entity
@@ -452,104 +486,123 @@ WHERE entity = @entity AND entity_id = @entityId;",
 
         try
         {
-            return _db.Tx(connection =>
-            {
-                if (!RecordExists(connection, key, entityId))
-                {
-                    return ServiceResult.Fail(
-                        CustomFieldEntity.LabelFor(key) + " is not in the list any more, so its answers cannot be saved.");
-                }
-
-                var fields = _db.Query<CustomField>(connection, @"
-SELECT id AS id, entity AS entity, label AS label, type AS type,
-       options_json AS optionsJson, required AS required, active AS active,
-       sort AS sort, created_at AS createdAt
-FROM custom_fields
-WHERE entity = @entity AND active = 1
-ORDER BY sort, id;", new { entity = key });
-
-                var known = new HashSet<int>(fields.Select(field => field.Id));
-
-                foreach (var fieldId in values.Keys)
-                {
-                    if (!known.Contains(fieldId))
-                    {
-                        return ServiceResult.Fail(
-                            "One of the fields is not on this form any more. Close the window and open it again.");
-                    }
-                }
-
-                var photoCount = Convert.ToInt32(_db.Scalar(connection, @"
-SELECT COUNT(1) FROM photos
-WHERE entity = @entity AND entity_id = @entityId AND IFNULL(active, 1) = 1;",
-                    new { entity = key, entityId }) ?? 0);
-
-                // Check everything first: a failure on the fourth field must not leave three answers
-                // written and the form half saved.
-                var prepared = new List<(CustomField Field, string? Stored)>();
-
-                foreach (var field in fields)
-                {
-                    // Every active field is checked, even one the caller forgot to send: a missing
-                    // required answer must fail here, not on the record that quietly has no CNIC.
-                    values.TryGetValue(field.Id, out var raw);
-
-                    if (!Normalize(field, raw, photoCount, out var stored, out var error))
-                    {
-                        return ServiceResult.Fail(error!);
-                    }
-
-                    if (values.ContainsKey(field.Id))
-                    {
-                        prepared.Add((field, stored));
-                    }
-                }
-
-                foreach (var (field, stored) in prepared)
-                {
-                    var before = _db.Scalar(connection, @"
-SELECT value FROM custom_values WHERE field_id = @fieldId AND entity_id = @entityId;",
-                        new { fieldId = field.Id, entityId })?.ToString();
-
-                    if (string.Equals(before, stored, StringComparison.Ordinal))
-                    {
-                        continue;
-                    }
-
-                    if (field.IsPhoto)
-                    {
-                        // A photo field has no value of its own: the gallery is the answer.
-                        continue;
-                    }
-
-                    _db.Execute(connection, @"
-INSERT INTO custom_values(field_id, entity, entity_id, value, updated_at)
-VALUES(@fieldId, @entity, @entityId, @value, @at)
-ON CONFLICT(field_id, entity_id) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at;",
-                        new
-                        {
-                            fieldId = field.Id,
-                            entity = key,
-                            entityId,
-                            value = stored,
-                            at = Clock.Now()
-                        });
-
-                    _audit.Record(connection, user, CustomFieldEntity.ModuleFor(key), "custom_value_set",
-                        "custom_values", entityId.ToString(CultureInfo.InvariantCulture),
-                        oldValue: before ?? string.Empty,
-                        newValue: stored ?? string.Empty,
-                        details: field.Label);
-                }
-
-                return ServiceResult.Success();
-            });
+            return _db.Tx(connection => SaveValuesInTransaction(connection, user, key, entityId, values));
         }
         catch (Exception exception)
         {
             _log.Error($"The custom values of {key} {entityId} could not be saved.", exception);
             return ServiceResult.Fail("The answers could not be saved. " + exception.Message);
         }
+    }
+
+    // Photos live in a gallery keyed by the parent id. Until staged photos are supported, refuse
+    // rather than silently creating a record that violates the owner's required-photo rule.
+    internal ServiceResult SaveNewRecordValuesInTransaction(Microsoft.Data.Sqlite.SqliteConnection connection,
+        User actor, string entity, int id, IReadOnlyDictionary<int, string?>? values)
+    {
+        var photo = _db.QuerySingle<string>(connection, @"
+SELECT label FROM custom_fields WHERE entity = @entity AND active = 1 AND required = 1
+  AND LOWER(type) = 'photo' ORDER BY sort, id LIMIT 1;", new { entity });
+        if (photo is not null)
+            return ServiceResult.Fail("The required photo field \"" + photo +
+                "\" cannot yet be supplied before creating a record. Ask the owner to make it optional, create the record and add its photo.");
+        return SaveValuesInTransaction(connection, actor, entity, id, values ?? new Dictionary<int, string?>());
+    }
+
+    // Caller owns the transaction and permission check. A failed result must be converted to an
+    // exception by a caller that already wrote the parent row, so Database.Tx rolls it all back.
+    internal ServiceResult SaveValuesInTransaction(Microsoft.Data.Sqlite.SqliteConnection connection,
+        User? user, string key, int entityId, IReadOnlyDictionary<int, string?> values)
+    {
+        if (!RecordExists(connection, key, entityId))
+        {
+            return ServiceResult.Fail(
+                CustomFieldEntity.LabelFor(key) + " is not in the list any more, so its answers cannot be saved.");
+        }
+
+        var fields = _db.Query<CustomField>(connection, @"
+SELECT id AS id, entity AS entity, field_key AS fieldKey, label AS label, type AS type,
+   options_json AS optionsJson, help_text AS helpText, required AS required, active AS active,
+   sort AS sort, created_at AS createdAt
+FROM custom_fields
+WHERE entity = @entity AND active = 1
+ORDER BY sort, id;", new { entity = key });
+
+        var known = new HashSet<int>(fields.Select(field => field.Id));
+
+        foreach (var fieldId in values.Keys)
+        {
+            if (!known.Contains(fieldId))
+            {
+                return ServiceResult.Fail(
+                    "One of the fields is not on this form any more. Close the window and open it again.");
+            }
+        }
+
+        var photoCount = Convert.ToInt32(_db.Scalar(connection, @"
+SELECT COUNT(1) FROM photos
+WHERE entity = @entity AND entity_id = @entityId AND IFNULL(active, 1) = 1;",
+            new { entity = key, entityId }) ?? 0);
+
+        // Check everything first: a failure on the fourth field must not leave three answers
+        // written and the form half saved.
+        var prepared = new List<(CustomField Field, string? Stored)>();
+
+        foreach (var field in fields)
+        {
+            // Every active field is checked, even one the caller forgot to send: a missing
+            // required answer must fail here, not on the record that quietly has no CNIC.
+            values.TryGetValue(field.Id, out var raw);
+
+            if (!Normalize(field, raw, photoCount, out var stored, out var error))
+            {
+                return ServiceResult.Fail(error!);
+            }
+
+            if (values.ContainsKey(field.Id))
+            {
+                prepared.Add((field, stored));
+            }
+        }
+
+        foreach (var (field, stored) in prepared)
+        {
+            var before = _db.Scalar(connection, @"
+SELECT value FROM custom_values WHERE field_id = @fieldId AND entity_id = @entityId;",
+                new { fieldId = field.Id, entityId })?.ToString();
+
+            if (string.Equals(before, stored, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (field.IsPhoto)
+            {
+                // A photo field has no value of its own: the gallery is the answer.
+                continue;
+            }
+
+            _db.Execute(connection, @"
+INSERT INTO custom_values(field_id, entity, entity_id, value, updated_at)
+VALUES(@fieldId, @entity, @entityId, @value, @at)
+ON CONFLICT(field_id, entity_id) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at;",
+                new
+                {
+                    fieldId = field.Id,
+                    entity = key,
+                    entityId,
+                    value = stored,
+                    at = Clock.Now()
+                });
+
+            _audit.Record(connection, user, CustomFieldEntity.ModuleFor(key), "custom_value_set",
+                "custom_values", entityId.ToString(CultureInfo.InvariantCulture),
+                oldValue: before ?? string.Empty,
+                newValue: stored ?? string.Empty,
+                details: field.Label);
+        }
+
+        return ServiceResult.Success();
     }
 
     /// <summary>
@@ -561,161 +614,8 @@ ON CONFLICT(field_id, entity_id) DO UPDATE SET value = excluded.value, updated_a
         string? raw,
         int photoCount,
         out string? stored,
-        out string? error)
-    {
-        stored = null;
-        error = null;
-
-        var text = (raw ?? string.Empty).Trim();
-        var type = CustomFieldType.Clean(field.Type);
-
-        if (type == CustomFieldType.Photo)
-        {
-            // Nothing is stored; "required" means the gallery must hold at least one picture.
-            if (field.Required && photoCount <= 0)
-            {
-                error = "\"" + field.Label + "\" needs at least one photo - use the Photos… button first.";
-                return false;
-            }
-
-            return true;
-        }
-
-        if (text.Length == 0)
-        {
-            if (field.Required)
-            {
-                error = type == CustomFieldType.Check
-                    ? "\"" + field.Label + "\" must be ticked."
-                    : "\"" + field.Label + "\" is required.";
-                return false;
-            }
-
-            return true;
-        }
-
-        switch (type)
-        {
-            case CustomFieldType.Text:
-                if (text.Length > MaxAnswerLength)
-                {
-                    error = "\"" + field.Label + "\" must be shorter than " + MaxAnswerLength + " letters.";
-                    return false;
-                }
-
-                stored = text;
-                return true;
-
-            case CustomFieldType.Number:
-                if (!Qty.TryParse(text, out var number))
-                {
-                    error = "\"" + field.Label + "\" must be a number, for example 5 or 2.5.";
-                    return false;
-                }
-
-                stored = Qty.Edit(number);
-                return true;
-
-            case CustomFieldType.Amount:
-                if (!Money.TryParse(text, out var rupees))
-                {
-                    error = "\"" + field.Label + "\" must be an amount in rupees, for example 1200.";
-                    return false;
-                }
-
-                stored = Money.ToPaisa(rupees).ToString(CultureInfo.InvariantCulture);
-                return true;
-
-            case CustomFieldType.Date:
-                if (!TryReadDate(text, out var date))
-                {
-                    error = "\"" + field.Label + "\" must be a date, for example 2026-10-22.";
-                    return false;
-                }
-
-                stored = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-                return true;
-
-            case CustomFieldType.Select:
-                var match = field.Options.FirstOrDefault(option =>
-                    string.Equals(option, text, StringComparison.OrdinalIgnoreCase));
-
-                if (match is null)
-                {
-                    error = "\"" + field.Label + "\" must be one of: " + string.Join(", ", field.Options) + ".";
-                    return false;
-                }
-
-                stored = match;
-                return true;
-
-            case CustomFieldType.Check:
-                var ticked = text is "1" or "true" or "True" or "yes" or "Yes" or "on";
-
-                if (!ticked && text is not ("0" or "false" or "False" or "no" or "No" or "off"))
-                {
-                    error = "\"" + field.Label + "\" must be yes or no.";
-                    return false;
-                }
-
-                if (field.Required && !ticked)
-                {
-                    error = "\"" + field.Label + "\" must be ticked.";
-                    return false;
-                }
-
-                stored = ticked ? "1" : "0";
-                return true;
-
-            default:
-                error = "That kind of field is not understood.";
-                return false;
-        }
-    }
-
-    /// <summary>"2026-10-22" or "22/10/2026" - the two ways a shop writes a date.</summary>
-    private static bool TryReadDate(string text, out DateTime date)
-    {
-        var formats = new[] { "yyyy-MM-dd", "dd/MM/yyyy", "d/M/yyyy", "dd-MM-yyyy", "d-M-yyyy" };
-
-        return DateTime.TryParseExact(text, formats, CultureInfo.InvariantCulture,
-            DateTimeStyles.None, out date);
-    }
-
-    private static string? CheckLabel(string label)
-    {
-        if (label.Length < MinLabelLength)
-        {
-            return "The field needs a name of at least " + MinLabelLength + " letters.";
-        }
-
-        if (label.Length > MaxLabelLength)
-        {
-            return "The name is too long - keep it under " + MaxLabelLength + " letters.";
-        }
-
-        return null;
-    }
-
-    private static string? CheckType(string type, string? optionsText)
-    {
-        if (!CustomFieldType.IsKnown(type))
-        {
-            return "Choose what kind of answer this field takes.";
-        }
-
-        if (CustomFieldType.NeedsOptions(type))
-        {
-            var options = CustomFieldType.ParseOptions(CustomFieldType.BuildOptions(optionsText));
-
-            if (options.Count < 2)
-            {
-                return "A list needs at least two choices, separated by commas.";
-            }
-        }
-
-        return null;
-    }
+        out string? error) =>
+        FieldGovernance.Normalize(field, raw, photoCount, out stored, out error);
 
     /// <summary>The same name twice on one form would make two identical questions.</summary>
     private bool LabelExists(Microsoft.Data.Sqlite.SqliteConnection connection, string entity,
@@ -730,8 +630,8 @@ WHERE entity = @entity AND LOWER(label) = LOWER(@label) AND id <> @id;",
     private CustomField? ReadField(Microsoft.Data.Sqlite.SqliteConnection connection, int fieldId)
     {
         return _db.QuerySingle<CustomField>(connection, @"
-SELECT id AS id, entity AS entity, label AS label, type AS type,
-       options_json AS optionsJson, required AS required, active AS active,
+SELECT id AS id, entity AS entity, field_key AS fieldKey, label AS label, type AS type,
+       options_json AS optionsJson, help_text AS helpText, required AS required, active AS active,
        sort AS sort, created_at AS createdAt
 FROM custom_fields WHERE id = @id;", new { id = fieldId });
     }
@@ -758,12 +658,15 @@ FROM custom_fields WHERE id = @id;", new { id = fieldId });
             new { id = entityId }) ?? 0) > 0;
     }
 
-    private static string Describe(string label, string type, string? optionsJson, bool required)
+    private static string Describe(
+        string label, string type, string? optionsJson, bool required, string? helpText = null)
     {
         var options = CustomFieldType.ParseOptions(optionsJson);
+        var help = FieldGovernance.CleanHelpText(helpText);
 
         return label + " · " + CustomFieldType.LabelFor(type)
                + (options.Count > 0 ? " (" + string.Join(", ", options) + ")" : string.Empty)
-               + (required ? " · required" : string.Empty);
+               + (required ? " · required" : string.Empty)
+               + (help.Length > 0 ? " · help: " + help : string.Empty);
     }
 }

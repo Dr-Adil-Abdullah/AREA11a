@@ -74,7 +74,7 @@ SELECT p.id AS productId, p.name AS name, p.generic AS generic,
        (SELECT c.name FROM companies c WHERE c.id = p.company_id) AS company,
        p.base_unit AS baseUnit, p.reorder_level AS levelQty,
        p.box_strips AS boxStrips, p.strip_tablets AS stripTablets,
-       IFNULL((SELECT SUM(b.qty_base) FROM batches b WHERE b.product_id = p.id AND b.active = 1), 0) AS stockQty
+       CAST(IFNULL((SELECT SUM(b.qty_base) FROM batches b WHERE b.product_id = p.id AND b.active = 1), 0) AS REAL) AS stockQty
 FROM products p
 WHERE p.active = 1
 ORDER BY p.name COLLATE NOCASE;");

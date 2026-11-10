@@ -1,11 +1,11 @@
 # SCHEMA REFERENCE — exact columns of the rebuilt database
 
 > Generated from the reference `src/lib/schema.ts` (migrations 001–013, verbatim) plus
-> Area11 migrations 014–022 (per-user permissions, photos, own fields, several barcodes).
-> Verified by running all 22 files against SQLite in order. This is the authority for every SQL
+> Area11 migrations 014–030 (permissions, photos, own fields, barcodes, provisional money, reconciliation, catalog ordering, managed units, category tags, descriptive strength, rename-safe quantity rules, central field governance and master-foundation contracts).
+> Verified by running all 30 files against SQLite in order. This is the authority for every SQL
 > statement in `Area11.Core`.
 
-**34 tables** · 22 migrations
+**42 application tables + the `_migrations` ledger** · 30 migrations · plus the `provisional_report_lines` and `product_supplier_directory` views
 
 ## `_migrations`  (2 columns)
 
@@ -72,6 +72,26 @@ FK: `supplier_id` → `suppliers.id` · `product_id` → `products.id`
 
 Indexes: `idx_batches_product`, `idx_batches_expiry`
 
+### D-93 quantity invariant (v0.35.9 — no schema change)
+
+`qty_base` remains **REAL**, including fractional quantities; report projections must not cast it to
+`INTEGER`. Existing databases may contain negative batch quantities from the retired U-25/U-30 rules.
+Those rows are historical evidence, so v0.35.9 adds **no migration**, no silent zeroing and no
+retroactive `CHECK (qty_base >= 0)` that would make an old database fail to open.
+
+Every new ordinary decrement goes through `Area11.Core/Services/StockPolicy.cs`. In the caller's
+immediate transaction it reads the active batch and product total, then executes a conditional
+`UPDATE` requiring both `batches.qty_base >= requested` and the active product `SUM(qty_base) >=
+requested`. The batch, product total, stock/financial/audit rows and document number therefore commit
+or roll back together. Sale planning separately reserves repeated products and shared FEFO batches
+before numbering so the user gets the shortage before a number is taken.
+
+The only absolute batch assignment is the owner-only physical **stock-take**: a finite, non-negative
+counted quantity is written with an audited adjustment. This is the reconciliation path for a
+historical minus. `StockMinusService` and its page remain read-only reports/review trails. The legacy
+`stock.allowNegative` settings key may remain in an old `settings` row, but production no longer reads
+it; it is not a bypass and v0.35.9 does not delete that historical setting.
+
 ## `categories`  (6 columns)
 
 | Column | Type | Not null | Default |
@@ -83,7 +103,7 @@ Indexes: `idx_batches_product`, `idx_batches_expiry`
 | `active` | INTEGER | yes | `1` |
 | `created_at` | TEXT | yes | `datetime('now','localtime')` |
 
-## `companies`  (8 columns)
+## `companies`  (9 columns)
 
 | Column | Type | Not null | Default |
 |---|---|---|---|
@@ -95,24 +115,34 @@ Indexes: `idx_batches_product`, `idx_batches_expiry`
 | `rep_name` | TEXT |  |  |
 | `rep_phone` | TEXT |  |  |
 | `visit_day` | INTEGER |  |  |
+| `sort_order` | INTEGER | yes | `0` |
 
 `visit_day` is 1 = Monday ... 7 = Sunday; NULL = no fixed day (migration 023, F-44).
+`sort_order` is added by append-only migration 026; existing company rows keep their ids, values and
+product links. Catalog reads order by `sort_order`, then case-insensitive name. Indexes are
+`idx_categories_parent_order` and `idx_companies_catalog_order`.
 
-## `custom_fields`  (9 columns)
+## `custom_fields`  (11 columns)
 
 | Column | Type | Not null | Default |
 |---|---|---|---|
 | `id` | INTEGER |  |  |
 | `entity` | TEXT | yes |  |
+| `field_key` | TEXT |  |  |
 | `label` | TEXT | yes |  |
 | `type` | TEXT | yes | `'text'` |
 | `options_json` | TEXT |  |  |
+| `help_text` | TEXT | yes | `''` |
 | `required` | INTEGER | yes | `0` |
 | `active` | INTEGER | yes | `1` |
 | `sort` | INTEGER | yes | `0` |
 | `created_at` | TEXT | yes | `datetime('now','localtime')` |
 
-Indexes: `idx_cf_entity`
+Migration 029 backfills `field_key` as `entity.custom.id` and leaves every existing answer untouched.
+The service assigns the same stable key to new rows; a label rename never changes it. `help_text` is
+optional one-line display guidance, not an executable validation rule.
+
+Indexes: `idx_cf_entity`, `ux_custom_fields_field_key`, `idx_custom_fields_entity_key`
 
 ## `custom_values`  (6 columns)
 
@@ -175,7 +205,7 @@ Indexes: `idx_expenses_date`
 | `user_id` | INTEGER |  |  |
 | `created_at` | TEXT | yes | `datetime('now','localtime')` |
 
-## `payments`  (11 columns)
+## `payments`  (12 columns)
 
 | Column | Type | Not null | Default |
 |---|---|---|---|
@@ -190,10 +220,11 @@ Indexes: `idx_expenses_date`
 | `supplier_id` | INTEGER |  |  |
 | `user_id` | INTEGER |  |  |
 | `note` | TEXT |  |  |
+| `provisional_return_id` | INTEGER |  |  |
 
-FK: `supplier_id` → `suppliers.id` · `customer_id` → `customers.id` · `purchase_id` → `purchases.id` · `sale_id` → `sales.id`
+FK: `supplier_id` → `suppliers.id` · `customer_id` → `customers.id` · `purchase_id` → `purchases.id` · `sale_id` → `sales.id` · `provisional_return_id` → `provisional_returns.id`
 
-Indexes: `idx_payments_date`
+Indexes: `idx_payments_date`, `idx_payments_provisional`
 
 ## `photos`  (7 columns)
 
@@ -211,6 +242,22 @@ Only `file_name` lives here (rule U-19); the picture itself sits in `%ProgramDat
 `active = 0` is a **put-away** photo (D-00b) - the row and the file stay.
 
 Indexes: `idx_photos_entity`
+
+## `product_category_tags`  (2 columns)
+
+| Column | Type | Not null | Default |
+|---|---|---|---|
+| `product_id` | INTEGER | yes |  |
+| `category_id` | INTEGER | yes |  |
+
+Migration 027 adds additional **filter-only** category links. `products.category_id` remains the one
+primary category used by financial reports; this table is never joined into sale, profit or category
+money totals. The composite primary key prevents duplicate links. Putting away a category removes
+its tag links without deleting products or history.
+
+FK: `product_id` → `products.id` · `category_id` → `categories.id`
+
+Indexes: `idx_product_category_tags_category`, `idx_product_category_tags_product`
 
 ## `product_barcodes`  (7 columns)
 
@@ -230,7 +277,7 @@ and is still read as one more code.
 
 Indexes: `idx_pb_code` (UNIQUE, **partial**: `WHERE active = 1`), `idx_pb_product`
 
-## `products`  (23 columns)
+## `products`  (28 columns)
 
 | Column | Type | Not null | Default |
 |---|---|---|---|
@@ -257,12 +304,23 @@ Indexes: `idx_pb_code` (UNIQUE, **partial**: `WHERE active = 1`), `idx_pb_produc
 | `updated_at` | TEXT | yes | `datetime('now','localtime')` |
 | `photo` | TEXT |  |  |
 | `room` | TEXT |  |  |
+| `strength_value` | REAL | yes | `0` |
+| `strength_unit` | TEXT | yes | `''` |
+| `generic_formula_id` | INTEGER |  |  |
+| `brand_id` | INTEGER |  |  |
+| `preferred_supplier_id` | INTEGER |  |  |
 
-FK: `category_id` → `categories.id` · `company_id` → `companies.id`
+FK: `category_id` → `categories.id` · `company_id` → `companies.id` · `generic_formula_id` → `generic_formulas.id` · `brand_id` → `brands.id` · `preferred_supplier_id` → `suppliers.id`
 
-Indexes: `idx_products_name`, `idx_products_generic`, `idx_products_barcode`
+Migration 027 adds descriptive strength/volume only. For example, `base_unit = injection`, `strength_value = 50`, `strength_unit = ml`, `box_strips = 1`, `strip_tablets = 10` means ten whole injection units per box; it never means 500 mL of stock. Ten, fifty and hundred mL variants remain separate products. `qty_base` and all historical quantities remain REAL and unchanged.
 
-## `provisional_items`  (5 columns)
+Migration 030 adds the final three nullable managed links. It deliberately does not guess a formula,
+brand or preferred supplier from legacy display text. Existing `generic` and `brand` strings remain
+readable during the later, separately approved catalog UI migration.
+
+Indexes: `idx_products_name`, `idx_products_generic`, `idx_products_barcode`, `idx_products_strength`, `idx_products_generic_formula`, `idx_products_brand`, `idx_products_preferred_supplier`
+
+## `provisional_items`  (10 columns)
 
 | Column | Type | Not null | Default |
 |---|---|---|---|
@@ -271,12 +329,37 @@ Indexes: `idx_products_name`, `idx_products_generic`, `idx_products_barcode`
 | `product_id` | INTEGER | yes |  |
 | `qty_base` | REAL | yes | `0` |
 | `created_at` | TEXT | yes | `datetime('now','localtime')` |
+| `batch_id` | INTEGER |  |  |
+| `qty_entered` | REAL | yes | `0` |
+| `unit_entered` | TEXT |  |  |
+| `refund_paisa` | INTEGER | yes | `0` |
+| `cost_paisa_at_return` | INTEGER | yes | `0` |
 
-FK: `product_id` → `products.id` · `provisional_id` → `provisional_returns.id`
+FK: `product_id` → `products.id` · `provisional_id` → `provisional_returns.id` · `batch_id` → `batches.id`
 
-Indexes: `idx_prov_items`
+Indexes: `idx_prov_items`, `idx_prov_items_product`
 
-## `provisional_returns`  (13 columns)
+## `provisional_return_allocations`  (7 columns)
+
+One row allocates part of the ORIGINAL PR event to one original sale line. It is not another return,
+stock movement or payment. `expected_refund_paisa` is the remaining bill value of that quantity at
+link time; `refund_paisa` is the actual PR money allocated to the line.
+
+| Column | Type | Not null | Default |
+|---|---|---|---|
+| `id` | INTEGER |  |  |
+| `provisional_item_id` | INTEGER | yes |  |
+| `sale_item_id` | INTEGER | yes |  |
+| `qty_base` | REAL | yes | CHECK > 0 |
+| `expected_refund_paisa` | INTEGER | yes | CHECK >= 0 |
+| `refund_paisa` | INTEGER | yes | CHECK >= 0 |
+| `created_at` | TEXT | yes | `datetime('now','localtime')` |
+
+FK: `provisional_item_id` → `provisional_items.id` (cascade) · `sale_item_id` → `sale_items.id`
+
+Indexes: `idx_pr_alloc_sale_item`, `idx_pr_alloc_provisional_item`; unique `(provisional_item_id, sale_item_id)`
+
+## `provisional_returns`  (20 columns)
 
 | Column | Type | Not null | Default |
 |---|---|---|---|
@@ -293,10 +376,17 @@ Indexes: `idx_prov_items`
 | `linked_by` | INTEGER |  |  |
 | `user_id` | INTEGER |  |  |
 | `created_at` | TEXT | yes | `datetime('now','localtime')` |
+| `customer_name` | TEXT |  |  |
+| `linked_code` | TEXT |  |  |
+| `cancel_reason` | TEXT |  |  |
+| `cancelled_at` | TEXT |  |  |
+| `cancelled_by` | INTEGER |  |  |
+| `linked_expected_paisa` | INTEGER |  | NULL = old link needs reconciliation |
+| `linked_unallocated_paisa` | INTEGER |  | actual PR money above matched line capacity |
 
 FK: `linked_sale_id` → `sales.id`
 
-Indexes: `idx_prov_status`, `idx_prov_date`
+Indexes: `idx_prov_status`, `idx_prov_date`, unique `idx_prov_code`
 
 ## `purchase_items`  (12 columns)
 
@@ -426,6 +516,15 @@ Indexes: `idx_sales_date`, `idx_sales_customer`, `idx_sales_status`, `idx_sales_
 | `key` | TEXT |  |  |
 | `value` | TEXT | yes |  |
 | `updated_at` | TEXT | yes | `datetime('now','localtime')` |
+
+v0.39.0 has **130 known keys**. Migration 030 adds no settings rows; `SettingsService.EnsureDefaults()`
+registers seven later-phase contracts: `printer.defaultBulk`, `printer.bulkFormat`,
+`profit.showMargins`, `whatsapp.preparePdf`, `whatsapp.exportDirectory`, `sync.automaticEnabled` and
+`sync.automaticMinutes`. Their safe defaults are individual printing, PDF preparation on, profit
+visible and automatic sync off (15-minute interval). The actual bulk-print/WhatsApp/profit UI and
+automatic-sync scheduler remain separate phases. Legacy `discount.mode` remains readable but inert.
+Thirty-two keys are `labels.*` JSON strings. Defaults are inserted only when missing, never over an
+owner's value; owner-visible saves retain validated, atomic old/new audit rows.
 
 ## `shifts`  (13 columns)
 
@@ -583,6 +682,27 @@ Indexes: `idx_sret_supplier`
 
 Indexes: `idx_suppliers_name`
 
+## `units`  (6 columns)
+
+| Column | Type | Not null | Default |
+|---|---|---|---|
+| `id` | INTEGER |  |  |
+| `name` | TEXT | yes |  |
+| `active` | INTEGER | yes | `1` |
+| `sort_order` | INTEGER | yes | `0` |
+| `created_at` | TEXT | yes | `datetime('now','localtime')` |
+| `whole_only` | INTEGER | yes | `0` |
+
+Migration 027 creates the managed, case-insensitively unique unit list and preserves legacy base-unit
+spellings as canonical lower-case rows. Migration 028 adds `whole_only` and marks the built-in injection
+row. Product create/edit and both Excel import paths require an active unit. Rename updates current
+product base/strength labels in one transaction; it never rewrites batch quantities, sale quantities or
+historical documents. A unit used by a current product cannot be put away. `whole_only = 1` follows the
+managed row through renames, so stock paths do not infer quantity rules from an editable name. `ml` may
+describe strength without becoming an injection stock-count division.
+
+The `name` column has `COLLATE NOCASE UNIQUE` in the migration.
+
 ## `user_permissions`  (5 columns)
 
 | Column | Type | Not null | Default |
@@ -612,3 +732,123 @@ Indexes: `idx_user_permissions_user`
 | `created_at` | TEXT | yes | `datetime('now','localtime')` |
 
 Indexes: `idx_users_role`
+
+## `brands`  (8 columns — migration 030)
+
+| Column | Type | Not null | Default |
+|---|---|---|---|
+| `id` | INTEGER |  |  |
+| `company_id` | INTEGER |  |  |
+| `name` | TEXT | yes |  |
+| `name_key` | TEXT | yes |  |
+| `active` | INTEGER | yes | `1` |
+| `sort_order` | INTEGER | yes | `0` |
+| `created_at` | TEXT | yes | `datetime('now','localtime')` |
+| `updated_at` | TEXT | yes | `datetime('now','localtime')` |
+
+FK: `company_id` → `companies.id`. `name_key` is case-insensitively unique; trimming/collapsing
+whitespace is the future catalog write service's job. A blank display name or key is rejected.
+
+Indexes: `idx_brands_catalog`, `idx_brands_company`
+
+## `document_drafts`  (12 columns — migration 030)
+
+| Column | Type | Not null | Default |
+|---|---|---|---|
+| `id` | INTEGER |  |  |
+| `draft_key` | TEXT | yes |  |
+| `draft_type` | TEXT | yes |  |
+| `payload_json` | TEXT | yes |  |
+| `status` | TEXT | yes | `'draft'` |
+| `created_by_id` | INTEGER |  |  |
+| `created_by_name` | TEXT | yes |  |
+| `created_at` | TEXT | yes | `datetime('now','localtime')` |
+| `updated_at` | TEXT | yes | `datetime('now','localtime')` |
+| `posted_document_id` | INTEGER |  |  |
+| `posted_at` | TEXT |  |  |
+| `discard_reason` | TEXT |  |  |
+
+FK: `created_by_id` → `users.id`. Payload must be a JSON object. Draft/posted/discarded state and
+posted document/timestamp consistency are checked. A draft is local-only and has no sale, purchase,
+payment, stock movement, invoice number or report effect. `posted_document_id` is intentionally not a
+foreign key because sale/purchase posting is polymorphic; the later posting service must validate the
+final document in its own transaction.
+
+Index: `idx_document_drafts_status`
+
+## `form_field_definitions`  (15 columns — migration 030)
+
+| Column | Type | Not null | Default |
+|---|---|---|---|
+| `id` | INTEGER |  |  |
+| `field_key` | TEXT | yes |  |
+| `section_key` | TEXT | yes |  |
+| `label` | TEXT | yes |  |
+| `data_type` | TEXT | yes |  |
+| `input_method` | TEXT | yes |  |
+| `help_text` | TEXT | yes | `''` |
+| `safe_required` | INTEGER | yes | `0` |
+| `required` | INTEGER | yes | `0` |
+| `critical` | INTEGER | yes | `0` |
+| `override_acknowledged_by` | TEXT |  |  |
+| `override_acknowledged_at` | TEXT |  |  |
+| `sort_order` | INTEGER | yes | `0` |
+| `created_at` | TEXT | yes | `datetime('now','localtime')` |
+| `updated_at` | TEXT | yes | `datetime('now','localtime')` |
+
+Native fields are separate from owner-created `custom_fields`. Supported data types include REAL
+`quantity` and integer-paisa `amount`; input methods include `month_calendar`. A critical,
+safe-required field cannot become optional unless both named acknowledgement columns are populated.
+The later Owner Override UI must still show the risk warning and obtain explicit confirmation.
+
+Index: `idx_form_field_definitions_section`
+
+## `generic_formulas`  (7 columns — migration 030)
+
+| Column | Type | Not null | Default |
+|---|---|---|---|
+| `id` | INTEGER |  |  |
+| `name` | TEXT | yes |  |
+| `name_key` | TEXT | yes |  |
+| `active` | INTEGER | yes | `1` |
+| `sort_order` | INTEGER | yes | `0` |
+| `created_at` | TEXT | yes | `datetime('now','localtime')` |
+| `updated_at` | TEXT | yes | `datetime('now','localtime')` |
+
+`name_key` is case-insensitively unique. As with brands, normalized whitespace/case is assigned by the
+future write service; migration 030 does not merge legacy salt text or invent links.
+
+Index: `idx_generic_formulas_catalog`
+
+## `shift_discrepancies`  (9 columns — migration 030)
+
+| Column | Type | Not null | Default |
+|---|---|---|---|
+| `id` | INTEGER |  |  |
+| `shift_id` | INTEGER | yes |  |
+| `stage` | TEXT | yes |  |
+| `expected_paisa` | INTEGER | yes |  |
+| `counted_paisa` | INTEGER | yes |  |
+| `difference_paisa` | INTEGER | yes |  |
+| `reason` | TEXT | yes |  |
+| `alerted_at` | TEXT |  |  |
+| `created_at` | TEXT | yes | `datetime('now','localtime')` |
+
+FK: `shift_id` → `shifts.id`. One row per shift and `opening`/`closing` stage. Only a non-zero
+difference is stored, it must equal `counted - expected`, and a real reason is mandatory. This is an
+auditable discrepancy contract, never a payment or automatic drawer inflow.
+
+Index: `idx_shift_discrepancies_stage`
+
+## `product_supplier_directory` (view — migration 030)
+
+| Output column | Meaning |
+|---|---|
+| `product_id` | Product whose supplier choices are being listed |
+| `supplier_id` | Preferred supplier and/or a supplier found on genuine purchase lines |
+| `is_preferred` | `1` when this is the product's current preferred supplier |
+| `last_purchased_at` | Latest matching purchase date, retained when the supplier is also preferred |
+
+The union is grouped by product and supplier, so a preferred supplier with no purchase still appears,
+all historical suppliers remain available, and the same supplier is not duplicated. No preferred link
+is inferred from purchase history.

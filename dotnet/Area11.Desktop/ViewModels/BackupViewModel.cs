@@ -4,6 +4,7 @@ using System.Globalization;
 using Area11.Core.Models;
 using Area11.Core.Services;
 using Area11.Core.Utils;
+using Microsoft.Win32;
 
 namespace Area11.Desktop.ViewModels;
 
@@ -46,6 +47,7 @@ public sealed class BackupViewModel : ObservableObject, IEmptyPage
         _onRestored = onRestored;
 
         CreateCommand = new RelayCommand(CreateBackup);
+        CreateAsCommand = new RelayCommand(CreateBackupAs);
         RefreshCommand = new RelayCommand(Load);
         AskRestoreCommand = new RelayCommand(AskRestore);
         CancelRestoreCommand = new RelayCommand(CancelRestore);
@@ -59,6 +61,9 @@ public sealed class BackupViewModel : ObservableObject, IEmptyPage
     public ObservableCollection<BackupFile> Files { get; } = new();
 
     public RelayCommand CreateCommand { get; }
+
+    /// <summary>Save one full backup to a USB stick or another owner-chosen folder.</summary>
+    public RelayCommand CreateAsCommand { get; }
 
     public RelayCommand RefreshCommand { get; }
 
@@ -79,6 +84,10 @@ public sealed class BackupViewModel : ObservableObject, IEmptyPage
     public bool CannotUse => !CanUse;
 
     public string FolderText => _services.Backup.BackupsFolder;
+
+    public string LastRestoreSummary => _services.Backup.LastRestoreSummary;
+
+    public bool HasRestoreSummary => !string.IsNullOrWhiteSpace(LastRestoreSummary);
 
     public string LastAutomatic
     {
@@ -123,8 +132,13 @@ public sealed class BackupViewModel : ObservableObject, IEmptyPage
     /// <summary>What is about to be replaced, spelled out in the panel.</summary>
     public string ConfirmText => Selected is null
         ? string.Empty
-        : $"Everything in the shop will be replaced by {Selected.FileName} ({Selected.Stamp}). " +
-          "A copy of today's data is kept first. This cannot be undone from inside the program.";
+        : $"Everything in the shop will be replaced by {Selected.FileName}. " +
+          $"Made: {(string.IsNullOrWhiteSpace(Selected.MadeAt) ? Selected.Stamp : Selected.MadeAt)} " +
+          $"({_services.Backup.BackupAge(Selected)}). " +
+          $"Backup version: {(string.IsNullOrWhiteSpace(Selected.BackupVersion) ? "not recorded" : Selected.BackupVersion)}. " +
+          "A full database-and-photos recovery zip of the live shop is kept first. " +
+          "If this was the wrong file, restore that recovery zip to return." +
+          _services.Backup.RestoreWarning(Selected);
 
     public bool AutoEnabled
     {
@@ -179,6 +193,8 @@ public sealed class BackupViewModel : ObservableObject, IEmptyPage
         }
 
         OnPropertyChanged(nameof(HasNoFiles));
+        OnPropertyChanged(nameof(LastRestoreSummary));
+        OnPropertyChanged(nameof(HasRestoreSummary));
 
         // Keep the highlighted row if it is still there; otherwise start on the newest.
         var keep = Selected?.FileName;
@@ -187,9 +203,30 @@ public sealed class BackupViewModel : ObservableObject, IEmptyPage
 
     // ------------------------------ Actions ------------------------------
 
-    private void CreateBackup()
+    private void CreateBackup() => CreateBackup(null);
+
+    private void CreateBackupAs()
     {
-        var result = _services.Backup.Create(_user, IncludePhotos);
+        var dialog = new SaveFileDialog
+        {
+            Title = "Choose where to save this Area11 backup",
+            Filter = "Area11 backup (*.zip)|*.zip",
+            FileName = $"area11-backup-{DateTime.Now:yyyyMMdd-HHmmss}.zip",
+            DefaultExt = ".zip",
+            AddExtension = true,
+            // The service deliberately adds a suffix rather than overwriting an earlier backup.
+            OverwritePrompt = false
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            CreateBackup(dialog.FileName);
+        }
+    }
+
+    private void CreateBackup(string? destinationFile)
+    {
+        var result = _services.Backup.Create(_user, IncludePhotos, destinationFile: destinationFile);
 
         if (!result.Ok || result.Value is null)
         {
@@ -200,9 +237,16 @@ public sealed class BackupViewModel : ObservableObject, IEmptyPage
         Load();
         Selected = Files.FirstOrDefault(file => file.FileName == result.Value.FileName);
 
+        if (destinationFile is not null)
+        {
+            OpenFolder(result.Value.FullPath);
+        }
+
+        // Keep the successful result visible even if Explorer itself is unavailable: the full path
+        // is the proof the owner needs, and a shell problem must not look like a failed backup.
         SetStatus(
-            $"Backup made: {result.Value.FileName} ({result.Value.SizeLabel}). " +
-            "Copy it to a USB stick, or keep it on another computer - a backup on the same disk is not a backup.",
+            $"Backup made: {result.Value.FullPath} ({result.Value.SizeLabel}). " +
+            "The live database stayed in place. Keep a copy on another disk or computer too.",
             false);
     }
 
@@ -287,15 +331,23 @@ public sealed class BackupViewModel : ObservableObject, IEmptyPage
             false);
     }
 
-    private void OpenFolder()
+    private void OpenFolder() => OpenFolder(null);
+
+    private void OpenFolder(string? selectedFile)
     {
+        var path = selectedFile ?? _services.Backup.BackupsFolder;
+
         try
         {
-            Process.Start(new ProcessStartInfo(_services.Backup.BackupsFolder) { UseShellExecute = true });
+            var start = selectedFile is null
+                ? new ProcessStartInfo(path)
+                : new ProcessStartInfo("explorer.exe", $"/select,\"{path}\"");
+            start.UseShellExecute = true;
+            Process.Start(start);
         }
         catch (Exception exception) when (exception is InvalidOperationException or System.ComponentModel.Win32Exception)
         {
-            SetStatus("The folder could not be opened. Its path is: " + _services.Backup.BackupsFolder, true);
+            SetStatus("The folder could not be opened. Its path is: " + path, true);
         }
     }
 

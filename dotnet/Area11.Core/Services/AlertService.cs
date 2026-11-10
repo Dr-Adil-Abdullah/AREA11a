@@ -5,14 +5,16 @@ using Area11.Core.Utils;
 namespace Area11.Core.Services;
 
 /// <summary>
-/// The alert board (Spec 16, U-31, U-34, 15.2.1, D-50). Six sources today:
-///   • a medicine whose stock is MINUS - somebody sold what the shelf did not have;
+/// The alert board (Spec 16, U-31, U-34, 15.2.1, D-50). Live shop facts include:
+///   • a historical medicine whose stock is MINUS - D-93 blocks new decrements, but old rows stay visible;
 ///   • goods sitting in quarantine, waiting for a decision;
 ///   • a no-bill return that is still missing its bill;
 ///   • a batch inside the **supplier return window**: the supplier will take it back only until a
 ///     cutoff (three months before expiry by default), so the shop must act now or keep it (§9.3.6);
 ///   • a shelf at or below its reorder level - folded into ONE line, not one line per medicine;
 ///   • a batch already **expired** and still on the shelf - also one folded line;
+///   • batches inside the nearest coming-expiry band (green reminders);
+///   • opening/closing cash differences with their reason (red financial alerts);
 ///   • a drawer left open from an earlier day (a reminder, not a problem).
 ///
 /// **Two kinds (D-50).** A *problem* - money or stock that is wrong now - is ended only by the
@@ -47,6 +49,13 @@ public sealed class AlertService
 
     /// <summary>Batches already past their expiry date that are still on the shelf (serious).</summary>
     public const string TypeExpired = "expired";
+
+    /// <summary>Coming expiry inside the owner's nearest band: an ordinary green reminder.</summary>
+    public const string TypeExpirySoon = "expiry_soon";
+
+    /// <summary>Actual opening/closing cash differs from its counted/expected baseline (red).</summary>
+    public const string TypeShiftOpeningDifference = "shift_opening_difference";
+    public const string TypeShiftClosingDifference = "shift_closing_difference";
 
     private const int MinimumReasonLength = 3;
 
@@ -95,8 +104,11 @@ WHERE r.disposition = 'quarantine'
 ORDER BY r.created_at DESC;"));
 
             problems.AddRange(_db.Query<ProblemRow>(connection, @"
-SELECT q.id AS entityId, 'No-bill return ' || q.code AS name, 0 AS qty, q.created_at AS lastChange,
-       q.code AS qcode, q.date AS date, q.status AS status, q.refund_paisa AS refundPaisa
+SELECT q.id AS entityId, 'No-bill return ' || q.code AS name, 0 AS qty,
+       COALESCE(q.linked_at, q.created_at) AS lastChange,
+       q.linked_code AS qcode, q.date AS date, q.status AS status, q.refund_paisa AS refundPaisa,
+       q.linked_expected_paisa AS linkedExpectedPaisa,
+       q.linked_unallocated_paisa AS linkedUnallocatedPaisa
 FROM provisional_returns q
 WHERE q.status IN ('pending', 'linked')
 ORDER BY q.id DESC;"));
@@ -123,14 +135,17 @@ ORDER BY b.expiry_date ASC, p.name COLLATE NOCASE;",
             }
 
             // ---- a shelf running out: ONE line for all of them (serious) ----
+            // The folded line uses only the names and the number of medicines. Do not map an
+            // aggregate quantity that is never read: SQLite SUM may expose either Int64 or Double,
+            // while the quantity itself remains REAL and must never be truncated for this screen.
             var lowStock = _db.Query<ProblemRow>(connection, @"
-SELECT p.id AS entityId, p.name AS name,
-       IFNULL((SELECT SUM(b.qty_base) FROM batches b WHERE b.product_id = p.id AND b.active = 1), 0) AS qty
+SELECT p.id AS entityId, p.name AS name
 FROM products p
 WHERE p.active = 1
   AND IFNULL((SELECT SUM(b.qty_base) FROM batches b WHERE b.product_id = p.id AND b.active = 1), 0) >= 0
   AND IFNULL((SELECT SUM(b.qty_base) FROM batches b WHERE b.product_id = p.id AND b.active = 1), 0) <= p.reorder_level
-ORDER BY qty ASC, p.name COLLATE NOCASE;");
+ORDER BY IFNULL((SELECT SUM(b.qty_base) FROM batches b WHERE b.product_id = p.id AND b.active = 1), 0) ASC,
+         p.name COLLATE NOCASE;");
 
             if (lowStock.Count > 0)
             {
@@ -179,6 +194,67 @@ ORDER BY b.expiry_date ASC, p.name COLLATE NOCASE;");
                              + " - write them off or send them back"
                 });
             }
+
+            // ---- batches nearing expiry: an ordinary green reminder, not a financial adjustment ----
+            var expiryDays = _settings.ExpiryBands.Level3Days;
+            var nearingExpiry = _db.Query<ProblemRow>(connection, @"
+SELECT b.id AS entityId, p.name || ' - ' || b.batch_no AS name, b.qty_base AS qty,
+       b.expiry_date AS date, 'expiry_soon' AS type,
+       CAST(julianday(b.expiry_date) - julianday(date('now','localtime')) AS INTEGER) AS daysLeft
+FROM batches b
+JOIN products p ON p.id = b.product_id
+WHERE p.active = 1 AND b.active = 1 AND b.qty_base > 0
+  AND IFNULL(b.expiry_date, '') <> ''
+  AND julianday(b.expiry_date) - julianday(date('now','localtime')) BETWEEN 0 AND @days
+ORDER BY b.expiry_date ASC, p.name COLLATE NOCASE;", new { days = expiryDays });
+
+            if (nearingExpiry.Count > 0)
+            {
+                var names = string.Join(", ", nearingExpiry.Take(3).Select(row => row.Name)
+                    .Where(name => !string.IsNullOrWhiteSpace(name)));
+                problems.Add(new ProblemRow
+                {
+                    EntityId = nearingExpiry.Count,
+                    Count = nearingExpiry.Count,
+                    Type = TypeExpirySoon,
+                    Title = nearingExpiry.Count + (nearingExpiry.Count == 1 ? " batch is" : " batches are") +
+                            " nearing expiry",
+                    Detail = names + (nearingExpiry.Count > 3 ? " and more" : string.Empty) +
+                             " - check the nearest dates and sell in FEFO order"
+                });
+            }
+
+            // ---- opening and closing cash differences: red financial alerts, never money movement ----
+            problems.AddRange(_db.Query<ProblemRow>(connection, @"
+SELECT s.id AS entityId,
+       'Opening shift #' || s.id || ' by ' || IFNULL(u.name, 'someone') AS name,
+       s.opening_float_paisa AS amountPaisa, p.actual_paisa AS baselinePaisa,
+       s.opened_at AS lastChange, s.opened_at AS date,
+       'shift_opening_difference' AS type, s.note AS note
+FROM shifts s
+JOIN shifts p ON p.id = (
+    SELECT previous.id FROM shifts previous
+    WHERE previous.id < s.id AND previous.status = 'closed' AND previous.actual_paisa IS NOT NULL
+    ORDER BY previous.id DESC LIMIT 1)
+LEFT JOIN users u ON u.id = s.user_id
+WHERE s.opening_float_paisa <> p.actual_paisa
+ORDER BY s.id DESC;"));
+
+            problems.AddRange(_db.Query<ProblemRow>(connection, @"
+SELECT s.id AS entityId,
+       'Closing shift #' || s.id || ' by ' || IFNULL((
+           SELECT a.user_name FROM audit_logs a
+           WHERE a.entity = 'shifts' AND a.entity_id = CAST(s.id AS TEXT)
+             AND a.action IN ('shift_close', 'shift_handover')
+           ORDER BY a.id DESC LIMIT 1), IFNULL(u.name, 'someone')) AS name,
+       s.actual_paisa AS amountPaisa, IFNULL(s.expected_paisa, 0) AS baselinePaisa,
+       IFNULL(s.closed_at, s.opened_at) AS lastChange, IFNULL(s.closed_at, s.opened_at) AS date,
+       'shift_closing_difference' AS type, s.note AS note
+FROM shifts s
+LEFT JOIN users u ON u.id = s.user_id
+WHERE s.status = 'closed' AND s.actual_paisa IS NOT NULL
+  AND s.actual_paisa <> IFNULL(s.expected_paisa, 0)
+ORDER BY s.id DESC;"));
 
             // ---- a drawer left open from an earlier day (a reminder) ----
             problems.AddRange(_db.Query<ProblemRow>(connection, @"
@@ -490,6 +566,7 @@ SELECT p.name || ' - ' || b.batch_no FROM batches b
 JOIN products p ON p.id = b.product_id WHERE b.id = @id;", new { id }) ?? string.Empty,
             TypeProvisional or TypeProvisionalLinked => _db.QuerySingle<string>(connection,
                 "SELECT 'No-bill return ' || code FROM provisional_returns WHERE id = @id;", new { id }) ?? string.Empty,
+            TypeShiftOpeningDifference or TypeShiftClosingDifference => "Shift #" + id,
             _ => string.Empty
         };
     }
@@ -512,14 +589,17 @@ JOIN products p ON p.id = b.product_id WHERE b.id = @id;", new { id }) ?? string
             TypeShiftOpen => (TypeShiftOpen, entityId),
             TypeLowStock => (TypeLowStock, entityId),
             TypeExpired => (TypeExpired, entityId),
+            TypeExpirySoon => (TypeExpirySoon, entityId),
+            TypeShiftOpeningDifference => (TypeShiftOpeningDifference, entityId),
+            TypeShiftClosingDifference => (TypeShiftClosingDifference, entityId),
             _ => (null, 0)
         };
     }
 
     /// <summary>
     /// Which of the three lists a row belongs to. A medicine with minus stock is red. Goods in
-    /// quarantine need a decision. A no-bill return blinks red until the bill is attached and turns
-    /// amber afterwards, because from then on it waits for the owner, not for the cashier (15.5.4).
+    /// quarantine need a decision. A no-bill return is red until the bill is attached and becomes
+    /// a green confirmation reminder afterwards, because the money question is then waiting for review (15.5.4).
     /// </summary>
     private static string KindOf(ProblemRow problem)
     {
@@ -540,25 +620,60 @@ JOIN products p ON p.id = b.product_id WHERE b.id = @id;", new { id }) ?? string
         return string.IsNullOrWhiteSpace(problem.QCode) ? TypeNegativeStock : TypeQuarantine;
     }
 
-    private static string DetailOf(ProblemRow problem, string kind, int cutoffDays) => kind switch
+    private static string DetailOf(ProblemRow problem, string kind, int cutoffDays)
     {
-        TypeSupplierCutoff =>
-            Qty.Format(problem.Qty) + " expiring " + ShortDate(problem.Date) + " (" + problem.DaysLeft +
-            " days) - send it back by " + LastReturnDay(problem.Date, cutoffDays) +
-            ", after that the supplier may refuse it",
-        TypeQuarantine =>
-            Qty.Format(problem.Qty) + " in quarantine since " + ShortDate(problem.LastChange) +
-            " - decide: back in stock, damaged, or sold",
-        TypeProvisional =>
-            Money.Format(problem.RefundPaisa) + " refunded on " + ShortDate(problem.Date) +
-            " with no bill - attach the bill",
-        TypeProvisionalLinked =>
-            "bill " + (problem.QCode ?? string.Empty) + " attached - confirm it is the right bill, then end this alert",
-        TypeShiftOpen =>
-            "opened " + ShortDate(problem.Date) + " by " + (problem.Name ?? "someone") +
-            " - count the drawer and close it on the Shift (galla) page",
-        _ => "stock " + Qty.Format(problem.Qty) + " - fix by a stock count or a purchase"
-    };
+        if (kind == TypeProvisionalLinked)
+        {
+            var bill = string.IsNullOrWhiteSpace(problem.QCode) ? "(unknown)" : problem.QCode;
+
+            if (problem.LinkedExpectedPaisa is null)
+            {
+                return "bill " + bill + " attached before line reconciliation - attach the same bill " +
+                       "again on the No bill (PR) page before another return";
+            }
+
+            var variance = problem.RefundPaisa - problem.LinkedExpectedPaisa.Value;
+            if (variance != 0 || (problem.LinkedUnallocatedPaisa ?? 0) > 0)
+            {
+                return "bill " + bill + " attached - PR refund differs from the returned quantities' " +
+                       "bill value by " + Money.Format(Math.Abs(variance)) +
+                       "; check the reconciliation, then end this alert";
+            }
+
+            return "bill " + bill + " attached - confirm it is the right bill, then end this alert";
+        }
+
+        if (kind is TypeShiftOpeningDifference or TypeShiftClosingDifference)
+        {
+            var opening = kind == TypeShiftOpeningDifference;
+            var difference = problem.AmountPaisa - problem.BaselinePaisa;
+            var baseline = opening ? "previous counted" : "expected";
+            var reason = string.IsNullOrWhiteSpace(problem.Note) ? "(not recorded)" : problem.Note;
+
+            return (opening ? "opening " : "counted ") + Money.Format(problem.AmountPaisa) +
+                   "; " + baseline + " " + Money.Format(problem.BaselinePaisa) +
+                   "; " + ShiftWords.Difference(difference) + "; reason: " + reason +
+                   ". Review shift #" + problem.EntityId + " - no automatic payment or drawer adjustment was made";
+        }
+
+        return kind switch
+        {
+            TypeSupplierCutoff =>
+                Qty.Format(problem.Qty) + " expiring " + ShortDate(problem.Date) + " (" + problem.DaysLeft +
+                " days) - send it back by " + LastReturnDay(problem.Date, cutoffDays) +
+                ", after that the supplier may refuse it",
+            TypeQuarantine =>
+                Qty.Format(problem.Qty) + " in quarantine since " + ShortDate(problem.LastChange) +
+                " - decide: back in stock, damaged, or sold",
+            TypeProvisional =>
+                Money.Format(problem.RefundPaisa) + " refunded on " + ShortDate(problem.Date) +
+                " with no bill - attach the bill",
+            TypeShiftOpen =>
+                "opened " + ShortDate(problem.Date) + " by " + (problem.Name ?? "someone") +
+                " - count the drawer and close it on the Shift (galla) page",
+            _ => "stock " + Qty.Format(problem.Qty) + " - fix by a stock count or a purchase"
+        };
+    }
 
     /// <summary>The last day the supplier still takes this batch back: expiry minus the cutoff.</summary>
     private static string LastReturnDay(string? expiryDate, int cutoffDays)
@@ -600,6 +715,17 @@ JOIN products p ON p.id = b.product_id WHERE b.id = @id;", new { id }) ?? string
         public string? Status { get; set; }
 
         public long RefundPaisa { get; set; }
+
+        public long? LinkedExpectedPaisa { get; set; }
+
+        public long? LinkedUnallocatedPaisa { get; set; }
+
+        /// <summary>Shift actual/opening cash and the previous-counted/expected baseline.</summary>
+        public long AmountPaisa { get; set; }
+
+        public long BaselinePaisa { get; set; }
+
+        public string? Note { get; set; }
 
         /// <summary>Set only by a query that already knows its kind (the supplier cutoff).</summary>
         public string? Type { get; set; }

@@ -14,8 +14,9 @@ namespace Area11.Core.Services;
 /// The rules, all enforced inside one transaction:
 ///   • the return hangs on the original bill; an item that is not on that bill is refused;
 ///   • never more than was sold, counting every earlier return of the same bill;
-///   • never more money than was collected for that bill - cash refunds are capped by `paid_paisa`;
-///   • if the bill was on credit, the khata is reduced first and only the rest leaves the drawer;
+///   • never more than the bill's remaining value, counting every earlier return;
+///   • the khata is reduced only by what is still owed on THIS bill after chronological recoveries;
+///     only the already-collected, not-yet-refunded remainder leaves the drawer;
 ///   • the original bill rows are never edited (15.1.6) - a return is a new record;
 ///   • goods go back to the SAME batch instantly (U-32), or to quarantine with a permanent
 ///     Q-number when the cashier deliberately chooses "not back to stock" (U-34).
@@ -504,7 +505,7 @@ VALUES(@productId, @batchId, 'return_in', @qty, 'sale_return', @returnOf, @code,
                 Item = item,
                 QtyBase = wholeRemainder ? item.RemainingBase : wanted.QtyBase,
                 QtyEntered = wholeRemainder
-                    ? item.QtyEntered
+                    ? item.RemainingUnits
                     : item.QtyBase <= 0 ? 0 : item.QtyEntered * wanted.QtyBase / item.QtyBase,
                 RefundPaisa = refund
             });
@@ -515,15 +516,66 @@ VALUES(@productId, @batchId, 'return_in', @qty, 'sale_return', @returnOf, @code,
             throw new ValidationException("Choose at least one item and a quantity to return.");
         }
 
+        var requestedRefundTotal = lines.Sum(line => line.RefundPaisa);
+
+        // Two caps protect the same original bill. Line allocations stop repeated products/split
+        // lines being returned twice; the bill cap also counts any actual PR money that exceeded a
+        // matched line's capacity. The original bill and PR payment remain immutable throughout.
+        var remainingLineValue = Math.Max(0, items.Sum(item => item.RemainingPaisa));
+        var remainingBillValue = Math.Max(0,
+            sale.TotalPaisa - sale.NormalRefundedPaisa - sale.ProvisionalRefundedPaisa);
+        var remainingValue = Math.Min(remainingLineValue, remainingBillValue);
+
+        if (requestedRefundTotal > remainingValue)
+        {
+            var excess = requestedRefundTotal - remainingValue;
+
+            // A previous over-refund has already consumed value that these quantities would normally
+            // carry. Keep the quantities requested, reduce refund shares from the last line backwards,
+            // and make the consequence explicit instead of paying the same bill value again.
+            for (var index = lines.Count - 1; index >= 0 && excess > 0; index--)
+            {
+                var reduction = Math.Min(excess, lines[index].RefundPaisa);
+                lines[index].RefundPaisa -= reduction;
+                excess -= reduction;
+            }
+
+            warnings.Add(
+                $"Earlier no-bill refunds already used this bill's value. This return is capped at " +
+                $"{Money.Format(remainingValue)} instead of {Money.Format(requestedRefundTotal)}.");
+        }
+
         var refundTotal = lines.Sum(line => line.RefundPaisa);
 
-        // Never more money than the shop took for this bill, and the khata comes first.
-        var creditCap = Math.Max(0, sale.DuePaisa - sale.CreditRefundedPaisa);
-        var cashCap = Math.Max(0, sale.PaidPaisa - sale.CashRefundedPaisa);
+        // For a customer's bill, the shared chronological replay says how much of THAT bill is still
+        // owed after recoveries and its own earlier returns. The rest is collected money available
+        // for cash back:
+        //
+        //   remaining value - remaining khata
+        //     = original paid + recoveries allocated to this bill - earlier cash refunds.
+        //
+        // A later collection therefore moves value from khata to cash; it never increases the total.
+        long creditCap;
+        long cashCap;
 
-        // A khata can only shrink if there is a customer to shrink it on. A bill with no customer
-        // (walk-in) has nothing to write the debt off against, so the whole refund must be cash.
-        var credit = sale.CustomerId is int ? Math.Min(creditCap, refundTotal) : 0L;
+        if (sale.CustomerId is int customerId)
+        {
+            var settlement = CustomerSettlementLedger.Read(_db, connection, customerId);
+            var bill = settlement.Bill(sale.Id) ?? throw new ValidationException(
+                "This bill's khata history could not be found, so the refund was not calculated.");
+
+            creditCap = Math.Min(remainingValue, Math.Max(0, bill.CreditRemainingPaisa));
+            cashCap = remainingValue - creditCap;
+        }
+        else
+        {
+            // A walk-in has no khata to reduce. Any uncollected part of such a historical bill is
+            // not cash and can never be handed back.
+            creditCap = 0;
+            cashCap = Math.Min(remainingValue, Math.Max(0, sale.PaidPaisa - sale.CashRefundedPaisa));
+        }
+
+        var credit = Math.Min(creditCap, refundTotal);
         var cash = refundTotal - credit;
 
         if (cash > cashCap)
@@ -535,7 +587,9 @@ VALUES(@productId, @batchId, 'return_in', @qty, 'sale_return', @returnOf, @code,
 
         if (refundTotal == 0)
         {
-            warnings.Add("The refund for these items is zero - they were free or fully discounted.");
+            warnings.Add(remainingValue == 0 && sale.ProvisionalRefundedPaisa > 0
+                ? "No refundable bill value remains after the linked no-bill refund; the goods can still be returned with a zero refund."
+                : "The refund for these items is zero - they were free or fully discounted.");
         }
 
         return new ReturnPlan
@@ -545,7 +599,7 @@ VALUES(@productId, @batchId, 'return_in', @qty, 'sale_return', @returnOf, @code,
             RefundPaisa = refundTotal,
             CashPaisa = cash,
             CreditPaisa = credit,
-            RefundablePaisa = cashCap,
+            RefundablePaisa = cashCap + creditCap,
             Warnings = warnings
         };
     }
@@ -555,10 +609,12 @@ VALUES(@productId, @batchId, 'return_in', @qty, 'sale_return', @returnOf, @code,
     private SaleRow LoadSale(SqliteConnection connection, int saleId)
     {
         var sale = _db.QuerySingle<SaleRow>(connection, @"
-SELECT s.id, s.code, s.date, s.customer_id AS customerId, s.total_paisa AS totalPaisa,
-       s.paid_paisa AS paidPaisa, s.due_paisa AS duePaisa, s.status,
-       COALESCE((SELECT SUM(r.cash_refund_paisa)   FROM sale_returns r WHERE r.sale_id = s.id), 0) AS cashRefundedPaisa,
-       COALESCE((SELECT SUM(r.credit_reduced_paisa) FROM sale_returns r WHERE r.sale_id = s.id), 0) AS creditRefundedPaisa
+SELECT s.id, s.code, s.date, s.customer_id AS customerId,
+       s.paid_paisa AS paidPaisa, s.total_paisa AS totalPaisa, s.status,
+       COALESCE((SELECT SUM(r.cash_refund_paisa) FROM sale_returns r WHERE r.sale_id = s.id), 0) AS cashRefundedPaisa,
+       COALESCE((SELECT SUM(r.refund_paisa) FROM sale_returns r WHERE r.sale_id = s.id), 0) AS normalRefundedPaisa,
+       COALESCE((SELECT SUM(pr.refund_paisa) FROM provisional_returns pr
+                 WHERE pr.linked_sale_id = s.id AND pr.status = 'linked'), 0) AS provisionalRefundedPaisa
 FROM sales s WHERE s.id = @id;", new { id = saleId });
 
         if (sale is null)
@@ -571,9 +627,33 @@ FROM sales s WHERE s.id = @id;", new { id = saleId });
 
     private List<ItemRow> ReadItemRows(SqliteConnection connection, SaleRow sale)
     {
+        // Cypress and older links had no line allocations. Do not guess them during a migration and
+        // do not let the Returns screen bless another return before the owner repairs the old link.
+        var unreconciled = _db.QuerySingle<string>(connection, @"
+SELECT code FROM provisional_returns
+WHERE linked_sale_id = @id AND status = 'linked' AND linked_expected_paisa IS NULL
+ORDER BY id LIMIT 1;", new { id = sale.Id });
+
+        if (!string.IsNullOrWhiteSpace(unreconciled))
+        {
+            throw new ValidationException(
+                unreconciled + " was linked before sale-line reconciliation existed. Open No bill (PR), " +
+                "select it, and attach the same bill again before making another return against this bill.");
+        }
+
         var returned = _db.Query<ReturnedRow>(connection, @"
-SELECT sale_item_id AS saleItemId, SUM(qty_base) AS qty, SUM(refund_paisa) AS refund
+SELECT sale_item_id AS saleItemId, CAST(SUM(qty_base) AS REAL) AS qty, SUM(refund_paisa) AS refund
 FROM sale_returns WHERE sale_id = @id GROUP BY sale_item_id;", new { id = sale.Id })
+            .ToDictionary(row => row.SaleItemId);
+
+        var provisionallyReturned = _db.Query<ReturnedRow>(connection, @"
+SELECT a.sale_item_id AS saleItemId, CAST(SUM(a.qty_base) AS REAL) AS qty, SUM(a.refund_paisa) AS refund
+FROM provisional_return_allocations a
+JOIN provisional_items i ON i.id = a.provisional_item_id
+JOIN provisional_returns pr ON pr.id = i.provisional_id
+JOIN sale_items si ON si.id = a.sale_item_id
+WHERE si.sale_id = @id AND pr.status = 'linked'
+GROUP BY a.sale_item_id;", new { id = sale.Id })
             .ToDictionary(row => row.SaleItemId);
 
         var items = _db.Query<ItemRow>(connection, @"
@@ -583,11 +663,14 @@ FROM sale_items WHERE sale_id = @id ORDER BY id;", new { id = sale.Id });
 
         foreach (var item in items)
         {
-            if (returned.TryGetValue(item.SaleItemId, out var row))
-            {
-                item.AlreadyReturnedBase = row.Qty;
-                item.AlreadyRefundedPaisa = row.Refund;
-            }
+            var normalQty = returned.TryGetValue(item.SaleItemId, out var normal) ? normal.Qty : 0;
+            var normalRefund = normal?.Refund ?? 0;
+            var provisionalQty = provisionallyReturned.TryGetValue(item.SaleItemId, out var provisional)
+                ? provisional.Qty
+                : 0;
+
+            item.AlreadyReturnedBase = normalQty + provisionalQty;
+            item.AlreadyRefundedPaisa = normalRefund + (provisional?.Refund ?? 0);
         }
 
         return items;
@@ -605,17 +688,17 @@ FROM sale_items WHERE sale_id = @id ORDER BY id;", new { id = sale.Id });
 
         public int? CustomerId { get; set; }
 
-        public long TotalPaisa { get; set; }
-
         public long PaidPaisa { get; set; }
 
-        public long DuePaisa { get; set; }
+        public long TotalPaisa { get; set; }
 
         public string? Status { get; set; }
 
         public long CashRefundedPaisa { get; set; }
 
-        public long CreditRefundedPaisa { get; set; }
+        public long NormalRefundedPaisa { get; set; }
+
+        public long ProvisionalRefundedPaisa { get; set; }
     }
 
     private sealed class ItemRow : ReturnLineOption
@@ -640,7 +723,7 @@ FROM sale_items WHERE sale_id = @id ORDER BY id;", new { id = sale.Id });
 
         public double QtyEntered { get; init; }
 
-        public long RefundPaisa { get; init; }
+        public long RefundPaisa { get; set; }
     }
 
     private sealed class ReturnPlan

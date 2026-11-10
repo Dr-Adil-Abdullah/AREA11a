@@ -25,7 +25,8 @@ public sealed class LoginViewModel : ObservableObject
 
     public string StoreName => _services.Settings.GetString("store.name");
 
-    public string AppName => _services.Settings.GetString("brand.appName");
+    /// <summary>The product title is fixed; the shop name below it remains the store's own data.</summary>
+    public string AppName => "Area11";
 
     public string UserName
     {
