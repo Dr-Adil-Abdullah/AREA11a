@@ -35,6 +35,7 @@ public sealed class CloudSyncViewModel : ObservableObject, IEmptyPage
     private string _shopIdText = "-";
     private string _keyText = "no key";
     private string _lastSyncText = "never sent from this computer";
+    private string _automaticText = "Automatic push is off - use the Push button.";
     private string _previewText = "Press \"See what the cloud has\" to read the copy without writing anything.";
     private string _sentText = string.Empty;
     private bool _hasPreview;
@@ -105,6 +106,13 @@ public sealed class CloudSyncViewModel : ObservableObject, IEmptyPage
     {
         get => _lastSyncText;
         private set => SetProperty(ref _lastSyncText, value);
+    }
+
+    /// <summary>Portion 15: automatic on or off, how often, and the last failure in plain words.</summary>
+    public string AutomaticText
+    {
+        get => _automaticText;
+        private set => SetProperty(ref _automaticText, value);
     }
 
     // ------------------------------ the comparison ------------------------------
@@ -180,6 +188,10 @@ public sealed class CloudSyncViewModel : ObservableObject, IEmptyPage
         ShopIdText = value.ShopId.Length == 0 ? "not filled in" : value.ShopId;
         KeyText = value.KeyLabel;
         LastSyncText = value.LastSyncLabel + " - " + value.StatusLabel;
+        AutomaticText = value.AutomaticLabel
+                        + (value.LastError.Length == 0
+                            ? string.Empty
+                            : " Last automatic attempt failed: " + value.LastError);
 
         Rows.Clear();
 

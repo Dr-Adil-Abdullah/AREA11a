@@ -783,7 +783,9 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Text("sync.shopId", "shop-1");
         Text("sync.status", "not_configured");
         Text("sync.lastSyncAt", string.Empty);
-        // Safe Phase 1 default: no background timer until the separately approved Phase 7 enables it.
+        Text("sync.lastError", string.Empty);
+        // Portion 15 is the separately approved Phase 7: the background timer is now allowed, and it
+        // stays off until the owner ticks it. Minutes are validated (whole, 5 to 1440) on the save path.
         Flag("sync.automaticEnabled", false);
         Number("sync.automaticMinutes", 15);
 

@@ -449,6 +449,14 @@
                                 <TextBlock Text="The key is a password to the whole mirror. It is never shown again after saving, and it never appears in the black box or on the Cloud sync page."
                                            Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
 
+                                <CheckBox Content="Push automatically every few minutes"
+                                          IsChecked="{Binding SyncAutomatic, Mode=TwoWay}" Margin="0,10,0,0" />
+
+                                <TextBlock Text="Automatic push every (minutes)" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding SyncAutomaticMinutesText, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock Text="Whole minutes from 5 to 1440. A failed push waits for the next round - the shop never stops for the cloud, and bringing data here always stays a deliberate two clicks."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+
                                 <Button Content="Remove the saved key" Style="{StaticResource GhostButton}"
                                         HorizontalAlignment="Left" Margin="0,8,0,0"
                                         Command="{Binding ClearSyncKeyCommand}" />

@@ -74,6 +74,8 @@ public sealed class SettingsViewModel : ObservableObject
     private string _syncUrl = string.Empty;
     private string _syncTable = "area11_sync";
     private string _syncShopId = string.Empty;
+    private bool _syncAutomatic;
+    private string _syncAutomaticMinutesText = "15";
     private string _syncKey = string.Empty;
     private string _syncKeyLabel = string.Empty;
     private string _syncSummary = string.Empty;
@@ -619,6 +621,9 @@ public sealed class SettingsViewModel : ObservableObject
         SyncUrl = settings.GetString(SyncService.UrlKey);
         SyncTable = settings.GetString(SyncService.TableKey);
         SyncShopId = settings.GetString(SyncService.ShopIdKey);
+        SyncAutomatic = settings.GetBool(SyncService.AutomaticEnabledKey);
+        SyncAutomaticMinutesText = settings.GetInt(SyncService.AutomaticMinutesKey, 15)
+            .ToString(CultureInfo.InvariantCulture);
         SyncKey = string.Empty;
         _syncKeyCleared = false;
         RaiseSyncLabels();
@@ -728,6 +733,14 @@ public sealed class SettingsViewModel : ObservableObject
         if (!int.TryParse(CopiesText.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var copies))
         {
             SetStatus("Copies must be a whole number, for example 1.", true);
+            return;
+        }
+
+        if (!int.TryParse(SyncAutomaticMinutesText.Trim(), NumberStyles.Integer,
+                CultureInfo.InvariantCulture, out var automaticMinutes)
+            || automaticMinutes is < 5 or > 1440)
+        {
+            SetStatus("Automatic sync must be a whole number of minutes from 5 to 1440.", true);
             return;
         }
 
@@ -867,6 +880,8 @@ public sealed class SettingsViewModel : ObservableObject
             values[SyncService.UrlKey] = SyncUrl.Trim();
             values[SyncService.TableKey] = SyncTable.Trim();
             values[SyncService.ShopIdKey] = SyncShopId.Trim();
+            values[SyncService.AutomaticEnabledKey] = SyncAutomatic;
+            values[SyncService.AutomaticMinutesKey] = automaticMinutes;
 
             if (_syncKeyCleared)
             {
@@ -949,6 +964,26 @@ public sealed class SettingsViewModel : ObservableObject
         set => SetProperty(ref _syncShopId, value);
     }
 
+    /// <summary>Portion 15: the automatic tick - on means the shop pushes itself every few minutes.</summary>
+    public bool SyncAutomatic
+    {
+        get => _syncAutomatic;
+        set
+        {
+            if (SetProperty(ref _syncAutomatic, value))
+            {
+                RaiseSyncSummary();
+            }
+        }
+    }
+
+    /// <summary>Portion 15: minutes between automatic pushes, whole, 5 to 1440 (checked on save).</summary>
+    public string SyncAutomaticMinutesText
+    {
+        get => _syncAutomaticMinutesText;
+        set => SetProperty(ref _syncAutomaticMinutesText, value);
+    }
+
     /// <summary>
     /// What the owner types when he wants to replace the key. It is deliberately **not** loaded from the
     /// database: a password that appears on a screen is a password that ends up in a photograph. An
@@ -1010,9 +1045,11 @@ public sealed class SettingsViewModel : ObservableObject
             return;
         }
 
-        SyncSummary = _services.Cloud.IsConfigured
-            ? "Ready. Open SYSTEM -> Cloud sync to push the shop's data, or to read the cloud copy."
-            : "Switched on but not complete - fill the address, the key, the table and the shop id, then press Save settings.";
+        SyncSummary = !_services.Cloud.IsConfigured
+            ? "Switched on but not complete - fill the address, the key, the table and the shop id, then press Save settings."
+            : SyncAutomatic
+                ? "Ready. Open SYSTEM -> Cloud sync to push the shop's data, or to read the cloud copy. Automatic push is on."
+                : "Ready. Open SYSTEM -> Cloud sync to push the shop's data, or to read the cloud copy.";
     }
 
     // ------------------------------ Staff -------------------------------

@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
@@ -86,7 +87,11 @@ public sealed class ShellViewModel : ObservableObject
         // out twice.
         SessionWatch.Start();
         _sessionTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
-        _sessionTimer.Tick += (_, _) => CheckSession();
+        _sessionTimer.Tick += (_, _) =>
+        {
+            CheckSession();
+            TryAutomaticSync();
+        };
         _sessionTimer.Start();
     }
 
@@ -121,6 +126,40 @@ public sealed class ShellViewModel : ObservableObject
     /// Reads both clocks once every 30 seconds (v0.35.0, D-92). The rule is in `SessionPolicy`, so
     /// the tests can prove it without a window; this method only carries out the verdict.
     /// </summary>
+    /// <summary>
+    /// Portion 15: the automatic cloud push, once per timer tick when it is due. The due check is
+    /// cheap (settings only, no network); the push itself runs on a background thread, so the counter
+    /// never freezes for the cloud. Nothing here can throw out: the service swallows everything, and
+    /// this method keeps its own catch for the handoff itself. Only while signed in - the shell and
+    /// its timer die on sign-out, and the tick quietly does nothing when automatic is off.
+    /// </summary>
+    private void TryAutomaticSync()
+    {
+        try
+        {
+            if (!_services.Cloud.IsAutomaticDue())
+            {
+                return;
+            }
+
+            Task.Run(() =>
+            {
+                try
+                {
+                    _services.Cloud.RunAutomaticIfDue();
+                }
+                catch (Exception exception)
+                {
+                    _services.Log.Error("The automatic push did not run.", exception);
+                }
+            });
+        }
+        catch (Exception exception)
+        {
+            _services.Log.Error("The automatic push did not run.", exception);
+        }
+    }
+
     private void CheckSession()
     {
         if (!SessionWatch.Running)

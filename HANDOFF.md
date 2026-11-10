@@ -1,11 +1,11 @@
 # HANDOFF - read this first
 
-> **WIP handoff, 10 Nov 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/b4b7bf7b-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/b4b7bf7b-area11a). Portion 14 finished in v0.55.0 Ember (Windows/physical pending); v0.52.0 Windows 1086/1086 green; batch order (5, 6, 18) complete; Portion 17 paused; next is 15 per roadmap unless the owner says otherwise. Older status and approval statements below are historical. This branch is not a tested release.
+> **WIP handoff, 10 Nov 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/b4b7bf7b-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/b4b7bf7b-area11a). Portion 15 finished in v0.56.0 Flint (Windows/physical pending); v0.52.0 Windows 1086/1086 green; batch order (5, 6, 18) complete; Portion 17 paused; next is 16 per roadmap unless the owner says otherwise. Older status and approval statements below are historical. This branch is not a tested release.
 
 
 ## Latest handoff — v0.54.0 Dusk
 
-Portion 14 finished: cash drawer details and alerts (#8) — `shift_discrepancies` written in Open/Close/Handover (same transaction, non-zero only, short + over, reason + alerted_at); `Discrepancies()` read newest-first with who/why; Shift page Drawer-differences grid; Alerts page Open-the-Shift-page card via the dashboard callback pattern; no backfill, alerts red-only. **1130 written cases, 57/57 static; Windows build/xUnit and physical checks pending.** v0.52.0 Windows 1086/1086 green. Batch order (5, 6, 18) complete; Portion 17 paused; next is 15 per roadmap unless the owner says otherwise.
+Portion 15 finished: hybrid sync hardening and safe test workflow (#7) — `IsAutomaticDue` + `RunAutomaticIfDue` (never throws, pushes only); one-push-at-a-time guard; failures stamp `sync.lastError` and retry next interval; Settings automatic tick + minutes; Cloud page automatic line; shell tick fires on a background thread; CLOUD-SYNC test workflow rewritten. **1144 written cases, 57/57 static; Windows build/xUnit, physical and real-cloud checks pending.** v0.52.0 Windows 1086/1086 green. Batch order (5, 6, 18) complete; Portion 17 paused; next is 16 per roadmap unless the owner says otherwise.
 
 
 ## Latest handoff — v0.43.0 Umber

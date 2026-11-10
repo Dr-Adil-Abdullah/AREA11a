@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using Area11.Core.Data;
 using Area11.Core.Models;
 using Area11.Core.Utils;
@@ -30,6 +31,15 @@ public sealed class SyncService
     public const string EnabledKey = "sync.enabled";
     public const string StatusKey = "sync.status";
     public const string LastSyncKey = "sync.lastSyncAt";
+    public const string AutomaticEnabledKey = "sync.automaticEnabled";
+    public const string AutomaticMinutesKey = "sync.automaticMinutes";
+    public const string LastErrorKey = "sync.lastError";
+
+    /// <summary>
+    /// Portion 15: one push owns the wire. The start of the refusal below; the automatic caller
+    /// matches on it to skip quietly instead of recording a failure.
+    /// </summary>
+    private const string BusyMessage = "A push is already running";
 
     /// <summary>The days of bills, purchases, payments and expenses that travel (Spec 25.5).</summary>
     public const int RecentDays = 90;
@@ -107,6 +117,12 @@ ORDER BY allocation.id;";
     private readonly BackupService _backup;
     private readonly ICloudTransport _cloud;
 
+    /// <summary>
+    /// Portion 15: 1 while a push (manual or automatic) owns the wire. An int, not a bool, because
+    /// only <see cref="Interlocked"/> may touch it - the automatic push runs on a background thread.
+    /// </summary>
+    private int _pushRunning;
+
     public SyncService(
         Database db,
         SettingsService settings,
@@ -157,6 +173,15 @@ ORDER BY allocation.id;";
     /// <summary>The owner's tick in Settings -> Cloud sync (`sync.enabled`). Off means "do not talk to the cloud".</summary>
     public bool Enabled => _settings.GetBool(EnabledKey);
 
+    /// <summary>Portion 15: the owner's automatic tick. On means "push for me every few minutes".</summary>
+    public bool AutomaticEnabled => _settings.GetBool(AutomaticEnabledKey);
+
+    /// <summary>
+    /// Portion 15: minutes between automatic pushes, 5 to 1440. Clamped, not refused: a number that
+    /// arrived through the quiet door must still schedule something sane.
+    /// </summary>
+    public int AutomaticMinutes => Math.Clamp(_settings.GetInt(AutomaticMinutesKey, 15), 5, 1440);
+
     /// <summary>Is a key saved? The key itself is never shown, so the screen needs this one fact.</summary>
     public bool HasKey => Key.Length > 0;
 
@@ -204,7 +229,10 @@ ORDER BY allocation.id;";
             KeyLabel = KeyLabel,
             LastSync = _settings.GetString(LastSyncKey).Trim(),
             StatusLabel = StatusText(_settings.GetString(StatusKey)),
-            Enabled = Enabled
+            Enabled = Enabled,
+            AutomaticEnabled = AutomaticEnabled,
+            AutomaticMinutes = AutomaticMinutes,
+            LastError = _settings.GetString(LastErrorKey).Trim()
         };
 
         try
@@ -238,6 +266,16 @@ ORDER BY allocation.id;";
                 "Only the owner can send the shop's data to the cloud.");
         }
 
+        return BuildDocument();
+    }
+
+    /// <summary>
+    /// Portion 15: the document without the permission question. The manual path asks it in
+    /// <see cref="Build"/>; the automatic path answers it with the owner's own tick instead - he
+    /// switched automatic on, so the scheduled push carries his standing permission.
+    /// </summary>
+    private ServiceResult<SyncEnvelope> BuildDocument()
+    {
         if (!Enabled)
         {
             return ServiceResult<SyncEnvelope>.Fail(
@@ -496,51 +534,178 @@ ORDER BY allocation.id;";
     /// <summary>Send the document. Reads the shop and writes the cloud - never the other way round.</summary>
     public ServiceResult<SyncRun> Push(User? user)
     {
-        var built = Build(user);
-
-        if (!built.Ok || built.Value is null)
-        {
-            return ServiceResult<SyncRun>.Fail(built.Error ?? "The data could not be prepared.");
-        }
-
-        var envelope = built.Value;
-
-        if (envelope.RowCount == 0)
+        if (!CanSync(user))
         {
             return ServiceResult<SyncRun>.Fail(
-                "There is nothing to send yet - this shop has no medicines or bills.");
+                "Only the owner can send the shop's data to the cloud.");
         }
 
-        // The table's row, not the document: snake_case columns, `version` as an int, and the document
-        // itself inside `payload` (Spec 25.2). A raw envelope asked for a `format` column and was refused.
-        var json = ToJson(RowFor(envelope));
-        var answer = _cloud.Send(Url, Key, Table, json);
-
-        if (!answer.Ok)
-        {
-            Remember("error");
-
-            var message = WireError(answer);
-
-            _log.Error("Cloud push failed: " + message, new InvalidOperationException(message));
-
-            return ServiceResult<SyncRun>.Fail(message);
-        }
-
-        var run = new SyncRun
-        {
-            At = Clock.Now(),
-            ShopId = envelope.ShopId,
-            Rows = envelope.RowCount,
-            Tables = envelope.Tables.Count,
-            SizeBytes = envelope.SizeBytes
-        };
-
-        Remember("pushed");
-        _audit.RecordStandalone(user, Modules.Sync, "sync_push", details: run.SummaryLabel);
-
-        return ServiceResult<SyncRun>.Success(run);
+        return PushCore(user, manual: true);
     }
+
+    /// <summary>
+    /// Portion 15: the push without the permission question, behind the one-push-at-a-time guard. The
+    /// manual path asks permission in <see cref="Push"/>; the automatic path answers it with the
+    /// owner's own tick (see <see cref="BuildDocument"/>). Ordered, never overlapping: a second push
+    /// while one owns the wire is refused, so the cloud can never receive two half-built documents
+    /// interleaved - and every push rebuilds the whole document, so a skipped tick loses nothing.
+    /// </summary>
+    private ServiceResult<SyncRun> PushCore(User? user, bool manual)
+    {
+        if (Interlocked.CompareExchange(ref _pushRunning, 1, 0) != 0)
+        {
+            return ServiceResult<SyncRun>.Fail(
+                BusyMessage + " - wait a few seconds and press Push again.");
+        }
+
+        try
+        {
+            var built = BuildDocument();
+
+            if (!built.Ok || built.Value is null)
+            {
+                return ServiceResult<SyncRun>.Fail(built.Error ?? "The data could not be prepared.");
+            }
+
+            var envelope = built.Value;
+
+            if (envelope.RowCount == 0)
+            {
+                // An empty shop has nothing to retry: stamp it like an attempt so the automatic
+                // path waits the full interval instead of rebuilding every tick.
+                if (!manual)
+                {
+                    Remember("empty");
+                }
+
+                return ServiceResult<SyncRun>.Fail(
+                    "There is nothing to send yet - this shop has no medicines or bills.");
+            }
+
+            // The table's row, not the document: snake_case columns, `version` as an int, and the document
+            // itself inside `payload` (Spec 25.2). A raw envelope asked for a `format` column and was refused.
+            var json = ToJson(RowFor(envelope));
+            var answer = _cloud.Send(Url, Key, Table, json);
+
+            if (!answer.Ok)
+            {
+                Remember("error");
+
+                var message = WireError(answer);
+
+                if (!manual)
+                {
+                    RememberError(message);
+                }
+
+                _log.Error("Cloud push failed: " + message, new InvalidOperationException(message));
+
+                return ServiceResult<SyncRun>.Fail(message);
+            }
+
+            var run = new SyncRun
+            {
+                At = Clock.Now(),
+                ShopId = envelope.ShopId,
+                Rows = envelope.RowCount,
+                Tables = envelope.Tables.Count,
+                SizeBytes = envelope.SizeBytes
+            };
+
+            Remember("pushed");
+            RememberError(string.Empty);
+            _audit.RecordStandalone(user, Modules.Sync, "sync_push", details: run.SummaryLabel);
+
+            return ServiceResult<SyncRun>.Success(run);
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _pushRunning, 0);
+        }
+    }
+
+    /// <summary>
+    /// Portion 15: cheap and network-free - the shell's tick asks this, not the push itself. Due means
+    /// the owner ticked automatic, the cloud is set up, and the last attempt (success or failure) is
+    /// at least <see cref="AutomaticMinutes"/> old. Failures reschedule like successes, so a dead
+    /// internet is retried every interval, never hammered every tick.
+    /// </summary>
+    public bool IsAutomaticDue()
+    {
+        try
+        {
+            if (!AutomaticEnabled || !Enabled || !IsConfigured)
+            {
+                return false;
+            }
+
+            var last = _settings.GetString(LastSyncKey).Trim();
+
+            if (!DateTime.TryParseExact(last, ShopStampFormat, CultureInfo.InvariantCulture,
+                    DateTimeStyles.None, out var when))
+            {
+                return true;
+            }
+
+            return TimeSource.Now >= when.AddMinutes(AutomaticMinutes);
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The automatic sync check did not run.", exception);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Portion 15: one scheduled push, or null when there is nothing to do. Null also means "it
+    /// failed" - the failure is already in the log, the status and the last-error line, because a
+    /// background tick has no screen to show it on. Never throws: the counter must not fall over
+    /// because the cloud did. Only pushes; bringing data here always stays a deliberate two clicks.
+    /// </summary>
+    public SyncRun? RunAutomaticIfDue()
+    {
+        try
+        {
+            if (!IsAutomaticDue())
+            {
+                return null;
+            }
+
+            // A manual push owns the wire; this tick steps aside and tries at the next interval.
+            // The guard inside PushCore settles the race a peek cannot see.
+            if (IsPushRunning)
+            {
+                return null;
+            }
+
+            var pushed = PushCore(null, manual: false);
+
+            if (!pushed.Ok || pushed.Value is null)
+            {
+                // Lost the race with a manual push: skip quietly, without recording a failure.
+                if (IsBusyFailure(pushed.Error))
+                {
+                    return null;
+                }
+
+                _log.Warn("The automatic push did not run: " + (pushed.Error ?? "unknown reason"));
+                return null;
+            }
+
+            return pushed.Value;
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The automatic push did not run.", exception);
+            return null;
+        }
+    }
+
+    /// <summary>Lock-free peek at the guard; the compare-exchange inside PushCore is the real door.</summary>
+    private bool IsPushRunning => Interlocked.CompareExchange(ref _pushRunning, 0, 0) != 0;
+
+    private static bool IsBusyFailure(string? error) =>
+        (error ?? string.Empty).StartsWith(BusyMessage, StringComparison.Ordinal);
 
     /// <summary>
     /// The cloud table's row for one document: `shop_id`, `shop_name`, `sent_at`, `version`, `payload`.
@@ -1146,11 +1311,22 @@ ORDER BY allocation.id;";
         _settings.SetUiOnly(StatusKey, status);
     }
 
+    /// <summary>
+    /// Portion 15: the last failure in the owner's words, for the Cloud sync page. A wire message
+    /// never carries the key (see <see cref="WireError"/>), and one line is enough - the full story
+    /// stays in the log. Cleared by every successful push, manual or automatic.
+    /// </summary>
+    private void RememberError(string message)
+    {
+        _settings.SetUiOnly(LastErrorKey, Shorten(message, 200));
+    }
+
     private static string StatusText(string raw) => raw.Trim() switch
     {
         "pushed" => "the last push succeeded",
         "applied" => "cloud data was brought here",
         "error" => "the last attempt failed - see the message below",
+        "empty" => "nothing to send yet",
         "not_configured" => "not set up yet",
         _ => "never used on this computer"
     };

@@ -321,6 +321,21 @@ public sealed class SyncStatus
     /// <summary>The owner's tick in Settings -> Cloud sync (`sync.enabled`).</summary>
     public bool Enabled { get; set; }
 
+    /// <summary>Portion 15: the owner's automatic tick (`sync.automaticEnabled`).</summary>
+    public bool AutomaticEnabled { get; set; }
+
+    /// <summary>Portion 15: minutes between automatic pushes, already clamped to 5..1440.</summary>
+    public int AutomaticMinutes { get; set; }
+
+    /// <summary>Portion 15: the last failure in the owner's words, or empty when the last push worked.</summary>
+    public string LastError { get; set; } = string.Empty;
+
+    /// <summary>Portion 15: one line for the page - on or off, and how often.</summary>
+    public string AutomaticLabel => !AutomaticEnabled
+        ? "Automatic push is off - use the Push button."
+        : "Automatic push is on: every " + AutomaticMinutes.ToString(CultureInfo.InvariantCulture)
+          + (AutomaticMinutes == 1 ? " minute." : " minutes.");
+
     public string ConfigLabel => Configured
         ? "Cloud sync is set up"
         : Enabled
