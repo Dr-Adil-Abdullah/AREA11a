@@ -1,3 +1,4 @@
+using System.Security;
 using Area11.Core.Models;
 using Area11.Core.Services;
 using Xunit;
@@ -118,6 +119,44 @@ public sealed class StartupCloseTests
         var startup = Startup(test, machine, user);
 
         var refused = startup.SetMode(TestData.Owner, "protected", @"C:\Area11\Area11.exe");
+
+        Assert.False(refused.Ok);
+        Assert.Contains("administrator", refused.Error!, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Nothing was changed", refused.Error!, StringComparison.Ordinal);
+        Assert.False(machine.Enabled);
+        Assert.False(user.Enabled);
+        Assert.Equal(StartupService.Manual, startup.Mode);
+    }
+
+    [Fact]
+    public void SecurityRefusal_FallsBackToThisAccount()
+    {
+        // The owner's screenshot, 11 Nov 2026: HKLM without an administrator answers with
+        // SecurityException ("Requested registry access is not allowed."), not with
+        // UnauthorizedAccessException - and the fallback must catch that shape too.
+        using var test = new TestDatabase();
+        var machine = new FakeAutoStart { ThrowSecurity = true };
+        var user = new FakeAutoStart();
+        var startup = Startup(test, machine, user);
+
+        var saved = startup.SetMode(TestData.Owner, "auto", @"C:\Area11\Area11.exe");
+
+        Assert.True(saved.Ok, saved.Error);
+        Assert.False(machine.Enabled);
+        Assert.True(user.Enabled);
+        Assert.Equal(StartupService.Auto, startup.Mode);
+        Assert.Contains("this Windows account only", Assert.Single(saved.Warnings));
+    }
+
+    [Fact]
+    public void SecurityRefusalEverywhere_NothingChanges()
+    {
+        using var test = new TestDatabase();
+        var machine = new FakeAutoStart { ThrowSecurity = true };
+        var user = new FakeAutoStart { ThrowSecurity = true };
+        var startup = Startup(test, machine, user);
+
+        var refused = startup.SetMode(TestData.Owner, "auto", @"C:\Area11\Area11.exe");
 
         Assert.False(refused.Ok);
         Assert.Contains("administrator", refused.Error!, StringComparison.OrdinalIgnoreCase);
@@ -306,6 +345,8 @@ public sealed class StartupCloseTests
 
         public bool ThrowAdmin { get; init; }
 
+        public bool ThrowSecurity { get; init; }
+
         public bool ThrowStuck { get; init; }
 
         public void Enable(string exePath)
@@ -313,6 +354,11 @@ public sealed class StartupCloseTests
             if (ThrowAdmin)
             {
                 throw new UnauthorizedAccessException("access denied");
+            }
+
+            if (ThrowSecurity)
+            {
+                throw new SecurityException("Requested registry access is not allowed.");
             }
 
             Enabled = true;

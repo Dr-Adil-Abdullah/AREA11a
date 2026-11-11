@@ -1,3 +1,4 @@
+using System.Security;
 using Area11.Core.Models;
 using Area11.Core.Utils;
 
@@ -112,6 +113,12 @@ public sealed class StartupService
     /// own entry (owner's word, Nov 2026) and the scope sentence says so - a refused save is now
     /// only for a Windows that refuses even that. One entry only: two Run values would open
     /// Area11 twice, and nothing here guards a second copy.
+    ///
+    /// Both refusal shapes are caught: Windows answers a locked HKLM Run list with
+    /// <see cref="SecurityException"/> ("Requested registry access is not allowed.") when the key
+    /// is opened for writing, and with <see cref="UnauthorizedAccessException"/> when the value
+    /// itself cannot be written. Catching only the second one let the first skip the fallback and
+    /// fail the whole save (owner's screenshot, 11 Nov 2026) - that is the bug this catches.
     /// </summary>
     public ServiceResult SetMode(User actor, string mode, string exePath)
     {
@@ -145,14 +152,14 @@ public sealed class StartupService
                     _machine.Enable(exePath);
                     DisableQuietly(_userStore);
                 }
-                catch (UnauthorizedAccessException)
+                catch (Exception refused) when (IsAccessRefusal(refused))
                 {
                     _userStore.Enable(exePath);
                     scope = "user";
                 }
             }
         }
-        catch (UnauthorizedAccessException)
+        catch (Exception refused) when (IsAccessRefusal(refused))
         {
             return ServiceResult.Fail(
                 "Windows refused even this account's own start-up entry. Right-click START-AREA11, " +
@@ -187,6 +194,15 @@ public sealed class StartupService
 
         return ServiceResult.Success();
     }
+
+    /// <summary>
+    /// The two shapes of "Windows said no": a value that cannot be written
+    /// (<see cref="UnauthorizedAccessException"/>) and a key that cannot even be opened for
+    /// writing (<see cref="SecurityException"/> - the HKLM answer without an administrator).
+    /// Everything else (a broken path, a missing list) is a real fault and must keep failing loud.
+    /// </summary>
+    private static bool IsAccessRefusal(Exception exception) =>
+        exception is UnauthorizedAccessException or SecurityException;
 
     private static bool EnabledOf(IAutoStartStore store)
     {
