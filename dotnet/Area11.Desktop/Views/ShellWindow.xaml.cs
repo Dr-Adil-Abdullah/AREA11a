@@ -63,6 +63,19 @@ public partial class ShellWindow : Window
     private string? _leftAt;
 
     /// <summary>
+    /// Repair (owner's v0.60.0 run, Nov 2026): without these two, rapid focus fights (our own
+    /// Activate against the browser, repeated Alt+Tab) queued one check per heartbeat and every
+    /// check showed its own modal box - a pile of fifteen. Now at most one guard box exists, and a
+    /// nag-loop (OK while still outside) waits a few seconds between reminders. The episode stamp
+    /// is untouched: every escape is still recorded when the operator comes back.
+    /// </summary>
+    private bool _guardDialogOpen;
+
+    private DateTime _lastGuardBoxUtc = DateTime.MinValue;
+
+    private static readonly TimeSpan GuardBoxCooldown = TimeSpan.FromSeconds(3);
+
+    /// <summary>
     /// Screen lockdown, first half (owner's word, Nov 2026): while the guard is on, leaving Area11
     /// for another program first shows a small "not allowed" box and pulls the screen back. Our own
     /// boxes (password prompt, message boxes, dialogs) deactivate the frame too, so the check waits
@@ -85,7 +98,8 @@ public partial class ShellWindow : Window
             return;
         }
 
-        _leftAt = Clock.Now();
+        // First stamp wins: without an Activated in between, repeated leavings are one absence.
+        _leftAt ??= Clock.Now();
 
         Dispatcher.BeginInvoke(new Action(() =>
         {
@@ -106,6 +120,14 @@ public partial class ShellWindow : Window
                     }
                 }
 
+                // One box at a time, and no nag-loop: a queued check that arrives while the box
+                // is already open - or seconds after the last one - stays silent. The stamp above
+                // still stands, so the escape is recorded when the operator comes back.
+                if (_guardDialogOpen || DateTime.UtcNow - _lastGuardBoxUtc < GuardBoxCooldown)
+                {
+                    return;
+                }
+
                 // Nobody's home: pull the screen back first, then say why.
                 if (WindowState == WindowState.Minimized)
                 {
@@ -114,9 +136,19 @@ public partial class ShellWindow : Window
 
                 Activate();
 
-                MessageBox.Show(this,
-                    "Going back is not allowed on this screen. This escape was written to the black box.",
-                    "Area11", MessageBoxButton.OK, MessageBoxImage.Warning);
+                _guardDialogOpen = true;
+                _lastGuardBoxUtc = DateTime.UtcNow;
+
+                try
+                {
+                    MessageBox.Show(this,
+                        "Going back is not allowed on this screen. This escape was written to the black box.",
+                        "Area11", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+                finally
+                {
+                    _guardDialogOpen = false;
+                }
 
                 Activate();
             }
