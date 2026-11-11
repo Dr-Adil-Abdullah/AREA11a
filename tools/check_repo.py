@@ -4891,6 +4891,17 @@ def check_phase_one_shell() -> None:
     if "public bool IsCurrentModule" not in nav or "public bool IsCurrentPage" not in nav:
         fail("NavItem no longer exposes distinct active module and active page states")
 
+    # Owner's 2026-11-11 crash (InvalidOperationException, "while a Window is closing"): setting
+    # DialogResult on a modal dialog already closes it, so an explicit Close() on the next line
+    # runs against a closing window and explodes. WPF cannot run here, so the ban is structural.
+    dialog_result = re.compile(r"^\s*(\w+\.)?DialogResult\s*=\s*(true|false)\s*;\s*$")
+    for behind in sorted((DOTNET / "Area11.Desktop").rglob("*.xaml.cs")):
+        lines = behind.read_text(encoding="utf-8-sig").splitlines()
+        for index, line in enumerate(lines[:-1]):
+            if dialog_result.match(line) and lines[index + 1].strip() == "Close();":
+                fail(f"{rel(behind)}:{index + 2} calls Close() right after DialogResult - "
+                     "the dialog already closes itself and this crashes (Nov 2026)")
+
     REPORT.append(
         "Shell: fixed Area11, 44px bell, permission-filtered modules, Counter-first startup, "
         "contextual pages, six shell-owned Settings sections and a separate Products category filter; "

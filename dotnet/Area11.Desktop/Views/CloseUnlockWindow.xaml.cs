@@ -35,8 +35,9 @@ public partial class CloseUnlockWindow : Window
 
     private void OnCancel(object sender, RoutedEventArgs e)
     {
+        // Setting DialogResult already closes a modal dialog - Close() after it crashes the
+        // window while it is closing (owner's 2026-11-11 InvalidOperationException). Never add it.
         DialogResult = false;
-        Close();
     }
 
     private void TryUnlock()
@@ -53,7 +54,7 @@ public partial class CloseUnlockWindow : Window
         }
 
         Unlocked = true;
+        // No Close() after this: DialogResult already closes the dialog (see OnCancel).
         DialogResult = true;
-        Close();
     }
 }
