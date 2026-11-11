@@ -4939,6 +4939,20 @@ def check_phase_one_shell() -> None:
         if app_shell_text.count("TaskbarHider.EnsureVisible()") < 2:
             fail("Kiosk App: the startup heal and the exit restore are not both present")
 
+    # Owner's 2026-11-11 stack trace (VerifyNotClosing <- InternalClose <- ConfirmShellClosing):
+    # calling Close() re-entrantly from inside a Closing handler explodes, so the post-unlock
+    # close must be deferred past the event (Dispatcher.BeginInvoke). Both guarded windows carry
+    # the pattern, so both are pinned: no bare Close() line, and the deferred close must exist.
+    for guarded in (DOTNET / "Area11.Desktop/Views/ShellWindow.xaml.cs",
+                    DOTNET / "Area11.Desktop/Views/LoginWindow.xaml.cs"):
+        guarded_lines = guarded.read_text(encoding="utf-8-sig").splitlines()
+        if not any("BeginInvoke" in line and "Close" in line for line in guarded_lines):
+            fail(f"{rel(guarded)} must defer its post-unlock Close past the Closing event (Nov 2026)")
+        for index, line in enumerate(guarded_lines):
+            if line.strip() == "Close();":
+                fail(f"{rel(guarded)}:{index + 1} calls Close() directly - a guarded window must "
+                     "defer it past Closing or VerifyNotClosing crashes (Nov 2026)")
+
     REPORT.append(
         "Shell: fixed Area11, 44px bell, permission-filtered modules, Counter-first startup, "
         "contextual pages, six shell-owned Settings sections and a separate Products category filter; "

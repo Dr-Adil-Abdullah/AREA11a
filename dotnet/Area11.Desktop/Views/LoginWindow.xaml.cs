@@ -1,3 +1,4 @@
+using System;
 using System.Windows;
 using System.Windows.Input;
 using Area11.Desktop.ViewModels;
@@ -66,8 +67,10 @@ public partial class LoginWindow : Window
 
         if (dialog.ShowDialog() == true && dialog.Unlocked)
         {
+            // Same repair as ShellWindow (owner's 2026-11-11 VerifyNotClosing trace): never a
+            // direct Close() inside Closing - the real close is deferred past the cancelled event.
             AllowClose = true;
-            Close();
+            Dispatcher.BeginInvoke(new Action(Close));
         }
     }
 

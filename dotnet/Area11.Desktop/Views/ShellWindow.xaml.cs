@@ -55,8 +55,12 @@ public partial class ShellWindow : Window
 
         if (dialog.ShowDialog() == true && dialog.Unlocked)
         {
+            // Repair (owner's 2026-11-11 stack trace: VerifyNotClosing): Close() here runs INSIDE
+            // the Closing event, and WPF explodes on a re-entrant close. The event already ends
+            // cancelled (e.Cancel above), so the real close is deferred past it - it arrives as a
+            // fresh Close, sees AllowClose and proceeds. Never call Close() directly here.
             AllowClose = true;
-            Close();
+            Dispatcher.BeginInvoke(new Action(Close));
         }
     }
 
