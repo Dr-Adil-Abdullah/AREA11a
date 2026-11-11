@@ -72,6 +72,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     // ---- Cloud sync (F-48): the key is typed here but never read back onto the screen ----
     private StartupModeOption? _selectedStartupMode;
+    private bool _focusGuardEnabled;
 
     private bool _syncEnabled;
     private string _syncUrl = string.Empty;
@@ -163,6 +164,13 @@ public sealed class SettingsViewModel : ObservableObject
 
     /// <summary>Portion 16: the three ways Area11 may start and close. Owner only.</summary>
     public ObservableCollection<StartupModeOption> StartupModeOptions { get; }
+
+    /// <summary>Screen lockdown (owner, Nov 2026): warn-and-pull-back plus black-box episodes.</summary>
+    public bool FocusGuardEnabled
+    {
+        get => _focusGuardEnabled;
+        set => SetProperty(ref _focusGuardEnabled, value);
+    }
 
     public StartupModeOption? SelectedStartupMode
     {
@@ -610,6 +618,7 @@ public sealed class SettingsViewModel : ObservableObject
         var startupMode = settings.GetString(StartupService.ModeKey);
         SelectedStartupMode = StartupModeOptions.FirstOrDefault(option => option.Key == startupMode)
                               ?? StartupModeOptions[0];
+        FocusGuardEnabled = _services.Focus.Enabled;
 
         // The clock line (v0.35.0, D-92). It says where the time comes from and how far the two
         // clocks were apart when Area11 last looked - a shop whose PC is a day out must see it here.
@@ -994,9 +1003,26 @@ public sealed class SettingsViewModel : ObservableObject
             startupNote = " Startup: " + _services.Startup.ModeLabel + " " + _services.Startup.ScopeText;
         }
 
+        // Screen lockdown (owner's word, Nov 2026): a plain setting, owner-only at the service
+        // guard. Unchanged means untouched, like the startup mode above.
+        var focusNote = string.Empty;
+
+        if (CanChangeStartup && FocusGuardEnabled != _services.Focus.Enabled)
+        {
+            var focus = _services.Settings.Set(FocusGuardService.GuardKey, FocusGuardEnabled, _user);
+
+            if (!focus.Ok)
+            {
+                SetStatus(focus.Error ?? "The screen lock could not be saved.", true);
+                return;
+            }
+
+            focusNote = " Screen lock: " + (FocusGuardEnabled ? "on." : "off.");
+        }
+
         SetStatus($"Saved. Paper {paper.Width} mm, printing " +
                   (AutoPrint ? "automatic." : "manual (use the button on the counter screen).") +
-                  cloudNote + startupNote, false);
+                  cloudNote + startupNote + focusNote, false);
     }
 
     // ---------------------------- Cloud sync ----------------------------

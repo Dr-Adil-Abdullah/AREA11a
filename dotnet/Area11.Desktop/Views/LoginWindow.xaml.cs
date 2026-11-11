@@ -30,7 +30,9 @@ public partial class LoginWindow : Window
             return;
         }
 
-        if (!_viewModel.Services.Startup.IsProtected)
+        // The screen lock implies a protected close (owner's word, Nov 2026): with the lock on,
+        // × asks for the password even when the startup mode itself is not protected.
+        if (!_viewModel.Services.Startup.IsProtected && !_viewModel.Services.Focus.Enabled)
         {
             return;
         }

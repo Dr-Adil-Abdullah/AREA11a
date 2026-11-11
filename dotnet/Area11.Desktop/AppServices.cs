@@ -77,6 +77,7 @@ public sealed class AppServices
         // Do the books add up? A read-only check over the shop's own rows (F-54).
         Books = new BookCheckService(Database, Permissions, Log);
         Lan = new LanService(Database, Audit, Log, Config);
+        Focus = new FocusGuardService(Settings, Audit, Log);
     }
 
     public Database Database { get; }
@@ -153,6 +154,9 @@ public sealed class AppServices
     public SyncService Cloud { get; }
 
     public StartupService Startup { get; }
+
+    /// <summary>The screen lockdown's memory: away-episodes and killed runs (owner, Nov 2026).</summary>
+    public FocusGuardService Focus { get; }
 
     /// <summary>Find any bill and print it again (F-52).</summary>
     public SaleHistoryService History { get; }

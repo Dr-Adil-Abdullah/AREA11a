@@ -256,6 +256,11 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
             return ServiceResult.Fail("Only the owner can change the application icon.");
         }
 
+        if (values.ContainsKey("lockdown.focusGuard") && actor?.IsOwner != true)
+        {
+            return ServiceResult.Fail("Only the owner can change the screen lock.");
+        }
+
         // Owner's word (Nov 2026, reverses D-77): the window title shows his own app name.
         if (values.TryGetValue("brand.appName", out var appName))
         {
@@ -843,6 +848,14 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         // Windows; protected also asks for the password on every close. Manual by default: the
         // shop must opt into auto-start and protection on purpose.
         Text("startup.mode", "manual");
+
+        // ---- Screen lockdown (owner's word, Nov 2026): off until the owner opts in; session.*
+        // is the run's own silent telemetry (kill detection), never audited per write.
+        Flag("lockdown.focusGuard", false);
+        Text("session.lastUser", string.Empty);
+        Text("session.lastStart", string.Empty);
+        Text("session.lastSeen", string.Empty);
+        Flag("session.cleanExit", true);
 
         // ---- Application section labels (E-12/S-05) ----
         // One catalog supplies the defaults, the editor, the Core guard and the WPF resources.

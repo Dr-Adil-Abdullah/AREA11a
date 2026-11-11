@@ -94,6 +94,10 @@ public sealed class ShellViewModel : ObservableObject
         {
             CheckSession();
             TryAutomaticSync();
+
+            // Still alive, still this operator: the next startup reads this stamp to tell a kill
+            // from a clean exit. Never throws, never blocks the till.
+            _services.Focus.Heartbeat(_user.Name);
         };
         _sessionTimer.Start();
     }
@@ -386,6 +390,9 @@ public sealed class ShellViewModel : ObservableObject
     }
 
     public string UserName => _user.Name;
+
+    /// <summary>The operator on this screen - the frame names them in black-box episodes.</summary>
+    public User CurrentUser => _user;
 
     public string RoleText => _user.RoleLabel;
 

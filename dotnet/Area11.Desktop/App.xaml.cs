@@ -56,6 +56,16 @@ public partial class App : Application
             CommandGuard.Sink = (message, exception) => _services!.Log.Error(message, exception);
             RunTrail.Step("database ready");
 
+            // A run that never said goodbye (Task Manager, power loss) is reported now, once, to
+            // the black box - before the sign-in window, so there is no one on the screen to blame
+            // and no way to start without the line being written.
+            var previousRun = _services.Focus.CheckPreviousRun();
+
+            if (!string.IsNullOrWhiteSpace(previousRun))
+            {
+                RunTrail.Step("previous run: " + previousRun);
+            }
+
             // The shop's time (v0.35.0, D-92): asked from the internet in the background, from this
             // moment and every 20 minutes after it. Nothing waits for the answer - if the line is
             // down the sign-in window opens at once on the computer's own clock.
@@ -90,6 +100,22 @@ public partial class App : Application
             CrashReporter.Report("starting the application", exception, note);
             Shutdown(1);
         }
+    }
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        // The opposite of a kill: a Task Manager end never reaches here, so the stamp below is
+        // exactly what the next startup checks for. Never throws - an exit that crashes is the one
+        // thing this override must not become.
+        try
+        {
+            _services?.Focus.MarkCleanExit();
+        }
+        catch (Exception)
+        {
+        }
+
+        base.OnExit(e);
     }
 
     private void OnDispatcherException(object sender, DispatcherUnhandledExceptionEventArgs e)

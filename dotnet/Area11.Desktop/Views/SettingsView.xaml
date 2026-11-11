@@ -155,6 +155,12 @@
                                            Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,6,0,0" />
                                 <TextBlock Text="Honest limit: this stops casual closing, not a Windows administrator, Task Manager, shutdown or power loss. The shop's data survives all of those."
                                            Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,4,0,0" />
+
+                                <CheckBox Content="Lock the screen while signed in"
+                                          IsChecked="{Binding FocusGuardEnabled, Mode=TwoWay}"
+                                          Margin="0,10,0,0" />
+                                <TextBlock Text="When ticked, leaving Area11 for another program first shows a small 'not allowed' box and pulls the screen back, and × asks for the password on every window. Every escape is still written to the black box with who left, at what time, and for how long - and a run ended from Task Manager is caught at the next start."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,4,0,0" />
                             </StackPanel>
                         </Border>
 

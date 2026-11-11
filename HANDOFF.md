@@ -1,6 +1,6 @@
 # HANDOFF - read this first
 
-> **WIP handoff, 10 Nov 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/b4b7bf7b-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/b4b7bf7b-area11a). Owner fixes shipped in v0.59.0 Aegean (Windows/physical pending); v0.58.0 Windows 1163/1163 green; all master portions 4-18 code-complete; Windows/physical verification pending. Older status and approval statements below are historical. This branch is not a tested release.
+> **WIP handoff, 10 Nov 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/b4b7bf7b-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/b4b7bf7b-area11a). Screen lockdown (production Phase 1) shipped in v0.60.0 Basalt (Windows/physical pending); v0.59.0 Aegean owner fixes (Windows/physical pending); v0.58.0 Windows 1163/1163 green; all master portions 4-18 code-complete; Windows/physical verification pending. Older status and approval statements below are historical. This branch is not a tested release.
 
 
 ## Latest handoff — v0.54.0 Dusk
