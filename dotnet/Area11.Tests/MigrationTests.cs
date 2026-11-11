@@ -121,6 +121,119 @@ INSERT INTO settings(key, value, updated_at) VALUES('backup.autoEnabled', 'false
     }
 
     [Fact]
+    public void OwnerNameMigration_RenamesUntouchedOwnerToAdmin_AndKeepsOwnNames()
+    {
+        // An untouched shop carries the seed's exact 'Owner'; a shop that already named its
+        // owner something of its own keeps that choice (migration 033, owner's word, Nov 2026).
+        var folder = Path.Combine(Path.GetTempPath(), "area11-migration-test", Guid.NewGuid().ToString("N"));
+        var legacyFolder = Path.Combine(folder, "legacy");
+        Directory.CreateDirectory(legacyFolder);
+
+        foreach (var source in Directory.GetFiles(TestDatabase.MigrationsFolder, "*.sql"))
+        {
+            var name = Path.GetFileName(source);
+
+            if (!name.StartsWith("033_", StringComparison.Ordinal))
+            {
+                File.Copy(source, Path.Combine(legacyFolder, name));
+            }
+        }
+
+        var path = Path.Combine(folder, "legacy.db");
+
+        try
+        {
+            var database = new Database(path, pooling: false, durable: false);
+            var log = new LogService(Path.Combine(folder, "logs"));
+            var runner = new MigrationRunner(database, log);
+            runner.ApplyPending(legacyFolder);
+
+            database.Tx(connection =>
+            {
+                database.Execute(connection, @"
+INSERT INTO users(id, name, role, password_hash, active, created_at)
+VALUES(1, 'Owner', 'owner', 'hash', 1, '2026-11-01'),
+      (2, 'Someone', 'owner', 'hash', 1, '2026-11-01');");
+            });
+
+            Assert.Equal(1, runner.ApplyPending(TestDatabase.MigrationsFolder));
+
+            using var connection = database.Open();
+            var names = database.Query<string>(connection, "SELECT name FROM users ORDER BY id;");
+
+            Assert.Equal(new[] { "admin", "Someone" }, names);
+        }
+        finally
+        {
+            try { Directory.Delete(folder, recursive: true); } catch (IOException) { }
+        }
+    }
+
+    [Fact]
+    public void OwnerNameMigration_StopsWhenAnotherAdminAlreadyExists()
+    {
+        // Two admins would make every sign-in a guess, so the rename refuses and the shop keeps
+        // working exactly as before - the owner renames one of them by hand instead.
+        var folder = Path.Combine(Path.GetTempPath(), "area11-migration-test", Guid.NewGuid().ToString("N"));
+        var legacyFolder = Path.Combine(folder, "legacy");
+        Directory.CreateDirectory(legacyFolder);
+
+        foreach (var source in Directory.GetFiles(TestDatabase.MigrationsFolder, "*.sql"))
+        {
+            var name = Path.GetFileName(source);
+
+            if (!name.StartsWith("033_", StringComparison.Ordinal))
+            {
+                File.Copy(source, Path.Combine(legacyFolder, name));
+            }
+        }
+
+        var path = Path.Combine(folder, "legacy.db");
+
+        try
+        {
+            var database = new Database(path, pooling: false, durable: false);
+            var log = new LogService(Path.Combine(folder, "logs"));
+            var runner = new MigrationRunner(database, log);
+            runner.ApplyPending(legacyFolder);
+
+            database.Tx(connection =>
+            {
+                database.Execute(connection, @"
+INSERT INTO users(id, name, role, password_hash, active, created_at)
+VALUES(1, 'Owner', 'owner', 'hash', 1, '2026-11-01'),
+      (2, 'AdMin', 'cashier', 'hash', 1, '2026-11-01');");
+            });
+
+            Assert.Equal(1, runner.ApplyPending(TestDatabase.MigrationsFolder));
+
+            using var connection = database.Open();
+            var names = database.Query<string>(connection, "SELECT name FROM users ORDER BY id;");
+
+            Assert.Equal(new[] { "Owner", "AdMin" }, names);
+        }
+        finally
+        {
+            try { Directory.Delete(folder, recursive: true); } catch (IOException) { }
+        }
+    }
+
+    [Fact]
+    public void FirstStart_AdminAndBlankBothSignInWithArea11()
+    {
+        using var test = new TestDatabase();
+        var auth = new AuthService(test.Database, test.Audit, test.Settings, test.Log);
+
+        var typed = auth.Login("admin", "area11");
+        Assert.True(typed.Ok, typed.Error);
+        Assert.True(typed.Value!.IsOwner);
+
+        // The old convenience stays: a blank name still means the owner-role account.
+        Assert.True(auth.Login(string.Empty, "area11").Ok);
+        Assert.False(auth.Login("Owner", "area11").Ok);
+    }
+
+    [Fact]
     public void FirstStart_CreatesOwnerAndCategories_AndDefaultLoginWorks()
     {
         using var test = new TestDatabase();

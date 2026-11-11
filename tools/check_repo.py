@@ -5185,7 +5185,7 @@ def check_master_foundation() -> None:
     tests_path = DOTNET / "Area11.Tests/MasterFoundationTests.cs"
     sync_tests_path = DOTNET / "Area11.Tests/SyncTests.cs"
     paths = (migration_path, models_path, sync_models_path, sync_service_path, settings_path,
-             reset_path, app_services_path, tests_path, sync_tests_path)
+             app_services_path, tests_path, sync_tests_path)
     if any(not path.exists() for path in paths):
         for path in paths:
             if not path.exists():
@@ -5197,7 +5197,6 @@ def check_master_foundation() -> None:
     sync_models = sync_models_path.read_text(encoding="utf-8-sig")
     sync_service = sync_service_path.read_text(encoding="utf-8-sig")
     settings = settings_path.read_text(encoding="utf-8-sig")
-    reset = reset_path.read_text(encoding="utf-8-sig")
     app_services = app_services_path.read_text(encoding="utf-8-sig")
     tests = tests_path.read_text(encoding="utf-8-sig")
     sync_tests = sync_tests_path.read_text(encoding="utf-8-sig")
@@ -5268,25 +5267,12 @@ def check_master_foundation() -> None:
         if f'"{key}"' not in settings:
             fail(f"Master Phase-1 setting contract is missing: {key}")
 
-    for needle, reason in (
-        ('ConfirmationPhrase = "REBUILD ISOLATED TEST COPY"',
-         "isolated rebuild has no exact confirmation barrier"),
-        ('DatabaseFileName = "area11-test.db"',
-         "test rebuild must never target the genuine area11.db filename"),
-        ("IsProtectedLiveFolder(workspace)", "the genuine data-folder guard is not called"),
-        ("ShopConfig.IsUnc(workspace)", "network-share rebuild is not refused"),
-        ("backups.SafetyCopy(\"test-rebuild\")", "an untrimmed technical snapshot is not made"),
-        ("File.Move(staged, databasePath, overwrite: true)", "fresh schema is not staged before replacement"),
-        ("PRAGMA quick_check;", "staged test database is not checked"),
-        ("TryRecoverPrevious(databasePath, technicalBackupPath", "post-replacement failure has no snapshot recovery path"),
-        ("The previous isolated copy was not replaced.", "pre-replacement failure state is not explicit"),
-        ("The database state is uncertain", "failed recovery could falsely claim the database was untouched"),
-        ("test_schema_rebuild", "fresh test copy does not record its rebuild audit row"),
-    ):
-        if needle not in reset:
-            fail(f"Master Phase-1 isolated rebuild: {reason}")
-    if reset.index("backups.SafetyCopy") > reset.index("File.Move(staged, databasePath"):
-        fail("Master Phase-1 isolated rebuild replaces the test database before its technical backup")
+    # v0.65.0 (owner's word, Nov 2026): the isolated test-copy service was removed from the
+    # shipped program - no screen used it, and the release must carry no dev/test machinery. Its
+    # absence is pinned here instead of its shape: resurrecting the file fails the check until
+    # this guard is consciously updated. Restorable from git if the owner's test results ask for it.
+    if reset_path.exists():
+        fail("IsolatedTestCopyService.cs was removed in v0.65.0 - bring it back only on the owner's word")
     if "IsolatedTestCopyService" in app_services:
         fail("The isolated test rebuild must not become a genuine-shop desktop service or demo mode")
 
@@ -5301,9 +5287,6 @@ def check_master_foundation() -> None:
         "MasterSettings_DefaultToSinglePrintManualSyncAndVisibleProfit",
         "MasterSettings_RefuseInvalidBulkFormatAndAutomaticInterval",
         "Migration030_PreservesLegacyProductTextAndAddsHistoryWithoutGuessingLinks",
-        "IsolatedTestRebuild_AlwaysBacksUpBeforeReplacingAndStartsWithoutBusinessRows",
-        "IsolatedTestRebuild_RefusesWrongConfirmationAndUnmarkedExistingFolders",
-        "IsolatedTestRebuild_BackupFaultLeavesTheOriginalIsolatedCopyUntouched",
     ):
         if fact not in tests:
             fail(f"Master Phase-1 regression fact is missing: {fact}")
@@ -5312,8 +5295,8 @@ def check_master_foundation() -> None:
 
     REPORT.append(
         "Master Phase 1: native override/draft/catalog/supplier/drawer contracts, REAL quantities, "
-        "local-only drafts, format-3 parent ordering, guarded isolated rebuild/technical backup and "
-        "fourteen focused regression facts")
+        "local-only drafts, format-3 parent ordering, isolated rebuild removed in v0.65.0 and "
+        "eleven focused regression facts")
 
 
 # ---------------------------------------------------------------------------

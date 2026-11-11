@@ -1,7 +1,6 @@
 <Window Icon="{DynamicResource Area11WindowIcon}" x:Class="Area11.Desktop.Views.LoginWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:utils="clr-namespace:Area11.Core.Utils;assembly=Area11.Core"
         Title="{Binding WindowTitle}"
         Width="460" Height="580"
         WindowStartupLocation="CenterScreen"
@@ -21,17 +20,10 @@
                            Foreground="{StaticResource TextBrush}" Margin="0,16,0,0" />
                 <TextBlock Text="{Binding StoreName}" Style="{StaticResource PageSubtitle}" />
 
-                <DockPanel Margin="0,26,0,0">
-                    <TextBlock Text="Sign in to the counter" Style="{StaticResource SectionTitle}"
-                               VerticalAlignment="Center" />
-                    <Border Background="{StaticResource BrandSoftBrush}" CornerRadius="10"
-                            Padding="8,2" HorizontalAlignment="Right" VerticalAlignment="Center">
-                        <TextBlock Text="{x:Static utils:BuildInfo.Label}" FontSize="10"
-                                   Foreground="{StaticResource BrandDarkBrush}" FontWeight="SemiBold" />
-                    </Border>
-                </DockPanel>
+                <TextBlock Text="Sign in to the counter" Style="{StaticResource SectionTitle}"
+                           Margin="0,26,0,0" />
 
-                <TextBlock Text="User name (leave blank for the owner)" Style="{StaticResource FieldLabel}" />
+                <TextBlock Text="User name (leave blank for the admin)" Style="{StaticResource FieldLabel}" />
                 <TextBox x:Name="NameBox"
                          Text="{Binding UserName, UpdateSourceTrigger=PropertyChanged}" />
 
@@ -65,7 +57,7 @@
                                 <DataTrigger Binding="{Binding CanChangeDefaultPassword}" Value="True">
                                     <Setter Property="Visibility" Value="Visible" />
                                     <Setter Property="Text"
-                                            Value="First start: the owner password is area11. Change it before real use." />
+                                            Value="First start: the admin password is area11. Change it before real use." />
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>

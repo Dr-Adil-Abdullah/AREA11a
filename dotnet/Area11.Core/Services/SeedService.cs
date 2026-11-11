@@ -4,9 +4,9 @@ using Area11.Core.Utils;
 namespace Area11.Core.Services;
 
 /// <summary>
-/// First start only: the owner account and the five example categories (Spec 4.2.3, 8.2.3).
-/// The default owner password is area11 and must be changed on day one — the app says so on
-/// the login screen until it happens.
+/// First start only: the admin (owner-role) account and the five example categories
+/// (Spec 4.2.3, 8.2.3). The account is named `admin` and its default password is area11, which
+/// must be changed on day one — the app says so on the login screen until it happens.
 /// </summary>
 public sealed class SeedService
 {
@@ -34,11 +34,11 @@ public sealed class SeedService
                 {
                     _db.Execute(connection, @"
 INSERT INTO users(name, role, password_hash, active, created_at)
-VALUES('Owner', 'owner', @hash, 1, @at);",
+VALUES('admin', 'owner', @hash, 1, @at);",
                         new { hash = PasswordHasher.Hash("area11"), at = Clock.Now() });
 
                     changed = true;
-                    _log.Info("First start: the owner account was created (password must be changed).");
+                    _log.Info("First start: the admin account was created (password must be changed).");
                 }
 
                 var seededCategories = new[] { "Medicine", "Surgical", "Cosmetics", "General", "Baby Care" };
