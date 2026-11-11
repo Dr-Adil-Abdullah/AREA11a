@@ -1,4 +1,5 @@
 using Area11.Core.Models;
+using Area11.Core.Utils;
 using Area11.Desktop;
 
 namespace Area11.Desktop.ViewModels;
@@ -28,8 +29,17 @@ public sealed class LoginViewModel : ObservableObject
 
     public string StoreName => _services.Settings.GetString("store.name");
 
-    /// <summary>The product title is fixed; the shop name below it remains the store's own data.</summary>
-    public string AppName => "Area11";
+    /// <summary>Owner's word (Nov 2026, reverses D-77): the sign-in screen carries his app name.</summary>
+    public string AppName
+    {
+        get
+        {
+            var name = _services.Settings.GetString("brand.appName").Trim();
+            return name.Length == 0 ? "Area11" : name;
+        }
+    }
+
+    public string WindowTitle => AppName + " — " + BuildInfo.Label;
 
     public string UserName
     {

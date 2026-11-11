@@ -32,6 +32,7 @@ public sealed class SettingsViewModel : ObservableObject
     private readonly Action? _onSaved;
 
     private string _storeName = string.Empty;
+    private string _appDisplayName = "Area11";
     private string _productPhotoSize = "medium";
     private string _storeAddress = string.Empty;
     private string _storePhone = string.Empty;
@@ -264,6 +265,15 @@ public sealed class SettingsViewModel : ObservableObject
         get => _storeName;
         set => SetProperty(ref _storeName, value);
     }
+
+    /// <summary>Owner's word (Nov 2026): his own name on every window, the sign-in screen and the taskbar.</summary>
+    public string AppDisplayName
+    {
+        get => _appDisplayName;
+        set => SetProperty(ref _appDisplayName, value);
+    }
+
+    public bool CanChangeAppName => _user.IsOwner;
 
     public string StoreAddress
     {
@@ -587,6 +597,7 @@ public sealed class SettingsViewModel : ObservableObject
         var photoSize = settings.GetString("appearance.productPhotoSize");
         ProductPhotoSize = photoSize is "large" ? "large" : "medium";
         StoreName = settings.GetString("store.name");
+        AppDisplayName = settings.GetString("brand.appName");
         StoreAddress = settings.GetString("store.address");
         StorePhone = settings.GetString("store.phone");
         FooterNote = settings.GetString("store.footerNote");
@@ -829,6 +840,12 @@ public sealed class SettingsViewModel : ObservableObject
             return;
         }
 
+        if (CanChangeAppName && (AppDisplayName.Trim().Length == 0 || AppDisplayName.Trim().Length > 40))
+        {
+            SetStatus("The application name must be 1 to 40 letters.", true);
+            return;
+        }
+
         // A switch that is ON with half a form behind it would fail on the Cloud sync page with a
         // sentence the owner cannot act on, so the page refuses the combination here (D-66, v0.26.0).
         var keyWillExist = !_syncKeyCleared && (_services.Cloud.HasKey || SyncKey.Trim().Length > 0);
@@ -918,6 +935,14 @@ public sealed class SettingsViewModel : ObservableObject
             }
         }
 
+        // The app name is an owner-only key: a manager's ordinary save must not trip the whole
+        // atomic dictionary on one key, so it travels only when the owner changed it.
+        if (CanChangeAppName && !string.Equals(AppDisplayName.Trim(),
+                _services.Settings.GetString("brand.appName"), StringComparison.Ordinal))
+        {
+            values["brand.appName"] = AppDisplayName.Trim();
+        }
+
         var result = _services.Settings.SetMany(values, _user);
 
         if (!result.Ok)
@@ -966,7 +991,7 @@ public sealed class SettingsViewModel : ObservableObject
                 return;
             }
 
-            startupNote = " Startup: " + _services.Startup.ModeLabel;
+            startupNote = " Startup: " + _services.Startup.ModeLabel + " " + _services.Startup.ScopeText;
         }
 
         SetStatus($"Saved. Paper {paper.Width} mm, printing " +

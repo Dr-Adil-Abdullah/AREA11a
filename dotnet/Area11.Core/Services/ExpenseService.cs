@@ -48,7 +48,7 @@ public sealed class ExpenseService
         _log = log;
     }
 
-    public static string CategoryLabel(string? category) => ExpenseCategories.Label(category);
+    public static string CategoryLabel(string? category) => ExpenseCategoryService.Label(category);
 
     // ------------------------------------------------------------------ expenses
 
@@ -76,10 +76,15 @@ public sealed class ExpenseService
             return ServiceResult<ExpenseResult>.Fail("The amount must be more than zero.");
         }
 
-        var category = (input.Category ?? "other").Trim().ToLowerInvariant();
-        if (Array.IndexOf(Categories, category) < 0)
+        // Owner's word (Nov 2026): the word must be on the shop's own list - silently filing a
+        // mistyped category under "Other" would hide spending in the wrong drawer.
+        var wanted = (input.Category ?? "other").Trim();
+        var category = new ExpenseCategoryService(_db, _audit, _permissions, _log).FindActive(wanted)?.Name;
+
+        if (category is null)
         {
-            category = "other";
+            return ServiceResult<ExpenseResult>.Fail(
+                "Unknown expense category '" + wanted + "'. Add it in Expenses, Manage categories.");
         }
 
         try

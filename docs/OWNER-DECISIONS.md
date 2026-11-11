@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## تازہ status — Owner fixes، v0.59.0 Aegean
+
+تین مانگیں ایک ساتھ: (1) نام+ائیکن ہر جگہ — الگ Settings ٹیب (Shop details سے باہر)، نام ہر کھڑکی/لاگ اِن/ٹاسک بار پر، ائیکن ہر کھڑکی پر، پرچی/WhatsApp پر نام پہلے سے تھا؛ (2) startup — ایڈمن نہ ہو تو اسی اکاؤنٹ پر لگے، سب پر ایڈمن سے، ایک entry، دائرہ صفحے پر لکھا آئے؛ فلمیں روکنا ایپ کا کام نہیں (Windows kiosk الگ ہے)؛ (3) expense categories اپنی — دو قسموں (running/stock) کے نیچے، صرف مالک بنائے، پرانا ریکارڈ ویسا رہے۔ فالتو کوڈ اکٹھا پوچھ کر ہٹے گا۔ پیداواری (production) منصوبہ `docs/PRODUCTION-PLAN.md` میں (5 مرحلے)۔ **1175 written cases، 57/57 static؛ Windows/xUnit اور physical pending** (v0.58.0 کی Windows 1163/1163 گرین ہو چکی)۔
+
 ## تازہ status — Portion 17 مکمل، v0.58.0 Burgundy
 
 تصاویر کا جائزہ + ہر چننے والی فہرست پر کور: مالک نے Portion 17 کا pause ختم کیا اور سب لائنوں پر تصویر مانگی؛ پرانی گیلریاں/کور/سائز درست نکلے اور وہی رہے؛ ایک کور فارمولا + ایک سوال میں پوری فہرست کی تصویریں؛ Purchases، stock-take، Returns اور Reorder سب پر دوا کی تصویر؛ لوگوں کی تصویریں اجازت سے بندھی؛ بیک اپ میں تصویریں، cloud میں کبھی نہیں؛ نئی اردو دستاویز `docs/PHOTOS.md`۔ **1163 written cases، 57/57 static؛ Windows 1163/1163 گرین (10 نومبر 2026)، physical pending**۔ تمام master portions 4-18 code-complete؛ صرف Windows/physical تصدیق باقی۔

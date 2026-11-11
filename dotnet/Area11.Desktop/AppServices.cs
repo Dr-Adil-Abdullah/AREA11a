@@ -45,6 +45,7 @@ public sealed class AppServices
         StockTake = new StockTakeService(Database, Audit, Numbering, Settings, Permissions, Log);
         Shifts = new ShiftService(Database, Audit, Permissions, Log);
         CashOut = new ExpenseService(Database, Audit, Settings, Permissions, Log);
+        ExpenseCategories = new ExpenseCategoryService(Database, Audit, Permissions, Log);
         Recovery = new RecoveryService(Database, Audit, Settings, Permissions, Log);
         Reports = new ReportService(Database, Settings, Permissions, Log);
         Tax = new TaxService(Database, Settings, Permissions, Log);
@@ -70,7 +71,7 @@ public sealed class AppServices
         Cloud = new SyncService(Database, Settings, Audit, Permissions, Log, Backup, new SupabaseTransport());
         // Startup and protected close: the policy is Core, the registry entry is Windows-only, so
         // the store is constructed here at the composition root (Portion 16).
-        Startup = new StartupService(Settings, Auth, Permissions, Audit, Log, new HklmRunStore());
+        Startup = new StartupService(Settings, Auth, Permissions, Audit, Log, new HklmRunStore(), new HkcuRunStore());
         // The bill history and its reprint: the same ReceiptService that printed the original (F-52).
         History = new SaleHistoryService(Database, Receipts, ReturnReceipts, Audit, Permissions, Log);
         // Do the books add up? A read-only check over the shop's own rows (F-54).
@@ -135,6 +136,8 @@ public sealed class AppServices
     public ShiftService Shifts { get; }
 
     public ExpenseService CashOut { get; }
+
+    public ExpenseCategoryService ExpenseCategories { get; }
 
     public RecoveryService Recovery { get; }
 

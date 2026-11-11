@@ -29,7 +29,8 @@ public sealed class StartupService
     private readonly PermissionService _permissions;
     private readonly AuditService _audit;
     private readonly LogService _log;
-    private readonly IAutoStartStore _autostart;
+    private readonly IAutoStartStore _machine;
+    private readonly IAutoStartStore _userStore;
 
     public StartupService(
         SettingsService settings,
@@ -37,14 +38,16 @@ public sealed class StartupService
         PermissionService permissions,
         AuditService audit,
         LogService log,
-        IAutoStartStore autostart)
+        IAutoStartStore machine,
+        IAutoStartStore userStore)
     {
         _settings = settings;
         _auth = auth;
         _permissions = permissions;
         _audit = audit;
         _log = log;
-        _autostart = autostart;
+        _machine = machine;
+        _userStore = userStore;
     }
 
     /// <summary>The saved mode, or manual when the word is missing or unreadable. Never throws.</summary>
@@ -75,6 +78,25 @@ public sealed class StartupService
     /// <summary>True in auto and protected: Windows should start Area11 at sign-in.</summary>
     public bool WantsAutoStart => Mode is Auto or Protected;
 
+    /// <summary>Where the entry actually lives, read live from Windows (never a stored claim).</summary>
+    public string ScopeText
+    {
+        get
+        {
+            if (EnabledOf(_machine))
+            {
+                return "Applies to every Windows account on this PC.";
+            }
+
+            if (EnabledOf(_userStore))
+            {
+                return "Applies to this Windows account only - save again as administrator for every account.";
+            }
+
+            return "No start-up entry is set.";
+        }
+    }
+
     /// <summary>One line for Settings and the sign-in screen.</summary>
     public string ModeLabel => Mode switch
     {
@@ -86,8 +108,10 @@ public sealed class StartupService
     /// <summary>
     /// The owner picks a mode. The Windows entry is written FIRST and the setting only after it
     /// sticks, so the two can never disagree with the setting claiming what Windows never got.
-    /// Needs a Windows administrator for auto and protected (machine-wide entry, owner's word);
-    /// without one the save is refused and nothing changes.
+    /// All accounts first; when no administrator is available the current account still gets its
+    /// own entry (owner's word, Nov 2026) and the scope sentence says so - a refused save is now
+    /// only for a Windows that refuses even that. One entry only: two Run values would open
+    /// Area11 twice, and nothing here guards a second copy.
     /// </summary>
     public ServiceResult SetMode(User actor, string mode, string exePath)
     {
@@ -103,23 +127,35 @@ public sealed class StartupService
             return ServiceResult.Fail("The startup mode must be manual, auto or protected.");
         }
 
-        var previous = Mode;
+        var machineWas = EnabledOf(_machine);
+        var userWas = EnabledOf(_userStore);
+        var scope = "machine";
 
         try
         {
             if (clean == Manual)
             {
-                _autostart.Disable();
+                DisableQuietly(_machine);
+                DisableQuietly(_userStore);
             }
             else
             {
-                _autostart.Enable(exePath);
+                try
+                {
+                    _machine.Enable(exePath);
+                    DisableQuietly(_userStore);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    _userStore.Enable(exePath);
+                    scope = "user";
+                }
             }
         }
         catch (UnauthorizedAccessException)
         {
             return ServiceResult.Fail(
-                "Windows refused: saving this needs a Windows administrator. Right-click START-AREA11, " +
+                "Windows refused even this account's own start-up entry. Right-click START-AREA11, " +
                 "choose Run as administrator, then save again. Nothing was changed.");
         }
         catch (Exception exception)
@@ -134,28 +170,65 @@ public sealed class StartupService
 
         if (!saved.Ok)
         {
-            // The setting refused after Windows accepted: put Windows back the way it was, so the
-            // next reader never finds an entry the setting does not know about.
-            try
-            {
-                if (previous == Manual)
-                {
-                    _autostart.Disable();
-                }
-                else
-                {
-                    _autostart.Enable(exePath);
-                }
-            }
-            catch (Exception exception)
-            {
-                _log.Error("The Windows start-up entry could not be rolled back.", exception);
-            }
+            // The setting refused after Windows accepted: put back exactly what was there before
+            // this call, so the next reader never finds an entry the setting does not know about.
+            RestoreQuietly(_machine, machineWas, exePath);
+            RestoreQuietly(_userStore, userWas, exePath);
 
             return ServiceResult.Fail(saved.Error ?? "The startup mode could not be saved.");
         }
 
+        if (scope == "user")
+        {
+            return ServiceResult.Success(
+                "No administrator was available, so this applies to this Windows account only. " +
+                "Save again as administrator for every account on this PC.");
+        }
+
         return ServiceResult.Success();
+    }
+
+    private static bool EnabledOf(IAutoStartStore store)
+    {
+        try
+        {
+            return store.IsEnabled();
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    private void DisableQuietly(IAutoStartStore store)
+    {
+        try
+        {
+            store.Disable();
+        }
+        catch (Exception exception)
+        {
+            _log.Warn("A start-up entry could not be removed: " + exception.Message);
+        }
+    }
+
+    private void RestoreQuietly(IAutoStartStore store, bool wasEnabled, string exePath)
+    {
+        try
+        {
+            if (wasEnabled)
+            {
+                store.Enable(exePath);
+            }
+            else
+            {
+                store.Disable();
+            }
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The Windows start-up entry could not be rolled back.", exception);
+        }
     }
 
     /// <summary>
@@ -199,14 +272,8 @@ public sealed class StartupService
     {
         try
         {
-            try
-            {
-                _autostart.Disable();
-            }
-            catch (Exception exception)
-            {
-                _log.Warn("The start-up entry could not be removed during recovery: " + exception.Message);
-            }
+            DisableQuietly(_machine);
+            DisableQuietly(_userStore);
 
             _settings.SetUiOnly(ModeKey, Manual);
             _audit.RecordStandalone(null, "Auth", "protection_reset",

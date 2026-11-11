@@ -192,6 +192,10 @@ public sealed class SettingsService
         {
             return ServiceResult.Fail("Application appearance must be saved through the audited settings path.");
         }
+        if (string.Equals(key, "brand.appName", StringComparison.Ordinal))
+        {
+            return ServiceResult.Fail("The application name must be saved through the audited settings path.");
+        }
 
         try
         {
@@ -250,6 +254,22 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         if (values.ContainsKey("appearance.iconFileName") && actor?.IsOwner != true)
         {
             return ServiceResult.Fail("Only the owner can change the application icon.");
+        }
+
+        // Owner's word (Nov 2026, reverses D-77): the window title shows his own app name.
+        if (values.TryGetValue("brand.appName", out var appName))
+        {
+            if (actor?.IsOwner != true)
+            {
+                return ServiceResult.Fail("Only the owner can change the application name.");
+            }
+
+            var clean = appName?.ToString()?.Trim() ?? string.Empty;
+
+            if (clean.Length == 0 || clean.Length > 40)
+            {
+                return ServiceResult.Fail("The application name must be 1 to 40 letters.");
+            }
         }
 
         var preparation = PrepareBulk(values);

@@ -47,9 +47,13 @@
                                        Style="{StaticResource FieldHint}" />
 
                             <TextBlock Text="Category" Style="{StaticResource FieldLabel}" Margin="0,12,0,0" />
-                            <ComboBox ItemsSource="{Binding Categories}" DisplayMemberPath="Label"
-                                      SelectedItem="{Binding Category, Mode=TwoWay}" Width="220"
-                                      HorizontalAlignment="Left" />
+                            <StackPanel Orientation="Horizontal">
+                                <ComboBox ItemsSource="{Binding Categories}" DisplayMemberPath="Label"
+                                          SelectedItem="{Binding Category, Mode=TwoWay}" Width="220" />
+                                <Button Content="Manage categories…" Command="{Binding ManageCategoriesCommand}"
+                                        Visibility="{Binding CanManageCategories, Converter={StaticResource BoolToVis}}"
+                                        Margin="8,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
 
                             <TextBlock Text="What was it" Style="{StaticResource FieldLabel}" Margin="0,10,0,0" />
                             <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}"

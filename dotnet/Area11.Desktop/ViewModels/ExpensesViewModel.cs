@@ -59,6 +59,7 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
         DocEditor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Expense, saveWithParent: true);
         DocEditor.LoadNew();
 
+        ManageCategoriesCommand = new RelayCommand(ManageCategories);
         SaveExpenseCommand = new RelayCommand(SaveExpense);
         SaveDrawingCommand = new RelayCommand(SaveDrawing);
         SearchCommand = new RelayCommand(Search);
@@ -74,10 +75,12 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
 
     public ObservableCollection<BatchRow> Batches { get; } = new();
 
-    /// <summary>The eight categories the shop actually uses; "Other" is last so nothing is ever blocked.</summary>
-    public IReadOnlyList<CategoryOption> Categories { get; } = ExpenseService.Categories
-        .Select(key => new CategoryOption(key, ExpenseService.CategoryLabel(key)))
-        .ToList();
+    /// <summary>The shop's own list (running costs, then stock goods); reloaded on every Load.</summary>
+    public ObservableCollection<CategoryOption> Categories { get; } = new();
+
+    public bool CanManageCategories => _user.IsOwner;
+
+    public RelayCommand ManageCategoriesCommand { get; }
 
     public IReadOnlyList<string> DrawingKinds { get; } = new[] { "Cash", "Goods" };
 
@@ -153,6 +156,35 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
     {
         get => _category;
         set => SetProperty(ref _category, value);
+    }
+
+    private void ManageCategories()
+    {
+        if (!CanManageCategories)
+        {
+            return;
+        }
+
+        ExpenseCategoryWindowDoor.Show(_services, _user);
+        RefreshCategories();
+    }
+
+    private void RefreshCategories()
+    {
+        var keep = Category?.Key ?? "other";
+        Categories.Clear();
+
+        foreach (var row in _services.ExpenseCategories.List())
+        {
+            Categories.Add(new CategoryOption(
+                row.Name, ExpenseCategoryService.Label(row.Name) + " (" + row.TypeLabel + ")"));
+        }
+
+        Category = Categories.FirstOrDefault(item =>
+                string.Equals(item.Key, keep, StringComparison.OrdinalIgnoreCase))
+            ?? Categories.FirstOrDefault(item => item.Key == "other")
+            ?? Categories.FirstOrDefault()
+            ?? new CategoryOption("other", "Other");
     }
 
     public string Title
@@ -285,6 +317,7 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
 
     public void Load()
     {
+        RefreshCategories();
         Rows.Clear();
 
         foreach (var row in _services.CashOut.List())

@@ -1271,6 +1271,18 @@ public sealed class ShellViewModel : ObservableObject
         BellSummaryText = report.BellText;
     }
 
+    /// <summary>Owner's word (Nov 2026, reverses D-77): the window title carries his app name.</summary>
+    public string AppDisplayName
+    {
+        get
+        {
+            var name = _services.Settings.GetString("brand.appName").Trim();
+            return name.Length == 0 ? "Area11" : name;
+        }
+    }
+
+    public string WindowTitle => AppDisplayName + " — " + BuildInfo.Label;
+
     private void ApplyProductPhotoSize()
     {
         if (Application.Current is { } app)
@@ -1282,6 +1294,8 @@ public sealed class ShellViewModel : ObservableObject
 
     private void RefreshHeader()
     {
+        OnPropertyChanged(nameof(AppDisplayName));
+        OnPropertyChanged(nameof(WindowTitle));
         ApplyProductPhotoSize();
         RefreshUserPhoto();
         LabelResources.Apply(_services.AppLabels);

@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:utils="clr-namespace:Area11.Core.Utils;assembly=Area11.Core"
-        Title="{x:Static utils:BuildInfo.WindowTitle}"
+        Title="{Binding WindowTitle}"
         Width="460" Height="580"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
@@ -12,10 +12,9 @@
         <Border Style="{StaticResource Card}" Margin="34" VerticalAlignment="Center" Padding="26">
             <StackPanel>
                 <Border Width="46" Height="46" CornerRadius="12"
-                        Background="{StaticResource BrandBrush}"
+                        BorderThickness="1" BorderBrush="{StaticResource LineBrush}"
                         HorizontalAlignment="Left">
-                    <TextBlock Text="A11" Foreground="White" FontSize="14" FontWeight="Bold"
-                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <Border.Background><ImageBrush ImageSource="{DynamicResource Area11WindowIcon}" Stretch="UniformToFill" /></Border.Background>
                 </Border>
 
                 <TextBlock Text="{Binding AppName}" FontSize="24" FontWeight="Bold"

@@ -33,19 +33,33 @@
             </TabControl.Template>
 
             <!-- ============================ 1. SHOP ============================ -->
+            <TabItem Header="App name &amp; icon">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel>
+                                <TextBlock Text="App name &amp; icon" Style="{StaticResource SectionTitle}" />
+                                <TextBlock Text="Owner: this name shows on every window, the sign-in screen and the taskbar. The icon shows on every window and the taskbar. Slips and WhatsApp keep printing the shop name from Shop details."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+                                <TextBlock Text="App name (1-40 letters)" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding AppDisplayName, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanChangeAppName}" MaxLength="40" />
+                                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                    <Button Content="Choose app icon…" Command="{Binding ChooseAppIconCommand}" IsEnabled="{Binding CanChangeAppIcon}" />
+                                    <Button Content="Use default icon" Command="{Binding ResetAppIconCommand}" IsEnabled="{Binding CanChangeAppIcon}" Margin="8,0,0,0" />
+                                </StackPanel>
+                                <TextBlock Text="Choose a Windows .ico file, no larger than 2 MB. The installed program and existing shortcuts keep their own icon; a photo-inclusive backup includes the chosen file."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
             <TabItem Header="Shop">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
 
                         <Border Style="{StaticResource SettingsGroup}">
                             <StackPanel>
-                                <TextBlock Text="App window icon" Style="{StaticResource SectionTitle}" />
-                                <TextBlock Text="Owner: choose a Windows .ico file. This changes Area11 windows; the installed executable and existing shortcuts keep their own icon. A photo-inclusive backup includes the chosen file."
-                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
-                                <StackPanel Orientation="Horizontal" Margin="0,6,0,12">
-                                    <Button Content="Choose app icon…" Command="{Binding ChooseAppIconCommand}" IsEnabled="{Binding CanChangeAppIcon}" />
-                                    <Button Content="Use default icon" Command="{Binding ResetAppIconCommand}" IsEnabled="{Binding CanChangeAppIcon}" Margin="8,0,0,0" />
-                                </StackPanel>
                                 <TextBlock Text="Product photos" Style="{StaticResource SectionTitle}" />
                                 <TextBlock Text="Choose the thumbnail size in Counter and the Products list. Open a photo to see its gallery."
                                            Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
@@ -57,7 +71,7 @@
                         <Border Style="{StaticResource SettingsGroup}">
                             <StackPanel>
                                 <TextBlock Text="Shop details" Style="{StaticResource SectionTitle}" />
-                                <TextBlock Text="This is printed at the top of every receipt. The application header always says Area11."
+                                <TextBlock Text="This is printed at the top of every receipt. Window titles show the app name from the 'App name &amp; icon' tab."
                                            Style="{StaticResource FieldHint}" />
 
                                 <Grid Margin="0,6,0,0">

@@ -7,7 +7,7 @@ namespace Area11.Core.Services;
 /// </summary>
 public interface IAutoStartStore
 {
-    /// <summary>Start <paramref name="exePath"/> at every Windows sign-in on this PC.</summary>
+    /// <summary>Start <paramref name="exePath"/> at Windows sign-in (every account or this one, per store).</summary>
     void Enable(string exePath);
 
     /// <summary>Remove the entry. Missing already means done, not an error.</summary>

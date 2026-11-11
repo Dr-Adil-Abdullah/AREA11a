@@ -91,18 +91,76 @@ public sealed class StartupCloseTests
     }
 
     [Fact]
-    public void WithoutAdmin_NothingChanges()
+    public void WithoutAdmin_ThisAccountStillStarts()
     {
         using var test = new TestDatabase();
-        var store = new FakeAutoStart { ThrowAdmin = true };
-        var startup = Startup(test, store);
+        var machine = new FakeAutoStart { ThrowAdmin = true };
+        var user = new FakeAutoStart();
+        var startup = Startup(test, machine, user);
+
+        var saved = startup.SetMode(TestData.Owner, "protected", @"C:\Area11\Area11.exe");
+
+        Assert.True(saved.Ok, saved.Error);
+        Assert.False(machine.Enabled);
+        Assert.True(user.Enabled);
+        Assert.Equal(@"C:\Area11\Area11.exe", user.ExePath);
+        Assert.Equal(StartupService.Protected, startup.Mode);
+        Assert.Contains("this Windows account only", Assert.Single(saved.Warnings));
+        Assert.Contains("this Windows account only", startup.ScopeText);
+    }
+
+    [Fact]
+    public void WithoutAdminAnywhere_NothingChanges()
+    {
+        using var test = new TestDatabase();
+        var machine = new FakeAutoStart { ThrowAdmin = true };
+        var user = new FakeAutoStart { ThrowAdmin = true };
+        var startup = Startup(test, machine, user);
 
         var refused = startup.SetMode(TestData.Owner, "protected", @"C:\Area11\Area11.exe");
 
         Assert.False(refused.Ok);
         Assert.Contains("administrator", refused.Error!, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("Nothing was changed", refused.Error!, StringComparison.Ordinal);
-        Assert.False(store.Enabled);
+        Assert.False(machine.Enabled);
+        Assert.False(user.Enabled);
+        Assert.Equal(StartupService.Manual, startup.Mode);
+    }
+
+    [Fact]
+    public void MachineSuccess_RemovesTheUserEntry()
+    {
+        using var test = new TestDatabase();
+        var machine = new FakeAutoStart();
+        var user = new FakeAutoStart();
+        user.Enable(@"C:\Area11\Area11.exe");
+        var startup = Startup(test, machine, user);
+
+        var saved = startup.SetMode(TestData.Owner, "auto", @"C:\Area11\Area11.exe");
+
+        Assert.True(saved.Ok, saved.Error);
+        Assert.True(machine.Enabled);
+        Assert.False(user.Enabled);
+        Assert.Empty(saved.Warnings);
+        Assert.Contains("every Windows account", startup.ScopeText);
+    }
+
+    [Fact]
+    public void Manual_DisablesBothSides()
+    {
+        using var test = new TestDatabase();
+        var machine = new FakeAutoStart();
+        var user = new FakeAutoStart();
+        machine.Enable(@"C:\Area11\Area11.exe");
+        user.Enable(@"C:\Area11\Area11.exe");
+        var startup = Startup(test, machine, user);
+
+        // A previous admin save must not strand an entry neither side removes.
+        var saved = startup.SetMode(TestData.Owner, "manual", @"C:\Area11\Area11.exe");
+
+        Assert.True(saved.Ok, saved.Error);
+        Assert.False(machine.Enabled);
+        Assert.False(user.Enabled);
         Assert.Equal(StartupService.Manual, startup.Mode);
     }
 
@@ -280,13 +338,14 @@ public sealed class StartupCloseTests
         public bool IsEnabled() => Enabled;
     }
 
-    private static StartupService Startup(TestDatabase test, IAutoStartStore store) =>
+    private static StartupService Startup(TestDatabase test, IAutoStartStore machine, IAutoStartStore? user = null) =>
         new(test.Settings,
             new AuthService(test.Database, test.Audit, test.Settings, test.Log),
             new PermissionService(test.Database, test.Log, test.Audit),
             test.Audit,
             test.Log,
-            store);
+            machine,
+            user ?? new FakeAutoStart());
 
     private static User AddStaff(TestDatabase test, string name, string pin)
     {
