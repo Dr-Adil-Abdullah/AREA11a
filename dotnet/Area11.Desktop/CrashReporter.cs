@@ -37,23 +37,54 @@ public static class CrashReporter
             // No console attached (double-clicked exe). The file and the box are enough.
         }
 
+        var text = "Area11 hit a problem " + area + ".\n\n"
+            + (string.IsNullOrWhiteSpace(note) ? string.Empty : note + "\n\n")
+            + (exception?.GetType().Name ?? "Exception") + ": " + message
+            + (string.IsNullOrWhiteSpace(file)
+                ? "\n\nThe details could not be written to a file."
+                : "\n\nFull details were written to:\n" + file)
+            + "\n\nSend this text and that file in the chat.";
+        var caption = "Area11 " + BuildInfo.Version;
+
+        // Kiosk login (v0.66.0) is topmost fullscreen: an ownerless box would open UNDER it and the
+        // shop would stare at a frozen sign-in. Parenting to the open window keeps the box on top.
+        var owner = SafeMainWindow();
+
         try
         {
-            MessageBox.Show(
-                "Area11 hit a problem " + area + ".\n\n"
-                + (string.IsNullOrWhiteSpace(note) ? string.Empty : note + "\n\n")
-                + (exception?.GetType().Name ?? "Exception") + ": " + message
-                + (string.IsNullOrWhiteSpace(file)
-                    ? "\n\nThe details could not be written to a file."
-                    : "\n\nFull details were written to:\n" + file)
-                + "\n\nSend this text and that file in the chat.",
-                "Area11 " + BuildInfo.Version,
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+            if (owner is null)
+            {
+                MessageBox.Show(text, caption, MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            else
+            {
+                try
+                {
+                    MessageBox.Show(owner, text, caption, MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                catch (Exception)
+                {
+                    // The owner was closing under us - the plain box is still better than silence.
+                    MessageBox.Show(text, caption, MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
         }
         catch (Exception)
         {
             // Even the box failed; the console line and the file are still there.
+        }
+    }
+
+    private static Window? SafeMainWindow()
+    {
+        try
+        {
+            var owner = Application.Current?.MainWindow;
+            return owner is not null && owner.IsLoaded && owner.IsVisible ? owner : null;
+        }
+        catch (Exception)
+        {
+            return null;
         }
     }
 }

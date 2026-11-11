@@ -21,6 +21,29 @@ public partial class LoginWindow : Window
         DataContext = viewModel;
         Loaded += (_, _) => NameBox.Focus();
         Closing += ConfirmLoginClosing;
+        Closed += (_, _) => TaskbarHider.Show();
+        ApplyKioskIfAutoMode();
+    }
+
+    /// <summary>
+    /// Kiosk login (owner's word, Nov 2026): on a PC whose mode auto-starts Area11, the sign-in
+    /// fills the whole screen edge to edge and the taskbar is really hidden - staff see nothing
+    /// but the shop. Manual PCs keep the normal window. The taskbar is restored when this window
+    /// closes for ANY reason (see Closed above), and App startup heals a taskbar orphaned by a
+    /// kill during a previous login.
+    /// </summary>
+    private void ApplyKioskIfAutoMode()
+    {
+        if (!_viewModel.Services.Startup.WantsAutoStart)
+        {
+            return;
+        }
+
+        WindowStyle = WindowStyle.None;
+        WindowState = WindowState.Maximized;
+        ResizeMode = ResizeMode.NoResize;
+        Topmost = true;
+        TaskbarHider.Hide();
     }
 
     private void ConfirmLoginClosing(object? sender, System.ComponentModel.CancelEventArgs e)

@@ -1,5 +1,9 @@
 # PROGRESS - the feature board (what is done, what is next)
 
+## Kiosk login — v0.66.0 Crimson (code; Windows/physical pending)
+
+Owner's word + answers (auto-start only / hide for real / login only): on auto/protected PCs the sign-in is borderless-maximized-topmost and the taskbar (all monitors) is really hidden; manual PCs keep the normal window; main screen untouched. Safety: ref-counted Hide/Show, restore on login Closed, startup heal + exit force (first copy only), crash box parented above the login. Includes the dialog-crash repair (4 redundant Close() calls deleted, structural ban in the checker). **1206 written cases (no new facts - Desktop-only), 57/57 static.** Require Windows `ALL GREEN - 1206 of 1206`, rebuild + reinstall, physical proof: fullscreen login, taskbar gone then back after sign-in, crash box visible above login, manual PC normal window.
+
 ## Pre-Phase-6 professional cleanup — v0.65.0 Gold (code + written tests; Windows/physical pending)
 
 Owner's word: first login is admin + area11 (default password stays area11), nothing demo/test-looking ships. Seed names the owner-role account `admin`; migration 033 renames stored untouched `Owner`→`admin` (already-renamed keeps its name, existing-`admin` collision refuses); blank-name sign-in still resolves by role; login screen says admin and lost its version chip (window title keeps `vX (Colour)` so screenshots stay diagnosable). Removed `IsolatedTestCopyService` + 3 facts (no screen used it); absence pinned in `check_repo.py`, restorable from git, final verdict after owner's test results. Kept: crash/trail/binding/logs (support), printer/LAN test buttons (shop work), day-one password nudge. **1206 written cases (net zero: −3 +3), 57/57 static.** No local .NET/WPF run: require Windows `ALL GREEN - 1206 of 1206` and the real-life test (fresh install, admin + area11, change password on day one, old DB upgrades with the rename, badge gone, no test machinery customer-visible).

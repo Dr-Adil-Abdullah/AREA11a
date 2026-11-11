@@ -43,6 +43,12 @@ public partial class App : Application
             return;
         }
 
+        // Kiosk login (owner's word, Nov 2026): only the first copy touches the taskbar. A Task
+        // Manager kill during a previous kiosk login can orphan it hidden - this heals that on the
+        // next start. A refused second copy must NOT run this: it would unhide the taskbar under
+        // the first copy's fullscreen login.
+        TaskbarHider.EnsureVisible();
+
         // A WinExe has no console, so an exception that escapes would vanish. Both hooks write a
         // crash file and print the same text on the console the batch file is watching.
         DispatcherUnhandledException += OnDispatcherException;
@@ -132,6 +138,14 @@ public partial class App : Application
         }
         catch (Exception)
         {
+        }
+
+        // The kiosk login restores the taskbar when it closes, but a crash-box survival or a late
+        // exit path can skip that - leaving the PC with no taskbar. The exit forces it back. Only
+        // the first copy: a refused second copy never hid anything. Never throws (see the class).
+        if (_instance is not null)
+        {
+            TaskbarHider.EnsureVisible();
         }
 
         // Letting go of the single-instance lock. Dispose never throws, and even a kill that skips

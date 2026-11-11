@@ -4902,6 +4902,43 @@ def check_phase_one_shell() -> None:
                 fail(f"{rel(behind)}:{index + 2} calls Close() right after DialogResult - "
                      "the dialog already closes itself and this crashes (Nov 2026)")
 
+    # Kiosk login (owner's word, Nov 2026, v0.66.0): auto-start PCs sign in fullscreen with the
+    # taskbar really hidden. WPF cannot run here, so the wiring is pinned structurally: the login
+    # hides on kiosk entry (auto/protected only) and restores on close, the crash box parents to
+    # the open window (an ownerless box would hide UNDER the topmost login), and the app heals a
+    # kill-orphaned taskbar at startup and forces it back at exit (first copy only, both times).
+    taskbar_path = DOTNET / "Area11.Desktop/TaskbarHider.cs"
+    login_path = DOTNET / "Area11.Desktop/Views/LoginWindow.xaml.cs"
+    crash_path = DOTNET / "Area11.Desktop/CrashReporter.cs"
+    app_shell_path = DOTNET / "Area11.Desktop/App.xaml.cs"
+    for path in (taskbar_path, login_path, crash_path, app_shell_path):
+        if not path.exists():
+            fail(f"Kiosk login is incomplete: {rel(path)} is missing")
+    if all(path.exists() for path in (taskbar_path, login_path, crash_path, app_shell_path)):
+        taskbar_text = taskbar_path.read_text(encoding="utf-8-sig")
+        login_text = login_path.read_text(encoding="utf-8-sig")
+        crash_text = crash_path.read_text(encoding="utf-8-sig")
+        app_shell_text = app_shell_path.read_text(encoding="utf-8-sig")
+        for needle, reason in (
+            ("Shell_TrayWnd", "the taskbar window is not addressed"),
+            ("Shell_SecondaryTrayWnd", "extra monitors keep their taskbar"),
+        ):
+            if needle not in taskbar_text:
+                fail(f"Kiosk TaskbarHider: {reason}")
+        for needle, reason in (
+            ("WantsAutoStart", "fullscreen is not limited to auto-start PCs"),
+            ("WindowStyle.None", "the kiosk login keeps its frame"),
+            ("Topmost = true", "another window can sit above the kiosk login"),
+            ("TaskbarHider.Hide()", "the kiosk login does not hide the taskbar"),
+            ("TaskbarHider.Show()", "a closed login can orphan the taskbar hidden"),
+        ):
+            if needle not in login_text:
+                fail(f"Kiosk LoginWindow: {reason} ({needle})")
+        if "MessageBox.Show(owner" not in crash_text:
+            fail("Kiosk CrashReporter: the crash box can open under the topmost login")
+        if app_shell_text.count("TaskbarHider.EnsureVisible()") < 2:
+            fail("Kiosk App: the startup heal and the exit restore are not both present")
+
     REPORT.append(
         "Shell: fixed Area11, 44px bell, permission-filtered modules, Counter-first startup, "
         "contextual pages, six shell-owned Settings sections and a separate Products category filter; "
