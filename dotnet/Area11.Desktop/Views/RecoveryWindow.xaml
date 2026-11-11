@@ -1,0 +1,35 @@
+<Window Icon="{DynamicResource Area11WindowIcon}" x:Class="Area11.Desktop.Views.RecoveryWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Forgot password - Area11" Height="300" Width="420"
+        WindowStartupLocation="CenterOwner" Background="{StaticResource CanvasBrush}"
+        ResizeMode="NoResize" ShowInTaskbar="False">
+
+    <Grid Margin="18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Forgot the owner password?" Style="{StaticResource SectionTitle}" />
+        <TextBlock Grid.Row="1" Text="Type the recovery word and the owner is signed straight in. Until the owner sets their own word in Settings, the word is area11. Every recovery is written to the black box."
+                   Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,4,0,0" />
+
+        <TextBlock Grid.Row="2" Text="Recovery word" Style="{StaticResource FieldLabel}" Margin="0,10,0,0" />
+        <PasswordBox Grid.Row="3" x:Name="SecretBox" KeyDown="OnSecretKeyDown" />
+
+        <TextBlock Grid.Row="4" x:Name="ErrorText" TextWrapping="Wrap" Margin="0,8,0,0"
+                   Foreground="{StaticResource DangerBrush}" FontWeight="SemiBold" Visibility="Collapsed" />
+
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Content="Back" Style="{StaticResource GhostButton}" MinWidth="110"
+                    Click="OnCancel" IsCancel="True" />
+            <Button Content="Sign in as owner" Style="{StaticResource PrimaryButton}" MinWidth="130" Margin="8,0,0,0"
+                    Click="OnRecover" IsDefault="True" />
+        </StackPanel>
+    </Grid>
+</Window>

@@ -1,11 +1,11 @@
 # AGENTS.md - how to work in this repository
 
-> **WIP handoff, 10 Nov 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/b4b7bf7b-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/b4b7bf7b-area11a). Screen lockdown (production Phase 1) shipped in v0.60.0 Basalt (Windows/physical pending); v0.59.0 Aegean owner fixes (Windows/physical pending); v0.58.0 Windows 1163/1163 green; all master portions 4-18 code-complete; Windows/physical verification pending. Older status and approval statements below are historical. This branch is not a tested release.
+> **WIP handoff, 10 Nov 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/b4b7bf7b-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/b4b7bf7b-area11a). Dead-code review + password doors (production Phase 2) shipped in v0.61.0 Taupe (Windows/physical pending); v0.60.0 Basalt lockdown + v0.59.0 Aegean fixes (Windows/physical pending); v0.58.0 Windows 1163/1163 green; all master portions 4-18 code-complete; Windows/physical verification pending. Older status and approval statements below are historical. This branch is not a tested release.
 
 
 ## Latest handoff — v0.54.0 Dusk
 
-Production Phase 1 shipped (screen lockdown, owner's word) — new `FocusGuardService` (`screen_left`/`session_killed` black-box episodes, 30s heartbeat, kill detection at startup), frame Deactivated warn-and-pull-back + Activated episode, lock-implies-protected-close on both windows, owner-only Settings toggle. **1180 written cases, 57/57 static; Windows build/xUnit and physical checks pending.** v0.59.0 Aegean owner fixes (name/icon, startup fallback, categories) also pending. v0.58.0 Windows 1163/1163 green. All master portions 4-18 code-complete; production plan in `docs/PRODUCTION-PLAN.md` (Phase 1 done, phases 2-6 gated).
+Production Phase 2 shipped (dead-code review + password doors, owner's word) — removed 5 dead methods + 14 dormant keys (`QuietSettingsTests` retarget, workbook leg to `expiry.levels`); kept `discount.mode`/`stock.allowNegative`/`stock.warnNegative` (legacy retention); Staff-tab PIN/password reset via `SetSecret`; login `RecoveryWindow` + `RecoverOwner`/`SetRecoveryWord` (factory area11, hashed own word, shared throttle, word never in black box). **1189 written cases, 57/57 static; Windows build/xUnit and physical checks pending.** v0.60.0 + v0.59.0 also pending. v0.58.0 Windows 1163/1163 green. All master portions 4-18 code-complete; production plan in `docs/PRODUCTION-PLAN.md` (phases 1-2 done, 3-6 gated).
 
 
 ## Latest handoff — v0.43.0 Umber

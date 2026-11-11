@@ -59,4 +59,14 @@ public partial class LoginWindow : Window
     }
 
     private void TrySignIn() => _viewModel.SignIn(SecretBox.Password);
+
+    private void OnForgotPassword(object sender, RoutedEventArgs e)
+    {
+        var dialog = new RecoveryWindow(_viewModel.Services) { Owner = this };
+
+        if (dialog.ShowDialog() == true && dialog.RecoveredUser is not null)
+        {
+            _viewModel.SignInAs(dialog.RecoveredUser);
+        }
+    }
 }

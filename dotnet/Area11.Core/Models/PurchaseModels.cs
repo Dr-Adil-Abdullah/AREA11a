@@ -74,31 +74,3 @@ public sealed class PurchaseInvoiceLine
 
     public string QtyLabel => Qty.Format(QtyEntered) + " " + Unit;
 }
-
-/// <summary>A batch as the counter sees it (nearest expiry first).</summary>
-public sealed class BatchView
-{
-    public int Id { get; set; }
-
-    public int ProductId { get; set; }
-
-    public string BatchNo { get; set; } = string.Empty;
-
-    public string? ExpiryDate { get; set; }
-
-    public string? ExpiryYm { get; set; }
-
-    public double QtyBase { get; set; }
-
-    public long CostPaisa { get; set; }
-
-    public long RetailPaisa { get; set; }
-
-    public bool IsSample { get; set; }
-
-    public string QtyLabel => $"{QtyBase:0.###}";
-
-    public string ExpiryLabel => string.IsNullOrWhiteSpace(ExpiryDate)
-        ? "—"
-        : ExpiryDate;
-}

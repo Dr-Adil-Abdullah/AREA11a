@@ -80,14 +80,23 @@ public sealed class LoginViewModel : ObservableObject
                 return false;
             }
 
-            _services.SignIn(result.Value);
-            Secret = string.Empty;
-            SignedIn?.Invoke(result.Value);
+            SignInAs(result.Value);
             return true;
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    /// <summary>
+    /// Signs in a user the service already proved (the "forgot password" door). The window that
+    /// proved them closes first; this is the same road home a password sign-in takes.
+    /// </summary>
+    public void SignInAs(User user)
+    {
+        _services.SignIn(user);
+        Secret = string.Empty;
+        SignedIn?.Invoke(user);
     }
 }

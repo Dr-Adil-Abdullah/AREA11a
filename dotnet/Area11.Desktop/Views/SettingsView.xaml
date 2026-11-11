@@ -615,6 +615,38 @@
                                                     Command="{Binding AddStaffCommand}" />
                                         </StackPanel>
                                     </Border>
+
+                                    <Border Background="{StaticResource BrandSoftBrush}" CornerRadius="8"
+                                            Padding="12" Margin="0,12,0,0">
+                                        <StackPanel>
+                                            <TextBlock Text="Change a PIN or password" Style="{StaticResource SectionTitle}" />
+                                            <TextBlock Text="Pick a person on the left, type the new PIN - or the new password for the owner - and press the button. The old one stops working at once."
+                                                       Style="{StaticResource FieldHint}" />
+
+                                            <TextBlock Text="New PIN or password" Style="{StaticResource FieldLabel}" />
+                                            <TextBox Text="{Binding ResetStaffSecret, UpdateSourceTrigger=PropertyChanged}" />
+
+                                            <Button Content="Change it for the selected person" Style="{StaticResource PrimaryButton}"
+                                                    HorizontalAlignment="Left" Margin="0,10,0,0"
+                                                    Command="{Binding ResetSecretCommand}" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Background="{StaticResource BrandSoftBrush}" CornerRadius="8"
+                                            Padding="12" Margin="0,12,0,0">
+                                        <StackPanel>
+                                            <TextBlock Text="Your own recovery word" Style="{StaticResource SectionTitle}" />
+                                            <TextBlock Text="If you ever forget the owner password, this word signs you straight in from the sign-in screen. Until you set one, the word is area11 - set your own so nobody else can use it. Empty means back to area11."
+                                                       Style="{StaticResource FieldHint}" />
+
+                                            <TextBlock Text="New recovery word" Style="{StaticResource FieldLabel}" />
+                                            <TextBox Text="{Binding NewRecoveryWord, UpdateSourceTrigger=PropertyChanged}" />
+
+                                            <Button Content="Save this recovery word" Style="{StaticResource PrimaryButton}"
+                                                    HorizontalAlignment="Left" Margin="0,10,0,0"
+                                                    Command="{Binding SaveRecoveryWordCommand}" />
+                                        </StackPanel>
+                                    </Border>
                                 </StackPanel>
                             </ScrollViewer>
                         </Border>

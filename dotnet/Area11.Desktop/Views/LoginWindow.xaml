@@ -44,6 +44,12 @@
                         Margin="0,20,0,0"
                         Click="OnSignInClick" />
 
+                <Button Content="Forgot password?"
+                        Style="{StaticResource GhostButton}"
+                        Height="32"
+                        Margin="0,8,0,0"
+                        Click="OnForgotPassword" />
+
                 <TextBlock Text="{Binding StatusMessage}"
                            Foreground="{StaticResource DangerBrush}"
                            FontSize="12"

@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## تازہ status — Production Phase 2 (فالتو کوڈ + پاس ورڈ) مکمل، v0.61.0 Taupe
+
+مالک کے اکٹھے جواب: چھوٹا فالتو خود ہٹا (5 مردہ methods، 14 سوئی keys، ٹیسٹ نئی keys پر)؛ 3 keys پرانی دکانوں کے لیے رکھیں (`discount.mode`، `stock.allowNegative`، `stock.warnNegative`)؛ Staff ٹیب سے کسی کا بھی PIN/پاس ورڈ بدلے؛ لاگ اِن پر "forgot password" — "area11" لکھے تو مالک لاگ اِن (غلط پر پابندی، اپنا لفظ لگ سکتا ہے، خالی = فیکٹری، بلیک باکس میں لفظ کبھی نہیں)۔ **1189 written cases، 57/57 static؛ Windows/xUnit اور physical pending** (v0.60.0 اور v0.59.0 بھی pending، v0.58.0 کی Windows 1163/1163 گرین)۔ باقی مرحلے 3-6 مالک کی اجازت سے۔
+
 ## تازہ status — Production Phase 1 (lockdown) مکمل، v0.60.0 Basalt
 
 مالک نے Phase 1 بدل دیا: لاگ اِن خود کھلے؛ × پاس ورڈ مانگے اور پیچھے نہ ہٹے؛ چھوڑنے/چھوٹا کرنے پر پہلے چھوٹا "not allowed" باکس + اسکرین واپس؛ شارٹ کٹ یا Task Manager سے فرار بلیک باکس میں (کون/کب/کتنی دیر)۔ لاک آن ہو تو × ہر کھڑکی پر پاس ورڈ مانگے چاہے startup mode کچھ بھی ہو؛ Task Manager سے بند ہونا اگلے اسٹارٹ پر پکڑا جائے؛ لاک پہلے سے بند (off) ہے، مالک ٹک کرے تو چلے۔ **1180 written cases، 57/57 static؛ Windows/xUnit اور physical pending** (v0.59.0 بھی pending، v0.58.0 کی Windows 1163/1163 گرین ہو چکی)۔ باقی مرحلے 2-6 مالک کی اجازت سے۔

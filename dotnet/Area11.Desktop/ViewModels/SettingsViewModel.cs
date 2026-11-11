@@ -91,6 +91,8 @@ public sealed class SettingsViewModel : ObservableObject
     private User? _selectedUser;
     private string _newStaffName = string.Empty;
     private string _newStaffPin = string.Empty;
+    private string _resetStaffSecret = string.Empty;
+    private string _newRecoveryWord = string.Empty;
     private string _selectedRole = "Cashier";
 
     private string _statusText = "Changes are saved when you press Save.";
@@ -111,6 +113,8 @@ public sealed class SettingsViewModel : ObservableObject
         ResetPermissionsCommand = new RelayCommand(ResetPermissions);
         ResetLabelsCommand = new RelayCommand(ResetLabels);
         ToggleActiveCommand = new RelayCommand(ToggleActive);
+        ResetSecretCommand = new RelayCommand(ResetSecret);
+        SaveRecoveryWordCommand = new RelayCommand(SaveRecoveryWord);
         RefreshStaffCommand = new RelayCommand(LoadUsers);
         StaffPhotosCommand = new RelayCommand(OpenStaffPhotos);
         ChooseAppIconCommand = new RelayCommand(ChooseAppIcon);
@@ -213,6 +217,10 @@ public sealed class SettingsViewModel : ObservableObject
     public string ResetLabelsText => _confirmLabelReset ? "Click again to restore all" : "Restore original words";
 
     public RelayCommand ToggleActiveCommand { get; }
+
+    public RelayCommand ResetSecretCommand { get; }
+
+    public RelayCommand SaveRecoveryWordCommand { get; }
 
     public RelayCommand RefreshStaffCommand { get; }
 
@@ -582,6 +590,20 @@ public sealed class SettingsViewModel : ObservableObject
     {
         get => _selectedRole;
         set => SetProperty(ref _selectedRole, value);
+    }
+
+    /// <summary>The new PIN or password the owner types for the selected person (cleared after save).</summary>
+    public string ResetStaffSecret
+    {
+        get => _resetStaffSecret;
+        set => SetProperty(ref _resetStaffSecret, value);
+    }
+
+    /// <summary>The owner's own "forgot password" word (cleared after save; empty means factory).</summary>
+    public string NewRecoveryWord
+    {
+        get => _newRecoveryWord;
+        set => SetProperty(ref _newRecoveryWord, value);
     }
 
     // ----------------------------- Loading ------------------------------
@@ -1201,6 +1223,68 @@ public sealed class SettingsViewModel : ObservableObject
         SetStatus(person.Active
             ? $"{person.Name} has been switched off and can no longer sign in."
             : $"{person.Name} can sign in again.", false);
+    }
+
+    /// <summary>
+    /// The owner's panel for a forgotten secret (Phase 2, owner's word): the selected person gets
+    /// the typed PIN - or the password, when the selected person is the owner. The service guards
+    /// owner-only and writes the black-box line; the box is cleared so the secret never sits on
+    /// the screen.
+    /// </summary>
+    private void ResetSecret()
+    {
+        if (_selectedUser is null)
+        {
+            SetStatus("Select a person first.", true);
+            return;
+        }
+
+        if (!CanManageStaff)
+        {
+            SetStatus("Only the owner can change passwords and PINs.", true);
+            return;
+        }
+
+        var person = _selectedUser;
+        var result = _services.Auth.SetSecret(_user, person.Id, ResetStaffSecret, person.IsOwner);
+
+        if (!result.Ok)
+        {
+            SetStatus(result.Error ?? "The change could not be saved.", true);
+            return;
+        }
+
+        ResetStaffSecret = string.Empty;
+        SetStatus(person.IsOwner
+            ? "The owner password is changed. Sign in with the new one."
+            : $"{person.Name} can now sign in with the new PIN.", false);
+    }
+
+    /// <summary>
+    /// The owner's own "forgot password" word (Phase 2, owner's word). Until this is set, the
+    /// factory word signs the owner in; an empty save hands the door back to the factory word.
+    /// </summary>
+    private void SaveRecoveryWord()
+    {
+        if (!CanManageStaff)
+        {
+            SetStatus("Only the owner can change the recovery word.", true);
+            return;
+        }
+
+        var result = _services.Auth.SetRecoveryWord(_user, NewRecoveryWord);
+
+        if (!result.Ok)
+        {
+            SetStatus(result.Error ?? "The change could not be saved.", true);
+            return;
+        }
+
+        var backToFactory = NewRecoveryWord.Trim().Length == 0;
+        NewRecoveryWord = string.Empty;
+        SetStatus(backToFactory
+            ? "The recovery word is back to the factory word (area11)."
+            : "The recovery word is changed. The factory word no longer works.", false);
     }
 
     private void ResetLabels()

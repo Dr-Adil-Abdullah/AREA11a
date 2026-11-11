@@ -66,7 +66,6 @@ public static class SyncTables
 
     public static bool IsKnown(string table) => Array.IndexOf(Order, table) >= 0;
 
-    public static bool IsRecent(string table) => Array.IndexOf(Recent, table) >= 0;
 }
 
 /// <summary>

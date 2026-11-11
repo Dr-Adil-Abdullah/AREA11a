@@ -170,27 +170,6 @@ ORDER BY i.id;", new { id = purchaseId });
         }
     }
 
-    public ServiceResult<List<BatchView>> GetBatches(int productId)
-    {
-        try
-        {
-            using var connection = _db.Open();
-            var rows = _db.Query<BatchView>(connection, @"
-SELECT id, product_id, batch_no, expiry_date, expiry_ym, qty_base, cost_paisa, retail_paisa, is_sample
-FROM batches
-WHERE product_id = @productId AND active = 1 AND qty_base <> 0
-ORDER BY CASE WHEN expiry_date IS NULL OR expiry_date = '' THEN 1 ELSE 0 END, expiry_date, id;",
-                new { productId });
-
-            return ServiceResult<List<BatchView>>.Success(rows);
-        }
-        catch (Exception exception)
-        {
-            _log.Error($"Batches of product {productId} could not be loaded.", exception);
-            return ServiceResult<List<BatchView>>.Fail("Batches could not be loaded.");
-        }
-    }
-
     private ServiceResult<PurchaseResult> Save(SqliteConnection connection, PurchaseInput input, User user)
     {
         var supplier = _db.QuerySingle<Supplier>(connection,

@@ -1317,9 +1317,8 @@ WHERE active = 1 AND product_id <> @id AND LOWER(TRIM(barcode)) = LOWER(@code);"
         || key.StartsWith("bill.next", StringComparison.Ordinal)
         || key.StartsWith("sync.", StringComparison.Ordinal)
         || key.StartsWith("hardware.", StringComparison.Ordinal)
-        || key is "appearance.iconFileName" or "brand.logoDataUrl" or "stock.allowNegative" or "stock.warnNegative"
-            or "backup.lastRunAt" or "backup.lastFile" or "session.handoverAt" or "session.handoverBy"
-            or "menu.collapsedGroups";
+        || key is "appearance.iconFileName" or "stock.allowNegative" or "stock.warnNegative"
+            or "backup.lastRunAt" or "backup.lastFile" or "session.handoverAt" or "session.handoverBy";
 
     private static string KeyText(object? value) => Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty;
 

@@ -13,6 +13,17 @@ namespace Area11.Core.Services;
 /// </summary>
 public sealed class AuthService
 {
+    /// <summary>
+    /// The factory recovery word (Phase 2, owner's word): "area11", the same word as the
+    /// first-start owner password. While the owner never sets their own word, this word signs the
+    /// owner in through the "forgot password" door. Spaces and case are forgiven ("Area 11" works).
+    /// </summary>
+    public const string FactoryRecoveryWord = "area11";
+
+    public const string RecoveryWordKey = "security.recoveryWordHash";
+
+    private const string RecoveryThrottleKey = "(recovery)";
+
     private const int MaxAttempts = 5;
     private static readonly TimeSpan LockDuration = TimeSpan.FromMinutes(2);
     private static readonly Dictionary<string, AttemptState> Attempts = new(StringComparer.OrdinalIgnoreCase);
@@ -242,6 +253,121 @@ public sealed class AuthService
             return ServiceResult.Fail("The change could not be saved.");
         }
     }
+
+    /// <summary>
+    /// The "forgot password" door (Phase 2, owner's word): the recovery word signs the owner in,
+    /// with the same throttle as the sign-in so guessing is slowed exactly the same way. The black
+    /// box records the recovery - and whether the factory word or the owner's own word opened it.
+    /// </summary>
+    public ServiceResult<User> RecoverOwner(string? word)
+    {
+        var clean = NormalizeWord(word);
+
+        if (clean.Length == 0)
+        {
+            return ServiceResult<User>.Fail("Enter the recovery word.");
+        }
+
+        if (IsLocked(RecoveryThrottleKey, out var remaining))
+        {
+            return ServiceResult<User>.Fail(
+                $"Too many attempts. Try again in {Math.Ceiling(remaining.TotalSeconds)} seconds.");
+        }
+
+        try
+        {
+            using var connection = _db.Open();
+
+            var user = _db.QuerySingle<User>(connection,
+                "SELECT id, name, role, active FROM users WHERE role = 'owner' AND active = 1 ORDER BY id LIMIT 1;");
+
+            if (user is null)
+            {
+                RegisterFailure(RecoveryThrottleKey);
+                _audit.Record(connection, null, "Auth", "owner_recover_failed", "users", null,
+                    details: "no owner account");
+                return ServiceResult<User>.Fail("No owner account exists.");
+            }
+
+            var stored = _settings.GetString(RecoveryWordKey);
+            var factory = stored.Trim().Length == 0;
+            var valid = factory
+                ? clean == FactoryRecoveryWord
+                : PasswordHasher.Verify(clean, stored);
+
+            if (!valid)
+            {
+                RegisterFailure(RecoveryThrottleKey);
+                _audit.Record(connection, user, "Auth", "owner_recover_failed", "users", user.Id.ToString(),
+                    details: "wrong recovery word");
+                return ServiceResult<User>.Fail("The recovery word is not correct.");
+            }
+
+            ClearFailures(RecoveryThrottleKey);
+
+            _db.Execute(connection, "UPDATE users SET last_login_at = @at WHERE id = @id;",
+                new { at = Clock.Now(), id = user.Id });
+
+            _audit.Record(connection, user, "Auth", "owner_recovered", "users", user.Id.ToString(),
+                details: factory ? "factory word" : "own word");
+
+            return ServiceResult<User>.Success(user);
+        }
+        catch (Exception exception)
+        {
+            _log.Error("Owner recovery failed because of a system error.", exception);
+            return ServiceResult<User>.Fail("Sign-in is not possible right now. Please try again.");
+        }
+    }
+
+    /// <summary>
+    /// The owner sets their own recovery word - or an empty word, which hands the door back to the
+    /// factory word so the escape hatch can never be left without one. Only the hash is stored, and
+    /// the black box records that it changed, never the word or its hash.
+    /// </summary>
+    public ServiceResult SetRecoveryWord(User actor, string? word)
+    {
+        if (!actor.IsOwner)
+        {
+            return ServiceResult.Fail("Only the owner can change the recovery word.");
+        }
+
+        var clean = NormalizeWord(word);
+
+        if (clean.Length > 0 && (clean.Length < 4 || clean.Length > 40))
+        {
+            return ServiceResult.Fail("The recovery word must be 4 to 40 letters.");
+        }
+
+        try
+        {
+            var stored = clean.Length == 0 ? string.Empty : PasswordHasher.Hash(clean);
+
+            // The quiet door on purpose: the loud door would write the hash into the black box, and
+            // a hash in the black box is a secret half given away. The honest line below says only
+            // that it changed.
+            var saved = _settings.SetUiOnly(RecoveryWordKey, stored);
+
+            if (!saved.Ok)
+            {
+                return ServiceResult.Fail(saved.Error ?? "The change could not be saved.");
+            }
+
+            _audit.RecordStandalone(actor, "Auth", "recovery_word_changed",
+                clean.Length == 0 ? "back to the factory word" : "changed");
+
+            return ServiceResult.Success();
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The recovery word could not be changed.", exception);
+            return ServiceResult.Fail("The change could not be saved.");
+        }
+    }
+
+    /// <summary>" Area 11 " and "area11" open the same door: trimmed, lowercased, spaceless.</summary>
+    public static string NormalizeWord(string? word) =>
+        (word ?? string.Empty).Trim().ToLowerInvariant().Replace(" ", string.Empty);
 
     public ServiceResult SetActive(User actor, int userId, bool active)
     {

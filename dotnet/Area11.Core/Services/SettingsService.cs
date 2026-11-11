@@ -168,9 +168,9 @@ public sealed class SettingsService
     }
 
     /// <summary>
-    /// A **screen preference** (which menu groups are folded) is stored like any other setting, but it
-    /// is deliberately **not** written into the black box: it changes nothing about money or stock,
-    /// and a shop that folds and unfolds the menu all day would push the real changes off the page.
+    /// A **silent value** (the session heartbeat, a last-seen stamp) is stored like any other setting,
+    /// but it is deliberately **not** written into the black box: it changes nothing about money or
+    /// stock, and a stamp written every 30 seconds would push the real changes off the page.
     ///
     /// The key must still exist in <see cref="Defaults"/> - an unknown key is a bug in the caller,
     /// not a preference, and is refused rather than written.
@@ -709,9 +709,6 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Text("store.footerNote", "Thank you for your visit.");
         Text("store.terms", "Medicines are returnable within 7 days with the original receipt.");
         Text("brand.appName", "Area11");
-        Text("brand.shortName", "A11");
-        Text("brand.logoDataUrl", string.Empty);
-        Text("brand.primaryColor", "#0e7490");
 
         // ---- Billing and numbering (Spec 12.5.12) ----
         Text("bill.purchasePrefix", "PINV-");
@@ -766,14 +763,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
 
         // ---- Receipt layout (the printer itself is declared once, at the top of this method) ----
         Text("receipt.datePosition", "top");
-        Flag("receipt.showOriginalPrice", true);
         Flag("receipt.showDiscount", true);
-        Flag("receipt.showSavings", false);
-        Flag("receipt.showCostColumns", false);
-
-        // ---- Payments ----
-        Raw("payment.methods", "[\"cash\",\"credit\"]");
-        Text("payment.default", "cash");
 
         // ---- Stock ----
         // Both legacy keys stay readable so an old database needs no destructive migration. D-93 removed
@@ -782,9 +772,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Flag("stock.warnNegative", true);
 
         // ---- Returns (U-28, D-02) ----
-        Flag("returns.requireInvoice", true);
         Number("returns.maxDays", 0);
-        Flag("returns.cashierRestockToShelf", false);
 
         // ---- Credit ----
         Flag("credit.blockOverLimit", false);
@@ -794,7 +782,10 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Number("security.pinLength", 4);
         Number("security.autoLockMinutes", 15);
         Number("security.sessionHours", 12);
-        Flag("security.requireLogin", true);
+        // The "forgot password" door (Phase 2, owner's word): empty means the factory word
+        // ("area11") signs the owner in; otherwise this holds the hash of the owner's own word.
+        // Locked out of the workbook - a hash must never travel in a spreadsheet.
+        Text("security.recoveryWordHash", string.Empty);
 
         // ---- Backup (F-36) ----
         Flag("backup.autoEnabled", false);
@@ -826,14 +817,6 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Text("whatsapp.exportDirectory", string.Empty);
         Flag("profit.showMargins", true);
 
-        // ---- Menu (D-51) ----
-        // The folded groups, by key ("stock", "money" ...). A menu fold is a preference, not a
-        // business fact, so it is stored beside the settings but kept out of the black box (see
-        // SetUiOnly below) - a busy day must not bury a real change under a hundred menu clicks.
-        Raw("menu.collapsedGroups", "[]");
-        // The owner's tick: keep every group open and take the folding away altogether.
-        Flag("menu.pinnedOpen", false);
-
         // ---- Session and the drawer (v0.35.0, D-92) ----
         // How long the counter may stand untouched before the person is signed out (hours; 0 = only
         // the 12-hour limit). Two hours by default: a cashier who bills all day never reaches it, one
@@ -863,9 +846,6 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         {
             Text(label.SettingKey, label.DefaultText);
         }
-
-        // ---- Owner ----
-        Text("owner.name", "Owner");
 
         return map;
     }
