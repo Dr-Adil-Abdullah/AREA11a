@@ -1,5 +1,9 @@
 # PROGRESS - the feature board (what is done, what is next)
 
+## Green run — v0.66.0 Crimson Windows 1206/1206 (11 Nov 2026, owner evidence)
+
+`RUN-TESTS.cmd` on the owner's PC: **Passed 1206, Failed 0, Total 1206 (1m40s)** - the 9 repaired expectations (8 seed-name + 1 FocusGuard span) are proven, and the v0.64 auth reds stayed green. xUnit verification is DONE for v0.66.0; what remains is physical: rebuild + reinstall (the installed v0.64.0 binary still carries both dialog crashes), kiosk proof (fullscreen, taskbar gone/back, crash box above login, manual PC normal) and the real-life shop test.
+
 ## Kiosk login — v0.66.0 Crimson (code; Windows/physical pending)
 
 Owner's word + answers (auto-start only / hide for real / login only): on auto/protected PCs the sign-in is borderless-maximized-topmost and the taskbar (all monitors) is really hidden; manual PCs keep the normal window; main screen untouched. Safety: ref-counted Hide/Show, restore on login Closed, startup heal + exit force (first copy only), crash box parented above the login. Includes the dialog-crash repair (4 redundant Close() calls deleted, structural ban in the checker). **1206 written cases (no new facts - Desktop-only), 57/57 static.** Require Windows `ALL GREEN - 1206 of 1206`, rebuild + reinstall, physical proof: fullscreen login, taskbar gone then back after sign-in, crash box visible above login, manual PC normal window.
