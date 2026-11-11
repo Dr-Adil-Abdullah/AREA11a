@@ -442,4 +442,30 @@ public static class InstallService
             return 3;
         }
     }
+
+    /// <summary>
+    /// Runs the installer's auto-start step and answers with an exit code setup can read:
+    ///   0 - start-with-Windows is on for every account;
+    ///   2 - refused with a sentence (not really an administrator, bad path) - setup shows the
+    ///       sentence and carries on, because the program itself is installed and works;
+    ///   3 - something unexpected broke - setup shows its own fallback sentence and carries on.
+    ///
+    /// The sentence also goes to the console, so running this verb by hand in a terminal says what
+    /// happened instead of answering in exit codes only.
+    /// </summary>
+    public static int RunEnableAutoStart(StartupService startup, string exePath)
+    {
+        try
+        {
+            var result = startup.SetMachineAutoStart(exePath);
+
+            Console.WriteLine(result.Ok ? "Start-with-Windows is on for every account." : result.Error);
+
+            return result.Ok ? 0 : 2;
+        }
+        catch (Exception)
+        {
+            return 3;
+        }
+    }
 }

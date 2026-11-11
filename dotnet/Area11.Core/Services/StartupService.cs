@@ -196,6 +196,54 @@ public sealed class StartupService
     }
 
     /// <summary>
+    /// The installer's path (Phase 5, owner's word): machine-wide start-with-Windows plus
+    /// `startup.mode = auto`, run once by `Area11.exe --enable-autostart` at the end of setup.
+    /// Machine ONLY, deliberately no this-account fallback: setup runs elevated, often as a
+    /// different administrator account, so a fallback would register the wrong person's sign-in.
+    /// When Windows refuses, the install itself still stands - the sentence says where to switch
+    /// auto-start on by hand (Settings, Shop), and setup shows it without failing.
+    /// </summary>
+    public ServiceResult SetMachineAutoStart(string exePath)
+    {
+        if (string.IsNullOrWhiteSpace(exePath))
+        {
+            return ServiceResult.Fail("The installed program's path is needed for the start-up entry.");
+        }
+
+        var machineWas = EnabledOf(_machine);
+
+        try
+        {
+            _machine.Enable(exePath);
+        }
+        catch (Exception refused) when (IsAccessRefusal(refused))
+        {
+            return ServiceResult.Fail(
+                "Windows refused the machine-wide start-up entry. Area11 is installed and works - " +
+                "switch auto-start on in Settings, Shop (run as administrator for every account).");
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The machine-wide start-up entry could not be written by setup.", exception);
+
+            return ServiceResult.Fail(
+                "The machine-wide start-up entry could not be written (" + exception.Message + "). " +
+                "Area11 is installed and works - switch auto-start on in Settings, Shop.");
+        }
+
+        var saved = _settings.Set(ModeKey, Auto, actor: null);
+
+        if (!saved.Ok)
+        {
+            RestoreQuietly(_machine, machineWas, exePath);
+
+            return ServiceResult.Fail(saved.Error ?? "The startup mode could not be saved.");
+        }
+
+        return ServiceResult.Success();
+    }
+
+    /// <summary>
     /// The two shapes of "Windows said no": a value that cannot be written
     /// (<see cref="UnauthorizedAccessException"/>) and a key that cannot even be opened for
     /// writing (<see cref="SecurityException"/> - the HKLM answer without an administrator).

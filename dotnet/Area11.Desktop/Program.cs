@@ -25,6 +25,25 @@ public static class Program
             return InstallService.RunCheck(args);
         }
 
+        // Phase 5: setup's last step runs the installed program against itself - the exe that runs
+        // IS the installed copy, so its own path is the one Windows must start (no argument to get
+        // wrong). The database is created and migrated here if this is a fresh PC; like every CLI
+        // verb, this returns before any window, any trail or the single-instance lock.
+        if (args.Length > 0 && string.Equals(args[0], "--enable-autostart", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                var services = AppServices.Create();
+                var exePath = Environment.ProcessPath ?? string.Empty;
+
+                return InstallService.RunEnableAutoStart(services.Startup, exePath);
+            }
+            catch (Exception)
+            {
+                return 3;
+            }
+        }
+
         // Before the first window: WPF writes a binding fault to the debug output and carries on
         // with an empty box. Nothing on a shop PC can see that stream, so the page just "has no
         // data" - this sends every one of those lines to %TEMP%\Area11\binding-errors.txt, where

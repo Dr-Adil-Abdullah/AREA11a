@@ -167,6 +167,81 @@ public sealed class StartupCloseTests
     }
 
     [Fact]
+    public void InstallAutoStart_EnablesMachineOnly_AndSavesAutoMode()
+    {
+        // Setup runs elevated: the entry must be machine-wide, and the this-account fallback must
+        // NOT run - setup's administrator is usually not the shop's Windows account.
+        using var test = new TestDatabase();
+        var machine = new FakeAutoStart();
+        var user = new FakeAutoStart();
+        var startup = Startup(test, machine, user);
+
+        var enabled = startup.SetMachineAutoStart(@"C:\Program Files\Area11\Area11.exe");
+
+        Assert.True(enabled.Ok, enabled.Error);
+        Assert.True(machine.Enabled);
+        Assert.False(user.Enabled);
+        Assert.Equal(StartupService.Auto, startup.Mode);
+    }
+
+    [Fact]
+    public void InstallAutoStart_RefusedMachine_TouchesNothing_AndNamesSettings()
+    {
+        using var test = new TestDatabase();
+        var machine = new FakeAutoStart { ThrowSecurity = true };
+        var user = new FakeAutoStart();
+        var startup = Startup(test, machine, user);
+
+        var refused = startup.SetMachineAutoStart(@"C:\Program Files\Area11\Area11.exe");
+
+        Assert.False(refused.Ok);
+        Assert.Contains("Settings, Shop", refused.Error!, StringComparison.Ordinal);
+        Assert.Contains("installed and works", refused.Error!, StringComparison.Ordinal);
+        Assert.False(machine.Enabled);
+        Assert.False(user.Enabled);
+        Assert.Equal(StartupService.Manual, startup.Mode);
+    }
+
+    [Fact]
+    public void InstallAutoStart_BlankPath_IsRefused()
+    {
+        using var test = new TestDatabase();
+        var machine = new FakeAutoStart();
+        var startup = Startup(test, machine);
+
+        var refused = startup.SetMachineAutoStart("  ");
+
+        Assert.False(refused.Ok);
+        Assert.False(machine.Enabled);
+        Assert.Equal(StartupService.Manual, startup.Mode);
+    }
+
+    [Fact]
+    public void RunEnableAutoStart_AnswersZeroOnSuccess()
+    {
+        using var test = new TestDatabase();
+        var startup = Startup(test, new FakeAutoStart());
+
+        Assert.Equal(0, InstallService.RunEnableAutoStart(startup, @"C:\Program Files\Area11\Area11.exe"));
+        Assert.Equal(StartupService.Auto, startup.Mode);
+    }
+
+    [Fact]
+    public void RunEnableAutoStart_AnswersTwoOnRefusal()
+    {
+        using var test = new TestDatabase();
+        var startup = Startup(test, new FakeAutoStart { ThrowSecurity = true });
+
+        Assert.Equal(2, InstallService.RunEnableAutoStart(startup, @"C:\Program Files\Area11\Area11.exe"));
+    }
+
+    [Fact]
+    public void RunEnableAutoStart_AnswersThreeOnTheUnexpected()
+    {
+        Assert.Equal(3, InstallService.RunEnableAutoStart(null!, @"C:\Program Files\Area11\Area11.exe"));
+    }
+
+    [Fact]
     public void MachineSuccess_RemovesTheUserEntry()
     {
         using var test = new TestDatabase();

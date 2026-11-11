@@ -1,5 +1,10 @@
 # Installing Area11 on the shop PC (F-47, D-19)
 
+> **Phase 5 added the single-file path (recommended):** `tools\MAKE-SETUP.cmd` builds one
+> `dist\Area11-Setup-vX.exe` (double-click, permission question, installed) - see the Urdu guide
+> `docs/INSTALL-URDU.md`. This page documents the older zip-plus-script path, which stays as the
+> backup; both install the same program to the same folders and never touch the shop's data.
+
 > **اردو خلاصہ:** `tools\MAKE-INSTALLER.cmd` بلڈ کمپیوٹر پر ایک بار چلائیں۔ جو فولڈر `dist\Area11-setup`
 > بنتا ہے وہ USB پر دکان کے کمپیوٹر پر لے جائیں اور اُس میں `INSTALL-AREA11.cmd` پر ڈبل کلک کریں۔ ونڈوز
 > اجازت مانگے گی — **Yes** دبائیں۔ پروگرام `C:\Program Files\Area11` میں جاتا ہے، ڈیسک ٹاپ اور سٹارٹ مینو
