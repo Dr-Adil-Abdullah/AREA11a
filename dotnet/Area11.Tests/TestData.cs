@@ -13,6 +13,14 @@ internal static class TestData
 {
     public static readonly User Owner = new() { Id = 1, Name = "Owner", Role = "owner" };
 
+    /// <summary>
+    /// The name the seed gives the owner-role account (SeedService + migration 033). Tests that read
+    /// a name back through the users table (shifts, expenses, stock history, alerts, shift report)
+    /// must expect THIS, not the fixture above: the fixture is only the actor passed in, while those
+    /// services resolve the stored name by id.
+    /// </summary>
+    public const string SeedOwnerName = "admin";
+
     /// <summary>Adds a medicine that has stock sitting on one batch (expiry far away).</summary>
     public static int AddProduct(
         TestDatabase test,

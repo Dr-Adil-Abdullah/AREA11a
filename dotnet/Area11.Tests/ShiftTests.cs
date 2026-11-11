@@ -64,7 +64,7 @@ INSERT INTO users(name, role, active, created_at) VALUES('Cashier', 'cashier', 1
 
         var current = Shifts(test).Current();
         Assert.NotNull(current);
-        Assert.Equal("Owner", current!.OpenedBy);
+        Assert.Equal(TestData.SeedOwnerName, current!.OpenedBy);
     }
 
     [Fact]
@@ -340,7 +340,7 @@ INSERT INTO users(name, role, active, created_at) VALUES('Cashier', 'cashier', 1
         Assert.Equal(55000L, row.ExpectedPaisa);
         Assert.Equal(55000L, row.ActualPaisa);
         Assert.Equal(0L, row.DifferencePaisa);
-        Assert.Equal("Owner", row.OpenedBy);
+        Assert.Equal(TestData.SeedOwnerName, row.OpenedBy);
         Assert.Equal("counted twice", row.NoteLabel);
     }
 

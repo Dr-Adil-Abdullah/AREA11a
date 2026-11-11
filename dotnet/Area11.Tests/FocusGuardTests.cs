@@ -28,7 +28,8 @@ public sealed class FocusGuardTests
         Assert.Contains("Ali left the screen for 3 sec", seconds);
         Assert.Contains("Ali left the screen for 2 min", minutes);
         Assert.Contains("Ali left the screen for 1 hr 5 min", hours);
-        Assert.Contains("14:00:00 to 14:00:03", seconds);
+        // The black-box line keeps the full date and time - "which day" matters as much as "which hour".
+        Assert.Contains("2026-11-10 14:00:00 to 2026-11-10 14:00:03", seconds);
         Assert.Equal(3, Audits(test, "screen_left"));
     }
 

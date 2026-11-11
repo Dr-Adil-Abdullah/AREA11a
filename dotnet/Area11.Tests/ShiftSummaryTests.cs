@@ -92,7 +92,7 @@ VALUES(@userId, datetime('now','localtime',@from), datetime('now','localtime',@a
 
         var person = Assert.Single(report.People);
 
-        Assert.Equal("Owner", person.Name);
+        Assert.Equal(TestData.SeedOwnerName, person.Name);
         Assert.Equal("1 shift", person.ShiftsLabel);
         Assert.Equal("exact", person.DifferenceLabel);
         Assert.Equal("1 exact", person.PatternLabel);
@@ -144,7 +144,7 @@ VALUES(@userId, datetime('now','localtime',@from), datetime('now','localtime',@a
         Assert.Equal(2, report.PeopleCount);
         Assert.Equal(2, report.ClosedShifts);
 
-        var owner = report.People.Single(person => person.Name == "Owner");
+        var owner = report.People.Single(person => person.Name == TestData.SeedOwnerName);
         var cashier = report.People.Single(person => person.Name == "Bilal");
 
         Assert.Equal(-100L, owner.DifferencePaisa);
@@ -235,7 +235,7 @@ VALUES(@userId, datetime('now','localtime',@from), datetime('now','localtime',@a
         // Only the owner's counted drawer is in the report; Bilal's is open and has no count yet.
         var person = Assert.Single(report.People);
 
-        Assert.Equal("Owner", person.Name);
+        Assert.Equal(TestData.SeedOwnerName, person.Name);
         Assert.Equal(-500L, person.DifferencePaisa);
         Assert.Equal(1, report.ClosedShifts);
 

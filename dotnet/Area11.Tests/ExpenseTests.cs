@@ -298,7 +298,7 @@ SELECT type AS type, qty_base AS qtyBase FROM stock_movements WHERE product_id =
         var expense = Assert.Single(rows, row => row.Kind == "expense");
         Assert.Equal("Rent", expense.KindLabel);
         Assert.Equal("Rs 1,200", expense.CashLabel);
-        Assert.Equal("Owner", expense.WhoLabel);
+        Assert.Equal(TestData.SeedOwnerName, expense.WhoLabel);
 
         var goods = Assert.Single(rows, row => row.Kind == "drawing_goods");
         Assert.False(goods.TookCash);

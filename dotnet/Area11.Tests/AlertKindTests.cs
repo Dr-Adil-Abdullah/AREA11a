@@ -146,7 +146,7 @@ VALUES(@userId, @at, 0, 0, 0, 0, 'open');",
         Assert.Equal("Drawer left open", drawer.TypeLabel);
         Assert.True(drawer.IsLight);
         Assert.False(drawer.IsSerious);
-        Assert.Contains("Owner", drawer.Detail);
+        Assert.Contains(TestData.SeedOwnerName, drawer.Detail);
     }
 
     [Fact]
