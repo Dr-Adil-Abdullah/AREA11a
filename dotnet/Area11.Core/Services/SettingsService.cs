@@ -788,7 +788,10 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Text("security.recoveryWordHash", string.Empty);
 
         // ---- Backup (F-36) ----
-        Flag("backup.autoEnabled", false);
+        // On since v0.63.0 (owner's word, Nov 2026: data loss is the biggest fear). A new shop is
+        // protected from its first day; an old shop is switched on by migration 032; the Backup
+        // page keeps its one-tick switch for any shop that wants it off.
+        Flag("backup.autoEnabled", true);
         Number("backup.everyHours", 24);
         Number("backup.keep", 7);
         // Bookkeeping for the daily backup: when it last ran and which file it made. Kept out of the

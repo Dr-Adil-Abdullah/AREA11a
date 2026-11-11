@@ -73,6 +73,54 @@ public sealed class MigrationTests
     }
 
     [Fact]
+    public void BackupAutoMigration_TurnsAnUntouchedFalseToTrue()
+    {
+        // The old shop: the key was seeded false and never presented as a choice, so a stored
+        // false is an untouched shop - migration 032 switches it on (owner's word, Nov 2026).
+        var folder = Path.Combine(Path.GetTempPath(), "area11-migration-test", Guid.NewGuid().ToString("N"));
+        var legacyFolder = Path.Combine(folder, "legacy");
+        Directory.CreateDirectory(legacyFolder);
+
+        foreach (var source in Directory.GetFiles(TestDatabase.MigrationsFolder, "*.sql"))
+        {
+            var name = Path.GetFileName(source);
+
+            if (!name.StartsWith("032_", StringComparison.Ordinal))
+            {
+                File.Copy(source, Path.Combine(legacyFolder, name));
+            }
+        }
+
+        var path = Path.Combine(folder, "legacy.db");
+
+        try
+        {
+            var database = new Database(path, pooling: false, durable: false);
+            var log = new LogService(Path.Combine(folder, "logs"));
+            var runner = new MigrationRunner(database, log);
+            runner.ApplyPending(legacyFolder);
+
+            database.Tx(connection =>
+            {
+                database.Execute(connection, @"
+INSERT INTO settings(key, value, updated_at) VALUES('backup.autoEnabled', 'false', '2026-11-01');");
+            });
+
+            Assert.Equal(1, runner.ApplyPending(TestDatabase.MigrationsFolder));
+
+            using var connection = database.Open();
+            var value = database.Scalar(connection,
+                "SELECT value FROM settings WHERE key = 'backup.autoEnabled';")?.ToString();
+
+            Assert.Equal("true", value);
+        }
+        finally
+        {
+            try { Directory.Delete(folder, recursive: true); } catch (IOException) { }
+        }
+    }
+
+    [Fact]
     public void FirstStart_CreatesOwnerAndCategories_AndDefaultLoginWorks()
     {
         using var test = new TestDatabase();

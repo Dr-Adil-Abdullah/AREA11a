@@ -13,6 +13,7 @@ public partial class App : Application
     private AppServices? _services;
     private LoginWindow? _loginWindow;
     private bool _loggingOut;
+    private SingleInstanceGuard? _instance;
 
     /// <summary>
     /// Portion 16: true once Windows announced it is going down. The protected-close prompt must
@@ -23,6 +24,24 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // One shop, one copy (owner's word, Nov 2026): asked FIRST, before the database or any
+        // window exists, so the refused copy leaves nothing behind - no window, no log line it
+        // would have to explain, and no second writer on the shop's file.
+        _instance = SingleInstanceGuard.TryAcquire(SingleInstanceGuard.ApplicationName);
+
+        if (!_instance.IsFirst)
+        {
+            _instance.Dispose();
+            _instance = null;
+
+            MessageBox.Show(
+                "Area11 is already running on this Windows account. Use the open window - " +
+                "a second copy is not allowed, because two copies would sell from the same shelf.",
+                "Area11", MessageBoxButton.OK, MessageBoxImage.Information);
+            Shutdown();
+            return;
+        }
 
         // A WinExe has no console, so an exception that escapes would vanish. Both hooks write a
         // crash file and print the same text on the console the batch file is watching.
@@ -114,6 +133,11 @@ public partial class App : Application
         catch (Exception)
         {
         }
+
+        // Letting go of the single-instance lock. Dispose never throws, and even a kill that skips
+        // this override is safe: the mutex dies with the process and the next start takes it over.
+        _instance?.Dispose();
+        _instance = null;
 
         base.OnExit(e);
     }
