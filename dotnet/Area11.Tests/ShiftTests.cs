@@ -220,6 +220,37 @@ INSERT INTO users(name, role, active, created_at) VALUES('Cashier', 'cashier', 1
     }
 
     [Fact]
+    public void AnOnlineSupplierPayment_DoesNotMoveTheDrawer()
+    {
+        using var test = new TestDatabase();
+        var supplier = TestData.AddSupplier(test);
+        var product = TestData.AddProduct(test, batchQty: 0);
+
+        Assert.True(Shifts(test).Open(TestData.Owner, 50000, null).Ok);
+
+        // Rs 40 of the delivery paid from the bank, not from the till.
+        var bought = TestData.Purchases(test).Create(new PurchaseInput
+        {
+            SupplierId = supplier,
+            PaidPaisa = 4000,
+            PaidMethod = "online",
+            Lines = new List<PurchaseLineInput>
+            {
+                new() { ProductId = product, Unit = "box", Quantity = 2, BatchNo = "B-9", Expiry = "2027-06",
+                        CostPaisa = 20000, RetailPaisa = 30000 }
+            }
+        }, TestData.Owner);
+
+        Assert.True(bought.Ok, bought.Error);
+
+        var shift = Shifts(test).Current()!;
+
+        // The drawer still holds exactly the float: bank money leaves the bank.
+        Assert.Equal(0L, shift.SupplierCashOutPaisa);
+        Assert.Equal(50000L, shift.ExpectedPaisa);
+    }
+
+    [Fact]
     public void Closing_SaysExactOverOrShort_AndCannotBeDoneTwice()
     {
         using var test = new TestDatabase();

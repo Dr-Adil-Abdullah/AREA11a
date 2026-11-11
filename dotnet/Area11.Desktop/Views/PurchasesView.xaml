@@ -226,6 +226,10 @@
                         <TextBlock Text="Paid now (Rs)" Style="{StaticResource FieldLabel}" />
                         <TextBox Text="{Binding PaidText, UpdateSourceTrigger=PropertyChanged}" />
 
+                        <TextBlock Text="Paid how" Style="{StaticResource FieldLabel}" Margin="0,8,0,0" />
+                        <ComboBox ItemsSource="{Binding Methods}" SelectedItem="{Binding PaidMethod, Mode=TwoWay}"
+                                  ToolTip="Cash leaves the drawer; online and card leave the bank and never move the drawer count." />
+
                         <views:CustomFieldsEditorView DataContext="{Binding DocEditor}" />
 
                         <Button Content="Save purchase (PINV)" Style="{StaticResource PrimaryButton}" Height="38"

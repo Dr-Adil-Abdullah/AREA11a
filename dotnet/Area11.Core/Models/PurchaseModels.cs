@@ -33,6 +33,13 @@ public sealed class PurchaseInput
 
     public long PaidPaisa { get; set; }
 
+    /// <summary>
+    /// How the "paid now" money left the shop: cash, online or card. Null or anything unknown
+    /// means cash, so drafts written before this choice existed keep their old meaning - and only
+    /// cash moves the drawer's expected count.
+    /// </summary>
+    public string? PaidMethod { get; set; }
+
     public string? Notes { get; set; }
 
     /// <summary>

@@ -157,7 +157,12 @@ ORDER BY i.id;", new { id = purchaseId });
             Pair("Total", Money.Format(header.TotalPaisa), bold: true);
             if (header.PaidPaisa > 0)
             {
-                Pair("Paid", Money.Format(header.PaidPaisa));
+                // The method comes from the payment row itself, so a reprint shows the same till
+                // the money left from - cash from the drawer, online/card from the bank.
+                var paidMethod = Convert.ToString(_db.Scalar(connection,
+                    "SELECT method FROM payments WHERE purchase_id = @id LIMIT 1;",
+                    new { id = purchaseId })) ?? "cash";
+                Pair("Paid (" + paidMethod + ")", Money.Format(header.PaidPaisa));
                 Pair("Due", Money.Format(header.DuePaisa), header.DuePaisa > 0);
             }
 
@@ -338,12 +343,17 @@ UPDATE purchases SET subtotal_paisa = @total, total_paisa = @total, paid_paisa =
 
         if (paid > 0)
         {
+            // Phase 3 (owner, Nov 2026): the supplier is sometimes paid from the bank, and bank
+            // money must not move the drawer. The drawer counts only `cash` rows, so the method
+            // written here decides which till the money came from.
+            var method = NormalizePaidMethod(input.PaidMethod);
             _db.Execute(connection, @"
 INSERT INTO payments(date, method, amount_paisa, purchase_id, supplier_id, user_id, note)
-VALUES(@at, 'cash', @amount, @purchaseId, @supplierId, @userId, @note);",
+VALUES(@at, @method, @amount, @purchaseId, @supplierId, @userId, @note);",
                 new
                 {
                     at = stamp,
+                    method,
                     amount = paid,
                     purchaseId,
                     supplierId = input.SupplierId,
@@ -356,8 +366,16 @@ VALUES(@at, 'cash', @amount, @purchaseId, @supplierId, @userId, @note);",
                 new { paid, id = input.SupplierId });
         }
 
+        // The method is logged only when money actually moved; with nothing paid there is no
+        // payment row, so writing "cash" would invent a drawer movement that never happened.
+        var auditValue = paid > 0
+            ? "(" + code + " from " + supplier.Name + ": total " + totalPaisa + ", paid " + paid
+                + " by " + NormalizePaidMethod(input.PaidMethod) + ", lines " + input.Lines.Count + ")"
+            : "(" + code + " from " + supplier.Name + ": total " + totalPaisa + ", paid " + paid
+                + ", lines " + input.Lines.Count + ")";
+
         _audit.Record(connection, user, "Purchases", "purchase_create", "purchases", purchaseId.ToString(),
-            newValue: $"{{\"code\":\"{code}\",\"supplier\":\"{supplier.Name}\",\"total\":{totalPaisa},\"paid\":{paid},\"lines\":{input.Lines.Count}}}");
+            newValue: auditValue);
 
         return ServiceResult<PurchaseResult>.Success(new PurchaseResult
         {
@@ -367,6 +385,16 @@ VALUES(@at, 'cash', @amount, @purchaseId, @supplierId, @userId, @note);",
             Units = totalUnits,
             Warnings = warnings
         }, warnings.ToArray());
+    }
+
+    /// <summary>
+    /// Cash, online or card - the same three ways the Suppliers page pays with. Anything else
+    /// (including the null of an old draft) means cash, the way every earlier purchase was written.
+    /// </summary>
+    private static string NormalizePaidMethod(string? method)
+    {
+        var clean = (method ?? "cash").Trim().ToLowerInvariant();
+        return clean is "cash" or "online" or "card" ? clean : "cash";
     }
 
     private sealed class PurchaseInvoiceHeader

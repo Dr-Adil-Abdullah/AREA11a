@@ -53,6 +53,7 @@ public sealed class SettingsViewModel : ObservableObject
     private string _cashierLimitText = "5";
     private string _managerLimitText = "20";
     private bool _blockBelowCost;
+    private bool _blockOverLimit;
     private bool _showMargins;
     private bool _taxEnabled;
     private string _taxPercentText = "0";
@@ -415,6 +416,12 @@ public sealed class SettingsViewModel : ObservableObject
         set => SetProperty(ref _blockBelowCost, value);
     }
 
+    public bool BlockOverLimit
+    {
+        get => _blockOverLimit;
+        set => SetProperty(ref _blockOverLimit, value);
+    }
+
     public bool TaxEnabled
     {
         get => _taxEnabled;
@@ -665,6 +672,7 @@ public sealed class SettingsViewModel : ObservableObject
         CashierLimitText = Text(settings.GetDouble("discount.maxPercentCashier", 5));
         ManagerLimitText = Text(settings.GetDouble("discount.maxPercentManager", 20));
         BlockBelowCost = settings.GetBool("discount.blockBelowCost", true);
+        BlockOverLimit = settings.GetBool("credit.blockOverLimit", false);
         ShowMargins = settings.GetBool("profit.showMargins", true);
         TaxEnabled = settings.GetBool("tax.enabled");
         TaxPercentText = Text(settings.GetDouble("tax.percent"));
@@ -925,6 +933,7 @@ public sealed class SettingsViewModel : ObservableObject
             ["discount.maxPercentCashier"] = cashierLimit,
             ["discount.maxPercentManager"] = managerLimit,
             ["discount.blockBelowCost"] = BlockBelowCost,
+            ["credit.blockOverLimit"] = BlockOverLimit,
             ["profit.showMargins"] = ShowMargins,
             ["tax.enabled"] = TaxEnabled,
             ["tax.percent"] = taxPercent,

@@ -78,6 +78,38 @@ public sealed class PurchaseTests
         Assert.Equal(0, PayableOf(test, supplierId));
     }
 
+    // ============================== how the supplier was paid ==============================
+
+    [Fact]
+    public void AnOnlinePayment_WritesAnOnlineRow_AndLeavesThePayableCorrect()
+    {
+        using var test = new TestDatabase();
+        var productId = NewProduct(test);
+        var supplierId = TestData.AddSupplier(test);
+
+        var purchase = Buy(test, supplierId, productId, unit: "base", qty: 10, cost: 1000,
+            paid: 4000, paidMethod: "online");
+
+        Assert.True(purchase.Ok, purchase.Error);
+        Assert.Equal(10000, purchase.Value!.TotalPaisa);
+        Assert.Equal(6000, PayableOf(test, supplierId));
+        Assert.Equal("online", PaidMethodOf(test, purchase.Value.PurchaseId));
+    }
+
+    [Fact]
+    public void AnUnknownPaidMethod_FallsBackToCash()
+    {
+        using var test = new TestDatabase();
+        var productId = NewProduct(test);
+        var supplierId = TestData.AddSupplier(test);
+
+        var purchase = Buy(test, supplierId, productId, unit: "base", qty: 10, cost: 1000,
+            paid: 4000, paidMethod: "cheque");
+
+        Assert.True(purchase.Ok, purchase.Error);
+        Assert.Equal("cash", PaidMethodOf(test, purchase.Value!.PurchaseId));
+    }
+
     // ============================== the bonus line ==============================
 
     [Fact]
@@ -248,6 +280,7 @@ public sealed class PurchaseTests
         double qty,
         long cost,
         long paid = 0,
+        string? paidMethod = null,
         string? batchNo = "B-9",
         string expiry = "2027-06-30",
         long retail = 0,
@@ -259,6 +292,7 @@ public sealed class PurchaseTests
             SupplierId = supplierId,
             SupplierInvoiceNo = "SUP-77",
             PaidPaisa = paid,
+            PaidMethod = paidMethod,
             Lines = new List<PurchaseLineInput>
             {
                 new()
@@ -307,6 +341,15 @@ public sealed class PurchaseTests
 
         return Convert.ToInt64(test.Database.Scalar(connection,
             "SELECT balance_paisa FROM suppliers WHERE id = @id;", new { id = supplierId }) ?? 0L);
+    }
+
+    private static string PaidMethodOf(TestDatabase test, int purchaseId)
+    {
+        using var connection = test.Database.Open();
+
+        return test.Database.Scalar(connection,
+            "SELECT method FROM payments WHERE purchase_id = @id LIMIT 1;",
+            new { id = purchaseId })?.ToString() ?? string.Empty;
     }
 
     private static string BatchNumberOf(TestDatabase test, int productId)

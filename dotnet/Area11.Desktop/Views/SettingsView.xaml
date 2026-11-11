@@ -307,6 +307,12 @@
                                            Style="{StaticResource FieldHint}" />
                                 <TextBlock Text="Discount % is of the full retail/selling-price total. With no discount, the Counter asks before using a VIP/Doctor rate; No keeps ordinary retail."
                                            Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,6,0,0" />
+
+                                <CheckBox Content="Stop a bill that crosses the customer's khata limit"
+                                          IsChecked="{Binding BlockOverLimit, Mode=TwoWay}"
+                                          Margin="0,14,0,0" />
+                                <TextBlock Text="Applies to cashiers. The owner and managers can always cross it; a customer with no limit set is never stopped."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
                             </StackPanel>
                         </Border>
 

@@ -34,6 +34,7 @@ public sealed class PurchasesViewModel : ObservableObject
     private string _retailText = string.Empty;
     private bool _isSample;
     private string _paidText = string.Empty;
+    private string _paidMethod = "cash";
     private string _statusMessage = "Enter a delivery and add lines.";
     private bool _isStatusError;
     private int _openDraftId;
@@ -281,6 +282,15 @@ public sealed class PurchasesViewModel : ObservableObject
         set => SetProperty(ref _paidText, value);
     }
 
+    /// <summary>How the "paid now" money leaves the shop - the same three ways the Suppliers page pays with.</summary>
+    public IReadOnlyList<string> Methods { get; } = SupplierLedgerService.PaymentMethods;
+
+    public string PaidMethod
+    {
+        get => _paidMethod;
+        set => SetProperty(ref _paidMethod, value);
+    }
+
     public string StatusMessage
     {
         get => _statusMessage;
@@ -455,6 +465,7 @@ public sealed class PurchasesViewModel : ObservableObject
         {
             SupplierId = SelectedSupplier.Id,
             PaidPaisa = Money.ToPaisa(paid),
+            PaidMethod = PaidMethod,
             CustomAnswers = DocEditor.AnswerValues().ToDictionary(pair => pair.Key, pair => pair.Value),
             Lines = Lines.Select(line => new PurchaseLineInput
             {
@@ -495,6 +506,8 @@ public sealed class PurchasesViewModel : ObservableObject
 
         Lines.Clear();
         PaidText = string.Empty;
+        // Back to cash after every save: a forgotten "online" would silently spare the drawer.
+        PaidMethod = "cash";
         _openDraftId = 0;
         OnPropertyChanged(nameof(HasOpenDraft));
         DocEditor.LoadNew();
@@ -570,6 +583,7 @@ public sealed class PurchasesViewModel : ObservableObject
         {
             SupplierId = SelectedSupplier?.Id ?? 0,
             PaidPaisa = Money.ToPaisa(paid),
+            PaidMethod = PaidMethod,
             CustomAnswers = DocEditor.AnswerValues().ToDictionary(pair => pair.Key, pair => pair.Value),
             Lines = Lines.Select(line => new PurchaseLineInput
             {
@@ -625,6 +639,9 @@ public sealed class PurchasesViewModel : ObservableObject
             ? Suppliers.FirstOrDefault(supplier => supplier.Id == input.SupplierId)
             : null;
         PaidText = input.PaidPaisa > 0 ? Money.Edit(input.PaidPaisa) : string.Empty;
+        // An old draft has no method stored; it was written when everything was cash.
+        var draftMethod = (input.PaidMethod ?? "cash").Trim().ToLowerInvariant();
+        PaidMethod = draftMethod is "cash" or "online" or "card" ? draftMethod : "cash";
 
         var skipped = 0;
         Lines.Clear();

@@ -1,6 +1,6 @@
 # HANDOFF - read this first
 
-> **WIP handoff, 10 Nov 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/b4b7bf7b-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/b4b7bf7b-area11a). Dead-code review + password doors (production Phase 2) shipped in v0.61.0 Taupe (Windows/physical pending); v0.60.0 Basalt lockdown + v0.59.0 Aegean fixes (Windows/physical pending); v0.58.0 Windows 1163/1163 green; all master portions 4-18 code-complete; Windows/physical verification pending. Older status and approval statements below are historical. This branch is not a tested release.
+> **WIP handoff, 11 Nov 2026:** Read [`INCOMPLETE-WORK-HANDOFF.md`](INCOMPLETE-WORK-HANDOFF.md) first on branch [`arena/b4b7bf7b-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/b4b7bf7b-area11a). Money audit + owner's answers (production Phase 3) shipped in v0.62.0 Moss (Windows/physical pending); v0.61.0 Taupe dead-code/passwords + v0.60.0 Basalt lockdown + v0.59.0 Aegean fixes (Windows/physical pending); v0.58.0 Windows 1163/1163 green; all master portions 4-18 code-complete; Windows/physical verification pending. Older status and approval statements below are historical. This branch is not a tested release.
 
 
 ## Latest handoff — v0.54.0 Dusk
