@@ -43,6 +43,55 @@ public sealed class SaleService
         _log = log;
     }
 
+    /// <summary>
+    /// Cashier-screen guidance only (batch 2, portion 2). Read current stock, including cumulative
+    /// pack quantities and expired batches, without saving warnings on a sale or receipt. Quote
+    /// and Create still enforce D-93 independently; even the owner cannot oversell.
+    /// </summary>
+    public ServiceResult<List<string>> CounterWarnings(SaleInput input)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            var warnings = new List<string>();
+            foreach (var group in input.Lines.GroupBy(line => line.ProductId))
+            {
+                var product = _db.QuerySingle<Product>(connection, @"
+SELECT id, name, base_unit, box_strips, strip_tablets, retail_paisa
+FROM products WHERE id = @id AND active = 1;", new { id = group.Key });
+                if (product is null)
+                {
+                    continue;
+                }
+
+                var requested = group.Sum(line => line.Quantity * product.QuantityPerSelectedUnit(line.Unit));
+                var book = _db.QuerySingle<double>(connection, @"
+SELECT COALESCE(SUM(qty_base), 0) FROM batches
+WHERE product_id = @id AND active = 1;", new { id = group.Key });
+                var sellable = _db.QuerySingle<double>(connection, @"
+SELECT COALESCE(SUM(qty_base), 0) FROM batches
+WHERE product_id = @id AND active = 1 AND qty_base > 0
+  AND (expiry_date IS NULL OR expiry_date = '' OR date(expiry_date) >= date('now','localtime'));",
+                    new { id = group.Key });
+                if (double.IsFinite(requested) && requested > 0
+                    && requested - Math.Min(book, sellable) > PlanningTolerance(requested))
+                {
+                    warnings.Add(product.Name + ": not in stock for this quantity. No one can make this bill; receive stock or reduce the quantity.");
+                }
+                if (product.RetailPaisa <= 0)
+                {
+                    warnings.Add(product.Name + ": no retail price is set. Only the owner or a manager can enter a selling rate; stock must be available.");
+                }
+            }
+            return ServiceResult<List<string>>.Success(warnings);
+        }
+        catch (Exception exception)
+        {
+            _log.Error("Counter availability could not be checked.", exception);
+            return ServiceResult<List<string>>.Fail("Availability could not be checked. Refresh and try again.");
+        }
+    }
+
     public ServiceResult<SaleQuote> Quote(SaleInput input, User user)
     {
         try
@@ -453,9 +502,9 @@ FROM products WHERE id = @id AND active = 1;",
                 }
                 : product.RetailPaisa;
 
-            if (tierPrice <= 0)
+            if (tierPrice <= 0 && lineInput.UnitPricePaisa <= 0)
             {
-                throw new ValidationException($"{product.Name}: no retail rate is set.");
+                throw new ValidationException($"{product.Name}: no retail rate is set. Ask the owner or a manager to enter a selling rate.");
             }
 
             if (lineInput.UnitPricePaisa > 0 && !user.CanManage)

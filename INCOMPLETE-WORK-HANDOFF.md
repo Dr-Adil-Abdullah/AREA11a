@@ -1,6 +1,19 @@
 # AREA11a — Unfinished work / نامکمل کام اور اگلا قدم
 
+## Latest — v0.72.0 Heather: batch 2, portion 2 (Windows/physical pending)
+
+Final clarified owner decision supersedes the earlier negative-stock answer: zero/insufficient stock blocks EVERY role, including owner and manager (D-93 remains unchanged). Both missing price and unavailable stock trigger ONE Counter-only popup per live bill. Clearing, posting, parking or loading another cart resets it; price is not repeated in the warning. If stock exists, an owner/manager may enter the existing custom rate even when catalog retail is missing; cashiers cannot. No receipt/chit warning or layout change; discounts unchanged. Core reads live stock, excludes expired stock, and combines repeated products and pack units. Quote/Create independently retain stock and below-cost checks. Seven new Core facts, **1234 written cases; 61 static checks**. Installed the C# grammar for verification; rewrote the pre-existing null-conditional event unsubscribe in ShellViewModel.Detach as an equivalent explicit null guard (the parser cannot read that C# 14 syntax). No .NET SDK here: Windows build/xUnit and physical proof pending. Next on owner's "next": batch-2 portion 4, full Urdu tutorial. Installer only on explicit بنا دو. v0.70.0's 1227/1227 is prior evidence, not proof of this version.
+
+
 **Read this first. This is a work-in-progress handoff, not a release or a declaration that Portion 4 is complete.**
+
+## v0.72.0 targeted Windows proof (use disposable test data)
+
+1. Rebuild/reinstall Heather and run `tools\RUN-TESTS.cmd`; require the full log ending `ALL GREEN - 1234 of 1234`. The seven added facts are written, not run in the Linux sandbox (no .NET SDK).
+2. Add a zero-stock product with a price. One Counter popup; adding/typing again within the same bill must not repeat it. Owner, manager and cashier must all fail to post; stock/payments/bills stay unchanged.
+3. Clear the bill, add a stocked product with no retail price: new popup. Cashier cannot supply a rate; owner/manager can supply a positive rate at/above cost and post. Existing below-cost and discount behavior stays unchanged.
+4. Clear/post/park or load another held/draft cart: warning can appear once for that new live bill. Check repeated lines/strip quantities and expired-only stock. Print a successful bill: NO availability text or added heading, existing rate shown normally.
+5. Heron Purchase-open physical proof is still pending; tutorial remains next on owner's `next`, not implemented by this portion.
 
 ## Exact source to resume
 

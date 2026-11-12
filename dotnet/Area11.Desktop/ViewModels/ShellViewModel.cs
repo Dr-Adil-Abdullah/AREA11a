@@ -231,7 +231,11 @@ public sealed class ShellViewModel : ObservableObject
     public void Detach()
     {
         CommandGuard.Failed -= OnCommandFailed;
-        _settingsPage?.LockdownChromeChanged -= ForwardChromeChanged;
+        // Equivalent to null-conditional event removal, also readable by the static C# grammar.
+        if (_settingsPage is not null)
+        {
+            _settingsPage.LockdownChromeChanged -= ForwardChromeChanged;
+        }
         _sessionTimer.Stop();
         SessionWatch.Stop();
         UserMenuOpen = false;

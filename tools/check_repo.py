@@ -5566,6 +5566,28 @@ def check_save_warning() -> None:
 # ---------------------------------------------------------------------------
 # Template conflict: DisplayMemberPath + ItemTemplate must never meet (v0.71.0)
 # ---------------------------------------------------------------------------
+def check_counter_availability() -> None:
+    """Counter popup wiring cannot be unit-tested by the Core-only test project."""
+    vm = (DOTNET / "Area11.Desktop/ViewModels/PosViewModel.cs").read_text(encoding="utf-8-sig")
+    core = (DOTNET / "Area11.Core/Services/SaleService.cs").read_text(encoding="utf-8-sig")
+    for needle in ["_services.Sales.CounterWarnings(input)", "&& !_availabilityWarningShown",
+                   '_availabilityWarningShown = true;', '"Counter availability"',
+                   'MessageBoxButton.OK, MessageBoxImage.Warning']:
+        if needle not in vm:
+            fail("Counter availability: missing popup-once wiring: " + needle)
+    if vm.index('_availabilityWarningShown = true;') > vm.index('MessageBox.Show(string.Join'):
+        fail("Counter availability: set the once flag before the modal opens")
+    if vm.count('_availabilityWarningShown = false;\n        Cart.Clear();') != vm.count('        Cart.Clear();'):
+        fail("Counter availability: each new/cleared/restored cart must reset the popup")
+    if 'tierPrice <= 0 && lineInput.UnitPricePaisa <= 0' not in core:
+        fail("Counter availability: an owner/manager rate must work without a catalog rate")
+    for name in ['ReceiptService.cs', 'ReturnReceiptService.cs']:
+        text = (DOTNET / ('Area11.Core/Services/' + name)).read_text(encoding="utf-8-sig")
+        if 'CounterWarnings' in text or 'Counter availability' in text:
+            fail("Counter availability: warnings must never enter receipts")
+    REPORT.append("Counter availability: popup once per bill, reset on cart boundaries, no receipt wiring")
+
+
 def check_template_conflict() -> None:
     """No list control sets both DisplayMemberPath and ItemTemplate.
 
@@ -6113,6 +6135,7 @@ def main() -> int:
     check_deworkshop()
     check_save_warning()
     check_template_conflict()
+    check_counter_availability()
     check_checklist()
     check_audit_recovery()
     check_report_chart()

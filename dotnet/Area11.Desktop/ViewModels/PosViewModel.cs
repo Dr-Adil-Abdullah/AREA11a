@@ -26,6 +26,8 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     private readonly AppServices _services;
     private readonly User _user;
     private readonly List<Product> _catalog = new();
+    // One availability popup per live bill, never on the customer receipt.
+    private bool _availabilityWarningShown;
 
     // Every live barcode of every medicine, grouped by product, so one keystroke filters without a
     // database call (the scanner types a whole code in a few milliseconds).
@@ -863,6 +865,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
     private void ClearCart()
     {
+        _availabilityWarningShown = false;
         Cart.Clear();
         TenderedText = string.Empty;
         DiscountPercent = "0";
@@ -971,6 +974,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         // Post-commit only: this lightweight card cannot save, undo, print, or duplicate anything.
         ShowSaleSuccess = _services.Settings.GetBool("sale.successPopup", true);
 
+        _availabilityWarningShown = false;
         Cart.Clear();
         TenderedText = string.Empty;
         SecondAmountText = string.Empty;
@@ -1043,6 +1047,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     {
         if (Cart.Count == 0)
         {
+            _availabilityWarningShown = false;
             SubtotalText = "Rs 0";
             DiscountText = "Rs 0";
             TotalText = "Rs 0";
@@ -1054,7 +1059,18 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             return;
         }
 
-        var quote = _services.Sales.Quote(BuildInput(), _user);
+        var input = BuildInput();
+        var availability = _services.Sales.CounterWarnings(input);
+        if (availability.Ok && availability.Value is { Count: > 0 } warnings
+            && !_availabilityWarningShown)
+        {
+            // Set before opening the modal: focus changes can cause another recalculation.
+            _availabilityWarningShown = true;
+            MessageBox.Show(string.Join("\n\n", warnings), "Counter availability",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+
+        var quote = _services.Sales.Quote(input, _user);
         if (!quote.Ok || quote.Value is null)
         {
             SubtotalText = "—";
@@ -1183,6 +1199,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             : string.Empty;
 
         var skipped = 0;
+        _availabilityWarningShown = false;
         Cart.Clear();
         foreach (var line in input.Lines)
         {
@@ -1227,6 +1244,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         }
 
         var code = result.Value;
+        _availabilityWarningShown = false;
         Cart.Clear();
         TenderedText = string.Empty;
         SecondAmountText = string.Empty;
