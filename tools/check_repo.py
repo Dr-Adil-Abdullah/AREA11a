@@ -5187,7 +5187,9 @@ def check_phase_three_packaging() -> None:
         (product_editor, product_editor_path, ('{Binding PackSizeLabel, UpdateSourceTrigger=PropertyChanged}',)),
         (products_view, products_view_path, ('{Binding PackSizeLabel, Mode=OneWay}',)),
         (pos_view, pos_view_path, ('{Binding PackSizeLabel, Mode=OneWay}',)),
-        (purchase_view, purchase_view_path, ('DisplayMemberPath="ProductChoiceLabel"',)),
+        # v0.71.0: the label moved into the photo ItemTemplate - DisplayMemberPath plus a
+        # template is the pair that killed the page on open, so the pin follows the template.
+        (purchase_view, purchase_view_path, ('{Binding ProductChoiceLabel}',)),
     ):
         for needle in needles:
             if needle not in text:
@@ -5559,6 +5561,45 @@ def check_save_warning() -> None:
 
     REPORT.append("Warn-once save: the selling price ships necessary, the product form names what "
                   "is missing with a save-anyway choice, and the service never blocks the save")
+
+
+# ---------------------------------------------------------------------------
+# Template conflict: DisplayMemberPath + ItemTemplate must never meet (v0.71.0)
+# ---------------------------------------------------------------------------
+def check_template_conflict() -> None:
+    """No list control sets both DisplayMemberPath and ItemTemplate.
+
+    WPF refuses that combination with an InvalidOperationException while the page is being
+    drawn, which the shop reads as "Purchase does not open". The Purchases picker died exactly
+    this way (owner screenshot, 12 Nov 2026): the photo template was added without removing the
+    old DisplayMemberPath. The template alone shows the label, so the path must stay away.
+    """
+    for path in sorted((DOTNET / "Area11.Desktop/Views").glob("*.xaml")):
+        lines = path.read_text(encoding="utf-8-sig").split("\n")
+        index = 0
+        while index < len(lines):
+            match = re.match(r"\s*<(ComboBox|ListBox|ListView|ItemsControl)\b", lines[index])
+            if not match:
+                index += 1
+                continue
+            tag = match.group(1)
+            start = index
+            chunk = []
+            while index < len(lines):
+                chunk.append(lines[index])
+                if "/>" in lines[index]:
+                    break
+                if re.match(r"\s*</" + tag + r"\s*>", lines[index]):
+                    break
+                index += 1
+            text = "\n".join(chunk)
+            if "DisplayMemberPath" in text and "ItemTemplate" in text:
+                fail(f"{rel(path)}:{start + 1}: a {tag} sets both DisplayMemberPath and "
+                     "ItemTemplate - WPF refuses that pair and the page dies on open (v0.71.0)")
+            index += 1
+
+    REPORT.append("Template conflict: no list control sets DisplayMemberPath together with "
+                  "ItemTemplate, so no page can die on open this way")
 
 
 # ---------------------------------------------------------------------------
@@ -6071,6 +6112,7 @@ def main() -> int:
     check_master_foundation()
     check_deworkshop()
     check_save_warning()
+    check_template_conflict()
     check_checklist()
     check_audit_recovery()
     check_report_chart()

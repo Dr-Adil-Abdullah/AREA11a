@@ -1,6 +1,10 @@
 # PROGRESS - the feature board (what is done, what is next)
 
-## Owner batch 2, portion 1/4 — Fields tab actually warns at product save (v0.70.0 Claret; Windows/physical pending)
+## Owner batch 2, portion 3/4 — Purchase page opens again (v0.71.0 Heron; Windows/physical pending)
+
+v0.70.0 Claret Windows GREEN (owner evidence, full log: 1227/1227, 0 failed, 1m37s). The Purchase crash from the owner's screenshot: the product picker set BOTH DisplayMemberPath and ItemTemplate, a pair WPF refuses while drawing the page (`Set property ItemTemplate threw`, line 91). Fixed by removing the path (the photo template already shows the choice label; nothing looks different) - and the old Phase-3 pin that demanded the path now follows the template binding instead. All other views scanned: no other control sets the pair. New `check_template_conflict` gate (proved by planting). **1227 cases unchanged, 60/60.** Require rebuild + reinstall, Purchase opens, Windows `ALL GREEN - 1227 of 1227`. Still queued: portion 2 (Counter + receipt not-available line) and portion 4 (Urdu tutorial) on owner's "next".
+
+## Owner batch 2, portion 1/4 — Fields tab actually warns at product save (v0.70.0 Claret; Windows GREEN 1227/1227 on 12 Nov 2026, physical pending)
 
 "Mark required" reached only the file import, and the selling price was not even in the catalog - so the switch looked dead and priceless products broke the Counter total. Now: `product.retail` in the catalog, necessary by default (owner relaxes it himself); `ProductService.MissingRequiredLabels` names what's empty (a linked salt/brand counts as present); the product editor pops up the names with a Save-anyway choice (owner's warn-once); the service never blocks the save; Fields-tab status and heading tell the truth (product = popup, phones/agency = import only, sale/purchase = preferences). **1227 cases (+4), 59/59.** Require Windows `ALL GREEN - 1227 of 1227` + physical (mark required, save popup, save anyway). Next: portion 2 (Counter + receipt not-available line) on owner's "next"; portion 3 (Purchase error) waits for the owner's screenshot; portion 4 (Urdu tutorial).
 

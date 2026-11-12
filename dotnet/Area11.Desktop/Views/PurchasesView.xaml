@@ -76,8 +76,11 @@
                         <TextBlock Text="Search product" Style="{StaticResource FieldLabel}" />
                         <TextBox Text="{Binding ProductSearch, UpdateSourceTrigger=PropertyChanged}"
                                  ToolTip="Name, pack / variant, strength, salt, barcode, brand, rack, category or company. Several words narrow the list: every word must match." />
+                        <!-- No DisplayMemberPath here on purpose (v0.71.0): WPF refuses a control that sets
+                             both DisplayMemberPath and ItemTemplate, and the page died on open. The template
+                             below already shows the choice label, so nothing looks different. -->
                         <ComboBox Margin="0,5,0,0" ItemsSource="{Binding FilteredProducts}"
-                                  DisplayMemberPath="ProductChoiceLabel" SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
+                                  SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
                                   ToolTip="Strength and pack text distinguish variants; each selection remains its original product.">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
