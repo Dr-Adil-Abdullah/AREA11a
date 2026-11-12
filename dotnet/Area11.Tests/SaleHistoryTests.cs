@@ -1,3 +1,4 @@
+using System.Globalization;
 using Area11.Core.Models;
 using Area11.Core.Services;
 using Area11.Core.Utils;
@@ -208,6 +209,27 @@ public sealed class SaleHistoryTests
         Assert.Equal(1, Audits(test, "sale_reprint"));
         Assert.Contains(sale.Code, AuditDetails(test, "sale_reprint"));
         Assert.Contains(Money.Format(sale.TotalPaisa), AuditDetails(test, "sale_reprint"));
+    }
+
+    [Fact]
+    public void TheReprintOfACorrectedBillNamesBothTimes()
+    {
+        using var test = new TestDatabase();
+        var sale = Bill(test);
+
+        using var connection = test.Database.Open();
+        var born = test.Database.QuerySingle<string>(connection,
+            "SELECT created_at FROM sales WHERE id = @id;", new { id = sale.SaleId }) ?? string.Empty;
+        var moved = DateTime.Parse(born, CultureInfo.InvariantCulture).AddDays(2)
+            .ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+        test.Database.Execute(connection,
+            "UPDATE sales SET date = @date WHERE id = @id;", new { date = moved, id = sale.SaleId });
+
+        Assert.True(History(test).RecordReprint(TestData.Owner, sale.SaleId).Ok);
+
+        var details = AuditDetails(test, "sale_reprint");
+        Assert.Contains(born, details);
+        Assert.Contains(moved, details);
     }
 
     [Fact]

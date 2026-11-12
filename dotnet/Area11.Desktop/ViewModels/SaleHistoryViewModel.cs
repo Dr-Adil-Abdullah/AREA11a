@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using Area11.Core.Models;
+using Area11.Core.Services;
 using Area11.Core.Utils;
 
 namespace Area11.Desktop.ViewModels;
@@ -55,6 +56,8 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
     private bool _hasPayments;
     private string _statusText = "Pick a range and press Search. Every bill in it can be printed again.";
     private bool _isStatusError;
+    private bool _hasDriftHint;
+    private string _driftHintText = string.Empty;
 
     private const string AllMethods = "All methods";
 
@@ -77,6 +80,7 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
         PreviewCommand = new RelayCommand(Preview);
         WhatsAppCommand = new RelayCommand(SendOnWhatsApp);
         PrintReturnCommand = new RelayCommand(PrintSelectedReturn);
+        FixTimeCommand = new RelayCommand(FixTime);
 
         Load();
     }
@@ -118,6 +122,24 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
 
     /// <summary>Prints the return receipt of the row picked in the returns list.</summary>
     public RelayCommand PrintReturnCommand { get; }
+
+    /// <summary>The owner-only modal that lists the wrongly-stamped bills and fixes them in one press.</summary>
+    public RelayCommand FixTimeCommand { get; }
+
+    public bool IsOwner => _user.IsOwner;
+
+    /// <summary>True when the computer clock stands far enough from true time to warn about.</summary>
+    public bool HasDriftHint
+    {
+        get => _hasDriftHint;
+        private set => SetProperty(ref _hasDriftHint, value);
+    }
+
+    public string DriftHintText
+    {
+        get => _driftHintText;
+        private set => SetProperty(ref _driftHintText, value);
+    }
 
     // ------------------------------ the filters ------------------------------
 
@@ -352,6 +374,8 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
 
     public void Load()
     {
+        RefreshDriftHint();
+
         var page = _services.History.Search(_user, new SaleHistoryFilter
         {
             Search = SearchText,
@@ -393,6 +417,33 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
                 ? "No bills in this range."
                 : "Pick a bill on the left. The paper is shown here before it prints, and nothing is changed by looking.",
             false);
+    }
+
+    /// <summary>
+    /// Minutes matter (v0.68.0): when the computer clock stands far enough from true time, the Bills
+    /// page says so under its heading - so no sale hides in the wrong day unnoticed.
+    /// </summary>
+    private void RefreshDriftHint()
+    {
+        if (TimeSource.IsOnline && TimeSource.Offset.Duration() >= TimeCorrectionService.SuspectThreshold)
+        {
+            HasDriftHint = true;
+            DriftHintText = "This computer's clock is " + TimeSource.Describe(TimeSource.Offset) +
+                            " away from true time - bills stamped before the fix may carry the wrong day. " +
+                            "Press 'Fix wrong time…'.";
+        }
+        else
+        {
+            HasDriftHint = false;
+            DriftHintText = string.Empty;
+        }
+    }
+
+    /// <summary>Opens the fix modal, then reloads: the fix may have moved bills across the range.</summary>
+    private void FixTime()
+    {
+        TimeCorrectionDoor.Show(_services, _user);
+        Load();
     }
 
     private void Open()

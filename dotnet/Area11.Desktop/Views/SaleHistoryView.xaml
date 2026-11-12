@@ -16,9 +16,14 @@
                 <TextBlock Text="{DynamicResource AppLabel.bills}" Style="{StaticResource PageTitle}" />
                 <TextBlock Text="Every bill the shop has made: find it, open it, print it again (F-52)."
                            Style="{StaticResource PageSubtitle}" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding DriftHintText}" Style="{StaticResource PageSubtitle}" TextWrapping="Wrap"
+                           FontWeight="SemiBold" Visibility="{Binding HasDriftHint, Converter={StaticResource BoolToVis}}" />
             </StackPanel>
 
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Content="Fix wrong time…" Style="{StaticResource GhostButton}" Margin="0,0,6,0"
+                        Command="{Binding FixTimeCommand}" ToolTip="Bills stamped with the wrong clock, fixed together"
+                        Visibility="{Binding IsOwner, Converter={StaticResource BoolToVis}}" />
                 <Button Content="Today" Style="{StaticResource GhostButton}" Margin="0,0,6,0"
                         Command="{Binding TodayCommand}" />
                 <Button Content="7 days" Style="{StaticResource GhostButton}" Margin="0,0,6,0"

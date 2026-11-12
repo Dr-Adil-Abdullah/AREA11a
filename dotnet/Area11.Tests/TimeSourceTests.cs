@@ -11,6 +11,7 @@ namespace Area11.Tests;
 /// `Probe` is the seam: the tests never touch the network, so they run on a shop PC with the cable
 /// unplugged exactly as they run here.
 /// </summary>
+[Collection("Time")]
 public sealed class TimeSourceTests : IDisposable
 {
     public TimeSourceTests() => TimeSource.Reset();
@@ -62,11 +63,12 @@ public sealed class TimeSourceTests : IDisposable
     }
 
     [Fact]
-    public void An_answer_more_than_two_days_out_is_treated_as_a_wrong_answer()
+    public void An_answer_more_than_thirty_days_out_is_treated_as_a_wrong_answer()
     {
         // A server that says 1980, or one that answers in another world - either way the shop's
         // bills must not jump. The computer clock is kept and the reason is written down.
-        TimeSource.Probe = () => DateTimeOffset.Now.AddDays(-3);
+        // (Thirty days, not two: the two-day refusal is gone on the owner's word, Nov 2026.)
+        TimeSource.Probe = () => DateTimeOffset.Now.AddDays(-40);
 
         var accepted = TimeSource.TrySync(200);
 
@@ -76,11 +78,27 @@ public sealed class TimeSourceTests : IDisposable
     }
 
     [Fact]
-    public void The_edge_that_separates_drift_from_a_wrong_answer_is_two_days()
+    public void The_edge_that_separates_drift_from_a_wrong_answer_is_thirty_days()
     {
-        // The number is asserted, not a 1.9-day answer: applying a two-day correction, even for a
-        // millisecond, would move every stamp another test is reading at the same moment.
-        Assert.Equal(TimeSpan.FromDays(2), TimeSource.LargestAcceptedOffset);
+        // The number is asserted, not a 29-day answer: applying a month-large correction, even for
+        // a millisecond, would move every stamp another test is reading at the same moment.
+        Assert.Equal(TimeSpan.FromDays(30), TimeSource.LargestAcceptedOffset);
+    }
+
+    [Fact]
+    public void A_three_day_drift_is_believed_now_that_the_two_day_refusal_is_gone()
+    {
+        // The owner's day and month حساب: a PC three days out must be corrected, not refused.
+        // Asked through the pure question, so no stamp in the program moves for a moment.
+        Assert.True(TimeSource.IsPlausible(TimeSpan.FromDays(3)));
+        Assert.True(TimeSource.IsPlausible(TimeSpan.FromDays(-3)));
+    }
+
+    [Fact]
+    public void A_forty_day_answer_is_still_refused_as_garbage()
+    {
+        Assert.False(TimeSource.IsPlausible(TimeSpan.FromDays(40)));
+        Assert.False(TimeSource.IsPlausible(TimeSpan.FromDays(-40)));
     }
 
     [Fact]
@@ -111,6 +129,8 @@ public sealed class TimeSourceTests : IDisposable
         Assert.Equal("+2.0 s", TimeSource.Describe(TimeSpan.FromSeconds(2)));
         Assert.Equal("-2.0 min", TimeSource.Describe(TimeSpan.FromMinutes(-2)));
         Assert.Equal("+3.5 h", TimeSource.Describe(TimeSpan.FromHours(3.5)));
+        Assert.Equal("+3.0 days", TimeSource.Describe(TimeSpan.FromDays(3)));
+        Assert.Equal("-1.5 days", TimeSource.Describe(TimeSpan.FromDays(-1.5)));
     }
 
     [Fact]

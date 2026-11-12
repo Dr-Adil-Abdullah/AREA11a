@@ -96,6 +96,7 @@ VIEW_MODEL_OF = {
     "CloudSyncView.xaml": "CloudSyncViewModel",
     "SaleHistoryView.xaml": "SaleHistoryViewModel",
     "BookCheckView.xaml": "BookCheckViewModel",
+    "TimeCorrectionWindow.xaml": "TimeCorrectionViewModel",
 }
 
 
@@ -4482,9 +4483,14 @@ def check_shop_clock() -> None:
 
     source_text = source.read_text(encoding="utf-8", errors="replace")
 
-    if "LargestAcceptedOffset" not in source_text or "FromDays(2)" not in source_text:
-        fail("TimeSource no longer refuses an answer that is more than two days out - one wrong "
-             "server would move every bill in the shop")
+    if "LargestAcceptedOffset" not in source_text or "FromDays(30)" not in source_text:
+        fail("TimeSource lost the thirty-day garbage bound - one wrong server would move every "
+             "bill in the shop (the two-day refusal is gone on the owner's word, Nov 2026, but "
+             "a garbage answer must still be refused)")
+
+    if "IsPlausible" not in source_text:
+        fail("TimeSource lost the pure plausibility question - the tests could no longer ask about "
+             "a three-day drift without moving every stamp in the program")
 
     policy_text = policy.read_text(encoding="utf-8", errors="replace")
 
@@ -4513,6 +4519,48 @@ def check_shop_clock() -> None:
 
     if "status = 'open'" not in sales_text:
         fail("SaleService does not read the open shift - the drawer gate cannot be answered")
+
+    # The bill-time fix (v0.68.0, owner's word Nov 2026): the counter records the drift on every
+    # bill, the owner fixes the wrongly-stamped ones together in one action, and the paper and the
+    # black box keep both times. Each half is pinned - a fix that forgets the money rows, the audit
+    # lines or the paper would look perfect on the screen and be wrong in the books.
+    if "time_offset_seconds" not in sales_text or "TimeSource.Offset" not in sales_text:
+        fail("SaleService no longer records the drift on the bill - the fix could not know which "
+             "bills were stamped with the wrong clock")
+
+    fix = DOTNET / "Area11.Core/Services/TimeCorrectionService.cs"
+    receipts = DOTNET / "Area11.Core/Services/ReceiptService.cs"
+
+    if not fix.exists():
+        fail("TimeCorrectionService.cs is missing - the wrongly-stamped bills could not be fixed together")
+    else:
+        fix_text = fix.read_text(encoding="utf-8", errors="replace")
+
+        if "IsOwner" not in fix_text or "Only the owner can fix the time on bills" not in fix_text:
+            fail("TimeCorrectionService lost the owner gate - a cashier could move the day's حساب")
+
+        if '"sale_time_fixed"' not in fix_text or "oldValue" not in fix_text or "newValue" not in fix_text:
+            fail("TimeCorrectionService does not write both times into the black box - a moved bill "
+                 "could never be traced back to its wrong stamp")
+
+        if "UPDATE payments SET date" not in fix_text:
+            fail("TimeCorrectionService leaves the money rows on the wrong day - the day's collection "
+                 "and the day's sales would sit in different days")
+
+        if "_db.Tx(" not in fix_text:
+            fail("TimeCorrectionService does not fix the range in one transaction - a half-fixed range "
+                 "would be worse than none")
+
+    if receipts.exists():
+        receipts_text = receipts.read_text(encoding="utf-8", errors="replace")
+
+        if "First stamped" not in receipts_text or "Correct time" not in receipts_text:
+            fail("ReceiptService no longer prints both times on a corrected bill - the wrong stamp "
+                 "would be rewritten out of history")
+
+        if "big: true" not in receipts_text and "doubleHeight: true" not in receipts_text:
+            fail("ReceiptService no longer prints the correct time BIG - the customer would read the "
+                 "small wrong stamp as the day of his bill")
 
     pos_text = pos.read_text(encoding="utf-8", errors="replace")
 

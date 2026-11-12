@@ -161,6 +161,10 @@ public sealed class SaleService
         var computed = Compute(connection, input, user);
         var stamp = Clock.Now();
 
+        // The drift in force when this bill is stamped (v0.68.0): if a time server later shows the
+        // clock was wrong, TimeCorrectionService moves exactly the bills stamped under that drift.
+        var timeOffsetSeconds = Calc.Round(TimeSource.Offset.TotalSeconds);
+
         var customer = ResolveCustomer(connection, input.CustomerId);
         var doctor = ResolveDoctor(connection, input.DoctorId);
         var plan = Plan(input, computed.TotalPaisa);
@@ -193,10 +197,10 @@ public sealed class SaleService
         _db.Execute(connection, @"
 INSERT INTO sales(code, date, customer_id, doctor_id, user_id, subtotal_paisa, discount_paisa,
                   tax_paisa, round_off_paisa, total_paisa, paid_paisa, due_paisa, status,
-                  payment_method, notes, created_at, change_paisa)
+                  payment_method, notes, created_at, change_paisa, time_offset_seconds)
 VALUES(@code, @date, @customerId, @doctorId, @userId, @subtotal, @discount,
        @tax, @roundOff, @total, @paid, @due, @status,
-       @method, @notes, @createdAt, @change);",
+       @method, @notes, @createdAt, @change, @timeOffset);",
             new
             {
                 code,
@@ -215,7 +219,8 @@ VALUES(@code, @date, @customerId, @doctorId, @userId, @subtotal, @discount,
                 method,
                 notes = string.IsNullOrWhiteSpace(input.Notes) ? null : input.Notes.Trim(),
                 createdAt = stamp,
-                change
+                change,
+                timeOffset = timeOffsetSeconds
             });
 
         var saleId = (int)_db.NextId(connection);

@@ -48,7 +48,7 @@ public sealed class ReceiptService
             using var connection = _db.Open();
 
             var sale = _db.QuerySingle<SaleRow>(connection, @"
-SELECT id, code, date, customer_id, user_id, subtotal_paisa, discount_paisa, tax_paisa,
+SELECT id, code, date, created_at, customer_id, user_id, subtotal_paisa, discount_paisa, tax_paisa,
        round_off_paisa, total_paisa, paid_paisa, due_paisa, change_paisa, payment_method, status
 FROM sales WHERE id = @id;", new { id = saleId });
 
@@ -124,13 +124,33 @@ WHERE sale_id = @id AND method <> 'credit' ORDER BY id;", new { id = saleId });
         document.Lines.Add(ReceiptLine.Sep(width));
 
         var dateText = FormatDate(sale.Date);
+
+        // A corrected bill (v0.68.0) shows BOTH times, on the owner's word: the wrong stamp SMALL
+        // and the correct reporting time BIG - so the customer reads the right day, and the old
+        // stamp stays on the paper instead of being rewritten out of history.
+        var corrected = !string.IsNullOrWhiteSpace(sale.CreatedAt)
+            && !string.Equals(sale.Date, sale.CreatedAt, StringComparison.Ordinal);
+        var wrongText = corrected ? FormatDate(sale.CreatedAt) : string.Empty;
+
+        void AddCorrectedTimes()
+        {
+            Add("First stamped " + wrongText, ReceiptAlign.Center);
+            Add("Correct time " + dateText, ReceiptAlign.Center, bold: true, big: true);
+        }
+
         var dateOnTop = !string.Equals(_settings.GetString("receipt.datePosition"), "bottom",
             StringComparison.OrdinalIgnoreCase);
 
         if (dateOnTop)
         {
-            Pair($"Bill: {sale.Code}", dateText);
+            Pair($"Bill: {sale.Code}", corrected ? string.Empty : dateText);
             Pair($"Customer: {customer}", string.IsNullOrWhiteSpace(cashier) ? string.Empty : $"By: {cashier}");
+
+            if (corrected)
+            {
+                AddCorrectedTimes();
+            }
+
             document.Lines.Add(ReceiptLine.Sep(width));
         }
         else
@@ -207,7 +227,15 @@ WHERE sale_id = @id AND method <> 'credit' ORDER BY id;", new { id = saleId });
         if (!dateOnTop)
         {
             document.Lines.Add(ReceiptLine.Sep(width));
-            Add(dateText, ReceiptAlign.Center);
+
+            if (corrected)
+            {
+                AddCorrectedTimes();
+            }
+            else
+            {
+                Add(dateText, ReceiptAlign.Center);
+            }
         }
 
         document.Lines.Add(ReceiptLine.Sep(width));
@@ -292,6 +320,9 @@ WHERE sale_id = @id AND method <> 'credit' ORDER BY id;", new { id = saleId });
         public string Code { get; set; } = string.Empty;
 
         public string? Date { get; set; }
+
+        /// <summary>The stamp the bill was born with - differs from Date only after a time fix.</summary>
+        public string? CreatedAt { get; set; }
 
         public int? CustomerId { get; set; }
 

@@ -339,8 +339,9 @@ ORDER BY r.id;", new { id = saleId }));
         {
             using var connection = _db.Open();
 
-            var row = _db.QuerySingle<SaleHistoryRow>(connection,
-                "SELECT code AS code, total_paisa AS totalPaisa FROM sales WHERE id = @id;",
+            var row = _db.QuerySingle<SaleHistoryRow>(connection, @"
+SELECT code AS code, date AS date, created_at AS createdAt, total_paisa AS totalPaisa
+FROM sales WHERE id = @id;",
                 new { id = saleId });
 
             if (row is null)
@@ -348,8 +349,15 @@ ORDER BY r.id;", new { id = saleId }));
                 return ServiceResult.Fail("That bill is not in this shop's database.");
             }
 
+            // A corrected bill (v0.68.0) carries two times on the paper - the black box names both as
+            // well, so the copy in the customer's hand traces to the minute either way.
+            var bothTimes = !string.IsNullOrWhiteSpace(row.CreatedAt)
+                && !string.Equals(row.Date, row.CreatedAt, StringComparison.Ordinal)
+                ? " First stamped " + row.CreatedAt + ", corrected to " + row.Date + "."
+                : string.Empty;
+
             _audit.RecordStandalone(user, Modules.Sales, "sale_reprint",
-                details: "Printed the bill " + row.Code + " again (" + Money.Format(row.TotalPaisa) + ").");
+                details: "Printed the bill " + row.Code + " again (" + Money.Format(row.TotalPaisa) + ")." + bothTimes);
 
             return ServiceResult.Success();
         }

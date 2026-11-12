@@ -74,6 +74,7 @@ public sealed class AppServices
         Startup = new StartupService(Settings, Auth, Permissions, Audit, Log, new HklmRunStore(), new HkcuRunStore());
         // The bill history and its reprint: the same ReceiptService that printed the original (F-52).
         History = new SaleHistoryService(Database, Receipts, ReturnReceipts, Audit, Permissions, Log);
+        TimeCorrection = new TimeCorrectionService(Database, Audit, Log);
         // Do the books add up? A read-only check over the shop's own rows (F-54).
         Books = new BookCheckService(Database, Permissions, Log);
         Lan = new LanService(Database, Audit, Log, Config);
@@ -160,6 +161,8 @@ public sealed class AppServices
 
     /// <summary>Find any bill and print it again (F-52).</summary>
     public SaleHistoryService History { get; }
+
+    public TimeCorrectionService TimeCorrection { get; }
 
     /// <summary>The read-only "do the books add up?" check (F-54) - it never writes a row.</summary>
     public BookCheckService Books { get; }

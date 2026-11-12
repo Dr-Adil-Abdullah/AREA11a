@@ -19,21 +19,21 @@ namespace Area11.Core.Utils;
 public static class BuildInfo
 {
     /// <summary>Version shown in the window title and on the sign-in screen.</summary>
-    public const string Version = "0.67.0";
+    public const string Version = "0.68.0";
 
     /// <summary>The colour of this version, in one word - also the name of the release.</summary>
-    public const string CodeName = "Charcoal";
+    public const string CodeName = "Jasper";
 
     /// <summary>The exact brand colour of this version (must equal BrandBrush in Theme.xaml).</summary>
-    public const string BrandHex = "#36454F";
+    public const string BrandHex = "#9E2B25";
 
     /// <summary>Hover / pressed shade of the same colour.</summary>
-    public const string BrandDarkHex = "#232E35";
+    public const string BrandDarkHex = "#6E1E1A";
 
     /// <summary>Very light tint used for stripes and badges.</summary>
-    public const string BrandSoftHex = "#DEE3E6";
+    public const string BrandSoftHex = "#F0DDDB";
 
-    public const string ReleasedOn = "2026-11-11";
+    public const string ReleasedOn = "2026-11-12";
 
     /// <summary>"v0.2.0 · Purple" - the label the owner looks for.</summary>
     public static string Label => $"v{Version} · {CodeName}";

@@ -87,6 +87,27 @@ VALUES(@saleId, @productId, NULL, @name, @qty, 'strip', @qty, @price, 0, @lineTo
     }
 
     [Fact]
+    public void ACorrectedBillPrintsTheWrongStampSmallAndTheCorrectTimeBig()
+    {
+        // The fix moved this bill two days forward; created_at keeps the wrong stamp. On the
+        // owner's word the paper shows both: the wrong stamp small, the correct time big.
+        using var test = new TestDatabase();
+        var saleId = SeedSale(test);
+
+        using var connection = test.Database.Open();
+        test.Database.Execute(connection,
+            "UPDATE sales SET date = '2026-10-22 14:32:00' WHERE id = @id;", new { id = saleId });
+
+        var document = Receipt(test, saleId);
+
+        Assert.Contains("First stamped 20-10-2026 14:32", document.PlainText);
+        Assert.Contains("Correct time 22-10-2026 14:32", document.PlainText);
+
+        var big = Assert.Single(document.Lines, line => line.DoubleHeight);
+        Assert.Contains("22-10-2026 14:32", big.Text);
+    }
+
+    [Fact]
     public void FiftyEightMillimetrePaper_IsThirtyTwoCharactersWide()
     {
         using var test = new TestDatabase();

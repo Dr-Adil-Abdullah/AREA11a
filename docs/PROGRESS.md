@@ -1,5 +1,9 @@
 # PROGRESS - the feature board (what is done, what is next)
 
+## Owner batch P2/4 — wrong-clock bills fixed together + big drift accepted (v0.68.0 Jasper; Windows/physical pending)
+
+Counter records the drift on every bill (migration 034); Bills → 'Fix wrong time…' (owner only) lists the wrongly-stamped bills together with the time each would get, and one press moves them all - sales.date (reporting time) + money rows, one transaction, both times in the black box. Reprint: wrong stamp small, correct time big. Two-day refusal gone (owner's word): drift to 30 days accepted, garbage beyond refused, days as '+3.0 days'. Offline safety: no list/fix until a server answers in the run; drift hint on Bills from 5 minutes. **1223 cases (+17), 57/57.** Require Windows `ALL GREEN - 1223 of 1223` + physical: drift hint, batch fix, dual-time reprint. Next on owner's "next": P3 de-workshop, P4 docs plan + portion docs.
+
 ## Owner batch P1/4 — true Settings tabs + lockdown chrome (v0.67.0 Charcoal; Windows/physical pending)
 
 Owner's "startup settings are inside Printing" was an off-by-one: the headerless tab strip starts with App-name at 0, so every section opened its neighbour. Fixed (sections 1-7, "My settings"→Staff per owner's answer), pairing pinned in the checker. Lockdown chrome: guard on = no minimize box, maximized, taskbar hidden (edge-triggered, restored on close/unlock), Win+Down instant silent pull-back (no episode for a blocked minimize), live-apply on save via VM event chain. **1206 cases (no new facts - Desktop-only), 57/57.** Require Windows `ALL GREEN - 1206 of 1206` + physical: each section opens its true tab, tick drops minimize+taskbar live. Next on owner's "next": P2 time (batch correction UI + big-drift acceptance, answers recorded), P3 de-workshop, P4 docs plan + portion docs.
