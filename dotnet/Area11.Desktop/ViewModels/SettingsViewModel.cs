@@ -1,3 +1,4 @@
+using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using Microsoft.Win32;
@@ -169,6 +170,13 @@ public sealed class SettingsViewModel : ObservableObject
 
     /// <summary>Portion 16: the three ways Area11 may start and close. Owner only.</summary>
     public ObservableCollection<StartupModeOption> StartupModeOptions { get; }
+
+    /// <summary>
+    /// Lockdown chrome (v0.67.0): raised from Save() when the guard tick was actually written, so
+    /// the frame can drop the minimize box and the taskbar (or bring them back) at once. The shell
+    /// subscribes through ShellViewModel - a page never touches the window.
+    /// </summary>
+    public event Action? LockdownChromeChanged;
 
     /// <summary>Screen lockdown (owner, Nov 2026): warn-and-pull-back plus black-box episodes.</summary>
     public bool FocusGuardEnabled
@@ -1054,6 +1062,11 @@ public sealed class SettingsViewModel : ObservableObject
         SetStatus($"Saved. Paper {paper.Width} mm, printing " +
                   (AutoPrint ? "automatic." : "manual (use the button on the counter screen).") +
                   cloudNote + startupNote + focusNote, false);
+
+        if (focusNote.Length > 0)
+        {
+            LockdownChromeChanged?.Invoke();
+        }
     }
 
     // ---------------------------- Cloud sync ----------------------------

@@ -55,7 +55,9 @@ public sealed class ShellViewModel : ObservableObject
         _user = user;
 
         LogoutCommand = new RelayCommand(Logout);
-        OpenOwnerSettingsCommand = new RelayCommand(() => ShowSettings(4));
+        // "My settings" opens the Staff & permissions tab (owner's word, Nov 2026): the number is
+        // a true SettingsView tab index - kept in step with the section list below, tab for tab.
+        OpenOwnerSettingsCommand = new RelayCommand(() => ShowSettings(5));
         OpenAlertsCommand = new RelayCommand(ShowAlerts);
         GoHomeCommand = new RelayCommand(GoHome);
         OpenModuleCommand = new RelayCommand<NavItem>(OpenModule);
@@ -110,6 +112,12 @@ public sealed class ShellViewModel : ObservableObject
     /// program must never invent that number (D-92).
     /// </summary>
     public event Action? SessionExpired;
+
+    /// <summary>
+    /// Lockdown chrome (v0.67.0): re-raised when the settings page saves the guard tick, so the
+    /// frame re-reads it at once. A re-raise, because a page must never reach the window directly.
+    /// </summary>
+    public event Action? LockdownChromeChanged;
 
     /// <summary>Any click or key press on the frame counts as work - the idle clock starts again.</summary>
     public void TouchSession() => SessionWatch.Touch();
@@ -223,10 +231,13 @@ public sealed class ShellViewModel : ObservableObject
     public void Detach()
     {
         CommandGuard.Failed -= OnCommandFailed;
+        _settingsPage?.LockdownChromeChanged -= ForwardChromeChanged;
         _sessionTimer.Stop();
         SessionWatch.Stop();
         UserMenuOpen = false;
     }
+
+    private void ForwardChromeChanged() => LockdownChromeChanged?.Invoke();
 
     /// <summary>
     /// The line above the page after a button failed, or empty when nothing has failed
@@ -787,16 +798,20 @@ public sealed class ShellViewModel : ObservableObject
         }
     }
 
-    /// <summary>The existing six Settings tab indices, now acted on by the shell header.</summary>
+    /// <summary>
+    /// Repair (owner's word, Nov 2026): every section opened its NEIGHBOUR's tab - the numbers
+    /// below are true SettingsView tab indices (tab 0 is "App name & icon", which has no
+    /// section), so Shop is 1, Printing is 2, and so on. check_repo.py pins the pairing.
+    /// </summary>
     private void BuildSettingsTabs()
     {
-        SettingsTabItems.Add(new SettingsTabItem(0, "Shop"));
-        SettingsTabItems.Add(new SettingsTabItem(1, "Printing"));
-        SettingsTabItems.Add(new SettingsTabItem(2, "Sales rules"));
-        SettingsTabItems.Add(new SettingsTabItem(3, _services.AppLabels.Get("cloud"), "cloud"));
-        SettingsTabItems.Add(new SettingsTabItem(4, "Staff & permissions"));
-        SettingsTabItems.Add(new SettingsTabItem(5, "App words"));
-        SettingsTabItems.Add(new SettingsTabItem(6, "Fields"));
+        SettingsTabItems.Add(new SettingsTabItem(1, "Shop"));
+        SettingsTabItems.Add(new SettingsTabItem(2, "Printing"));
+        SettingsTabItems.Add(new SettingsTabItem(3, "Sales rules"));
+        SettingsTabItems.Add(new SettingsTabItem(4, _services.AppLabels.Get("cloud"), "cloud"));
+        SettingsTabItems.Add(new SettingsTabItem(5, "Staff & permissions"));
+        SettingsTabItems.Add(new SettingsTabItem(6, "App words"));
+        SettingsTabItems.Add(new SettingsTabItem(7, "Fields"));
     }
 
     /// <summary>Adds a top-row module heading only when at least one permitted page follows it.</summary>
@@ -1185,6 +1200,7 @@ public sealed class ShellViewModel : ObservableObject
             if (_settingsPage is null)
             {
                 _settingsPage = new SettingsViewModel(_services, _user, RefreshHeader);
+                _settingsPage.LockdownChromeChanged += ForwardChromeChanged;
             }
 
             var page = _settingsPage;

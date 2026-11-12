@@ -159,7 +159,7 @@
                                 <CheckBox Content="Lock the screen while signed in"
                                           IsChecked="{Binding FocusGuardEnabled, Mode=TwoWay}"
                                           Margin="0,10,0,0" />
-                                <TextBlock Text="When ticked, leaving Area11 for another program first shows a small 'not allowed' box and pulls the screen back, and × asks for the password on every window. Every escape is still written to the black box with who left, at what time, and for how long - and a run ended from Task Manager is caught at the next start."
+                                <TextBlock Text="When ticked, leaving Area11 for another program first shows a small 'not allowed' box and pulls the screen back, and × asks for the password on every window. While ticked, the shop screen also keeps no minimize box, stays maximized, and the taskbar is hidden. Every escape is still written to the black box with who left, at what time, and for how long - and a run ended from Task Manager is caught at the next start."
                                            Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,4,0,0" />
                             </StackPanel>
                         </Border>

@@ -1,5 +1,9 @@
 # PROGRESS - the feature board (what is done, what is next)
 
+## Owner batch P1/4 — true Settings tabs + lockdown chrome (v0.67.0 Charcoal; Windows/physical pending)
+
+Owner's "startup settings are inside Printing" was an off-by-one: the headerless tab strip starts with App-name at 0, so every section opened its neighbour. Fixed (sections 1-7, "My settings"→Staff per owner's answer), pairing pinned in the checker. Lockdown chrome: guard on = no minimize box, maximized, taskbar hidden (edge-triggered, restored on close/unlock), Win+Down instant silent pull-back (no episode for a blocked minimize), live-apply on save via VM event chain. **1206 cases (no new facts - Desktop-only), 57/57.** Require Windows `ALL GREEN - 1206 of 1206` + physical: each section opens its true tab, tick drops minimize+taskbar live. Next on owner's "next": P2 time (batch correction UI + big-drift acceptance, answers recorded), P3 de-workshop, P4 docs plan + portion docs.
+
 ## Green run — v0.66.0 Crimson Windows 1206/1206 (11 Nov 2026, owner evidence)
 
 `RUN-TESTS.cmd` on the owner's PC: **Passed 1206, Failed 0, Total 1206 (1m40s)** - the 9 repaired expectations (8 seed-name + 1 FocusGuard span) are proven, and the v0.64 auth reds stayed green. xUnit verification is DONE for v0.66.0; what remains is physical: rebuild + reinstall (the installed v0.64.0 binary still carries both dialog crashes), kiosk proof (fullscreen, taskbar gone/back, crash box above login, manual PC normal) and the real-life shop test.

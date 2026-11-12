@@ -25,6 +25,9 @@ public partial class ShellWindow : Window
         Closing += ConfirmShellClosing;
         Deactivated += OnShellDeactivated;
         Activated += OnShellReactivated;
+        Loaded += OnShellLoaded;
+        Closed += OnShellClosed;
+        StateChanged += OnShellStateChanged;
     }
 
     /// <summary>
@@ -66,6 +69,12 @@ public partial class ShellWindow : Window
 
     private string? _leftAt;
 
+    /// <summary>Lockdown chrome (v0.67.0): true while THIS frame holds the taskbar hidden.</summary>
+    private bool _chromeHidden;
+
+    /// <summary>An instant-blocked minimize restores before anyone saw it - no episode for that.</summary>
+    private bool _skipInstantEpisode;
+
     /// <summary>
     /// Repair (owner's v0.60.0 run, Nov 2026): without these two, rapid focus fights (our own
     /// Activate against the browser, repeated Alt+Tab) queued one check per heartbeat and every
@@ -103,7 +112,10 @@ public partial class ShellWindow : Window
         }
 
         // First stamp wins: without an Activated in between, repeated leavings are one absence.
+        // A fresh absence also retires any instant-restore skip: the skip belongs to the minimize
+        // that caused it, never to the next real return.
         _leftAt ??= Clock.Now();
+        _skipInstantEpisode = false;
 
         Dispatcher.BeginInvoke(new Action(() =>
         {
@@ -169,6 +181,15 @@ public partial class ShellWindow : Window
     /// </summary>
     private void OnShellReactivated(object? sender, EventArgs e)
     {
+        // An instantly blocked minimize (see OnShellStateChanged) never left the screen, so it
+        // must not become a black-box episode either - the attempt simply did not happen.
+        if (_skipInstantEpisode)
+        {
+            _skipInstantEpisode = false;
+            _leftAt = null;
+            return;
+        }
+
         if (_leftAt is null || DataContext is not ShellViewModel shell)
         {
             return;
@@ -178,6 +199,81 @@ public partial class ShellWindow : Window
         _leftAt = null;
 
         shell.Services.Focus.RecordAway(shell.CurrentUser, leftAt, Clock.Now());
+    }
+
+    /// <summary>
+    /// Lockdown chrome (owner's word, Nov 2026, v0.67.0): while the guard is on, the frame keeps
+    /// only x (no minimize box), stays maximized, and the taskbar is hidden - staff cannot click
+    /// their way out. Applied on load, on return, and live when the tick is saved; the taskbar
+    /// half is edge-triggered (see _chromeHidden) so repeated applies never stack hides.
+    /// </summary>
+    public void ApplyLockdownChrome()
+    {
+        if (DataContext is not ShellViewModel shell)
+        {
+            return;
+        }
+
+        if (shell.Services.Focus.Enabled)
+        {
+            ResizeMode = ResizeMode.NoResize;
+            WindowState = WindowState.Maximized;
+
+            if (!_chromeHidden)
+            {
+                _chromeHidden = true;
+                TaskbarHider.Hide();
+            }
+        }
+        else if (_chromeHidden)
+        {
+            _chromeHidden = false;
+            ResizeMode = ResizeMode.CanResize;
+            TaskbarHider.Show();
+        }
+        else
+        {
+            ResizeMode = ResizeMode.CanResize;
+        }
+    }
+
+    private void OnShellLoaded(object sender, RoutedEventArgs e)
+    {
+        ApplyLockdownChrome();
+
+        if (DataContext is ShellViewModel shell)
+        {
+            shell.LockdownChromeChanged += ApplyLockdownChrome;
+        }
+    }
+
+    private void OnShellClosed(object? sender, EventArgs e)
+    {
+        if (DataContext is ShellViewModel shell)
+        {
+            shell.LockdownChromeChanged -= ApplyLockdownChrome;
+        }
+
+        if (_chromeHidden)
+        {
+            _chromeHidden = false;
+            TaskbarHider.Show();
+        }
+    }
+
+    /// <summary>
+    /// NoResize removes the minimize BOX, not the keyboard: Win+Down still minimizes. While the
+    /// guard is on, a minimized frame is pulled straight back at once - silently, because nothing
+    /// visible happened (the deactivation guard below stays the voice for real leaves).
+    /// </summary>
+    private void OnShellStateChanged(object? sender, EventArgs e)
+    {
+        if (WindowState == WindowState.Minimized
+            && DataContext is ShellViewModel shell && shell.Services.Focus.Enabled)
+        {
+            _skipInstantEpisode = true;
+            WindowState = WindowState.Maximized;
+        }
     }
 
     private TabControl? _headerTabs;

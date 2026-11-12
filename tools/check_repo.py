@@ -4953,6 +4953,47 @@ def check_phase_one_shell() -> None:
                 fail(f"{rel(guarded)}:{index + 1} calls Close() directly - a guarded window must "
                      "defer it past Closing or VerifyNotClosing crashes (Nov 2026)")
 
+    # Repair (owner's word, Nov 2026, v0.67.0): every Settings section opened its NEIGHBOUR's tab -
+    # the headerless TabControl starts with "App name & icon" at 0, so Shop is 1, not 0. WPF cannot
+    # run here, so each section number is pinned against its true tab, with "My settings" too.
+    for needle, reason in (
+        ('SettingsTabItems.Add(new SettingsTabItem(1, "Shop"))', "Shop section lost tab 1"),
+        ('SettingsTabItems.Add(new SettingsTabItem(2, "Printing"))', "Printing lost tab 2"),
+        ('SettingsTabItems.Add(new SettingsTabItem(3, "Sales rules"))', "Sales rules lost tab 3"),
+        ('SettingsTabItem(4, _services.AppLabels.Get("cloud")', "Cloud section lost tab 4"),
+        ('SettingsTabItems.Add(new SettingsTabItem(5, "Staff & permissions"))', "Staff lost tab 5"),
+        ('SettingsTabItems.Add(new SettingsTabItem(6, "App words"))', "App words lost tab 6"),
+        ('SettingsTabItems.Add(new SettingsTabItem(7, "Fields"))', "Fields section lost tab 7"),
+        ("ShowSettings(5)", "My settings no longer opens the Staff tab"),
+    ):
+        if needle not in shell:
+            fail(f"Settings sections: {reason} ({needle})")
+
+    # Lockdown chrome (v0.67.0): no minimize, maximized, taskbar hidden while the guard is on; the
+    # settings page raises the refresh, the shell re-raises it, the frame applies it. Structural.
+    settings_vm_path = DOTNET / "Area11.Desktop/ViewModels/SettingsViewModel.cs"
+    shell_behind_path = DOTNET / "Area11.Desktop/Views/ShellWindow.xaml.cs"
+    for path in (settings_vm_path, shell_behind_path):
+        if not path.exists():
+            fail(f"Lockdown chrome is incomplete: {rel(path)} is missing")
+    if all(path.exists() for path in (settings_vm_path, shell_behind_path)):
+        settings_vm_text = settings_vm_path.read_text(encoding="utf-8-sig")
+        shell_behind_text = shell_behind_path.read_text(encoding="utf-8-sig")
+        if "LockdownChromeChanged" not in settings_vm_text:
+            fail("Lockdown chrome: the settings page does not raise the refresh")
+        if "ForwardChromeChanged" not in shell:
+            fail("Lockdown chrome: the shell does not forward the refresh to the frame")
+        for needle, reason in (
+            ("ApplyLockdownChrome", "the frame never applies the guard chrome"),
+            ("ResizeMode.NoResize", "the minimize box survives the guard"),
+            ("TaskbarHider.Hide()", "the taskbar survives the guard"),
+            ("TaskbarHider.Show()", "a closed/unlocked frame can orphan the taskbar hidden"),
+            ("_chromeHidden", "repeated applies can stack taskbar hides"),
+            ("OnShellStateChanged", "Win+Down minimizes past the guard"),
+        ):
+            if needle not in shell_behind_text:
+                fail(f"Lockdown chrome: {reason} ({needle})")
+
     REPORT.append(
         "Shell: fixed Area11, 44px bell, permission-filtered modules, Counter-first startup, "
         "contextual pages, six shell-owned Settings sections and a separate Products category filter; "
