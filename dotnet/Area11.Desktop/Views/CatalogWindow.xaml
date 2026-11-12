@@ -1,7 +1,7 @@
 <Window Icon="{DynamicResource Area11WindowIcon}" x:Class="Area11.Desktop.Views.CatalogWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Catalogs - Area11" Height="720" Width="1100"
+        Title="{Binding WindowTitle}" Height="720" Width="1100"
         MinHeight="620" MinWidth="940" WindowStartupLocation="CenterOwner"
         Background="{StaticResource CanvasBrush}">
     <Grid Margin="18">

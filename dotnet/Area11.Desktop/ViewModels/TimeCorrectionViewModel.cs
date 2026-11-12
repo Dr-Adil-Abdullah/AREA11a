@@ -44,6 +44,18 @@ public sealed class TimeCorrectionViewModel : ObservableObject
         List();
     }
 
+    /// <summary>The window title carries the shop's app name (v0.69.0, de-workshop).</summary>
+    public string WindowTitle => AppDisplayName + " — Fix the time on bills";
+
+    private string AppDisplayName
+    {
+        get
+        {
+            var name = _services.Settings.GetString("brand.appName").Trim();
+            return name.Length == 0 ? "Area11" : name;
+        }
+    }
+
     public ObservableCollection<TimeCorrectionBill> Bills { get; } = new();
 
     public RelayCommand ListCommand { get; }

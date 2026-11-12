@@ -30,7 +30,8 @@ public sealed class CommandOutcome
     public string Sentence =>
         (HasName ? "The \"" + Name + "\" button" : "A button on this page")
         + " could not finish. The page is still open and the rest of the shop is untouched - try it "
-        + "again; if it fails twice, run tools\\SEND-REPORT.cmd and send that one file.";
+        + "again; if it fails twice, show the report file to the person who supports your shop "
+        + "(the SEND-REPORT tool collects it into one file).";
 
     /// <summary>True when the button's method gave it a readable name.</summary>
     public bool HasName => Name.Length > 0 && !string.Equals(Name, "button", StringComparison.Ordinal);

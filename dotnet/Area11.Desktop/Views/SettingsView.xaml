@@ -194,7 +194,7 @@
 
                         <Border Style="{StaticResource SettingsGroup}">
                             <StackPanel>
-                                <TextBlock Text="When the receipt prints (D-26)" Style="{StaticResource SectionTitle}" />
+                                <TextBlock Text="When the receipt prints" Style="{StaticResource SectionTitle}" />
                                 <TextBlock Text="The owner asked for this to be a choice, so it is: automatic or manual."
                                            Style="{StaticResource FieldHint}" />
 
@@ -388,7 +388,7 @@
                             <StackPanel>
                                 <TextBlock Text="Stock" Style="{StaticResource SectionTitle}" />
 
-                                <TextBlock Text="New work never takes stock below zero (D-93)"
+                                <TextBlock Text="New work never takes stock below zero"
                                            Style="{StaticResource FieldLabel}" Margin="0,10,0,0" />
                                 <TextBlock TextWrapping="Wrap" Style="{StaticResource FieldHint}"
                                            Text="Sales, write-offs, goods drawings, supplier returns and PR cancellations stop with a clear shortage message. There is no checkbox or owner bypass. Existing minus quantities stay visible in Stock minus until a physical stock-take reconciles them." />
@@ -455,7 +455,7 @@
 
                         <Border Style="{StaticResource SettingsGroup}">
                             <StackPanel IsEnabled="{Binding CanChangeCloud}">
-                                <TextBlock Text="Supabase mirror (optional)" Style="{StaticResource SectionTitle}" />
+                                <TextBlock Text="Cloud mirror (optional)" Style="{StaticResource SectionTitle}" />
                                 <TextBlock Text="A copy of the shop for looking at from home. The database on this computer is always the truth; the cloud is a mirror. Area11 works with no internet and no cloud account."
                                            Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
 

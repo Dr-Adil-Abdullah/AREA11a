@@ -14,6 +14,13 @@ namespace Area11.Desktop;
 /// </summary>
 public static class CrashReporter
 {
+    /// <summary>
+    /// The name on the crash box (v0.69.0): the shop's app name once the program knows it, the
+    /// product name before that. Set once after the services exist; a crash before then cannot
+    /// know the shop's choice.
+    /// </summary>
+    public static string AppName { get; set; } = "Area11";
+
     public static void Report(string area, Exception? exception, string? note = null)
     {
         var file = CrashLog.Write(area, exception, note);
@@ -37,14 +44,14 @@ public static class CrashReporter
             // No console attached (double-clicked exe). The file and the box are enough.
         }
 
-        var text = "Area11 hit a problem " + area + ".\n\n"
+        var text = AppName + " hit a problem " + area + ".\n\n"
             + (string.IsNullOrWhiteSpace(note) ? string.Empty : note + "\n\n")
             + (exception?.GetType().Name ?? "Exception") + ": " + message
             + (string.IsNullOrWhiteSpace(file)
                 ? "\n\nThe details could not be written to a file."
                 : "\n\nFull details were written to:\n" + file)
-            + "\n\nSend this text and that file in the chat.";
-        var caption = "Area11 " + BuildInfo.Version;
+            + "\n\nPlease show this message and that file to the person who supports your shop.";
+        var caption = AppName + " " + BuildInfo.Version;
 
         // Kiosk login (v0.66.0) is topmost fullscreen: an ownerless box would open UNDER it and the
         // shop would stare at a frozen sign-in. Parenting to the open window keeps the box on top.

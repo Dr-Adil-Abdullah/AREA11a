@@ -15,7 +15,7 @@
             <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
                 <TextBlock Text="{DynamicResource AppLabel.books}" Style="{StaticResource PageTitle}" />
                 <TextBlock Style="{StaticResource PageSubtitle}" TextWrapping="Wrap"
-                           Text="Every total is compared with the rows it was built from. The check only reads: nothing is repaired, and nothing is changed (F-54)." />
+                           Text="Every total is compared with the rows it was built from. The check only reads: nothing is repaired, and nothing is changed." />
             </StackPanel>
 
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">

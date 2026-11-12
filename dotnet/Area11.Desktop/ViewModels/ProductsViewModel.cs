@@ -109,6 +109,18 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         Load();
     }
 
+    /// <summary>The editor window title carries the shop's app name (v0.69.0, de-workshop).</summary>
+    public string WindowTitle => AppDisplayName + " — Product editor";
+
+    private string AppDisplayName
+    {
+        get
+        {
+            var name = _services.Settings.GetString("brand.appName").Trim();
+            return name.Length == 0 ? "Area11" : name;
+        }
+    }
+
     public ObservableCollection<Product> Items { get; } = new();
 
     public ObservableCollection<Category> Categories { get; } = new();

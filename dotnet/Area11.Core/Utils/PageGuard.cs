@@ -36,8 +36,8 @@ public sealed class PageFault
     public string Advice =>
         "Nothing else is affected: the other pages, the counter and the shop's figures are untouched. "
         + "Press another page, and try this one again in a minute - a read that failed once often "
-        + "works on the second try. If it fails again, run tools\\SEND-REPORT.cmd and send that one "
-        + "file; it carries the whole detail.";
+        + "works on the second try. If it fails again, show the file named below to the person who "
+        + "supports your shop (the SEND-REPORT tool collects it into one file).";
 
     public bool HasReport => !string.IsNullOrWhiteSpace(ReportPath);
 
@@ -52,7 +52,7 @@ public sealed class PageFault
     public string ReportLabel => HasReport
         ? "The full detail was written to: " + ReportPath
         : "The full detail is in the shop's log folder (" + LogsFolderForReading()
-          + ") - run tools\\SEND-REPORT.cmd and it collects the report for you.";
+          + ") - the SEND-REPORT tool in the shop folder collects the report for you.";
 
     /// <summary>
     /// The log folder, or the usual place if this machine will not answer. A label is never worth an

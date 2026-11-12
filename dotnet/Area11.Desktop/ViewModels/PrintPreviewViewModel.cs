@@ -38,6 +38,18 @@ public sealed class PrintPreviewViewModel : ObservableObject
 
     public string Title { get; }
 
+    /// <summary>The window title carries the shop's app name (v0.69.0, de-workshop).</summary>
+    public string WindowTitle => AppDisplayName + " — " + Title;
+
+    private string AppDisplayName
+    {
+        get
+        {
+            var name = _services.Settings.GetString("brand.appName").Trim();
+            return name.Length == 0 ? "Area11" : name;
+        }
+    }
+
     /// <summary>The paper text, cut to the printer's width - monospaced on the screen.</summary>
     public string PreviewText { get; }
 

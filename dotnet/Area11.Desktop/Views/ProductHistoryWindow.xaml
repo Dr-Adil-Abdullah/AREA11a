@@ -1,7 +1,7 @@
 <Window Icon="{DynamicResource Area11WindowIcon}" x:Class="Area11.Desktop.Views.ProductHistoryWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="History - Area11" Height="620" Width="860" MinHeight="540" MinWidth="780"
+        Title="{Binding WindowTitle}" Height="620" Width="860" MinHeight="540" MinWidth="780"
         WindowStartupLocation="CenterOwner" Background="{StaticResource CanvasBrush}">
 
     <Grid Margin="16">

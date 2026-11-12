@@ -59,6 +59,18 @@ public sealed class CatalogWindowViewModel : ObservableObject
         Load();
     }
 
+    /// <summary>The window title carries the shop's app name (v0.69.0, de-workshop).</summary>
+    public string WindowTitle => AppDisplayName + " — Catalogs";
+
+    private string AppDisplayName
+    {
+        get
+        {
+            var name = _services.Settings.GetString("brand.appName").Trim();
+            return name.Length == 0 ? "Area11" : name;
+        }
+    }
+
     public ObservableCollection<Category> Categories { get; } = new();
 
     public ObservableCollection<Category> ParentOptions { get; } = new();

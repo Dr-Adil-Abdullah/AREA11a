@@ -17,7 +17,23 @@ public partial class CloseUnlockWindow : Window
     {
         InitializeComponent();
         _services = services;
+
+        // De-workshop (v0.69.0): this prompt carries the shop's app name, not the product name.
+        var app = AppDisplayName;
+        Title = app + " — Closing is protected";
+        WhoText.Text = "Who is closing " + app + "?";
+        CloseButton.Content = "Close " + app;
+
         Loaded += (_, _) => NameBox.Focus();
+    }
+
+    private string AppDisplayName
+    {
+        get
+        {
+            var name = _services.Settings.GetString("brand.appName").Trim();
+            return name.Length == 0 ? "Area11" : name;
+        }
     }
 
     /// <summary>True when the service accepted the secret and the permission. Read after ShowDialog.</summary>

@@ -13,7 +13,7 @@
         <DockPanel Grid.Row="0" Margin="0,0,0,10">
             <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
                 <TextBlock Text="{DynamicResource AppLabel.cloud}" Style="{StaticResource PageTitle}" />
-                <TextBlock Text="Copy the shop's data to Supabase so you can look at it from home. The copy here is always the truth; the cloud is a mirror (F-48)."
+                <TextBlock Text="Copy the shop's data to the cloud so you can look at it from home. The copy here is always the truth; the cloud is a mirror."
                            Style="{StaticResource PageSubtitle}" TextWrapping="Wrap" />
             </StackPanel>
 
@@ -83,7 +83,7 @@
                             </ItemsControl>
 
                             <TextBlock Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,8,0,0"
-                                       Text="Medicines, customers, suppliers, categories, companies and batches travel whole. Bills, purchases, payments and expenses travel for the last 90 days (Spec 25.5). Photos never travel - they go in the zip backup." />
+                                       Text="Medicines, customers, suppliers, categories, companies and batches travel whole. Bills, purchases, payments and expenses travel for the last 90 days. Photos never travel - they go in the zip backup." />
                         </StackPanel>
                     </Border>
                 </StackPanel>

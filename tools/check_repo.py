@@ -5451,6 +5451,75 @@ def check_master_foundation() -> None:
 
 
 # ---------------------------------------------------------------------------
+# De-workshop: the shop must never see the workshop (v0.69.0, owner's word)
+# ---------------------------------------------------------------------------
+def check_deworkshop() -> None:
+    """No dev names, spec codes, vendor names or workshop wording on the shop's face.
+
+    Why a check and not a cleanup: every one of these looks perfect to the person who typed it.
+    A window titled "Photos - Area11" after the owner named his app, a subtitle ending in (F-52),
+    a crash box asking him to "send it in the chat" - each reads as an unfinished program, and
+    each would come back the next time someone copies an old line. So the face is checked here.
+    """
+    views = sorted((DOTNET / "Area11.Desktop/Views").glob("*.xaml"))
+    attr_code = re.compile(
+        r'(?:Text|Content|ToolTip|Title)="[^"]*\((?:F|D|U|E|Z|T|CAT|NAV|UNIT|PHOTO)-[0-9A-Z-]+')
+
+    for path in views:
+        text = path.read_text(encoding="utf-8-sig")
+
+        if ' - Area11"' in text:
+            fail(f"{rel(path)} still titles a window with the dev name 'Area11' - the shop named "
+                 "its app, and every window carries that name (v0.69.0)")
+
+        match = attr_code.search(text)
+        if match:
+            fail(f"{rel(path)} shows a spec code on the screen ({match.group(0)[:60]}...) - codes "
+                 "live in comments, never in front of the shop")
+
+        if "Supabase" in text:
+            fail(f"{rel(path)} names the vendor 'Supabase' on the screen - the shop reads 'cloud' "
+                 "(v0.69.0)")
+
+    crash = (DOTNET / "Area11.Desktop/CrashReporter.cs").read_text(encoding="utf-8-sig")
+
+    if "in the chat" in crash:
+        fail("CrashReporter still asks the owner to 'send it in the chat' - the shop has a support "
+             "person, not a dev chat")
+
+    if "supports your shop" not in crash:
+        fail("CrashReporter lost the support wording - a crash box that names no one leaves the "
+             "owner with a file and no address")
+
+    if "public static string AppName" not in crash:
+        fail("CrashReporter lost the shop's app name - the crash box would call every shop 'Area11'")
+
+    guard = (DOTNET / "Area11.Core/Utils/PageGuard.cs").read_text(encoding="utf-8-sig")
+    button = (DOTNET / "Area11.Core/Utils/CommandGuard.cs").read_text(encoding="utf-8-sig")
+
+    for name, text in (("PageGuard.cs", guard), ("CommandGuard.cs", button)):
+        if "tools\\\\SEND-REPORT.cmd" in text:
+            fail(f"{name} still tells the operator to run tools\\SEND-REPORT.cmd - the file is "
+                 "named, and the support person is named; the command line is not (v0.69.0)")
+
+    close_unlock = (DOTNET / "Area11.Desktop/Views/CloseUnlockWindow.xaml.cs").read_text(
+        encoding="utf-8-sig")
+
+    if '"Who is closing " +' not in close_unlock:
+        fail("CloseUnlockWindow no longer asks with the shop's app name - 'Who is closing Area11?' "
+             "is the workshop talking")
+
+    shell_code = (DOTNET / "Area11.Desktop/Views/ShellWindow.xaml.cs").read_text(encoding="utf-8-sig")
+
+    if '"Area11", MessageBoxButton.OK, MessageBoxImage.Warning' in shell_code:
+        fail("the guard's 'not allowed' box is captioned 'Area11' - it carries the shop's app name "
+             "(v0.69.0)")
+
+    REPORT.append("De-workshop: every window carries the shop's app name, no spec code, vendor name "
+                  "or workshop wording on the screen")
+
+
+# ---------------------------------------------------------------------------
 def check_docs() -> None:
     docs = [ROOT / "README.md", ROOT / "HANDOFF.md", ROOT / "AGENTS.md", ROOT / "dotnet/README.md"]
     docs += sorted((ROOT / "docs").glob("*.md"))
@@ -5958,6 +6027,7 @@ def main() -> int:
     check_phase_two_fields()
     check_phase_three_packaging()
     check_master_foundation()
+    check_deworkshop()
     check_checklist()
     check_audit_recovery()
     check_report_chart()

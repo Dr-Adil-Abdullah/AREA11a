@@ -21,6 +21,23 @@ public partial class App : Application
     /// </summary>
     internal static bool IsSystemShutdown { get; private set; }
 
+    /// <summary>
+    /// The shop's app name for the boxes (v0.69.0): read once the services exist, the product name
+    /// before that or when the settings cannot be read. A box caption is never worth an exception.
+    /// </summary>
+    private string ShopAppName()
+    {
+        try
+        {
+            var name = _services?.Settings.GetString("brand.appName")?.Trim() ?? string.Empty;
+            return name.Length == 0 ? "Area11" : name;
+        }
+        catch (Exception)
+        {
+            return "Area11";
+        }
+    }
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -35,6 +52,9 @@ public partial class App : Application
             _instance.Dispose();
             _instance = null;
 
+            // De-workshop note (v0.69.0): this box keeps the product name on purpose - it is shown
+            // BEFORE the database exists, and opening the shop's file from a refused copy just to
+            // read its app name would risk a lock on the copy that is already selling.
             MessageBox.Show(
                 "Area11 is already running on this Windows account. Use the open window - " +
                 "a second copy is not allowed, because two copies would sell from the same shelf.",
@@ -58,6 +78,7 @@ public partial class App : Application
         try
         {
             _services = AppServices.Create();
+            CrashReporter.AppName = ShopAppName();
             LabelResources.Apply(_services.AppLabels);
             IconAssets.Apply(_services);
 
@@ -70,10 +91,10 @@ public partial class App : Application
                 _services.Startup.ResetToManual();
                 RunTrail.Step("startup protection reset by Shift-at-startup");
                 MessageBox.Show(
-                    "Closing protection was switched off and Area11 is back to manual start. " +
+                    "Closing protection was switched off and " + ShopAppName() + " is back to manual start. " +
                     "This was written to the black box. Pick a mode again in Settings, Shop " +
                     "when you are ready.",
-                    "Area11", MessageBoxButton.OK, MessageBoxImage.Information);
+                    ShopAppName(), MessageBoxButton.OK, MessageBoxImage.Information);
             }
 
             // Every button that fails writes one line to the same log the rest of the program uses

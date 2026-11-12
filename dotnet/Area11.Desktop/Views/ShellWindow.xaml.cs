@@ -159,7 +159,8 @@ public partial class ShellWindow : Window
                 {
                     MessageBox.Show(this,
                         "Going back is not allowed on this screen. This escape was written to the black box.",
-                        "Area11", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        (DataContext as ShellViewModel)?.AppDisplayName ?? "Area11",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
                 finally
                 {

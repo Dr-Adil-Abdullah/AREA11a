@@ -161,15 +161,15 @@ public static class InstallService
 
     private static InstallCheck ArchitectureCheck(MachineFacts facts) => facts.IsArm64
         ? new InstallCheck("architecture", "Processor", InstallState.Note,
-            "This is an ARM PC. Area11 installs its x64 build and Windows 10 runs it under emulation - slower, but it works.",
+            "This is an ARM PC. This program installs its x64 build and Windows 10 runs it under emulation - slower, but it works.",
             "Nothing to do.")
         : new InstallCheck("architecture", "Processor", InstallState.Ready,
-            "64-bit Intel/AMD PC - the build Area11 is made for.",
+            "64-bit Intel/AMD PC - the build this program is made for.",
             string.Empty);
 
     private static InstallCheck RuntimeCheck() => new(
         "runtime", "What has to be installed", InstallState.Ready,
-        "Nothing else: the .NET runtime travels inside the program (D-19), the database engine ships with it, and there is no Python anywhere.",
+        "Nothing else: the .NET runtime travels inside the program, the database engine ships with it, and there is no Python anywhere.",
         string.Empty);
 
     private static InstallCheck SourceCheck(MachineFacts facts)
@@ -235,7 +235,7 @@ public static class InstallService
 
         return new InstallCheck("spooler", "Print spooler", InstallState.Note,
             "Windows did not say whether the print spooler is running.",
-            "The installer starts it anyway; a printer problem never stops Area11 (Z-07).");
+            "The installer starts it anyway; a printer problem never stops the shop.");
     }
 
     private static InstallCheck PrinterCheck(MachineFacts facts)

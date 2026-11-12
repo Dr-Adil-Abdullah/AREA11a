@@ -72,7 +72,7 @@ public static class Program
         {
             RunTrail.Step("STOPPED before the first window: " + exception.GetType().Name + ": " + exception.Message);
 
-            CrashReporter.Report("starting Area11 (before the first window)", exception,
+            CrashReporter.Report("starting the application (before the first window)", exception,
                 "The program closed while Windows was drawing its first window.");
 
             return 1;

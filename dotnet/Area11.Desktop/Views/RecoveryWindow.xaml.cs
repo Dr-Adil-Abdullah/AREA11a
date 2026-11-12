@@ -17,7 +17,20 @@ public partial class RecoveryWindow : Window
     {
         InitializeComponent();
         _services = services;
+
+        // De-workshop (v0.69.0): this prompt carries the shop's app name, not the product name.
+        Title = AppDisplayName + " — Forgot password";
+
         Loaded += (_, _) => SecretBox.Focus();
+    }
+
+    private string AppDisplayName
+    {
+        get
+        {
+            var name = _services.Settings.GetString("brand.appName").Trim();
+            return name.Length == 0 ? "Area11" : name;
+        }
     }
 
     /// <summary>The signed-in owner. Read after ShowDialog, only when it returned true.</summary>

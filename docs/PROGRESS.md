@@ -1,5 +1,9 @@
 # PROGRESS - the feature board (what is done, what is next)
 
+## Owner batch P3/4 — de-workshop: the shop sees no workshop (v0.69.0 Mallard; Windows/physical pending)
+
+Every window carries the shop's app name (9 VM-bound dialog titles + closing/password prompts in code-behind; crash box + Shift box + guard caption too). Visible spec codes gone (7 XAML subtitles, tax paper Z-03, installer D-19/Z-07; one test expectation updated, count unchanged), 'Supabase'→'cloud' ×2, crash/fault/button-failure wording professional (file + support person named; 'in the chat' and run-tools commands out). Kept deliberately: version in titles (owner's word), second-copy product name (pre-database, must not touch the file). New `check_deworkshop` gate (proved by planting). **1223 cases, 58/58.** Require Windows `ALL GREEN - 1223 of 1223` + physical: dialog titles, closing prompt, crash box. Next on owner's "next": P4 docs plan + portion docs.
+
 ## Owner batch P2/4 — wrong-clock bills fixed together + big drift accepted (v0.68.0 Jasper; Windows/physical pending)
 
 Counter records the drift on every bill (migration 034); Bills → 'Fix wrong time…' (owner only) lists the wrongly-stamped bills together with the time each would get, and one press moves them all - sales.date (reporting time) + money rows, one transaction, both times in the black box. Reprint: wrong stamp small, correct time big. Two-day refusal gone (owner's word): drift to 30 days accepted, garbage beyond refused, days as '+3.0 days'. Offline safety: no list/fix until a server answers in the run; drift hint on Bills from 5 minutes. **1223 cases (+17), 57/57.** Require Windows `ALL GREEN - 1223 of 1223` + physical: drift hint, batch fix, dual-time reprint. Next on owner's "next": P3 de-workshop, P4 docs plan + portion docs.

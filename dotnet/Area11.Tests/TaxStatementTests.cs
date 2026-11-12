@@ -136,7 +136,7 @@ public sealed class TaxStatementTests
 
         // Rs 702 on the bill, Rs 700 taken: the Rs 2 is the round-off, and it is on the paper.
         Assert.Equal(-200L, report.RoundOffPaisa);
-        Assert.Contains("Round-off down on the bills (Z-03): " + report.RoundOffLabel, text);
+        Assert.Contains("Round-off down on the bills: " + report.RoundOffLabel, text);
         Assert.Equal(report.GrossPaisa, report.NetPaisa + report.TaxPaisa + report.RoundOffPaisa);
     }
 

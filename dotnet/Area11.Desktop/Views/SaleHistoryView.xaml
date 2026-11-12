@@ -14,7 +14,7 @@
         <DockPanel Grid.Row="0" Margin="0,0,0,10">
             <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
                 <TextBlock Text="{DynamicResource AppLabel.bills}" Style="{StaticResource PageTitle}" />
-                <TextBlock Text="Every bill the shop has made: find it, open it, print it again (F-52)."
+                <TextBlock Text="Every bill the shop has made: find it, open it, print it again."
                            Style="{StaticResource PageSubtitle}" TextWrapping="Wrap" />
                 <TextBlock Text="{Binding DriftHintText}" Style="{StaticResource PageSubtitle}" TextWrapping="Wrap"
                            FontWeight="SemiBold" Visibility="{Binding HasDriftHint, Converter={StaticResource BoolToVis}}" />
