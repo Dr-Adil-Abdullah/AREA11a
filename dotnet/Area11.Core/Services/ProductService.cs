@@ -436,6 +436,46 @@ VALUES
     }
 
     /// <summary>
+    /// The owner's necessary product fields this patch leaves empty (v0.70.0, owner batch).
+    /// The editor shows these in a warn-once popup; the service never blocks the save, because
+    /// the owner chose "warn me once, then let me save anyway". A linked salt or brand counts
+    /// as present - the typed text is only one of the two ways to fill it.
+    /// </summary>
+    public IReadOnlyList<string> MissingRequiredLabels(ProductPatch patch)
+    {
+        using var connection = _db.Open();
+        var missing = new List<string>();
+        var generic = patch.GenericFormulaId > 0 ? "linked" : patch.Generic;
+        if (NativeFieldPolicyService.RequiredTextError(_db, connection,
+            "product.generic", "Generic / salt", generic) is not null)
+        {
+            missing.Add("Generic / salt");
+        }
+        var brand = patch.BrandId > 0 ? "linked" : patch.Brand;
+        if (NativeFieldPolicyService.RequiredTextError(_db, connection,
+            "product.brand", "Brand", brand) is not null)
+        {
+            missing.Add("Brand");
+        }
+        if (NativeFieldPolicyService.RequiredTextError(_db, connection,
+            "product.rack", "Rack / shelf", patch.RackNo) is not null)
+        {
+            missing.Add("Rack / shelf");
+        }
+        if (NativeFieldPolicyService.RequiredTextError(_db, connection,
+            "product.pack", "Pack description", patch.PackSizeLabel) is not null)
+        {
+            missing.Add("Pack description");
+        }
+        if (NativeFieldPolicyService.IsRequired(_db, connection, "product.retail")
+            && patch.RetailPaisa is null or <= 0)
+        {
+            missing.Add("Selling price");
+        }
+        return missing;
+    }
+
+    /// <summary>
     /// Partial update (Spec 8.1.4.1): only non-null fields are written, so changing the retail
     /// rate can never wipe the cost, the pack formula, the rack or the reorder level.
     /// </summary>

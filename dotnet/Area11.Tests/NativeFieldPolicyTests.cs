@@ -68,12 +68,12 @@ BEGIN SELECT RAISE(ABORT, 'audit unavailable'); END;"));
         var service = new NativeFieldPolicyService(test.Database, test.Audit, test.Log);
         Assert.True(service.EnsureDefaults().Ok);
         var fields = service.List(TestData.Owner).Value!;
-        Assert.Equal(12, fields.Count);
+        Assert.Equal(13, fields.Count);
         var quantity = fields.Single(field => field.FieldKey == "sale.quantity");
         Assert.True(service.SetRequired(TestData.Owner, quantity.Id, false, true).Ok);
         Assert.True(service.EnsureDefaults().Ok);
         var after = service.List(TestData.Owner).Value!;
-        Assert.Equal(12, after.Count);
+        Assert.Equal(13, after.Count);
         var kept = after.Single(field => field.Id == quantity.Id);
         Assert.False(kept.Required);
         Assert.Equal("Owner", kept.OverrideAcknowledgedBy);
@@ -189,6 +189,66 @@ BEGIN SELECT RAISE(ABORT, 'audit unavailable'); END;"));
             "SELECT required FROM form_field_definitions WHERE id = @id;", new { id })));
         Assert.Equal(0L, Convert.ToInt64(test.Database.Scalar(connection,
             "SELECT COUNT(*) FROM audit_logs WHERE action = 'native_field_required_changed';")));
+    }
+
+    [Fact]
+    public void SellingPriceShipsNecessaryAndIsNamedWhenZero()
+    {
+        using var test = new TestDatabase();
+        var policy = new NativeFieldPolicyService(test.Database, test.Audit, test.Log);
+        Assert.True(policy.EnsureDefaults().Ok);
+        var products = new ProductService(test.Database, test.Audit, test.Log);
+
+        // A price of zero is the Counter's blank-total case: the save must name it.
+        var missing = products.MissingRequiredLabels(new ProductPatch { Name = "Disprin", RetailPaisa = 0 });
+        Assert.Contains("Selling price", missing);
+    }
+
+    [Fact]
+    public void SellingPriceWarningGoesQuietWhenTheOwnerMarksItOptional()
+    {
+        using var test = new TestDatabase();
+        var policy = new NativeFieldPolicyService(test.Database, test.Audit, test.Log);
+        Assert.True(policy.EnsureDefaults().Ok);
+        var retail = policy.List(TestData.Owner).Value!.Single(field => field.FieldKey == "product.retail");
+        Assert.True(retail.Required);
+        Assert.True(policy.SetRequired(TestData.Owner, retail.Id, false, false).Ok);
+        var products = new ProductService(test.Database, test.Audit, test.Log);
+
+        var missing = products.MissingRequiredLabels(new ProductPatch { Name = "Disprin" });
+        Assert.DoesNotContain("Selling price", missing);
+    }
+
+    [Fact]
+    public void RequiredTextFieldsAreNamedAndALinkedSaltCountsAsPresent()
+    {
+        using var test = new TestDatabase();
+        var policy = new NativeFieldPolicyService(test.Database, test.Audit, test.Log);
+        Assert.True(policy.EnsureDefaults().Ok);
+        var generic = policy.List(TestData.Owner).Value!.Single(field => field.FieldKey == "product.generic");
+        Assert.True(policy.SetRequired(TestData.Owner, generic.Id, true, false).Ok);
+        var products = new ProductService(test.Database, test.Audit, test.Log);
+
+        Assert.Contains("Generic / salt",
+            products.MissingRequiredLabels(new ProductPatch { Name = "Disprin", RetailPaisa = 100 }));
+
+        // The typed text is only one way to fill the salt: a catalog link also fills it.
+        Assert.DoesNotContain("Generic / salt",
+            products.MissingRequiredLabels(new ProductPatch { Name = "Disprin", RetailPaisa = 100, GenericFormulaId = 7 }));
+    }
+
+    [Fact]
+    public void ProductSaveIsNeverBlockedByMissingNecessaryFields()
+    {
+        using var test = new TestDatabase();
+        var policy = new NativeFieldPolicyService(test.Database, test.Audit, test.Log);
+        Assert.True(policy.EnsureDefaults().Ok);
+        var products = new ProductService(test.Database, test.Audit, test.Log);
+
+        // Warn-once is the owner's word: the popup warns, the service always saves.
+        var created = products.Create(TestData.Owner, new ProductPatch { Name = "Priceless", RetailPaisa = 0 });
+        Assert.True(created.Ok);
+        Assert.True(created.Value > 0);
     }
 
     private static int AddField(TestDatabase test, bool critical) => test.Database.Tx(connection =>

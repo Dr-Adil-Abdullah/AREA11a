@@ -5520,6 +5520,48 @@ def check_deworkshop() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Warn-once save: the Fields tab must actually warn (v0.70.0, owner's word)
+# ---------------------------------------------------------------------------
+def check_save_warning() -> None:
+    """The product form warns about the owner's necessary fields - and still saves.
+
+    The owner clicked "Mark required" and nothing happened: the policy only reached the file
+    import, and the selling price was not even in the catalog. Now the catalog holds the price
+    as necessary, the editor names the missing fields in a popup with a save-anyway choice,
+    and the service itself never blocks (that is the owner's chosen warn-once).
+    """
+    policy = (DOTNET / "Area11.Core/Services/NativeFieldPolicyService.cs").read_text(encoding="utf-8-sig")
+
+    if '"product.retail"' not in policy:
+        fail("the built-in field catalog lost the selling price - a product without a price "
+             "breaks the Counter total with no warning at save time")
+
+    if 'item.Key == "product.retail"' not in policy:
+        fail("the selling price no longer ships necessary - the owner's word is that a price "
+             "is expected unless he relaxes it himself")
+
+    products = (DOTNET / "Area11.Core/Services/ProductService.cs").read_text(encoding="utf-8-sig")
+
+    if "MissingRequiredLabels" not in products:
+        fail("ProductService lost MissingRequiredLabels - the editor popup would have nothing to name")
+
+    editor = (DOTNET / "Area11.Desktop/ViewModels/ProductsViewModel.cs").read_text(encoding="utf-8-sig")
+
+    if "MissingRequiredLabels(patch)" not in editor or "Save anyway?" not in editor:
+        fail("the product editor no longer warns about the necessary fields with a save-anyway "
+             "choice - the Fields tab would be a dead switch again")
+
+    fields = (DOTNET / "Area11.Desktop/ViewModels/NativeFieldsViewModel.cs").read_text(encoding="utf-8-sig")
+
+    if '"product.retail"' not in fields:
+        fail("the Fields tab status no longer counts the selling price as connected - it would "
+             "tell the owner his price rule is a mere preference")
+
+    REPORT.append("Warn-once save: the selling price ships necessary, the product form names what "
+                  "is missing with a save-anyway choice, and the service never blocks the save")
+
+
+# ---------------------------------------------------------------------------
 def check_docs() -> None:
     docs = [ROOT / "README.md", ROOT / "HANDOFF.md", ROOT / "AGENTS.md", ROOT / "dotnet/README.md"]
     docs += sorted((ROOT / "docs").glob("*.md"))
@@ -6028,6 +6070,7 @@ def main() -> int:
     check_phase_three_packaging()
     check_master_foundation()
     check_deworkshop()
+    check_save_warning()
     check_checklist()
     check_audit_recovery()
     check_report_chart()

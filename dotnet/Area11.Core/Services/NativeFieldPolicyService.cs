@@ -45,6 +45,7 @@ public sealed class NativeFieldPolicyService
                     (Key: "product.brand", Section: "Product", Label: "Brand", Type: NativeFieldDataType.Text, Input: NativeInputMethod.Text),
                     (Key: "product.rack", Section: "Product", Label: "Rack / shelf", Type: NativeFieldDataType.Text, Input: NativeInputMethod.Text),
                     (Key: "product.pack", Section: "Product", Label: "Pack description", Type: NativeFieldDataType.Text, Input: NativeInputMethod.Text),
+                    (Key: "product.retail", Section: "Product", Label: "Selling price", Type: NativeFieldDataType.Amount, Input: NativeInputMethod.Numeric),
                     (Key: "supplier.agency", Section: "Supplier", Label: "Supplier agency", Type: NativeFieldDataType.Text, Input: NativeInputMethod.Text)
                 };
                 foreach (var item in definitions)
@@ -57,7 +58,9 @@ ON CONFLICT(field_key) DO NOTHING;", new
                     {
                         key = item.Key, section = item.Section, label = item.Label,
                         type = item.Type, input = item.Input,
-                        safe = item.Section is "Sale" or "Purchase" ? 1 : 0,
+                        // Selling price ships necessary (owner's word, v0.70.0): a product without a
+                        // price breaks the Counter total, so the owner must relax it deliberately.
+                        safe = item.Section is "Sale" or "Purchase" || item.Key == "product.retail" ? 1 : 0,
                         critical = item.Section is "Sale" or "Purchase" ? 1 : 0,
                         sort = Array.IndexOf(definitions, item)
                     });

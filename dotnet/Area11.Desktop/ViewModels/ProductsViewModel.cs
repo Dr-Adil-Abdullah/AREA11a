@@ -919,6 +919,22 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
             SetStatus("Extra fields could not be loaded. Reopen the editor before saving.", true);
             return;
         }
+        // Warn-once (v0.70.0, owner's word): the necessary fields are named, and saving anyway
+        // stays one press. This asks on every Save press - never more than once per press.
+        var missing = _services.Products.MissingRequiredLabels(patch);
+        if (missing.Count > 0)
+        {
+            var answer = MessageBox.Show(
+                "These are marked necessary in Settings, Fields: " + string.Join(", ", missing)
+                + ".\n\nSave anyway?",
+                AppDisplayName, MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
+            if (answer != MessageBoxResult.Yes)
+            {
+                SetStatus("Not saved - fill the necessary fields, or press Save and choose Save anyway.", false);
+                return;
+            }
+        }
+
         var answers = Editor.AnswerValues();
         var isNew = _editingId is null;
         IReadOnlyList<string> saveWarnings = Array.Empty<string>();

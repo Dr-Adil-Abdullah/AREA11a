@@ -1,5 +1,9 @@
 # PROGRESS - the feature board (what is done, what is next)
 
+## Owner batch 2, portion 1/4 — Fields tab actually warns at product save (v0.70.0 Claret; Windows/physical pending)
+
+"Mark required" reached only the file import, and the selling price was not even in the catalog - so the switch looked dead and priceless products broke the Counter total. Now: `product.retail` in the catalog, necessary by default (owner relaxes it himself); `ProductService.MissingRequiredLabels` names what's empty (a linked salt/brand counts as present); the product editor pops up the names with a Save-anyway choice (owner's warn-once); the service never blocks the save; Fields-tab status and heading tell the truth (product = popup, phones/agency = import only, sale/purchase = preferences). **1227 cases (+4), 59/59.** Require Windows `ALL GREEN - 1227 of 1227` + physical (mark required, save popup, save anyway). Next: portion 2 (Counter + receipt not-available line) on owner's "next"; portion 3 (Purchase error) waits for the owner's screenshot; portion 4 (Urdu tutorial).
+
 ## Owner batch P3/4 — de-workshop: the shop sees no workshop (v0.69.0 Mallard; Windows/physical pending)
 
 Every window carries the shop's app name (9 VM-bound dialog titles + closing/password prompts in code-behind; crash box + Shift box + guard caption too). Visible spec codes gone (7 XAML subtitles, tax paper Z-03, installer D-19/Z-07; one test expectation updated, count unchanged), 'Supabase'→'cloud' ×2, crash/fault/button-failure wording professional (file + support person named; 'in the chat' and run-tools commands out). Kept deliberately: version in titles (owner's word), second-copy product name (pre-database, must not touch the file). New `check_deworkshop` gate (proved by planting). **1223 cases, 58/58.** Require Windows `ALL GREEN - 1223 of 1223` + physical: dialog titles, closing prompt, crash box. Next on owner's "next": P4 docs plan + portion docs.
