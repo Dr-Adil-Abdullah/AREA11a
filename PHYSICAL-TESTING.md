@@ -1,5 +1,21 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-18 — POS space comparison: trial A (Marlin), trial B queued, final choice pending
+
+Owner's new spoken feedback: persistent products list and stacked optional actions take too much Cart space. Wants search-only products and compact actions. Chose to try transient results first, standing small search panel second on next, then decide. No new screenshot or runtime PASS supplied for this trial.
+
+On v0.74.0, use test data or an UNPOSTED cart that is cleared afterward (do not create fake sales in the real shop):
+1. Blank search: catalog absent, Cart has the main space, no hidden selected medicine. A shop with products must not show an empty-shop hint just because search is blank.
+2. Type a genuine name/strength/pack: bounded results overlay, matching details/photos/stock/rate, correct variant selected. Add closes results, clears selected product/query and restores search focus. Add with blank search cannot silently repeat a hidden product. More matches scroll inside results. No match explains itself; fuzzy guesses are labelled and require Add, never name-Enter auto-sale.
+3. Exact barcode of unit/strip/box adds one correct pack and clears search. Unknown barcode and closed-galla add retain refusal (not a false “added”). Escape/Close results hides the overlay; changing the query reopens it.
+4. Add 5–10 lines. At short window/1024×768/1366×768 and 125%/150% DPI, check Cart, fixed total/cash/change/Complete sale/F4 and compact actions. Only the Cart/results/details themselves should scroll, not a long whole page hiding routine actions.
+5. Park / Save draft / Open drafts / Parked carts / Reprint all use existing paths; More / split opens doctor/loyalty/extra fields without changing their values; choosing split opens its inputs; New customer opens its form. Parked list and details are not stacked permanently. Reprint is a copy, not another sale.
+6. Regression: F4 and success modal, AutoPrint on/off, validation/stock guard and permissions unchanged. Discount still the former total-based calculation in THIS UI trial; profit-default/total-warning work is queued, not silently active.
+7. Full Windows `ALL GREEN - 1240 of 1240` and Desktop build pending. Static structural gate is not visual proof. Save a screenshot/feedback of trial A before next B; final preference remains owner's decision. Do not run two live instances to compare (single-instance guard/data location are shared).
+
+Owner result: pending. Next implementation: trial B only when owner says next, final selection later.
+
+
 ## PT-17 — Heather short-screen checkout/F4 failure; Laurel candidate repair (NOT physically passed)
 
 Owner supplied sugession1.png (1366×728 image, v0.72.0 title) and sugession2.png (product editor), and reported the Complete sale button outside the screen plus F4 doing nothing. Screenshot shows Rs 300 subtotal, 10% / Rs 30 discount, Rs 270 total, Rs 500 tendered and Rs 230 change; this proves the on-screen quote, NOT a saved sale or printing. Source confirms Auto-height payment overflow and no F4 handler/binding anywhere in Desktop. Owner chose an owned modal completion popup. Packing explanation requested, not a change to real stock/product definitions.

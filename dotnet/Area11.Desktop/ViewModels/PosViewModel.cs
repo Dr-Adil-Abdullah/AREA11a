@@ -19,7 +19,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     /// has rows**, so nothing in this page has to keep a second flag in step with its list.
     /// </summary>
     public EmptyHint? EmptyHint => EmptyPage.When(
-        Products.Count == 0,
+        _catalog.Count == 0 || (SearchText.Trim().Length > 0 && Products.Count == 0),
         "Counter (POS)",
         searched: SearchText.Trim().Length > 0);
 
@@ -36,6 +36,9 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     private string _searchText = string.Empty;
     private string _searchHint = string.Empty;
     private bool _isSearchGuessing;
+    private bool _isSearchResultsOpen;
+    private bool _showCheckoutDetails;
+    private bool _showParkedCarts;
     private Product? _selectedProduct;
     private string _unit = "strip";
     private string _quantity = "1";
@@ -80,6 +83,13 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
         AddCommand = new RelayCommand(AddToCart);
         ScanCommand = new RelayCommand(ScanBarcode);
+        CloseSearchResultsCommand = new RelayCommand(() => IsSearchResultsOpen = false);
+        ToggleCheckoutDetailsCommand = new RelayCommand(() => ShowCheckoutDetails = !ShowCheckoutDetails);
+        ToggleParkedCartsCommand = new RelayCommand(() =>
+        {
+            ShowParkedCarts = !ShowParkedCarts;
+            if (ShowParkedCarts) LoadHeldCarts();
+        });
         RemoveCommand = new RelayCommand(RemoveLast);
         ClearCommand = new RelayCommand(ClearCart);
         CompleteCommand = new RelayCommand(CompleteSale);
@@ -128,6 +138,42 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
     /// <summary>A scan (or Enter after typing a code): find the pack, add one of it (F-43).</summary>
     public RelayCommand ScanCommand { get; }
+
+    public RelayCommand CloseSearchResultsCommand { get; }
+    public RelayCommand ToggleCheckoutDetailsCommand { get; }
+    public RelayCommand ToggleParkedCartsCommand { get; }
+
+    public bool IsSearchResultsOpen
+    {
+        get => _isSearchResultsOpen;
+        private set => SetProperty(ref _isSearchResultsOpen, value);
+    }
+
+    public bool ShowCheckoutDetails
+    {
+        get => _showCheckoutDetails;
+        set
+        {
+            if (SetProperty(ref _showCheckoutDetails, value) && value)
+            {
+                ShowParkedCarts = false;
+                IsSearchResultsOpen = false;
+            }
+        }
+    }
+
+    public bool ShowParkedCarts
+    {
+        get => _showParkedCarts;
+        set
+        {
+            if (SetProperty(ref _showParkedCarts, value) && value)
+            {
+                ShowCheckoutDetails = false;
+                IsSearchResultsOpen = false;
+            }
+        }
+    }
 
     public RelayCommand RemoveCommand { get; }
 
@@ -324,6 +370,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             OnPropertyChanged(nameof(IsCash));
             OnPropertyChanged(nameof(IsSplit));
             OnPropertyChanged(nameof(IsCashOrSplit));
+            if (IsSplit) ShowCheckoutDetails = true;
             Recalculate();
         }
     }
@@ -608,7 +655,18 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     {
         var term = SearchText.Trim();
         Products.Clear();
+        // Trial A: blank search must not repopulate a standing catalog or select a hidden item.
+        if (term.Length == 0)
+        {
+            SelectedProduct = null;
+            SearchHint = string.Empty;
+            IsSearchGuessing = false;
+            IsSearchResultsOpen = false;
+            OnPropertyChanged(nameof(EmptyHint));
+            return;
+        }
 
+        IsSearchResultsOpen = true;
         var shown = new List<Product>();
 
         foreach (var product in _catalog)
@@ -653,6 +711,11 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         {
             SelectedProduct = Products.FirstOrDefault();
         }
+        if (Products.Count == 0 && SearchHint.Length == 0)
+        {
+            SearchHint = "No matching medicine. Check the name or pack.";
+        }
+        OnPropertyChanged(nameof(EmptyHint));
     }
 
     /// <summary>
@@ -693,8 +756,8 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         Unit = match.Pack is BarcodePack.Box or BarcodePack.Strip ? match.Pack : "unit";
         Quantity = "1";
 
+        // AddToCart keeps its own success/refusal status; a failed add is never called added.
         AddToCart();
-        SetStatus(match.Caption + " added.", false);
     }
 
     /// <summary>All live codes once, so the filter and the scan never disagree.</summary>
@@ -820,8 +883,12 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             Cart.Add(NewCartLine(SelectedProduct.Id, SelectedProduct.Name, Unit, quantity, 0));
         }
 
+        var addedName = SelectedProduct.Name;
         Quantity = "1";
-        SetStatus($"{SelectedProduct.Name} added.", false);
+        SearchText = string.Empty;
+        SelectedProduct = null;
+        IsSearchResultsOpen = false;
+        SetStatus($"{addedName} added.", false);
         Recalculate();
     }
 
@@ -1303,6 +1370,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
         Recalculate();
         LoadHeldCarts();
+        ShowParkedCarts = false;
         SetStatus($"{cart.Code} is back on the counter ({cart.Lines.Count} line(s)).", false);
     }
 
@@ -1330,6 +1398,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         NewCustomerEditor.LoadNew();
         NewCustomerName = string.Empty;
         NewCustomerPhone = string.Empty;
+        ShowCheckoutDetails = true;
         IsAddingCustomer = true;
 
         SetStatus("Type the customer's name (and phone, if they give it) and press Save customer.", false);

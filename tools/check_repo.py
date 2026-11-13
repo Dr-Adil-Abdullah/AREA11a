@@ -5566,6 +5566,49 @@ def check_save_warning() -> None:
 # ---------------------------------------------------------------------------
 # Template conflict: DisplayMemberPath + ItemTemplate must never meet (v0.71.0)
 # ---------------------------------------------------------------------------
+def check_counter_search_trial() -> None:
+    """Trial A only; B and the profit-discount change are explicitly queued, not implemented."""
+    import xml.etree.ElementTree as ET
+    root = ET.parse(DOTNET / "Area11.Desktop/Views/PosView.xaml").getroot()
+    ns = "{http://schemas.microsoft.com/winfx/2006/xaml/presentation}"
+    xname = "{http://schemas.microsoft.com/winfx/2006/xaml}Name"
+    named = {node.get(xname): node for node in root.iter() if node.get(xname)}
+    parents = {child: parent for parent in root.iter() for child in parent}
+    results = named.get("SearchResultsOverlay")
+    actions = named.get("CounterActions")
+    footer = named.get("CheckoutFooter")
+    if results is None or results.get("Visibility") != "{Binding IsSearchResultsOpen, Converter={StaticResource BoolToVis}}":
+        fail("Counter trial A: search results must be conditional, not a standing catalog")
+    else:
+        if results.get("MaxHeight") != "260" or results.get("Panel.ZIndex") != "20":
+            fail("Counter trial A: results must be a bounded in-window overlay")
+        grids = [node for node in root.iter(ns + "DataGrid") if node.get("ItemsSource") == "{Binding Products}"]
+        if len(grids) != 1 or grids[0] not in list(results.iter()):
+            fail("Counter trial A: the only products grid must live inside search results")
+    if actions is None or footer is None or actions not in list(footer.iter()):
+        fail("Counter trial A: compact actions must remain in the fixed footer")
+    else:
+        for command in ["HoldCommand", "SaveDraftCommand", "DraftsCommand", "ToggleParkedCartsCommand", "PrintLastCommand", "ToggleCheckoutDetailsCommand"]:
+            if not any(node.get("Command") == "{Binding " + command + "}" for node in actions.iter()):
+                fail("Counter trial A: missing fixed action " + command)
+        node = actions
+        while node in parents:
+            node = parents[node]
+            if node.tag == ns + "ScrollViewer": fail("Counter trial A: routine buttons must not scroll away")
+    vm = (DOTNET / "Area11.Desktop/ViewModels/PosViewModel.cs").read_text(encoding="utf-8-sig")
+    filter_code = vm.split("private void FilterProducts()", 1)[1].split("private void ScanBarcode()", 1)[0]
+    for needle in ["if (term.Length == 0)", "SelectedProduct = null;", "IsSearchResultsOpen = false;", "return;", "IsSearchResultsOpen = true;", "PackagingPolicy.Matches(product, term, codes)", "Fuzzy.Rank"]:
+        if needle not in filter_code: fail("Counter trial A: missing blank/exact/fuzzy search rule " + needle)
+    if filter_code.index("if (term.Length == 0)") > filter_code.index("foreach (var product in _catalog)"):
+        fail("Counter trial A: blank search must return before iterating the catalog")
+    add_code = vm.split("private void AddToCart()", 1)[1].split("private void RemoveLast()", 1)[0]
+    for needle in ['SearchText = string.Empty;', 'SelectedProduct = null;', 'IsSearchResultsOpen = false;']:
+        if needle not in add_code: fail("Counter trial A: successful add must reset search: " + needle)
+    if "if (IsSplit) ShowCheckoutDetails = true;" not in vm:
+        fail("Counter trial A: split inputs must open when split is selected")
+    REPORT.append("Counter trial A: blank search empty, bounded transient results, compact fixed actions, optional side details")
+
+
 def check_counter_checkout() -> None:
     """Desktop has no test reference: pin the bounded layout, shortcut and post-commit modal."""
     import xml.etree.ElementTree as ET
@@ -5587,8 +5630,8 @@ def check_counter_checkout() -> None:
         if footer not in ancestors or any(node.tag == ns + "ScrollViewer" for node in ancestors):
             fail("Counter checkout: Complete sale must remain in the footer, outside scrolling content")
         rows = parents[footer].find(ns + "Grid.RowDefinitions")
-        if rows is None or [row.get("Height") for row in rows] != ["Auto", "0.8*", "1.2*", "Auto"]:
-            fail("Counter checkout: cart/options must be bounded star rows, not overflowing Auto content")
+        if rows is None or [row.get("Height") for row in rows] != ["Auto", "Auto", "*", "Auto"]:
+            fail("Counter checkout: the trial workspace must be a bounded star row, not overflowing Auto content")
         if footer.get("Grid.Row") != "3" or button.get("Command") != "{Binding CompleteCommand}":
             fail("Counter checkout: the fixed footer must invoke the existing sale command")
         for binding in ["{Binding TotalText}", "{Binding ChangeText}", "{Binding TenderedText, UpdateSourceTrigger=PropertyChanged}", "{Binding StatusMessage}"]:
@@ -6185,6 +6228,7 @@ def main() -> int:
     check_template_conflict()
     check_counter_availability()
     check_counter_checkout()
+    check_counter_search_trial()
     check_checklist()
     check_audit_recovery()
     check_report_chart()

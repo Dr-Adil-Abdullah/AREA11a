@@ -1,5 +1,8 @@
 # Production کا منصوبہ — debug سے دکان تک (Phase 5 + صفائی + کیوسک + پورشن 1-3 + نیا بیچ 1/4 + 3/4 مکمل، v0.71.0)
 
+> نیا UI تجربہ v0.74.0 Marlin (D-104): پہلے سرچ کے عارضی نتائج، next پر دوسرا مستقل مختصر panel، دونوں دیکھ کر مالک final کرے گا۔ ابھی discount وہی سابق total بنیاد؛ profit default اور total >5% تصدیق کا منظور شدہ کام الگ queued ہے۔ 1240 cases، Windows/PT-18 باقی؛ installer کی اجازت نہیں۔
+
+
 > تازہ مرمت v0.73.0 Laurel: مالک کی سکرین والی شکایت پر Counter footer/F4/کامیابی کا الگ modal؛ 1240 written cases، Windows اور PT-17 باقی۔ اس مرمت کو installer بنانے یا Phase 6 کی نئی اجازت نہ سمجھیں۔
 
 

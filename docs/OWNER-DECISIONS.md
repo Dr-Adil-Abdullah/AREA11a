@@ -1,5 +1,13 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## D-104 — پہلے POS کے دونوں انداز آزماؤ؛ ڈسکاؤنٹ کا نیا حکم الگ زیرِ انتظار
+
+- مالک نے سرچ layout کے سوال پر کہا: “now one then in next 2nd both test which i prefer will done finel later”۔ پہلے عارضی نتائج، اگلے next پر چھوٹا مستقل search panel؛ دونوں آزمانے کے بعد حتمی انتخاب۔ پہلے انداز کو final منظوری نہیں۔
+- compact Park/Save draft/Open drafts/Parked carts/Reprint/More بٹن، Cart بڑی جگہ، عام fields اور Complete sale مستقل سامنے؛ details صرف ضرورت پر۔ v0.74.0 Marlin اس پہلے UI تجربے کا کوڈ ہے؛ Windows/اصل پرکھ باقی۔
+- **ڈسکاؤنٹ کا نیا فیصلہ، ابھی لاگو نہیں:** Settings میں مالک profit یا total بنیاد چن سکے۔ اپ ڈیٹ والے مالی حصے میں موجودہ دکان کے **آئندہ** بل بھی خود profit بنیاد پر منتقل ہوں۔ total بنیاد پر 5% سے زیادہ ہو تو ہر bill محفوظ کرنے سے پہلے واضح Yes/No تصدیق؛ مستقل بنیاد کا نشان ساتھ۔ یہ پچھلے retail-only حکم کی آئندہ مالی implementation کے لیے تبدیلی ہے، پرانے محفوظ bills دوبارہ حساب نہیں ہوں گے۔
+- profit کی پیش کردہ مثال: cost 200، sale 300، profit 100، اس کا 10% = 10 رعایت؛ total بنیاد کا 10% = 30۔ اصل فروخت ہونے والے batch کی cost استعمال ہوگی، دکان کے کرایے کے بعد والے net-profit کی نہیں۔ اس UI تجربے میں حساب، موجودہ discount.mode، permissions، cost lock یا رسید نہیں بدلے۔ ابھی رعایت پرانا full-selling-total حساب ہے؛ queued کام کو shipped سمجھنا خطرناک ہے۔
+
+
 ## D-103 — چھوٹی سکرین پر بل بٹن اور الگ کامیابی popup (v0.73.0 Laurel)
 
 مالک کی دو Heather تصاویر: Complete sale نیچے نظر نہیں آتا، F4 بھی کچھ نہیں کرتا؛ بائیں product list کم چوڑی، دائیں فروخت کا حصہ چوڑا مگر بٹن ہمیشہ نظر آئے۔ بل کے بعد ✓، invoice، کل، وصول نقدی اور بہت بڑا واپس دینے والا بقایا چاہیے؛ سوال پر **درمیان میں الگ پاپ اَپ** منتخب، Done سے بند۔ Auto-print آن ہو تو کوشش، آف ہو تو نہیں؛ success-popup کی موجودہ setting الگ برقرار۔ modal صرف کامیاب محفوظ bill پر، دوبارہ save/print نہیں۔ سٹرپ/باکس/base unit، pack label، strength/volume کی وضاحت چار مثالوں اور screenshot کے 1×1 injection/5 gram کے فرق سے دی؛ product data/labels بدلنے کی اجازت فرض نہیں کی۔ 6 نئے Core tests لکھے، 1240 کل؛ Desktop کے لیے نیا ساختی گیٹ، Windows/عملی ثبوت باقی۔ اصل دکان/رسید/رعایت نہیں بدلی۔

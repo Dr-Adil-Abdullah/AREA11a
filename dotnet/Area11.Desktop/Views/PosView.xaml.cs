@@ -1,3 +1,4 @@
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Area11.Desktop.ViewModels;
@@ -11,8 +12,25 @@ public partial class PosView : UserControl
         InitializeComponent();
     }
 
+    private void OnAddToCartClick(object sender, RoutedEventArgs e)
+    {
+        // Button command runs after Click; restore scanner focus after its UI has settled.
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (!IsLoaded) return;
+            MedicineSearchBox.Focus();
+            MedicineSearchBox.SelectAll();
+        }));
+    }
+
     private void OnCounterPreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (e.Key == Key.Escape && DataContext is PosViewModel searchModel && searchModel.IsSearchResultsOpen)
+        {
+            searchModel.CloseSearchResultsCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
         // Preview catches F4 before a focused ComboBox uses it to open its dropdown.
         // This is only a shortcut to the existing guarded command, never another save path.
         if (e.Key != Key.F4 || Keyboard.Modifiers != ModifierKeys.None)
