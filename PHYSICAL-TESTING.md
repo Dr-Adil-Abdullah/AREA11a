@@ -1,5 +1,22 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-17 — Heather short-screen checkout/F4 failure; Laurel candidate repair (NOT physically passed)
+
+Owner supplied sugession1.png (1366×728 image, v0.72.0 title) and sugession2.png (product editor), and reported the Complete sale button outside the screen plus F4 doing nothing. Screenshot shows Rs 300 subtotal, 10% / Rs 30 discount, Rs 270 total, Rs 500 tendered and Rs 230 change; this proves the on-screen quote, NOT a saved sale or printing. Source confirms Auto-height payment overflow and no F4 handler/binding anywhere in Desktop. Owner chose an owned modal completion popup. Packing explanation requested, not a change to real stock/product definitions.
+
+Candidate v0.73.0: fixed non-scrolling checkout footer, bounded cart/options; actual F4 preview handler with edit commit/repeat suppression; post-commit modal and committed cash snapshot. Static checking is not visual proof.
+
+On disposable test data, after rebuild/reinstall:
+1. At 1366×768 and 1024×768, plus 125%/150% scaling or a short window: cart rows, checkout button/total/cash/change/status stay reachable without scrolling to the bottom. Optional customer/doctor/points/split/custom fields/drafts/parked carts can scroll independently. Try many cart rows and many custom answers; no controls lost.
+2. Click Complete sale AND separately press F4 from search, cash textbox, customer/payment ComboBox and a rate edit. Grid edit must be committed; Alt+F4 remains protected-close policy, not a sale. Hold F4: no duplicate sale. Failed stock/cost/short-cash/required-answer validation: visible error, no success modal or automatic print.
+3. Rs 300 retail, cost at/below Rs 270, 10% discount, Rs 500 cash: exactly one saved INV, modal tick + bill Rs 270 + cash Rs 500 + LARGE give-back Rs 230. Done/Enter/× cannot save or print again. Cart is empty afterward; change snapshot is not overwritten by the cleared cart.
+4. Test zero change, blank tender (explicit assumed-exact label), card, online, credit and mixed payments. Noncash received is Rs 0, credit due is not mistaken for cash; split cash/change matches the cash portion.
+5. AutoPrint OFF: no printer call. ON: one automatic call after save. Printer unavailable: bill remains saved and confirmation says reprint, never enter the sale again. Popup OFF: no modal but fixed status/last invoice remain. Popup ON: owned, centered and Done reachable even with a short work area.
+6. Check app title/icon and FocusGuard do not treat the owned modal as leaving the app. Confirm settings-popup wording and updated guide. Run full Windows suite: `ALL GREEN - 1240 of 1240` (not run in agent sandbox).
+
+Owner result: pending. Never upgrade this record to PASS from static checks alone.
+
+
 ## PT-16 — Login/Counter XAML parse: owner screenshot, candidate repair pending Windows verification
 
 **مالک کی تازہ اطلاع:** “سکرین جو ہے لاگ ان پہ اوپن ہو گئی ہے اور ایرر ختم ہو گیا ہے”۔ اسے login-related error کے خاتمے کی owner-reported مثبت اطلاع کے طور پر درج کیا گیا ہے۔ یہ نہیں بتایا گیا کہ Counter اور Products دونوں، medium/large thumbnails یا پورا app مکمل چیک ہوئے؛ ان کی الگ تصدیق باقی ہے۔ 973/973 Core/Tests کی اطلاع برقرار ہے؛ اس output سے exact commit خود ثابت نہیں ہوتا۔

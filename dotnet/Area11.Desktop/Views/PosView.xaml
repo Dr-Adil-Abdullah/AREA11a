@@ -1,7 +1,8 @@
 <UserControl x:Class="Area11.Desktop.Views.PosView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:views="clr-namespace:Area11.Desktop.Views">
+             xmlns:views="clr-namespace:Area11.Desktop.Views"
+             PreviewKeyDown="OnCounterPreviewKeyDown">
 
     <Grid>
         <Grid.RowDefinitions>
@@ -24,9 +25,9 @@
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1.2*" />
-                <ColumnDefinition Width="14" />
                 <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="1.3*" />
             </Grid.ColumnDefinitions>
 
             <!-- Catalog -->
@@ -106,7 +107,8 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
+                        <RowDefinition Height="0.8*" MinHeight="0" />
+                        <RowDefinition Height="1.2*" MinHeight="0" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
@@ -120,7 +122,7 @@
                         </StackPanel>
                     </DockPanel>
 
-                    <DataGrid Grid.Row="1" ItemsSource="{Binding Cart}"
+                    <DataGrid x:Name="CartGrid" Grid.Row="1" ItemsSource="{Binding Cart}"
                               ToolTip="Rate is rupees per this line's unit. Owner/Manager may edit an agreed custom price; an unchanged retail rate still allows the VIP/Doctor Yes/No choice.">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Item" Binding="{Binding Name, Mode=OneWay}" Width="2*" />
@@ -251,73 +253,7 @@
                             </StackPanel>
                         </Border>
 
-                        <Grid Margin="0,10,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="Subtotal" Style="{StaticResource MetricLabel}" />
-                                <TextBlock Text="{Binding SubtotalText}" FontSize="14" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="1">
-                                <TextBlock Text="Discount" Style="{StaticResource MetricLabel}" />
-                                <TextBlock Text="{Binding DiscountText}" FontSize="14" />
-                            </StackPanel>
-                        </Grid>
-
-                        <TextBlock Text="TOTAL" Style="{StaticResource MetricLabel}" Margin="0,8,0,0" />
-                        <TextBlock Text="{Binding TotalText}" FontSize="28" FontWeight="Bold"
-                                   Foreground="{StaticResource BrandBrush}" />
-
-                        <TextBlock Text="{Binding PointsUsedText}" FontSize="12" FontWeight="SemiBold"
-                                   Foreground="{StaticResource SuccessBrush}"
-                                   Visibility="{Binding HasPointsUsed, Converter={StaticResource BoolToVis}}" />
-
-                        <Grid Margin="0,6,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="Cash received" Style="{StaticResource MetricLabel}" />
-                                <TextBox Text="{Binding TenderedText, UpdateSourceTrigger=PropertyChanged}"
-                                         IsEnabled="{Binding IsCashOrSplit}" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="1" Margin="8,0,0,0">
-                                <TextBlock Text="Change" Style="{StaticResource MetricLabel}" />
-                                <TextBlock Text="{Binding ChangeText}" FontSize="17" FontWeight="SemiBold" />
-                            </StackPanel>
-                        </Grid>
-
-                        <CheckBox Content="Print the receipt automatically"
-                                  IsChecked="{Binding AutoPrint, Mode=TwoWay}"
-                                  ToolTip="Off = the cashier prints with the button below."
-                                  Margin="0,8,0,0" />
-
-                        <Border Background="#F0FDF4" BorderBrush="{StaticResource SuccessBrush}"
-                                BorderThickness="1" CornerRadius="7" Padding="10" Margin="0,10,0,0"
-                                Visibility="{Binding ShowSaleSuccess, Converter={StaticResource BoolToVis}}">
-                            <StackPanel>
-                                <TextBlock Text="✓ Done — sale saved" Foreground="{StaticResource SuccessBrush}"
-                                           FontSize="17" FontWeight="Bold" />
-                                <TextBlock Text="{Binding LastBill}" TextWrapping="Wrap"
-                                           FontWeight="SemiBold" Margin="0,5,0,0" />
-                                <TextBlock Text="{Binding SuccessChangeText}" TextWrapping="Wrap"
-                                           Foreground="{StaticResource DangerBrush}" FontSize="15" FontWeight="Bold"
-                                           Margin="0,5,0,0"
-                                           Visibility="{Binding HasSuccessChange, Converter={StaticResource BoolToVis}}" />
-                                <Button Content="Done — ready for next sale" Style="{StaticResource PrimaryButton}"
-                                        Command="{Binding DoneCommand}" IsDefault="True"
-                                        HorizontalAlignment="Left" Margin="0,9,0,0"
-                                        ToolTip="Dismiss this card only. The invoice is already saved; scanning the next item also continues." />
-                            </StackPanel>
-                        </Border>
-
                         <views:CustomFieldsEditorView DataContext="{Binding DocEditor}" />
-
-                        <Button Content="Complete sale  (F4)" Style="{StaticResource PrimaryButton}" Height="40"
-                                Margin="0,12,0,0" Command="{Binding CompleteCommand}" />
 
                         <Button Content="Park this cart for later" Style="{StaticResource GhostButton}"
                                 Margin="0,6,0,0" Command="{Binding HoldCommand}"
@@ -335,24 +271,6 @@
 
                         <Button Content="Print last bill again" Style="{StaticResource GhostButton}"
                                 Margin="0,6,0,0" Command="{Binding PrintLastCommand}" />
-
-                        <Border Background="#F8FAFC" CornerRadius="6" Padding="9" Margin="0,10,0,0">
-                            <StackPanel>
-                                <TextBlock Text="{Binding StatusMessage}" FontSize="11" TextWrapping="Wrap">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsStatusError}" Value="True">
-                                                    <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
-                                <TextBlock Text="{Binding LastBill}" FontSize="12" FontWeight="SemiBold" Margin="0,5,0,0" />
-                            </StackPanel>
-                        </Border>
 
                         <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="8"
                                 Padding="10" Margin="0,10,0,0">
@@ -401,6 +319,73 @@
                         </Border>
                     </StackPanel>
                     </ScrollViewer>
+
+                    <!-- The checkout is NOT inside a ScrollViewer or Auto-sized content row.
+                         The cart and optional fields yield space first on short/high-DPI screens. -->
+                    <Border x:Name="CheckoutFooter" Grid.Row="3" BorderBrush="{StaticResource LineBrush}"
+                            BorderThickness="0,1,0,0" Padding="0,8,0,0" Margin="0,8,0,0">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1.2*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="TOTAL" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding TotalText}" FontSize="26" FontWeight="Bold"
+                                               Foreground="{StaticResource BrandBrush}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Subtotal" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding SubtotalText}" FontSize="14" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Discount" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding DiscountText}" FontSize="14" />
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock Text="{Binding PointsUsedText}" FontSize="11" TextWrapping="Wrap"
+                                       Visibility="{Binding HasPointsUsed, Converter={StaticResource BoolToVis}}" />
+                            <Grid Margin="0,4,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="Cash received" Style="{StaticResource MetricLabel}" />
+                                    <TextBox Text="{Binding TenderedText, UpdateSourceTrigger=PropertyChanged}"
+                                             IsEnabled="{Binding IsCashOrSplit}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                    <TextBlock Text="Give back" Style="{StaticResource MetricLabel}" />
+                                    <TextBlock Text="{Binding ChangeText}" FontSize="24" FontWeight="Bold"
+                                               Foreground="{StaticResource BrandBrush}" />
+                                </StackPanel>
+                            </Grid>
+                            <CheckBox Content="Print the receipt automatically"
+                                      IsChecked="{Binding AutoPrint, Mode=TwoWay}" Margin="0,4,0,0"
+                                      ToolTip="Off = use Print last bill again; the sale still saves." />
+                            <Button x:Name="CompleteSaleButton" Content="Complete sale  (F4)"
+                                    Style="{StaticResource PrimaryButton}" Height="40" Margin="0,6,0,0"
+                                    Command="{Binding CompleteCommand}" />
+                            <TextBlock Text="{Binding StatusMessage}" FontSize="11" TextWrapping="Wrap"
+                                       MaxHeight="44" Margin="0,5,0,0" ToolTip="{Binding StatusMessage}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsStatusError}" Value="True">
+                                                <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBlock Text="{Binding LastBill}" FontSize="11" TextTrimming="CharacterEllipsis"
+                                       ToolTip="{Binding LastBill}" />
+                        </StackPanel>
+                    </Border>
                 </Grid>
             </Border>
         </Grid>

@@ -65,9 +65,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     private int _lastSaleId;
     private int _openDraftId;
     private bool _autoPrint;
-    private bool _showSaleSuccess;
-    private string _successChangeText = string.Empty;
-    private bool _hasSuccessChange;
+    private bool _isCompletingSale;
     private bool _shiftClosed;
     private string _handoverNote = string.Empty;
     private string _blockedText = string.Empty;
@@ -85,7 +83,6 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         RemoveCommand = new RelayCommand(RemoveLast);
         ClearCommand = new RelayCommand(ClearCart);
         CompleteCommand = new RelayCommand(CompleteSale);
-        DoneCommand = new RelayCommand(() => ShowSaleSuccess = false);
         PrintLastCommand = new RelayCommand(PrintLast, () => _lastSaleId > 0);
         RefreshCommand = new RelayCommand(LoadLookups);
         OpenProductPhotoCommand = new RelayCommand<int>(OpenProductPhoto);
@@ -137,9 +134,6 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     public RelayCommand ClearCommand { get; }
 
     public RelayCommand CompleteCommand { get; }
-
-    /// <summary>Dismisses only the confirmation card; it never changes the committed bill or new cart.</summary>
-    public RelayCommand DoneCommand { get; }
 
     public RelayCommand PrintLastCommand { get; }
 
@@ -458,24 +452,6 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     {
         get => _lastBill;
         private set => SetProperty(ref _lastBill, value);
-    }
-
-    public bool ShowSaleSuccess
-    {
-        get => _showSaleSuccess;
-        private set => SetProperty(ref _showSaleSuccess, value);
-    }
-
-    public string SuccessChangeText
-    {
-        get => _successChangeText;
-        private set => SetProperty(ref _successChangeText, value);
-    }
-
-    public bool HasSuccessChange
-    {
-        get => _hasSuccessChange;
-        private set => SetProperty(ref _hasSuccessChange, value);
     }
 
     /// <summary>
@@ -827,9 +803,6 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             return;
         }
 
-        // Scanning/adding the next customer's first item is itself a quick continuation.
-        ShowSaleSuccess = false;
-
         if (!Qty.TryParse(Quantity, out var quantity) || quantity <= 0)
         {
             SetStatus("Quantity must be greater than zero.", true);
@@ -878,9 +851,23 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
     private void CompleteSale()
     {
+        // The guard covers special-rate dialogs, printing and the success modal as well as save.
+        if (_isCompletingSale) return;
+        _isCompletingSale = true;
+        try
+        {
+            CompleteSaleOnce();
+        }
+        finally
+        {
+            _isCompletingSale = false;
+        }
+    }
+
+    private void CompleteSaleOnce()
+    {
         // Asked again here even though the page shows a card: the drawer can be closed from another
         // window while this cart is open, and the bill is the last place it may be discovered.
-        ShowSaleSuccess = false;
         CheckDrawer();
 
         if (IsBlocked)
@@ -953,11 +940,6 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
                    (sale.ChangePaisa > 0 ? $" · change {Money.Format(sale.ChangePaisa)}" : string.Empty) +
                    (sale.DuePaisa > 0 ? $" · due {Money.Format(sale.DuePaisa)}" : string.Empty);
 
-        HasSuccessChange = sale.ChangePaisa > 0;
-        SuccessChangeText = HasSuccessChange
-            ? "Give this cash back: " + Money.Format(sale.ChangePaisa)
-            : string.Empty;
-
         var warnings = sale.Warnings.Count > 0 ? "  ⚠ " + string.Join(" ", sale.Warnings) : string.Empty;
         SetStatus($"Bill saved.{(wasDraft ? " Its draft is posted." : string.Empty)}{warnings}", sale.Warnings.Count > 0);
 
@@ -966,13 +948,10 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         _lastSaleId = sale.SaleId;
         PrintLastCommand.RaiseCanExecuteChanged();
 
-        if (AutoPrint)
-        {
-            Print(_lastSaleId);
-        }
-
-        // Post-commit only: this lightweight card cannot save, undo, print, or duplicate anything.
-        ShowSaleSuccess = _services.Settings.GetBool("sale.successPopup", true);
+        var printStatus = AutoPrint
+            ? (Print(_lastSaleId) ? "Receipt sent to the printer." : "Receipt could not be printed. The bill is saved; use Print last bill again.")
+            : "Automatic printing is off. Use Print last bill again if needed.";
+        var showSuccess = _services.Settings.GetBool("sale.successPopup", true);
 
         _availabilityWarningShown = false;
         Cart.Clear();
@@ -983,6 +962,12 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         OnPropertyChanged(nameof(HasOpenDraft));
         DocEditor.LoadNew();
         LoadLookups();
+
+        // Clear/refresh the cart BEFORE the modal. Dismissal cannot save or print again.
+        if (showSuccess && !SaleSuccessDoor.Show(_services, sale, printStatus))
+        {
+            SetStatus("Bill saved. The confirmation could not open; check the bill above. " + printStatus, true);
+        }
     }
 
     private bool TryGetDiscount(out decimal percent)
@@ -1105,23 +1090,24 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         Print(_lastSaleId);
     }
 
-    private void Print(int saleId)
+    private bool Print(int saleId)
     {
         var document = _services.Receipts.Build(saleId);
         if (!document.Ok || document.Value is null)
         {
             SetStatus(document.Error ?? "The receipt could not be prepared.", true);
-            return;
+            return false;
         }
 
         var printed = _services.Printer.Print(document.Value);
         if (!printed.Ok)
         {
             SetStatus(printed.Error ?? "The receipt could not be printed.", true);
-            return;
+            return false;
         }
 
-        SetStatus($"Receipt printed ({document.Value.Width} characters wide).", false);
+        SetStatus($"Receipt sent to the printer ({document.Value.Width} characters wide).", false);
+        return true;
     }
 
     // ------------------------------ Held carts ------------------------------

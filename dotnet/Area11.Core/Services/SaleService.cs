@@ -408,6 +408,10 @@ VALUES(@at, @method, @amount, @saleId, @customerId, @userId, @note);",
             RoundPaisa = computed.RoundPaisa,
             TotalPaisa = computed.TotalPaisa,
             PaidPaisa = paid,
+            // Report the committed payment plan, never a later quote of an already-cleared cart.
+            CashReceivedPaisa = plan.CashPartPaisa > 0
+                ? Math.Max(input.TenderedPaisa, plan.CashPartPaisa) : 0,
+            CashReceivedAssumed = plan.CashPartPaisa > 0 && input.TenderedPaisa <= 0,
             DuePaisa = due,
             ChangePaisa = change,
             SaleItemIds = saleItemIds,

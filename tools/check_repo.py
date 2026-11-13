@@ -5566,6 +5566,54 @@ def check_save_warning() -> None:
 # ---------------------------------------------------------------------------
 # Template conflict: DisplayMemberPath + ItemTemplate must never meet (v0.71.0)
 # ---------------------------------------------------------------------------
+def check_counter_checkout() -> None:
+    """Desktop has no test reference: pin the bounded layout, shortcut and post-commit modal."""
+    import xml.etree.ElementTree as ET
+    root = ET.parse(DOTNET / "Area11.Desktop/Views/PosView.xaml").getroot()
+    ns = "{http://schemas.microsoft.com/winfx/2006/xaml/presentation}"
+    xname = "{http://schemas.microsoft.com/winfx/2006/xaml}Name"
+    parents = {child: parent for parent in root.iter() for child in parent}
+    named = {node.get(xname): node for node in root.iter() if node.get(xname)}
+    footer = named.get("CheckoutFooter")
+    button = named.get("CompleteSaleButton")
+    if footer is None or button is None:
+        fail("Counter checkout: fixed footer and completion button must be named")
+    else:
+        ancestors = []
+        node = button
+        while node in parents:
+            node = parents[node]
+            ancestors.append(node)
+        if footer not in ancestors or any(node.tag == ns + "ScrollViewer" for node in ancestors):
+            fail("Counter checkout: Complete sale must remain in the footer, outside scrolling content")
+        rows = parents[footer].find(ns + "Grid.RowDefinitions")
+        if rows is None or [row.get("Height") for row in rows] != ["Auto", "0.8*", "1.2*", "Auto"]:
+            fail("Counter checkout: cart/options must be bounded star rows, not overflowing Auto content")
+        if footer.get("Grid.Row") != "3" or button.get("Command") != "{Binding CompleteCommand}":
+            fail("Counter checkout: the fixed footer must invoke the existing sale command")
+        for binding in ["{Binding TotalText}", "{Binding ChangeText}", "{Binding TenderedText, UpdateSourceTrigger=PropertyChanged}", "{Binding StatusMessage}"]:
+            if not any(node.get("Text") == binding for node in footer.iter()):
+                fail("Counter checkout: missing fixed-footer money/status field: " + binding)
+    vm = (DOTNET / "Area11.Desktop/ViewModels/PosViewModel.cs").read_text(encoding="utf-8-sig")
+    view = (DOTNET / "Area11.Desktop/Views/PosView.xaml.cs").read_text(encoding="utf-8-sig")
+    if root.get("PreviewKeyDown") != "OnCounterPreviewKeyDown":
+        fail("Counter checkout: connect the F4 preview handler")
+    for needle in ["Key.F4", "e.IsRepeat", "e.Handled = true", "CartGrid.CommitEdit", "viewModel.CompleteCommand.Execute(null)"]:
+        if needle not in view: fail("Counter checkout: missing F4 safeguard: " + needle)
+    for needle in ["if (_isCompletingSale) return;", "finally", "_isCompletingSale = false;", 'GetBool("sale.successPopup", true)', "? (Print(_lastSaleId)", "SaleSuccessDoor.Show(_services, sale, printStatus)"]:
+        if needle not in vm: fail("Counter checkout: missing completion safeguard: " + needle)
+    if vm.index("SaleSuccessDoor.Show") < vm.index("var sale = result.Value;"):
+        fail("Counter checkout: success modal must follow a successful save")
+    door = (DOTNET / "Area11.Desktop/SaleSuccessDoor.cs").read_text(encoding="utf-8-sig")
+    if "window.Owner = owner" not in door or "window.ShowDialog();" not in door:
+        fail("Counter checkout: success must be an owned modal window")
+    popup = ET.parse(DOTNET / "Area11.Desktop/Views/SaleSuccessWindow.xaml").getroot()
+    for binding in ["{Binding TotalText}", "{Binding CashReceivedText}", "{Binding ChangeText}"]:
+        if not any(node.get("Text") == binding for node in popup.iter()):
+            fail("Counter checkout: missing committed success amount: " + binding)
+    REPORT.append("Counter checkout: fixed non-scrolling footer, bounded cart/options, F4 command, guarded post-save modal")
+
+
 def check_counter_availability() -> None:
     """Counter popup wiring cannot be unit-tested by the Core-only test project."""
     vm = (DOTNET / "Area11.Desktop/ViewModels/PosViewModel.cs").read_text(encoding="utf-8-sig")
@@ -6136,6 +6184,7 @@ def main() -> int:
     check_save_warning()
     check_template_conflict()
     check_counter_availability()
+    check_counter_checkout()
     check_checklist()
     check_audit_recovery()
     check_report_chart()

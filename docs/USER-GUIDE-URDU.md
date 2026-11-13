@@ -1,6 +1,6 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.72.0 Heather۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.73.0 Laurel۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
 
 **پڑھنے کا طریقہ:** حصہ اوّل میں صرف صفحات/اختیارات کی مختصر فہرست ہے۔ حصہ دوم میں انہی کی الگ، قدم بہ قدم تفصیل ہے۔ پہلے پورا خلاصہ دیکھیں؛ پھر جس کام کی ضرورت ہو اسی نمبر کی تفصیل پڑھیں۔ HTML فائل براؤزر میں کھلتی ہے، انٹرنیٹ کے بغیر بھی؛ براؤزر کے Print سے کاغذ یا PDF بنا سکتے ہیں۔
 
@@ -56,7 +56,7 @@
 | App name & icon | App name: کھڑکی/login/taskbar کا نام؛ Choose app icon…: اپنی .ico؛ Use default icon: اصل آئیکن |
 | Shop | thumbnail size: تصویر کتنی بڑی؛ shop name/phone/address/footer: رسید کے الفاظ؛ discount line: کاغذ پر رعایت؛ idle sign-out: بےکار نشست؛ clock: وقت کی حالت؛ startup/lock: سبق 33 |
 | Printing | 58/80 mm: چوڑائی؛ printer: کون سا پرنٹر؛ auto-print: بل کے بعد خود پرنٹ؛ cutter؛ bulk print: منتخب قطاریں؛ separate/A4: الگ رسیدیں یا خلاصہ؛ PDF folder؛ copies |
-| Sales rules | cashier/manager discount %؛ below-cost lock؛ khata-limit lock؛ profit visibility؛ Done card؛ loyalty on/rate/VIP threshold؛ tax on/rate؛ expiry کی تین حدیں؛ supplier return کی reminder/cutoff |
+| Sales rules | cashier/manager discount %؛ below-cost lock؛ khata-limit lock؛ profit visibility؛ Done popup؛ loyalty on/rate/VIP threshold؛ tax on/rate؛ expiry کی تین حدیں؛ supplier return کی reminder/cutoff |
 | Cloud sync | on/off، address، table، shop id، محفوظ key، automatic push کا وقفہ، Remove the saved key |
 | Staff & permissions | شخص منتخب؛ account on/off؛ module کی ticks؛ role defaults؛ Add this person؛ Change it for the selected person؛ Save this recovery word؛ Photos |
 | App words | ہر page/group کا دکان والا نام؛ Restore original words |
@@ -133,6 +133,17 @@ Recovery سے داخلہ پرانی فروخت یا کھاتے کو reset نہی
 7. Save product دبائیں۔ Built-in required خانے خالی ہوں تو ناموں والا popup آ سکتا ہے؛ Save anyway کا مطلب جان بوجھ کر نامکمل چیز محفوظ کرنا ہے۔ اس سے Counter کی missing-price/stock پابندی ختم نہیں ہوتی۔
 8. Cancel / close کے وقت unsaved changes کا سوال آئے تو اپنی ضرورت کے مطابق واپس جائیں یا چھوڑیں۔ Remove selected (history kept) چیز کو عام استعمال سے الگ کرتا ہے، پرانی فروخت نہیں مٹاتا۔
 
+### چار مثالوں سے تین خانوں کا فرق
+
+| چیز | Strength / volume | Pack label صرف پہچان | Pack formula اور stock |
+|---|---|---|---|
+| 500 mg گولی | 500 mg | 10 × 10 tablets | base tablet، 10 strips/box × 10 tablets/strip = 100 گولیاں |
+| 5 gram انجیکشن | 5 gram | 10 injections | base injection، 10 × 1 = 10 انجیکشن؛ gram کو stock کی تقسیم نہ بنائیں |
+| 100 ml شربت، پوری بوتل بیچنی ہے | 100 ml | 100 ml bottle | base bottle، 1 × 1 = 1 بوتل؛ 100 الگ ml فروخت فرض نہ ہوں |
+| 5 gram ساشے | 5 gram | 20 sachets | base sachet، 20 × 1 = 20 ساشے |
+
+موجودہ فارم پر غیر گولی مصنوعات کے لیے بھی strips / box اور tablets / strip کے عمومی labels آتے ہیں؛ ان کا حساب ضرب کا ہے، ہر انجیکشن کے واقعی پٹی میں ہونے کا دعویٰ نہیں۔ اصل pack دیکھ کر formula رکھیں۔ 1 × 1 اور base injection کا مطلب ایک box میں ایک injection؛ strength 5 gram ہونے سے اسے پانچ یا زیادہ injections نہیں بناتا۔ Pack label میں صرف 1 لکھنا پہچان واضح نہیں کرتا؛ label کو بہتر لکھنے سے اصل formula خود نہیں بدلتا۔ اس سبق کے لیے موجودہ کاروباری product کی تعریف/سٹاک خودکار تبدیل نہیں کیے گئے۔
+
 **اہم:** product بنانے سے عام سٹاک خود نہیں آتا۔ اصل مال Purchases سے وصول کریں؛ حقیقی جسمانی فرق Stock-take سے درست کریں۔ Photo نہ ہونا چیز محفوظ کرنے کو لازمی طور پر نہیں روکتا۔
 
 <a id="lesson-06"></a>
@@ -181,8 +192,8 @@ Supplier statement پر پہلے سے ادا شدہ رقم دوبارہ Pay نہ
 4. مالک/مینیجر custom rate لکھ سکتے ہیں؛ کیشیئر نہیں۔ عام retail نہ بدلا ہو، discount صفر ہو اور customer VIP/Doctor ہو تو special rate کا Yes/No سوال آ سکتا ہے؛ No عام retail رکھتا ہے۔ customer category خود بخود ہر بل پر special rate لگانے کی ضمانت نہیں۔
 5. Discount % مکمل selling/retail مجموعے کے تناسب کی رعایت ہے، صرف profit کی نہیں۔ مجاز حد اور cost lock لاگو رہتے ہیں۔ Loyalty آن ہو تو Points to use استعمال کر سکتے ہیں؛ 1 point = 1 روپیہ، استعمال کی باقی کاروباری پابندیاں پھر بھی رہیں گی۔
 6. Payment میں حقیقی طریقہ چنیں۔ Split میں دوسری method اور اس کا Amount، باقی cash؛ cash/credit حصے سکرین پر ملائیں۔ Cash received وہ نقدی ہے جو واقعی ہاتھ میں آئی؛ Change واپس کی جانے والی نقدی ہے، فروخت کا منافع نہیں۔
-7. Subtotal، Discount، TOTAL، Cash part، On credit اور Change دیکھیں؛ پھر Complete sale (F4)۔ error آئے تو بل محفوظ سمجھ کر رقم/مال دوبارہ نہ چلائیں؛ پہلے error اور Bills میں حالت دیکھیں۔
-8. کامیابی پر invoice/status ملے گا۔ Auto-print الگ اختیار ہے۔ Done card بند کرنے سے بل cancel نہیں ہوتا؛ نیا item scan کرنا اگلے گاہک کی شروعات ہے۔ Print last bill again صرف نقل نکالتا ہے۔
+7. Subtotal، Discount، TOTAL، Cash part، On credit اور Change دیکھیں۔ v0.73.0 میں Total، Cash received، Give back اور Complete sale بٹن الگ مستقل نیچے والے حصے میں ہیں؛ کسٹمر/ڈاکٹر/دیگر خانے اوپر الگ سکرول ہوتے ہیں۔ Complete sale یا اصل F4 شارٹ کٹ استعمال کریں؛ rate edit ہو تو F4 پہلے اس edit کو مکمل کرتا ہے۔ error آئے تو بل محفوظ سمجھ کر رقم/مال دوبارہ نہ چلائیں؛ پہلے error اور Bills میں حالت دیکھیں۔
+8. کامیابی پر invoice/status ملے گا۔ Settings → Sales rules میں success popup آن ہو تو الگ درمیان کی کھڑکی کھلے گی: ✓، invoice، بل، Cash received اور بہت بڑا GIVE THIS CASH BACK۔ مثال: بل 270، نقد 500، واپس 230 روپے۔ Done / Enter / × صرف کھڑکی بند کرتے ہیں؛ دوبارہ فروخت یا پرنٹ نہیں کرتے۔ اس کے بعد اگلا customer شروع کریں۔ Auto-print الگ اختیار ہے؛ پرنٹر کو بھیجنا کاغذ واقعی نکلنے کا ثبوت نہیں۔ Print last bill again صرف نقل نکالتا ہے۔ Cash received خالی ہو تو پرانے exact-cash قاعدے کے مطابق رقم فرض ہوتی ہے اور popup صاف لکھتا ہے exact amount assumed؛ online/card/credit کے لیے cash صفر ہوتا ہے۔
 
 **مثال:** 300 روپے کا cash bill، وصول 500 تو Change 200۔ credit کی رقم کو نقد وصولی میں گننے سے گلا غلط ہو گا۔
 
@@ -404,7 +415,7 @@ Supplier statement پر پہلے سے ادا شدہ رقم دوبارہ Pay نہ
 1. Cashier may give اور Manager may give رعایت کی حدیں ہیں۔ limit سے زیادہ درج کرکے قبول سمجھنے کے بجائے سکرین کا message پڑھیں۔ پوری selling-price total پر discount بنتا ہے۔
 2. Never sell below cost, even with a discount ایک قابل انتخاب lock ہے؛ اس کو بدلنے سے حقیقی نقصان کا خطرہ ہے۔ یہاں tutorial پڑھنے کی خاطر موجودہ policy تبدیل نہ کریں۔
 3. Stop a bill that crosses the customer's khata limit بھی قابل انتخاب ہے؛ customer کی limit صفر ہو تو مقررہ ceiling نہیں۔ مالک exempt ہے؛ manager override موجودہ manager-override configuration کے مطابق ہے—صرف ظاہری متن دیکھ کر ہر manager کو لازماً مجاز نہ سمجھیں۔
-4. Show profit and margins بند ہو تو منافع مختلف صفحات سے چھپتا ہے، مالک سے بھی؛ کاروبار کے اصل اعداد نہیں مٹتے۔ Done / invoice / cash-change card صرف کامیابی کے بعد کی اطلاع ہے، پرنٹ یا transaction کا متبادل نہیں۔
+4. Show profit and margins بند ہو تو منافع مختلف صفحات سے چھپتا ہے، مالک سے بھی؛ کاروبار کے اصل اعداد نہیں مٹتے۔ Done / invoice / cash-change popup صرف کامیابی کے بعد کی اطلاع ہے، پرنٹ یا transaction کا متبادل نہیں۔
 5. Give loyalty points آن/آف؛ Rupees spent for 1 point سے earning rate؛ Points that make a customer VIP سے threshold۔ points خرچ ہونے والے خانے کا 1 point = 1 روپیہ الگ اصول ہے۔ مالک نے موجودہ loyalty rate برقرار رکھا ہے۔
 6. Tax آن/فیصد کا اختیار موجود ہے مگر **اس دکان کی ہدایت sales tax نہیں**۔ اسے آن کرنے سے آئندہ bills اور receipt پر اثر پڑ سکتا ہے؛ بلااجازت تبدیل نہ کریں۔
 7. Stock: نئے کام میں negative stock کی checkbox/owner bypass نہیں۔ یہ sale، write-off، goods drawing، SR اور PR cancellation پر بھی لاگو ہے۔
@@ -511,10 +522,10 @@ Supplier statement پر پہلے سے ادا شدہ رقم دوبارہ Pay نہ
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation recovery ZIP/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.72.0 کا متوقع test count 1234 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.73.0 کا متوقع test count 1240 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 
-یہ متن v0.72.0 کی navigation اور Views/ViewModels کے مطابق لکھا ہے، تصاویر یا حقیقی Windows session کے مشاہدے کا دعویٰ نہیں۔ بنیادی نقشہ ShellViewModel اور AppLabelService؛ SettingsView، NativeFieldsView، CustomFieldsView؛ متعلقہ Products/Counter/Purchases/Returns/Partners/Shift/Reports/System views سے ملا۔ مالی/stock حدود SaleService، StockPolicy، PurchaseService، ReturnService، ProvisionalReturnService، SupplierLedgerService، AuthService اور StartupService سے ملائی گئیں۔
+یہ متن v0.73.0 کی navigation اور Views/ViewModels کے مطابق لکھا ہے، تصاویر یا حقیقی Windows session کے مشاہدے کا دعویٰ نہیں۔ بنیادی نقشہ ShellViewModel اور AppLabelService؛ SettingsView، NativeFieldsView، CustomFieldsView؛ متعلقہ Products/Counter/Purchases/Returns/Partners/Shift/Reports/System views سے ملا۔ مالی/stock حدود SaleService، StockPolicy، PurchaseService، ReturnService، ProvisionalReturnService، SupplierLedgerService، AuthService اور StartupService سے ملائی گئیں۔
 
 پرانے HOW-TO-RUN، سابق version rows یا پرانے handoff میں tutorial سے متصادم installation/receipt/negative-stock عبارت تاریخی ہو سکتی ہے۔ نئی receipt-unavailable لائن منسوخ، D-93 برقرار، app identity اور receipt shop details الگ ہیں۔ پروگرام کی نئی release میں بٹن/قاعدہ بدلے تو اس کتاب کو بھی نئے source کے ساتھ دوبارہ ملانا ضروری ہے۔

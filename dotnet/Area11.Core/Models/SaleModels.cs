@@ -126,6 +126,12 @@ public sealed class SaleResult
 
     public long PaidPaisa { get; init; }
 
+    /// <summary>Cash handed over, including change; zero for wholly non-cash/credit sales.</summary>
+    public long CashReceivedPaisa { get; init; }
+
+    /// <summary>Legacy non-positive tender means exact cash; the completion window must say so.</summary>
+    public bool CashReceivedAssumed { get; init; }
+
     public long DuePaisa { get; init; }
 
     public long ChangePaisa { get; init; }

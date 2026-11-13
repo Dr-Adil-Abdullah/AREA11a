@@ -1,0 +1,63 @@
+<Window Icon="{DynamicResource Area11WindowIcon}" x:Class="Area11.Desktop.Views.SaleSuccessWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{Binding WindowTitle}" Width="500" Height="560"
+        WindowStartupLocation="CenterOwner" Background="{StaticResource CanvasBrush}"
+        ShowInTaskbar="False" ResizeMode="CanResize">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBlock Text="✓" FontSize="52" FontWeight="Bold" HorizontalAlignment="Center"
+                           Foreground="{StaticResource SuccessBrush}" />
+                <TextBlock Text="Sale saved" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"
+                           Foreground="{StaticResource SuccessBrush}" />
+                <TextBlock Text="{Binding Invoice}" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap"
+                           HorizontalAlignment="Center" Margin="0,6,0,14" />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="Bill total" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding TotalText}" FontSize="25" FontWeight="Bold" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                        <TextBlock Text="{Binding CashReceivedLabel}" Style="{StaticResource MetricLabel}" TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding CashReceivedText}" FontSize="25" FontWeight="Bold" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Grid>
+                <Border Background="{StaticResource BrandSoftBrush}" CornerRadius="10" Padding="16" Margin="0,14,0,12">
+                    <StackPanel>
+                        <TextBlock Text="GIVE THIS CASH BACK" FontWeight="Bold" TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding ChangeText}" FontSize="42" FontWeight="Bold" TextWrapping="Wrap"
+                                   Foreground="{StaticResource BrandDarkBrush}" />
+                    </StackPanel>
+                </Border>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="Paid (all methods)" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding PaidText}" FontSize="16" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                        <TextBlock Text="On khata" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding DueText}" FontSize="16" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Grid>
+                <TextBlock Text="{Binding PrintStatus}" TextWrapping="Wrap" Margin="0,12,0,0"
+                           Foreground="{StaticResource MutedBrush}" />
+            </StackPanel>
+        </ScrollViewer>
+        <!-- Dismiss only: no save, refund, print or DialogResult+Close pair. -->
+        <Button Grid.Row="1" Content="Done — next customer" Style="{StaticResource PrimaryButton}"
+                Height="44" Margin="0,14,0,0" IsDefault="True" Click="OnDone" />
+    </Grid>
+</Window>
