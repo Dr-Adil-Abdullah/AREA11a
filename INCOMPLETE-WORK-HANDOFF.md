@@ -1,11 +1,19 @@
 # AREA11a — Unfinished work / نامکمل کام اور اگلا قدم
 
+## Latest — batch 2, portion 4: Urdu tutorial delivered (documentation only)
+
+Owner's `next` authorized the final tutorial portion. [Offline, printable Urdu tutorial](docs/USER-GUIDE-URDU.html) and [editable Markdown source](docs/USER-GUIDE-URDU.md): **36 lessons**, all navigation pages and Settings groups, with the complete option summary FIRST and separate step-by-step detail SECOND. Source-reviewed against v0.72.0 views/view-models and relevant services; not a claim of observed Windows behavior or owner comprehension/acceptance. Covers cashier/owner workflows, missing price vs stock, no availability text on receipts, mixed supplier-payment recording, Fields' real scope, stock reconciliation, backup/restore risk, cloud limits and deferred LAN. HTML is self-contained RTL, mobile/print styled, has lesson links, no scripts or network assets. No application/build/color/test-count change: source remains v0.72.0 Heather, **1234 written cases**; its Windows run and physical checks remain pending. Next: owner reads/asks about lessons and provides Windows/physical evidence; setup/production Phase 6 ONLY on explicit بنا دو. Earlier “tutorial queued” notes are history, not the current task.
+
+
+
+**Documentation validation:** 36 lesson anchors and 74 internal links checked, no duplicate IDs or external assets/scripts, generated HTML body matches Markdown, `__CLEAR__` preserved as literal code, RTL/mobile/print CSS present. Purchase cost/retail checked against PurchaseService: base-unit rates (unlike Counter's selected-unit rate); example explains the pack-price trap. `check_repo.py`: 61/61 with real C# grammar; rules matrix current; diff whitespace clean. These checks are structural/source review, not a rendered-browser or Windows walkthrough.
+
 ## Latest — v0.72.0 Heather: batch 2, portion 2 (Windows/physical pending)
 
 Final clarified owner decision supersedes the earlier negative-stock answer: zero/insufficient stock blocks EVERY role, including owner and manager (D-93 remains unchanged). Both missing price and unavailable stock trigger ONE Counter-only popup per live bill. Clearing, posting, parking or loading another cart resets it; price is not repeated in the warning. If stock exists, an owner/manager may enter the existing custom rate even when catalog retail is missing; cashiers cannot. No receipt/chit warning or layout change; discounts unchanged. Core reads live stock, excludes expired stock, and combines repeated products and pack units. Quote/Create independently retain stock and below-cost checks. Seven new Core facts, **1234 written cases; 61 static checks**. Installed the C# grammar for verification; rewrote the pre-existing null-conditional event unsubscribe in ShellViewModel.Detach as an equivalent explicit null guard (the parser cannot read that C# 14 syntax). No .NET SDK here: Windows build/xUnit and physical proof pending. Next on owner's "next": batch-2 portion 4, full Urdu tutorial. Installer only on explicit بنا دو. v0.70.0's 1227/1227 is prior evidence, not proof of this version.
 
 
-**Read this first. This is a work-in-progress handoff, not a release or a declaration that Portion 4 is complete.**
+**Read this first. This is a work-in-progress handoff, not a tested production release. The latest tutorial delivery and its pending owner acceptance are recorded above; older portion statuses below are historical.**
 
 ## v0.72.0 targeted Windows proof (use disposable test data)
 
@@ -18,9 +26,9 @@ Final clarified owner decision supersedes the earlier negative-stock answer: zer
 ## Exact source to resume
 
 - Repository: <https://github.com/Dr-Adil-Abdullah/AREA11a>
-- WIP branch: [`arena/60395e95-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/60395e95-area11a)
-- Open pull request: <https://github.com/Dr-Adil-Abdullah/AREA11a/pull/2>
-- This file on the WIP branch: <https://github.com/Dr-Adil-Abdullah/AREA11a/blob/arena/60395e95-area11a/INCOMPLETE-WORK-HANDOFF.md>
+- Current session branch: [`arena/b4b7bf7b-area11a`](https://github.com/Dr-Adil-Abdullah/AREA11a/tree/arena/b4b7bf7b-area11a)
+- Historical pull request: <https://github.com/Dr-Adil-Abdullah/AREA11a/pull/2> (not checked as this session’s active PR)
+- This file on the current branch: <https://github.com/Dr-Adil-Abdullah/AREA11a/blob/arena/b4b7bf7b-area11a/INCOMPLETE-WORK-HANDOFF.md>
 
 **Important:** the plain repository URL may open the default branch, not this branch. A new agent must open the branch or PR above, inspect the latest commit and working tree, and follow its own environment's branch rules. Do not merge this WIP as if it were a completed release. This handoff records the latest owner feedback in this session; check actual Git history and files for newer work before acting. Older entries in README, TAKEOVER, HANDOFF and historical sections of progress documents describe their dates, not current approval or verification status.
 
