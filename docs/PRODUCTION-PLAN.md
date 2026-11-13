@@ -1,5 +1,8 @@
 # Production کا منصوبہ — debug سے دکان تک (Phase 5 + صفائی + کیوسک + پورشن 1-3 + نیا بیچ 1/4 + 3/4 مکمل، v0.71.0)
 
+> Trial B v0.75.0 Kestrel اب کوڈ میں: مستقل مختصر search pane، بڑا Cart، compact checkout وہی۔ A v0.74.0 Marlin سے موازنہ، مالک final چنے گا؛ ابھی physical PASS نہیں۔ D-104 discount کام queued، موجودہ رعایت سابق total بنیاد؛ installer کی اجازت نہیں۔
+
+
 > نیا UI تجربہ v0.74.0 Marlin (D-104): پہلے سرچ کے عارضی نتائج، next پر دوسرا مستقل مختصر panel، دونوں دیکھ کر مالک final کرے گا۔ ابھی discount وہی سابق total بنیاد؛ profit default اور total >5% تصدیق کا منظور شدہ کام الگ queued ہے۔ 1240 cases، Windows/PT-18 باقی؛ installer کی اجازت نہیں۔
 
 

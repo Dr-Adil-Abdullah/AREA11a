@@ -1,5 +1,10 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## D-105 — مالک نے Trial B کہا؛ حتمی پسند ابھی نہیں دی (v0.75.0 Kestrel)
+
+دوسرا انداز: چھوٹا مستقل سرچ پینل اور اس کے ساتھ بڑا Cart۔ خالی سرچ پر ساری مصنوعات نہیں؛ منتخب چیز ڈالنے کے بعد matches صاف، پینل کی جگہ قائم۔ نام، طاقت، pack، stock، retail اور تصویر ایک عمودی card میں تاکہ تنگ پینل میں لمبی چوڑی table نہ گھمانا پڑے۔ باقی compact buttons/checkout/F4/modal وہی۔ A = v0.74.0 Marlin؛ B = v0.75.0 Kestrel۔ مالک دونوں کے بعد final چنے گا؛ کوئی preference یا physical PASS فرض نہیں۔ D-104 والے مالی فیصلے اب بھی queued، ابھی کوئی discount/default/receipt/stock تبدیلی نہیں۔ موجودہ code میں فیصد سابق کل فروخت کی رقم پر ہی ہے، profit پر منتقل نہیں ہوا۔ Installer کی اجازت نہیں۔
+
+
 ## D-104 — پہلے POS کے دونوں انداز آزماؤ؛ ڈسکاؤنٹ کا نیا حکم الگ زیرِ انتظار
 
 - مالک نے سرچ layout کے سوال پر کہا: “now one then in next 2nd both test which i prefer will done finel later”۔ پہلے عارضی نتائج، اگلے next پر چھوٹا مستقل search panel؛ دونوں آزمانے کے بعد حتمی انتخاب۔ پہلے انداز کو final منظوری نہیں۔

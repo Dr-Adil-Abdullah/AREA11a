@@ -1,5 +1,20 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-19 — POS trial B: reserved search pane vs A overlay (NOT physically passed)
+
+Owner requested “tryal b”, not a final preference. B = v0.75.0 Kestrel (purple), A = v0.74.0 Marlin (blue, cfbc68d). No new screenshot/runtime/test log received for this trial. Only results layout and version/docs/checker pins changed; the A search/scan ViewModel and all financial services/models/migrations remain identical.
+
+On test data or an UNPOSTED real cart cleared afterward (no fake sale):
+1. Blank search: narrow pane remains at the side, with a prompt, no catalog/selected hidden medicine. Cart uses the wider adjoining area, not an obscured background. Typing results does not resize/cover Cart. After Add/scan, matches clear but the reserved pane does not disappear.
+2. Search 2–3 matching names/strengths/packs. Cards show name, strength, pack, stock, retail, photo and salt/rack. Long names/pack text and medium/large photos wrap; scroll matches vertically, no wide nine-column table. Pick correct variant and Add. Test no matches, typo suggestions (explicit human Add), exact pack barcode, unknown barcode and Escape/Hide then edit query to reopen.
+3. Add 5–10 cart lines, resize at 1366×768/1024×768 and 125%/150% scaling. Check fixed compact actions and total/cash/change/Complete sale/F4; only bounded lists scroll. Header/search/footer must not be pushed out by more products.
+4. More/split, new customer and Parked carts open temporary side details over the cart region, not another permanent column; Close returns full Cart width. Split opens inputs; draft indicator remains in footer; required extras still apply. F4 edits, validation, exact barcode pack, reprint, auto-print on/off and modal snapshot retained.
+5. Compare an A screenshot (same size/cart) to B; do not run two live instances or assume another program folder isolates shop data. Ask owner A / B / specific adjustment before calling either final. Source snapshots identify builds; no default-branch switch is needed.
+6. Full Windows `ALL GREEN - 1240 of 1240` and Desktop build remain pending. Discount is STILL the former full-selling-total calculation: approved profit-default/retail warning is not implemented by either UI trial.
+
+Result: pending owner comparison and Windows proof. No visual/production acceptance claimed.
+
+
 ## PT-18 — POS space comparison: trial A (Marlin), trial B queued, final choice pending
 
 Owner's new spoken feedback: persistent products list and stacked optional actions take too much Cart space. Wants search-only products and compact actions. Chose to try transient results first, standing small search panel second on next, then decide. No new screenshot or runtime PASS supplied for this trial.

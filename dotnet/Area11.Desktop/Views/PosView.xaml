@@ -3,8 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:views="clr-namespace:Area11.Desktop.Views"
              PreviewKeyDown="OnCounterPreviewKeyDown">
-    <!-- Trial A: search results overlay the full-width cart; no standing catalog column.
-         Trial B is queued for the owner's next, then the owner chooses the final layout. -->
+    <!-- Trial B: a reserved narrow search pane beside the cart, not over it.
+         Trial A remains in v0.74.0 for comparison; the owner has not chosen a final layout. -->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -15,7 +15,7 @@
         <DockPanel Grid.Row="0" Margin="0,0,0,8">
             <StackPanel DockPanel.Dock="Left">
                 <TextBlock Text="{DynamicResource AppLabel.counter}" Style="{StaticResource PageTitle}" />
-                <TextBlock Text="Search to pick a medicine · trial A" Style="{StaticResource PageSubtitle}" />
+                <TextBlock Text="Search beside the cart · trial B" Style="{StaticResource PageSubtitle}" />
             </StackPanel>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                 <TextBlock Text="{Binding CashierName, StringFormat=Cashier: {0}}"
@@ -46,9 +46,13 @@
                            Margin="8,3,0,0" />
             </Grid>
         </Border>
-        <Grid Grid.Row="2">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-            <Border Grid.Column="0" Style="{StaticResource Card}" Padding="8">
+        <Grid x:Name="CounterWorkspace" Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" MinWidth="200" MaxWidth="340" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="2.4*" />
+            </Grid.ColumnDefinitions>
+            <Border x:Name="CartPanel" Grid.Column="2" Style="{StaticResource Card}" Padding="8">
                 <Grid>
                     <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
                     <DockPanel Grid.Row="0" Margin="0,0,0,5">
@@ -81,7 +85,8 @@
                     </DataGrid>
                 </Grid>
             </Border>
-            <Border x:Name="CheckoutDetailsPanel" Grid.Column="1" Width="320" Margin="8,0,0,0"
+            <Border x:Name="CheckoutDetailsPanel" Grid.Column="2" Width="320" Margin="8,0,0,0"
+                    HorizontalAlignment="Right" Panel.ZIndex="10" MaxWidth="{Binding ElementName=CartPanel, Path=ActualWidth}"
                     Style="{StaticResource Card}" Padding="10"
                     Visibility="{Binding ShowCheckoutDetails, Converter={StaticResource BoolToVis}}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -105,7 +110,8 @@
                                             Command="{Binding CancelAddCustomerCommand}" />
                                 </StackPanel>
                             </StackPanel>
-                        </Border>                        <TextBlock Text="Doctor (prescription, optional)" Style="{StaticResource FieldLabel}" Margin="0,8,0,0" />
+                        </Border>
+                        <TextBlock Text="Doctor (prescription, optional)" Style="{StaticResource FieldLabel}" Margin="0,8,0,0" />
                         <ComboBox ItemsSource="{Binding Doctors}" DisplayMemberPath="Name"
                                   SelectedItem="{Binding SelectedDoctor, Mode=TwoWay}"
                                   ToolTip="Which doctor wrote the prescription. A doctor is a customer with the category Doctor." />
@@ -168,7 +174,8 @@
                     </StackPanel>
                 </ScrollViewer>
             </Border>
-            <Border Grid.Column="1" Width="320" Margin="8,0,0,0" Style="{StaticResource Card}" Padding="8"
+            <Border Grid.Column="2" Width="320" Margin="8,0,0,0" Style="{StaticResource Card}" Padding="8"
+                    HorizontalAlignment="Right" Panel.ZIndex="10" MaxWidth="{Binding ElementName=CartPanel, Path=ActualWidth}"
                     Visibility="{Binding ShowParkedCarts, Converter={StaticResource BoolToVis}}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
@@ -221,53 +228,78 @@
                     </StackPanel>
                 </ScrollViewer>
             </Border>
-            <!-- In-window overlay (not an unowned Popup): it cannot steal permanent cart space
-                 or make FocusGuard think the cashier left the application. -->
-            <Border x:Name="SearchResultsOverlay" Grid.ColumnSpan="2" Panel.ZIndex="20"
-                    VerticalAlignment="Top" MaxHeight="260" Background="White" BorderThickness="2"
-                    BorderBrush="{StaticResource BrandBrush}" Padding="8"
-                    Visibility="{Binding IsSearchResultsOpen, Converter={StaticResource BoolToVis}}">
+            <!-- Search keeps its own reserved width even when empty. Only matches clear after
+                 Add/scan; no result row can cover or resize the cart. -->
+            <Border x:Name="SearchResultsPanel" Grid.Column="0" Style="{StaticResource Card}" Padding="8">
                 <Grid>
-                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
                     <DockPanel Grid.Row="0" Margin="0,0,0,5">
-                        <Button DockPanel.Dock="Right" Content="Close results (Esc)" Command="{Binding CloseSearchResultsCommand}"
-                                Style="{StaticResource GhostButton}" Padding="8,4" />
-                        <StackPanel>
-                            <TextBlock Text="Pick the correct strength / pack, then Add to cart." Style="{StaticResource FieldHint}" />
-                            <TextBlock Text="Suggestions only — check the medicine before adding."
-                                       Style="{StaticResource FieldHint}" Foreground="{StaticResource WarningBrush}"
-                                       Visibility="{Binding IsSearchGuessing, Converter={StaticResource BoolToVis}}" />
-                            <TextBlock Text="{Binding SearchHint}" TextWrapping="Wrap" FontWeight="Bold" FontSize="11.5"
-                                       Foreground="{StaticResource BrandDarkBrush}" />
-                        </StackPanel>
+                        <Button DockPanel.Dock="Right" Content="Hide (Esc)" Command="{Binding CloseSearchResultsCommand}"
+                                Style="{StaticResource GhostButton}" Padding="7,4"
+                                Visibility="{Binding IsSearchResultsOpen, Converter={StaticResource BoolToVis}}" />
+                        <TextBlock Text="Search matches" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
                     </DockPanel>
-                    <DataGrid Grid.Row="1" RowHeight="NaN" ItemsSource="{Binding Products}"
-                              SelectedItem="{Binding SelectedProduct, Mode=TwoWay}">
+                    <StackPanel Grid.Row="1" Visibility="{Binding IsSearchResultsOpen, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="Suggestions only — check before adding." TextWrapping="Wrap"
+                                   Style="{StaticResource FieldHint}" Foreground="{StaticResource WarningBrush}"
+                                   Visibility="{Binding IsSearchGuessing, Converter={StaticResource BoolToVis}}" />
+                        <TextBlock Text="{Binding SearchHint}" TextWrapping="Wrap" FontWeight="Bold" FontSize="11.5"
+                                   Foreground="{StaticResource BrandDarkBrush}" />
+                    </StackPanel>
+                    <TextBlock x:Name="SearchStandbyHint" Grid.Row="2" Text="Type or edit the search above to show matches here. Pick the correct strength / pack, then Add to cart."
+                               TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="3,10,3,0">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsSearchResultsOpen}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <DataGrid x:Name="SearchMatchesGrid" Grid.Row="2" RowHeight="NaN" ItemsSource="{Binding Products}"
+                              SelectedItem="{Binding SelectedProduct, Mode=TwoWay}" IsReadOnly="True"
+                              HeadersVisibility="None" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              Visibility="{Binding IsSearchResultsOpen, Converter={StaticResource BoolToVis}}">
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="Photo" Width="90">
+                            <DataGridTemplateColumn Width="*">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Command="{Binding DataContext.OpenProductPhotoCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                CommandParameter="{Binding Id}" Padding="2" BorderThickness="0" Background="Transparent"
-                                                ToolTip="Open this medicine's photo gallery">
-                                            <Border Width="{DynamicResource ProductThumbnailSize}" Height="{DynamicResource ProductThumbnailSize}"
-                                                    CornerRadius="12" BorderThickness="1" BorderBrush="{StaticResource LineBrush}">
-                                                <Border.Background><ImageBrush ImageSource="{Binding PhotoPath}" Stretch="UniformToFill" /></Border.Background>
-                                                <TextBlock Text="No photo" FontSize="9" TextWrapping="Wrap" TextAlignment="Center"
-                                                           VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}"
-                                                           Visibility="{Binding HasNoPhoto, Converter={StaticResource BoolToVis}}" />
-                                            </Border>
-                                        </Button>
+                                        <Grid Margin="2,5">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                            <Button Command="{Binding DataContext.OpenProductPhotoCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding Id}" Padding="0" BorderThickness="0"
+                                                    Background="Transparent" VerticalAlignment="Top" Margin="0,0,7,0"
+                                                    ToolTip="Open this medicine's photo gallery">
+                                                <Border Width="{DynamicResource ProductThumbnailSize}" Height="{DynamicResource ProductThumbnailSize}"
+                                                        CornerRadius="10" BorderThickness="1" BorderBrush="{StaticResource LineBrush}">
+                                                    <Border.Background><ImageBrush ImageSource="{Binding PhotoPath}" Stretch="UniformToFill" /></Border.Background>
+                                                    <TextBlock Text="No photo" FontSize="9" TextWrapping="Wrap" TextAlignment="Center"
+                                                               VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}"
+                                                               Visibility="{Binding HasNoPhoto, Converter={StaticResource BoolToVis}}" />
+                                                </Border>
+                                            </Button>
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                <WrapPanel>
+                                                    <TextBlock Text="{Binding StrengthLabel, Mode=OneWay}" FontSize="11" Margin="0,0,6,0" />
+                                                    <TextBlock Text="{Binding PackSizeLabel, Mode=OneWay}" FontSize="11" TextWrapping="Wrap" />
+                                                </WrapPanel>
+                                                <WrapPanel>
+                                                    <TextBlock Text="{Binding StockLabel, Mode=OneWay}" FontSize="11" Margin="0,0,7,0" />
+                                                    <TextBlock Text="{Binding RetailText, Mode=OneWay}" FontSize="11" FontWeight="SemiBold" />
+                                                </WrapPanel>
+                                                <TextBlock Text="{Binding Generic}" FontSize="10" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" />
+                                                <TextBlock Text="{Binding RackNo, StringFormat=Rack: {0}}" FontSize="10" Foreground="{StaticResource MutedBrush}" />
+                                            </StackPanel>
+                                        </Grid>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="Medicine" Binding="{Binding Name}" Width="2*" />
-                            <DataGridTextColumn Header="Strength" Binding="{Binding StrengthLabel, Mode=OneWay}" Width="80" />
-                            <DataGridTextColumn Header="Pack / variant" Binding="{Binding PackSizeLabel, Mode=OneWay}" Width="100" />
-                            <DataGridTextColumn Header="Salt" Binding="{Binding Generic}" Width="1.4*" />
-                            <DataGridTextColumn Header="Stock" Binding="{Binding StockLabel, Mode=OneWay}" Width="90" />
-                            <DataGridTextColumn Header="Retail" Binding="{Binding RetailText, Mode=OneWay}" Width="90" />
-                            <DataGridTextColumn Header="Rack" Binding="{Binding RackNo}" Width="70" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
