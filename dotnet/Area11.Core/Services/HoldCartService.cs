@@ -72,8 +72,8 @@ public sealed class HoldCartService
 
                 _db.Execute(connection, @"
 INSERT INTO held_carts(code, created_at, updated_at, user_id, customer_id, discount_percent,
-                       note, total_paisa, items_count, status)
-VALUES(@code, @at, @at, @userId, @customerId, @discount, @note, @total, @count, 'held');",
+                       note, total_paisa, items_count, status, discount_basis)
+VALUES(@code, @at, @at, @userId, @customerId, @discount, @note, @total, @count, 'held', @basis);",
                     new
                     {
                         code = number,
@@ -83,7 +83,8 @@ VALUES(@code, @at, @at, @userId, @customerId, @discount, @note, @total, @count, 
                         discount = (double)input.DiscountPercent,
                         note = string.IsNullOrWhiteSpace(input.Notes) ? null : input.Notes.Trim(),
                         total = quote.Value.TotalPaisa,
-                        count = input.Lines.Count
+                        count = input.Lines.Count,
+                        basis = quote.Value.DiscountBasis
                     });
 
                 var cartId = (int)_db.NextId(connection);
@@ -96,8 +97,8 @@ VALUES(@code, @at, @at, @userId, @customerId, @discount, @note, @total, @count, 
                         ?? "Unknown item";
 
                     _db.Execute(connection, @"
-INSERT INTO held_cart_items(cart_id, product_id, name_snapshot, unit, quantity, unit_price_paisa, position)
-VALUES(@cartId, @productId, @name, @unit, @quantity, @price, @position);",
+INSERT INTO held_cart_items(cart_id, product_id, name_snapshot, unit, quantity, unit_price_paisa, position, pricing_mode, discount_basis, discount_percent)
+VALUES(@cartId, @productId, @name, @unit, @quantity, @price, @position, @mode, @basis, @percent);",
                         new
                         {
                             cartId,
@@ -106,7 +107,10 @@ VALUES(@cartId, @productId, @name, @unit, @quantity, @price, @position);",
                             unit = string.IsNullOrWhiteSpace(line.Unit) ? "base" : line.Unit.Trim().ToLowerInvariant(),
                             quantity = line.Quantity,
                             price = line.UnitPricePaisa,
-                            position = position++
+                            position = position++,
+                            mode = line.PricingMode,
+                            basis = line.DiscountBasis,
+                            percent = (double)line.LineDiscountPercent
                         });
                 }
 
@@ -167,7 +171,7 @@ ORDER BY h.created_at DESC, h.id DESC;");
             var cart = _db.Tx(connection =>
             {
                 var row = _db.QuerySingle<CartRow>(connection, @"
-SELECT id, code, customer_id, discount_percent, status
+SELECT id, code, customer_id, discount_percent, discount_basis, status
 FROM held_carts WHERE id = @id;", new { id = cartId });
 
                 if (row is null)
@@ -185,7 +189,7 @@ FROM held_carts WHERE id = @id;", new { id = cartId });
                     new { at = Clock.Now(), id = cartId });
 
                 var lines = _db.Query<HeldCartLine>(connection, @"
-SELECT product_id AS productId, name_snapshot AS name, unit, quantity, unit_price_paisa AS unitPricePaisa
+SELECT product_id AS productId, name_snapshot AS name, unit, quantity, unit_price_paisa AS unitPricePaisa, pricing_mode, discount_basis, discount_percent AS lineDiscountPercent
 FROM held_cart_items WHERE cart_id = @id ORDER BY position, id;", new { id = cartId });
 
                 _audit.Record(connection, user, "POS", "cart_resume", "held_carts", cartId.ToString(),
@@ -197,6 +201,7 @@ FROM held_cart_items WHERE cart_id = @id ORDER BY position, id;", new { id = car
                     Code = row.Code,
                     CustomerId = row.CustomerId,
                     DiscountPercent = (decimal)row.DiscountPercent,
+                    DiscountBasis = row.DiscountBasis,
                     Lines = lines.ToList()
                 };
             });
@@ -280,6 +285,7 @@ FROM held_cart_items WHERE cart_id = @id ORDER BY position, id;", new { id = car
         public int? CustomerId { get; set; }
 
         public double DiscountPercent { get; set; }
+        public string? DiscountBasis { get; set; }
 
         public string Status { get; set; } = "held";
     }

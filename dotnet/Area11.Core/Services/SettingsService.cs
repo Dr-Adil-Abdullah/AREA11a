@@ -182,6 +182,9 @@ public sealed class SettingsService
             return ServiceResult.Fail($"Unknown setting '{key}'.");
         }
 
+        if (key is "discount.billBasis" or "discount.blockBelowCost")
+            return ServiceResult.Fail("Pricing policy must use the audited owner settings path.");
+
         // Application words are owner-visible settings, not transient UI preferences. Keep them on
         // the validated, permission-checked and audited SetMany/AppLabelService path.
         if (key.StartsWith("labels.", StringComparison.Ordinal))
@@ -236,6 +239,15 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
     /// </summary>
     public ServiceResult SetMany(IReadOnlyDictionary<string, object?> values, User? actor)
     {
+        if (values.TryGetValue("discount.billBasis", out var billBasis))
+        {
+            if (!IsCurrentOwner(actor)) return ServiceResult.Fail("Only the owner can change the default discount basis.");
+            if (billBasis is not string basis || basis is not ("profit" or "retail"))
+                return ServiceResult.Fail("Choose profit or retail for the bill discount basis.");
+        }
+        if (values.TryGetValue("discount.blockBelowCost", out var belowCost) && belowCost is not true)
+            return ServiceResult.Fail("Selling below purchase cost is not allowed for any role.");
+
         // Labels can also be saved as part of the Settings screen's larger atomic dictionary. Guard
         // that real path here as well as AppLabelService.Save, so a direct Core caller cannot bypass
         // the Settings permission. A manually constructed service without permissions fails closed.
@@ -322,6 +334,23 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         }
     }
 
+    private bool IsCurrentOwner(User? actor)
+    {
+        if (actor?.IsOwner != true) return false;
+        try
+        {
+            using var connection = _db.Open();
+            return _db.QuerySingle<User>(connection,
+                "SELECT id, name, role, active FROM users WHERE id = @id;", new { id = actor.Id })
+                is { IsOwner: true, Active: true };
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The owner account could not be verified for pricing settings.", exception);
+            return false;
+        }
+    }
+
     /// <summary>
     /// Validates and serialises settings without opening a transaction. The native workbook preview
     /// uses this exact same guard, then applies the prepared values inside the workbook's ONE database
@@ -339,6 +368,10 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
                 return ServiceResult<IReadOnlyDictionary<string, string>>.Fail($"Unknown setting '{pair.Key}'.");
             }
 
+            if (pair.Key == "discount.billBasis" && pair.Value is not ("profit" or "retail"))
+                return ServiceResult<IReadOnlyDictionary<string, string>>.Fail("Choose profit or retail for the bill discount basis.");
+            if (pair.Key == "discount.blockBelowCost" && pair.Value is not true)
+                return ServiceResult<IReadOnlyDictionary<string, string>>.Fail("Purchase-cost protection cannot be disabled.");
             var refusal = Guard(pair.Key, pair.Value, values);
             if (refusal is not null)
             {
@@ -736,10 +769,11 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Number("tax.percent", 0);
         Text("tax.label", "Sales Tax");
 
-        // ---- Discount (27-Oct owner decision: always full retail/selling price) ----
+        // ---- Discount (D-107: future profit default, owner-selectable retail, per-person caps) ----
         Flag("discount.enabled", true);
-        // Legacy key retained for old databases; the 27-Oct owner rule always discounts full retail.
-        Text("discount.mode", "retail");
+        // Retired keys retained for old databases/tools; active allowances live per person.
+        Text("discount.mode", "retail"); // Retired legacy key, not the active basis.
+        Text("discount.billBasis", "profit");
         Number("discount.maxPercentCashier", 5);
         Number("discount.maxPercentManager", 20);
         Flag("discount.blockBelowCost", true);

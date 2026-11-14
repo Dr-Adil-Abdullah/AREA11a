@@ -276,37 +276,14 @@
 
                         <Border Style="{StaticResource SettingsGroup}">
                             <StackPanel>
-                                <TextBlock Text="Discount limits" Style="{StaticResource SectionTitle}" />
-                                <TextBlock Text="A bigger discount than the limit needs a manager, so a cashier cannot quietly empty the till."
-                                           Style="{StaticResource FieldHint}" />
-
-                                <Grid Margin="0,6,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="12" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Cashier may give (percent)" Style="{StaticResource FieldLabel}" />
-                                        <TextBox Text="{Binding CashierLimitText, UpdateSourceTrigger=PropertyChanged}" Width="110"
-                                                 HorizontalAlignment="Left" />
-                                    </StackPanel>
-
-                                    <StackPanel Grid.Column="2">
-                                        <TextBlock Text="Manager may give (percent)" Style="{StaticResource FieldLabel}" />
-                                        <TextBox Text="{Binding ManagerLimitText, UpdateSourceTrigger=PropertyChanged}" Width="110"
-                                                 HorizontalAlignment="Left" />
-                                    </StackPanel>
-                                </Grid>
-
-                                <CheckBox Content="Never sell below cost, even with a discount"
-                                          IsChecked="{Binding BlockBelowCost, Mode=TwoWay}"
-                                          Margin="0,14,0,0" />
-                                <TextBlock Text="Recommended. A sale below cost is a real loss, not a discount."
-                                           Style="{StaticResource FieldHint}" />
-                                <TextBlock Text="Discount % is of the full retail/selling-price total. With no discount, the Counter asks before using a VIP/Doctor rate; No keeps ordinary retail."
-                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                <TextBlock Text="Purchase cost protection — always ON" Style="{StaticResource SectionTitle}" />
+                                <TextBlock Text="No one, including the owner, may sell below actual batch purchase cost. This cannot be switched off."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+                                <TextBlock Text="Default bill discount basis (owner only)" Style="{StaticResource FieldLabel}" Margin="0,12,0,0" />
+                                <ComboBox ItemsSource="{Binding DiscountBases}" SelectedItem="{Binding BillDiscountBasis, Mode=TwoWay}"
+                                          IsEnabled="{Binding IsOwner}" Width="180" HorizontalAlignment="Left" />
+                                <TextBlock Text="profit = discount from gross profit; retail = discount from the selling total. Staff limits are per person in Staff &amp; permissions; save that panel separately. An allowed Counter override lasts one bill only."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
 
                                 <CheckBox Content="Stop a bill that crosses the customer's khata limit"
                                           IsChecked="{Binding BlockOverLimit, Mode=TwoWay}"
@@ -582,7 +559,26 @@
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
 
-                                    <Button Content="Back to the normal rights for this role"
+                                    <Border Background="{StaticResource BrandSoftBrush}" CornerRadius="8" Padding="12" Margin="0,12,0,0"
+                                            Visibility="{Binding IsOwner, Converter={StaticResource BoolToVis}}">
+                                        <StackPanel>
+                                            <TextBlock Text="This person's pricing limits" Style="{StaticResource SectionTitle}" />
+                                            <TextBlock Text="New non-owner accounts start with no price/discount edits. Limits apply to bill AND item discounts. Save here, separately from the page Save."
+                                                       Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+                                            <CheckBox Content="May edit final item rate" IsChecked="{Binding PricingEditRate}" Margin="0,8,0,0" />
+                                            <TextBlock Text="Maximum manual reduction from retail (%)" Style="{StaticResource FieldLabel}" />
+                                            <TextBox Text="{Binding PricingManualLimit, UpdateSourceTrigger=PropertyChanged}" />
+                                            <CheckBox Content="May discount gross profit" IsChecked="{Binding PricingProfit}" Margin="0,8,0,0" />
+                                            <TextBox Text="{Binding PricingProfitLimit, UpdateSourceTrigger=PropertyChanged}" ToolTip="Maximum profit discount percent" />
+                                            <CheckBox Content="May discount selling total" IsChecked="{Binding PricingRetail}" Margin="0,8,0,0" />
+                                            <TextBox Text="{Binding PricingRetailLimit, UpdateSourceTrigger=PropertyChanged}" ToolTip="Maximum selling-total discount percent" />
+                                            <CheckBox Content="May override bill basis for one bill" IsChecked="{Binding PricingOverride}" Margin="0,8,0,0" />
+                                            <Button Content="Save this person's pricing limits" Command="{Binding SavePricingCommand}"
+                                                    Style="{StaticResource PrimaryButton}" Margin="0,10,0,0" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Button Content="Reset page permissions for this role (pricing unchanged)"
                                             Style="{StaticResource GhostButton}"
                                             HorizontalAlignment="Left" Margin="0,10,0,0"
                                             Command="{Binding ResetPermissionsCommand}" />

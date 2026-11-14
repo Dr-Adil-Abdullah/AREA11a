@@ -19,6 +19,7 @@ public partial class PosView : UserControl
     {
         // Only this view's load, not a child's. Never refocus on every property/selection change.
         if (!ReferenceEquals(e.OriginalSource, this)) return;
+        if (DataContext is PosViewModel model) model.RefreshPricingDefaults();
         Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() =>
         {
             if (IsVisible && DataContext is PosViewModel { IsBlocked: false }
@@ -63,6 +64,16 @@ public partial class PosView : UserControl
         e.Handled = true;
         SearchMatchesGrid.SelectedItem = row.Item;
         AddFocusedSearchMatch();
+    }
+
+    private void OnCartLineDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        var source = e.OriginalSource as DependencyObject;
+        var row = FindParent<DataGridRow>(source);
+        if (row?.Item is not PosCartLine line || FindParent<ButtonBase>(source) is not null
+            || !ReferenceEquals(ItemsControl.ItemsControlFromItemContainer(row), CartGrid)) return;
+        e.Handled = true;
+        if (DataContext is PosViewModel viewModel) viewModel.EditCartLine(line);
     }
 
     private static T? FindParent<T>(DependencyObject? child) where T : DependencyObject
@@ -167,6 +178,13 @@ public partial class PosView : UserControl
             {
                 e.Handled = true;
                 if (!e.IsRepeat) AddFocusedSearchMatch();
+                return;
+            }
+            if (e.Key == Key.Enter && CartGrid.IsKeyboardFocusWithin)
+            {
+                e.Handled = true;
+                if (!e.IsRepeat && CartGrid.SelectedItem is PosCartLine line
+                    && DataContext is PosViewModel cartModel) cartModel.EditCartLine(line);
                 return;
             }
             // Native TextBox caret, ComboBox choices and DataGrid cell/row arrows are untouched.

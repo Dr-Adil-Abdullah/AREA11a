@@ -1,5 +1,24 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-21 — Phase2 per-person pricing, actual profit and immutable bills (Windows NOT passed)
+
+**v0.77.0 Sandpiper**, brown `#745238`. **1270 written cases (+30), 65 static checks**; no SDK, Core/xUnit, Desktop/WPF run or physical result in this sandbox. Static/grammar checks and Python SQLite execution are independent evidence, not a C# runtime pass. Owner-readable procedure: [فیز2 آزمائش اور واپسی](docs/POS-PHASE2-TEST-URDU.md). New permissions are DENY by default for non-owner: owner must save each person's pricing panel before expecting edits/discounts.
+
+1. Verified backup; isolated test PC/VM/data for posted examples. Never assume a second program folder isolates ProgramData; live shop preview only, clear afterward. Ordinary old bills/history/stock values must survive migration035 unchanged. New future default profit, retired discount.mode inert. Every upgrade subsequent run keeps the owner's chosen discount.billBasis.
+2. Owner Settings→Staff: choose person, rate-edit/manual reduction, profit/retail permissions and separate caps, one-bill override. Save THIS panel separately. Same role two users, one granted/one denied; manager cannot edit grants/default; owner can configure own caps. Revocation must affect next quote/post, including resumed draft/held lines.
+3. Selected Cart row Enter/double-click opens owned non-taskbar editor, no sale save. Existing grid stays read-only intentionally. Blank/header clicks do not open. Combo fields keyboard accessible, Apply vs Cancel/×; candidate errors do not modify cart. Reset clears manual/line discount, restores bill-discount eligibility. No duplicate Add/Edit on repeat.
+4. Cost200/sale300/bill10: profit290, retail270. For retail>5, quote works but save asks EACH time; No no save, Yes respects caps/cost. Fresh draft JSON cannot carry confirmation. Try same object in automated tests: confirmation consumed, second post requires it again.
+5. A100 manual95, B100 item retail20%=80, C100 normal bill retail10%=90: pre-round net265; existing default Rs10 rounding may make260 (not a second bill percentage). Manual A110 remains110. Add further ordinary lines; they get current bill%. Separate adjusted lines must not merge with later normal adds.
+6. Reference1200/manualcap20% → max240/min960. 800 rejected; 960 accepted if cost permits. Cost1000 makes960 reject. A missing catalog reference has no measurable reference reduction, but owner-granted rate edit and positive/actualcost checks remain; do not silently create/update catalog price. Special VIP/Doctor opt-in remains, item/bill percentage never stacks with special rate on that item.
+7. Per-item profit10 vs retail10 on same300/cost200:290 vs270. Reference product cost is not actual batch cost: consume two FEFO batches200/250 under sale300 each, profit10% →585 before existing rounding/points. Pack selected-unit manual cap, fractional quantities, rounding, loyalty and cost floor on every allocation; owner cannot disable floor through legacy false, UI-only setter or workbook.
+8. Cost/profit direct fields visible only under authorized manager/owner/profit visibility; masked quote cost when hidden. Mathematical caveat: someone allowed profit-based discount can infer margin from its net effect—do not claim absolute cost secrecy. Profit-discount permission is itself sensitive.
+9. Hold/Draft preserve mode/basis/percent/rate; resumed by another user must revalidate current caps/stock/reference. Settings default may change while cart open; Clear/Park/Post resets new bill to current Settings. Rejected/cancelled basis selection must visually revert; popup owner active and lockdown must not treat editor as leaving app.
+10. Save example, receipt/reprint/Bills/report/cash/change agree. Change defaults/prices afterward, historical bill unchanged. Partial then full return uses saved net (two290 units refund290 each), no recompute under today's retail basis. Invalid amount/cap/confirmation/cost creates no sale/payment/stock/number change.
+11. Windows Desktop build plus **ALL GREEN - 1270 of 1270** and PT-20 keyboard/short-screen/DPI/modal/print regressions. This release has no Extra Discount field or implementation; that's phase3. Whole-page 15-point audit is phase4, not already done.
+
+Result: pending Windows and owner physical proof. No installer authorized.
+
+
 ## PT-20 — Approved phase 1: reserved B search, space and keyboard (Windows NOT passed)
 
 Build **v0.76.0 Osprey**, green `#35614A`; 1240 written cases unchanged, 64 static source checks. No Windows/.NET runtime here; the checklist below is pending, not a claim of observed input routing or measured height gain. Owner chose B; no more A/B choice is requested. [Consolidated plan](docs/POS-NEXT-REVIEW-PLAN-URDU.md), [Counter lesson](docs/USER-GUIDE-URDU.html#lesson-09).

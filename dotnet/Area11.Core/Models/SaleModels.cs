@@ -14,6 +14,11 @@ public sealed class SaleLineInput
 
     /// <summary>Custom price for one selected unit; 0 = retail or the explicitly accepted special rate.</summary>
     public long UnitPricePaisa { get; set; }
+
+    /// <summary>normal | manual | discount. Legacy nonzero UnitPricePaisa also means manual.</summary>
+    public string PricingMode { get; set; } = "normal";
+    public string DiscountBasis { get; set; } = "profit";
+    public decimal LineDiscountPercent { get; set; }
 }
 
 /// <summary>One part of a split payment: how much was paid, and by which method.</summary>
@@ -38,6 +43,11 @@ public sealed class SaleInput
     public List<SaleLineInput> Lines { get; set; } = new();
 
     public decimal DiscountPercent { get; set; }
+
+    /// <summary>Null uses the owner's current Settings default; explicit value is this bill only.</summary>
+    public string? DiscountBasis { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool RetailDiscountConfirmed { get; set; }
 
     /// <summary>
     /// Explicit Yes in the counter's VIP/Doctor popup. False = normal retail; an explicit discount
@@ -79,6 +89,7 @@ public sealed class SaleInput
 /// <summary>What the counter shows before saving — computed by the same code that saves.</summary>
 public sealed class SaleQuote
 {
+    public string DiscountBasis { get; init; } = "profit";
     public long SubtotalPaisa { get; init; }
 
     public long DiscountPaisa { get; init; }
@@ -105,6 +116,7 @@ public sealed class SaleQuote
 
     public double Units { get; init; }
 
+    public List<SaleLinePricing> Lines { get; init; } = new();
     public List<string> Warnings { get; init; } = new();
 }
 
@@ -171,6 +183,11 @@ public sealed class SaleDraftLine
 
     public long LineTotalPaisa { get; set; }
 
+    public int InputIndex { get; init; }
+    public string PricingMode { get; init; } = "normal";
+    public string DiscountBasis { get; init; } = "profit";
+    public decimal AppliedDiscountPercent { get; init; }
+
     public long LineCostPaisa => Calc.Round(CostUnitPaisa * QtyBase);
 }
 
@@ -186,6 +203,9 @@ public sealed class HeldCartLine
     public double Quantity { get; set; }
 
     public long UnitPricePaisa { get; set; }
+    public string PricingMode { get; set; } = "normal";
+    public string DiscountBasis { get; set; } = "profit";
+    public decimal LineDiscountPercent { get; set; }
 }
 
 /// <summary>A parked bill as the counter list shows it - no lines, so the list stays light.</summary>
@@ -226,6 +246,7 @@ public sealed class HeldCart
     public int? CustomerId { get; set; }
 
     public decimal DiscountPercent { get; set; }
+    public string? DiscountBasis { get; set; }
 
     public List<HeldCartLine> Lines { get; set; } = new();
 }

@@ -130,7 +130,7 @@ Full permission matrix: Section 7.4.
 
 3.1.19 **[U-19]** **Photos live in a folder** (`data/photos/`), the database stores only the file name — keeps the database light. (5 Oct 2026)
 
-3.1.20 **[U-20]** **Current rule (27 Oct 2026 physical-testing decision):** an explicit discount percentage applies to the **full retail/selling-price total**. This supersedes the 5 Oct margin/retail choice for new sales; the legacy `discount.mode` value is retained only so old databases open safely and does not change the calculation.
+3.1.20 **[U-20]** **Current owner-approved phase-2 rule (D-107, v0.77.0):** new/future bills, including an existing shop, default to gross-profit-based percentage using actual allocated stock-batch cost; owner Settings may choose full selling total. Per-item manual final rate or item profit/retail percentage excludes that item from bill percentage; reset restores eligibility. Owner-only per-person allowances separately limit manual reduction, profit percentage, retail percentage and one-bill basis override; no role-wide automatic grant. An allowed one-bill basis change prompts then resets to Settings default; retail bill percentage above5 needs fresh pre-save confirmation each bill. No role sells below cost. Saved historical monetary records remain unchanged. Retired discount.mode remains inert; the active key is discount.billBasis. This supersedes the 27-Oct full-retail-only rule for future sales. Separate sale-level Extra Discount is approved for phase3 but NOT implemented in phase2.
 
 3.1.21 **[U-21]** **Medicine room/almari + camera photo**: each medicine carries "where it is kept" and a photo — both. (5 Oct 2026)
 
@@ -204,7 +204,7 @@ Full permission matrix: Section 7.4.
 
 3.3.7 **[E-07]** **Expiry levels**: days + colour from settings (levels 1/2/3).
 
-3.3.8 **[E-08]** **Rates and discount**: retail/VIP/Doctor rates remain editable guidance; a special rate requires an explicit counter **Yes**, while **No** keeps retail. Explicit discount is a percentage of full retail, with role limits from Settings (27 Oct 2026 clarification).
+3.3.8 **[E-08]** **Current D-107:** editable retail/VIP/Doctor guidance and explicit special-rate Yes/No retained; nonstacking per-item normal/manual/profit-discount/retail-discount modes and owner-managed per-person caps. Mandatory actual-batch cost floor includes owner. Bill default profit (owner-selectable retail), allowed one-bill override/reset and retail>5 pre-save confirmation; previous role-wide/full-retail-only policy superseded for future bills, saved bills unchanged. Extra Discount remains a separate pending phase3.
 
 3.3.9 **[E-09]** **Round-off, tax, invoice format, printer size (58/80 mm)** — from settings.
 

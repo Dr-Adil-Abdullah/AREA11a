@@ -91,6 +91,10 @@ public sealed class SettingsViewModel : ObservableObject
     private IdleHourOption? _selectedIdleHour;
     private string _clockText = string.Empty;
     private User? _selectedUser;
+    private string _billDiscountBasis = "profit";
+    private bool _pricingEditRate, _pricingProfit, _pricingRetail, _pricingOverride;
+    private string _pricingManualLimit = "0", _pricingProfitLimit = "0", _pricingRetailLimit = "0";
+
     private string _newStaffName = string.Empty;
     private string _newStaffPin = string.Empty;
     private string _resetStaffSecret = string.Empty;
@@ -111,6 +115,7 @@ public sealed class SettingsViewModel : ObservableObject
         ExtraFields = new CustomFieldsViewModel(services, user);
 
         SaveCommand = new RelayCommand(Save);
+        SavePricingCommand = new RelayCommand(SavePricing);
         AddStaffCommand = new RelayCommand(AddStaff);
         ResetPermissionsCommand = new RelayCommand(ResetPermissions);
         ResetLabelsCommand = new RelayCommand(ResetLabels);
@@ -258,6 +263,51 @@ public sealed class SettingsViewModel : ObservableObject
 
     /// <summary>Takes the saved key off this computer (it takes effect when Save is pressed).</summary>
     public RelayCommand ClearSyncKeyCommand { get; }
+
+    public RelayCommand SavePricingCommand { get; }
+    public bool IsOwner => _user.IsOwner;
+    public IReadOnlyList<string> DiscountBases { get; } = new[] { "profit", "retail" };
+    public string BillDiscountBasis { get => _billDiscountBasis; set => SetProperty(ref _billDiscountBasis, value); }
+    public bool PricingEditRate { get => _pricingEditRate; set => SetProperty(ref _pricingEditRate, value); }
+    public bool PricingProfit { get => _pricingProfit; set => SetProperty(ref _pricingProfit, value); }
+    public bool PricingRetail { get => _pricingRetail; set => SetProperty(ref _pricingRetail, value); }
+    public bool PricingOverride { get => _pricingOverride; set => SetProperty(ref _pricingOverride, value); }
+    public string PricingManualLimit { get => _pricingManualLimit; set => SetProperty(ref _pricingManualLimit, value); }
+    public string PricingProfitLimit { get => _pricingProfitLimit; set => SetProperty(ref _pricingProfitLimit, value); }
+    public string PricingRetailLimit { get => _pricingRetailLimit; set => SetProperty(ref _pricingRetailLimit, value); }
+
+    private void LoadPricing()
+    {
+        if (_selectedUser is null || !_user.IsOwner) return;
+        try
+        {
+            var allowance = _services.Pricing.ForUser(_selectedUser);
+            PricingEditRate = allowance.EditRate;
+            PricingManualLimit = allowance.ManualReductionPercent.ToString("0.##", CultureInfo.InvariantCulture);
+            PricingProfit = allowance.ProfitDiscount;
+            PricingProfitLimit = allowance.ProfitPercent.ToString("0.##", CultureInfo.InvariantCulture);
+            PricingRetail = allowance.RetailDiscount;
+            PricingRetailLimit = allowance.RetailPercent.ToString("0.##", CultureInfo.InvariantCulture);
+            PricingOverride = allowance.OverrideBasis;
+        }
+        catch (ValidationException exception) { SetStatus(exception.Message, true); }
+    }
+
+    private void SavePricing()
+    {
+        if (!_user.IsOwner || _selectedUser is null) { SetStatus("Only the owner can set a person's pricing limits.", true); return; }
+        if (!decimal.TryParse(PricingManualLimit, NumberStyles.Number, CultureInfo.InvariantCulture, out var manual)
+            || !decimal.TryParse(PricingProfitLimit, NumberStyles.Number, CultureInfo.InvariantCulture, out var profit)
+            || !decimal.TryParse(PricingRetailLimit, NumberStyles.Number, CultureInfo.InvariantCulture, out var retail))
+        { SetStatus("Enter numeric percentage limits between 0 and 100.", true); return; }
+        var result = _services.Pricing.Save(_user, new PricingAllowance
+        {
+            UserId = _selectedUser.Id, EditRate = PricingEditRate, ManualReductionPercent = manual,
+            ProfitDiscount = PricingProfit, ProfitPercent = profit, RetailDiscount = PricingRetail,
+            RetailPercent = retail, OverrideBasis = PricingOverride
+        });
+        SetStatus(result.Ok ? "Pricing limits saved for " + _selectedUser.Name + "." : result.Error ?? "Could not save pricing limits.", !result.Ok);
+    }
 
     public bool CanManageStaff => _services.Permissions.Can(_user, Modules.Staff);
 
@@ -679,7 +729,8 @@ public sealed class SettingsViewModel : ObservableObject
 
         CashierLimitText = Text(settings.GetDouble("discount.maxPercentCashier", 5));
         ManagerLimitText = Text(settings.GetDouble("discount.maxPercentManager", 20));
-        BlockBelowCost = settings.GetBool("discount.blockBelowCost", true);
+        BlockBelowCost = true;
+        BillDiscountBasis = settings.GetString("discount.billBasis");
         BlockOverLimit = settings.GetBool("credit.blockOverLimit", false);
         ShowMargins = settings.GetBool("profit.showMargins", true);
         TaxEnabled = settings.GetBool("tax.enabled");
@@ -770,6 +821,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void LoadPermissions()
     {
+        LoadPricing();
         Permissions.Clear();
 
         if (_selectedUser is null)
@@ -824,12 +876,6 @@ public sealed class SettingsViewModel : ObservableObject
             || automaticMinutes is < 5 or > 1440)
         {
             SetStatus("Automatic sync must be a whole number of minutes from 5 to 1440.", true);
-            return;
-        }
-
-        if (!TryNumber(CashierLimitText, out var cashierLimit) || !TryNumber(ManagerLimitText, out var managerLimit))
-        {
-            SetStatus("Discount limits must be numbers, for example 5 or 7.5.", true);
             return;
         }
 
@@ -938,9 +984,7 @@ public sealed class SettingsViewModel : ObservableObject
             ["receipt.showDiscount"] = ShowDiscount,
             ["sale.successPopup"] = SaleSuccessPopup,
 
-            ["discount.maxPercentCashier"] = cashierLimit,
-            ["discount.maxPercentManager"] = managerLimit,
-            ["discount.blockBelowCost"] = BlockBelowCost,
+            ["discount.blockBelowCost"] = true,
             ["credit.blockOverLimit"] = BlockOverLimit,
             ["profit.showMargins"] = ShowMargins,
             ["tax.enabled"] = TaxEnabled,
@@ -991,6 +1035,7 @@ public sealed class SettingsViewModel : ObservableObject
             values["brand.appName"] = AppDisplayName.Trim();
         }
 
+        if (_user.IsOwner) values["discount.billBasis"] = BillDiscountBasis;
         var result = _services.Settings.SetMany(values, _user);
 
         if (!result.Ok)

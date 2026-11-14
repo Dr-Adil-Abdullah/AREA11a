@@ -30,6 +30,7 @@ public sealed class AppServices
         Partners = new PartnerService(Database, Audit, Log);
         Ledger = new CustomerLedgerService(Database, Audit, Settings, Permissions, Log);
         SupplierLedger = new SupplierLedgerService(Database, Audit, Numbering, Settings, Permissions, Log);
+        Pricing = new PricingAllowanceService(Database, Audit, Log);
         Sales = new SaleService(Database, Audit, Numbering, Settings, Permissions, Log);
         Purchases = new PurchaseService(Database, Audit, Numbering, Settings, Permissions, Log);
         Holds = new HoldCartService(Database, Audit, Numbering, Permissions, Sales, Log);
@@ -113,6 +114,8 @@ public sealed class AppServices
     public CustomerLedgerService Ledger { get; }
 
     public SupplierLedgerService SupplierLedger { get; }
+
+    public PricingAllowanceService Pricing { get; }
 
     public SaleService Sales { get; }
 

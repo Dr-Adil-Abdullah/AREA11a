@@ -64,6 +64,7 @@ VIEW_MODEL_OF = {
     "ProductsView.xaml": "ProductsViewModel",
     "ProductEditorWindow.xaml": "ProductsViewModel",
     "PosView.xaml": "PosViewModel",
+    "LinePricingWindow.xaml": "LinePricingViewModel",
     "PageFaultView.xaml": "PageFaultViewModel",
     "PurchasesView.xaml": "PurchasesViewModel",
     "SettingsView.xaml": "SettingsViewModel",
@@ -5672,6 +5673,52 @@ def check_counter_keyboard_phase_one() -> None:
     REPORT.append("Counter phase 1: titleless Counter, quiet fixed actions, guarded initial/Add focus, section navigation and row-only Add gestures (Windows proof pending)")
 
 
+def check_counter_pricing_phase_two() -> None:
+    """Money regression tests are written in Core; pin WPF and alternate-write-path wiring too."""
+    core = (DOTNET / "Area11.Core/Services/SaleService.cs").read_text(encoding="utf-8-sig")
+    model = (DOTNET / "Area11.Core/Models/SaleModels.cs").read_text(encoding="utf-8-sig")
+    policy = (DOTNET / "Area11.Core/Services/PricingAllowanceService.cs").read_text(encoding="utf-8-sig")
+    vm = (DOTNET / "Area11.Desktop/ViewModels/PosViewModel.cs").read_text(encoding="utf-8-sig")
+    settings = (DOTNET / "Area11.Core/Services/SettingsService.cs").read_text(encoding="utf-8-sig")
+    workbook = (DOTNET / "Area11.Core/Services/WorkbookService.cs").read_text(encoding="utf-8-sig")
+    view = (DOTNET / "Area11.Desktop/Views/PosView.xaml.cs").read_text(encoding="utf-8-sig")
+    tests = (DOTNET / "Area11.Tests/PricingPhaseTwoTests.cs").read_text(encoding="utf-8-sig")
+    for needle in ['new PricingAllowanceService(_db, _audit, _log).Read(connection, user)',
+                   'billBasis != defaultBasis && !pricing.OverrideBasis',
+                   'mode == "manual" ? 0 : input.DiscountPercent',
+                   'PricingAllowanceService.CheckDiscount(pricing, lineBasis, linePercent)',
+                   'pricing.ManualReductionPercent', 'const bool blockBelowCost = true;',
+                   'line.GrossPaisa - line.LineCostPaisa', 'line.GrossPaisa - discount < line.LineCostPaisa',
+                   'input.DiscountPercent > 5 && !input.RetailDiscountConfirmed',
+                   'input.RetailDiscountConfirmed = false;', 'pricing_mode, discount_basis, discount_percent']:
+        if needle not in core: fail("Counter phase 2: missing Core pricing guard " + needle)
+    if 'user.Kind switch' in core:
+        fail("Counter phase 2: pricing caps must be per person, not the retired role-wide switch")
+    for needle in ['!actor.IsOwner', 'IsOwner: true, Active: true', 'ManualReductionPercent is < 0 or > 100',
+                   'oldValue: JsonSerializer.Serialize(before)', 'user_pricing_allowances']:
+        if needle not in policy: fail("Counter phase 2: missing owner-managed per-person policy " + needle)
+    for needle in ['JsonIgnore', 'RetailDiscountConfirmed', 'LineDiscountPercent', 'PricingMode', 'InputIndex']:
+        if needle not in model: fail("Counter phase 2: missing durable/ephemeral pricing distinction " + needle)
+    if 'key is "discount.billBasis" or "discount.blockBelowCost"' not in settings or 'key is "discount.billBasis" or "discount.blockBelowCost"' not in workbook:
+        fail("Counter phase 2: UI-only settings and workbook paths must not bypass pricing policy")
+    if 'Text("discount.billBasis", "profit")' not in settings or 'Only the owner can change the default discount basis.' not in settings:
+        fail("Counter phase 2: missing owner-only profit default")
+    for needle in ['EditCartLine(PosCartLine line)', 'window.ShowDialog();', 'if (!editor.Accepted) return;',
+                   'line.PricingMode == "normal"', 'ResetBillBasis();', 'RestoreBillBasis(input.DiscountBasis)',
+                   'RestoreBillBasis(cart.DiscountBasis)', 'input.RetailDiscountConfirmed = true;']:
+        if needle not in vm: fail("Counter phase 2: missing cart/editor/save state contract " + needle)
+    if 'OnCartLineDoubleClick' not in view or 'cartModel.EditCartLine(line)' not in view:
+        fail("Counter phase 2: cart double-click and selected-row Enter must reach the owned editor")
+    root = ET.parse(DOTNET / "Area11.Desktop/Views/PosView.xaml").getroot()
+    if not any(node.get("PreviewMouseDoubleClick") == "OnCartLineDoubleClick" for node in root.iter()):
+        fail("Counter phase 2: wire the cart editor gesture")
+    for needle in ['ExistingShopFutureBillsUseTheNewProfitDefault', 'ManualAndItemDiscountLinesAreExcludedFromBillDiscount',
+                   'ManualRateCannotBypassTheTwentyPercentReductionCap', 'ProfitDiscountUsesBothFefoBatchCosts',
+                   'ADiscountedPartialReturnUsesSavedNetNotTodaysBasis', 'ReopeningARetailDraftRequiresFreshSaveConfirmation']:
+        if needle not in tests: fail("Counter phase 2: missing named money regression " + needle)
+    REPORT.append("Counter phase 2: per-person owner-only limits, batch-profit/retail line and bill basis, manual exclusion, cost floor, ephemeral confirmation, owned editor and persisted hold/draft snapshots (Windows tests pending)")
+
+
 def check_counter_checkout() -> None:
     """Desktop has no test reference: pin the bounded layout, shortcut and post-commit modal."""
     import xml.etree.ElementTree as ET
@@ -6293,6 +6340,7 @@ def main() -> int:
     check_counter_checkout()
     check_counter_search_trial()
     check_counter_keyboard_phase_one()
+    check_counter_pricing_phase_two()
     check_checklist()
     check_audit_recovery()
     check_report_chart()

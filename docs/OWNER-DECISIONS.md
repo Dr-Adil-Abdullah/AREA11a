@@ -1,5 +1,14 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## D-107 — next سے فیز2؛ per-person limits، item editor اور اصل حساب (v0.77.0 Sandpiper)
+
+صرف مالک ہر شخص کے لیے manual rate اجازت/حد، profit فیصد اجازت/حد، retail فیصد اجازت/حد اور one-bill basis override کی اجازت محفوظ کرے گا؛ عہدہ خود اجازت نہیں۔ غیر مالک کی پرانی/نئی account کو نئی pricing row کے بغیر خودکار رعایت/ریٹ اجازت نہیں۔ مالک خود اپنی limits بھی مقرر کرسکے۔ Settings کا نیا active key discount.billBasis (profit/retail)، ابتدائی future-bill default profit existing shop پر بھی؛ retired discount.mode inert رہتا ہے۔ allowed override صرف ایک bill، واضح popup اور next bill Settings default۔ total-basis bill >5% ہر save سے پہلے fresh confirmation، Core بھی check/consume، draftJSON میں approval نہیں۔
+
+Owned item editor: normal/manual/itemprofit/itemretail؛ manual اوپر یا نیچے ہو، یا item % ہو، bill% دوبارہ نہیں؛ reset normal، بعد کی untouched lines پر موجودہ bill%۔ فی selected-unit reference سے manual cap، 1200−20%=960؛ actualcost اس سے اوپر ہو تو cost floor۔ reference retail missing ہو تو فیصد کمی ناپنا ممکن نہیں؛ مالک کی explicit rate-edit اجازت والا شخص مثبت rate دے سکتا ہے، actual cost سے نیچے پھر بھی نہیں۔ ہر role پر mandatory actual FEFO cost؛ پرانی optional-lock اور silent-clamp پالیسی اس نئی واضح شرط سے superseded۔ اس لیے پرانے bill-test expectations بھی updated، پرانے saved bills نہیں۔
+
+فیز1 میں ملا ReadOnly/template مسئلہ اب dedicated guarded editor سے حل؛ پورا grid کھول کر permissions bypass نہیں۔ Settings UI-only اور workbook protected-policy write paths بھی بند۔ cost visibility محفوظ مگر profit-based percentage کا نتیجہ ریاضی سے cost کا اندازہ دے سکتا ہے؛ اسے absolute secrecy نہ سمجھیں۔ Extra Discount ابھی نہیں، فیز3 میں bill-level الگ ہوگا، product lines rewrite نہیں۔ تمام source checks Windows physical PASS نہیں۔
+
+
 ## D-106 — یکجا منصوبہ منظور؛ next سے صرف فیز 1 (v0.76.0 Osprey)
 
 مالک نے B کا مستقل چھوٹا سرچ پینل پسند کیا۔ اندر دہرایا POS/cashier ہٹانا، نرم گول ہلکے نمایاں actions، keyboard سے پورا Counter، سادہ تیر اندر اور Shift+تیر حصوں کے درمیان، exact barcode Enter اور selected-result Enter/double-click Add۔ مالی editor اور per-person caps فیز2 میں، فیز1 میں ان کے بننے کا دعویٰ نہیں۔

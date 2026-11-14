@@ -23,6 +23,8 @@ public sealed class SaleCompletionTests
         var product = TestData.AddProduct(test, costPaisa: 15000, retailPaisa: 30000);
         var input = One(product, tendered: 50000);
         input.DiscountPercent = 10;
+        input.DiscountBasis = "retail"; // This fixture deliberately keeps the Rs270 completion example.
+        input.RetailDiscountConfirmed = true;
         var saved = TestData.Sales(test).Create(input, TestData.Owner);
         Assert.True(saved.Ok, saved.Error);
         Assert.Equal(27000L, saved.Value!.TotalPaisa);

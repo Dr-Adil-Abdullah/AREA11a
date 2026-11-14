@@ -1,5 +1,8 @@
 # Production کا منصوبہ — debug سے دکان تک (Phase 5 + صفائی + کیوسک + پورشن 1-3 + نیا بیچ 1/4 + 3/4 مکمل، v0.71.0)
 
+> **تازہ — v0.77.0 Sandpiper:** فیز2 code مکمل (per-person owner-only pricing + guarded item editor + profit/retail حساب)، Windows/PT-21 باقی۔ اگلا next = فیز3 کا الگ bill-level Extra Discount؛ فیز4 جامع page/15-point review اور کتاب کی آخری matching۔ نئی UI/رقم والی source جانچ کو اصل دکان کی منظوری نہ سمجھیں۔ نئے non-owner pricing rights خودکار نہیں؛ پہلے مالک panel میں save کرے۔ [منصوبہ](POS-NEXT-REVIEW-PLAN-URDU.md)۔ Installer کی اجازت نہیں۔
+
+
 > **تازہ ترتیب — v0.76.0 Osprey:** مالک نے B منتخب اور یکجا چار فیز پلان منظور کیا؛ صرف فیز1 UI/keyboard code مکمل، Windows/PT-20 pending۔ اگلا next = فیز2 owner-only per-person permissions + item editor + مالی حساب؛ فیز3 الگ sale-level Extra Discount، فیز4 صفحہ وار 15 نکاتی review/guide۔ [حتمی منصوبہ](POS-NEXT-REVIEW-PLAN-URDU.md)۔ کوئی مالی default اس UI فیز میں نہیں بدلا؛ پرانی queued عبارت تاریخی ہے۔ کوئی installer نہیں۔
 
 

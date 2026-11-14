@@ -1313,6 +1313,7 @@ WHERE active = 1 AND product_id <> @id AND LOWER(TRIM(barcode)) = LOWER(@code);"
     }
 
     private static bool IsLockedSetting(string key) =>
+        key is "discount.billBasis" or "discount.blockBelowCost" ||
         key.StartsWith("security.", StringComparison.Ordinal)
         || key.StartsWith("bill.next", StringComparison.Ordinal)
         || key.StartsWith("sync.", StringComparison.Ordinal)

@@ -80,7 +80,8 @@
                         </StackPanel>
                     </DockPanel>
                     <DataGrid x:Name="CartGrid" Grid.Row="1" ItemsSource="{Binding Cart}"
-                              ToolTip="Rate is rupees per this line's unit. Owner/Manager may edit an agreed custom price; an unchanged retail rate still allows the VIP/Doctor Yes/No choice.">
+                              IsReadOnly="True" PreviewMouseDoubleClick="OnCartLineDoubleClick"
+                              ToolTip="Rate is rupees per this line's unit. Double-click a row (or select it and press Enter) for its final rate / item discount. Owner-managed personal limits apply.">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Item" Binding="{Binding Name, Mode=OneWay}" Width="2*" />
                             <DataGridTextColumn Header="Unit" Binding="{Binding UnitLabel, Mode=OneWay}" Width="60" />
@@ -91,13 +92,9 @@
                                         <TextBlock Text="{Binding RateText, Mode=OneWay}" VerticalAlignment="Center" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
-                                <DataGridTemplateColumn.CellEditingTemplate>
-                                    <DataTemplate>
-                                        <TextBox Text="{Binding RateText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 IsEnabled="{Binding DataContext.CanEditRates, RelativeSource={RelativeSource AncestorType=UserControl}}" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellEditingTemplate>
+
                             </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="Pricing" Binding="{Binding PricingLabel, Mode=OneWay}" Width="170" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -341,8 +338,10 @@
                         <ComboBox ItemsSource="{Binding PaymentMethods}" SelectedItem="{Binding PaymentMethod, Mode=TwoWay}" />
                     </StackPanel>
                     <StackPanel Grid.Column="2" Margin="8,0,0,0">
-                        <TextBlock Text="Discount %" Style="{StaticResource MetricLabel}" />
-                        <TextBox Text="{Binding DiscountPercent, UpdateSourceTrigger=PropertyChanged}" />
+                        <ComboBox ItemsSource="{Binding DiscountBases}" SelectedItem="{Binding BillDiscountBasis, Mode=TwoWay}"
+                                  ToolTip="Bill discount basis: profit or retail (selling total). Allowed changes last one bill only." FontSize="11" />
+                        <TextBox Text="{Binding DiscountPercent, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="Bill discount percent, using the basis selected above" />
                     </StackPanel>
                     <StackPanel Grid.Column="3" Margin="8,0,0,0">
                         <TextBlock Text="Subtotal" Style="{StaticResource MetricLabel}" />

@@ -1,6 +1,6 @@
 # POS، رعایت اور مکمل جائزہ — مالک کی جانچ کے لیے یکجا منصوبہ
 
-**حیثیت:** مالک کے **next** سے منصوبہ اور فیز1 منظور۔ **v0.76.0 Osprey میں صرف فیز1 code مکمل، Windows/PT-20 باقی**۔ فیز2–4 ابھی باقی؛ اگلا next فیز2 کے لیے ہے۔ یہ Windows PASS، security certification یا مکمل audit کی رپورٹ نہیں۔ سابق تجویزیں جو اس متن سے مختلف ہیں، تازہ فیصلوں کی جگہ نہیں لیتیں۔
+**حیثیت:** مالک کے اگلے **next** سے **فیز2** منظور۔ **v0.77.0 Sandpiper میں فیز1/2 code مکمل؛ Windows/PT-21، 1270-case run اور عملی تصدیق باقی۔** فیز3 Extra Discount اور فیز4 جامع review باقی؛ اگلا next فیز3 ہے۔ یہ security certification یا مکمل audit PASS نہیں۔ متعلقہ test/واپسی نامہ: [فیز2 آزمائیں](POS-PHASE2-TEST-URDU.md)۔
 
 ## مختصر نقشہ — پہلے یہ پڑھیں
 
@@ -11,7 +11,7 @@
 | 3 | بل بننے کے بعد الگ Extra Discount، رسید، وصولی، واپسی/رپورٹس | 1120 − 20 = 1100، صفر بقایا، cash drawer، cap، reprint/refund |
 | 4 | 15 نکات کے تحت صفحہ وار code/guide review، bugs اور مکمل/باقی رپورٹ | اپ ڈیٹ اردو کتاب، page coverage، مسئلوں کی حیثیت، Windows/physical checklist |
 
-مالک کا **next** فیز1 کی منظوری ہے؛ اس مرحلے میں صرف فیز1 کیا گیا۔ اس کے بعد ہر **next** پر اگلا فیز۔ کوئی فیز tests میں رکا ہو تو اسے مکمل کہہ کر آگے نہیں بڑھنا۔ ہر فیز کے متعلقہ tests، guide اور handoff اسی فیز کے ساتھ؛ آخری فیز تک documentation ملتوی نہیں۔
+مالک کا **next** فیز1 کی منظوری ہے؛ فیز1 سابق v0.76.0 میں اور فیز2 موجودہ v0.77.0 میں کیا گیا۔ اس کے بعد ہر **next** پر اگلا فیز۔ کوئی فیز tests میں رکا ہو تو اسے مکمل کہہ کر آگے نہیں بڑھنا۔ ہر فیز کے متعلقہ tests، guide اور handoff اسی فیز کے ساتھ؛ آخری فیز تک documentation ملتوی نہیں۔
 
 ## فیز 1 — POS کی جگہ اور کی بورڈ
 
@@ -131,4 +131,4 @@ Allowed1120→1100، denied user، cap exceeded، repeated apply/edit/reset، be
 
 ## ابھی کی آخری حیثیت
 
-بنیادی UI/discount/permission/Extra Discount فیصلے واضح؛ مزید وہی سوال دوبارہ درکار نہیں۔ جزوی return settlement جیسی implementation-dependent policy اگر واقعی غیر متعین ملے تو متعلقہ مثال کے ساتھ پوچھیں، خود فیصلہ نہ کریں۔ موجودہ runtime code میں ان نئے مالی فیصلوں کے نافذ ہونے کا دعویٰ نہیں۔ فیز1 code مکمل؛ اصل keyboard/DPI/Windows جانچ باقی، پھر اگلے next پر فیز2۔
+بنیادی UI/discount/permission/Extra Discount فیصلے واضح؛ مزید وہی سوال دوبارہ درکار نہیں۔ جزوی return settlement جیسی implementation-dependent policy اگر واقعی غیر متعین ملے تو متعلقہ مثال کے ساتھ پوچھیں، خود فیصلہ نہ کریں۔ موجودہ runtime code میں ان نئے مالی فیصلوں کے نافذ ہونے کا دعویٰ نہیں۔ فیز1/2 code مکمل؛ Windows/runtime proof باقی۔ اگلے next پر صرف فیز3 Extra Discount؛ فیز4 review ابھی باقی۔

@@ -1,8 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.76.0 Osprey۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.77.0 Sandpiper۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
 
-**موجودہ POS فیز1:** مالک نے B والا مستقل چھوٹا search panel منتخب کیا؛ ساتھ بڑا Cart ہے۔ اندر دہرایا POS/cashier نام ہٹا دیا؛ اصل صفحہ اور user اوپر shell میں ہیں۔ نرم گول ہلکے نمایاں بٹن اور keyboard navigation شامل، Windows/PT-20 جانچ باقی۔ نئے مالی فیصلے (ہر شخص کی الگ اجازت، item editor، profit/total basis، الگ Extra Discount) منظور ہیں مگر **فیز2/3 میں باقی**۔ اس release میں رعایت ابھی سابق full-selling-total حساب پر ہے؛ پرانے bill نہیں بدلے۔ مکمل منصوبہ [یہاں](POS-NEXT-REVIEW-PLAN-URDU.md) ہے؛ ہر next پر اگلا فیز۔
+**موجودہ POS فیز2:** مستقل search pane منتخب ہے۔ v0.77.0 میں owner-only ہر شخص کی الگ قیمت/رعایت حدیں، Cart کا محفوظ item editor اور profit/retail حساب code میں شامل ہیں۔ **موجودہ دکان کے آئندہ bills کا ابتدائی default اب profit ہے**؛ مالک Settings سے retail واپس کرسکتا ہے۔ پرانے محفوظ bills unchanged۔ الگ ایڈٹ شدہ لائن پر bill% دوبارہ نہیں؛ خرید سے نیچے کسی کو اجازت نہیں۔ **Extra Discount فیز3 میں ابھی باقی**، جامع page/15-point audit فیز4 میں۔ Windows tests/build/عملی ثبوت باقی۔ [فیز2 کی آسان مشق اور واپسی](POS-PHASE2-TEST-URDU.md) اور [مکمل منصوبہ](POS-NEXT-REVIEW-PLAN-URDU.md) الگ ہیں۔
 
 **پڑھنے کا طریقہ:** حصہ اوّل میں صرف صفحات/اختیارات کی مختصر فہرست ہے۔ حصہ دوم میں انہی کی الگ، قدم بہ قدم تفصیل ہے۔ پہلے پورا خلاصہ دیکھیں؛ پھر جس کام کی ضرورت ہو اسی نمبر کی تفصیل پڑھیں۔ HTML فائل براؤزر میں کھلتی ہے، انٹرنیٹ کے بغیر بھی؛ براؤزر کے Print سے کاغذ یا PDF بنا سکتے ہیں۔
 
@@ -58,9 +58,9 @@
 | App name & icon | App name: کھڑکی/login/taskbar کا نام؛ Choose app icon…: اپنی .ico؛ Use default icon: اصل آئیکن |
 | Shop | thumbnail size: تصویر کتنی بڑی؛ shop name/phone/address/footer: رسید کے الفاظ؛ discount line: کاغذ پر رعایت؛ idle sign-out: بےکار نشست؛ clock: وقت کی حالت؛ startup/lock: سبق 33 |
 | Printing | 58/80 mm: چوڑائی؛ printer: کون سا پرنٹر؛ auto-print: بل کے بعد خود پرنٹ؛ cutter؛ bulk print: منتخب قطاریں؛ separate/A4: الگ رسیدیں یا خلاصہ؛ PDF folder؛ copies |
-| Sales rules | cashier/manager discount %؛ below-cost lock؛ khata-limit lock؛ profit visibility؛ Done popup؛ loyalty on/rate/VIP threshold؛ tax on/rate؛ expiry کی تین حدیں؛ supplier return کی reminder/cutoff |
+| Sales rules | owner کا default profit/retail basis؛ خرید سے نیچے فروخت مستقل بند؛ khata-limit lock؛ profit visibility؛ Done popup؛ loyalty on/rate/VIP threshold؛ tax on/rate؛ expiry کی تین حدیں؛ supplier return کی reminder/cutoff |
 | Cloud sync | on/off، address، table، shop id، محفوظ key، automatic push کا وقفہ، Remove the saved key |
-| Staff & permissions | شخص منتخب؛ account on/off؛ module کی ticks؛ role defaults؛ Add this person؛ Change it for the selected person؛ Save this recovery word؛ Photos |
+| Staff & permissions | شخص منتخب؛ account on/off؛ module کی ticks؛ role page defaults؛ ہر شخص کے manual/profit/retail caps اور one-bill override کا الگ Save؛ Add this person؛ Change it for the selected person؛ Save this recovery word؛ Photos |
 | App words | ہر page/group کا دکان والا نام؛ Restore original words |
 | Fields: Built-in | Form، Field، type، input، Required، Critical؛ Mark required؛ Mark optional… |
 | Fields: Extra / Own fields | فارم، field name، stable key، جواب کی قسم، help، choices، required، ترتیب، put away/bring back |
@@ -191,17 +191,17 @@ Supplier statement پر پہلے سے ادا شدہ رقم دوبارہ Pay نہ
 1. گلا کھلا ہو؛ Counter کے اوپر دوا تلاش کریں یا barcode سکین کریں۔ خالی search پر پوری catalog فہرست نہیں آئے گی؛ نام لکھیں تو Cart کے ساتھ مستقل چھوٹے پینل میں نتیجوں کے cards آئیں گے؛ ہر card میں تصویر/نام، طاقت، pack، stock، retail اور salt/rack دیکھیں۔ صحیح طاقت/pack منتخب کرکے Unit، Quantity اور Add to cart؛ کامیاب add پر نتائج اور search صاف، scanner focus واپس، مگر پینل کی جگہ قائم رہے گی۔ Esc یا Hide صرف matches چھپاتا ہے؛ query بدلیں تو دوبارہ آئیں گے۔ name کے Enter سے guessed medicine خود نہیں ڈلتی، درست barcode Enter اپنی pack unit کے مطابق کام کرتا ہے۔
 2. Cart میں Item، Unit، Qty اور Rate Rs دیکھیں۔ Rate اسی لائن کی unit کا روپے والا ریٹ ہے۔ غلط چیز Remove؛ پورا غیر محفوظ cart ختم کرنا ہو تو Clear۔
 3. واک اِن فروخت کے لیے کھاتہ درکار نہ ہو تو customer ضروری نہیں؛ **credit کے لیے درست customer** منتخب کریں۔ New customer… سے نام/فون شامل کرنے پر cart اپنی جگہ رہتا ہے۔ نسخے کا Doctor اختیاری الگ انتخاب ہے۔
-4. موجودہ Core میں custom rate مالک/مینیجر تک محدود ہے، لیکن اس وقت Cart کی عمومی Read-only ترتیب کے باعث صرف rate template موجود ہونا قابلِ استعمال ایڈیٹر نہیں بناتا۔ **نیا Cart double-click/Enter item editor اور ہر شخص کی الگ اجازتیں فیز2 میں باقی ہیں؛ ابھی اس کا بنا ہونا فرض نہ کریں۔** عام retail نہ بدلا ہو، discount صفر ہو اور customer VIP/Doctor ہو تو special rate کا Yes/No سوال آ سکتا ہے؛ No عام retail رکھتا ہے۔ customer category خود بخود ہر بل پر special rate لگانے کی ضمانت نہیں۔
-5. Discount % مکمل selling/retail مجموعے کے تناسب کی رعایت ہے، صرف profit کی نہیں۔ مجاز حد اور cost lock لاگو رہتے ہیں۔ Loyalty آن ہو تو Points to use استعمال کر سکتے ہیں؛ 1 point = 1 روپیہ، استعمال کی باقی کاروباری پابندیاں پھر بھی رہیں گی۔
+4. Cart row پر double-click یا منتخب row پر Enter سے **Item price / discount** کھولیں۔ mode **normal** (bill discount)، **manual** (آخری منتخب-unit ریٹ)، یا **discount** (اس item کا فیصد، profit/retail اپنی پسند)۔ اجازت ہر شخص کی مالک مقرر کرتا ہے؛ صرف manager role کافی نہیں۔ manual یا الگ discount والی line پر bill% دوبارہ نہیں، خواہ ریٹ بڑھایا ہو۔ Apply پہلے Core quote/حد/cost چیک کرتا ہے؛ Cancel نافذ نہیں؛ Reset to normal دوبارہ bill discount میں۔ Cart کی Pricing column حالت بتاتی ہے؛ grid کا عام rate cell جان بوجھ کر read-only، اصل editor یہ owned window ہے۔
+5. **Bill Discount % کے اوپر profit/retail منتخب دکھتا ہے۔** profit میں actual FEFO batch cost اور فروخت کے فرق سے فیصد؛ retail میں پوری فروخت سے۔ مثال cost200/sale300/10%: profit290، retail270۔ normal lines ہی bill% میں؛ ہر لائن کے اپنے manual/profit/retail فیصلے الگ۔ نئی عام line موجودہ bill% لے گی۔ ہر شخص کے تین caps اور edit/override اجازتیں Settings → Staff میں مالک Save کرتا ہے۔ خرید سے نیچے final sale کسی role کو نہیں، زیادہ رعایت انکار (خاموش کم فیصد نہیں)۔ Loyalty کے points بعد میں اپنی caps/cost کے ساتھ؛ Rs10 rounding فعال ہو تو الگ round-off بھی دیکھیں۔ **Extra Discount ابھی نہیں**۔
 6. Payment میں حقیقی طریقہ چنیں۔ Split میں دوسری method اور اس کا Amount، باقی cash؛ cash/credit حصے سکرین پر ملائیں۔ Cash received وہ نقدی ہے جو واقعی ہاتھ میں آئی؛ Change واپس کی جانے والی نقدی ہے، فروخت کا منافع نہیں۔
-7. Subtotal، Discount، TOTAL، Cash part، On credit اور Change دیکھیں۔ v0.76.0 فیز1 میں Customer، Payment، Discount %، Total، Cash received، Give back اور Complete sale مستقل نیچے ہیں۔ Cart مرکزی جگہ کا بڑا حصہ لیتا ہے؛ search pane اس کے ساتھ اپنی جگہ رکھتا ہے۔ Doctor/points/extra answers کے لیے More / split، جبکہ نئی customer entry کے لیے New customer دبائیں۔ Split چنیں تو اس کی detail خود کھلے گی۔ Complete sale یا اصل F4 شارٹ کٹ استعمال کریں؛ rate edit ہو تو F4 پہلے اس edit کو مکمل کرتا ہے۔ error آئے تو بل محفوظ سمجھ کر رقم/مال دوبارہ نہ چلائیں؛ پہلے error اور Bills میں حالت دیکھیں۔
-8. کامیابی پر invoice/status ملے گا۔ Settings → Sales rules میں success popup آن ہو تو الگ درمیان کی کھڑکی کھلے گی: ✓، invoice، بل، Cash received اور بہت بڑا GIVE THIS CASH BACK۔ مثال: بل 270، نقد 500، واپس 230 روپے۔ Done / Enter / × صرف کھڑکی بند کرتے ہیں؛ دوبارہ فروخت یا پرنٹ نہیں کرتے۔ اس کے بعد اگلا customer شروع کریں۔ Auto-print الگ اختیار ہے؛ پرنٹر کو بھیجنا کاغذ واقعی نکلنے کا ثبوت نہیں۔ Print last bill again صرف نقل نکالتا ہے۔ Cash received خالی ہو تو پرانے exact-cash قاعدے کے مطابق رقم فرض ہوتی ہے اور popup صاف لکھتا ہے exact amount assumed؛ online/card/credit کے لیے cash صفر ہوتا ہے۔
+7. Subtotal، Discount، TOTAL، Cash part، On credit اور Change دیکھیں۔ v0.77.0 فیز2 میں Customer، Payment، Discount %، Total، Cash received، Give back اور Complete sale مستقل نیچے ہیں۔ Cart مرکزی جگہ کا بڑا حصہ لیتا ہے؛ search pane اس کے ساتھ اپنی جگہ رکھتا ہے۔ Doctor/points/extra answers کے لیے More / split، جبکہ نئی customer entry کے لیے New customer دبائیں۔ Split چنیں تو اس کی detail خود کھلے گی۔ Complete sale یا اصل F4 شارٹ کٹ استعمال کریں؛ rate edit ہو تو F4 پہلے اس edit کو مکمل کرتا ہے۔ error آئے تو بل محفوظ سمجھ کر رقم/مال دوبارہ نہ چلائیں؛ پہلے error اور Bills میں حالت دیکھیں۔
+8. retail بنیاد پر bill% 5 سے زیادہ ہو تو **save سے پہلے ہر bill پر** تصدیق۔ No پر محفوظ نہیں، Yes سے user cap یا cost پابندی نہیں ٹوٹتی۔ کامیابی پر invoice/status ملے گا۔ Settings → Sales rules میں success popup آن ہو تو الگ درمیان کی کھڑکی کھلے گی: ✓، invoice، بل، Cash received اور بہت بڑا GIVE THIS CASH BACK۔ مثال: بل 270، نقد 500، واپس 230 روپے۔ Done / Enter / × صرف کھڑکی بند کرتے ہیں؛ دوبارہ فروخت یا پرنٹ نہیں کرتے۔ اس کے بعد اگلا customer شروع کریں۔ Auto-print الگ اختیار ہے؛ پرنٹر کو بھیجنا کاغذ واقعی نکلنے کا ثبوت نہیں۔ Print last bill again صرف نقل نکالتا ہے۔ Cash received خالی ہو تو پرانے exact-cash قاعدے کے مطابق رقم فرض ہوتی ہے اور popup صاف لکھتا ہے exact amount assumed؛ online/card/credit کے لیے cash صفر ہوتا ہے۔
 
 **مثال:** 300 روپے کا cash bill، وصول 500 تو Change 200۔ credit کی رقم کو نقد وصولی میں گننے سے گلا غلط ہو گا۔
 
 ### فیز1 — ماؤس کے بغیر Counter کیسے چلائیں؟
 
-**یہ ابھی UI/keyboard کی تبدیلی ہے؛ نئے ڈسکاؤنٹ کا حساب یا Extra Discount ابھی شامل نہیں۔**
+**یہ keyboard سہولت فیز1 میں آئی؛ فیز2 میں item editor اور نیا حساب شامل، Extra Discount ابھی فیز3 میں باقی ہے۔**
 
 1. گلا کھلا ہو اور Counter کھولیں؛ سرچ میں کرسر آنا چاہیے۔ نام لکھیں؛ خالی سرچ پر تمام دوائیں نہیں آئیں گی۔ صرف نام لکھ کر Enter سے اندازے والی دوا Add نہیں ہوتی۔ اصل barcode لکھ/سکین کرکے سرچ کے اندر Enter دیں تو اسی code کا موجودہ scan راستہ چلتا ہے۔
 2. نتیجے منتخب کرنے کے لیے سرچ میں **↓** دبائیں۔ فوکس نتیجے کے خانے پر آئے گا، تصویر کے بٹن پر نہیں۔ **↑↓** سے دوا/طاقت/pack چنیں؛ **Enter** سے وہی Add ہوگی۔ اسی row پر **double-click** بھی Add کرتا ہے۔ تصویر والا بٹن صرف gallery کھولتا ہے؛ خالی جگہ/heading پر double-click سے Add نہیں۔
@@ -211,7 +211,7 @@ Supplier statement پر پہلے سے ادا شدہ رقم دوبارہ Pay نہ
 6. حصے کے اندر عام تیر متعلقہ list/grid/خانے کا کام کرتے ہیں۔ نیچے action buttons پر تیر اسی حصے میں پڑوسی بٹن تک، **Enter** اس بٹن کا کام؛ کی بورڈ سے منتخب action نمایاں رنگ میں دکھتا ہے۔ Tab مکمل متبادل ہے۔ Print automatically checkbox پر Space یا Enter سے حالت بدلے؛ خود Complete sale نہیں۔
 7. **Esc** کھلی Unit/Customer/Payment فہرست کو پہلے بند کرے۔ سرچ نتائج میں ہوں تو نتائج چھپنے پر فوکس سرچ میں واپس؛ query بدلیں تو دوبارہ matches۔ معمول کے دوسرے input میں رقم/کسٹمر لکھنے سے فوکس زبردستی سرچ میں واپس نہیں آئے گا۔
 8. Refresh اب نیچے actions میں ہے۔ More / split یا Parked carts کھولیں تو Shift+تیر سے اس دکھائی دینے والے حصے تک جائیں یا Tab سے controls چنیں؛ بند کریں تو اضافی حصہ navigation میں شامل نہیں۔
-9. **F4** اصل Complete sale ہی ہے اور بل محفوظ کر سکتا ہے؛ محض keyboard آزمانے کے لیے اسے نہ دبائیں۔ Cart پر Enter/double-click والا **نیا price/discount editor فیز2 میں آئے گا**، اسے فیز1 سے نہ سمجھیں۔
+9. **F4** اصل Complete sale ہی ہے اور بل محفوظ کر سکتا ہے؛ محض keyboard آزمانے کے لیے اسے نہ دبائیں۔ Cart پر Enter/double-click اب **Item price / discount** کھولتا ہے؛ Apply صرف cart بدلتا ہے، bill محفوظ نہیں کرتا۔
 
 ### فیز1 کی محفوظ مشق
 
@@ -224,7 +224,7 @@ Supplier statement پر پہلے سے ادا شدہ رقم دوبارہ Pay نہ
 
 1. پہلی بار cart میں stock کم/ختم یا catalog retail missing ہونے پر Counter availability popup پڑھیں، OK کریں۔ **اسی live bill میں دوبارہ حساب/typing پر popup بار بار نہیں آئے گا۔** یہ وارننگ غائب ہونے سے رکاوٹ ختم نہیں ہوتی۔
 2. stock کم ہو تو مقدار کم کریں، غلط unit ٹھیک کریں یا اصل stock وصول کریں۔ **مالک/مینیجر بھی صفر یا ناکافی stock کا بل نہیں بنا سکتے۔** ایک ہی product کی الگ لائنیں مجموعی stock استعمال کرتی ہیں؛ expired-only stock بھی sellable نہیں۔
-3. stock موجود لیکن قیمت درج نہیں تو مالک/مینیجر Rate Rs میں مثبت، درست فروخت کا ریٹ دیں؛ وہی cost lock اور discount rules لگیں گے۔ cashier خود ریٹ لکھ کر یہ رکاوٹ عبور نہیں کر سکتا۔ مستقل حل product میں صحیح Retail محفوظ کرنا ہے۔
+3. stock موجود لیکن retail درج نہیں تو مالک کی rate-edit اجازت والا شخص item editor کے manual mode میں مثبت درست فروخت ریٹ دے۔ reference قیمت نہ ہو تو فیصد کمی نہیں ناپ سکتے، مگر actual batch cost/stock پابندی برقرار۔ اجازت نہ ہو تو خود ریٹ لکھ کر رکاوٹ عبور نہیں؛ مستقل حل product میں صحیح Retail محفوظ کرنا ہے۔
 4. Clear، کامیاب sale، cart park یا دوسرے draft/cart کو load کرنے پر نئے live bill کی warning یاد دوبارہ شروع ہوتی ہے؛ آخری چیز ہٹانے سے cart خالی ہو تب بھی اگلی شروعات نئی ہے۔
 5. **رسید/چٹ پر availability کا لفظ، اضافی سطر یا اوپر کا نشان نہیں آتا۔** قیمت کو popup میں دوبارہ نہیں دکھایا گیا؛ معمول کی Rate والی جگہ دیکھیں۔ سٹاک نہ ہونے کا ناکام bill کوئی فروخت نہیں۔
 
@@ -433,8 +433,8 @@ Supplier statement پر پہلے سے ادا شدہ رقم دوبارہ Pay نہ
 
 ## سبق 30 — Sales rules: کیا بدلتا ہے، کیا نہیں
 
-1. Cashier may give اور Manager may give رعایت کی حدیں ہیں۔ limit سے زیادہ درج کرکے قبول سمجھنے کے بجائے سکرین کا message پڑھیں۔ پوری selling-price total پر discount بنتا ہے۔
-2. Never sell below cost, even with a discount ایک قابل انتخاب lock ہے؛ اس کو بدلنے سے حقیقی نقصان کا خطرہ ہے۔ یہاں tutorial پڑھنے کی خاطر موجودہ policy تبدیل نہ کریں۔
+1. **Default bill discount basis (owner only)** میں profit یا retail؛ عام Save۔ پہلی update کے بعد آئندہ bills کا default profit ہے، retail پر واپس انتخاب ممکن۔ موجودہ user کو one-bill override کی اجازت ہو تو Counter پر صرف اس bill کے لیے popup کے بعد بدل سکے؛ نیا bill Settings default۔ محفوظ draft/held basis اپنی واپس آئے، موجودہ permissions دوبارہ چیک۔
+2. **Purchase cost protection — always ON**: اصل batch خرید سے نیچے کسی کو، حتیٰ کہ مالک، اجازت نہیں۔ پرانا checkbox/lock-off اب راستہ نہیں۔ ہر شخص کی edit/manual reduction/profit%/retail%/override limits **Staff & permissions** کے الگ panel میں، یہاں role-wide cashier/manager caps نہیں۔
 3. Stop a bill that crosses the customer's khata limit بھی قابل انتخاب ہے؛ customer کی limit صفر ہو تو مقررہ ceiling نہیں۔ مالک exempt ہے؛ manager override موجودہ manager-override configuration کے مطابق ہے—صرف ظاہری متن دیکھ کر ہر manager کو لازماً مجاز نہ سمجھیں۔
 4. Show profit and margins بند ہو تو منافع مختلف صفحات سے چھپتا ہے، مالک سے بھی؛ کاروبار کے اصل اعداد نہیں مٹتے۔ Done / invoice / cash-change popup صرف کامیابی کے بعد کی اطلاع ہے، پرنٹ یا transaction کا متبادل نہیں۔
 5. Give loyalty points آن/آف؛ Rupees spent for 1 point سے earning rate؛ Points that make a customer VIP سے threshold۔ points خرچ ہونے والے خانے کا 1 point = 1 روپیہ الگ اصول ہے۔ مالک نے موجودہ loyalty rate برقرار رکھا ہے۔
@@ -447,8 +447,10 @@ Supplier statement پر پہلے سے ادا شدہ رقم دوبارہ Pay نہ
 
 ## سبق 31 — عملہ، اجازتیں، راز اور App words
 
+**نیا الگ pricing panel (صرف مالک):** Settings → Staff & permissions میں شخص منتخب کریں، **This person's pricing limits** میں rate-edit اجازت، retail-reference سے manual reduction%، profit اجازت/حد، selling-total اجازت/حد اور one-bill override tick/حدیں دیں۔ **Save this person's pricing limits** اسی panel کا الگ Save ہے۔ non-owner کو بغیر محفوظ grant کے خودکار اختیار نہیں، manager بھی نہیں۔ module-role reset pricing panel کو reset نہیں کرتا۔ پہلے محفوظ bill دوبارہ حساب نہیں ہوگا۔ تفصیلی مثال/آزمائش/واپسی [فیز2 نامہ](POS-PHASE2-TEST-URDU.md) میں ہے۔
+
 1. مالک Settings → Staff & permissions کھولے۔ Add a person میں Name، Role اور چار ہندسوں کا PIN؛ Add this person۔ مشترکہ PIN کے بجائے ہر شخص کا اپنا نام رکھیں۔
-2. شخص منتخب کرکے account Switch on / off سے رسائی روک/بحال کریں۔ ماڈیول کی ticks مخصوص کام کی اجازت دیتی ہیں؛ checkbox بدلنے پر اس کا status دیکھیں۔ Back to the normal rights for this role ذاتی exceptions ہٹا سکتا ہے، پہلے دیکھیں۔ مالک کو اس طرح خود محدود نہیں کرتے۔
+2. شخص منتخب کرکے account Switch on / off سے رسائی روک/بحال کریں۔ ماڈیول کی ticks مخصوص کام کی اجازت دیتی ہیں؛ checkbox بدلنے پر اس کا status دیکھیں۔ Reset page permissions for this role (pricing unchanged) صرف module exceptions ہٹاتا ہے؛ pricing limits کا الگ Save ہے۔ مالک کے module rights اس سے محدود نہیں ہوتے، pricing caps الگ ہیں۔
 3. password/PIN بدلنے کے لیے شخص منتخب، New PIN or password میں نیا راز، Change it for the selected person۔ پرانا راز جاننا ضروری نہیں۔ غلط منتخب شخص کا password نہ بدلیں۔
 4. Your own recovery word میں اپنا یاد رہنے والا محفوظ لفظ، Save this recovery word۔ خالی چھوڑ کر فیکٹری area11 پر واپس جانا کم محفوظ ہے؛ اسے عملے کے سامنے نہ دکھائیں۔
 5. Photos… شناخت کی مدد ہے، login کا بدل نہیں۔ Close the program ایک خاص اجازت ہے؛ صرف عمومی manager نام رکھنے سے ہر بندش مجاز مت سمجھیں۔
@@ -457,6 +459,9 @@ Supplier statement پر پہلے سے ادا شدہ رقم دوبارہ Pay نہ
 <a id="lesson-32"></a>
 
 ## سبق 32 — Fields: پہلے موجود خانے، پھر اپنے سوال
+
+
+
 
 ### Built-in fields کو استعمال کرنے کے قدم
 
@@ -534,7 +539,7 @@ Supplier statement پر پہلے سے ادا شدہ رقم دوبارہ Pay نہ
 | Total پر dash/قیمت missing | cart کی Rate Rs، product retail، stock، unit اور نیچے message دیکھیں؛ سبق 10 |
 | گلا بند | Shift میں مجاز شخص اصل float/پچھلی بندش ملائے؛ فرضی cash entry نہ بنائیں |
 | سٹاک موجود لگتا ہے مگر sale رکے | unit/pack، cart کی مجموعی مقدار، active/unexpired batches اور پرانا minus ملائیں |
-| ریٹ/رعایت رد | cashier/manager حد، below-cost lock، required positive rate اور صارف کا اصل role دیکھیں |
+| ریٹ/رعایت رد | اس شخص کے محفوظ manual/profit/retail caps، درست basis، مثبت ریٹ، stock اور مستقل purchase-cost guard دیکھیں |
 | credit bill رکے | customer، باقی limit، payment split اور اصل permissions چیک |
 | صفحہ نہ دکھے | Staff permissions یا فلٹر/بدلا ہوا App words؛ فوراً reinstall/data reset نہ کریں |
 | print نہ نکلے | پہلے saved invoice معلوم کریں؛ Windows printer/width/paper؛ اسی bill کی reprint |
@@ -543,10 +548,10 @@ Supplier statement پر پہلے سے ادا شدہ رقم دوبارہ Pay نہ
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation recovery ZIP/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.76.0 کا متوقع test count 1240 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.77.0 کا متوقع test count 1270 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 
-یہ متن v0.76.0 کی navigation اور Views/ViewModels کے مطابق لکھا ہے، تصاویر یا حقیقی Windows session کے مشاہدے کا دعویٰ نہیں۔ بنیادی نقشہ ShellViewModel اور AppLabelService؛ SettingsView، NativeFieldsView، CustomFieldsView؛ متعلقہ Products/Counter/Purchases/Returns/Partners/Shift/Reports/System views سے ملا۔ مالی/stock حدود SaleService، StockPolicy، PurchaseService، ReturnService، ProvisionalReturnService، SupplierLedgerService، AuthService اور StartupService سے ملائی گئیں۔
+یہ متن v0.77.0 کی navigation اور Views/ViewModels کے مطابق لکھا ہے، تصاویر یا حقیقی Windows session کے مشاہدے کا دعویٰ نہیں۔ بنیادی نقشہ ShellViewModel اور AppLabelService؛ SettingsView، NativeFieldsView، CustomFieldsView؛ متعلقہ Products/Counter/Purchases/Returns/Partners/Shift/Reports/System views سے ملا۔ مالی/stock حدود SaleService، StockPolicy، PurchaseService، ReturnService، ProvisionalReturnService، SupplierLedgerService، AuthService اور StartupService سے ملائی گئیں۔
 
-پرانے HOW-TO-RUN، سابق version rows یا پرانے handoff میں tutorial سے متصادم installation/receipt/negative-stock عبارت تاریخی ہو سکتی ہے۔ نئی receipt-unavailable لائن منسوخ، D-93 برقرار، app identity اور receipt shop details الگ ہیں۔ مالک نے مستقل search pane B منتخب کیا؛ فیز1 space/keyboard code موجود، Windows ثبوت باقی۔ فیز2 مالی editor/permissions، فیز3 Extra Discount اور فیز4 مکمل page-by-page review باقی ہیں۔ پروگرام کی نئی release میں بٹن/قاعدہ بدلے تو اس کتاب کو بھی نئے source کے ساتھ دوبارہ ملانا ضروری ہے۔
+پرانے HOW-TO-RUN، سابق version rows یا پرانے handoff میں tutorial سے متصادم installation/receipt/negative-stock عبارت تاریخی ہو سکتی ہے۔ نئی receipt-unavailable لائن منسوخ، D-93 برقرار، app identity اور receipt shop details الگ ہیں۔ مالک نے مستقل search pane B منتخب کیا؛ فیز1 space/keyboard code موجود، Windows ثبوت باقی۔ فیز2 مالی editor/permissions code موجود، Windows/PT-21 باقی؛ فیز3 Extra Discount اور فیز4 مکمل page-by-page review باقی ہیں۔ پروگرام کی نئی release میں بٹن/قاعدہ بدلے تو اس کتاب کو بھی نئے source کے ساتھ دوبارہ ملانا ضروری ہے۔

@@ -48,6 +48,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     private string _pointsUsedText = string.Empty;
     private bool _hasPointsUsed;
     private string _discountPercent = "0";
+    private string _billDiscountBasis = "profit";
     private string _paymentMethod = "cash";
     private string _tenderedText = string.Empty;
     private string _secondMethod = "online";
@@ -105,6 +106,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         SaveCustomerCommand = new RelayCommand(SaveNewCustomer);
         OpenShiftCommand = new RelayCommand(() => OpenShiftRequested?.Invoke());
 
+        _billDiscountBasis = _services.Settings.GetString("discount.billBasis");
         _autoPrint = _services.Settings.GetBool("printer.autoPrint", true);
 
         LoadLookups();
@@ -238,15 +240,100 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
     public string CashierName => _user.Name;
 
-    public int MaxDiscountPercent => _user.Kind switch
+    private PricingAllowance CurrentAllowance => _services.Pricing.ForUser(_user);
+    public decimal MaxDiscountPercent
     {
-        UserRole.Owner => 100,
-        UserRole.Manager => _services.Settings.GetInt("discount.maxPercentManager", 20),
-        _ => _services.Settings.GetInt("discount.maxPercentCashier", 5)
-    };
+        get
+        {
+            var allowance = CurrentAllowance;
+            return BillDiscountBasis == "profit"
+                ? allowance.ProfitDiscount ? allowance.ProfitPercent : 0
+                : allowance.RetailDiscount ? allowance.RetailPercent : 0;
+        }
+    }
+    public bool CanEditRates => CurrentAllowance.EditRate;
+    public IReadOnlyList<string> DiscountBases { get; } = new[] { "profit", "retail" };
+    public string BillDiscountBasis
+    {
+        get => _billDiscountBasis;
+        set
+        {
+            if (value is not ("profit" or "retail") || value == _billDiscountBasis) return;
+            var configured = _services.Settings.GetString("discount.billBasis");
+            if (value != configured && !CurrentAllowance.OverrideBasis)
+            {
+                SetStatus("You are not allowed to change this bill's discount basis.", true);
+                RefreshBasisSelection();
+                return;
+            }
+            if (MessageBox.Show($"Change THIS bill from {_billDiscountBasis} to {value}?\n\nprofit = percentage of gross profit; retail = percentage of selling total.\nThe next bill returns to the owner's Settings default.",
+                    "One-bill discount basis", MessageBoxButton.YesNo, MessageBoxImage.Warning,
+                    MessageBoxResult.No) != MessageBoxResult.Yes)
+            { RefreshBasisSelection(); return; }
+            RestoreBillBasis(value);
+        }
+    }
+    private void RefreshBasisSelection()
+    {
+        // WPF may still be completing SelectedItem's source update. Restore the rejected choice
+        // after that transfer, so Cancel/denial cannot leave a visually different basis selected.
+        Application.Current?.Dispatcher.BeginInvoke(new Action(() => OnPropertyChanged(nameof(BillDiscountBasis))));
+    }
+    private void RestoreBillBasis(string? basis)
+    {
+        _billDiscountBasis = basis ?? _services.Settings.GetString("discount.billBasis");
+        OnPropertyChanged(nameof(BillDiscountBasis));
+        OnPropertyChanged(nameof(MaxDiscountPercent));
+        Recalculate();
+    }
+    private void ResetBillBasis() => RestoreBillBasis(null);
+    public void RefreshPricingDefaults()
+    {
+        if (Cart.Count == 0) ResetBillBasis();
+        OnPropertyChanged(nameof(MaxDiscountPercent));
+        OnPropertyChanged(nameof(CanEditRates));
+    }
 
-    /// <summary>Arbitrary rates are owner/manager only; a cashier may still accept a configured special rate.</summary>
-    public bool CanEditRates => _user.CanManage;
+
+    public void EditCartLine(PosCartLine line)
+    {
+        if (IsBlocked || _isCompletingSale) return;
+        var index = Cart.IndexOf(line);
+        if (index < 0) return;
+        var showCost = _services.Permissions.Can(_user, Modules.Profit)
+            && _services.Settings.GetBool("profit.showMargins", true) && _user.CanManage;
+        var editor = new LinePricingViewModel(_services.Settings.GetString("brand.appName"), line.Name + " · " + line.UnitLabel + " · Qty " + line.QuantityText,
+            "Reference rate per selected unit: " + Money.Format(line.GuideRatePaisa),
+            line.PricingMode, line.LineDiscountBasis, line.RateText, line.LineDiscountPercent, showCost,
+            (mode, rate, percent, basis) =>
+            {
+                var proposal = BuildInput();
+                var proposedLine = proposal.Lines[index];
+                proposedLine.PricingMode = mode;
+                proposedLine.UnitPricePaisa = rate;
+                proposedLine.LineDiscountPercent = percent;
+                proposedLine.DiscountBasis = basis;
+                var quote = _services.Sales.Quote(proposal, _user);
+                return quote.Ok && quote.Value is not null
+                    ? ServiceResult<SaleLinePricing>.Success(quote.Value.Lines[index])
+                    : ServiceResult<SaleLinePricing>.Fail(quote.Error ?? "Cannot quote this change.");
+            });
+        var window = new Area11.Desktop.Views.LinePricingWindow(editor)
+        {
+            Owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(candidate => candidate.IsActive)
+                ?? Application.Current?.MainWindow,
+            MaxHeight = Math.Max(1, SystemParameters.WorkArea.Height - 24),
+            MaxWidth = Math.Max(1, SystemParameters.WorkArea.Width - 24)
+        };
+        window.ShowDialog();
+        if (!editor.Accepted) return;
+        line.PricingMode = editor.Mode;
+        line.LineDiscountBasis = editor.Basis;
+        line.LineDiscountPercent = editor.DiscountPercent;
+        line.RateText = editor.Mode == "manual" ? Money.Edit(editor.RatePaisa) : Money.Edit(line.GuideRatePaisa);
+        line.NotifyPricing();
+        Recalculate();
+    }
 
     /// <summary>
     /// The sentence under the search box (F-50). Empty for an exact search; a "did you mean" line
@@ -804,7 +891,8 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     /// A cart always starts with the ordinary retail rate. An edited rate is passed to Core as the
     /// existing integer-paisa override; leaving it equal to retail keeps the VIP/Doctor choice open.
     /// </summary>
-    private PosCartLine NewCartLine(int productId, string name, string unit, double quantity, long savedRate)
+    private PosCartLine NewCartLine(int productId, string name, string unit, double quantity, long savedRate,
+        string mode = "normal", string basis = "profit", decimal percent = 0)
     {
         var product = _catalog.FirstOrDefault(item => item.Id == productId);
         var guideRate = product is null ? 0 : Calc.Round(product.RetailPaisa * product.QuantityPerSelectedUnit(unit));
@@ -816,6 +904,9 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             Unit = unit,
             Quantity = quantity,
             GuideRatePaisa = guideRate,
+            PricingMode = savedRate > 0 && mode == "normal" ? "manual" : mode,
+            LineDiscountBasis = basis,
+            LineDiscountPercent = percent,
             RateText = Money.Edit(rate),
             RateChanged = Recalculate
         };
@@ -828,8 +919,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             return 0;
         }
 
-        var rate = Money.ToPaisa(rupees);
-        return rate == line.GuideRatePaisa ? 0 : rate;
+        return line.PricingMode == "manual" ? Money.ToPaisa(rupees) : 0;
     }
 
     private bool RatesAreValid()
@@ -842,11 +932,6 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
                 return false;
             }
 
-            if (!_user.CanManage && RateOverride(line) != 0)
-            {
-                SetStatus($"{line.Name}: only the owner or a manager can enter a custom selling rate.", true);
-                return false;
-            }
         }
 
         return true;
@@ -872,7 +957,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             return;
         }
 
-        var existing = Cart.FirstOrDefault(line => line.ProductId == SelectedProduct.Id && line.Unit == Unit);
+        var existing = Cart.FirstOrDefault(line => line.ProductId == SelectedProduct.Id && line.Unit == Unit && line.PricingMode == "normal");
         if (existing is not null)
         {
             existing.Quantity += quantity;
@@ -909,6 +994,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         Cart.Clear();
         TenderedText = string.Empty;
         DiscountPercent = "0";
+        ResetBillBasis();
         _openDraftId = 0;
         OnPropertyChanged(nameof(HasOpenDraft));
         DocEditor.LoadNew();
@@ -992,6 +1078,13 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         }
 
         var input = BuildInput(useSpecialRate);
+        if (BillDiscountBasis == "retail" && discount > 5)
+        {
+            if (MessageBox.Show($"This bill gives {discount:0.##}% off the SELLING TOTAL, not profit.\nConfirm before saving this bill?",
+                    "Confirm total-based discount", MessageBoxButton.YesNo, MessageBoxImage.Warning,
+                    MessageBoxResult.No) != MessageBoxResult.Yes) return;
+            input.RetailDiscountConfirmed = true;
+        }
         var wasDraft = _openDraftId > 0;
         var result = wasDraft
             ? _services.Drafts.PostSale(_user, _openDraftId, input)
@@ -1025,6 +1118,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         TenderedText = string.Empty;
         SecondAmountText = string.Empty;
         DiscountPercent = "0";
+        ResetBillBasis();
         _openDraftId = 0;
         OnPropertyChanged(nameof(HasOpenDraft));
         DocEditor.LoadNew();
@@ -1079,6 +1173,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             CustomerId = SelectedCustomer is { Id: > 0 } ? SelectedCustomer.Id : null,
             DoctorId = SelectedDoctor is { Id: > 0 } ? SelectedDoctor.Id : null,
             DiscountPercent = percent,
+            DiscountBasis = BillDiscountBasis,
             UseSpecialRate = useSpecialRate,
             PaymentMethod = PaymentMethod,
             Payments = payments,
@@ -1089,7 +1184,10 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
                 ProductId = line.ProductId,
                 Unit = line.Unit,
                 Quantity = line.Quantity,
-                UnitPricePaisa = RateOverride(line)
+                UnitPricePaisa = RateOverride(line),
+                PricingMode = line.PricingMode,
+                DiscountBasis = line.LineDiscountBasis,
+                LineDiscountPercent = line.LineDiscountPercent
             }).ToList(),
             CustomAnswers = DocEditor.AnswerValues().ToDictionary(pair => pair.Key, pair => pair.Value)
         };
@@ -1234,6 +1332,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         SelectedDoctor = input.DoctorId is > 0
             ? Doctors.FirstOrDefault(doctor => doctor.Id == input.DoctorId)
             : null;
+        RestoreBillBasis(input.DiscountBasis);
         DiscountPercent = input.DiscountPercent.ToString("0.##", CultureInfo.InvariantCulture);
         PaymentMethod = string.IsNullOrWhiteSpace(input.PaymentMethod) ? "cash" : input.PaymentMethod;
         TenderedText = input.TenderedPaisa > 0 ? Money.Edit(input.TenderedPaisa) : string.Empty;
@@ -1262,7 +1361,8 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
                 skipped++;
                 continue;
             }
-            Cart.Add(NewCartLine(line.ProductId, product.Name, line.Unit, line.Quantity, line.UnitPricePaisa));
+            Cart.Add(NewCartLine(line.ProductId, product.Name, line.Unit, line.Quantity, line.UnitPricePaisa,
+                line.PricingMode, line.DiscountBasis, line.LineDiscountPercent));
         }
 
         _openDraftId = draftId;
@@ -1302,6 +1402,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         TenderedText = string.Empty;
         SecondAmountText = string.Empty;
         DiscountPercent = "0";
+        ResetBillBasis();
         // A parked cart keeps lines, rates, customer and discount - but not the bill's own answers:
         // those ride with drafts, the durable vehicle. Clearing here stops them leaking into the
         // next customer's bill.
@@ -1354,9 +1455,11 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         {
             // The parked cart already stores integer-paisa custom rates; do not silently replace
             // them with retail when the customer returns to the counter.
-            Cart.Add(NewCartLine(line.ProductId, line.Name, line.Unit, line.Quantity, line.UnitPricePaisa));
+            Cart.Add(NewCartLine(line.ProductId, line.Name, line.Unit, line.Quantity, line.UnitPricePaisa,
+                line.PricingMode, line.DiscountBasis, line.LineDiscountPercent));
         }
 
+        RestoreBillBasis(cart.DiscountBasis);
         DiscountPercent = cart.DiscountPercent.ToString("0.##", CultureInfo.InvariantCulture);
 
         // A parked customer may have been switched off since. Fall back to the walk-in line rather
@@ -1470,6 +1573,13 @@ public sealed class PosCartLine : ObservableObject
             }
         }
     }
+
+    public string PricingMode { get; set; } = "normal";
+    public string LineDiscountBasis { get; set; } = "profit";
+    public decimal LineDiscountPercent { get; set; }
+    public string PricingLabel => PricingMode == "normal" ? "Bill discount" : PricingMode == "manual"
+        ? "Final rate · no bill discount" : $"{LineDiscountPercent:0.##}% {LineDiscountBasis} · no bill discount";
+    public void NotifyPricing() => OnPropertyChanged(nameof(PricingLabel));
 
     public Action? RateChanged { get; init; }
 
