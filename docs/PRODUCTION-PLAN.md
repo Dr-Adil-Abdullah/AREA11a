@@ -1,5 +1,8 @@
 # Production کا منصوبہ — debug سے دکان تک (Phase 5 + صفائی + کیوسک + پورشن 1-3 + نیا بیچ 1/4 + 3/4 مکمل، v0.71.0)
 
+> **تازہ ترتیب — v0.76.0 Osprey:** مالک نے B منتخب اور یکجا چار فیز پلان منظور کیا؛ صرف فیز1 UI/keyboard code مکمل، Windows/PT-20 pending۔ اگلا next = فیز2 owner-only per-person permissions + item editor + مالی حساب؛ فیز3 الگ sale-level Extra Discount، فیز4 صفحہ وار 15 نکاتی review/guide۔ [حتمی منصوبہ](POS-NEXT-REVIEW-PLAN-URDU.md)۔ کوئی مالی default اس UI فیز میں نہیں بدلا؛ پرانی queued عبارت تاریخی ہے۔ کوئی installer نہیں۔
+
+
 > Trial B v0.75.0 Kestrel اب کوڈ میں: مستقل مختصر search pane، بڑا Cart، compact checkout وہی۔ A v0.74.0 Marlin سے موازنہ، مالک final چنے گا؛ ابھی physical PASS نہیں۔ D-104 discount کام queued، موجودہ رعایت سابق total بنیاد؛ installer کی اجازت نہیں۔
 
 

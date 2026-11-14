@@ -1,8 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.75.0 Kestrel۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.76.0 Osprey۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
 
-**موجودہ POS تجربہ B:** v0.75.0 Kestrel میں مستقل چھوٹا search panel اور اس کے ساتھ بڑا Cart ہے۔ A والے v0.74.0 Marlin میں نتائج Cart کے اوپر عارضی کھلتے تھے۔ دونوں کو دیکھ کر مالک final چنے گا؛ کسی کی عملی منظوری ابھی نہیں ملی۔ اس ورژن میں صرف UI بدل رہا ہے؛ رعایت ابھی سابق full-selling-total حساب پر ہے۔ profit/total setting، موجودہ دکان کو آئندہ profit-default پر منتقل کرنا اور total بنیاد >5% پر قبل از save تصدیق منظور ہیں مگر ابھی queued، نافذ نہیں۔ پرانے bill دوبارہ حساب نہیں ہوں گے۔
+**موجودہ POS فیز1:** مالک نے B والا مستقل چھوٹا search panel منتخب کیا؛ ساتھ بڑا Cart ہے۔ اندر دہرایا POS/cashier نام ہٹا دیا؛ اصل صفحہ اور user اوپر shell میں ہیں۔ نرم گول ہلکے نمایاں بٹن اور keyboard navigation شامل، Windows/PT-20 جانچ باقی۔ نئے مالی فیصلے (ہر شخص کی الگ اجازت، item editor، profit/total basis، الگ Extra Discount) منظور ہیں مگر **فیز2/3 میں باقی**۔ اس release میں رعایت ابھی سابق full-selling-total حساب پر ہے؛ پرانے bill نہیں بدلے۔ مکمل منصوبہ [یہاں](POS-NEXT-REVIEW-PLAN-URDU.md) ہے؛ ہر next پر اگلا فیز۔
 
 **پڑھنے کا طریقہ:** حصہ اوّل میں صرف صفحات/اختیارات کی مختصر فہرست ہے۔ حصہ دوم میں انہی کی الگ، قدم بہ قدم تفصیل ہے۔ پہلے پورا خلاصہ دیکھیں؛ پھر جس کام کی ضرورت ہو اسی نمبر کی تفصیل پڑھیں۔ HTML فائل براؤزر میں کھلتی ہے، انٹرنیٹ کے بغیر بھی؛ براؤزر کے Print سے کاغذ یا PDF بنا سکتے ہیں۔
 
@@ -191,13 +191,32 @@ Supplier statement پر پہلے سے ادا شدہ رقم دوبارہ Pay نہ
 1. گلا کھلا ہو؛ Counter کے اوپر دوا تلاش کریں یا barcode سکین کریں۔ خالی search پر پوری catalog فہرست نہیں آئے گی؛ نام لکھیں تو Cart کے ساتھ مستقل چھوٹے پینل میں نتیجوں کے cards آئیں گے؛ ہر card میں تصویر/نام، طاقت، pack، stock، retail اور salt/rack دیکھیں۔ صحیح طاقت/pack منتخب کرکے Unit، Quantity اور Add to cart؛ کامیاب add پر نتائج اور search صاف، scanner focus واپس، مگر پینل کی جگہ قائم رہے گی۔ Esc یا Hide صرف matches چھپاتا ہے؛ query بدلیں تو دوبارہ آئیں گے۔ name کے Enter سے guessed medicine خود نہیں ڈلتی، درست barcode Enter اپنی pack unit کے مطابق کام کرتا ہے۔
 2. Cart میں Item، Unit، Qty اور Rate Rs دیکھیں۔ Rate اسی لائن کی unit کا روپے والا ریٹ ہے۔ غلط چیز Remove؛ پورا غیر محفوظ cart ختم کرنا ہو تو Clear۔
 3. واک اِن فروخت کے لیے کھاتہ درکار نہ ہو تو customer ضروری نہیں؛ **credit کے لیے درست customer** منتخب کریں۔ New customer… سے نام/فون شامل کرنے پر cart اپنی جگہ رہتا ہے۔ نسخے کا Doctor اختیاری الگ انتخاب ہے۔
-4. مالک/مینیجر custom rate لکھ سکتے ہیں؛ کیشیئر نہیں۔ عام retail نہ بدلا ہو، discount صفر ہو اور customer VIP/Doctor ہو تو special rate کا Yes/No سوال آ سکتا ہے؛ No عام retail رکھتا ہے۔ customer category خود بخود ہر بل پر special rate لگانے کی ضمانت نہیں۔
+4. موجودہ Core میں custom rate مالک/مینیجر تک محدود ہے، لیکن اس وقت Cart کی عمومی Read-only ترتیب کے باعث صرف rate template موجود ہونا قابلِ استعمال ایڈیٹر نہیں بناتا۔ **نیا Cart double-click/Enter item editor اور ہر شخص کی الگ اجازتیں فیز2 میں باقی ہیں؛ ابھی اس کا بنا ہونا فرض نہ کریں۔** عام retail نہ بدلا ہو، discount صفر ہو اور customer VIP/Doctor ہو تو special rate کا Yes/No سوال آ سکتا ہے؛ No عام retail رکھتا ہے۔ customer category خود بخود ہر بل پر special rate لگانے کی ضمانت نہیں۔
 5. Discount % مکمل selling/retail مجموعے کے تناسب کی رعایت ہے، صرف profit کی نہیں۔ مجاز حد اور cost lock لاگو رہتے ہیں۔ Loyalty آن ہو تو Points to use استعمال کر سکتے ہیں؛ 1 point = 1 روپیہ، استعمال کی باقی کاروباری پابندیاں پھر بھی رہیں گی۔
 6. Payment میں حقیقی طریقہ چنیں۔ Split میں دوسری method اور اس کا Amount، باقی cash؛ cash/credit حصے سکرین پر ملائیں۔ Cash received وہ نقدی ہے جو واقعی ہاتھ میں آئی؛ Change واپس کی جانے والی نقدی ہے، فروخت کا منافع نہیں۔
-7. Subtotal، Discount، TOTAL، Cash part، On credit اور Change دیکھیں۔ v0.75.0 trial B میں Customer، Payment، Discount %، Total، Cash received، Give back اور Complete sale مستقل نیچے ہیں۔ Cart مرکزی جگہ کا بڑا حصہ لیتا ہے؛ search pane اس کے ساتھ اپنی جگہ رکھتا ہے۔ Doctor/points/extra answers کے لیے More / split، جبکہ نئی customer entry کے لیے New customer دبائیں۔ Split چنیں تو اس کی detail خود کھلے گی۔ Complete sale یا اصل F4 شارٹ کٹ استعمال کریں؛ rate edit ہو تو F4 پہلے اس edit کو مکمل کرتا ہے۔ error آئے تو بل محفوظ سمجھ کر رقم/مال دوبارہ نہ چلائیں؛ پہلے error اور Bills میں حالت دیکھیں۔
+7. Subtotal، Discount، TOTAL، Cash part، On credit اور Change دیکھیں۔ v0.76.0 فیز1 میں Customer، Payment، Discount %، Total، Cash received، Give back اور Complete sale مستقل نیچے ہیں۔ Cart مرکزی جگہ کا بڑا حصہ لیتا ہے؛ search pane اس کے ساتھ اپنی جگہ رکھتا ہے۔ Doctor/points/extra answers کے لیے More / split، جبکہ نئی customer entry کے لیے New customer دبائیں۔ Split چنیں تو اس کی detail خود کھلے گی۔ Complete sale یا اصل F4 شارٹ کٹ استعمال کریں؛ rate edit ہو تو F4 پہلے اس edit کو مکمل کرتا ہے۔ error آئے تو بل محفوظ سمجھ کر رقم/مال دوبارہ نہ چلائیں؛ پہلے error اور Bills میں حالت دیکھیں۔
 8. کامیابی پر invoice/status ملے گا۔ Settings → Sales rules میں success popup آن ہو تو الگ درمیان کی کھڑکی کھلے گی: ✓، invoice، بل، Cash received اور بہت بڑا GIVE THIS CASH BACK۔ مثال: بل 270، نقد 500، واپس 230 روپے۔ Done / Enter / × صرف کھڑکی بند کرتے ہیں؛ دوبارہ فروخت یا پرنٹ نہیں کرتے۔ اس کے بعد اگلا customer شروع کریں۔ Auto-print الگ اختیار ہے؛ پرنٹر کو بھیجنا کاغذ واقعی نکلنے کا ثبوت نہیں۔ Print last bill again صرف نقل نکالتا ہے۔ Cash received خالی ہو تو پرانے exact-cash قاعدے کے مطابق رقم فرض ہوتی ہے اور popup صاف لکھتا ہے exact amount assumed؛ online/card/credit کے لیے cash صفر ہوتا ہے۔
 
 **مثال:** 300 روپے کا cash bill، وصول 500 تو Change 200۔ credit کی رقم کو نقد وصولی میں گننے سے گلا غلط ہو گا۔
+
+### فیز1 — ماؤس کے بغیر Counter کیسے چلائیں؟
+
+**یہ ابھی UI/keyboard کی تبدیلی ہے؛ نئے ڈسکاؤنٹ کا حساب یا Extra Discount ابھی شامل نہیں۔**
+
+1. گلا کھلا ہو اور Counter کھولیں؛ سرچ میں کرسر آنا چاہیے۔ نام لکھیں؛ خالی سرچ پر تمام دوائیں نہیں آئیں گی۔ صرف نام لکھ کر Enter سے اندازے والی دوا Add نہیں ہوتی۔ اصل barcode لکھ/سکین کرکے سرچ کے اندر Enter دیں تو اسی code کا موجودہ scan راستہ چلتا ہے۔
+2. نتیجے منتخب کرنے کے لیے سرچ میں **↓** دبائیں۔ فوکس نتیجے کے خانے پر آئے گا، تصویر کے بٹن پر نہیں۔ **↑↓** سے دوا/طاقت/pack چنیں؛ **Enter** سے وہی Add ہوگی۔ اسی row پر **double-click** بھی Add کرتا ہے۔ تصویر والا بٹن صرف gallery کھولتا ہے؛ خالی جگہ/heading پر double-click سے Add نہیں۔
+3. کامیاب Add پر سرچ صاف اور فوکس واپس؛ اگلی دوا تلاش کریں۔ Quantity غلط ہو تو پیغام پڑھیں؛ انکار کو کامیاب Add نہ سمجھیں۔ scanner عام keyboard جیسا لکھتا ہے؛ کسی دوسرے خانے میں کرسر ہو تو پہلے سرچ میں واپس آئیں، ہر input سے scan خود پہچاننے کا وعدہ نہیں۔
+4. **Tab** سے سرچ → Unit → Quantity → Add جیسے دستیاب controls میں آگے، **Shift+Tab** سے پیچھے۔ Unit خانے میں **↑↓** سے unit/strip/box منتخب کریں؛ متن یا رقم میں **←→** عام حروف کا کرسر چلائیں۔
+5. **Shift+↓ یا Shift+→** اگلے حصے اور **Shift+↑ یا Shift+←** پچھلے حصے میں لے جاتے ہیں۔ ترتیب: **سرچ/Unit/Quantity → سرچ نتائج → Cart → کھلی More details یا Parked carts → Customer/Payment/Discount → Cash/Complete sale → نیچے کے actions**۔ بند حصے اور خالی/چھپے نتائج خود skip ہوتے ہیں۔ آخری حصے سے آگے دوبارہ شروع نہیں؛ وہیں رکیں گے۔ Shift+تیر اب section shortcut ہے؛ پورا متن منتخب کرنے کے لیے **Ctrl+A** استعمال کریں۔
+6. حصے کے اندر عام تیر متعلقہ list/grid/خانے کا کام کرتے ہیں۔ نیچے action buttons پر تیر اسی حصے میں پڑوسی بٹن تک، **Enter** اس بٹن کا کام؛ کی بورڈ سے منتخب action نمایاں رنگ میں دکھتا ہے۔ Tab مکمل متبادل ہے۔ Print automatically checkbox پر Space یا Enter سے حالت بدلے؛ خود Complete sale نہیں۔
+7. **Esc** کھلی Unit/Customer/Payment فہرست کو پہلے بند کرے۔ سرچ نتائج میں ہوں تو نتائج چھپنے پر فوکس سرچ میں واپس؛ query بدلیں تو دوبارہ matches۔ معمول کے دوسرے input میں رقم/کسٹمر لکھنے سے فوکس زبردستی سرچ میں واپس نہیں آئے گا۔
+8. Refresh اب نیچے actions میں ہے۔ More / split یا Parked carts کھولیں تو Shift+تیر سے اس دکھائی دینے والے حصے تک جائیں یا Tab سے controls چنیں؛ بند کریں تو اضافی حصہ navigation میں شامل نہیں۔
+9. **F4** اصل Complete sale ہی ہے اور بل محفوظ کر سکتا ہے؛ محض keyboard آزمانے کے لیے اسے نہ دبائیں۔ Cart پر Enter/double-click والا **نیا price/discount editor فیز2 میں آئے گا**، اسے فیز1 سے نہ سمجھیں۔
+
+### فیز1 کی محفوظ مشق
+
+بغیر بل محفوظ کیے 5–10 دوائیں Add کریں، Unit/Quantity/Cart/Customer/Cash/actions میں جائیں؛ رقم لکھ کر دیکھیں کہ فوکس نہیں چھنتا۔ Clear سے غیر محفوظ cart ختم کریں۔ حقیقی shop میں فرضی Complete sale/F4 نہ کریں۔ Windows پر چھوٹی سکرین، DPI، اصلی scanner اور keyboard کی تصدیق باقی؛ مسئلہ ہو تو version، بٹن، کیے گئے قدم اور تصویر دیں۔
+
 
 <a id="lesson-10"></a>
 
@@ -524,10 +543,10 @@ Supplier statement پر پہلے سے ادا شدہ رقم دوبارہ Pay نہ
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation recovery ZIP/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.75.0 کا متوقع test count 1240 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.76.0 کا متوقع test count 1240 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 
-یہ متن v0.75.0 کی navigation اور Views/ViewModels کے مطابق لکھا ہے، تصاویر یا حقیقی Windows session کے مشاہدے کا دعویٰ نہیں۔ بنیادی نقشہ ShellViewModel اور AppLabelService؛ SettingsView، NativeFieldsView، CustomFieldsView؛ متعلقہ Products/Counter/Purchases/Returns/Partners/Shift/Reports/System views سے ملا۔ مالی/stock حدود SaleService، StockPolicy، PurchaseService، ReturnService، ProvisionalReturnService، SupplierLedgerService، AuthService اور StartupService سے ملائی گئیں۔
+یہ متن v0.76.0 کی navigation اور Views/ViewModels کے مطابق لکھا ہے، تصاویر یا حقیقی Windows session کے مشاہدے کا دعویٰ نہیں۔ بنیادی نقشہ ShellViewModel اور AppLabelService؛ SettingsView، NativeFieldsView، CustomFieldsView؛ متعلقہ Products/Counter/Purchases/Returns/Partners/Shift/Reports/System views سے ملا۔ مالی/stock حدود SaleService، StockPolicy، PurchaseService، ReturnService، ProvisionalReturnService، SupplierLedgerService، AuthService اور StartupService سے ملائی گئیں۔
 
-پرانے HOW-TO-RUN، سابق version rows یا پرانے handoff میں tutorial سے متصادم installation/receipt/negative-stock عبارت تاریخی ہو سکتی ہے۔ نئی receipt-unavailable لائن منسوخ، D-93 برقرار، app identity اور receipt shop details الگ ہیں۔ Trial B اب code میں ہے؛ A اور B کا Windows موازنہ اور مالک کی حتمی پسند باقی ہے۔ پروگرام کی نئی release میں بٹن/قاعدہ بدلے تو اس کتاب کو بھی نئے source کے ساتھ دوبارہ ملانا ضروری ہے۔
+پرانے HOW-TO-RUN، سابق version rows یا پرانے handoff میں tutorial سے متصادم installation/receipt/negative-stock عبارت تاریخی ہو سکتی ہے۔ نئی receipt-unavailable لائن منسوخ، D-93 برقرار، app identity اور receipt shop details الگ ہیں۔ مالک نے مستقل search pane B منتخب کیا؛ فیز1 space/keyboard code موجود، Windows ثبوت باقی۔ فیز2 مالی editor/permissions، فیز3 Extra Discount اور فیز4 مکمل page-by-page review باقی ہیں۔ پروگرام کی نئی release میں بٹن/قاعدہ بدلے تو اس کتاب کو بھی نئے source کے ساتھ دوبارہ ملانا ضروری ہے۔

@@ -1,5 +1,14 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## D-106 — یکجا منصوبہ منظور؛ next سے صرف فیز 1 (v0.76.0 Osprey)
+
+مالک نے B کا مستقل چھوٹا سرچ پینل پسند کیا۔ اندر دہرایا POS/cashier ہٹانا، نرم گول ہلکے نمایاں actions، keyboard سے پورا Counter، سادہ تیر اندر اور Shift+تیر حصوں کے درمیان، exact barcode Enter اور selected-result Enter/double-click Add۔ مالی editor اور per-person caps فیز2 میں، فیز1 میں ان کے بننے کا دعویٰ نہیں۔
+
+صرف مالک لوگوں کی price/profit-discount/retail-discount/manual-reduction اور one-bill-basis/Extra Discount permissions بدل سکے۔ separate per-person caps، no below-cost even owner، adjusted item bill-discount سے باہر، reset معمول میں۔ default profit owner Settings سے بدل سکے، one-bill override popup پھر Settings default reset۔ یہ سب مالی قواعد ابھی queued۔
+
+آخری واضح Extra Discount فیصلہ: مکمل بل کے بعد الگ روپے کی چھوٹ، تمام products پہلے adjusted ہوں تب بھی ممکن؛ ان کے rates/line discounts/bill-percent نہ بدلیں۔ 1120−20=1100، receipt پر الگ Extra Discount اور final payable؛ صرف owner کی دی ہوئی per-person rupee allowance، repeated cap bypass نہیں، cost safety برقرار۔ اسے product-line price/discount میں تقسیم کرکے لکھنا مالک نے رد کیا۔ returns/refund settlement میں نئی policy درکار ہو تو پہلے مثال/MCQ؛ خاموش مفروضہ نہیں۔ مکمل scope/15 checks: [منصوبہ](POS-NEXT-REVIEW-PLAN-URDU.md)۔ ہر next پر ایک فیز، الگ Windows/physical ثبوت، installer authorized نہیں۔
+
+
 ## D-105 — مالک نے Trial B کہا؛ حتمی پسند ابھی نہیں دی (v0.75.0 Kestrel)
 
 دوسرا انداز: چھوٹا مستقل سرچ پینل اور اس کے ساتھ بڑا Cart۔ خالی سرچ پر ساری مصنوعات نہیں؛ منتخب چیز ڈالنے کے بعد matches صاف، پینل کی جگہ قائم۔ نام، طاقت، pack، stock، retail اور تصویر ایک عمودی card میں تاکہ تنگ پینل میں لمبی چوڑی table نہ گھمانا پڑے۔ باقی compact buttons/checkout/F4/modal وہی۔ A = v0.74.0 Marlin؛ B = v0.75.0 Kestrel۔ مالک دونوں کے بعد final چنے گا؛ کوئی preference یا physical PASS فرض نہیں۔ D-104 والے مالی فیصلے اب بھی queued، ابھی کوئی discount/default/receipt/stock تبدیلی نہیں۔ موجودہ code میں فیصد سابق کل فروخت کی رقم پر ہی ہے، profit پر منتقل نہیں ہوا۔ Installer کی اجازت نہیں۔

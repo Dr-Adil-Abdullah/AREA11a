@@ -1,5 +1,25 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-20 — Approved phase 1: reserved B search, space and keyboard (Windows NOT passed)
+
+Build **v0.76.0 Osprey**, green `#35614A`; 1240 written cases unchanged, 64 static source checks. No Windows/.NET runtime here; the checklist below is pending, not a claim of observed input routing or measured height gain. Owner chose B; no more A/B choice is requested. [Consolidated plan](docs/POS-NEXT-REVIEW-PLAN-URDU.md), [Counter lesson](docs/USER-GUIDE-URDU.html#lesson-09).
+
+**Safety:** real shop: unposted carts only, clear afterward. F4/Complete sale saves a REAL bill: do not use for practice. Save/modal/print proof only on verified isolated test data/environment; a second application folder is not data isolation.
+
+1. Open Counter with drawer open: original shell user/navigation still visible; duplicate POS/subtitle/cashier content row absent. Refresh works from footer actions. Search focused on active initial load; blocked Counter does not bypass shift/handover. Changing cash/quantity/customer must not steal focus back to search.
+2. Blank search: reserved narrow pane with prompt, no standing catalog or hidden selection. Type exact name/strength/pack and typo; search textbox Enter remains exact-barcode-only, no fuzzy auto-add. Correct barcode pack adds once, unknown barcode/refusals retain honest status.
+3. Search Down focuses the result CELL, not its photo button. Up/Down selects rows, Enter adds that selected medicine once. Hold Enter: no duplicate add. Result double-click adds once. Header/empty/scrollbar double-click adds nothing; photo click/Enter opens gallery only, does not Add. Successful gesture clears query/results, returns focus to search.
+4. Tab / Shift+Tab remain normal field traversal. In Unit use Up/Down; Left/Right in textboxes still move caret. Shift+Down/Right moves section FORWARD; Shift+Up/Left BACK. Order: search entry (search/unit/quantity/Add) → nonempty visible matches → Cart → visible More/held-cart panel → customer/payment/discount → cash/Complete → actions. Hidden/empty sections skipped; boundaries stop, no wrap to shell.
+5. From an open Unit/Customer/Payment dropdown, Shift+arrow closes list and leaves its section without continuing to edit old choices; Esc first closes that list without hiding search behind it. From matches Esc hides results and restores search focus. No key should leave focus stranded on a collapsed grid.
+6. Cart current rate edit (where available) must commit before section/F4 departure; this release found inherited ReadOnly on Cart, so the existing rate editing template ALONE is not a usable editor. Dedicated cart Enter/double-click price/discount editor belongs to PHASE 2, NOT implemented in phase 1. Do not claim per-user caps or profit default work yet.
+7. Footer actions: softly tinted rounded 32-DIP-minimum controls; keyboard-focused action has clear dark/white cue. Arrows on buttons stay inside section; Enter runs action. Print automatically checkbox Enter/Space toggles only. Tab reaches optional panels and photo buttons. Open/close panels via keyboard and verify hidden sections skipped afterward.
+8. 5–10 cart lines, 1366×768 / 1024×768, 125%/150% DPI: bounded results/cart scroll, fixed customer/payment/discount/total/cash/change/actions remain readable. F4 guarded save/modal/AutoPrint/reprint regression on isolated test data, no duplicate sale/payment. Full Desktop build and `ALL GREEN - 1240 of 1240` remain pending.
+
+**Source finding recorded, not silently called fixed:** inherited DataGrid IsReadOnly=True prevents a rate editing template by itself enabling cart edits. Phase 2's item editor will address this with real permissions/validation; no finance change was slipped into phase 1.
+
+Result: awaiting owner Windows build, screenshots and keyboard/DPI/scanner walkthrough. All phase 2/3 finance and phase 4 comprehensive review still queued. No installer authorized.
+
+
 ## PT-19 — POS trial B: reserved search pane vs A overlay (NOT physically passed)
 
 Owner requested “tryal b”, not a final preference. B = v0.75.0 Kestrel (purple), A = v0.74.0 Marlin (blue, cfbc68d). No new screenshot/runtime/test log received for this trial. Only results layout and version/docs/checker pins changed; the A search/scan ViewModel and all financial services/models/migrations remain identical.

@@ -1357,7 +1357,8 @@ def check_app_labels() -> None:
 
     # Partners is deliberately a three-tab container: it has a menu title but no PageTitle of its
     # own. Do not add a duplicate heading merely to make this set uniform.
-    titleless = {"partners"}
+    # Owner removed Counter's duplicate in-page heading in v0.76.0; its selected shell label stays.
+    titleless = {"partners", "counter"}
     partners_text = partners_view.read_text(encoding="utf-8-sig")
     if "PageTitle" in partners_text or "<views:CustomersView" not in partners_text:
         fail("PartnersView is no longer the known titleless tab container; update the label route check")
@@ -5628,6 +5629,49 @@ def check_counter_search_trial() -> None:
     REPORT.append("Counter trial B: blank search empty, reserved narrow results pane, compact fixed actions, optional side details")
 
 
+def check_counter_keyboard_phase_one() -> None:
+    """Source contracts only; Windows input routing and layout still need PT-20."""
+    root = ET.parse(DOTNET / "Area11.Desktop/Views/PosView.xaml").getroot()
+    ns = "{http://schemas.microsoft.com/winfx/2006/xaml/presentation}"
+    xname = "{http://schemas.microsoft.com/winfx/2006/xaml}Name"
+    xkey = "{http://schemas.microsoft.com/winfx/2006/xaml}Key"
+    named = {node.get(xname): node for node in root.iter() if node.get(xname)}
+    for name in ["SearchEntryPanel", "SearchResultsPanel", "CartPanel", "CheckoutDetailsPanel",
+                 "ParkedCartsPanel", "CheckoutFields", "CheckoutMoney", "CounterActions",
+                 "MedicineSearchBox", "UnitPicker", "AddQuantityBox", "CustomerPicker", "CashReceivedBox"]:
+        if name not in named: fail("Counter phase 1: missing keyboard section/anchor " + name)
+    if root.get("Loaded") != "OnCounterLoaded": fail("Counter phase 1: initial search focus must be wired")
+    for node in root.iter(ns + "TextBlock"):
+        if node.get("Text") == "{DynamicResource AppLabel.counter}" or "{Binding CashierName" in node.get("Text", ""):
+            fail("Counter phase 1: duplicate Counter/cashier header must not return")
+    matches = named.get("SearchMatchesGrid")
+    if matches is None or matches.get("PreviewMouseDoubleClick") != "OnSearchMatchDoubleClick":
+        fail("Counter phase 1: double-click Add must be wired to the results grid")
+    search = named.get("MedicineSearchBox")
+    if search is None or not any(node.get("Key") == "Enter" and node.get("Command") == "{Binding ScanCommand}" for node in search.iter()):
+        fail("Counter phase 1: search Enter must remain exact-barcode scan")
+    actions = named.get("CounterActions")
+    if actions is None or not any(node.get("Command") == "{Binding RefreshCommand}" for node in actions.iter()):
+        fail("Counter phase 1: Refresh must remain accessible without the old heading")
+    elif not all(node.get("Style") == "{StaticResource CounterActionButton}" for node in actions.iter(ns + "Button")):
+        fail("Counter phase 1: footer buttons need the quiet rounded action style")
+    style = next((node for node in root.iter(ns + "Style") if node.get(xkey) == "CounterActionButton"), None)
+    if style is None or not any(node.get("CornerRadius") == "9" for node in style.iter()):
+        fail("Counter phase 1: missing softly rounded action template")
+    elif not any(node.get("Property") == "IsKeyboardFocused" for node in style.iter()):
+        fail("Counter phase 1: focused action needs a visible keyboard cue")
+    view = (DOTNET / "Area11.Desktop/Views/PosView.xaml.cs").read_text(encoding="utf-8-sig")
+    for needle in ["ModifierKeys.Shift", "MoveCounterSection(e.Key)", "CartGrid.CommitEdit", "IsDropDownOpen = false",
+                   "grid.CurrentCell = new DataGridCellInfo", "FirstGridCell(row)?.Focus()", "if (!e.IsRepeat) AddFocusedSearchMatch();",
+                   "section.IsAncestorOf(target)",
+                   "FindParent<DataGridRow>(source)", "FindParent<ButtonBase>(source) is not null",
+                   "ItemsControl.ItemsControlFromItemContainer(row), SearchMatchesGrid",
+                   "viewModel.AddCommand.Execute(null)", "viewModel.SearchText.Length != 0",
+                   "viewModel.IsBlocked", "Window.GetWindow(this)?.IsActive", "returnToSearch"]:
+        if needle not in view: fail("Counter phase 1: missing input safety contract " + needle)
+    REPORT.append("Counter phase 1: titleless Counter, quiet fixed actions, guarded initial/Add focus, section navigation and row-only Add gestures (Windows proof pending)")
+
+
 def check_counter_checkout() -> None:
     """Desktop has no test reference: pin the bounded layout, shortcut and post-commit modal."""
     import xml.etree.ElementTree as ET
@@ -6248,6 +6292,7 @@ def main() -> int:
     check_counter_availability()
     check_counter_checkout()
     check_counter_search_trial()
+    check_counter_keyboard_phase_one()
     check_checklist()
     check_audit_recovery()
     check_report_chart()
