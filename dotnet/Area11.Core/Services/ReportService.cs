@@ -181,6 +181,10 @@ public sealed class ReportService
                 Pair("Discount", Money.Format(totals.DiscountPaisa));
             }
 
+            if (totals.ExtraDiscountPaisa != 0)
+                Pair("Extra Discount", Money.Format(totals.ExtraDiscountPaisa));
+            Add("Items: before Extra Discount.");
+
             if (totals.RefundPaisa != 0)
             {
                 Pair("Refunds", Money.Format(totals.RefundPaisa));
@@ -235,6 +239,7 @@ public sealed class ReportService
 SELECT COUNT(1) AS bills,
        IFNULL(SUM(total_paisa), 0) AS sales,
        IFNULL(SUM(discount_paisa), 0) AS discount,
+       IFNULL(SUM(extra_discount_paisa), 0) AS extraDiscount,
        IFNULL(SUM(due_paisa), 0) AS credit
 FROM sales
 WHERE status IN ('paid','partial','credit') AND date >= @from AND date < @until;",
@@ -295,6 +300,7 @@ SELECT (SELECT IFNULL(SUM(amount_paisa), 0) FROM expenses
             ItemsBase = items.Items,
             SalesPaisa = totals.Sales,
             DiscountPaisa = totals.Discount,
+            ExtraDiscountPaisa = totals.ExtraDiscount,
             RefundPaisa = returns.Refunds,
             CostPaisa = items.Cost,
             RestockCostPaisa = returns.RestockCost,
@@ -520,7 +526,14 @@ LEFT JOIN back ON back.name = keys.name
 ORDER BY sales DESC;",
             new { from = period.FromStamp, until = period.UntilStamp });
 
-        var total = rows.Sum(row => row.Sales);
+        var extra = Convert.ToInt64(_db.Scalar(connection, @"
+SELECT IFNULL(SUM(extra_discount_paisa), 0) FROM sales
+WHERE status IN ('paid','partial','credit') AND date >= @from AND date < @until;",
+            new { from = period.FromStamp, until = period.UntilStamp }) ?? 0L);
+        if (extra != 0)
+            rows.Add(new CategoryRow { Name = "Bill Extra Discount (not assigned to products)", Sales = -extra });
+        // Percentages use pre-extra positive activity; a separate negative allowance has no bar.
+        var total = rows.Where(row => row.Sales > 0).Sum(row => row.Sales);
 
         return rows.Select(row => new ReportCategoryRow
         {
@@ -604,6 +617,7 @@ LIMIT 1;";
         public long Sales { get; set; }
 
         public long Discount { get; set; }
+        public long ExtraDiscount { get; set; }
 
         public long Credit { get; set; }
     }

@@ -1,5 +1,13 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## D-108 — next سے فیز3، پھر واضح جواب b سے جزوی واپسی طریقہ B
+
+- مالک نے فیز3 کی اجازت دی؛ جزوی return کا سوال مثال کے ساتھ پوچھا گیا۔ جواب **b**: A560+B560، الگ Extra20، paid1100؛ پہلے لوٹنے والے item کی560، بعد والے کی صرف باقی540۔ proportional550/550 تجویز منتخب نہیں ہوئی۔ ایک request میں cap آخری درج return line سے کم ہوگا؛ preview میں وجہ واضح، اصل sale-item قیمتیں untouched۔
+- Extra سختی سے sale-level، ordinary line/bill discounts/points/rounding کے بعد؛ per-person owner-only enabled/rupee cap، owner سمیت automatic grant نہیں۔ repeated Apply پوری amount replace کرتا ہے؛ cap دوبارہ نہیں بنتی۔ final actual allocated cost floor سب پر۔
+- v0.78.0 Avocet source،30 نئے/1300 written tests،66 static checks، independent memory-only SQLite migration/BookCheck proof۔ Windows/Desktop/xUnit/PT-22 باقی؛ نہ مکمل financial/security certification، نہ full audit۔
+- مکمل مرحلہ وار نامہ: [فیز3](POS-PHASE3-TEST-URDU.md)۔ اگلا next فیز4 جامع page/settings/15-point review؛ installer صرف بنا دو پر۔
+
+
 ## D-107 — next سے فیز2؛ per-person limits، item editor اور اصل حساب (v0.77.0 Sandpiper)
 
 صرف مالک ہر شخص کے لیے manual rate اجازت/حد، profit فیصد اجازت/حد، retail فیصد اجازت/حد اور one-bill basis override کی اجازت محفوظ کرے گا؛ عہدہ خود اجازت نہیں۔ غیر مالک کی پرانی/نئی account کو نئی pricing row کے بغیر خودکار رعایت/ریٹ اجازت نہیں۔ مالک خود اپنی limits بھی مقرر کرسکے۔ Settings کا نیا active key discount.billBasis (profit/retail)، ابتدائی future-bill default profit existing shop پر بھی؛ retired discount.mode inert رہتا ہے۔ allowed override صرف ایک bill، واضح popup اور next bill Settings default۔ total-basis bill >5% ہر save سے پہلے fresh confirmation، Core بھی check/consume، draftJSON میں approval نہیں۔

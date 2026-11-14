@@ -16,11 +16,11 @@
         <StackPanel Grid.Row="0" Margin="0,0,0,8">
             <TextBlock Text="{Binding Title}" Style="{StaticResource PageTitle}" TextWrapping="Wrap" />
             <TextBlock Text="{Binding TotalsText}" Style="{StaticResource PageSubtitle}" TextWrapping="Wrap" />
-            <TextBlock Text="{Binding ProfitText, StringFormat='Profit: {0}'}" Style="{StaticResource PageSubtitle}" />
+            <TextBlock Text="{Binding ProfitText, StringFormat='Item profit before bill Extra Discount: {0}'}" Style="{StaticResource PageSubtitle}" TextWrapping="Wrap" />
         </StackPanel>
 
-        <TextBlock Grid.Row="1" Text="Every purchase and every sale, oldest first. Rates are as they were on the day."
-                   Style="{StaticResource FieldHint}" Margin="0,0,0,8" />
+        <TextBlock Grid.Row="1" Text="Every purchase and sale, oldest first. Original rates; sale amounts/profit are before separate bill Extra Discount."
+                   Style="{StaticResource FieldHint}" Margin="0,0,0,8" TextWrapping="Wrap" />
 
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
@@ -67,7 +67,7 @@
                             <DataGridTextColumn Header="Bill" Binding="{Binding BillCode, Mode=OneWay}" Width="90" />
                             <DataGridTextColumn Header="Buyer" Binding="{Binding BuyerLabel, Mode=OneWay}" Width="*" />
                             <DataGridTextColumn Header="Qty" Binding="{Binding QtyLabel, Mode=OneWay}" Width="70" />
-                            <DataGridTextColumn Header="Total" Binding="{Binding TotalLabel, Mode=OneWay}" Width="90" />
+                            <DataGridTextColumn Header="Before Extra" Binding="{Binding TotalLabel, Mode=OneWay}" Width="90" />
                             <DataGridTextColumn Header="Profit" Binding="{Binding ProfitLabel, Mode=OneWay}" Width="90"
                                                 Visibility="{Binding DataContext.ProfitVisible, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}" />
                         </DataGrid.Columns>

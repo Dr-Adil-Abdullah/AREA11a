@@ -72,8 +72,8 @@ public sealed class HoldCartService
 
                 _db.Execute(connection, @"
 INSERT INTO held_carts(code, created_at, updated_at, user_id, customer_id, discount_percent,
-                       note, total_paisa, items_count, status, discount_basis)
-VALUES(@code, @at, @at, @userId, @customerId, @discount, @note, @total, @count, 'held', @basis);",
+                       note, total_paisa, items_count, status, discount_basis, extra_discount_paisa)
+VALUES(@code, @at, @at, @userId, @customerId, @discount, @note, @total, @count, 'held', @basis, @extra);",
                     new
                     {
                         code = number,
@@ -84,7 +84,8 @@ VALUES(@code, @at, @at, @userId, @customerId, @discount, @note, @total, @count, 
                         note = string.IsNullOrWhiteSpace(input.Notes) ? null : input.Notes.Trim(),
                         total = quote.Value.TotalPaisa,
                         count = input.Lines.Count,
-                        basis = quote.Value.DiscountBasis
+                        basis = quote.Value.DiscountBasis,
+                        extra = input.ExtraDiscountPaisa
                     });
 
                 var cartId = (int)_db.NextId(connection);
@@ -171,7 +172,7 @@ ORDER BY h.created_at DESC, h.id DESC;");
             var cart = _db.Tx(connection =>
             {
                 var row = _db.QuerySingle<CartRow>(connection, @"
-SELECT id, code, customer_id, discount_percent, discount_basis, status
+SELECT id, code, customer_id, discount_percent, discount_basis, extra_discount_paisa, status
 FROM held_carts WHERE id = @id;", new { id = cartId });
 
                 if (row is null)
@@ -202,6 +203,7 @@ FROM held_cart_items WHERE cart_id = @id ORDER BY position, id;", new { id = car
                     CustomerId = row.CustomerId,
                     DiscountPercent = (decimal)row.DiscountPercent,
                     DiscountBasis = row.DiscountBasis,
+                    ExtraDiscountPaisa = row.ExtraDiscountPaisa,
                     Lines = lines.ToList()
                 };
             });
@@ -286,6 +288,7 @@ FROM held_cart_items WHERE cart_id = @id ORDER BY position, id;", new { id = car
 
         public double DiscountPercent { get; set; }
         public string? DiscountBasis { get; set; }
+        public long ExtraDiscountPaisa { get; set; }
 
         public string Status { get; set; } = "held";
     }

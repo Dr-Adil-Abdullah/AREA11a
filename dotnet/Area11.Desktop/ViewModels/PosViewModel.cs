@@ -47,6 +47,10 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     private string _redeemPointsText = string.Empty;
     private string _pointsUsedText = string.Empty;
     private bool _hasPointsUsed;
+    private long _appliedExtraDiscount;
+    private string _extraDiscountEntry = "0";
+    private string _preExtraTotalText = "Rs 0";
+    private string _extraDiscountText = "Rs 0";
     private string _discountPercent = "0";
     private string _billDiscountBasis = "profit";
     private string _paymentMethod = "cash";
@@ -82,6 +86,8 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         DocEditor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Sale, saveWithParent: true);
         DocEditor.LoadNew();
 
+        ApplyExtraDiscountCommand = new RelayCommand(ApplyExtraDiscount);
+        RemoveExtraDiscountCommand = new RelayCommand(RemoveExtraDiscount);
         AddCommand = new RelayCommand(AddToCart);
         ScanCommand = new RelayCommand(ScanBarcode);
         CloseSearchResultsCommand = new RelayCommand(() => IsSearchResultsOpen = false);
@@ -993,6 +999,8 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         _availabilityWarningShown = false;
         Cart.Clear();
         TenderedText = string.Empty;
+        _appliedExtraDiscount = 0;
+        ExtraDiscountEntry = "0";
         DiscountPercent = "0";
         ResetBillBasis();
         _openDraftId = 0;
@@ -1045,6 +1053,8 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             SetStatus("Cash received must be a number.", true);
             return;
         }
+
+        if (!RequireAppliedExtraEntry()) return;
 
         var useSpecialRate = false;
         if (!TryGetDiscount(out var discount))
@@ -1117,6 +1127,8 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         Cart.Clear();
         TenderedText = string.Empty;
         SecondAmountText = string.Empty;
+        _appliedExtraDiscount = 0;
+        ExtraDiscountEntry = "0";
         DiscountPercent = "0";
         ResetBillBasis();
         _openDraftId = 0;
@@ -1135,6 +1147,59 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     {
         return decimal.TryParse(DiscountPercent, NumberStyles.Number, CultureInfo.InvariantCulture, out percent) &&
                percent >= 0 && percent <= MaxDiscountPercent;
+    }
+
+    public RelayCommand ApplyExtraDiscountCommand { get; }
+    public RelayCommand RemoveExtraDiscountCommand { get; }
+    public string ExtraDiscountEntry { get => _extraDiscountEntry; set => SetProperty(ref _extraDiscountEntry, value); }
+    public string PreExtraTotalText { get => _preExtraTotalText; private set => SetProperty(ref _preExtraTotalText, value); }
+    public string ExtraDiscountText { get => _extraDiscountText; private set => SetProperty(ref _extraDiscountText, value); }
+
+    private bool RequireAppliedExtraEntry()
+    {
+        if (!Money.TryParse(ExtraDiscountEntry, out var extraEntry) || extraEntry < 0
+            || extraEntry > long.MaxValue / 100m || decimal.Round(extraEntry, 2) != extraEntry
+            || Money.ToPaisa(extraEntry) != _appliedExtraDiscount)
+        {
+            SetStatus("Extra Discount entry is not applied. Open More / split and Apply it, or Remove Extra Discount, before completing, parking or saving a draft.", true);
+            ShowCheckoutDetails = true;
+            return false;
+        }
+        return true;
+    }
+
+    private void ApplyExtraDiscount()
+    {
+        if (_isCompletingSale || Cart.Count == 0 || IsBlocked) return;
+        if (!Money.TryParse(ExtraDiscountEntry, out var rupees) || rupees < 0
+            || rupees > long.MaxValue / 100m || decimal.Round(rupees, 2) != rupees)
+        { SetStatus("Extra Discount must be zero or a positive rupee amount with up to two decimals.", true); return; }
+        var input = BuildInput();
+        input.ExtraDiscountPaisa = Money.ToPaisa(rupees); // replaces WHOLE allowance; never adds to it
+        var result = _services.Sales.Quote(input, _user);
+        if (!result.Ok || result.Value is null)
+        { SetStatus(result.Error ?? "Extra Discount is not allowed.", true); return; }
+        var quote = result.Value;
+        var owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(window => window.IsActive)
+            ?? Application.Current?.MainWindow;
+        if (owner is null) { SetStatus("The counter window is not ready. Try again.", true); return; }
+        if (MessageBox.Show(owner, $"Before Extra Discount: {Money.Format(quote.PreExtraTotalPaisa)}\n" +
+                $"Extra Discount for the whole bill: {Money.Format(quote.ExtraDiscountPaisa)}\n" +
+                $"Final payable: {Money.Format(quote.TotalPaisa)}\n\n" +
+                "Product prices and earlier discounts stay unchanged. Applying again replaces the amount, not adds to it. Apply?",
+                "Extra Discount", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        _appliedExtraDiscount = input.ExtraDiscountPaisa;
+        Recalculate();
+        SetStatus("Extra Discount applied to this bill only. Check final payable and cash received.", false);
+    }
+
+    private void RemoveExtraDiscount()
+    {
+        if (_isCompletingSale) return;
+        _appliedExtraDiscount = 0;
+        ExtraDiscountEntry = "0";
+        Recalculate();
+        SetStatus("Extra Discount removed; product prices and previous discounts unchanged.", false);
     }
 
     private SaleInput BuildInput(bool useSpecialRate = false)
@@ -1173,6 +1238,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             CustomerId = SelectedCustomer is { Id: > 0 } ? SelectedCustomer.Id : null,
             DoctorId = SelectedDoctor is { Id: > 0 } ? SelectedDoctor.Id : null,
             DiscountPercent = percent,
+            ExtraDiscountPaisa = _appliedExtraDiscount,
             DiscountBasis = BillDiscountBasis,
             UseSpecialRate = useSpecialRate,
             PaymentMethod = PaymentMethod,
@@ -1200,6 +1266,8 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             _availabilityWarningShown = false;
             SubtotalText = "Rs 0";
             DiscountText = "Rs 0";
+            PreExtraTotalText = "Rs 0";
+            ExtraDiscountText = "Rs 0";
             TotalText = "Rs 0";
             ChangeText = "Rs 0";
             CashPartText = "Rs 0";
@@ -1225,6 +1293,8 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         {
             SubtotalText = "—";
             DiscountText = "—";
+            PreExtraTotalText = "—";
+            ExtraDiscountText = Money.Format(_appliedExtraDiscount);
             TotalText = "—";
             ChangeText = "—";
             SetStatus(quote.Error ?? "The total could not be calculated.", true);
@@ -1233,6 +1303,8 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
         SubtotalText = Money.Format(quote.Value.SubtotalPaisa);
         DiscountText = Money.Format(quote.Value.DiscountPaisa);
+        PreExtraTotalText = Money.Format(quote.Value.PreExtraTotalPaisa);
+        ExtraDiscountText = Money.Format(quote.Value.ExtraDiscountPaisa);
         TotalText = Money.Format(quote.Value.TotalPaisa);
 
         HasPointsUsed = quote.Value.RedeemPoints > 0;
@@ -1289,6 +1361,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             return;
         }
 
+        if (!RequireAppliedExtraEntry()) return;
         var saved = _openDraftId > 0
             ? _services.Drafts.SaveSaleDraft(_user, BuildInput(), _openDraftId)
             : _services.Drafts.SaveSaleDraft(_user, BuildInput());
@@ -1332,6 +1405,8 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         SelectedDoctor = input.DoctorId is > 0
             ? Doctors.FirstOrDefault(doctor => doctor.Id == input.DoctorId)
             : null;
+        _appliedExtraDiscount = input.ExtraDiscountPaisa;
+        ExtraDiscountEntry = Money.Edit(_appliedExtraDiscount);
         RestoreBillBasis(input.DiscountBasis);
         DiscountPercent = input.DiscountPercent.ToString("0.##", CultureInfo.InvariantCulture);
         PaymentMethod = string.IsNullOrWhiteSpace(input.PaymentMethod) ? "cash" : input.PaymentMethod;
@@ -1389,6 +1464,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             return;
         }
 
+        if (!RequireAppliedExtraEntry()) return;
         var result = _services.Holds.Hold(BuildInput(), _user);
         if (!result.Ok || string.IsNullOrEmpty(result.Value))
         {
@@ -1401,6 +1477,8 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         Cart.Clear();
         TenderedText = string.Empty;
         SecondAmountText = string.Empty;
+        _appliedExtraDiscount = 0;
+        ExtraDiscountEntry = "0";
         DiscountPercent = "0";
         ResetBillBasis();
         // A parked cart keeps lines, rates, customer and discount - but not the bill's own answers:
@@ -1459,6 +1537,8 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
                 line.PricingMode, line.DiscountBasis, line.LineDiscountPercent));
         }
 
+        _appliedExtraDiscount = cart.ExtraDiscountPaisa;
+        ExtraDiscountEntry = Money.Edit(_appliedExtraDiscount);
         RestoreBillBasis(cart.DiscountBasis);
         DiscountPercent = cart.DiscountPercent.ToString("0.##", CultureInfo.InvariantCulture);
 

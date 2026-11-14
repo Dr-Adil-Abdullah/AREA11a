@@ -399,7 +399,7 @@ public sealed class ReturnsViewModel : ObservableObject, IEmptyPage
         RefundText = Money.Format(quote.Value.RefundPaisa);
         CashText = Money.Format(quote.Value.CashPaisa);
         CreditText = Money.Format(quote.Value.CreditReducedPaisa);
-        SetStatus("Refund calculated from this bill. Press Take the return to save it.", false);
+        SetStatus("Refund calculated from this bill. Press Take the return to save it. " + string.Join(" ", quote.Value.Warnings), false);
     }
 
     private void TakeReturn()
@@ -443,7 +443,7 @@ public sealed class ReturnsViewModel : ObservableObject, IEmptyPage
         Reason = ReturnService.ReasonChangedMind;
         Restock = true;
         ResetBill();
-        SetStatus(message, false);
+        SetStatus(message + " " + string.Join(" ", saved.Warnings), false);
     }
 
     private void Print(string returnCode)

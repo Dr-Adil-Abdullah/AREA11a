@@ -8,7 +8,7 @@ namespace Area11.Core.Services;
 /// <summary>
 /// The counter (Spec 12.2). One transaction:
 ///   validate → FEFO batches → tier price → discount guard → tax → round down with cost guard →
-///   reconcile the lines → deduct stock through the D-93 non-negative policy → sale + payments →
+///   reconcile the lines → separate sale-level Extra/cap/final-cost guard → deduct stock through the D-93 non-negative policy → sale + payments →
 ///   customer khata → black box.
 /// The same calculation produces both the live quote and the saved bill, so the cashier can
 /// never see a total different from the one stored.
@@ -140,6 +140,8 @@ WHERE product_id = @id AND active = 1 AND qty_base > 0
                 DiscountPaisa = computed.DiscountPaisa,
                 TaxPaisa = computed.TaxPaisa,
                 RoundPaisa = computed.RoundPaisa,
+                PreExtraTotalPaisa = computed.PreExtraTotalPaisa,
+                ExtraDiscountPaisa = computed.ExtraDiscountPaisa,
                 TotalPaisa = computed.TotalPaisa,
                 ChangePaisa = change,
                 CashPartPaisa = split.CashPartPaisa,
@@ -262,10 +264,10 @@ WHERE product_id = @id AND active = 1 AND qty_base > 0
         _db.Execute(connection, @"
 INSERT INTO sales(code, date, customer_id, doctor_id, user_id, subtotal_paisa, discount_paisa,
                   tax_paisa, round_off_paisa, total_paisa, paid_paisa, due_paisa, status,
-                  payment_method, notes, created_at, change_paisa, time_offset_seconds, discount_basis)
+                  payment_method, notes, created_at, change_paisa, time_offset_seconds, discount_basis, pre_extra_total_paisa, extra_discount_paisa)
 VALUES(@code, @date, @customerId, @doctorId, @userId, @subtotal, @discount,
        @tax, @roundOff, @total, @paid, @due, @status,
-       @method, @notes, @createdAt, @change, @timeOffset, @basis);",
+       @method, @notes, @createdAt, @change, @timeOffset, @basis, @preExtra, @extra);",
             new
             {
                 code,
@@ -277,6 +279,8 @@ VALUES(@code, @date, @customerId, @doctorId, @userId, @subtotal, @discount,
                 discount = computed.DiscountPaisa,
                 tax = computed.TaxPaisa,
                 roundOff = computed.RoundPaisa,
+                preExtra = computed.PreExtraTotalPaisa,
+                extra = computed.ExtraDiscountPaisa,
                 total = computed.TotalPaisa,
                 paid,
                 due,
@@ -419,6 +423,16 @@ VALUES(@at, @method, @amount, @saleId, @customerId, @userId, @note);",
         _audit.Record(connection, user, "POS", "sale_create", "sales", saleId.ToString(),
             newValue: $"{{\"code\":\"{code}\",\"total\":{computed.TotalPaisa},\"discount\":{computed.DiscountPaisa},\"round\":{computed.RoundPaisa},\"method\":\"{method}\"}}");
 
+        if (computed.ExtraDiscountPaisa > 0)
+            _audit.Record(connection, user, "POS", "sale_extra_discount", "sales", saleId.ToString(),
+                newValue: System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    preExtraTotalPaisa = computed.PreExtraTotalPaisa,
+                    extraDiscountPaisa = computed.ExtraDiscountPaisa,
+                    finalTotalPaisa = computed.TotalPaisa,
+                    returnPolicy = "original-item-value-then-remaining-bill-cap"
+                }));
+
         return ServiceResult<SaleResult>.Success(new SaleResult
         {
             SaleId = saleId,
@@ -427,6 +441,8 @@ VALUES(@at, @method, @amount, @saleId, @customerId, @userId, @note);",
             DiscountPaisa = computed.DiscountPaisa,
             TaxPaisa = computed.TaxPaisa,
             RoundPaisa = computed.RoundPaisa,
+            PreExtraTotalPaisa = computed.PreExtraTotalPaisa,
+            ExtraDiscountPaisa = computed.ExtraDiscountPaisa,
             TotalPaisa = computed.TotalPaisa,
             PaidPaisa = paid,
             // Report the committed payment plan, never a later quote of an already-cleared cart.
@@ -457,6 +473,11 @@ VALUES(@at, @method, @amount, @saleId, @customerId, @userId, @note);",
             && (input.DiscountPercent > 0 || input.Lines.Any(item => item.LineDiscountPercent > 0)))
             throw new ValidationException("Discounts are switched off in Settings.");
         PricingAllowanceService.CheckDiscount(pricing, billBasis, input.DiscountPercent);
+
+        if (input.ExtraDiscountPaisa < 0)
+            throw new ValidationException("Extra Discount can only reduce a bill; enter zero or a positive amount.");
+        if (input.ExtraDiscountPaisa > 0 && (!pricing.ExtraDiscount || input.ExtraDiscountPaisa > pricing.ExtraLimitPaisa))
+            throw new ValidationException($"Your Extra Discount limit is {Money.Format(pricing.ExtraDiscount ? pricing.ExtraLimitPaisa : 0)} per bill. Ask the owner to configure your allowance.");
 
         var customer = ResolveCustomer(connection, input.CustomerId);
         var warnings = new List<string>();
@@ -735,6 +756,13 @@ ORDER BY CASE WHEN expiry_date IS NULL OR expiry_date = '' THEN 1 ELSE 0 END, ex
             if (needed > 0) throw new ValidationException("This bill would fall below purchase cost.");
         }
 
+        // Strictly AFTER rounding/points and line cost checks. Never Spread Extra Discount:
+        // product rates, quantities and all previous line/bill discounts stay byte-for-byte equal.
+        var preExtraTotal = totalPaisa;
+        if (input.ExtraDiscountPaisa > Math.Max(0, preExtraTotal - costTotal))
+            throw new ValidationException("Extra Discount would take this bill below actual purchase cost. Reduce it; no role can bypass this safeguard.");
+        totalPaisa = preExtraTotal - input.ExtraDiscountPaisa;
+
         return new ComputedSale
         {
             Lines = lines,
@@ -742,6 +770,8 @@ ORDER BY CASE WHEN expiry_date IS NULL OR expiry_date = '' THEN 1 ELSE 0 END, ex
             DiscountPaisa = discountTotal,
             TaxPaisa = taxPaisa,
             RoundPaisa = roundPaisa,
+            PreExtraTotalPaisa = preExtraTotal,
+            ExtraDiscountPaisa = input.ExtraDiscountPaisa,
             TotalPaisa = totalPaisa,
             RedeemPoints = redeem.Points,
             RedeemPaisa = redeem.Paisa,
@@ -773,7 +803,7 @@ ORDER BY CASE WHEN expiry_date IS NULL OR expiry_date = '' THEN 1 ELSE 0 END, ex
             }
         }
 
-        // The bill total must equal the sum of its lines, always (Spec 11.4).
+        // Before the separate sale-level Extra Discount, this total must equal the sum of lines.
         var difference = expectedTotal - lines.Sum(line => line.LineTotalPaisa);
         if (difference != 0)
         {
@@ -1037,6 +1067,8 @@ WHERE id = @id AND active = 1 AND LOWER(IFNULL(category, '')) = 'doctor';",
 
         public long RoundPaisa { get; init; }
 
+        public long PreExtraTotalPaisa { get; init; }
+        public long ExtraDiscountPaisa { get; init; }
         public long TotalPaisa { get; init; }
 
         public int RedeemPoints { get; init; }

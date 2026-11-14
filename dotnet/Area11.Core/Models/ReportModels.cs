@@ -56,6 +56,7 @@ public sealed class ReportTotals
     public long SalesPaisa { get; set; }
 
     public long DiscountPaisa { get; set; }
+    public long ExtraDiscountPaisa { get; set; }
 
     public long RefundPaisa { get; set; }
 
@@ -94,6 +95,7 @@ public sealed class ReportTotals
     public string SalesText => Money.Format(SalesPaisa);
 
     public string DiscountText => Money.Format(DiscountPaisa);
+    public string ExtraDiscountText => Money.Format(ExtraDiscountPaisa);
 
     public string RefundText => Money.Format(RefundPaisa);
 

@@ -75,7 +75,9 @@ SELECT c.id AS id, c.name AS name, c.phone AS phone, c.category AS category,
                WHERE s.customer_id = c.id AND s.status IN ('paid','partial','credit')), 0) AS INTEGER) AS lifetimePaisa,
        CAST(IFNULL((SELECT SUM(si.line_total_paisa - si.qty_base * si.cost_paisa_at_sale)
                FROM sale_items si JOIN sales s ON s.id = si.sale_id
-               WHERE s.customer_id = c.id AND s.status IN ('paid','partial','credit')), 0) AS INTEGER) AS profitPaisa,
+               WHERE s.customer_id = c.id AND s.status IN ('paid','partial','credit')), 0)
+            - IFNULL((SELECT SUM(es.extra_discount_paisa) FROM sales es
+               WHERE es.customer_id = c.id AND es.status IN ('paid','partial','credit')), 0) AS INTEGER) AS profitPaisa,
        CAST(IFNULL((SELECT SUM(r.refund_paisa) FROM sale_returns r
                JOIN sales rs ON rs.id = r.sale_id WHERE rs.customer_id = c.id), 0) AS INTEGER) AS returnsPaisa,
        (SELECT MAX(s.date) FROM sales s WHERE s.customer_id = c.id) AS lastBillDate
@@ -121,7 +123,9 @@ SELECT c.id AS id, c.name AS name, c.phone AS phone, c.category AS category,
                WHERE s.customer_id = c.id AND s.status IN ('paid','partial','credit')), 0) AS INTEGER) AS lifetimePaisa,
        CAST(IFNULL((SELECT SUM(si.line_total_paisa - si.qty_base * si.cost_paisa_at_sale)
                FROM sale_items si JOIN sales s ON s.id = si.sale_id
-               WHERE s.customer_id = c.id AND s.status IN ('paid','partial','credit')), 0) AS INTEGER) AS profitPaisa,
+               WHERE s.customer_id = c.id AND s.status IN ('paid','partial','credit')), 0)
+            - IFNULL((SELECT SUM(es.extra_discount_paisa) FROM sales es
+               WHERE es.customer_id = c.id AND es.status IN ('paid','partial','credit')), 0) AS INTEGER) AS profitPaisa,
        CAST(IFNULL((SELECT SUM(r.refund_paisa) FROM sale_returns r
                JOIN sales rs ON rs.id = r.sale_id WHERE rs.customer_id = c.id), 0) AS INTEGER) AS returnsPaisa,
        (SELECT MAX(s.date) FROM sales s WHERE s.customer_id = c.id) AS lastBillDate

@@ -1,5 +1,23 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-22 — Sale-level Extra Discount + explicit return policy B (Windows NOT passed)
+
+**v0.78.0 Avocet**, slate blue `#465D7A`. **1300 written cases (+30),66 static checks**; no .NET/WPF or physical execution. Independent SQLite script is NOT a SaleService test. [Urdu usage/safe tests/disable](docs/POS-PHASE3-TEST-URDU.md).
+
+1. Verified backup and genuinely isolated test data/VM, not a second exe folder. Old headers/items/all prior grant fields survive036 unchanged; pre-extra NULL/extra0 for history; current future default remains owner's chosen basis. Never post pretend sales against live shop data.
+2. Owner sets each person's Extra enabled/rupee cap using separate pricing-panel Save, including own allowance. No automatic50/no owner fallback. Same role different caps20/30; manager/forged owner/inactive account cannot grant/bypass. Revoke between quote/post, Draft/Park resume under another user/current cap.
+3. More / split Extra entry: typing alone does not apply; owned confirm1120/20/1100 Yes/No; repeated20 stays20, attempted30 with cap20 refuses, original applied amount remains. Pending/invalid entry blocks Complete/F4 until Apply or Remove. Remove restores original total without modifying product rates/qty/discounts/bill%. Closing panel retains applied amount.
+4. All-manual/all-item-discount lines still permit separate Extra when allowed. Points/rounding first, Extra afterward. Per-line original cost floor AND final bill actual FEFO allocated-cost total floor remain mandatory for owner too; refusal no silent clamp/no stock/payment/audit-sale side effects. Zero stock always blocks.
+5.1120−20=1100, cash1100→due/change0; cash1200→change100; no Extra cash1100 must not auto-forgive20. Split/credit/recovery/final customer balance, drawer/shift expected cash, points earning all final-based. Save/print/re-entry regressions PT-20/21 remain required.
+6. Original sale_item rates/qty/discount/line_total unchanged with vs without Extra. Header pre-extra1120/extra20/final1100, dedicated audit transactionally. Receipt58/80mm/reprint and Bills show separate fields even when ordinary discount line hidden. Old receipt amounts remain unchanged.
+7. B approved: A560+B560 paid1100 afterExtra20. Return A first560 then B540 (reverse order same consequence for whichever first), combined request1100. Quantity partial/repeat/last-paisa, zero remainder, duplicate refusals, restock/quarantine, credit-vs-actual-collected cash cap, linked PR differences; preview warning visible before posting and final totals match. No proportional rewriting of original sale lines.
+8. Overall/day reports profit final1100−cost800=300. Customer profit subtracts Extra once. Top/product history explicitly BEFORE bill Extra; category separate negative unallocated Extra20 reconciles category total1100. BooksCheck line sum−Extra/header/snapshots clean; tamper detection on isolated test copy only.
+9. Park/Draft/restart preserve absolute Extra, changed limits fail safely. Clear/Post/Park new live cartExtra0; resume same saved cartExtra20. UI short-screen1366×768/1024×768,125/150%DPI, scroll reachability, native arrows/Shift+arrows/scanner focus and owned popup do not regress.
+10. Desktop build + real **ALL GREEN —1300 of1300** log; actual Windows screenshots and printer evidence only. No installer, no whole-program security/15-point audit PASS.
+
+Result: pending Windows/owner physical proof. Phase4 is next, not already completed.
+
+
 ## PT-21 — Phase2 per-person pricing, actual profit and immutable bills (Windows NOT passed)
 
 **v0.77.0 Sandpiper**, brown `#745238`. **1270 written cases (+30), 65 static checks**; no SDK, Core/xUnit, Desktop/WPF run or physical result in this sandbox. Static/grammar checks and Python SQLite execution are independent evidence, not a C# runtime pass. Owner-readable procedure: [فیز2 آزمائش اور واپسی](docs/POS-PHASE2-TEST-URDU.md). New permissions are DENY by default for non-owner: owner must save each person's pricing panel before expecting edits/discounts.

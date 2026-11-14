@@ -126,7 +126,7 @@ public sealed class ProductHistoryViewModel : ObservableObject
         }
 
         TotalsText = "Bought " + history.BoughtQtyLabel + " (" + Money.Format(history.BoughtPaisa) + ")"
-            + "  ·  Sold " + history.SoldQtyLabel + " (" + Money.Format(history.SoldPaisa) + ")";
+            + "  ·  Sold before bill Extra Discount " + history.SoldQtyLabel + " (" + Money.Format(history.SoldPaisa) + ")";
         ProfitText = history.CanSeeProfit ? Money.Format(history.ProfitPaisa) : "hidden";
         ProfitVisible = history.CanSeeProfit;
 

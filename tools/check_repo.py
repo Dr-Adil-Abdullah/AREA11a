@@ -5719,6 +5719,57 @@ def check_counter_pricing_phase_two() -> None:
     REPORT.append("Counter phase 2: per-person owner-only limits, batch-profit/retail line and bill basis, manual exclusion, cost floor, ephemeral confirmation, owned editor and persisted hold/draft snapshots (Windows tests pending)")
 
 
+def check_counter_extra_discount_phase_three() -> None:
+    """Pin sale-only allowance, return policy B and display paths; NOT C#/WPF execution."""
+    def read(path: str) -> str:
+        return (DOTNET / path).read_text(encoding="utf-8-sig")
+    core = read("Area11.Core/Services/SaleService.cs")
+    vm = read("Area11.Desktop/ViewModels/PosViewModel.cs")
+    returns = read("Area11.Core/Services/ReturnService.cs")
+    policy = read("Area11.Core/Services/PricingAllowanceService.cs")
+    receipt = read("Area11.Core/Services/ReceiptService.cs")
+    book = read("Area11.Core/Services/BookCheckService.cs")
+    report = read("Area11.Core/Services/ReportService.cs")
+    migration = read("Area11.Core/Data/Migrations/036_sale_extra_discount.sql")
+    tests = read("Area11.Tests/ExtraDiscountTests.cs")
+    for needle in ['input.ExtraDiscountPaisa < 0', '!pricing.ExtraDiscount',
+                   'input.ExtraDiscountPaisa > pricing.ExtraLimitPaisa',
+                   'input.ExtraDiscountPaisa > Math.Max(0, preExtraTotal - costTotal)',
+                   'totalPaisa = preExtraTotal - input.ExtraDiscountPaisa;',
+                   'pre_extra_total_paisa, extra_discount_paisa', '"sale_extra_discount"']:
+        if needle not in core: fail("Counter phase 3: missing sale-level financial guard " + needle)
+    if core.index('var preExtraTotal = totalPaisa;') < core.index('Spread(lines, taxPaisa + roundPaisa - redeem.Paisa, totalPaisa);'):
+        fail("Counter phase 3: Extra Discount must be AFTER normal line allocation")
+    for call in re.findall(r'Spread\([^;]+;', core):
+        if 'ExtraDiscount' in call: fail("Counter phase 3: never spread Extra Discount into products")
+    if 'UPDATE sale_items' in migration or 'UPDATE sales' in migration:
+        fail("Counter phase 3: additive migration must preserve historical records, not fabricate snapshots")
+    for needle in ['extra_limit_paisa', 'extra_discount INTEGER NOT NULL DEFAULT 0', 'pre_extra_total_paisa INTEGER NULL']:
+        if needle not in migration: fail("Counter phase 3: missing safe schema default " + needle)
+    for needle in ['value.ExtraLimitPaisa < 0', 'extra_limit_paisa=excluded.extra_limit_paisa']:
+        if needle not in policy: fail("Counter phase 3: owner allowance must validate and persist " + needle)
+    for needle in ['input.ExtraDiscountPaisa = Money.ToPaisa(rupees)', '_appliedExtraDiscount = input.ExtraDiscountPaisa',
+                   '_appliedExtraDiscount = input.ExtraDiscountPaisa;', '_appliedExtraDiscount = cart.ExtraDiscountPaisa;',
+                   'Money.ToPaisa(extraEntry) != _appliedExtraDiscount', 'MessageBox.Show(owner,']:
+        if needle not in vm: fail("Counter phase 3: missing absolute apply/restore/confirmation wiring " + needle)
+    if '_appliedExtraDiscount +=' in vm: fail("Counter phase 3: Apply must replace, never accumulate")
+    for needle in ['Before Extra Discount', 'Pair("Extra Discount",', 'sale.ExtraDiscountPaisa > 0']:
+        if needle not in receipt: fail("Counter phase 3: receipt must expose separate final allowance " + needle)
+    for needle in ['sale.TotalPaisa - sale.NormalRefundedPaisa - sale.ProvisionalRefundedPaisa',
+                   'for (var index = lines.Count - 1;', 'Extra Discount and earlier refunds limit this bill',
+                   'sale.PaidPaisa - sale.CashRefundedPaisa']:
+        if needle not in returns: fail("Counter phase 3: missing approved policy-B refund/collection guard " + needle)
+    if 'SUM(si.line_total_paisa), 0) - s.extra_discount_paisa' not in book:
+        fail("Counter phase 3: BookCheck must reconcile unchanged items minus extra")
+    if 'Bill Extra Discount (not assigned to products)' not in report:
+        fail("Counter phase 3: category report must show separate unallocated allowance")
+    for needle in ['ReturnPolicyBFirst560Then540AndNoThirdRefund', 'SaleItemRowsAreNotReducedByExtra',
+                   'ExtraCannotTakeFinalBillBelowActualCostEvenForOwner', 'RevokedPermissionBetweenQuoteAndPostIsRechecked',
+                   'TooLittleCashIsNotAutomaticallyForgiven', 'ReportsProfitAndCategoriesReconcileWithoutProductAllocation']:
+        if needle not in tests: fail("Counter phase 3: missing named runtime regression " + needle)
+    REPORT.append("Counter phase 3: separate absolute sale allowance after points/rounding, per-person owner-set cap, immutable product amounts, receipt/report/book reconciliation and policy-B refund guards (Windows tests pending)")
+
+
 def check_counter_checkout() -> None:
     """Desktop has no test reference: pin the bounded layout, shortcut and post-commit modal."""
     import xml.etree.ElementTree as ET
@@ -6341,6 +6392,7 @@ def main() -> int:
     check_counter_search_trial()
     check_counter_keyboard_phase_one()
     check_counter_pricing_phase_two()
+    check_counter_extra_discount_phase_three()
     check_checklist()
     check_audit_recovery()
     check_report_chart()

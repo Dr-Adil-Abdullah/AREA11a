@@ -287,6 +287,11 @@ WHERE id = @id
                 }
 
                 var warnings = ReconciliationWarnings(row.RefundPaisa, plan);
+                var extra = Convert.ToInt64(_db.Scalar(connection,
+                    "SELECT extra_discount_paisa FROM sales WHERE id = @id;", new { id = sale.Id }) ?? 0L);
+                if (extra > 0)
+                    warnings.Add("This bill had separate Extra Discount " + Money.Format(extra) +
+                        ". Item values are before it. This links an already-paid no-bill refund, never changes or pays it again; later bill returns are capped by the remaining final bill value.");
                 _audit.Record(connection, user, "Returns", oldLink ? "provisional_reconcile" : "provisional_link",
                     "provisional_returns", row.Code,
                     oldValue: oldLink ? "linked without sale-line allocations" : "pending",

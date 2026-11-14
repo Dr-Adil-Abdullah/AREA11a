@@ -120,17 +120,17 @@ public sealed class BookCheckService
 
         var findings = ToFindings(_db.Query<CheckRow>(connection, @"
 SELECT s.code AS Code, s.total_paisa AS ExpectedPaisa,
-       IFNULL(SUM(si.line_total_paisa), 0) AS FoundPaisa
+       IFNULL(SUM(si.line_total_paisa), 0) - s.extra_discount_paisa AS FoundPaisa
 FROM sales s
 LEFT JOIN sale_items si ON si.sale_id = s.id
 WHERE s.status IN ('paid','partial','credit')
 GROUP BY s.id, s.code, s.total_paisa
-HAVING IFNULL(SUM(si.line_total_paisa), 0) <> s.total_paisa
+HAVING IFNULL(SUM(si.line_total_paisa), 0) - s.extra_discount_paisa <> s.total_paisa
 ORDER BY s.id
 LIMIT 201;"));
 
         return Rule("A bill's lines add up to the bill",
-            "Every bill is the sum of its lines; the receipt, the report and the drawer all read this total.",
+            "Every bill is the sum of its unchanged lines less sale-level Extra Discount; receipt, report and drawer read this final total.",
             checkedRows, findings);
     }
 
@@ -144,19 +144,19 @@ LIMIT 201;"));
         // was reduced by them before the lines were spread. So they belong on the left of the sum.
         var findings = ToFindings(_db.Query<CheckRow>(connection, @"
 SELECT s.code AS Code, s.total_paisa AS ExpectedPaisa,
-       (s.subtotal_paisa - s.discount_paisa + s.tax_paisa + s.round_off_paisa
+       (s.subtotal_paisa - s.discount_paisa + s.tax_paisa + s.round_off_paisa - s.extra_discount_paisa
         + IFNULL((SELECT SUM(p.amount_paisa) FROM payments p
                   WHERE p.sale_id = s.id AND p.method = 'loyalty'), 0)) AS FoundPaisa
 FROM sales s
 WHERE s.status IN ('paid','partial','credit')
-  AND s.total_paisa <> (s.subtotal_paisa - s.discount_paisa + s.tax_paisa + s.round_off_paisa
+  AND s.total_paisa <> (s.subtotal_paisa - s.discount_paisa + s.tax_paisa + s.round_off_paisa - s.extra_discount_paisa
         + IFNULL((SELECT SUM(p.amount_paisa) FROM payments p
                   WHERE p.sale_id = s.id AND p.method = 'loyalty'), 0))
 ORDER BY s.id
 LIMIT 201;"));
 
         return Rule("A bill's header adds up",
-            "Subtotal minus discount plus tax plus round-off (and less the points used) is the printed total.",
+            "Subtotal minus discount plus tax plus round-off, less points and separate Extra Discount, is the printed total.",
             checkedRows, findings);
     }
 
@@ -216,7 +216,9 @@ FROM sales s
 WHERE s.status IN ('paid','partial','credit')
   AND (s.total_paisa < 0 OR s.paid_paisa < 0 OR s.due_paisa < 0
        OR s.subtotal_paisa < 0 OR s.discount_paisa < 0
-       OR s.discount_paisa > s.subtotal_paisa)
+       OR s.discount_paisa > s.subtotal_paisa
+       OR s.extra_discount_paisa < 0
+       OR (s.pre_extra_total_paisa IS NOT NULL AND s.pre_extra_total_paisa - s.extra_discount_paisa <> s.total_paisa))
 ORDER BY s.id
 LIMIT 201;"));
 

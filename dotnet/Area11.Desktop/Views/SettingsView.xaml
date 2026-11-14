@@ -573,6 +573,10 @@
                                             <CheckBox Content="May discount selling total" IsChecked="{Binding PricingRetail}" Margin="0,8,0,0" />
                                             <TextBox Text="{Binding PricingRetailLimit, UpdateSourceTrigger=PropertyChanged}" ToolTip="Maximum selling-total discount percent" />
                                             <CheckBox Content="May override bill basis for one bill" IsChecked="{Binding PricingOverride}" Margin="0,8,0,0" />
+                                            <CheckBox Content="May give separate Extra Discount" IsChecked="{Binding PricingExtra}" Margin="0,8,0,0" />
+                                            <TextBlock Text="Extra Discount limit (Rs per whole bill, not per click)" Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+                                            <TextBox Text="{Binding PricingExtraLimit, UpdateSourceTrigger=PropertyChanged}" />
+                                            <TextBlock Text="No automatic allowance, including owner. Actual purchase-cost safeguard always applies." Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
                                             <Button Content="Save this person's pricing limits" Command="{Binding SavePricingCommand}"
                                                     Style="{StaticResource PrimaryButton}" Margin="0,10,0,0" />
                                         </StackPanel>

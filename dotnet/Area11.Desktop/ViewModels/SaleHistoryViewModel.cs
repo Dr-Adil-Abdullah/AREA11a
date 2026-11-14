@@ -261,6 +261,9 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
         private set => SetProperty(ref _previewText, value);
     }
 
+    private string _preExtraTotalText = "-", _extraDiscountText = "-";
+    public string PreExtraTotalText { get => _preExtraTotalText; private set => SetProperty(ref _preExtraTotalText, value); }
+    public string ExtraDiscountText { get => _extraDiscountText; private set => SetProperty(ref _extraDiscountText, value); }
     public string SubtotalLabel
     {
         get => _subtotalLabel;
@@ -488,6 +491,8 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
         OnPropertyChanged(nameof(CanPrintReturn));
 
         SelectedTitle = detail.TitleLabel;
+        PreExtraTotalText = detail.Sale.PreExtraTotalText;
+        ExtraDiscountText = detail.Sale.ExtraDiscountText;
         SubtotalLabel = detail.SubtotalLabel;
         DiscountLabel = detail.DiscountLabel;
         TaxLabel = detail.TaxLabel;
@@ -739,6 +744,8 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
         Returns.Clear();
         PreviewText = string.Empty;
         SelectedTitle = "Open a bill to see its lines.";
+        PreExtraTotalText = "-";
+        ExtraDiscountText = "-";
         SubtotalLabel = "-";
         DiscountLabel = "-";
         TaxLabel = "-";

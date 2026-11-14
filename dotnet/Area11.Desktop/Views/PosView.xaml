@@ -125,6 +125,20 @@
                                 </StackPanel>
                             </StackPanel>
                         </Border>
+                        <Border Background="{StaticResource BrandSoftBrush}" CornerRadius="6" Padding="8" Margin="0,8,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Extra Discount (Rs for the whole bill)" Style="{StaticResource FieldLabel}" />
+                                <TextBlock Text="{Binding PreExtraTotalText, StringFormat='Before Extra Discount: {0}'}" />
+                                <TextBox Text="{Binding ExtraDiscountEntry, UpdateSourceTrigger=PropertyChanged}" ToolTip="Type the whole rupee allowance, then Apply. Typing alone does not apply it." />
+                                <WrapPanel>
+                                    <Button Content="Apply Extra Discount" Command="{Binding ApplyExtraDiscountCommand}" Style="{StaticResource CounterActionButton}" />
+                                    <Button Content="Remove Extra Discount" Command="{Binding RemoveExtraDiscountCommand}" Style="{StaticResource CounterActionButton}" />
+                                </WrapPanel>
+                                <TextBlock Text="{Binding ExtraDiscountText, StringFormat='Applied Extra Discount: {0}'}" />
+                                <TextBlock Text="{Binding TotalText, StringFormat='Final payable: {0}'}" FontWeight="Bold" />
+                                <TextBlock Text="Personal permission/cap and purchase-cost safeguard apply. Never changes item prices. Less cash received is not automatically forgiven." Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
                         <TextBlock Text="Doctor (prescription, optional)" Style="{StaticResource FieldLabel}" Margin="0,8,0,0" />
                         <ComboBox ItemsSource="{Binding Doctors}" DisplayMemberPath="Name"
                                   SelectedItem="{Binding SelectedDoctor, Mode=TwoWay}"
@@ -350,6 +364,7 @@
                     <StackPanel Grid.Column="4" Margin="8,0,0,0">
                         <TextBlock Text="Discount" Style="{StaticResource MetricLabel}" />
                         <TextBlock Text="{Binding DiscountText}" FontSize="14" />
+                        <TextBlock Text="{Binding ExtraDiscountText, StringFormat='Extra: −{0}'}" FontSize="11" ToolTip="Separate sale-level Extra Discount. Use More / split to Apply or Remove." />
                     </StackPanel>
                 </Grid>
                 <Grid x:Name="CheckoutMoney" Margin="0,5,0,0">
@@ -378,7 +393,7 @@
                     <Button Content="Open drafts" Command="{Binding DraftsCommand}" Style="{StaticResource CounterActionButton}" />
                     <Button Content="Parked carts" Command="{Binding ToggleParkedCartsCommand}" Style="{StaticResource CounterActionButton}" />
                     <Button Content="Reprint" Command="{Binding PrintLastCommand}" Style="{StaticResource CounterActionButton}" ToolTip="Print last bill again; never a new sale." />
-                    <Button Content="More / split" Command="{Binding ToggleCheckoutDetailsCommand}" Style="{StaticResource CounterActionButton}" ToolTip="Doctor, points, split payment and extra answers. Closing this panel does not reset answers." />
+                    <Button Content="More / split" Command="{Binding ToggleCheckoutDetailsCommand}" Style="{StaticResource CounterActionButton}" ToolTip="Extra Discount, doctor, points, split payment and extra answers. Closing this panel does not reset answers." />
                     <Button Content="New customer" Command="{Binding BeginAddCustomerCommand}" Style="{StaticResource CounterActionButton}" Visibility="{Binding CanAddCustomer, Converter={StaticResource BoolToVis}}" />
                     <Button Content="Refresh" Command="{Binding RefreshCommand}" Style="{StaticResource CounterActionButton}" />
                     <CheckBox Content="Print automatically" IsChecked="{Binding AutoPrint, Mode=TwoWay}" Margin="6,4,0,0" />

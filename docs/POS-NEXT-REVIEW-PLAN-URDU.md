@@ -1,6 +1,6 @@
 # POS، رعایت اور مکمل جائزہ — مالک کی جانچ کے لیے یکجا منصوبہ
 
-**حیثیت:** مالک کے اگلے **next** سے **فیز2** منظور۔ **v0.77.0 Sandpiper میں فیز1/2 code مکمل؛ Windows/PT-21، 1270-case run اور عملی تصدیق باقی۔** فیز3 Extra Discount اور فیز4 جامع review باقی؛ اگلا next فیز3 ہے۔ یہ security certification یا مکمل audit PASS نہیں۔ متعلقہ test/واپسی نامہ: [فیز2 آزمائیں](POS-PHASE2-TEST-URDU.md)۔
+**حیثیت:** تازہ next سے فیز3 منظور، پھر مالک کے **b** سے جزوی return طریقہ B منظور: پہلے560 پھر باقی540، نہ کہ550/550۔ **v0.78.0 Avocet میں فیز1/2/3 کا source موجود؛ Windows build،1300-case run اور PT-20/21/22 عملی تصدیق باقی۔** فیز4 جامع review ابھی نہیں ہوا؛ اگلا next فیز4۔ یہ security certification یا runtime PASS نہیں۔ [فیز3 استعمال/آزمائش/بندش](POS-PHASE3-TEST-URDU.md)؛ [فیز2 نامہ](POS-PHASE2-TEST-URDU.md)۔
 
 ## مختصر نقشہ — پہلے یہ پڑھیں
 
@@ -11,7 +11,7 @@
 | 3 | بل بننے کے بعد الگ Extra Discount، رسید، وصولی، واپسی/رپورٹس | 1120 − 20 = 1100، صفر بقایا، cash drawer، cap، reprint/refund |
 | 4 | 15 نکات کے تحت صفحہ وار code/guide review، bugs اور مکمل/باقی رپورٹ | اپ ڈیٹ اردو کتاب، page coverage، مسئلوں کی حیثیت، Windows/physical checklist |
 
-مالک کا **next** فیز1 کی منظوری ہے؛ فیز1 سابق v0.76.0 میں اور فیز2 موجودہ v0.77.0 میں کیا گیا۔ اس کے بعد ہر **next** پر اگلا فیز۔ کوئی فیز tests میں رکا ہو تو اسے مکمل کہہ کر آگے نہیں بڑھنا۔ ہر فیز کے متعلقہ tests، guide اور handoff اسی فیز کے ساتھ؛ آخری فیز تک documentation ملتوی نہیں۔
+مالک کا **next** فیز1 کی منظوری ہے؛ فیز1 v0.76.0، فیز2 v0.77.0 اور فیز3 کا code v0.78.0 میں کیا گیا۔ اس کے بعد ہر **next** پر اگلا فیز۔ کوئی فیز tests میں رکا ہو تو اسے مکمل کہہ کر آگے نہیں بڑھنا۔ ہر فیز کے متعلقہ tests، guide اور handoff اسی فیز کے ساتھ؛ آخری فیز تک documentation ملتوی نہیں۔
 
 ## فیز 1 — POS کی جگہ اور کی بورڈ
 
@@ -90,7 +90,7 @@ Cost200/sale300/10%: profit290، total270؛ mixed normal/manual/line bases، rol
 - Receipt/reprint میں اصل calculated total، Extra Discount اور final payable الگ؛ صرف1120 printable payable اور اندر1100 رکھنا نہیں۔ tax نہیں۔
 - Discount، cash received، change، due/credit، shift drawer، reports، profit اور audit سب reconcile۔ کم وصولی خود سے Extra Discount نہ بنے؛ معافی نہ ہو تو due۔
 - Sale-level original/extra/final values، actor/time محفوظ؛ Park/Draft اور validation میں صحیح بحالی، sale posting transaction میں atomic record۔
-- **Product lines rewrite یا Extra Discount کو item price/line discount بنا کر محفوظ نہیں کرنا۔** Returns میں bill-level رعایت کا settlement لازمی دیکھنا تاکہ original paid amount سے زیادہ refund نہ ہو؛ partial-return کی نئی business policy درکار ہو تو مثال/MCQ سے مالک کو پہلے سمجھانا۔ اس uncertainty کو خاموش فرض یا completion نہ بنانا۔
+- **Product lines rewrite یا Extra Discount کو item price/line discount بنا کر محفوظ نہیں کرنا۔** Returns میں bill-level رعایت کا settlement لازمی دیکھنا تاکہ original paid amount سے زیادہ refund نہ ہو؛ مالک نے مثال کے بعد **B** منتخب کیا: اصل item amount پہلے، پھر final bill کی باقی قابلِ واپسی حد؛560 پھر540، دونوں اکٹھے1100۔ cap آخری درج return line سے کم، وجہ واضح؛ أصل فروخت کی لائنیں نہ بدلیں۔
 
 ### قبولیت/جانچ
 
@@ -131,4 +131,4 @@ Allowed1120→1100، denied user، cap exceeded، repeated apply/edit/reset، be
 
 ## ابھی کی آخری حیثیت
 
-بنیادی UI/discount/permission/Extra Discount فیصلے واضح؛ مزید وہی سوال دوبارہ درکار نہیں۔ جزوی return settlement جیسی implementation-dependent policy اگر واقعی غیر متعین ملے تو متعلقہ مثال کے ساتھ پوچھیں، خود فیصلہ نہ کریں۔ موجودہ runtime code میں ان نئے مالی فیصلوں کے نافذ ہونے کا دعویٰ نہیں۔ فیز1/2 code مکمل؛ Windows/runtime proof باقی۔ اگلے next پر صرف فیز3 Extra Discount؛ فیز4 review ابھی باقی۔
+بنیادی UI/discount/permission/Extra Discount فیصلے واضح؛ مزید وہی سوال دوبارہ درکار نہیں۔ جزوی return کا سوال پوچھا اور B جواب ملا؛ یہی نافذ ہے، دوبارہ یہی سوال نہیں۔ نئی حقیقی ambiguity پر مثال کے ساتھ پوچھیں۔ v0.78.0 میں فیز1/2/3 source موجود؛ Windows/runtime proof باقی۔ اگلے next پر فیز4 review؛ اسے پہلے سے مکمل نہ سمجھیں۔

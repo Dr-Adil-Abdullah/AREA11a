@@ -36,6 +36,7 @@ public sealed class ReportsViewModel : ObservableObject, IEmptyPage
     private string _itemsText = "0";
     private string _salesText = "Rs 0";
     private string _discountText = "Rs 0";
+    private string _extraDiscountText = "Rs 0";
     private string _averageBillText = "Rs 0";
     private string _cashText = "Rs 0";
     private string _creditText = "Rs 0";
@@ -143,6 +144,7 @@ public sealed class ReportsViewModel : ObservableObject, IEmptyPage
         private set => SetProperty(ref _salesText, value);
     }
 
+    public string ExtraDiscountText { get => _extraDiscountText; private set => SetProperty(ref _extraDiscountText, value); }
     public string DiscountText
     {
         get => _discountText;
@@ -318,6 +320,7 @@ public sealed class ReportsViewModel : ObservableObject, IEmptyPage
         ItemsText = value.Totals.ItemsText;
         SalesText = value.Totals.SalesText;
         DiscountText = value.Totals.DiscountText;
+        ExtraDiscountText = value.Totals.ExtraDiscountText;
         AverageBillText = value.Totals.AverageBillText;
         CashText = value.Totals.CashText;
         CreditText = value.Totals.CreditText;

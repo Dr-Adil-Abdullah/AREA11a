@@ -11,6 +11,8 @@ public sealed class PricingAllowance
     public bool RetailDiscount { get; set; }
     public decimal RetailPercent { get; set; }
     public bool OverrideBasis { get; set; }
+    public bool ExtraDiscount { get; set; }
+    public long ExtraLimitPaisa { get; set; }
 }
 
 public sealed class SaleLinePricing

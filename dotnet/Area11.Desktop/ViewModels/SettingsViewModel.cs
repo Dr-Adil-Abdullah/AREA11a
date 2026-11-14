@@ -92,6 +92,8 @@ public sealed class SettingsViewModel : ObservableObject
     private string _clockText = string.Empty;
     private User? _selectedUser;
     private string _billDiscountBasis = "profit";
+    private bool _pricingExtra;
+    private string _pricingExtraLimit = "0";
     private bool _pricingEditRate, _pricingProfit, _pricingRetail, _pricingOverride;
     private string _pricingManualLimit = "0", _pricingProfitLimit = "0", _pricingRetailLimit = "0";
 
@@ -268,6 +270,8 @@ public sealed class SettingsViewModel : ObservableObject
     public bool IsOwner => _user.IsOwner;
     public IReadOnlyList<string> DiscountBases { get; } = new[] { "profit", "retail" };
     public string BillDiscountBasis { get => _billDiscountBasis; set => SetProperty(ref _billDiscountBasis, value); }
+    public bool PricingExtra { get => _pricingExtra; set => SetProperty(ref _pricingExtra, value); }
+    public string PricingExtraLimit { get => _pricingExtraLimit; set => SetProperty(ref _pricingExtraLimit, value); }
     public bool PricingEditRate { get => _pricingEditRate; set => SetProperty(ref _pricingEditRate, value); }
     public bool PricingProfit { get => _pricingProfit; set => SetProperty(ref _pricingProfit, value); }
     public bool PricingRetail { get => _pricingRetail; set => SetProperty(ref _pricingRetail, value); }
@@ -289,6 +293,8 @@ public sealed class SettingsViewModel : ObservableObject
             PricingRetail = allowance.RetailDiscount;
             PricingRetailLimit = allowance.RetailPercent.ToString("0.##", CultureInfo.InvariantCulture);
             PricingOverride = allowance.OverrideBasis;
+            PricingExtra = allowance.ExtraDiscount;
+            PricingExtraLimit = Money.Edit(allowance.ExtraLimitPaisa);
         }
         catch (ValidationException exception) { SetStatus(exception.Message, true); }
     }
@@ -300,11 +306,15 @@ public sealed class SettingsViewModel : ObservableObject
             || !decimal.TryParse(PricingProfitLimit, NumberStyles.Number, CultureInfo.InvariantCulture, out var profit)
             || !decimal.TryParse(PricingRetailLimit, NumberStyles.Number, CultureInfo.InvariantCulture, out var retail))
         { SetStatus("Enter numeric percentage limits between 0 and 100.", true); return; }
+        if (!Money.TryParse(PricingExtraLimit, out var extra) || extra < 0 || extra > long.MaxValue / 100m
+            || decimal.Round(extra, 2) != extra)
+        { SetStatus("Extra Discount limit must be a positive rupee amount (up to two decimals), or zero.", true); return; }
         var result = _services.Pricing.Save(_user, new PricingAllowance
         {
             UserId = _selectedUser.Id, EditRate = PricingEditRate, ManualReductionPercent = manual,
             ProfitDiscount = PricingProfit, ProfitPercent = profit, RetailDiscount = PricingRetail,
-            RetailPercent = retail, OverrideBasis = PricingOverride
+            RetailPercent = retail, OverrideBasis = PricingOverride,
+            ExtraDiscount = PricingExtra, ExtraLimitPaisa = Money.ToPaisa(extra)
         });
         SetStatus(result.Ok ? "Pricing limits saved for " + _selectedUser.Name + "." : result.Error ?? "Could not save pricing limits.", !result.Ok);
     }

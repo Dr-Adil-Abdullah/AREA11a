@@ -136,6 +136,7 @@ ORDER BY s.date, s.id, i.id;", new { id = productId }));
 
             document.Lines.Add(ReceiptLine.Sep(width));
             Add("SOLD (" + history.Sales.Count + ")", ReceiptAlign.Left, bold: true);
+            Add("Amounts before bill Extra.");
             foreach (var row in history.Sales)
             {
                 Add(row.DateLabel + " " + row.BillCode + " " + row.BuyerLabel);
@@ -176,7 +177,7 @@ ORDER BY s.date, s.id, i.id;", new { id = productId }));
         {
             var history = loaded.Value;
             var output = new StringBuilder();
-            output.AppendLine("type,date,document,partner,qty,rate_paisa,total_paisa,profit_paisa");
+            output.AppendLine("type,date,document,partner,qty,rate_paisa,total_paisa,profit_paisa,sale_amount_basis");
 
             static string Cell(string value) =>
                 "\"" + (value ?? string.Empty).Replace("\"", "\"\"") + "\"";
@@ -189,7 +190,7 @@ ORDER BY s.date, s.id, i.id;", new { id = productId }));
                     .Append(',').Append(Cell(row.SupplierName)).Append(',').Append(Qty(row.QtyBase))
                     .Append(',').Append(row.RatePaisa.ToString(CultureInfo.InvariantCulture))
                     .Append(',').Append(row.LineTotalPaisa.ToString(CultureInfo.InvariantCulture))
-                    .AppendLine(",\"\"");
+                    .AppendLine(",\"\",not_applicable");
             }
 
             foreach (var row in history.Sales)
@@ -198,9 +199,9 @@ ORDER BY s.date, s.id, i.id;", new { id = productId }));
                     .Append(',').Append(Cell(row.BuyerLabel)).Append(',').Append(Qty(row.QtyBase))
                     .Append(',').Append(row.RatePaisa.ToString(CultureInfo.InvariantCulture))
                     .Append(',').Append(row.LineTotalPaisa.ToString(CultureInfo.InvariantCulture))
-                    .Append(',').AppendLine(history.CanSeeProfit
+                    .Append(',').Append(history.CanSeeProfit
                         ? row.ProfitPaisa.ToString(CultureInfo.InvariantCulture)
-                        : "\"\"");
+                        : "\"\"").AppendLine(",before_bill_extra_discount");
             }
 
             return ServiceResult<string>.Success(output.ToString());

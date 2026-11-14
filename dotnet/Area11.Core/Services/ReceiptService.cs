@@ -49,7 +49,7 @@ public sealed class ReceiptService
 
             var sale = _db.QuerySingle<SaleRow>(connection, @"
 SELECT id, code, date, created_at, customer_id, user_id, subtotal_paisa, discount_paisa, tax_paisa,
-       round_off_paisa, total_paisa, paid_paisa, due_paisa, change_paisa, payment_method, status
+       round_off_paisa, pre_extra_total_paisa, extra_discount_paisa, total_paisa, paid_paisa, due_paisa, change_paisa, payment_method, status
 FROM sales WHERE id = @id;", new { id = saleId });
 
             if (sale is null)
@@ -189,6 +189,12 @@ WHERE sale_id = @id AND method <> 'credit' ORDER BY id;", new { id = saleId });
             Pair("Round off", Money.Fixed(sale.RoundOffPaisa));
         }
 
+        if (sale.ExtraDiscountPaisa > 0)
+        {
+            Pair("Before Extra Discount", Money.Fixed(sale.PreExtraTotalPaisa ?? (sale.TotalPaisa + sale.ExtraDiscountPaisa)));
+            // Mandatory even when the optional ordinary-discount receipt line is hidden.
+            Pair("Extra Discount", "-" + Money.Fixed(sale.ExtraDiscountPaisa));
+        }
         Pair("TOTAL", Money.Fixed(sale.TotalPaisa), bold: true);
 
         if (payments.Count > 0)
@@ -336,6 +342,8 @@ WHERE sale_id = @id AND method <> 'credit' ORDER BY id;", new { id = saleId });
 
         public long RoundOffPaisa { get; set; }
 
+        public long? PreExtraTotalPaisa { get; set; }
+        public long ExtraDiscountPaisa { get; set; }
         public long TotalPaisa { get; set; }
 
         public long PaidPaisa { get; set; }

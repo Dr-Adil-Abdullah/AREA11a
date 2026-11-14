@@ -43,6 +43,8 @@ public sealed class SaleInput
     public List<SaleLineInput> Lines { get; set; } = new();
 
     public decimal DiscountPercent { get; set; }
+    /// <summary>Absolute allowance in integer paisa for the WHOLE bill, after all ordinary computations.</summary>
+    public long ExtraDiscountPaisa { get; set; }
 
     /// <summary>Null uses the owner's current Settings default; explicit value is this bill only.</summary>
     public string? DiscountBasis { get; set; }
@@ -98,6 +100,8 @@ public sealed class SaleQuote
 
     public long RoundPaisa { get; init; }
 
+    public long PreExtraTotalPaisa { get; init; }
+    public long ExtraDiscountPaisa { get; init; }
     public long TotalPaisa { get; init; }
 
     public long ChangePaisa { get; init; }
@@ -134,6 +138,8 @@ public sealed class SaleResult
 
     public long RoundPaisa { get; init; }
 
+    public long PreExtraTotalPaisa { get; init; }
+    public long ExtraDiscountPaisa { get; init; }
     public long TotalPaisa { get; init; }
 
     public long PaidPaisa { get; init; }
@@ -246,6 +252,8 @@ public sealed class HeldCart
     public int? CustomerId { get; set; }
 
     public decimal DiscountPercent { get; set; }
+    /// <summary>Absolute allowance in integer paisa for the WHOLE bill, after all ordinary computations.</summary>
+    public long ExtraDiscountPaisa { get; set; }
     public string? DiscountBasis { get; set; }
 
     public List<HeldCartLine> Lines { get; set; } = new();

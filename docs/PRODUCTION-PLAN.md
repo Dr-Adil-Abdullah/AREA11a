@@ -1,5 +1,7 @@
 # Production کا منصوبہ — debug سے دکان تک (Phase 5 + صفائی + کیوسک + پورشن 1-3 + نیا بیچ 1/4 + 3/4 مکمل، v0.71.0)
 
+> **تازہ v0.78.0 Avocet:** فیز3 الگ Extra Discount اور منظورشدہ B return source شامل؛1300 written tests/Windows/PT-22 باقی۔ اگلا next فیز4 جامع review؛ ذیل کی پرانی phase2 status تاریخی۔ [فیز3 آسان نامہ](POS-PHASE3-TEST-URDU.md)۔ Installer کی اجازت نہیں۔
+
 > **تازہ — v0.77.0 Sandpiper:** فیز2 code مکمل (per-person owner-only pricing + guarded item editor + profit/retail حساب)، Windows/PT-21 باقی۔ اگلا next = فیز3 کا الگ bill-level Extra Discount؛ فیز4 جامع page/15-point review اور کتاب کی آخری matching۔ نئی UI/رقم والی source جانچ کو اصل دکان کی منظوری نہ سمجھیں۔ نئے non-owner pricing rights خودکار نہیں؛ پہلے مالک panel میں save کرے۔ [منصوبہ](POS-NEXT-REVIEW-PLAN-URDU.md)۔ Installer کی اجازت نہیں۔
 
 

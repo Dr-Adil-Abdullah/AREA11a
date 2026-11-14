@@ -34,7 +34,7 @@ public sealed class PricingAllowanceService
         if (person is not { Active: true }) throw new ValidationException("This staff account is not active.");
         var saved = _db.QuerySingle<PricingAllowance>(connection, @"
 SELECT user_id, edit_rate, manual_reduction_percent, profit_discount, profit_percent,
-       retail_discount, retail_percent, override_basis
+       retail_discount, retail_percent, override_basis, extra_discount, extra_limit_paisa
 FROM user_pricing_allowances WHERE user_id = @id;", new { id = person.Id });
         return saved ?? new PricingAllowance
         {
@@ -65,22 +65,26 @@ FROM user_pricing_allowances WHERE user_id = @id;", new { id = person.Id });
                 if (value.ManualReductionPercent is < 0 or > 100 || value.ProfitPercent is < 0 or > 100
                     || value.RetailPercent is < 0 or > 100)
                     throw new ValidationException("Every pricing limit must be between 0 and 100 percent.");
+                if (value.ExtraLimitPaisa < 0)
+                    throw new ValidationException("Extra Discount limit cannot be negative.");
                 var before = Read(connection, target);
                 _db.Execute(connection, @"
 INSERT INTO user_pricing_allowances(user_id, edit_rate, manual_reduction_percent,
- profit_discount, profit_percent, retail_discount, retail_percent, override_basis)
-VALUES(@userId, @editRate, @manual, @profitDiscount, @profit, @retailDiscount, @retail, @overrideBasis)
+ profit_discount, profit_percent, retail_discount, retail_percent, override_basis, extra_discount, extra_limit_paisa)
+VALUES(@userId, @editRate, @manual, @profitDiscount, @profit, @retailDiscount, @retail, @overrideBasis, @extra, @extraLimit)
 ON CONFLICT(user_id) DO UPDATE SET edit_rate=excluded.edit_rate,
  manual_reduction_percent=excluded.manual_reduction_percent,
  profit_discount=excluded.profit_discount, profit_percent=excluded.profit_percent,
  retail_discount=excluded.retail_discount, retail_percent=excluded.retail_percent,
- override_basis=excluded.override_basis;", new
+ override_basis=excluded.override_basis, extra_discount=excluded.extra_discount,
+ extra_limit_paisa=excluded.extra_limit_paisa;", new
                 {
                     userId = value.UserId, editRate = value.EditRate ? 1 : 0,
                     manual = (double)value.ManualReductionPercent,
                     profitDiscount = value.ProfitDiscount ? 1 : 0, profit = (double)value.ProfitPercent,
                     retailDiscount = value.RetailDiscount ? 1 : 0, retail = (double)value.RetailPercent,
-                    overrideBasis = value.OverrideBasis ? 1 : 0
+                    overrideBasis = value.OverrideBasis ? 1 : 0,
+                    extra = value.ExtraDiscount ? 1 : 0, extraLimit = value.ExtraLimitPaisa
                 });
                 _audit.Record(connection, actor, "Users", "pricing_permissions", "user_pricing_allowances",
                     value.UserId.ToString(), oldValue: JsonSerializer.Serialize(before), newValue: JsonSerializer.Serialize(value));

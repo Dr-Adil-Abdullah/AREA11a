@@ -143,6 +143,8 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Before Extra Discount" Style="{StaticResource FieldHint}" />
+                                    <TextBlock Text="Extra Discount" Style="{StaticResource FieldHint}" />
                                     <TextBlock Text="Subtotal" Style="{StaticResource FieldHint}" />
                                     <TextBlock Text="Discount" Style="{StaticResource FieldHint}"
                                                Visibility="{Binding HasDiscount, Converter={StaticResource BoolToVis}}" />
@@ -154,6 +156,8 @@
                                     <TextBlock Text="Left on the khata" Style="{StaticResource FieldHint}" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                                    <TextBlock Text="{Binding PreExtraTotalText}" HorizontalAlignment="Right" />
+                                    <TextBlock Text="{Binding ExtraDiscountText}" HorizontalAlignment="Right" />
                                     <TextBlock Text="{Binding SubtotalLabel}" HorizontalAlignment="Right" />
                                     <TextBlock Text="{Binding DiscountLabel}" HorizontalAlignment="Right"
                                                Visibility="{Binding HasDiscount, Converter={StaticResource BoolToVis}}" />

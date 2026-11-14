@@ -1,8 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.77.0 Sandpiper۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.78.0 Avocet۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
 
-**موجودہ POS فیز2:** مستقل search pane منتخب ہے۔ v0.77.0 میں owner-only ہر شخص کی الگ قیمت/رعایت حدیں، Cart کا محفوظ item editor اور profit/retail حساب code میں شامل ہیں۔ **موجودہ دکان کے آئندہ bills کا ابتدائی default اب profit ہے**؛ مالک Settings سے retail واپس کرسکتا ہے۔ پرانے محفوظ bills unchanged۔ الگ ایڈٹ شدہ لائن پر bill% دوبارہ نہیں؛ خرید سے نیچے کسی کو اجازت نہیں۔ **Extra Discount فیز3 میں ابھی باقی**، جامع page/15-point audit فیز4 میں۔ Windows tests/build/عملی ثبوت باقی۔ [فیز2 کی آسان مشق اور واپسی](POS-PHASE2-TEST-URDU.md) اور [مکمل منصوبہ](POS-NEXT-REVIEW-PLAN-URDU.md) الگ ہیں۔
+**موجودہ POS فیز3:** مستقل search pane منتخب ہے۔ v0.78.0 میں owner-only ہر شخص کی الگ قیمت/رعایت حدیں، Cart کا محفوظ item editor اور profit/retail حساب code میں شامل ہیں۔ **موجودہ دکان کے آئندہ bills کا ابتدائی default اب profit ہے**؛ مالک Settings سے retail واپس کرسکتا ہے۔ پرانے محفوظ bills unchanged۔ الگ ایڈٹ شدہ لائن پر bill% دوبارہ نہیں؛ خرید سے نیچے کسی کو اجازت نہیں۔ **الگ sale-level Extra Discount اب فیز3 کے code میں شامل؛ مالک کا return طریقہ B: پہلے560 پھر باقی540، اصل item rates نہیں بدلتے**، جامع page/15-point audit فیز4 میں۔ Windows tests/build/عملی ثبوت باقی۔ [فیز2 کی آسان مشق اور واپسی](POS-PHASE2-TEST-URDU.md) ، [فیز3 استعمال/آزمائش/بندش](POS-PHASE3-TEST-URDU.md) اور [مکمل منصوبہ](POS-NEXT-REVIEW-PLAN-URDU.md) الگ ہیں۔
 
 **پڑھنے کا طریقہ:** حصہ اوّل میں صرف صفحات/اختیارات کی مختصر فہرست ہے۔ حصہ دوم میں انہی کی الگ، قدم بہ قدم تفصیل ہے۔ پہلے پورا خلاصہ دیکھیں؛ پھر جس کام کی ضرورت ہو اسی نمبر کی تفصیل پڑھیں۔ HTML فائل براؤزر میں کھلتی ہے، انٹرنیٹ کے بغیر بھی؛ براؤزر کے Print سے کاغذ یا PDF بنا سکتے ہیں۔
 
@@ -192,16 +192,16 @@ Supplier statement پر پہلے سے ادا شدہ رقم دوبارہ Pay نہ
 2. Cart میں Item، Unit، Qty اور Rate Rs دیکھیں۔ Rate اسی لائن کی unit کا روپے والا ریٹ ہے۔ غلط چیز Remove؛ پورا غیر محفوظ cart ختم کرنا ہو تو Clear۔
 3. واک اِن فروخت کے لیے کھاتہ درکار نہ ہو تو customer ضروری نہیں؛ **credit کے لیے درست customer** منتخب کریں۔ New customer… سے نام/فون شامل کرنے پر cart اپنی جگہ رہتا ہے۔ نسخے کا Doctor اختیاری الگ انتخاب ہے۔
 4. Cart row پر double-click یا منتخب row پر Enter سے **Item price / discount** کھولیں۔ mode **normal** (bill discount)، **manual** (آخری منتخب-unit ریٹ)، یا **discount** (اس item کا فیصد، profit/retail اپنی پسند)۔ اجازت ہر شخص کی مالک مقرر کرتا ہے؛ صرف manager role کافی نہیں۔ manual یا الگ discount والی line پر bill% دوبارہ نہیں، خواہ ریٹ بڑھایا ہو۔ Apply پہلے Core quote/حد/cost چیک کرتا ہے؛ Cancel نافذ نہیں؛ Reset to normal دوبارہ bill discount میں۔ Cart کی Pricing column حالت بتاتی ہے؛ grid کا عام rate cell جان بوجھ کر read-only، اصل editor یہ owned window ہے۔
-5. **Bill Discount % کے اوپر profit/retail منتخب دکھتا ہے۔** profit میں actual FEFO batch cost اور فروخت کے فرق سے فیصد؛ retail میں پوری فروخت سے۔ مثال cost200/sale300/10%: profit290، retail270۔ normal lines ہی bill% میں؛ ہر لائن کے اپنے manual/profit/retail فیصلے الگ۔ نئی عام line موجودہ bill% لے گی۔ ہر شخص کے تین caps اور edit/override اجازتیں Settings → Staff میں مالک Save کرتا ہے۔ خرید سے نیچے final sale کسی role کو نہیں، زیادہ رعایت انکار (خاموش کم فیصد نہیں)۔ Loyalty کے points بعد میں اپنی caps/cost کے ساتھ؛ Rs10 rounding فعال ہو تو الگ round-off بھی دیکھیں۔ **Extra Discount ابھی نہیں**۔
+5. **Bill Discount % کے اوپر profit/retail منتخب دکھتا ہے۔** profit میں actual FEFO batch cost اور فروخت کے فرق سے فیصد؛ retail میں پوری فروخت سے۔ مثال cost200/sale300/10%: profit290، retail270۔ normal lines ہی bill% میں؛ ہر لائن کے اپنے manual/profit/retail فیصلے الگ۔ نئی عام line موجودہ bill% لے گی۔ ہر شخص کے تین caps اور edit/override اجازتیں Settings → Staff میں مالک Save کرتا ہے۔ خرید سے نیچے final sale کسی role کو نہیں، زیادہ رعایت انکار (خاموش کم فیصد نہیں)۔ Loyalty کے points بعد میں اپنی caps/cost کے ساتھ؛ Rs10 rounding فعال ہو تو الگ round-off بھی دیکھیں۔ **Extra Discount اس پورے حساب کے بعد الگ؛ نیچے قدم دیکھیں**۔
 6. Payment میں حقیقی طریقہ چنیں۔ Split میں دوسری method اور اس کا Amount، باقی cash؛ cash/credit حصے سکرین پر ملائیں۔ Cash received وہ نقدی ہے جو واقعی ہاتھ میں آئی؛ Change واپس کی جانے والی نقدی ہے، فروخت کا منافع نہیں۔
-7. Subtotal، Discount، TOTAL، Cash part، On credit اور Change دیکھیں۔ v0.77.0 فیز2 میں Customer، Payment، Discount %، Total، Cash received، Give back اور Complete sale مستقل نیچے ہیں۔ Cart مرکزی جگہ کا بڑا حصہ لیتا ہے؛ search pane اس کے ساتھ اپنی جگہ رکھتا ہے۔ Doctor/points/extra answers کے لیے More / split، جبکہ نئی customer entry کے لیے New customer دبائیں۔ Split چنیں تو اس کی detail خود کھلے گی۔ Complete sale یا اصل F4 شارٹ کٹ استعمال کریں؛ rate edit ہو تو F4 پہلے اس edit کو مکمل کرتا ہے۔ error آئے تو بل محفوظ سمجھ کر رقم/مال دوبارہ نہ چلائیں؛ پہلے error اور Bills میں حالت دیکھیں۔
+7. Subtotal، Discount، TOTAL، Cash part، On credit اور Change دیکھیں۔ v0.78.0 میں Customer، Payment، Discount %، Total، Cash received، Give back اور Complete sale مستقل نیچے ہیں۔ Cart مرکزی جگہ کا بڑا حصہ لیتا ہے؛ search pane اس کے ساتھ اپنی جگہ رکھتا ہے۔ Extra Discount/Doctor/points/extra answers کے لیے More / split، جبکہ نئی customer entry کے لیے New customer دبائیں۔ Split چنیں تو اس کی detail خود کھلے گی۔ Complete sale یا اصل F4 شارٹ کٹ استعمال کریں؛ rate edit ہو تو F4 پہلے اس edit کو مکمل کرتا ہے۔ error آئے تو بل محفوظ سمجھ کر رقم/مال دوبارہ نہ چلائیں؛ پہلے error اور Bills میں حالت دیکھیں۔
 8. retail بنیاد پر bill% 5 سے زیادہ ہو تو **save سے پہلے ہر bill پر** تصدیق۔ No پر محفوظ نہیں، Yes سے user cap یا cost پابندی نہیں ٹوٹتی۔ کامیابی پر invoice/status ملے گا۔ Settings → Sales rules میں success popup آن ہو تو الگ درمیان کی کھڑکی کھلے گی: ✓، invoice، بل، Cash received اور بہت بڑا GIVE THIS CASH BACK۔ مثال: بل 270، نقد 500، واپس 230 روپے۔ Done / Enter / × صرف کھڑکی بند کرتے ہیں؛ دوبارہ فروخت یا پرنٹ نہیں کرتے۔ اس کے بعد اگلا customer شروع کریں۔ Auto-print الگ اختیار ہے؛ پرنٹر کو بھیجنا کاغذ واقعی نکلنے کا ثبوت نہیں۔ Print last bill again صرف نقل نکالتا ہے۔ Cash received خالی ہو تو پرانے exact-cash قاعدے کے مطابق رقم فرض ہوتی ہے اور popup صاف لکھتا ہے exact amount assumed؛ online/card/credit کے لیے cash صفر ہوتا ہے۔
 
 **مثال:** 300 روپے کا cash bill، وصول 500 تو Change 200۔ credit کی رقم کو نقد وصولی میں گننے سے گلا غلط ہو گا۔
 
 ### فیز1 — ماؤس کے بغیر Counter کیسے چلائیں؟
 
-**یہ keyboard سہولت فیز1 میں آئی؛ فیز2 میں item editor اور نیا حساب شامل، Extra Discount ابھی فیز3 میں باقی ہے۔**
+**یہ keyboard سہولت فیز1 میں آئی؛ فیز2 میں item editor اور نیا حساب، فیز3 میں الگ Extra Discount اور منظورشدہ B واپسی شامل؛ Windows جانچ باقی ہے۔**
 
 1. گلا کھلا ہو اور Counter کھولیں؛ سرچ میں کرسر آنا چاہیے۔ نام لکھیں؛ خالی سرچ پر تمام دوائیں نہیں آئیں گی۔ صرف نام لکھ کر Enter سے اندازے والی دوا Add نہیں ہوتی۔ اصل barcode لکھ/سکین کرکے سرچ کے اندر Enter دیں تو اسی code کا موجودہ scan راستہ چلتا ہے۔
 2. نتیجے منتخب کرنے کے لیے سرچ میں **↓** دبائیں۔ فوکس نتیجے کے خانے پر آئے گا، تصویر کے بٹن پر نہیں۔ **↑↓** سے دوا/طاقت/pack چنیں؛ **Enter** سے وہی Add ہوگی۔ اسی row پر **double-click** بھی Add کرتا ہے۔ تصویر والا بٹن صرف gallery کھولتا ہے؛ خالی جگہ/heading پر double-click سے Add نہیں۔
@@ -217,6 +217,17 @@ Supplier statement پر پہلے سے ادا شدہ رقم دوبارہ Pay نہ
 
 بغیر بل محفوظ کیے 5–10 دوائیں Add کریں، Unit/Quantity/Cart/Customer/Cash/actions میں جائیں؛ رقم لکھ کر دیکھیں کہ فوکس نہیں چھنتا۔ Clear سے غیر محفوظ cart ختم کریں۔ حقیقی shop میں فرضی Complete sale/F4 نہ کریں۔ Windows پر چھوٹی سکرین، DPI، اصلی scanner اور keyboard کی تصدیق باقی؛ مسئلہ ہو تو version، بٹن، کیے گئے قدم اور تصویر دیں۔
 
+
+### بل کے آخر میں الگ Extra Discount — پوری مثال
+
+1. مالک پہلے Settings → Staff & permissions → شخص → **This person's pricing limits** میں **May give separate Extra Discount** اور روپے کی حد دے، پھر **Save this person's pricing limits**۔ خود مالک کے لیے بھی یہ اجازت مقرر کرنا ہوگی۔ عام profit/retail% caps الگ رہیں گی۔
+2. پوری cart، rate/item discounts، bill%، points/rounding کا حساب پہلے ہونے دیں۔ فرض کریں **Before Extra Discount1120**۔ سب lines manual/fixed ہوں تب بھی الگ Extra چل سکتا ہے؛ یہ ان کے ریٹ بدلنے کا راستہ نہیں۔
+3. **More / split** میں **Extra Discount (Rs for the whole bill)** میں20 لکھیں۔ صرف لکھنے سے لاگو نہیں ہوگا؛ **Apply Extra Discount** دبائیں۔
+4. owned popup میں **1120، Extra20، final1100** دیکھ کر Yes؛ No سے سابقہ applied رقم برقرار۔ footer میں Extra−20 اور Total1100 دیکھیں۔ cap20 ہو تو30 سے انکار، خاموش20 نہیں۔ دوبارہ20 Apply کرنے سے20 ہی،40 نہیں؛ یہ پوری رقم replace ہے۔
+5. **Cash received1100** دیں، صرف حقیقی فروخت پر Complete sale/F4۔ رسید، reprint اور Bills میں pre-extra1120/Extra20/final1100 الگ، due0۔ Extra کے بغیر کم cash لینے سے فرق خود سے معاف نہیں ہوگا؛ مناسب customer/credit منتخب کریں یا پوری نقدی وصول کریں۔
+6. Apply/Remove سے product rate/quantity/پہلے کی line discount/bill% نہیں بدلتے۔ **Remove Extra Discount** صرف یہ رقم ہٹاتا ہے۔ اگر textbox کی نئی رقم Apply نہیں کی تو Complete sale/Park/Save draft روکے گا؛ پہلے Apply یا Remove۔ Clear/Post/Park سے اگلی live cartExtra0، اسی parked/draft کو کھولنے پر اس کی Extra بحال اور موجودہ cap دوبارہ چیک۔
+7. final payable actual allocated خرید کی مجموعی لاگت سے کم نہیں ہوسکتا، مالک بھی نہیں؛ پہلے ہر line کا اپنا cost guard بھی برقرار۔ لہٰذا cap20 کا مطلب ہر bill پر لازماً20 دینے کی اجازت نہیں۔
+8. بند کرنا ہو تو جاری cart میں Remove؛ مالک اس شخص کا Extra tick بند کرکے الگ Save کرے۔ محفوظ پرانے bills unchanged۔ پرانی exe/backup اوپر ڈالنا بندش کا طریقہ نہیں۔ محفوظ عملی مشق، errors اور B واپسی [فیز3 نامہ](POS-PHASE3-TEST-URDU.md) میں۔
 
 <a id="lesson-10"></a>
 
@@ -243,7 +254,7 @@ Supplier statement پر پہلے سے ادا شدہ رقم دوبارہ Pay نہ
 ## سبق 12 — Bills، دوبارہ رسید اور غلط وقت
 
 1. SELL → Bills میں Today، 7 days، 30 days یا From/To منتخب کریں۔ bill number، customer name/phone اور Paid by فلٹر؛ Search۔ Clear فلٹر صاف کرتا ہے۔
-2. bill منتخب کریں؛ اشیا، مقدار، subtotal، discount، tax/round-off اگر ہوں، Paid، Due، returns اور Money that came in دیکھیں۔ انتخاب پڑھنے سے نیا bill نہیں بنتا۔
+2. bill منتخب کریں؛ اشیا، مقدار، subtotal، discount، **Before Extra Discount، Extra Discount، final Total**، tax/round-off اگر ہوں، Paid، Due، returns اور Money that came in دیکھیں۔ انتخاب پڑھنے سے نیا bill نہیں بنتا۔
 3. Print this bill again ایک نقل؛ Print selected… متعدد منتخب بل؛ Preview اصل کاغذ کی عبارت/چوڑائی دکھاتا ہے؛ WhatsApp… کا PDF خود attach کرنا ہوتا ہے۔ returns والے حصے سے اسی return کی رسید نکال سکتے ہیں۔
 4. مالک کے لیے Fix wrong time… ہے۔ پہلے اصل Windows clock درست رکھیں اور time server کا جواب دستیاب ہو۔ From/To دے کر List bills؛ Wrong time اور Correct time کی پیش کش غور سے ملائیں۔
 5. Fix every bill above فہرست والے bills اور متعلقہ زمانی ریکارڈ ایک ساتھ درست کرنے کی کارروائی ہے؛ انتخاب پڑھے بغیر نہ دبائیں۔ اصل اور درست وقت کا ثبوت ریکارڈ میں محفوظ رہتا ہے۔ وقت بدلا ہونے سے تاریخ وار reports میں bill دوسری تاریخ پر آ سکتا ہے، رقم کی نئی فروخت نہیں بنتی۔
@@ -259,6 +270,10 @@ Supplier statement پر پہلے سے ادا شدہ رقم دوبارہ Pay نہ
 4. Total refund، Cash out اور Khata reduced ملائیں؛ Take the return (RET)۔ credit والے bill میں پہلے ادھار کم ہو سکتا ہے؛ ہر refund لازماً پوری نقد ادائیگی نہیں۔ وصول شدہ رقم اور باقی مقدار کی حدیں لاگو ہیں۔
 5. Quarantine tab میں مجاز شخص Q-number والی چیز چن کر Back in stock، Damaged / expired یا Sold on کا اصل نتیجہ درج کرے۔ ہر نتیجے کا وقت/شخص/نوٹ مستقل رہتا ہے۔
 6. پہلے سے محفوظ return کو دوبارہ نیا return نہ لکھیں۔ رسید Bills کے returns حصے سے بھی مل سکتی ہے۔
+
+### Extra والے بل کی جزوی واپسی — مالک کا منتخب طریقہ B
+
+A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A کی اصل محفوظ رقم **560**؛ بعد میں B آئے تو صرف باقی **540**۔ یہ proportional550/550 نہیں، اور اصل sale-item rates/discounts نہیں بدلتے۔ Returns preview میں Extra اور باقی cap کی وجہ پڑھیں، گاہک کو پہلے سمجھائیں، پھر Take the return۔ دونوں ایک request میں ہوں تو بھی کل1100؛ cap کا فرق آخری درج return line سے کم ہوگا۔ واقعی وصول cash سے زائد نقد واپسی نہیں؛ credit کی صورت میں باقی کھاتہ کم ہوگا، فرضی cash نہیں۔ ایک بار واپس کی ہوئی quantity دوبارہ نہیں۔ الگ test data میں اس مثال کی مشق کریں؛ اصل دکان پر فرضی return نہ بنائیں۔
 
 <a id="lesson-14"></a>
 
@@ -361,6 +376,8 @@ Supplier statement پر پہلے سے ادا شدہ رقم دوبارہ Pay نہ
 4. Tax report میں مہینہ Previous/Next/This month سے بدلیں؛ bill پر واقعی charged tax اور روزانہ کی جمع دکھتی ہے۔ یہ نیا tax لگانے والا بٹن نہیں۔ refund کے tax کی علیحدہ تقسیم خودکار نہیں؛ accountant کے لیے refunds بھی پڑھیں۔
 5. مالک کی موجودہ ہدایت **sales tax نہیں لینا** ہے؛ Settings میں tax محض سبق دیکھنے کے لیے آن نہ کریں۔ Copy for the accountant متن کی نقل ہے، قانونی filing خودکار نہیں۔
 
+**Extra Discount کی رپورٹ:** overall/day sales اور profit آخری payable سے؛ customer profit سے الگ Extra ایک بار کم۔ product history/top medicines کے item amounts/profit **bill Extra سے پہلے** دکھتے ہیں کیونکہ Extra کسی product کو تقسیم نہیں کی گئی۔ category report میں الگ منفی **Bill Extra Discount (not assigned to products)** row ہے؛ category مجموعہ final sales سے ملے گا۔ مثال1120−Extra20، cost800: overall profit300، نہ320۔ product figures کو final overall profit نہ سمجھیں۔
+
 <a id="lesson-24"></a>
 
 ## سبق 24 — Alerts: یاد دہانی اور اصل مسئلہ
@@ -377,7 +394,7 @@ Supplier statement پر پہلے سے ادا شدہ رقم دوبارہ Pay نہ
 
 1. Black box میں Search، Module، Action، Lines اور When فلٹر؛ Today/7/30/All time۔ رقم یا چیز کا اختلاف ہو تو متعلقہ entry منتخب کریں۔
 2. Earlier state — Before this line اور Recorded new state — After this line اس وقت ریکارڈ ہوئی عبارت ہیں، ضروری نہیں آج کا live balance ہوں۔ محفوظ correction والی ہدایت پڑھیں۔ Save CSV سے جائزے کی نقل۔
-3. یہاں **عام Undo نہیں**؛ صرف پرانی حالت دکھنے سے transaction واپس نہیں ہوئی۔ بغیر سمجھے پوری shop restore کرنا ایک غلط رقم کا معمولی حل نہیں۔
+3. نئے Extra والے bill میں **unchanged item sum − الگ Extra = final total**؛ header میں points/rounding کے بعد بھی یہی رقم۔ Black box کی **sale_extra_discount** entry میں اصل/Extra/final دیکھیں۔ یہاں **عام Undo نہیں**؛ صرف پرانی حالت دکھنے سے transaction واپس نہیں ہوئی۔ بغیر سمجھے پوری shop restore کرنا ایک غلط رقم کا معمولی حل نہیں۔
 4. Books check → Check again سے گیارہ حسابی identities کا صرف پڑھنے والا جائزہ۔ Says، Rows say اور Gap کو document کے ساتھ دیکھیں؛ Save this list سے ماہر کو ثبوت دیں۔
 5. Books check خود repair نہیں کرتا۔ فرق آئے تو اصل bill/return/payment اور backup محفوظ کریں؛ DB فائل پر براہ راست رقم مت لکھیں۔
 
@@ -447,7 +464,7 @@ Supplier statement پر پہلے سے ادا شدہ رقم دوبارہ Pay نہ
 
 ## سبق 31 — عملہ، اجازتیں، راز اور App words
 
-**نیا الگ pricing panel (صرف مالک):** Settings → Staff & permissions میں شخص منتخب کریں، **This person's pricing limits** میں rate-edit اجازت، retail-reference سے manual reduction%، profit اجازت/حد، selling-total اجازت/حد اور one-bill override tick/حدیں دیں۔ **Save this person's pricing limits** اسی panel کا الگ Save ہے۔ non-owner کو بغیر محفوظ grant کے خودکار اختیار نہیں، manager بھی نہیں۔ module-role reset pricing panel کو reset نہیں کرتا۔ پہلے محفوظ bill دوبارہ حساب نہیں ہوگا۔ تفصیلی مثال/آزمائش/واپسی [فیز2 نامہ](POS-PHASE2-TEST-URDU.md) میں ہے۔
+**نیا الگ pricing panel (صرف مالک):** Settings → Staff & permissions میں شخص منتخب کریں، **This person's pricing limits** میں rate-edit اجازت، retail-reference سے manual reduction%، profit اجازت/حد، selling-total اجازت/حد اور one-bill override tick/حدیں دیں۔ الگ **May give separate Extra Discount** اور **Extra Discount limit (Rs per whole bill, not per click)** بھی یہیں ہیں؛ مالک سمیت اس نئی Extra اجازت کا کوئی خودکار grant نہیں، اپنی بھی واضح حد save کریں۔ **Save this person's pricing limits** اسی panel کا الگ Save ہے۔ non-owner کو بغیر محفوظ grant کے خودکار اختیار نہیں، manager بھی نہیں۔ module-role reset pricing panel کو reset نہیں کرتا۔ پہلے محفوظ bill دوبارہ حساب نہیں ہوگا۔ تفصیلی مثال/آزمائش/واپسی [فیز2 نامہ](POS-PHASE2-TEST-URDU.md) اور [فیز3 Extra Discount نامہ](POS-PHASE3-TEST-URDU.md) میں ہے۔
 
 1. مالک Settings → Staff & permissions کھولے۔ Add a person میں Name، Role اور چار ہندسوں کا PIN؛ Add this person۔ مشترکہ PIN کے بجائے ہر شخص کا اپنا نام رکھیں۔
 2. شخص منتخب کرکے account Switch on / off سے رسائی روک/بحال کریں۔ ماڈیول کی ticks مخصوص کام کی اجازت دیتی ہیں؛ checkbox بدلنے پر اس کا status دیکھیں۔ Reset page permissions for this role (pricing unchanged) صرف module exceptions ہٹاتا ہے؛ pricing limits کا الگ Save ہے۔ مالک کے module rights اس سے محدود نہیں ہوتے، pricing caps الگ ہیں۔
@@ -548,10 +565,10 @@ Supplier statement پر پہلے سے ادا شدہ رقم دوبارہ Pay نہ
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation recovery ZIP/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.77.0 کا متوقع test count 1270 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.78.0 کا متوقع test count 1300 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 
-یہ متن v0.77.0 کی navigation اور Views/ViewModels کے مطابق لکھا ہے، تصاویر یا حقیقی Windows session کے مشاہدے کا دعویٰ نہیں۔ بنیادی نقشہ ShellViewModel اور AppLabelService؛ SettingsView، NativeFieldsView، CustomFieldsView؛ متعلقہ Products/Counter/Purchases/Returns/Partners/Shift/Reports/System views سے ملا۔ مالی/stock حدود SaleService، StockPolicy، PurchaseService، ReturnService، ProvisionalReturnService، SupplierLedgerService، AuthService اور StartupService سے ملائی گئیں۔
+یہ متن v0.78.0 کی navigation اور Views/ViewModels کے مطابق لکھا ہے، تصاویر یا حقیقی Windows session کے مشاہدے کا دعویٰ نہیں۔ بنیادی نقشہ ShellViewModel اور AppLabelService؛ SettingsView، NativeFieldsView، CustomFieldsView؛ متعلقہ Products/Counter/Purchases/Returns/Partners/Shift/Reports/System views سے ملا۔ مالی/stock حدود SaleService، StockPolicy، PurchaseService، ReturnService، ProvisionalReturnService، SupplierLedgerService، AuthService اور StartupService سے ملائی گئیں۔
 
-پرانے HOW-TO-RUN، سابق version rows یا پرانے handoff میں tutorial سے متصادم installation/receipt/negative-stock عبارت تاریخی ہو سکتی ہے۔ نئی receipt-unavailable لائن منسوخ، D-93 برقرار، app identity اور receipt shop details الگ ہیں۔ مالک نے مستقل search pane B منتخب کیا؛ فیز1 space/keyboard code موجود، Windows ثبوت باقی۔ فیز2 مالی editor/permissions code موجود، Windows/PT-21 باقی؛ فیز3 Extra Discount اور فیز4 مکمل page-by-page review باقی ہیں۔ پروگرام کی نئی release میں بٹن/قاعدہ بدلے تو اس کتاب کو بھی نئے source کے ساتھ دوبارہ ملانا ضروری ہے۔
+پرانے HOW-TO-RUN، سابق version rows یا پرانے handoff میں tutorial سے متصادم installation/receipt/negative-stock عبارت تاریخی ہو سکتی ہے۔ نئی receipt-unavailable لائن منسوخ، D-93 برقرار، app identity اور receipt shop details الگ ہیں۔ مالک نے مستقل search pane B منتخب کیا؛ فیز1 space/keyboard code موجود، Windows ثبوت باقی۔ فیز2 مالی editor/permissions code موجود، Windows/PT-21 باقی؛ فیز3 Extra Discount/طریقہB source موجود، Windows/PT-22 باقی؛ فیز4 مکمل page-by-page review ابھی باقی ہے۔ پروگرام کی نئی release میں بٹن/قاعدہ بدلے تو اس کتاب کو بھی نئے source کے ساتھ دوبارہ ملانا ضروری ہے۔

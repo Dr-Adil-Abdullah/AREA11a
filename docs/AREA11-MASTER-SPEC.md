@@ -130,7 +130,7 @@ Full permission matrix: Section 7.4.
 
 3.1.19 **[U-19]** **Photos live in a folder** (`data/photos/`), the database stores only the file name — keeps the database light. (5 Oct 2026)
 
-3.1.20 **[U-20]** **Current owner-approved phase-2 rule (D-107, v0.77.0):** new/future bills, including an existing shop, default to gross-profit-based percentage using actual allocated stock-batch cost; owner Settings may choose full selling total. Per-item manual final rate or item profit/retail percentage excludes that item from bill percentage; reset restores eligibility. Owner-only per-person allowances separately limit manual reduction, profit percentage, retail percentage and one-bill basis override; no role-wide automatic grant. An allowed one-bill basis change prompts then resets to Settings default; retail bill percentage above5 needs fresh pre-save confirmation each bill. No role sells below cost. Saved historical monetary records remain unchanged. Retired discount.mode remains inert; the active key is discount.billBasis. This supersedes the 27-Oct full-retail-only rule for future sales. Separate sale-level Extra Discount is approved for phase3 but NOT implemented in phase2.
+3.1.20 **[U-20]** **Current owner-approved phase-2 rule (D-107, v0.77.0):** new/future bills, including an existing shop, default to gross-profit-based percentage using actual allocated stock-batch cost; owner Settings may choose full selling total. Per-item manual final rate or item profit/retail percentage excludes that item from bill percentage; reset restores eligibility. Owner-only per-person allowances separately limit manual reduction, profit percentage, retail percentage and one-bill basis override; no role-wide automatic grant. An allowed one-bill basis change prompts then resets to Settings default; retail bill percentage above5 needs fresh pre-save confirmation each bill. No role sells below cost. Saved historical monetary records remain unchanged. Retired discount.mode remains inert; the active key is discount.billBasis. This supersedes the 27-Oct full-retail-only rule for future sales. Phase3 is implemented in source by D-108 (v0.78.0), Windows proof pending: a separate sale-level absolute rupee Extra Discount AFTER normal line/bill/rounding/points computations, owner-only per-person enabled/rupee cap (no automatic grant even owner), no product rate/quantity/discount/line-total rewrites, final actual batch-cost total floor for all roles, separate pre-extra/extra/final/payment/audit snapshots and receipt/reprint fields. Repeat Apply replaces not adds. Owner explicitly chose return policy B: original stored item refund first, capped by remaining final bill and actually collected refundable cash/credit; 560 then540 from paid1100, NOT proportional550/550. Overall profit uses final; product figures before unallocated Extra are labelled, category shows separate negative allowance. Historical amounts remain unchanged.
 
 3.1.21 **[U-21]** **Medicine room/almari + camera photo**: each medicine carries "where it is kept" and a photo — both. (5 Oct 2026)
 
@@ -204,7 +204,7 @@ Full permission matrix: Section 7.4.
 
 3.3.7 **[E-07]** **Expiry levels**: days + colour from settings (levels 1/2/3).
 
-3.3.8 **[E-08]** **Current D-107:** editable retail/VIP/Doctor guidance and explicit special-rate Yes/No retained; nonstacking per-item normal/manual/profit-discount/retail-discount modes and owner-managed per-person caps. Mandatory actual-batch cost floor includes owner. Bill default profit (owner-selectable retail), allowed one-bill override/reset and retail>5 pre-save confirmation; previous role-wide/full-retail-only policy superseded for future bills, saved bills unchanged. Extra Discount remains a separate pending phase3.
+3.3.8 **[E-08]** **Current D-107:** editable retail/VIP/Doctor guidance and explicit special-rate Yes/No retained; nonstacking per-item normal/manual/profit-discount/retail-discount modes and owner-managed per-person caps. Mandatory actual-batch cost floor includes owner. Bill default profit (owner-selectable retail), allowed one-bill override/reset and retail>5 pre-save confirmation; previous role-wide/full-retail-only policy superseded for future bills, saved bills unchanged. D-108 phase3 source adds separately owner-configured per-person sale-level Extra allowance/cap after normal calculation, without product-line rewrites; explicit original/extra/final and approved return B, receipt/reports/BooksCheck reconciliation. Windows proof remains pending.
 
 3.3.9 **[E-09]** **Round-off, tax, invoice format, printer size (58/80 mm)** — from settings.
 
@@ -950,7 +950,7 @@ Full permission matrix: Section 7.4.
 
 ### 11.4 Reconciling bill and item lines `[defect fix, stage-30s]`
 
-11.4.1 Round-off and loyalty rebate must be spread over the item lines proportionally (the last line absorbs the remainder) so that **bill total = sum of item totals, always** — on the receipt and in every report. (Original defect: a typical bill showed a Rs 7.50 gap between items and total.) Tests: no-adjustment, loyalty only, round-off only, both, margin report.
+11.4.1 Round-off and loyalty rebate are reconciled over item lines with the actual allocated-cost floor. **D-108 exception for the separately authorized sale-level Extra Discount:** before Extra, calculated total = sum of stored item totals; AFTER Extra, **final bill total = sum of unchanged item totals minus sale.extra_discount_paisa**. Extra must NEVER be spread into item rates, quantities, discounts or totals. Receipt shows pre-extra/Extra/final separately; BookCheck and final overall reports use this equation. Per-product reports remain before unallocated bill Extra and are labelled accordingly; category report carries a separate negative unallocated allowance row. Historical old bills have extra0 and keep the prior equation. Tests: PricingPhaseTwoTests, ExtraDiscountTests, existing no-adjustment/loyalty/rounding tests; Windows proof pending.
 
 ### 11.5 Tax
 
@@ -992,7 +992,7 @@ Full permission matrix: Section 7.4.
 
 12.2.3 Apply discount and check role limit and below-cost lock (11.2).
 
-12.2.4 Apply tax (if on), then round-off with cost guard (11.3), then reconcile item lines (11.4).
+12.2.4 Apply existing tax (if on; this shop requires no sales tax), rounding/points with mandatory actual-cost guard, then reconcile item lines (11.4). D-108: ONLY AFTER this complete calculation, validate the current person's explicit Extra flag/rupee cap and final total >= actual allocated cost total; subtract the absolute Extra ONCE at sale level, not from items. Store pre-extra/Extra/final transactionally with all payments, stock, loyalty and audit; percentage cap and Extra cap are independent permissions. No typed underpayment automatically creates an allowance.
 
 12.2.5 Check customer credit limit if any part is on credit (13.4).
 
@@ -1058,7 +1058,7 @@ Full permission matrix: Section 7.4.
 
 ### 14.2 Sale receipt content and layout
 
-14.2.1 Shop name, address, phone (header); bill number; date/time (top or bottom per `receipt.datePosition`); cashier; customer; lines (name, unit, qty, price, total); optional columns: price before discount, discount, savings; sub-total, discount, round-off, tax (separate line), total; payment lines; **cash received and change**; footer note; custom terms (guarantee, return policy).
+14.2.1 Shop name, address, phone (header); bill number; date/time (top or bottom per `receipt.datePosition`); cashier; customer; lines (name, unit, qty, price, total); optional columns: price before discount, discount, savings; sub-total, discount, round-off, tax (separate line), pre-extra total / separate Extra Discount when present / final total (D-108); payment lines; **cash received and change**; footer note; custom terms (guarantee, return policy).
 
 14.2.2 Toggles `[Spec §8.3.3]`: show original price / discounted price / only final total + name + quantity. Cost columns are shown **only to the owner**.
 

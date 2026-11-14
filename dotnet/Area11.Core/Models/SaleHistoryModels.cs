@@ -37,6 +37,10 @@ public sealed class SaleHistoryRow
     public long SubtotalPaisa { get; set; }
 
     public long DiscountPaisa { get; set; }
+    public long? PreExtraTotalPaisa { get; set; }
+    public long ExtraDiscountPaisa { get; set; }
+    public string ExtraDiscountText => Money.Format(ExtraDiscountPaisa);
+    public string PreExtraTotalText => Money.Format(PreExtraTotalPaisa ?? (TotalPaisa + ExtraDiscountPaisa));
 
     public long TaxPaisa { get; set; }
 
