@@ -96,6 +96,7 @@ ON CONFLICT(field_key) DO NOTHING;", new
         try
         {
             using var connection = _db.Open();
+            OwnerAccess.Require(_db, connection, user);
             var fields = _db.Query<FormFieldDefinition>(connection,
                 "SELECT * FROM form_field_definitions ORDER BY section_key, sort_order, id;");
             return ServiceResult<List<FormFieldDefinition>>.Success(fields);
@@ -122,6 +123,7 @@ ON CONFLICT(field_key) DO NOTHING;", new
         {
             return _db.Tx(connection =>
             {
+                var owner = OwnerAccess.Require(_db, connection, user);
                 var field = _db.QuerySingle<FormFieldDefinition>(connection,
                     "SELECT * FROM form_field_definitions WHERE id = @id;", new { id = fieldId });
                 if (field is null)
@@ -148,12 +150,12 @@ SET required = @required, override_acknowledged_by = @by,
 WHERE id = @id;", new
                 {
                     required = required ? 1 : 0,
-                    by = overriding ? user.Name.Trim() : null,
+                    by = overriding ? owner.Name.Trim() : null,
                     ackAt = overriding ? at : null,
                     at,
                     id = fieldId
                 });
-                _audit.Record(connection, user, Modules.Settings, "native_field_required_changed",
+                _audit.Record(connection, owner, Modules.Settings, "native_field_required_changed",
                     "form_field_definitions", field.Id.ToString(),
                     oldValue: field.Required ? "required" : "optional",
                     newValue: required ? "required" : "optional",

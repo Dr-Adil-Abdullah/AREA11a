@@ -81,6 +81,11 @@ LEFT JOIN customers c ON c.id = s.customer_id
 WHERE i.product_id = @id AND s.status IN ('paid', 'partial', 'credit')
 ORDER BY s.date, s.id, i.id;", new { id = productId }));
 
+            // Do not merely hide a WPF column: direct Core consumers must not receive
+            // the profit snapshot when the same policy denies its display/export.
+            if (!history.CanSeeProfit)
+                foreach (var row in history.Sales) row.ProfitPaisa = 0;
+
             return ServiceResult<ProductHistory>.Success(history);
         }
         catch (Exception exception)

@@ -1,5 +1,7 @@
 # Phase 4 — source evidence register, portion 1 (v0.79.0 Tern)
 
+> **Latest: v0.80.0 portion2.** This initial portion1 register is retained with current table corrections. Settings0 reachability and Fields7 clamp are now fixed in SOURCE (Windows pending); native-field active-owner and two explicit-profit projection gaps fixed. Method-level progress / remaining high-priority actorless ledger/catalog/cost/session gaps: [portion2 access register](POS-PHASE4-ACCESS-REVIEW.md).1337 written cases,68 static checks; no C#/WPF execution. The chronological portion1 validation below stays historical.
+
 **Date:** 2026-11-10. **Status: IN PROGRESS, not a full audit PASS.** No .NET SDK / Windows runtime on this machine. F = focused source review + bounded fix + written, UNEXECUTED C# regressions. T = route/call/data/gate trace only; not all methods or all 15 dimensions reviewed. Prior phase evidence is explicitly inherited, not rerun C# evidence.
 
 ## Navigation inventory — 26 routes (25 AddPage + wordmark Dashboard)
@@ -41,14 +43,14 @@ Source: `Views/SettingsView.xaml` top-level TabItems and `ShellViewModel.BuildSe
 
 | Index / section | ViewModel → service → data / permission | Lessons | Status / evidence |
 |---|---|---|---|
-| 0 App name & icon | Settings → Settings.SetMany; settings / active owner for brand.appName and appearance.iconFileName | 28 | F owner write boundary; **navigation discrepancy**: no shell section for index0; reachability pending, do not claim a clickable section exists |
+| 0 App name & icon | Settings → Settings.SetMany; settings / active owner for brand.appName and appearance.iconFileName | 28 | F owner write boundary; portion2 SOURCE FIX: shell section0 added; all indices/clamp0–7 now agree, Windows reachability pending |
 | 1 Shop | Settings → Settings.SetMany; shop/contact/receipt/logo/product-photo settings, Settings gate | 28 | T; app branding distinct from receipt branding |
 | 2 Printing | Settings → Settings.SetMany, Printer; printer/paper/copies/receipt controls | 29,35 | T; real preview/paper/device pending |
 | 3 Sales rules | Settings → Settings.SetMany; discount.billBasis live-owner check; sale rules re-read by services | 30 | F for basis write boundary; prior phase2/3 finance retained |
 | 4 Cloud | Settings → Settings.SetMany, Sync.CanSync; sync address/key/table/shop id | 34 | T; masked input does not imply encrypted storage, remote RLS pending |
 | 5 Staff & permissions | Settings → Auth.CreateStaff/SetSecret/SetActive/SetRecoveryWord, Permission.Set/Reset, Pricing.Save; users/permissions/allowances | 31 | F owner DB row checked inside transaction; recovery hash+nonsecret audit atomic; pricing already live-owner gated |
 | 6 App words | Settings → AppLabel.Validate/Reset, Settings.SetMany; labels.* / Settings gate | 31 | T; labels permission preserved, not generalized settings security proof |
-| 7 Fields: Built-in fields | NativeFieldsView/VM → NativeFieldPolicy.List/SetRequired → field policy | 32 | T; nested section inventoried, direct-call permissions pending |
+| 7 Fields: Built-in fields | NativeFieldsView/VM → NativeFieldPolicy.List/SetRequired → field policy | 32 | portion2 F: live active-owner reads/writes; current-name audit/ack, critical confirmation retained; C# pending |
 | 7 Fields: Extra fields | CustomFieldsView/VM → CustomField.* → definitions/values / Settings | 32 | T; same service as navigation customFields; not obsolete removal |
 
 ## Supplemental surfaces and all 36 guide lessons
@@ -111,7 +113,7 @@ Every lesson is mapped below. Mapping means source address identified, NOT every
 | 11 | Backup/cloud | Restore staged path/rollback and transport inspected; network not exercised | Real failure drill, credentials at rest, remote RLS, mixed-version/local allowance compatibility |
 | 12 | Other finance | Route/ledger/report services mapped; stock expense tag remains label-only | Customer/supplier mixed delivery/loyalty/expense/report transaction reconciliation |
 | 13 | Draft/Park | Existing price/basis/Extra revalidation not altered | Cross-user/stale stock/permission, duplicate draft post fault scenarios |
-| 14 | UI/keyboard | Prior narrow search/cart/fixed footer retained; Settings index0 discrepancy recorded | Actual Windows small-screen/DPI/native keys/scanner/modal tests; Settings identity reachability fix/retest |
+| 14 | UI/keyboard | Prior narrow search/cart/fixed footer retained; Settings index0 discrepancy recorded | Actual Windows small-screen/DPI/native keys/scanner/modal tests; Settings identity/Fields fixes now source-present; Windows retest |
 | 15 | Obsolete/tutorial | 26 routes, eight Settings contents, nested fields and36 lessons inventoried; guide change boundaries stated | Complete sentence/action reconciliation and batch owner decision before whole-feature removal |
 
 ## Focused fixes and limits
@@ -126,7 +128,7 @@ Every lesson is mapped below. Mapping means source address identified, NOT every
 
 1325 C# cases written (+20 OwnerBoundaryReviewTests, +5 PhotoTests), **none executed here**. Run `tools/RUN-TESTS.cmd` on Windows, expect total1325 failed0; desktop build and physical checks separately. Repository structural gate checks these fixes and inventory coverage but is not runtime/security certification. Independent `tools/check_extra_discount_sqlite.py` uses only synthetic in-memory data, never the shop DB.
 
-**Next portion of the SAME phase:** first resolve/retest Settings index0 reachability; review direct service authorization/stale session and cost projections; then finance/stock/duplicate execution fault matrix; imports/backup/cloud boundaries; finally full36-lesson action reconciliation + Windows evidence. No installer, no compatibility removal, no HasOpenDrawer or permission read-error policy change authorized by this portion.
+**Portion1 next checklist (updated by portion2):** Settings index0/Fields7 source fixes done, Windows retest pending. Continue direct service authorization/stale session and cost projections (see portion2 method matrix); then finance/stock/duplicate execution fault matrix; imports/backup/cloud boundaries; finally full36-lesson action reconciliation + Windows evidence. No installer, no compatibility removal, no HasOpenDrawer or permission read-error policy change authorized by this portion.
 
 ### Executed evidence for this portion
 

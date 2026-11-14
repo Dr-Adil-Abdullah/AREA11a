@@ -804,11 +804,12 @@ public sealed class ShellViewModel : ObservableObject
 
     /// <summary>
     /// Repair (owner's word, Nov 2026): every section opened its NEIGHBOUR's tab - the numbers
-    /// below are true SettingsView tab indices (tab 0 is "App name & icon", which has no
-    /// section), so Shop is 1, Printing is 2, and so on. check_repo.py pins the pairing.
+    /// below are true SettingsView tab indices. Include identity at 0: the headerless view
+    /// has no other clickable tab strip. Shop stays 1 through Fields at 7.
     /// </summary>
     private void BuildSettingsTabs()
     {
+        SettingsTabItems.Add(new SettingsTabItem(0, "App name & icon"));
         SettingsTabItems.Add(new SettingsTabItem(1, "Shop"));
         SettingsTabItems.Add(new SettingsTabItem(2, "Printing"));
         SettingsTabItems.Add(new SettingsTabItem(3, "Sales rules"));
@@ -1226,7 +1227,7 @@ public sealed class ShellViewModel : ObservableObject
         new BackupViewModel(_services, _user, AppRestart.Restart);
 
     /// <summary>
-    /// Opens Settings on a section: 0 = Shop, 4 = Staff &amp; permissions (the person's shortcut).
+    /// Opens Settings on a section: 0 = App name &amp; icon, 5 = Staff &amp; permissions (the person's shortcut).
     /// The page is created on the way, because the Settings destination may not have been opened yet
     /// in this session.
     /// </summary>

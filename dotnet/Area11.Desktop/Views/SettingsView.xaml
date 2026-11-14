@@ -24,7 +24,7 @@
         </DockPanel>
 
         <!-- The shell owns the clickable section row. This headerless template keeps the existing
-             six tab contents and SelectedTabIndex semantics without drawing a second tab strip. -->
+             eight tab contents and SelectedTabIndex semantics without drawing a second tab strip. -->
         <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
             <TabControl.Template>
                 <ControlTemplate TargetType="TabControl">

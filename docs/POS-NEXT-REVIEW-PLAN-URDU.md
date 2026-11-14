@@ -136,3 +136,7 @@ Allowed1120→1100، denied user، cap exceeded، repeated apply/edit/reset، be
 ### فیز4 کی تازہ پیش رفت — v0.79.0، حصہ1
 
 فیز4 شروع ہے، مکمل نہیں۔ 26 routes، Settings کے8 contents اور36 lessons کا evidence register [یہاں](POS-PHASE4-EVIDENCE.md)؛ مالک کی موجودہ شناخت، راز reset، recovery atomicity اور تصاویر کے محفوظ filenames کے محدود fixes شامل۔ 1325 C# cases صرف لکھے گئے، Windows پر چلنے باقی۔ اگلا حصہ اسی فیز کا direct-service/finance/files/cloud/UI اور مکمل کتاب reconciliation ہے؛ Settings index0 کی shell reachability بھی باقی۔ [اس حصے کی محفوظ آزمائش](POS-PHASE4-TEST-URDU.md)۔
+
+### فیز4 حصہ2 — v0.80.0
+
+Settings identity0/Fields7 کی source درستگی، native fields کا موجودہ active owner اور Doctors/ProductHistory کے explicit profit fields درست۔ جامع audit ابھی جاری،1337 C# cases صرف لکھے؛ [method-wise شواہد](POS-PHASE4-ACCESS-REVIEW.md) اور [اردو محفوظ آزمائش](POS-PHASE4-PART2-URDU.md)۔ اگلی ترجیح actorless ledger/catalog read APIs، cost/profit projections اور باقی permissions/session matrix؛ پھر finance/files/cloud/guide/Windows باقی کام۔

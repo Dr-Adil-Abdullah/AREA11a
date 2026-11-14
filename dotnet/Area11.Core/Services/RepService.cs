@@ -168,7 +168,7 @@ WHERE id = @companyId;",
             using var connection = _db.Open();
             var rows = _db.Query<DoctorRow>(connection, DoctorSql);
 
-            MaskProfit(rows, _permissions.Can(user, Modules.Profit));
+            MaskProfit(rows, ProfitPolicy.CanSee(_permissions, _settings, user));
 
             return ServiceResult<List<DoctorRow>>.Success(rows);
         }

@@ -4917,8 +4917,8 @@ def check_phase_one_shell() -> None:
         if needle not in window:
             fail(f"Shell header section binding missing {needle}")
 
-    if shell.count("SettingsTabItems.Add(new SettingsTabItem(") != 7:
-        fail("Settings shell must expose the original sections and the Fields section")
+    if shell.count("SettingsTabItems.Add(new SettingsTabItem(") != 8:
+        fail("Settings shell must expose all eight contents, including identity and Fields")
 
     for obsolete in ("menu.collapsedGroups", "menu.pinnedOpen", "ToggleGroup", "SetCollapsed"):
         if obsolete in shell:
@@ -6394,8 +6394,49 @@ def check_owner_boundary_review():
     tabs = view.findall('./w:Grid/w:TabControl/w:TabItem', ns)
     if len(tabs) != 8 or not all(f'| {n} ' in doc for n in range(8)):
         FAILURES.append('Phase4 Settings inventory drift: review all top-level contents')
-    need(doc, ['IN PROGRESS', 'not a full audit PASS', 'filename containment', 'no shell section for index0'], 'evidence honesty')
+    need(doc, ['IN PROGRESS', 'not a full audit PASS', 'filename containment', 'Windows'], 'evidence honesty')
     REPORT.append('Phase4 portion1: bounded live-owner/alternate-secret/recovery/photo contracts and 26-route/eight-Settings/36-lesson inventory present; full audit and Windows runtime pending')
+
+
+def check_phase_four_access_projections():
+    """Bounded source contracts only. In particular, these cannot prove live session authentication."""
+    core = DOTNET / 'Area11.Core/Services'
+    desktop = DOTNET / 'Area11.Desktop'
+    shell = (desktop / 'ViewModels/ShellViewModel.cs').read_text()
+    vm = (desktop / 'ViewModels/SettingsViewModel.cs').read_text()
+    ns = {'w': 'http://schemas.microsoft.com/winfx/2006/xaml/presentation'}
+    tabs = ET.parse(desktop / 'Views/SettingsView.xaml').getroot().findall('./w:Grid/w:TabControl/w:TabItem', ns)
+    indices = [int(n) for n in re.findall(r'SettingsTabItems.Add\(new SettingsTabItem\((\d+),', shell)]
+    if indices != list(range(len(tabs))):
+        FAILURES.append('Phase4 portion2: every Settings content needs its matching shell section, including identity0 and Fields7')
+    clamp = re.search(r'Math.Clamp\(value, 0, (\d+)\)', vm)
+    if clamp is None or int(clamp[1]) != len(tabs) - 1:
+        FAILURES.append('Phase4 portion2: Settings selected-index clamp loses an existing tab')
+    if 'SettingsTabItems.Add(new SettingsTabItem(0, "App name & icon"))' not in shell:
+        FAILURES.append('Phase4 portion2: identity section0 label/address missing')
+    native = (core / 'NativeFieldPolicyService.cs').read_text()
+    if native.count('OwnerAccess.Require(_db, connection, user);') != 2:
+        FAILURES.append('Phase4 native-field read AND write paths need current-owner validation')
+    for token in ('OwnerAccess.Require(_db, connection, user);', 'by = overriding ? owner.Name.Trim() : null',
+                  '_audit.Record(connection, owner, Modules.Settings, "native_field_required_changed"'):
+        if token not in native:
+            FAILURES.append(f'Phase4 native-field boundary missing {token}')
+    write = native.split('public ServiceResult SetRequired', 1)[-1]
+    if not (write.find('OwnerAccess.Require') >= 0 and write.find('OwnerAccess.Require') < write.find('if (field.Required == required)')):
+        FAILURES.append('Phase4 native-field current owner check must precede no-op success inside transaction')
+    reps = (core / 'RepService.cs').read_text()
+    if 'MaskProfit(rows, ProfitPolicy.CanSee(_permissions, _settings, user));' not in reps:
+        FAILURES.append('Phase4 Doctors must respect the same global-plus-person profit policy')
+    history = (core / 'ProductHistoryService.cs').read_text()
+    if 'if (!history.CanSeeProfit)\n                foreach (var row in history.Sales) row.ProfitPaisa = 0;' not in history:
+        FAILURES.append('Phase4 ProductHistory.Load must mask raw denied profit, not only UI/CSV')
+    tests = (DOTNET / 'Area11.Tests/PhaseFourAccessProjectionTests.cs').read_text()
+    for name in ('NativeFieldNoOpDoesNotBypassCurrentOwnerCheck', 'NativeFieldAcknowledgementUsesCurrentStoredOwnerName',
+                 'DoctorProfitGrantDoesNotOverrideGlobalHideSwitch', 'ProductHistoryDoesNotReturnHiddenRawProfitToManager',
+                 'ProductHistoryMasksOwnerRawProfitWhenGlobalOffAndRestoresFromSnapshots'):
+        if name not in tests:
+            FAILURES.append(f'Phase4 access projection regression missing {name}')
+    REPORT.append('Phase4 portion2: all eight Settings indices/clamp, live-owner native fields, Doctors global profit switch and raw history-profit masking contracts; Windows/runtime/session and remaining access matrix pending')
 
 
 def main() -> int:
@@ -6463,6 +6504,7 @@ def main() -> int:
     check_native_workbook()
     check_backup_restore_gate()
     check_owner_boundary_review()
+    check_phase_four_access_projections()
     check_csharp_grammar()
 
     if not quiet:

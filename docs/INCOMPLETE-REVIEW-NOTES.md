@@ -1,5 +1,10 @@
 # Review carry-forward — not a completed audit
 
+## Phase4 portion2 (v0.80.0), still IN PROGRESS
+
+Settings identity0/Fields7 section+clamp now source-fixed. Native-field live owner/DB-name audit and Doctors global-switch/ProductHistory raw-profit masking fixed;1337 cases written, not executed. HIGH PRIORITY next: actorless CustomerLedger.List/Page (including raw profit), SupplierLedger statements/read IDs and Product catalog cost-bearing API/callers; raw report costs/Reorder costs/product purchase history/session/custom-fields/time-correction matrix OPEN. No whole-layer privacy/session guarantee. See `POS-PHASE4-ACCESS-REVIEW.md`; previous portion1 Settings queue is superseded, actual Windows check still pending. Finance/error-policy/recovery/compatibility decisions unchanged; no installer.
+
+
 ## Phase4 portion1 (v0.79.0), still IN PROGRESS
 
 Bounded owner-write/alternate-secret/atomic-recovery/photo-filename fixes and25 UNEXECUTED regressions;1325 written total. See `POS-PHASE4-EVIDENCE.md` for26 routes,8 Settings contents,36 lessons and honest15-dimension pending list. Generic permission read defaults, factory recovery, HasOpenDrawer and compatibility policies unchanged. Filename validation is not a reparse-point/symlink guarantee. Settings identity content index0 has no shell section; next portion must resolve/retest reachability. No whole-audit/security/Windows PASS or installer.

@@ -774,14 +774,14 @@ public sealed class SettingsViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Which section is open: 0 Shop, 1 Printing, 2 Sales rules, 3 Cloud sync, 4 Staff, 5 App words.
+    /// Which section is open: 0 App name &amp; icon, 1 Shop, 2 Printing, 3 Sales rules, 4 Cloud, 5 Staff, 6 App words, 7 Fields.
     /// Bound two-way so the shell's dark-header section buttons and the person's staff shortcut can
     /// select the same existing content without rebuilding it.
     /// </summary>
     public int SelectedTabIndex
     {
         get => _selectedTabIndex;
-        set => SetProperty(ref _selectedTabIndex, Math.Clamp(value, 0, 6));
+        set => SetProperty(ref _selectedTabIndex, Math.Clamp(value, 0, 7));
     }
 
     /// <summary>

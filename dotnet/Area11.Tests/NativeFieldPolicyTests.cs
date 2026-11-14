@@ -26,7 +26,7 @@ public sealed class NativeFieldPolicyTests
         Assert.True(service.SetRequired(TestData.Owner, id, false, true).Ok);
         using (var confirmedConnection = test.Database.Open())
         {
-            Assert.Equal("Owner", Convert.ToString(test.Database.Scalar(confirmedConnection,
+            Assert.Equal(TestData.SeedOwnerName, Convert.ToString(test.Database.Scalar(confirmedConnection,
                 "SELECT override_acknowledged_by FROM form_field_definitions WHERE id = @id;", new { id })));
             Assert.NotNull(test.Database.Scalar(confirmedConnection,
                 "SELECT override_acknowledged_at FROM form_field_definitions WHERE id = @id;", new { id }));
@@ -76,7 +76,7 @@ BEGIN SELECT RAISE(ABORT, 'audit unavailable'); END;"));
         Assert.Equal(13, after.Count);
         var kept = after.Single(field => field.Id == quantity.Id);
         Assert.False(kept.Required);
-        Assert.Equal("Owner", kept.OverrideAcknowledgedBy);
+        Assert.Equal(TestData.SeedOwnerName, kept.OverrideAcknowledgedBy);
     }
 
     [Fact]

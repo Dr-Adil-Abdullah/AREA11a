@@ -1,10 +1,10 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.79.0 Tern۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.80.0 Ibis۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
 
 **موجودہ POS فیز3:** مستقل search pane منتخب ہے۔ v0.78.0 میں owner-only ہر شخص کی الگ قیمت/رعایت حدیں، Cart کا محفوظ item editor اور profit/retail حساب code میں شامل ہیں۔ **موجودہ دکان کے آئندہ bills کا ابتدائی default اب profit ہے**؛ مالک Settings سے retail واپس کرسکتا ہے۔ پرانے محفوظ bills unchanged۔ الگ ایڈٹ شدہ لائن پر bill% دوبارہ نہیں؛ خرید سے نیچے کسی کو اجازت نہیں۔ **الگ sale-level Extra Discount اب فیز3 کے code میں شامل؛ مالک کا return طریقہ B: پہلے560 پھر باقی540، اصل item rates نہیں بدلتے**، جامع page/15-point audit فیز4 میں۔ Windows tests/build/عملی ثبوت باقی۔ [فیز2 کی آسان مشق اور واپسی](POS-PHASE2-TEST-URDU.md) ، [فیز3 استعمال/آزمائش/بندش](POS-PHASE3-TEST-URDU.md) اور [مکمل منصوبہ](POS-NEXT-REVIEW-PLAN-URDU.md) الگ ہیں۔
 
-**فیز4 حصہ1 کی تازہ حیثیت:** v0.79.0 میں موجودہ active owner کی write جانچ، راز reset کے بعد پرانی دوسری credential کی بندش، recovery hash/audit کی مشترک transaction اور تصاویر کے محفوظ filenames درست کیے ہیں۔ **جامع فیز4 ابھی جاری ہے، مکمل PASS نہیں**؛26 routes/Settings کے8 contents/36 اسباق کا نقشہ [evidence register](POS-PHASE4-EVIDENCE.md) اور [محفوظ test/باقی کام](POS-PHASE4-TEST-URDU.md) میں۔1325 C# cases لکھے ہیں، یہاں چلائے نہیں۔ مالی فیز2/3 کا منظورشدہ حساب برقرار ہے۔
+**فیز4 حصہ2 کی تازہ حیثیت:** v0.80.0 میں Settings کے App name & icon section اور Fields کی درست selection، Built-in fields کے موجودہ active owner، Doctors کے global profit switch اور Product history کے denied raw profit کی درستگی شامل۔ حصہ1 کے owner/reset/recovery/photo fixes برقرار۔ **جامع فیز4 ابھی جاری، مکمل PASS نہیں**؛26 routes/Settings کے8 contents/36 اسباق کا [register](POS-PHASE4-EVIDENCE.md)، [method-wise مزید شواہد/حدود](POS-PHASE4-ACCESS-REVIEW.md) اور [حصہ2 محفوظ آزمائش](POS-PHASE4-PART2-URDU.md) دیکھیں۔1337 C# cases لکھے ہیں، یہاں چلائے نہیں۔ مالی فیز2/3 کا منظورشدہ حساب برقرار ہے۔
 
 **پڑھنے کا طریقہ:** حصہ اوّل میں صرف صفحات/اختیارات کی مختصر فہرست ہے۔ حصہ دوم میں انہی کی الگ، قدم بہ قدم تفصیل ہے۔ پہلے پورا خلاصہ دیکھیں؛ پھر جس کام کی ضرورت ہو اسی نمبر کی تفصیل پڑھیں۔ HTML فائل براؤزر میں کھلتی ہے، انٹرنیٹ کے بغیر بھی؛ براؤزر کے Print سے کاغذ یا PDF بنا سکتے ہیں۔
 
@@ -172,6 +172,8 @@ Recovery سے داخلہ پرانی فروخت یا کھاتے کو reset نہی
 5. History of this medicine… سے کب، کس سے خریدا، کس کو بیچا اور کیا ریٹ تھا دیکھیں۔ یہ دیکھنے کا صفحہ ہے؛ پرانی تجارت کو یہاں edit نہ سمجھیں۔
 6. تصاویر سمیت نقل کے لیے Backup میں Include the photos رکھیں۔ Cloud اور عام Excel export تصاویر نہیں لے جاتے۔
 
+**Product history میں منافع:** اجازت/global switch بند ہو تو explicit profit screen/export میں hidden اور Core کے returned sale-profit fields بھی mask؛ اصل sale/item snapshots unchanged۔ خرید کے الگ rows/cost-bearing دوسرے راستے ابھی مکمل privacy audit سے پاس نہیں؛ اسے ہر inference کے خلاف حفاظت نہ سمجھیں۔
+
 <a id="lesson-08"></a>
 
 ## سبق 08 — Purchases میں حقیقی ڈیلیوری وصول کرنا
@@ -328,6 +330,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 3. کمپنی منتخب کرکے rep کا نام، فون، Visits on لکھیں؛ مالک/مینیجر Save the rep کرے۔ company کی غلط entry پر کسی دوسری کمپنی کا نمائندہ نہ لگا دیں۔
 4. Customer lifetime profit پوری تاریخ کے حساب کا اشارہ ہے، وصول شدہ نقدی نہیں۔ returns اور cost اثر ڈالتے ہیں، visibility بند ہو تو منافع چھپ سکتا ہے۔
 
+**منافع کی موجودہ حد:** Doctors کا explicit profit اب global `profit.showMargins` اور اس شخص کی profit permission دونوں سے مشروط ہے۔ global OFF ہو تو مالک/الگ grantee کے لیے بھی profit hidden، اصل sales/counts اپنی permission کے مطابق برقرار؛ ON سے اصل محفوظ snapshot کا عدد واپس۔ یہ ہر cost-bearing راستے سے حساب اخذ کرنے کی ناممکن ہونے کی ضمانت نہیں؛ مکمل service access review ابھی جاری ہے۔
+
 <a id="lesson-19"></a>
 
 ## سبق 19 — Reorder pad
@@ -429,7 +433,7 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 
 ## سبق 28 — ایپ کی شناخت اور Shop details الگ
 
-**موجودہ source کی حد:** App name & icon کا content index0 موجود ہے، مگر shell کی clickable section list میں اس کا اندراج نہیں۔ لہٰذا اس build میں اس راستے کی عام رسائی ابھی درست/Windows verify ہونا باقی ہے؛ نیچے اس content کے کام کی وضاحت ہے، دستیابی کا PASS نہیں۔ Shop/Printing وغیرہ الگ sections ہیں۔
+**فیز4 حصہ2 کی source درستگی:** App name & icon اب shell کا اپنا section0، Shop1 سے Fields7 تک اصل contents وہی؛ Fields کی selection اب App words پر نہیں رکے گی۔ Windows پر تمام8 buttons/keyboard/چھوٹی screen کی عملی تصدیق باقی۔ section بدلنے سے half-typed values نہیں مٹنی چاہئیں؛ خرابی ہو تو [حصہ2 آزمائش](POS-PHASE4-PART2-URDU.md) کے مطابق بتائیں۔
 
 1. Settings → App name & icon: App name ایک سے چالیس حرف؛ Choose app icon… میں .ico، زیادہ سے زیادہ 2 MB؛ Use default icon واپس اصل۔ پھر Save settings۔
 2. یہ نام/icon window، login اور taskbar کے لیے ہیں۔ نصب executable اور پہلے سے بنے desktop shortcuts کا اپنا icon الگ رہ سکتا ہے۔ app icon بدلنے سے رسید پر لوگو نہیں لگتا۔
@@ -501,6 +505,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 3. choice والے سوال میں Choices commas سے الگ؛ Required سوچ کر رکھیں۔ دستاویزی Bills/Purchases/Expenses پر photo قسم دستیاب نہیں؛ دوسرے جائز photo fields بھی لازمی تصویر کا تالا نہیں بنتے۔
 4. Save کے بعد متعلقہ فارم میں سوال دیکھیں۔ Stable key نام بدلنے کے باوجود شناخت قائم رکھتا ہے؛ اسے نئے سوال کے لیے پرانے جواب کا مطلب بدلنے میں استعمال نہ کریں۔
 5. Move up/down ترتیب؛ Put away سوال چھپاتا ہے، پرانے جواب حذف نہیں؛ Bring back واپس دکھاتا ہے۔ document answers اسی bill/draft کے ہیں، اگلے customer کے bill میں جان بوجھ کر نقل نہ کریں۔
+
+**Built-in fields — حصہ2:** مالک کے لیے metadata کھولتے/تبدیل کرتے وقت موجودہ active owner database سے چیک ہوتا ہے؛ critical field optional کرنے کا risk confirmation پہلے کی طرح لازم۔ audit/acknowledgement میں database کا موجودہ owner نام، صرف پرانا display label نہیں۔ یہ final post کی product/quantity validation ختم نہیں کرتا؛ مالک نہ ہوں یا account بدل/بند ہو تو تبدیلی نہ ہونے پر صحیح active owner سے دوبارہ sign in کریں۔ یہ تمام کھلے sessions کی فوری revocation کا دعویٰ نہیں۔
 
 <a id="lesson-33"></a>
 
