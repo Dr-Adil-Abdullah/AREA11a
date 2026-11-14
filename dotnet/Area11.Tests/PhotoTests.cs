@@ -408,6 +408,71 @@ public sealed class PhotoTests
         Assert.False(photos.OwnAvatar(cashier).Ok);
     }
 
+    [Fact]
+    public void ThumbnailsNeverResolveAnExistingFileOutsidePhotoFolder()
+    {
+        using var test = new TestDatabase(); using var folders = new PhotoFolders();
+        var source = folders.SourceFile("outside.jpg"); var photos = folders.Photos(test);
+        Assert.True(File.Exists(source));
+        Assert.Null(photos.CoverPath(source));
+        Assert.Null(photos.CoverPath("../source/outside.jpg"));
+        Assert.Null(photos.CoverPath("..\\source\\outside.jpg"));
+        Assert.Null(photos.CoverPath("C:outside.jpg"));
+        Assert.Null(photos.CoverPath("\\\\server\\share\\outside.jpg"));
+    }
+
+    [Fact]
+    public void GalleryRowsCannotCarryAnOutsideFullPath()
+    {
+        using var test = new TestDatabase(); using var folders = new PhotoFolders();
+        var product = TestData.AddProduct(test); var photos = folders.Photos(test);
+        var added = photos.Add(TestData.Owner, PhotoEntity.Product, product, folders.SourceFile("gallery.jpg")).Value!;
+        test.Database.Tx(c => { test.Database.Execute(c,
+            "UPDATE photos SET file_name=@path WHERE id=@id;", new { path = folders.SourceFile("outside.jpg"), id = added.Id }); });
+        var result = photos.List(TestData.Owner, PhotoEntity.Product, product);
+        Assert.True(result.Ok, result.Error);
+        Assert.False(result.Value!.Single().Exists);
+        Assert.Equal(string.Empty, result.Value.Single().FullPath);
+        Assert.False(photos.PathOf(TestData.Owner, added.Id).Ok);
+    }
+
+    [Fact]
+    public void BulkCoversIgnoreUnsafeStoredNames()
+    {
+        using var test = new TestDatabase(); using var folders = new PhotoFolders();
+        var product = TestData.AddProduct(test); var photos = folders.Photos(test);
+        var added = photos.Add(TestData.Owner, PhotoEntity.Product, product, folders.SourceFile("cover.jpg")).Value!;
+        test.Database.Tx(c => { test.Database.Execute(c,
+            "UPDATE photos SET file_name=@path WHERE id=@id;", new { path = folders.SourceFile("outside.jpg"), id = added.Id }); });
+        Assert.Empty(photos.CoversFor(TestData.Owner, PhotoEntity.Product, new[] { product }));
+    }
+
+    [Fact]
+    public void ChoosingCoverCannotBlessAnOutsideFile()
+    {
+        using var test = new TestDatabase(); using var folders = new PhotoFolders();
+        var product = TestData.AddProduct(test); var photos = folders.Photos(test);
+        var added = photos.Add(TestData.Owner, PhotoEntity.Product, product, folders.SourceFile("cover.jpg")).Value!;
+        test.Database.Tx(c => { test.Database.Execute(c,
+            "UPDATE photos SET file_name=@path WHERE id=@id;", new { path = folders.SourceFile("outside.jpg"), id = added.Id }); });
+        Assert.False(photos.SetProductCover(TestData.Owner, added.Id).Ok);
+        Assert.True(File.Exists(added.FullPath)); // no cleanup/deletion of any historical row or file
+    }
+
+    [Fact]
+    public void StaffAvatarRejectsDriveRelativeAndNetworkNames()
+    {
+        using var test = new TestDatabase(); using var folders = new PhotoFolders();
+        var cashier = TestData.Cashier(test); var photos = folders.Photos(test);
+        var added = photos.Add(TestData.Owner, PhotoEntity.User, cashier.Id, folders.SourceFile("staff.jpg")).Value!;
+        foreach (var name in new[] { "C:outside.jpg", "\\\\server\\share\\outside.jpg", "../source/outside.jpg" })
+        {
+            test.Database.Tx(c => { test.Database.Execute(c,
+                "UPDATE photos SET file_name=@name WHERE id=@id;", new { name, id = added.Id }); });
+            Assert.False(photos.OwnAvatar(cashier).Ok);
+        }
+    }
+
     /// <summary>One throw-away photo folder and one source folder per test.</summary>
     private sealed class PhotoFolders : IDisposable
     {

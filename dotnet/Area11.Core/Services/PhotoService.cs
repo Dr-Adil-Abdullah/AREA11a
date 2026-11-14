@@ -73,7 +73,11 @@ public sealed class PhotoService
     /// </summary>
     public string? CoverPath(string? fileName)
     {
-        if (string.IsNullOrWhiteSpace(fileName))
+        // Stored names can come from imported/restored data. Use the same boundary for
+        // thumbnails, bulk covers, galleries, cover selection and full-size reads.
+        if (string.IsNullOrWhiteSpace(fileName) || fileName != fileName.Trim()
+            || Path.IsPathRooted(fileName) || fileName.Contains("..", StringComparison.Ordinal)
+            || fileName.IndexOfAny(new[] { '/', '\\', ':', '*', '?', '"', '<', '>', '|', '\0' }) >= 0)
         {
             return null;
         }
@@ -195,7 +199,7 @@ ORDER BY sort_order, id;",
 
             foreach (var row in rows)
             {
-                row.FullPath = Path.Combine(PhotosFolder, row.FileName);
+                row.FullPath = CoverPath(row.FileName) ?? string.Empty;
                 row.Exists = File.Exists(row.FullPath);
             }
 
@@ -426,7 +430,7 @@ FROM photos WHERE id = @id;", new { id = photoId });
                 {
                     return ServiceResult.Fail("Choose an active product photo.");
                 }
-                if (!File.Exists(Path.Combine(PhotosFolder, selected.FileName)))
+                if (CoverPath(selected.FileName) is null)
                 {
                     return ServiceResult.Fail("That photo file is missing; choose an available photo.");
                 }
@@ -486,12 +490,9 @@ WHERE entity = @entity AND entity_id = @entityId ORDER BY sort_order, id;",
 SELECT p.file_name FROM photos p JOIN users u ON u.id = p.entity_id AND u.active = 1
 WHERE p.entity = 'user' AND p.entity_id = @id AND IFNULL(p.active, 1) = 1
 ORDER BY p.sort_order, p.id LIMIT 1;", new { id = user.Id });
-            if (string.IsNullOrWhiteSpace(file) || file.IndexOfAny(new[] { '/', '\\' }) >= 0
-                || file.Contains("..", StringComparison.Ordinal))
-            {
+            var path = CoverPath(file);
+            if (path is null)
                 return ServiceResult<string>.Fail("No available profile photo.");
-            }
-            var path = Path.Combine(PhotosFolder, file);
             return File.Exists(path) ? ServiceResult<string>.Success(path)
                 : ServiceResult<string>.Fail("No available profile photo.");
         }
@@ -589,23 +590,11 @@ FROM photos WHERE id = @id;", new { id = photoId });
                 return ServiceResult<PhotoItem>.Fail("You do not have permission to see this photo.");
             }
 
-            // The database is not a trusted input at this point: a name with a separator or ".." in it
-            // would point outside the shop's photo folder. Such a row is treated as a missing picture.
-            if (row.FileName.IndexOfAny(new[] { '/', '\\' }) >= 0
-                || row.FileName.Contains("..", StringComparison.Ordinal))
-            {
-                return ServiceResult<PhotoItem>.Fail(
-                    "The picture is missing from the photos folder (" + row.FileName + ").");
-            }
-
-            row.FullPath = Path.Combine(PhotosFolder, row.FileName);
-            row.Exists = File.Exists(row.FullPath);
-
-            if (!row.Exists)
-            {
-                return ServiceResult<PhotoItem>.Fail(
-                    "The picture is missing from the photos folder (" + row.FileName + ").");
-            }
+            var path = CoverPath(row.FileName);
+            if (path is null)
+                return ServiceResult<PhotoItem>.Fail("The picture is missing or outside the photos folder.");
+            row.FullPath = path;
+            row.Exists = true;
 
             return ServiceResult<PhotoItem>.Success(row);
         }

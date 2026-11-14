@@ -180,6 +180,7 @@ public sealed class AuthService
         {
             var id = _db.Tx(connection =>
             {
+                var owner = OwnerAccess.Require(_db, connection, actor);
                 var duplicate = Convert.ToInt64(_db.Scalar(connection,
                     "SELECT COUNT(1) FROM users WHERE lower(name) = lower(@name);", new { name = cleanName }) ?? 0L);
 
@@ -200,7 +201,7 @@ public sealed class AuthService
 
                 var newId = (int)_db.NextId(connection);
 
-                _audit.Record(connection, actor, "Users", "create", "users", newId.ToString(),
+                _audit.Record(connection, owner, "Users", "create", "users", newId.ToString(),
                     newValue: $"{{\"name\":\"{cleanName}\",\"role\":\"{UserRoles.ToDb(role)}\",\"pin\":\"set\"}}");
 
                 return newId;
@@ -236,16 +237,25 @@ public sealed class AuthService
         {
             _db.Tx(connection =>
             {
+                var owner = OwnerAccess.Require(_db, connection, actor);
+                var target = _db.QuerySingle<User>(connection,
+                    "SELECT id, name, role, active FROM users WHERE id = @id;", new { id = userId });
+                if (target is null) throw new ValidationException("That person no longer exists.");
                 var column = isPassword ? "password_hash" : "pin_hash";
+                var otherColumn = isPassword ? "pin_hash" : "password_hash";
 
-                _db.Execute(connection, $"UPDATE users SET {column} = @hash WHERE id = @id;",
+                _db.Execute(connection, $"UPDATE users SET {column} = @hash, {otherColumn} = NULL WHERE id = @id;",
                     new { hash = PasswordHasher.Hash(newSecret.Trim()), id = userId });
 
-                _audit.Record(connection, actor, "Users", "secret_change", "users", userId.ToString(),
+                _audit.Record(connection, owner, "Users", "secret_change", "users", userId.ToString(),
                     oldValue: "{\"secret\":\"set\"}", newValue: "{\"secret\":\"changed\"}");
             });
 
             return ServiceResult.Success();
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult.Fail(exception.Message);
         }
         catch (Exception exception)
         {
@@ -343,20 +353,9 @@ public sealed class AuthService
         {
             var stored = clean.Length == 0 ? string.Empty : PasswordHasher.Hash(clean);
 
-            // The quiet door on purpose: the loud door would write the hash into the black box, and
-            // a hash in the black box is a secret half given away. The honest line below says only
-            // that it changed.
-            var saved = _settings.SetUiOnly(RecoveryWordKey, stored);
-
-            if (!saved.Ok)
-            {
-                return ServiceResult.Fail(saved.Error ?? "The change could not be saved.");
-            }
-
-            _audit.RecordStandalone(actor, "Auth", "recovery_word_changed",
-                clean.Length == 0 ? "back to the factory word" : "changed");
-
-            return ServiceResult.Success();
+            // Save the hash quietly, but verify the live owner and record a non-secret event
+            // in the SAME transaction. The generic settings paths refuse this key.
+            return _settings.SaveRecoveryHash(actor, stored);
         }
         catch (Exception exception)
         {
@@ -380,14 +379,24 @@ public sealed class AuthService
         {
             _db.Tx(connection =>
             {
+                var owner = OwnerAccess.Require(_db, connection, actor);
+                var target = _db.QuerySingle<User>(connection,
+                    "SELECT id, name, role, active FROM users WHERE id = @id;", new { id = userId });
+                if (target is null) throw new ValidationException("That person no longer exists.");
+                if (target.IsOwner && !active)
+                    throw new ValidationException("The owner account cannot be switched off.");
                 _db.Execute(connection, "UPDATE users SET active = @active WHERE id = @id;",
                     new { active = active ? 1 : 0, id = userId });
 
-                _audit.Record(connection, actor, "Users", active ? "activate" : "deactivate", "users",
+                _audit.Record(connection, owner, "Users", active ? "activate" : "deactivate", "users",
                     userId.ToString());
             });
 
             return ServiceResult.Success();
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult.Fail(exception.Message);
         }
         catch (Exception exception)
         {

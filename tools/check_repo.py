@@ -6337,6 +6337,67 @@ def rel(path: pathlib.Path) -> str:
         return str(path)
 
 
+def check_owner_boundary_review():
+    """Narrow source contracts, NOT executed authorization/security tests."""
+    core = DOTNET / 'Area11.Core' / 'Services'
+    def need(text, markers, label):
+        for marker in markers:
+            if marker not in text:
+                FAILURES.append(f'Phase4 {label}: missing {marker!r}')
+    owner = (core / 'OwnerAccess.cs').read_text()
+    need(owner, ['SELECT id, name, role, active FROM users WHERE id = @id;',
+                 'IsOwner: true, Active: true', 'throw new ValidationException'], 'live owner')
+    auth = (core / 'AuthService.cs').read_text()
+    permission = (core / 'PermissionService.cs').read_text()
+    if auth.count('OwnerAccess.Require(_db, connection, actor)') != 3:
+        FAILURES.append('Phase4 Auth create/reset/activation must each validate owner in write transaction')
+    if permission.count('OwnerAccess.Require(_db, connection, actor)') != 2:
+        FAILURES.append('Phase4 Permission Set/Reset must validate current owner')
+    need(auth, ['{otherColumn} = NULL', 'if (target is null)', 'target.IsOwner && !active',
+                '_settings.SaveRecoveryHash(actor, stored)'], 'staff credentials')
+    settings = (core / 'SettingsService.cs').read_text()
+    need(settings, ['values.ContainsKey(AuthService.RecoveryWordKey)',
+                    'key == AuthService.RecoveryWordKey', 'key == FocusGuardService.GuardKey', 'internal ServiceResult SaveRecoveryHash',
+                    'if (ownerOnly) OwnerAccess.Require(_db, connection, actor);'], 'secret settings')
+    recovery = settings.split('internal ServiceResult SaveRecoveryHash', 1)[-1].split('private bool IsCurrentOwner', 1)[0]
+    need(recovery, ['OwnerAccess.Require', '_audit.Record(connection, owner, "Auth", "recovery_word_changed"',
+                    '_cache[AuthService.RecoveryWordKey] = json'], 'atomic recovery')
+    if recovery.find('_cache[') < recovery.find('_audit.Record('):
+        FAILURES.append('Phase4 recovery cache must not precede transaction audit')
+    photo = (core / 'PhotoService.cs').read_text()
+    need(photo, ['Path.IsPathRooted(fileName)', 'fileName.Contains("..", StringComparison.Ordinal)',
+                 'row.FullPath = CoverPath(row.FileName) ?? string.Empty;',
+                 'CoverPath(selected.FileName) is null', 'var path = CoverPath(file);',
+                 'var path = CoverPath(row.FileName);'], 'shared photo filename boundary')
+    if 'Path.Combine(PhotosFolder, row.FileName)' in photo or 'Path.Combine(PhotosFolder, selected.FileName)' in photo:
+        FAILURES.append('Phase4 stored gallery/cover names bypass safe resolver')
+    boundary = (DOTNET / 'Area11.Tests' / 'OwnerBoundaryReviewTests.cs').read_text()
+    need(boundary, ['RecoveryAuditFailureRollsBackHashAndCache', 'SecretResetAuditFailureRestoresOldCredential',
+                    'PasswordResetInvalidatesAnOldPinToo', 'PinResetInvalidatesAnOldPasswordToo',
+                    'ForgedOwnerCannotGrantAnyModule', 'ProtectedOwnerSettingsRejectForgedOwnerAtomically'], 'regressions')
+    need((DOTNET / 'Area11.Tests' / 'PhotoTests.cs').read_text(),
+         ['ThumbnailsNeverResolveAnExistingFileOutsidePhotoFolder', 'GalleryRowsCannotCarryAnOutsideFullPath',
+          'BulkCoversIgnoreUnsafeStoredNames', 'ChoosingCoverCannotBlessAnOutsideFile',
+          'StaffAvatarRejectsDriveRelativeAndNetworkNames'], 'photo regressions')
+    doc = (ROOT / 'docs/POS-PHASE4-EVIDENCE.md').read_text()
+    shell = (DOTNET / 'Area11.Desktop/ViewModels/ShellViewModel.cs').read_text()
+    routes = set(re.findall(r'AddPage\("\w+",\s*"(\w+)"', shell)) | {'dashboard'}
+    inventoried = set(re.findall(r'^\| ([a-zA-Z]+) \|', doc, re.M)) - {'Route', 'Lesson'}
+    if routes != inventoried:
+        FAILURES.append(f'Phase4 route evidence drift: missing {routes-inventoried}, extra {inventoried-routes}')
+    lessons = set(re.findall(r'^\| (\d{2}) \|', doc, re.M))
+    if lessons != {f'{n:02}' for n in range(1, 37)}:
+        FAILURES.append('Phase4 evidence must map all36 guide lessons')
+    # Top-level contents, not nested Built-in/Extra field TabItems.
+    ns = {'w': 'http://schemas.microsoft.com/winfx/2006/xaml/presentation'}
+    view = ET.parse(DOTNET / 'Area11.Desktop/Views/SettingsView.xaml').getroot()
+    tabs = view.findall('./w:Grid/w:TabControl/w:TabItem', ns)
+    if len(tabs) != 8 or not all(f'| {n} ' in doc for n in range(8)):
+        FAILURES.append('Phase4 Settings inventory drift: review all top-level contents')
+    need(doc, ['IN PROGRESS', 'not a full audit PASS', 'filename containment', 'no shell section for index0'], 'evidence honesty')
+    REPORT.append('Phase4 portion1: bounded live-owner/alternate-secret/recovery/photo contracts and 26-route/eight-Settings/36-lesson inventory present; full audit and Windows runtime pending')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -6401,6 +6462,7 @@ def main() -> int:
     check_cloud_sync_closure()
     check_native_workbook()
     check_backup_restore_gate()
+    check_owner_boundary_review()
     check_csharp_grammar()
 
     if not quiet:

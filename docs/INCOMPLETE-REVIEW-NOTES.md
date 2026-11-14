@@ -1,5 +1,10 @@
 # Review carry-forward — not a completed audit
 
+## Phase4 portion1 (v0.79.0), still IN PROGRESS
+
+Bounded owner-write/alternate-secret/atomic-recovery/photo-filename fixes and25 UNEXECUTED regressions;1325 written total. See `POS-PHASE4-EVIDENCE.md` for26 routes,8 Settings contents,36 lessons and honest15-dimension pending list. Generic permission read defaults, factory recovery, HasOpenDrawer and compatibility policies unchanged. Filename validation is not a reparse-point/symlink guarantee. Settings identity content index0 has no shell section; next portion must resolve/retest reachability. No whole-audit/security/Windows PASS or installer.
+
+
 ## Current approved phase2 (v0.77.0)
 
 - Fixed: inherited read-only rate template replaced by guarded owned editor, no blanket grid editing.

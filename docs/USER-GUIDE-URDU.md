@@ -1,8 +1,10 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.78.0 Avocet۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.79.0 Tern۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
 
 **موجودہ POS فیز3:** مستقل search pane منتخب ہے۔ v0.78.0 میں owner-only ہر شخص کی الگ قیمت/رعایت حدیں، Cart کا محفوظ item editor اور profit/retail حساب code میں شامل ہیں۔ **موجودہ دکان کے آئندہ bills کا ابتدائی default اب profit ہے**؛ مالک Settings سے retail واپس کرسکتا ہے۔ پرانے محفوظ bills unchanged۔ الگ ایڈٹ شدہ لائن پر bill% دوبارہ نہیں؛ خرید سے نیچے کسی کو اجازت نہیں۔ **الگ sale-level Extra Discount اب فیز3 کے code میں شامل؛ مالک کا return طریقہ B: پہلے560 پھر باقی540، اصل item rates نہیں بدلتے**، جامع page/15-point audit فیز4 میں۔ Windows tests/build/عملی ثبوت باقی۔ [فیز2 کی آسان مشق اور واپسی](POS-PHASE2-TEST-URDU.md) ، [فیز3 استعمال/آزمائش/بندش](POS-PHASE3-TEST-URDU.md) اور [مکمل منصوبہ](POS-NEXT-REVIEW-PLAN-URDU.md) الگ ہیں۔
+
+**فیز4 حصہ1 کی تازہ حیثیت:** v0.79.0 میں موجودہ active owner کی write جانچ، راز reset کے بعد پرانی دوسری credential کی بندش، recovery hash/audit کی مشترک transaction اور تصاویر کے محفوظ filenames درست کیے ہیں۔ **جامع فیز4 ابھی جاری ہے، مکمل PASS نہیں**؛26 routes/Settings کے8 contents/36 اسباق کا نقشہ [evidence register](POS-PHASE4-EVIDENCE.md) اور [محفوظ test/باقی کام](POS-PHASE4-TEST-URDU.md) میں۔1325 C# cases لکھے ہیں، یہاں چلائے نہیں۔ مالی فیز2/3 کا منظورشدہ حساب برقرار ہے۔
 
 **پڑھنے کا طریقہ:** حصہ اوّل میں صرف صفحات/اختیارات کی مختصر فہرست ہے۔ حصہ دوم میں انہی کی الگ، قدم بہ قدم تفصیل ہے۔ پہلے پورا خلاصہ دیکھیں؛ پھر جس کام کی ضرورت ہو اسی نمبر کی تفصیل پڑھیں۔ HTML فائل براؤزر میں کھلتی ہے، انٹرنیٹ کے بغیر بھی؛ براؤزر کے Print سے کاغذ یا PDF بنا سکتے ہیں۔
 
@@ -427,6 +429,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 
 ## سبق 28 — ایپ کی شناخت اور Shop details الگ
 
+**موجودہ source کی حد:** App name & icon کا content index0 موجود ہے، مگر shell کی clickable section list میں اس کا اندراج نہیں۔ لہٰذا اس build میں اس راستے کی عام رسائی ابھی درست/Windows verify ہونا باقی ہے؛ نیچے اس content کے کام کی وضاحت ہے، دستیابی کا PASS نہیں۔ Shop/Printing وغیرہ الگ sections ہیں۔
+
 1. Settings → App name & icon: App name ایک سے چالیس حرف؛ Choose app icon… میں .ico، زیادہ سے زیادہ 2 MB؛ Use default icon واپس اصل۔ پھر Save settings۔
 2. یہ نام/icon window، login اور taskbar کے لیے ہیں۔ نصب executable اور پہلے سے بنے desktop shortcuts کا اپنا icon الگ رہ سکتا ہے۔ app icon بدلنے سے رسید پر لوگو نہیں لگتا۔
 3. Shop tab: Product photos کا thumbnail size صرف Counter/Products کی دکھائی جانے والی تصویر کا حجم۔ Shop name، Phone، Address، Note at the bottom of the receipt **کاغذ والی دکان** ہیں۔
@@ -472,6 +476,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 4. Your own recovery word میں اپنا یاد رہنے والا محفوظ لفظ، Save this recovery word۔ خالی چھوڑ کر فیکٹری area11 پر واپس جانا کم محفوظ ہے؛ اسے عملے کے سامنے نہ دکھائیں۔
 5. Photos… شناخت کی مدد ہے، login کا بدل نہیں۔ Close the program ایک خاص اجازت ہے؛ صرف عمومی manager نام رکھنے سے ہر بندش مجاز مت سمجھیں۔
 6. App words میں اصل section کے مقابل اپنا نام لکھیں؛ Save settings سے navigation/headings بدلتے ہیں۔ Restore original words سب labels واپس کرتا ہے؛ پرانے بل/رسید کی عبارت یا تاریخی record دوبارہ نہیں لکھتا۔
+
+**فیز4 حصہ1 — راز کی تبدیلی:** اب نیا password مقرر کرنے سے سابق PIN، اور نیا PIN مقرر کرنے سے سابق password صاف ہوتا ہے۔ صرف نیا مقرر کردہ راز استعمال کریں؛ اس سے تمام پہلے کھلے sessions کے فوراً ختم ہونے کا دعویٰ نہیں۔ owner-only متعلقہ writes میں database کا موجودہ active owner چیک؛ manager کو administration نہیں۔ recovery کا مخصوص owner راستہ استعمال کریں؛ hash اور غیرخفیہ audit ایک transaction، عام settings سے recovery hash لکھنا ممنوع۔ factory recovery کی موجودہ پالیسی برقرار۔
 
 <a id="lesson-32"></a>
 

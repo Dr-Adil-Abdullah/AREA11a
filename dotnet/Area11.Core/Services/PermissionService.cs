@@ -165,6 +165,7 @@ public sealed class PermissionService
         {
             _db.Tx(connection =>
             {
+                var owner = OwnerAccess.Require(_db, connection, actor);
                 var target = _db.QuerySingle<User>(connection,
                     "SELECT id, name, role, active FROM users WHERE id = @id;", new { id = userId });
 
@@ -195,10 +196,10 @@ ON CONFLICT(user_id, module_key) DO UPDATE SET
                         module,
                         allowed = allowed ? 1 : 0,
                         at = Clock.Now(),
-                        actor = actor.Name
+                        actor = owner.Name
                     });
 
-                _audit.Record(connection, actor, "Users", "permission_change", "user_permissions",
+                _audit.Record(connection, owner, "Users", "permission_change", "user_permissions",
                     $"{userId}:{module}",
                     oldValue: old?.ToString(),
                     newValue: allowed ? "1" : "0");
@@ -228,12 +229,21 @@ ON CONFLICT(user_id, module_key) DO UPDATE SET
         {
             _db.Tx(connection =>
             {
+                var owner = OwnerAccess.Require(_db, connection, actor);
+                var target = _db.QuerySingle<User>(connection,
+                    "SELECT id, name, role, active FROM users WHERE id = @id;", new { id = userId });
+                if (target is null) throw new ValidationException("That person no longer exists.");
+                if (target.IsOwner) throw new ValidationException("The owner always has every permission.");
                 _db.Execute(connection, "DELETE FROM user_permissions WHERE user_id = @userId;", new { userId });
-                _audit.Record(connection, actor, "Users", "permission_reset", "user_permissions",
+                _audit.Record(connection, owner, "Users", "permission_reset", "user_permissions",
                     userId.ToString(), oldValue: "custom", newValue: "role defaults");
             });
 
             return ServiceResult.Success();
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult.Fail(exception.Message);
         }
         catch (Exception exception)
         {

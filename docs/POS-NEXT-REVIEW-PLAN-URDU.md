@@ -132,3 +132,7 @@ Allowed1120→1100، denied user، cap exceeded، repeated apply/edit/reset، be
 ## ابھی کی آخری حیثیت
 
 بنیادی UI/discount/permission/Extra Discount فیصلے واضح؛ مزید وہی سوال دوبارہ درکار نہیں۔ جزوی return کا سوال پوچھا اور B جواب ملا؛ یہی نافذ ہے، دوبارہ یہی سوال نہیں۔ نئی حقیقی ambiguity پر مثال کے ساتھ پوچھیں۔ v0.78.0 میں فیز1/2/3 source موجود؛ Windows/runtime proof باقی۔ اگلے next پر فیز4 review؛ اسے پہلے سے مکمل نہ سمجھیں۔
+
+### فیز4 کی تازہ پیش رفت — v0.79.0، حصہ1
+
+فیز4 شروع ہے، مکمل نہیں۔ 26 routes، Settings کے8 contents اور36 lessons کا evidence register [یہاں](POS-PHASE4-EVIDENCE.md)؛ مالک کی موجودہ شناخت، راز reset، recovery atomicity اور تصاویر کے محفوظ filenames کے محدود fixes شامل۔ 1325 C# cases صرف لکھے گئے، Windows پر چلنے باقی۔ اگلا حصہ اسی فیز کا direct-service/finance/files/cloud/UI اور مکمل کتاب reconciliation ہے؛ Settings index0 کی shell reachability بھی باقی۔ [اس حصے کی محفوظ آزمائش](POS-PHASE4-TEST-URDU.md)۔

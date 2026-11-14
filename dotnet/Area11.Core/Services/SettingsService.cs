@@ -182,6 +182,10 @@ public sealed class SettingsService
             return ServiceResult.Fail($"Unknown setting '{key}'.");
         }
 
+        if (key == AuthService.RecoveryWordKey)
+            return ServiceResult.Fail("The recovery word must use the owner-only secret settings path.");
+        if (key == FocusGuardService.GuardKey)
+            return ServiceResult.Fail("Screen lock must use the audited owner settings path.");
         if (key is "discount.billBasis" or "discount.blockBelowCost")
             return ServiceResult.Fail("Pricing policy must use the audited owner settings path.");
 
@@ -239,6 +243,8 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
     /// </summary>
     public ServiceResult SetMany(IReadOnlyDictionary<string, object?> values, User? actor)
     {
+        if (values.ContainsKey(AuthService.RecoveryWordKey))
+            return ServiceResult.Fail("The recovery word must use the owner-only secret settings path.");
         if (values.TryGetValue("discount.billBasis", out var billBasis))
         {
             if (!IsCurrentOwner(actor)) return ServiceResult.Fail("Only the owner can change the default discount basis.");
@@ -289,6 +295,11 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
             }
         }
 
+        var ownerOnly = values.Keys.Any(key => key is "discount.billBasis" or "appearance.iconFileName"
+            or "brand.appName" or "lockdown.focusGuard");
+        if (ownerOnly && !IsCurrentOwner(actor))
+            return ServiceResult.Fail("Only the active owner can change these protected settings.");
+
         var preparation = PrepareBulk(values);
         if (!preparation.Ok || preparation.Value is null)
         {
@@ -301,6 +312,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         {
             _db.Tx(connection =>
             {
+                if (ownerOnly) OwnerAccess.Require(_db, connection, actor);
                 foreach (var pair in values)
                 {
                     var json = prepared[pair.Key];
@@ -331,6 +343,32 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         {
             _log.Error($"Settings could not be saved ({string.Join(", ", values.Keys)}).", exception);
             return ServiceResult.Fail("The settings could not be saved.");
+        }
+    }
+
+    internal ServiceResult SaveRecoveryHash(User actor, string hash)
+    {
+        try
+        {
+            var json = JsonSerializer.Serialize(hash);
+            _db.Tx(connection =>
+            {
+                var owner = OwnerAccess.Require(_db, connection, actor);
+                _db.Execute(connection, @"
+INSERT INTO settings(key, value, updated_at) VALUES(@key, @value, @at)
+ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at;",
+                    new { key = AuthService.RecoveryWordKey, value = json, at = Clock.Now() });
+                _audit.Record(connection, owner, "Auth", "recovery_word_changed",
+                    details: hash.Length == 0 ? "back to the factory word" : "changed");
+            });
+            lock (_gate) { _cache[AuthService.RecoveryWordKey] = json; }
+            return ServiceResult.Success();
+        }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
+        catch (Exception exception)
+        {
+            _log.Error("The recovery word could not be saved.", exception);
+            return ServiceResult.Fail("The change could not be saved.");
         }
     }
 
