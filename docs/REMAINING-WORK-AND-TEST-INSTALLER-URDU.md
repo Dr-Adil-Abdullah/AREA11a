@@ -1,5 +1,11 @@
 # باقی کام، GitHub اور test installer — v0.87.0
 
+## GitHub پر موجودہ اشاعت
+
+تمام جمع شدہ source/docs تبدیلیاں commit `f36a349` میں محفوظ؛ پہلے سے remote پر موجود history کو برقرار رکھتے ہوئے merge `ce1e543` اسی branch `arena/b4b7bf7b-area11a` پر **کامیابی سے push ہوا**۔ Force-push نہیں کیا؛merge کا source tree وہی جانچا ہوا v0.87 snapshot ہے۔ اب اسی branch سے source لیا جاسکتا ہے؛`main` میں merge یا installer release کا دعویٰ نہیں۔ ہر آئندہ مرحلے میں docs+commit+push لازمی ہدایت D-112 میں درج ہے۔
+
+**تازہ checks:**76 static PASS؛پانچ isolated SQLite probes PASS؛guide کے36 lessons کی exact MD/HTML parity،نئے plan کے local links اور staged diff/hygiene checks PASS۔1493 C# cases / Windows build / installer runtime اب بھی UNRUN۔
+
 **تاریخ:2026-11-10۔** یہ موجودہ source/evidence کی صورت حال ہے؛ مکمل audit یا Windows منظوری نہیں۔ مالک کی نئی ہدایت: ہر مرحلے میں دستاویزات اپڈیٹ اور اسی Arena branch پر commit/push بھی لازم؛ کامیابی صرف اصل Git نتیجے کے بعد کہیں۔ Installer بنانے کی اجازت اب test کے لیے مل گئی ہے؛ اس کا مطلب production منظوری نہیں۔
 
 ## کتنا باقی / کتنے “next”؟
