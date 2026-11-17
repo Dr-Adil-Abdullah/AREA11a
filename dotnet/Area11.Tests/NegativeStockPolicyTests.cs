@@ -397,7 +397,7 @@ VALUES(@productId, @batchNo, @expiry, @expiryYm, @quantity, 20000, 30000, 0, 1, 
         var takes = Takes(test);
         var opened = takes.Open(TestData.Owner);
         Assert.True(opened.Ok, opened.Error);
-        var line = takes.Sheet(opened.Value!.Id).Single(row => row.BatchId == provisionalBatch);
+        var line = takes.Sheet(TestData.Owner, opened.Value!.Id).Single(row => row.BatchId == provisionalBatch);
         Assert.True(takes.Count(TestData.Owner, line.Id, 5, "unit", "found the original PR goods").Ok);
         var counted = takes.Apply(TestData.Owner, opened.Value.Id);
         Assert.True(counted.Ok, counted.Error);

@@ -1,8 +1,10 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.88.0 Skylark۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.89.0 Redstart۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
 
-**فیز4 حصہ10 — عام batch اور تازہ تیاری:** Stock/Expenses/Suppliers کے batch picker کی cost/valuation الگ Cost+main سے؛quantity/batch/date برقرار۔ Write-off/Expenses preview اور manual SR tray تازہ current cost/quantity/pack لیتے ہیں؛ناکامی پر hidden/انکار،نہ stale رقم نہ fake0۔ **انہی صفحات کی history/today/results اور frozen stock-take ابھی باقی ہیں؛پورا صفحہ cost-private نہیں۔** [PT-30](POS-PHASE4-PART10-URDU.md)،[trace/حدود](POS-PHASE4-BATCH-READ-REVIEW.md)۔1521C#cases UNRUN،77static checks PASS؛Windows باقی۔
+**فیز4 حصہ11 — stock/frozen valuation:** Write-off history/today/save result اور stock-take Current/History/sheet/found/new print/Open/Apply output الگ Cost+main کے تحت؛منع ہو تو raw money/labels mask،گنتی/فرق/status برقرار۔ اصل frozen cost اور Count/Apply حساب unchanged؛مجاز0،uncounted—،hidden الگ۔ نئے print میں query failure successful empty نہیں۔ [PT-31](POS-PHASE4-PART11-URDU.md)،[trace/حدود](POS-PHASE4-STOCK-VALUATION-REVIEW.md)۔1551C#cases UNRUN،78static PASS؛Windows/generic exports/expense/purchase/supplier/session rollout باقی۔
+
+**فیز4 حصہ10 — عام batch اور تازہ تیاری:** Stock/Expenses/Suppliers کے batch picker کی cost/valuation الگ Cost+main سے؛quantity/batch/date برقرار۔ Write-off/Expenses preview اور manual SR tray تازہ current cost/quantity/pack لیتے ہیں؛ناکامی پر hidden/انکار،نہ stale رقم نہ fake0۔ **Stock history/today/results اور frozen stock-take حصہ11 میں منتقل؛Expense/Supplier کے باقی مالی outputs اب بھی باقی،global secrecy نہیں۔** [PT-30](POS-PHASE4-PART10-URDU.md)،[trace/حدود](POS-PHASE4-BATCH-READ-REVIEW.md)۔1521C#cases UNRUN،77static checks PASS؛Windows باقی۔
 
 **فیز4 حصہ9 — خرید invoice / expired stock:** نئے purchase document میں cost منع ہو تو line amount،Total،Paid،Due سب hidden؛نام/quantity/batch/date برقرار۔ expired list کی raw cost/valuation بھی mask؛Add whole batch تازہ500حد والی row اور known cost دوبارہ چیک کرتا ہے،انکار پر tray untouched۔ supplier عام paid/payable/Pay/SR پالیسی اور posting unchanged،یہ global completion نہیں۔ [PT-29](POS-PHASE4-PART9-URDU.md)،[trace/حدود](POS-PHASE4-PURCHASE-READ-REVIEW.md)۔1493 C# cases UNRUN،76 static checks PASS؛Windows باقی۔
 
@@ -380,7 +382,9 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 4. Stock minus پر پرانے منفی balances، کتنے دن، cost value اور review دیکھیں۔ Monthly review میں جو پایا وہ لکھ کر Mark reviewed کریں۔ **Review سے quantity نہیں بدلتی۔**
 5. حقیقی shelf count لے کر Stock-take میں مالک سے correction منظور کروائیں۔ محض فہرست صاف کرنے کے لیے فرضی purchase یا خود SQL سے صفر نہ کریں۔
 
-**حصہ10 — batch اور Write-off preview:** Stock grant کے ساتھ metadata،Cost+main سے خرید کی valuation؛preview ہر متعلقہ interaction پر تازہ cost/stock/pack لیتا ہے۔ ناکامی پر hidden/error،پرانے product کی رقم یا fake0 نہیں۔ **Write-off history/today totals اور save result ابھی الگ open مالی راستے ہیں**؛اس محدود preview fix سے پورے صفحے کی secrecy نہ سمجھیں۔ اصل stock posting unchanged۔ [PT-30](POS-PHASE4-PART10-URDU.md)۔
+**حصہ10 — batch اور Write-off preview:** Stock grant کے ساتھ metadata،Cost+main سے خرید کی valuation؛preview ہر متعلقہ interaction پر تازہ cost/stock/pack لیتا ہے۔ ناکامی پر hidden/error،پرانے product کی رقم یا fake0 نہیں۔ **حصہ11 میں Write-off history/today totals اور save result بھی منتقل**؛StockMinus/audit/generic export اور دوسرے نامکمل راستوں سے global secrecy نہ سمجھیں۔ اصل stock posting unchanged۔ [PT-30](POS-PHASE4-PART10-URDU.md)۔
+
+**حصہ11 — Write-off کے باقی output:** history کی رقم،today total اور نئی save-result loss الگ Cost+main؛منع ہو تو hidden،مجاز اصل0 الگ۔ اصل adjustment/audit/stock حساب کو چھپی0 سے نہیں بدلتے۔ Account/page دوبارہ چیک؛StockMinus/generic exports/audit/session الگ باقی۔ [PT-31](POS-PHASE4-PART11-URDU.md)۔
 
 <a id="lesson-21"></a>
 
@@ -392,6 +396,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 4. صرف manager counting/cancel کی مجاز حدود میں کام کرے؛ **Apply this stock-take صرف مالک**۔ ہر row، shortage/excess اور cost اثر دیکھ کر ایک بار apply کریں۔ counted quantity کو حقیقی غیر منفی گنتی رکھیں۔
 5. Apply کے بعد book count کے مطابق corrections اور audit بنتا ہے؛ دوبارہ apply نہیں۔ Cancel کے لیے وجہ لازم ہے۔ Earlier counts سے تاریخ ملتی ہے۔ غلط count کو صحیح دکھانے کے لیے بار بار sessions نہ بنائیں۔
 
+**حصہ11 — محفوظ frozen cost،الگ visibility:** Current/history summary،sheet value،found search cost،نئے print کا net Value اور Open/Apply results Cost+main سے مشروط؛qty/count/difference باقی۔ اندرونی Count/Apply اصل frozen cost ہی لیتے ہیں۔ Hidden رقم کو دوبارہ0 input نہ بنائیں۔ مجاز uncounted—،حقیقی0 اور denied hidden الگ؛differences-only quantity-based۔ Query failure نئی document کو ناکام کرے،خالی successful sheet نہیں۔ الگ stock-take CSV builder موجود نہیں؛generic exports کی review ابھی باقی۔ [PT-31](POS-PHASE4-PART11-URDU.md)۔
+
 <a id="lesson-22"></a>
 
 ## سبق 22 — Expenses اور مالک کی ذاتی نکاسی
@@ -402,7 +408,7 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 4. ایک ہی نکاسی Expense اور Drawing دونوں میں مت لکھیں۔ goods drawing سٹاک سے زیادہ نہیں ہو سکتی۔
 5. What went out میں entry منتخب کرکے Print voucher۔ محفوظ entry edit/delete نہیں؛ غلطی سامنے ہو تو مالک ریکارڈ دیکھ کر واضح corrective entry کرے۔
 
-**حصہ10 — Goods drawing preview:** Cash workflow کی batch list اور نئی cost preview الگ Cost+main کے تحت؛ممنوع رقم hidden،missing/stale selection سے fake0 حساب نہیں۔ Pack/quantity تازہ read سے؛یہ stock reservation یا posting authorization نہیں۔ Expense/drawing history/results/voucher اور frozen stock-take ابھی اگلا audit؛عام expense cash rule نہیں بدلا۔ [PT-30](POS-PHASE4-PART10-URDU.md)۔
+**حصہ10 — Goods drawing preview:** Cash workflow کی batch list اور نئی cost preview الگ Cost+main کے تحت؛ممنوع رقم hidden،missing/stale selection سے fake0 حساب نہیں۔ Pack/quantity تازہ read سے؛یہ stock reservation یا posting authorization نہیں۔ Frozen stock-take حصہ11 میں منتقل؛Expense/drawing history/results/voucher ابھی اگلا audit؛عام expense cash rule نہیں بدلا۔ [PT-30](POS-PHASE4-PART10-URDU.md)۔
 
 <a id="lesson-23"></a>
 
@@ -531,7 +537,9 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 
 **حصہ9 کی scope update:** permission Details میں نئے purchase invoice اور expired-list masks شامل؛line total کے ساتھPaid/Due بھی hidden۔ الگ ticks/main rule unchanged؛purchase entry/draft/result،عام supplier ledger/Pay/SR اور دوسرے نامکمل راستے واضح باقی۔ [trace](POS-PHASE4-PURCHASE-READ-REVIEW.md)۔
 
-**حصہ10 کی scope update:** permission Details میں عام batch read masks اور تازہ Write-off/Expenses/manualSR preparation شامل۔ تاریخ/quantity برقرار؛history/totals/results اور frozen stock-take valuation ابھی واضح باقی۔ [trace](POS-PHASE4-BATCH-READ-REVIEW.md)۔
+**حصہ10 کی scope update:** permission Details میں عام batch read masks اور تازہ Write-off/Expenses/manualSR preparation شامل۔ تاریخ/quantity برقرار؛حصہ11 میں stock history/totals/results اور frozen stock-take بھی منتقل،Expense/Supplier/generic exports ابھی باقی۔ [trace](POS-PHASE4-BATCH-READ-REVIEW.md)۔
+
+**حصہ11 کی scope update:** Details میں stock history/today/result اور frozen stock-take line/session/document/Open/Apply money masks شامل؛backend frozen accounting برقرار۔ یہ expense/purchase/Supplier/generic exports اور session کی مکمل حفاظت کا سرٹیفکیٹ نہیں۔ [trace](POS-PHASE4-STOCK-VALUATION-REVIEW.md)۔
 
 <a id="lesson-32"></a>
 
@@ -594,6 +602,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 5. دستیابی کی اندرونی وارننگ رسید پر کبھی نہیں؛ app name/icon کو کاغذ کا shop name/logo نہ سمجھیں۔ Slip دینے سے پہلے نام، unit، quantity، rate، total، paid/due اور change ملانا کیشیئر کی ذمہ داری ہے۔
 
 **خرید invoice کی تازہ حد:** نئے purchase ReceiptDocument کی print/PDF/text preparation میں ایک ہی cost rule؛منع ہونے پرline amounts/Total/Paid/Due hidden۔ یہ نئے document کی جانچ ہے؛پہلے محفوظ PDF،کاغذ یا دوسرے ابھی غیرمنتقل exports خود واپس محفوظ نہیں ہوتے۔ [PT-29](POS-PHASE4-PART9-URDU.md)۔
+
+**Stock-take نئی print حد:** نیا document authorized current account/page سے تیار؛Cost+main منع ہو تو net Value hidden،book/count/difference برقرار۔ Query failure میں print تیاری ناکام،اصل SQL error نہیں؛پرانے paper/PDF واپس recall نہیں ہوتے۔ کوئی الگ stock-take CSV route مکمل ہونے کا دعویٰ نہیں۔ [PT-31](POS-PHASE4-PART11-URDU.md)۔
 
 <a id="lesson-36"></a>
 

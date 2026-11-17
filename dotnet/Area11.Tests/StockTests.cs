@@ -227,7 +227,7 @@ public sealed class StockTests
             Note = "correcting the 2 lost"
         }, manager).Ok);
 
-        var history = Stock(test).History();
+        var history = Stock(test).History(TestData.Owner);
 
         Assert.Equal(2, history.Count);                       // both lines stay
         Assert.Equal("out", history[1].Direction);
@@ -250,7 +250,7 @@ public sealed class StockTests
             ProductId = product, QtyEntered = 3, Unit = "strip", Reason = StockService.ReasonExpired
         }, TestData.Owner);
 
-        var row = Stock(test).History()[0];
+        var row = Stock(test).History(TestData.Owner)[0];
 
         Assert.Equal("Brufen 400mg", row.ProductName);
         Assert.Equal("B-1", row.BatchNo);
@@ -271,14 +271,14 @@ public sealed class StockTests
             ProductId = product, QtyEntered = 10, Unit = "unit", Reason = StockService.ReasonExpired
         }, TestData.Owner);
 
-        Assert.Equal(200000L, Stock(test).LossTodayPaisa());
+        Assert.Equal(200000L, Stock(test).LossTodayPaisa(TestData.Owner));
 
         Stock(test).WriteOff(new WriteOffInput
         {
             ProductId = product, QtyEntered = 2, Unit = "unit", Reason = StockService.ReasonCountExtra
         }, TestData.Owner);
 
-        Assert.Equal(160000L, Stock(test).LossTodayPaisa());
+        Assert.Equal(160000L, Stock(test).LossTodayPaisa(TestData.Owner));
     }
 
     [Fact]

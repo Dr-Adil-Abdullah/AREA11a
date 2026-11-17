@@ -35,6 +35,8 @@ public sealed class StockTakeLine
 
     public long? ValuePaisa { get; set; }
 
+    public bool CostKnown { get; set; }
+
     public string? CountedBy { get; set; }
 
     public string? CountedAt { get; set; }
@@ -60,7 +62,7 @@ public sealed class StockTakeLine
         ? "—"
         : (DiffQtyBase.Value > 0 ? "+" : string.Empty) + Qty.Format(DiffQtyBase.Value);
 
-    public string ValueLabel => ValuePaisa is null ? "—" : Money.Format(ValuePaisa.Value);
+    public string ValueLabel => !CostKnown ? "hidden" : ValuePaisa is null ? "—" : Money.Format(ValuePaisa.Value);
 
     public string WhereLabel => string.IsNullOrWhiteSpace(BatchNo)
         ? "(new batch)"
@@ -93,6 +95,8 @@ public sealed class StockTakeSession
 
     public int DiffCount { get; set; }
 
+    public bool CostKnown { get; set; }
+
     public long ShortPaisa { get; set; }
 
     public long ExtraPaisa { get; set; }
@@ -117,9 +121,9 @@ public sealed class StockTakeSession
         _ => "Open"
     };
 
-    public string ShortLabel => Money.Format(ShortPaisa);
+    public string ShortLabel => CostKnown ? Money.Format(ShortPaisa) : "hidden";
 
-    public string ExtraLabel => Money.Format(ExtraPaisa);
+    public string ExtraLabel => CostKnown ? Money.Format(ExtraPaisa) : "hidden";
 
     public string DateLabel => string.IsNullOrWhiteSpace(Date) || Date!.Length < 16 ? Date ?? string.Empty : Date![..16];
 
@@ -135,9 +139,15 @@ public sealed class StockTakeResult
 
     public int DiffCount { get; set; }
 
+    public bool CostKnown { get; set; }
+
     public long ShortPaisa { get; set; }
 
     public long ExtraPaisa { get; set; }
+
+    public string ShortLabel => CostKnown ? Money.Format(ShortPaisa) : "hidden";
+
+    public string ExtraLabel => CostKnown ? Money.Format(ExtraPaisa) : "hidden";
 
     public int NewBatches { get; set; }
 

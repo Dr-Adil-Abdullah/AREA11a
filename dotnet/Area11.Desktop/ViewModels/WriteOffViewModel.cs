@@ -184,12 +184,13 @@ public sealed class WriteOffViewModel : ObservableObject, IEmptyPage
     public void Load()
     {
         History.Clear();
-        foreach (var row in _services.Stock.History())
+        foreach (var row in _services.Stock.History(_user))
         {
             History.Add(row);
         }
 
-        TodayTotal = "Written off today: " + Money.Format(_services.Stock.LossTodayPaisa());
+        var lossToday = _services.Stock.LossTodayPaisa(_user);
+        TodayTotal = "Written off today: " + (lossToday is long value ? Money.Format(value) : "hidden");
         OnPropertyChanged(nameof(TodayTotal));
         OnPropertyChanged(nameof(IsNotAllowed));
     }
@@ -323,7 +324,7 @@ public sealed class WriteOffViewModel : ObservableObject, IEmptyPage
         LoadBatches();
 
         var message = name + ": " + Qty.Format(Math.Abs(saved.QtyBase)) + " written off, loss "
-                      + Money.Format(saved.LossPaisa) + " at cost.";
+                      + saved.LossLabel + " at cost.";
 
         if (saved.Warnings.Count > 0)
         {

@@ -6944,6 +6944,65 @@ def check_batch_read_visibility():
     REPORT.append('Phase4 portion10: current-reader batch workflow gate, independent raw/aggregate masks and fresh cost/pack/quantity preparation for write-off/expense previews and manual SR tray; posting, frozen stock-take and histories/results/global rollout remain OPEN')
 
 
+def check_stock_valuation_visibility():
+    core = DOTNET / 'Area11.Core'
+    stock = (core / 'Services/StockService.cs').read_text()
+    take = (core / 'Services/StockTakeService.cs').read_text()
+    for text, signature, end, module in (
+        (stock, 'public List<WriteOffRow> History(', '/// <summary>Money written off', 'Stock'),
+        (stock, 'public long? LossTodayPaisa(', '// ------------------------------------------------------------------- saving', 'Stock'),
+        (take, 'public StockTakeSession? Current(', '/// <summary>Every session', 'StockTake'),
+        (take, 'public List<StockTakeSession> History(', '/// <summary>The sheet', 'StockTake'),
+        (take, 'public List<StockTakeLine> Sheet(', '/// <summary>\n    /// Portion 11', 'StockTake'),
+        (take, 'public List<Product> NotOnSheet(', '// ------------------------------------------------------------------ helpers', 'StockTake'),
+        (take, 'public ServiceResult<ReceiptDocument> BuildSheetDocument(', '/// <summary>Searches medicines', 'StockTake')):
+        part = text.split(signature, 1)[-1].split(end, 1)[0]
+        gate = f'SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.{module})'
+        if 'User? user' not in part or gate not in part or 'CostPolicy.CanSee(_permissions, _settings, reader)' not in part:
+            FAILURES.append(f'Stock valuation reader/module/cost gate missing: {signature}')
+        lookup = min((part.find(x) for x in ('_db.Query', '_db.Scalar', 'ReadSheet(connection', 'LoadSession(connection') if part.find(x) >= 0), default=len(part))
+        if part.find(gate) > lookup:
+            FAILURES.append(f'Stock valuation gate must precede read: {signature}')
+    for token in ('row.CostKnown = canSeeCost;', 'if (!canSeeCost) row.ValuePaisa = 0;',
+                  'if (!CostPolicy.CanSee(_permissions, _settings, reader)) return null;',
+                  'value.CostKnown = canSeeCost;', 'if (!canSeeCost) value.LossPaisa = 0;'):
+        if token not in stock: FAILURES.append(f'Stock raw result/aggregate mask missing {token}')
+    for token in ('ProjectSession(result.Value, canSeeCost);', 'ProjectSession(LoadSession(connection, openId), canSeeCost)',
+                  'foreach (var row in rows) ProjectSession(row, canSeeCost);', 'ProjectLines(lines, canSeeCost);',
+                  'if (!canSeeCost) { session.ShortPaisa = 0; session.ExtraPaisa = 0; }',
+                  'if (!canSeeCost) { value.ShortPaisa = 0; value.ExtraPaisa = 0; }',
+                  'if (!canSeeCost) line.ValuePaisa = null;', 'if (!canSeeCost) product.CostPaisa = 0;',
+                  'Pair("Value", canSeeCost ? Money.Format(valueTotal) : "hidden", bold: true);'):
+        if token not in take: FAILURES.append(f'Frozen stock-take projection missing {token}')
+    for text, start, end, inner in (
+        (stock, 'public ServiceResult<WriteOffResult> WriteOff(', '/// <summary>The write-off history', 'Save(connection, input, user)'),
+        (take, 'public ServiceResult<StockTakeSession> Open(', 'private ServiceResult<StockTakeSession> OpenInside', 'OpenInside(connection, user!, room, categoryId, note)'),
+        (take, 'public ServiceResult<StockTakeResult> Apply(', 'private ServiceResult<StockTakeResult> ApplyInside', 'ApplyInside(connection, user, sessionId, note)')):
+        part = text.split(start, 1)[-1].split(end, 1)[0]
+        if part.find('SnapshotReadAccess.Require') < 0 or part.find('CostPolicy.CanSee') < 0 or part.find('CostPolicy.CanSee') > part.find(inner):
+            FAILURES.append(f'Posting output projection must resolve reader/cost before write in transaction: {start}')
+    doc = take.split('public ServiceResult<ReceiptDocument> BuildSheetDocument(', 1)[-1].split('public List<Product> NotOnSheet', 1)[0]
+    if 'var lines = ReadSheet(connection, sessionId, differencesOnly);' not in doc or ' + exception.Message' in doc:
+        FAILURES.append('Document must use throwing same-connection raw sheet, not failure-as-empty public Sheet or DB error details')
+    model = (core / 'Models/StockTakeModels.cs').read_text()
+    for token in ('!CostKnown ? "hidden" : ValuePaisa is null ? "—"', 'CostKnown ? Money.Format(ShortPaisa) : "hidden"', 'CostKnown ? Money.Format(ExtraPaisa) : "hidden"'):
+        if token not in model: FAILURES.append(f'Frozen value formatter needs hidden/zero/not-counted distinction: {token}')
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/StockTakeViewModel.cs').read_text()
+    if '?? _session;' in vm or 'Lines.Clear();\n            Found.Clear();' not in vm:
+        FAILURES.append('Stock-take failed refresh must not retain old session/rows')
+    for token in ('applied.ShortLabel', 'applied.ExtraLabel', 'StockTake.Current(_user)', 'StockTake.Sheet(_user,'):
+        if token not in vm: FAILURES.append(f'Stock-take UI must consume explicit masked read/result: {token}')
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/WriteOffViewModel.cs').read_text()
+    if 'saved.LossLabel' not in vm or 'Stock.LossTodayPaisa(_user)' not in vm or 'Stock.History(_user)' not in vm:
+        FAILURES.append('Write-off UI must consume masked history/today/result labels')
+    tests = (DOTNET / 'Area11.Tests/StockValuationVisibilityTests.cs').read_text()
+    for name in ('MaskedWriteOffResultStillPostsActualCostAndStock', 'MaskedOpenResultDoesNotZeroFrozenCostUsedByCountAndApply',
+                 'LaterLiveCostChangeCannotRewriteFrozenApplyOrReadValues', 'NewDocumentHidesNetValueButPreservesBookAndCounted',
+                 'MissingDocumentAndDatabaseFailureNeverProduceSuccessfulEmptySheet', 'KnownZeroTodayIsNotHiddenNull'):
+        if name not in tests: FAILURES.append(f'Stock valuation regression missing {name}')
+    REPORT.append('Phase4 portion11: current-reader stock history/daily/result and frozen stock-take current/history/sheet/found/document/Open/Apply money projections, no public actorless fallbacks; private valuation/posting retained; generic exports/expense/session/Windows still OPEN')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -7019,6 +7078,7 @@ def main() -> int:
     check_permission_inspector_ui()
     check_purchase_read_visibility()
     check_batch_read_visibility()
+    check_stock_valuation_visibility()
     check_csharp_grammar()
 
     if not quiet:

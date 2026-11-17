@@ -351,7 +351,7 @@ VALUES(@productId, 'P7-1', '2027-06-30', '2027-06', @quantity, 100, 200, 0, 1, @
         Create(products, "Finder syrup", baseUnit: "ml", boxStrips: 0, stripTablets: 0,
             strengthValue: 50, strengthUnit: "ml", packSizeLabel: "50 mL bottle");
 
-        var found = Takes(test).NotOnSheet(1, "Finder");
+        var found = Takes(test).NotOnSheet(TestData.Owner, 1, "Finder");
 
         var row = Assert.Single(found);
         Assert.Equal(50, row.StrengthValue);

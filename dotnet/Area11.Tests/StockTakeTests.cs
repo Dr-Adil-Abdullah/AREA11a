@@ -29,7 +29,7 @@ public sealed class StockTakeTests
     }
 
     private static StockTakeLine LineOf(StockTakeService service, int sessionId, int productId) =>
-        service.Sheet(sessionId).First(line => line.ProductId == productId);
+        service.Sheet(TestData.Owner, sessionId).First(line => line.ProductId == productId);
 
     [Fact]
     public void Opening_FreezesTheBook_AndGetsAPermanentNumber()
@@ -79,7 +79,7 @@ public sealed class StockTakeTests
         Assert.Equal(-10d, counted.DiffQtyBase);
         Assert.Equal(-200000L, counted.ValuePaisa);      // 10 x Rs 200 cost, minus = shortage
         Assert.True(counted.HasDifference);
-        Assert.Equal(1, service.History()[0].CountedLines);
+        Assert.Equal(1, service.History(TestData.Owner)[0].CountedLines);
     }
 
     [Fact]
@@ -343,8 +343,8 @@ VALUES('Disprin', 'tablet', 2, 10, 5000, 8000, 0, 0, 10, 1, @at, @at);",
         service.Count(TestData.Owner, LineOf(service, opened.Id, first).Id, 10, "unit", null);   // no difference
         service.Count(TestData.Owner, LineOf(service, opened.Id, second).Id, 18, "unit", null);  // difference
 
-        var all = service.Sheet(opened.Id);
-        var diffs = service.Sheet(opened.Id, differencesOnly: true);
+        var all = service.Sheet(TestData.Owner, opened.Id);
+        var diffs = service.Sheet(TestData.Owner, opened.Id, differencesOnly: true);
 
         Assert.Equal(2, all.Count);
         Assert.Single(diffs);
@@ -388,5 +388,5 @@ VALUES('Disprin', 'tablet', 2, 10, 5000, 8000, 0, 0, 10, 1, @at, @at);",
     }
 
     private static StockTakeSession TakeSession(TestDatabase test, int id) =>
-        Takes(test).History().First(row => row.Id == id);
+        Takes(test).History(TestData.Owner).First(row => row.Id == id);
 }

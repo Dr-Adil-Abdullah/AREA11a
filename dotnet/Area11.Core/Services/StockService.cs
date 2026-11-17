@@ -165,7 +165,18 @@ ORDER BY id LIMIT 1;", new { productId, batchId });
 
         try
         {
-            return _db.Tx(connection => Save(connection, input, user));
+            return _db.Tx(connection =>
+            {
+                var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Stock);
+                var canSeeCost = CostPolicy.CanSee(_permissions, _settings, reader);
+                var result = Save(connection, input, user);
+                if (result.Value is { } value)
+                {
+                    value.CostKnown = canSeeCost;
+                    if (!canSeeCost) value.LossPaisa = 0;
+                }
+                return result;
+            });
         }
         catch (ValidationException exception)
         {
@@ -179,13 +190,15 @@ ORDER BY id LIMIT 1;", new { productId, batchId });
     }
 
     /// <summary>The write-off history, newest first - which goods went where, and at what cost.</summary>
-    public List<WriteOffRow> History(int limit = 200)
+    public List<WriteOffRow> History(User? user, int limit = 200)
     {
         try
         {
             using var connection = _db.Open();
 
-            return _db.Query<WriteOffRow>(connection, @"
+            var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Stock);
+            var canSeeCost = CostPolicy.CanSee(_permissions, _settings, reader);
+            var rows = _db.Query<WriteOffRow>(connection, @"
 SELECT a.id AS id, a.date AS date, p.name AS productName, b.batch_no AS batchNo,
        b.expiry_date AS expiryDate, a.direction AS direction, a.qty_base AS qtyBase,
        a.qty_entered AS qtyEntered, a.unit_entered AS unitEntered, a.value_paisa AS valuePaisa,
@@ -196,7 +209,14 @@ LEFT JOIN batches b ON b.id = a.batch_id
 LEFT JOIN users u ON u.id = a.user_id
 ORDER BY a.id DESC
 LIMIT @limit;", new { limit = Math.Clamp(limit, 1, 1000) });
+            foreach (var row in rows)
+            {
+                row.CostKnown = canSeeCost;
+                if (!canSeeCost) row.ValuePaisa = 0;
+            }
+            return rows;
         }
+        catch (ValidationException) { return new List<WriteOffRow>(); }
         catch (Exception exception)
         {
             _log.Error("The write-off history could not be read.", exception);
@@ -205,21 +225,24 @@ LIMIT @limit;", new { limit = Math.Clamp(limit, 1, 1000) });
     }
 
     /// <summary>Money written off since midnight - the number the owner checks before closing.</summary>
-    public long LossTodayPaisa()
+    public long? LossTodayPaisa(User? user)
     {
         try
         {
             using var connection = _db.Open();
 
+            var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Stock);
+            if (!CostPolicy.CanSee(_permissions, _settings, reader)) return null;
             return Convert.ToInt64(_db.Scalar(connection, @"
 SELECT IFNULL(SUM(CASE WHEN direction = 'out' THEN value_paisa ELSE -value_paisa END), 0)
 FROM stock_adjustments
 WHERE date >= date('now', 'localtime') || ' 00:00:00';") ?? 0L);
         }
+        catch (ValidationException) { return null; }
         catch (Exception exception)
         {
             _log.Error("Today's write-off value could not be read.", exception);
-            return 0L;
+            return null;
         }
     }
 

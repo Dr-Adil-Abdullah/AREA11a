@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-31 — stock history/result and frozen stock-take outputs (v0.89.0) — UNRUN
+
+[Safe checklist](docs/POS-PHASE4-PART11-URDU.md): isolated fixtures only;current reader/page/cost/main,owner denial,hidden vs known0 vs uncounted,quantity filters,new document net and failure-not-empty,real stored cost despite hidden results,once-only frozen Apply,transaction fault/read-only data.1551C#cases/Windows build UNRUN;78static/7isolatedSQLiteprobes not runtime proof. No installer or shop fake posting. [Trace](docs/POS-PHASE4-STOCK-VALUATION-REVIEW.md).
+
 ## PT-30 — batch projection / fresh cost previews / manual SR tray (v0.88.0) — UNRUN
 
 [Safe checklist](docs/POS-PHASE4-PART10-URDU.md): isolated synthetic fixtures only;current actor/workflow/module,independent cost/main/owner masks,metadata/known0,effective product fallback,stale/missing/cross-product batch refusal before tray mutation,fresh cost/stock/pack,no silent first-batch fallback,read-only DB. Whole Stock/Expenses/Suppliers pages are not yet cost-private:history/totals/results remain open.1521cases/Windows build UNRUN;77static and6isolated SQL probes are not runtime certification. No installer produced.

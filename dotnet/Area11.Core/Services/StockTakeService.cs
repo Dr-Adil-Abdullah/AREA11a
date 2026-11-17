@@ -63,7 +63,14 @@ public sealed class StockTakeService
 
         try
         {
-            return _db.Tx(connection => OpenInside(connection, user!, room, categoryId, note));
+            return _db.Tx(connection =>
+            {
+                var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.StockTake);
+                var canSeeCost = CostPolicy.CanSee(_permissions, _settings, reader);
+                var result = OpenInside(connection, user!, room, categoryId, note);
+                ProjectSession(result.Value, canSeeCost);
+                return result;
+            });
         }
         catch (ValidationException exception)
         {
@@ -324,7 +331,18 @@ WHERE id = @id;", new { id = lineId });
 
         try
         {
-            return _db.Tx(connection => ApplyInside(connection, user, sessionId, note));
+            return _db.Tx(connection =>
+            {
+                var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.StockTake);
+                var canSeeCost = CostPolicy.CanSee(_permissions, _settings, reader);
+                var result = ApplyInside(connection, user, sessionId, note);
+                if (result.Value is { } value)
+                {
+                    value.CostKnown = canSeeCost;
+                    if (!canSeeCost) { value.ShortPaisa = 0; value.ExtraPaisa = 0; }
+                }
+                return result;
+            });
         }
         catch (ValidationException exception)
         {
@@ -538,23 +556,26 @@ WHERE id = @id;",
     }
 
     /// <summary>The open session, or the newest one - what the page opens itself with.</summary>
-    public StockTakeSession? Current()
+    public StockTakeSession? Current(User? user)
     {
         try
         {
             using var connection = _db.Open();
 
+            var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.StockTake);
+            var canSeeCost = CostPolicy.CanSee(_permissions, _settings, reader);
             var id = _db.QuerySingle<int?>(connection,
                 "SELECT id FROM stock_takes WHERE status = 'open' ORDER BY id DESC LIMIT 1;");
 
             if (id is int openId)
             {
-                return LoadSession(connection, openId);
+                return ProjectSession(LoadSession(connection, openId), canSeeCost);
             }
 
             var newest = _db.QuerySingle<int?>(connection, "SELECT id FROM stock_takes ORDER BY id DESC LIMIT 1;");
-            return newest is int newestId ? LoadSession(connection, newestId) : null;
+            return newest is int newestId ? ProjectSession(LoadSession(connection, newestId), canSeeCost) : null;
         }
+        catch (ValidationException) { return null; }
         catch (Exception exception)
         {
             _log.Error("The current stock-take could not be read.", exception);
@@ -563,13 +584,15 @@ WHERE id = @id;",
     }
 
     /// <summary>Every session, newest first.</summary>
-    public List<StockTakeSession> History()
+    public List<StockTakeSession> History(User? user)
     {
         try
         {
             using var connection = _db.Open();
 
-            return _db.Query<StockTakeSession>(connection, @"
+            var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.StockTake);
+            var canSeeCost = CostPolicy.CanSee(_permissions, _settings, reader);
+            var rows = _db.Query<StockTakeSession>(connection, @"
 SELECT t.id AS id, t.code AS code, t.date AS date, t.status AS status, t.room AS room,
        t.category_id AS categoryId, t.note AS note, t.items_count AS itemsCount, t.diff_count AS diffCount,
        t.short_paisa AS shortPaisa, t.extra_paisa AS extraPaisa, u.name AS userName,
@@ -581,7 +604,10 @@ FROM stock_takes t
 LEFT JOIN users u ON u.id = t.user_id
 LEFT JOIN users a ON a.id = t.applied_by
 ORDER BY t.id DESC;");
+            foreach (var row in rows) ProjectSession(row, canSeeCost);
+            return rows;
         }
+        catch (ValidationException) { return new List<StockTakeSession>(); }
         catch (Exception exception)
         {
             _log.Error("The stock-take history could not be read.", exception);
@@ -590,29 +616,19 @@ ORDER BY t.id DESC;");
     }
 
     /// <summary>The sheet of one session, with book / counted / difference / value (19.2.2).</summary>
-    public List<StockTakeLine> Sheet(int sessionId, bool differencesOnly = false)
+    public List<StockTakeLine> Sheet(User? user, int sessionId, bool differencesOnly = false)
     {
         try
         {
             using var connection = _db.Open();
 
-            var lines = _db.Query<StockTakeLine>(connection, @"
-SELECT i.id AS id, i.product_id AS productId, p.name AS productName, i.batch_id AS batchId,
-       b.batch_no AS batchNo, b.expiry_date AS expiryDate, p.rack_no AS rackNo,
-       i.system_qty_base AS systemQtyBase, i.counted_qty_base AS countedQtyBase,
-       i.unit_entered AS unitEntered, i.qty_entered AS qtyEntered, i.diff_qty_base AS diffQtyBase,
-       i.value_paisa AS valuePaisa, u.name AS countedBy, i.counted_at AS countedAt, i.note AS note
-FROM stock_take_items i
-JOIN products p ON p.id = i.product_id
-LEFT JOIN batches b ON b.id = i.batch_id
-LEFT JOIN users u ON u.id = i.counted_by
-WHERE i.stock_take_id = @sessionId
-ORDER BY p.name COLLATE NOCASE, b.expiry_date, i.id;", new { sessionId });
-
-            return differencesOnly
-                ? lines.Where(line => line.HasDifference || (!line.IsCounted && Math.Abs(line.SystemQtyBase) > 0.0005)).ToList()
-                : lines;
+            var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.StockTake);
+            var canSeeCost = CostPolicy.CanSee(_permissions, _settings, reader);
+            var lines = ReadSheet(connection, sessionId, differencesOnly);
+            ProjectLines(lines, canSeeCost);
+            return lines;
         }
+        catch (ValidationException) { return new List<StockTakeLine>(); }
         catch (Exception exception)
         {
             _log.Error("The sheet of stock-take " + sessionId + " could not be read.", exception);
@@ -626,21 +642,19 @@ ORDER BY p.name COLLATE NOCASE, b.expiry_date, i.id;", new { sessionId });
     /// </summary>
     public ServiceResult<ReceiptDocument> BuildSheetDocument(int sessionId, User? user, bool differencesOnly = false)
     {
-        if (!_permissions.Can(user, Modules.StockTake))
-        {
-            return ServiceResult<ReceiptDocument>.Fail("You do not have permission to see the stock-take.");
-        }
-
         try
         {
             using var connection = _db.Open();
+            var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.StockTake);
+            var canSeeCost = CostPolicy.CanSee(_permissions, _settings, reader);
             var session = LoadSession(connection, sessionId);
             if (session is null)
             {
                 return ServiceResult<ReceiptDocument>.Fail("That stock-take session no longer exists.");
             }
 
-            var lines = Sheet(sessionId, differencesOnly);
+            var lines = ReadSheet(connection, sessionId, differencesOnly);
+            ProjectLines(lines, canSeeCost);
             var width = ReceiptService.ColumnsForMillimetres(_settings.GetInt("printer.width", 58));
             var document = new ReceiptDocument
             {
@@ -697,18 +711,19 @@ ORDER BY p.name COLLATE NOCASE, b.expiry_date, i.id;", new { sessionId });
             document.Lines.Add(ReceiptLine.Sep(width));
             Pair("Lines", lines.Count.ToString(CultureInfo.InvariantCulture));
             Pair("Differences", differenceCount.ToString(CultureInfo.InvariantCulture), differenceCount > 0);
-            Pair("Value", Money.Format(valueTotal), bold: true);
+            Pair("Value", canSeeCost ? Money.Format(valueTotal) : "hidden", bold: true);
             return ServiceResult<ReceiptDocument>.Success(document);
         }
+        catch (ValidationException exception) { return ServiceResult<ReceiptDocument>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error("The stock-take sheet could not be prepared.", exception);
-            return ServiceResult<ReceiptDocument>.Fail("The stock-take sheet could not be prepared. " + exception.Message);
+            return ServiceResult<ReceiptDocument>.Fail("The stock-take sheet could not be prepared. Refresh and try again.");
         }
     }
 
     /// <summary>Searches medicines that are not on the sheet, for "found on the shelf".</summary>
-    public List<Product> NotOnSheet(int sessionId, string? term = null)
+    public List<Product> NotOnSheet(User? user, int sessionId, string? term = null)
     {
         var text = (term ?? string.Empty).Trim();
 
@@ -716,7 +731,9 @@ ORDER BY p.name COLLATE NOCASE, b.expiry_date, i.id;", new { sessionId });
         {
             using var connection = _db.Open();
 
-            return _db.Query<Product>(connection, @"
+            var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.StockTake);
+            var canSeeCost = CostPolicy.CanSee(_permissions, _settings, reader);
+            var products = _db.Query<Product>(connection, @"
 SELECT p.id AS id, p.name AS name, p.base_unit AS baseUnit, p.box_strips AS boxStrips,
        p.strip_tablets AS stripTablets, p.cost_paisa AS costPaisa, p.retail_paisa AS retailPaisa,
        p.reorder_level AS reorderLevel, p.active AS active, p.strength_value AS strengthValue,
@@ -727,7 +744,16 @@ WHERE p.active = 1
   AND NOT EXISTS (SELECT 1 FROM stock_take_items i WHERE i.stock_take_id = @sessionId AND i.product_id = p.id)
 ORDER BY p.name COLLATE NOCASE
 LIMIT 40;", new { term = text, like = "%" + text + "%", sessionId });
+            foreach (var product in products)
+            {
+                product.CostKnown = canSeeCost;
+                if (!canSeeCost) product.CostPaisa = 0;
+                product.MarginKnown = false;
+                product.MarginPercent = 0;
+            }
+            return products;
         }
+        catch (ValidationException) { return new List<Product>(); }
         catch (Exception exception)
         {
             _log.Error("The medicines missing from the sheet could not be searched.", exception);
@@ -736,6 +762,45 @@ LIMIT 40;", new { term = text, like = "%" + text + "%", sessionId });
     }
 
     // ------------------------------------------------------------------ helpers
+
+    // Internal raw sheet/session reads stay separate from public projections: never feed
+    // hidden money into Count/Apply or overwrite the frozen historical cost.
+    private List<StockTakeLine> ReadSheet(SqliteConnection connection, int sessionId, bool differencesOnly)
+    {
+        var lines = _db.Query<StockTakeLine>(connection, @"
+SELECT i.id AS id, i.product_id AS productId, p.name AS productName, i.batch_id AS batchId,
+       b.batch_no AS batchNo, b.expiry_date AS expiryDate, p.rack_no AS rackNo,
+       i.system_qty_base AS systemQtyBase, i.counted_qty_base AS countedQtyBase,
+       i.unit_entered AS unitEntered, i.qty_entered AS qtyEntered, i.diff_qty_base AS diffQtyBase,
+       i.value_paisa AS valuePaisa, u.name AS countedBy, i.counted_at AS countedAt, i.note AS note
+FROM stock_take_items i
+JOIN products p ON p.id = i.product_id
+LEFT JOIN batches b ON b.id = i.batch_id
+LEFT JOIN users u ON u.id = i.counted_by
+WHERE i.stock_take_id = @sessionId
+ORDER BY p.name COLLATE NOCASE, b.expiry_date, i.id;", new { sessionId });
+
+        return differencesOnly
+            ? lines.Where(line => line.HasDifference || (!line.IsCounted && Math.Abs(line.SystemQtyBase) > 0.0005)).ToList()
+            : lines;
+    }
+
+    private static StockTakeSession? ProjectSession(StockTakeSession? session, bool canSeeCost)
+    {
+        if (session is null) return null;
+        session.CostKnown = canSeeCost;
+        if (!canSeeCost) { session.ShortPaisa = 0; session.ExtraPaisa = 0; }
+        return session;
+    }
+
+    private static void ProjectLines(List<StockTakeLine> lines, bool canSeeCost)
+    {
+        foreach (var line in lines)
+        {
+            line.CostKnown = canSeeCost;
+            if (!canSeeCost) line.ValuePaisa = null;
+        }
+    }
 
     private void RefreshTotals(SqliteConnection connection, int sessionId)
     {

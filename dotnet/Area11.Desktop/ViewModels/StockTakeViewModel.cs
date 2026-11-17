@@ -195,17 +195,20 @@ public sealed class StockTakeViewModel : ObservableObject, IEmptyPage
 
     public void Load()
     {
-        var current = _services.StockTake.Current();
+        var current = _services.StockTake.Current(_user);
 
         // Keep the same session on screen when it is still the open one.
         _session = current;
 
         History.Clear();
-        foreach (var row in _services.StockTake.History())
+        foreach (var row in _services.StockTake.History(_user))
         {
             History.Add(row);
         }
 
+        _session = History.FirstOrDefault(row => row.Id == current?.Id);
+        Found.Clear();
+        FoundProduct = null;
         ReloadSheet();
         RaiseSession();
     }
@@ -221,7 +224,7 @@ public sealed class StockTakeViewModel : ObservableObject, IEmptyPage
         }
 
         var sessionId = _session.Id;
-        var sheet = _services.StockTake.Sheet(sessionId, DifferencesOnly);
+        var sheet = _services.StockTake.Sheet(_user, sessionId, DifferencesOnly);
 
         // Portion 17: one cover query for the whole sheet, then each line takes its own.
         var covers = _services.Photos.CoversFor(_user, PhotoEntity.Product,
@@ -234,7 +237,16 @@ public sealed class StockTakeViewModel : ObservableObject, IEmptyPage
         }
 
         // The service has the freshest totals; re-read the session so the labels move with the count.
-        _session = _services.StockTake.History().FirstOrDefault(row => row.Id == sessionId) ?? _session;
+        var latestHistory = _services.StockTake.History(_user);
+        History.Clear();
+        foreach (var row in latestHistory) History.Add(row);
+        _session = latestHistory.FirstOrDefault(row => row.Id == sessionId);
+        if (_session is null)
+        {
+            Lines.Clear();
+            Found.Clear();
+            FoundProduct = null;
+        }
 
         SelectedLine = Lines.FirstOrDefault(line => !line.IsCounted)
             ?? Lines.FirstOrDefault(line => line.Id == SelectedLine?.Id)
@@ -363,7 +375,7 @@ public sealed class StockTakeViewModel : ObservableObject, IEmptyPage
 
         var applied = result.Value!;
         var message = applied.Code + " applied: " + applied.DiffCount + " difference(s), short "
-                      + Money.Format(applied.ShortPaisa) + ", extra " + Money.Format(applied.ExtraPaisa) + ".";
+                      + applied.ShortLabel + ", extra " + applied.ExtraLabel + ".";
 
         if (applied.Warnings.Count > 0)
         {
@@ -408,7 +420,7 @@ public sealed class StockTakeViewModel : ObservableObject, IEmptyPage
             return;
         }
 
-        foreach (var product in _services.StockTake.NotOnSheet(_session.Id, FoundText))
+        foreach (var product in _services.StockTake.NotOnSheet(_user, _session.Id, FoundText))
         {
             product.PhotoPath = _services.Photos.CoverPath(product.PhotoFileName);
             Found.Add(product);

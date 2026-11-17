@@ -74,6 +74,10 @@ public sealed class WriteOffResult
 
     public long LossPaisa { get; set; }
 
+    public bool CostKnown { get; set; }
+
+    public string LossLabel => CostKnown ? Area11.Core.Utils.Money.Format(LossPaisa) : "hidden";
+
     public double QtyBase { get; set; }
 
     /// <summary>The stock left after the write-off; new D-93 rows cannot be below zero.</summary>
@@ -106,6 +110,8 @@ public sealed class WriteOffRow
 
     public long ValuePaisa { get; set; }
 
+    public bool CostKnown { get; set; }
+
     public string Reason { get; set; } = string.Empty;
 
     public string? Note { get; set; }
@@ -114,7 +120,7 @@ public sealed class WriteOffRow
 
     public string QtyLabel => Area11.Core.Utils.Qty.Format(QtyBase);
 
-    public string ValueLabel => Area11.Core.Utils.Money.Format(ValuePaisa);
+    public string ValueLabel => CostKnown ? Area11.Core.Utils.Money.Format(ValuePaisa) : "hidden";
 
     public string SignedQtyLabel => (Direction == "in" ? "+" : "-") + QtyLabel;
 

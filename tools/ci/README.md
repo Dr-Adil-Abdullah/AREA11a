@@ -9,7 +9,7 @@ built by writing this template.
 To enable, an owner/integration with workflow-write permission must place the file
 at `.github/workflows/build.yml`. Do not share credentials in chat. The workflow
 builds the entire solution with .NET 10 on Windows and runs the current synthetic
-C# suite (1521 written cases at v0.88.0), retaining TRX evidence on failure.
+C# suite (1551 written cases at v0.89.0), retaining TRX evidence on failure.
 A successful test job is not a real WPF/printer/install smoke test.
 
 After enabling, a manual **Run workflow** with `make_installer=true` publishes
@@ -22,9 +22,9 @@ The workflow template and its PowerShell have not been executed here.
 Local Windows fallback: run `tools\RUN-TESTS.cmd`, build `Area11.sln -c Release`,
 then `tools\MAKE-SETUP.cmd` with .NET10 SDK and Inno Setup6 installed. The local
 MAKE-SETUP script publishes/packs; it does **not** itself run the test suite.
-Expected output: `dist\Area11-Setup-v0.88.0.exe`. Generated binaries/data must
+Expected output: `dist\Area11-Setup-v0.89.0.exe`. Generated binaries/data must
 stay out of Git. Use a separate VM/spare PC with no shop data for test installation:
 changing the executable folder does not isolate `C:\ProgramData\Area11`.
 
 See `docs/REMAINING-WORK-AND-TEST-INSTALLER-URDU.md` for remaining work, the
-6–10-cycle estimate with caveats, and safe testing conditions.
+5–9-cycle estimate with caveats, and safe testing conditions.
