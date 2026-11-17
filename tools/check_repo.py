@@ -6884,6 +6884,66 @@ def check_purchase_read_visibility():
     REPORT.append('Phase4 portion9: current-reader purchase invoice masks line/Total/Paid/Due money, expired supplier batch raw cost/valuation + known flags, one-click current-row preparation refuses masked0; posting/supplier payable policy/global route rollout and Windows remain OPEN')
 
 
+def check_batch_read_visibility():
+    core = DOTNET / 'Area11.Core'
+    stock = (core / 'Services/StockService.cs').read_text()
+    read = stock.split('public ServiceResult<List<BatchRow>> Batches(', 1)[-1].split('public ServiceResult<BatchCostPreparation>', 1)[0]
+    for token in ('User? user, int productId', 'RequireBatchPurpose(purpose);',
+                  'var reader = ProductReadAccess.Require(_db, connection, _permissions, user, purpose);',
+                  'var canSeeCost = CostPolicy.CanSee(_permissions, _settings, reader);',
+                  'row.CostKnown = canSeeCost;', 'if (!canSeeCost) row.CostPaisa = 0;'):
+        if token not in read:
+            FAILURES.append(f'Batch reader/current workflow/independent raw mask missing: {token}')
+    if read.find('ProductReadAccess.Require') > read.find('_db.Query<BatchRow>'):
+        FAILURES.append('Batch reader must be resolved before batch lookup')
+    prep = stock.split('public ServiceResult<BatchCostPreparation> PrepareBatchCost(', 1)[-1].split('/// <summary>Writes the goods off', 1)[0]
+    for token in ('RequireBatchPurpose(purpose);',
+                  'var reader = ProductReadAccess.Require(_db, connection, _permissions, user, purpose);',
+                  'ProductReadAccess.RequirePreparationCost(reader, purpose, _permissions, _settings);',
+                  'WHERE product_id = @productId AND active = 1 AND (@batchId IS NULL OR id = @batchId)',
+                  'if (batchId is not null && batch is null)',
+                  'if (batchId is null && (batch is not null || purpose == ProductReadPurpose.SupplierReturn))',
+                  'CostPaisa = batch is not null && batch.CostPaisa > 0 ? batch.CostPaisa : product.CostPaisa',
+                  'ProductReadPurpose.WriteOff or ProductReadPurpose.Expense or ProductReadPurpose.SupplierReturn'):
+        if token not in prep:
+            FAILURES.append(f'Fresh preparation must gate money/current product-batch before fallback: {token}')
+    if prep.find('RequirePreparationCost') > prep.find('_db.QuerySingle<ProductRow>'):
+        FAILURES.append('Batch cost authorization must precede cost lookup')
+    if ' + exception.Message' in prep:
+        FAILURES.append('Batch preparation must not disclose database exception details')
+    model = (core / 'Models/StockModels.cs').read_text().split('public sealed class WriteOffInput', 1)[0]
+    for token in ('public bool CostKnown', 'CostKnown ? Area11.Core.Utils.Calc.Round(QtyBase * CostPaisa) : 0',
+                  'CostKnown ? Area11.Core.Utils.Money.Format(ValuePaisa) : "hidden"'):
+        if token not in model:
+            FAILURES.append(f'Batch valuation needs known flag/hidden label: {token}')
+    for name, purpose in (('WriteOff', 'WriteOff'), ('Expenses', 'Expense'), ('Suppliers', 'SupplierReturn')):
+        vm = (DOTNET / f'Area11.Desktop/ViewModels/{name}ViewModel.cs').read_text()
+        if f'_services.Stock.Batches(_user, SelectedProduct.Id, ProductReadPurpose.{purpose})' not in vm:
+            FAILURES.append(f'{name} batch picker must pass current actor and own workflow')
+        part = vm.split('private void AddLine()' if name == 'Suppliers' else 'private void RefreshPreview()', 1)[-1]
+        part = part.split('private void RemoveLine()' if name == 'Suppliers' else 'private void Save()', 1)[0]
+        for token in ('_services.Stock.PrepareBatchCost(_user, SelectedProduct.Id, SelectedBatch',
+                      f'ProductReadPurpose.{purpose}', 'if (!prepared.Ok || prepared.Value is null)',
+                      'var cost = fresh.CostPaisa;', 'Packs.PerUnit(fresh.BoxStrips, fresh.StripTablets, Unit)'):
+            if token not in part:
+                FAILURES.append(f'{name} preview/tray must use fresh authorized input: {token}')
+        if name == 'Suppliers':
+            if part.find('if (!prepared.Ok') > part.find('Tray.Remove('):
+                FAILURES.append('Do not mutate manual SR tray before fresh preparation succeeds')
+        elif ' = "hidden";' not in part:
+            FAILURES.append(f'{name} denied preview must be hidden, not fake0')
+        if 'SelectedProduct.CostPaisa' in part or 'SelectedBatch.CostPaisa' in part:
+            FAILURES.append(f'{name} must not reuse stale/masked displayed cost')
+    tests = (DOTNET / 'Area11.Tests/BatchReadVisibilityTests.cs').read_text()
+    for name in ('EverySupportedWorkflowRequiresItsOwnModuleEvenWithCost', 'ProfitOnlyDoesNotRevealBatchCostInAnyWorkflow',
+                 'HiddenBatchCostCannotBecomeZeroPreparation', 'PreparationReReadsCurrentCostQuantityAndPackInsteadOfDisplayedRow',
+                 'MissingOrInactiveSelectedBatchNeverFallsBackToAnother', 'NullSelectionWithLiveBatchesMustNotSilentlyPickFirstBatch',
+                 'ReadAndPreparationDoNotPostMoneyStockOrAudit'):
+        if name not in tests:
+            FAILURES.append(f'Batch read/preparation regression missing {name}')
+    REPORT.append('Phase4 portion10: current-reader batch workflow gate, independent raw/aggregate masks and fresh cost/pack/quantity preparation for write-off/expense previews and manual SR tray; posting, frozen stock-take and histories/results/global rollout remain OPEN')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -6958,6 +7018,7 @@ def main() -> int:
     check_windows_failure_regressions()
     check_permission_inspector_ui()
     check_purchase_read_visibility()
+    check_batch_read_visibility()
     check_csharp_grammar()
 
     if not quiet:

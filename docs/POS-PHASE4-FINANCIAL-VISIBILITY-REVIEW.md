@@ -1,5 +1,7 @@
 # Phase4 portion7 — independent financial visibility (D-110), v0.85.0 Plover
 
+> **Subsequent backend portion10:** [v0.88 batch/fresh preparation](POS-PHASE4-BATCH-READ-REVIEW.md) migrates generic Stock/Cash/Suppliers batch-list cost and valuation plus fresh previews/manualSR tray. Stock history/today/result and frozen stock-take and expense results/vouchers remain open; original posting/formulas unchanged. [PT-30](POS-PHASE4-PART10-URDU.md).
+
 > **Subsequent backend portion9:** [v0.87.0 purchase invoice / expired reads](POS-PHASE4-PURCHASE-READ-REVIEW.md) migrates new invoice amounts incl Paid+Due and expired-list raw/valuation fields; refreshed known-cost gate before one-click tray preparation. This narrows, does not close, remaining routes below; purchase entry/drafts/results,ordinary supplier ledger money/Pay/SR,generic batches and stale prepared objects still OPEN. [PT-29](POS-PHASE4-PART9-URDU.md).
 
 > **Subsequent UI portion8/D-111:** owner-requested financial group, hover/scope and live assignment inspector added in [v0.86.0](POS-PHASE4-PERMISSION-INSPECTOR-REVIEW.md). This improves configuration/visibility explanations, does NOT close the global backend rollout below or settle the supplier financial-action policy.

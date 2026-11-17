@@ -493,7 +493,7 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
             return;
         }
 
-        var result = _services.Stock.Batches(SelectedProduct.Id);
+        var result = _services.Stock.Batches(_user, SelectedProduct.Id, ProductReadPurpose.Expense);
 
         if (result.Ok && result.Value is not null)
         {
@@ -509,7 +509,7 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
         RefreshPreview();
     }
 
-    /// <summary>Shows what will be recorded before the button is pressed. Pure arithmetic.</summary>
+    /// <summary>Reads fresh authorized inputs for the preview; writes nothing.</summary>
     private void RefreshPreview()
     {
         if (SelectedProduct is null)
@@ -519,23 +519,28 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
             return;
         }
 
-        var perUnit = Packs.PerUnit(SelectedProduct.BoxStrips, SelectedProduct.StripTablets, Unit);
-
+        var prepared = _services.Stock.PrepareBatchCost(_user, SelectedProduct.Id, SelectedBatch?.Id,
+            ProductReadPurpose.Expense);
+        if (!prepared.Ok || prepared.Value is null)
+        {
+            ValuePreview = "hidden";
+            StockPreview = prepared.Error ?? "Refresh and select the medicine and batch again.";
+            return;
+        }
+        var fresh = prepared.Value;
+        var perUnit = Packs.PerUnit(fresh.BoxStrips, fresh.StripTablets, Unit);
         Qty.TryParse(QtyText, out var qty);
         var qtyBase = Calc.ToBase(qty, perUnit);
-
-        var cost = SelectedBatch is not null && SelectedBatch.CostPaisa > 0
-            ? SelectedBatch.CostPaisa
-            : SelectedProduct.CostPaisa;
+        var cost = fresh.CostPaisa;
 
         ValuePreview = Money.Format(Calc.Round(qtyBase * cost)) + " at cost";
 
         StockPreview = SelectedBatch is null
             ? "No batch on this medicine."
-            : "Batch " + SelectedBatch.BatchNo + ": " + Qty.Format(SelectedBatch.QtyBase) + " now -> "
-              + Qty.Format(SelectedBatch.QtyBase - qtyBase) + " after";
+            : "Batch " + SelectedBatch.BatchNo + ": " + Qty.Format(fresh.QtyBase) + " now -> "
+              + Qty.Format(fresh.QtyBase - qtyBase) + " after";
 
-        var willGoMinus = SelectedBatch is not null && SelectedBatch.QtyBase - qtyBase < 0;
+        var willGoMinus = SelectedBatch is not null && fresh.QtyBase - qtyBase < 0;
 
         if (willGoMinus)
         {

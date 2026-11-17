@@ -15,14 +15,16 @@ public sealed class BatchRow
 
     public long CostPaisa { get; set; }
 
+    public bool CostKnown { get; set; }
+
     public string? SupplierName { get; set; }
 
     /// <summary>How much money is lying in this batch at purchase cost.</summary>
-    public long ValuePaisa => Area11.Core.Utils.Calc.Round(QtyBase * CostPaisa);
+    public long ValuePaisa => CostKnown ? Area11.Core.Utils.Calc.Round(QtyBase * CostPaisa) : 0;
 
     public string QtyLabel => Area11.Core.Utils.Qty.Format(QtyBase);
 
-    public string ValueLabel => Area11.Core.Utils.Money.Format(ValuePaisa);
+    public string ValueLabel => CostKnown ? Area11.Core.Utils.Money.Format(ValuePaisa) : "hidden";
 
     /// <summary>"B-1 - 2027-06-30 - 40 tablet (Rs 800)" - one line in a batch drop-down.</summary>
     public string PickLabel => BatchNo + " - " + (string.IsNullOrWhiteSpace(ExpiryDate) ? "no date" : ExpiryDate!)
@@ -127,4 +129,18 @@ public sealed class WriteOffRow
     };
 
     public string DateLabel => string.IsNullOrWhiteSpace(Date) || Date!.Length < 16 ? Date ?? string.Empty : Date![..16];
+}
+
+/// <summary>Fresh, authorized preview inputs only. Not an authorization token for posting.</summary>
+public sealed class BatchCostPreparation
+{
+    public int ProductId { get; init; }
+    public string ProductName { get; init; } = string.Empty;
+    public int? BatchId { get; init; }
+    public string? BatchNo { get; init; }
+    public double QtyBase { get; init; }
+    public long CostPaisa { get; init; }
+    public string BaseUnit { get; init; } = "tablet";
+    public int BoxStrips { get; init; }
+    public int StripTablets { get; init; }
 }

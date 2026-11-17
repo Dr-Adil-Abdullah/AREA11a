@@ -227,7 +227,7 @@ public sealed class WriteOffViewModel : ObservableObject, IEmptyPage
             return;
         }
 
-        var result = _services.Stock.Batches(SelectedProduct.Id);
+        var result = _services.Stock.Batches(_user, SelectedProduct.Id, ProductReadPurpose.WriteOff);
 
         if (result.Ok && result.Value is not null)
         {
@@ -241,7 +241,7 @@ public sealed class WriteOffViewModel : ObservableObject, IEmptyPage
         RefreshPreview();
     }
 
-    /// <summary>Recomputes the two numbers on screen. Pure arithmetic - it writes nothing.</summary>
+    /// <summary>Recomputes the preview from fresh authorized inputs; writes nothing.</summary>
     private void RefreshPreview()
     {
         if (SelectedProduct is null)
@@ -252,17 +252,23 @@ public sealed class WriteOffViewModel : ObservableObject, IEmptyPage
             return;
         }
 
-        var perUnit = Packs.PerUnit(SelectedProduct.BoxStrips, SelectedProduct.StripTablets, Unit);
-
+        var prepared = _services.Stock.PrepareBatchCost(_user, SelectedProduct.Id, SelectedBatch?.Id,
+            ProductReadPurpose.WriteOff);
+        if (!prepared.Ok || prepared.Value is null)
+        {
+            LossPreview = "hidden";
+            StockPreview = prepared.Error ?? "Refresh and select the medicine and batch again.";
+            WillGoMinus = false;
+            return;
+        }
+        var fresh = prepared.Value;
+        var perUnit = Packs.PerUnit(fresh.BoxStrips, fresh.StripTablets, Unit);
         Qty.TryParse(QtyText, out var qty);
-        var qtyBase = qty * perUnit;
-
-        var cost = SelectedBatch is not null && SelectedBatch.CostPaisa > 0
-            ? SelectedBatch.CostPaisa
-            : SelectedProduct.CostPaisa;
+        var qtyBase = Calc.ToBase(qty, perUnit);
+        var cost = fresh.CostPaisa;
 
         var isExtra = Reason == StockService.ReasonCountExtra;
-        var stockBefore = SelectedBatch?.QtyBase ?? SelectedProduct.StockBase;
+        var stockBefore = fresh.QtyBase;
         var stockAfter = isExtra ? stockBefore + qtyBase : stockBefore - qtyBase;
 
         LossPreview = Money.Format(Calc.Round(qtyBase * cost)) + " at cost";

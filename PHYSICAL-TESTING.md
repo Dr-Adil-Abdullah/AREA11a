@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-30 — batch projection / fresh cost previews / manual SR tray (v0.88.0) — UNRUN
+
+[Safe checklist](docs/POS-PHASE4-PART10-URDU.md): isolated synthetic fixtures only;current actor/workflow/module,independent cost/main/owner masks,metadata/known0,effective product fallback,stale/missing/cross-product batch refusal before tray mutation,fresh cost/stock/pack,no silent first-batch fallback,read-only DB. Whole Stock/Expenses/Suppliers pages are not yet cost-private:history/totals/results remain open.1521cases/Windows build UNRUN;77static and6isolated SQL probes are not runtime certification. No installer produced.
+
 ## Test-installer request authorized — artifact NOT BUILT (2026-11-10)
 
 [Remaining plan / isolated Windows test steps](docs/REMAINING-WORK-AND-TEST-INSTALLER-URDU.md). Current source0.87.0 needs a real Windows full build/test and Inno pack; local Linux has neither. No active Actions workflow/runs. Do not install over shop data for a fake test: fixed ProgramData path and app startup migrations mean a separate executable folder is not isolation. Updated CI template remains unexecuted. No new Windows success or produced exe to record.

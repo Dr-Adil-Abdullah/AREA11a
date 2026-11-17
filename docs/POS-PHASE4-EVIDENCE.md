@@ -1,5 +1,7 @@
 # Phase 4 — source evidence register, portion 1 (v0.79.0 Tern)
 
+> **Latest v0.88.0 portion10/D-110:** general batch metadata/current workflow read with independent rawcost+valuation masks; fresh authorized write-off/expense previews/manualSR tray preparation. [Trace/remaining](POS-PHASE4-BATCH-READ-REVIEW.md),[PT-30](POS-PHASE4-PART10-URDU.md).1521C#cases UNRUN,77static checks;6isolated SQLprobes PASS,not runtime. Stock/expense histories/results/totals and frozen stock-take still OPEN; do not call whole pages cost-private.
+
 > **Latest v0.87.0 portion9/D-110:** new purchase invoice line/Total/Paid/Due independent cost masks; expired rawcost/valuation mask + current known-cost preparation check. [Trace/remaining routes](POS-PHASE4-PURCHASE-READ-REVIEW.md),[PT-29](POS-PHASE4-PART9-URDU.md).1493 written C# cases UNRUN,76 static checks; actual isolated SELECT/filter/read-only checks PASS, not .NET/Windows. Supplier payable/payment/Pay/SR unchanged; all-route security/fullPhase4 OPEN.
 
 > **Latest v0.86.0 portion8/D-111:** requested sensitive financial permission UI/help/owner-only live assignment inspector. Independent keys retained; no existing financial service or schema changed. [Trace/limits](POS-PHASE4-PERMISSION-INSPECTOR-REVIEW.md),[PT-28](POS-PHASE4-PART8-URDU.md).1469 written cases UNRUN,75 static checks. Global backend rollout/supplier financial-policy/Windows remain OPEN; not an all-route leak-prevention PASS.

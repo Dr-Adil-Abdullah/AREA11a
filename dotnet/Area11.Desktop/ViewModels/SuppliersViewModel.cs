@@ -714,7 +714,7 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
             return;
         }
 
-        var result = _services.Stock.Batches(SelectedProduct.Id);
+        var result = _services.Stock.Batches(_user, SelectedProduct.Id, ProductReadPurpose.SupplierReturn);
 
         if (!result.Ok)
         {
@@ -746,9 +746,17 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
             return;
         }
 
-        var perUnit = Packs.PerUnit(SelectedProduct.BoxStrips, SelectedProduct.StripTablets, Unit);
+        var prepared = _services.Stock.PrepareBatchCost(_user, SelectedProduct.Id, SelectedBatch.Id,
+            ProductReadPurpose.SupplierReturn);
+        if (!prepared.Ok || prepared.Value is null)
+        {
+            SetStatus(prepared.Error ?? "The current batch cost could not be prepared. No tray values were changed.", true);
+            return;
+        }
+        var fresh = prepared.Value;
+        var perUnit = Packs.PerUnit(fresh.BoxStrips, fresh.StripTablets, Unit);
         var qtyBase = Calc.ToBase(qty, perUnit);
-        var cost = SelectedBatch.CostPaisa > 0 ? SelectedBatch.CostPaisa : SelectedProduct.CostPaisa;
+        var cost = fresh.CostPaisa;
 
         // The same batch twice would make the tray lie about the stock, so the second entry replaces
         // the first - one line per batch, like the service expects.
@@ -762,8 +770,8 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
         {
             ProductId = SelectedProduct.Id,
             BatchId = SelectedBatch.Id,
-            ProductName = SelectedProduct.Name,
-            BatchNo = SelectedBatch.BatchNo,
+            ProductName = fresh.ProductName,
+            BatchNo = fresh.BatchNo ?? string.Empty,
             QtyEntered = qty,
             Unit = Unit,
             QtyBase = qtyBase,

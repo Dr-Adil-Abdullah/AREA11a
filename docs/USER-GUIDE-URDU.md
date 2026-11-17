@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.87.0 Waxwing۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.88.0 Skylark۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**فیز4 حصہ10 — عام batch اور تازہ تیاری:** Stock/Expenses/Suppliers کے batch picker کی cost/valuation الگ Cost+main سے؛quantity/batch/date برقرار۔ Write-off/Expenses preview اور manual SR tray تازہ current cost/quantity/pack لیتے ہیں؛ناکامی پر hidden/انکار،نہ stale رقم نہ fake0۔ **انہی صفحات کی history/today/results اور frozen stock-take ابھی باقی ہیں؛پورا صفحہ cost-private نہیں۔** [PT-30](POS-PHASE4-PART10-URDU.md)،[trace/حدود](POS-PHASE4-BATCH-READ-REVIEW.md)۔1521C#cases UNRUN،77static checks PASS؛Windows باقی۔
 
 **فیز4 حصہ9 — خرید invoice / expired stock:** نئے purchase document میں cost منع ہو تو line amount،Total،Paid،Due سب hidden؛نام/quantity/batch/date برقرار۔ expired list کی raw cost/valuation بھی mask؛Add whole batch تازہ500حد والی row اور known cost دوبارہ چیک کرتا ہے،انکار پر tray untouched۔ supplier عام paid/payable/Pay/SR پالیسی اور posting unchanged،یہ global completion نہیں۔ [PT-29](POS-PHASE4-PART9-URDU.md)،[trace/حدود](POS-PHASE4-PURCHASE-READ-REVIEW.md)۔1493 C# cases UNRUN،76 static checks PASS؛Windows باقی۔
 
@@ -343,6 +345,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 
 **حصہ9 — expired list:** الگ View Purchase Cost + main ON کے بغیر valuation hidden؛quantity/batch/date برقرار۔ expired quick-add تازہ موجودہ500حد کی row دوبارہ پڑھتا ہے؛ممنوع/نامعلوم cost،ناکام read یا row نہ ملنے پر tray بدلنے سے پہلے انکار،اصل مجاز0 الگ known۔ پہلے سے بنے tray/manual SR اور ordinary account paid/payable/Pay/SR policy ابھی الگ باقی؛یہ تمام Supplier posting کی نئی cost gate نہیں۔ [PT-29](POS-PHASE4-PART9-URDU.md)۔
 
+**حصہ10 — manual batch کی تازہ حد:** عام supplier batch picker کا raw cost/valuation بھی Cost+main کے بغیر hidden۔ Manual Add line سے پہلے موجودہ product/batch/pack/cost دوبارہ پڑھتا ہے؛اجازت ختم یا batch اب غلط ہو تو tray بدلنے سے پہلے انکار۔ یہ ordinary supplier paid/payable/Pay/SR posting policy یا پہلے بنے tray کی واپسی کا فیصلہ نہیں۔ [PT-30](POS-PHASE4-PART10-URDU.md)۔
+
 <a id="lesson-18"></a>
 
 ## سبق 18 — Doctors & reps
@@ -376,6 +380,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 4. Stock minus پر پرانے منفی balances، کتنے دن، cost value اور review دیکھیں۔ Monthly review میں جو پایا وہ لکھ کر Mark reviewed کریں۔ **Review سے quantity نہیں بدلتی۔**
 5. حقیقی shelf count لے کر Stock-take میں مالک سے correction منظور کروائیں۔ محض فہرست صاف کرنے کے لیے فرضی purchase یا خود SQL سے صفر نہ کریں۔
 
+**حصہ10 — batch اور Write-off preview:** Stock grant کے ساتھ metadata،Cost+main سے خرید کی valuation؛preview ہر متعلقہ interaction پر تازہ cost/stock/pack لیتا ہے۔ ناکامی پر hidden/error،پرانے product کی رقم یا fake0 نہیں۔ **Write-off history/today totals اور save result ابھی الگ open مالی راستے ہیں**؛اس محدود preview fix سے پورے صفحے کی secrecy نہ سمجھیں۔ اصل stock posting unchanged۔ [PT-30](POS-PHASE4-PART10-URDU.md)۔
+
 <a id="lesson-21"></a>
 
 ## سبق 21 — Stock-take: اصل گنتی سے حساب ملانا
@@ -395,6 +401,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 3. Owner took money or goods میں Kind منتخب کریں۔ Cash taken اصل نقدی کم کرتا ہے؛ Goods میں medicine/batch، quantity/unit سے shelf کم اور purchase cost پر drawing شمار ہوتی ہے، cash نہیں نکلتا۔
 4. ایک ہی نکاسی Expense اور Drawing دونوں میں مت لکھیں۔ goods drawing سٹاک سے زیادہ نہیں ہو سکتی۔
 5. What went out میں entry منتخب کرکے Print voucher۔ محفوظ entry edit/delete نہیں؛ غلطی سامنے ہو تو مالک ریکارڈ دیکھ کر واضح corrective entry کرے۔
+
+**حصہ10 — Goods drawing preview:** Cash workflow کی batch list اور نئی cost preview الگ Cost+main کے تحت؛ممنوع رقم hidden،missing/stale selection سے fake0 حساب نہیں۔ Pack/quantity تازہ read سے؛یہ stock reservation یا posting authorization نہیں۔ Expense/drawing history/results/voucher اور frozen stock-take ابھی اگلا audit؛عام expense cash rule نہیں بدلا۔ [PT-30](POS-PHASE4-PART10-URDU.md)۔
 
 <a id="lesson-23"></a>
 
@@ -519,9 +527,11 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 - List میں **Grant** اور **Access** الگ پڑھیں: enabled tick کے باوجود account inactive یا financial main OFF ہوسکتا ہے۔ Role default اور explicit override الگ دکھتے ہیں؛ relevant page grant اب بھی لازم۔
 - تقریباً3s refresh یا Refresh now؛ owner grant/read ناکام ہو تو نام صاف، پرانی list کو تازہ حالت نہ سمجھیں۔ یہ instantaneous session revocation نہیں۔
 - Single mouse click OS double-click وقفے کے بعد tick save کرتا ہے، تاکہ صرف تفصیل کھولنے سے grant نہ بدل جائے۔ Space عام checkbox کی طرح؛ per-person pricing limits کا الگ Save برقرار۔
-- **Backend rollout OPEN:** حصہ9 میں نئے invoice/expired reads منتقل؛purchase entry/draft/result،عام supplier ledger/generic batch/stock/expense/audit/export کے باقی راستوں سے leakage بند ہونے کا دعویٰ نہیں۔ Supplier payable/payment کا مالی-policy سوال اس نئی UI سے خودکار طے نہیں ہوا۔ اصل cost/posting کبھی hidden0 سے نہ بنائیں۔ [محفوظ PT-28](POS-PHASE4-PART8-URDU.md)۔
+- **Backend rollout OPEN:** حصہ9 میں نئے invoice/expired reads منتقل؛purchase entry/draft/result،عام supplier ledger،stock/expense history/results،frozen stock-take،audit/export کے باقی راستوں سے leakage بند ہونے کا دعویٰ نہیں۔ Supplier payable/payment کا مالی-policy سوال اس نئی UI سے خودکار طے نہیں ہوا۔ اصل cost/posting کبھی hidden0 سے نہ بنائیں۔ [محفوظ PT-28](POS-PHASE4-PART8-URDU.md)۔
 
 **حصہ9 کی scope update:** permission Details میں نئے purchase invoice اور expired-list masks شامل؛line total کے ساتھPaid/Due بھی hidden۔ الگ ticks/main rule unchanged؛purchase entry/draft/result،عام supplier ledger/Pay/SR اور دوسرے نامکمل راستے واضح باقی۔ [trace](POS-PHASE4-PURCHASE-READ-REVIEW.md)۔
+
+**حصہ10 کی scope update:** permission Details میں عام batch read masks اور تازہ Write-off/Expenses/manualSR preparation شامل۔ تاریخ/quantity برقرار؛history/totals/results اور frozen stock-take valuation ابھی واضح باقی۔ [trace](POS-PHASE4-BATCH-READ-REVIEW.md)۔
 
 <a id="lesson-32"></a>
 
