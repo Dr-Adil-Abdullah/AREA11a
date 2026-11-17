@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## D-113 implementation checkpoint — v0.93.0 (2026-11-10)
+
+Approved password A implemented in source across manual/auto/safety/rollback with current-user DPAPI and explicit Owner legacy recovery. Original password needed for older/new-PC restore; local safety password setup required first. No actual secret in chat.51new cases/1692total UNRUN;Windows/DPAPI/new-PC/fault/installer not certified. [Trace](POS-PHASE4-ENCRYPTED-BACKUP-REVIEW.md),[PT-35](POS-PHASE4-PART15-URDU.md). Supplier monetary-policy question remains unanswered; no new business-rule choice made. Earlier v0.92 status below is historical.
+
 ## D-113 — bulk editable files Owner-default؛Audit metadata؛encrypted backup کے لیے A password (2026-11-10)
 
 Owner requests lightweight two-tier architecture. Editable Excel/CSV export/import default Owner only;existing Staff & Permissions میں explicit **Allow Excel/CSV Bulk Export & Import** grant،صرف Owner assign کرے۔ Manager/staff rank کافی نہیں؛deny پرpartial/zero editable file نہیں۔ Separate Cost/Profit/main rule برقرار؛product editable file Cost/main،mixed shop workbook دونوںfinancial/main۔ Audit question کا انتخاب **metadata**:دونوںfinancial/main نہ ہوں توtime/person/action/module،rawold/new/details/entityنہیں؛اصلstored auditunchanged۔

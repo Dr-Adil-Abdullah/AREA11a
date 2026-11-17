@@ -1,12 +1,14 @@
-# Approved password backup design — NOT IMPLEMENTED in v0.92.0
+# Approved password backup design — v0.93.0 source checkpoint
+
+**Current: source implemented in portion15**, including DPAPI/password UI/manual/automatic/safety/rollback/explicit legacy recovery. [Actual format + limits + evidence](POS-PHASE4-ENCRYPTED-BACKUP-REVIEW.md),[required PT-35](POS-PHASE4-PART15-URDU.md).82static checks and independent Python format model PASS;1692C#cases/Windows/DPAPI/new-PC/physical faults UNRUN, no installer or certification. The original v0.92 contract below is retained chronologically, NOT the current implementation status.
 
 **2026-11-10, D-113.** Owner chose **A: backup password** (not a recovery-key file). No real password is requested or stored in chat/source/docs. This page is a pending implementation contract, not a cryptographic/runtime certification.
 
-## Current truth / safety boundary
+## Historical v0.92 truth / safety boundary
 
 `BackupService` is unchanged in portion14. Existing manual/automatic/pre-restore safety copies are ordinary ZIP/DB-based workflows, NOT encrypted or authenticated packages. Do not advertise/send them as confidential or tamper-evident. Existing files must not be deleted, renamed or silently trusted as authenticated. No installer or new backup artifact was produced.
 
-## Next coherent implementation
+## Approved contract (source implementation now in v0.93)
 
 - Owner-only in-app setup/change with confirmation using password controls, not an ordinary Settings string. A separate, strong backup password; losing it can make older backups unrecoverable. App login reset must not pretend to recover encryption keys. Rotation does not change an old package's password.
 - Automatic backups need the secret without prompting: use Windows-protected local credential storage **outside the database/settings/export/backup/audit**. Scope, ACLs, different Windows-account behavior and startup failure must be tested. On a new PC explicitly request the original backup password. No embedded shared secret, plaintext credential file, password in manifest, or unencrypted fallback. No password/key telemetry/logging. Missing setup/credential access must be a conspicuous failed backup, never a fake successful encrypted backup; the absence of recent backups is a data-loss risk to surface.
@@ -20,4 +22,4 @@
 
 Codec round-trip with files beyond one chunk; every-byte-region mutation/wrong-password/truncation/append/reorder rejection; KDF/length/count bounds; no plaintext/password leak in package or persisted settings/log/audit; failure cleanup/atomic-file preservation; genuine new-PC/password restore; Windows credential/ACL/auto-start/manual/auto/safety/rollback matrix; corrupt archive/DB and injected-replace/photo failure with original shop preserved. Synthetic data only, verified backup and truly separate DB/VM; another exe folder is not isolation.
 
-No .NET/Windows execution here. Part15 is the next priority; this plan does not mean encryption has been written or tested.
+No .NET/Windows execution here. At v0.92 this was only a plan; v0.93 source is reviewed in the linked portion15 trace, not a successful runtime/security result.

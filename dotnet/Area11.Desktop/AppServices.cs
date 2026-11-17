@@ -56,7 +56,8 @@ public sealed class AppServices
         Receipts = new ReceiptService(Database, Settings, Log);
         Printer = new PrinterService(Settings, Log);
         WhatsApp = new WhatsAppService(Settings, Log);
-        Backup = new BackupService(Database, Settings, Audit, Permissions, Log);
+        Backup = new BackupService(Database, Settings, Audit, Permissions, Log,
+            passwordStore: new WindowsBackupPasswordStore(Database.FilePath));
         Import = new ImportService(Database, Audit, Permissions, Log, Settings);
         Workbooks = new WorkbookService(Database, Audit, Permissions, Settings, Log, Import);
         Reorder = new ReorderService(Database, Audit, Settings, Permissions, Log);

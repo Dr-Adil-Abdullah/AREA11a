@@ -16,7 +16,7 @@ Run it after any change to the board:
 The marks are the owner's own vocabulary:
 
     (tick)   every piece of work for the feature is finished and tested
-    (half)   the code is finished, one action in the shop still has to prove it
+    (half)   source exists; required Windows/shop evidence is still pending
     (cross)  not started
 
 `tools/check_repo.py` fails if these files disagree with the board, so the printed list can never
@@ -76,7 +76,7 @@ PHASES = (
             "`Shift (galla)` → گلہ کھولیں، رقم گنیں، بند کریں → فرق (کم/زیادہ) لکھا آئے۔",
             "`Expenses` → ایک خرچ (بجلی، چائے) لکھیں → رپورٹ میں نظر آئے۔",
             "`Reports` → آج / 7 دن / 30 دن کے نمبر دیکھیں؛ `Tax report` مہینے کا حساب دکھائے۔",
-            "`Backup & restore` → **Back up now** → `C:\\ProgramData\\Area11\\backups` میں ZIP بنے۔",
+            "`Backup & restore` → **Back up now** → `C:\\ProgramData\\Area11\\backups` میں encrypted `.a11bak` بنے؛ پہلے Owner کا backup password setup۔",
         ),
     },
     {
@@ -92,7 +92,7 @@ PHASES = (
     },
 )
 
-# The five features whose code is finished and which need exactly one action in the shop. The words
+# The features needing further shop/Windows evidence. The words
 # are the owner's, not a developer's: what he does, and what he should see.
 HALF_ACTIONS = {
     "F-04": "`Black box` کھولیں: آج جو بھی کام کیا (دوا شامل، بل، واپسی)، اُس کی ایک سطر نظر آئے — کس نے، کب، کیا بدلا۔",

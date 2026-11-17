@@ -25,6 +25,10 @@ public sealed class BackupFile
     /// <summary>Area11 version that wrote the zip, so an old format is visible before restoring.</summary>
     public string BackupVersion { get; set; } = string.Empty;
 
+    public bool IsEncrypted { get; set; }
+
+    public string ProtectionLabel => IsEncrypted ? "Encrypted · verify on restore" : "LEGACY · unverified";
+
     public long SizeBytes { get; set; }
 
     /// <summary>"412 KB" - a number of bytes means nothing to a shopkeeper.</summary>
@@ -35,7 +39,7 @@ public sealed class BackupFile
     /// <summary>How it was made, in the words the owner used: by hand or by the program.</summary>
     public string KindLabel => IsSafetyCopy ? "Before restore" : IsAutomatic ? "Automatic" : "By hand";
 
-    public string Caption => $"{Stamp}  ·  {SizeLabel}  ·  {KindLabel}";
+    public string Caption => $"{Stamp}  ·  {SizeLabel}  ·  {KindLabel}  ·  {ProtectionLabel}";
 }
 
 /// <summary>

@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-35 — Password backup / DPAPI / original-password recovery (v0.93.0) — UNRUN
+
+[Safe isolated checklist](docs/POS-PHASE4-PART15-URDU.md): missing/locked secret no fallback, Owner confirmation/current role, manual/auto/safety/rollback, Windows profile ACL/different account/path, original password on genuine new PC, rotation/local safety password independence, tamper/bounds/legacy, A/B/C/photos, disk-full/access-denied/locks/crash/concurrency, retention/Sync.1692C#cases/Desktop/Windows UNRUN.82static + independent Python model6roundtrips/24negative +10SQLiteprobes are NOT runtime proof. [Format/limits](docs/POS-PHASE4-ENCRYPTED-BACKUP-REVIEW.md). No installer/live-shop fake posts.
+
 ## PT-34 — Explicit bulk files / Audit metadata (v0.92.0) — UNRUN
 
 [Safe checklist](docs/POS-PHASE4-PART14-URDU.md): current module/grants/main,manager default denied/explicit staff allowed,no editable masked0,actorful preview-before-decode,insideTx rechecks,Audit metadata/search-count boundary,fresh4CSV/snapshots,view timer cleanup,original DB immutability.1641cases/Desktop/Windows UNRUN;81static/10memorySQLprobes are not runtime. **Backup encryption NOT implemented**,passwordA next per [contract](docs/SECURE-BACKUP-PASSWORD-PLAN.md). No installer/live-shop fake posts.

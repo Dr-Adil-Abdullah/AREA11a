@@ -1,6 +1,10 @@
-# باقی کام، GitHub اور test installer — v0.92.0
+# باقی کام، GitHub اور test installer — v0.93.0
 
-## حصہ14 کے بعد تازہ باقی کام
+## حصہ15 کے بعد موجودہ ترجیح
+
+Password backup کا coherent source راستہ شامل:manual/auto/full safety/rollback/current-user DPAPI/اصلpasswordrestore/Owner-onlylegacy۔ [PT-35](POS-PHASE4-PART15-URDU.md)،[حدود/evidence](POS-PHASE4-ENCRYPTED-BACKUP-REVIEW.md)۔ **Windows1692C#cases،DPAPI/ACL،حقیقیnew-PCrestore/faultmatrix UNRUN**؛82static اورPythonmodel runtimeنہیں۔ Installerنہیںبنا۔ اگلیاہمgateواقعیالگWindowsVMمیںencryptedbackup+restoreہے؛اسکےبغیرپرانےbackupsنہdeleteکریں۔ باقیاندازہتقریباً **3–7 مربوط review/result چکر**؛Supplierpolicy/session/StockMinus/otheroutputs/fault/files/cloud/fullPhase4کھلےہیں۔ موجودہ feature board **51 done/6 partial** ہے: F-36 کی نئی security extension کو Windows/PT-35 کے لیے دوبارہ partial رکھا،feature حذف نہیں ہوا۔ یہ audit فیصد نہیں۔ ذیل کے حصہ14 اور پرانے اندازے تاریخی ہیں۔
+
+## تاریخی حصہ14 کے بعد باقی کام
 
 Explicit owner-default bulk gate اورAuditmetadata/search boundary source میں شامل؛editableproduct/mixedfileمکملمالیاجازتکےبغیرانکار،چارCSVdoorsپرbulkgate۔ [PT-34](POS-PHASE4-PART14-URDU.md)،[trace](POS-PHASE4-BULK-AUDIT-REVIEW.md)۔ **اب فوری اگلا کام:آپ کا منتخب A password backup**—setup،protectedautomaticcredentials،authenticatedencryptedpackage،restore/safety/rollbackاورlegacyrecoveryایکساتھ۔ [منظورشدہcontract](SECURE-BACKUP-PASSWORD-PLAN.md)؛**موجودہZIP/DBbackupsابھیencryptedنہیں**۔
 

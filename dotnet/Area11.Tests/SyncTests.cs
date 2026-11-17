@@ -801,7 +801,7 @@ VALUES(901, 'Sync medicine', 901, 901, 901);");
         var permissions = new PermissionService(test.Database, test.Log, test.Audit);
 
         var backup = new BackupService(test.Database, test.Settings, test.Audit, permissions, test.Log,
-            NewFolder(), backupsFolder ?? NewFolder());
+            NewFolder(), backupsFolder ?? NewFolder(), new TestBackupPasswordStore(), NewFolder());
 
         return new SyncService(test.Database, test.Settings, test.Audit, permissions, test.Log, backup, wire);
     }

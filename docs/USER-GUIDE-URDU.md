@@ -1,8 +1,10 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.92.0 Bittern۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.93.0 Shearwater۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
 
-**حصہ14 — Excel/CSV اور Audit:** موجودہ checkbox کا نام **Allow Excel/CSV Bulk Export & Import**؛default صرف Owner،Manager/Staff کو Owner کی explicit grant۔ Editable product file کے لیے Cost/main،mixed shop workbook دونوںfinancial/main؛انکار پرmasked0file نہیں۔ Audit کے rawold/new/details کے لیے دونوںfinancial/main،ورنہmetadata؛hiddenfieldsearch/count بھیبند۔ چارCSVdoorsپرbulkgrant؛freshexport،cachedrawpageنہیں۔ [PT-34](POS-PHASE4-PART14-URDU.md)،[trace](POS-PHASE4-BULK-AUDIT-REVIEW.md)۔ **PasswordA backup منظور،encryption ابھی implement نہیں ہوا؛موجودہ ZIP/DB encrypted نہیں۔** [اگلا منصوبہ](SECURE-BACKUP-PASSWORD-PLAN.md)۔1641C#cases UNRUN،81static PASS؛Windows/fullPhase4 باقی۔
+**حصہ15 — الگ password backup:** `.a11bak` کے لیے Owner کا Set / change backup password؛Automatic کے لیے اسی Windows account کی protected local storage،setup نہ ہو توFAIL/no plain fallback۔ Manual/auto/full safety/rollback ایک ہی encrypted format؛restore پہلے authentication/checksum،پھرZIP/DB validation،پھر encrypted safety اورlive swap۔ نئےPC/oldbackup کے لیےاصلpassword؛local safety password پہلےsetup،rotationپرoldpasswordبرقرار۔ Legacy ZIP/DB الگ Owner-only UNVERIFIED acceptance؛پرانےbackupsنہdeleteکریں۔ [PT-35](POS-PHASE4-PART15-URDU.md)،[format/حدود](POS-PHASE4-ENCRYPTED-BACKUP-REVIEW.md)۔ **1692C#cases/Windows/DPAPI/new-PC UNRUN**؛82static اورindependentPythonmodel PASS،certificationنہیں۔
+
+**حصہ14 — Excel/CSV اور Audit:** موجودہ checkbox کا نام **Allow Excel/CSV Bulk Export & Import**؛default صرف Owner،Manager/Staff کو Owner کی explicit grant۔ Editable product file کے لیے Cost/main،mixed shop workbook دونوںfinancial/main؛انکار پرmasked0file نہیں۔ Audit کے rawold/new/details کے لیے دونوںfinancial/main،ورنہmetadata؛hiddenfieldsearch/count بھیبند۔ چارCSVdoorsپرbulkgrant؛freshexport،cachedrawpageنہیں۔ [PT-34](POS-PHASE4-PART14-URDU.md)،[trace](POS-PHASE4-BULK-AUDIT-REVIEW.md)۔ **اس حصے14 کے وقت encryption pending تھی؛نیا source حصہ15 میں،پرانے ZIP/DB اب بھی encrypted نہیں۔** [اصل contract/تازہ حیثیت](SECURE-BACKUP-PASSWORD-PLAN.md)۔1641C#cases UNRUN،81static PASS؛Windows/fullPhase4 باقی۔
 
 **فیز4 حصہ13 — خرید کا editable hidden0 نہیں:** نئی خرید اور purchase draft کھولنے/محفوظ/update/post کے لیے موجودہ Purchases + الگ Cost + main ON؛صرف Profit/manager کافی نہیں۔ Summary/discard موجودہ page اجازت پر الگ۔ اجازت بند ہو تو unsaved لائنیں/اصل رقم برقرار مگر cost/paid/total/status اگلے check پر mask،Save بند؛اجازت واپس پر review،خودSave نہیں۔ Nominal3second timer کی فوری recall ضمانت نہیں۔ [PT-33](POS-PHASE4-PART13-URDU.md)،[trace/حدود](POS-PHASE4-PURCHASE-PREPARATION-REVIEW.md)۔1609 C#cases UNRUN،80static PASS؛Supplier/generic exports/session/Windows باقی۔
 
@@ -58,7 +60,7 @@
 | [24](#lesson-24) | Alerts | یاد دہانی اور مالی/سٹاک مسئلے الگ؛ مسئلہ صرف مالک وجہ سے ختم کرے |
 | [25](#lesson-25) | Black box / Books check | کس نے کیا بدلا؛ پرانی حالت؛ حساب کی صرف پڑھنے والی جانچ |
 | [26](#lesson-26) | Excel / CSV | نئی فہرست import، export، workbook bulk update، قیمتیں بدلنا |
-| [27](#lesson-27) | Backup & restore | تصویروں سمیت ZIP؛ خودکار شیڈول؛ پرانی حالت بحال کرنے کا خطرہ |
+| [27](#lesson-27) | Backup & restore | تصویروں سمیت encrypted package؛ خودکار شیڈول؛ پرانی حالت بحال کرنے کا خطرہ |
 | [28](#lesson-28) | Settings: App name & icon / Shop | ایپ کی شناخت الگ؛ رسید والی دکان کی تفصیل الگ |
 | [29](#lesson-29) | Settings: Printing / Printer & scanner | کاغذ، copies، auto-print، bulk، PDF اور اصل ہارڈویئر کی جانچ |
 | [30](#lesson-30) | Settings: Sales rules | رعایت کی حد، cost lock، credit lock، profit، points، stock/expiry |
@@ -475,19 +477,20 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 7. Choose edited workbook… کے بعد old/new preview دیکھیں؛ database بدل گئی ہو تو نیا download/preview چاہیے ہو سکتا ہے۔ Apply these changes حتمی مرحلہ ہے۔
 8. Prices tab میں Percent یا Rupees، متعلقہ منتخب records اور Change the purchase cost too صرف حقیقی cost تبدیلی پر؛ Preview → پرانے/نئے ریٹ ملائیں → Apply these prices۔ below-cost سے رد قطار کو نظرانداز کرکے کامیاب نہ سمجھیں۔
 
-**Backup کی اہم موجودہ حقیقت:** Owner نے الگ password والا طریقہ A منتخب کیا ہے،مگر v0.92 میں encryption/credential store/نیا restore format ابھی نہیں لکھا گیا۔ موجودہ ZIP/DB plain ہیں،انہیں encrypted سمجھ کر نہ بھیجیں۔ اگلا کام manual/auto/safety/rollback ایک ساتھ ہے؛اصل password chat میں نہ دیں،پرانے backups نہ delete کریں۔ [منظورشدہ منصوبہ](SECURE-BACKUP-PASSWORD-PLAN.md)۔
+**Backup کی اہم موجودہ حقیقت:** نئے v0.93 `.a11bak` manual/auto/safety encrypted source میں شامل؛پرانے ZIP/DB plain/unverified رہتے ہیں۔ Password الگ،صرفایپمیںsetup؛chatمیںنہدیں۔ Windows/PT-35 اورواقعیالگrestoreثبوتباقی؛پرانےbackupsمحفوظ۔ [حدود](POS-PHASE4-ENCRYPTED-BACKUP-REVIEW.md)۔
 
 <a id="lesson-27"></a>
 
 ## سبق 27 — Backup اور Restore: سب سے اہم حفاظت
 
-1. Backup & restore → Include the photos رکھیں؛ Back up now یا Back up as… سے ZIP لیں۔ Open the folder/Refresh سے فائل دیکھیں۔ تازہ ZIP کو USB یا دوسرے محفوظ کمپیوٹر پر نقل کریں؛ اسی disk کی دوسری directory مکمل آفت سے حفاظت نہیں۔
-2. Automatic backup میں on/off، Every (hours)، Keep this many؛ Save the schedule۔ صرف automatic فائلوں کی retention الگ ہے؛ دستی backup خود سنبھالیں۔ schedule ہونے سے پروگرام بند رہنے کے دوران ہر وقت backup بننے کی ضمانت نہیں۔
-3. اصل data عموماً C:\ProgramData\Area11 میں رہتا ہے؛ اگر data location بدلی ہو تو موجودہ حالت/backup page دیکھیں۔ کھلی DB کی اکیلی .db فائل نقل کرنا مکمل ZIP backup کے برابر نہیں، متعلقہ journal/تصاویر رہ سکتی ہیں۔
-4. Restore پورے موجودہ حساب کی جگہ **منتخب پرانی حالت** لاتا ہے۔ آج کے نئے بل/وصولیاں پرانے backup میں نہ ہوں تو restore کے بعد وہاں نہیں دکھیں گے۔ ایک غلط bill ٹھیک کرنے کے لیے یہ معمول کا Undo نہیں۔
-5. صرف مالک، کام روک کر، درست تاریخ/فائل دیکھ کر Restore this backup… منتخب کرے، تنبیہ پڑھے، پھر Restore now۔ پروگرام پہلے موجودہ حالت کی recovery copy بنانے کی کوشش/جانچ کرتا ہے؛ ناکامی کا پیغام ہو تو آگے محفوظ سمجھ کر نہ بڑھیں۔
-6. بحالی کے بعد records، bills، balances اور تصاویر ملائیں۔ Last restore and recovery میں پہلے کی حفاظتی ZIP محفوظ رکھیں۔ restore fail ہو تو فائلیں delete یا بار بار الگ backups نہ چلاتے رہیں؛ پیغام اور recovery location نوٹ کرکے مدد لیں۔
-7. نئی مشین پر مکمل جانچ **الگ test environment** میں کریں۔ محض Area11 کی دوسری program folder بنا لینے سے الگ test data نہیں بنتا؛ دونوں ایک ہی shop data استعمال کر سکتی ہیں۔
+1. پہلے Owner → **Set / change backup password**؛ مضبوط الگ password اور confirmation دیں، 12–1024 characters۔ اصل password محفوظ جگہ سنبھالیں؛ ایپ کا login reset اس backup کو نہیں کھول سکتا۔ اسی Windows account اور database path کی protected local storage خودکار backup کو password دیتی ہے؛ نئے account یا path پر setup دوبارہ ضروری ہے۔
+2. Include the photos رکھیں؛ Back up now یا Back up as… سے **`.a11bak` encrypted package** لیں۔ Open the folder/Refresh سے دیکھیں؛ تازہ copy USB یا الگ محفوظ computer پر رکھیں۔ Filename/date صرف unverified hint؛ پورا package password سے verify ہوگا۔ Back up as سے plain ZIP نہیں بنتی۔
+3. Automatic backup میں on/off، Every(hours)، Keep this many؛ Save the schedule۔ صرف نئی managed encrypted automatic copies trim؛ manual، safety اور legacy خود محفوظ رکھیں۔ Setup/access ناکام ہو تو sign-in اور page پر تنبیہ، plaintext fallback نہیں۔ یہ ایپ بند ہونے پر چلنے والی Windows backup service نہیں؛ I/O میں وقت لگ سکتا ہے۔
+4. Restore پورے موجودہ database کی جگہ پرانی حالت لاتا ہے؛ آج کے نئے bills پرانے backup میں نہ ہوں تو وہ وہاں نہیں دکھیں گے۔ **کام روکیں**؛ غلط bill کا معمول کا Undo نہیں۔ Restore this backup… کی red تنبیہ یا **Restore file / new PC / legacy** سے file چنیں، تصدیق پڑھیں۔
+5. Encrypted restore میں اس file کا **اصل password** درج کریں۔ نئے PC پر پہلے local backup password setup کریں تاکہ موجودہ حالت کی encrypted full safety بن سکے۔ Source کا پرانا password اور نئی safety کا local password الگ ہو سکتے ہیں۔ Wrong password، tamper، unsupported format یا unsafe ZIP/DB پہلے رد؛ validation کے بعد safety، پھر replacement۔
+6. Legacy ZIP/DB صرف موجودہ Owner کی الگ **UNVERIFIED legacy recovery** قبولیت سے؛ بغیر authentication فائل کو نئی hash سے معتبر نہیں بناتے۔ نئی safety پھر بھی encrypted۔ Password rotation سے پرانے packages کا password نہیں بدلتا؛ پرانے backups اس وقت تک نہ مٹائیں جب تک نیا encrypted backup اور واقعی الگ restore verify نہ ہو۔
+7. بحالی کے بعد records، bills، balances، photos اور Last restore and recovery کا ملان کریں؛ named full safety رکھیں۔ Failure پر پیغام محفوظ، مزید posting روکیں؛ automatic rollback ناکام ہو تو صاف recovery required، جھوٹی success نہیں۔ Photo semantics merge ہیں: included فائلیں overwrite/add، غیرشامل تصاویر delete نہیں؛ DB-only copy موجودہ photos نہیں مٹاتی۔
+8. واقعی الگ test VM/PC میں **[PT-35](POS-PHASE4-PART15-URDU.md)** کریں؛ دوسری exe folder کافی نہیں۔ Private current-user profile میں verification کے لیے عارضی plain staging بنتی ہے؛ cleanup best-effort، crash/lock پر رہ سکتی ہے، secure erase نہیں۔ Live DB/photos encrypt-at-rest نہیں کیے، photo+DB atomic snapshot نہیں۔ Windows، DPAPI، ACL، new-PC اور fault جانچ ابھی باقی ہے۔
 
 <a id="lesson-28"></a>
 
@@ -612,7 +615,7 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 2. Automatic push اور وقفہ (5 سے 1440 منٹ) صرف مقررہ push؛ failed push سے اگلی کوشش تک cloud پرانی ہو سکتی ہے۔ Remove the saved key کے بعد status ملائیں۔
 3. SYSTEM → Cloud sync میں Push the shop's data to the cloud مقامی ریکارڈ کی نقل بھیجتا ہے؛ See what the cloud has (writes nothing) صرف preview ہے۔
 4. Bring the cloud data here overwrite والی خطرناک کارروائی ہے۔ cloud میں آج کا bill نہ ہو سکتا ہے؛ counts/differences اور confirmation پڑھے بغیر نہ کریں۔ پہلے backup، پھر مجاز شخص کی دانستہ اجازت؛ اسے خودکار دوطرفہ merge نہ سمجھیں۔
-5. catalog/master rows وسیع، transactions عموماً گزشتہ 90 دن اور ان کے ضروری متعلقہ records کے scope میں جاتے ہیں؛ **photos نہیں**۔ اس لیے مکمل، تصاویر والا ZIP backup ضروری ہے۔
+5. catalog/master rows وسیع، transactions عموماً گزشتہ 90 دن اور ان کے ضروری متعلقہ records کے scope میں جاتے ہیں؛ **photos نہیں**۔ اس لیے مکمل، تصاویر والا encrypted backup ضروری ہے۔
 6. Second counter (LAN) کا صفحہ موجود ہے مگر مالک نے دوسرا counter **ملتوی** رکھا ہے۔ ابھی data folder/share یا database mode نہ بدلیں۔ دو فولڈر بنا لینا دو الگ دکانیں نہیں۔ جب منظور ہو تو ماہر موجودہ location، journal، network/share permissions، backup اور اصل دونوں PC پر جانچ کے بعد ہی آگے بڑھے۔
 
 <a id="lesson-35"></a>
@@ -649,7 +652,7 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 - ایک test product، درست pack formula اور اصلی جیسی future expiry کے test batch سے purchase؛ ایک cash sale اور اس کی دوبارہ رسید؛ پھر اس bill کی return۔ ہر جگہ stock اور cash اثر الگ نوٹ کریں۔
 - صفر-stock item کا bill مالک سے بھی رد ہو؛ missing retail لیکن موجود stock پر صرف مالک/مینیجر custom rate دے سکے؛ cashier کو اجازت نہ ہو۔ warning اسی live bill میں ایک بار ہو، Clear کے بعد پھر ممکن ہو، slip پر کوئی availability لائن نہ ہو۔
 - Settings Fields میں product retail required کرکے product save warning دیکھیں؛ Save anyway ہو مگر Counter کی پابندیاں الگ رہیں۔
-- printer test slip، gallery cover، draft save/open، backup ZIP اور صرف الگ ماحول میں restore آزمائیں۔ اصل stock-take apply، live cloud pull یا LAN configuration کو مشق کا پہلا قدم نہ بنائیں۔
+- printer test slip، gallery cover، draft save/open، encrypted backup اور صرف الگ ماحول میں restore آزمائیں۔ اصل stock-take apply، live cloud pull یا LAN configuration کو مشق کا پہلا قدم نہ بنائیں۔
 
 ### اگر کام رک جائے
 
@@ -665,9 +668,9 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 | تصویر غائب | gallery میں missing file دیکھیں، photos-inclusive backup تلاش؛ record دوبارہ نہ بنائیں |
 | کریش/صفحہ کھلنے کی خرابی | error کی پوری عبارت، version، صفحہ اور کیا دبایا نوٹ؛ غیر محفوظ کام کا حال دیکھیں؛ DB نہ مٹائیں |
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
-| restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation recovery ZIP/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
+| restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.86.0 کا متوقع test count 1469 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.93.0 کا متوقع test count 1692 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 

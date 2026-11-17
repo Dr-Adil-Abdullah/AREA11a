@@ -1,6 +1,6 @@
 # Area11 — مکمل فیچر ٹک لسٹ (پرنٹ کرنے کے لیے)
 
-**ورژن:** v0.92.0 (Bittern `#63614A`) · **تاریخ:** 2026-11-17
+**ورژن:** v0.93.0 (Shearwater `#475E69`) · **تاریخ:** 2026-11-10
 
 > یہ فائل **خودکار** بنتی ہے: `python3 tools/make_checklist.py`۔ ہاتھ سے نہ بدلیں۔
 > اصلی فیصلہ `docs/PROGRESS.md` کے بورڈ میں ہوتا ہے، اور `tools/check_repo.py` اُس سے میل
@@ -10,8 +10,8 @@
 
 | حالت | گنتی | فیصد |
 |---|---|---|
-| ✅ مکمل | 52 | 91.2% |
-| 🟡 جاری — کوڈ مکمل، دکان میں ایک عمل باقی | 5 | 8.8% |
+| ✅ مکمل | 51 | 89.5% |
+| 🟡 جاری — کوڈ مکمل، دکان میں ایک عمل باقی | 6 | 10.5% |
 | ❌ شروع نہیں | 0 | 0% |
 | **کل فیچر** | **57** | **100%** |
 
@@ -95,7 +95,7 @@
 
 ## فیز 3 — کھاتے، رپورٹس، بیک اپ
 
-**اس حصے میں 9 فیچر — 9 ✅ کامل · 0 🟡 جاری · 0 ❌ شروع نہیں**
+**اس حصے میں 9 فیچر — 8 ✅ کامل · 1 🟡 جاری · 0 ❌ شروع نہیں**
 
 *یہاں دکان کا حساب ہے: گلہ، اخراجات، رپورٹس، ادھار کی وصولی، اور بیک اپ۔*
 
@@ -106,7 +106,7 @@
 | ☐ | F-33 | Udhaar recovery: ageing | ✅ مکمل |
 | ☐ | F-34 | Reports | ✅ مکمل |
 | ☐ | F-35 | Audit viewer + CSV export (owner; manager hidden by default) | ✅ مکمل |
-| ☐ | F-36 | Backup | ✅ مکمل |
+| ☐ | F-36 | Backup | 🟡 جاری |
 | ☐ | F-37 | Import / export / bulk price change | ✅ مکمل |
 | ☐ | F-38 | Reorder levels + WhatsApp order text | ✅ مکمل |
 | ☐ | F-39 | Stock-minus registry: every shelf below zero, the movement that took it there, valu... | ✅ مکمل |
@@ -116,7 +116,11 @@
 1. `Shift (galla)` → گلہ کھولیں، رقم گنیں، بند کریں → فرق (کم/زیادہ) لکھا آئے۔
 2. `Expenses` → ایک خرچ (بجلی، چائے) لکھیں → رپورٹ میں نظر آئے۔
 3. `Reports` → آج / 7 دن / 30 دن کے نمبر دیکھیں؛ `Tax report` مہینے کا حساب دکھائے۔
-4. `Backup & restore` → **Back up now** → `C:\ProgramData\Area11\backups` میں ZIP بنے۔
+4. `Backup & restore` → **Back up now** → `C:\ProgramData\Area11\backups` میں encrypted `.a11bak` بنے؛ پہلے Owner کا backup password setup۔
+
+**اِس حصے میں باقی:**
+
+- 🟡 **F-36 — Backup**: PT-35:1692C#cases,DPAPI/ACL,new-PC original password,rotation,isolated full restore/fault matrix;no runtime certification
 
 ## فیز 4 — باقی سب (دکان کے لیے اضافی سہولتیں)
 
@@ -176,4 +180,4 @@
 اور اُس کا پیمانہ اوپر لکھا ہے۔ جب آپ کوئی عمل کر لیں اور کہیں کہ «ہو گیا»، تو اُس فیچر کا نشان اگلی دوڑ میں
 ✅ ہو جائے گا — اِس فائل میں خود بخود۔
 
-*بنایا گیا: 2026-11-17 · `tools/make_checklist.py`*
+*بنایا گیا: 2026-11-10 · `tools/make_checklist.py`*

@@ -143,7 +143,7 @@ STATUS: dict[str, tuple[str, str, str]] = {
     "Z-05": ("WIP", "D-113 current Audit metadata vs both-financial raw detail/search; fresh selected snapshot/CSV; no universal undo; Windows proof pending", "AuditViewerTests.EarlierState_*; BulkAndAuditAccessTests.*"),
     "Z-06": ("DONE", "SQLite file, no network needed", "-"),
     "Z-07": ("DONE", "a printer fault is reported and the bill is saved anyway - the paper never decides the sale", "PrintTests.*"),
-    "Z-08": ("DONE", "one SQLite file + zip backup (Phase 3)", "-"),
+    "Z-08": ("WIP", "SQLite + encrypted .a11bak manual/auto/safety/rollback source; current-user DPAPI and explicit legacy; PT-35 Windows/new-PC/fault UNRUN", "BackupTests.*, BackupPackageTests.*, EncryptedBackupTests.*"),
     "Z-09": ("DONE", "`audit_logs` + the Black box page (search, filters, CSV)", "AuditDiffTests.*"),
     "Z-10": ("DUTY", "end of each phase", "-"),
     "Z-11": ("DONE", "`Money.RoundDownWithCostGuard`", "MoneyTests.*"),

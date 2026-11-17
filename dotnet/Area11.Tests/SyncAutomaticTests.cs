@@ -350,7 +350,7 @@ public sealed class SyncAutomaticTests
         var permissions = new PermissionService(test.Database, test.Log, test.Audit);
 
         var backup = new BackupService(test.Database, test.Settings, test.Audit, permissions, test.Log,
-            NewFolder(), NewFolder());
+            NewFolder(), NewFolder(), new TestBackupPasswordStore(), NewFolder());
 
         return new SyncService(test.Database, test.Settings, test.Audit, permissions, test.Log, backup, wire);
     }

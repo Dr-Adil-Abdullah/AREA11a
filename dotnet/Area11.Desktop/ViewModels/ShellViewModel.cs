@@ -79,8 +79,11 @@ public sealed class ShellViewModel : ObservableObject
         RefreshAlerts();
 
         // The first sign-in of the day makes the daily copy if it is switched on. It never throws
-        // and never blocks the till: a failed backup is a line in the log and a note on the page.
+        // without aborting sign-in. Synchronous backup I/O may take time; failures are shown explicitly.
         _services.Backup.RunAutomaticIfDue();
+        if (!string.IsNullOrWhiteSpace(_services.Backup.LastFailure))
+            System.Windows.MessageBox.Show(_services.Backup.LastFailure, "Automatic backup FAILED",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
 
         // Counter is preferred only if already permitted. Never grant a permission for startup:
         // otherwise use Dashboard, or a permitted page only if Dashboard is unavailable.

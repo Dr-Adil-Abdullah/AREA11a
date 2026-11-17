@@ -40,7 +40,7 @@ public sealed class BackupTests
         Assert.True(File.Exists(created.Value!.FullPath));
         Assert.Contains("KB", created.Value.SizeLabel);
 
-        using var zip = ZipFile.OpenRead(created.Value.FullPath);
+        using var zip = TestBackupPasswordStore.OpenArchive(created.Value.FullPath);
         var names = zip.Entries.Select(entry => entry.FullName).ToList();
 
         Assert.Contains("area11.db", names);
@@ -70,7 +70,7 @@ public sealed class BackupTests
 
         Assert.True(created.Ok, created.Error);
 
-        using var zip = ZipFile.OpenRead(created.Value!.FullPath);
+        using var zip = TestBackupPasswordStore.OpenArchive(created.Value!.FullPath);
         Assert.DoesNotContain(zip.Entries, entry => entry.FullName.StartsWith("photos/", StringComparison.Ordinal));
         Assert.Contains(zip.Entries, entry => entry.FullName == "area11.db");
     }
@@ -84,7 +84,7 @@ public sealed class BackupTests
         TestData.AddProduct(test, name: "Panadol 500mg");
         var livePath = test.Database.FilePath;
         var chosenFolder = Path.Combine(folders.BackupFolder, "USB stick");
-        var chosen = Path.Combine(chosenFolder, "shop before update.zip");
+        var chosen = Path.Combine(chosenFolder, "shop before update.a11bak");
         var service = folders.Backups(test);
 
         var first = service.Create(TestData.Owner, destinationFile: chosen);
@@ -133,7 +133,7 @@ public sealed class BackupTests
 
         for (var round = 0; round < 3; round++)
         {
-            var automatic = service.Create(null, includePhotos: true, automatic: true);
+            var automatic = service.Create(TestData.Owner, includePhotos: true, automatic: true);
             Assert.True(automatic.Ok, automatic.Error);
         }
 
@@ -191,7 +191,7 @@ public sealed class BackupTests
 
         // The safety zip is the shop as it was a moment before the restore: both medicines + photo.
         Assert.Equal(2L, CountProductsInFile(safety));
-        using (var zip = ZipFile.OpenRead(safety))
+        using (var zip = TestBackupPasswordStore.OpenArchive(safety))
         {
             Assert.Contains(zip.Entries, entry => entry.FullName == "area11.db");
             Assert.Contains(zip.Entries, entry => entry.FullName == "photos/after-backup.jpg");
@@ -233,7 +233,7 @@ VALUES(@at, 'owner', 'test_new_work', 'Products', 'work after the backup');",
 
         Assert.Contains("Newer work", warning, StringComparison.Ordinal);
         Assert.Contains(later, warning, StringComparison.Ordinal);
-        Assert.Contains("recovery zip", warning, StringComparison.Ordinal);
+        Assert.Contains("recovery package", warning, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -248,17 +248,17 @@ VALUES(@at, 'owner', 'test_new_work', 'Products', 'work after the backup');",
         Assert.True(made.Ok, made.Error);
         TestData.AddProduct(test, name: "Brufen 400mg");
 
-        using (var zip = ZipFile.Open(made.Value!.FullPath, ZipArchiveMode.Update))
+        TestBackupPasswordStore.RewriteArchive(made.Value!.FullPath, zip =>
         {
             var entry = zip.CreateEntry("photos/../escaped.txt");
             using var writer = new StreamWriter(entry.Open());
             writer.Write("must never escape");
-        }
+        });
 
         var restored = service.Restore(made.Value.FullPath, TestData.Owner);
 
         Assert.False(restored.Ok);
-        Assert.Contains("outside the photo folder", restored.Error, StringComparison.Ordinal);
+        Assert.Contains("verification failed", restored.Error, StringComparison.Ordinal);
         Assert.Equal(2L, CountProducts(test));
         Assert.False(File.Exists(Path.GetFullPath(Path.Combine(folders.PhotoFolder, "..", "escaped.txt"))));
     }
@@ -332,12 +332,16 @@ VALUES(@at, 'owner', 'test_new_work', 'Products', 'work after the backup');",
 
         TestData.AddProduct(test, name: "Panadol 500mg");
 
-        var copy = folders.Backups(test).SafetyCopy("test");
+        var copy = folders.Backups(test).SafetyCopy("test", TestData.Owner);
         Assert.True(copy.Ok, copy.Error);
 
         TestData.AddProduct(test, name: "Brufen 400mg");
 
-        var restored = folders.Backups(test).Restore(copy.Value!, TestData.Owner);
+        var legacy = Path.Combine(folders.BackupFolder, "legacy.db");
+        using (var archive = TestBackupPasswordStore.OpenArchive(copy.Value!))
+            archive.GetEntry("area11.db")!.ExtractToFile(legacy);
+        Assert.False(folders.Backups(test).Restore(legacy, TestData.Owner).Ok);
+        var restored = folders.Backups(test).RestoreLegacy(legacy, TestData.Owner, acknowledgeUnverified: true);
 
         Assert.True(restored.Ok, restored.Error);
         Assert.Equal(1L, CountProducts(test));
@@ -555,7 +559,7 @@ VALUES(@at, 'owner', 'test_new_work', 'Products', 'work after the backup');",
 
     private static void AssertPhotosInZip(string path, params string[] expected)
     {
-        using var zip = ZipFile.OpenRead(path);
+        using var zip = TestBackupPasswordStore.OpenArchive(path);
         var actual = zip.Entries
             .Where(entry => entry.FullName.StartsWith("photos/", StringComparison.Ordinal))
             .Select(entry => entry.FullName)
@@ -590,7 +594,7 @@ VALUES(@at, 'owner', 'test_new_work', 'Products', 'work after the backup');",
 
         try
         {
-            using (var zip = ZipFile.OpenRead(path))
+            using (var zip = TestBackupPasswordStore.OpenArchive(path))
             {
                 var database = zip.Entries.Single(entry => entry.FullName == "area11.db");
                 database.ExtractToFile(extracted);
@@ -642,7 +646,7 @@ VALUES(@at, 'owner', 'test_new_work', 'Products', 'work after the backup');",
         public BackupService Backups(TestDatabase test) =>
             new(test.Database, test.Settings, test.Audit,
                 new PermissionService(test.Database, test.Log, test.Audit), test.Log,
-                PhotoFolder, BackupFolder);
+                PhotoFolder, BackupFolder, new TestBackupPasswordStore(), Path.Combine(_root, "stage"));
 
         public void WritePhoto(string name, string text) =>
             File.WriteAllText(Path.Combine(PhotoFolder, name), text);

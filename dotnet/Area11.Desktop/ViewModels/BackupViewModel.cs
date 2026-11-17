@@ -1,3 +1,5 @@
+using System.Windows;
+using Area11.Desktop.Views;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
@@ -36,7 +38,7 @@ public sealed class BackupViewModel : ObservableObject, IEmptyPage
     private bool _autoEnabled;
     private string _everyHoursText = "24";
     private string _keepText = "7";
-    private string _statusText = "Press \"Back up now\" and copy the zip to a USB stick or your e-mail.";
+    private string _statusText = "Press \"Back up now\" and copy the encrypted package to a USB stick or your e-mail.";
     private bool _isStatusError;
     private string _lastAutomatic = "No automatic backup yet.";
 
@@ -46,6 +48,8 @@ public sealed class BackupViewModel : ObservableObject, IEmptyPage
         _user = user;
         _onRestored = onRestored;
 
+        ConfigurePasswordCommand = new RelayCommand(ConfigurePassword);
+        RestoreFileCommand = new RelayCommand(RestoreFile);
         CreateCommand = new RelayCommand(CreateBackup);
         CreateAsCommand = new RelayCommand(CreateBackupAs);
         RefreshCommand = new RelayCommand(Load);
@@ -59,6 +63,14 @@ public sealed class BackupViewModel : ObservableObject, IEmptyPage
     }
 
     public ObservableCollection<BackupFile> Files { get; } = new();
+
+    public RelayCommand ConfigurePasswordCommand { get; }
+
+    public RelayCommand RestoreFileCommand { get; }
+
+    public string PasswordStatus => _services.Backup.PasswordConfigured
+        ? "Protected local backup password configured. Older files may require an older password."
+        : "BACKUPS BLOCKED: Owner must set a backup password for this Windows account. No plaintext fallback.";
 
     public RelayCommand CreateCommand { get; }
 
@@ -115,7 +127,7 @@ public sealed class BackupViewModel : ObservableObject, IEmptyPage
         }
     }
 
-    /// <summary>Ticked = the zip carries the photos as well. Unticked = smaller, but photos are lost.</summary>
+    /// <summary>Include supported photos in the package; unticked does not delete existing live photos.</summary>
     public bool IncludePhotos
     {
         get => _includePhotos;
@@ -132,12 +144,12 @@ public sealed class BackupViewModel : ObservableObject, IEmptyPage
     /// <summary>What is about to be replaced, spelled out in the panel.</summary>
     public string ConfirmText => Selected is null
         ? string.Empty
-        : $"Everything in the shop will be replaced by {Selected.FileName}. " +
-          $"Made: {(string.IsNullOrWhiteSpace(Selected.MadeAt) ? Selected.Stamp : Selected.MadeAt)} " +
+        : $"The shop database will be replaced by {Selected.FileName}; included photos will be merged. Stop all shop work first. " +
+          $"Filename date (UNVERIFIED hint): {(string.IsNullOrWhiteSpace(Selected.MadeAt) ? Selected.Stamp : Selected.MadeAt)} " +
           $"({_services.Backup.BackupAge(Selected)}). " +
           $"Backup version: {(string.IsNullOrWhiteSpace(Selected.BackupVersion) ? "not recorded" : Selected.BackupVersion)}. " +
-          "A full database-and-photos recovery zip of the live shop is kept first. " +
-          "If this was the wrong file, restore that recovery zip to return." +
+          "A full database-and-photos encrypted recovery package of the live shop is kept first. " +
+          "If this was the wrong file, restore that encrypted recovery package to return." +
           _services.Backup.RestoreWarning(Selected);
 
     public bool AutoEnabled
@@ -184,6 +196,8 @@ public sealed class BackupViewModel : ObservableObject, IEmptyPage
         EveryHoursText = backup.EveryHours.ToString(CultureInfo.InvariantCulture);
         KeepText = backup.KeepCount.ToString(CultureInfo.InvariantCulture);
         LastAutomatic = backup.LastBackupText;
+        OnPropertyChanged(nameof(PasswordStatus));
+        if (!string.IsNullOrWhiteSpace(backup.LastFailure)) SetStatus(backup.LastFailure, true);
 
         Files.Clear();
 
@@ -210,9 +224,9 @@ public sealed class BackupViewModel : ObservableObject, IEmptyPage
         var dialog = new SaveFileDialog
         {
             Title = "Choose where to save this Area11 backup",
-            Filter = "Area11 backup (*.zip)|*.zip",
-            FileName = $"area11-backup-{DateTime.Now:yyyyMMdd-HHmmss}.zip",
-            DefaultExt = ".zip",
+            Filter = "Encrypted Area11 backup (*.a11bak)|*.a11bak",
+            FileName = $"area11-backup-{DateTime.Now:yyyyMMdd-HHmmss}.a11bak",
+            DefaultExt = ".a11bak",
             AddExtension = true,
             // The service deliberately adds a suffix rather than overwriting an earlier backup.
             OverwritePrompt = false
@@ -280,16 +294,54 @@ public sealed class BackupViewModel : ObservableObject, IEmptyPage
         var chosen = Selected;
         ConfirmRestore = false;
 
-        var result = _services.Backup.Restore(chosen.FullPath, _user);
+        RestorePath(chosen.FullPath);
+    }
 
+    private void ConfigurePassword()
+    {
+        if (!_user.IsOwner) { SetStatus("Only the current owner can set or change the backup password.", true); return; }
+        var credentials = BackupPasswordDialog.Prompt(setup: true);
+        if (credentials is null) return;
+        var result = _services.Backup.ConfigurePassword(_user, credentials.Value.Password, credentials.Value.Confirmation);
+        OnPropertyChanged(nameof(PasswordStatus));
+        SetStatus(result.Ok ? "Backup password stored for this Windows account. Older backups still need their original password. Make and verify a new encrypted backup now."
+            : result.Error ?? "Password setup failed.", !result.Ok);
+    }
+
+    private void RestoreFile()
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = "Choose backup — restore REPLACES the current shop",
+            Filter = "Encrypted Area11 backup (*.a11bak)|*.a11bak|Legacy UNVERIFIED ZIP / DB (*.zip;*.db)|*.zip;*.db",
+            CheckFileExists = true
+        };
+        if (dialog.ShowDialog() != true) return;
+        if (MessageBox.Show("This replaces the current shop database and restores any included photos. An encrypted full safety copy is required first. Continue?",
+            "Restore confirmation", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+        RestorePath(dialog.FileName);
+    }
+
+    private void RestorePath(string path)
+    {
+        Area11.Core.Utils.ServiceResult<RestoreResult> result;
+        if (System.IO.Path.GetExtension(path).Equals(BackupPackage.Extension, StringComparison.OrdinalIgnoreCase))
+        {
+            var credentials = BackupPasswordDialog.Prompt(setup: false);
+            if (credentials is null) return;
+            result = _services.Backup.Restore(path, _user, credentials.Value.Password);
+        }
+        else
+        {
+            if (MessageBox.Show("OWNER-ONLY LEGACY RECOVERY: this file is NOT authenticated or confidential. Its origin and changes cannot be verified. Use only a trusted legacy ZIP/DB. Accept this risk?",
+                "UNVERIFIED legacy recovery", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+            result = _services.Backup.RestoreLegacy(path, _user, acknowledgeUnverified: true);
+        }
         if (!result.Ok || result.Value is null)
         {
             SetStatus(result.Error ?? "The backup could not be restored.", true);
             return;
         }
-
-        // The database on disk is now the old one: every page on the screen holds numbers read from
-        // a file that no longer exists. The window is rebuilt from scratch a moment from now.
         SetStatus(result.Value.SummaryText, false);
         _onRestored?.Invoke();
     }

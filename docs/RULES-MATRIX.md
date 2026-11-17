@@ -22,8 +22,8 @@ this file tracks the owner's numbered rules.
 ## Summary
 
 - rules in the specification: **116**
-- ✅ done: **90**
-- 🟡 written / partial: **6**
+- ✅ done: **89**
+- 🟡 written / partial: **7**
 - ⬜ not started: **0**
 - 🔁 standing rules: **20**
 
@@ -165,7 +165,7 @@ The hard guarantees.
 | **Z-05** | Wrong entry reversible (Undo / see the earlier state). | 🟡 written / partial | D-113 current Audit metadata vs both-financial raw detail/search; fresh selected snapshot/CSV; no universal undo; Windows proof pending | AuditViewerTests.EarlierState_*; BulkAndAuditAccessTests.* | - |
 | **Z-06** | Offline too — no error (Spec §1.2.1). | ✅ done | SQLite file, no network needed | - | - |
 | **Z-07** | If the printer/barcode device is absent the app must not stop. | ✅ done | a printer fault is reported and the bill is saved anyway - the paper never decides the sale | PrintTests.* | - |
-| **Z-08** | Data is one local file (SQLite) — backup = copy of one file. | ✅ done | one SQLite file + zip backup (Phase 3) | - | - |
+| **Z-08** | Data is one local file (SQLite) — backup = copy of one file. | 🟡 written / partial | SQLite + encrypted .a11bak manual/auto/safety/rollback source; current-user DPAPI and explicit legacy; PT-35 Windows/new-PC/fault UNRUN | BackupTests.*, BackupPackageTests.*, EncryptedBackupTests.* | - |
 | **Z-09** | Audit log (unchangeable) — to reach the root of any mistake. | ✅ done | `audit_logs` + the Black box page (search, filters, CSV) | AuditDiffTests.* | - |
 | **Z-10** | Each stage passes through the owner's hands, then move forward. | 🔁 standing rule | end of each phase | - | - |
 | **Z-11** | Round-off + cost protection (owner-confirmed): if rounding down to a multiple of 10 would take the amount below the purchase cost, the rounding is not applied (bill 545, cost 543 → collect 545; bill 545, cost 500 → 540). Original function: applyRoundWithCostGuard. A warning is shown when a bill is below cost. | ✅ done | `Money.RoundDownWithCostGuard` | MoneyTests.* | - |

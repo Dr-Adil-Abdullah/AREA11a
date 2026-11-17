@@ -42,3 +42,7 @@ __pycache__/
 
 # Local Python source-check environment (never part of the application)
 .venv/
+
+# Encrypted shop backups and protected automatic credentials are never source.
+*.a11bak
+*.dpapi

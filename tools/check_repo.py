@@ -4411,9 +4411,9 @@ def check_backup_restore_gate() -> None:
         fail("Backup restore safety guard could not isolate the public Restore method")
     else:
         body = restore.group(0)
-        safety = body.find("var safety = Create(user, includePhotos: true")
+        safety = body.find("var safety = CreateCore(user, includePhotos: true")
         replacement_call = body.find("ReplaceDatabase(unpacked);")
-        rollback = body.find("TryRollback(safetyPath, databaseReplaced, photosTouched, previousPhotos)")
+        rollback = body.find("TryRollback(safetyPath, databaseReplaced, photosTouched, previousPhotos, recoveryPassword, stage)")
         if safety < 0 or replacement_call < 0 or safety > replacement_call:
             fail("Backup restore must make a full safety copy before replacing the live database")
         if rollback < 0:
@@ -7183,7 +7183,72 @@ def check_bulk_audit_access():
                  'NoCostRefusesWholeEditableProductFileRatherThanBlankingItsPrice', 'MetadataSearchCannotMatchHiddenValueDetailsOrEntity',
                  'AuditExportRereadsAfterRevocationInsteadOfUsingEarlierRawPage', 'MetadataReadsNeverRewriteStoredAuditValues'):
         if name not in tests: FAILURES.append(f'Bulk/audit regression missing {name}')
-    REPORT.append('Phase4 portion14/D-113: owner-default explicit bulk gate, editable data refused not zeroed, actorful previews/current Tx checks; audit metadata/search boundary and fresh details/CSV; all four CSV doors gated; password backup approved but NOT implemented, global/Windows OPEN')
+    REPORT.append('Phase4 portion14/D-113: owner-default explicit bulk gate, editable data refused not zeroed, actorful previews/current Tx checks; audit metadata/search boundary and fresh details/CSV; all four CSV doors gated; password backup was pending at portion14 (portion15 has its own gate), global/Windows OPEN')
+
+
+def check_encrypted_backup_contract() -> None:
+    """Structural regression guard only, NOT crypto/runtime/ACL certification."""
+    core = DOTNET / 'Area11.Core/Services'
+    service = (core / 'BackupService.cs').read_text()
+    codec = (core / 'BackupPackage.cs').read_text()
+    store = (DOTNET / 'Area11.Desktop/WindowsBackupPasswordStore.cs').read_text()
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/BackupViewModel.cs').read_text()
+    dialog = (DOTNET / 'Area11.Desktop/Views/BackupPasswordDialog.cs').read_text()
+    for token in ('Iterations = 600000', 'ChunkBytes = 1024 * 1024', 'MaxPayloadBytes = 32L',
+                  'new AesGcm(key, 16)', 'Rfc2898DeriveBytes.Pbkdf2(',
+                  'header.CopyTo(aad, 0)', 'WriteUInt32LittleEndian(aad.AsSpan(HeaderBytes), index)',
+                  'source.Length - source.Position != encodedLength - HeaderBytes',
+                  'CryptographicOperations.FixedTimeEquals(digest, plain.AsSpan(0, 32))',
+                  'CryptographicOperations.ZeroMemory(key)', 'if (source.ReadByte() != -1)'):
+        if token not in codec: fail(f'Encrypted backup codec contract missing {token}')
+    for token in ('OwnerAccess.Require(_db, connection, user)',
+                  'string.Equals(password, confirmation, StringComparison.Ordinal)',
+                  '_passwordStore.Save(password)', 'var password = passwordOverride ?? StoredPassword();',
+                  'private ServiceResult<BackupFile> CreateCore(',
+                  'File.Move(pending, path);', 'FileMode.CreateNew', 'output.Flush(flushToDisk: true)',
+                  'if (!CanUse(user)) throw new ValidationException(',
+                  'private static void PreflightArchive(', 'MaxArchiveEntries = 60000',
+                  'bytes > 128UL * 1024 * 1024', 'if (copied > expected)',
+                  'entry.Length / Math.Max(1, entry.CompressedLength) > 10000',
+                  '!names.Add(name)', 'if (!acknowledgeUnverified || user is not { Active: true, IsOwner: true })',
+                  '.Where(file => file.IsAutomatic && file.IsEncrypted)',
+                  'BackupPackage.Decrypt(input, output, recoveryPassword);'):
+        if token not in service: fail(f'Encrypted backup service contract missing {token}')
+    restore = service.split('public ServiceResult<RestoreResult> Restore(', 1)[-1].split('public ServiceResult<RestoreResult> RestoreLegacy(', 1)[0]
+    points = [restore.find(token) for token in ('BackupPackage.Decrypt(', 'ValidateArchive(archive);', 'return RestoreArchive(')]
+    if any(point < 0 for point in points) or points != sorted(points):
+        fail('Encrypted restore must authenticate/checksum before ZIP/SQLite processing')
+    archive = service.split('private static void ValidateArchive(', 1)[-1].split('private static int PhotosInside', 1)[0]
+    if not 0 <= archive.find('PreflightArchive(path);') < archive.find('ZipFile.OpenRead(path)'):
+        fail('Archive preflight bounds must precede central-directory allocation')
+    public_create = service.split('public ServiceResult<BackupFile> Create(',1)[-1].split('private ServiceResult<BackupFile> CreateCore(',1)[0]
+    if 'if (!CanUse(user))' not in public_create or 'if (!automatic' in public_create:
+        fail('Public automatic flag must never bypass current actor permission')
+    for token in ('CryptProtectData', 'CryptUnprotectData', 'SpecialFolder.LocalApplicationData',
+                  'backup-credentials', 'File.Move(temporary, _path, overwrite: true)',
+                  'CryptographicOperations.ZeroMemory(plain)'):
+        if token not in store: fail(f'Windows protected backup storage contract missing {token}')
+    if 'CRYPTPROTECT_LOCAL_MACHINE' in store or 'Settings.' in store:
+        fail('Automatic backup credential must stay current-user DPAPI, outside Settings')
+    for token in ('PasswordBox', 'dialog._password.Clear()', 'dialog._confirmation.Clear()'):
+        if token not in dialog: fail(f'Unbound backup password dialog missing {token}')
+    for token in ('BackupPasswordDialog.Prompt(setup: false)', 'RestoreLegacy(path, _user, acknowledgeUnverified: true)',
+                  'new OpenFileDialog', 'UNVERIFIED legacy recovery'):
+        if token not in vm: fail(f'Backup password / new-PC / legacy UI missing {token}')
+    app = (DOTNET / 'Area11.Desktop/AppServices.cs').read_text()
+    if 'new WindowsBackupPasswordStore(Database.FilePath)' not in app:
+        fail('Desktop must inject Windows protected backup credential storage')
+    shell = (DOTNET / 'Area11.Desktop/ViewModels/ShellViewModel.cs').read_text()
+    if '"Automatic backup FAILED"' not in shell: fail('Automatic failure must be conspicuous at sign-in')
+    tests = (DOTNET / 'Area11.Tests/BackupPackageTests.cs').read_text() + (DOTNET / 'Area11.Tests/EncryptedBackupTests.cs').read_text()
+    for name in ('IndependentPythonVector_Decrypts', 'ReorderedFullChunks_AreRejected',
+                 'MissingCredential_ManualAutomaticAndSafetyFailWithoutPlaintext',
+                 'Rotation_OldFileNeedsOriginalPassword_NewSafetyUsesLocalPassword',
+                 'Legacy_RequiresExplicitAcceptanceAndCurrentOwner',
+                 'AuthenticatedButUnsafeArchive_IsRejectedBeforeSafetyOrLiveChanges',
+                 'Password_IsAbsentFromSettingsAuditAndPackagePlaintext'):
+        if name not in tests: fail(f'Encrypted backup regression missing {name}')
+    REPORT.append('Phase4 portion15: bounded AES-GCM/password package, current-user DPAPI host store, no plaintext fallback, atomic manual/auto/safety, authenticated staged restore/rollback, explicit owner-only legacy recovery. Structural proof only; C#/Windows/DPAPI/fault/new-PC execution OPEN')
 
 
 def main() -> int:
@@ -7265,6 +7330,7 @@ def main() -> int:
     check_expense_visibility()
     check_purchase_preparation()
     check_bulk_audit_access()
+    check_encrypted_backup_contract()
     check_csharp_grammar()
 
     if not quiet:
