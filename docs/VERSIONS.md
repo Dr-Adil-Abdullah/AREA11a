@@ -218,6 +218,7 @@ table below**; a shade listed there has been used and must not come back.
 | 0.89.0 | 2026-11-10 | Redstart | `#73524D` | Phase4 portion11: current-reader stock history/today/result and stock-take frozen line/session/document/Open/Apply projections; raw frozen costs/posting formulas retained.30new facts/1551cases UNRUN;78static checks;all-route/expense/export/session/Windows OPEN. |
 | 0.90.0 | 2026-11-10 | Dipper | `#4F6759` | Phase4 portion12: current Cash readers and goods-drawing history/today/result/voucher cost masks; ordinary cash expense/drawing unchanged, original stock/cash posting SQL retained.28new facts/1579cases UNRUN;79static checks;purchase/supplier/export/session/Windows OPEN. |
 | 0.91.0 | 2026-11-10 | Kingfisher | `#386477` | Phase4 portion13: purchase preparation/create/draft open-save-post require current Purchases + independent Cost/main; summary list module-only, unsaved UI masked not zeroed. Original Save/SQL retained;30new facts/1609cases UNRUN; supplier/export/session/Windows OPEN. |
+| 0.92.0 | 2026-11-10 | Bittern | `#63614A` | Phase4 portion14/D-113: owner-default explicit bulk-file gate; current editable-file/preview/apply checks with refusal not masked0; audit metadata and hidden-field search boundary, fresh CSV/snapshots, all four CSV doors gated.32new facts/1641cases UNRUN; backup password A approved but encryption NOT yet implemented; global/Windows OPEN. |
 
 ## Notes for the next agent
 

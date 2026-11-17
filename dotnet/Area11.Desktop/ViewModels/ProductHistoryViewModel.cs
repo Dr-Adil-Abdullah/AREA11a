@@ -194,6 +194,12 @@ public sealed class ProductHistoryViewModel : ObservableObject
 
         try
         {
+            csv = _services.ProductHistory.BuildCsv(_user, _productId);
+            if (!csv.Ok || csv.Value is null)
+            {
+                SetStatus(csv.Error ?? "The history CSV could not be prepared.", true);
+                return;
+            }
             File.WriteAllText(dialog.FileName, csv.Value, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
 
             IsStatusError = false;

@@ -13,6 +13,8 @@ namespace Area11.Core.Models;
 /// </summary>
 public sealed class AuditRow
 {
+    public bool DetailKnown { get; set; } = true;
+
     public int Id { get; set; }
 
     public string At { get; set; } = string.Empty;
@@ -123,6 +125,12 @@ public sealed class AuditSnapshot
     public static AuditSnapshot For(AuditRow row)
     {
         ArgumentNullException.ThrowIfNull(row);
+        if (!row.DetailKnown)
+            return new AuditSnapshot
+            {
+                EarlierText = "hidden", RecordedText = "hidden", DetailsText = "hidden",
+                ContextText = "Audit metadata only. Both financial grants and the main switch are required for raw details."
+            };
 
         return new AuditSnapshot
         {

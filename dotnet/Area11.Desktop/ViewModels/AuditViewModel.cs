@@ -94,7 +94,13 @@ public sealed class AuditViewModel : ObservableObject, IEmptyPage
         {
             if (SetProperty(ref _selected, value))
             {
-                Snapshot = value is null ? null : AuditSnapshot.For(value);
+                Snapshot = null;
+                if (value is not null)
+                {
+                    var fresh = _services.AuditHistory.ReadSnapshot(value.Id, _user);
+                    if (fresh.Ok) Snapshot = fresh.Value;
+                    else { StatusText = fresh.Error ?? "The audit detail could not be prepared."; IsStatusError = true; }
+                }
             }
         }
     }
@@ -190,6 +196,23 @@ public sealed class AuditViewModel : ObservableObject, IEmptyPage
         Load();
     }
 
+    public void RefreshAccess()
+    {
+        var access = _services.AuditHistory.CheckAccess(_user);
+        if (!access.Ok)
+        {
+            Selected = null;
+            Rows.Clear();
+            _page = null;
+            CanExport = false;
+            CountText = "0 line(s)";
+            StatusText = access.Error ?? "Current Audit access is required.";
+            IsStatusError = true;
+            return;
+        }
+        if (_page is not null && _page.Rows.Any(row => row.DetailKnown != access.Value)) Load();
+    }
+
     private void Load()
     {
         var filter = new AuditFilter
@@ -271,8 +294,8 @@ public sealed class AuditViewModel : ObservableObject, IEmptyPage
     }
 
     /// <summary>
-    /// Writes exactly what is on the screen - the same filter, the same rows, the same order. An export
-    /// that quietly contains more or other lines than the owner is looking at is worse than none.
+    /// Rereads the same bounded filter with current access after the file dialog. New records may
+    /// change the page since it was displayed; cached raw rows must not bypass revocation.
     /// </summary>
     private void Export()
     {
@@ -300,11 +323,18 @@ public sealed class AuditViewModel : ObservableObject, IEmptyPage
         {
             // UTF-8 WITH a BOM: without it Excel reads Urdu names as gibberish, and an export the
             // owner cannot read is not an export.
-            File.WriteAllText(dialog.FileName, _page.ToCsv(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+            var fresh = _services.AuditHistory.BuildCsv(_page.Filter, _user);
+            if (!fresh.Ok || fresh.Value is null)
+            {
+                Load();
+                StatusText = fresh.Error ?? "The audit CSV could not be prepared.";
+                IsStatusError = true;
+                return;
+            }
+            File.WriteAllText(dialog.FileName, fresh.Value, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
 
             IsStatusError = false;
-            StatusText = _page.Rows.Count.ToString(CultureInfo.InvariantCulture)
-                         + " line(s) saved to " + dialog.FileName;
+            StatusText = "Current audit page saved to " + dialog.FileName;
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {

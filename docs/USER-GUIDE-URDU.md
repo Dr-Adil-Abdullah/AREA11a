@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.91.0 Kingfisher۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.92.0 Bittern۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**حصہ14 — Excel/CSV اور Audit:** موجودہ checkbox کا نام **Allow Excel/CSV Bulk Export & Import**؛default صرف Owner،Manager/Staff کو Owner کی explicit grant۔ Editable product file کے لیے Cost/main،mixed shop workbook دونوںfinancial/main؛انکار پرmasked0file نہیں۔ Audit کے rawold/new/details کے لیے دونوںfinancial/main،ورنہmetadata؛hiddenfieldsearch/count بھیبند۔ چارCSVdoorsپرbulkgrant؛freshexport،cachedrawpageنہیں۔ [PT-34](POS-PHASE4-PART14-URDU.md)،[trace](POS-PHASE4-BULK-AUDIT-REVIEW.md)۔ **PasswordA backup منظور،encryption ابھی implement نہیں ہوا؛موجودہ ZIP/DB encrypted نہیں۔** [اگلا منصوبہ](SECURE-BACKUP-PASSWORD-PLAN.md)۔1641C#cases UNRUN،81static PASS؛Windows/fullPhase4 باقی۔
 
 **فیز4 حصہ13 — خرید کا editable hidden0 نہیں:** نئی خرید اور purchase draft کھولنے/محفوظ/update/post کے لیے موجودہ Purchases + الگ Cost + main ON؛صرف Profit/manager کافی نہیں۔ Summary/discard موجودہ page اجازت پر الگ۔ اجازت بند ہو تو unsaved لائنیں/اصل رقم برقرار مگر cost/paid/total/status اگلے check پر mask،Save بند؛اجازت واپس پر review،خودSave نہیں۔ Nominal3second timer کی فوری recall ضمانت نہیں۔ [PT-33](POS-PHASE4-PART13-URDU.md)،[trace/حدود](POS-PHASE4-PURCHASE-PREPARATION-REVIEW.md)۔1609 C#cases UNRUN،80static PASS؛Supplier/generic exports/session/Windows باقی۔
 
@@ -446,6 +448,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 4. مالک End an alert میں اصل وجہ لکھ کر End this alert۔ alert بند کرنا **رقم یا stock کی correction نہیں**۔ اصل مسئلہ واپس آئے یا نئی حرکت ہو تو alert دوبارہ آ سکتی ہے۔
 5. سابق alerts/history سے پڑھے بغیر بار بار خاموش نہ کریں؛ یہ audit trail کا حصہ ہیں۔
 
+**حصہ14 کی Audit حد:** Audit-only پر وقت،شخص،عمل اور module؛old/new/details/entity hidden۔ Raw mixed detail صرف Cost+Profit+main ON پر۔ Hidden field کو search کرکے row/count نہیں نکلتے۔ CSV کے لیے الگ bulk grant بھی؛وہی bounded filter تازہ پڑھا جاتا ہے،پرانا cached raw page نہیں۔ Books کی raw CSV کو bulk + دونوں مالی grants + Reports-or-Audit چاہیے؛Books کے پورے page کی باقی policy الگ OPEN ہے۔ [PT-34](POS-PHASE4-PART14-URDU.md)۔
+
 <a id="lesson-25"></a>
 
 ## سبق 25 — Black box اور Books check
@@ -455,6 +459,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 3. نئے Extra والے bill میں **unchanged item sum − الگ Extra = final total**؛ header میں points/rounding کے بعد بھی یہی رقم۔ Black box کی **sale_extra_discount** entry میں اصل/Extra/final دیکھیں۔ یہاں **عام Undo نہیں**؛ صرف پرانی حالت دکھنے سے transaction واپس نہیں ہوئی۔ بغیر سمجھے پوری shop restore کرنا ایک غلط رقم کا معمولی حل نہیں۔
 4. Books check → Check again سے گیارہ حسابی identities کا صرف پڑھنے والا جائزہ۔ Says، Rows say اور Gap کو document کے ساتھ دیکھیں؛ Save this list سے ماہر کو ثبوت دیں۔
 5. Books check خود repair نہیں کرتا۔ فرق آئے تو اصل bill/return/payment اور backup محفوظ کریں؛ DB فائل پر براہ راست رقم مت لکھیں۔
+
+**موجودہ D-113 شرط:** Editable Excel/CSV default صرف Owner؛Manager/Staff کو **Allow Excel/CSV Bulk Export & Import** کی Owner grant چاہیے۔ Product cost file/preview/apply میں Cost/main؛mixed shop workbook میں دونوں مالی grants/main۔ Products page alone کافی نہیں؛partial/zero editable file نہیں بنتی۔ Upload preview اب current actor چیک کرتا ہے؛Apply transaction میں دوبارہ gate۔ Timer revocation پر derived preview ہٹاتا ہے،اصل input file نہیں۔ [PT-34](POS-PHASE4-PART14-URDU.md)۔
 
 <a id="lesson-26"></a>
 
@@ -468,6 +474,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 6. Stock، balances، secrets اور numbering counters محفوظ/protected ہیں؛ workbook کو منفی سٹاک یا PIN بدلنے کا راستہ نہ سمجھیں۔ Include Settings changes الگ confirmation مانگتا ہے، JSON value کی قسم برقرار رکھنی ہے۔
 7. Choose edited workbook… کے بعد old/new preview دیکھیں؛ database بدل گئی ہو تو نیا download/preview چاہیے ہو سکتا ہے۔ Apply these changes حتمی مرحلہ ہے۔
 8. Prices tab میں Percent یا Rupees، متعلقہ منتخب records اور Change the purchase cost too صرف حقیقی cost تبدیلی پر؛ Preview → پرانے/نئے ریٹ ملائیں → Apply these prices۔ below-cost سے رد قطار کو نظرانداز کرکے کامیاب نہ سمجھیں۔
+
+**Backup کی اہم موجودہ حقیقت:** Owner نے الگ password والا طریقہ A منتخب کیا ہے،مگر v0.92 میں encryption/credential store/نیا restore format ابھی نہیں لکھا گیا۔ موجودہ ZIP/DB plain ہیں،انہیں encrypted سمجھ کر نہ بھیجیں۔ اگلا کام manual/auto/safety/rollback ایک ساتھ ہے؛اصل password chat میں نہ دیں،پرانے backups نہ delete کریں۔ [منظورشدہ منصوبہ](SECURE-BACKUP-PASSWORD-PLAN.md)۔
 
 <a id="lesson-27"></a>
 
@@ -519,6 +527,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 7. Stock: نئے کام میں negative stock کی checkbox/owner bypass نہیں۔ یہ sale، write-off، goods drawing، SR اور PR cancellation پر بھی لاگو ہے۔
 8. Expiry Level 1 سب سے دور، Level 3 قریب کی warning؛ دن منطقی ترتیب میں رکھیں۔ یہ approaching-expiry رنگ بدلتے ہیں؛ گزر چکی expiry والی batch الگ expired ہے اور عام sellable batch نہیں۔
 9. Supplier returns کے Start reminding اور Last return day cutoff میں مثلاً 180 اور 90 ہوں تو 120 دن باقی والی چیز یاد دہانی میں آتی ہے، واپسی آخری 90 دن سے پہلے مطلوب ہے۔ supplier کا اصل معاہدہ بھی ملائیں۔ Save settings کے بعد status دیکھیں۔
+
+**Bulk checkbox کی تازہ تعریف:** موجودہ `import` key ہی **Allow Excel/CSV Bulk Export & Import** ہے،نیا duplicate grant نہیں؛default Owner-only،manager کی خودکار اجازت ختم،پرانی explicit grants برقرار ہیں۔ Owner ہی assign کرے؛مالی Cost/Profit checkboxes الگ اور main برقرار۔ Audit metadata اور raw detail کی حد بھی [PT-34](POS-PHASE4-PART14-URDU.md) میں ہے۔
 
 <a id="lesson-31"></a>
 

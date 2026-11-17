@@ -238,8 +238,35 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
 
     // ------------------------------ Import ------------------------------
 
+    /// <summary>Active-view next-check cleanup, not recall of external files or objects.</summary>
+    public void RefreshAccess()
+    {
+        if (!RequireBulkAccess()) return;
+        if (!_services.Import.CanUseBulk(_user, cost: true))
+        {
+            if (_preview?.Kind == "Products") ClearPreview();
+            _pricePreview = null;
+            PriceRows.Clear();
+            RaisePriceState();
+        }
+        if (_bulkPreview is not null && !_services.Workbooks.CanUseWorkbook(_user)) ClearBulk();
+    }
+
+    private bool RequireBulkAccess()
+    {
+        if (_services.Import.CanUseBulk(_user)) return true;
+        ClearPreview();
+        ClearBulk();
+        _pricePreview = null;
+        PriceRows.Clear();
+        RaisePriceState();
+        SetStatus("Allow Excel/CSV Bulk Export & Import permission is required. No file was prepared.", true);
+        return false;
+    }
+
     private void ChooseFile()
     {
+        if (!RequireBulkAccess()) return;
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
             Title = "Choose the " + Kind.ToLowerInvariant() + " file",
@@ -259,7 +286,7 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
 
             if (string.Equals(Path.GetExtension(dialog.FileName), ".xlsx", StringComparison.OrdinalIgnoreCase))
             {
-                _preview = _services.Import.PreviewWorkbook(Kind, bytes);
+                _preview = _services.Import.PreviewWorkbook(_user, Kind, bytes);
             }
             else
             {
@@ -268,9 +295,9 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
                 var text = reader.ReadToEnd();
                 _preview = Kind switch
                 {
-                    "Customers" => _services.Import.PreviewCustomers(text),
-                    "Suppliers" => _services.Import.PreviewSuppliers(text),
-                    _ => _services.Import.PreviewProducts(text)
+                    "Customers" => _services.Import.PreviewCustomers(_user, text),
+                    "Suppliers" => _services.Import.PreviewSuppliers(_user, text),
+                    _ => _services.Import.PreviewProducts(_user, text)
                 };
             }
 
@@ -311,6 +338,8 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
 
     private void ApplyImport()
     {
+        RefreshAccess();
+        if (!RequireBulkAccess()) return;
         if (_preview is null || !_preview.CanApply)
         {
             SetStatus("There is nothing to import - choose a file first.", true);
@@ -363,6 +392,7 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
 
     private void SaveTemplate()
     {
+        if (!RequireBulkAccess()) return;
         var dialog = new Microsoft.Win32.SaveFileDialog
         {
             Title = "Save the native Excel template",
@@ -380,6 +410,7 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
 
         try
         {
+            if (!RequireBulkAccess()) return;
             File.WriteAllBytes(dialog.FileName, WorkbookService.Template());
             SetStatus("Workbook saved. Fill the Products, Customers and/or Suppliers sheets, then choose it here.", false);
         }
@@ -393,6 +424,7 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
 
     private void Export(string kind)
     {
+        if (!RequireBulkAccess()) return;
         var dialog = new Microsoft.Win32.SaveFileDialog
         {
             Title = "Save the " + kind.ToLowerInvariant() + " workbook",
@@ -456,6 +488,7 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
 
     private void DownloadAll()
     {
+        if (!RequireBulkAccess()) return;
         var dialog = new Microsoft.Win32.SaveFileDialog
         {
             Title = "Download all shop data",
@@ -491,6 +524,7 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
 
     private void ChooseBulkFile()
     {
+        if (!RequireBulkAccess()) return;
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
             Title = "Choose the edited all-data workbook",
@@ -543,6 +577,8 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
 
     private void ApplyBulk()
     {
+        RefreshAccess();
+        if (!RequireBulkAccess()) return;
         if (_bulkPreview is null || !_bulkPreview.CanApply)
         {
             SetStatus("Preview first, and fix every red line. There is nothing to apply.", true);
@@ -601,6 +637,7 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
 
     private void PreviewPrices()
     {
+        if (!RequireBulkAccess()) return;
         if (!decimal.TryParse(PriceAmountText.Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out var amount))
         {
             SetStatus("The amount must be a number, for example 10 or -5.", true);
@@ -631,6 +668,8 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
 
     private void ApplyPrices()
     {
+        RefreshAccess();
+        if (!RequireBulkAccess()) return;
         if (_pricePreview is null || !_pricePreview.CanApply)
         {
             SetStatus("Preview first - and fix the lines that would fall below cost.", true);

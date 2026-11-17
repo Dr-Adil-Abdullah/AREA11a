@@ -1,15 +1,31 @@
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
+using Area11.Desktop.ViewModels;
 
 namespace Area11.Desktop.Views;
 
-/// <summary>
-/// Code-behind stays empty: searching, refusing and exporting live in AuditHistoryService, and the
-/// page cannot edit or delete a line because it has no command that could.
-/// </summary>
 public partial class AuditView : UserControl
 {
+    private readonly DispatcherTimer _accessTimer;
+
     public AuditView()
     {
         InitializeComponent();
+        _accessTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+        _accessTimer.Tick += CheckAccess;
+        Loaded += OnLoaded;
+        Unloaded += (_, _) => _accessTimer.Stop();
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        CheckAccess(this, EventArgs.Empty);
+        _accessTimer.Start();
+    }
+
+    private void CheckAccess(object? sender, EventArgs e)
+    {
+        if (DataContext is AuditViewModel viewModel) viewModel.RefreshAccess();
     }
 }

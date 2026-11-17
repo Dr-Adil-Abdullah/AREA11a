@@ -183,6 +183,13 @@ ORDER BY s.date, s.id, i.id;", new { id = productId }));
     /// </summary>
     public ServiceResult<string> BuildCsv(User? user, int productId)
     {
+        try
+        {
+            using var connection = _db.Open();
+            BulkDataAccess.Require(_db, connection, _permissions, _settings, user);
+        }
+        catch (Exception) { return ServiceResult<string>.Fail("Allow Excel/CSV Bulk Export & Import permission is required."); }
+
         var loaded = Load(user, productId);
         if (!loaded.Ok || loaded.Value is null)
         {

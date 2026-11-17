@@ -162,7 +162,7 @@ The hard guarantees.
 | **Z-02** | A new change must not break old working parts (test at every stage). | ✅ done | regression tests for every money rule | SaleTests.*, MoneyTests.* | - |
 | **Z-03** | No mistakes in calculation/money (round-off only downward — 545→540). | ✅ done | round-down only downward, never below cost | MoneyTests.*, SaleTests.RoundDown_* | - |
 | **Z-04** | Data is always safe (auto-save + transactions). | ✅ done | single transaction per document, WAL | SaleTests.* | - |
-| **Z-05** | Wrong entry reversible (Undo / see the earlier state). | 🟡 written / partial | `AuditSnapshot` + selected Black box row: complete read-only before/after/details and guidance to existing audited corrections; no universal financial undo; Windows/live owner proof pending | AuditViewerTests.EarlierState_* | - |
+| **Z-05** | Wrong entry reversible (Undo / see the earlier state). | 🟡 written / partial | D-113 current Audit metadata vs both-financial raw detail/search; fresh selected snapshot/CSV; no universal undo; Windows proof pending | AuditViewerTests.EarlierState_*; BulkAndAuditAccessTests.* | - |
 | **Z-06** | Offline too — no error (Spec §1.2.1). | ✅ done | SQLite file, no network needed | - | - |
 | **Z-07** | If the printer/barcode device is absent the app must not stop. | ✅ done | a printer fault is reported and the bill is saved anyway - the paper never decides the sale | PrintTests.* | - |
 | **Z-08** | Data is one local file (SQLite) — backup = copy of one file. | ✅ done | one SQLite file + zip backup (Phase 3) | - | - |
@@ -185,7 +185,7 @@ What the original used, and what the rebuild uses instead.
 | **T-07** | Search: Fuse.js (even a wrongly spelled medicine is found). | ✅ done | misspelt search (F-50): `panadl` finds Panadol, and Enter never adds a guess | ProductTests.* | Phase 4 |
 | **T-08** | Print: node-thermal-printer / ESC-POS (58/80 mm) + react-to-print (A4). | ✅ done | `EscPosBuilder` + `PrinterService`; the owner printed on the shop printer on 23 Oct 2026 | PrintTests.* | Phase 1 |
 | **T-09** | WhatsApp: free wa.me link — no paid API (Spec §11.2.5). | ✅ done | the Reorder pad builds the order text and opens WhatsApp (F-38) | ReorderTests.* | Phase 3 |
-| **T-10** | Excel: SheetJS (import old data / export reports). | 🟡 written / partial | dependency-free native `.xlsx` read/write, multi-sheet templates and eight-sheet all-data/bulk update are written with protected stock/balances/Settings and 14 facts; Windows/xUnit and real Excel open/edit/re-import proof pending | WorkbookTests.*; ImportTests.* | Phase 3 |
+| **T-10** | Excel: SheetJS (import old data / export reports). | 🟡 written / partial | D-113 owner-default explicit bulk gate; actorful previews/Tx rechecks; editable product Cost/main,mixed bothfinancial/main; native XLSX protected stock/balances/Settings; Windows/Excel proof pending | WorkbookTests.*; ImportTests.*; BulkAndAuditAccessTests.* | Phase 3 |
 | **T-11** | Live preview: dev server (0.0.0.0). | 🔁 standing rule | desktop app | - | - |
 | **T-12** | Return/go-back: Git + tags (no new engine to write). | ✅ done | git tags | - | - |
 | **T-13** | No extra library for the schema: SQL schema + migrations written by hand (short, clean, understandable). | ✅ done | hand-written SQL migrations 001-015 | - | - |

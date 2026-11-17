@@ -78,7 +78,7 @@ public sealed class ImportTests
     {
         using var test = new TestDatabase();
 
-        var preview = Imports(test).PreviewProducts(
+        var preview = Imports(test).PreviewProducts(TestData.Owner,
             "Name,Retail,Cost,Opening qty,Expiry\r\n" +
             "Panadol 500mg,120,90,100,2027-06-30\r\n" +
             "Panadol 500mg,120,90,0,\r\n" +          // the same medicine twice in one file
@@ -99,7 +99,7 @@ public sealed class ImportTests
     {
         using var test = new TestDatabase();
 
-        var preview = Imports(test).PreviewProducts(
+        var preview = Imports(test).PreviewProducts(TestData.Owner,
             "Name,Generic,Retail,Cost,Reorder level,Rack,Opening qty,Batch no,Expiry\r\n" +
             "Panadol 500mg,Paracetamol,120,90,10,A-1,100,B-77,2027-06-30\r\n" +
             "Brufen 400mg,Ibuprofen,150,110,5,A-2,0,,\r\n");
@@ -136,7 +136,7 @@ public sealed class ImportTests
     {
         using var test = new TestDatabase();
         var imports = Imports(test);
-        var unknown = imports.PreviewProducts(
+        var unknown = imports.PreviewProducts(TestData.Owner,
             "Name,Base unit,Retail,Cost\r\nUnknown unit medicine,not-a-unit,120,90\r\n");
         Assert.Equal(1, unknown.ErrorCount);
         Assert.Contains("active managed list", unknown.Rows[0].Message);
@@ -144,7 +144,7 @@ public sealed class ImportTests
 
         var products = new ProductService(test.Database, test.Audit, test.Log);
         var unit = products.AddUnit(TestData.Owner, "vial").Value;
-        var preview = imports.PreviewProducts(
+        var preview = imports.PreviewProducts(TestData.Owner,
             "Name,Base unit,Retail,Cost\r\nVial import,  VIAL  ,120,90\r\n");
         Assert.True(preview.CanApply, preview.SummaryText);
         Assert.True(products.SetUnitActive(TestData.Owner, unit, false).Ok);
@@ -166,10 +166,10 @@ public sealed class ImportTests
         var csv = "Name,Retail,Cost\r\nPanadol 500mg,120,90\r\n";
         var imports = Imports(test);
 
-        var first = imports.ApplyProducts(TestData.Owner, imports.PreviewProducts(csv));
+        var first = imports.ApplyProducts(TestData.Owner, imports.PreviewProducts(TestData.Owner, csv));
         Assert.True(first.Ok, first.Error);
 
-        var second = imports.PreviewProducts(csv);
+        var second = imports.PreviewProducts(TestData.Owner, csv);
 
         Assert.Equal(0, second.ReadyCount);
         Assert.Equal(1, second.SkippedCount);
@@ -182,7 +182,7 @@ public sealed class ImportTests
     {
         using var test = new TestDatabase();
 
-        var preview = Imports(test).PreviewProducts("Name,Retail,Cost,Opening qty\r\nPanadol 500mg,120,90,50\r\n");
+        var preview = Imports(test).PreviewProducts(TestData.Owner, "Name,Retail,Cost,Opening qty\r\nPanadol 500mg,120,90,50\r\n");
 
         Assert.Equal(1, preview.ErrorCount);
         Assert.Contains("expiry", preview.Rows[0].Message, StringComparison.OrdinalIgnoreCase);
@@ -193,7 +193,7 @@ public sealed class ImportTests
     {
         using var test = new TestDatabase();
 
-        var preview = Imports(test).PreviewProducts("Name,Retail,Cost\r\nPanadol 500mg,80,90\r\n");
+        var preview = Imports(test).PreviewProducts(TestData.Owner, "Name,Retail,Cost\r\nPanadol 500mg,80,90\r\n");
 
         Assert.Equal(1, preview.ErrorCount);
         Assert.Contains("below cost", preview.Rows[0].Message, StringComparison.OrdinalIgnoreCase);
@@ -205,7 +205,7 @@ public sealed class ImportTests
         using var test = new TestDatabase();
 
         var imports = Imports(test);
-        var preview = imports.PreviewProducts("Name,Retail,Cost\r\nPanadol 500mg,120,90\r\n");
+        var preview = imports.PreviewProducts(TestData.Owner, "Name,Retail,Cost\r\nPanadol 500mg,120,90\r\n");
 
         Assert.True(preview.CanApply);
 
@@ -224,7 +224,7 @@ public sealed class ImportTests
 
         var imports = Imports(test);
 
-        var preview = imports.PreviewCustomers(
+        var preview = imports.PreviewCustomers(TestData.Owner,
             "Name,Phone,Category,Opening udhaar,Credit limit\r\n" +
             "Ali Raza,0300-1234567,VIP,5000,10000\r\n" +
             "Sara Khan,,normal,0,\r\n");
@@ -281,12 +281,12 @@ public sealed class ImportTests
         var field = policy.List(TestData.Owner).Value!.Single(item => item.FieldKey == key);
         var imports = Imports(test);
         var csv = "Name,Generic,Brand,Rack,Pack,Cost,Retail\r\nTest medicine," + generic + "," + brand + "," + rack + "," + pack + ",0,0\r\n";
-        var preview = imports.PreviewProducts(csv);
+        var preview = imports.PreviewProducts(TestData.Owner, csv);
         Assert.True(preview.CanApply, preview.SummaryText);
         Assert.True(policy.SetRequired(TestData.Owner, field.Id, true, false).Ok);
         Assert.False(imports.ApplyProducts(TestData.Owner, preview).Ok);
         Assert.Equal(0L, Count(test, "products"));
-        Assert.False(imports.PreviewProducts(csv).CanApply);
+        Assert.False(imports.PreviewProducts(TestData.Owner, csv).CanApply);
     }
 
     [Theory]
@@ -299,7 +299,7 @@ public sealed class ImportTests
         var csv = entity == CustomFieldEntity.Customer
             ? "Name,Opening udhaar\r\nNew person,0\r\n"
             : "Name,Opening payable\r\nNew person,0\r\n";
-        var preview = entity == CustomFieldEntity.Customer ? imports.PreviewCustomers(csv) : imports.PreviewSuppliers(csv);
+        var preview = entity == CustomFieldEntity.Customer ? imports.PreviewCustomers(TestData.Owner, csv) : imports.PreviewSuppliers(TestData.Owner, csv);
         Assert.True(preview.CanApply, preview.SummaryText);
         var fields = new CustomFieldService(test.Database, test.Audit, TestData.Permissions(test), test.Log);
         Assert.True(fields.Add(TestData.Owner, entity, "Licence number", CustomFieldType.Text, null, true).Ok);
@@ -308,7 +308,7 @@ public sealed class ImportTests
         Assert.False(result.Ok);
         Assert.Contains("Licence number", result.Error);
         Assert.Equal(0L, Count(test, entity == CustomFieldEntity.Customer ? "customers" : "suppliers"));
-        var newPreview = entity == CustomFieldEntity.Customer ? imports.PreviewCustomers(csv) : imports.PreviewSuppliers(csv);
+        var newPreview = entity == CustomFieldEntity.Customer ? imports.PreviewCustomers(TestData.Owner, csv) : imports.PreviewSuppliers(TestData.Owner, csv);
         Assert.False(newPreview.CanApply);
     }
 
@@ -318,7 +318,7 @@ public sealed class ImportTests
         using var test = new TestDatabase();
         var imports = Imports(test);
         const string csv = "Name,Cost,Retail\r\nNew medicine,0,0\r\n";
-        var preview = imports.PreviewProducts(csv);
+        var preview = imports.PreviewProducts(TestData.Owner, csv);
         Assert.True(preview.CanApply, preview.SummaryText);
         var fields = new CustomFieldService(test.Database, test.Audit, TestData.Permissions(test), test.Log);
         Assert.True(fields.Add(TestData.Owner, CustomFieldEntity.Product, "Licence number", CustomFieldType.Text, null, true).Ok);
@@ -326,7 +326,7 @@ public sealed class ImportTests
         Assert.False(result.Ok);
         Assert.Contains("Licence number", result.Error);
         Assert.Equal(0L, Count(test, "products"));
-        Assert.False(imports.PreviewProducts(csv).CanApply);
+        Assert.False(imports.PreviewProducts(TestData.Owner, csv).CanApply);
     }
 
     [Fact]
@@ -338,12 +338,12 @@ public sealed class ImportTests
         var phone = policy.List(TestData.Owner).Value!.Single(field => field.FieldKey == "customer.phone");
         var imports = Imports(test);
         const string csv = "Name,Phone,Opening udhaar\r\nWithout Phone,,100\r\n";
-        var preview = imports.PreviewCustomers(csv);
+        var preview = imports.PreviewCustomers(TestData.Owner, csv);
         Assert.True(preview.CanApply, preview.SummaryText);
         Assert.True(policy.SetRequired(TestData.Owner, phone.Id, true, false).Ok);
         Assert.False(imports.ApplyCustomers(TestData.Owner, preview).Ok);
         Assert.Equal(0L, Count(test, "customers"));
-        var again = imports.PreviewCustomers(csv);
+        var again = imports.PreviewCustomers(TestData.Owner, csv);
         Assert.False(again.CanApply);
         Assert.Contains(again.Rows, row => row.Message.Contains("phone"));
     }
@@ -355,7 +355,7 @@ public sealed class ImportTests
 
         TestData.AddCustomer(test, name: "Ali Raza", phone: "0300-1234567");
 
-        var preview = Imports(test).PreviewCustomers(
+        var preview = Imports(test).PreviewCustomers(TestData.Owner,
             "Name,Phone\r\nAli Raza,0300-1234567\r\nSara Khan,0321-9999999\r\n");
 
         Assert.Equal(1, preview.ReadyCount);
@@ -372,12 +372,12 @@ public sealed class ImportTests
         var field = policy.List(TestData.Owner).Value!.Single(row => row.FieldKey == "supplier.phone");
         var imports = Imports(test);
         const string csv = "Name,Phone,Opening payable\r\nNew Supplier,,500\r\n";
-        var preview = imports.PreviewSuppliers(csv);
+        var preview = imports.PreviewSuppliers(TestData.Owner, csv);
         Assert.True(preview.CanApply, preview.SummaryText);
         Assert.True(policy.SetRequired(TestData.Owner, field.Id, true, false).Ok);
         Assert.False(imports.ApplySuppliers(TestData.Owner, preview).Ok);
         Assert.Equal(0L, Count(test, "suppliers"));
-        var again = imports.PreviewSuppliers(csv);
+        var again = imports.PreviewSuppliers(TestData.Owner, csv);
         Assert.False(again.CanApply);
         Assert.Contains(again.Rows, row => row.Message.Contains("phone"));
     }
@@ -391,12 +391,12 @@ public sealed class ImportTests
         var field = policy.List(TestData.Owner).Value!.Single(row => row.FieldKey == "supplier.agency");
         var imports = Imports(test);
         const string csv = "Name,Agency,Opening payable\r\nNew Supplier,,500\r\n";
-        var preview = imports.PreviewSuppliers(csv);
+        var preview = imports.PreviewSuppliers(TestData.Owner, csv);
         Assert.True(preview.CanApply, preview.SummaryText);
         Assert.True(policy.SetRequired(TestData.Owner, field.Id, true, false).Ok);
         Assert.False(imports.ApplySuppliers(TestData.Owner, preview).Ok);
         Assert.Equal(0L, Count(test, "suppliers"));
-        Assert.False(imports.PreviewSuppliers(csv).CanApply);
+        Assert.False(imports.PreviewSuppliers(TestData.Owner, csv).CanApply);
     }
 
     [Fact]
@@ -406,7 +406,7 @@ public sealed class ImportTests
 
         var imports = Imports(test);
 
-        var preview = imports.PreviewSuppliers("Name,Phone,Agency,Opening payable\r\nGSK,042-111,GSK Pakistan,25000\r\n");
+        var preview = imports.PreviewSuppliers(TestData.Owner, "Name,Phone,Agency,Opening payable\r\nGSK,042-111,GSK Pakistan,25000\r\n");
 
         Assert.True(preview.CanApply, preview.SummaryText);
 
@@ -528,7 +528,7 @@ public sealed class ImportTests
 
     private static ImportService Imports(TestDatabase test) =>
         new(test.Database, test.Audit,
-            new PermissionService(test.Database, test.Log, test.Audit), test.Log);
+            new PermissionService(test.Database, test.Log, test.Audit), test.Log, test.Settings);
 
     private static long Count(TestDatabase test, string fromWhere) =>
         test.Database.Tx(connection => Convert.ToInt64(

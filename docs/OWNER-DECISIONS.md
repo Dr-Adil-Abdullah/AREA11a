@@ -1,5 +1,13 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## D-113 — bulk editable files Owner-default؛Audit metadata؛encrypted backup کے لیے A password (2026-11-10)
+
+Owner requests lightweight two-tier architecture. Editable Excel/CSV export/import default Owner only;existing Staff & Permissions میں explicit **Allow Excel/CSV Bulk Export & Import** grant،صرف Owner assign کرے۔ Manager/staff rank کافی نہیں؛deny پرpartial/zero editable file نہیں۔ Separate Cost/Profit/main rule برقرار؛product editable file Cost/main،mixed shop workbook دونوںfinancial/main۔ Audit question کا انتخاب **metadata**:دونوںfinancial/main نہ ہوں توtime/person/action/module،rawold/new/details/entityنہیں؛اصلstored auditunchanged۔
+
+Full backup کے لیےencrypted package + authenticated checksum،restore میںlive data سے پہلےtamper rejection۔ Owner نے **A password** منتخب کیا،recovery-key fileنہیں۔ Automatic کے لیےWindows-protected local secret،نئےPCپرoriginalpassword؛chat/source/log/settings/exportمیںsecretنہیں۔ صرفread/openبغیرcontentchangeقابلِ اعتمادdetectنہیں؛unkeyedSHA256اکیلاکافیanti-forgeryنہیں۔ Passwordگم/rotationپرoldbackupکےrecoveryخطرےواضحرکھیں،legacyfilesنہdeleteکریں۔
+
+**v0.92.0 میںtier1 +Audit sourcewritten؛encrypted backup ابھی NOT IMPLEMENTED**۔ [Trace](POS-PHASE4-BULK-AUDIT-REVIEW.md)،[PT-34](POS-PHASE4-PART14-URDU.md)،[اگلے حصے کا password contract](SECURE-BACKUP-PASSWORD-PLAN.md)۔ Supplier2000/paid500/payable1500/PaySRعامledgerpolicyابھیunanswered؛اسفیصلےمیںاسکاaccountingexceptionخودسےمنتخبنہیںکیا۔
+
 ## D-112 — continuous source publication and test-installer request (2026-11-10)
 
 Owner requests every portion include both documentation and same-current-branch Git commit/push, plus a clear remaining-work/next-count estimate. Test installer is now authorized if feasible; not a production-readiness waiver. Never claim an artifact without a successful Windows publish/pack. Real isolated test data/backup restrictions remain. Current Linux toolchain cannot build WPF/Inno; no active Actions workflow. [Remaining plan / installer limitations](REMAINING-WORK-AND-TEST-INSTALLER-URDU.md). Supplier payment inference policy is still unanswered; separate financial checkboxes remain settled.

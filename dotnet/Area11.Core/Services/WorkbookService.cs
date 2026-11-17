@@ -62,7 +62,7 @@ public sealed class WorkbookService
     });
 
     /// <summary>One ordinary list as a real workbook; the existing CSV queries stay unchanged.</summary>
-    public ServiceResult<byte[]> ExportList(User user, string kind)
+    public ServiceResult<byte[]> ExportList(User? user, string kind)
     {
         var exported = kind switch
         {
@@ -89,21 +89,22 @@ public sealed class WorkbookService
         catch (Exception exception)
         {
             _log.Error("The Excel list could not be written.", exception);
-            return ServiceResult<byte[]>.Fail("The Excel workbook could not be written. " + exception.Message);
+            return ServiceResult<byte[]>.Fail("The Excel workbook could not be written.");
         }
     }
 
     /// <summary>The eight Spec 24.2 sheets: six data sheets, Settings and Instructions; no photos.</summary>
-    public ServiceResult<byte[]> ExportAll(User user)
+    public ServiceResult<byte[]> ExportAll(User? user)
     {
         if (!CanImport(user))
         {
-            return ServiceResult<byte[]>.Fail("Only the owner or a manager can download the shop workbook.");
+            return ServiceResult<byte[]>.Fail("The owner or an explicitly authorized bulk-data user may download the shop workbook.");
         }
 
         try
         {
             using var connection = _db.Open();
+            BulkDataAccess.Require(_db, connection, _permissions, _settings, user, mixed: true);
             var workbook = new XlsxWorkbook();
             foreach (var schema in Schemas)
             {
@@ -117,16 +118,16 @@ public sealed class WorkbookService
         catch (Exception exception)
         {
             _log.Error("The all-data Excel workbook could not be written.", exception);
-            return ServiceResult<byte[]>.Fail("The all-data workbook could not be written. " + exception.Message);
+            return ServiceResult<byte[]>.Fail("The all-data workbook could not be written.");
         }
     }
 
     /// <summary>Reads and checks the whole edited workbook. This method never writes the database.</summary>
-    public ServiceResult<BulkUpdatePreview> PreviewBulk(User user, byte[] bytes, bool includeSettings)
+    public ServiceResult<BulkUpdatePreview> PreviewBulk(User? user, byte[] bytes, bool includeSettings)
     {
         if (!CanImport(user))
         {
-            return ServiceResult<BulkUpdatePreview>.Fail("Only the owner or a manager can preview a bulk update.");
+            return ServiceResult<BulkUpdatePreview>.Fail("The owner or an explicitly authorized bulk-data user may preview a bulk update.");
         }
 
         if (includeSettings && !_permissions.Can(user, Modules.Settings))
@@ -139,6 +140,7 @@ public sealed class WorkbookService
         {
             var workbook = XlsxFile.Read(bytes);
             using var connection = _db.Open();
+            BulkDataAccess.Require(_db, connection, _permissions, _settings, user, mixed: true);
             var recognised = false;
 
             foreach (var sheet in workbook.Sheets)
@@ -177,21 +179,21 @@ public sealed class WorkbookService
         }
         catch (Exception exception) when (exception is InvalidDataException or IOException or ArgumentException)
         {
-            return ServiceResult<BulkUpdatePreview>.Fail("The workbook could not be read. " + exception.Message);
+            return ServiceResult<BulkUpdatePreview>.Fail("The workbook could not be read.");
         }
         catch (Exception exception)
         {
             _log.Error("The all-data workbook preview failed.", exception);
-            return ServiceResult<BulkUpdatePreview>.Fail("The workbook preview failed. " + exception.Message);
+            return ServiceResult<BulkUpdatePreview>.Fail("The workbook preview failed.");
         }
     }
 
     /// <summary>Applies exactly the approved plan, or rolls everything back including its audit rows.</summary>
-    public ServiceResult<BulkUpdateOutcome> ApplyBulk(User user, BulkUpdatePreview preview)
+    public ServiceResult<BulkUpdateOutcome> ApplyBulk(User? user, BulkUpdatePreview preview)
     {
         if (!CanImport(user))
         {
-            return ServiceResult<BulkUpdateOutcome>.Fail("Only the owner or a manager can apply a bulk update.");
+            return ServiceResult<BulkUpdateOutcome>.Fail("The owner or an explicitly authorized bulk-data user may apply a bulk update.");
         }
 
         if (!preview.CanApply)
@@ -224,6 +226,7 @@ public sealed class WorkbookService
 
             var outcome = _db.Tx(connection =>
             {
+                BulkDataAccess.Require(_db, connection, _permissions, _settings, user, mixed: true);
                 var result = new BulkUpdateOutcome();
 
                 // Validate EVERY record before the first UPDATE. A late stale row or a cross-record
@@ -310,11 +313,15 @@ public sealed class WorkbookService
             _log.Info($"Native workbook update: {outcome.ChangedRecords} record(s), {outcome.ChangedFields} field(s).");
             return ServiceResult<BulkUpdateOutcome>.Success(outcome);
         }
+        catch (ValidationException exception)
+        {
+            return ServiceResult<BulkUpdateOutcome>.Fail("The workbook was not applied; every change was rolled back. " + exception.Message);
+        }
         catch (Exception exception)
         {
             _log.Error("The native workbook update was rolled back.", exception);
             return ServiceResult<BulkUpdateOutcome>.Fail(
-                "The workbook was not applied; every change was rolled back. " + exception.Message);
+                "The workbook was not applied; every change was rolled back.");
         }
     }
 
@@ -925,8 +932,18 @@ WHERE active = 1 AND product_id <> @id AND LOWER(TRIM(barcode)) = LOWER(@code);"
 
     // ============================== Apply safety ==============================
 
-    private bool CanImport(User? user) =>
-        user is not null && user.CanManage && _permissions.Can(user, Modules.Import);
+    public bool CanUseWorkbook(User? user) => CanImport(user);
+
+    private bool CanImport(User? user)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            BulkDataAccess.Require(_db, connection, _permissions, _settings, user, mixed: true);
+            return true;
+        }
+        catch (Exception) { return false; }
+    }
 
     private static void VerifyPlan(PendingBulkRecord record)
     {

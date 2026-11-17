@@ -102,7 +102,7 @@ public sealed class WorkbookTests
         Set(products, 1, "Cost", "90");
         Set(products, 1, "Opening qty", "0");
 
-        var preview = Imports(test).PreviewWorkbook("Products", XlsxFile.Write(workbook));
+        var preview = Imports(test).PreviewWorkbook(TestData.Owner, "Products", XlsxFile.Write(workbook));
         Assert.Equal(1, preview.ReadyCount);
         Assert.True(preview.CanApply, preview.SummaryText);
         Assert.Equal(0L, Count(test, "products")); // preview still writes nothing
@@ -321,12 +321,12 @@ public sealed class WorkbookTests
     }
 
     [Fact]
-    public void BulkUpdate_CashierCannotDownloadPreviewOrApply()
+    public void BulkUpdate_ImportAndSettingsAloneCannotExposeMixedFinancialWorkbook()
     {
         using var test = new TestDatabase();
         var productId = TestData.AddProduct(test);
         var cashier = TestData.Cashier(test);
-        // Even an explicitly granted module permission must not widen Spec 24.2's role boundary.
+        // D-113: delegated bulk access does not replace independent financial grants/main.
         test.Database.Tx(connection => test.Database.Execute(connection, @"
 INSERT INTO user_permissions(user_id, module_key, allowed)
 VALUES(@id, 'import', 1), (@id, 'settings', 1);", new { id = cashier.Id }));
@@ -593,7 +593,7 @@ VALUES(@id, 'import', 1), (@id, 'settings', 1);", new { id = cashier.Id }));
     // ================================ helpers ================================
 
     private static ImportService Imports(TestDatabase test) =>
-        new(test.Database, test.Audit, new PermissionService(test.Database, test.Log, test.Audit), test.Log);
+        new(test.Database, test.Audit, new PermissionService(test.Database, test.Log, test.Audit), test.Log, test.Settings);
 
     private static WorkbookService Workbooks(TestDatabase test) =>
         new(test.Database, test.Audit, new PermissionService(test.Database, test.Log, test.Audit),

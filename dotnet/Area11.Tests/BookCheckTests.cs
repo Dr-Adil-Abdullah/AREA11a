@@ -22,7 +22,7 @@ namespace Area11.Tests;
 public sealed class BookCheckTests
 {
     private static BookCheckService Check(TestDatabase test) =>
-        new(test.Database, TestData.Permissions(test), test.Log);
+        new(test.Database, TestData.Permissions(test), test.Log, test.Settings);
 
     private static BookCheckReport Run(TestDatabase test, User? user = null)
     {

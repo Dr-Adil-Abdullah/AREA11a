@@ -51,13 +51,13 @@ public sealed class AppServices
         Recovery = new RecoveryService(Database, Audit, Settings, Permissions, Log);
         Reports = new ReportService(Database, Settings, Permissions, Log);
         Tax = new TaxService(Database, Settings, Permissions, Log);
-        AuditHistory = new AuditHistoryService(Database, Permissions, Log);
+        AuditHistory = new AuditHistoryService(Database, Permissions, Log, Settings);
         ProvisionalReceipts = new ProvisionalReceiptService(Provisional, Settings, Log);
         Receipts = new ReceiptService(Database, Settings, Log);
         Printer = new PrinterService(Settings, Log);
         WhatsApp = new WhatsAppService(Settings, Log);
         Backup = new BackupService(Database, Settings, Audit, Permissions, Log);
-        Import = new ImportService(Database, Audit, Permissions, Log);
+        Import = new ImportService(Database, Audit, Permissions, Log, Settings);
         Workbooks = new WorkbookService(Database, Audit, Permissions, Settings, Log, Import);
         Reorder = new ReorderService(Database, Audit, Settings, Permissions, Log);
         ProductHistory = new ProductHistoryService(Database, Settings, Permissions, Log);
@@ -78,7 +78,7 @@ public sealed class AppServices
         History = new SaleHistoryService(Database, Receipts, ReturnReceipts, Audit, Permissions, Log);
         TimeCorrection = new TimeCorrectionService(Database, Audit, Log);
         // Do the books add up? A read-only check over the shop's own rows (F-54).
-        Books = new BookCheckService(Database, Permissions, Log);
+        Books = new BookCheckService(Database, Permissions, Log, Settings);
         Lan = new LanService(Database, Audit, Log, Config);
         Focus = new FocusGuardService(Settings, Audit, Log);
     }

@@ -556,12 +556,12 @@
                                                     <Button DockPanel.Dock="Right" Content="Details…" Click="PermissionDetailsClick"
                                                             ToolTip="Read scope and current enabled/disabled staff assignments. Does not change a grant."
                                                             Style="{StaticResource GhostButton}" Padding="6,2" Margin="4,0,0,0" />
-                                                    <CheckBox Content="{Binding Label}"
-                                                              IsChecked="{Binding Allowed, Mode=TwoWay}"
+                                                    <CheckBox IsChecked="{Binding Allowed, Mode=TwoWay}"
                                                               IsEnabled="{Binding CanEdit}"
                                                               PreviewMouseLeftButtonDown="PermissionMouseDown"
                                                               PreviewMouseLeftButtonUp="PermissionMouseUp"
                                                               ToolTipService.ShowOnDisabled="True">
+                                                        <CheckBox.Content><TextBlock Text="{Binding Label}" TextWrapping="Wrap" MaxWidth="190" /></CheckBox.Content>
                                                         <CheckBox.ToolTip><ToolTip><TextBlock Text="{Binding Summary}" MaxWidth="360" TextWrapping="Wrap" /></ToolTip></CheckBox.ToolTip>
                                                     </CheckBox>
                                                 </DockPanel>
@@ -596,7 +596,7 @@
                                                     </DataTemplate>
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>
-                                            <TextBlock Text="Rollout is not complete: supplier/invoice/batch/stock/expense/audit/export paths still need migration. Details lists the current limits; this panel alone does not certify all-route cost secrecy."
+                                            <TextBlock Text="Rollout is not complete: supplier accounts, other outputs and stale objects still need review; encrypted password backup is next, not implemented. Details lists current limits; this panel does not certify all-route cost secrecy."
                                                        Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,8,0,0" />
                                         </StackPanel>
                                     </Border>

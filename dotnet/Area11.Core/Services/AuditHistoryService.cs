@@ -20,12 +20,14 @@ public sealed class AuditHistoryService
     private readonly Database _db;
     private readonly PermissionService _permissions;
     private readonly LogService _log;
+    private readonly SettingsService _settings;
 
-    public AuditHistoryService(Database db, PermissionService permissions, LogService log)
+    public AuditHistoryService(Database db, PermissionService permissions, LogService log, SettingsService settings)
     {
         _db = db;
         _permissions = permissions;
         _log = log;
+        _settings = settings;
     }
 
     /// <summary>Page sizes the viewer offers. "All" is not offered: the black box grows for ever.</summary>
@@ -48,9 +50,12 @@ public sealed class AuditHistoryService
         try
         {
             using var connection = _db.Open();
+            var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Audit);
+            var detailsKnown = CanReadDetails(reader);
 
             var window = new
             {
+                detailsKnown,
                 search = wanted.Search,
                 pattern = "%" + wanted.Search + "%",
                 module = wanted.Module,
@@ -63,17 +68,19 @@ public sealed class AuditHistoryService
             var rows = _db.Query<AuditRow>(connection, @"
 SELECT id AS id, IFNULL(at, '') AS at, IFNULL(user_name, '') AS userName,
        IFNULL(module, '') AS module, action AS action,
-       IFNULL(entity, '') AS entity, IFNULL(entity_id, '') AS entityId,
-       IFNULL(old_value, '') AS oldValue, IFNULL(new_value, '') AS newValue,
-       IFNULL(details, '') AS details
+       CASE WHEN @detailsKnown THEN IFNULL(entity, '') ELSE '' END AS entity,
+       CASE WHEN @detailsKnown THEN IFNULL(entity_id, '') ELSE '' END AS entityId,
+       CASE WHEN @detailsKnown THEN IFNULL(old_value, '') ELSE '' END AS oldValue,
+       CASE WHEN @detailsKnown THEN IFNULL(new_value, '') ELSE '' END AS newValue,
+       CASE WHEN @detailsKnown THEN IFNULL(details, '') ELSE 'hidden' END AS details
 FROM audit_logs
 WHERE (@search = ''
        OR action LIKE @pattern
-       OR IFNULL(details, '') LIKE @pattern
        OR IFNULL(user_name, '') LIKE @pattern
-       OR IFNULL(entity, '') LIKE @pattern
-       OR IFNULL(old_value, '') LIKE @pattern
-       OR IFNULL(new_value, '') LIKE @pattern)
+       OR (@detailsKnown AND (IFNULL(details, '') LIKE @pattern
+           OR IFNULL(entity, '') LIKE @pattern
+           OR IFNULL(old_value, '') LIKE @pattern
+           OR IFNULL(new_value, '') LIKE @pattern)))
   AND (@module = '' OR IFNULL(module, '') = @module)
   AND (@action = '' OR action = @action)
   AND (@from = '' OR at >= @from)
@@ -86,16 +93,17 @@ SELECT COUNT(1)
 FROM audit_logs
 WHERE (@search = ''
        OR action LIKE @pattern
-       OR IFNULL(details, '') LIKE @pattern
        OR IFNULL(user_name, '') LIKE @pattern
-       OR IFNULL(entity, '') LIKE @pattern
-       OR IFNULL(old_value, '') LIKE @pattern
-       OR IFNULL(new_value, '') LIKE @pattern)
+       OR (@detailsKnown AND (IFNULL(details, '') LIKE @pattern
+           OR IFNULL(entity, '') LIKE @pattern
+           OR IFNULL(old_value, '') LIKE @pattern
+           OR IFNULL(new_value, '') LIKE @pattern)))
   AND (@module = '' OR IFNULL(module, '') = @module)
   AND (@action = '' OR action = @action)
   AND (@from = '' OR at >= @from)
   AND (@until = '' OR at < @until);", window) ?? 0);
 
+            foreach (var row in rows) row.DetailKnown = detailsKnown;
             return ServiceResult<AuditPage>.Success(new AuditPage
             {
                 Rows = rows,
@@ -110,7 +118,65 @@ WHERE (@search = ''
         {
             _log.Error("The black box could not be read.", exception);
             return ServiceResult<AuditPage>.Fail(
-                "The black box could not be read. (" + exception.GetType().Name + ": " + exception.Message + ")");
+                "The black box could not be read. Refresh and try again.");
+        }
+    }
+
+    public ServiceResult<bool> CheckAccess(User? user)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Audit);
+            return ServiceResult<bool>.Success(CanReadDetails(reader));
+        }
+        catch (Exception) { return ServiceResult<bool>.Fail("Current Audit access is required."); }
+    }
+
+    private bool CanReadDetails(User reader) =>
+        CostPolicy.CanSee(_permissions, _settings, reader) && ProfitPolicy.CanSee(_permissions, _settings, reader);
+
+    /// <summary>Fresh row selection; a previously returned raw row is not an authorization token.</summary>
+    public ServiceResult<AuditSnapshot> ReadSnapshot(int id, User? user)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Audit);
+            var detailsKnown = CanReadDetails(reader);
+            if (!detailsKnown)
+                return ServiceResult<AuditSnapshot>.Success(AuditSnapshot.For(new AuditRow { DetailKnown = false }));
+            var row = _db.QuerySingle<AuditRow>(connection, @"
+SELECT id, IFNULL(at, '') AS at, IFNULL(user_name, '') AS userName,
+       IFNULL(module, '') AS module, action, IFNULL(entity, '') AS entity,
+       IFNULL(entity_id, '') AS entityId, IFNULL(old_value, '') AS oldValue,
+       IFNULL(new_value, '') AS newValue, IFNULL(details, '') AS details
+FROM audit_logs WHERE id = @id;", new { id });
+            return row is null ? ServiceResult<AuditSnapshot>.Fail("That audit line was not found.")
+                : ServiceResult<AuditSnapshot>.Success(AuditSnapshot.For(row));
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The audit detail could not be read.", exception);
+            return ServiceResult<AuditSnapshot>.Fail("The audit detail could not be read. Refresh and try again.");
+        }
+    }
+
+    /// <summary>Reread the requested bounded page after permission checks; never export cached raw rows.</summary>
+    public ServiceResult<string> BuildCsv(AuditFilter? filter, User? user)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            BulkDataAccess.Require(_db, connection, _permissions, _settings, user);
+            var page = Read(filter, user);
+            return page.Ok && page.Value is not null ? ServiceResult<string>.Success(page.Value.ToCsv())
+                : ServiceResult<string>.Fail(page.Error ?? "The audit CSV could not be prepared.");
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The audit CSV could not be prepared.", exception);
+            return ServiceResult<string>.Fail("Audit access and Allow Excel/CSV Bulk Export & Import permission are required.");
         }
     }
 

@@ -331,7 +331,7 @@ VALUES(@id,'EXPENSIVE','2028-06-30','2028-06',5,55000,56000,1);",
     public void BookCheckAcceptsUnchangedLinesMinusSeparateExtra()
     {
         using var t = new TestDatabase(); Grant(t); Post(t, Cart(t));
-        var result = new BookCheckService(t.Database, TestData.Permissions(t), t.Log).Run(TestData.Owner);
+        var result = new BookCheckService(t.Database, TestData.Permissions(t), t.Log, t.Settings).Run(TestData.Owner);
         Assert.True(result.Ok, result.Error);
         Assert.All(result.Value!.Rules.Where(x => x.Title.StartsWith("A bill")), x => Assert.True(x.Clean, x.Title));
     }

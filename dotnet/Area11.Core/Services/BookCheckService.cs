@@ -38,12 +38,14 @@ public sealed class BookCheckService
     private readonly Database _db;
     private readonly PermissionService _permissions;
     private readonly LogService _log;
+    private readonly SettingsService _settings;
 
-    public BookCheckService(Database db, PermissionService permissions, LogService log)
+    public BookCheckService(Database db, PermissionService permissions, LogService log, SettingsService settings)
     {
         _db = db;
         _permissions = permissions;
         _log = log;
+        _settings = settings;
     }
 
     /// <summary>
@@ -55,6 +57,21 @@ public sealed class BookCheckService
     /// </summary>
     public bool CanRun(User? user) =>
         _permissions.Can(user, Modules.Reports) || _permissions.Can(user, Modules.Audit);
+
+    /// <summary>Fresh CSV, not the old screen report. Raw reconciliation amounts need both grants.</summary>
+    public ServiceResult<string> BuildCsv(User? user)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            BulkDataAccess.Require(_db, connection, _permissions, _settings, user, mixed: true);
+            SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Reports, Modules.Audit);
+            var report = Run(user);
+            return report.Ok && report.Value is not null ? ServiceResult<string>.Success(report.Value.ToCsv())
+                : ServiceResult<string>.Fail(report.Error ?? "The books CSV could not be prepared.");
+        }
+        catch (Exception) { return ServiceResult<string>.Fail("Current bulk, books and both financial permissions with main ON are required."); }
+    }
 
     /// <summary>
     /// Runs every rule once, in the order a shopkeeper would ask them: bills first (that is where

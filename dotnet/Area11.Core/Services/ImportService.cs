@@ -55,13 +55,15 @@ public sealed class ImportService
     private readonly AuditService _audit;
     private readonly PermissionService _permissions;
     private readonly LogService _log;
+    private readonly SettingsService _settings;
 
-    public ImportService(Database db, AuditService audit, PermissionService permissions, LogService log)
+    public ImportService(Database db, AuditService audit, PermissionService permissions, LogService log, SettingsService settings)
     {
         _db = db;
         _audit = audit;
         _permissions = permissions;
         _log = log;
+        _settings = settings;
     }
 
     // ======================= Templates and exports =======================
@@ -83,8 +85,9 @@ public sealed class ImportService
     /// Reads the matching worksheet from a real .xlsx file, then uses the exact same preview and
     /// duplicate/opening-stock rules as CSV. A one-sheet workbook may have any sheet name.
     /// </summary>
-    public ImportPreview PreviewWorkbook(string kind, byte[] bytes)
+    public ImportPreview PreviewWorkbook(User? user, string kind, byte[] bytes)
     {
+        RequirePreviewAccess(user, cost: kind is not ("Customers" or "Suppliers"));
         var workbook = XlsxFile.Read(bytes);
         var sheet = workbook.Sheet(kind);
         if (sheet is null)
@@ -106,9 +109,9 @@ public sealed class ImportService
         var text = XlsxFile.SheetAsCsv(sheet);
         return kind switch
         {
-            "Customers" => PreviewCustomers(text),
-            "Suppliers" => PreviewSuppliers(text),
-            _ => PreviewProducts(text)
+            "Customers" => PreviewCustomers(user, text),
+            "Suppliers" => PreviewSuppliers(user, text),
+            _ => PreviewProducts(user, text)
         };
     }
 
@@ -116,9 +119,9 @@ public sealed class ImportService
     /// Every medicine with its stock on the shelf. This is the file the owner keeps as a paper copy
     /// of the shop, and the one he edits for a bulk price change.
     /// </summary>
-    public ServiceResult<string> ExportProducts(User user)
+    public ServiceResult<string> ExportProducts(User? user)
     {
-        if (!Allowed(user))
+        if (!CanImport(user, cost: true))
         {
             return ServiceResult<string>.Fail("You do not have permission to export data.");
         }
@@ -126,6 +129,7 @@ public sealed class ImportService
         try
         {
             using var connection = _db.Open();
+            BulkDataAccess.Require(_db, connection, _permissions, _settings, user, cost: true);
 
             var rows = _db.Query<ExportProductRow>(connection, @"
 SELECT p.id AS id, p.name AS name, IFNULL(p.generic, '') AS generic, IFNULL(p.brand, '') AS brand,
@@ -178,9 +182,9 @@ ORDER BY p.name COLLATE NOCASE;");
     }
 
     /// <summary>Every customer with the udhaar on the book - the khata in one file.</summary>
-    public ServiceResult<string> ExportCustomers(User user)
+    public ServiceResult<string> ExportCustomers(User? user)
     {
-        if (!Allowed(user))
+        if (!CanImport(user, cost: false))
         {
             return ServiceResult<string>.Fail("You do not have permission to export data.");
         }
@@ -188,6 +192,7 @@ ORDER BY p.name COLLATE NOCASE;");
         try
         {
             using var connection = _db.Open();
+            BulkDataAccess.Require(_db, connection, _permissions, _settings, user, cost: false);
 
             var rows = _db.Query<ExportCustomerRow>(connection, @"
 SELECT c.id AS id, c.name AS name, IFNULL(c.phone, '') AS phone, c.category AS category,
@@ -220,9 +225,9 @@ ORDER BY c.name COLLATE NOCASE;");
     }
 
     /// <summary>Every supplier with what the shop owes.</summary>
-    public ServiceResult<string> ExportSuppliers(User user)
+    public ServiceResult<string> ExportSuppliers(User? user)
     {
-        if (!Allowed(user))
+        if (!CanImport(user, cost: false))
         {
             return ServiceResult<string>.Fail("You do not have permission to export data.");
         }
@@ -230,6 +235,7 @@ ORDER BY c.name COLLATE NOCASE;");
         try
         {
             using var connection = _db.Open();
+            BulkDataAccess.Require(_db, connection, _permissions, _settings, user, cost: false);
 
             var rows = _db.Query<ExportSupplierRow>(connection, @"
 SELECT s.id AS id, s.name AS name, IFNULL(s.phone, '') AS phone, IFNULL(s.agency, '') AS agency,
@@ -262,8 +268,9 @@ ORDER BY s.name COLLATE NOCASE;");
     // ============================ Product import ============================
 
     /// <summary>Reads and checks a products file. Writes nothing - see the class comment.</summary>
-    public ImportPreview PreviewProducts(string csvText)
+    public ImportPreview PreviewProducts(User? user, string csvText)
     {
+        RequirePreviewAccess(user, cost: true);
         var preview = new ImportPreview { Kind = "Products" };
         var table = CsvReader.Parse(csvText ?? string.Empty);
 
@@ -453,11 +460,11 @@ ORDER BY sort, id LIMIT 1;");
     /// Writes the previewed products. One transaction: either the whole file is in the shop or none
     /// of it is.
     /// </summary>
-    public ServiceResult<ImportOutcome> ApplyProducts(User user, ImportPreview preview)
+    public ServiceResult<ImportOutcome> ApplyProducts(User? user, ImportPreview preview)
     {
-        if (!CanImport(user))
+        if (!CanImport(user, cost: true))
         {
-            return ServiceResult<ImportOutcome>.Fail("Only the owner or a manager can import medicines.");
+            return ServiceResult<ImportOutcome>.Fail("The owner or an explicitly authorized bulk-data user may import medicines.");
         }
 
         if (!preview.CanApply)
@@ -472,6 +479,7 @@ ORDER BY sort, id LIMIT 1;");
         {
             var outcome = _db.Tx(connection =>
             {
+                BulkDataAccess.Require(_db, connection, _permissions, _settings, user, cost: true);
                 var result = new ImportOutcome { Kind = "Products", Skipped = preview.SkippedCount };
                 var categoryIds = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
@@ -596,8 +604,9 @@ VALUES(@productId, @batchId, 'import', @qty, 'import', 'Opening stock (import)',
 
     // =========================== Customer import ===========================
 
-    public ImportPreview PreviewCustomers(string csvText)
+    public ImportPreview PreviewCustomers(User? user, string csvText)
     {
+        RequirePreviewAccess(user, cost: false);
         var preview = new ImportPreview { Kind = "Customers" };
         var table = CsvReader.Parse(csvText ?? string.Empty);
 
@@ -723,11 +732,11 @@ VALUES(@productId, @batchId, 'import', @qty, 'import', 'Opening stock (import)',
     /// into `balance_paisa`: the opening is part of the khata, and the page starts its running total
     /// there, so "Books match" is true on the day the shop moves in.
     /// </summary>
-    public ServiceResult<ImportOutcome> ApplyCustomers(User user, ImportPreview preview)
+    public ServiceResult<ImportOutcome> ApplyCustomers(User? user, ImportPreview preview)
     {
-        if (!CanImport(user))
+        if (!CanImport(user, cost: false))
         {
-            return ServiceResult<ImportOutcome>.Fail("Only the owner or a manager can import customers.");
+            return ServiceResult<ImportOutcome>.Fail("The owner or an explicitly authorized bulk-data user may import customers.");
         }
 
         if (!preview.CanApply)
@@ -742,6 +751,7 @@ VALUES(@productId, @batchId, 'import', @qty, 'import', 'Opening stock (import)',
         {
             var outcome = _db.Tx(connection =>
             {
+                BulkDataAccess.Require(_db, connection, _permissions, _settings, user, cost: false);
                 var result = new ImportOutcome { Kind = "Customers", Skipped = preview.SkippedCount };
                 var requiredCustom = RequiredCustomField(connection, "customer");
                 if (requiredCustom is not null && preview.Customers.Count > 0)
@@ -799,8 +809,9 @@ ORDER BY sort, id LIMIT 1;", new { entity });
 
     // =========================== Supplier import ===========================
 
-    public ImportPreview PreviewSuppliers(string csvText)
+    public ImportPreview PreviewSuppliers(User? user, string csvText)
     {
+        RequirePreviewAccess(user, cost: false);
         var preview = new ImportPreview { Kind = "Suppliers" };
         var table = CsvReader.Parse(csvText ?? string.Empty);
 
@@ -901,11 +912,11 @@ ORDER BY sort, id LIMIT 1;", new { entity });
         return preview;
     }
 
-    public ServiceResult<ImportOutcome> ApplySuppliers(User user, ImportPreview preview)
+    public ServiceResult<ImportOutcome> ApplySuppliers(User? user, ImportPreview preview)
     {
-        if (!CanImport(user))
+        if (!CanImport(user, cost: false))
         {
-            return ServiceResult<ImportOutcome>.Fail("Only the owner or a manager can import suppliers.");
+            return ServiceResult<ImportOutcome>.Fail("The owner or an explicitly authorized bulk-data user may import suppliers.");
         }
 
         if (!preview.CanApply)
@@ -920,6 +931,7 @@ ORDER BY sort, id LIMIT 1;", new { entity });
         {
             var outcome = _db.Tx(connection =>
             {
+                BulkDataAccess.Require(_db, connection, _permissions, _settings, user, cost: false);
                 var result = new ImportOutcome { Kind = "Suppliers", Skipped = preview.SkippedCount };
                 var requiredCustom = RequiredCustomField(connection, "supplier");
                 if (requiredCustom is not null && preview.Suppliers.Count > 0)
@@ -979,7 +991,7 @@ VALUES(@name, @phone, @agency, @opening, @opening, 1, @at);",
     {
         var preview = new PricePreview();
 
-        if (!CanImport(user))
+        if (!CanImport(user, cost: true))
         {
             return preview;
         }
@@ -987,6 +999,7 @@ VALUES(@name, @phone, @agency, @opening, @opening, 1, @at);",
         try
         {
             using var connection = _db.Open();
+            BulkDataAccess.Require(_db, connection, _permissions, _settings, user, cost: true);
 
             var rows = _db.Query<PriceRow>(connection, @"
 SELECT p.id AS id, p.name AS name, p.cost_paisa AS costPaisa, p.retail_paisa AS retailPaisa
@@ -1025,9 +1038,9 @@ ORDER BY p.name COLLATE NOCASE;",
     /// Applies the previewed change. A row whose new retail is below cost is **not written**: the shop
     /// would be selling at a loss on every bill, and that is the one mistake this feature could cause.
     /// </summary>
-    public ServiceResult<PriceOutcome> ApplyPrices(User user, PricePreview preview)
+    public ServiceResult<PriceOutcome> ApplyPrices(User? user, PricePreview preview)
     {
-        if (!_permissions.Can(user, Modules.Products))
+        if (!CanImport(user, cost: true) || !_permissions.Can(user, Modules.Products))
         {
             return ServiceResult<PriceOutcome>.Fail("You do not have permission to change prices.");
         }
@@ -1044,6 +1057,9 @@ ORDER BY p.name COLLATE NOCASE;",
         {
             var outcome = _db.Tx(connection =>
             {
+                var reader = BulkDataAccess.Require(_db, connection, _permissions, _settings, user, cost: true);
+                if (!_permissions.Can(reader, Modules.Products))
+                    throw new ValidationException("Products permission is required to apply bulk prices.");
                 var result = new PriceOutcome { BelowCost = preview.BelowCostCount };
 
                 foreach (var row in preview.Rows.Where(row => row.Changes && !row.BelowCost))
@@ -1077,11 +1093,25 @@ WHERE id = @id;",
 
     // ============================== Helpers ==============================
 
-    /// <summary>Export and preview: reading data is enough; writing needs <see cref="CanImport"/>.</summary>
-    private bool Allowed(User? user) =>
-        user is not null && (_permissions.Can(user, Modules.Import) || _permissions.Can(user, Modules.Products));
+    /// <summary>Current Import module is necessary; it defaults to owner only.</summary>
+    public bool CanUseBulk(User? user, bool cost = false) => CanImport(user, cost);
 
-    private bool CanImport(User? user) => user is not null && _permissions.Can(user, Modules.Import);
+    private bool CanImport(User? user, bool cost = false)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            BulkDataAccess.Require(_db, connection, _permissions, _settings, user, cost: cost);
+            return true;
+        }
+        catch (Exception) { return false; }
+    }
+
+    private void RequirePreviewAccess(User? user, bool cost)
+    {
+        using var connection = _db.Open();
+        BulkDataAccess.Require(_db, connection, _permissions, _settings, user, cost: cost);
+    }
 
     /// <summary>
     /// One price after the owner's instruction. Percent uses <see cref="Calc.RoundMoney"/> so a price

@@ -228,8 +228,8 @@ public sealed class BookCheckViewModel : ObservableObject, IEmptyPage
     }
 
     /// <summary>
-    /// Writes exactly what is on the screen. One file, one row per finding, and the money as plain
-    /// numbers so the accountant can add the column up.
+    /// Rechecks the books behind current export permissions. The live report may have changed
+    /// since the screen was prepared; do not export its cached monetary findings.
     /// </summary>
     private void Save()
     {
@@ -257,14 +257,18 @@ public sealed class BookCheckViewModel : ObservableObject, IEmptyPage
         {
             // UTF-8 WITH a BOM: without it Excel reads Urdu names as gibberish (the same rule the
             // black box's export follows).
-            File.WriteAllText(dialog.FileName, _report.ToCsv(),
+            var csv = _services.Books.BuildCsv(_user);
+            if (!csv.Ok || csv.Value is null)
+            {
+                StatusText = csv.Error ?? "The books CSV could not be prepared.";
+                IsStatusError = true;
+                return;
+            }
+            File.WriteAllText(dialog.FileName, csv.Value,
                 new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
 
             IsStatusError = false;
-            StatusText = _report.Problems == 0
-                ? "Saved: the shop is clean. " + dialog.FileName
-                : _report.Problems.ToString(CultureInfo.InvariantCulture) + " fault(s) saved to "
-                  + dialog.FileName;
+            StatusText = "Current books check saved to " + dialog.FileName;
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {

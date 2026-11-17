@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-34 — Explicit bulk files / Audit metadata (v0.92.0) — UNRUN
+
+[Safe checklist](docs/POS-PHASE4-PART14-URDU.md): current module/grants/main,manager default denied/explicit staff allowed,no editable masked0,actorful preview-before-decode,insideTx rechecks,Audit metadata/search-count boundary,fresh4CSV/snapshots,view timer cleanup,original DB immutability.1641cases/Desktop/Windows UNRUN;81static/10memorySQLprobes are not runtime. **Backup encryption NOT implemented**,passwordA next per [contract](docs/SECURE-BACKUP-PASSWORD-PLAN.md). No installer/live-shop fake posts.
+
 ## PT-33 — Purchase preparation/drafts/stale unsaved form (v0.91.0) — UNRUN
 
 [Safe checklist](docs/POS-PHASE4-PART13-URDU.md): isolated synthetic data only;current actor/Purchases/Cost/main matrix,deny raw draft/Create/save/post without editable0,summary/discard module-only,retained UI line/cost/paid/status masking and restore-review,no autosave,new selection lookup failure,known0/sample,revocation/current payload bypass refusal,retry/doublepost/rollback.1609cases/Windows build UNRUN;80static/9isolatedSQLprobes not runtime proof. No installer/live-shop fake posts. [Trace](docs/POS-PHASE4-PURCHASE-PREPARATION-REVIEW.md).

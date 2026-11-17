@@ -134,7 +134,7 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, @role, 1, @at);"
 
     /// <summary>The reading side of the black box (F-35). One factory, one constructor change.</summary>
     public static AuditHistoryService AuditHistory(TestDatabase test) =>
-        new(test.Database, new PermissionService(test.Database, test.Log, test.Audit), test.Log);
+        new(test.Database, new PermissionService(test.Database, test.Log, test.Audit), test.Log, test.Settings);
 
     /// <summary>Customers and suppliers (D-50 added the "new customer" form, so the service is used).</summary>
     public static PartnerService Partners(TestDatabase test) =>

@@ -190,6 +190,7 @@ public sealed class FinancialVisibilityTests
     public void HistoryCsvBothPurchaseMoneyCellsFollowCostNotProfitGrant()
     {
         using var t = new TestDatabase(); var ids = Seed(t); var user = Staff(t); Grant(t, user, Modules.Profit);
+        Grant(t, user, Modules.Import);
         var hidden = History(t).BuildCsv(user, ids.Sold).Value!.Split('\n').Single(x => x.StartsWith("bought,"));
         Assert.Equal("\"\"", hidden.Split(',')[5]); Assert.Equal("\"\"", hidden.Split(',')[6]);
         Grant(t, user, Modules.PurchaseCost);

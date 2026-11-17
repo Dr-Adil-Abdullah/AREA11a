@@ -1,5 +1,7 @@
 # Phase 4 — source evidence register, portion 1 (v0.79.0 Tern)
 
+> **Latest v0.92 portion14/D-113:** [Bulk/Audit trace](POS-PHASE4-BULK-AUDIT-REVIEW.md),[PT-34](POS-PHASE4-PART14-URDU.md). Owner-default explicit bulk grant;editable product/mixed-file all-or-refuse gates,actorful previews/current Apply checks;Audit metadata+search boundary and freshCSV/snapshot.1641C#cases UNRUN;81static/10memorySQLprobes PASS,not runtime. **PasswordA approved;backup encryption NOT implemented** ([next contract](SECURE-BACKUP-PASSWORD-PLAN.md));global/Windows OPEN.
+
 > **Latest v0.91.0 portion13/D-110:** [Purchase preparation/drafts trace](POS-PHASE4-PURCHASE-PREPARATION-REVIEW.md),[PT-33](POS-PHASE4-PART13-URDU.md). Current Purchases+Cost/main for Create/open/save/update/post,not editable masked0;summary/discard module-only;retained UI masked/blocked on next check.1609C#cases UNRUN;80static/9isolatedSQLprobes PASS,not runtime. Supplier/genericexport/session/Windows/fullPhase4 OPEN.
 
 > **Latest v0.90.0 portion12/D-110:** current Cash readers and goods-drawing raw history/today/result/voucher cost masks;ordinary cash expense/drawing and original stock/cash accounting retained. [Trace/limits](POS-PHASE4-EXPENSE-VISIBILITY-REVIEW.md),[PT-32](POS-PHASE4-PART12-URDU.md).1579C#cases UNRUN;79static/8isolatedSQLiteprobes PASS,not runtime. Purchase/supplier/generic export/session/Windows/fullPhase4 OPEN.

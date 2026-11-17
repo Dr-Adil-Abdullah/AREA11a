@@ -219,6 +219,7 @@ public sealed class ProductHistoryTests
         Buy(test, productId);
         Sell(test, productId, null);
         var manager = TestData.AddUser(test, "manager");
+        Assert.True(TestData.Permissions(test).Set(TestData.Owner, manager.Id, Modules.Import, true).Ok);
 
         var csv = Histories(test).BuildCsv(manager, productId);
 

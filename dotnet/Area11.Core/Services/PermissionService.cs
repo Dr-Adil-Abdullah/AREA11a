@@ -52,7 +52,7 @@ public static class Modules
         Profit => "View Profit",
         PurchaseCost => "View Purchase Cost",
         Audit => "Audit black box",
-        Import => "Excel import",
+        Import => "Allow Excel/CSV Bulk Export & Import",
         Backup => "Backup / restore",
         Settings => "Settings",
         Staff => "Staff & permissions",
@@ -86,7 +86,7 @@ public sealed class PermissionService
         // Cloud sync moves the whole shop out of the building, so a manager does not get it by
         // default - the owner ticks it for one person on purpose (F-48, D-66).
         UserRole.Manager => module is not (Modules.Profit or Modules.PurchaseCost or Modules.Audit or Modules.Backup
-            or Modules.Staff or Modules.Sync or Modules.CloseApp),
+            or Modules.Staff or Modules.Sync or Modules.CloseApp or Modules.Import),
         UserRole.Salesman => module is Modules.Pos or Modules.Sales or Modules.Returns
             or Modules.Customers or Modules.Products,
         _ => module is Modules.Pos or Modules.Returns or Modules.Customers

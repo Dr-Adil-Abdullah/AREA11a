@@ -3878,7 +3878,7 @@ def check_audit_recovery() -> None:
     for needle in (
         "public AuditRow? Selected",
         "public AuditSnapshot? Snapshot",
-        "AuditSnapshot.For(value)",
+        "_services.AuditHistory.ReadSnapshot(value.Id, _user)",
         "Selected = null;",
         "public bool HasSnapshot",
     ):
@@ -4266,7 +4266,7 @@ def check_native_workbook() -> None:
         "if (text.Length == 0)",
         "if (text == ClearToken)",
         "VerifyCurrentRow(connection, record);",
-        "user is not null && user.CanManage && _permissions.Can(user, Modules.Import)",
+        "BulkDataAccess.Require(_db, connection, _permissions, _settings, user, mixed: true);",
         "Snapshot = currentFingerprint",
         "ReadRows(connection, schema, record.KeyValue)",
         "Fingerprint(schema, current)",
@@ -4293,11 +4293,11 @@ def check_native_workbook() -> None:
         if needle not in service:
             fail(f"T-10 workbook preview/apply protection is missing: {needle}")
 
-    if "PreviewWorkbook(string kind, byte[] bytes)" not in imports:
+    if "PreviewWorkbook(User? user, string kind, byte[] bytes)" not in imports:
         fail("T-10 new-record import no longer accepts the matching native worksheet")
 
     for needle in (
-        "_services.Import.PreviewWorkbook(Kind, bytes)",
+        "_services.Import.PreviewWorkbook(_user, Kind, bytes)",
         "WorkbookService.Template()",
         "_services.Workbooks.ExportAll(_user)",
         "_services.Workbooks.PreviewBulk(_user, bytes, IncludeSettings)",
@@ -4327,7 +4327,7 @@ def check_native_workbook() -> None:
         "BulkUpdate_RefusesStockAndAccountBalanceChanges",
         "BulkUpdate_SettingsNeedTheTick_AndKeepStringNumberAndArrayTypes",
         "BulkUpdate_LockedSettingsCannotBeAddedByHand",
-        "BulkUpdate_CashierCannotDownloadPreviewOrApply",
+        "BulkUpdate_ImportAndSettingsAloneCannotExposeMixedFinancialWorkbook",
         "BulkApply_StaleLaterRowRollsBackTheEarlierValidRow",
         "BulkUpdate_BatchExpiryAlsoUpdatesItsMonth_NotItsQuantity",
         "BulkUpdate_CategoryCycleIsRefusedBeforeAnythingIsWritten",
@@ -7124,6 +7124,68 @@ def check_purchase_preparation():
     REPORT.append('Phase4 portion13: current Purchases+Cost/main preparation/create/draft open-save-post; module-only summaries/discard; result known flag; retained unsaved form masked/commands blocked with next-interaction and nominal3s timer checks. Supplier/export/session/Windows OPEN')
 
 
+def check_bulk_audit_access():
+    core = DOTNET / 'Area11.Core/Services'
+    gate = (core / 'BulkDataAccess.cs').read_text()
+    for token in ('SnapshotReadAccess.Require(db, connection, permissions, actor, Modules.Import)',
+                  '(cost || mixed) && !CostPolicy.CanSee', 'mixed && !ProfitPolicy.CanSee'):
+        if token not in gate: FAILURES.append(f'Bulk current-module/independent financial gate missing {token}')
+    perms = (core / 'PermissionService.cs').read_text()
+    manager = perms.split('UserRole.Manager => module is not (',1)[-1].split('),',1)[0]
+    if 'Modules.Import' not in manager or 'Import => "Allow Excel/CSV Bulk Export & Import"' not in perms:
+        FAILURES.append('Bulk checkbox must be explicit and default denied to manager/staff')
+    imports = (core / 'ImportService.cs').read_text()
+    if '_permissions.Can(user, Modules.Products)' in imports.split('private bool CanImport(',1)[-1]:
+        FAILURES.append('Products module must not replace bulk-file grant')
+    for method in ('PreviewProducts', 'PreviewCustomers', 'PreviewSuppliers', 'PreviewWorkbook'):
+        part = imports.split('public ImportPreview '+method+'(',1)[-1].split('\n    }',1)[0]
+        if 'User? user,' not in part or 'RequirePreviewAccess(user, cost:' not in part:
+            FAILURES.append(f'Upload preview must gate current actor before parsing/lookup: {method}')
+    for method in ('ApplyProducts','ApplyCustomers','ApplySuppliers','ApplyPrices'):
+        part = imports.split(' '+method+'(',1)[-1].split('\n    }',1)[0]
+        if 'BulkDataAccess.Require(_db, connection, _permissions, _settings, user, cost:' not in part:
+            FAILURES.append(f'Apply transaction must recheck bulk reader: {method}')
+    workbook = (core / 'WorkbookService.cs').read_text()
+    if 'user.CanManage' in workbook or workbook.count('BulkDataAccess.Require(_db, connection, _permissions, _settings, user, mixed: true);') < 3:
+        FAILURES.append('Mixed workbook requires explicit bulk+both financial, including inside Apply Tx; rank not substitute')
+    audit = (core / 'AuditHistoryService.cs').read_text()
+    for token in ('SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Audit)',
+                  'CostPolicy.CanSee(_permissions, _settings, reader) && ProfitPolicy.CanSee(_permissions, _settings, reader)',
+                  "CASE WHEN @detailsKnown THEN IFNULL(old_value, '') ELSE '' END AS oldValue",
+                  "CASE WHEN @detailsKnown THEN IFNULL(new_value, '') ELSE '' END AS newValue",
+                  "CASE WHEN @detailsKnown THEN IFNULL(details, '') ELSE 'hidden' END AS details",
+                  'foreach (var row in rows) row.DetailKnown = detailsKnown;',
+                  'public ServiceResult<AuditSnapshot> ReadSnapshot(int id, User? user)',
+                  'public ServiceResult<string> BuildCsv(AuditFilter? filter, User? user)',
+                  'BulkDataAccess.Require(_db, connection, _permissions, _settings, user);'):
+        if token not in audit: FAILURES.append(f'Audit current metadata/detail/export boundary missing {token}')
+    if audit.count("OR (@detailsKnown AND (IFNULL(details, '') LIKE @pattern") != 2:
+        FAILURES.append('Both audit page/count must exclude hidden fields from text-search oracle')
+    if '+ exception.Message' in audit: FAILURES.append('Audit errors must not return raw database details')
+    models = (DOTNET / 'Area11.Core/Models/AuditModels.cs').read_text()
+    if 'if (!row.DetailKnown)' not in models or 'EarlierText = "hidden", RecordedText = "hidden", DetailsText = "hidden"' not in models:
+        FAILURES.append('Unknown audit snapshot must not expose old/new raw or details')
+    for stem in ('ProductHistory','BookCheck'):
+        part = (core / (stem+'Service.cs')).read_text().split('public ServiceResult<string> BuildCsv(',1)[-1]
+        if 'BulkDataAccess.Require(' not in part: FAILURES.append(stem+' CSV missing dedicated bulk gate')
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/AuditViewModel.cs').read_text()
+    if '_page.ToCsv()' in vm or '_services.AuditHistory.BuildCsv(_page.Filter, _user)' not in vm:
+        FAILURES.append('Audit CSV must prepare fresh gated page, never old raw DTO')
+    books = (DOTNET / 'Area11.Desktop/ViewModels/BookCheckViewModel.cs').read_text()
+    if '_report.ToCsv()' in books or '_services.Books.BuildCsv(_user)' not in books:
+        FAILURES.append('Books CSV must be rebuilt behind current gates')
+    for stem in ('Audit','ImportExport'):
+        view = (DOTNET / ('Area11.Desktop/Views/'+stem+'View.xaml.cs')).read_text()
+        for token in ('TimeSpan.FromSeconds(3)', 'Unloaded += (_, _) => _accessTimer.Stop();', 'viewModel.RefreshAccess();'):
+            if token not in view: FAILURES.append(f'{stem} active-view stale cleanup missing {token}')
+    tests = (DOTNET / 'Area11.Tests/BulkAndAuditAccessTests.cs').read_text()
+    for name in ('ProductsPageGrantIsNotABulkFileGrant', 'ExplicitStaffCanPreviewAndApplyAuthorizedProductImport',
+                 'NoCostRefusesWholeEditableProductFileRatherThanBlankingItsPrice', 'MetadataSearchCannotMatchHiddenValueDetailsOrEntity',
+                 'AuditExportRereadsAfterRevocationInsteadOfUsingEarlierRawPage', 'MetadataReadsNeverRewriteStoredAuditValues'):
+        if name not in tests: FAILURES.append(f'Bulk/audit regression missing {name}')
+    REPORT.append('Phase4 portion14/D-113: owner-default explicit bulk gate, editable data refused not zeroed, actorful previews/current Tx checks; audit metadata/search boundary and fresh details/CSV; all four CSV doors gated; password backup approved but NOT implemented, global/Windows OPEN')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -7202,6 +7264,7 @@ def main() -> int:
     check_stock_valuation_visibility()
     check_expense_visibility()
     check_purchase_preparation()
+    check_bulk_audit_access()
     check_csharp_grammar()
 
     if not quiet:

@@ -179,6 +179,7 @@ public sealed class SnapshotReadBoundaryTests
     public void HistoryCsvLeavesBothDeniedPurchaseMoneyCellsEmptyButKeepsSales()
     {
         using var t = new TestDatabase(); var id = Seed(t); var user = TestData.AddUser(t, "salesman");
+        Grant(t, user, Modules.Import);
         var csv = History(t).BuildCsv(user, id); Assert.True(csv.Ok, csv.Error);
         var lines = csv.Value!.Split('\n'); var bought = lines.Single(x => x.StartsWith("bought,"));
         var cells = bought.Trim().Split(','); Assert.Equal("10", cells[4]); Assert.Equal("\"\"", cells[5]); Assert.Equal("\"\"", cells[6]);
@@ -201,6 +202,7 @@ public sealed class SnapshotReadBoundaryTests
     public void HistoryDocumentAndCsvRevalidateBeforeEachNewPreparation()
     {
         using var t = new TestDatabase(); var id = Seed(t); var user = TestData.AddUser(t, "manager"); var service = History(t);
+        Grant(t, user, Modules.Import);
         Assert.True(service.BuildCsv(user, id).Ok); Assert.True(service.BuildDocument(user, id).Ok);
         Grant(t, user, Modules.Products, false);
         Assert.False(service.BuildCsv(user, id).Ok); Assert.False(service.BuildDocument(user, id).Ok);
@@ -291,6 +293,7 @@ public sealed class SnapshotReadBoundaryTests
     public void MaskedSnapshotAndExportReadsNeverRewriteFinancialSnapshots()
     {
         using var t = new TestDatabase(); var id = Seed(t); var user = TestData.AddUser(t, "salesman");
+        Grant(t, user, Modules.Import);
         Grant(t, user, Modules.Reorder); Grant(t, user, Modules.Reports);
         Masked(History(t).Load(user, id).Value!); Assert.True(History(t).BuildCsv(user, id).Ok);
         Assert.True(History(t).BuildDocument(user, id).Ok); Assert.True(Pad(t).Report(user).Ok);
