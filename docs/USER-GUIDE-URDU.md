@@ -1,10 +1,12 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.89.0 Redstart۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.90.0 Dipper۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
 
-**فیز4 حصہ11 — stock/frozen valuation:** Write-off history/today/save result اور stock-take Current/History/sheet/found/new print/Open/Apply output الگ Cost+main کے تحت؛منع ہو تو raw money/labels mask،گنتی/فرق/status برقرار۔ اصل frozen cost اور Count/Apply حساب unchanged؛مجاز0،uncounted—،hidden الگ۔ نئے print میں query failure successful empty نہیں۔ [PT-31](POS-PHASE4-PART11-URDU.md)،[trace/حدود](POS-PHASE4-STOCK-VALUATION-REVIEW.md)۔1551C#cases UNRUN،78static PASS؛Windows/generic exports/expense/purchase/supplier/session rollout باقی۔
+**فیز4 حصہ12 — expense میں cash/مال الگ:** Goods-drawing کی List/Today/new result/voucher valuation الگ Cost+main سے؛منع ہو تو raw money mask/hidden۔ کرایہ/نقدdrawing اور گلے کا cash total متعلقہ Cash grant پر برقرار؛Stock tag صرف label،receiving نہیں۔ Failed Today معلوم0 نہیں،hidden۔ اصل SaveGoods/SQL/accounting unchanged۔ [PT-32](POS-PHASE4-PART12-URDU.md)،[trace/حدود](POS-PHASE4-EXPENSE-VISIBILITY-REVIEW.md)۔1579C#cases UNRUN،79static PASS؛purchase/supplier/generic exports/session/Windows ابھی باقی۔
 
-**فیز4 حصہ10 — عام batch اور تازہ تیاری:** Stock/Expenses/Suppliers کے batch picker کی cost/valuation الگ Cost+main سے؛quantity/batch/date برقرار۔ Write-off/Expenses preview اور manual SR tray تازہ current cost/quantity/pack لیتے ہیں؛ناکامی پر hidden/انکار،نہ stale رقم نہ fake0۔ **Stock history/today/results اور frozen stock-take حصہ11 میں منتقل؛Expense/Supplier کے باقی مالی outputs اب بھی باقی،global secrecy نہیں۔** [PT-30](POS-PHASE4-PART10-URDU.md)،[trace/حدود](POS-PHASE4-BATCH-READ-REVIEW.md)۔1521C#cases UNRUN،77static checks PASS؛Windows باقی۔
+**فیز4 حصہ11 — stock/frozen valuation:** Write-off history/today/save result اور stock-take Current/History/sheet/found/new print/Open/Apply output الگ Cost+main کے تحت؛منع ہو تو raw money/labels mask،گنتی/فرق/status برقرار۔ اصل frozen cost اور Count/Apply حساب unchanged؛مجاز0،uncounted—،hidden الگ۔ نئے print میں query failure successful empty نہیں۔ [PT-31](POS-PHASE4-PART11-URDU.md)،[trace/حدود](POS-PHASE4-STOCK-VALUATION-REVIEW.md)۔1551C#cases UNRUN،78static PASS؛Expense goods outputs حصہ12 میں منتقل؛Windows/generic exports/purchase/supplier/session rollout باقی۔
+
+**فیز4 حصہ10 — عام batch اور تازہ تیاری:** Stock/Expenses/Suppliers کے batch picker کی cost/valuation الگ Cost+main سے؛quantity/batch/date برقرار۔ Write-off/Expenses preview اور manual SR tray تازہ current cost/quantity/pack لیتے ہیں؛ناکامی پر hidden/انکار،نہ stale رقم نہ fake0۔ **Stock history/today/results اور frozen stock-take حصہ11 میں منتقل؛Expense goods outputs حصہ12 میں منتقل؛Supplier/generic exports ابھی باقی،global secrecy نہیں۔** [PT-30](POS-PHASE4-PART10-URDU.md)،[trace/حدود](POS-PHASE4-BATCH-READ-REVIEW.md)۔1521C#cases UNRUN،77static checks PASS؛Windows باقی۔
 
 **فیز4 حصہ9 — خرید invoice / expired stock:** نئے purchase document میں cost منع ہو تو line amount،Total،Paid،Due سب hidden؛نام/quantity/batch/date برقرار۔ expired list کی raw cost/valuation بھی mask؛Add whole batch تازہ500حد والی row اور known cost دوبارہ چیک کرتا ہے،انکار پر tray untouched۔ supplier عام paid/payable/Pay/SR پالیسی اور posting unchanged،یہ global completion نہیں۔ [PT-29](POS-PHASE4-PART9-URDU.md)،[trace/حدود](POS-PHASE4-PURCHASE-READ-REVIEW.md)۔1493 C# cases UNRUN،76 static checks PASS؛Windows باقی۔
 
@@ -408,7 +410,9 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 4. ایک ہی نکاسی Expense اور Drawing دونوں میں مت لکھیں۔ goods drawing سٹاک سے زیادہ نہیں ہو سکتی۔
 5. What went out میں entry منتخب کرکے Print voucher۔ محفوظ entry edit/delete نہیں؛ غلطی سامنے ہو تو مالک ریکارڈ دیکھ کر واضح corrective entry کرے۔
 
-**حصہ10 — Goods drawing preview:** Cash workflow کی batch list اور نئی cost preview الگ Cost+main کے تحت؛ممنوع رقم hidden،missing/stale selection سے fake0 حساب نہیں۔ Pack/quantity تازہ read سے؛یہ stock reservation یا posting authorization نہیں۔ Frozen stock-take حصہ11 میں منتقل؛Expense/drawing history/results/voucher ابھی اگلا audit؛عام expense cash rule نہیں بدلا۔ [PT-30](POS-PHASE4-PART10-URDU.md)۔
+**حصہ10 — Goods drawing preview:** Cash workflow کی batch list اور نئی cost preview الگ Cost+main کے تحت؛ممنوع رقم hidden،missing/stale selection سے fake0 حساب نہیں۔ Pack/quantity تازہ read سے؛یہ stock reservation یا posting authorization نہیں۔ Frozen stock-take حصہ11 میں منتقل؛Expense/drawing goods history/results/voucher حصہ12 میں منتقل؛generic exports ابھی باقی؛عام expense cash rule نہیں بدلا۔ [PT-30](POS-PHASE4-PART10-URDU.md)۔
+
+**حصہ12 — Goods valuation اور cash الگ:** List/Today/goods save result/new voucher میں Cost+main نہ ہو تو goods cost hidden،raw amount بھی mask۔ Expense/rent اور cash drawing اپنی Cash اجازت پر readable؛today cash sum میں goods کبھی شامل نہیں۔ Stock category tag label-only؛note/title/custom answers میں خود لکھی رقم خودکار scrub نہیں۔ Current account/page before read/write؛نیا voucher goods ID کو cash kind سے نہیں دکھاتا۔ مجاز0 اور failed/denied hidden الگ؛پہلے بنے file/status کی recall ضمانت نہیں۔ [PT-32](POS-PHASE4-PART12-URDU.md)۔
 
 <a id="lesson-23"></a>
 
@@ -537,9 +541,11 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 
 **حصہ9 کی scope update:** permission Details میں نئے purchase invoice اور expired-list masks شامل؛line total کے ساتھPaid/Due بھی hidden۔ الگ ticks/main rule unchanged؛purchase entry/draft/result،عام supplier ledger/Pay/SR اور دوسرے نامکمل راستے واضح باقی۔ [trace](POS-PHASE4-PURCHASE-READ-REVIEW.md)۔
 
-**حصہ10 کی scope update:** permission Details میں عام batch read masks اور تازہ Write-off/Expenses/manualSR preparation شامل۔ تاریخ/quantity برقرار؛حصہ11 میں stock history/totals/results اور frozen stock-take بھی منتقل،Expense/Supplier/generic exports ابھی باقی۔ [trace](POS-PHASE4-BATCH-READ-REVIEW.md)۔
+**حصہ10 کی scope update:** permission Details میں عام batch read masks اور تازہ Write-off/Expenses/manualSR preparation شامل۔ تاریخ/quantity برقرار؛حصہ11 میں stock history/totals/results اور frozen stock-take بھی منتقل،Expense goods outputs حصہ12 میں منتقل؛Supplier/generic exports ابھی باقی۔ [trace](POS-PHASE4-BATCH-READ-REVIEW.md)۔
 
 **حصہ11 کی scope update:** Details میں stock history/today/result اور frozen stock-take line/session/document/Open/Apply money masks شامل؛backend frozen accounting برقرار۔ یہ expense/purchase/Supplier/generic exports اور session کی مکمل حفاظت کا سرٹیفکیٹ نہیں۔ [trace](POS-PHASE4-STOCK-VALUATION-REVIEW.md)۔
+
+**حصہ12 کی scope update:** financial Details میں expense goods-drawing history/today/result/voucher masks شامل؛یہ ordinary Cash amount کو چھپانے کا نیا grant نہیں۔ Purchase/supplier/generic exports اور session rollout ابھی باقی۔ [trace](POS-PHASE4-EXPENSE-VISIBILITY-REVIEW.md)۔
 
 <a id="lesson-32"></a>
 
@@ -604,6 +610,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 **خرید invoice کی تازہ حد:** نئے purchase ReceiptDocument کی print/PDF/text preparation میں ایک ہی cost rule؛منع ہونے پرline amounts/Total/Paid/Due hidden۔ یہ نئے document کی جانچ ہے؛پہلے محفوظ PDF،کاغذ یا دوسرے ابھی غیرمنتقل exports خود واپس محفوظ نہیں ہوتے۔ [PT-29](POS-PHASE4-PART9-URDU.md)۔
 
 **Stock-take نئی print حد:** نیا document authorized current account/page سے تیار؛Cost+main منع ہو تو net Value hidden،book/count/difference برقرار۔ Query failure میں print تیاری ناکام،اصل SQL error نہیں؛پرانے paper/PDF واپس recall نہیں ہوتے۔ کوئی الگ stock-take CSV route مکمل ہونے کا دعویٰ نہیں۔ [PT-31](POS-PHASE4-PART11-URDU.md)۔
+
+**Cash-out voucher کی تازہ حد:** نیا goods voucher Cost+main سے amount،ورنہ hidden؛ordinary expense/cash-drawing voucher Cash module کے تحت اصل رقم۔ Voucher query fail ہو تو تیاری fail،SQL details نہیں۔ PDF/کاغذ پہلے بن چکے ہوں تو واپس مٹنے کی ضمانت نہیں؛generic exports الگ audit۔ [PT-32](POS-PHASE4-PART12-URDU.md)۔
 
 <a id="lesson-36"></a>
 

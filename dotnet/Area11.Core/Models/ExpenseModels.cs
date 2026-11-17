@@ -141,6 +141,10 @@ public sealed class DrawingResult
 
     public long AmountPaisa { get; set; }
 
+    public bool AmountKnown { get; set; }
+
+    public string AmountLabel => AmountKnown ? Money.Format(AmountPaisa) : "hidden";
+
     public double QtyBase { get; set; }
 
     public double StockAfterBase { get; set; }
@@ -169,6 +173,8 @@ public sealed class CashOutRow
 
     public long AmountPaisa { get; set; }
 
+    public bool AmountKnown { get; set; }
+
     public string? Note { get; set; }
 
     public string? UserName { get; set; }
@@ -178,7 +184,7 @@ public sealed class CashOutRow
     /// <summary>True = money really left the drawer. A goods drawing took stock, not cash.</summary>
     public bool TookCash => Kind is "expense" or "drawing_cash";
 
-    public string AmountLabel => Money.Format(AmountPaisa);
+    public string AmountLabel => AmountKnown ? Money.Format(AmountPaisa) : "hidden";
 
     public string DateLabel => string.IsNullOrWhiteSpace(Date)
         ? "-"
@@ -210,6 +216,10 @@ public sealed class CashOutRow
 /// <summary>A day's cash-out at a glance, for the top of the screen.</summary>
 public sealed class CashOutToday
 {
+    public bool CashKnown { get; set; }
+
+    public bool GoodsCostKnown { get; set; }
+
     public long ExpensePaisa { get; set; }
 
     public long DrawingCashPaisa { get; set; }
@@ -219,13 +229,13 @@ public sealed class CashOutToday
     public int Entries { get; set; }
 
     /// <summary>Money that left the drawer today (expenses + cash drawings).</summary>
-    public long CashOutPaisa => ExpensePaisa + DrawingCashPaisa;
+    public long CashOutPaisa => CashKnown ? ExpensePaisa + DrawingCashPaisa : 0;
 
-    public string ExpenseLabel => Money.Format(ExpensePaisa);
+    public string ExpenseLabel => CashKnown ? Money.Format(ExpensePaisa) : "hidden";
 
-    public string DrawingLabel => Money.Format(DrawingCashPaisa);
+    public string DrawingLabel => CashKnown ? Money.Format(DrawingCashPaisa) : "hidden";
 
-    public string GoodsLabel => Money.Format(DrawingGoodsCostPaisa);
+    public string GoodsLabel => GoodsCostKnown ? Money.Format(DrawingGoodsCostPaisa) : "hidden";
 
-    public string CashOutLabel => Money.Format(CashOutPaisa);
+    public string CashOutLabel => CashKnown ? Money.Format(CashOutPaisa) : "hidden";
 }

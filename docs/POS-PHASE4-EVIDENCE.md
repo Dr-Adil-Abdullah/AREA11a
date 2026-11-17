@@ -1,5 +1,7 @@
 # Phase 4 — source evidence register, portion 1 (v0.79.0 Tern)
 
+> **Latest v0.90.0 portion12/D-110:** current Cash readers and goods-drawing raw history/today/result/voucher cost masks;ordinary cash expense/drawing and original stock/cash accounting retained. [Trace/limits](POS-PHASE4-EXPENSE-VISIBILITY-REVIEW.md),[PT-32](POS-PHASE4-PART12-URDU.md).1579C#cases UNRUN;79static/8isolatedSQLiteprobes PASS,not runtime. Purchase/supplier/generic export/session/Windows/fullPhase4 OPEN.
+
 > **Latest v0.89.0 portion11/D-110:** current-reader stock history/today/result and frozen stock-take Current/History/Sheet/found/document/Open/Apply monetary projections, preserving internal frozen accounting. [Trace/limits](POS-PHASE4-STOCK-VALUATION-REVIEW.md),[PT-31](POS-PHASE4-PART11-URDU.md).1551cases UNRUN;78static/7isolatedSQLiteprobes PASS,not runtime. No separate stock-take CSV builder;generic exports/expense/purchase/supplier/session/Windows/fullPhase4 OPEN.
 
 > **Latest v0.88.0 portion10/D-110:** general batch metadata/current workflow read with independent rawcost+valuation masks; fresh authorized write-off/expense previews/manualSR tray preparation. [Trace/remaining](POS-PHASE4-BATCH-READ-REVIEW.md),[PT-30](POS-PHASE4-PART10-URDU.md).1521C#cases UNRUN,77static checks;6isolated SQLprobes PASS,not runtime. Stock/expense histories/results/totals and frozen stock-take still OPEN; do not call whole pages cost-private.

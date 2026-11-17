@@ -1,5 +1,7 @@
 # Phase4 portion7 — independent financial visibility (D-110), v0.85.0 Plover
 
+> **Subsequent portion12:** [v0.90 expense/goods outputs](POS-PHASE4-EXPENSE-VISIBILITY-REVIEW.md) migrates mixed history/Today/goods result/new voucher valuation while ordinary Cash-module expense/cash-drawing amounts stay readable and stock/cash posting SQL unchanged. Purchase/supplier/StockMinus/audit/generic export/session/Windows still open. [PT-32](POS-PHASE4-PART12-URDU.md).
+
 > **Subsequent portion11:** [v0.89 stock/frozen outputs](POS-PHASE4-STOCK-VALUATION-REVIEW.md) migrates Stock history/today/result and StockTake Current/History/Sheet/found/document/Open/Apply outputs while private raw frozen accounting stays intact. Generic exports/StockMinus/expense/purchase/supplier/session/Windows still open;no standalone stock-take CSV builder exists. [PT-31](POS-PHASE4-PART11-URDU.md).
 
 > **Subsequent backend portion10:** [v0.88 batch/fresh preparation](POS-PHASE4-BATCH-READ-REVIEW.md) migrates generic Stock/Cash/Suppliers batch-list cost and valuation plus fresh previews/manualSR tray. Stock history/today/result and frozen stock-take and expense results/vouchers remain open; original posting/formulas unchanged. [PT-30](POS-PHASE4-PART10-URDU.md).

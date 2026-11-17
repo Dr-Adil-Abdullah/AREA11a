@@ -91,6 +91,7 @@ public sealed class ExpenseService
         {
             var result = _db.Tx(connection =>
             {
+                SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Cash);
                 var stamp = Clock.Now();
 
                 _db.Execute(connection, @"
@@ -183,6 +184,7 @@ VALUES(@at, @category, @title, @amount, @note, @userId, @at);",
         {
             var result = _db.Tx(connection =>
             {
+                SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Cash);
                 var stamp = Clock.Now();
 
                 _db.Execute(connection, @"
@@ -205,6 +207,7 @@ VALUES(@at, 'cash', @amount, @note, @userId, @at);",
                 {
                     Id = id,
                     Type = "cash",
+                    AmountKnown = true,
                     AmountPaisa = input.AmountPaisa
                 };
 
@@ -217,6 +220,10 @@ VALUES(@at, 'cash', @amount, @note, @userId, @at);",
             });
 
             return ServiceResult<DrawingResult>.Success(result);
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult<DrawingResult>.Fail(exception.Message);
         }
         catch (Exception exception)
         {
@@ -243,7 +250,18 @@ VALUES(@at, 'cash', @amount, @note, @userId, @at);",
 
         try
         {
-            var result = _db.Tx(connection => SaveGoods(connection, user, input));
+            var result = _db.Tx(connection =>
+            {
+                var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Cash);
+                var canSeeCost = CostPolicy.CanSee(_permissions, _settings, reader);
+                var saved = SaveGoods(connection, user, input);
+                if (saved.Value is { } value)
+                {
+                    value.AmountKnown = canSeeCost;
+                    if (!canSeeCost) value.AmountPaisa = 0;
+                }
+                return saved;
+            });
 
             if (!result.Ok || result.Value is null)
             {
@@ -350,12 +368,14 @@ VALUES(@at, 'goods', @value, @note, @userId, @at);",
     // ------------------------------------------------------------------ reading
 
     /// <summary>Expenses and drawings on one list, newest first - what the screen shows.</summary>
-    public List<CashOutRow> List(int limit = 200)
+    public List<CashOutRow> List(User? user, int limit = 200)
     {
         try
         {
             using var connection = _db.Open();
 
+            var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Cash);
+            var canSeeCost = CostPolicy.CanSee(_permissions, _settings, reader);
             var rows = _db.Query<CashOutRow>(connection, @"
 SELECT e.id AS id, 'expense' AS kind, e.date AS date, e.category AS category,
        e.title AS title, e.amount_paisa AS amountPaisa, e.note AS note, IFNULL(u.name, '') AS userName,
@@ -395,6 +415,8 @@ GROUP BY v.entity_id;");
 
             foreach (var row in rows)
             {
+                row.AmountKnown = row.Kind != KindDrawingGoods || canSeeCost;
+                if (!row.AmountKnown) row.AmountPaisa = 0;
                 if (row.Kind == "expense" && byExpense.TryGetValue(row.Id, out var line))
                 {
                     row.ExtraLabel = line;
@@ -403,6 +425,7 @@ GROUP BY v.entity_id;");
 
             return rows;
         }
+        catch (ValidationException) { return new List<CashOutRow>(); }
         catch (Exception exception)
         {
             _log.Error("The cash-out list could not be read.", exception);
@@ -416,11 +439,6 @@ GROUP BY v.entity_id;");
     /// </summary>
     public ServiceResult<ReceiptDocument> BuildVoucherDocument(string kind, int id, User? user)
     {
-        if (!_permissions.Can(user, Modules.Cash))
-        {
-            return ServiceResult<ReceiptDocument>.Fail("You do not have permission to see the cash-out.");
-        }
-
         var what = (kind ?? string.Empty).Trim().ToLowerInvariant();
         if (what is not (KindExpense or KindDrawingCash or KindDrawingGoods))
         {
@@ -430,6 +448,8 @@ GROUP BY v.entity_id;");
         try
         {
             using var connection = _db.Open();
+            var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Cash);
+            var showAmount = what != KindDrawingGoods || CostPolicy.CanSee(_permissions, _settings, reader);
             CashOutVoucher? voucher = what == KindExpense
                 ? _db.QuerySingle<CashOutVoucher>(connection, @"
 SELECT e.title AS title, e.amount_paisa AS amountPaisa, e.category AS category,
@@ -496,26 +516,29 @@ WHERE d.id = @id
             }
 
             document.Lines.Add(ReceiptLine.Sep(width));
-            Pair("Amount", Money.Format(voucher.AmountPaisa), bold: true);
+            Pair("Amount", showAmount ? Money.Format(voucher.AmountPaisa) : "hidden", bold: true);
             return ServiceResult<ReceiptDocument>.Success(document);
         }
+        catch (ValidationException exception) { return ServiceResult<ReceiptDocument>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error("The cash-out voucher could not be prepared.", exception);
-            return ServiceResult<ReceiptDocument>.Fail("The cash-out voucher could not be prepared. " + exception.Message);
+            return ServiceResult<ReceiptDocument>.Fail("The cash-out voucher could not be prepared. Refresh and try again.");
         }
     }
 
     /// <summary>Today's totals for the top of the screen.</summary>
-    public CashOutToday Today()
+    public CashOutToday Today(User? user)
     {
         try
         {
             using var connection = _db.Open();
+            var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Cash);
+            var canSeeCost = CostPolicy.CanSee(_permissions, _settings, reader);
             var from = Clock.Today();
             var to = from + " 23:59:59";
 
-            return _db.QuerySingle<CashOutToday>(connection, @"
+            var today = _db.QuerySingle<CashOutToday>(connection, @"
 SELECT
   IFNULL((SELECT SUM(e.amount_paisa) FROM expenses e
           WHERE e.date >= @from AND e.date <= @to), 0) AS expensePaisa,
@@ -526,7 +549,12 @@ SELECT
   (SELECT COUNT(1) FROM expenses e WHERE e.date >= @from AND e.date <= @to)
   + (SELECT COUNT(1) FROM owner_drawings d WHERE d.date >= @from AND d.date <= @to) AS entries;",
                 new { from, to }) ?? new CashOutToday();
+            today.CashKnown = true;
+            today.GoodsCostKnown = canSeeCost;
+            if (!canSeeCost) today.DrawingGoodsCostPaisa = 0;
+            return today;
         }
+        catch (ValidationException) { return new CashOutToday(); }
         catch (Exception exception)
         {
             _log.Error("Today's cash-out could not be read.", exception);

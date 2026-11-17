@@ -20,10 +20,6 @@ public sealed class ExpenseTests
         new(test.Database, test.Audit,
             new PermissionService(test.Database, test.Log, test.Audit), test.Log);
 
-    private static readonly User Manager = new() { Id = 3, Name = "Manager", Role = "manager" };
-
-    private static readonly User Cashier = new() { Id = 2, Name = "Cashier", Role = "cashier" };
-
     private static double StockOf(TestDatabase test, int productId)
     {
         using var connection = test.Database.Open();
@@ -119,7 +115,7 @@ SELECT category AS category, title AS title, amount_paisa AS amountPaisa FROM ex
 
         // The owner has every permission, and a manager gets Cash by default.
         Assert.True(TestData.CashOut(test).AddExpense(TestData.Owner, Rent()).Ok);
-        Assert.True(TestData.CashOut(test).AddExpense(Manager, Rent(title: "Electricity bill")).Ok);
+        Assert.True(TestData.CashOut(test).AddExpense(TestData.AddUser(test, "manager"), Rent(title: "Electricity bill")).Ok);
     }
 
     [Fact]
@@ -143,7 +139,7 @@ SELECT category AS category, title AS title, amount_paisa AS amountPaisa FROM ex
 
         Assert.True(Shifts(test).Open(TestData.Owner, 200000, null).Ok);
 
-        var byCashier = TestData.CashOut(test).AddDrawing(Cashier, new DrawingInput
+        var byCashier = TestData.CashOut(test).AddDrawing(TestData.Cashier(test), new DrawingInput
         {
             Type = "cash",
             AmountPaisa = 50000
@@ -152,7 +148,7 @@ SELECT category AS category, title AS title, amount_paisa AS amountPaisa FROM ex
         Assert.False(byCashier.Ok);
         Assert.Contains("owner", byCashier.Error!, StringComparison.OrdinalIgnoreCase);
 
-        var byManager = TestData.CashOut(test).AddDrawing(Manager, new DrawingInput
+        var byManager = TestData.CashOut(test).AddDrawing(TestData.AddUser(test, "manager"), new DrawingInput
         {
             Type = "cash",
             AmountPaisa = 50000
@@ -275,7 +271,7 @@ SELECT type AS type, qty_base AS qtyBase FROM stock_movements WHERE product_id =
             Unit = "unit"
         }).Ok);
 
-        var rows = TestData.CashOut(test).List();
+        var rows = TestData.CashOut(test).List(TestData.Owner);
 
         Assert.Equal(3, rows.Count);
 
@@ -291,7 +287,7 @@ SELECT type AS type, qty_base AS qtyBase FROM stock_movements WHERE product_id =
             .Select(row => row.Kind);
 
         Assert.Equal(promised, rows.Select(row => row.Kind));
-        Assert.Equal(rows.Select(row => row.Kind), TestData.CashOut(test).List().Select(row => row.Kind));
+        Assert.Equal(rows.Select(row => row.Kind), TestData.CashOut(test).List(TestData.Owner).Select(row => row.Kind));
 
         // Found by KIND, not by position: the labels are what the owner reads, and they must be
         // attached to the right entry wherever it lands in the list.
@@ -331,7 +327,7 @@ SELECT type AS type, qty_base AS qtyBase FROM stock_movements WHERE product_id =
             Unit = "unit"
         }).Ok);
 
-        var today = TestData.CashOut(test).Today();
+        var today = TestData.CashOut(test).Today(TestData.Owner);
 
         Assert.Equal(100000L, today.ExpensePaisa);
         Assert.Equal(50000L, today.DrawingCashPaisa);

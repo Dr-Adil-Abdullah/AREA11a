@@ -318,14 +318,15 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
     public void Load()
     {
         RefreshCategories();
+        SelectedRow = null;
         Rows.Clear();
 
-        foreach (var row in _services.CashOut.List())
+        foreach (var row in _services.CashOut.List(_user))
         {
             Rows.Add(row);
         }
 
-        var today = _services.CashOut.Today();
+        var today = _services.CashOut.Today(_user);
         TodayText = "Today: " + today.CashOutLabel + " out of the drawer (shop " + today.ExpenseLabel
                     + ", owner cash " + today.DrawingLabel + ") · goods taken at cost " + today.GoodsLabel
                     + " · " + today.Entries + " entr" + (today.Entries == 1 ? "y" : "ies");
@@ -411,7 +412,7 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
 
         Load();
 
-        var message = "Owner took " + Money.Format(saved.AmountPaisa) + " cash.";
+        var message = "Owner took " + saved.AmountLabel + " cash.";
         SetStatus(saved.HasWarning ? message + " " + saved.WarningText : message, saved.HasWarning);
     }
 
@@ -455,7 +456,7 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
         LoadBatches();
 
         var message = "Owner took " + Qty.Format(saved.QtyBase) + " of " + name + ", valued at cost "
-                      + Money.Format(saved.AmountPaisa) + ".";
+                      + saved.AmountLabel + ".";
 
         SetStatus(saved.HasWarning ? message + " " + saved.WarningText : message, saved.HasWarning);
     }

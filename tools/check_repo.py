@@ -7003,6 +7003,58 @@ def check_stock_valuation_visibility():
     REPORT.append('Phase4 portion11: current-reader stock history/daily/result and frozen stock-take current/history/sheet/found/document/Open/Apply money projections, no public actorless fallbacks; private valuation/posting retained; generic exports/expense/session/Windows still OPEN')
 
 
+def check_expense_visibility():
+    core = DOTNET / 'Area11.Core'
+    text = (core / 'Services/ExpenseService.cs').read_text()
+    for signature, end in (
+        ('public List<CashOutRow> List(', '/// <summary>\n    /// Portion 11'),
+        ('public CashOutToday Today(', '/// <summary>True while'),
+        ('public ServiceResult<ReceiptDocument> BuildVoucherDocument(', '/// <summary>Today')):
+        part = text.split(signature, 1)[-1].split(end, 1)[0]
+        gate = 'SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Cash)'
+        if 'User? user' not in part or gate not in part or 'CostPolicy.CanSee(_permissions, _settings, reader)' not in part:
+            FAILURES.append(f'Cash output requires current Cash reader + independent cost: {signature}')
+        query = min((part.find(x) for x in ('_db.Query', 'CashOutVoucher? voucher') if part.find(x) >= 0), default=len(part))
+        if part.find(gate) > query:
+            FAILURES.append(f'Cash reader must precede money lookup: {signature}')
+    for token in ('row.AmountKnown = row.Kind != KindDrawingGoods || canSeeCost;',
+                  'if (!row.AmountKnown) row.AmountPaisa = 0;', 'today.CashKnown = true;',
+                  'today.GoodsCostKnown = canSeeCost;', 'if (!canSeeCost) today.DrawingGoodsCostPaisa = 0;',
+                  'var showAmount = what != KindDrawingGoods || CostPolicy.CanSee(_permissions, _settings, reader);',
+                  'AND d.type = @type;', 'Pair("Amount", showAmount ? Money.Format(voucher.AmountPaisa) : "hidden", bold: true);'):
+        if token not in text: FAILURES.append(f'Goods-only cash output projection/type constraint missing {token}')
+    for start,end in (('public ServiceResult<ExpenseResult> AddExpense(', '// ------------------------------------------------------------------ drawings'),
+                      ('private ServiceResult<DrawingResult> AddCashDrawing(', '/// <summary>\n    /// Medicine taken')):
+        part = text.split(start,1)[-1].split(end,1)[0]
+        if 'SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Cash);' not in part or part.find('SnapshotReadAccess.Require') > part.find('INSERT INTO'):
+            FAILURES.append(f'Cash write must resolve current reader before transaction write: {start}')
+    goods = text.split('private ServiceResult<DrawingResult> AddGoodsDrawing(',1)[-1].split('private ServiceResult<DrawingResult> SaveGoods(',1)[0]
+    for token in ('SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Cash);',
+                  'var canSeeCost = CostPolicy.CanSee(_permissions, _settings, reader);',
+                  'value.AmountKnown = canSeeCost;', 'if (!canSeeCost) value.AmountPaisa = 0;'):
+        if token not in goods: FAILURES.append(f'Goods result projection inside transaction missing {token}')
+    if goods.find('CostPolicy.CanSee') > goods.find('SaveGoods(connection, user, input)'):
+        FAILURES.append('Resolve goods cost visibility before posting, not after commit')
+    doc = text.split('public ServiceResult<ReceiptDocument> BuildVoucherDocument(',1)[-1].split('public CashOutToday Today(',1)[0]
+    if ' + exception.Message' in doc:
+        FAILURES.append('Voucher must not return database exception details')
+    model = (core / 'Models/ExpenseModels.cs').read_text()
+    for token in ('AmountKnown ? Money.Format(AmountPaisa) : "hidden"',
+                  'CashKnown ? ExpensePaisa + DrawingCashPaisa : 0',
+                  'CashKnown ? Money.Format(CashOutPaisa) : "hidden"',
+                  'GoodsCostKnown ? Money.Format(DrawingGoodsCostPaisa) : "hidden"'):
+        if token not in model: FAILURES.append(f'Cash/goods known-zero/hidden formatter missing {token}')
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/ExpensesViewModel.cs').read_text()
+    for token in ('_services.CashOut.List(_user)', '_services.CashOut.Today(_user)', 'SelectedRow = null;', '+ saved.AmountLabel + ".";'):
+        if token not in vm: FAILURES.append(f'Expense UI must consume explicit projected current reads/result: {token}')
+    tests = (DOTNET / 'Area11.Tests/ExpenseVisibilityTests.cs').read_text()
+    for name in ('MainOffMasksGoodsButKeepsActualCashExpenseAndDrawingAmounts', 'GoodsRowCannotBeReadAsCashKindToBypassCostMask',
+                 'MainOffGoodsDrawingMasksReturnedAmountButPostsActualStockAndCost', 'GoodsDrawingStillDoesNotMoveDrawerCashWhenMainOff',
+                 'StockCategoryIsOnlyACashExpenseLabelNotReceivingOrGoodsValuation', 'FinancialGrantDatabaseFailureMasksGoodsButNotOrdinaryCash'):
+        if name not in tests: FAILURES.append(f'Expense goods/cash regression missing {name}')
+    REPORT.append('Phase4 portion12: current Cash readers, goods-drawing raw/history/today/result/voucher independent cost masks, cash expense/drawing totals retained, current account before writes; purchase/supplier/generic exports/session/Windows OPEN')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -7079,6 +7131,7 @@ def main() -> int:
     check_purchase_read_visibility()
     check_batch_read_visibility()
     check_stock_valuation_visibility()
+    check_expense_visibility()
     check_csharp_grammar()
 
     if not quiet:

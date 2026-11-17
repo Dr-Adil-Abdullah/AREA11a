@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-32 — Expense goods-cost outputs vs ordinary cash (v0.90.0) — UNRUN
+
+[Safe checklist](docs/POS-PHASE4-PART12-URDU.md): isolated fixtures only;current actor/Cash/cost/main,goods raw/list/today/result/voucher mask,ordinary cash unchanged,known0 vs hidden,no goods in drawer sum,type-confusion refusal,safe error/default,genuine posting despite hidden result,rollback,stock tag label-only.1579cases/Windows build UNRUN;79static/8isolatedSQLprobes not runtime proof. No installer/live-shop fake posts. [Trace](docs/POS-PHASE4-EXPENSE-VISIBILITY-REVIEW.md).
+
 ## PT-31 — stock history/result and frozen stock-take outputs (v0.89.0) — UNRUN
 
 [Safe checklist](docs/POS-PHASE4-PART11-URDU.md): isolated fixtures only;current reader/page/cost/main,owner denial,hidden vs known0 vs uncounted,quantity filters,new document net and failure-not-empty,real stored cost despite hidden results,once-only frozen Apply,transaction fault/read-only data.1551C#cases/Windows build UNRUN;78static/7isolatedSQLiteprobes not runtime proof. No installer or shop fake posting. [Trace](docs/POS-PHASE4-STOCK-VALUATION-REVIEW.md).
