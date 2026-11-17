@@ -198,9 +198,16 @@ public sealed class ReturnsViewModel : ObservableObject, IEmptyPage
         _saleId = saleId;
         Lines.Clear();
 
+        // Portion 17: one cover query for the whole bill, so each line shows its medicine.
+        var covers = _services.Photos.CoversFor(_user, PhotoEntity.Product,
+            lines.Value.Select(line => line.ProductId));
+
         foreach (var line in lines.Value)
         {
-            var row = new ReturnLineRow(line, Recalculate);
+            var row = new ReturnLineRow(line, Recalculate)
+            {
+                PhotoPath = covers.TryGetValue(line.ProductId, out var path) ? path : null
+            };
             Lines.Add(row);
         }
 
@@ -392,7 +399,7 @@ public sealed class ReturnsViewModel : ObservableObject, IEmptyPage
         RefundText = Money.Format(quote.Value.RefundPaisa);
         CashText = Money.Format(quote.Value.CashPaisa);
         CreditText = Money.Format(quote.Value.CreditReducedPaisa);
-        SetStatus("Refund calculated from this bill. Press Take the return to save it.", false);
+        SetStatus("Refund calculated from this bill. Press Take the return to save it. " + string.Join(" ", quote.Value.Warnings), false);
     }
 
     private void TakeReturn()
@@ -436,7 +443,7 @@ public sealed class ReturnsViewModel : ObservableObject, IEmptyPage
         Reason = ReturnService.ReasonChangedMind;
         Restock = true;
         ResetBill();
-        SetStatus(message, false);
+        SetStatus(message + " " + string.Join(" ", saved.Warnings), false);
     }
 
     private void Print(string returnCode)
@@ -532,8 +539,9 @@ public sealed class ReturnLineRow : ObservableObject
         _changed = changed;
 
         SaleItemId = line.SaleItemId;
+        ProductId = line.ProductId;
         Name = line.Name;
-        UnitLabel = line.UnitSold;
+        UnitLabel = Packs.Display(line.UnitSold);
         SoldLabel = line.SoldLabel;
         ReturnedLabel = line.ReturnedLabel;
         RemainingLabel = line.RemainingLabel;
@@ -543,6 +551,14 @@ public sealed class ReturnLineRow : ObservableObject
     }
 
     public int SaleItemId { get; }
+
+    /// <summary>Portion 17: which medicine this bill line was, for its cover thumbnail.</summary>
+    public int ProductId { get; }
+
+    /// <summary>Portion 17: the cover path, filled by the page - display only.</summary>
+    public string? PhotoPath { get; set; }
+
+    public bool HasNoPhoto => string.IsNullOrWhiteSpace(PhotoPath);
 
     public string Name { get; }
 

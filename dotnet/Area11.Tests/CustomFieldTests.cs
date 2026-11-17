@@ -550,16 +550,16 @@ BEGIN SELECT RAISE(ABORT, 'audit unavailable'); END;"));
         var rejected = products.Update(TestData.Owner, product, new ProductPatch { Name = "Changed name" },
             new Dictionary<int, string?> { [required.Id] = "" });
         Assert.False(rejected.Ok);
-        Assert.NotEqual("Changed name", products.Get(product).Value!.Name);
+        Assert.NotEqual("Changed name", products.Get(TestData.Owner, product).Value!.Name);
         Assert.Equal(0L, Rows(test, "SELECT COUNT(*) FROM custom_values;"));
         Assert.True(products.Update(TestData.Owner, product, new ProductPatch { Name = "Changed name" },
             new Dictionary<int, string?> { [required.Id] = "ABC-123" }).Ok);
-        Assert.Equal("Changed name", products.Get(product).Value!.Name);
+        Assert.Equal("Changed name", products.Get(TestData.Owner, product).Value!.Name);
         Assert.Equal("ABC-123", fields.Values(TestData.Owner, CustomFieldEntity.Product, product).Value![required.Id]);
         Assert.True(fields.SetActive(TestData.Owner, required.Id, false).Ok);
         Assert.False(products.Update(TestData.Owner, product, new ProductPatch { Name = "Stale name" },
             new Dictionary<int, string?> { [required.Id] = "different" }).Ok);
-        Assert.Equal("Changed name", products.Get(product).Value!.Name);
+        Assert.Equal("Changed name", products.Get(TestData.Owner, product).Value!.Name);
     }
 
     [Fact]
@@ -601,6 +601,8 @@ BEGIN SELECT RAISE(ABORT, 'audit unavailable'); END;"));
         }
 
         public string PhotoFolder { get; }
+
+        public string SourceFolder { get; }
 
         public string SourceFile(string name, string text = "pretend this is a picture")
         {

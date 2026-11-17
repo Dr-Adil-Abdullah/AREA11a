@@ -130,6 +130,19 @@
 
                             <DataGrid Grid.Row="3" ItemsSource="{Binding Lines}">
                                 <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="Photo" Width="90">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Border Width="{DynamicResource ProductThumbnailSize}" Height="{DynamicResource ProductThumbnailSize}"
+                                                        CornerRadius="12" BorderThickness="1" BorderBrush="{StaticResource LineBrush}">
+                                                    <Border.Background><ImageBrush ImageSource="{Binding PhotoPath}" Stretch="UniformToFill" /></Border.Background>
+                                                    <TextBlock Text="No photo" FontSize="9" TextWrapping="Wrap" TextAlignment="Center"
+                                                               VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}"
+                                                               Visibility="{Binding HasNoPhoto, Converter={StaticResource BoolToVis}}" />
+                                                </Border>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
                                     <DataGridTextColumn Header="Medicine" Binding="{Binding Name, Mode=OneWay}" Width="2*" />
                                     <DataGridTextColumn Header="Sold" Binding="{Binding SoldLabel, Mode=OneWay}" Width="80" />
                                     <DataGridTextColumn Header="Returned" Binding="{Binding ReturnedLabel, Mode=OneWay}" Width="80" />

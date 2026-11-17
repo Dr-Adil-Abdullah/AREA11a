@@ -15,6 +15,7 @@ public sealed class PurchaseService
     private readonly Database _db;
     private readonly AuditService _audit;
     private readonly NumberingService _numbering;
+    private readonly SettingsService _settings;
     private readonly PermissionService _permissions;
     private readonly LogService _log;
 
@@ -22,12 +23,14 @@ public sealed class PurchaseService
         Database db,
         AuditService audit,
         NumberingService numbering,
+        SettingsService settings,
         PermissionService permissions,
         LogService log)
     {
         _db = db;
         _audit = audit;
         _numbering = numbering;
+        _settings = settings;
         _permissions = permissions;
         _log = log;
     }
@@ -60,24 +63,123 @@ public sealed class PurchaseService
         }
     }
 
-    public ServiceResult<List<BatchView>> GetBatches(int productId)
+    /// <summary>
+    /// Portion 11: the saved purchase as an invoice for the file. Read from the database, so a
+    /// reprint never depends on the lines still sitting on the screen; read-only, changes nothing.
+    /// </summary>
+    public ServiceResult<ReceiptDocument> BuildInvoiceDocument(int purchaseId, User? user)
     {
         try
         {
             using var connection = _db.Open();
-            var rows = _db.Query<BatchView>(connection, @"
-SELECT id, product_id, batch_no, expiry_date, expiry_ym, qty_base, cost_paisa, retail_paisa, is_sample
-FROM batches
-WHERE product_id = @productId AND active = 1 AND qty_base <> 0
-ORDER BY CASE WHEN expiry_date IS NULL OR expiry_date = '' THEN 1 ELSE 0 END, expiry_date, id;",
-                new { productId });
+            var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Purchases);
+            var canSeeCost = CostPolicy.CanSee(_permissions, _settings, reader);
+            var header = _db.QuerySingle<PurchaseInvoiceHeader>(connection, @"
+SELECT p.code AS code, p.supplier_invoice_no AS supplierInvoiceNo, p.date AS date,
+       p.total_paisa AS totalPaisa, p.paid_paisa AS paidPaisa, p.due_paisa AS duePaisa,
+       s.name AS supplierName
+FROM purchases p
+JOIN suppliers s ON s.id = p.supplier_id
+WHERE p.id = @id;", new { id = purchaseId });
+            if (header is null)
+            {
+                return ServiceResult<ReceiptDocument>.Fail("That purchase no longer exists.");
+            }
 
-            return ServiceResult<List<BatchView>>.Success(rows);
+            var lines = _db.Query<PurchaseInvoiceLine>(connection, @"
+SELECT p.name AS productName, i.qty_entered AS qtyEntered, i.unit AS unit,
+       i.batch_no AS batchNo, i.expiry_date AS expiryDate,
+       i.line_total_paisa AS lineTotalPaisa,
+       CASE WHEN b.is_sample = 1 THEN 1 ELSE 0 END AS isSample
+FROM purchase_items i
+JOIN products p ON p.id = i.product_id
+LEFT JOIN batches b ON b.id = i.batch_id
+WHERE i.purchase_id = @id
+ORDER BY i.id;", new { id = purchaseId });
+
+            var width = ReceiptService.ColumnsForMillimetres(_settings.GetInt("printer.width", 58));
+            var document = new ReceiptDocument
+            {
+                Title = "Purchase " + header.Code,
+                Width = width,
+                AutoCut = _settings.GetBool("printer.autoCut", true),
+                Copies = 1
+            };
+
+            void Add(string text, ReceiptAlign align = ReceiptAlign.Left, bool bold = false, bool big = false) =>
+                document.Lines.Add(new ReceiptLine(ReceiptService.Fit(text, width), align, bold, big));
+
+            void Pair(string left, string right, bool bold = false) =>
+                document.Lines.Add(new ReceiptLine(ReceiptService.TwoColumns(left, right, width), ReceiptAlign.Left, bold));
+
+            var shop = _settings.GetString("store.name");
+            if (!string.IsNullOrWhiteSpace(shop))
+            {
+                Add(shop!.Trim(), ReceiptAlign.Center, bold: true);
+            }
+
+            Add("PURCHASE INVOICE", ReceiptAlign.Center, bold: true, big: true);
+            Add(header.Code, ReceiptAlign.Center, bold: true);
+            Add("Supplier: " + header.SupplierName);
+            if (!string.IsNullOrWhiteSpace(header.SupplierInvoiceNo))
+            {
+                Add("Their bill: " + header.SupplierInvoiceNo!.Trim());
+            }
+
+            if (!string.IsNullOrWhiteSpace(header.Date))
+            {
+                Add("Date: " + header.Date!.Trim());
+            }
+
+            document.Lines.Add(ReceiptLine.Sep(width));
+
+            foreach (var line in lines)
+            {
+                var head = line.ProductName + (line.IsSample ? " (free)" : string.Empty);
+                Add(head, ReceiptAlign.Left, bold: true);
+                Pair("    " + line.QtyLabel, canSeeCost ? Money.Format(line.LineTotalPaisa) : "hidden");
+                var where = (line.BatchNo ?? string.Empty).Trim();
+                if (!string.IsNullOrWhiteSpace(line.ExpiryDate))
+                {
+                    where += (where.Length == 0 ? string.Empty : "  ") + "exp " + line.ExpiryDate!.Trim();
+                }
+
+                if (where.Length > 0)
+                {
+                    Add("    " + where);
+                }
+            }
+
+            document.Lines.Add(ReceiptLine.Sep(width));
+            Pair("Total", canSeeCost ? Money.Format(header.TotalPaisa) : "hidden", bold: true);
+            if (!canSeeCost)
+            {
+                // Paid + Due would reconstruct Total, even when every line amount is hidden.
+                // Do not show synthetic zeroes or disclose which amounts happened to be positive.
+                Pair("Paid", "hidden");
+                Pair("Due", "hidden");
+            }
+            else if (header.PaidPaisa > 0)
+            {
+                // The method comes from the payment row itself, so a reprint shows the same till
+                // the money left from - cash from the drawer, online/card from the bank.
+                var paidMethod = Convert.ToString(_db.Scalar(connection,
+                    "SELECT method FROM payments WHERE purchase_id = @id LIMIT 1;",
+                    new { id = purchaseId })) ?? "cash";
+                Pair("Paid (" + paidMethod + ")", Money.Format(header.PaidPaisa));
+                Pair("Due", Money.Format(header.DuePaisa), header.DuePaisa > 0);
+            }
+
+            return ServiceResult<ReceiptDocument>.Success(document);
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult<ReceiptDocument>.Fail(exception.Message);
         }
         catch (Exception exception)
         {
-            _log.Error($"Batches of product {productId} could not be loaded.", exception);
-            return ServiceResult<List<BatchView>>.Fail("Batches could not be loaded.");
+            _log.Error("The purchase invoice could not be prepared.", exception);
+            return ServiceResult<ReceiptDocument>.Fail("The purchase invoice could not be prepared. Refresh and try again.");
         }
     }
 
@@ -134,7 +236,7 @@ VALUES(@code, @supplierId, @invoiceNo, @date, 0, 0, 0, 0, 0, @notes, @userId, @c
             var unit = (line.Unit ?? "box").Trim().ToLowerInvariant();
             var unitsPerSelected = unit switch
             {
-                "box" => (double)(Math.Max(1, product.BoxStrips) * Math.Max(1, product.StripTablets)),
+                "box" => product.BoxStrips > 0 ? (double)(Math.Max(1, product.BoxStrips) * Math.Max(1, product.StripTablets)) : 1d,
                 "strip" => (double)Math.Max(1, product.StripTablets),
                 _ => 1d
             };
@@ -249,12 +351,17 @@ UPDATE purchases SET subtotal_paisa = @total, total_paisa = @total, paid_paisa =
 
         if (paid > 0)
         {
+            // Phase 3 (owner, Nov 2026): the supplier is sometimes paid from the bank, and bank
+            // money must not move the drawer. The drawer counts only `cash` rows, so the method
+            // written here decides which till the money came from.
+            var method = NormalizePaidMethod(input.PaidMethod);
             _db.Execute(connection, @"
 INSERT INTO payments(date, method, amount_paisa, purchase_id, supplier_id, user_id, note)
-VALUES(@at, 'cash', @amount, @purchaseId, @supplierId, @userId, @note);",
+VALUES(@at, @method, @amount, @purchaseId, @supplierId, @userId, @note);",
                 new
                 {
                     at = stamp,
+                    method,
                     amount = paid,
                     purchaseId,
                     supplierId = input.SupplierId,
@@ -267,8 +374,16 @@ VALUES(@at, 'cash', @amount, @purchaseId, @supplierId, @userId, @note);",
                 new { paid, id = input.SupplierId });
         }
 
+        // The method is logged only when money actually moved; with nothing paid there is no
+        // payment row, so writing "cash" would invent a drawer movement that never happened.
+        var auditValue = paid > 0
+            ? "(" + code + " from " + supplier.Name + ": total " + totalPaisa + ", paid " + paid
+                + " by " + NormalizePaidMethod(input.PaidMethod) + ", lines " + input.Lines.Count + ")"
+            : "(" + code + " from " + supplier.Name + ": total " + totalPaisa + ", paid " + paid
+                + ", lines " + input.Lines.Count + ")";
+
         _audit.Record(connection, user, "Purchases", "purchase_create", "purchases", purchaseId.ToString(),
-            newValue: $"{{\"code\":\"{code}\",\"supplier\":\"{supplier.Name}\",\"total\":{totalPaisa},\"paid\":{paid},\"lines\":{input.Lines.Count}}}");
+            newValue: auditValue);
 
         return ServiceResult<PurchaseResult>.Success(new PurchaseResult
         {
@@ -278,6 +393,33 @@ VALUES(@at, 'cash', @amount, @purchaseId, @supplierId, @userId, @note);",
             Units = totalUnits,
             Warnings = warnings
         }, warnings.ToArray());
+    }
+
+    /// <summary>
+    /// Cash, online or card - the same three ways the Suppliers page pays with. Anything else
+    /// (including the null of an old draft) means cash, the way every earlier purchase was written.
+    /// </summary>
+    private static string NormalizePaidMethod(string? method)
+    {
+        var clean = (method ?? "cash").Trim().ToLowerInvariant();
+        return clean is "cash" or "online" or "card" ? clean : "cash";
+    }
+
+    private sealed class PurchaseInvoiceHeader
+    {
+        public string Code { get; set; } = string.Empty;
+
+        public string? SupplierInvoiceNo { get; set; }
+
+        public string? Date { get; set; }
+
+        public long TotalPaisa { get; set; }
+
+        public long PaidPaisa { get; set; }
+
+        public long DuePaisa { get; set; }
+
+        public string SupplierName { get; set; } = string.Empty;
     }
 
     private sealed class ProductRow

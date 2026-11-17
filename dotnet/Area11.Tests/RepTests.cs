@@ -345,7 +345,7 @@ VALUES(@saleId, @product, 1, 'base', 1, 50000, 50000, 20000);",
     // ============================== helpers ==============================
 
     private static RepService Reps(TestDatabase test) =>
-        new(test.Database, test.Audit, TestData.Permissions(test), test.Log);
+        new(test.Database, test.Audit, test.Settings, TestData.Permissions(test), test.Log);
 
     private static int AddCompany(TestDatabase test, string name)
     {

@@ -254,7 +254,7 @@ public sealed class StockTests
 
         Assert.Equal("Brufen 400mg", row.ProductName);
         Assert.Equal("B-1", row.BatchNo);
-        Assert.Equal("Owner", row.UserName);
+        Assert.Equal(TestData.SeedOwnerName, row.UserName);
         Assert.Equal("Expired", row.ReasonLabel);
         Assert.Equal("-30", row.SignedQtyLabel);   // 3 strips x 10 tablets
         Assert.Equal(3d, row.QtyEntered ?? 0d);

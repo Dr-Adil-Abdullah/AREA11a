@@ -132,7 +132,7 @@ public sealed class DraftSummary
     /// <summary>True when a previous post was interrupted after the pre-mark; see DraftService.</summary>
     public bool NeedsPostCheck { get; set; }
 
-    public string TypeLabel => DraftType.LabelFor(DraftType);
+    public string TypeLabel => global::Area11.Core.Models.DraftType.LabelFor(DraftType);
 
     public string Headline =>
         DraftKey + " · " + Lines + (Lines == 1 ? " line" : " lines")
@@ -183,6 +183,11 @@ public sealed class GenericFormula
 
     public int SortOrder { get; set; }
 
+    /// <summary>Current products explicitly linked to this salt (legacy typed text is not counted).</summary>
+    public int ProductCount { get; set; }
+
+    public string ActiveLabel => Active ? "Active" : "Put away";
+
     public string? CreatedAt { get; set; }
 
     public string? UpdatedAt { get; set; }
@@ -203,6 +208,14 @@ public sealed class BrandDefinition
 
     public int SortOrder { get; set; }
 
+    /// <summary>Current products explicitly linked to this brand (legacy typed text is not counted).</summary>
+    public int ProductCount { get; set; }
+
+    /// <summary>Display name of the linked company, or null when the brand stands alone (P9).</summary>
+    public string? CompanyName { get; set; }
+
+    public string ActiveLabel => Active ? "Active" : "Put away";
+
     public string? CreatedAt { get; set; }
 
     public string? UpdatedAt { get; set; }
@@ -215,9 +228,23 @@ public sealed class ProductSupplierDirectoryRow
 
     public int SupplierId { get; set; }
 
+    public string? SupplierName { get; set; }
+
     public bool IsPreferred { get; set; }
 
     public string? LastPurchasedAt { get; set; }
+}
+
+/// <summary>One supplier offered by the product filter: preferred and/or genuine history (P9).</summary>
+public sealed class ProductSupplierOption
+{
+    public int SupplierId { get; set; }
+
+    public string Name { get; set; } = string.Empty;
+
+    public int ProductCount { get; set; }
+
+    public override string ToString() => Name;
 }
 
 public static class DrawerStage
@@ -228,27 +255,9 @@ public static class DrawerStage
     public static readonly string[] All = { Opening, Closing };
 }
 
-/// <summary>One non-zero opening or closing drawer difference, including its mandatory reason.</summary>
-public sealed class ShiftDiscrepancy
-{
-    public int Id { get; set; }
-
-    public int ShiftId { get; set; }
-
-    public string Stage { get; set; } = DrawerStage.Opening;
-
-    public long ExpectedPaisa { get; set; }
-
-    public long CountedPaisa { get; set; }
-
-    public long DifferencePaisa { get; set; }
-
-    public string Reason { get; set; } = string.Empty;
-
-    public string? AlertedAt { get; set; }
-
-    public string? CreatedAt { get; set; }
-}
+// The drawer-difference row lives in ShiftModels.cs (Portion 14); this file keeps only
+// DrawerStage, which the foundation tests still use. A second copy here broke the build
+// (CS0101) because the static checker cannot see duplicate definitions.
 
 /// <summary>
 /// Receipt for an isolated schema-only rebuild. A first copy has no previous database and therefore

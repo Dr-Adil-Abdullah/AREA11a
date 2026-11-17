@@ -70,13 +70,14 @@ public sealed class SupplierLedgerService
     // --------------------------------------------------------------------- reads
 
     /// <summary>The supplier list with the payable, searchable by name, agency or phone.</summary>
-    public ServiceResult<List<SupplierSummary>> List(string? search = null, bool onlyOwing = false)
+    public ServiceResult<List<SupplierSummary>> List(User? user, string? search = null, bool onlyOwing = false)
     {
         try
         {
             var term = (search ?? string.Empty).Trim();
 
             using var connection = _db.Open();
+            LedgerReadAccess.Require(_db, connection, _permissions, user, Modules.Suppliers);
 
             var rows = _db.Query<SupplierSummary>(connection, SummarySql + @"
 WHERE s.active = 1
@@ -87,6 +88,10 @@ ORDER BY s.balance_paisa DESC, s.name COLLATE NOCASE;",
 
             return ServiceResult<List<SupplierSummary>>.Success(rows);
         }
+        catch (ValidationException exception)
+        {
+            return ServiceResult<List<SupplierSummary>>.Fail(exception.Message);
+        }
         catch (Exception exception)
         {
             _log.Error("The supplier list could not be loaded.", exception);
@@ -95,11 +100,12 @@ ORDER BY s.balance_paisa DESC, s.name COLLATE NOCASE;",
     }
 
     /// <summary>One supplier: the numbers, every movement, and the payable rebuilt from history.</summary>
-    public ServiceResult<SupplierPage> Page(int supplierId)
+    public ServiceResult<SupplierPage> Page(User? user, int supplierId)
     {
         try
         {
             using var connection = _db.Open();
+            LedgerReadAccess.Require(_db, connection, _permissions, user, Modules.Suppliers);
 
             var summary = _db.QuerySingle<SupplierSummary>(connection, SummarySql + @"
 WHERE s.id = @id;", new { id = supplierId });
@@ -143,6 +149,10 @@ WHERE s.id = @id;", new { id = supplierId });
 
             return ServiceResult<SupplierPage>.Success(page);
         }
+        catch (ValidationException exception)
+        {
+            return ServiceResult<SupplierPage>.Fail(exception.Message);
+        }
         catch (Exception exception)
         {
             _log.Error("The page of supplier " + supplierId + " could not be loaded.", exception);
@@ -151,11 +161,13 @@ WHERE s.id = @id;", new { id = supplierId });
     }
 
     /// <summary>Expired stock still on the shelf - the goods the owner sends back first (9.3.3).</summary>
-    public ServiceResult<List<ExpiredBatchRow>> ExpiredBatches(int limit = 50)
+    public ServiceResult<List<ExpiredBatchRow>> ExpiredBatches(User? user, int limit = 50)
     {
         try
         {
             using var connection = _db.Open();
+            var reader = LedgerReadAccess.Require(_db, connection, _permissions, user, Modules.Suppliers);
+            var canSeeCost = CostPolicy.CanSee(_permissions, _settings, reader);
 
             var rows = _db.Query<ExpiredBatchRow>(connection, @"
 SELECT b.id AS batchId, b.product_id AS productId, p.name AS productName, b.batch_no AS batchNo,
@@ -169,7 +181,16 @@ WHERE b.active = 1 AND b.qty_base > 0
 ORDER BY b.expiry_date ASC, p.name COLLATE NOCASE
 LIMIT @limit;", new { limit = Math.Clamp(limit, 1, 500) });
 
+            foreach (var row in rows)
+            {
+                row.CostKnown = canSeeCost;
+                if (!canSeeCost) row.CostPaisa = 0;
+            }
             return ServiceResult<List<ExpiredBatchRow>>.Success(rows);
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult<List<ExpiredBatchRow>>.Fail(exception.Message);
         }
         catch (Exception exception)
         {
@@ -311,9 +332,81 @@ VALUES(@at, @method, @amount, @supplierId, @userId, @note);",
     // ------------------------------------------------------------------ statement
 
     /// <summary>The supplier's statement on the same 58 / 80 mm pipeline as every other slip.</summary>
-    public ServiceResult<ReceiptDocument> Statement(int supplierId)
+    /// <summary>
+    /// Portion 11: one bulk job for several picked suppliers. Every supplier must build or none
+    /// does. The summary lists name, phone and what the shop owes for the a4_list format.
+    /// </summary>
+    public ServiceResult<BulkPrintJob> BuildBulkStatements(User? user, IReadOnlyList<int> ids)
     {
-        var page = Page(supplierId);
+        var clean = ids.Where(id => id > 0).Distinct().OrderBy(id => id).ToList();
+        if (clean.Count == 0)
+        {
+            return ServiceResult<BulkPrintJob>.Fail("Pick at least one supplier first.");
+        }
+
+        try
+        {
+            var documents = new List<ReceiptDocument>();
+            var summaries = new List<SupplierSummary>();
+            foreach (var id in clean)
+            {
+                var page = Page(user, id);
+                if (!page.Ok || page.Value is null)
+                {
+                    return ServiceResult<BulkPrintJob>.Fail(
+                        "Supplier " + id + " could not be prepared; nothing was printed.");
+                }
+
+                var built = Statement(user, id);
+                if (!built.Ok || built.Value is null)
+                {
+                    return ServiceResult<BulkPrintJob>.Fail(
+                        "Supplier " + id + " could not be prepared; nothing was printed.");
+                }
+
+                documents.Add(built.Value);
+                summaries.Add(page.Value.Summary);
+            }
+
+            var width = ReceiptService.ColumnsForMillimetres(_settings.GetInt("printer.width", 58));
+            var summary = new ReceiptDocument
+            {
+                Title = "Suppliers (" + summaries.Count + ")",
+                Width = width,
+                AutoCut = _settings.GetBool("printer.autoCut", true),
+                Copies = 1
+            };
+            summary.Lines.Add(new ReceiptLine(ReceiptService.Fit("SUPPLIERS (" + summaries.Count + ")", width), ReceiptAlign.Center, bold: true));
+            summary.Lines.Add(ReceiptLine.Sep(width));
+            foreach (var row in summaries)
+            {
+                summary.Lines.Add(new ReceiptLine(ReceiptService.Fit(row.Name, width), ReceiptAlign.Left, bold: true));
+                summary.Lines.Add(new ReceiptLine(ReceiptService.TwoColumns(
+                    (row.Phone ?? string.Empty).Trim(), Money.Format(row.PayablePaisa), width)));
+            }
+
+            summary.Lines.Add(ReceiptLine.Sep(width));
+            summary.Lines.Add(new ReceiptLine(
+                ReceiptService.TwoColumns("TOTAL OWED", Money.Format(summaries.Sum(row => row.PayablePaisa)), width),
+                ReceiptAlign.Left, bold: true));
+
+            return ServiceResult<BulkPrintJob>.Success(new BulkPrintJob
+            {
+                Title = "Suppliers (" + summaries.Count + ")",
+                Documents = documents,
+                Summary = summary
+            });
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The bulk statements could not be prepared.", exception);
+            return ServiceResult<BulkPrintJob>.Fail("The bulk statements could not be prepared. " + exception.Message);
+        }
+    }
+
+    public ServiceResult<ReceiptDocument> Statement(User? user, int supplierId)
+    {
+        var page = Page(user, supplierId);
 
         if (!page.Ok || page.Value is null)
         {

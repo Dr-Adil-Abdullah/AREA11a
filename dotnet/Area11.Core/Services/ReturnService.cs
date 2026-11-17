@@ -487,12 +487,18 @@ VALUES(@productId, @batchId, 'return_in', @qty, 'sale_return', @returnOf, @code,
             if (wanted.QtyBase > item.RemainingBase + 0.0005)
             {
                 throw new ValidationException(
-                    $"{item.Name}: this bill had {Qty.Format(item.QtyEntered)} {item.UnitSold}, " +
+                    $"{item.Name}: this bill had {Qty.Format(item.QtyEntered)} {Packs.Display(item.UnitSold)}, " +
                     $"{Qty.Format(item.AlreadyReturnedBase)} already returned - " +
-                    $"now only {Qty.Format(item.RemainingUnits)} {item.UnitSold} can be returned.");
+                    $"now only {Qty.Format(item.RemainingUnits)} {Packs.Display(item.UnitSold)} can be returned.");
             }
 
             var wholeRemainder = Math.Abs(wanted.QtyBase - item.RemainingBase) < 0.0005;
+
+            if (!wholeRemainder && UnitPolicy.RequiresWhole(_db, connection, item.BaseUnit) && !Qty.IsWhole(wanted.QtyBase))
+            {
+                throw new ValidationException(
+                    item.Name + ": a return uses whole " + (item.BaseUnit ?? "unit") + " units; strength is not a stock division.");
+            }
 
             var refund = wholeRemainder
                 ? item.RemainingPaisa
@@ -516,6 +522,8 @@ VALUES(@productId, @batchId, 'return_in', @qty, 'sale_return', @returnOf, @code,
             throw new ValidationException("Choose at least one item and a quantity to return.");
         }
 
+        if (sale.ExtraDiscountPaisa > 0)
+            warnings.Add($"This bill had Extra Discount {Money.Format(sale.ExtraDiscountPaisa)}. Original item values are used first, then capped by the bill value still refundable. Later items can receive less; the original product prices are unchanged.");
         var requestedRefundTotal = lines.Sum(line => line.RefundPaisa);
 
         // Two caps protect the same original bill. Line allocations stop repeated products/split
@@ -541,7 +549,9 @@ VALUES(@productId, @batchId, 'return_in', @qty, 'sale_return', @returnOf, @code,
             }
 
             warnings.Add(
-                $"Earlier no-bill refunds already used this bill's value. This return is capped at " +
+                (sale.ExtraDiscountPaisa > 0
+                    ? "Extra Discount and earlier refunds limit this bill. This return is capped at "
+                    : "Earlier no-bill refunds already used this bill's value. This return is capped at ") +
                 $"{Money.Format(remainingValue)} instead of {Money.Format(requestedRefundTotal)}.");
         }
 
@@ -589,7 +599,9 @@ VALUES(@productId, @batchId, 'return_in', @qty, 'sale_return', @returnOf, @code,
         {
             warnings.Add(remainingValue == 0 && sale.ProvisionalRefundedPaisa > 0
                 ? "No refundable bill value remains after the linked no-bill refund; the goods can still be returned with a zero refund."
-                : "The refund for these items is zero - they were free or fully discounted.");
+                : sale.ExtraDiscountPaisa > 0 && remainingValue == 0
+                    ? "No refundable bill value remains after Extra Discount and earlier returns; these goods can still be returned with a zero refund."
+                    : "The refund for these items is zero - they were free or fully discounted.");
         }
 
         return new ReturnPlan
@@ -610,7 +622,7 @@ VALUES(@productId, @batchId, 'return_in', @qty, 'sale_return', @returnOf, @code,
     {
         var sale = _db.QuerySingle<SaleRow>(connection, @"
 SELECT s.id, s.code, s.date, s.customer_id AS customerId,
-       s.paid_paisa AS paidPaisa, s.total_paisa AS totalPaisa, s.status,
+       s.paid_paisa AS paidPaisa, s.total_paisa AS totalPaisa, s.extra_discount_paisa, s.status,
        COALESCE((SELECT SUM(r.cash_refund_paisa) FROM sale_returns r WHERE r.sale_id = s.id), 0) AS cashRefundedPaisa,
        COALESCE((SELECT SUM(r.refund_paisa) FROM sale_returns r WHERE r.sale_id = s.id), 0) AS normalRefundedPaisa,
        COALESCE((SELECT SUM(pr.refund_paisa) FROM provisional_returns pr
@@ -657,9 +669,10 @@ GROUP BY a.sale_item_id;", new { id = sale.Id })
             .ToDictionary(row => row.SaleItemId);
 
         var items = _db.Query<ItemRow>(connection, @"
-SELECT id AS saleItemId, product_id AS productId, batch_id AS batchId, name_snapshot AS name,
-       qty_base AS qtyBase, qty_entered AS qtyEntered, unit_sold AS unitSold, line_total_paisa AS lineTotalPaisa
-FROM sale_items WHERE sale_id = @id ORDER BY id;", new { id = sale.Id });
+SELECT si.id AS saleItemId, si.product_id AS productId, si.batch_id AS batchId, si.name_snapshot AS name,
+       si.qty_base AS qtyBase, si.qty_entered AS qtyEntered, si.unit_sold AS unitSold,
+       si.line_total_paisa AS lineTotalPaisa, p.base_unit AS baseUnit
+FROM sale_items si LEFT JOIN products p ON p.id = si.product_id WHERE si.sale_id = @id ORDER BY si.id;", new { id = sale.Id });
 
         foreach (var item in items)
         {
@@ -691,6 +704,7 @@ FROM sale_items WHERE sale_id = @id ORDER BY id;", new { id = sale.Id });
         public long PaidPaisa { get; set; }
 
         public long TotalPaisa { get; set; }
+        public long ExtraDiscountPaisa { get; set; }
 
         public string? Status { get; set; }
 
@@ -704,6 +718,8 @@ FROM sale_items WHERE sale_id = @id ORDER BY id;", new { id = sale.Id });
     private sealed class ItemRow : ReturnLineOption
     {
         public int? BatchId { get; set; }
+
+        public string? BaseUnit { get; set; }
     }
 
     private sealed class ReturnedRow

@@ -64,6 +64,8 @@ VIEW_MODEL_OF = {
     "ProductsView.xaml": "ProductsViewModel",
     "ProductEditorWindow.xaml": "ProductsViewModel",
     "PosView.xaml": "PosViewModel",
+    "LinePricingWindow.xaml": "LinePricingViewModel",
+    "PermissionDetailsWindow.xaml": "PermissionDetailsViewModel",
     "PageFaultView.xaml": "PageFaultViewModel",
     "PurchasesView.xaml": "PurchasesViewModel",
     "SettingsView.xaml": "SettingsViewModel",
@@ -96,6 +98,7 @@ VIEW_MODEL_OF = {
     "CloudSyncView.xaml": "CloudSyncViewModel",
     "SaleHistoryView.xaml": "SaleHistoryViewModel",
     "BookCheckView.xaml": "BookCheckViewModel",
+    "TimeCorrectionWindow.xaml": "TimeCorrectionViewModel",
 }
 
 
@@ -1356,7 +1359,8 @@ def check_app_labels() -> None:
 
     # Partners is deliberately a three-tab container: it has a menu title but no PageTitle of its
     # own. Do not add a duplicate heading merely to make this set uniform.
-    titleless = {"partners"}
+    # Owner removed Counter's duplicate in-page heading in v0.76.0; its selected shell label stays.
+    titleless = {"partners", "counter"}
     partners_text = partners_view.read_text(encoding="utf-8-sig")
     if "PageTitle" in partners_text or "<views:CustomersView" not in partners_text:
         fail("PartnersView is no longer the known titleless tab container; update the label route check")
@@ -4482,9 +4486,14 @@ def check_shop_clock() -> None:
 
     source_text = source.read_text(encoding="utf-8", errors="replace")
 
-    if "LargestAcceptedOffset" not in source_text or "FromDays(2)" not in source_text:
-        fail("TimeSource no longer refuses an answer that is more than two days out - one wrong "
-             "server would move every bill in the shop")
+    if "LargestAcceptedOffset" not in source_text or "FromDays(30)" not in source_text:
+        fail("TimeSource lost the thirty-day garbage bound - one wrong server would move every "
+             "bill in the shop (the two-day refusal is gone on the owner's word, Nov 2026, but "
+             "a garbage answer must still be refused)")
+
+    if "IsPlausible" not in source_text:
+        fail("TimeSource lost the pure plausibility question - the tests could no longer ask about "
+             "a three-day drift without moving every stamp in the program")
 
     policy_text = policy.read_text(encoding="utf-8", errors="replace")
 
@@ -4513,6 +4522,48 @@ def check_shop_clock() -> None:
 
     if "status = 'open'" not in sales_text:
         fail("SaleService does not read the open shift - the drawer gate cannot be answered")
+
+    # The bill-time fix (v0.68.0, owner's word Nov 2026): the counter records the drift on every
+    # bill, the owner fixes the wrongly-stamped ones together in one action, and the paper and the
+    # black box keep both times. Each half is pinned - a fix that forgets the money rows, the audit
+    # lines or the paper would look perfect on the screen and be wrong in the books.
+    if "time_offset_seconds" not in sales_text or "TimeSource.Offset" not in sales_text:
+        fail("SaleService no longer records the drift on the bill - the fix could not know which "
+             "bills were stamped with the wrong clock")
+
+    fix = DOTNET / "Area11.Core/Services/TimeCorrectionService.cs"
+    receipts = DOTNET / "Area11.Core/Services/ReceiptService.cs"
+
+    if not fix.exists():
+        fail("TimeCorrectionService.cs is missing - the wrongly-stamped bills could not be fixed together")
+    else:
+        fix_text = fix.read_text(encoding="utf-8", errors="replace")
+
+        if "OwnerAccess.Require(_db, connection, user);" not in fix_text or "Only the owner can fix the time on bills" not in fix_text:
+            fail("TimeCorrectionService lost the owner gate - a cashier could move the day's حساب")
+
+        if '"sale_time_fixed"' not in fix_text or "oldValue" not in fix_text or "newValue" not in fix_text:
+            fail("TimeCorrectionService does not write both times into the black box - a moved bill "
+                 "could never be traced back to its wrong stamp")
+
+        if "UPDATE payments SET date" not in fix_text:
+            fail("TimeCorrectionService leaves the money rows on the wrong day - the day's collection "
+                 "and the day's sales would sit in different days")
+
+        if "_db.Tx(" not in fix_text:
+            fail("TimeCorrectionService does not fix the range in one transaction - a half-fixed range "
+                 "would be worse than none")
+
+    if receipts.exists():
+        receipts_text = receipts.read_text(encoding="utf-8", errors="replace")
+
+        if "First stamped" not in receipts_text or "Correct time" not in receipts_text:
+            fail("ReceiptService no longer prints both times on a corrected bill - the wrong stamp "
+                 "would be rewritten out of history")
+
+        if "big: true" not in receipts_text and "doubleHeight: true" not in receipts_text:
+            fail("ReceiptService no longer prints the correct time BIG - the customer would read the "
+                 "small wrong stamp as the day of his bill")
 
     pos_text = pos.read_text(encoding="utf-8", errors="replace")
 
@@ -4867,8 +4918,8 @@ def check_phase_one_shell() -> None:
         if needle not in window:
             fail(f"Shell header section binding missing {needle}")
 
-    if shell.count("SettingsTabItems.Add(new SettingsTabItem(") != 7:
-        fail("Settings shell must expose the original sections and the Fields section")
+    if shell.count("SettingsTabItems.Add(new SettingsTabItem(") != 8:
+        fail("Settings shell must expose all eight contents, including identity and Fields")
 
     for obsolete in ("menu.collapsedGroups", "menu.pinnedOpen", "ToggleGroup", "SetCollapsed"):
         if obsolete in shell:
@@ -4890,6 +4941,109 @@ def check_phase_one_shell() -> None:
         fail("Products no longer exposes a read-only filter id for header synchronization")
     if "public bool IsCurrentModule" not in nav or "public bool IsCurrentPage" not in nav:
         fail("NavItem no longer exposes distinct active module and active page states")
+
+    # Owner's 2026-11-11 crash (InvalidOperationException, "while a Window is closing"): setting
+    # DialogResult on a modal dialog already closes it, so an explicit Close() on the next line
+    # runs against a closing window and explodes. WPF cannot run here, so the ban is structural.
+    dialog_result = re.compile(r"^\s*(\w+\.)?DialogResult\s*=\s*(true|false)\s*;\s*$")
+    for behind in sorted((DOTNET / "Area11.Desktop").rglob("*.xaml.cs")):
+        lines = behind.read_text(encoding="utf-8-sig").splitlines()
+        for index, line in enumerate(lines[:-1]):
+            if dialog_result.match(line) and lines[index + 1].strip() == "Close();":
+                fail(f"{rel(behind)}:{index + 2} calls Close() right after DialogResult - "
+                     "the dialog already closes itself and this crashes (Nov 2026)")
+
+    # Kiosk login (owner's word, Nov 2026, v0.66.0): auto-start PCs sign in fullscreen with the
+    # taskbar really hidden. WPF cannot run here, so the wiring is pinned structurally: the login
+    # hides on kiosk entry (auto/protected only) and restores on close, the crash box parents to
+    # the open window (an ownerless box would hide UNDER the topmost login), and the app heals a
+    # kill-orphaned taskbar at startup and forces it back at exit (first copy only, both times).
+    taskbar_path = DOTNET / "Area11.Desktop/TaskbarHider.cs"
+    login_path = DOTNET / "Area11.Desktop/Views/LoginWindow.xaml.cs"
+    crash_path = DOTNET / "Area11.Desktop/CrashReporter.cs"
+    app_shell_path = DOTNET / "Area11.Desktop/App.xaml.cs"
+    for path in (taskbar_path, login_path, crash_path, app_shell_path):
+        if not path.exists():
+            fail(f"Kiosk login is incomplete: {rel(path)} is missing")
+    if all(path.exists() for path in (taskbar_path, login_path, crash_path, app_shell_path)):
+        taskbar_text = taskbar_path.read_text(encoding="utf-8-sig")
+        login_text = login_path.read_text(encoding="utf-8-sig")
+        crash_text = crash_path.read_text(encoding="utf-8-sig")
+        app_shell_text = app_shell_path.read_text(encoding="utf-8-sig")
+        for needle, reason in (
+            ("Shell_TrayWnd", "the taskbar window is not addressed"),
+            ("Shell_SecondaryTrayWnd", "extra monitors keep their taskbar"),
+        ):
+            if needle not in taskbar_text:
+                fail(f"Kiosk TaskbarHider: {reason}")
+        for needle, reason in (
+            ("WantsAutoStart", "fullscreen is not limited to auto-start PCs"),
+            ("WindowStyle.None", "the kiosk login keeps its frame"),
+            ("Topmost = true", "another window can sit above the kiosk login"),
+            ("TaskbarHider.Hide()", "the kiosk login does not hide the taskbar"),
+            ("TaskbarHider.Show()", "a closed login can orphan the taskbar hidden"),
+        ):
+            if needle not in login_text:
+                fail(f"Kiosk LoginWindow: {reason} ({needle})")
+        if "MessageBox.Show(owner" not in crash_text:
+            fail("Kiosk CrashReporter: the crash box can open under the topmost login")
+        if app_shell_text.count("TaskbarHider.EnsureVisible()") < 2:
+            fail("Kiosk App: the startup heal and the exit restore are not both present")
+
+    # Owner's 2026-11-11 stack trace (VerifyNotClosing <- InternalClose <- ConfirmShellClosing):
+    # calling Close() re-entrantly from inside a Closing handler explodes, so the post-unlock
+    # close must be deferred past the event (Dispatcher.BeginInvoke). Both guarded windows carry
+    # the pattern, so both are pinned: no bare Close() line, and the deferred close must exist.
+    for guarded in (DOTNET / "Area11.Desktop/Views/ShellWindow.xaml.cs",
+                    DOTNET / "Area11.Desktop/Views/LoginWindow.xaml.cs"):
+        guarded_lines = guarded.read_text(encoding="utf-8-sig").splitlines()
+        if not any("BeginInvoke" in line and "Close" in line for line in guarded_lines):
+            fail(f"{rel(guarded)} must defer its post-unlock Close past the Closing event (Nov 2026)")
+        for index, line in enumerate(guarded_lines):
+            if line.strip() == "Close();":
+                fail(f"{rel(guarded)}:{index + 1} calls Close() directly - a guarded window must "
+                     "defer it past Closing or VerifyNotClosing crashes (Nov 2026)")
+
+    # Repair (owner's word, Nov 2026, v0.67.0): every Settings section opened its NEIGHBOUR's tab -
+    # the headerless TabControl starts with "App name & icon" at 0, so Shop is 1, not 0. WPF cannot
+    # run here, so each section number is pinned against its true tab, with "My settings" too.
+    for needle, reason in (
+        ('SettingsTabItems.Add(new SettingsTabItem(1, "Shop"))', "Shop section lost tab 1"),
+        ('SettingsTabItems.Add(new SettingsTabItem(2, "Printing"))', "Printing lost tab 2"),
+        ('SettingsTabItems.Add(new SettingsTabItem(3, "Sales rules"))', "Sales rules lost tab 3"),
+        ('SettingsTabItem(4, _services.AppLabels.Get("cloud")', "Cloud section lost tab 4"),
+        ('SettingsTabItems.Add(new SettingsTabItem(5, "Staff & permissions"))', "Staff lost tab 5"),
+        ('SettingsTabItems.Add(new SettingsTabItem(6, "App words"))', "App words lost tab 6"),
+        ('SettingsTabItems.Add(new SettingsTabItem(7, "Fields"))', "Fields section lost tab 7"),
+        ("ShowSettings(5)", "My settings no longer opens the Staff tab"),
+    ):
+        if needle not in shell:
+            fail(f"Settings sections: {reason} ({needle})")
+
+    # Lockdown chrome (v0.67.0): no minimize, maximized, taskbar hidden while the guard is on; the
+    # settings page raises the refresh, the shell re-raises it, the frame applies it. Structural.
+    settings_vm_path = DOTNET / "Area11.Desktop/ViewModels/SettingsViewModel.cs"
+    shell_behind_path = DOTNET / "Area11.Desktop/Views/ShellWindow.xaml.cs"
+    for path in (settings_vm_path, shell_behind_path):
+        if not path.exists():
+            fail(f"Lockdown chrome is incomplete: {rel(path)} is missing")
+    if all(path.exists() for path in (settings_vm_path, shell_behind_path)):
+        settings_vm_text = settings_vm_path.read_text(encoding="utf-8-sig")
+        shell_behind_text = shell_behind_path.read_text(encoding="utf-8-sig")
+        if "LockdownChromeChanged" not in settings_vm_text:
+            fail("Lockdown chrome: the settings page does not raise the refresh")
+        if "ForwardChromeChanged" not in shell:
+            fail("Lockdown chrome: the shell does not forward the refresh to the frame")
+        for needle, reason in (
+            ("ApplyLockdownChrome", "the frame never applies the guard chrome"),
+            ("ResizeMode.NoResize", "the minimize box survives the guard"),
+            ("TaskbarHider.Hide()", "the taskbar survives the guard"),
+            ("TaskbarHider.Show()", "a closed/unlocked frame can orphan the taskbar hidden"),
+            ("_chromeHidden", "repeated applies can stack taskbar hides"),
+            ("OnShellStateChanged", "Win+Down minimizes past the guard"),
+        ):
+            if needle not in shell_behind_text:
+                fail(f"Lockdown chrome: {reason} ({needle})")
 
     REPORT.append(
         "Shell: fixed Area11, 44px bell, permission-filtered modules, Counter-first startup, "
@@ -5036,7 +5190,9 @@ def check_phase_three_packaging() -> None:
         (product_editor, product_editor_path, ('{Binding PackSizeLabel, UpdateSourceTrigger=PropertyChanged}',)),
         (products_view, products_view_path, ('{Binding PackSizeLabel, Mode=OneWay}',)),
         (pos_view, pos_view_path, ('{Binding PackSizeLabel, Mode=OneWay}',)),
-        (purchase_view, purchase_view_path, ('DisplayMemberPath="ProductChoiceLabel"',)),
+        # v0.71.0: the label moved into the photo ItemTemplate - DisplayMemberPath plus a
+        # template is the pair that killed the page on open, so the pin follows the template.
+        (purchase_view, purchase_view_path, ('{Binding ProductChoiceLabel}',)),
     ):
         for needle in needles:
             if needle not in text:
@@ -5090,7 +5246,7 @@ def check_phase_three_packaging() -> None:
 
     # The list projection carries category display text, not the edit form's tag IDs.
     # Loading an edit directly from a list row silently wipes existing tags on Save.
-    for needle in ("_services.Products.Get(product.Id)", "LoadForm(full.Value)", "Editor.Load(full.Value.Id)"):
+    for needle in ("_services.Products.Get(_user, product.Id)", "LoadForm(full.Value)", "Editor.Load(full.Value.Id)"):
         if needle not in products_vm:
             fail(f"Product editing must load the complete record and category IDs: {needle}")
     for needle in ("primaryCategoryId is null && clean.Count > 0", "Choose a primary category before adding additional category tags."):
@@ -5185,7 +5341,7 @@ def check_master_foundation() -> None:
     tests_path = DOTNET / "Area11.Tests/MasterFoundationTests.cs"
     sync_tests_path = DOTNET / "Area11.Tests/SyncTests.cs"
     paths = (migration_path, models_path, sync_models_path, sync_service_path, settings_path,
-             reset_path, app_services_path, tests_path, sync_tests_path)
+             app_services_path, tests_path, sync_tests_path)
     if any(not path.exists() for path in paths):
         for path in paths:
             if not path.exists():
@@ -5197,7 +5353,6 @@ def check_master_foundation() -> None:
     sync_models = sync_models_path.read_text(encoding="utf-8-sig")
     sync_service = sync_service_path.read_text(encoding="utf-8-sig")
     settings = settings_path.read_text(encoding="utf-8-sig")
-    reset = reset_path.read_text(encoding="utf-8-sig")
     app_services = app_services_path.read_text(encoding="utf-8-sig")
     tests = tests_path.read_text(encoding="utf-8-sig")
     sync_tests = sync_tests_path.read_text(encoding="utf-8-sig")
@@ -5268,25 +5423,12 @@ def check_master_foundation() -> None:
         if f'"{key}"' not in settings:
             fail(f"Master Phase-1 setting contract is missing: {key}")
 
-    for needle, reason in (
-        ('ConfirmationPhrase = "REBUILD ISOLATED TEST COPY"',
-         "isolated rebuild has no exact confirmation barrier"),
-        ('DatabaseFileName = "area11-test.db"',
-         "test rebuild must never target the genuine area11.db filename"),
-        ("IsProtectedLiveFolder(workspace)", "the genuine data-folder guard is not called"),
-        ("ShopConfig.IsUnc(workspace)", "network-share rebuild is not refused"),
-        ("backups.SafetyCopy(\"test-rebuild\")", "an untrimmed technical snapshot is not made"),
-        ("File.Move(staged, databasePath, overwrite: true)", "fresh schema is not staged before replacement"),
-        ("PRAGMA quick_check;", "staged test database is not checked"),
-        ("TryRecoverPrevious(databasePath, technicalBackupPath", "post-replacement failure has no snapshot recovery path"),
-        ("The previous isolated copy was not replaced.", "pre-replacement failure state is not explicit"),
-        ("The database state is uncertain", "failed recovery could falsely claim the database was untouched"),
-        ("test_schema_rebuild", "fresh test copy does not record its rebuild audit row"),
-    ):
-        if needle not in reset:
-            fail(f"Master Phase-1 isolated rebuild: {reason}")
-    if reset.index("backups.SafetyCopy") > reset.index("File.Move(staged, databasePath"):
-        fail("Master Phase-1 isolated rebuild replaces the test database before its technical backup")
+    # v0.65.0 (owner's word, Nov 2026): the isolated test-copy service was removed from the
+    # shipped program - no screen used it, and the release must carry no dev/test machinery. Its
+    # absence is pinned here instead of its shape: resurrecting the file fails the check until
+    # this guard is consciously updated. Restorable from git if the owner's test results ask for it.
+    if reset_path.exists():
+        fail("IsolatedTestCopyService.cs was removed in v0.65.0 - bring it back only on the owner's word")
     if "IsolatedTestCopyService" in app_services:
         fail("The isolated test rebuild must not become a genuine-shop desktop service or demo mode")
 
@@ -5301,9 +5443,6 @@ def check_master_foundation() -> None:
         "MasterSettings_DefaultToSinglePrintManualSyncAndVisibleProfit",
         "MasterSettings_RefuseInvalidBulkFormatAndAutomaticInterval",
         "Migration030_PreservesLegacyProductTextAndAddsHistoryWithoutGuessingLinks",
-        "IsolatedTestRebuild_AlwaysBacksUpBeforeReplacingAndStartsWithoutBusinessRows",
-        "IsolatedTestRebuild_RefusesWrongConfirmationAndUnmarkedExistingFolders",
-        "IsolatedTestRebuild_BackupFaultLeavesTheOriginalIsolatedCopyUntouched",
     ):
         if fact not in tests:
             fail(f"Master Phase-1 regression fact is missing: {fact}")
@@ -5312,8 +5451,430 @@ def check_master_foundation() -> None:
 
     REPORT.append(
         "Master Phase 1: native override/draft/catalog/supplier/drawer contracts, REAL quantities, "
-        "local-only drafts, format-3 parent ordering, guarded isolated rebuild/technical backup and "
-        "fourteen focused regression facts")
+        "local-only drafts, format-3 parent ordering, isolated rebuild removed in v0.65.0 and "
+        "eleven focused regression facts")
+
+
+# ---------------------------------------------------------------------------
+# De-workshop: the shop must never see the workshop (v0.69.0, owner's word)
+# ---------------------------------------------------------------------------
+def check_deworkshop() -> None:
+    """No dev names, spec codes, vendor names or workshop wording on the shop's face.
+
+    Why a check and not a cleanup: every one of these looks perfect to the person who typed it.
+    A window titled "Photos - Area11" after the owner named his app, a subtitle ending in (F-52),
+    a crash box asking him to "send it in the chat" - each reads as an unfinished program, and
+    each would come back the next time someone copies an old line. So the face is checked here.
+    """
+    views = sorted((DOTNET / "Area11.Desktop/Views").glob("*.xaml"))
+    attr_code = re.compile(
+        r'(?:Text|Content|ToolTip|Title)="[^"]*\((?:F|D|U|E|Z|T|CAT|NAV|UNIT|PHOTO)-[0-9A-Z-]+')
+
+    for path in views:
+        text = path.read_text(encoding="utf-8-sig")
+
+        if ' - Area11"' in text:
+            fail(f"{rel(path)} still titles a window with the dev name 'Area11' - the shop named "
+                 "its app, and every window carries that name (v0.69.0)")
+
+        match = attr_code.search(text)
+        if match:
+            fail(f"{rel(path)} shows a spec code on the screen ({match.group(0)[:60]}...) - codes "
+                 "live in comments, never in front of the shop")
+
+        if "Supabase" in text:
+            fail(f"{rel(path)} names the vendor 'Supabase' on the screen - the shop reads 'cloud' "
+                 "(v0.69.0)")
+
+    crash = (DOTNET / "Area11.Desktop/CrashReporter.cs").read_text(encoding="utf-8-sig")
+
+    if "in the chat" in crash:
+        fail("CrashReporter still asks the owner to 'send it in the chat' - the shop has a support "
+             "person, not a dev chat")
+
+    if "supports your shop" not in crash:
+        fail("CrashReporter lost the support wording - a crash box that names no one leaves the "
+             "owner with a file and no address")
+
+    if "public static string AppName" not in crash:
+        fail("CrashReporter lost the shop's app name - the crash box would call every shop 'Area11'")
+
+    guard = (DOTNET / "Area11.Core/Utils/PageGuard.cs").read_text(encoding="utf-8-sig")
+    button = (DOTNET / "Area11.Core/Utils/CommandGuard.cs").read_text(encoding="utf-8-sig")
+
+    for name, text in (("PageGuard.cs", guard), ("CommandGuard.cs", button)):
+        if "tools\\\\SEND-REPORT.cmd" in text:
+            fail(f"{name} still tells the operator to run tools\\SEND-REPORT.cmd - the file is "
+                 "named, and the support person is named; the command line is not (v0.69.0)")
+
+    close_unlock = (DOTNET / "Area11.Desktop/Views/CloseUnlockWindow.xaml.cs").read_text(
+        encoding="utf-8-sig")
+
+    if '"Who is closing " +' not in close_unlock:
+        fail("CloseUnlockWindow no longer asks with the shop's app name - 'Who is closing Area11?' "
+             "is the workshop talking")
+
+    shell_code = (DOTNET / "Area11.Desktop/Views/ShellWindow.xaml.cs").read_text(encoding="utf-8-sig")
+
+    if '"Area11", MessageBoxButton.OK, MessageBoxImage.Warning' in shell_code:
+        fail("the guard's 'not allowed' box is captioned 'Area11' - it carries the shop's app name "
+             "(v0.69.0)")
+
+    REPORT.append("De-workshop: every window carries the shop's app name, no spec code, vendor name "
+                  "or workshop wording on the screen")
+
+
+# ---------------------------------------------------------------------------
+# Warn-once save: the Fields tab must actually warn (v0.70.0, owner's word)
+# ---------------------------------------------------------------------------
+def check_save_warning() -> None:
+    """The product form warns about the owner's necessary fields - and still saves.
+
+    The owner clicked "Mark required" and nothing happened: the policy only reached the file
+    import, and the selling price was not even in the catalog. Now the catalog holds the price
+    as necessary, the editor names the missing fields in a popup with a save-anyway choice,
+    and the service itself never blocks (that is the owner's chosen warn-once).
+    """
+    policy = (DOTNET / "Area11.Core/Services/NativeFieldPolicyService.cs").read_text(encoding="utf-8-sig")
+
+    if '"product.retail"' not in policy:
+        fail("the built-in field catalog lost the selling price - a product without a price "
+             "breaks the Counter total with no warning at save time")
+
+    if 'item.Key == "product.retail"' not in policy:
+        fail("the selling price no longer ships necessary - the owner's word is that a price "
+             "is expected unless he relaxes it himself")
+
+    products = (DOTNET / "Area11.Core/Services/ProductService.cs").read_text(encoding="utf-8-sig")
+
+    if "MissingRequiredLabels" not in products:
+        fail("ProductService lost MissingRequiredLabels - the editor popup would have nothing to name")
+
+    editor = (DOTNET / "Area11.Desktop/ViewModels/ProductsViewModel.cs").read_text(encoding="utf-8-sig")
+
+    if "MissingRequiredLabels(patch)" not in editor or "Save anyway?" not in editor:
+        fail("the product editor no longer warns about the necessary fields with a save-anyway "
+             "choice - the Fields tab would be a dead switch again")
+
+    fields = (DOTNET / "Area11.Desktop/ViewModels/NativeFieldsViewModel.cs").read_text(encoding="utf-8-sig")
+
+    if '"product.retail"' not in fields:
+        fail("the Fields tab status no longer counts the selling price as connected - it would "
+             "tell the owner his price rule is a mere preference")
+
+    REPORT.append("Warn-once save: the selling price ships necessary, the product form names what "
+                  "is missing with a save-anyway choice, and the service never blocks the save")
+
+
+# ---------------------------------------------------------------------------
+# Template conflict: DisplayMemberPath + ItemTemplate must never meet (v0.71.0)
+# ---------------------------------------------------------------------------
+def check_counter_search_trial() -> None:
+    """Trial B: reserved results pane, unchanged search safety and fixed actions; final choice pending."""
+    import xml.etree.ElementTree as ET
+    root = ET.parse(DOTNET / "Area11.Desktop/Views/PosView.xaml").getroot()
+    ns = "{http://schemas.microsoft.com/winfx/2006/xaml/presentation}"
+    xname = "{http://schemas.microsoft.com/winfx/2006/xaml}Name"
+    named = {node.get(xname): node for node in root.iter() if node.get(xname)}
+    parents = {child: parent for parent in root.iter() for child in parent}
+    results = named.get("SearchResultsPanel")
+    workspace = named.get("CounterWorkspace")
+    cart = named.get("CartPanel")
+    actions = named.get("CounterActions")
+    footer = named.get("CheckoutFooter")
+    if results is None or workspace is None or cart is None:
+        fail("Counter trial B: reserved search and cart panels must be named")
+    else:
+        if parents.get(results) is not workspace or parents.get(cart) is not workspace:
+            fail("Counter trial B: results and cart must share the bounded workspace")
+        if results.get("Grid.Column") != "0" or cart.get("Grid.Column") != "2":
+            fail("Counter trial B: results must be beside the cart, never on top of it")
+        if results.get("Visibility") is not None or results.get("Grid.ColumnSpan") is not None or results.get("Panel.ZIndex") is not None:
+            fail("Counter trial B: the search panel must stay reserved, not conditional or overlaid")
+        columns = workspace.find(ns + "Grid.ColumnDefinitions")
+        if columns is None or len(columns) != 3:
+            fail("Counter trial B: reserve narrow search / gap / wider cart columns")
+        elif [node.get("Width") for node in columns] != ["1*", "8", "2.4*"] or columns[0].get("MaxWidth") != "340":
+            fail("Counter trial B: search must remain narrower and capped, leaving most width to cart")
+        grids = [node for node in root.iter(ns + "DataGrid") if node.get("ItemsSource") == "{Binding Products}"]
+        if len(grids) != 1 or grids[0] not in list(results.iter()):
+            fail("Counter trial B: the only products grid must live inside the reserved pane")
+        elif grids[0].get("Visibility") != "{Binding IsSearchResultsOpen, Converter={StaticResource BoolToVis}}":
+            fail("Counter trial B: blank search must leave the reserved pane empty of products")
+        else:
+            templates = grids[0].find(ns + "DataGrid.Columns")
+            if templates is None or len(templates) != 1 or templates[0].tag != ns + "DataGridTemplateColumn":
+                fail("Counter trial B: narrow results need a single stacked-card column, not a wide table")
+        if named.get("SearchStandbyHint") is None:
+            fail("Counter trial B: the empty pane needs a search instruction")
+    if actions is None or footer is None or actions not in list(footer.iter()):
+        fail("Counter trial B: compact actions must remain in the fixed footer")
+    else:
+        for command in ["HoldCommand", "SaveDraftCommand", "DraftsCommand", "ToggleParkedCartsCommand", "PrintLastCommand", "ToggleCheckoutDetailsCommand"]:
+            if not any(node.get("Command") == "{Binding " + command + "}" for node in actions.iter()):
+                fail("Counter trial B: missing fixed action " + command)
+        node = actions
+        while node in parents:
+            node = parents[node]
+            if node.tag == ns + "ScrollViewer": fail("Counter trial B: routine buttons must not scroll away")
+    vm = (DOTNET / "Area11.Desktop/ViewModels/PosViewModel.cs").read_text(encoding="utf-8-sig")
+    filter_code = vm.split("private void FilterProducts()", 1)[1].split("private void ScanBarcode()", 1)[0]
+    for needle in ["if (term.Length == 0)", "SelectedProduct = null;", "IsSearchResultsOpen = false;", "return;", "IsSearchResultsOpen = true;", "PackagingPolicy.Matches(product, term, codes)", "Fuzzy.Rank"]:
+        if needle not in filter_code: fail("Counter trial B: missing blank/exact/fuzzy search rule " + needle)
+    if filter_code.index("if (term.Length == 0)") > filter_code.index("foreach (var product in _catalog)"):
+        fail("Counter trial B: blank search must return before iterating the catalog")
+    add_code = vm.split("private void AddToCart()", 1)[1].split("private void RemoveLast()", 1)[0]
+    for needle in ['SearchText = string.Empty;', 'SelectedProduct = null;', 'IsSearchResultsOpen = false;']:
+        if needle not in add_code: fail("Counter trial B: successful add must reset search: " + needle)
+    if "if (IsSplit) ShowCheckoutDetails = true;" not in vm:
+        fail("Counter trial B: split inputs must open when split is selected")
+    REPORT.append("Counter trial B: blank search empty, reserved narrow results pane, compact fixed actions, optional side details")
+
+
+def check_counter_keyboard_phase_one() -> None:
+    """Source contracts only; Windows input routing and layout still need PT-20."""
+    root = ET.parse(DOTNET / "Area11.Desktop/Views/PosView.xaml").getroot()
+    ns = "{http://schemas.microsoft.com/winfx/2006/xaml/presentation}"
+    xname = "{http://schemas.microsoft.com/winfx/2006/xaml}Name"
+    xkey = "{http://schemas.microsoft.com/winfx/2006/xaml}Key"
+    named = {node.get(xname): node for node in root.iter() if node.get(xname)}
+    for name in ["SearchEntryPanel", "SearchResultsPanel", "CartPanel", "CheckoutDetailsPanel",
+                 "ParkedCartsPanel", "CheckoutFields", "CheckoutMoney", "CounterActions",
+                 "MedicineSearchBox", "UnitPicker", "AddQuantityBox", "CustomerPicker", "CashReceivedBox"]:
+        if name not in named: fail("Counter phase 1: missing keyboard section/anchor " + name)
+    if root.get("Loaded") != "OnCounterLoaded": fail("Counter phase 1: initial search focus must be wired")
+    for node in root.iter(ns + "TextBlock"):
+        if node.get("Text") == "{DynamicResource AppLabel.counter}" or "{Binding CashierName" in node.get("Text", ""):
+            fail("Counter phase 1: duplicate Counter/cashier header must not return")
+    matches = named.get("SearchMatchesGrid")
+    if matches is None or matches.get("PreviewMouseDoubleClick") != "OnSearchMatchDoubleClick":
+        fail("Counter phase 1: double-click Add must be wired to the results grid")
+    search = named.get("MedicineSearchBox")
+    if search is None or not any(node.get("Key") == "Enter" and node.get("Command") == "{Binding ScanCommand}" for node in search.iter()):
+        fail("Counter phase 1: search Enter must remain exact-barcode scan")
+    actions = named.get("CounterActions")
+    if actions is None or not any(node.get("Command") == "{Binding RefreshCommand}" for node in actions.iter()):
+        fail("Counter phase 1: Refresh must remain accessible without the old heading")
+    elif not all(node.get("Style") == "{StaticResource CounterActionButton}" for node in actions.iter(ns + "Button")):
+        fail("Counter phase 1: footer buttons need the quiet rounded action style")
+    style = next((node for node in root.iter(ns + "Style") if node.get(xkey) == "CounterActionButton"), None)
+    if style is None or not any(node.get("CornerRadius") == "9" for node in style.iter()):
+        fail("Counter phase 1: missing softly rounded action template")
+    elif not any(node.get("Property") == "IsKeyboardFocused" for node in style.iter()):
+        fail("Counter phase 1: focused action needs a visible keyboard cue")
+    view = (DOTNET / "Area11.Desktop/Views/PosView.xaml.cs").read_text(encoding="utf-8-sig")
+    for needle in ["ModifierKeys.Shift", "MoveCounterSection(e.Key)", "CartGrid.CommitEdit", "IsDropDownOpen = false",
+                   "grid.CurrentCell = new DataGridCellInfo", "FirstGridCell(row)?.Focus()", "if (!e.IsRepeat) AddFocusedSearchMatch();",
+                   "section.IsAncestorOf(target)",
+                   "FindParent<DataGridRow>(source)", "FindParent<ButtonBase>(source) is not null",
+                   "ItemsControl.ItemsControlFromItemContainer(row), SearchMatchesGrid",
+                   "viewModel.AddCommand.Execute(null)", "viewModel.SearchText.Length != 0",
+                   "viewModel.IsBlocked", "Window.GetWindow(this)?.IsActive", "returnToSearch"]:
+        if needle not in view: fail("Counter phase 1: missing input safety contract " + needle)
+    REPORT.append("Counter phase 1: titleless Counter, quiet fixed actions, guarded initial/Add focus, section navigation and row-only Add gestures (Windows proof pending)")
+
+
+def check_counter_pricing_phase_two() -> None:
+    """Money regression tests are written in Core; pin WPF and alternate-write-path wiring too."""
+    core = (DOTNET / "Area11.Core/Services/SaleService.cs").read_text(encoding="utf-8-sig")
+    model = (DOTNET / "Area11.Core/Models/SaleModels.cs").read_text(encoding="utf-8-sig")
+    policy = (DOTNET / "Area11.Core/Services/PricingAllowanceService.cs").read_text(encoding="utf-8-sig")
+    vm = (DOTNET / "Area11.Desktop/ViewModels/PosViewModel.cs").read_text(encoding="utf-8-sig")
+    settings = (DOTNET / "Area11.Core/Services/SettingsService.cs").read_text(encoding="utf-8-sig")
+    workbook = (DOTNET / "Area11.Core/Services/WorkbookService.cs").read_text(encoding="utf-8-sig")
+    view = (DOTNET / "Area11.Desktop/Views/PosView.xaml.cs").read_text(encoding="utf-8-sig")
+    tests = (DOTNET / "Area11.Tests/PricingPhaseTwoTests.cs").read_text(encoding="utf-8-sig")
+    for needle in ['new PricingAllowanceService(_db, _audit, _log).Read(connection, user)',
+                   'billBasis != defaultBasis && !pricing.OverrideBasis',
+                   'mode == "manual" ? 0 : input.DiscountPercent',
+                   'PricingAllowanceService.CheckDiscount(pricing, lineBasis, linePercent)',
+                   'pricing.ManualReductionPercent', 'const bool blockBelowCost = true;',
+                   'line.GrossPaisa - line.LineCostPaisa', 'line.GrossPaisa - discount < line.LineCostPaisa',
+                   'input.DiscountPercent > 5 && !input.RetailDiscountConfirmed',
+                   'input.RetailDiscountConfirmed = false;', 'pricing_mode, discount_basis, discount_percent']:
+        if needle not in core: fail("Counter phase 2: missing Core pricing guard " + needle)
+    if 'user.Kind switch' in core:
+        fail("Counter phase 2: pricing caps must be per person, not the retired role-wide switch")
+    for needle in ['!actor.IsOwner', 'IsOwner: true, Active: true', 'ManualReductionPercent is < 0 or > 100',
+                   'oldValue: JsonSerializer.Serialize(before)', 'user_pricing_allowances']:
+        if needle not in policy: fail("Counter phase 2: missing owner-managed per-person policy " + needle)
+    for needle in ['JsonIgnore', 'RetailDiscountConfirmed', 'LineDiscountPercent', 'PricingMode', 'InputIndex']:
+        if needle not in model: fail("Counter phase 2: missing durable/ephemeral pricing distinction " + needle)
+    if 'key is "discount.billBasis" or "discount.blockBelowCost"' not in settings or 'key is "discount.billBasis" or "discount.blockBelowCost"' not in workbook:
+        fail("Counter phase 2: UI-only settings and workbook paths must not bypass pricing policy")
+    if 'Text("discount.billBasis", "profit")' not in settings or 'Only the owner can change the default discount basis.' not in settings:
+        fail("Counter phase 2: missing owner-only profit default")
+    for needle in ['EditCartLine(PosCartLine line)', 'window.ShowDialog();', 'if (!editor.Accepted) return;',
+                   'line.PricingMode == "normal"', 'ResetBillBasis();', 'RestoreBillBasis(input.DiscountBasis)',
+                   'RestoreBillBasis(cart.DiscountBasis)', 'input.RetailDiscountConfirmed = true;']:
+        if needle not in vm: fail("Counter phase 2: missing cart/editor/save state contract " + needle)
+    if 'OnCartLineDoubleClick' not in view or 'cartModel.EditCartLine(line)' not in view:
+        fail("Counter phase 2: cart double-click and selected-row Enter must reach the owned editor")
+    root = ET.parse(DOTNET / "Area11.Desktop/Views/PosView.xaml").getroot()
+    if not any(node.get("PreviewMouseDoubleClick") == "OnCartLineDoubleClick" for node in root.iter()):
+        fail("Counter phase 2: wire the cart editor gesture")
+    for needle in ['ExistingShopFutureBillsUseTheNewProfitDefault', 'ManualAndItemDiscountLinesAreExcludedFromBillDiscount',
+                   'ManualRateCannotBypassTheTwentyPercentReductionCap', 'ProfitDiscountUsesBothFefoBatchCosts',
+                   'ADiscountedPartialReturnUsesSavedNetNotTodaysBasis', 'ReopeningARetailDraftRequiresFreshSaveConfirmation']:
+        if needle not in tests: fail("Counter phase 2: missing named money regression " + needle)
+    REPORT.append("Counter phase 2: per-person owner-only limits, batch-profit/retail line and bill basis, manual exclusion, cost floor, ephemeral confirmation, owned editor and persisted hold/draft snapshots (Windows tests pending)")
+
+
+def check_counter_extra_discount_phase_three() -> None:
+    """Pin sale-only allowance, return policy B and display paths; NOT C#/WPF execution."""
+    def read(path: str) -> str:
+        return (DOTNET / path).read_text(encoding="utf-8-sig")
+    core = read("Area11.Core/Services/SaleService.cs")
+    vm = read("Area11.Desktop/ViewModels/PosViewModel.cs")
+    returns = read("Area11.Core/Services/ReturnService.cs")
+    policy = read("Area11.Core/Services/PricingAllowanceService.cs")
+    receipt = read("Area11.Core/Services/ReceiptService.cs")
+    book = read("Area11.Core/Services/BookCheckService.cs")
+    report = read("Area11.Core/Services/ReportService.cs")
+    migration = read("Area11.Core/Data/Migrations/036_sale_extra_discount.sql")
+    tests = read("Area11.Tests/ExtraDiscountTests.cs")
+    for needle in ['input.ExtraDiscountPaisa < 0', '!pricing.ExtraDiscount',
+                   'input.ExtraDiscountPaisa > pricing.ExtraLimitPaisa',
+                   'input.ExtraDiscountPaisa > Math.Max(0, preExtraTotal - costTotal)',
+                   'totalPaisa = preExtraTotal - input.ExtraDiscountPaisa;',
+                   'pre_extra_total_paisa, extra_discount_paisa', '"sale_extra_discount"']:
+        if needle not in core: fail("Counter phase 3: missing sale-level financial guard " + needle)
+    if core.index('var preExtraTotal = totalPaisa;') < core.index('Spread(lines, taxPaisa + roundPaisa - redeem.Paisa, totalPaisa);'):
+        fail("Counter phase 3: Extra Discount must be AFTER normal line allocation")
+    for call in re.findall(r'Spread\([^;]+;', core):
+        if 'ExtraDiscount' in call: fail("Counter phase 3: never spread Extra Discount into products")
+    if 'UPDATE sale_items' in migration or 'UPDATE sales' in migration:
+        fail("Counter phase 3: additive migration must preserve historical records, not fabricate snapshots")
+    for needle in ['extra_limit_paisa', 'extra_discount INTEGER NOT NULL DEFAULT 0', 'pre_extra_total_paisa INTEGER NULL']:
+        if needle not in migration: fail("Counter phase 3: missing safe schema default " + needle)
+    for needle in ['value.ExtraLimitPaisa < 0', 'extra_limit_paisa=excluded.extra_limit_paisa']:
+        if needle not in policy: fail("Counter phase 3: owner allowance must validate and persist " + needle)
+    for needle in ['input.ExtraDiscountPaisa = Money.ToPaisa(rupees)', '_appliedExtraDiscount = input.ExtraDiscountPaisa',
+                   '_appliedExtraDiscount = input.ExtraDiscountPaisa;', '_appliedExtraDiscount = cart.ExtraDiscountPaisa;',
+                   'Money.ToPaisa(extraEntry) != _appliedExtraDiscount', 'MessageBox.Show(owner,']:
+        if needle not in vm: fail("Counter phase 3: missing absolute apply/restore/confirmation wiring " + needle)
+    if '_appliedExtraDiscount +=' in vm: fail("Counter phase 3: Apply must replace, never accumulate")
+    for needle in ['Before Extra Discount', 'Pair("Extra Discount",', 'sale.ExtraDiscountPaisa > 0']:
+        if needle not in receipt: fail("Counter phase 3: receipt must expose separate final allowance " + needle)
+    for needle in ['sale.TotalPaisa - sale.NormalRefundedPaisa - sale.ProvisionalRefundedPaisa',
+                   'for (var index = lines.Count - 1;', 'Extra Discount and earlier refunds limit this bill',
+                   'sale.PaidPaisa - sale.CashRefundedPaisa']:
+        if needle not in returns: fail("Counter phase 3: missing approved policy-B refund/collection guard " + needle)
+    if 'SUM(si.line_total_paisa), 0) - s.extra_discount_paisa' not in book:
+        fail("Counter phase 3: BookCheck must reconcile unchanged items minus extra")
+    if 'Bill Extra Discount (not assigned to products)' not in report:
+        fail("Counter phase 3: category report must show separate unallocated allowance")
+    for needle in ['ReturnPolicyBFirst560Then540AndNoThirdRefund', 'SaleItemRowsAreNotReducedByExtra',
+                   'ExtraCannotTakeFinalBillBelowActualCostEvenForOwner', 'RevokedPermissionBetweenQuoteAndPostIsRechecked',
+                   'TooLittleCashIsNotAutomaticallyForgiven', 'ReportsProfitAndCategoriesReconcileWithoutProductAllocation']:
+        if needle not in tests: fail("Counter phase 3: missing named runtime regression " + needle)
+    REPORT.append("Counter phase 3: separate absolute sale allowance after points/rounding, per-person owner-set cap, immutable product amounts, receipt/report/book reconciliation and policy-B refund guards (Windows tests pending)")
+
+
+def check_counter_checkout() -> None:
+    """Desktop has no test reference: pin the bounded layout, shortcut and post-commit modal."""
+    import xml.etree.ElementTree as ET
+    root = ET.parse(DOTNET / "Area11.Desktop/Views/PosView.xaml").getroot()
+    ns = "{http://schemas.microsoft.com/winfx/2006/xaml/presentation}"
+    xname = "{http://schemas.microsoft.com/winfx/2006/xaml}Name"
+    parents = {child: parent for parent in root.iter() for child in parent}
+    named = {node.get(xname): node for node in root.iter() if node.get(xname)}
+    footer = named.get("CheckoutFooter")
+    button = named.get("CompleteSaleButton")
+    if footer is None or button is None:
+        fail("Counter checkout: fixed footer and completion button must be named")
+    else:
+        ancestors = []
+        node = button
+        while node in parents:
+            node = parents[node]
+            ancestors.append(node)
+        if footer not in ancestors or any(node.tag == ns + "ScrollViewer" for node in ancestors):
+            fail("Counter checkout: Complete sale must remain in the footer, outside scrolling content")
+        rows = parents[footer].find(ns + "Grid.RowDefinitions")
+        if rows is None or [row.get("Height") for row in rows] != ["Auto", "Auto", "*", "Auto"]:
+            fail("Counter checkout: the trial workspace must be a bounded star row, not overflowing Auto content")
+        if footer.get("Grid.Row") != "3" or button.get("Command") != "{Binding CompleteCommand}":
+            fail("Counter checkout: the fixed footer must invoke the existing sale command")
+        for binding in ["{Binding TotalText}", "{Binding ChangeText}", "{Binding TenderedText, UpdateSourceTrigger=PropertyChanged}", "{Binding StatusMessage}"]:
+            if not any(node.get("Text") == binding for node in footer.iter()):
+                fail("Counter checkout: missing fixed-footer money/status field: " + binding)
+    vm = (DOTNET / "Area11.Desktop/ViewModels/PosViewModel.cs").read_text(encoding="utf-8-sig")
+    view = (DOTNET / "Area11.Desktop/Views/PosView.xaml.cs").read_text(encoding="utf-8-sig")
+    if root.get("PreviewKeyDown") != "OnCounterPreviewKeyDown":
+        fail("Counter checkout: connect the F4 preview handler")
+    for needle in ["Key.F4", "e.IsRepeat", "e.Handled = true", "CartGrid.CommitEdit", "viewModel.CompleteCommand.Execute(null)"]:
+        if needle not in view: fail("Counter checkout: missing F4 safeguard: " + needle)
+    for needle in ["if (_isCompletingSale) return;", "finally", "_isCompletingSale = false;", 'GetBool("sale.successPopup", true)', "? (Print(_lastSaleId)", "SaleSuccessDoor.Show(_services, sale, printStatus)"]:
+        if needle not in vm: fail("Counter checkout: missing completion safeguard: " + needle)
+    if vm.index("SaleSuccessDoor.Show") < vm.index("var sale = result.Value;"):
+        fail("Counter checkout: success modal must follow a successful save")
+    door = (DOTNET / "Area11.Desktop/SaleSuccessDoor.cs").read_text(encoding="utf-8-sig")
+    if "window.Owner = owner" not in door or "window.ShowDialog();" not in door:
+        fail("Counter checkout: success must be an owned modal window")
+    popup = ET.parse(DOTNET / "Area11.Desktop/Views/SaleSuccessWindow.xaml").getroot()
+    for binding in ["{Binding TotalText}", "{Binding CashReceivedText}", "{Binding ChangeText}"]:
+        if not any(node.get("Text") == binding for node in popup.iter()):
+            fail("Counter checkout: missing committed success amount: " + binding)
+    REPORT.append("Counter checkout: fixed non-scrolling footer, bounded cart/options, F4 command, guarded post-save modal")
+
+
+def check_counter_availability() -> None:
+    """Counter popup wiring cannot be unit-tested by the Core-only test project."""
+    vm = (DOTNET / "Area11.Desktop/ViewModels/PosViewModel.cs").read_text(encoding="utf-8-sig")
+    core = (DOTNET / "Area11.Core/Services/SaleService.cs").read_text(encoding="utf-8-sig")
+    for needle in ["_services.Sales.CounterWarnings(input)", "&& !_availabilityWarningShown",
+                   '_availabilityWarningShown = true;', '"Counter availability"',
+                   'MessageBoxButton.OK, MessageBoxImage.Warning']:
+        if needle not in vm:
+            fail("Counter availability: missing popup-once wiring: " + needle)
+    if vm.index('_availabilityWarningShown = true;') > vm.index('MessageBox.Show(string.Join'):
+        fail("Counter availability: set the once flag before the modal opens")
+    if vm.count('_availabilityWarningShown = false;\n        Cart.Clear();') != vm.count('        Cart.Clear();'):
+        fail("Counter availability: each new/cleared/restored cart must reset the popup")
+    if 'tierPrice <= 0 && lineInput.UnitPricePaisa <= 0' not in core:
+        fail("Counter availability: an owner/manager rate must work without a catalog rate")
+    for name in ['ReceiptService.cs', 'ReturnReceiptService.cs']:
+        text = (DOTNET / ('Area11.Core/Services/' + name)).read_text(encoding="utf-8-sig")
+        if 'CounterWarnings' in text or 'Counter availability' in text:
+            fail("Counter availability: warnings must never enter receipts")
+    REPORT.append("Counter availability: popup once per bill, reset on cart boundaries, no receipt wiring")
+
+
+def check_template_conflict() -> None:
+    """No list control sets both DisplayMemberPath and ItemTemplate.
+
+    WPF refuses that combination with an InvalidOperationException while the page is being
+    drawn, which the shop reads as "Purchase does not open". The Purchases picker died exactly
+    this way (owner screenshot, 12 Nov 2026): the photo template was added without removing the
+    old DisplayMemberPath. The template alone shows the label, so the path must stay away.
+    """
+    for path in sorted((DOTNET / "Area11.Desktop/Views").glob("*.xaml")):
+        lines = path.read_text(encoding="utf-8-sig").split("\n")
+        index = 0
+        while index < len(lines):
+            match = re.match(r"\s*<(ComboBox|ListBox|ListView|ItemsControl)\b", lines[index])
+            if not match:
+                index += 1
+                continue
+            tag = match.group(1)
+            start = index
+            chunk = []
+            while index < len(lines):
+                chunk.append(lines[index])
+                if "/>" in lines[index]:
+                    break
+                if re.match(r"\s*</" + tag + r"\s*>", lines[index]):
+                    break
+                index += 1
+            text = "\n".join(chunk)
+            if "DisplayMemberPath" in text and "ItemTemplate" in text:
+                fail(f"{rel(path)}:{start + 1}: a {tag} sets both DisplayMemberPath and "
+                     "ItemTemplate - WPF refuses that pair and the page dies on open (v0.71.0)")
+            index += 1
+
+    REPORT.append("Template conflict: no list control sets DisplayMemberPath together with "
+                  "ItemTemplate, so no page can die on open this way")
 
 
 # ---------------------------------------------------------------------------
@@ -5777,6 +6338,552 @@ def rel(path: pathlib.Path) -> str:
         return str(path)
 
 
+def check_owner_boundary_review():
+    """Narrow source contracts, NOT executed authorization/security tests."""
+    core = DOTNET / 'Area11.Core' / 'Services'
+    def need(text, markers, label):
+        for marker in markers:
+            if marker not in text:
+                FAILURES.append(f'Phase4 {label}: missing {marker!r}')
+    owner = (core / 'OwnerAccess.cs').read_text()
+    need(owner, ['SELECT id, name, role, active FROM users WHERE id = @id;',
+                 'IsOwner: true, Active: true', 'throw new ValidationException'], 'live owner')
+    auth = (core / 'AuthService.cs').read_text()
+    permission = (core / 'PermissionService.cs').read_text()
+    if auth.count('OwnerAccess.Require(_db, connection, actor)') != 3:
+        FAILURES.append('Phase4 Auth create/reset/activation must each validate owner in write transaction')
+    if permission.count('OwnerAccess.Require(_db, connection, actor)') != 2:
+        FAILURES.append('Phase4 Permission Set/Reset must validate current owner')
+    need(auth, ['{otherColumn} = NULL', 'if (target is null)', 'target.IsOwner && !active',
+                '_settings.SaveRecoveryHash(actor, stored)'], 'staff credentials')
+    settings = (core / 'SettingsService.cs').read_text()
+    need(settings, ['values.ContainsKey(AuthService.RecoveryWordKey)',
+                    'key == AuthService.RecoveryWordKey', 'key == FocusGuardService.GuardKey', 'internal ServiceResult SaveRecoveryHash',
+                    'if (ownerOnly) OwnerAccess.Require(_db, connection, actor);'], 'secret settings')
+    recovery = settings.split('internal ServiceResult SaveRecoveryHash', 1)[-1].split('private bool IsCurrentOwner', 1)[0]
+    need(recovery, ['OwnerAccess.Require', '_audit.Record(connection, owner, "Auth", "recovery_word_changed"',
+                    '_cache[AuthService.RecoveryWordKey] = json'], 'atomic recovery')
+    if recovery.find('_cache[') < recovery.find('_audit.Record('):
+        FAILURES.append('Phase4 recovery cache must not precede transaction audit')
+    photo = (core / 'PhotoService.cs').read_text()
+    need(photo, ['Path.IsPathRooted(fileName)', 'fileName.Contains("..", StringComparison.Ordinal)',
+                 'row.FullPath = CoverPath(row.FileName) ?? string.Empty;',
+                 'CoverPath(selected.FileName) is null', 'var path = CoverPath(file);',
+                 'var path = CoverPath(row.FileName);'], 'shared photo filename boundary')
+    if 'Path.Combine(PhotosFolder, row.FileName)' in photo or 'Path.Combine(PhotosFolder, selected.FileName)' in photo:
+        FAILURES.append('Phase4 stored gallery/cover names bypass safe resolver')
+    boundary = (DOTNET / 'Area11.Tests' / 'OwnerBoundaryReviewTests.cs').read_text()
+    need(boundary, ['RecoveryAuditFailureRollsBackHashAndCache', 'SecretResetAuditFailureRestoresOldCredential',
+                    'PasswordResetInvalidatesAnOldPinToo', 'PinResetInvalidatesAnOldPasswordToo',
+                    'ForgedOwnerCannotGrantAnyModule', 'ProtectedOwnerSettingsRejectForgedOwnerAtomically'], 'regressions')
+    need((DOTNET / 'Area11.Tests' / 'PhotoTests.cs').read_text(),
+         ['ThumbnailsNeverResolveAnExistingFileOutsidePhotoFolder', 'GalleryRowsCannotCarryAnOutsideFullPath',
+          'BulkCoversIgnoreUnsafeStoredNames', 'ChoosingCoverCannotBlessAnOutsideFile',
+          'StaffAvatarRejectsDriveRelativeAndNetworkNames'], 'photo regressions')
+    doc = (ROOT / 'docs/POS-PHASE4-EVIDENCE.md').read_text()
+    shell = (DOTNET / 'Area11.Desktop/ViewModels/ShellViewModel.cs').read_text()
+    routes = set(re.findall(r'AddPage\("\w+",\s*"(\w+)"', shell)) | {'dashboard'}
+    inventoried = set(re.findall(r'^\| ([a-zA-Z]+) \|', doc, re.M)) - {'Route', 'Lesson'}
+    if routes != inventoried:
+        FAILURES.append(f'Phase4 route evidence drift: missing {routes-inventoried}, extra {inventoried-routes}')
+    lessons = set(re.findall(r'^\| (\d{2}) \|', doc, re.M))
+    if lessons != {f'{n:02}' for n in range(1, 37)}:
+        FAILURES.append('Phase4 evidence must map all36 guide lessons')
+    # Top-level contents, not nested Built-in/Extra field TabItems.
+    ns = {'w': 'http://schemas.microsoft.com/winfx/2006/xaml/presentation'}
+    view = ET.parse(DOTNET / 'Area11.Desktop/Views/SettingsView.xaml').getroot()
+    tabs = view.findall('./w:Grid/w:TabControl/w:TabItem', ns)
+    if len(tabs) != 8 or not all(f'| {n} ' in doc for n in range(8)):
+        FAILURES.append('Phase4 Settings inventory drift: review all top-level contents')
+    need(doc, ['IN PROGRESS', 'not a full audit PASS', 'filename containment', 'Windows'], 'evidence honesty')
+    REPORT.append('Phase4 portion1: bounded live-owner/alternate-secret/recovery/photo contracts and 26-route/eight-Settings/36-lesson inventory present; full audit and Windows runtime pending')
+
+
+def check_phase_four_access_projections():
+    """Bounded source contracts only. In particular, these cannot prove live session authentication."""
+    core = DOTNET / 'Area11.Core/Services'
+    desktop = DOTNET / 'Area11.Desktop'
+    shell = (desktop / 'ViewModels/ShellViewModel.cs').read_text()
+    vm = (desktop / 'ViewModels/SettingsViewModel.cs').read_text()
+    ns = {'w': 'http://schemas.microsoft.com/winfx/2006/xaml/presentation'}
+    tabs = ET.parse(desktop / 'Views/SettingsView.xaml').getroot().findall('./w:Grid/w:TabControl/w:TabItem', ns)
+    indices = [int(n) for n in re.findall(r'SettingsTabItems.Add\(new SettingsTabItem\((\d+),', shell)]
+    if indices != list(range(len(tabs))):
+        FAILURES.append('Phase4 portion2: every Settings content needs its matching shell section, including identity0 and Fields7')
+    clamp = re.search(r'Math.Clamp\(value, 0, (\d+)\)', vm)
+    if clamp is None or int(clamp[1]) != len(tabs) - 1:
+        FAILURES.append('Phase4 portion2: Settings selected-index clamp loses an existing tab')
+    if 'SettingsTabItems.Add(new SettingsTabItem(0, "App name & icon"))' not in shell:
+        FAILURES.append('Phase4 portion2: identity section0 label/address missing')
+    native = (core / 'NativeFieldPolicyService.cs').read_text()
+    if native.count('OwnerAccess.Require(_db, connection, user);') != 2:
+        FAILURES.append('Phase4 native-field read AND write paths need current-owner validation')
+    for token in ('OwnerAccess.Require(_db, connection, user);', 'by = overriding ? owner.Name.Trim() : null',
+                  '_audit.Record(connection, owner, Modules.Settings, "native_field_required_changed"'):
+        if token not in native:
+            FAILURES.append(f'Phase4 native-field boundary missing {token}')
+    write = native.split('public ServiceResult SetRequired', 1)[-1]
+    if not (write.find('OwnerAccess.Require') >= 0 and write.find('OwnerAccess.Require') < write.find('if (field.Required == required)')):
+        FAILURES.append('Phase4 native-field current owner check must precede no-op success inside transaction')
+    reps = (core / 'RepService.cs').read_text()
+    if 'MaskProfit(rows, ProfitPolicy.CanSee(_permissions, _settings, user));' not in reps:
+        FAILURES.append('Phase4 Doctors must respect the same global-plus-person profit policy')
+    history = (core / 'ProductHistoryService.cs').read_text()
+    if 'if (!history.CanSeeProfit)\n                foreach (var row in history.Sales) row.ProfitPaisa = 0;' not in history:
+        FAILURES.append('Phase4 ProductHistory.Load must mask raw denied profit, not only UI/CSV')
+    tests = (DOTNET / 'Area11.Tests/PhaseFourAccessProjectionTests.cs').read_text()
+    for name in ('NativeFieldNoOpDoesNotBypassCurrentOwnerCheck', 'NativeFieldAcknowledgementUsesCurrentStoredOwnerName',
+                 'DoctorProfitGrantDoesNotOverrideGlobalHideSwitch', 'ProductHistoryDoesNotReturnHiddenRawProfitToManager',
+                 'ProductHistoryMasksOwnerRawProfitWhenGlobalOffAndRestoresFromSnapshots'):
+        if name not in tests:
+            FAILURES.append(f'Phase4 access projection regression missing {name}')
+    REPORT.append('Phase4 portion2: all eight Settings indices/clamp, live-owner native fields, Doctors global profit switch and raw history-profit masking contracts; Windows/runtime/session and remaining access matrix pending')
+
+
+def check_ledger_read_boundaries():
+    """Narrow source contracts; not a compiler or authentication/transaction-revocation proof."""
+    core = DOTNET / 'Area11.Core/Services'
+    access = (core / 'LedgerReadAccess.cs').read_text()
+    for token in ('actor is not { Active: true }', 'SELECT id, name, role, active FROM users WHERE id = @id;',
+                  'current is not { Active: true }', 'current.Kind != actor.Kind',
+                  'permissions.Can(current, module)'):
+        if token not in access:
+            FAILURES.append(f'Ledger reader current-account boundary missing {token}')
+    for stem, module, direct in (
+        ('CustomerLedgerService', 'Customers', ('List', 'Page', 'PaymentReceipt')),
+        ('SupplierLedgerService', 'Suppliers', ('List', 'Page', 'ExpiredBatches')),
+    ):
+        text = (core / f'{stem}.cs').read_text()
+        methods = re.findall(r'public ServiceResult<[^\n]+?>\s+(List|Page|Statement|BuildBulkStatements|ExpiredBatches)\(([^)]*)\)', text)
+        for name, args in methods:
+            if not args.startswith('User? user,'):
+                FAILURES.append(f'{stem}.{name} retains an actorless ledger read overload')
+        for name in direct:
+            match = re.search(r'public ServiceResult<[^\n]+?>\s+' + name + r'\(', text)
+            if match is None:
+                FAILURES.append(f'{stem}.{name} missing')
+                continue
+            body = text[match.end():].split('\n    public ', 1)[0]
+            token = f'LedgerReadAccess.Require(_db, connection, _permissions, user, Modules.{module});'
+            if token not in body:
+                FAILURES.append(f'{stem}.{name} bypasses live-reader authorization')
+        for token in ('Page(user, id)', 'Statement(user, id)', f'Page(user, {"customerId" if module == "Customers" else "supplierId"})'):
+            if token not in text:
+                FAILURES.append(f'{stem} print/bulk must propagate caller: {token}')
+    customer = (core / 'CustomerLedgerService.cs').read_text()
+    for token in ('row.ProfitKnown = canSeeProfit;', 'if (!canSeeProfit) row.ProfitPaisa = 0;',
+                  'summary.ProfitKnown = ProfitPolicy.CanSee(_permissions, _settings, reader);',
+                  'if (!summary.ProfitKnown) summary.ProfitPaisa = 0;',
+                  'Statement(User? user, int customerId) => Statement(user, customerId, null);'):
+        if token not in customer:
+            FAILURES.append(f'Customer ledger caller/profit contract missing {token}')
+    for stem in ('Customers', 'Suppliers'):
+        vm = (DOTNET / f'Area11.Desktop/ViewModels/{stem}ViewModel.cs').read_text()
+        for method, first in re.findall(r'_services\.(?:Ledger|SupplierLedger)\.(List|Page|Statement|BuildBulkStatements|ExpiredBatches)\(\s*([^,)]+)', vm):
+            if first.strip() != '_user':
+                FAILURES.append(f'{stem} UI {method} does not pass actual _user')
+    tests = (DOTNET / 'Area11.Tests/LedgerReadBoundaryTests.cs').read_text()
+    for name in ('AnonymousCustomerReadsIncludingMonthlyAndBulkRefuse', 'AnonymousSupplierReadsIncludingExpiredAndBulkRefuse',
+                 'ForgedOwnerRoleOnCashierIdCannotReadEitherLedger', 'GlobalSwitchMasksOwnerListAndPageThenRestoresWithoutReposting',
+                 'PaymentReceiptChecksCurrentAccountBeforeReturningExistingPayment', 'SupplierGrantRevocationAffectsNextReadOnSameService'):
+        if name not in tests:
+            FAILURES.append(f'Ledger read regression missing {name}')
+    REPORT.append('Phase4 portion3: required ledger reader on list/page/statement/month/bulk/expired paths, current active account/module gates, customer raw-profit masking and UI caller propagation; catalog/cost/session/full audit and C# runtime pending')
+
+
+def check_product_read_boundaries():
+    """Bounded source contracts, deliberately not authentication/runtime proof."""
+    core = DOTNET / 'Area11.Core'
+    access = (core / 'Services/ProductReadAccess.cs').read_text()
+    for token in ('actor is not { Active: true }', 'current is not { Active: true }',
+                  'current.Kind != actor.Kind', 'permissions.Can(current, module)',
+                  'if (!product.CostKnown) product.CostPaisa = 0;',
+                  'product.CostKnown = financialRow && canSeeCost;',
+                  'product.MarginKnown = financialRow && canSeeProfit;'):
+        if token not in access:
+            FAILURES.append(f'Product read/projection boundary missing {token}')
+    purposes = {'Catalog': 'Products', 'Counter': 'Pos', 'Purchase': 'Purchases',
+                'SupplierReturn': 'Suppliers', 'WriteOff': 'Stock', 'Expense': 'Cash',
+                'ProvisionalReturn': 'Returns'}
+    for purpose, module in purposes.items():
+        if f'ProductReadPurpose.{purpose} => Modules.{module}' not in access:
+            FAILURES.append(f'Product workflow {purpose} lost module gate {module}')
+    text = (core / 'Services/ProductService.cs').read_text()
+    for name in ('Search', 'SearchSmart', 'Get'):
+        signatures = re.findall(r'public ServiceResult<[^\n]+?>\s+' + name + r'\(\s*([^)]*)\)', text)
+        if len(signatures) != 1 or not signatures[0].startswith('User? user,'):
+            FAILURES.append(f'ProductService.{name} must require reader; no actorless overload')
+        if name == 'SearchSmart':
+            for token in ('Search(user, typed, categoryId, companyId, lowStockOnly, strength, supplierId, purpose)',
+                          'Search(user, null, categoryId, companyId, lowStockOnly, strength, supplierId, purpose)'):
+                if token not in text:
+                    FAILURES.append(f'Product smart search lost projected path: {token}')
+        else:
+            match = re.search(r'public ServiceResult<[^\n]+?>\s+' + name + r'\(', text)
+            body = text[match.end():].split('\n    public ', 1)[0] if match else ''
+            for token in ('ProductReadAccess.Require(_db, connection, _permissions, user, purpose)',
+                          'ProductReadAccess.Project(product, purpose, canSeeCost, canSeeProfit)'):
+                if token not in body:
+                    FAILURES.append(f'ProductService.{name} lost {token}')
+    product = (core / 'Models/Product.cs').read_text()
+    for token in ('CostKnown ? Money.Format(CostPaisa) : "hidden"', '!MarginKnown || RetailPaisa <= 0',
+                  'return $"{MarginPercent:0.#}%";'):
+        if token not in product:
+            FAILURES.append(f'Product cost/margin formatter contract missing {token}')
+    report = (core / 'Services/ReportService.cs').read_text()
+    for token in ('CostPaisa = canSeeCost ? items.Cost : 0', 'RestockCostPaisa = canSeeCost ? returns.RestockCost : 0',
+                  'PurchasesPaisa = canSeeCost ? outflow.Purchases : 0'):
+        if token not in report:
+            FAILURES.append(f'Report hidden raw cost contract missing {token}')
+    vms = DOTNET / 'Area11.Desktop/ViewModels'
+    for stem, purpose in (('Products', None), ('Pos', 'Counter'), ('Purchases', 'Purchase'),
+                          ('Suppliers', 'SupplierReturn'), ('WriteOff', 'WriteOff'),
+                          ('Expenses', 'Expense'), ('Provisional', 'ProvisionalReturn')):
+        vm = (vms / f'{stem}ViewModel.cs').read_text()
+        calls = re.findall(r'_services\.Products\.(?:Search|SearchSmart|Get)\(([^;]+?)\);', vm)
+        if not calls:
+            FAILURES.append(f'{stem} product caller missing')
+        for args in calls:
+            if not args.startswith('_user,') or (purpose and f'purpose: ProductReadPurpose.{purpose}' not in args):
+                FAILURES.append(f'{stem} must pass current reader and correct product workflow')
+    vm = (vms / 'ProductsViewModel.cs').read_text()
+    if '!full.Value.CostKnown' not in vm:
+        FAILURES.append('Product edit must not load masked zero cost')
+    tests = (DOTNET / 'Area11.Tests/ProductReadBoundaryTests.cs').read_text()
+    for name in ('AnonymousCatalogAndWorkflowReadsRefuse', 'ForgedOwnerRoleCannotReadProductsThroughAnotherAccount',
+                 'ExactTokenAndFuzzyCounterRowsShareTheSameProjection', 'OperationalCostPreparationNeedsModuleAndSeparateCostGrant',
+                 'PurposeGrantRevocationAffectsNextReadOnSameService', 'CostFreeCounterResultDoesNotZeroActualPostedBatchCost',
+                 'CostFreeCatalogObjectCannotBypassCoreActualCostFloor', 'ManagerReportDoesNotReturnRawHiddenCostInputs'):
+        if name not in tests:
+            FAILURES.append(f'Product read regression missing {name}')
+    REPORT.append('Phase4 portion4: current reader/module/purpose on product search/smart/get, cost-free Counter/PR, bounded operational cost and margin projection, report hidden raw-cost masking and caller propagation; session/full cost audit and C# runtime pending')
+
+
+def check_snapshot_read_boundaries():
+    """Focused snapshot/export contracts, not authentication or C# runtime proof."""
+    core = DOTNET / 'Area11.Core'
+    access = (core / 'Services/SnapshotReadAccess.cs').read_text()
+    for token in ('actor is not { Active: true }', 'current is not { Active: true }',
+                  'current.Kind != actor.Kind', 'permissions.Can(current, module)',
+                  'alternateModule is null || !permissions.Can(current, alternateModule)'):
+        if token not in access:
+            FAILURES.append(f'Snapshot current-reader boundary missing {token}')
+    for stem, method, modules in (
+            ('ProductHistory', 'Load', 'Modules.Products'), ('Reorder', 'Report', 'Modules.Reorder'),
+            ('Dashboard', 'GetSnapshot', 'Modules.Pos, Modules.Reports'),
+            ('Report', 'Build', 'Modules.Reports'), ('Report', 'Days', 'Modules.Reports')):
+        text = (core / f'Services/{stem}Service.cs').read_text()
+        match = re.search(r'public ServiceResult<[^\n]+?>\s+' + method + r'\(', text)
+        body = text[match.end():].split('\n    public ', 1)[0] if match else ''
+        token = f'SnapshotReadAccess.Require(_db, connection, _permissions, user, {modules});'
+        if token not in body:
+            FAILURES.append(f'{stem}.{method} lost current-reader/module validation')
+        if stem != 'Reorder' and 'ProfitPolicy.CanSee(_permissions, _settings, reader)' not in body:
+            FAILURES.append(f'{stem}.{method} must use resolved reader for profit')
+        if stem == 'Reorder' and not (0 <= body.find(token) < body.find('if (!_settings.GetBool("reorder.enabled"')):
+            FAILURES.append('Disabled reorder must still validate current reader')
+    history = (core / 'Services/ProductHistoryService.cs').read_text()
+    for token in ('CanSeeCost = CostPolicy.CanSee(_permissions, _settings, reader)', 'row.CostKnown = history.CanSeeCost;',
+                  'if (!row.CostKnown)', 'row.RatePaisa = 0;', 'row.LineTotalPaisa = 0;',
+                  'history.BoughtQtyLabel + " / " + history.BoughtTotalLabel',
+                  'row.CostKnown ? row.RatePaisa.ToString(CultureInfo.InvariantCulture) : "\\\"\\\""',
+                  'row.CostKnown ? row.LineTotalPaisa.ToString(CultureInfo.InvariantCulture) : "\\\"\\\""'):
+        if token not in history:
+            FAILURES.append(f'History purchase-cost projection/export missing {token}')
+    if history.count('var loaded = Load(user, productId);') != 2:
+        FAILURES.append('History print/CSV preparation must both use current Load boundary')
+    models = (core / 'Models/ProductHistoryModels.cs').read_text()
+    for token in ('CostKnown ? Money.Format(RatePaisa) : "hidden"',
+                  'CostKnown ? Money.Format(LineTotalPaisa) : "hidden"',
+                  'CanSeeCost ? Money.Format(BoughtPaisa) : "hidden"'):
+        if token not in models:
+            FAILURES.append(f'History masked formatter missing {token}')
+    reorder = (core / 'Services/ReorderService.cs').read_text()
+    for token in ('row.LastCostKnown = canSeeCost;', 'row.LastCostPaisa = row.LastCostKnown ? supply.CostPaisa : 0;'):
+        if token not in reorder:
+            FAILURES.append(f'Reorder central cost rule missing {token}')
+    report = (core / 'Services/ReportService.cs').read_text()
+    if re.search(r'public List<ReportDayRow> Days\(', report) or 'Days(ReportRange range, User? user)' not in report:
+        FAILURES.append('Public daily rows must require reader and return checked result')
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/ProductHistoryViewModel.cs').read_text()
+    if 'history.BoughtTotalLabel' not in vm or 'Money.Format(history.BoughtPaisa)' in vm:
+        FAILURES.append('History screen summary must distinguish hidden purchase money from zero')
+    tests = (DOTNET / 'Area11.Tests/SnapshotReadBoundaryTests.cs').read_text()
+    for name in ('AnonymousSnapshotAndHistoryExportReadsRefuse', 'InactiveDatabaseOwnerCannotUseSnapshotOrExportDefaults',
+                 'StaffHistoryKeepsPurchaseQuantityButMasksBothCostInputsAndAggregate',
+                 'ProfitGrantDoesNotOverrideIndependentHistoricalCostGrant',
+                 'HistoryCsvLeavesBothDeniedPurchaseMoneyCellsEmptyButKeepsSales',
+                 'HistoryDocumentMasksPurchaseRowsAndSummaryNotOnlyScreenColumns',
+                 'DisabledReorderStillChecksCurrentReaderBeforeEarlySuccess',
+                 'PublicDaysRequiresReportModuleAndRespectsGlobalProfitToggle',
+                 'DashboardKeepsPosOrReportsRatherThanRequiringBoth'):
+        if name not in tests:
+            FAILURES.append(f'Snapshot boundary regression missing {name}')
+    REPORT.append('Phase4 portion5: history/Reorder purchase-cost masks (D-110 now supplies independent grants), masked screen/print/CSV summaries, current reader/module for five snapshot paths, checked public daily rows; wider session/finance/export/Windows audit pending')
+
+
+def check_definition_time_boundaries():
+    """Owner definition writes and one-transaction clock correction; source contracts only."""
+    core = DOTNET / 'Area11.Core/Services'
+    fields = (core / 'CustomFieldService.cs').read_text()
+    for name in ('Add', 'Update', 'SetActive', 'Move'):
+        match = re.search(r'public ServiceResult(?:<CustomField>)?\s+' + name + r'\(', fields)
+        body = fields[match.end():].split('\n    public ', 1)[0] if match else ''
+        tx = body.find('return _db.Tx(connection =>')
+        gate = body.find('var owner = OwnerAccess.Require(_db, connection, user);')
+        first = min((pos for pos in (body.find('LabelExists(connection'), body.find('ReadField(connection')) if pos >= 0), default=-1)
+        if not (0 <= tx < gate < first):
+            FAILURES.append(f'CustomField.{name} must validate current owner inside transaction before duplicate/target/no-op checks')
+        if '_audit.Record(connection, owner, Modules.Settings' not in body:
+            FAILURES.append(f'CustomField.{name} must audit resolved owner')
+    for name in ('List', 'Values', 'DescribeValues'):
+        match = re.search(r'public ServiceResult<[^\n]+?>\s+' + name + r'\(', fields)
+        body = fields[match.end():].split('\n    public ', 1)[0] if match else ''
+        module = 'module' if name == 'List' else 'CustomFieldEntity.ModuleFor(key)'
+        if f'SnapshotReadAccess.Require(_db, connection, _permissions, user, {module});' not in body:
+            FAILURES.append(f'CustomField.{name} lost current reader/module gate')
+        if name == 'List' and 'if (manage || includeInactive) OwnerAccess.Require(_db, connection, reader);' not in body:
+            FAILURES.append('Custom field management/inactive listing must validate current owner')
+    public_save = fields.split('public ServiceResult SaveValues(', 1)[-1].split('    // The creator', 1)[0]
+    for token in ('return _db.Tx(connection =>',
+                  'var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, CustomFieldEntity.ModuleFor(key));',
+                  'return SaveValuesInTransaction(connection, reader, key, entityId, values);'):
+        if token not in public_save:
+            FAILURES.append(f'Public custom answer save lost checked transaction/reader: {token}')
+    fix = (core / 'TimeCorrectionService.cs').read_text()
+    if fix.count('OwnerAccess.Require(_db, connection, user);') != 3:
+        FAILURES.append('Time eligibility, list and transactional apply all need current-owner gates')
+    apply = fix.split('User? user, IReadOnlyList<int>? ids, TimeSpan currentOffset)', 1)[-1].split('    private static TimeSpan ShiftFor', 1)[0]
+    stages = [apply.find(token) for token in ('return _db.Tx(connection =>',
+              'var owner = OwnerAccess.Require(_db, connection, user);',
+              'var row = _db.QuerySingle<BillRow>(connection', 'var planned = new List<',
+              'UPDATE sales SET date = @date, time_offset_seconds = @offset',
+              '_audit.Record(connection, owner, Modules.Sales, "sale_time_fixed"')]
+    if any(pos < 0 for pos in stages) or stages != sorted(stages):
+        FAILURES.append('Time correction must read/plan/write/audit after owner check in same transaction')
+    if apply.count('_db.Tx(') != 1 or '_db.Open()' in apply:
+        FAILURES.append('Time apply must not use detached read connection or nested write transaction')
+    db = (DOTNET / 'Area11.Core/Data/Database.cs').read_text()
+    if 'connection.BeginTransaction(deferred: false)' not in db:
+        FAILURES.append('Time correction depends on Database.Tx immediate transaction')
+    tests = (DOTNET / 'Area11.Tests/OwnerDefinitionTimeBoundaryTests.cs').read_text()
+    for name in ('ForgedOwnerLabelCannotAdministerDefinitionsOrBillTimes',
+                 'InactiveDatabaseOwnerCannotUseNoOpOrDefinitionAndTimeWrites',
+                 'DefinitionAuditsUseCurrentStoredOwnerName', 'CashierKeepsAuthorizedCustomerAnswerWorkflow',
+                 'SameFieldServiceChecksNextReadAndPublicSaveAfterModuleRevocation',
+                 'AuthorizedTimeCorrectionKeepsCreatedAtAndAllMoneySnapshots',
+                 'SecondApplyOfSameOffsetIsIdempotentAndStillRequiresOwner',
+                 'BadPaymentDateRollsBackEarlierBillAndItsAuditInSameTransaction',
+                 'TimeAuditFailureRollsBackBillPaymentAndOffset'):
+        if name not in tests:
+            FAILURES.append(f'Definition/time boundary regression missing {name}')
+    REPORT.append('Phase4 portion6: current owner inside four custom-definition write transactions, public field read/save current account/module, resolved audits and immediate one-transaction owner/read/plan/write time correction; delegated parent workflows/full sessions/concurrency/Windows pending')
+
+
+def check_financial_visibility_grants():
+    """D-110 independent financial grants. Named paths only, not whole-application secrecy proof."""
+    core = DOTNET / 'Area11.Core'
+    permission = (core / 'Services/PermissionService.cs').read_text()
+    for token in ('public const string PurchaseCost = "purchasecost";', 'PurchaseCost => "View Purchase Cost"',
+                  'Profit => "View Profit"', 'Modules.Profit or Modules.PurchaseCost or Modules.Audit',
+                  'if (IsFinancialVisibility(module)) return CanSeeFinancial(user, module);',
+                  'current is not { Active: true } || current.Kind != actor.Kind',
+                  'if (target.IsOwner && !IsFinancialVisibility(module))',
+                  'user.IsOwner && !IsFinancialVisibility(module)'):
+        if token not in permission:
+            FAILURES.append(f'Central financial permission contract missing {token}')
+    if not (permission.find('if (IsFinancialVisibility(module))') < permission.find('if (user.IsOwner)')):
+        FAILURES.append('Owner module bypass must not override explicit financial checkbox')
+    financial = permission.split('private bool CanSeeFinancial', 1)[-1].split('public IReadOnlyDictionary', 1)[0]
+    if 'return false; // never fall back' not in financial:
+        FAILURES.append('Financial DB failure must refuse visibility, not role-fallback')
+    cost = (core / 'Services/CostPolicy.cs').read_text()
+    for token in ('settings.GetBool(MasterFoundationSettings.ProfitShowMargins, true)',
+                  'permissions.Can(user, Modules.PurchaseCost)'):
+        if token not in cost:
+            FAILURES.append(f'Cost policy must use main switch and independent cost grant: {token}')
+    history = (core / 'Services/ProductHistoryService.cs').read_text()
+    if 'CanSeeCost = CostPolicy.CanSee(_permissions, _settings, reader)' not in history or 'CanSeeCost = reader.CanManage' in history:
+        FAILURES.append('History must supersede D-109 role-based cost rule with D-110 grant')
+    report = (core / 'Services/ReportService.cs').read_text()
+    for token in ('DeadStock = ReadDeadStock(connection, canSeeCost)', 'projected.CostKnown = canSeeCost;',
+                  'if (!canSeeCost) projected.ValuePaisa = 0;', 'CostPaisa = canSeeCost ? items.Cost : 0',
+                  'RestockCostPaisa = canSeeCost ? returns.RestockCost : 0',
+                  'PurchasesPaisa = canSeeCost ? outflow.Purchases : 0'):
+        if token not in report:
+            FAILURES.append(f'Report independent purchase-cost projection missing {token}')
+    if 'CostKnown ? Money.Format(ValuePaisa) : "hidden"' not in (core / 'Models/ReportModels.cs').read_text():
+        FAILURES.append('Dead stock must distinguish hidden valuation from actual zero')
+    products = (core / 'Services/ProductService.cs').read_text()
+    if products.count('ProductReadAccess.RequirePreparationCost(reader, purpose, _permissions, settings);') != 2:
+        FAILURES.append('Product search/get must refuse unauthorized preparation instead of feeding masked zero')
+    project = (core / 'Services/ProductReadAccess.cs').read_text()
+    for token in ('!CostPolicy.CanSee(permissions, settings, reader)',
+                  'product.CostKnown = financialRow && canSeeCost;', 'product.MarginKnown = financialRow && canSeeProfit;',
+                  '(product.RetailPaisa - product.CostPaisa) * 100m / product.RetailPaisa'):
+        if token not in project:
+            FAILURES.append(f'Independent product cost/profit projection missing {token}')
+    quote = (core / 'Services/SaleService.cs').read_text()
+    for token in ('var canSeeCost = CostPolicy.CanSee(_permissions, _settings, user);',
+                  'CostKnown = canSeeCost', 'ProfitKnown = canSeeProfit', 'CostPaisa = canSeeCost',
+                  'ProfitPaisa = canSeeProfit'):
+        if token not in quote:
+            FAILURES.append(f'Quote independent financial projection missing {token}')
+    ui = DOTNET / 'Area11.Desktop'
+    vm = (ui / 'ViewModels/SettingsViewModel.cs').read_text()
+    if 'editable || (_user.IsOwner && PermissionService.IsFinancialVisibility(module))' not in vm:
+        FAILURES.append('Owner must be able to edit own two financial visibility checkboxes')
+    if 'if (_user.IsOwner) values[MasterFoundationSettings.ProfitShowMargins] = ShowMargins;' not in vm or '["profit.showMargins"] = ShowMargins,' in vm:
+        FAILURES.append('Ordinary manager Settings save must omit the owner-only main financial switch')
+    pricing = (ui / 'ViewModels/LinePricingViewModel.cs').read_text()
+    for token in ('if (line.CostKnown)', 'if (line.ProfitKnown)', 'Money.Format(line.ProfitPaisa)'):
+        if token not in pricing:
+            FAILURES.append(f'Item editor must render independent Core quote flags: {token}')
+    settings = (core / 'Services/SettingsService.cs').read_text()
+    if 'if (key == MasterFoundationSettings.ProfitShowMargins)' not in settings or 'or MasterFoundationSettings.ProfitShowMargins);' not in settings:
+        FAILURES.append('Main financial switch must be protected from UI-only/manager saves')
+    if 'or MasterFoundationSettings.ProfitShowMargins ||' not in (core / 'Services/WorkbookService.cs').read_text():
+        FAILURES.append('Workbook must not bypass owner-only main financial switch')
+    tests = (DOTNET / 'Area11.Tests/FinancialVisibilityTests.cs').read_text()
+    for name in ('StaffHasTwoDistinctFinancialCheckboxKeysAndLabels', 'CostOnlyGrantWorksAcrossNamedViewsWithoutGrantingProfit',
+                 'ProfitOnlyGrantDoesNotReturnNamedPurchaseCostFields', 'MainSwitchOffMasksBothEvenForOwner',
+                 'OwnerCostCheckboxMayBeRevokedWithoutLosingSettingsAccess',
+                 'FinancialDatabaseReadFailureDoesNotFallBackToOwnerVisibility',
+                 'QuoteProfitOnlyReturnsActualProfitButNoAllocatedCost',
+                 'CostPreparationRequiresCostGrantRatherThanReturningFakeZeroInputs'):
+        if name not in tests:
+            FAILURES.append(f'Central financial visibility regression missing {name}')
+    REPORT.append('Phase4 portion7/D-110: two independent financial checkboxes + common owner-only main switch, current-account fail-closed financial reads, named cost/profit projections and safe preparation refusal; remaining batch/invoice/ledger/export propagation and full runtime audit OPEN')
+
+
+def check_windows_failure_regressions():
+    """Contracts from the owner's actual v0.80.0 Windows failure excerpt."""
+    service = (DOTNET / 'Area11.Core/Services/PricingAllowanceService.cs').read_text()
+    for token in ('if (!user.Active || person is not { Active: true })', 'if (person.Kind != user.Kind)'):
+        if token not in service:
+            FAILURES.append(f'Pricing read must refuse inactive/mismatched actor snapshot: {token}')
+    counter = (DOTNET / 'Area11.Tests/CounterAvailabilityTests.cs').read_text()
+    if 'var cashier = TestData.Cashier(test);' not in counter or 'new User { Id = 1' in counter:
+        FAILURES.append('Counter role tests must not relabel owner ID1 as staff')
+    book = (DOTNET / 'Area11.Core/Services/BookCheckService.cs').read_text()
+    snapshot = book.split('private BookCheckRule BillImpossibleMoney(', 1)[-1].split('private BookCheckRule ', 1)[0]
+    for token in ('THEN s.total_paisa ELSE 0 END AS ExpectedPaisa',
+                  'THEN s.pre_extra_total_paisa - s.extra_discount_paisa'):
+        if token not in snapshot:
+            FAILURES.append(f'Snapshot mismatch must report gap, not entire bill: {token}')
+    tests = (DOTNET / 'Area11.Tests/BookCheckTests.cs').read_text()
+    for token in ('Assert.Equal(4, report.Problems);', 'Assert.Equal(5, lines.Length);',
+                  'SnapshotOnlyMismatchReportsTheGapNotTheWholeBill', 'LegacyNullSnapshotDoesNotInventAFourthFinding'):
+        if token not in tests:
+            FAILURES.append(f'BookCheck snapshot/legacy regression missing {token}')
+    runner = (ROOT / 'tools/RUN-TESTS.cmd').read_text()
+    if 'findstr /r /i /c:"^[ ]*Failed Area11.Tests[.]"' not in runner:
+        FAILURES.append('Test runner must include indented VSTest failure names, not only final15 lines')
+    if not (ROOT / 'tools/check_bookcheck_snapshot_sqlite.py').is_file():
+        FAILURES.append('Reproducible isolated BookCheck snapshot SQL regression missing')
+    REPORT.append('Windows v0.80 report: real counter-role fixtures, active/same-role pricing read, snapshot gap vs whole-bill correction, new-vs-legacy finding counts and indented failure-name extraction; all four old-run failures now identified and mapped; patched xUnit rerun still UNRUN')
+
+
+def check_permission_inspector_ui():
+    core = DOTNET / 'Area11.Core'
+    inspector = (core / 'Services/PermissionInspectionService.cs').read_text()
+    for token in ('actor is not { Active: true, IsOwner: true }',
+                  'owner is not { Active: true, IsOwner: true }', 'Modules.All.Contains(module)',
+                  'BeginTransaction(deferred: true)', 'p.module_key = @module',
+                  'p.allowed AS savedGrant', 'JsonSerializer.Deserialize<bool>(json)',
+                  'PermissionService.RoleDefault(role, module)', 'transaction.Commit()',
+                  'Blocked: inactive account', 'Blocked: main switch OFF'):
+        if token not in inspector:
+            FAILURES.append(f'Owner-only live permission inspector missing {token}')
+    for forbidden in ('SELECT *', 'pin_hash', 'password_hash', '_db.Tx(', 'INSERT INTO', 'UPDATE users', 'UPDATE user_permissions'):
+        if forbidden in inspector:
+            FAILURES.append(f'Permission inspector must be a secret-free read-only projection: {forbidden}')
+    help_text = (core / 'Services/PermissionDocumentation.cs').read_text()
+    for token in ('Modules.Profit', 'Modules.PurchaseCost', 'Modules.Suppliers', 'Modules.Customers',
+                  'GLOBAL ROLLOUT OPEN', 'related totals', 'line total AND Bought aggregate'):
+        if token not in help_text:
+            FAILURES.append(f'Permission hover/scope must preserve independent grants and honest rollout: {token}')
+    ui = DOTNET / 'Area11.Desktop'
+    view = (ui / 'Views/SettingsView.xaml').read_text()
+    for token in ('Sensitive financial &amp; ledger permissions', 'Binding PagePermissions',
+                  'Binding FinancialPermissions', 'Binding Summary', 'PermissionMouseDown', 'PermissionDetailsClick'):
+        if token not in view:
+            FAILURES.append(f'Settings permission UI missing {token}')
+    pointer = (ui / 'Views/SettingsView.xaml.cs').read_text()
+    for token in ('TimeSpan.FromMilliseconds(GetDoubleClickTime() + 1)', 'e.Handled = true;', 'e.ClickCount >= 2',
+                  'CancelPermissionClick();', '_pendingPermissionClick = () => viewModel.TogglePermissionFromPointer(toggle);',
+                  'viewModel.OpenPermissionDetails(toggle);'):
+        if token not in pointer:
+            FAILURES.append(f'Double-click details must not accidentally persist a checkbox toggle: {token}')
+    settings = (ui / 'ViewModels/SettingsViewModel.cs').read_text()
+    if '!Permissions.Contains(toggle)' not in settings or 'PermissionInspector.Inspect(_user, toggle.Module)' not in settings:
+        FAILURES.append('Pending old-selection permission toggles/details need a current object/owner check')
+    details = (ui / 'ViewModels/PermissionDetailsViewModel.cs').read_text()
+    if details.find('People.Clear();') > details.find('PermissionInspector.Inspect(') or 'People.Clear();' not in details:
+        FAILURES.append('Permission inspector must clear stale names BEFORE any denied/failed refresh')
+    window = (ui / 'Views/PermissionDetailsWindow.xaml.cs').read_text()
+    for token in ('TimeSpan.FromSeconds(3)', '_refreshTimer.Stop();', '_refreshTimer.Tick -= RefreshAssignments;'):
+        if token not in window:
+            FAILURES.append(f'Live permission modal refresh/lifetime missing {token}')
+    tests = (DOTNET / 'Area11.Tests/PermissionInspectionTests.cs').read_text()
+    for name in ('EveryExistingCheckboxHasSummaryScopeAndPrerequisites',
+                 'ManagerWithStaffAndSettingsGrantsStillCannotInspect',
+                 'SameInspectorShowsCostGrantAndRevocationOnNextRead',
+                 'MainOffShowsAssignedGrantSeparatelyFromBlockedAccess',
+                 'DatabaseFailureDoesNotReturnAnOwnerDefaultOrCachedPeople',
+                 'InspectionDoesNotWriteGrantsSettingsAuditsOrFinancialRows'):
+        if name not in tests:
+            FAILURES.append(f'Permission inspector regression missing {name}')
+    REPORT.append('Phase4 permission UI: separate sensitive grants, shared hover/scope metadata, owner-only secret-free DB snapshot inspector, 3-second refresh with stale-name clearing, delayed single-click vs double-click details; Windows gestures and global D-110 route rollout OPEN')
+
+
+def check_purchase_read_visibility():
+    core = DOTNET / 'Area11.Core'
+    purchase = (core / 'Services/PurchaseService.cs').read_text()
+    invoice = purchase.split('public ServiceResult<ReceiptDocument> BuildInvoiceDocument(', 1)[-1].split('private ServiceResult<PurchaseResult> Save(', 1)[0]
+    for token in ('int purchaseId, User? user',
+                  'var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Purchases);',
+                  'var canSeeCost = CostPolicy.CanSee(_permissions, _settings, reader);',
+                  'canSeeCost ? Money.Format(line.LineTotalPaisa) : "hidden"',
+                  'canSeeCost ? Money.Format(header.TotalPaisa) : "hidden"',
+                  'if (!canSeeCost)', 'Pair("Paid", "hidden");', 'Pair("Due", "hidden");',
+                  'else if (header.PaidPaisa > 0)', 'catch (ValidationException exception)'):
+        if token not in invoice:
+            FAILURES.append(f'Purchase invoice current-reader/independent rate-total mask missing {token}')
+    if invoice.find('SnapshotReadAccess.Require') > invoice.find('_db.QuerySingle<PurchaseInvoiceHeader>'):
+        FAILURES.append('Invoice authorization must precede header lookup, including missing records')
+    if ' + exception.Message' in invoice:
+        FAILURES.append('Invoice read failure must not return internal database values/messages')
+    supplier = (core / 'Services/SupplierLedgerService.cs').read_text()
+    expired = supplier.split('public ServiceResult<List<ExpiredBatchRow>> ExpiredBatches(', 1)[-1].split('// -------------------------------------------------------------------- paying', 1)[0]
+    for token in ('var reader = LedgerReadAccess.Require(_db, connection, _permissions, user, Modules.Suppliers);',
+                  'var canSeeCost = CostPolicy.CanSee(_permissions, _settings, reader);',
+                  'row.CostKnown = canSeeCost;', 'if (!canSeeCost) row.CostPaisa = 0;'):
+        if token not in expired:
+            FAILURES.append(f'Expired supplier batches must independently project cost/valuation: {token}')
+    model = (core / 'Models/SupplierLedgerModels.cs').read_text().split('public sealed class ExpiredBatchRow', 1)[-1]
+    for token in ('public bool CostKnown', 'CostKnown ? Calc.Round(QtyBase * CostPaisa) : 0',
+                  'CostKnown ? Money.Format(ValuePaisa) : "hidden"'):
+        if token not in model:
+            FAILURES.append(f'Expired valuation must distinguish hidden from known-zero: {token}')
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/SuppliersViewModel.cs').read_text()
+    add = vm.split('private void AddExpired()', 1)[-1].split('private void RefreshTrayTotal()', 1)[0]
+    for token in ('_services.SupplierLedger.ExpiredBatches(_user, 500)',
+                  'current.Value?.FirstOrDefault(item => item.BatchId == selectedBatchId)',
+                  'if (!current.Ok || row is null)', 'if (!row.CostKnown)'):
+        if token not in add:
+            FAILURES.append(f'One-click expired preparation must re-read/refuse masked/stale inputs: {token}')
+    if add.find('if (!row.CostKnown)') > add.find('Tray.Remove('):
+        FAILURES.append('Do not mutate supplier return tray before the current known-cost gate')
+    tests = (DOTNET / 'Area11.Tests/PurchaseReadVisibilityTests.cs').read_text()
+    for name in ('ProfitOnlyCannotRevealInvoiceLineTotalPaidOrDue', 'MainOffMasksOwnerInvoiceAndOnRestoresWithoutReposting',
+                 'ManagerExpiredListRetainsQuantityButMasksRateAndValuation', 'AuthorizedActualZeroExpiredCostIsKnownNotHidden',
+                 'FinancialGrantDatabaseFailureDoesNotFallBackToOwnerCost', 'MaskedReadsDoNotRewriteMoneyStockPaymentsOrAudits'):
+        if name not in tests:
+            FAILURES.append(f'Purchase/expired read regression missing {name}')
+    REPORT.append('Phase4 portion9: current-reader purchase invoice masks line/Total/Paid/Due money, expired supplier batch raw cost/valuation + known flags, one-click current-row preparation refuses masked0; posting/supplier payable policy/global route rollout and Windows remain OPEN')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -5824,6 +6931,15 @@ def main() -> int:
     check_phase_two_fields()
     check_phase_three_packaging()
     check_master_foundation()
+    check_deworkshop()
+    check_save_warning()
+    check_template_conflict()
+    check_counter_availability()
+    check_counter_checkout()
+    check_counter_search_trial()
+    check_counter_keyboard_phase_one()
+    check_counter_pricing_phase_two()
+    check_counter_extra_discount_phase_three()
     check_checklist()
     check_audit_recovery()
     check_report_chart()
@@ -5832,6 +6948,16 @@ def main() -> int:
     check_cloud_sync_closure()
     check_native_workbook()
     check_backup_restore_gate()
+    check_owner_boundary_review()
+    check_phase_four_access_projections()
+    check_ledger_read_boundaries()
+    check_product_read_boundaries()
+    check_snapshot_read_boundaries()
+    check_definition_time_boundaries()
+    check_financial_visibility_grants()
+    check_windows_failure_regressions()
+    check_permission_inspector_ui()
+    check_purchase_read_visibility()
     check_csharp_grammar()
 
     if not quiet:

@@ -196,7 +196,7 @@ public sealed class WriteOffViewModel : ObservableObject, IEmptyPage
 
     private void Search()
     {
-        var result = _services.Products.Search(SearchText);
+        var result = _services.Products.Search(_user, SearchText, purpose: ProductReadPurpose.WriteOff);
 
         Results.Clear();
 
@@ -252,9 +252,7 @@ public sealed class WriteOffViewModel : ObservableObject, IEmptyPage
             return;
         }
 
-        var perUnit = SelectedProduct.UnitsPerBox > 0 && Unit == "box"
-            ? SelectedProduct.UnitsPerBox
-            : Unit == "strip" ? SelectedProduct.UnitsPerStrip : 1;
+        var perUnit = Packs.PerUnit(SelectedProduct.BoxStrips, SelectedProduct.StripTablets, Unit);
 
         Qty.TryParse(QtyText, out var qty);
         var qtyBase = qty * perUnit;

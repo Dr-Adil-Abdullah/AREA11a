@@ -197,8 +197,8 @@ public sealed class DraftTests
 
         // The work is back as a draft; fixing the cart and posting again works.
         Assert.Equal("draft", DraftStatus(test, saved.Value.Id));
-        var fixed = drafts.SaveSaleDraft(TestData.Owner, TestData.Cart(product), saved.Value.Id);
-        Assert.True(fixed.Ok, fixed.Error);
+        var mended = drafts.SaveSaleDraft(TestData.Owner, TestData.Cart(product), saved.Value.Id);
+        Assert.True(mended.Ok, mended.Error);
         var retry = drafts.PostSale(TestData.Owner, saved.Value.Id);
         Assert.True(retry.Ok, retry.Error);
         Assert.Equal(1, Count(test, "sales"));
@@ -331,8 +331,8 @@ public sealed class DraftTests
         test.Database.Tx(connection =>
         {
             test.Database.Execute(connection,
-                "UPDATE document_drafts SET status = 'posted', posted_document_id = -1 WHERE id = @id;",
-                new { id = saved.Value!.Id });
+                "UPDATE document_drafts SET status = 'posted', posted_document_id = -1, posted_at = @at WHERE id = @id;",
+                new { id = saved.Value!.Id, at = "2026-01-01 10:00:00" });
         });
 
         var id = saved.Value!.Id;

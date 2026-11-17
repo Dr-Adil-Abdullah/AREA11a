@@ -53,13 +53,14 @@ public sealed class CustomerLedgerService
     public static readonly string[] CollectionMethods = { "cash", "online", "card" };
 
     /// <summary>The customer list: search by name or phone, optional "only with udhaar".</summary>
-    public ServiceResult<List<CustomerSummary>> List(string? search = null, bool onlyCredit = false)
+    public ServiceResult<List<CustomerSummary>> List(User? user, string? search = null, bool onlyCredit = false)
     {
         try
         {
             var term = (search ?? string.Empty).Trim();
 
             using var connection = _db.Open();
+            var reader = LedgerReadAccess.Require(_db, connection, _permissions, user, Modules.Customers);
 
             // Every sum is CAST to INTEGER: `qty_base` is REAL (a strip can be half a box), so SUM
             // returns a floating point number, and a floating paisa must never reach a rupee field.
@@ -75,7 +76,9 @@ SELECT c.id AS id, c.name AS name, c.phone AS phone, c.category AS category,
                WHERE s.customer_id = c.id AND s.status IN ('paid','partial','credit')), 0) AS INTEGER) AS lifetimePaisa,
        CAST(IFNULL((SELECT SUM(si.line_total_paisa - si.qty_base * si.cost_paisa_at_sale)
                FROM sale_items si JOIN sales s ON s.id = si.sale_id
-               WHERE s.customer_id = c.id AND s.status IN ('paid','partial','credit')), 0) AS INTEGER) AS profitPaisa,
+               WHERE s.customer_id = c.id AND s.status IN ('paid','partial','credit')), 0)
+            - IFNULL((SELECT SUM(es.extra_discount_paisa) FROM sales es
+               WHERE es.customer_id = c.id AND es.status IN ('paid','partial','credit')), 0) AS INTEGER) AS profitPaisa,
        CAST(IFNULL((SELECT SUM(r.refund_paisa) FROM sale_returns r
                JOIN sales rs ON rs.id = r.sale_id WHERE rs.customer_id = c.id), 0) AS INTEGER) AS returnsPaisa,
        (SELECT MAX(s.date) FROM sales s WHERE s.customer_id = c.id) AS lastBillDate
@@ -86,12 +89,19 @@ WHERE c.active = 1
 ORDER BY c.balance_paisa DESC, c.name COLLATE NOCASE;",
                 new { term, pattern = "%" + term + "%", onlyCredit = onlyCredit ? 1 : 0 });
 
+            var canSeeProfit = ProfitPolicy.CanSee(_permissions, _settings, reader);
             foreach (var row in rows)
             {
                 row.Stars = StarsFor(row.LoyaltyPoints, _settings.GetInt("loyalty.vipThreshold", 500));
+                row.ProfitKnown = canSeeProfit;
+                if (!canSeeProfit) row.ProfitPaisa = 0;
             }
 
             return ServiceResult<List<CustomerSummary>>.Success(rows);
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult<List<CustomerSummary>>.Fail(exception.Message);
         }
         catch (Exception exception)
         {
@@ -105,11 +115,12 @@ ORDER BY c.balance_paisa DESC, c.name COLLATE NOCASE;",
     }
 
     /// <summary>The whole page: the numbers, every movement, and the balance check.</summary>
-    public ServiceResult<CustomerPage> Page(int customerId)
+    public ServiceResult<CustomerPage> Page(User? user, int customerId)
     {
         try
         {
             using var connection = _db.Open();
+            var reader = LedgerReadAccess.Require(_db, connection, _permissions, user, Modules.Customers);
 
             var summary = _db.QuerySingle<CustomerSummary>(connection, @"
 SELECT c.id AS id, c.name AS name, c.phone AS phone, c.category AS category,
@@ -121,7 +132,9 @@ SELECT c.id AS id, c.name AS name, c.phone AS phone, c.category AS category,
                WHERE s.customer_id = c.id AND s.status IN ('paid','partial','credit')), 0) AS INTEGER) AS lifetimePaisa,
        CAST(IFNULL((SELECT SUM(si.line_total_paisa - si.qty_base * si.cost_paisa_at_sale)
                FROM sale_items si JOIN sales s ON s.id = si.sale_id
-               WHERE s.customer_id = c.id AND s.status IN ('paid','partial','credit')), 0) AS INTEGER) AS profitPaisa,
+               WHERE s.customer_id = c.id AND s.status IN ('paid','partial','credit')), 0)
+            - IFNULL((SELECT SUM(es.extra_discount_paisa) FROM sales es
+               WHERE es.customer_id = c.id AND es.status IN ('paid','partial','credit')), 0) AS INTEGER) AS profitPaisa,
        CAST(IFNULL((SELECT SUM(r.refund_paisa) FROM sale_returns r
                JOIN sales rs ON rs.id = r.sale_id WHERE rs.customer_id = c.id), 0) AS INTEGER) AS returnsPaisa,
        (SELECT MAX(s.date) FROM sales s WHERE s.customer_id = c.id) AS lastBillDate
@@ -133,6 +146,8 @@ FROM customers c WHERE c.id = @id;", new { id = customerId });
             }
 
             summary.Stars = StarsFor(summary.LoyaltyPoints, _settings.GetInt("loyalty.vipThreshold", 500));
+            summary.ProfitKnown = ProfitPolicy.CanSee(_permissions, _settings, reader);
+            if (!summary.ProfitKnown) summary.ProfitPaisa = 0;
 
             var movements = ReadMovements(connection, customerId);
 
@@ -180,6 +195,10 @@ FROM customers c WHERE c.id = @id;", new { id = customerId });
             page.ExpectedPaisa = running;
 
             return ServiceResult<CustomerPage>.Success(page);
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult<CustomerPage>.Fail(exception.Message);
         }
         catch (Exception exception)
         {
@@ -289,7 +308,7 @@ VALUES(@at, @method, @amount, @customerId, @userId, @note);",
     /// The paper the customer takes home: every movement and the closing balance. Printed by the same
     /// 58 / 80 mm pipeline as every other slip, so the shop needs no second printer.
     /// </summary>
-    public ServiceResult<ReceiptDocument> Statement(int customerId) => Statement(customerId, null);
+    public ServiceResult<ReceiptDocument> Statement(User? user, int customerId) => Statement(user, customerId, null);
 
     /// <summary>
     /// The month's paper (F-49): the movements of **one month** between an opening and a closing
@@ -300,7 +319,7 @@ VALUES(@at, @method, @amount, @customerId, @userId, @note);",
     /// from the khata. Profit is deliberately absent: the customer's copy is not the owner's report
     /// (F-44 puts lifetime profit behind the owner's permission).
     /// </summary>
-    public ServiceResult<ReceiptDocument> Statement(int customerId, string? month)
+    public ServiceResult<ReceiptDocument> Statement(User? user, int customerId, string? month)
     {
         var cleanMonth = NormalizeMonth(month);
 
@@ -310,7 +329,7 @@ VALUES(@at, @method, @amount, @customerId, @userId, @note);",
                 "Write the month as 2026-10 (four-digit year, a dash, two-digit month). Nothing was printed.");
         }
 
-        var page = Page(customerId);
+        var page = Page(user, customerId);
 
         if (!page.Ok || page.Value is null)
         {
@@ -433,6 +452,79 @@ VALUES(@at, @method, @amount, @customerId, @userId, @note);",
     /// the day. The "before" figure is that plus the amount received, because a collection moves the
     /// khata by exactly its own amount.
     /// </summary>
+    /// <summary>
+    /// Portion 11: one bulk job for several picked customers. Full statements only (the month
+    /// statement stays a single print); every customer must build or none does. The summary
+    /// lists name, phone and balance for the a4_list format.
+    /// </summary>
+    public ServiceResult<BulkPrintJob> BuildBulkStatements(User? user, IReadOnlyList<int> ids)
+    {
+        var clean = ids.Where(id => id > 0).Distinct().OrderBy(id => id).ToList();
+        if (clean.Count == 0)
+        {
+            return ServiceResult<BulkPrintJob>.Fail("Pick at least one customer first.");
+        }
+
+        try
+        {
+            var documents = new List<ReceiptDocument>();
+            var summaries = new List<CustomerSummary>();
+            foreach (var id in clean)
+            {
+                var page = Page(user, id);
+                if (!page.Ok || page.Value is null)
+                {
+                    return ServiceResult<BulkPrintJob>.Fail(
+                        "Customer " + id + " could not be prepared; nothing was printed.");
+                }
+
+                var built = Statement(user, id);
+                if (!built.Ok || built.Value is null)
+                {
+                    return ServiceResult<BulkPrintJob>.Fail(
+                        "Customer " + id + " could not be prepared; nothing was printed.");
+                }
+
+                documents.Add(built.Value);
+                summaries.Add(page.Value.Summary);
+            }
+
+            var width = ReceiptService.ColumnsForMillimetres(_settings.GetInt("printer.width", 58));
+            var summary = new ReceiptDocument
+            {
+                Title = "Customers (" + summaries.Count + ")",
+                Width = width,
+                AutoCut = _settings.GetBool("printer.autoCut", true),
+                Copies = 1
+            };
+            summary.Lines.Add(new ReceiptLine(ReceiptService.Fit("CUSTOMERS (" + summaries.Count + ")", width), ReceiptAlign.Center, bold: true));
+            summary.Lines.Add(ReceiptLine.Sep(width));
+            foreach (var row in summaries)
+            {
+                summary.Lines.Add(new ReceiptLine(ReceiptService.Fit(row.Name, width), ReceiptAlign.Left, bold: true));
+                summary.Lines.Add(new ReceiptLine(ReceiptService.TwoColumns(
+                    (row.Phone ?? string.Empty).Trim(), Money.Format(row.BalancePaisa), width)));
+            }
+
+            summary.Lines.Add(ReceiptLine.Sep(width));
+            summary.Lines.Add(new ReceiptLine(
+                ReceiptService.TwoColumns("TOTAL OWED", Money.Format(summaries.Sum(row => row.BalancePaisa)), width),
+                ReceiptAlign.Left, bold: true));
+
+            return ServiceResult<BulkPrintJob>.Success(new BulkPrintJob
+            {
+                Title = "Customers (" + summaries.Count + ")",
+                Documents = documents,
+                Summary = summary
+            });
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The bulk statements could not be prepared.", exception);
+            return ServiceResult<BulkPrintJob>.Fail("The bulk statements could not be prepared. " + exception.Message);
+        }
+    }
+
     public ServiceResult<ReceiptDocument> PaymentReceipt(User? user, int paymentId)
     {
         if (!_permissions.Can(user, Modules.Customers))
@@ -443,6 +535,7 @@ VALUES(@at, @method, @amount, @customerId, @userId, @note);",
         try
         {
             using var connection = _db.Open();
+            LedgerReadAccess.Require(_db, connection, _permissions, user, Modules.Customers);
 
             var payment = _db.QuerySingle<PaymentRow>(connection, @"
 SELECT p.id AS id, p.date AS date, p.method AS method, p.amount_paisa AS amountPaisa,
@@ -519,6 +612,10 @@ WHERE p.id = @id AND p.sale_id IS NULL AND p.purchase_id IS NULL
             }
 
             return ServiceResult<ReceiptDocument>.Success(document);
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult<ReceiptDocument>.Fail(exception.Message);
         }
         catch (Exception exception)
         {

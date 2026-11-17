@@ -20,17 +20,19 @@ public static class Modules
     public const string Cash = "cash";
     public const string Reports = "reports";
     public const string Profit = "profit";
+    public const string PurchaseCost = "purchasecost";
     public const string Audit = "audit";
     public const string Import = "import";
     public const string Backup = "backup";
     public const string Settings = "settings";
     public const string Staff = "staff";
     public const string Sync = "sync";
+    public const string CloseApp = "closeapp";
 
     public static readonly string[] All =
     {
         Pos, Sales, Returns, Customers, Products, Purchases, Suppliers, Stock, StockTake, Reorder,
-        Cash, Reports, Profit, Audit, Import, Backup, Settings, Staff, Sync
+        Cash, Reports, Profit, PurchaseCost, Audit, Import, Backup, Settings, Staff, Sync, CloseApp
     };
 
     public static string Label(string module) => module switch
@@ -47,13 +49,15 @@ public static class Modules
         Reorder => "Reorder pad",
         Cash => "Cash / shifts",
         Reports => "Reports",
-        Profit => "Net profit",
+        Profit => "View Profit",
+        PurchaseCost => "View Purchase Cost",
         Audit => "Audit black box",
         Import => "Excel import",
         Backup => "Backup / restore",
         Settings => "Settings",
         Staff => "Staff & permissions",
         Sync => "Cloud sync",
+        CloseApp => "Close the program",
         _ => module
     };
 }
@@ -81,8 +85,8 @@ public sealed class PermissionService
         UserRole.Owner => true,
         // Cloud sync moves the whole shop out of the building, so a manager does not get it by
         // default - the owner ticks it for one person on purpose (F-48, D-66).
-        UserRole.Manager => module is not (Modules.Profit or Modules.Audit or Modules.Backup
-            or Modules.Staff or Modules.Sync),
+        UserRole.Manager => module is not (Modules.Profit or Modules.PurchaseCost or Modules.Audit or Modules.Backup
+            or Modules.Staff or Modules.Sync or Modules.CloseApp),
         UserRole.Salesman => module is Modules.Pos or Modules.Sales or Modules.Returns
             or Modules.Customers or Modules.Products,
         _ => module is Modules.Pos or Modules.Returns or Modules.Customers
@@ -94,6 +98,10 @@ public sealed class PermissionService
         {
             return false;
         }
+
+        // Visibility is independently revocable even for the owner. Other owner module access
+        // remains protected, so hiding financial numbers cannot lock the owner out of Settings.
+        if (IsFinancialVisibility(module)) return CanSeeFinancial(user, module);
 
         if (user.IsOwner)
         {
@@ -113,6 +121,29 @@ public sealed class PermissionService
         {
             _log.Error($"Permission check failed for user {user.Id}/{module}.", exception);
             return RoleDefault(user.Kind, module);
+        }
+    }
+
+    public static bool IsFinancialVisibility(string module) => module is Modules.Profit or Modules.PurchaseCost;
+
+    private bool CanSeeFinancial(User actor, string module)
+    {
+        if (!actor.Active || actor.Id <= 0) return false;
+        try
+        {
+            using var connection = _db.Open();
+            var current = _db.QuerySingle<User>(connection,
+                "SELECT id, name, role, active FROM users WHERE id = @id;", new { id = actor.Id });
+            if (current is not { Active: true } || current.Kind != actor.Kind) return false;
+            var grant = _db.QuerySingle<int?>(connection,
+                "SELECT allowed FROM user_permissions WHERE user_id = @userId AND module_key = @module;",
+                new { userId = current.Id, module });
+            return grant is null ? RoleDefault(current.Kind, module) : grant.Value != 0;
+        }
+        catch (Exception exception)
+        {
+            _log.Error($"Financial visibility check failed for {actor.Id}/{module}.", exception);
+            return false; // never fall back to role visibility on a failed read
         }
     }
 
@@ -140,7 +171,7 @@ public sealed class PermissionService
 
         foreach (var module in Modules.All)
         {
-            map[module] = user.IsOwner
+            map[module] = (user.IsOwner && !IsFinancialVisibility(module))
                 || (stored.TryGetValue(module, out var value) ? value : RoleDefault(user.Kind, module));
         }
 
@@ -163,6 +194,7 @@ public sealed class PermissionService
         {
             _db.Tx(connection =>
             {
+                var owner = OwnerAccess.Require(_db, connection, actor);
                 var target = _db.QuerySingle<User>(connection,
                     "SELECT id, name, role, active FROM users WHERE id = @id;", new { id = userId });
 
@@ -171,7 +203,7 @@ public sealed class PermissionService
                     throw new ValidationException("That person no longer exists.");
                 }
 
-                if (target.IsOwner)
+                if (target.IsOwner && !IsFinancialVisibility(module))
                 {
                     throw new ValidationException("The owner always has every permission.");
                 }
@@ -193,10 +225,10 @@ ON CONFLICT(user_id, module_key) DO UPDATE SET
                         module,
                         allowed = allowed ? 1 : 0,
                         at = Clock.Now(),
-                        actor = actor.Name
+                        actor = owner.Name
                     });
 
-                _audit.Record(connection, actor, "Users", "permission_change", "user_permissions",
+                _audit.Record(connection, owner, "Users", "permission_change", "user_permissions",
                     $"{userId}:{module}",
                     oldValue: old?.ToString(),
                     newValue: allowed ? "1" : "0");
@@ -226,12 +258,21 @@ ON CONFLICT(user_id, module_key) DO UPDATE SET
         {
             _db.Tx(connection =>
             {
+                var owner = OwnerAccess.Require(_db, connection, actor);
+                var target = _db.QuerySingle<User>(connection,
+                    "SELECT id, name, role, active FROM users WHERE id = @id;", new { id = userId });
+                if (target is null) throw new ValidationException("That person no longer exists.");
+                if (target.IsOwner) throw new ValidationException("The owner always has every permission.");
                 _db.Execute(connection, "DELETE FROM user_permissions WHERE user_id = @userId;", new { userId });
-                _audit.Record(connection, actor, "Users", "permission_reset", "user_permissions",
+                _audit.Record(connection, owner, "Users", "permission_reset", "user_permissions",
                     userId.ToString(), oldValue: "custom", newValue: "role defaults");
             });
 
             return ServiceResult.Success();
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult.Fail(exception.Message);
         }
         catch (Exception exception)
         {

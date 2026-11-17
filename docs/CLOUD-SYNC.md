@@ -33,6 +33,8 @@ create table if not exists public.area11_sync (
 | Key | anon key (یہ پاس ورڈ کی طرح ہے — کسی کو نہ دیں؛ محفوظ ہونے کے بعد دوبارہ سکرین پر نہیں آتا) |
 | Table | `area11_sync` |
 | Shop id | `shop-1` (ایک ہی دکان کے دونوں کاؤنٹر پر **ایک ہی**؛ دوسری برانچ ہو تو `shop-2`) |
+| خودکار بھیج (automatic) | ٹک لگائیں تو sign-in کے دوران دکان خود ہر چند منٹ بعد بھیجتی ہے (v0.56.0) |
+| ہر (منٹ) | 5 سے 1440 تک پورا عدد، مثلاً `15` |
 
 پھر **Save settings** دبائیں۔ اگر ٹک لگی ہو اور کوئی خانہ خالی ہو تو صفحہ محفوظ نہیں کرتا اور صاف کہتا ہے کہ کون سا خانہ
 باقی ہے۔ غلط خانہ بھی وہیں رد ہو جاتا ہے: ایڈریس `https://` سے شروع ہونا چاہیے، اور **shop id میں خالی جگہ نہیں** ہو سکتی۔
@@ -51,6 +53,19 @@ create table if not exists public.area11_sync (
 
 تیسرا بٹن اُس وقت تک **بند** رہتا ہے جب تک آپ یہ ٹک نہ لگائیں:
 *"I understand: the cloud rows replace the rows on this computer."*
+
+## 2a. خودکار بھیج (automatic push، v0.56.0)
+
+Settings میں **«Push automatically every few minutes»** پر ٹک اور منٹ (5 سے 1440) لکھیں تو sign-in کے دوران
+دکان خود بھیجتی رہتی ہے۔ اصول وہی ہیں جو ہاتھ والے بٹن کے ہیں:
+
+- ایک وقت میں **ایک ہی push**: ہاتھ والا بٹن چل رہا ہو تو خودکار باری خاموشی سے اگلی باری کا انتظار کرتی ہے،
+  اور خودکار بھیج چل رہا ہو تو بٹن صاف کہتا ہے کہ پہلے وہ مکمل ہونے دیں۔
+- ناکام باری **پورا وقفہ** انتظار کرتی ہے — انٹرنیٹ بند ہو تو ہر آدھے منٹ شور نہیں، اگلی باری پر خود کوشش ہوتی ہے۔
+  آخری غلطی کا جملہ اسی صفحے کی «Automatic» والی سطر میں نظر آتا ہے؛ کامیاب بھیج (ہاتھ والا یا خودکار) اسے مٹا دیتا ہے۔
+- خودکار بھیج **صرف بھیجتا** ہے — «Bring» ہمیشہ آپ کے اپنے دو کلک (دیکھیں، پھر ٹک) سے ہوتا ہے۔
+- دو کاؤنٹر ایک ہی shop id پر بھیجیں تو **آخری بھیج جیتتا** ہے (نیا پرانے کی جگہ لکھا جاتا ہے)؛ کوئی جوڑ (merge) نہیں ہوتا۔
+- خالی دکان («بھیجنے کو کچھ نہیں») بھی پورا وقفہ انتظار کرتی ہے، ہر ٹک پر دوبارہ تیاری نہیں ہوتی۔
 
 Preview کے بعد **Refresh** یا کامیاب **Push** پرانی preview کو apply سے ہٹا دیتا ہے؛ نیا موازنہ پڑھنا ہوگا۔
 Preview کے بعد Settings میں cloud بند کر دیں تو Core بھی apply رد کرتا ہے، بیک اپ سے پہلے۔ مستقبل کے
@@ -74,9 +89,8 @@ Preview کے بعد Settings میں cloud بند کر دیں تو Core بھی ap
 `provisional_return_id` خالی کر کے یا financial row چھپا کر خرابی نہیں چھپائی جاتی۔
 
 Format 3 میں companies، generic formulas، brands اور suppliers products سے پہلے لکھے جاتے ہیں تاکہ
-managed links کا parent موجود ہو۔ فی الحال یہ **manual Push / Preview / Bring** ہی ہیں: Phase-1 settings
-میں automatic-sync کی مستقبل کی contract values ہیں، مگر کوئی background scheduler یا automatic-sync UI
-ابھی نہیں بنایا گیا۔
+managed links کا parent موجود ہو۔ v0.56.0 سے **automatic push** بھی ہے (اوپر 2a): ہاتھ والا Push / Preview /
+Bring ویسے ہی ہیں، اور خودکار باری انہی اصولوں پر چلتی ہے — صرف بھیجنا، ایک وقت میں ایک، ناکامی پر اگلا وقفہ۔
 
 ---
 
@@ -131,6 +145,7 @@ Supabase کا ٹیبل `area11_sync` ایک ہی قطار رکھتا ہے، او
 | "That copy belongs to 'shop-2'…" | غلط دکان کی کاپی | Shop id ٹھیک کریں؛ کچھ نہیں لکھا گیا |
 | "different Area11 (format …)" | دستاویز نئے/نامعلوم قواعد کا ہے | Area11 اپڈیٹ کریں؛ بیک اپ یا apply شروع نہیں ہوتا |
 | "references missing … Repair the local database" | مقامی record کا parent موجود نہیں | Push نہ دہرائیں؛ مقامی books/database کی مرمت اور مکمل log درکار ہے |
+| "A push is already running…" | خودکار بھیج چل رہا ہے | چند سیکنڈ ٹھہریں اور Push دوبارہ دبائیں؛ دوہرا بھیج نہیں ہوتا |
 
 ---
 
@@ -147,7 +162,7 @@ Key کبھی آڈٹ میں نہیں لکھی جاتی؛ صفحہ بھی اُس �
 
 ## 7. اصل Supabase پر محتاط جانچ (v0.39.0)
 
-پہلے Windows پر `tools\RUN-TESTS.cmd` چلائیں: مطلوبہ نتیجہ **`ALL GREEN - 918 of 918`** ہے۔
+پہلے Windows پر `tools\RUN-TESTS.cmd` چلائیں: مطلوبہ نتیجہ **`ALL GREEN - 1144 of 1144`** ہے۔
 پھر اصل cloud جانچ کے لیے الگ **test Shop id / table** اور آزمائشی database نقل استعمال کریں۔ اصل دکان کا
 ڈیٹا یا key چیٹ میں نہ بھیجیں؛ key صرف Settings کے خانے میں لکھیں۔
 
@@ -159,4 +174,10 @@ Key کبھی آڈٹ میں نہیں لکھی جاتی؛ صفحہ بھی اُس �
 5. صرف آزمائشی نقل پر ٹک اور **Bring** کریں۔ پہلے backup بننا چاہیے؛ managed parents product سے پہلے apply ہوں،
    پرانے financial parents/lines، PR allocations اور payments موجود ہوں، اور unrelated پرانا بل شامل نہ ہو۔
 6. Preview کے بعد Refresh/Push پر پرانی copy apply نہ ہو؛ Settings میں switch بند کر کے بھی apply رد ہو۔
-7. اصل نتیجہ، HTTP status اور پورا error متن محفوظ کریں۔ صرف fake-wire tests کو اصل Supabase کامیابی نہ لکھیں۔
+7. خودکار جانچ: test copy میں automatic پر ٹک اور 5 منٹ لکھیں؛ وقفے پر Push خود ہو اور «last sync» بدلے۔ پھر انٹرنیٹ
+   بند کر کے وقفہ گزاریں: صفحے کی «Automatic» سطر میں ناکامی کا جملہ آئے اور دکان کا کام رُکے نہیں؛ انٹرنیٹ واپس آئے
+   تو اگلی باری خود کامیاب ہو اور جملہ مٹ جائے۔
+8. ترتیب: خودکار بھیج کے دوران Push دبائیں تو «already running» والا جواب آئے، دوہرا بھیج نہ ہو۔
+9. علیحدگی: آزمائش ہمیشہ **test copy + test shop id + الگ table** پر کریں؛ بھیجنے سے پہلے صفحے پر SHOP ID اور TABLE
+   خود پڑھیں۔ اصل shop id کے نیچے test copy کبھی نہ بھیجیں — وہ اصل cloud نقل پر لکھ دے گا۔
+10. اصل نتیجہ، HTTP status اور پورا error متن محفوظ کریں۔ صرف fake-wire tests کو اصل Supabase کامیابی نہ لکھیں۔

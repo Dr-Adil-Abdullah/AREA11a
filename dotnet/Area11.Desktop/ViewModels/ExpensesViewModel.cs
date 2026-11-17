@@ -45,6 +45,7 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
     private string _stockPreview = string.Empty;
     private Product? _selectedProduct;
     private BatchRow? _selectedBatch;
+    private CashOutRow? _selectedRow;
 
     private string _todayText = "Rs 0";
     private string _statusText = "Type what was spent, or what the owner took, then press Save.";
@@ -58,10 +59,12 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
         DocEditor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Expense, saveWithParent: true);
         DocEditor.LoadNew();
 
+        ManageCategoriesCommand = new RelayCommand(ManageCategories);
         SaveExpenseCommand = new RelayCommand(SaveExpense);
         SaveDrawingCommand = new RelayCommand(SaveDrawing);
         SearchCommand = new RelayCommand(Search);
         RefreshCommand = new RelayCommand(Load);
+        PrintVoucherCommand = new RelayCommand(PrintVoucher);
 
         Load();
     }
@@ -72,10 +75,12 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
 
     public ObservableCollection<BatchRow> Batches { get; } = new();
 
-    /// <summary>The eight categories the shop actually uses; "Other" is last so nothing is ever blocked.</summary>
-    public IReadOnlyList<CategoryOption> Categories { get; } = ExpenseService.Categories
-        .Select(key => new CategoryOption(key, ExpenseService.CategoryLabel(key)))
-        .ToList();
+    /// <summary>The shop's own list (running costs, then stock goods); reloaded on every Load.</summary>
+    public ObservableCollection<CategoryOption> Categories { get; } = new();
+
+    public bool CanManageCategories => _user.IsOwner;
+
+    public RelayCommand ManageCategoriesCommand { get; }
 
     public IReadOnlyList<string> DrawingKinds { get; } = new[] { "Cash", "Goods" };
 
@@ -91,6 +96,49 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
     public RelayCommand SearchCommand { get; }
 
     public RelayCommand RefreshCommand { get; }
+
+    /// <summary>Portion 11: the picked entry as a printed voucher for the file.</summary>
+    public RelayCommand PrintVoucherCommand { get; }
+
+    /// <summary>The entry picked in the "what went out" list; null until the owner picks one.</summary>
+    public CashOutRow? SelectedRow
+    {
+        get => _selectedRow;
+        set
+        {
+            if (SetProperty(ref _selectedRow, value))
+            {
+                OnPropertyChanged(nameof(CanPrintVoucher));
+            }
+        }
+    }
+
+    public bool CanPrintVoucher => SelectedRow is not null;
+
+    /// <summary>
+    /// The picked entry on paper - an expense voucher or an owner-drawing slip. The paper is read
+    /// back from the database, so it always matches the black box, and printing changes nothing.
+    /// </summary>
+    private void PrintVoucher()
+    {
+        if (SelectedRow is null)
+        {
+            SetStatus("Pick an entry in the list first.", true);
+            return;
+        }
+
+        var document = _services.CashOut.BuildVoucherDocument(SelectedRow.Kind, SelectedRow.Id, _user);
+        if (!document.Ok || document.Value is null)
+        {
+            SetStatus(document.Error ?? "The voucher could not be prepared.", true);
+            return;
+        }
+
+        var printed = _services.Printer.Print(document.Value);
+        SetStatus(printed.Ok
+            ? "Voucher sent to the printer."
+            : "The printer did not answer: " + printed.Error, !printed.Ok);
+    }
 
     /// <summary>Recording an expense is money going out of the till, so it needs the Cash permission.</summary>
     public bool CanRecord => _services.Permissions.Can(_user, Modules.Cash);
@@ -108,6 +156,35 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
     {
         get => _category;
         set => SetProperty(ref _category, value);
+    }
+
+    private void ManageCategories()
+    {
+        if (!CanManageCategories)
+        {
+            return;
+        }
+
+        ExpenseCategoryWindowDoor.Show(_services, _user);
+        RefreshCategories();
+    }
+
+    private void RefreshCategories()
+    {
+        var keep = Category?.Key ?? "other";
+        Categories.Clear();
+
+        foreach (var row in _services.ExpenseCategories.List())
+        {
+            Categories.Add(new CategoryOption(
+                row.Name, ExpenseCategoryService.Label(row.Name) + " (" + row.TypeLabel + ")"));
+        }
+
+        Category = Categories.FirstOrDefault(item =>
+                string.Equals(item.Key, keep, StringComparison.OrdinalIgnoreCase))
+            ?? Categories.FirstOrDefault(item => item.Key == "other")
+            ?? Categories.FirstOrDefault()
+            ?? new CategoryOption("other", "Other");
     }
 
     public string Title
@@ -240,6 +317,7 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
 
     public void Load()
     {
+        RefreshCategories();
         Rows.Clear();
 
         foreach (var row in _services.CashOut.List())
@@ -384,7 +462,7 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
 
     private void Search()
     {
-        var result = _services.Products.Search(SearchText);
+        var result = _services.Products.Search(_user, SearchText, purpose: ProductReadPurpose.Expense);
 
         Results.Clear();
 

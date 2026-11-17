@@ -1,3 +1,5 @@
+using Area11.Core.Utils;
+
 namespace Area11.Core.Models;
 
 public sealed class PurchaseLineInput
@@ -31,6 +33,13 @@ public sealed class PurchaseInput
 
     public long PaidPaisa { get; set; }
 
+    /// <summary>
+    /// How the "paid now" money left the shop: cash, online or card. Null or anything unknown
+    /// means cash, so drafts written before this choice existed keep their old meaning - and only
+    /// cash moves the drawer's expected count.
+    /// </summary>
+    public string? PaidMethod { get; set; }
+
     public string? Notes { get; set; }
 
     /// <summary>
@@ -53,30 +62,22 @@ public sealed class PurchaseResult
     public List<string> Warnings { get; init; } = new();
 }
 
-/// <summary>A batch as the counter sees it (nearest expiry first).</summary>
-public sealed class BatchView
+/// <summary>One line of a saved purchase invoice, for the printed copy.</summary>
+public sealed class PurchaseInvoiceLine
 {
-    public int Id { get; set; }
+    public string ProductName { get; set; } = string.Empty;
 
-    public int ProductId { get; set; }
+    public double QtyEntered { get; set; }
 
-    public string BatchNo { get; set; } = string.Empty;
+    public string Unit { get; set; } = string.Empty;
+
+    public string? BatchNo { get; set; }
 
     public string? ExpiryDate { get; set; }
 
-    public string? ExpiryYm { get; set; }
-
-    public double QtyBase { get; set; }
-
-    public long CostPaisa { get; set; }
-
-    public long RetailPaisa { get; set; }
+    public long LineTotalPaisa { get; set; }
 
     public bool IsSample { get; set; }
 
-    public string QtyLabel => $"{QtyBase:0.###}";
-
-    public string ExpiryLabel => string.IsNullOrWhiteSpace(ExpiryDate)
-        ? "—"
-        : ExpiryDate;
+    public string QtyLabel => Qty.Format(QtyEntered) + " " + Unit;
 }

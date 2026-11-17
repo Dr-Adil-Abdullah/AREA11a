@@ -24,7 +24,7 @@
         </DockPanel>
 
         <!-- The shell owns the clickable section row. This headerless template keeps the existing
-             six tab contents and SelectedTabIndex semantics without drawing a second tab strip. -->
+             eight tab contents and SelectedTabIndex semantics without drawing a second tab strip. -->
         <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
             <TabControl.Template>
                 <ControlTemplate TargetType="TabControl">
@@ -33,19 +33,33 @@
             </TabControl.Template>
 
             <!-- ============================ 1. SHOP ============================ -->
+            <TabItem Header="App name &amp; icon">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel>
+                                <TextBlock Text="App name &amp; icon" Style="{StaticResource SectionTitle}" />
+                                <TextBlock Text="Owner: this name shows on every window, the sign-in screen and the taskbar. The icon shows on every window and the taskbar. Slips and WhatsApp keep printing the shop name from Shop details."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+                                <TextBlock Text="App name (1-40 letters)" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding AppDisplayName, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanChangeAppName}" MaxLength="40" />
+                                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                    <Button Content="Choose app icon…" Command="{Binding ChooseAppIconCommand}" IsEnabled="{Binding CanChangeAppIcon}" />
+                                    <Button Content="Use default icon" Command="{Binding ResetAppIconCommand}" IsEnabled="{Binding CanChangeAppIcon}" Margin="8,0,0,0" />
+                                </StackPanel>
+                                <TextBlock Text="Choose a Windows .ico file, no larger than 2 MB. The installed program and existing shortcuts keep their own icon; a photo-inclusive backup includes the chosen file."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
             <TabItem Header="Shop">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
 
                         <Border Style="{StaticResource SettingsGroup}">
                             <StackPanel>
-                                <TextBlock Text="App window icon" Style="{StaticResource SectionTitle}" />
-                                <TextBlock Text="Owner: choose a Windows .ico file. This changes Area11 windows; the installed executable and existing shortcuts keep their own icon. A photo-inclusive backup includes the chosen file."
-                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
-                                <StackPanel Orientation="Horizontal" Margin="0,6,0,12">
-                                    <Button Content="Choose app icon…" Command="{Binding ChooseAppIconCommand}" IsEnabled="{Binding CanChangeAppIcon}" />
-                                    <Button Content="Use default icon" Command="{Binding ResetAppIconCommand}" IsEnabled="{Binding CanChangeAppIcon}" Margin="8,0,0,0" />
-                                </StackPanel>
                                 <TextBlock Text="Product photos" Style="{StaticResource SectionTitle}" />
                                 <TextBlock Text="Choose the thumbnail size in Counter and the Products list. Open a photo to see its gallery."
                                            Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
@@ -57,7 +71,7 @@
                         <Border Style="{StaticResource SettingsGroup}">
                             <StackPanel>
                                 <TextBlock Text="Shop details" Style="{StaticResource SectionTitle}" />
-                                <TextBlock Text="This is printed at the top of every receipt. The application header always says Area11."
+                                <TextBlock Text="This is printed at the top of every receipt. Window titles show the app name from the 'App name &amp; icon' tab."
                                            Style="{StaticResource FieldHint}" />
 
                                 <Grid Margin="0,6,0,0">
@@ -126,6 +140,30 @@
                             </StackPanel>
                         </Border>
 
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel IsEnabled="{Binding CanChangeStartup}">
+                                <TextBlock Text="Windows start and protected close" Style="{StaticResource SectionTitle}" />
+                                <TextBlock Text="Owner only. Auto-start opens Area11 at every Windows sign-in on this PC (all accounts) and needs a Windows administrator to save. Protected also asks for the password on every × - on the shop screen and on the sign-in window."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+
+                                <TextBlock Text="How Area11 starts and closes" Style="{StaticResource FieldLabel}" />
+                                <ComboBox ItemsSource="{Binding StartupModeOptions}"
+                                          SelectedItem="{Binding SelectedStartupMode, Mode=TwoWay}"
+                                          DisplayMemberPath="Label" Width="380" HorizontalAlignment="Left" />
+
+                                <TextBlock Text="Who may close it in protected mode: the owner with the password or PIN, or a staff member you tick for Close the program on the Staff &amp; permissions tab. Hold Shift while starting to switch protection off again."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                <TextBlock Text="Honest limit: this stops casual closing, not a Windows administrator, Task Manager, shutdown or power loss. The shop's data survives all of those."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,4,0,0" />
+
+                                <CheckBox Content="Lock the screen while signed in"
+                                          IsChecked="{Binding FocusGuardEnabled, Mode=TwoWay}"
+                                          Margin="0,10,0,0" />
+                                <TextBlock Text="When ticked, leaving Area11 for another program first shows a small 'not allowed' box and pulls the screen back, and × asks for the password on every window. While ticked, the shop screen also keeps no minimize box, stays maximized, and the taskbar is hidden. Every escape is still written to the black box with who left, at what time, and for how long - and a run ended from Task Manager is caught at the next start."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Border>
+
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
@@ -156,7 +194,7 @@
 
                         <Border Style="{StaticResource SettingsGroup}">
                             <StackPanel>
-                                <TextBlock Text="When the receipt prints (D-26)" Style="{StaticResource SectionTitle}" />
+                                <TextBlock Text="When the receipt prints" Style="{StaticResource SectionTitle}" />
                                 <TextBlock Text="The owner asked for this to be a choice, so it is: automatic or manual."
                                            Style="{StaticResource FieldHint}" />
 
@@ -170,6 +208,47 @@
                                           IsChecked="{Binding AutoCut, Mode=TwoWay}"
                                           Margin="0,12,0,0" />
                                 <TextBlock Text="Only for printers with a cutter; a printer without one ignores the command."
+                                           Style="{StaticResource FieldHint}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel>
+                                <TextBlock Text="Printing several at once" Style="{StaticResource SectionTitle}" />
+                                <TextBlock Text="On the history, customer and supplier pages several rows can be ticked and printed as one set."
+                                           Style="{StaticResource FieldHint}" />
+
+                                <CheckBox Content="The Print button prints every ticked row"
+                                          IsChecked="{Binding DefaultBulk, Mode=TwoWay}"
+                                          Margin="0,12,0,0" />
+                                <TextBlock Text="On = one press prints the whole ticked set. Off = it prints the one open row, and the set stays behind its own 'Print selected' button."
+                                           Style="{StaticResource FieldHint}" />
+
+                                <TextBlock Text="What a bulk print looks like" Style="{StaticResource FieldLabel}" />
+                                <ComboBox ItemsSource="{Binding BulkFormatOptions}"
+                                          SelectedItem="{Binding SelectedBulkFormat, Mode=TwoWay}"
+                                          Width="430" HorizontalAlignment="Left" />
+                                <TextBlock Text="Separate receipts = one slip per bill, each cut on its own. One A4 list = the summary page only, for the file."
+                                           Style="{StaticResource FieldHint}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel>
+                                <TextBlock Text="WhatsApp + PDF" Style="{StaticResource SectionTitle}" />
+                                <TextBlock Text="Bills, statements, reports and slips can go to WhatsApp with a PDF file the owner attaches by hand."
+                                           Style="{StaticResource FieldHint}" />
+
+                                <CheckBox Content="Prepare a PDF file with every WhatsApp send"
+                                          IsChecked="{Binding WhatsAppPreparePdf, Mode=TwoWay}"
+                                          Margin="0,12,0,0" />
+                                <TextBlock Text="Off = only the message text goes; no file is prepared."
+                                           Style="{StaticResource FieldHint}" />
+
+                                <TextBlock Text="Folder for the prepared PDFs" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding WhatsAppExportDirectory, UpdateSourceTrigger=PropertyChanged}" Width="430"
+                                         HorizontalAlignment="Left" />
+                                <TextBlock Text="Leave it empty to use the shop's exports folder."
                                            Style="{StaticResource FieldHint}" />
                             </StackPanel>
                         </Border>
@@ -197,47 +276,42 @@
 
                         <Border Style="{StaticResource SettingsGroup}">
                             <StackPanel>
-                                <TextBlock Text="Discount limits" Style="{StaticResource SectionTitle}" />
-                                <TextBlock Text="A bigger discount than the limit needs a manager, so a cashier cannot quietly empty the till."
-                                           Style="{StaticResource FieldHint}" />
+                                <TextBlock Text="Purchase cost protection — always ON" Style="{StaticResource SectionTitle}" />
+                                <TextBlock Text="No one, including the owner, may sell below actual batch purchase cost. This cannot be switched off."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+                                <TextBlock Text="Default bill discount basis (owner only)" Style="{StaticResource FieldLabel}" Margin="0,12,0,0" />
+                                <ComboBox ItemsSource="{Binding DiscountBases}" SelectedItem="{Binding BillDiscountBasis, Mode=TwoWay}"
+                                          IsEnabled="{Binding IsOwner}" Width="180" HorizontalAlignment="Left" />
+                                <TextBlock Text="profit = discount from gross profit; retail = discount from the selling total. Staff limits are per person in Staff &amp; permissions; save that panel separately. An allowed Counter override lasts one bill only."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
 
-                                <Grid Margin="0,6,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="12" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Cashier may give (percent)" Style="{StaticResource FieldLabel}" />
-                                        <TextBox Text="{Binding CashierLimitText, UpdateSourceTrigger=PropertyChanged}" Width="110"
-                                                 HorizontalAlignment="Left" />
-                                    </StackPanel>
-
-                                    <StackPanel Grid.Column="2">
-                                        <TextBlock Text="Manager may give (percent)" Style="{StaticResource FieldLabel}" />
-                                        <TextBox Text="{Binding ManagerLimitText, UpdateSourceTrigger=PropertyChanged}" Width="110"
-                                                 HorizontalAlignment="Left" />
-                                    </StackPanel>
-                                </Grid>
-
-                                <CheckBox Content="Never sell below cost, even with a discount"
-                                          IsChecked="{Binding BlockBelowCost, Mode=TwoWay}"
+                                <CheckBox Content="Stop a bill that crosses the customer's khata limit"
+                                          IsChecked="{Binding BlockOverLimit, Mode=TwoWay}"
                                           Margin="0,14,0,0" />
-                                <TextBlock Text="Recommended. A sale below cost is a real loss, not a discount."
-                                           Style="{StaticResource FieldHint}" />
-                                <TextBlock Text="Discount % is of the full retail/selling-price total. With no discount, the Counter asks before using a VIP/Doctor rate; No keeps ordinary retail."
-                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                <TextBlock Text="Applies to cashiers. The owner and managers can always cross it; a customer with no limit set is never stopped."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel>
+                                <TextBlock Text="Profit and purchase-cost visibility" Style="{StaticResource SectionTitle}" />
+                                <CheckBox Content="Enable profit and purchase-cost visibility"
+                                          IsChecked="{Binding ShowMargins, Mode=TwoWay}"
+                                          IsEnabled="{Binding CanManageFinancialVisibility}"
+                                          Margin="0,10,0,0" />
+                                <TextBlock Text="Main switch: Off denies both profit and purchase-cost visibility. Each person also needs their separate View Profit / View Purchase Cost grant. No stored number changes."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
                             </StackPanel>
                         </Border>
 
                         <Border Style="{StaticResource SettingsGroup}">
                             <StackPanel>
                                 <TextBlock Text="Sale confirmation" Style="{StaticResource SectionTitle}" />
-                                <CheckBox Content="Show the Done / invoice / cash-change card after a saved sale"
+                                <CheckBox Content="Show the Done / invoice / cash-change popup after a saved sale"
                                           IsChecked="{Binding SaleSuccessPopup, Mode=TwoWay}"
                                           Margin="0,10,0,0" />
-                                <TextBlock Text="The card appears only after the bill is committed. Off = the existing status line still shows the saved invoice; printing is controlled separately above."
+                                <TextBlock Text="The popup appears only after the bill is committed. Off = the status line still shows the saved invoice; automatic printing is controlled separately above."
                                            Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
                             </StackPanel>
                         </Border>
@@ -292,7 +366,7 @@
                             <StackPanel>
                                 <TextBlock Text="Stock" Style="{StaticResource SectionTitle}" />
 
-                                <TextBlock Text="New work never takes stock below zero (D-93)"
+                                <TextBlock Text="New work never takes stock below zero"
                                            Style="{StaticResource FieldLabel}" Margin="0,10,0,0" />
                                 <TextBlock TextWrapping="Wrap" Style="{StaticResource FieldHint}"
                                            Text="Sales, write-offs, goods drawings, supplier returns and PR cancellations stop with a clear shortage message. There is no checkbox or owner bypass. Existing minus quantities stay visible in Stock minus until a physical stock-take reconciles them." />
@@ -359,7 +433,7 @@
 
                         <Border Style="{StaticResource SettingsGroup}">
                             <StackPanel IsEnabled="{Binding CanChangeCloud}">
-                                <TextBlock Text="Supabase mirror (optional)" Style="{StaticResource SectionTitle}" />
+                                <TextBlock Text="Cloud mirror (optional)" Style="{StaticResource SectionTitle}" />
                                 <TextBlock Text="A copy of the shop for looking at from home. The database on this computer is always the truth; the cloud is a mirror. Area11 works with no internet and no cloud account."
                                            Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
 
@@ -395,6 +469,14 @@
                                 <TextBox Text="{Binding SyncKey, UpdateSourceTrigger=PropertyChanged}" />
                                 <TextBlock Text="{Binding SyncKeyLabel}" Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
                                 <TextBlock Text="The key is a password to the whole mirror. It is never shown again after saving, and it never appears in the black box or on the Cloud sync page."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+
+                                <CheckBox Content="Push automatically every few minutes"
+                                          IsChecked="{Binding SyncAutomatic, Mode=TwoWay}" Margin="0,10,0,0" />
+
+                                <TextBlock Text="Automatic push every (minutes)" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding SyncAutomaticMinutesText, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock Text="Whole minutes from 5 to 1440. A failed push waits for the next round - the shop never stops for the cloud, and bringing data here always stays a deliberate two clicks."
                                            Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
 
                                 <Button Content="Remove the saved key" Style="{StaticResource GhostButton}"
@@ -459,10 +541,10 @@
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <StackPanel>
                                     <TextBlock Text="{Binding SelectedUserCaption}" Style="{StaticResource SectionTitle}" />
-                                    <TextBlock Text="Tick what this person may open. The owner sees everything and cannot be limited."
+                                    <TextBlock Text="Page grants and financial visibility are separate. Only the owner changes grants. Financial visibility can also be disabled for the owner."
                                                Style="{StaticResource FieldHint}" />
 
-                                    <ItemsControl ItemsSource="{Binding Permissions}" Margin="0,10,0,0">
+                                    <ItemsControl ItemsSource="{Binding PagePermissions}" Margin="0,10,0,0">
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate>
                                                 <UniformGrid Columns="2" />
@@ -470,15 +552,79 @@
                                         </ItemsControl.ItemsPanel>
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <CheckBox Content="{Binding Label}"
-                                                          IsChecked="{Binding Allowed, Mode=TwoWay}"
-                                                          IsEnabled="{Binding CanEdit}"
-                                                          Margin="0,3,10,3" />
+                                                <DockPanel Margin="0,3,10,3">
+                                                    <Button DockPanel.Dock="Right" Content="Details…" Click="PermissionDetailsClick"
+                                                            ToolTip="Read scope and current enabled/disabled staff assignments. Does not change a grant."
+                                                            Style="{StaticResource GhostButton}" Padding="6,2" Margin="4,0,0,0" />
+                                                    <CheckBox Content="{Binding Label}"
+                                                              IsChecked="{Binding Allowed, Mode=TwoWay}"
+                                                              IsEnabled="{Binding CanEdit}"
+                                                              PreviewMouseLeftButtonDown="PermissionMouseDown"
+                                                              PreviewMouseLeftButtonUp="PermissionMouseUp"
+                                                              ToolTipService.ShowOnDisabled="True">
+                                                        <CheckBox.ToolTip><ToolTip><TextBlock Text="{Binding Summary}" MaxWidth="360" TextWrapping="Wrap" /></ToolTip></CheckBox.ToolTip>
+                                                    </CheckBox>
+                                                </DockPanel>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
 
-                                    <Button Content="Back to the normal rights for this role"
+                                    <Border Background="{StaticResource BrandSoftBrush}" BorderBrush="{StaticResource BrandBrush}"
+                                            BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,14,0,0">
+                                        <StackPanel>
+                                            <TextBlock Text="Sensitive financial &amp; ledger permissions" Style="{StaticResource SectionTitle}" />
+                                            <TextBlock Text="Profit and Purchase Cost stay separate. Both need the main switch ON and a relevant page grant. Ledger access is a page/workflow grant, not a cost override."
+                                                       Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+                                            <TextBlock Text="Hover for a summary. Double-click a checkbox/label or choose Details for scope and live staff assignments. Single-click changes a tick after the Windows double-click interval; Space changes it normally."
+                                                       Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,6,0,4" />
+                                            <ItemsControl ItemsSource="{Binding FinancialPermissions}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <DockPanel Margin="0,5,0,5">
+                                                            <Button DockPanel.Dock="Right" Content="Details…" Click="PermissionDetailsClick"
+                                                                    Style="{StaticResource GhostButton}" Padding="8,3" Margin="8,0,0,0"
+                                                                    ToolTip="Read scope and current assignments without changing the checkbox." />
+                                                            <CheckBox Content="{Binding Label}"
+                                                                      IsChecked="{Binding Allowed, Mode=TwoWay}"
+                                                                      IsEnabled="{Binding CanEdit}"
+                                                                      PreviewMouseLeftButtonDown="PermissionMouseDown"
+                                                                      PreviewMouseLeftButtonUp="PermissionMouseUp"
+                                                                      ToolTipService.ShowOnDisabled="True">
+                                                                <CheckBox.ToolTip><ToolTip><TextBlock Text="{Binding Summary}" MaxWidth="360" TextWrapping="Wrap" /></ToolTip></CheckBox.ToolTip>
+                                                            </CheckBox>
+                                                        </DockPanel>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                            <TextBlock Text="Rollout is not complete: supplier/invoice/batch/stock/expense/audit/export paths still need migration. Details lists the current limits; this panel alone does not certify all-route cost secrecy."
+                                                       Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,8,0,0" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Background="{StaticResource BrandSoftBrush}" CornerRadius="8" Padding="12" Margin="0,12,0,0"
+                                            Visibility="{Binding IsOwner, Converter={StaticResource BoolToVis}}">
+                                        <StackPanel>
+                                            <TextBlock Text="This person's pricing limits" Style="{StaticResource SectionTitle}" />
+                                            <TextBlock Text="New non-owner accounts start with no price/discount edits. Limits apply to bill AND item discounts. Save here, separately from the page Save."
+                                                       Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+                                            <CheckBox Content="May edit final item rate" IsChecked="{Binding PricingEditRate}" Margin="0,8,0,0" />
+                                            <TextBlock Text="Maximum manual reduction from retail (%)" Style="{StaticResource FieldLabel}" />
+                                            <TextBox Text="{Binding PricingManualLimit, UpdateSourceTrigger=PropertyChanged}" />
+                                            <CheckBox Content="May discount gross profit" IsChecked="{Binding PricingProfit}" Margin="0,8,0,0" />
+                                            <TextBox Text="{Binding PricingProfitLimit, UpdateSourceTrigger=PropertyChanged}" ToolTip="Maximum profit discount percent" />
+                                            <CheckBox Content="May discount selling total" IsChecked="{Binding PricingRetail}" Margin="0,8,0,0" />
+                                            <TextBox Text="{Binding PricingRetailLimit, UpdateSourceTrigger=PropertyChanged}" ToolTip="Maximum selling-total discount percent" />
+                                            <CheckBox Content="May override bill basis for one bill" IsChecked="{Binding PricingOverride}" Margin="0,8,0,0" />
+                                            <CheckBox Content="May give separate Extra Discount" IsChecked="{Binding PricingExtra}" Margin="0,8,0,0" />
+                                            <TextBlock Text="Extra Discount limit (Rs per whole bill, not per click)" Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+                                            <TextBox Text="{Binding PricingExtraLimit, UpdateSourceTrigger=PropertyChanged}" />
+                                            <TextBlock Text="No automatic allowance, including owner. Actual purchase-cost safeguard always applies." Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+                                            <Button Content="Save this person's pricing limits" Command="{Binding SavePricingCommand}"
+                                                    Style="{StaticResource PrimaryButton}" Margin="0,10,0,0" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Button Content="Reset page permissions for this role (pricing unchanged)"
                                             Style="{StaticResource GhostButton}"
                                             HorizontalAlignment="Left" Margin="0,10,0,0"
                                             Command="{Binding ResetPermissionsCommand}" />
@@ -515,6 +661,38 @@
                                             <Button Content="Add this person" Style="{StaticResource PrimaryButton}"
                                                     HorizontalAlignment="Left" Margin="0,10,0,0"
                                                     Command="{Binding AddStaffCommand}" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Background="{StaticResource BrandSoftBrush}" CornerRadius="8"
+                                            Padding="12" Margin="0,12,0,0">
+                                        <StackPanel>
+                                            <TextBlock Text="Change a PIN or password" Style="{StaticResource SectionTitle}" />
+                                            <TextBlock Text="Pick a person on the left, type the new PIN - or the new password for the owner - and press the button. The old one stops working at once."
+                                                       Style="{StaticResource FieldHint}" />
+
+                                            <TextBlock Text="New PIN or password" Style="{StaticResource FieldLabel}" />
+                                            <TextBox Text="{Binding ResetStaffSecret, UpdateSourceTrigger=PropertyChanged}" />
+
+                                            <Button Content="Change it for the selected person" Style="{StaticResource PrimaryButton}"
+                                                    HorizontalAlignment="Left" Margin="0,10,0,0"
+                                                    Command="{Binding ResetSecretCommand}" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Background="{StaticResource BrandSoftBrush}" CornerRadius="8"
+                                            Padding="12" Margin="0,12,0,0">
+                                        <StackPanel>
+                                            <TextBlock Text="Your own recovery word" Style="{StaticResource SectionTitle}" />
+                                            <TextBlock Text="If you ever forget the owner password, this word signs you straight in from the sign-in screen. Until you set one, the word is area11 - set your own so nobody else can use it. Empty means back to area11."
+                                                       Style="{StaticResource FieldHint}" />
+
+                                            <TextBlock Text="New recovery word" Style="{StaticResource FieldLabel}" />
+                                            <TextBox Text="{Binding NewRecoveryWord, UpdateSourceTrigger=PropertyChanged}" />
+
+                                            <Button Content="Save this recovery word" Style="{StaticResource PrimaryButton}"
+                                                    HorizontalAlignment="Left" Margin="0,10,0,0"
+                                                    Command="{Binding SaveRecoveryWordCommand}" />
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>

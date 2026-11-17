@@ -72,16 +72,6 @@ public sealed class RecoveryService
         }
     }
 
-    /// <summary>True when nobody owes anything - the screen shows a friendly line instead of an empty grid.</summary>
-    public ServiceResult<bool> NothingOwed(User? user)
-    {
-        var report = Report(user);
-
-        return report.Ok && report.Value is not null
-            ? ServiceResult<bool>.Success(report.Value.CustomersCount == 0)
-            : ServiceResult<bool>.Fail(report.Error ?? "The udhaar list could not be built.");
-    }
-
     // ------------------------------------------------------------------ ageing
 
     private RecoveryReport Build(SqliteConnection connection, DateTime today)

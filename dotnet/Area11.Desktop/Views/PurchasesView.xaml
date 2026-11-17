@@ -75,10 +75,26 @@
 
                         <TextBlock Text="Search product" Style="{StaticResource FieldLabel}" />
                         <TextBox Text="{Binding ProductSearch, UpdateSourceTrigger=PropertyChanged}"
-                                 ToolTip="Name, pack / variant, strength, salt, barcode, brand, rack, category or company" />
+                                 ToolTip="Name, pack / variant, strength, salt, barcode, brand, rack, category or company. Several words narrow the list: every word must match." />
+                        <!-- No DisplayMemberPath here on purpose (v0.71.0): WPF refuses a control that sets
+                             both DisplayMemberPath and ItemTemplate, and the page died on open. The template
+                             below already shows the choice label, so nothing looks different. -->
                         <ComboBox Margin="0,5,0,0" ItemsSource="{Binding FilteredProducts}"
-                                  DisplayMemberPath="ProductChoiceLabel" SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
-                                  ToolTip="Strength and pack text distinguish variants; each selection remains its original product." />
+                                  SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
+                                  ToolTip="Strength and pack text distinguish variants; each selection remains its original product.">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="36" Height="36" CornerRadius="8" BorderThickness="1" BorderBrush="{StaticResource LineBrush}" Margin="0,0,8,0">
+                                            <Border.Background><ImageBrush ImageSource="{Binding PhotoPath}" Stretch="UniformToFill" /></Border.Background>
+                                            <TextBlock Text="-" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}"
+                                                       Visibility="{Binding HasNoPhoto, Converter={StaticResource BoolToVis}}" />
+                                        </Border>
+                                        <TextBlock Text="{Binding ProductChoiceLabel}" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
 
                         <Grid Margin="0,4,0,0">
                             <Grid.ColumnDefinitions>
@@ -184,6 +200,19 @@
 
                     <DataGrid Grid.Row="1" ItemsSource="{Binding Lines}">
                         <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="Photo" Width="90">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border Width="{DynamicResource ProductThumbnailSize}" Height="{DynamicResource ProductThumbnailSize}"
+                                                CornerRadius="12" BorderThickness="1" BorderBrush="{StaticResource LineBrush}">
+                                            <Border.Background><ImageBrush ImageSource="{Binding PhotoPath}" Stretch="UniformToFill" /></Border.Background>
+                                            <TextBlock Text="No photo" FontSize="9" TextWrapping="Wrap" TextAlignment="Center"
+                                                       VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}"
+                                                       Visibility="{Binding HasNoPhoto, Converter={StaticResource BoolToVis}}" />
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                             <DataGridTextColumn Header="Item" Binding="{Binding ProductName, Mode=OneWay}" Width="2*" />
                             <DataGridTextColumn Header="Qty" Binding="{Binding QuantityText, Mode=OneWay}" Width="90" />
                             <DataGridTextColumn Header="Batch" Binding="{Binding BatchNo, Mode=OneWay}" Width="*" />
@@ -200,6 +229,10 @@
                         <TextBlock Text="Paid now (Rs)" Style="{StaticResource FieldLabel}" />
                         <TextBox Text="{Binding PaidText, UpdateSourceTrigger=PropertyChanged}" />
 
+                        <TextBlock Text="Paid how" Style="{StaticResource FieldLabel}" Margin="0,8,0,0" />
+                        <ComboBox ItemsSource="{Binding Methods}" SelectedItem="{Binding PaidMethod, Mode=TwoWay}"
+                                  ToolTip="Cash leaves the drawer; online and card leave the bank and never move the drawer count." />
+
                         <views:CustomFieldsEditorView DataContext="{Binding DocEditor}" />
 
                         <Button Content="Save purchase (PINV)" Style="{StaticResource PrimaryButton}" Height="38"
@@ -214,6 +247,9 @@
                         <Button Content="Open drafts" Style="{StaticResource GhostButton}"
                                 Margin="0,6,0,0" Command="{Binding DraftsCommand}"
                                 ToolTip="Open, post or discard shared purchase drafts." />
+                        <Button Content="WhatsApp last invoice…" Style="{StaticResource GhostButton}"
+                                Margin="0,6,0,0" Command="{Binding WhatsAppCommand}" IsEnabled="{Binding CanSendLastOnWhatsApp}"
+                                ToolTip="Send the just-saved invoice on WhatsApp (PDF prepared for attaching by hand)" />
 
                         <TextBlock Text="{Binding StatusMessage}" FontSize="11" TextWrapping="Wrap" Margin="0,10,0,0">
                             <TextBlock.Style>

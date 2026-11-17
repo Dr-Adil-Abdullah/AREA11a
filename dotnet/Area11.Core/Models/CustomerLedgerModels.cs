@@ -75,7 +75,10 @@ public sealed class CustomerSummary
 
     public long LifetimePaisa { get; set; }
 
+    /// <summary>Explicit profit is masked in denied service results; stored money is unchanged.</summary>
     public long ProfitPaisa { get; set; }
+
+    public bool ProfitKnown { get; set; }
 
     public long ReturnsPaisa { get; set; }
 
@@ -87,7 +90,7 @@ public sealed class CustomerSummary
 
     public string LifetimeText => Money.Format(LifetimePaisa);
 
-    public string ProfitText => Money.Format(ProfitPaisa);
+    public string ProfitText => ProfitKnown ? Money.Format(ProfitPaisa) : "hidden";
 
     public string ReturnsText => Money.Format(ReturnsPaisa);
 

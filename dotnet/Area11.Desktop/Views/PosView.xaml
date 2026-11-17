@@ -1,127 +1,87 @@
 <UserControl x:Class="Area11.Desktop.Views.PosView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:views="clr-namespace:Area11.Desktop.Views">
-
+             xmlns:views="clr-namespace:Area11.Desktop.Views"
+             Loaded="OnCounterLoaded" PreviewKeyDown="OnCounterPreviewKeyDown">
+    <UserControl.Resources>
+        <Style x:Key="CounterActionButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+            <Setter Property="Background" Value="{StaticResource BrandSoftBrush}" />
+            <Setter Property="MinHeight" Value="32" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="Margin" Value="0,0,6,4" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="9"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush" Value="{StaticResource BrandBrush}" />
+                </Trigger>
+                <Trigger Property="IsKeyboardFocused" Value="True">
+                    <Setter Property="Background" Value="{StaticResource BrandBrush}" />
+                    <Setter Property="Foreground" Value="White" />
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.5" /></Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+    <!-- Owner chose the reserved search pane. Phase 1 changes navigation, not money rules. -->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-
-        <DockPanel Grid.Row="0" Margin="0,0,0,14">
-            <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                <TextBlock Text="{DynamicResource AppLabel.counter}" Style="{StaticResource PageTitle}" />
-                <TextBlock Text="Nearest expiry first · box / strip / loose · cash change · round down with cost guard"
-                           Style="{StaticResource PageSubtitle}" />
-            </StackPanel>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                <TextBlock Text="{Binding CashierName, StringFormat=Cashier: {0}}"
-                           Style="{StaticResource PageSubtitle}" VerticalAlignment="Center" Margin="0,0,12,0" />
-                <Button Content="Refresh" Style="{StaticResource GhostButton}" Command="{Binding RefreshCommand}" />
-            </StackPanel>
-        </DockPanel>
-
-        <Grid Grid.Row="1">
+        <Border x:Name="SearchEntryPanel" Grid.Row="1" Style="{StaticResource Card}" Padding="8" Margin="0,0,0,8">
+            <Grid>
+                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" /><ColumnDefinition Width="100" />
+                    <ColumnDefinition Width="80" /><ColumnDefinition Width="116" />
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="MedicineSearchBox" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="Search or scan here. Enter: exact barcode only. Down: matches. Shift+arrows: change section. Tab: next field.">
+                    <TextBox.InputBindings><KeyBinding Key="Enter" Command="{Binding ScanCommand}" /></TextBox.InputBindings>
+                </TextBox>
+                <ComboBox x:Name="UnitPicker" Grid.Column="1" ItemsSource="{Binding Units}" SelectedItem="{Binding Unit, Mode=TwoWay}"
+                          Margin="8,0,0,0" ToolTip="Unit to add" />
+                <TextBox x:Name="AddQuantityBox" Grid.Column="2" Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
+                         Margin="8,0,0,0" ToolTip="Quantity to add" />
+                <Button Grid.Column="3" Content="Add to cart" Command="{Binding AddCommand}"
+                        Style="{StaticResource PrimaryButton}" Margin="8,0,0,0" Click="OnAddToCartClick" />
+                <TextBlock Grid.Row="1" Grid.ColumnSpan="3" Text="{Binding SelectedProduct.Name}" FontWeight="SemiBold"
+                           FontSize="11" Margin="0,3,0,0" TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding PriceHint}" Style="{StaticResource MetricLabel}"
+                           Margin="8,3,0,0" />
+            </Grid>
+        </Border>
+        <Grid x:Name="CounterWorkspace" Grid.Row="2">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1.2*" />
-                <ColumnDefinition Width="14" />
-                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="1*" MinWidth="200" MaxWidth="340" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="2.4*" />
             </Grid.ColumnDefinitions>
-
-            <!-- Catalog -->
-            <Border Grid.Column="0" Style="{StaticResource Card}" Padding="12">
+            <Border x:Name="CartPanel" Grid.Column="2" Style="{StaticResource Card}" Padding="8">
                 <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-
-                    <StackPanel Grid.Row="0">
-                        <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                 ToolTip="Name, pack / variant, strength, salt or barcode. A scanner types the code and presses Enter by itself.">
-                            <TextBox.InputBindings>
-                                <KeyBinding Key="Enter" Command="{Binding ScanCommand}" />
-                            </TextBox.InputBindings>
-                        </TextBox>
-
-                        <TextBlock Text="Scan a barcode and press Enter - one of the pack it belongs to is added."
-                                   Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,2,0,0" />
-
-                        <!-- F-50: the list below is a guess, and the shop is told so before a box moves. -->
-                        <TextBlock Text="{Binding SearchHint}" TextWrapping="Wrap" Margin="0,4,0,0" FontWeight="Bold"
-                                   FontSize="11.5" Foreground="{StaticResource BrandDarkBrush}"
-                                   Visibility="{Binding IsSearchGuessing, Converter={StaticResource BoolToVis}}" />
-                        <Grid Margin="0,8,0,10">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="90" />
-                                <ColumnDefinition Width="8" />
-                                <ColumnDefinition Width="70" />
-                                <ColumnDefinition Width="8" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <ComboBox Grid.Column="0" ItemsSource="{Binding Units}"
-                                      SelectedItem="{Binding Unit, Mode=TwoWay}" />
-                            <TextBox Grid.Column="2" Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" />
-                            <Button Grid.Column="4" Content="Add to cart" Style="{StaticResource PrimaryButton}"
-                                    Command="{Binding AddCommand}" />
-                        </Grid>
-                        <TextBlock Text="{Binding PriceHint}" Style="{StaticResource MetricLabel}" Margin="0,0,0,8" />
-                    </StackPanel>
-
-                    <DataGrid Grid.Row="1" RowHeight="NaN" ItemsSource="{Binding Products}"
-                              SelectedItem="{Binding SelectedProduct, Mode=TwoWay}">
-                        <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="Photo" Width="90">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Button Command="{Binding DataContext.OpenProductPhotoCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                CommandParameter="{Binding Id}" Padding="2" BorderThickness="0" Background="Transparent"
-                                                ToolTip="Open this medicine's photo gallery">
-                                            <Border Width="{DynamicResource ProductThumbnailSize}" Height="{DynamicResource ProductThumbnailSize}"
-                                                    CornerRadius="12" BorderThickness="1" BorderBrush="{StaticResource LineBrush}">
-                                                <Border.Background><ImageBrush ImageSource="{Binding PhotoPath}" Stretch="UniformToFill" /></Border.Background>
-                                                <TextBlock Text="No photo" FontSize="9" TextWrapping="Wrap" TextAlignment="Center"
-                                                           VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}"
-                                                           Visibility="{Binding HasNoPhoto, Converter={StaticResource BoolToVis}}" />
-                                            </Border>
-                                        </Button>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="Medicine" Binding="{Binding Name}" Width="2*" />
-                            <DataGridTextColumn Header="Strength" Binding="{Binding StrengthLabel, Mode=OneWay}" Width="80" />
-                            <DataGridTextColumn Header="Pack / variant" Binding="{Binding PackSizeLabel, Mode=OneWay}" Width="100" />
-                            <DataGridTextColumn Header="Salt" Binding="{Binding Generic}" Width="1.4*" />
-                            <DataGridTextColumn Header="Stock" Binding="{Binding StockLabel, Mode=OneWay}" Width="90" />
-                            <DataGridTextColumn Header="Retail" Binding="{Binding RetailText, Mode=OneWay}" Width="90" />
-                            <DataGridTextColumn Header="Rack" Binding="{Binding RackNo}" Width="70" />
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </Grid>
-            </Border>
-
-            <!-- Cart and payment -->
-            <Border Grid.Column="2" Style="{StaticResource Card}" Padding="12">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-
-                    <DockPanel Grid.Row="0" Margin="0,0,0,8">
+                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                    <DockPanel Grid.Row="0" Margin="0,0,0,5">
                         <TextBlock Text="Cart" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button Content="Remove" Style="{StaticResource GhostButton}"
-                                    Command="{Binding RemoveCommand}" />
-                            <Button Content="Clear" Style="{StaticResource GhostButton}" Margin="6,0,0,0"
-                                    Command="{Binding ClearCommand}" />
+                            <Button Content="Remove" Command="{Binding RemoveCommand}" Style="{StaticResource GhostButton}" Padding="10,4" />
+                            <Button Content="Clear" Command="{Binding ClearCommand}" Style="{StaticResource GhostButton}" Padding="10,4" Margin="6,0,0,0" />
                         </StackPanel>
                     </DockPanel>
-
-                    <DataGrid Grid.Row="1" ItemsSource="{Binding Cart}"
-                              ToolTip="Rate is rupees per this line's unit. Owner/Manager may edit an agreed custom price; an unchanged retail rate still allows the VIP/Doctor Yes/No choice.">
+                    <DataGrid x:Name="CartGrid" Grid.Row="1" ItemsSource="{Binding Cart}"
+                              IsReadOnly="True" PreviewMouseDoubleClick="OnCartLineDoubleClick"
+                              ToolTip="Rate is rupees per this line's unit. Double-click a row (or select it and press Enter) for its final rate / item discount. Owner-managed personal limits apply.">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Item" Binding="{Binding Name, Mode=OneWay}" Width="2*" />
                             <DataGridTextColumn Header="Unit" Binding="{Binding UnitLabel, Mode=OneWay}" Width="60" />
@@ -132,28 +92,20 @@
                                         <TextBlock Text="{Binding RateText, Mode=OneWay}" VerticalAlignment="Center" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
-                                <DataGridTemplateColumn.CellEditingTemplate>
-                                    <DataTemplate>
-                                        <TextBox Text="{Binding RateText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 IsEnabled="{Binding DataContext.CanEditRates, RelativeSource={RelativeSource AncestorType=UserControl}}" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellEditingTemplate>
+
                             </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="Pricing" Binding="{Binding PricingLabel, Mode=OneWay}" Width="170" />
                         </DataGrid.Columns>
                     </DataGrid>
-
-                    <ScrollViewer Grid.Row="2" Margin="0,10,0,0" VerticalScrollBarVisibility="Auto">
+                </Grid>
+            </Border>
+            <Border x:Name="CheckoutDetailsPanel" Grid.Column="2" Width="320" Margin="8,0,0,0"
+                    HorizontalAlignment="Right" Panel.ZIndex="10" MaxWidth="{Binding ElementName=CartPanel, Path=ActualWidth}"
+                    Style="{StaticResource Card}" Padding="10"
+                    Visibility="{Binding ShowCheckoutDetails, Converter={StaticResource BoolToVis}}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-                        <TextBlock Text="Customer" Style="{StaticResource FieldLabel}" />
-                        <ComboBox ItemsSource="{Binding Customers}" DisplayMemberPath="Name"
-                                  SelectedItem="{Binding SelectedCustomer, Mode=TwoWay}" />
-                        <TextBlock Text="{Binding CustomerHint}" Style="{StaticResource MetricLabel}" Margin="0,4,0,0" />
-
-                        <!-- a new face at the counter: add the khata without losing the cart (F-11) -->
-                        <Button Content="New customer..." Style="{StaticResource GhostButton}"
-                                Margin="0,6,0,0" HorizontalAlignment="Left"
-                                Command="{Binding BeginAddCustomerCommand}"
-                                Visibility="{Binding CanAddCustomer, Converter={StaticResource BoolToVis}}" />
+                        <Button Content="Close details" Command="{Binding ToggleCheckoutDetailsCommand}" Style="{StaticResource GhostButton}" />
                         <Border Background="{StaticResource BrandSoftBrush}" CornerRadius="6" Padding="9"
                                 Margin="0,6,0,0"
                                 Visibility="{Binding IsAddingCustomer, Converter={StaticResource BoolToVis}}">
@@ -173,7 +125,20 @@
                                 </StackPanel>
                             </StackPanel>
                         </Border>
-
+                        <Border Background="{StaticResource BrandSoftBrush}" CornerRadius="6" Padding="8" Margin="0,8,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Extra Discount (Rs for the whole bill)" Style="{StaticResource FieldLabel}" />
+                                <TextBlock Text="{Binding PreExtraTotalText, StringFormat='Before Extra Discount: {0}'}" />
+                                <TextBox Text="{Binding ExtraDiscountEntry, UpdateSourceTrigger=PropertyChanged}" ToolTip="Type the whole rupee allowance, then Apply. Typing alone does not apply it." />
+                                <WrapPanel>
+                                    <Button Content="Apply Extra Discount" Command="{Binding ApplyExtraDiscountCommand}" Style="{StaticResource CounterActionButton}" />
+                                    <Button Content="Remove Extra Discount" Command="{Binding RemoveExtraDiscountCommand}" Style="{StaticResource CounterActionButton}" />
+                                </WrapPanel>
+                                <TextBlock Text="{Binding ExtraDiscountText, StringFormat='Applied Extra Discount: {0}'}" />
+                                <TextBlock Text="{Binding TotalText, StringFormat='Final payable: {0}'}" FontWeight="Bold" />
+                                <TextBlock Text="Personal permission/cap and purchase-cost safeguard apply. Never changes item prices. Less cash received is not automatically forgiven." Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
                         <TextBlock Text="Doctor (prescription, optional)" Style="{StaticResource FieldLabel}" Margin="0,8,0,0" />
                         <ComboBox ItemsSource="{Binding Doctors}" DisplayMemberPath="Name"
                                   SelectedItem="{Binding SelectedDoctor, Mode=TwoWay}"
@@ -191,24 +156,7 @@
                                        TextWrapping="Wrap" />
                         </StackPanel>
 
-                        <Grid Margin="0,6,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="8" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="Discount %" Style="{StaticResource FieldLabel}" />
-                                <TextBox Text="{Binding DiscountPercent, UpdateSourceTrigger=PropertyChanged}" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="Payment" Style="{StaticResource FieldLabel}" />
-                                <ComboBox ItemsSource="{Binding PaymentMethods}"
-                                          SelectedItem="{Binding PaymentMethod, Mode=TwoWay}" />
-                            </StackPanel>
-                        </Grid>
-
-                        <Border Background="{StaticResource BrandSoftBrush}" CornerRadius="6" Padding="9"
+<Border Background="{StaticResource BrandSoftBrush}" CornerRadius="6" Padding="9"
                                 Margin="0,6,0,0"
                                 Visibility="{Binding IsSplit, Converter={StaticResource BoolToVis}}">
                             <StackPanel>
@@ -250,110 +198,16 @@
                                 </Grid>
                             </StackPanel>
                         </Border>
-
-                        <Grid Margin="0,10,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="Subtotal" Style="{StaticResource MetricLabel}" />
-                                <TextBlock Text="{Binding SubtotalText}" FontSize="14" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="1">
-                                <TextBlock Text="Discount" Style="{StaticResource MetricLabel}" />
-                                <TextBlock Text="{Binding DiscountText}" FontSize="14" />
-                            </StackPanel>
-                        </Grid>
-
-                        <TextBlock Text="TOTAL" Style="{StaticResource MetricLabel}" Margin="0,8,0,0" />
-                        <TextBlock Text="{Binding TotalText}" FontSize="28" FontWeight="Bold"
-                                   Foreground="{StaticResource BrandBrush}" />
-
-                        <TextBlock Text="{Binding PointsUsedText}" FontSize="12" FontWeight="SemiBold"
-                                   Foreground="{StaticResource SuccessBrush}"
-                                   Visibility="{Binding HasPointsUsed, Converter={StaticResource BoolToVis}}" />
-
-                        <Grid Margin="0,6,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="Cash received" Style="{StaticResource MetricLabel}" />
-                                <TextBox Text="{Binding TenderedText, UpdateSourceTrigger=PropertyChanged}"
-                                         IsEnabled="{Binding IsCashOrSplit}" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="1" Margin="8,0,0,0">
-                                <TextBlock Text="Change" Style="{StaticResource MetricLabel}" />
-                                <TextBlock Text="{Binding ChangeText}" FontSize="17" FontWeight="SemiBold" />
-                            </StackPanel>
-                        </Grid>
-
-                        <CheckBox Content="Print the receipt automatically"
-                                  IsChecked="{Binding AutoPrint, Mode=TwoWay}"
-                                  ToolTip="Off = the cashier prints with the button below."
-                                  Margin="0,8,0,0" />
-
-                        <Border Background="#F0FDF4" BorderBrush="{StaticResource SuccessBrush}"
-                                BorderThickness="1" CornerRadius="7" Padding="10" Margin="0,10,0,0"
-                                Visibility="{Binding ShowSaleSuccess, Converter={StaticResource BoolToVis}}">
-                            <StackPanel>
-                                <TextBlock Text="✓ Done — sale saved" Foreground="{StaticResource SuccessBrush}"
-                                           FontSize="17" FontWeight="Bold" />
-                                <TextBlock Text="{Binding LastBill}" TextWrapping="Wrap"
-                                           FontWeight="SemiBold" Margin="0,5,0,0" />
-                                <TextBlock Text="{Binding SuccessChangeText}" TextWrapping="Wrap"
-                                           Foreground="{StaticResource DangerBrush}" FontSize="15" FontWeight="Bold"
-                                           Margin="0,5,0,0"
-                                           Visibility="{Binding HasSuccessChange, Converter={StaticResource BoolToVis}}" />
-                                <Button Content="Done — ready for next sale" Style="{StaticResource PrimaryButton}"
-                                        Command="{Binding DoneCommand}" IsDefault="True"
-                                        HorizontalAlignment="Left" Margin="0,9,0,0"
-                                        ToolTip="Dismiss this card only. The invoice is already saved; scanning the next item also continues." />
-                            </StackPanel>
-                        </Border>
-
                         <views:CustomFieldsEditorView DataContext="{Binding DocEditor}" />
-
-                        <Button Content="Complete sale  (F4)" Style="{StaticResource PrimaryButton}" Height="40"
-                                Margin="0,12,0,0" Command="{Binding CompleteCommand}" />
-
-                        <Button Content="Park this cart for later" Style="{StaticResource GhostButton}"
-                                Margin="0,6,0,0" Command="{Binding HoldCommand}"
-                                ToolTip="Nothing is sold. The cart is kept in the database until you bring it back." />
-
-                        <TextBlock Text="Showing an open draft. Complete the sale to post it."
-                                   Style="{StaticResource FieldHint}" Margin="0,8,0,0" TextWrapping="Wrap"
-                                   Visibility="{Binding HasOpenDraft, Converter={StaticResource BoolToVis}}" />
-                        <Button Content="Save as draft" Style="{StaticResource GhostButton}"
-                                Margin="0,6,0,0" Command="{Binding SaveDraftCommand}"
-                                ToolTip="Park this cart as a shared draft. Nothing is sold; anyone with the counter permission can open and post it." />
-                        <Button Content="Open drafts" Style="{StaticResource GhostButton}"
-                                Margin="0,6,0,0" Command="{Binding DraftsCommand}"
-                                ToolTip="Open, post or discard shared sale drafts." />
-
-                        <Button Content="Print last bill again" Style="{StaticResource GhostButton}"
-                                Margin="0,6,0,0" Command="{Binding PrintLastCommand}" />
-
-                        <Border Background="#F8FAFC" CornerRadius="6" Padding="9" Margin="0,10,0,0">
-                            <StackPanel>
-                                <TextBlock Text="{Binding StatusMessage}" FontSize="11" TextWrapping="Wrap">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsStatusError}" Value="True">
-                                                    <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
-                                <TextBlock Text="{Binding LastBill}" FontSize="12" FontWeight="SemiBold" Margin="0,5,0,0" />
-                            </StackPanel>
-                        </Border>
-
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+            <Border x:Name="ParkedCartsPanel" Grid.Column="2" Width="320" Margin="8,0,0,0" Style="{StaticResource Card}" Padding="8"
+                    HorizontalAlignment="Right" Panel.ZIndex="10" MaxWidth="{Binding ElementName=CartPanel, Path=ActualWidth}"
+                    Visibility="{Binding ShowParkedCarts, Converter={StaticResource BoolToVis}}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Button Content="Close parked carts" Command="{Binding ToggleParkedCartsCommand}" Style="{StaticResource GhostButton}" />
                         <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="8"
                                 Padding="10" Margin="0,10,0,0">
                             <StackPanel>
@@ -400,16 +254,164 @@
                             </StackPanel>
                         </Border>
                     </StackPanel>
-                    </ScrollViewer>
+                </ScrollViewer>
+            </Border>
+            <!-- Search keeps its own reserved width even when empty. Only matches clear after
+                 Add/scan; no result row can cover or resize the cart. -->
+            <Border x:Name="SearchResultsPanel" Grid.Column="0" Style="{StaticResource Card}" Padding="8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <DockPanel Grid.Row="0" Margin="0,0,0,5">
+                        <Button DockPanel.Dock="Right" Content="Hide (Esc)" Command="{Binding CloseSearchResultsCommand}"
+                                Style="{StaticResource GhostButton}" Padding="7,4"
+                                Visibility="{Binding IsSearchResultsOpen, Converter={StaticResource BoolToVis}}" />
+                        <TextBlock Text="Search matches" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <StackPanel Grid.Row="1" Visibility="{Binding IsSearchResultsOpen, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="Suggestions only — check before adding." TextWrapping="Wrap"
+                                   Style="{StaticResource FieldHint}" Foreground="{StaticResource WarningBrush}"
+                                   Visibility="{Binding IsSearchGuessing, Converter={StaticResource BoolToVis}}" />
+                        <TextBlock Text="{Binding SearchHint}" TextWrapping="Wrap" FontWeight="Bold" FontSize="11.5"
+                                   Foreground="{StaticResource BrandDarkBrush}" />
+                    </StackPanel>
+                    <TextBlock x:Name="SearchStandbyHint" Grid.Row="2" Text="Type or edit the search above to show matches here. Pick the correct strength / pack, then Add to cart."
+                               TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="3,10,3,0">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsSearchResultsOpen}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <DataGrid x:Name="SearchMatchesGrid" Grid.Row="2" RowHeight="NaN"
+                              PreviewMouseDoubleClick="OnSearchMatchDoubleClick" ItemsSource="{Binding Products}"
+                              SelectedItem="{Binding SelectedProduct, Mode=TwoWay}" IsReadOnly="True"
+                              HeadersVisibility="None" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              Visibility="{Binding IsSearchResultsOpen, Converter={StaticResource BoolToVis}}">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Width="*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="2,5">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                            <Button Command="{Binding DataContext.OpenProductPhotoCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding Id}" Padding="0" BorderThickness="0"
+                                                    Background="Transparent" VerticalAlignment="Top" Margin="0,0,7,0"
+                                                    ToolTip="Open this medicine's photo gallery">
+                                                <Border Width="{DynamicResource ProductThumbnailSize}" Height="{DynamicResource ProductThumbnailSize}"
+                                                        CornerRadius="10" BorderThickness="1" BorderBrush="{StaticResource LineBrush}">
+                                                    <Border.Background><ImageBrush ImageSource="{Binding PhotoPath}" Stretch="UniformToFill" /></Border.Background>
+                                                    <TextBlock Text="No photo" FontSize="9" TextWrapping="Wrap" TextAlignment="Center"
+                                                               VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}"
+                                                               Visibility="{Binding HasNoPhoto, Converter={StaticResource BoolToVis}}" />
+                                                </Border>
+                                            </Button>
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                <WrapPanel>
+                                                    <TextBlock Text="{Binding StrengthLabel, Mode=OneWay}" FontSize="11" Margin="0,0,6,0" />
+                                                    <TextBlock Text="{Binding PackSizeLabel, Mode=OneWay}" FontSize="11" TextWrapping="Wrap" />
+                                                </WrapPanel>
+                                                <WrapPanel>
+                                                    <TextBlock Text="{Binding StockLabel, Mode=OneWay}" FontSize="11" Margin="0,0,7,0" />
+                                                    <TextBlock Text="{Binding RetailText, Mode=OneWay}" FontSize="11" FontWeight="SemiBold" />
+                                                </WrapPanel>
+                                                <TextBlock Text="{Binding Generic}" FontSize="10" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" />
+                                                <TextBlock Text="{Binding RackNo, StringFormat=Rack: {0}}" FontSize="10" Foreground="{StaticResource MutedBrush}" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
                 </Grid>
             </Border>
         </Grid>
-
-        <!-- The drawer gate (v0.35.0, D-92): with no galla open there is no bill, and the way out
-             is one button on this very screen - the owner's words: "sign in or open the galla right
-             here". The card covers the page rather than hiding it, so the cashier sees the shop's
-             work behind the sentence and knows the program did not lose it. -->
-        <Border Grid.Row="0" Grid.RowSpan="2" Background="#B3FFFFFF"
+        <!-- Fixed checkout: routine fields and compact actions never depend on cart row count. -->
+        <Border x:Name="CheckoutFooter" Grid.Row="3" Style="{StaticResource Card}" Padding="8" Margin="0,8,0,0">
+            <StackPanel>
+                <Grid x:Name="CheckoutFields">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="90" />
+                        <ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="Customer" Style="{StaticResource MetricLabel}" />
+                        <ComboBox x:Name="CustomerPicker" ItemsSource="{Binding Customers}" DisplayMemberPath="Name"
+                                  SelectedItem="{Binding SelectedCustomer, Mode=TwoWay}" ToolTip="{Binding CustomerHint}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                        <TextBlock Text="Payment" Style="{StaticResource MetricLabel}" />
+                        <ComboBox ItemsSource="{Binding PaymentMethods}" SelectedItem="{Binding PaymentMethod, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Margin="8,0,0,0">
+                        <ComboBox ItemsSource="{Binding DiscountBases}" SelectedItem="{Binding BillDiscountBasis, Mode=TwoWay}"
+                                  ToolTip="Bill discount basis: profit or retail (selling total). Allowed changes last one bill only." FontSize="11" />
+                        <TextBox Text="{Binding DiscountPercent, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="Bill discount percent, using the basis selected above" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="3" Margin="8,0,0,0">
+                        <TextBlock Text="Subtotal" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding SubtotalText}" FontSize="14" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="4" Margin="8,0,0,0">
+                        <TextBlock Text="Discount" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding DiscountText}" FontSize="14" />
+                        <TextBlock Text="{Binding ExtraDiscountText, StringFormat='Extra: −{0}'}" FontSize="11" ToolTip="Separate sale-level Extra Discount. Use More / split to Apply or Remove." />
+                    </StackPanel>
+                </Grid>
+                <Grid x:Name="CheckoutMoney" Margin="0,5,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" /><ColumnDefinition Width="180" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="TOTAL" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding TotalText}" FontSize="26" FontWeight="Bold" Foreground="{StaticResource BrandBrush}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                        <TextBlock Text="Cash received" Style="{StaticResource MetricLabel}" />
+                        <TextBox x:Name="CashReceivedBox" Text="{Binding TenderedText, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsCashOrSplit}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Margin="8,0,0,0">
+                        <TextBlock Text="Give back" Style="{StaticResource MetricLabel}" />
+                        <TextBlock Text="{Binding ChangeText}" FontSize="26" FontWeight="Bold" Foreground="{StaticResource BrandBrush}" />
+                    </StackPanel>
+                    <Button x:Name="CompleteSaleButton" Grid.Column="3" Content="Complete sale  (F4)"
+                            Command="{Binding CompleteCommand}" Style="{StaticResource PrimaryButton}" Height="42" Margin="8,0,0,0" />
+                </Grid>
+                <WrapPanel x:Name="CounterActions" Margin="0,5,0,0">
+                    <Button Content="Park cart" Command="{Binding HoldCommand}" Style="{StaticResource CounterActionButton}" ToolTip="Nothing is sold. Keep this cart for later." />
+                    <Button Content="Save draft" Command="{Binding SaveDraftCommand}" Style="{StaticResource CounterActionButton}" />
+                    <Button Content="Open drafts" Command="{Binding DraftsCommand}" Style="{StaticResource CounterActionButton}" />
+                    <Button Content="Parked carts" Command="{Binding ToggleParkedCartsCommand}" Style="{StaticResource CounterActionButton}" />
+                    <Button Content="Reprint" Command="{Binding PrintLastCommand}" Style="{StaticResource CounterActionButton}" ToolTip="Print last bill again; never a new sale." />
+                    <Button Content="More / split" Command="{Binding ToggleCheckoutDetailsCommand}" Style="{StaticResource CounterActionButton}" ToolTip="Extra Discount, doctor, points, split payment and extra answers. Closing this panel does not reset answers." />
+                    <Button Content="New customer" Command="{Binding BeginAddCustomerCommand}" Style="{StaticResource CounterActionButton}" Visibility="{Binding CanAddCustomer, Converter={StaticResource BoolToVis}}" />
+                    <Button Content="Refresh" Command="{Binding RefreshCommand}" Style="{StaticResource CounterActionButton}" />
+                    <CheckBox Content="Print automatically" IsChecked="{Binding AutoPrint, Mode=TwoWay}" Margin="6,4,0,0" />
+                </WrapPanel>
+                <TextBlock Text="{Binding PointsUsedText}" FontSize="11" Visibility="{Binding HasPointsUsed, Converter={StaticResource BoolToVis}}" />
+                <TextBlock Text="{Binding StatusMessage}" FontSize="11" TextWrapping="Wrap" MaxHeight="32"
+                           ToolTip="{Binding StatusMessage}">
+                    <TextBlock.Style><Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+                        <Style.Triggers><DataTrigger Binding="{Binding IsStatusError}" Value="True"><Setter Property="Foreground" Value="{StaticResource DangerBrush}" /></DataTrigger></Style.Triggers>
+                    </Style></TextBlock.Style>
+                </TextBlock>
+                <TextBlock Text="Open draft — Complete sale posts this draft." Style="{StaticResource FieldHint}"
+                           Visibility="{Binding HasOpenDraft, Converter={StaticResource BoolToVis}}" />
+                <TextBlock Text="{Binding LastBill}" FontSize="11" TextTrimming="CharacterEllipsis" ToolTip="{Binding LastBill}" />
+            </StackPanel>
+        </Border>
+        <Border Grid.Row="0" Grid.RowSpan="4" Background="#B3FFFFFF"
                 Visibility="{Binding IsBlocked, Converter={StaticResource BoolToVis}}">
             <Border Style="{StaticResource Card}" MaxWidth="620" VerticalAlignment="Center"
                     HorizontalAlignment="Center" Padding="26">

@@ -24,17 +24,17 @@ public sealed class PackagingSearchTests
         });
         AddBatch(test, id, 17);
 
-        var initial = products.Get(id).Value!;
+        var initial = products.Get(TestData.Owner, id).Value!;
         Assert.Equal("50 mL bottle", initial.PackSizeLabel);
 
         var unrelatedEdit = products.Update(TestData.Owner, id, new ProductPatch { RackNo = "R-9" });
         Assert.True(unrelatedEdit.Ok, unrelatedEdit.Error);
-        Assert.Equal("50 mL bottle", products.Get(id).Value!.PackSizeLabel);
+        Assert.Equal("50 mL bottle", products.Get(TestData.Owner, id).Value!.PackSizeLabel);
 
         var packEdit = products.Update(TestData.Owner, id,
             new ProductPatch { PackSizeLabel = "  100   mL bottle " });
         Assert.True(packEdit.Ok, packEdit.Error);
-        var after = products.Get(id).Value!;
+        var after = products.Get(TestData.Owner, id).Value!;
         Assert.Equal("100 mL bottle", after.PackSizeLabel);
         Assert.Equal(initial.Name, after.Name);
         Assert.Equal(initial.BaseUnit, after.BaseUnit);
@@ -57,13 +57,13 @@ public sealed class PackagingSearchTests
             new ProductPatch { PackSizeLabel = "50 mL\nsecond line" });
         Assert.False(multiline.Ok);
         Assert.Contains("one line", multiline.Error ?? string.Empty);
-        Assert.Equal("50 mL", products.Get(id).Value!.PackSizeLabel);
+        Assert.Equal("50 mL", products.Get(TestData.Owner, id).Value!.PackSizeLabel);
 
         var overlong = products.Update(TestData.Owner, id,
             new ProductPatch { PackSizeLabel = new string('x', PackagingPolicy.MaxPackSizeLength + 1) });
         Assert.False(overlong.Ok);
         Assert.Contains("100 characters", overlong.Error ?? string.Empty);
-        Assert.Equal("50 mL", products.Get(id).Value!.PackSizeLabel);
+        Assert.Equal("50 mL", products.Get(TestData.Owner, id).Value!.PackSizeLabel);
 
         var invalidCreate = products.Create(TestData.Owner, new ProductPatch
         {
@@ -73,7 +73,7 @@ public sealed class PackagingSearchTests
             RetailPaisa = 200
         });
         Assert.False(invalidCreate.Ok);
-        Assert.Empty(products.Search("Invalid new pack").Value!);
+        Assert.Empty(products.Search(TestData.Owner, "Invalid new pack").Value!);
     }
 
     [Fact]
@@ -98,11 +98,11 @@ public sealed class PackagingSearchTests
         AddBatch(test, fifty, 7);
         AddBatch(test, hundred, 11);
 
-        var fiftyHits = products.Search("50ml").Value!;
+        var fiftyHits = products.Search(TestData.Owner, "50ml").Value!;
         Assert.Equal(fifty, Assert.Single(fiftyHits).Id);
         Assert.Equal(7, fiftyHits[0].StockBase);
 
-        var hundredHits = products.Search("100 ML").Value!;
+        var hundredHits = products.Search(TestData.Owner, "100 ML").Value!;
         Assert.Equal(hundred, Assert.Single(hundredHits).Id);
         Assert.Equal(11, hundredHits[0].StockBase);
         Assert.NotEqual(fifty, hundred);
@@ -132,7 +132,7 @@ public sealed class PackagingSearchTests
         foreach (var term in new[]
                  { "northstar", "family bottle", "back almari", "search syrups", "search tag", "search acme" })
         {
-            var result = products.Search(term);
+            var result = products.Search(TestData.Owner, term);
             Assert.True(result.Ok, result.Error);
             Assert.Equal(id, Assert.Single(result.Value!).Id);
         }
@@ -231,8 +231,8 @@ public sealed class PackagingSearchTests
         Assert.True(after.Ok, after.Error);
         Assert.Equal(before.Value.Units, after.Value!.Units);
         Assert.Equal(before.Value.TotalPaisa, after.Value.TotalPaisa);
-        Assert.Equal(20, products.Get(id).Value!.StockBase);
-        Assert.Equal(10, products.Get(id).Value!.QuantityPerSelectedUnit("box"));
+        Assert.Equal(20, products.Get(TestData.Owner, id).Value!.StockBase);
+        Assert.Equal(10, products.Get(TestData.Owner, id).Value!.QuantityPerSelectedUnit("box"));
     }
 
     [Fact]
@@ -243,12 +243,12 @@ public sealed class PackagingSearchTests
         var id = Create(products, "Smart pack", patch => patch.PackSizeLabel = "75 mL");
         Create(products, "Other medicine", patch => patch.PackSizeLabel = null);
 
-        var exact = products.SearchSmart("75ml");
+        var exact = products.SearchSmart(TestData.Owner, "75ml");
         Assert.True(exact.Ok, exact.Error);
         Assert.False(exact.Value!.IsFuzzy);
         Assert.Equal(id, Assert.Single(exact.Value.Items).Id);
 
-        var blank = products.SearchSmart(null);
+        var blank = products.SearchSmart(TestData.Owner, null);
         Assert.True(blank.Ok, blank.Error);
         Assert.False(blank.Value!.IsFuzzy);
         Assert.Equal(2, blank.Value.Items.Count);

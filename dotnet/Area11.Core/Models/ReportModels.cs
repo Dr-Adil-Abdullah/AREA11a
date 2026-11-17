@@ -56,11 +56,14 @@ public sealed class ReportTotals
     public long SalesPaisa { get; set; }
 
     public long DiscountPaisa { get; set; }
+    public long ExtraDiscountPaisa { get; set; }
 
     public long RefundPaisa { get; set; }
 
     /// <summary>Cost of the goods that left the shelf in this period.</summary>
     public long CostPaisa { get; set; }
+
+    public bool CostKnown { get; set; }
 
     /// <summary>Cost of returned goods that really came back to the shelf - it must not count as a loss.</summary>
     public long RestockCostPaisa { get; set; }
@@ -94,10 +97,11 @@ public sealed class ReportTotals
     public string SalesText => Money.Format(SalesPaisa);
 
     public string DiscountText => Money.Format(DiscountPaisa);
+    public string ExtraDiscountText => Money.Format(ExtraDiscountPaisa);
 
     public string RefundText => Money.Format(RefundPaisa);
 
-    public string CostText => Money.Format(CostPaisa);
+    public string CostText => CostKnown ? Money.Format(CostPaisa) : "hidden";
 
     public string ProfitText => Money.Format(ProfitPaisa);
 
@@ -113,7 +117,7 @@ public sealed class ReportTotals
 
     public string DrawingsText => Money.Format(DrawingsCashPaisa);
 
-    public string PurchasesText => Money.Format(PurchasesPaisa);
+    public string PurchasesText => CostKnown ? Money.Format(PurchasesPaisa) : "hidden";
 
     public string MarginText => MarginPercent.ToString("0.0", CultureInfo.InvariantCulture) + " %";
 }
@@ -203,11 +207,13 @@ public sealed class ReportDeadRow
 
     public long ValuePaisa { get; set; }
 
+    public bool CostKnown { get; set; }
+
     public string? LastSold { get; set; }
 
     public string StockLabel => StockBase.ToString(CultureInfo.InvariantCulture);
 
-    public string ValueLabel => Money.Format(ValuePaisa);
+    public string ValueLabel => CostKnown ? Money.Format(ValuePaisa) : "hidden";
 
     public string LastSoldLabel => string.IsNullOrWhiteSpace(LastSold)
         ? "never sold"

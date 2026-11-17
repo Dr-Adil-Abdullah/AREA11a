@@ -56,7 +56,7 @@ public sealed class CustomerLedgerTests
 
         CreditBill(test, product, customer, 3);
 
-        var page = Ledger(test).Page(customer);
+        var page = Ledger(test).Page(TestData.Owner, customer);
 
         Assert.True(page.Ok, page.Error);
         Assert.Equal(90000L, page.Value!.StoredPaisa);      // 3 x Rs 300
@@ -91,7 +91,7 @@ WHERE customer_id = @id AND sale_id IS NULL AND purchase_id IS NULL AND amount_p
             new { id = customer });
         Assert.Equal(1, unattached);
 
-        var page = Ledger(test).Page(customer);
+        var page = Ledger(test).Page(TestData.Owner, customer);
         Assert.True(page.Ok, page.Error);
         Assert.True(page.Value!.BooksMatch);
         Assert.Equal(2, page.Value!.Lines.Count);
@@ -164,7 +164,7 @@ WHERE customer_id = @id AND sale_id IS NULL AND purchase_id IS NULL AND amount_p
 
         Assert.Equal(20000L, StoredBalance(test, customer));
 
-        var page = Ledger(test).Page(customer);
+        var page = Ledger(test).Page(TestData.Owner, customer);
 
         Assert.True(page.Ok, page.Error);
         Assert.Equal(20000L, page.Value!.ExpectedPaisa);
@@ -195,7 +195,7 @@ WHERE customer_id = @id AND sale_id IS NULL AND purchase_id IS NULL AND amount_p
         // another khata reduction hidden by MAX(0, ...).
         Assert.Equal(0L, StoredBalance(test, customer));
 
-        var page = Ledger(test).Page(customer);
+        var page = Ledger(test).Page(TestData.Owner, customer);
 
         Assert.True(page.Ok, page.Error);
         Assert.Equal(0L, page.Value!.ExpectedPaisa);
@@ -212,22 +212,22 @@ WHERE customer_id = @id AND sale_id IS NULL AND purchase_id IS NULL AND amount_p
 
         CreditBill(test, product, sana, 1);
 
-        var all = Ledger(test).List("Sana");
+        var all = Ledger(test).List(TestData.Owner, "Sana");
         Assert.True(all.Ok, all.Error);
         Assert.Single(all.Value!);
         Assert.Equal(sana, all.Value![0].Id);
 
-        var byPhone = Ledger(test).List("0300-1234567");
+        var byPhone = Ledger(test).List(TestData.Owner, "0300-1234567");
         Assert.True(byPhone.Ok, byPhone.Error);
         Assert.Equal(2, byPhone.Value!.Count);       // both share the test phone
 
-        var owing = Ledger(test).List(null, onlyCredit: true);
+        var owing = Ledger(test).List(TestData.Owner, null, onlyCredit: true);
         Assert.True(owing.Ok, owing.Error);
         Assert.Single(owing.Value!);
         Assert.Equal(sana, owing.Value![0].Id);
         Assert.True(owing.Value![0].BalancePaisa > 0);
 
-        var clear = Ledger(test).List("Ali");
+        var clear = Ledger(test).List(TestData.Owner, "Ali");
         Assert.Equal(ali, clear.Value![0].Id);
         Assert.Equal(0L, clear.Value![0].BalancePaisa);
     }
@@ -279,7 +279,7 @@ INSERT INTO user_permissions(user_id, module_key, allowed) VALUES(@id, 'customer
 
         CreditBill(test, product, customer, 3);
 
-        var summary = Ledger(test).List("Ali").Value![0];
+        var summary = Ledger(test).List(TestData.Owner, "Ali").Value![0];
         Assert.Equal(0, summary.LoyaltyPoints);
         Assert.Equal(1, summary.Stars);
     }
@@ -376,7 +376,7 @@ INSERT INTO user_permissions(user_id, module_key, allowed) VALUES(@id, 'customer
         CreditBill(test, product, customer, 2);
         Assert.True(Ledger(test).Collect(TestData.Owner, customer, 20000, "cash", null).Ok);
 
-        var statement = Ledger(test).Statement(customer);
+        var statement = Ledger(test).Statement(TestData.Owner, customer);
 
         Assert.True(statement.Ok, statement.Error);
 
@@ -401,7 +401,7 @@ INSERT INTO user_permissions(user_id, module_key, allowed) VALUES(@id, 'customer
         Assert.True(test.Settings.Set("printer.width", 80, TestData.Owner).Ok);
         test.Settings.Reload();
 
-        var statement = Ledger(test).Statement(customer);
+        var statement = Ledger(test).Statement(TestData.Owner, customer);
 
         Assert.True(statement.Ok, statement.Error);
 

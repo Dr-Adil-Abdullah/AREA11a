@@ -152,7 +152,7 @@ public sealed class WorkbookTests
         Assert.DoesNotContain("sync.key", keys);
         Assert.DoesNotContain("security.pinLength", keys);
         Assert.DoesNotContain("bill.nextSaleNo", keys);
-        Assert.DoesNotContain("brand.logoDataUrl", keys);
+        Assert.DoesNotContain("security.recoveryWordHash", keys);
     }
 
     [Fact]
@@ -279,7 +279,7 @@ public sealed class WorkbookTests
         var settings = workbook.Sheet("Settings")!;
         Set(settings, RowWithKey(settings, "store.name"), "Value", "Workbook Pharmacy");
         Set(settings, RowWithKey(settings, "tax.percent"), "Value", "12.5");
-        Set(settings, RowWithKey(settings, "payment.methods"), "Value", "[\"cash\",\"credit\",\"bank\"]");
+        Set(settings, RowWithKey(settings, "expiry.levels"), "Value", "[{\"level\":1,\"days\":300},{\"level\":2,\"days\":180},{\"level\":3,\"days\":90}]");
         var bytes = XlsxFile.Write(workbook);
         var service = Workbooks(test);
 
@@ -301,9 +301,9 @@ public sealed class WorkbookTests
             Assert.Equal(12.5m, tax.RootElement.GetDecimal());
         }
 
-        using var methods = JsonDocument.Parse(test.Settings.GetRaw("payment.methods"));
-        Assert.Equal(JsonValueKind.Array, methods.RootElement.ValueKind);
-        Assert.Equal("bank", methods.RootElement[2].GetString());
+        using var levels = JsonDocument.Parse(test.Settings.GetRaw("expiry.levels"));
+        Assert.Equal(JsonValueKind.Array, levels.RootElement.ValueKind);
+        Assert.Equal(300, levels.RootElement[0].GetProperty("days").GetInt32());
     }
 
     [Fact]

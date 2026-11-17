@@ -102,10 +102,10 @@ public sealed class BookCheckReport
     /// <summary>
     /// Each DOCUMENT once, with its biggest disagreement.
     ///
-    /// Why not simply add every finding: one broken bill is seen by three rules - its lines, its
-    /// header and "paid or owed" all disagree with it - so adding them would report a Rs 15 fault
-    /// for a Rs 5 gap, and the owner would go looking for money that was never missing. A document
-    /// is one amount of money that fails to add up; the rules are three ways of noticing it.
+    /// Why not simply add every finding: one broken bill can be seen by its lines, header,
+    /// "paid or owed" and original/Extra/final snapshot checks. Adding them would multiply the
+    /// same gap and the owner would look for money that was never missing. A document is one
+    /// amount of money that fails to add up; several rules can notice it independently.
     /// </summary>
     public IReadOnlyList<BookCheckFinding> WorstPerDocument => Rules
         .SelectMany(rule => rule.Findings)

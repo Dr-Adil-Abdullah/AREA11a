@@ -11,14 +11,14 @@ cd /d "%~dp0.."
 
 rem How many cases this build should run. tools\check_repo.py fails if this number
 rem and the suite disagree, so it cannot quietly go stale.
-set "EXPECTED=1010"
+set "EXPECTED=1493"
 
 rem  Which build is about to run? The line below is the ONLY place this script names a version,
 rem  and tools\check_repo.py fails if it disagrees with BuildInfo.cs - so it cannot go stale, and
 rem  the owner is never told an old tree is the new one. Reading the number out of the source with
 rem  findstr printed "vunknown" on his PC (v0.30.0): the tokens did not line up, and a banner that
 rem  says nothing is worse than no banner, because it looks like a failure of the tree.
-set "BUILD=v0.47.0 (Moss)"
+set "BUILD=v0.87.0 (Waxwing)"
 
 
 echo.
@@ -79,7 +79,8 @@ powershell -NoProfile -Command "Get-Content -LiteralPath '%TESTLOG%' -Tail 15"
 
 rem  A failed test is named on its own line ("Failed Area11.Tests.SaleTests...."). Listing the
 rem  names is what lets the first fault be fixed without reading the whole log.
-findstr /b /i /c:"Failed " "%TESTLOG%" > "%FAILEDLOG%" 2>nul
+rem  VSTest indents these lines, so allow leading spaces rather than /b "Failed ".
+findstr /r /i /c:"^[ ]*Failed Area11.Tests[.]" "%TESTLOG%" > "%FAILEDLOG%" 2>nul
 set "FAILEDSIZE=0"
 if exist "%FAILEDLOG%" for %%A in ("%FAILEDLOG%") do set "FAILEDSIZE=%%~zA"
 if not "%FAILEDSIZE%"=="0" (

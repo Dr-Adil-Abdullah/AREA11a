@@ -121,7 +121,7 @@ ORDER BY r.id;", new { code });
         foreach (var row in rows)
         {
             Add(ReceiptService.Fit(row.ProductName ?? string.Empty, width));
-            Pair($"  {Qty.Format(row.QtyEntered)} {row.UnitSold} x",
+            Pair($"  {Qty.Format(row.QtyEntered)} {Packs.Display(row.UnitSold)} x",
                 Money.Fixed(row.RefundPaisa));
 
             var where = row.InStock

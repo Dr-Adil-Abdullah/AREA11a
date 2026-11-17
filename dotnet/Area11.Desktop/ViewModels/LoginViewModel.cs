@@ -1,4 +1,5 @@
 using Area11.Core.Models;
+using Area11.Core.Utils;
 using Area11.Desktop;
 
 namespace Area11.Desktop.ViewModels;
@@ -17,6 +18,9 @@ public sealed class LoginViewModel : ObservableObject
         SignInCommand = new RelayCommand(() => SignIn(Secret));
     }
 
+    /// <summary>Portion 16: the sign-in window needs the startup policy for its own ×.</summary>
+    public AppServices Services => _services;
+
     public event Action<User>? SignedIn;
 
     public RelayCommand SignInCommand { get; }
@@ -25,8 +29,17 @@ public sealed class LoginViewModel : ObservableObject
 
     public string StoreName => _services.Settings.GetString("store.name");
 
-    /// <summary>The product title is fixed; the shop name below it remains the store's own data.</summary>
-    public string AppName => "Area11";
+    /// <summary>Owner's word (Nov 2026, reverses D-77): the sign-in screen carries his app name.</summary>
+    public string AppName
+    {
+        get
+        {
+            var name = _services.Settings.GetString("brand.appName").Trim();
+            return name.Length == 0 ? "Area11" : name;
+        }
+    }
+
+    public string WindowTitle => AppName + " — " + BuildInfo.Label;
 
     public string UserName
     {
@@ -67,14 +80,23 @@ public sealed class LoginViewModel : ObservableObject
                 return false;
             }
 
-            _services.SignIn(result.Value);
-            Secret = string.Empty;
-            SignedIn?.Invoke(result.Value);
+            SignInAs(result.Value);
             return true;
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    /// <summary>
+    /// Signs in a user the service already proved (the "forgot password" door). The window that
+    /// proved them closes first; this is the same road home a password sign-in takes.
+    /// </summary>
+    public void SignInAs(User user)
+    {
+        _services.SignIn(user);
+        Secret = string.Empty;
+        SignedIn?.Invoke(user);
     }
 }

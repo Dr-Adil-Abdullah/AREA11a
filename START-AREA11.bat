@@ -115,7 +115,7 @@ if errorlevel 1 (
 rem  The product normally lives on "main". An Arena repair is delivered on the named working
 rem  branch until its pull request is merged, so that branch must be accepted explicitly too.
 rem  Anything else is refused: a stray branch can otherwise make an old copy look like an update.
-set "WORK_BRANCH=arena/60395e95-area11a"
+set "WORK_BRANCH=arena/b4b7bf7b-area11a"
 set "BRANCH="
 for /f "delims=" %%b in ('git rev-parse --abbrev-ref HEAD 2^>nul') do set "BRANCH=%%b"
 
@@ -199,7 +199,7 @@ rem  and tools\check_repo.py fails if it disagrees with BuildInfo.cs - so it can
 rem  the owner is never told an old tree is the new one. Reading the number out of the source with
 rem  findstr printed "vunknown" on his PC (v0.30.0): the tokens did not line up, and a banner that
 rem  says nothing is worse than no banner, because it looks like a failure of the tree.
-set "BUILD=v0.47.0 (Moss)"
+set "BUILD=v0.87.0 (Waxwing)"
 
 echo        Code on this PC: %BUILD%
 

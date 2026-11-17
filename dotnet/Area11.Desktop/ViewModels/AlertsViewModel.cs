@@ -26,6 +26,7 @@ public sealed class AlertsViewModel : ObservableObject, IEmptyPage
     private readonly AppServices _services;
     private readonly User _user;
     private readonly Action? _onChanged;
+    private readonly Action<AlertRow>? _openShift;
 
     private string _statusText = "Every alert stays until the owner ends it with a written reason.";
     private bool _isStatusError;
@@ -36,16 +37,22 @@ public sealed class AlertsViewModel : ObservableObject, IEmptyPage
     /// Called after an alert is ended or brought back, so the red bar in the window frame updates
     /// immediately instead of waiting for the next page change.
     /// </param>
-    public AlertsViewModel(AppServices services, User user, Action? onChanged = null)
+    /// <param name="openShift">
+    /// Portion 14: walks to the drawer's page for a shift alert. Passed by the shell, the way the
+    /// dashboard's links travel - this page never reaches for the frame itself.
+    /// </param>
+    public AlertsViewModel(AppServices services, User user, Action? onChanged = null, Action<AlertRow>? openShift = null)
     {
         _services = services;
         _user = user;
         _onChanged = onChanged;
+        _openShift = openShift;
 
         RefreshCommand = new RelayCommand(Load);
         DismissCommand = new RelayCommand(Dismiss);
         DismissLightCommand = new RelayCommand(DismissLight);
         RestoreCommand = new RelayCommand(Restore);
+        OpenShiftCommand = new RelayCommand(OpenShiftRow);
 
         Load();
     }
@@ -62,6 +69,9 @@ public sealed class AlertsViewModel : ObservableObject, IEmptyPage
     public RelayCommand DismissLightCommand { get; }
 
     public RelayCommand RestoreCommand { get; }
+
+    /// <summary>Portion 14: shift alerts open the drawer's page; the rest stay put, and say so.</summary>
+    public RelayCommand OpenShiftCommand { get; }
 
     public bool IsOwner => _user.IsOwner;
 
@@ -191,6 +201,32 @@ public sealed class AlertsViewModel : ObservableObject, IEmptyPage
         _onChanged?.Invoke();
         SetStatus($"{caption} - put away. The problem itself is unchanged.", false);
     }
+
+    /// <summary>
+    /// Portion 14: a shift alert travels to the Shift page, where the drawer differences are kept.
+    /// Any other alert has no drawer to show, so the link says so instead of walking nowhere.
+    /// </summary>
+    private void OpenShiftRow()
+    {
+        if (Selected is null)
+        {
+            SetStatus("Pick the alert you want to open.", true);
+            return;
+        }
+
+        if (!IsShiftAlert(Selected))
+        {
+            SetStatus("Only shift alerts open the Shift page; this one has no drawer to show.", false);
+            return;
+        }
+
+        _openShift?.Invoke(Selected);
+    }
+
+    internal static bool IsShiftAlert(AlertRow row) =>
+        string.Equals(row.Type, AlertService.TypeShiftOpeningDifference, StringComparison.Ordinal)
+        || string.Equals(row.Type, AlertService.TypeShiftClosingDifference, StringComparison.Ordinal)
+        || string.Equals(row.Type, AlertService.TypeShiftOpen, StringComparison.Ordinal);
 
     private void Restore()
     {
