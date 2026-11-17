@@ -20,7 +20,8 @@ namespace Area11.Core.Services;
 ///      the purchase page run, so every guard (D-93, discount caps, cost lock) is re-checked at post
 ///      time against the then-current stock - no guard is weakened or bypassed;
 ///   3. drafts are **shared** (D-100): whoever holds the page permission may open, update, post or
-///      discard any draft of that kind - never by hiding, always by permission;
+///      discard any draft of that kind. D-110 additionally requires current Cost/main for purchase
+///      open/update/post; purchase list/discard retain current page-only access;
 ///   4. a post can never happen twice: the draft is pre-marked `posted` with a marker id **before**
 ///      the document is created, so a second post - or a retry after a crash - is refused;
 ///   5. a failed post restores the draft to `draft` with the latest payload, so no work is lost and
@@ -100,6 +101,8 @@ public sealed class DraftService
             return ServiceResult<DocumentDraft>.Fail("There is nothing to save - add at least one line.");
         }
 
+        var access = _purchases.CheckEntryAccess(user);
+        if (!access.Ok) return ServiceResult<DocumentDraft>.Fail(access.Error ?? "Purchase preparation is not allowed.");
         return Save(user, DraftType.Purchase, input, draftId);
     }
 
@@ -133,6 +136,7 @@ public sealed class DraftService
             {
                 var updated = _db.Tx(connection =>
                 {
+                    if (type == DraftType.Purchase) _purchases.RequireEntryReader(connection, user);
                     var row = ReadRow(connection, draftId);
                     if (row is null)
                     {
@@ -163,6 +167,7 @@ UPDATE document_drafts SET payload_json = @payload, updated_at = @at WHERE id = 
                 {
                     var created = _db.Tx(connection =>
                     {
+                        if (type == DraftType.Purchase) _purchases.RequireEntryReader(connection, user);
                         _db.Execute(connection, @"
 INSERT INTO document_drafts(draft_key, draft_type, payload_json, status, created_by_id,
                             created_by_name, created_at, updated_at)
@@ -221,6 +226,8 @@ VALUES(@key, @type, @payload, 'draft', @byId, @by, @at, @at);",
         try
         {
             using var connection = _db.Open();
+            if (type == DraftType.Purchase)
+                SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Purchases);
             var rows = _db.Query<DocumentDraft>(connection, @"
 SELECT id, draft_key AS draftKey, draft_type AS draftType, payload_json AS payloadJson,
        status, created_by_id AS createdById, created_by_name AS createdByName,
@@ -250,6 +257,7 @@ ORDER BY updated_at DESC, id DESC;",
 
             return ServiceResult<List<DraftSummary>>.Success(summaries);
         }
+        catch (ValidationException exception) { return ServiceResult<List<DraftSummary>>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error("Drafts could not be listed.", exception);
@@ -274,6 +282,7 @@ ORDER BY updated_at DESC, id DESC;",
         try
         {
             using var connection = _db.Open();
+            if (type == DraftType.Purchase) _purchases.RequireEntryReader(connection, user);
             var row = ReadRow(connection, draftId);
             if (row is null || row.DraftType != type)
             {
@@ -308,6 +317,7 @@ ORDER BY updated_at DESC, id DESC;",
 
             return ServiceResult<TInput>.Success(input);
         }
+        catch (ValidationException exception) { return ServiceResult<TInput>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error("A draft could not be opened.", exception);
@@ -355,8 +365,10 @@ ORDER BY updated_at DESC, id DESC;",
         {
             return _db.Tx(connection =>
             {
+                if (probe.DraftType == DraftType.Purchase)
+                    SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Purchases);
                 var row = ReadRow(connection, draftId);
-                if (row is null)
+                if (row is null || row.DraftType != probe.DraftType)
                 {
                     return ServiceResult.Fail("That draft is not in the list any more.");
                 }
@@ -436,6 +448,9 @@ WHERE id = @id;",
             return ServiceResult<PurchaseResult>.Fail("You do not have permission to post purchase drafts.");
         }
 
+        var access = _purchases.CheckEntryAccess(user);
+        if (!access.Ok) return ServiceResult<PurchaseResult>.Fail(access.Error ?? "Purchase preparation is not allowed.");
+
         PurchaseInput input;
         if (current is not null)
         {
@@ -457,13 +472,15 @@ WHERE id = @id;",
 
         return Post(draftId, DraftType.Purchase, input,
             payload => _purchases.Create(payload, user!),
-            (connection, id) => Finalize(connection, user, draftId, DraftType.Purchase, id));
+            (connection, id) => Finalize(connection, user, draftId, DraftType.Purchase, id),
+            connection => { _purchases.RequireEntryReader(connection, user); });
     }
 
     private ServiceResult<TResult> Post<TInput, TResult>(
         int draftId, string type, TInput input,
         Func<TInput, ServiceResult<TResult>> create,
-        Func<Microsoft.Data.Sqlite.SqliteConnection, int, ServiceResult> finalize)
+        Func<Microsoft.Data.Sqlite.SqliteConnection, int, ServiceResult> finalize,
+        Action<Microsoft.Data.Sqlite.SqliteConnection>? authorizeBeforeMark = null)
         where TResult : class
     {
         string payload;
@@ -488,6 +505,7 @@ WHERE id = @id;",
             // by another person or a retry after a crash - can create a second document.
             _db.Tx(connection =>
             {
+                authorizeBeforeMark?.Invoke(connection);
                 var row = ReadRow(connection, draftId);
                 if (row is null || row.DraftType != type)
                 {

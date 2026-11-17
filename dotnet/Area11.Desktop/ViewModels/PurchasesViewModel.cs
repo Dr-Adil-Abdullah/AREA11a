@@ -17,6 +17,8 @@ public sealed class PurchasesViewModel : ObservableObject
     private readonly AppServices _services;
     private readonly User _user;
     private readonly List<Product> _catalog = new();
+    private bool _entryAllowed;
+    private string _entryAccessMessage = string.Empty;
 
     private Supplier? _selectedSupplier;
     private string _newSupplierName = string.Empty;
@@ -144,8 +146,19 @@ public sealed class PurchasesViewModel : ObservableObject
         {
             if (SetProperty(ref _selectedProduct, value) && value is not null)
             {
-                CostText = Money.Edit(value.CostPaisa);
-                RetailText = Money.Edit(value.RetailPaisa);
+                if (!RefreshEntryAccess()) return;
+                // A failed new selection must never inherit the previous medicine's price.
+                CostText = string.Empty;
+                RetailText = string.Empty;
+                var fresh = _services.Products.Get(_user, value.Id, purpose: ProductReadPurpose.Purchase);
+                if (!fresh.Ok || fresh.Value is null)
+                {
+                    RefreshEntryAccess();
+                    SetStatus(fresh.Error ?? "The current product could not be prepared.", true);
+                    return;
+                }
+                CostText = Money.Edit(fresh.Value.CostPaisa);
+                RetailText = Money.Edit(fresh.Value.RetailPaisa);
             }
         }
     }
@@ -260,8 +273,8 @@ public sealed class PurchasesViewModel : ObservableObject
 
     public string CostText
     {
-        get => _costText;
-        set => SetProperty(ref _costText, value);
+        get => CanPrepare ? _costText : string.Empty;
+        set { if (CanPrepare) SetProperty(ref _costText, value); }
     }
 
     public string RetailText
@@ -278,8 +291,8 @@ public sealed class PurchasesViewModel : ObservableObject
 
     public string PaidText
     {
-        get => _paidText;
-        set => SetProperty(ref _paidText, value);
+        get => CanPrepare ? _paidText : string.Empty;
+        set { if (CanPrepare) SetProperty(ref _paidText, value); }
     }
 
     /// <summary>How the "paid now" money leaves the shop - the same three ways the Suppliers page pays with.</summary>
@@ -303,10 +316,35 @@ public sealed class PurchasesViewModel : ObservableObject
         private set => SetProperty(ref _isStatusError, value);
     }
 
-    public string TotalText => Money.Format(Lines.Where(line => !line.IsSample).Sum(line => line.LineTotalPaisa));
+    public bool CanPrepare => _entryAllowed;
+
+    public string EntryAccessMessage => _entryAccessMessage;
+
+    public string TotalText => CanPrepare
+        ? Money.Format(Lines.Where(line => !line.IsSample).Sum(line => line.LineTotalPaisa)) : "hidden";
+
+    /// <summary>Next-interaction/nominal timer mask. Keep unsaved amounts privately; never replace with0.</summary>
+    public bool RefreshEntryAccess()
+    {
+        var access = _services.Purchases.CheckEntryAccess(_user);
+        var wasAllowed = _entryAllowed;
+        _entryAllowed = access.Ok;
+        _entryAccessMessage = access.Ok ? string.Empty
+            : "Purchase preparation is locked. Unsaved work is kept; restore View Purchase Cost, the main switch and page access, then review it.";
+        foreach (var line in Lines) line.CostVisible = access.Ok;
+        OnPropertyChanged(nameof(CanPrepare));
+        OnPropertyChanged(nameof(EntryAccessMessage));
+        OnPropertyChanged(nameof(CostText));
+        OnPropertyChanged(nameof(PaidText));
+        OnPropertyChanged(nameof(TotalText));
+        if (!access.Ok) SetStatus(access.Error ?? _entryAccessMessage, true);
+        else if (!wasAllowed) SetStatus("Purchase preparation is available. Review any unsaved work before saving.", false);
+        return access.Ok;
+    }
 
     private void LoadLookups()
     {
+        if (!RefreshEntryAccess()) return;
         var suppliers = _services.Partners.GetSuppliers();
         Suppliers.Clear();
         if (suppliers.Ok && suppliers.Value is not null)
@@ -337,6 +375,7 @@ public sealed class PurchasesViewModel : ObservableObject
 
     private void FilterProducts()
     {
+        if (!RefreshEntryAccess()) return;
         var term = ProductSearch.Trim();
         FilteredProducts.Clear();
 
@@ -380,6 +419,7 @@ public sealed class PurchasesViewModel : ObservableObject
 
     private void AddLine()
     {
+        if (!RefreshEntryAccess()) return;
         if (SelectedProduct is null)
         {
             SetStatus("Select a product first.", true);
@@ -404,7 +444,14 @@ public sealed class PurchasesViewModel : ObservableObject
             return;
         }
 
-        var unitsPerSelected = SelectedProduct.QuantityPerSelectedUnit(Unit);
+        var currentProduct = _services.Products.Get(_user, SelectedProduct.Id, purpose: ProductReadPurpose.Purchase);
+        if (!currentProduct.Ok || currentProduct.Value is null)
+        {
+            RefreshEntryAccess();
+            SetStatus(currentProduct.Error ?? "The current product could not be prepared.", true);
+            return;
+        }
+        var unitsPerSelected = currentProduct.Value.QuantityPerSelectedUnit(Unit);
 
         Lines.Add(new PurchaseLineRow
         {
@@ -443,6 +490,7 @@ public sealed class PurchasesViewModel : ObservableObject
 
     private void Save()
     {
+        if (!RefreshEntryAccess()) return;
         if (SelectedSupplier is null)
         {
             SetStatus("Select or add a supplier first.", true);
@@ -486,13 +534,14 @@ public sealed class PurchasesViewModel : ObservableObject
             : _services.Purchases.Create(input, _user);
         if (!result.Ok || result.Value is null)
         {
+            RefreshEntryAccess();
             SetStatus(result.Error ?? "The purchase could not be saved.", true);
             return;
         }
 
         var purchase = result.Value;
         var warnings = purchase.Warnings.Count > 0 ? "  ⚠ " + string.Join(" ", purchase.Warnings) : string.Empty;
-        SetStatus($"{purchase.Code} saved{(wasDraft ? " - its draft is posted" : string.Empty)} — {Money.Format(purchase.TotalPaisa)}.{warnings}",
+        SetStatus($"{purchase.Code} saved{(wasDraft ? " - its draft is posted" : string.Empty)} — {purchase.TotalLabel}.{warnings}",
             purchase.Warnings.Count > 0);
 
         // Portion 11: the saved purchase prints its own invoice, like a sale prints its bill (Z-07).
@@ -567,6 +616,7 @@ public sealed class PurchasesViewModel : ObservableObject
     /// </summary>
     private void SavePurchaseDraft()
     {
+        if (!RefreshEntryAccess()) return;
         if (Lines.Count == 0)
         {
             SetStatus("Add at least one line.", true);
@@ -603,6 +653,7 @@ public sealed class PurchasesViewModel : ObservableObject
             : _services.Drafts.SavePurchaseDraft(_user, input);
         if (!saved.Ok || saved.Value is null)
         {
+            RefreshEntryAccess();
             SetStatus(saved.Error ?? "The draft could not be saved.", true);
             return;
         }
@@ -621,6 +672,7 @@ public sealed class PurchasesViewModel : ObservableObject
     /// </summary>
     public void OpenPurchaseDraft(int draftId)
     {
+        if (!RefreshEntryAccess()) return;
         if (Lines.Count > 0)
         {
             SetStatus("Save or remove the current lines before opening a draft.", true);
@@ -630,6 +682,7 @@ public sealed class PurchasesViewModel : ObservableObject
         var opened = _services.Drafts.OpenPurchase(_user, draftId);
         if (!opened.Ok || opened.Value is null)
         {
+            RefreshEntryAccess();
             SetStatus(opened.Error ?? "The draft could not be opened.", true);
             return;
         }
@@ -689,8 +742,16 @@ public sealed class PurchasesViewModel : ObservableObject
     }
 }
 
-public sealed class PurchaseLineRow
+public sealed class PurchaseLineRow : ObservableObject
 {
+    private bool _costVisible = true;
+
+    public bool CostVisible
+    {
+        get => _costVisible;
+        set { if (SetProperty(ref _costVisible, value)) OnPropertyChanged(nameof(CostText)); }
+    }
+
     public int ProductId { get; init; }
 
     public string ProductName { get; init; } = string.Empty;
@@ -720,5 +781,5 @@ public sealed class PurchaseLineRow
 
     public string QuantityText => $"{Qty.Format(Quantity)} {Packs.Display(Unit)}";
 
-    public string CostText => IsSample ? "sample" : Money.Format(LineTotalPaisa);
+    public string CostText => !CostVisible ? "hidden" : IsSample ? "sample" : Money.Format(LineTotalPaisa);
 }

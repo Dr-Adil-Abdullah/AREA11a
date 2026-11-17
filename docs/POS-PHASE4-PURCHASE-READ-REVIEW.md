@@ -1,5 +1,7 @@
 # Phase4 portion9 — Purchase invoice and supplier expired-stock reads, v0.87.0 Waxwing
 
+> **Subsequent portion13:** [Purchase entry/draft/result boundary](POS-PHASE4-PURCHASE-PREPARATION-REVIEW.md) now adds current Purchases+Cost/main preparation checks before Create/open/save/post. Saved invoice masking below remains unchanged. Ordinary Supplier paid/payable/PaySR remains undecided. [PT-33](POS-PHASE4-PART13-URDU.md).
+
 **Date:**2026-11-10. **Status:** bounded D-110 continuation; global rollout / Phase4 OPEN. No .NET/Windows execution. Separate Profit/Cost grants and common main switch retained. This portion does NOT decide the still-open ordinary supplier payable/payment policy.
 
 ## View → VM → Core → data / permission

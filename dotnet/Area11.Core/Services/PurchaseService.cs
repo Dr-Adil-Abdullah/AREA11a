@@ -35,7 +35,7 @@ public sealed class PurchaseService
         _log = log;
     }
 
-    public ServiceResult<PurchaseResult> Create(PurchaseInput input, User user)
+    public ServiceResult<PurchaseResult> Create(PurchaseInput input, User? user)
     {
         if (!_permissions.Can(user, Modules.Purchases))
         {
@@ -49,7 +49,13 @@ public sealed class PurchaseService
 
         try
         {
-            var result = _db.Tx(connection => Save(connection, input, user));
+            var result = _db.Tx(connection =>
+            {
+                RequireEntryReader(connection, user);
+                var saved = Save(connection, input, user!);
+                if (saved.Value is { } value) value.CostKnown = true;
+                return saved;
+            });
             return result;
         }
         catch (ValidationException exception)
@@ -61,6 +67,30 @@ public sealed class PurchaseService
             _log.Error("The purchase could not be saved.", exception);
             return ServiceResult<PurchaseResult>.Fail("The purchase could not be saved. Please try again.");
         }
+    }
+
+    /// <summary>Fresh preparation gate only; no payload, money or authorization token is returned.</summary>
+    public ServiceResult CheckEntryAccess(User? user)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            RequireEntryReader(connection, user);
+            return ServiceResult.Success();
+        }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
+        catch (Exception exception)
+        {
+            _log.Error("Purchase preparation access could not be checked.", exception);
+            return ServiceResult.Fail("Purchase preparation access could not be checked. Refresh and try again.");
+        }
+    }
+
+    internal User RequireEntryReader(Microsoft.Data.Sqlite.SqliteConnection connection, User? user)
+    {
+        var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Purchases);
+        ProductReadAccess.RequirePreparationCost(reader, ProductReadPurpose.Purchase, _permissions, _settings);
+        return reader;
     }
 
     /// <summary>

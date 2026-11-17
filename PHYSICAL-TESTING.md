@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-33 — Purchase preparation/drafts/stale unsaved form (v0.91.0) — UNRUN
+
+[Safe checklist](docs/POS-PHASE4-PART13-URDU.md): isolated synthetic data only;current actor/Purchases/Cost/main matrix,deny raw draft/Create/save/post without editable0,summary/discard module-only,retained UI line/cost/paid/status masking and restore-review,no autosave,new selection lookup failure,known0/sample,revocation/current payload bypass refusal,retry/doublepost/rollback.1609cases/Windows build UNRUN;80static/9isolatedSQLprobes not runtime proof. No installer/live-shop fake posts. [Trace](docs/POS-PHASE4-PURCHASE-PREPARATION-REVIEW.md).
+
 ## PT-32 — Expense goods-cost outputs vs ordinary cash (v0.90.0) — UNRUN
 
 [Safe checklist](docs/POS-PHASE4-PART12-URDU.md): isolated fixtures only;current actor/Cash/cost/main,goods raw/list/today/result/voucher mask,ordinary cash unchanged,known0 vs hidden,no goods in drawer sum,type-confusion refusal,safe error/default,genuine posting despite hidden result,rollback,stock tag label-only.1579cases/Windows build UNRUN;79static/8isolatedSQLprobes not runtime proof. No installer/live-shop fake posts. [Trace](docs/POS-PHASE4-EXPENSE-VISIBILITY-REVIEW.md).

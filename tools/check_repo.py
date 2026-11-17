@@ -7055,6 +7055,75 @@ def check_expense_visibility():
     REPORT.append('Phase4 portion12: current Cash readers, goods-drawing raw/history/today/result/voucher independent cost masks, cash expense/drawing totals retained, current account before writes; purchase/supplier/generic exports/session/Windows OPEN')
 
 
+
+def check_purchase_preparation():
+    core = DOTNET / 'Area11.Core'
+    text = (core / 'Services/PurchaseService.cs').read_text()
+    create = text.split('public ServiceResult<PurchaseResult> Create(', 1)[-1].split('/// <summary>Fresh preparation gate', 1)[0]
+    required = ('User? user', '_db.Tx(connection =>', 'RequireEntryReader(connection, user);',
+                'var saved = Save(connection, input, user!);', 'value.CostKnown = true;')
+    for token in required:
+        if token not in create: FAILURES.append(f'Purchase create current preparation/result gate missing {token}')
+    if not (create.find('_db.Tx(connection =>') < create.find('RequireEntryReader(connection, user);') < create.find('Save(connection, input, user!)')):
+        FAILURES.append('Purchase gate must be inside transaction before unchanged Save')
+    gate = text.split('internal User RequireEntryReader(', 1)[-1].split('/// <summary>', 1)[0]
+    for token in ('SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Purchases)',
+                  'ProductReadAccess.RequirePreparationCost(reader, ProductReadPurpose.Purchase, _permissions, _settings);'):
+        if token not in gate: FAILURES.append(f'Purchase preparation must resolve current module and separate Cost/main: {token}')
+    model = (core / 'Models/PurchaseModels.cs').read_text()
+    if 'CostKnown ? Money.Format(TotalPaisa) : "hidden"' not in model:
+        FAILURES.append('Purchase result must distinguish known0 from hidden')
+    drafts = (core / 'Services/DraftService.cs').read_text()
+    save = drafts.split('private ServiceResult<DocumentDraft> Save<TInput>(', 1)[-1].split('// ------------------------------------------------------------------ list & open', 1)[0]
+    if save.count('if (type == DraftType.Purchase) _purchases.RequireEntryReader(connection, user);') != 2:
+        FAILURES.append('Purchase draft insert AND update transactions must recheck preparation')
+    opened = drafts.split('private ServiceResult<TInput> Open<TInput>(', 1)[-1].split('// ------------------------------------------------------------------ discard', 1)[0]
+    if 'if (type == DraftType.Purchase) _purchases.RequireEntryReader(connection, user);' not in opened or opened.find('RequireEntryReader') > opened.find('ReadRow(connection, draftId)'):
+        FAILURES.append('Purchase draft open must gate before reading/deserializing raw payload')
+    listed = drafts.split('public ServiceResult<List<DraftSummary>> List(', 1)[-1].split('public ServiceResult<SaleInput> OpenSale', 1)[0]
+    if 'SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Purchases);' not in listed or 'RequireEntryReader(' in listed:
+        FAILURES.append('Purchase draft summaries need current module, not cost-bearing preparation')
+    posted = drafts.split('public ServiceResult<PurchaseResult> PostPurchase(', 1)[-1].split('private ServiceResult<TResult> Post<', 1)[0]
+    for token in ('_purchases.CheckEntryAccess(user)', 'payload => _purchases.Create(payload, user!)',
+                  'connection => { _purchases.RequireEntryReader(connection, user); }'):
+        if token not in posted: FAILURES.append(f'Purchase draft post must guard current payload and premark/Create: {token}')
+    post = drafts.split('private ServiceResult<TResult> Post<', 1)[-1].split('private void RestoreAfterFailure', 1)[0]
+    if 'authorizeBeforeMark?.Invoke(connection);' not in post or post.find('authorizeBeforeMark?.Invoke(connection);') > post.find('var row = ReadRow(connection, draftId);'):
+        FAILURES.append('Recheck purchase preparation before terminal draft marker')
+    discard = drafts.split('public ServiceResult Discard(', 1)[-1].split('// ------------------------------------------------------------------ post', 1)[0]
+    if 'SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Purchases);' not in discard or 'row.DraftType != probe.DraftType' not in discard:
+        FAILURES.append('Purchase draft discard needs current module/type recheck')
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/PurchasesViewModel.cs').read_text()
+    for token in ('get => CanPrepare ? _costText : string.Empty;', 'get => CanPrepare ? _paidText : string.Empty;',
+                  'foreach (var line in Lines) line.CostVisible = access.Ok;', 'public string TotalText => CanPrepare',
+                  'public string CostText => !CostVisible ? "hidden"', '{purchase.TotalLabel}',
+                  'purpose: ProductReadPurpose.Purchase'):
+        if token not in vm: FAILURES.append(f'Purchase UI must mask but preserve unsaved values: {token}')
+    for method in ('LoadLookups()', 'FilterProducts()', 'AddLine()', 'Save()', 'SavePurchaseDraft()', 'OpenPurchaseDraft(int draftId)'):
+        prefix = 'public void ' if method.startswith('OpenPurchaseDraft') else 'private void '
+        part = vm.split(prefix + method, 1)[-1]
+        if not part.lstrip().startswith('{\n        if (!RefreshEntryAccess()) return;'):
+            FAILURES.append(f'Purchase interaction must check before using retained money: {method}')
+    refresh = vm.split('public bool RefreshEntryAccess()', 1)[-1].split('private void LoadLookups()', 1)[0]
+    if any(token in refresh for token in ('Lines.Clear(', '_costText =', '_paidText =', '.CostPaisa =')):
+        FAILURES.append('Permission mask must not erase/zero unsaved purchase work')
+    view = (DOTNET / 'Area11.Desktop/Views/PurchasesView.xaml').read_text()
+    for cmd in ('SaveCommand', 'SaveDraftCommand'):
+        if 'Command="{Binding ' + cmd + '}" IsEnabled="{Binding CanPrepare}"' not in view:
+            FAILURES.append(f'Purchase save UI enabled state missing: {cmd}')
+    timer = (DOTNET / 'Area11.Desktop/Views/PurchasesView.xaml.cs').read_text()
+    for token in ('TimeSpan.FromSeconds(3)', 'Loaded += OnLoaded;', 'Unloaded += (_, _) => _accessTimer.Stop();',
+                  'viewModel.RefreshEntryAccess();'):
+        if token not in timer: FAILURES.append(f'Purchase page access timer/lifecycle missing {token}')
+    tests = (DOTNET / 'Area11.Tests/PurchasePreparationTests.cs').read_text()
+    for name in ('ProfitOnlyDoesNotAuthorizeCostBearingPreparation', 'MainOffBlocksEvenOwnerAndKeepsRawDraftIntact',
+                 'ExistingDraftServiceCannotPostPreviouslyOpenedPayloadAfterRevocation',
+                 'RestoringGrantOpensOriginalNotMaskedZeroDraft', 'SummaryListRemainsAvailableWithoutCostOrMainButReturnsNoPayload',
+                 'PurchaseValidationFailureKeepsDraftRetryableWithoutPartialStock'):
+        if name not in tests: FAILURES.append(f'Purchase preparation regression missing {name}')
+    REPORT.append('Phase4 portion13: current Purchases+Cost/main preparation/create/draft open-save-post; module-only summaries/discard; result known flag; retained unsaved form masked/commands blocked with next-interaction and nominal3s timer checks. Supplier/export/session/Windows OPEN')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -7132,6 +7201,7 @@ def main() -> int:
     check_batch_read_visibility()
     check_stock_valuation_visibility()
     check_expense_visibility()
+    check_purchase_preparation()
     check_csharp_grammar()
 
     if not quiet:

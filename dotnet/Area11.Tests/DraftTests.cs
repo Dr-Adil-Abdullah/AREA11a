@@ -229,6 +229,7 @@ public sealed class DraftTests
         var product = TestData.AddProduct(test);
         var supplier = TestData.AddSupplier(test);
         var manager = TestData.AddUser(test, "manager");
+        Assert.True(TestData.Permissions(test).Set(TestData.Owner, manager.Id, Modules.PurchaseCost, true).Ok);
         var drafts = TestData.Drafts(test);
 
         var saved = drafts.SavePurchaseDraft(TestData.Owner, Delivery(product, 0));

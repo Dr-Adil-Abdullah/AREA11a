@@ -217,6 +217,7 @@ table below**; a shade listed there has been used and must not come back.
 | 0.88.0 | 2026-11-10 | Skylark | `#4A6175` | Phase4 portion10: current batch reader/workflow + independent cost/valuation masks; fresh read-only write-off/expense previews and manual SR preparation; posting/frozen stock-take/history results still open;1521 cases UNRUN |
 | 0.89.0 | 2026-11-10 | Redstart | `#73524D` | Phase4 portion11: current-reader stock history/today/result and stock-take frozen line/session/document/Open/Apply projections; raw frozen costs/posting formulas retained.30new facts/1551cases UNRUN;78static checks;all-route/expense/export/session/Windows OPEN. |
 | 0.90.0 | 2026-11-10 | Dipper | `#4F6759` | Phase4 portion12: current Cash readers and goods-drawing history/today/result/voucher cost masks; ordinary cash expense/drawing unchanged, original stock/cash posting SQL retained.28new facts/1579cases UNRUN;79static checks;purchase/supplier/export/session/Windows OPEN. |
+| 0.91.0 | 2026-11-10 | Kingfisher | `#386477` | Phase4 portion13: purchase preparation/create/draft open-save-post require current Purchases + independent Cost/main; summary list module-only, unsaved UI masked not zeroed. Original Save/SQL retained;30new facts/1609cases UNRUN; supplier/export/session/Windows OPEN. |
 
 ## Notes for the next agent
 

@@ -53,8 +53,9 @@ public sealed class DraftsViewModel : ObservableObject
 
     public string Title => DraftType.LabelFor(_type) + " drafts";
 
-    public string Subtitle => "Incomplete work, shared with everyone holding the page permission. " +
-        "Nothing here has touched stock, money or reports until it is posted.";
+    public string Subtitle => _type == DraftType.Purchase
+        ? "Shared purchase drafts: page access lists metadata; opening, updating and posting also require View Purchase Cost and the main switch. Flagged interrupted posts must be checked before discarding."
+        : "Incomplete work, shared with everyone holding the page permission. Nothing here has touched stock, money or reports until it is posted.";
 
     public ObservableCollection<DraftSummary> Drafts { get; } = new();
 
@@ -104,6 +105,10 @@ public sealed class DraftsViewModel : ObservableObject
     public void Refresh()
     {
         var id = Selected?.Id;
+        Drafts.Clear();
+        Selected = null;
+        OnPropertyChanged(nameof(HasDrafts));
+        OnPropertyChanged(nameof(HasNoDraft));
         var result = _services.Drafts.List(_user, _type);
         if (!result.Ok || result.Value is null)
         {

@@ -57,6 +57,10 @@ public sealed class PurchaseResult
 
     public long TotalPaisa { get; init; }
 
+    public bool CostKnown { get; set; }
+
+    public string TotalLabel => CostKnown ? Money.Format(TotalPaisa) : "hidden";
+
     public double Units { get; init; }
 
     public List<string> Warnings { get; init; } = new();

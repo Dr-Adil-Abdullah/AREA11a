@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.90.0 Dipper۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.91.0 Kingfisher۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**فیز4 حصہ13 — خرید کا editable hidden0 نہیں:** نئی خرید اور purchase draft کھولنے/محفوظ/update/post کے لیے موجودہ Purchases + الگ Cost + main ON؛صرف Profit/manager کافی نہیں۔ Summary/discard موجودہ page اجازت پر الگ۔ اجازت بند ہو تو unsaved لائنیں/اصل رقم برقرار مگر cost/paid/total/status اگلے check پر mask،Save بند؛اجازت واپس پر review،خودSave نہیں۔ Nominal3second timer کی فوری recall ضمانت نہیں۔ [PT-33](POS-PHASE4-PART13-URDU.md)،[trace/حدود](POS-PHASE4-PURCHASE-PREPARATION-REVIEW.md)۔1609 C#cases UNRUN،80static PASS؛Supplier/generic exports/session/Windows باقی۔
 
 **فیز4 حصہ12 — expense میں cash/مال الگ:** Goods-drawing کی List/Today/new result/voucher valuation الگ Cost+main سے؛منع ہو تو raw money mask/hidden۔ کرایہ/نقدdrawing اور گلے کا cash total متعلقہ Cash grant پر برقرار؛Stock tag صرف label،receiving نہیں۔ Failed Today معلوم0 نہیں،hidden۔ اصل SaveGoods/SQL/accounting unchanged۔ [PT-32](POS-PHASE4-PART12-URDU.md)،[trace/حدود](POS-PHASE4-EXPENSE-VISIBILITY-REVIEW.md)۔1579C#cases UNRUN،79static PASS؛purchase/supplier/generic exports/session/Windows ابھی باقی۔
 
@@ -192,6 +194,8 @@ Recovery سے داخلہ پرانی فروخت یا کھاتے کو reset نہی
 
 **فیز4 حصہ7 — History کی خرید رقم (D-110، پرانا management-only اصول بدل گیا):** متعلقہ Products/History page grant + **View Purchase Cost** + main ON پر خرید Rate، Total اور Bought مالی خلاصہ؛ کسی بھی role کے لیے۔ cost منع ہو تو تینوں raw/labels mask؛ quantity/date/supplier برقرار۔ print/WhatsApp/PDF preparation یہی labels، CSV دونوں purchase money cells خالی۔ صرف Profit/Purchases/Suppliers grant cost کا بدل نہیں۔ واضح sale-profit الگ View Profit/main policy پر؛ مجاز profit سے cost حساب کرکے نکل سکتی ہے، مطلق secrecy نہیں۔ [PT-27](POS-PHASE4-PART7-URDU.md)۔
 
+**حصہ13 کی موجودہ شرط:** نئی خرید Save کرنے سے پہلے Core میں current stored Purchases+View Purchase Cost+main ON دوبارہ چیک ہوتا ہے۔ Cost/main منع ہو تو قابلِ Save masked0 فارم نہیں،انکار ہے۔ کھلے unsaved فارم کی line/cost/paid اصل حالت محفوظ رہتی ہے مگر اگلی action/timer check پر رقم hidden/blank،Save بند؛بحالی پر review کے بعد خود Save کریں۔ پہلے سے محفوظ invoice کی hidden-aware copy الگ ہے۔ [PT-33](POS-PHASE4-PART13-URDU.md)۔
+
 <a id="lesson-08"></a>
 
 ## سبق 08 — Purchases میں حقیقی ڈیلیوری وصول کرنا
@@ -262,6 +266,8 @@ Supplier statement پر پہلے سے ادا شدہ رقم دوبارہ Pay نہ
 3. stock موجود لیکن retail درج نہیں تو مالک کی rate-edit اجازت والا شخص item editor کے manual mode میں مثبت درست فروخت ریٹ دے۔ reference قیمت نہ ہو تو فیصد کمی نہیں ناپ سکتے، مگر actual batch cost/stock پابندی برقرار۔ اجازت نہ ہو تو خود ریٹ لکھ کر رکاوٹ عبور نہیں؛ مستقل حل product میں صحیح Retail محفوظ کرنا ہے۔
 4. Clear، کامیاب sale، cart park یا دوسرے draft/cart کو load کرنے پر نئے live bill کی warning یاد دوبارہ شروع ہوتی ہے؛ آخری چیز ہٹانے سے cart خالی ہو تب بھی اگلی شروعات نئی ہے۔
 5. **رسید/چٹ پر availability کا لفظ، اضافی سطر یا اوپر کا نشان نہیں آتا۔** قیمت کو popup میں دوبارہ نہیں دکھایا گیا؛ معمول کی Rate والی جگہ دیکھیں۔ سٹاک نہ ہونے کا ناکام bill کوئی فروخت نہیں۔
+
+**Purchase drafts کی تازہ حد:** Summary list/discard کے لیے current Purchases،لیکن raw draft Open/Save/update/Post کے لیے Cost+main بھی لازم؛یہ sale drafts کا نیا grant نہیں۔ Denied open میں editable صفر payload نہیں ملتا۔ اجازت واپس ہو تو اصل محفوظ رقم کھلتی ہے؛پرانے returned object/file کی recall نہیں۔ [PT-33](POS-PHASE4-PART13-URDU.md)۔
 
 <a id="lesson-11"></a>
 
@@ -546,6 +552,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 **حصہ11 کی scope update:** Details میں stock history/today/result اور frozen stock-take line/session/document/Open/Apply money masks شامل؛backend frozen accounting برقرار۔ یہ expense/purchase/Supplier/generic exports اور session کی مکمل حفاظت کا سرٹیفکیٹ نہیں۔ [trace](POS-PHASE4-STOCK-VALUATION-REVIEW.md)۔
 
 **حصہ12 کی scope update:** financial Details میں expense goods-drawing history/today/result/voucher masks شامل؛یہ ordinary Cash amount کو چھپانے کا نیا grant نہیں۔ Purchase/supplier/generic exports اور session rollout ابھی باقی۔ [trace](POS-PHASE4-EXPENSE-VISIBILITY-REVIEW.md)۔
+
+**حصہ13 کی scope update:** Staff Details میں purchase preparation/Create/draft open-save-post کا Cost/main تعلق شامل۔ Form کی unsaved state next check پر mask،نہ0 نہ erase؛timer فوری session guarantee نہیں۔ عام Supplier paid/payable/PaySR اور generic exports ابھی باقی۔ [trace](POS-PHASE4-PURCHASE-PREPARATION-REVIEW.md)۔
 
 <a id="lesson-32"></a>
 
