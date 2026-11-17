@@ -211,6 +211,8 @@ public sealed class ExpiredBatchRow
 
     public long CostPaisa { get; set; }
 
+    public bool CostKnown { get; set; }
+
     public string BaseUnit { get; set; } = "tablet";
 
     public int BoxStrips { get; set; }
@@ -219,7 +221,9 @@ public sealed class ExpiredBatchRow
 
     public string QtyLabel => Qty.Format(QtyBase) + " " + BaseUnit;
 
-    public string ValueLabel => Money.Format(Calc.Round(QtyBase * CostPaisa));
+    public long ValuePaisa => CostKnown ? Calc.Round(QtyBase * CostPaisa) : 0;
+
+    public string ValueLabel => CostKnown ? Money.Format(ValuePaisa) : "hidden";
 
     public string ExpiryLabel => string.IsNullOrWhiteSpace(ExpiryDate) ? "no date" : ExpiryDate!;
 

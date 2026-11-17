@@ -1,49 +1,89 @@
-name: build
+name: Windows test build and optional installer
 
-# HOW TO ENABLE (one minute, done by the owner or an agent with a personal token):
-#   GitHub -> this repository -> Add file -> Create new file ->
-#   path: .github/workflows/build.yml -> paste this file -> Commit.
-# The agent's GitHub App token is not allowed to create workflow files, which is why this
-# template lives here instead of being active.
-#
-# Why this exists: the owner builds on Windows, but every agent needs a way to prove the code
-# actually compiles without touching his shop computer. This is that proof - and it is the gate
-# in docs/PROGRESS.md task F-16.
-
+# TEMPLATE ONLY: copy to .github/workflows/build.yml to enable.
+# Workflow-write permission may be required; no workflow is active merely because
+# this template is checked in. Never include shop data or credentials in artifacts.
 on:
   push:
     branches: ["**"]
   pull_request:
   workflow_dispatch:
+    inputs:
+      make_installer:
+        description: "Build an unsigned TEST installer after build/tests pass"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
 
 jobs:
   windows:
-    name: Windows build + tests
-    runs-on: windows-latest
-    timeout-minutes: 25
-
+    name: Windows build and tests
+    runs-on: windows-2022
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
-
-      - name: Show SDK version
-        run: dotnet --info
-
-      - name: Restore
-        run: dotnet restore Area11.sln
-
-      - name: Build
-        run: dotnet build Area11.sln --no-restore --configuration Release
-
-      - name: Test
-        run: dotnet test Area11.sln --no-build --configuration Release --logger "console;verbosity=normal"
-
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install static-check dependencies
+        run: python -m pip install tree-sitter tree-sitter-c-sharp markdown
       - name: Static checks
-        shell: pwsh
         run: |
           python tools/check_repo.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tools/build_rules_matrix.py --check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Restore
+        run: dotnet restore Area11.sln
+      - name: Build Desktop, Core and Tests
+        run: dotnet build Area11.sln --no-restore -c Release
+      - name: Test synthetic databases only
+        run: dotnet test dotnet/Area11.Tests/Area11.Tests.csproj --no-build -c Release --logger "trx;LogFileName=area11.trx" --results-directory TestResults
+      - name: Retain test evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-test-results
+          path: TestResults/*.trx
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Publish and pack unsigned TEST installer
+        if: github.event_name == 'workflow_dispatch' && inputs.make_installer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $source = Get-Content dotnet/Area11.Core/Utils/BuildInfo.cs -Raw
+          if ($source -notmatch 'public const string Version\s*=\s*"([0-9]+\.[0-9]+\.[0-9]+)"') { throw 'Version missing' }
+          $version = $Matches[1]
+          dotnet publish dotnet/Area11.Desktop/Area11.Desktop.csproj -c Release -r win-x64 --self-contained true -o dist/Area11
+          if ($LASTEXITCODE -ne 0) { throw 'Publish failed' }
+          if (!(Test-Path dist/Area11/Area11.exe)) { throw 'Published executable missing' }
+          # Require all source migrations, not just one assumed migration filename.
+          $sourceMigrations = @(Get-ChildItem dotnet/Area11.Core/Data/Migrations/*.sql)
+          if ($sourceMigrations.Count -eq 0) { throw 'Source migrations missing' }
+          foreach ($file in $sourceMigrations) {
+            if (!(Test-Path (Join-Path dist/Area11/Migrations $file.Name))) { throw "Missing migration $($file.Name)" }
+          }
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (!(Test-Path $iscc)) { throw 'Inno Setup 6 not installed on this Windows runner' }
+          & $iscc "/DMyAppVersion=$version" tools/install/Area11.iss
+          if ($LASTEXITCODE -ne 0) { throw 'Installer packing failed' }
+          $installer = "dist/Area11-Setup-v$version.exe"
+          if (!(Test-Path $installer)) { throw 'Installer missing' }
+          (Get-FileHash $installer -Algorithm SHA256 | Format-List | Out-String) | Set-Content "$installer.sha256.txt"
+      - name: Upload unsigned TEST installer
+        if: github.event_name == 'workflow_dispatch' && inputs.make_installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Area11-test-installer
+          path: |
+            dist/Area11-Setup-v*.exe
+            dist/Area11-Setup-v*.exe.sha256.txt
+          if-no-files-found: error
+          retention-days: 14

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using Microsoft.Win32;
@@ -32,6 +33,7 @@ public sealed class SettingsViewModel : ObservableObject
     private readonly Action? _onSaved;
 
     private string _storeName = string.Empty;
+    private string _appDisplayName = "Area11";
     private string _productPhotoSize = "medium";
     private string _storeAddress = string.Empty;
     private string _storePhone = string.Empty;
@@ -41,6 +43,10 @@ public sealed class SettingsViewModel : ObservableObject
     private PaperOption? _selectedPaper;
     private bool _autoPrint;
     private bool _autoCut;
+    private bool _defaultBulk;
+    private BulkFormatOption? _selectedBulkFormat;
+    private bool _whatsAppPreparePdf;
+    private string _whatsAppExportDirectory = string.Empty;
     private string _copiesText = "1";
     private bool _showDiscount;
     private bool _saleSuccessPopup;
@@ -48,6 +54,8 @@ public sealed class SettingsViewModel : ObservableObject
     private string _cashierLimitText = "5";
     private string _managerLimitText = "20";
     private bool _blockBelowCost;
+    private bool _blockOverLimit;
+    private bool _showMargins;
     private bool _taxEnabled;
     private string _taxPercentText = "0";
 
@@ -65,10 +73,15 @@ public sealed class SettingsViewModel : ObservableObject
     private string _loyaltySummary = string.Empty;
 
     // ---- Cloud sync (F-48): the key is typed here but never read back onto the screen ----
+    private StartupModeOption? _selectedStartupMode;
+    private bool _focusGuardEnabled;
+
     private bool _syncEnabled;
     private string _syncUrl = string.Empty;
     private string _syncTable = "area11_sync";
     private string _syncShopId = string.Empty;
+    private bool _syncAutomatic;
+    private string _syncAutomaticMinutesText = "15";
     private string _syncKey = string.Empty;
     private string _syncKeyLabel = string.Empty;
     private string _syncSummary = string.Empty;
@@ -78,8 +91,16 @@ public sealed class SettingsViewModel : ObservableObject
     private IdleHourOption? _selectedIdleHour;
     private string _clockText = string.Empty;
     private User? _selectedUser;
+    private string _billDiscountBasis = "profit";
+    private bool _pricingExtra;
+    private string _pricingExtraLimit = "0";
+    private bool _pricingEditRate, _pricingProfit, _pricingRetail, _pricingOverride;
+    private string _pricingManualLimit = "0", _pricingProfitLimit = "0", _pricingRetailLimit = "0";
+
     private string _newStaffName = string.Empty;
     private string _newStaffPin = string.Empty;
+    private string _resetStaffSecret = string.Empty;
+    private string _newRecoveryWord = string.Empty;
     private string _selectedRole = "Cashier";
 
     private string _statusText = "Changes are saved when you press Save.";
@@ -96,10 +117,13 @@ public sealed class SettingsViewModel : ObservableObject
         ExtraFields = new CustomFieldsViewModel(services, user);
 
         SaveCommand = new RelayCommand(Save);
+        SavePricingCommand = new RelayCommand(SavePricing);
         AddStaffCommand = new RelayCommand(AddStaff);
         ResetPermissionsCommand = new RelayCommand(ResetPermissions);
         ResetLabelsCommand = new RelayCommand(ResetLabels);
         ToggleActiveCommand = new RelayCommand(ToggleActive);
+        ResetSecretCommand = new RelayCommand(ResetSecret);
+        SaveRecoveryWordCommand = new RelayCommand(SaveRecoveryWord);
         RefreshStaffCommand = new RelayCommand(LoadUsers);
         StaffPhotosCommand = new RelayCommand(OpenStaffPhotos);
         ChooseAppIconCommand = new RelayCommand(ChooseAppIcon);
@@ -112,6 +136,12 @@ public sealed class SettingsViewModel : ObservableObject
             new(80, "80 mm  —  48 characters per line (wide printer)")
         };
 
+        BulkFormatOptions = new ObservableCollection<BulkFormatOption>
+        {
+            new("separate_receipts", "Separate receipts — one slip per bill, each cut on its own"),
+            new("a4_list", "One A4 list — the summary page only, for the file")
+        };
+
         IdleHourOptions = new ObservableCollection<IdleHourOption>
         {
             new(0, "Never - only the 12-hour limit"),
@@ -120,6 +150,13 @@ public sealed class SettingsViewModel : ObservableObject
             new(4, "After 4 hours without work"),
             new(6, "After 6 hours without work"),
             new(12, "After 12 hours without work")
+        };
+
+        StartupModeOptions = new ObservableCollection<StartupModeOption>
+        {
+            new(StartupService.Manual, "By hand - start from the icon, close with ×"),
+            new(StartupService.Auto, "Start with Windows - × still closes it"),
+            new(StartupService.Protected, "Start with Windows - × asks for the password every time")
         };
 
         Load();
@@ -132,8 +169,37 @@ public sealed class SettingsViewModel : ObservableObject
 
     public ObservableCollection<PaperOption> PaperOptions { get; }
 
+    /// <summary>Portion 11: the two shapes a bulk print can take.</summary>
+    public ObservableCollection<BulkFormatOption> BulkFormatOptions { get; }
+
     /// <summary>The sign-out choices (v0.35.0, D-92). 12 hours is also the ceiling for every choice.</summary>
     public ObservableCollection<IdleHourOption> IdleHourOptions { get; }
+
+    /// <summary>Portion 16: the three ways Area11 may start and close. Owner only.</summary>
+    public ObservableCollection<StartupModeOption> StartupModeOptions { get; }
+
+    /// <summary>
+    /// Lockdown chrome (v0.67.0): raised from Save() when the guard tick was actually written, so
+    /// the frame can drop the minimize box and the taskbar (or bring them back) at once. The shell
+    /// subscribes through ShellViewModel - a page never touches the window.
+    /// </summary>
+    public event Action? LockdownChromeChanged;
+
+    /// <summary>Screen lockdown (owner, Nov 2026): warn-and-pull-back plus black-box episodes.</summary>
+    public bool FocusGuardEnabled
+    {
+        get => _focusGuardEnabled;
+        set => SetProperty(ref _focusGuardEnabled, value);
+    }
+
+    public StartupModeOption? SelectedStartupMode
+    {
+        get => _selectedStartupMode;
+        set => SetProperty(ref _selectedStartupMode, value);
+    }
+
+    /// <summary>Portion 16: only the owner picks how the program starts and closes.</summary>
+    public bool CanChangeStartup => _user.IsOwner;
 
     public IdleHourOption? SelectedIdleHour
     {
@@ -153,6 +219,8 @@ public sealed class SettingsViewModel : ObservableObject
     public ObservableCollection<AppLabelEditRow> LabelRows { get; } = new();
 
     public ObservableCollection<PermissionToggle> Permissions { get; } = new();
+    public ObservableCollection<PermissionToggle> PagePermissions { get; } = new();
+    public ObservableCollection<PermissionToggle> FinancialPermissions { get; } = new();
 
     public IReadOnlyList<string> StaffRoles { get; } = new[] { "Manager", "Salesman", "Cashier" };
 
@@ -167,6 +235,10 @@ public sealed class SettingsViewModel : ObservableObject
     public string ResetLabelsText => _confirmLabelReset ? "Click again to restore all" : "Restore original words";
 
     public RelayCommand ToggleActiveCommand { get; }
+
+    public RelayCommand ResetSecretCommand { get; }
+
+    public RelayCommand SaveRecoveryWordCommand { get; }
 
     public RelayCommand RefreshStaffCommand { get; }
 
@@ -196,7 +268,62 @@ public sealed class SettingsViewModel : ObservableObject
     /// <summary>Takes the saved key off this computer (it takes effect when Save is pressed).</summary>
     public RelayCommand ClearSyncKeyCommand { get; }
 
-    public bool CanManageStaff => _services.Permissions.Can(_user, Modules.Staff);
+    public RelayCommand SavePricingCommand { get; }
+    public bool IsOwner => _user.IsOwner;
+    public IReadOnlyList<string> DiscountBases { get; } = new[] { "profit", "retail" };
+    public string BillDiscountBasis { get => _billDiscountBasis; set => SetProperty(ref _billDiscountBasis, value); }
+    public bool PricingExtra { get => _pricingExtra; set => SetProperty(ref _pricingExtra, value); }
+    public string PricingExtraLimit { get => _pricingExtraLimit; set => SetProperty(ref _pricingExtraLimit, value); }
+    public bool PricingEditRate { get => _pricingEditRate; set => SetProperty(ref _pricingEditRate, value); }
+    public bool PricingProfit { get => _pricingProfit; set => SetProperty(ref _pricingProfit, value); }
+    public bool PricingRetail { get => _pricingRetail; set => SetProperty(ref _pricingRetail, value); }
+    public bool PricingOverride { get => _pricingOverride; set => SetProperty(ref _pricingOverride, value); }
+    public string PricingManualLimit { get => _pricingManualLimit; set => SetProperty(ref _pricingManualLimit, value); }
+    public string PricingProfitLimit { get => _pricingProfitLimit; set => SetProperty(ref _pricingProfitLimit, value); }
+    public string PricingRetailLimit { get => _pricingRetailLimit; set => SetProperty(ref _pricingRetailLimit, value); }
+
+    private void LoadPricing()
+    {
+        if (_selectedUser is null || !_user.IsOwner) return;
+        try
+        {
+            var allowance = _services.Pricing.ForUser(_selectedUser);
+            PricingEditRate = allowance.EditRate;
+            PricingManualLimit = allowance.ManualReductionPercent.ToString("0.##", CultureInfo.InvariantCulture);
+            PricingProfit = allowance.ProfitDiscount;
+            PricingProfitLimit = allowance.ProfitPercent.ToString("0.##", CultureInfo.InvariantCulture);
+            PricingRetail = allowance.RetailDiscount;
+            PricingRetailLimit = allowance.RetailPercent.ToString("0.##", CultureInfo.InvariantCulture);
+            PricingOverride = allowance.OverrideBasis;
+            PricingExtra = allowance.ExtraDiscount;
+            PricingExtraLimit = Money.Edit(allowance.ExtraLimitPaisa);
+        }
+        catch (ValidationException exception) { SetStatus(exception.Message, true); }
+    }
+
+    private void SavePricing()
+    {
+        if (!_user.IsOwner || _selectedUser is null) { SetStatus("Only the owner can set a person's pricing limits.", true); return; }
+        if (!decimal.TryParse(PricingManualLimit, NumberStyles.Number, CultureInfo.InvariantCulture, out var manual)
+            || !decimal.TryParse(PricingProfitLimit, NumberStyles.Number, CultureInfo.InvariantCulture, out var profit)
+            || !decimal.TryParse(PricingRetailLimit, NumberStyles.Number, CultureInfo.InvariantCulture, out var retail))
+        { SetStatus("Enter numeric percentage limits between 0 and 100.", true); return; }
+        if (!Money.TryParse(PricingExtraLimit, out var extra) || extra < 0 || extra > long.MaxValue / 100m
+            || decimal.Round(extra, 2) != extra)
+        { SetStatus("Extra Discount limit must be a positive rupee amount (up to two decimals), or zero.", true); return; }
+        var result = _services.Pricing.Save(_user, new PricingAllowance
+        {
+            UserId = _selectedUser.Id, EditRate = PricingEditRate, ManualReductionPercent = manual,
+            ProfitDiscount = PricingProfit, ProfitPercent = profit, RetailDiscount = PricingRetail,
+            RetailPercent = retail, OverrideBasis = PricingOverride,
+            ExtraDiscount = PricingExtra, ExtraLimitPaisa = Money.ToPaisa(extra)
+        });
+        SetStatus(result.Ok ? "Pricing limits saved for " + _selectedUser.Name + "." : result.Error ?? "Could not save pricing limits.", !result.Ok);
+    }
+
+    public bool CanManageStaff => _user.IsOwner && _services.Permissions.Can(_user, Modules.Staff);
+
+    public bool CanManageFinancialVisibility => _user.IsOwner;
 
     public bool CannotManageStaff => !CanManageStaff;
 
@@ -227,6 +354,15 @@ public sealed class SettingsViewModel : ObservableObject
         get => _storeName;
         set => SetProperty(ref _storeName, value);
     }
+
+    /// <summary>Owner's word (Nov 2026): his own name on every window, the sign-in screen and the taskbar.</summary>
+    public string AppDisplayName
+    {
+        get => _appDisplayName;
+        set => SetProperty(ref _appDisplayName, value);
+    }
+
+    public bool CanChangeAppName => _user.IsOwner;
 
     public string StoreAddress
     {
@@ -273,10 +409,50 @@ public sealed class SettingsViewModel : ObservableObject
         set => SetProperty(ref _autoCut, value);
     }
 
+    /// <summary>
+    /// Portion 11: on, the Print button prints every ticked row; off, it prints the one open row
+    /// and the bulk set stays behind its own "Print selected" button.
+    /// </summary>
+    public bool DefaultBulk
+    {
+        get => _defaultBulk;
+        set => SetProperty(ref _defaultBulk, value);
+    }
+
+    public BulkFormatOption? SelectedBulkFormat
+    {
+        get => _selectedBulkFormat;
+        set => SetProperty(ref _selectedBulkFormat, value);
+    }
+
+    /// <summary>Portion 12: on, every WhatsApp send also prepares a PDF file for attaching by hand.</summary>
+    public bool WhatsAppPreparePdf
+    {
+        get => _whatsAppPreparePdf;
+        set => SetProperty(ref _whatsAppPreparePdf, value);
+    }
+
+    /// <summary>Portion 12: where the prepared PDFs land; empty means the shop's exports folder.</summary>
+    public string WhatsAppExportDirectory
+    {
+        get => _whatsAppExportDirectory;
+        set => SetProperty(ref _whatsAppExportDirectory, value);
+    }
+
     public string CopiesText
     {
         get => _copiesText;
         set => SetProperty(ref _copiesText, value);
+    }
+
+    /// <summary>
+    /// Portion 13: the global profit switch. Off hides every margin - dashboard, reports, customer
+    /// pages, doctors, history - even from the owner, until it is switched back on.
+    /// </summary>
+    public bool ShowMargins
+    {
+        get => _showMargins;
+        set => SetProperty(ref _showMargins, value);
     }
 
     public bool ShowDiscount
@@ -310,6 +486,12 @@ public sealed class SettingsViewModel : ObservableObject
     {
         get => _blockBelowCost;
         set => SetProperty(ref _blockBelowCost, value);
+    }
+
+    public bool BlockOverLimit
+    {
+        get => _blockOverLimit;
+        set => SetProperty(ref _blockOverLimit, value);
     }
 
     public bool TaxEnabled
@@ -489,6 +671,20 @@ public sealed class SettingsViewModel : ObservableObject
         set => SetProperty(ref _selectedRole, value);
     }
 
+    /// <summary>The new PIN or password the owner types for the selected person (cleared after save).</summary>
+    public string ResetStaffSecret
+    {
+        get => _resetStaffSecret;
+        set => SetProperty(ref _resetStaffSecret, value);
+    }
+
+    /// <summary>The owner's own "forgot password" word (cleared after save; empty means factory).</summary>
+    public string NewRecoveryWord
+    {
+        get => _newRecoveryWord;
+        set => SetProperty(ref _newRecoveryWord, value);
+    }
+
     // ----------------------------- Loading ------------------------------
 
     private void LoadLabels()
@@ -510,6 +706,7 @@ public sealed class SettingsViewModel : ObservableObject
         var photoSize = settings.GetString("appearance.productPhotoSize");
         ProductPhotoSize = photoSize is "large" ? "large" : "medium";
         StoreName = settings.GetString("store.name");
+        AppDisplayName = settings.GetString("brand.appName");
         StoreAddress = settings.GetString("store.address");
         StorePhone = settings.GetString("store.phone");
         FooterNote = settings.GetString("store.footerNote");
@@ -519,6 +716,11 @@ public sealed class SettingsViewModel : ObservableObject
         SelectedIdleHour = IdleHourOptions.FirstOrDefault(option => option.Hours == idleHours)
                            ?? IdleHourOptions[2];
 
+        var startupMode = settings.GetString(StartupService.ModeKey);
+        SelectedStartupMode = StartupModeOptions.FirstOrDefault(option => option.Key == startupMode)
+                              ?? StartupModeOptions[0];
+        FocusGuardEnabled = _services.Focus.Enabled;
+
         // The clock line (v0.35.0, D-92). It says where the time comes from and how far the two
         // clocks were apart when Area11 last looked - a shop whose PC is a day out must see it here.
         ClockText = TimeSource.DescribeForOwner();
@@ -526,6 +728,12 @@ public sealed class SettingsViewModel : ObservableObject
         PrinterName = settings.GetString("printer.name");
         AutoPrint = settings.GetBool("printer.autoPrint", true);
         AutoCut = settings.GetBool("printer.autoCut", true);
+        DefaultBulk = settings.GetBool("printer.defaultBulk", false);
+        WhatsAppPreparePdf = settings.GetBool("whatsapp.preparePdf", true);
+        WhatsAppExportDirectory = settings.GetString("whatsapp.exportDirectory") ?? string.Empty;
+        SelectedBulkFormat = BulkFormatOptions.FirstOrDefault(option =>
+                string.Equals(option.Key, settings.GetString("printer.bulkFormat"), StringComparison.OrdinalIgnoreCase))
+            ?? BulkFormatOptions[0];
         CopiesText = settings.GetLong("printer.copies", 1).ToString(CultureInfo.InvariantCulture);
         ShowDiscount = settings.GetBool("receipt.showDiscount", true);
         SaleSuccessPopup = settings.GetBool("sale.successPopup", true);
@@ -535,7 +743,10 @@ public sealed class SettingsViewModel : ObservableObject
 
         CashierLimitText = Text(settings.GetDouble("discount.maxPercentCashier", 5));
         ManagerLimitText = Text(settings.GetDouble("discount.maxPercentManager", 20));
-        BlockBelowCost = settings.GetBool("discount.blockBelowCost", true);
+        BlockBelowCost = true;
+        BillDiscountBasis = settings.GetString("discount.billBasis");
+        BlockOverLimit = settings.GetBool("credit.blockOverLimit", false);
+        ShowMargins = settings.GetBool("profit.showMargins", true);
         TaxEnabled = settings.GetBool("tax.enabled");
         TaxPercentText = Text(settings.GetDouble("tax.percent"));
 
@@ -558,20 +769,23 @@ public sealed class SettingsViewModel : ObservableObject
         SyncUrl = settings.GetString(SyncService.UrlKey);
         SyncTable = settings.GetString(SyncService.TableKey);
         SyncShopId = settings.GetString(SyncService.ShopIdKey);
+        SyncAutomatic = settings.GetBool(SyncService.AutomaticEnabledKey);
+        SyncAutomaticMinutesText = settings.GetInt(SyncService.AutomaticMinutesKey, 15)
+            .ToString(CultureInfo.InvariantCulture);
         SyncKey = string.Empty;
         _syncKeyCleared = false;
         RaiseSyncLabels();
     }
 
     /// <summary>
-    /// Which section is open: 0 Shop, 1 Printing, 2 Sales rules, 3 Cloud sync, 4 Staff, 5 App words.
+    /// Which section is open: 0 App name &amp; icon, 1 Shop, 2 Printing, 3 Sales rules, 4 Cloud, 5 Staff, 6 App words, 7 Fields.
     /// Bound two-way so the shell's dark-header section buttons and the person's staff shortcut can
     /// select the same existing content without rebuilding it.
     /// </summary>
     public int SelectedTabIndex
     {
         get => _selectedTabIndex;
-        set => SetProperty(ref _selectedTabIndex, Math.Clamp(value, 0, 6));
+        set => SetProperty(ref _selectedTabIndex, Math.Clamp(value, 0, 7));
     }
 
     /// <summary>
@@ -621,7 +835,10 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void LoadPermissions()
     {
+        LoadPricing();
         Permissions.Clear();
+        PagePermissions.Clear();
+        FinancialPermissions.Clear();
 
         if (_selectedUser is null)
         {
@@ -635,13 +852,16 @@ public sealed class SettingsViewModel : ObservableObject
 
         foreach (var module in Modules.All)
         {
-            var toggle = new PermissionToggle(module, Modules.Label(module), map[module], editable)
+            var toggle = new PermissionToggle(module, PermissionDocumentation.For(module).Title, map[module],
+                editable || (_user.IsOwner && PermissionService.IsFinancialVisibility(module)))
             {
                 Allowed = map[module]
             };
 
             toggle.Changed += OnPermissionChanged;
             Permissions.Add(toggle);
+            if (PermissionDocumentation.IsSensitive(module)) FinancialPermissions.Add(toggle);
+            else PagePermissions.Add(toggle);
         }
 
         _suppressPermissionSave = false;
@@ -670,9 +890,11 @@ public sealed class SettingsViewModel : ObservableObject
             return;
         }
 
-        if (!TryNumber(CashierLimitText, out var cashierLimit) || !TryNumber(ManagerLimitText, out var managerLimit))
+        if (!int.TryParse(SyncAutomaticMinutesText.Trim(), NumberStyles.Integer,
+                CultureInfo.InvariantCulture, out var automaticMinutes)
+            || automaticMinutes is < 5 or > 1440)
         {
-            SetStatus("Discount limits must be numbers, for example 5 or 7.5.", true);
+            SetStatus("Automatic sync must be a whole number of minutes from 5 to 1440.", true);
             return;
         }
 
@@ -730,6 +952,12 @@ public sealed class SettingsViewModel : ObservableObject
             return;
         }
 
+        if (CanChangeAppName && (AppDisplayName.Trim().Length == 0 || AppDisplayName.Trim().Length > 40))
+        {
+            SetStatus("The application name must be 1 to 40 letters.", true);
+            return;
+        }
+
         // A switch that is ON with half a form behind it would fail on the Cloud sync page with a
         // sentence the owner cannot act on, so the page refuses the combination here (D-66, v0.26.0).
         var keyWillExist = !_syncKeyCleared && (_services.Cloud.HasKey || SyncKey.Trim().Length > 0);
@@ -767,13 +995,16 @@ public sealed class SettingsViewModel : ObservableObject
             ["printer.width"] = paper.Width,
             ["printer.autoPrint"] = AutoPrint,
             ["printer.autoCut"] = AutoCut,
+            ["printer.defaultBulk"] = DefaultBulk,
+            ["printer.bulkFormat"] = SelectedBulkFormat?.Key ?? "separate_receipts",
+            ["whatsapp.preparePdf"] = WhatsAppPreparePdf,
+            ["whatsapp.exportDirectory"] = WhatsAppExportDirectory.Trim(),
             ["printer.copies"] = copies,
             ["receipt.showDiscount"] = ShowDiscount,
             ["sale.successPopup"] = SaleSuccessPopup,
 
-            ["discount.maxPercentCashier"] = cashierLimit,
-            ["discount.maxPercentManager"] = managerLimit,
-            ["discount.blockBelowCost"] = BlockBelowCost,
+            ["discount.blockBelowCost"] = true,
+            ["credit.blockOverLimit"] = BlockOverLimit,
             ["tax.enabled"] = TaxEnabled,
             ["tax.percent"] = taxPercent,
             ["expiry.levels"] = _services.Settings.ExpiryBands
@@ -801,6 +1032,8 @@ public sealed class SettingsViewModel : ObservableObject
             values[SyncService.UrlKey] = SyncUrl.Trim();
             values[SyncService.TableKey] = SyncTable.Trim();
             values[SyncService.ShopIdKey] = SyncShopId.Trim();
+            values[SyncService.AutomaticEnabledKey] = SyncAutomatic;
+            values[SyncService.AutomaticMinutesKey] = automaticMinutes;
 
             if (_syncKeyCleared)
             {
@@ -812,6 +1045,17 @@ public sealed class SettingsViewModel : ObservableObject
             }
         }
 
+        // The app name is an owner-only key: a manager's ordinary save must not trip the whole
+        // atomic dictionary on one key, so it travels only when the owner changed it.
+        if (CanChangeAppName && !string.Equals(AppDisplayName.Trim(),
+                _services.Settings.GetString("brand.appName"), StringComparison.Ordinal))
+        {
+            values["brand.appName"] = AppDisplayName.Trim();
+        }
+
+        // A manager saving ordinary settings must not submit this owner-only switch.
+        if (_user.IsOwner) values[MasterFoundationSettings.ProfitShowMargins] = ShowMargins;
+        if (_user.IsOwner) values["discount.billBasis"] = BillDiscountBasis;
         var result = _services.Settings.SetMany(values, _user);
 
         if (!result.Ok)
@@ -843,9 +1087,51 @@ public sealed class SettingsViewModel : ObservableObject
                     ? " Cloud sync is ready."
                     : " Cloud sync is switched on but still incomplete.";
 
+        // Startup and close (Portion 16): saved through the service, not the values above - the
+        // Windows entry must stick before the setting claims it. Unchanged means untouched: an
+        // ordinary save must not rewrite the registry or audit a choice nobody made.
+        var startupNote = string.Empty;
+
+        if (CanChangeStartup && SelectedStartupMode is not null
+            && SelectedStartupMode.Key != _services.Startup.Mode)
+        {
+            var startup = _services.Startup.SetMode(
+                _user, SelectedStartupMode.Key, Environment.ProcessPath ?? string.Empty);
+
+            if (!startup.Ok)
+            {
+                SetStatus(startup.Error ?? "The startup mode could not be saved.", true);
+                return;
+            }
+
+            startupNote = " Startup: " + _services.Startup.ModeLabel + " " + _services.Startup.ScopeText;
+        }
+
+        // Screen lockdown (owner's word, Nov 2026): a plain setting, owner-only at the service
+        // guard. Unchanged means untouched, like the startup mode above.
+        var focusNote = string.Empty;
+
+        if (CanChangeStartup && FocusGuardEnabled != _services.Focus.Enabled)
+        {
+            var focus = _services.Settings.Set(FocusGuardService.GuardKey, FocusGuardEnabled, _user);
+
+            if (!focus.Ok)
+            {
+                SetStatus(focus.Error ?? "The screen lock could not be saved.", true);
+                return;
+            }
+
+            focusNote = " Screen lock: " + (FocusGuardEnabled ? "on." : "off.");
+        }
+
         SetStatus($"Saved. Paper {paper.Width} mm, printing " +
                   (AutoPrint ? "automatic." : "manual (use the button on the counter screen).") +
-                  cloudNote, false);
+                  cloudNote + startupNote + focusNote, false);
+
+        if (focusNote.Length > 0)
+        {
+            LockdownChromeChanged?.Invoke();
+        }
     }
 
     // ---------------------------- Cloud sync ----------------------------
@@ -881,6 +1167,26 @@ public sealed class SettingsViewModel : ObservableObject
     {
         get => _syncShopId;
         set => SetProperty(ref _syncShopId, value);
+    }
+
+    /// <summary>Portion 15: the automatic tick - on means the shop pushes itself every few minutes.</summary>
+    public bool SyncAutomatic
+    {
+        get => _syncAutomatic;
+        set
+        {
+            if (SetProperty(ref _syncAutomatic, value))
+            {
+                RaiseSyncSummary();
+            }
+        }
+    }
+
+    /// <summary>Portion 15: minutes between automatic pushes, whole, 5 to 1440 (checked on save).</summary>
+    public string SyncAutomaticMinutesText
+    {
+        get => _syncAutomaticMinutesText;
+        set => SetProperty(ref _syncAutomaticMinutesText, value);
     }
 
     /// <summary>
@@ -944,9 +1250,11 @@ public sealed class SettingsViewModel : ObservableObject
             return;
         }
 
-        SyncSummary = _services.Cloud.IsConfigured
-            ? "Ready. Open SYSTEM -> Cloud sync to push the shop's data, or to read the cloud copy."
-            : "Switched on but not complete - fill the address, the key, the table and the shop id, then press Save settings.";
+        SyncSummary = !_services.Cloud.IsConfigured
+            ? "Switched on but not complete - fill the address, the key, the table and the shop id, then press Save settings."
+            : SyncAutomatic
+                ? "Ready. Open SYSTEM -> Cloud sync to push the shop's data, or to read the cloud copy. Automatic push is on."
+                : "Ready. Open SYSTEM -> Cloud sync to push the shop's data, or to read the cloud copy.";
     }
 
     // ------------------------------ Staff -------------------------------
@@ -1004,6 +1312,68 @@ public sealed class SettingsViewModel : ObservableObject
             : $"{person.Name} can sign in again.", false);
     }
 
+    /// <summary>
+    /// The owner's panel for a forgotten secret (Phase 2, owner's word): the selected person gets
+    /// the typed PIN - or the password, when the selected person is the owner. The service guards
+    /// owner-only and writes the black-box line; the box is cleared so the secret never sits on
+    /// the screen.
+    /// </summary>
+    private void ResetSecret()
+    {
+        if (_selectedUser is null)
+        {
+            SetStatus("Select a person first.", true);
+            return;
+        }
+
+        if (!CanManageStaff)
+        {
+            SetStatus("Only the owner can change passwords and PINs.", true);
+            return;
+        }
+
+        var person = _selectedUser;
+        var result = _services.Auth.SetSecret(_user, person.Id, ResetStaffSecret, person.IsOwner);
+
+        if (!result.Ok)
+        {
+            SetStatus(result.Error ?? "The change could not be saved.", true);
+            return;
+        }
+
+        ResetStaffSecret = string.Empty;
+        SetStatus(person.IsOwner
+            ? "The owner password is changed. Sign in with the new one."
+            : $"{person.Name} can now sign in with the new PIN.", false);
+    }
+
+    /// <summary>
+    /// The owner's own "forgot password" word (Phase 2, owner's word). Until this is set, the
+    /// factory word signs the owner in; an empty save hands the door back to the factory word.
+    /// </summary>
+    private void SaveRecoveryWord()
+    {
+        if (!CanManageStaff)
+        {
+            SetStatus("Only the owner can change the recovery word.", true);
+            return;
+        }
+
+        var result = _services.Auth.SetRecoveryWord(_user, NewRecoveryWord);
+
+        if (!result.Ok)
+        {
+            SetStatus(result.Error ?? "The change could not be saved.", true);
+            return;
+        }
+
+        var backToFactory = NewRecoveryWord.Trim().Length == 0;
+        NewRecoveryWord = string.Empty;
+        SetStatus(backToFactory
+            ? "The recovery word is back to the factory word (area11)."
+            : "The recovery word is changed. The factory word no longer works.", false);
+    }
+
     private void ResetLabels()
     {
         if (!_services.Permissions.Can(_user, Modules.Settings))
@@ -1055,6 +1425,26 @@ public sealed class SettingsViewModel : ObservableObject
         SetStatus($"{_selectedUser.Name} is back to the normal {_selectedUser.RoleLabel} permissions.", false);
     }
 
+    // Pointer clicks are delayed by the Windows double-click interval. Keyboard Space still uses
+    // the native checkbox. A selection/reload replaces objects, so a pending old row cannot save.
+    public void TogglePermissionFromPointer(PermissionToggle toggle)
+    {
+        if (!CanManageStaff || !toggle.CanEdit || !Permissions.Contains(toggle)) return;
+        toggle.Allowed = !toggle.Allowed;
+    }
+
+    public void OpenPermissionDetails(PermissionToggle toggle)
+    {
+        if (!Permissions.Contains(toggle)) return;
+        var result = _services.PermissionInspector.Inspect(_user, toggle.Module);
+        if (!result.Ok)
+        {
+            SetStatus(result.Error ?? "Only the active owner can inspect assignments.", true);
+            return;
+        }
+        PermissionDetailsDoor.Show(_services, _user, toggle.Module);
+    }
+
     private void OnPermissionChanged(object? sender, EventArgs e)
     {
         if (_suppressPermissionSave || sender is not PermissionToggle toggle || _selectedUser is null)
@@ -1094,6 +1484,22 @@ public sealed class SettingsViewModel : ObservableObject
 }
 
 /// <summary>One paper size in the drop-down. ToString() is what the ComboBox shows.</summary>
+/// <summary>Portion 16: one start-and-close choice on the Settings page. ToString is the label.</summary>
+public sealed class StartupModeOption
+{
+    public StartupModeOption(string key, string label)
+    {
+        Key = key;
+        Label = label;
+    }
+
+    public string Key { get; }
+
+    public string Label { get; }
+
+    public override string ToString() => Label;
+}
+
 /// <summary>One sign-out choice on the Settings page (v0.35.0, D-92).</summary>
 public sealed class IdleHourOption
 {
@@ -1125,6 +1531,22 @@ public sealed class AppLabelEditRow
     public string DefaultText { get; }
 
     public string Text { get; set; }
+}
+
+/// <summary>Portion 11: one shape a bulk print can take - the key is what `printer.bulkFormat` stores.</summary>
+public sealed class BulkFormatOption
+{
+    public BulkFormatOption(string key, string label)
+    {
+        Key = key;
+        Label = label;
+    }
+
+    public string Key { get; }
+
+    public string Label { get; }
+
+    public override string ToString() => Label;
 }
 
 public sealed class PaperOption
@@ -1163,6 +1585,8 @@ public sealed class PermissionToggle : ObservableObject
     public string Module { get; }
 
     public string Label { get; }
+
+    public string Summary => PermissionDocumentation.For(Module).Summary;
 
     public bool CanEdit { get; }
 

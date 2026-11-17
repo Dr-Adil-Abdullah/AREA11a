@@ -106,7 +106,7 @@ ORDER BY id DESC LIMIT 1;", new { id = customer.ToString() });
         Assert.Equal("doctor", after.Category);
 
         var page = new CustomerLedgerService(test.Database, test.Audit, test.Settings,
-            new PermissionService(test.Database, test.Log, test.Audit), test.Log).Page(customer);
+            new PermissionService(test.Database, test.Log, test.Audit), test.Log).Page(TestData.Owner, customer);
 
         Assert.True(page.Ok, page.Error);
         Assert.True(page.Value!.BooksMatch);                // an edit cannot break the khata

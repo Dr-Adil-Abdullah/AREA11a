@@ -87,7 +87,7 @@ public static class FieldGovernance
         if (entity is not null && CustomFieldEntity.IsDocument(entity) && cleanType == CustomFieldType.Photo)
         {
             return "Photos belong to medicines, customers and suppliers. Bills, purchases and expenses " +
-                "carry text, number, amount, date, list and yes/no fields.";
+                "have no photo gallery and carry text, number, amount, date, list and yes/no fields.";
         }
 
 

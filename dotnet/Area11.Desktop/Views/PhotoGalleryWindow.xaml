@@ -1,7 +1,7 @@
 <Window Icon="{DynamicResource Area11WindowIcon}" x:Class="Area11.Desktop.Views.PhotoGalleryWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Photos - Area11" Height="620" Width="880"
+        Title="{Binding WindowTitle}" Height="620" Width="880"
         WindowStartupLocation="CenterOwner" Background="{StaticResource CanvasBrush}">
 
     <Grid Margin="16">

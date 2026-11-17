@@ -88,6 +88,19 @@
 
                     <Border Style="{StaticResource Card}" Padding="14" Margin="0,0,0,12">
                         <StackPanel>
+                            <TextBlock Text="Open the Shift page" Style="{StaticResource SectionTitle}" />
+                            <TextBlock Text="For a shift alert: the drawer differences behind it, with who counted and why."
+                                       Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+
+                            <Button Content="Open the Shift page" Style="{StaticResource GhostButton}"
+                                    Margin="0,8,0,0" HorizontalAlignment="Left"
+                                    Command="{Binding OpenShiftCommand}"
+                                    ToolTip="Walks to the Shift page. Only shift alerts travel; the rest stay put." />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}" Padding="14" Margin="0,0,0,12">
+                        <StackPanel>
                             <TextBlock Text="End an alert (owner)" Style="{StaticResource SectionTitle}" />
                             <TextBlock Text="{Binding SelectedCaption}" Style="{StaticResource FieldHint}" />
 

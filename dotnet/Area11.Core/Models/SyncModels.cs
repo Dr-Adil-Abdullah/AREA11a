@@ -24,6 +24,15 @@ public static class SyncTables
     /// its lines are also included when a recent payment or provisional reconciliation references it;
     /// that small dependency closure keeps the document valid instead of breaking its financial links.
     /// </summary>
+    /// <summary>
+    /// Tables whose rows may all be first-start seeds (7 managed units, 5 example categories, 12
+    /// native field definitions). Alone they are not worth a push; they travel with the first work.
+    /// </summary>
+    public static readonly string[] Seeds =
+    {
+        "units", "categories", "form_field_definitions"
+    };
+
     public static readonly string[] Recent =
     {
         "sales", "sale_items", "purchases", "purchase_items",
@@ -57,7 +66,6 @@ public static class SyncTables
 
     public static bool IsKnown(string table) => Array.IndexOf(Order, table) >= 0;
 
-    public static bool IsRecent(string table) => Array.IndexOf(Recent, table) >= 0;
 }
 
 /// <summary>
@@ -148,6 +156,14 @@ public sealed class SyncEnvelope
 
     [JsonIgnore]
     public int RowCount => Tables.Sum(pair => pair.Value.Count);
+
+    /// <summary>
+    /// Repair (first Windows run, v0.58.0): a fresh shop is never row-zero, so "nothing to send"
+    /// cannot mean <see cref="RowCount"/> zero - it means no row outside the seed tables.
+    /// </summary>
+    [JsonIgnore]
+    public bool HasWork => Tables.Any(pair =>
+        pair.Value.Count > 0 && !SyncTables.Seeds.Contains(pair.Key, StringComparer.Ordinal));
 
     [JsonIgnore]
     public string SizeLabel => SizeBytes >= 1024 * 1024
@@ -320,6 +336,21 @@ public sealed class SyncStatus
 
     /// <summary>The owner's tick in Settings -> Cloud sync (`sync.enabled`).</summary>
     public bool Enabled { get; set; }
+
+    /// <summary>Portion 15: the owner's automatic tick (`sync.automaticEnabled`).</summary>
+    public bool AutomaticEnabled { get; set; }
+
+    /// <summary>Portion 15: minutes between automatic pushes, already clamped to 5..1440.</summary>
+    public int AutomaticMinutes { get; set; }
+
+    /// <summary>Portion 15: the last failure in the owner's words, or empty when the last push worked.</summary>
+    public string LastError { get; set; } = string.Empty;
+
+    /// <summary>Portion 15: one line for the page - on or off, and how often.</summary>
+    public string AutomaticLabel => !AutomaticEnabled
+        ? "Automatic push is off - use the Push button."
+        : "Automatic push is on: every " + AutomaticMinutes.ToString(CultureInfo.InvariantCulture)
+          + (AutomaticMinutes == 1 ? " minute." : " minutes.");
 
     public string ConfigLabel => Configured
         ? "Cloud sync is set up"

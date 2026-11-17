@@ -32,6 +32,8 @@ public sealed class ReceiptService
     /// <summary>Paper width in characters: 32 for 58 mm, 48 for 80 mm.</summary>
     public int PaperWidth => ColumnsForMillimetres(_settings.GetInt("printer.width", 58));
 
+    public bool AutoCut => _settings.GetBool("printer.autoCut", true);
+
     /// <summary>
     /// The one place that turns millimetres into characters. The receipt and the hardware test slip
     /// must agree, or the slip would prove a width the bills do not use (F-46).
@@ -46,8 +48,8 @@ public sealed class ReceiptService
             using var connection = _db.Open();
 
             var sale = _db.QuerySingle<SaleRow>(connection, @"
-SELECT id, code, date, customer_id, user_id, subtotal_paisa, discount_paisa, tax_paisa,
-       round_off_paisa, total_paisa, paid_paisa, due_paisa, change_paisa, payment_method, status
+SELECT id, code, date, created_at, customer_id, user_id, subtotal_paisa, discount_paisa, tax_paisa,
+       round_off_paisa, pre_extra_total_paisa, extra_discount_paisa, total_paisa, paid_paisa, due_paisa, change_paisa, payment_method, status
 FROM sales WHERE id = @id;", new { id = saleId });
 
             if (sale is null)
@@ -122,13 +124,33 @@ WHERE sale_id = @id AND method <> 'credit' ORDER BY id;", new { id = saleId });
         document.Lines.Add(ReceiptLine.Sep(width));
 
         var dateText = FormatDate(sale.Date);
+
+        // A corrected bill (v0.68.0) shows BOTH times, on the owner's word: the wrong stamp SMALL
+        // and the correct reporting time BIG - so the customer reads the right day, and the old
+        // stamp stays on the paper instead of being rewritten out of history.
+        var corrected = !string.IsNullOrWhiteSpace(sale.CreatedAt)
+            && !string.Equals(sale.Date, sale.CreatedAt, StringComparison.Ordinal);
+        var wrongText = corrected ? FormatDate(sale.CreatedAt) : string.Empty;
+
+        void AddCorrectedTimes()
+        {
+            Add("First stamped " + wrongText, ReceiptAlign.Center);
+            Add("Correct time " + dateText, ReceiptAlign.Center, bold: true, big: true);
+        }
+
         var dateOnTop = !string.Equals(_settings.GetString("receipt.datePosition"), "bottom",
             StringComparison.OrdinalIgnoreCase);
 
         if (dateOnTop)
         {
-            Pair($"Bill: {sale.Code}", dateText);
+            Pair($"Bill: {sale.Code}", corrected ? string.Empty : dateText);
             Pair($"Customer: {customer}", string.IsNullOrWhiteSpace(cashier) ? string.Empty : $"By: {cashier}");
+
+            if (corrected)
+            {
+                AddCorrectedTimes();
+            }
+
             document.Lines.Add(ReceiptLine.Sep(width));
         }
         else
@@ -141,7 +163,7 @@ WHERE sale_id = @id AND method <> 'credit' ORDER BY id;", new { id = saleId });
         foreach (var item in items)
         {
             var quantity = Qty.Format(item.QtyEntered);
-            var unit = string.IsNullOrWhiteSpace(item.UnitSold) ? "unit" : item.UnitSold;
+            var unit = Packs.Display(item.UnitSold);
             var amount = Money.Fixed(item.LineTotalPaisa);
 
             Add(item.NameSnapshot);
@@ -167,6 +189,12 @@ WHERE sale_id = @id AND method <> 'credit' ORDER BY id;", new { id = saleId });
             Pair("Round off", Money.Fixed(sale.RoundOffPaisa));
         }
 
+        if (sale.ExtraDiscountPaisa > 0)
+        {
+            Pair("Before Extra Discount", Money.Fixed(sale.PreExtraTotalPaisa ?? (sale.TotalPaisa + sale.ExtraDiscountPaisa)));
+            // Mandatory even when the optional ordinary-discount receipt line is hidden.
+            Pair("Extra Discount", "-" + Money.Fixed(sale.ExtraDiscountPaisa));
+        }
         Pair("TOTAL", Money.Fixed(sale.TotalPaisa), bold: true);
 
         if (payments.Count > 0)
@@ -205,7 +233,15 @@ WHERE sale_id = @id AND method <> 'credit' ORDER BY id;", new { id = saleId });
         if (!dateOnTop)
         {
             document.Lines.Add(ReceiptLine.Sep(width));
-            Add(dateText, ReceiptAlign.Center);
+
+            if (corrected)
+            {
+                AddCorrectedTimes();
+            }
+            else
+            {
+                Add(dateText, ReceiptAlign.Center);
+            }
         }
 
         document.Lines.Add(ReceiptLine.Sep(width));
@@ -291,6 +327,9 @@ WHERE sale_id = @id AND method <> 'credit' ORDER BY id;", new { id = saleId });
 
         public string? Date { get; set; }
 
+        /// <summary>The stamp the bill was born with - differs from Date only after a time fix.</summary>
+        public string? CreatedAt { get; set; }
+
         public int? CustomerId { get; set; }
 
         public int? UserId { get; set; }
@@ -303,6 +342,8 @@ WHERE sale_id = @id AND method <> 'credit' ORDER BY id;", new { id = saleId });
 
         public long RoundOffPaisa { get; set; }
 
+        public long? PreExtraTotalPaisa { get; set; }
+        public long ExtraDiscountPaisa { get; set; }
         public long TotalPaisa { get; set; }
 
         public long PaidPaisa { get; set; }

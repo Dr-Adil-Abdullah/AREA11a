@@ -39,3 +39,6 @@ __pycache__/
 # Machine-local shortcuts generated on first launch; targets contain this PC's absolute path.
 /! START AREA11.lnk
 /! RUN TESTS.lnk
+
+# Local Python source-check environment (never part of the application)
+.venv/

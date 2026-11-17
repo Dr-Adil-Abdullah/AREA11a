@@ -168,9 +168,9 @@ public sealed class SettingsService
     }
 
     /// <summary>
-    /// A **screen preference** (which menu groups are folded) is stored like any other setting, but it
-    /// is deliberately **not** written into the black box: it changes nothing about money or stock,
-    /// and a shop that folds and unfolds the menu all day would push the real changes off the page.
+    /// A **silent value** (the session heartbeat, a last-seen stamp) is stored like any other setting,
+    /// but it is deliberately **not** written into the black box: it changes nothing about money or
+    /// stock, and a stamp written every 30 seconds would push the real changes off the page.
     ///
     /// The key must still exist in <see cref="Defaults"/> - an unknown key is a bug in the caller,
     /// not a preference, and is refused rather than written.
@@ -182,6 +182,15 @@ public sealed class SettingsService
             return ServiceResult.Fail($"Unknown setting '{key}'.");
         }
 
+        if (key == AuthService.RecoveryWordKey)
+            return ServiceResult.Fail("The recovery word must use the owner-only secret settings path.");
+        if (key == FocusGuardService.GuardKey)
+            return ServiceResult.Fail("Screen lock must use the audited owner settings path.");
+        if (key == MasterFoundationSettings.ProfitShowMargins)
+            return ServiceResult.Fail("Financial visibility must use the audited owner settings path.");
+        if (key is "discount.billBasis" or "discount.blockBelowCost")
+            return ServiceResult.Fail("Pricing policy must use the audited owner settings path.");
+
         // Application words are owner-visible settings, not transient UI preferences. Keep them on
         // the validated, permission-checked and audited SetMany/AppLabelService path.
         if (key.StartsWith("labels.", StringComparison.Ordinal))
@@ -191,6 +200,10 @@ public sealed class SettingsService
         if (key.StartsWith("appearance.", StringComparison.Ordinal))
         {
             return ServiceResult.Fail("Application appearance must be saved through the audited settings path.");
+        }
+        if (string.Equals(key, "brand.appName", StringComparison.Ordinal))
+        {
+            return ServiceResult.Fail("The application name must be saved through the audited settings path.");
         }
 
         try
@@ -232,6 +245,17 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
     /// </summary>
     public ServiceResult SetMany(IReadOnlyDictionary<string, object?> values, User? actor)
     {
+        if (values.ContainsKey(AuthService.RecoveryWordKey))
+            return ServiceResult.Fail("The recovery word must use the owner-only secret settings path.");
+        if (values.TryGetValue("discount.billBasis", out var billBasis))
+        {
+            if (!IsCurrentOwner(actor)) return ServiceResult.Fail("Only the owner can change the default discount basis.");
+            if (billBasis is not string basis || basis is not ("profit" or "retail"))
+                return ServiceResult.Fail("Choose profit or retail for the bill discount basis.");
+        }
+        if (values.TryGetValue("discount.blockBelowCost", out var belowCost) && belowCost is not true)
+            return ServiceResult.Fail("Selling below purchase cost is not allowed for any role.");
+
         // Labels can also be saved as part of the Settings screen's larger atomic dictionary. Guard
         // that real path here as well as AppLabelService.Save, so a direct Core caller cannot bypass
         // the Settings permission. A manually constructed service without permissions fails closed.
@@ -252,6 +276,32 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
             return ServiceResult.Fail("Only the owner can change the application icon.");
         }
 
+        if (values.ContainsKey("lockdown.focusGuard") && actor?.IsOwner != true)
+        {
+            return ServiceResult.Fail("Only the owner can change the screen lock.");
+        }
+
+        // Owner's word (Nov 2026, reverses D-77): the window title shows his own app name.
+        if (values.TryGetValue("brand.appName", out var appName))
+        {
+            if (actor?.IsOwner != true)
+            {
+                return ServiceResult.Fail("Only the owner can change the application name.");
+            }
+
+            var clean = appName?.ToString()?.Trim() ?? string.Empty;
+
+            if (clean.Length == 0 || clean.Length > 40)
+            {
+                return ServiceResult.Fail("The application name must be 1 to 40 letters.");
+            }
+        }
+
+        var ownerOnly = values.Keys.Any(key => key is "discount.billBasis" or "appearance.iconFileName"
+            or "brand.appName" or "lockdown.focusGuard" or MasterFoundationSettings.ProfitShowMargins);
+        if (ownerOnly && !IsCurrentOwner(actor))
+            return ServiceResult.Fail("Only the active owner can change these protected settings.");
+
         var preparation = PrepareBulk(values);
         if (!preparation.Ok || preparation.Value is null)
         {
@@ -264,6 +314,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         {
             _db.Tx(connection =>
             {
+                if (ownerOnly) OwnerAccess.Require(_db, connection, actor);
                 foreach (var pair in values)
                 {
                     var json = prepared[pair.Key];
@@ -297,6 +348,49 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         }
     }
 
+    internal ServiceResult SaveRecoveryHash(User actor, string hash)
+    {
+        try
+        {
+            var json = JsonSerializer.Serialize(hash);
+            _db.Tx(connection =>
+            {
+                var owner = OwnerAccess.Require(_db, connection, actor);
+                _db.Execute(connection, @"
+INSERT INTO settings(key, value, updated_at) VALUES(@key, @value, @at)
+ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at;",
+                    new { key = AuthService.RecoveryWordKey, value = json, at = Clock.Now() });
+                _audit.Record(connection, owner, "Auth", "recovery_word_changed",
+                    details: hash.Length == 0 ? "back to the factory word" : "changed");
+            });
+            lock (_gate) { _cache[AuthService.RecoveryWordKey] = json; }
+            return ServiceResult.Success();
+        }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
+        catch (Exception exception)
+        {
+            _log.Error("The recovery word could not be saved.", exception);
+            return ServiceResult.Fail("The change could not be saved.");
+        }
+    }
+
+    private bool IsCurrentOwner(User? actor)
+    {
+        if (actor?.IsOwner != true) return false;
+        try
+        {
+            using var connection = _db.Open();
+            return _db.QuerySingle<User>(connection,
+                "SELECT id, name, role, active FROM users WHERE id = @id;", new { id = actor.Id })
+                is { IsOwner: true, Active: true };
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The owner account could not be verified for pricing settings.", exception);
+            return false;
+        }
+    }
+
     /// <summary>
     /// Validates and serialises settings without opening a transaction. The native workbook preview
     /// uses this exact same guard, then applies the prepared values inside the workbook's ONE database
@@ -314,6 +408,10 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
                 return ServiceResult<IReadOnlyDictionary<string, string>>.Fail($"Unknown setting '{pair.Key}'.");
             }
 
+            if (pair.Key == "discount.billBasis" && pair.Value is not ("profit" or "retail"))
+                return ServiceResult<IReadOnlyDictionary<string, string>>.Fail("Choose profit or retail for the bill discount basis.");
+            if (pair.Key == "discount.blockBelowCost" && pair.Value is not true)
+                return ServiceResult<IReadOnlyDictionary<string, string>>.Fail("Purchase-cost protection cannot be disabled.");
             var refusal = Guard(pair.Key, pair.Value, values);
             if (refusal is not null)
             {
@@ -564,6 +662,13 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
                     ? null
                     : "The sign-out time must be 1, 2, 4, 6 or 12 hours (or 0 for the 12-hour limit only).";
 
+            // Startup and close (Portion 16). Three words only: anything else would silently become
+            // manual on read, and a mode that silently changes itself is worse than a refusal.
+            case "startup.mode":
+                return TextValue(value) is "manual" or "auto" or "protected"
+                    ? null
+                    : "The startup mode must be manual, auto or protected.";
+
             default:
                 return null;
         }
@@ -677,9 +782,6 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Text("store.footerNote", "Thank you for your visit.");
         Text("store.terms", "Medicines are returnable within 7 days with the original receipt.");
         Text("brand.appName", "Area11");
-        Text("brand.shortName", "A11");
-        Text("brand.logoDataUrl", string.Empty);
-        Text("brand.primaryColor", "#0e7490");
 
         // ---- Billing and numbering (Spec 12.5.12) ----
         Text("bill.purchasePrefix", "PINV-");
@@ -707,10 +809,11 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Number("tax.percent", 0);
         Text("tax.label", "Sales Tax");
 
-        // ---- Discount (27-Oct owner decision: always full retail/selling price) ----
+        // ---- Discount (D-107: future profit default, owner-selectable retail, per-person caps) ----
         Flag("discount.enabled", true);
-        // Legacy key retained for old databases; the 27-Oct owner rule always discounts full retail.
-        Text("discount.mode", "retail");
+        // Retired keys retained for old databases/tools; active allowances live per person.
+        Text("discount.mode", "retail"); // Retired legacy key, not the active basis.
+        Text("discount.billBasis", "profit");
         Number("discount.maxPercentCashier", 5);
         Number("discount.maxPercentManager", 20);
         Flag("discount.blockBelowCost", true);
@@ -734,14 +837,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
 
         // ---- Receipt layout (the printer itself is declared once, at the top of this method) ----
         Text("receipt.datePosition", "top");
-        Flag("receipt.showOriginalPrice", true);
         Flag("receipt.showDiscount", true);
-        Flag("receipt.showSavings", false);
-        Flag("receipt.showCostColumns", false);
-
-        // ---- Payments ----
-        Raw("payment.methods", "[\"cash\",\"credit\"]");
-        Text("payment.default", "cash");
 
         // ---- Stock ----
         // Both legacy keys stay readable so an old database needs no destructive migration. D-93 removed
@@ -750,9 +846,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Flag("stock.warnNegative", true);
 
         // ---- Returns (U-28, D-02) ----
-        Flag("returns.requireInvoice", true);
         Number("returns.maxDays", 0);
-        Flag("returns.cashierRestockToShelf", false);
 
         // ---- Credit ----
         Flag("credit.blockOverLimit", false);
@@ -762,10 +856,16 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Number("security.pinLength", 4);
         Number("security.autoLockMinutes", 15);
         Number("security.sessionHours", 12);
-        Flag("security.requireLogin", true);
+        // The "forgot password" door (Phase 2, owner's word): empty means the factory word
+        // ("area11") signs the owner in; otherwise this holds the hash of the owner's own word.
+        // Locked out of the workbook - a hash must never travel in a spreadsheet.
+        Text("security.recoveryWordHash", string.Empty);
 
         // ---- Backup (F-36) ----
-        Flag("backup.autoEnabled", false);
+        // On since v0.63.0 (owner's word, Nov 2026: data loss is the biggest fear). A new shop is
+        // protected from its first day; an old shop is switched on by migration 032; the Backup
+        // page keeps its one-tick switch for any shop that wants it off.
+        Flag("backup.autoEnabled", true);
         Number("backup.everyHours", 24);
         Number("backup.keep", 7);
         // Bookkeeping for the daily backup: when it last ran and which file it made. Kept out of the
@@ -783,7 +883,9 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Text("sync.shopId", "shop-1");
         Text("sync.status", "not_configured");
         Text("sync.lastSyncAt", string.Empty);
-        // Safe Phase 1 default: no background timer until the separately approved Phase 7 enables it.
+        Text("sync.lastError", string.Empty);
+        // Portion 15 is the separately approved Phase 7: the background timer is now allowed, and it
+        // stays off until the owner ticks it. Minutes are validated (whole, 5 to 1440) on the save path.
         Flag("sync.automaticEnabled", false);
         Number("sync.automaticMinutes", 15);
 
@@ -791,14 +893,6 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Flag("whatsapp.preparePdf", true);
         Text("whatsapp.exportDirectory", string.Empty);
         Flag("profit.showMargins", true);
-
-        // ---- Menu (D-51) ----
-        // The folded groups, by key ("stock", "money" ...). A menu fold is a preference, not a
-        // business fact, so it is stored beside the settings but kept out of the black box (see
-        // SetUiOnly below) - a busy day must not bury a real change under a hundred menu clicks.
-        Raw("menu.collapsedGroups", "[]");
-        // The owner's tick: keep every group open and take the folding away altogether.
-        Flag("menu.pinnedOpen", false);
 
         // ---- Session and the drawer (v0.35.0, D-92) ----
         // How long the counter may stand untouched before the person is signed out (hours; 0 = only
@@ -810,15 +904,25 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         Text("session.handoverAt", string.Empty);
         Text("session.handoverBy", string.Empty);
 
+        // ---- Startup and close (Portion 16): manual starts and closes by hand; auto starts with
+        // Windows; protected also asks for the password on every close. Manual by default: the
+        // shop must opt into auto-start and protection on purpose.
+        Text("startup.mode", "manual");
+
+        // ---- Screen lockdown (owner's word, Nov 2026): off until the owner opts in; session.*
+        // is the run's own silent telemetry (kill detection), never audited per write.
+        Flag("lockdown.focusGuard", false);
+        Text("session.lastUser", string.Empty);
+        Text("session.lastStart", string.Empty);
+        Text("session.lastSeen", string.Empty);
+        Flag("session.cleanExit", true);
+
         // ---- Application section labels (E-12/S-05) ----
         // One catalog supplies the defaults, the editor, the Core guard and the WPF resources.
         foreach (var label in AppLabelService.Definitions)
         {
             Text(label.SettingKey, label.DefaultText);
         }
-
-        // ---- Owner ----
-        Text("owner.name", "Owner");
 
         return map;
     }

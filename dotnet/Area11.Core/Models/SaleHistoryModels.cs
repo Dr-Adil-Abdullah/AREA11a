@@ -19,6 +19,9 @@ public sealed class SaleHistoryRow
     /// <summary>Stored as the shop's own text ("2026-10-26 14:05:00").</summary>
     public string Date { get; set; } = string.Empty;
 
+    /// <summary>The stamp the bill was born with - read only where the fix must show both times.</summary>
+    public string CreatedAt { get; set; } = string.Empty;
+
     public string Status { get; set; } = "paid";
 
     /// <summary>cash | credit | online | card | split</summary>
@@ -34,6 +37,10 @@ public sealed class SaleHistoryRow
     public long SubtotalPaisa { get; set; }
 
     public long DiscountPaisa { get; set; }
+    public long? PreExtraTotalPaisa { get; set; }
+    public long ExtraDiscountPaisa { get; set; }
+    public string ExtraDiscountText => Money.Format(ExtraDiscountPaisa);
+    public string PreExtraTotalText => Money.Format(PreExtraTotalPaisa ?? (TotalPaisa + ExtraDiscountPaisa));
 
     public long TaxPaisa { get; set; }
 

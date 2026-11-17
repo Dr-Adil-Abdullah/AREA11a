@@ -58,11 +58,15 @@ public sealed class StockService
     }
 
     /// <summary>The live batches of one medicine, oldest expiry first - where the medicine actually is.</summary>
-    public ServiceResult<List<BatchRow>> Batches(int productId)
+    public ServiceResult<List<BatchRow>> Batches(User? user, int productId,
+        ProductReadPurpose purpose = ProductReadPurpose.WriteOff)
     {
         try
         {
             using var connection = _db.Open();
+            RequireBatchPurpose(purpose);
+            var reader = ProductReadAccess.Require(_db, connection, _permissions, user, purpose);
+            var canSeeCost = CostPolicy.CanSee(_permissions, _settings, reader);
 
             var rows = _db.Query<BatchRow>(connection, @"
 SELECT b.id AS id, b.product_id AS productId, b.batch_no AS batchNo, b.expiry_date AS expiryDate,
@@ -80,15 +84,75 @@ ORDER BY (b.expiry_date IS NULL OR b.expiry_date = '') ASC, b.expiry_date ASC, b
             foreach (var row in rows)
             {
                 row.Levels = levels;
+                row.CostKnown = canSeeCost;
+                if (!canSeeCost) row.CostPaisa = 0;
             }
 
             return ServiceResult<List<BatchRow>>.Success(rows);
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult<List<BatchRow>>.Fail(exception.Message);
         }
         catch (Exception exception)
         {
             _log.Error("The batches of medicine " + productId + " could not be read.", exception);
             return ServiceResult<List<BatchRow>>.Fail("The batches could not be loaded.");
         }
+    }
+
+    /// <summary>
+    /// Fresh read-only cost preparation for a selected batch. Denial is not a zero-valued quote.
+    /// Existing posting fallback (positive batch cost, otherwise product cost) is retained.
+    /// This does not authorize a subsequent write or revoke previously prepared objects.
+    /// </summary>
+    public ServiceResult<BatchCostPreparation> PrepareBatchCost(User? user, int productId, int? batchId,
+        ProductReadPurpose purpose)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            RequireBatchPurpose(purpose);
+            var reader = ProductReadAccess.Require(_db, connection, _permissions, user, purpose);
+            ProductReadAccess.RequirePreparationCost(reader, purpose, _permissions, _settings);
+            var product = _db.QuerySingle<ProductRow>(connection, @"
+SELECT id, name, base_unit AS baseUnit, box_strips AS boxStrips, strip_tablets AS stripTablets,
+       cost_paisa AS costPaisa, retail_paisa AS retailPaisa
+FROM products WHERE id = @id AND active = 1;", new { id = productId })
+                ?? throw new ValidationException("That medicine is no longer active. Refresh and select it again.");
+            var batch = _db.QuerySingle<BatchDbRow>(connection, @"
+SELECT id, batch_no AS batchNo, qty_base AS qtyBase, cost_paisa AS costPaisa, expiry_date AS expiryDate
+FROM batches
+WHERE product_id = @productId AND active = 1 AND (@batchId IS NULL OR id = @batchId)
+ORDER BY id LIMIT 1;", new { productId, batchId });
+            if (batchId is not null && batch is null)
+                throw new ValidationException("That batch is no longer active for this medicine. Refresh and select it again.");
+            if (batchId is null && (batch is not null || purpose == ProductReadPurpose.SupplierReturn))
+                throw new ValidationException("Choose a current batch before preparing its cost.");
+            return ServiceResult<BatchCostPreparation>.Success(new BatchCostPreparation
+            {
+                ProductId = product.Id, ProductName = product.Name,
+                BatchId = batch?.Id, BatchNo = batch?.BatchNo,
+                QtyBase = batch?.QtyBase ?? 0,
+                CostPaisa = batch is not null && batch.CostPaisa > 0 ? batch.CostPaisa : product.CostPaisa,
+                BaseUnit = product.BaseUnit, BoxStrips = product.BoxStrips, StripTablets = product.StripTablets
+            });
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult<BatchCostPreparation>.Fail(exception.Message);
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The batch cost could not be prepared.", exception);
+            return ServiceResult<BatchCostPreparation>.Fail("The batch cost could not be prepared. Refresh and try again.");
+        }
+    }
+
+    private static void RequireBatchPurpose(ProductReadPurpose purpose)
+    {
+        if (purpose is not (ProductReadPurpose.WriteOff or ProductReadPurpose.Expense or ProductReadPurpose.SupplierReturn))
+            throw new ValidationException("Choose a supported batch reading workflow.");
     }
 
     /// <summary>Writes the goods off (or corrects the count). Owner or manager only (19.1).</summary>
@@ -314,19 +378,8 @@ VALUES(@date, @productId, @batchId, @direction, @qtyBase, @unit, @qtyEntered,
 
     // ------------------------------------------------------------------ helpers
 
-    private static double PerUnit(ProductRow product, string? unit)
-    {
-        var word = (unit ?? string.Empty).Trim().ToLowerInvariant();
-        var perStrip = Math.Max(1, product.StripTablets);
-        var perBox = Math.Max(1, product.BoxStrips) * perStrip;
-
-        return word switch
-        {
-            "box" => product.BoxStrips > 0 ? perBox : 1,
-            "strip" => product.StripTablets > 0 ? perStrip : 1,
-            _ => 1
-        };
-    }
+    private static double PerUnit(ProductRow product, string? unit) =>
+        Packs.PerUnit(product.BoxStrips, product.StripTablets, unit);
 
     private static string ReasonLabel(string reason) => reason switch
     {

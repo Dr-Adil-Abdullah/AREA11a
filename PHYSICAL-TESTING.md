@@ -1,5 +1,155 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-30 — batch projection / fresh cost previews / manual SR tray (v0.88.0) — UNRUN
+
+[Safe checklist](docs/POS-PHASE4-PART10-URDU.md): isolated synthetic fixtures only;current actor/workflow/module,independent cost/main/owner masks,metadata/known0,effective product fallback,stale/missing/cross-product batch refusal before tray mutation,fresh cost/stock/pack,no silent first-batch fallback,read-only DB. Whole Stock/Expenses/Suppliers pages are not yet cost-private:history/totals/results remain open.1521cases/Windows build UNRUN;77static and6isolated SQL probes are not runtime certification. No installer produced.
+
+## Test-installer request authorized — artifact NOT BUILT (2026-11-10)
+
+[Remaining plan / isolated Windows test steps](docs/REMAINING-WORK-AND-TEST-INSTALLER-URDU.md). Current source0.87.0 needs a real Windows full build/test and Inno pack; local Linux has neither. No active Actions workflow/runs. Do not install over shop data for a fake test: fixed ProgramData path and app startup migrations mean a separate executable folder is not isolation. Updated CI template remains unexecuted. No new Windows success or produced exe to record.
+
+## PT-29 — purchase invoice / supplier expired-stock financial reads (v0.87.0) — UNRUN
+
+[Safe checklist](docs/POS-PHASE4-PART9-URDU.md): isolated existing synthetic fixtures only; manager/profit-only/cost-only/module/owner/global switch, new invoice Paid+Due masks, next-read revocation, expired metadata/known0, stale/missing/bounded selection refusal before tray mutation, new print/PDF/text parity and unchanged read-only DB. No Pay/SR/live-shop fake posting or prepared-file recall claim.1493 C# cases UNRUN;76 static/source and isolated SQL checks PASS are not Windows/runtime certification. [Trace](docs/POS-PHASE4-PURCHASE-READ-REVIEW.md).
+
+## PT-28 — permission group / hover / double-click / live assignments (v0.86.0) — UNRUN
+
+[Safe checklist](docs/POS-PHASE4-PART8-URDU.md): real Windows tooltips, no accidental grant on double-click, native Space/Details/Esc, disabled owner boxes, old-selection pending click, drag-out/OS click timing, DPI, inactive/main OFF statuses, external DB revocation and owner-loss clearing, timer close/reopen. No synthetic live-shop financial entries.75 static/isolated inspector SELECT snapshot checks PASS are not WPF/xUnit proof;1469 written cases UNRUN. Prior real v0.80 run below remains4fail/1333pass; no newer all-green result supplied.
+
+## Complete v0.80.0 failure log received — all four now identified
+
+4failed/1333passed/0skipped/1337total,1m46s,net10.0. Actual failures: cashier quote False→True; BookCheck bill finding count3→4; MissingAndTooMuch expected500→0; CSV row count4→5. Core and Tests compiled in this run, not proof of Desktop compilation. All four map to existing v0.85.1 fixes; no unknown fourth remains and no further old log is needed. **Updated Windows/xUnit rerun still pending**; source remains unpushed. [Full assertion-to-fix table](docs/WINDOWS-V080-TEST-REPORT-REVIEW.md). Earlier partial-log uncertainty below is historical.
+
+## Follow-up owner report — still v0.80.0 Ibis,1m46s
+
+Again4failed/1333passed/0skipped/1337total. Now CSV Expected4/Actual5 confirmed and `BookCheckTests.MissingAndTooMuchAreCountedApart` line425 named (assertion omitted). Across both excerpts three distinct failing names observed; fourth still unknown. No v0.85.1 execution evidence, no new fix needed from this tail alone. Request complete current test.log, preserve before rerun; newer source still not pushed. [Updated evidence](docs/WINDOWS-V080-TEST-REPORT-REVIEW.md).
+
+## Latest actual owner report — v0.80.0 Ibis (received 2026-11-10)
+
+Windows/net10.0 xUnit: **4 failed,1333 passed,0 skipped,total1337,duration1m48s**. The total matches the banner. Visible failure: CounterAvailability cashier quote returned true (test used owner ID1); BookCheck CSV line368 stack also visible, assertion text omitted. Two other failing names/details missing: request original full test.log. Source response now v0.85.1 Stonechat/1449 written cases,74 static checks; **NOT rerun on Windows**, not an all-green claim. [Investigation/fixes/evidence](docs/WINDOWS-V080-TEST-REPORT-REVIEW.md). Full D-110 rollout and WPF/hardware remain unverified. Newer workspace changes have not been pushed; do not tell owner Pull alone retrieves them.
+
+## PT-26 — فیز4 حصہ6 Fields/time correction (v0.84.0) — Windows/physical PENDING
+
+[محفوظ قدم/مثال/حدود](docs/POS-PHASE4-PART6-URDU.md): verified backup + واقعی الگ data؛ active-owner definitions/admin list، public answers/current module، مجاز cashier answers، owner-only time preview/apply، repeated offset/no-op، created_at/money/audit preservation۔ اصل bills کی تاریخ test کے لیے نہ بدلیں، اصل DB corruption/triggers نہیں۔1421 written C# cases یہاں UNEXECUTED؛72 static checks اور الگ temporary SQLite lock/rollback proof runtime/Windows PASS نہیں۔ delegated parent/session/valuation/full audit OPEN؛ اصل output/screenshots درکار۔
+
+## PT-25 — فیز4 حصہ5 History/Reorder cost اور snapshots (v0.83.0) — Windows/physical PENDING
+
+[محفوظ قدم، مثال اور حدود](docs/POS-PHASE4-PART5-URDU.md): verified backup + واقعی الگ data؛ management-only purchase rate/total/summary، History screen/print/CSV، Reorder raw last cost، current reader/modules، Dashboard OR gate، Reports daily/global profit، revoke/disabled-account cases۔ اصل shop پر fake posting نہیں؛1401 written C# cases یہاں UNEXECUTED،71 static checks runtime PASS نہیں۔ Reports DeadStock valuation/دیگر finance/session/full audit OPEN؛ اصل Windows output/screenshots درکار۔
+
+## PT-24 — فیز4 حصہ4 Products / report cost (v0.82.0) — Windows/physical PENDING
+
+[مکمل محفوظ قدم اور حدود](docs/POS-PHASE4-PART4-URDU.md): verified backup + واقعی الگ data؛ Counter/PR search، Products management cost اور %retail margin/global switch، authorized receiving/SR/write-off/expense preparation، grant/revoke، Reports raw cost masking۔ اصل shop پر fake posting نہیں؛1377 written C# cases UNEXECUTED یہاں،70 static checks runtime PASS نہیں۔ باقی services/session/full audit OPEN؛ اصل Windows output/screenshots درکار۔
+
+## PT-23 — فیز4 حصہ3 ledger reads (v0.81.0) — Windows/physical PENDING
+
+[مکمل محفوظ قدم/واپسی](docs/POS-PHASE4-PART3-URDU.md): verified backup + واقعی الگ data؛ Customers/Suppliers list/account/full/month/bulk/print/PDF/WhatsApp preparation permission/grant/revoke، customer profit global OFF/ON، Books match unchanged۔ اصل دکان میں fake posting یا حقیقی شخص کو test WhatsApp نہیں۔1357 C# cases لکھے، یہاں نہیں چلائے؛69 static/source checks runtime PASS نہیں۔ محفوظ اصل screenshot/output مالک سے باقی۔ catalog/دوسرے cost/session paths اس test سے مکمل محفوظ قرار نہیں۔
+
+
+## PT-22 — Sale-level Extra Discount + explicit return policy B (Windows NOT passed)
+
+**v0.78.0 Avocet**, slate blue `#465D7A`. **1300 written cases (+30),66 static checks**; no .NET/WPF or physical execution. Independent SQLite script is NOT a SaleService test. [Urdu usage/safe tests/disable](docs/POS-PHASE3-TEST-URDU.md).
+
+1. Verified backup and genuinely isolated test data/VM, not a second exe folder. Old headers/items/all prior grant fields survive036 unchanged; pre-extra NULL/extra0 for history; current future default remains owner's chosen basis. Never post pretend sales against live shop data.
+2. Owner sets each person's Extra enabled/rupee cap using separate pricing-panel Save, including own allowance. No automatic50/no owner fallback. Same role different caps20/30; manager/forged owner/inactive account cannot grant/bypass. Revoke between quote/post, Draft/Park resume under another user/current cap.
+3. More / split Extra entry: typing alone does not apply; owned confirm1120/20/1100 Yes/No; repeated20 stays20, attempted30 with cap20 refuses, original applied amount remains. Pending/invalid entry blocks Complete/F4 until Apply or Remove. Remove restores original total without modifying product rates/qty/discounts/bill%. Closing panel retains applied amount.
+4. All-manual/all-item-discount lines still permit separate Extra when allowed. Points/rounding first, Extra afterward. Per-line original cost floor AND final bill actual FEFO allocated-cost total floor remain mandatory for owner too; refusal no silent clamp/no stock/payment/audit-sale side effects. Zero stock always blocks.
+5.1120−20=1100, cash1100→due/change0; cash1200→change100; no Extra cash1100 must not auto-forgive20. Split/credit/recovery/final customer balance, drawer/shift expected cash, points earning all final-based. Save/print/re-entry regressions PT-20/21 remain required.
+6. Original sale_item rates/qty/discount/line_total unchanged with vs without Extra. Header pre-extra1120/extra20/final1100, dedicated audit transactionally. Receipt58/80mm/reprint and Bills show separate fields even when ordinary discount line hidden. Old receipt amounts remain unchanged.
+7. B approved: A560+B560 paid1100 afterExtra20. Return A first560 then B540 (reverse order same consequence for whichever first), combined request1100. Quantity partial/repeat/last-paisa, zero remainder, duplicate refusals, restock/quarantine, credit-vs-actual-collected cash cap, linked PR differences; preview warning visible before posting and final totals match. No proportional rewriting of original sale lines.
+8. Overall/day reports profit final1100−cost800=300. Customer profit subtracts Extra once. Top/product history explicitly BEFORE bill Extra; category separate negative unallocated Extra20 reconciles category total1100. BooksCheck line sum−Extra/header/snapshots clean; tamper detection on isolated test copy only.
+9. Park/Draft/restart preserve absolute Extra, changed limits fail safely. Clear/Post/Park new live cartExtra0; resume same saved cartExtra20. UI short-screen1366×768/1024×768,125/150%DPI, scroll reachability, native arrows/Shift+arrows/scanner focus and owned popup do not regress.
+10. Desktop build + real **ALL GREEN —1300 of1300** log; actual Windows screenshots and printer evidence only. No installer, no whole-program security/15-point audit PASS.
+
+Result: pending Windows/owner physical proof. Phase4 is next, not already completed.
+
+
+## PT-21 — Phase2 per-person pricing, actual profit and immutable bills (Windows NOT passed)
+
+**v0.77.0 Sandpiper**, brown `#745238`. **1270 written cases (+30), 65 static checks**; no SDK, Core/xUnit, Desktop/WPF run or physical result in this sandbox. Static/grammar checks and Python SQLite execution are independent evidence, not a C# runtime pass. Owner-readable procedure: [فیز2 آزمائش اور واپسی](docs/POS-PHASE2-TEST-URDU.md). New permissions are DENY by default for non-owner: owner must save each person's pricing panel before expecting edits/discounts.
+
+1. Verified backup; isolated test PC/VM/data for posted examples. Never assume a second program folder isolates ProgramData; live shop preview only, clear afterward. Ordinary old bills/history/stock values must survive migration035 unchanged. New future default profit, retired discount.mode inert. Every upgrade subsequent run keeps the owner's chosen discount.billBasis.
+2. Owner Settings→Staff: choose person, rate-edit/manual reduction, profit/retail permissions and separate caps, one-bill override. Save THIS panel separately. Same role two users, one granted/one denied; manager cannot edit grants/default; owner can configure own caps. Revocation must affect next quote/post, including resumed draft/held lines.
+3. Selected Cart row Enter/double-click opens owned non-taskbar editor, no sale save. Existing grid stays read-only intentionally. Blank/header clicks do not open. Combo fields keyboard accessible, Apply vs Cancel/×; candidate errors do not modify cart. Reset clears manual/line discount, restores bill-discount eligibility. No duplicate Add/Edit on repeat.
+4. Cost200/sale300/bill10: profit290, retail270. For retail>5, quote works but save asks EACH time; No no save, Yes respects caps/cost. Fresh draft JSON cannot carry confirmation. Try same object in automated tests: confirmation consumed, second post requires it again.
+5. A100 manual95, B100 item retail20%=80, C100 normal bill retail10%=90: pre-round net265; existing default Rs10 rounding may make260 (not a second bill percentage). Manual A110 remains110. Add further ordinary lines; they get current bill%. Separate adjusted lines must not merge with later normal adds.
+6. Reference1200/manualcap20% → max240/min960. 800 rejected; 960 accepted if cost permits. Cost1000 makes960 reject. A missing catalog reference has no measurable reference reduction, but owner-granted rate edit and positive/actualcost checks remain; do not silently create/update catalog price. Special VIP/Doctor opt-in remains, item/bill percentage never stacks with special rate on that item.
+7. Per-item profit10 vs retail10 on same300/cost200:290 vs270. Reference product cost is not actual batch cost: consume two FEFO batches200/250 under sale300 each, profit10% →585 before existing rounding/points. Pack selected-unit manual cap, fractional quantities, rounding, loyalty and cost floor on every allocation; owner cannot disable floor through legacy false, UI-only setter or workbook.
+8. Cost/profit direct fields visible only under authorized manager/owner/profit visibility; masked quote cost when hidden. Mathematical caveat: someone allowed profit-based discount can infer margin from its net effect—do not claim absolute cost secrecy. Profit-discount permission is itself sensitive.
+9. Hold/Draft preserve mode/basis/percent/rate; resumed by another user must revalidate current caps/stock/reference. Settings default may change while cart open; Clear/Park/Post resets new bill to current Settings. Rejected/cancelled basis selection must visually revert; popup owner active and lockdown must not treat editor as leaving app.
+10. Save example, receipt/reprint/Bills/report/cash/change agree. Change defaults/prices afterward, historical bill unchanged. Partial then full return uses saved net (two290 units refund290 each), no recompute under today's retail basis. Invalid amount/cap/confirmation/cost creates no sale/payment/stock/number change.
+11. Windows Desktop build plus **ALL GREEN - 1270 of 1270** and PT-20 keyboard/short-screen/DPI/modal/print regressions. This release has no Extra Discount field or implementation; that's phase3. Whole-page 15-point audit is phase4, not already done.
+
+Result: pending Windows and owner physical proof. No installer authorized.
+
+
+## PT-20 — Approved phase 1: reserved B search, space and keyboard (Windows NOT passed)
+
+Build **v0.76.0 Osprey**, green `#35614A`; 1240 written cases unchanged, 64 static source checks. No Windows/.NET runtime here; the checklist below is pending, not a claim of observed input routing or measured height gain. Owner chose B; no more A/B choice is requested. [Consolidated plan](docs/POS-NEXT-REVIEW-PLAN-URDU.md), [Counter lesson](docs/USER-GUIDE-URDU.html#lesson-09).
+
+**Safety:** real shop: unposted carts only, clear afterward. F4/Complete sale saves a REAL bill: do not use for practice. Save/modal/print proof only on verified isolated test data/environment; a second application folder is not data isolation.
+
+1. Open Counter with drawer open: original shell user/navigation still visible; duplicate POS/subtitle/cashier content row absent. Refresh works from footer actions. Search focused on active initial load; blocked Counter does not bypass shift/handover. Changing cash/quantity/customer must not steal focus back to search.
+2. Blank search: reserved narrow pane with prompt, no standing catalog or hidden selection. Type exact name/strength/pack and typo; search textbox Enter remains exact-barcode-only, no fuzzy auto-add. Correct barcode pack adds once, unknown barcode/refusals retain honest status.
+3. Search Down focuses the result CELL, not its photo button. Up/Down selects rows, Enter adds that selected medicine once. Hold Enter: no duplicate add. Result double-click adds once. Header/empty/scrollbar double-click adds nothing; photo click/Enter opens gallery only, does not Add. Successful gesture clears query/results, returns focus to search.
+4. Tab / Shift+Tab remain normal field traversal. In Unit use Up/Down; Left/Right in textboxes still move caret. Shift+Down/Right moves section FORWARD; Shift+Up/Left BACK. Order: search entry (search/unit/quantity/Add) → nonempty visible matches → Cart → visible More/held-cart panel → customer/payment/discount → cash/Complete → actions. Hidden/empty sections skipped; boundaries stop, no wrap to shell.
+5. From an open Unit/Customer/Payment dropdown, Shift+arrow closes list and leaves its section without continuing to edit old choices; Esc first closes that list without hiding search behind it. From matches Esc hides results and restores search focus. No key should leave focus stranded on a collapsed grid.
+6. Cart current rate edit (where available) must commit before section/F4 departure; this release found inherited ReadOnly on Cart, so the existing rate editing template ALONE is not a usable editor. Dedicated cart Enter/double-click price/discount editor belongs to PHASE 2, NOT implemented in phase 1. Do not claim per-user caps or profit default work yet.
+7. Footer actions: softly tinted rounded 32-DIP-minimum controls; keyboard-focused action has clear dark/white cue. Arrows on buttons stay inside section; Enter runs action. Print automatically checkbox Enter/Space toggles only. Tab reaches optional panels and photo buttons. Open/close panels via keyboard and verify hidden sections skipped afterward.
+8. 5–10 cart lines, 1366×768 / 1024×768, 125%/150% DPI: bounded results/cart scroll, fixed customer/payment/discount/total/cash/change/actions remain readable. F4 guarded save/modal/AutoPrint/reprint regression on isolated test data, no duplicate sale/payment. Full Desktop build and `ALL GREEN - 1240 of 1240` remain pending.
+
+**Source finding recorded, not silently called fixed:** inherited DataGrid IsReadOnly=True prevents a rate editing template by itself enabling cart edits. Phase 2's item editor will address this with real permissions/validation; no finance change was slipped into phase 1.
+
+Result: awaiting owner Windows build, screenshots and keyboard/DPI/scanner walkthrough. All phase 2/3 finance and phase 4 comprehensive review still queued. No installer authorized.
+
+
+## PT-19 — POS trial B: reserved search pane vs A overlay (NOT physically passed)
+
+Owner requested “tryal b”, not a final preference. B = v0.75.0 Kestrel (purple), A = v0.74.0 Marlin (blue, cfbc68d). No new screenshot/runtime/test log received for this trial. Only results layout and version/docs/checker pins changed; the A search/scan ViewModel and all financial services/models/migrations remain identical.
+
+On test data or an UNPOSTED real cart cleared afterward (no fake sale):
+1. Blank search: narrow pane remains at the side, with a prompt, no catalog/selected hidden medicine. Cart uses the wider adjoining area, not an obscured background. Typing results does not resize/cover Cart. After Add/scan, matches clear but the reserved pane does not disappear.
+2. Search 2–3 matching names/strengths/packs. Cards show name, strength, pack, stock, retail, photo and salt/rack. Long names/pack text and medium/large photos wrap; scroll matches vertically, no wide nine-column table. Pick correct variant and Add. Test no matches, typo suggestions (explicit human Add), exact pack barcode, unknown barcode and Escape/Hide then edit query to reopen.
+3. Add 5–10 cart lines, resize at 1366×768/1024×768 and 125%/150% scaling. Check fixed compact actions and total/cash/change/Complete sale/F4; only bounded lists scroll. Header/search/footer must not be pushed out by more products.
+4. More/split, new customer and Parked carts open temporary side details over the cart region, not another permanent column; Close returns full Cart width. Split opens inputs; draft indicator remains in footer; required extras still apply. F4 edits, validation, exact barcode pack, reprint, auto-print on/off and modal snapshot retained.
+5. Compare an A screenshot (same size/cart) to B; do not run two live instances or assume another program folder isolates shop data. Ask owner A / B / specific adjustment before calling either final. Source snapshots identify builds; no default-branch switch is needed.
+6. Full Windows `ALL GREEN - 1240 of 1240` and Desktop build remain pending. Discount is STILL the former full-selling-total calculation: approved profit-default/retail warning is not implemented by either UI trial.
+
+Result: pending owner comparison and Windows proof. No visual/production acceptance claimed.
+
+
+## PT-18 — POS space comparison: trial A (Marlin), trial B queued, final choice pending
+
+Owner's new spoken feedback: persistent products list and stacked optional actions take too much Cart space. Wants search-only products and compact actions. Chose to try transient results first, standing small search panel second on next, then decide. No new screenshot or runtime PASS supplied for this trial.
+
+On v0.74.0, use test data or an UNPOSTED cart that is cleared afterward (do not create fake sales in the real shop):
+1. Blank search: catalog absent, Cart has the main space, no hidden selected medicine. A shop with products must not show an empty-shop hint just because search is blank.
+2. Type a genuine name/strength/pack: bounded results overlay, matching details/photos/stock/rate, correct variant selected. Add closes results, clears selected product/query and restores search focus. Add with blank search cannot silently repeat a hidden product. More matches scroll inside results. No match explains itself; fuzzy guesses are labelled and require Add, never name-Enter auto-sale.
+3. Exact barcode of unit/strip/box adds one correct pack and clears search. Unknown barcode and closed-galla add retain refusal (not a false “added”). Escape/Close results hides the overlay; changing the query reopens it.
+4. Add 5–10 lines. At short window/1024×768/1366×768 and 125%/150% DPI, check Cart, fixed total/cash/change/Complete sale/F4 and compact actions. Only the Cart/results/details themselves should scroll, not a long whole page hiding routine actions.
+5. Park / Save draft / Open drafts / Parked carts / Reprint all use existing paths; More / split opens doctor/loyalty/extra fields without changing their values; choosing split opens its inputs; New customer opens its form. Parked list and details are not stacked permanently. Reprint is a copy, not another sale.
+6. Regression: F4 and success modal, AutoPrint on/off, validation/stock guard and permissions unchanged. Discount still the former total-based calculation in THIS UI trial; profit-default/total-warning work is queued, not silently active.
+7. Full Windows `ALL GREEN - 1240 of 1240` and Desktop build pending. Static structural gate is not visual proof. Save a screenshot/feedback of trial A before next B; final preference remains owner's decision. Do not run two live instances to compare (single-instance guard/data location are shared).
+
+Owner result: pending. Next implementation: trial B only when owner says next, final selection later.
+
+
+## PT-17 — Heather short-screen checkout/F4 failure; Laurel candidate repair (NOT physically passed)
+
+Owner supplied sugession1.png (1366×728 image, v0.72.0 title) and sugession2.png (product editor), and reported the Complete sale button outside the screen plus F4 doing nothing. Screenshot shows Rs 300 subtotal, 10% / Rs 30 discount, Rs 270 total, Rs 500 tendered and Rs 230 change; this proves the on-screen quote, NOT a saved sale or printing. Source confirms Auto-height payment overflow and no F4 handler/binding anywhere in Desktop. Owner chose an owned modal completion popup. Packing explanation requested, not a change to real stock/product definitions.
+
+Candidate v0.73.0: fixed non-scrolling checkout footer, bounded cart/options; actual F4 preview handler with edit commit/repeat suppression; post-commit modal and committed cash snapshot. Static checking is not visual proof.
+
+On disposable test data, after rebuild/reinstall:
+1. At 1366×768 and 1024×768, plus 125%/150% scaling or a short window: cart rows, checkout button/total/cash/change/status stay reachable without scrolling to the bottom. Optional customer/doctor/points/split/custom fields/drafts/parked carts can scroll independently. Try many cart rows and many custom answers; no controls lost.
+2. Click Complete sale AND separately press F4 from search, cash textbox, customer/payment ComboBox and a rate edit. Grid edit must be committed; Alt+F4 remains protected-close policy, not a sale. Hold F4: no duplicate sale. Failed stock/cost/short-cash/required-answer validation: visible error, no success modal or automatic print.
+3. Rs 300 retail, cost at/below Rs 270, 10% discount, Rs 500 cash: exactly one saved INV, modal tick + bill Rs 270 + cash Rs 500 + LARGE give-back Rs 230. Done/Enter/× cannot save or print again. Cart is empty afterward; change snapshot is not overwritten by the cleared cart.
+4. Test zero change, blank tender (explicit assumed-exact label), card, online, credit and mixed payments. Noncash received is Rs 0, credit due is not mistaken for cash; split cash/change matches the cash portion.
+5. AutoPrint OFF: no printer call. ON: one automatic call after save. Printer unavailable: bill remains saved and confirmation says reprint, never enter the sale again. Popup OFF: no modal but fixed status/last invoice remain. Popup ON: owned, centered and Done reachable even with a short work area.
+6. Check app title/icon and FocusGuard do not treat the owned modal as leaving the app. Confirm settings-popup wording and updated guide. Run full Windows suite: `ALL GREEN - 1240 of 1240` (not run in agent sandbox).
+
+Owner result: pending. Never upgrade this record to PASS from static checks alone.
+
+
 ## PT-16 — Login/Counter XAML parse: owner screenshot, candidate repair pending Windows verification
 
 **مالک کی تازہ اطلاع:** “سکرین جو ہے لاگ ان پہ اوپن ہو گئی ہے اور ایرر ختم ہو گیا ہے”۔ اسے login-related error کے خاتمے کی owner-reported مثبت اطلاع کے طور پر درج کیا گیا ہے۔ یہ نہیں بتایا گیا کہ Counter اور Products دونوں، medium/large thumbnails یا پورا app مکمل چیک ہوئے؛ ان کی الگ تصدیق باقی ہے۔ 973/973 Core/Tests کی اطلاع برقرار ہے؛ اس output سے exact commit خود ثابت نہیں ہوتا۔

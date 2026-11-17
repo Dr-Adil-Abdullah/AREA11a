@@ -1,0 +1,822 @@
+<!doctype html>
+<html lang="ur" dir="rtl">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Area11 کا اردو استعمال نامہ: پہلے صفحات اور اختیارات کا خلاصہ، پھر 36 عملی اسباق۔">
+<title>Area11 — مکمل اردو استعمال نامہ — v0.88.0</title><style>
+:root{--ink:#242b35;--muted:#52616e;--brand:#62445e;--paper:#fff;--line:#dce2e8}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:#f1f3f6;color:var(--ink);font-family:"Noto Naskh Arabic","Segoe UI",Tahoma,Arial,sans-serif;font-size:19px;line-height:2.05}
+a{color:#654363;text-underline-offset:4px}a:hover{color:#302032}
+header{background:var(--brand);color:white;padding:32px max(24px,calc((100vw - 1360px)/2));border-bottom:6px solid #d5bbd0}
+header p{margin:0;opacity:.92;font-size:17px}header strong{font-size:28px}header a{color:white}
+.layout{display:grid;grid-template-columns:280px minmax(0,1000px);gap:28px;max-width:1360px;padding:28px 20px;margin:auto;align-items:start}
+nav{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto;background:white;border:1px solid var(--line);border-radius:12px;padding:16px;font-size:15px;line-height:1.9}
+nav strong{display:block;margin-bottom:10px}nav a{display:block;text-decoration:none;padding:7px 8px;border-radius:6px;border-bottom:1px solid #f0edf1}nav a:hover{background:#eee3ec}nav b{font-variant-numeric:tabular-nums;color:var(--muted);margin-inline-end:5px}
+main{background:var(--paper);padding:36px 44px;min-width:0;border:1px solid var(--line);border-radius:12px;box-shadow:0 6px 24px #27354408}
+h1{font-size:34px;margin-top:0;line-height:1.6}h2{font-size:26px;color:var(--brand);border-top:2px solid #e9dfe7;padding-top:24px;margin-top:46px;line-height:1.7}h3{font-size:22px;color:#3e4d5b;margin-top:30px}
+p{margin:15px 0}li{margin:12px 0;padding-inline-start:4px}strong{font-weight:700}table{border-collapse:collapse;width:100%;font-size:16px;line-height:1.95;margin:24px 0;overflow-wrap:anywhere}th,td{padding:11px 13px;border:1px solid var(--line);vertical-align:top;text-align:right}th{background:#eee3ec;color:#402c3e}tr:nth-child(even) td{background:#f9fafb}code{direction:ltr;unicode-bidi:isolate;display:inline-block;background:#f0edf1;border:1px solid #e0d6df;border-radius:4px;padding:0 6px;font-size:.9em;font-family:Consolas,monospace}
+footer{max-width:1000px;margin:12px auto 40px;padding:0 24px;color:var(--muted);font-size:15px;text-align:center}
+@media(max-width:1000px){.layout{grid-template-columns:minmax(0,1fr);padding:12px}nav{position:static;max-height:250px}main{padding:24px}body{font-size:18px}table{font-size:14px}th,td{padding:7px}}
+@media print{@page{size:A4;margin:16mm}body{background:white;font-size:11pt;line-height:1.8}header,nav,footer{display:none}.layout{display:block;margin:0;padding:0;max-width:none}main{border:0;padding:0;box-shadow:none}h1{font-size:22pt}h2{break-before:page;font-size:17pt;margin-top:0;border:0;padding-top:0}h3{font-size:14pt;break-after:avoid}table{font-size:10pt}thead{display:table-header-group}tr{break-inside:avoid}p,li{orphans:3;widows:3}a{color:inherit;text-decoration:none}}
+</style></head>
+<body>
+<!-- Source: USER-GUIDE-URDU.md; rendered with Python Markdown tables/fenced_code/toc. No network assets or scripts. -->
+<header><strong>Area11 · اردو استعمال نامہ</strong><p>پہلے خلاصہ، پھر تفصیل · 36 اسباق · source v0.86.0 Reedling · Windows عملی تصدیق باقی</p><p>تلاش: Ctrl+F · پرنٹ یا PDF: Ctrl+P · <a href="#top">شروع میں جائیں</a></p></header>
+<div class="layout"><nav aria-label="اسباق کی فہرست"><strong>سبق منتخب کریں</strong><a href="#top">مکمل نقشہ اور مختصر خلاصہ</a><a href="#lesson-01"><b>01</b> داخلہ اور بھولا ہوا پاس ورڈ</a><a href="#lesson-02"><b>02</b> صفحے کھولنا اور Dashboard</a><a href="#lesson-03"><b>03</b> صبح گلا کھولنا، رات گننا</a><a href="#lesson-04"><b>04</b> Products میں صحیح دوا تلاش کرنا</a><a href="#lesson-05"><b>05</b> نئی چیز اور اس کے پیک/ریٹ</a><a href="#lesson-06"><b>06</b> فہرستیں اور Managed units</a><a href="#lesson-07"><b>07</b> تصاویر، بارکوڈ اور چیز کی تاریخ</a><a href="#lesson-08"><b>08</b> Purchases میں حقیقی ڈیلیوری وصول کرنا</a><a href="#lesson-09"><b>09</b> Counter پر بل بنانا</a><a href="#lesson-10"><b>10</b> Not in stock اور بغیر قیمت کی وارننگ</a><a href="#lesson-11"><b>11</b> Park، مشترکہ drafts اور ادھورا کام</a><a href="#lesson-12"><b>12</b> Bills، دوبارہ رسید اور غلط وقت</a><a href="#lesson-13"><b>13</b> اصل بل والی Returns اور Quarantine</a><a href="#lesson-14"><b>14</b> اصل بل ہاتھ میں نہ ہو: No bill (PR)</a><a href="#lesson-15"><b>15</b> Customers، کھاتہ اور وصولی</a><a href="#lesson-16"><b>16</b> Udhaar recovery میں پرانا ادھار</a><a href="#lesson-17"><b>17</b> Suppliers، ادائیگی اور SR</a><a href="#lesson-18"><b>18</b> Doctors &amp; reps</a><a href="#lesson-19"><b>19</b> Reorder pad</a><a href="#lesson-20"><b>20</b> Write-off اور Stock minus</a><a href="#lesson-21"><b>21</b> Stock-take: اصل گنتی سے حساب ملانا</a><a href="#lesson-22"><b>22</b> Expenses اور مالک کی ذاتی نکاسی</a><a href="#lesson-23"><b>23</b> Reports اور Tax report</a><a href="#lesson-24"><b>24</b> Alerts: یاد دہانی اور اصل مسئلہ</a><a href="#lesson-25"><b>25</b> Black box اور Books check</a><a href="#lesson-26"><b>26</b> Excel / CSV: نئی فہرست اور bulk تبدیلی</a><a href="#lesson-27"><b>27</b> Backup اور Restore: سب سے اہم حفاظت</a><a href="#lesson-28"><b>28</b> ایپ کی شناخت اور Shop details الگ</a><a href="#lesson-29"><b>29</b> Printing اور اصل پرنٹر/سکینر</a><a href="#lesson-30"><b>30</b> Sales rules: کیا بدلتا ہے، کیا نہیں</a><a href="#lesson-31"><b>31</b> عملہ، اجازتیں، راز اور App words</a><a href="#lesson-32"><b>32</b> Fields: پہلے موجود خانے، پھر اپنے سوال</a><a href="#lesson-33"><b>33</b> خودکار آغاز، محفوظ بندش اور Screen lock</a><a href="#lesson-34"><b>34</b> Cloud اور دوسرا کاؤنٹر</a><a href="#lesson-35"><b>35</b> Preview، WhatsApp اور پرنٹ کی مشترکہ سمجھ</a><a href="#lesson-36"><b>36</b> روزانہ ترتیب، محفوظ مشق اور خرابی کا اگلا قدم</a></nav><main id="top"><h1 id="area11">Area11 — مکمل اردو استعمال نامہ</h1>
+<p><strong>کس کے لیے:</strong> مالک، مینیجر اور کیشیئر۔ <strong>جس کوڈ کے مطابق لکھا گیا:</strong> v0.88.0 Skylark۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔</p>
+<p><strong>فیز4 حصہ10 — عام batch اور تازہ تیاری:</strong> Stock/Expenses/Suppliers کے batch picker کی cost/valuation الگ Cost+main سے؛quantity/batch/date برقرار۔ Write-off/Expenses preview اور manual SR tray تازہ current cost/quantity/pack لیتے ہیں؛ناکامی پر hidden/انکار،نہ stale رقم نہ fake0۔ <strong>انہی صفحات کی history/today/results اور frozen stock-take ابھی باقی ہیں؛پورا صفحہ cost-private نہیں۔</strong> <a href="POS-PHASE4-PART10-URDU.md">PT-30</a>،<a href="POS-PHASE4-BATCH-READ-REVIEW.md">trace/حدود</a>۔1521C#cases UNRUN،77static checks PASS؛Windows باقی۔</p>
+<p><strong>فیز4 حصہ9 — خرید invoice / expired stock:</strong> نئے purchase document میں cost منع ہو تو line amount،Total،Paid،Due سب hidden؛نام/quantity/batch/date برقرار۔ expired list کی raw cost/valuation بھی mask؛Add whole batch تازہ500حد والی row اور known cost دوبارہ چیک کرتا ہے،انکار پر tray untouched۔ supplier عام paid/payable/Pay/SR پالیسی اور posting unchanged،یہ global completion نہیں۔ <a href="POS-PHASE4-PART9-URDU.md">PT-29</a>،<a href="POS-PHASE4-PURCHASE-READ-REVIEW.md">trace/حدود</a>۔1493 C# cases UNRUN،76 static checks PASS؛Windows باقی۔</p>
+<p><strong>موجودہ POS فیز3:</strong> مستقل search pane منتخب ہے۔ v0.78.0 میں owner-only ہر شخص کی الگ قیمت/رعایت حدیں، Cart کا محفوظ item editor اور profit/retail حساب code میں شامل ہیں۔ <strong>موجودہ دکان کے آئندہ bills کا ابتدائی default اب profit ہے</strong>؛ مالک Settings سے retail واپس کرسکتا ہے۔ پرانے محفوظ bills unchanged۔ الگ ایڈٹ شدہ لائن پر bill% دوبارہ نہیں؛ خرید سے نیچے کسی کو اجازت نہیں۔ <strong>الگ sale-level Extra Discount اب فیز3 کے code میں شامل؛ مالک کا return طریقہ B: پہلے560 پھر باقی540، اصل item rates نہیں بدلتے</strong>، جامع page/15-point audit فیز4 میں۔ Windows tests/build/عملی ثبوت باقی۔ <a href="POS-PHASE2-TEST-URDU.md">فیز2 کی آسان مشق اور واپسی</a> ، <a href="POS-PHASE3-TEST-URDU.md">فیز3 استعمال/آزمائش/بندش</a> اور <a href="POS-NEXT-REVIEW-PLAN-URDU.md">مکمل منصوبہ</a> الگ ہیں۔</p>
+<p><strong>فیز4 حصہ8 — اجازتوں کی نئی مدد:</strong> Staff &amp; permissions میں الگ <strong>Sensitive financial &amp; ledger permissions</strong> حصہ؛ View Profit اور View Purchase Cost الگ، Supplier/Customer ledger اپنے موجودہ page grants۔ ہر checkbox پر hover summary؛ double-click یا Details… سے scope اور owner-only موجودہ enabled/disabled assignment list۔ nominal3s refresh، active/main-switch blockers الگ؛ single mouse click double-click وقفے کے بعد save، Space native۔ یہ <strong>global backend rollout مکمل نہیں کرتا</strong>؛ <a href="POS-PHASE4-PART8-URDU.md">PT-28</a>، <a href="POS-PHASE4-PERMISSION-INSPECTOR-REVIEW.md">trace/حدود</a>۔1469 C# cases UNRUN،75 static checks PASS؛ حقیقی Windows modal/gestures اور مالی rollout باقی۔</p>
+<p><strong>Windows کی موصولہ رپورٹ / تازہ patch:</strong> آپ کے v0.80.0 میں1337 میں4 tests فیل،1333 پاس ہوئے؛ یہ اسی پرانے build کا اصل نتیجہ ہے۔ v0.85.1 میں cashier test کی حقیقی account fixture، pricing role-mismatch refusal، BookCheck snapshot کی اصل gap اور نئے/legacy finding counts درست کیے؛ ابھی Windows پر دوبارہ نہیں چلائے۔1449 cases لکھے،74 static checks PASS۔ چاروں failures اب اصل مکمل log سے شناخت ہوچکے؛updated Windows rerun باقی؛ <a href="WINDOWS-V080-TEST-REPORT-REVIEW.md">تفصیلی investigation</a>۔ newer workspace ابھی push نہیں کیا، صرف Pull سے دستیابی کا دعویٰ نہیں۔</p>
+<p><strong>فیز4 حصہ7 کی تازہ حیثیت — D-110:</strong> آپ کے تازہ فیصلے کے مطابق <strong>View Profit</strong> اور <strong>View Purchase Cost</strong> الگ ticks؛ موجودہ main switch دونوں کو روکتا ہے، متعلقہ page اجازت بھی لازم۔ manager عہدہ کافی نہیں۔ catalog/History/Reorder/DeadStock/ReportTotals/item quote منتقل؛ preparation میں cost منع ہو تو fake0 کی بجائے انکار۔ <strong>پورے پروگرام کی everywhere consistency ابھی مکمل نہیں</strong>: نئے invoice/expired reads حصہ9 میں منتقل؛purchase entry/drafts/results،supplier-ledger/generic batch/stock-take/expense/workbook/audit/دوسرے exports باقی۔ <a href="POS-PHASE4-FINANCIAL-VISIBILITY-REVIEW.md">حصہ7 شواہد/باقی rollout</a>، <a href="POS-PHASE4-PART7-URDU.md">محفوظ PT-27</a>، <a href="POS-PHASE4-EVIDENCE.md">جامع register</a>۔1445 C# cases لکھے مگر یہاں نہیں چلائے؛73 static checks PASS، Windows/full phase4 OPEN۔ actual batch cost/Extra/returnB/اصل snapshots unchanged۔</p>
+<p><strong>پڑھنے کا طریقہ:</strong> حصہ اوّل میں صرف صفحات/اختیارات کی مختصر فہرست ہے۔ حصہ دوم میں انہی کی الگ، قدم بہ قدم تفصیل ہے۔ پہلے پورا خلاصہ دیکھیں؛ پھر جس کام کی ضرورت ہو اسی نمبر کی تفصیل پڑھیں۔ HTML فائل براؤزر میں کھلتی ہے، انٹرنیٹ کے بغیر بھی؛ براؤزر کے Print سے کاغذ یا PDF بنا سکتے ہیں۔</p>
+<p><strong>زبان:</strong> سکرین کے اصل انگریزی نام ساتھ رکھے ہیں تاکہ بٹن پہچان سکیں۔ مالک App words سے نام بدلے تو سکرین پر مختلف لفظ آ سکتا ہے۔ ہر شخص کو صرف اجازت والے صفحات دکھتے ہیں؛ صفحہ نظر نہ آنا لازماً خرابی نہیں۔</p>
+<h2 id="_1">حصہ اوّل — مکمل نقشہ اور اختیارات کا خلاصہ</h2>
+<p>یہاں طریقۂ کار نہیں، صرف یہ بتایا گیا ہے کہ کون سا اختیار کیا کرتا ہے۔ تمام تفصیل اگلے حصے میں الگ ہے۔</p>
+<table>
+<thead>
+<tr>
+<th>سبق</th>
+<th>صفحہ یا اختیار</th>
+<th>مختصر کام</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#lesson-01">01</a></td>
+<td>Sign in / Forgot password?</td>
+<td>اپنے نام سے داخلہ؛ مالک کے لیے الگ recovery word</td>
+</tr>
+<tr>
+<td><a href="#lesson-02">02</a></td>
+<td>اوپر کی navigation، نام کا مینو، Dashboard</td>
+<td>صفحہ بدلنا؛ دکان کی حالت؛ اپنی نشست ختم کرنا</td>
+</tr>
+<tr>
+<td><a href="#lesson-03">03</a></td>
+<td>Shift (galla)</td>
+<td>گلا کھولنا، اصل نقدی گننا، بند کرنا یا اگلے شخص کو دینا</td>
+</tr>
+<tr>
+<td><a href="#lesson-04">04</a></td>
+<td>Products</td>
+<td>تلاش، فلٹر، New product، Edit product یا قطار پر ڈبل کلک</td>
+</tr>
+<tr>
+<td><a href="#lesson-05">05</a></td>
+<td>Product editor</td>
+<td>نام، نمک، برانڈ، کیٹیگری، سپلائر، طاقت، پیک، ریٹ، ریک، محفوظ کرنا</td>
+</tr>
+<tr>
+<td><a href="#lesson-06">06</a></td>
+<td>Catalogs / Managed units</td>
+<td>کیٹیگری، کمپنی، نمک، برانڈ اور یونٹ کی فہرستیں سنبھالنا</td>
+</tr>
+<tr>
+<td><a href="#lesson-07">07</a></td>
+<td>Photos / Barcodes / Product history</td>
+<td>تصویر، cover، pack کا کوڈ اور پرانی خریدوفروخت</td>
+</tr>
+<tr>
+<td><a href="#lesson-08">08</a></td>
+<td>Purchases</td>
+<td>اصل ڈیلیوری سے سٹاک وصول، بیچ/میعاد، سپلائر کا واجب الادا اور ادائیگی</td>
+</tr>
+<tr>
+<td><a href="#lesson-09">09</a></td>
+<td>Counter (POS)</td>
+<td>چیز ڈالنا، مقدار/یونٹ، کسٹمر، ادائیگی، رعایت، بل محفوظ کرنا</td>
+</tr>
+<tr>
+<td><a href="#lesson-10">10</a></td>
+<td>Counter availability</td>
+<td>فی بل ایک وارننگ؛ سٹاک نہ ہو تو کسی کا بل نہیں؛ بغیر ریٹ صرف مالک/مینیجر</td>
+</tr>
+<tr>
+<td><a href="#lesson-11">11</a></td>
+<td>Park / Drafts</td>
+<td>ادھورا کام محفوظ؛ بعد میں کھولنا، پوسٹ کرنا یا draft ترک کرنا</td>
+</tr>
+<tr>
+<td><a href="#lesson-12">12</a></td>
+<td>Bills / Fix wrong time…</td>
+<td>پرانا بل تلاش، دوبارہ پرنٹ، preview، WhatsApp؛ مالک کی وقت درستگی</td>
+</tr>
+<tr>
+<td><a href="#lesson-13">13</a></td>
+<td>Returns / Quarantine</td>
+<td>اصل بل سے واپسی؛ رقم/ادھار درست؛ مشکوک مال الگ رکھنا</td>
+</tr>
+<tr>
+<td><a href="#lesson-14">14</a></td>
+<td>No bill (PR)</td>
+<td>بل کے بغیر واپسی کا مستقل ریکارڈ؛ بعد میں اصل بل جوڑنا</td>
+</tr>
+<tr>
+<td><a href="#lesson-15">15</a></td>
+<td>Customers / Khata</td>
+<td>کسٹمر، کھاتہ، وصولی، حد، statement اور ماہانہ بیان</td>
+</tr>
+<tr>
+<td><a href="#lesson-16">16</a></td>
+<td>Udhaar recovery</td>
+<td>پرانا ادھار، عمر کی فہرست، وصولی اور رسید</td>
+</tr>
+<tr>
+<td><a href="#lesson-17">17</a></td>
+<td>Suppliers / SR</td>
+<td>واجب الادا، Pay، supplier return، credit note یا نقد واپسی</td>
+</tr>
+<tr>
+<td><a href="#lesson-18">18</a></td>
+<td>Doctors &amp; reps</td>
+<td>نسخے کے ڈاکٹر، کمپنی کے نمائندے، آنے کا دن، lifetime profit</td>
+</tr>
+<tr>
+<td><a href="#lesson-19">19</a></td>
+<td>Reorder pad</td>
+<td>کم سٹاک، minimum، ایک سپلائر کا آرڈر، WhatsApp متن/پرنٹ</td>
+</tr>
+<tr>
+<td><a href="#lesson-20">20</a></td>
+<td>Write-off / Stock minus</td>
+<td>خراب/ضائع مال کا نقصان؛ پرانے منفی سٹاک کا جائزہ</td>
+</tr>
+<tr>
+<td><a href="#lesson-21">21</a></td>
+<td>Stock-take</td>
+<td>اصل گنتی، فرق، صرف مالک کی حتمی منظوری</td>
+</tr>
+<tr>
+<td><a href="#lesson-22">22</a></td>
+<td>Expenses / Owner drawings</td>
+<td>دکان کا خرچ الگ؛ مالک کی نقدی یا مال الگ</td>
+</tr>
+<tr>
+<td><a href="#lesson-23">23</a></td>
+<td>Reports / Tax report</td>
+<td>تاریخ وار کاروبار؛ منافع؛ ماہانہ ٹیکس کا موجودہ ریکارڈ</td>
+</tr>
+<tr>
+<td><a href="#lesson-24">24</a></td>
+<td>Alerts</td>
+<td>یاد دہانی اور مالی/سٹاک مسئلے الگ؛ مسئلہ صرف مالک وجہ سے ختم کرے</td>
+</tr>
+<tr>
+<td><a href="#lesson-25">25</a></td>
+<td>Black box / Books check</td>
+<td>کس نے کیا بدلا؛ پرانی حالت؛ حساب کی صرف پڑھنے والی جانچ</td>
+</tr>
+<tr>
+<td><a href="#lesson-26">26</a></td>
+<td>Excel / CSV</td>
+<td>نئی فہرست import، export، workbook bulk update، قیمتیں بدلنا</td>
+</tr>
+<tr>
+<td><a href="#lesson-27">27</a></td>
+<td>Backup &amp; restore</td>
+<td>تصویروں سمیت ZIP؛ خودکار شیڈول؛ پرانی حالت بحال کرنے کا خطرہ</td>
+</tr>
+<tr>
+<td><a href="#lesson-28">28</a></td>
+<td>Settings: App name &amp; icon / Shop</td>
+<td>ایپ کی شناخت الگ؛ رسید والی دکان کی تفصیل الگ</td>
+</tr>
+<tr>
+<td><a href="#lesson-29">29</a></td>
+<td>Settings: Printing / Printer &amp; scanner</td>
+<td>کاغذ، copies، auto-print، bulk، PDF اور اصل ہارڈویئر کی جانچ</td>
+</tr>
+<tr>
+<td><a href="#lesson-30">30</a></td>
+<td>Settings: Sales rules</td>
+<td>رعایت کی حد، cost lock، credit lock، profit، points، stock/expiry</td>
+</tr>
+<tr>
+<td><a href="#lesson-31">31</a></td>
+<td>Settings: Staff &amp; permissions / App words</td>
+<td>لوگ، PIN/password، recovery word، اجازتیں اور صفحات کے نام</td>
+</tr>
+<tr>
+<td><a href="#lesson-32">32</a></td>
+<td>Settings: Fields / Own fields</td>
+<td>موجودہ خانہ required/optional؛ اپنے سوال اور ان کی ترتیب</td>
+</tr>
+<tr>
+<td><a href="#lesson-33">33</a></td>
+<td>Startup / Protected close / Screen lock</td>
+<td>Windows کے ساتھ آغاز، بندش کی اجازت، کام چھوڑنے کا ریکارڈ</td>
+</tr>
+<tr>
+<td><a href="#lesson-34">34</a></td>
+<td>Cloud sync / Second counter</td>
+<td>اختیاری cloud mirror؛ دوسرا کاؤنٹر فی الحال ملتوی</td>
+</tr>
+<tr>
+<td><a href="#lesson-35">35</a></td>
+<td>Preview / WhatsApp / کاغذ</td>
+<td>پرنٹ سے پہلے دیکھنا؛ PDF خود attach کرنا؛ دوبارہ پرنٹ ≠ نیا بل</td>
+</tr>
+<tr>
+<td><a href="#lesson-36">36</a></td>
+<td>روزانہ کام، محفوظ مشق اور مسئلہ حل</td>
+<td>صبح سے بندش تک ترتیب؛ غلطی، dash، کریش یا پرنٹر کے بعد اگلا قدم</td>
+</tr>
+</tbody>
+</table>
+<h3 id="settings">Settings کے ہر گروپ کا مختصر مطلب</h3>
+<table>
+<thead>
+<tr>
+<th>گروپ</th>
+<th>اختیارات اور مطلب</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>App name &amp; icon</td>
+<td>App name: کھڑکی/login/taskbar کا نام؛ Choose app icon…: اپنی .ico؛ Use default icon: اصل آئیکن</td>
+</tr>
+<tr>
+<td>Shop</td>
+<td>thumbnail size: تصویر کتنی بڑی؛ shop name/phone/address/footer: رسید کے الفاظ؛ discount line: کاغذ پر رعایت؛ idle sign-out: بےکار نشست؛ clock: وقت کی حالت؛ startup/lock: سبق 33</td>
+</tr>
+<tr>
+<td>Printing</td>
+<td>58/80 mm: چوڑائی؛ printer: کون سا پرنٹر؛ auto-print: بل کے بعد خود پرنٹ؛ cutter؛ bulk print: منتخب قطاریں؛ separate/A4: الگ رسیدیں یا خلاصہ؛ PDF folder؛ copies</td>
+</tr>
+<tr>
+<td>Sales rules</td>
+<td>owner کا default profit/retail basis؛ خرید سے نیچے فروخت مستقل بند؛ khata-limit lock؛ مشترک profit/cost visibility main switch؛ Done popup؛ loyalty on/rate/VIP threshold؛ tax on/rate؛ expiry کی تین حدیں؛ supplier return کی reminder/cutoff</td>
+</tr>
+<tr>
+<td>Cloud sync</td>
+<td>on/off، address، table، shop id، محفوظ key، automatic push کا وقفہ، Remove the saved key</td>
+</tr>
+<tr>
+<td>Staff &amp; permissions</td>
+<td>شخص منتخب؛ account on/off؛ module کی ticks؛ الگ View Profit / View Purchase Cost؛ role page defaults؛ ہر شخص کے manual/profit/retail caps اور one-bill override کا الگ Save؛ Add this person؛ Change it for the selected person؛ Save this recovery word؛ Photos</td>
+</tr>
+<tr>
+<td>App words</td>
+<td>ہر page/group کا دکان والا نام؛ Restore original words</td>
+</tr>
+<tr>
+<td>Fields: Built-in</td>
+<td>Form، Field، type، input، Required، Critical؛ Mark required؛ Mark optional…</td>
+</tr>
+<tr>
+<td>Fields: Extra / Own fields</td>
+<td>فارم، field name، stable key، جواب کی قسم، help، choices، required، ترتیب، put away/bring back</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_2">وہ باتیں جو خلاصے ہی میں یاد رکھیں</h3>
+<ul>
+<li><strong>سٹاک ختم ہونے کی اطلاع صرف Counter کے لیے ہے؛ رسید/چٹ پر ایسی کوئی لائن نہیں۔</strong></li>
+<li><strong>صفر/کم سٹاک والا بل مالک یا مینیجر بھی نہیں بنا سکتا۔</strong> پرانے منفی سٹاک کو گنتی سے درست کریں۔</li>
+<li><strong>Expense سٹاک نہیں بڑھاتا۔</strong> سٹاک وصول کرنے کا صفحہ Purchases ہے۔</li>
+<li><strong>Cloud backup کا متبادل نہیں۔</strong> مکمل حفاظتی نقل میں ڈیٹابیس اور تصاویر دونوں رکھیں۔</li>
+<li><strong>کوئی بھی سبق اصل دکان پر فرضی رقم یا فرضی سٹاک ڈال کر نہ آزمائیں۔</strong> حقیقی ریکارڈ پر مشق مستقل مالی اندراج بنا سکتی ہے۔</li>
+</ul>
+<h2 id="_3">حصہ دوم — الگ، قدم بہ قدم تفصیل</h2>
+<p>یہاں سے عملی طریقے شروع ہیں۔ اس حصے کو مختصر خلاصے کے ساتھ نہ ملائیں۔ مثالوں کے نام/رقم صرف سمجھانے کے لیے ہیں، حقیقی کاروبار میں اصل چیزیں درج کریں۔</p>
+<p><a id="lesson-01"></a></p>
+<h2 id="01">سبق 01 — داخلہ اور بھولا ہوا پاس ورڈ</h2>
+<ol>
+<li>نصب ایپ کا Area11 آئیکن کھولیں۔ جو شخص کام کرے وہ <strong>اپنا</strong> نام اور Password or PIN لکھے، پھر Sign in۔ دوسرے کا نام استعمال کریں گے تو کارروائی اسی دوسرے شخص کے نام پر لکھی جائے گی۔</li>
+<li>خالی user name مالک/admin کی لاگ اِن شناخت کے لیے استعمال ہو سکتا ہے؛ اپنے عملے کے لیے ان کا اصل اکاؤنٹ چنیں/لکھیں۔ نئی، غیر تبدیل شدہ تنصیب کی ابتدائی شناخت admin اور password area11 ہے؛ پہلے سے چلتی دکان پر اسے اپنا موجودہ پاس ورڈ سمجھ کر بار بار نہ آزمائیں۔</li>
+<li>عملے کا PIN بھولے تو مالک اپنے اکاؤنٹ سے Settings → Staff &amp; permissions میں نیا PIN دے۔ پرانا PIN پوچھنے کی ضرورت نہیں۔</li>
+<li>مالک password بھولے تو <strong>Forgot password?</strong> کھولے؛ اس الگ ڈبے کے <strong>Recovery word</strong> میں اپنا مقررہ لفظ دے اور Sign in as owner دبائے۔ جب تک تبدیل نہیں کیا، فیکٹری لفظ area11 ہے۔ اسے password والے خانے کا متبادل نہ سمجھیں۔</li>
+<li>داخلے کے بعد مالک اپنا password اور recovery word بدل دے۔ recovery word chat، تصویر یا رپورٹ میں نہ بھیجیں۔ غلط کوششوں پر کچھ دیر پابندی لگ سکتی ہے؛ مسلسل اندازے نہ لگائیں۔</li>
+</ol>
+<p>Recovery سے داخلہ پرانی فروخت یا کھاتے کو reset نہیں کرتا۔ دونوں راز بھول جائیں تو اصل ڈیٹابیس مٹانا حل نہیں؛ بیک اپ محفوظ کرکے مدد لیں۔</p>
+<p><a id="lesson-02"></a></p>
+<h2 id="02-dashboard">سبق 02 — صفحے کھولنا اور Dashboard</h2>
+<ol>
+<li>اوپر پہلے کام کا گروپ منتخب کریں: SELL، STOCK، CUSTOMERS &amp; SUPPLIERS، MONEY یا SYSTEM۔ نیچے اسی گروپ کے اجازت والے صفحات آتے ہیں۔</li>
+<li>Counter کی اجازت ہو تو آغاز وہاں ہوتا ہے؛ اجازت نہ ہو تو Dashboard۔ Dashboard کی الگ عام tab کے بجائے اوپر ایپ کے نام/wordmark سے وہاں جا سکتے ہیں۔</li>
+<li>Dashboard پر آج کے بل، فروخت، منافع، ادھار، مصنوعات، کم سٹاک، منفی سٹاک، میعاد اور گلے کے کارڈ دیکھیں۔ متعلقہ کارڈ متعلقہ صفحہ کھول سکتا ہے؛ اجازت یا profit visibility کے سبب کچھ چیزیں چھپی ہو سکتی ہیں۔</li>
+<li>گھنٹی سے Alerts؛ اپنے نام کے مینو سے Settings یا Sign out۔ <strong>Sign out ایپ بند کرنا نہیں</strong>، صرف اس شخص کی نشست ختم کرنا ہے۔ گلا خود بخود بند نہیں ہوتا۔</li>
+<li>Refresh تازہ فہرست لاتا ہے۔ خالی صفحے کا پیغام پڑھیں: ریکارڈ نہ ہونا، فلٹر تنگ ہونا اور اجازت نہ ہونا الگ باتیں ہیں۔</li>
+</ol>
+<p><strong>فیز4 حصہ5 — Dashboard کی read حد:</strong> موجودہ active account اور Pos <strong>یا</strong> Reports اجازت درکار؛ دونوں لازم نہیں۔ explicit profit الگ global switch/Profit permission سے؛ account بند/role بدلے تو صحیح sign-in کریں۔ عام supplier payable/customer credit totals کی سابق policy نہیں بدلی؛ یہ مکمل session یا ہر مالی aggregate کی certification نہیں۔</p>
+<p><a id="lesson-03"></a></p>
+<h2 id="03">سبق 03 — صبح گلا کھولنا، رات گننا</h2>
+<ol>
+<li>MONEY → Shift (galla) کھولیں۔ پہلے سے کھلا drawer ہو تو اسے دوبارہ نیا سمجھ کر نہ کھولیں؛ پچھلے شخص/مالک سے اصل نقدی گنوا کر بندش یا handover کریں۔</li>
+<li>Cash you start with میں <strong>واقعی موجود نقدی</strong> لکھیں، فروخت کا ہدف نہیں۔ پچھلی گنتی سے فرق آئے تو صحیح وجہ لکھیں۔ Open the shift دبائیں۔</li>
+<li>دن میں Cash bills، کھاتے کی نقد وصولی، refunds، supplier payments، expenses اور owner cash drawings سے Expected in the drawer بنتا ہے۔ Card/online رقم گلے میں نہیں پڑی، اسے نقدی میں شامل نہ گنیں۔</li>
+<li>بندش پر نوٹ اور سکے گن کر Counted cash لکھیں۔ کم یا زیادہ ہو، چاہے ایک روپیہ، وجہ لکھیں؛ Close the shift۔ صرف حساب ملانے کے لیے فرضی Expense نہ ڈالیں۔</li>
+<li>شخص بدل رہا ہو تو وصول کرنے والا staff چنیں، اصل counted cash دیں اور Hand over and print the slip۔ یہی رقم اگلے گلے کی opening float بنتی ہے؛ فرق پچھلی نشست پر محفوظ رہتا ہے۔ دونوں سے slip چیک/دستخط کروائیں۔</li>
+<li>Slip دوبارہ Print یا WhatsApp کی جا سکتی ہے۔ History، Drawer differences اور عملے کے short/over الگ دیکھیں؛ زائد رقم کو کمی چھپانے کے لیے استعمال نہ کریں۔</li>
+</ol>
+<p>گلا بند ہو تو بل نہیں بنے گا۔ Counter کے Open a galla now سے یہی صفحہ کھولیں؛ cash permission نہ ہو تو مجاز شخص کو بلائیں۔</p>
+<p><a id="lesson-04"></a></p>
+<h2 id="04-products">سبق 04 — Products میں صحیح دوا تلاش کرنا</h2>
+<ol>
+<li>STOCK → Products میں نام، نمک، طاقت، pack، barcode، brand، rack، category یا company لکھیں۔ کئی لفظ ہوں تو ہر لفظ ملنا ضروری ہے؛ بہت لمبی تلاش خالی آئے تو کم لفظ آزمائیں۔</li>
+<li>طاقت کا الگ فلٹر مثلاً 50 ml، اور supplier کا فلٹر موجود ہے۔ Products والا supplier فلٹر preferred supplier یا اصل purchase history سے چیز دکھاتا ہے؛ اسے نئی خریداری یا payable نہ سمجھیں۔</li>
+<li>primary category/company کی قطار والی جگہ سے بھی فلٹر لگ سکتا ہے۔ Clear filter سے اسے ہٹائیں۔ Stock بیچوں سے آتا ہے؛ اس grid میں عدد بدلنا سٹاک وصولی نہیں۔</li>
+<li>New product سے الگ editor کھلے گا؛ پرانی چیز منتخب کرکے Edit product یا قطار پر ڈبل کلک۔ 50 ml اور 100 ml جیسے مختلف variants کو ایک ہی چیز سمجھ کر edit نہ کریں۔</li>
+<li>پوری تصویر کے لیے Photo کھولیں؛ اصل معلومات کی تبدیلی editor میں کریں، پھر Products پر Refresh۔</li>
+</ol>
+<p><strong>فیز4 حصہ7 — موجودہ cost/margin حد (D-110):</strong> Products اجازت کے ساتھ <strong>View Purchase Cost</strong> اور main ON ہو تو catalog cost؛ manager عہدہ الگ شرط یا خودکار اجازت نہیں۔ margin کے لیے الگ <strong>View Profit</strong> اور main ON؛ <strong>Margin (% retail)</strong> میں خرید200/فروخت300 →33.3%، نہ50% markup۔ Profit-only پر rawcost hidden مگر درست projected margin؛ fake100% نہیں۔ cost hidden کو اصل صفر نہ سمجھیں؛ stored-cost editor نہیں کھلے گا۔ Counter/PR product reads cost-free، اصل sale floor Core اصل batch سے چیک کرتا ہے۔ product-based Purchase/SR/Write-off/Expense preparation cost اجازت/main ON کے بغیر انکار کرتی ہے؛ دیگر batch/direct routes کا rollout باقی۔ <a href="POS-PHASE4-PART7-URDU.md">PT-27</a>۔</p>
+<p><a id="lesson-05"></a></p>
+<h2 id="05">سبق 05 — نئی چیز اور اس کے پیک/ریٹ</h2>
+<ol>
+<li>Name واضح لکھیں۔ Salt / formula / generic اور Brand میں موجود نام کا link منتخب کریں یا اصل متن دیں۔ New salt/New brand سے نیا نام؛ <strong>Unlink</strong> صرف رابطہ ہٹاتا ہے، لکھا متن رکھنے کے لیے ہے۔ ایک چیز کے دو ہجے بنانے سے بچیں۔</li>
+<li>Barcode، Rack / shelf اور Room / almari درست درج کریں۔ پہلی category حساب کی primary ہے؛ اضافی tags صرف تلاش کے لیے۔ اضافی tags منتخب کرنے سے پہلے primary منتخب کریں۔ category خالی اور tags بھی خالی رہ سکتے ہیں۔</li>
+<li>Company اور اختیاری Preferred supplier منتخب کریں۔ Clear preferred رابطہ ہٹاتا ہے، پرانی خریداری نہیں۔ Manage catalogs… سے فہرستیں؛ Manage units… سے اصل stock units۔</li>
+<li><strong>Strength / volume صرف وصف ہے، سٹاک تبدیل کرنے کا فارمولا نہیں۔</strong> مثال: 50 ml کی 10 injections کے ڈبے میں stock کی اصل گنتی 10 injections ہے، 500 ml نہیں۔ ایسی مختلف طاقت/pack کی الگ مصنوعات رکھیں۔</li>
+<li>Pack size / variant label بھی صرف پہچان/تلاش کا متن ہے۔ اصل فارمولا الگ ہے: 1 box = کتنے inner packs، 1 inner pack = کتنے base units۔ مثال 2 strips فی box اور 10 tablets فی strip تو ایک box = 20 tablets۔</li>
+<li>Cost، Retail، VIP اور Doctor ریٹ ایک base unit کے روپے لکھیں؛ Amount میں روپے ہیں۔ Counter منتخب box/strip کے لیے pack formula سے ریٹ نکالتا ہے۔ Reorder level <strong>base units</strong> میں ہے۔ غلط pack formula سے مقدار اور منتخب unit کا ریٹ دونوں متاثر ہوں گے؛ پہلی رسید سے پہلے لازماً ملائیں۔</li>
+<li>Save product دبائیں۔ Built-in required خانے خالی ہوں تو ناموں والا popup آ سکتا ہے؛ Save anyway کا مطلب جان بوجھ کر نامکمل چیز محفوظ کرنا ہے۔ اس سے Counter کی missing-price/stock پابندی ختم نہیں ہوتی۔</li>
+<li>Cancel / close کے وقت unsaved changes کا سوال آئے تو اپنی ضرورت کے مطابق واپس جائیں یا چھوڑیں۔ Remove selected (history kept) چیز کو عام استعمال سے الگ کرتا ہے، پرانی فروخت نہیں مٹاتا۔</li>
+</ol>
+<h3 id="_4">چار مثالوں سے تین خانوں کا فرق</h3>
+<table>
+<thead>
+<tr>
+<th>چیز</th>
+<th>Strength / volume</th>
+<th>Pack label صرف پہچان</th>
+<th>Pack formula اور stock</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>500 mg گولی</td>
+<td>500 mg</td>
+<td>10 × 10 tablets</td>
+<td>base tablet، 10 strips/box × 10 tablets/strip = 100 گولیاں</td>
+</tr>
+<tr>
+<td>5 gram انجیکشن</td>
+<td>5 gram</td>
+<td>10 injections</td>
+<td>base injection، 10 × 1 = 10 انجیکشن؛ gram کو stock کی تقسیم نہ بنائیں</td>
+</tr>
+<tr>
+<td>100 ml شربت، پوری بوتل بیچنی ہے</td>
+<td>100 ml</td>
+<td>100 ml bottle</td>
+<td>base bottle، 1 × 1 = 1 بوتل؛ 100 الگ ml فروخت فرض نہ ہوں</td>
+</tr>
+<tr>
+<td>5 gram ساشے</td>
+<td>5 gram</td>
+<td>20 sachets</td>
+<td>base sachet، 20 × 1 = 20 ساشے</td>
+</tr>
+</tbody>
+</table>
+<p>موجودہ فارم پر غیر گولی مصنوعات کے لیے بھی strips / box اور tablets / strip کے عمومی labels آتے ہیں؛ ان کا حساب ضرب کا ہے، ہر انجیکشن کے واقعی پٹی میں ہونے کا دعویٰ نہیں۔ اصل pack دیکھ کر formula رکھیں۔ 1 × 1 اور base injection کا مطلب ایک box میں ایک injection؛ strength 5 gram ہونے سے اسے پانچ یا زیادہ injections نہیں بناتا۔ Pack label میں صرف 1 لکھنا پہچان واضح نہیں کرتا؛ label کو بہتر لکھنے سے اصل formula خود نہیں بدلتا۔ اس سبق کے لیے موجودہ کاروباری product کی تعریف/سٹاک خودکار تبدیل نہیں کیے گئے۔</p>
+<p><strong>اہم:</strong> product بنانے سے عام سٹاک خود نہیں آتا۔ اصل مال Purchases سے وصول کریں؛ حقیقی جسمانی فرق Stock-take سے درست کریں۔ Photo نہ ہونا چیز محفوظ کرنے کو لازمی طور پر نہیں روکتا۔</p>
+<p><a id="lesson-06"></a></p>
+<h2 id="06-managed-units">سبق 06 — فہرستیں اور Managed units</h2>
+<ol>
+<li>Product editor میں Manage catalogs… کھولیں۔ Categories، Companies، Salts اور Brands کی اپنی tabs ہیں۔ New، Name، متعلقہ Parent/Company اور Order لکھ کر Save کریں۔ چھوٹا Order اوپر دکھاتا ہے۔</li>
+<li>Category میں زیادہ سے زیادہ دو درجے ہیں؛ parent فلٹر اس کے children بھی دکھا سکتا ہے۔ primary category ہی مالی رپورٹ کا حصہ طے کرتی ہے، tags کو رقم دوبارہ جمع کرنے کا ذریعہ نہ بنائیں۔</li>
+<li>نمک/برانڈ کا نام بدلیں تو جڑی ہوئی چیزوں کے labels بدلتے ہیں؛ جس product پر صرف آزاد typed text ہے وہ خود دوبارہ نام نہیں پاتا۔</li>
+<li>Put away کسی catalog entry کو عام انتخاب سے ہٹاتا اور موجودہ links کو متعلقہ اصول کے مطابق الگ کرتا ہے؛ مصنوعات/بل/بیچ حذف نہیں ہوتے۔ Bring back پر پرانے links خود بخود دوبارہ نہیں جڑتے۔ بعد میں متعلقہ چیز کھول کر رابطہ دیکھیں۔</li>
+<li>Manage units… میں canonical نام اور ترتیب دیں۔ Whole stock quantities only اصل گنتی کے لیے ہے، مثلاً injection ٹکڑوں میں نہیں بکتا۔ ml کی strength کو fraction of injection نہ سمجھیں۔</li>
+<li>استعمال میں موجود unit کو put away نہیں کر سکتے۔ rename سے موجودہ labels بدل سکتے ہیں؛ صرف راستہ نکالنے کے لیے unit کا مطلب نہ بدلیں۔ catalog/unit میں تبدیلی مالک/مینیجر کرے۔</li>
+</ol>
+<p><a id="lesson-07"></a></p>
+<h2 id="07">سبق 07 — تصاویر، بارکوڈ اور چیز کی تاریخ</h2>
+<ol>
+<li>Photos of this medicine…، فہرست کی تصویر، یا کسٹمر/سپلائر/staff کے Photos… سے gallery کھولیں۔ Add a photo… اصل فائل کی نقل محفوظ کرتا ہے۔ Take a photo (camera) Windows Camera کھولتا ہے؛ تصویر محفوظ کرکے واپس Add a photo سے منتخب کریں۔</li>
+<li>صحیح active تصویر منتخب کرکے Set as cover؛ Open full size سے بڑی دیکھیں۔ Put away صرف چھپاتا ہے، فائل/تاریخ مٹاتا نہیں؛ Bring back سے واپس۔ Missing file کا مطلب فہرست میں ریکارڈ ہے مگر تصویر کی فائل موجود نہیں۔</li>
+<li>Barcodes of this medicine… میں code سکین کریں اور Printed on میں <strong>صحیح pack</strong> (box/strip/base وغیرہ) چنیں۔ Add this barcode۔ ایک box code کی beep ایک box ڈالے گی، ایک tablet نہیں۔</li>
+<li>غلط code کو Put away، درست کو فعال کریں۔ صرف مالک/مینیجر یہ تعریفیں بدلیں۔ قیمت بدلنے کے لیے barcode دوبارہ بنانے کی ضرورت نہیں۔</li>
+<li>History of this medicine… سے کب، کس سے خریدا، کس کو بیچا اور کیا ریٹ تھا دیکھیں۔ یہ دیکھنے کا صفحہ ہے؛ پرانی تجارت کو یہاں edit نہ سمجھیں۔</li>
+<li>تصاویر سمیت نقل کے لیے Backup میں Include the photos رکھیں۔ Cloud اور عام Excel export تصاویر نہیں لے جاتے۔</li>
+</ol>
+<p><strong>Product history میں منافع:</strong> اجازت/global switch بند ہو تو explicit profit screen/export میں hidden اور Core کے returned sale-profit fields بھی mask؛ اصل sale/item snapshots unchanged۔ خرید کے الگ rows/cost-bearing دوسرے راستے ابھی مکمل privacy audit سے پاس نہیں؛ اسے ہر inference کے خلاف حفاظت نہ سمجھیں۔</p>
+<p><strong>فیز4 حصہ7 — History کی خرید رقم (D-110، پرانا management-only اصول بدل گیا):</strong> متعلقہ Products/History page grant + <strong>View Purchase Cost</strong> + main ON پر خرید Rate، Total اور Bought مالی خلاصہ؛ کسی بھی role کے لیے۔ cost منع ہو تو تینوں raw/labels mask؛ quantity/date/supplier برقرار۔ print/WhatsApp/PDF preparation یہی labels، CSV دونوں purchase money cells خالی۔ صرف Profit/Purchases/Suppliers grant cost کا بدل نہیں۔ واضح sale-profit الگ View Profit/main policy پر؛ مجاز profit سے cost حساب کرکے نکل سکتی ہے، مطلق secrecy نہیں۔ <a href="POS-PHASE4-PART7-URDU.md">PT-27</a>۔</p>
+<p><a id="lesson-08"></a></p>
+<h2 id="08-purchases">سبق 08 — Purchases میں حقیقی ڈیلیوری وصول کرنا</h2>
+<ol>
+<li>STOCK → Purchases میں supplier منتخب کریں؛ نہ ہو تو New supplier، اصل نام/فون/agency اور متعلقہ extra fields لکھ کر Add supplier۔</li>
+<li>صحیح product variant تلاش کریں، Unit اور Quantity منتخب کریں۔ کاغذ والا Batch number درج کریں۔ اس فارم کے Cost اور Retail <strong>ایک base unit</strong> کے روپے ہیں، منتخب box/strip کے پورے pack کے نہیں؛ Quantity/Unit سے تعداد base units میں تبدیل ہو کر cost سے ضرب ہوتی ہے۔ مثال: 20 tablets کے ایک box کی کل خرید 200 روپے ہو تو Cost میں فی tablet 10 روپے، Quantity میں 1 اور Unit میں box ہوگا؛ پورے box کے 200 کو Cost میں ڈالیں گے تو کل 4000 بن سکتا ہے۔ لائن ڈالنے کے بعد total سے اصل invoice لازماً ملائیں۔</li>
+<li>Expiry printed strip سے لکھیں: 2027-06، 06/27 یا 2027-06-30؛ month/year اور calendar بھی موجود ہیں۔ خالی میعاد کا مطلب no expiry ہے۔ <strong>اس فارم میں غلط تاریخ لکھنے پر Add line رکتی ہے؛ پیغام پڑھ کر اصل printed تاریخ درست کریں۔</strong> بغیر میعاد کی لائن کو خودکار طور پر درست تاریخ لگ جانے کے برابر نہ سمجھیں؛ save کے بعد status بھی پڑھیں۔</li>
+<li>مفت bonus ہو تو Sample / bonus line منتخب کریں؛ تعداد الگ درج کریں، cost صفر ہوتا ہے۔ خریدی ہوئی اور bonus تعداد کو دو مرتبہ paid stock نہ لکھیں۔ Add line سے delivery lines میں ڈالیں؛ غلط آخری لائن Remove last۔</li>
+<li>Purchase total supplier کے اصل bill سے ملائیں۔ Paid now صرف ابھی دی ہوئی رقم ہے؛ باقی payable بنے گا۔ Paid how میں cash، online یا card کا <strong>حقیقی</strong> طریقہ دیں؛ cash گلے سے نکلتا ہے۔</li>
+<li>ایک ڈیلیوری میں دو طریقے ہوں تو اس فارم میں ایک ہی Paid how ہے: مثلاً 1000 کی خریداری، 300 cash اور 200 online ادا ہوئے—Paid now میں 300، cash سے purchase محفوظ کریں، پھر Suppliers میں اسی supplier کو Pay کے ذریعے 200 online الگ درج کریں۔ باقی 500 واجب الادا رہے گا۔ 500 کو cash لکھنا گلے کو غلط کرے گا۔</li>
+<li>Save purchase (PINV) کے بعد stock، payable اور ادا شدہ رقم دیکھیں۔ Save as draft ابھی وصولی پوسٹ نہیں کرتا۔ WhatsApp last invoice… صرف ابھی محفوظ invoice کے لیے ہے۔</li>
+</ol>
+<p>Supplier statement پر پہلے سے ادا شدہ رقم دوبارہ Pay نہ کریں۔ واقعی محفوظ ہوئی delivery کو refresh کے بعد دوبارہ نئے bill کے طور پر نہ لکھیں۔</p>
+<p><strong>حصہ9 — نئی purchase invoice preparation:</strong> View Purchase Cost + main ON سے رقم؛صرف Purchases/Profit یا manager عہدہ کافی نہیں۔ منع ہو تو line amounts،Total،Paid،Due سب hidden،supplier/reference/quantity/batch/date برقرار۔ Print/WhatsApp کے لیے نیا document بنتے وقت موجودہ active account/Purchases grant چیک ہوتا ہے؛پرانا PDF واپس نہیں چھپتا۔ <strong>Purchase entry/save result/draft ابھی اس مکمل cost rollout میں شامل نہیں۔</strong> <a href="POS-PHASE4-PART9-URDU.md">محفوظ PT-29</a>۔</p>
+<p><a id="lesson-09"></a></p>
+<h2 id="09-counter">سبق 09 — Counter پر بل بنانا</h2>
+<ol>
+<li>گلا کھلا ہو؛ Counter کے اوپر دوا تلاش کریں یا barcode سکین کریں۔ خالی search پر پوری catalog فہرست نہیں آئے گی؛ نام لکھیں تو Cart کے ساتھ مستقل چھوٹے پینل میں نتیجوں کے cards آئیں گے؛ ہر card میں تصویر/نام، طاقت، pack، stock، retail اور salt/rack دیکھیں۔ صحیح طاقت/pack منتخب کرکے Unit، Quantity اور Add to cart؛ کامیاب add پر نتائج اور search صاف، scanner focus واپس، مگر پینل کی جگہ قائم رہے گی۔ Esc یا Hide صرف matches چھپاتا ہے؛ query بدلیں تو دوبارہ آئیں گے۔ name کے Enter سے guessed medicine خود نہیں ڈلتی، درست barcode Enter اپنی pack unit کے مطابق کام کرتا ہے۔</li>
+<li>Cart میں Item، Unit، Qty اور Rate Rs دیکھیں۔ Rate اسی لائن کی unit کا روپے والا ریٹ ہے۔ غلط چیز Remove؛ پورا غیر محفوظ cart ختم کرنا ہو تو Clear۔</li>
+<li>واک اِن فروخت کے لیے کھاتہ درکار نہ ہو تو customer ضروری نہیں؛ <strong>credit کے لیے درست customer</strong> منتخب کریں۔ New customer… سے نام/فون شامل کرنے پر cart اپنی جگہ رہتا ہے۔ نسخے کا Doctor اختیاری الگ انتخاب ہے۔</li>
+<li>Cart row پر double-click یا منتخب row پر Enter سے <strong>Item price / discount</strong> کھولیں۔ mode <strong>normal</strong> (bill discount)، <strong>manual</strong> (آخری منتخب-unit ریٹ)، یا <strong>discount</strong> (اس item کا فیصد، profit/retail اپنی پسند)۔ اجازت ہر شخص کی مالک مقرر کرتا ہے؛ صرف manager role کافی نہیں۔ manual یا الگ discount والی line پر bill% دوبارہ نہیں، خواہ ریٹ بڑھایا ہو۔ Apply پہلے Core quote/حد/cost چیک کرتا ہے؛ Cancel نافذ نہیں؛ Reset to normal دوبارہ bill discount میں۔ Cart کی Pricing column حالت بتاتی ہے؛ grid کا عام rate cell جان بوجھ کر read-only، اصل editor یہ owned window ہے۔</li>
+<li><strong>Bill Discount % کے اوپر profit/retail منتخب دکھتا ہے۔</strong> profit میں actual FEFO batch cost اور فروخت کے فرق سے فیصد؛ retail میں پوری فروخت سے۔ مثال cost200/sale300/10%: profit290، retail270۔ normal lines ہی bill% میں؛ ہر لائن کے اپنے manual/profit/retail فیصلے الگ۔ نئی عام line موجودہ bill% لے گی۔ ہر شخص کے تین caps اور edit/override اجازتیں Settings → Staff میں مالک Save کرتا ہے۔ خرید سے نیچے final sale کسی role کو نہیں، زیادہ رعایت انکار (خاموش کم فیصد نہیں)۔ Loyalty کے points بعد میں اپنی caps/cost کے ساتھ؛ Rs10 rounding فعال ہو تو الگ round-off بھی دیکھیں۔ <strong>Extra Discount اس پورے حساب کے بعد الگ؛ نیچے قدم دیکھیں</strong>۔</li>
+<li>Payment میں حقیقی طریقہ چنیں۔ Split میں دوسری method اور اس کا Amount، باقی cash؛ cash/credit حصے سکرین پر ملائیں۔ Cash received وہ نقدی ہے جو واقعی ہاتھ میں آئی؛ Change واپس کی جانے والی نقدی ہے، فروخت کا منافع نہیں۔</li>
+<li>Subtotal، Discount، TOTAL، Cash part، On credit اور Change دیکھیں۔ v0.78.0 میں Customer، Payment، Discount %، Total، Cash received، Give back اور Complete sale مستقل نیچے ہیں۔ Cart مرکزی جگہ کا بڑا حصہ لیتا ہے؛ search pane اس کے ساتھ اپنی جگہ رکھتا ہے۔ Extra Discount/Doctor/points/extra answers کے لیے More / split، جبکہ نئی customer entry کے لیے New customer دبائیں۔ Split چنیں تو اس کی detail خود کھلے گی۔ Complete sale یا اصل F4 شارٹ کٹ استعمال کریں؛ rate edit ہو تو F4 پہلے اس edit کو مکمل کرتا ہے۔ error آئے تو بل محفوظ سمجھ کر رقم/مال دوبارہ نہ چلائیں؛ پہلے error اور Bills میں حالت دیکھیں۔</li>
+<li>retail بنیاد پر bill% 5 سے زیادہ ہو تو <strong>save سے پہلے ہر bill پر</strong> تصدیق۔ No پر محفوظ نہیں، Yes سے user cap یا cost پابندی نہیں ٹوٹتی۔ کامیابی پر invoice/status ملے گا۔ Settings → Sales rules میں success popup آن ہو تو الگ درمیان کی کھڑکی کھلے گی: ✓، invoice، بل، Cash received اور بہت بڑا GIVE THIS CASH BACK۔ مثال: بل 270، نقد 500، واپس 230 روپے۔ Done / Enter / × صرف کھڑکی بند کرتے ہیں؛ دوبارہ فروخت یا پرنٹ نہیں کرتے۔ اس کے بعد اگلا customer شروع کریں۔ Auto-print الگ اختیار ہے؛ پرنٹر کو بھیجنا کاغذ واقعی نکلنے کا ثبوت نہیں۔ Print last bill again صرف نقل نکالتا ہے۔ Cash received خالی ہو تو پرانے exact-cash قاعدے کے مطابق رقم فرض ہوتی ہے اور popup صاف لکھتا ہے exact amount assumed؛ online/card/credit کے لیے cash صفر ہوتا ہے۔</li>
+</ol>
+<p><strong>مثال:</strong> 300 روپے کا cash bill، وصول 500 تو Change 200۔ credit کی رقم کو نقد وصولی میں گننے سے گلا غلط ہو گا۔</p>
+<h3 id="1-counter">فیز1 — ماؤس کے بغیر Counter کیسے چلائیں؟</h3>
+<p><strong>یہ keyboard سہولت فیز1 میں آئی؛ فیز2 میں item editor اور نیا حساب، فیز3 میں الگ Extra Discount اور منظورشدہ B واپسی شامل؛ Windows جانچ باقی ہے۔</strong></p>
+<ol>
+<li>گلا کھلا ہو اور Counter کھولیں؛ سرچ میں کرسر آنا چاہیے۔ نام لکھیں؛ خالی سرچ پر تمام دوائیں نہیں آئیں گی۔ صرف نام لکھ کر Enter سے اندازے والی دوا Add نہیں ہوتی۔ اصل barcode لکھ/سکین کرکے سرچ کے اندر Enter دیں تو اسی code کا موجودہ scan راستہ چلتا ہے۔</li>
+<li>نتیجے منتخب کرنے کے لیے سرچ میں <strong>↓</strong> دبائیں۔ فوکس نتیجے کے خانے پر آئے گا، تصویر کے بٹن پر نہیں۔ <strong>↑↓</strong> سے دوا/طاقت/pack چنیں؛ <strong>Enter</strong> سے وہی Add ہوگی۔ اسی row پر <strong>double-click</strong> بھی Add کرتا ہے۔ تصویر والا بٹن صرف gallery کھولتا ہے؛ خالی جگہ/heading پر double-click سے Add نہیں۔</li>
+<li>کامیاب Add پر سرچ صاف اور فوکس واپس؛ اگلی دوا تلاش کریں۔ Quantity غلط ہو تو پیغام پڑھیں؛ انکار کو کامیاب Add نہ سمجھیں۔ scanner عام keyboard جیسا لکھتا ہے؛ کسی دوسرے خانے میں کرسر ہو تو پہلے سرچ میں واپس آئیں، ہر input سے scan خود پہچاننے کا وعدہ نہیں۔</li>
+<li><strong>Tab</strong> سے سرچ → Unit → Quantity → Add جیسے دستیاب controls میں آگے، <strong>Shift+Tab</strong> سے پیچھے۔ Unit خانے میں <strong>↑↓</strong> سے unit/strip/box منتخب کریں؛ متن یا رقم میں <strong>←→</strong> عام حروف کا کرسر چلائیں۔</li>
+<li><strong>Shift+↓ یا Shift+→</strong> اگلے حصے اور <strong>Shift+↑ یا Shift+←</strong> پچھلے حصے میں لے جاتے ہیں۔ ترتیب: <strong>سرچ/Unit/Quantity → سرچ نتائج → Cart → کھلی More details یا Parked carts → Customer/Payment/Discount → Cash/Complete sale → نیچے کے actions</strong>۔ بند حصے اور خالی/چھپے نتائج خود skip ہوتے ہیں۔ آخری حصے سے آگے دوبارہ شروع نہیں؛ وہیں رکیں گے۔ Shift+تیر اب section shortcut ہے؛ پورا متن منتخب کرنے کے لیے <strong>Ctrl+A</strong> استعمال کریں۔</li>
+<li>حصے کے اندر عام تیر متعلقہ list/grid/خانے کا کام کرتے ہیں۔ نیچے action buttons پر تیر اسی حصے میں پڑوسی بٹن تک، <strong>Enter</strong> اس بٹن کا کام؛ کی بورڈ سے منتخب action نمایاں رنگ میں دکھتا ہے۔ Tab مکمل متبادل ہے۔ Print automatically checkbox پر Space یا Enter سے حالت بدلے؛ خود Complete sale نہیں۔</li>
+<li><strong>Esc</strong> کھلی Unit/Customer/Payment فہرست کو پہلے بند کرے۔ سرچ نتائج میں ہوں تو نتائج چھپنے پر فوکس سرچ میں واپس؛ query بدلیں تو دوبارہ matches۔ معمول کے دوسرے input میں رقم/کسٹمر لکھنے سے فوکس زبردستی سرچ میں واپس نہیں آئے گا۔</li>
+<li>Refresh اب نیچے actions میں ہے۔ More / split یا Parked carts کھولیں تو Shift+تیر سے اس دکھائی دینے والے حصے تک جائیں یا Tab سے controls چنیں؛ بند کریں تو اضافی حصہ navigation میں شامل نہیں۔</li>
+<li><strong>F4</strong> اصل Complete sale ہی ہے اور بل محفوظ کر سکتا ہے؛ محض keyboard آزمانے کے لیے اسے نہ دبائیں۔ Cart پر Enter/double-click اب <strong>Item price / discount</strong> کھولتا ہے؛ Apply صرف cart بدلتا ہے، bill محفوظ نہیں کرتا۔</li>
+</ol>
+<h3 id="1">فیز1 کی محفوظ مشق</h3>
+<p>بغیر بل محفوظ کیے 5–10 دوائیں Add کریں، Unit/Quantity/Cart/Customer/Cash/actions میں جائیں؛ رقم لکھ کر دیکھیں کہ فوکس نہیں چھنتا۔ Clear سے غیر محفوظ cart ختم کریں۔ حقیقی shop میں فرضی Complete sale/F4 نہ کریں۔ Windows پر چھوٹی سکرین، DPI، اصلی scanner اور keyboard کی تصدیق باقی؛ مسئلہ ہو تو version، بٹن، کیے گئے قدم اور تصویر دیں۔</p>
+<h3 id="extra-discount">بل کے آخر میں الگ Extra Discount — پوری مثال</h3>
+<ol>
+<li>مالک پہلے Settings → Staff &amp; permissions → شخص → <strong>This person's pricing limits</strong> میں <strong>May give separate Extra Discount</strong> اور روپے کی حد دے، پھر <strong>Save this person's pricing limits</strong>۔ خود مالک کے لیے بھی یہ اجازت مقرر کرنا ہوگی۔ عام profit/retail% caps الگ رہیں گی۔</li>
+<li>پوری cart، rate/item discounts، bill%، points/rounding کا حساب پہلے ہونے دیں۔ فرض کریں <strong>Before Extra Discount1120</strong>۔ سب lines manual/fixed ہوں تب بھی الگ Extra چل سکتا ہے؛ یہ ان کے ریٹ بدلنے کا راستہ نہیں۔</li>
+<li><strong>More / split</strong> میں <strong>Extra Discount (Rs for the whole bill)</strong> میں20 لکھیں۔ صرف لکھنے سے لاگو نہیں ہوگا؛ <strong>Apply Extra Discount</strong> دبائیں۔</li>
+<li>owned popup میں <strong>1120، Extra20، final1100</strong> دیکھ کر Yes؛ No سے سابقہ applied رقم برقرار۔ footer میں Extra−20 اور Total1100 دیکھیں۔ cap20 ہو تو30 سے انکار، خاموش20 نہیں۔ دوبارہ20 Apply کرنے سے20 ہی،40 نہیں؛ یہ پوری رقم replace ہے۔</li>
+<li><strong>Cash received1100</strong> دیں، صرف حقیقی فروخت پر Complete sale/F4۔ رسید، reprint اور Bills میں pre-extra1120/Extra20/final1100 الگ، due0۔ Extra کے بغیر کم cash لینے سے فرق خود سے معاف نہیں ہوگا؛ مناسب customer/credit منتخب کریں یا پوری نقدی وصول کریں۔</li>
+<li>Apply/Remove سے product rate/quantity/پہلے کی line discount/bill% نہیں بدلتے۔ <strong>Remove Extra Discount</strong> صرف یہ رقم ہٹاتا ہے۔ اگر textbox کی نئی رقم Apply نہیں کی تو Complete sale/Park/Save draft روکے گا؛ پہلے Apply یا Remove۔ Clear/Post/Park سے اگلی live cartExtra0، اسی parked/draft کو کھولنے پر اس کی Extra بحال اور موجودہ cap دوبارہ چیک۔</li>
+<li>final payable actual allocated خرید کی مجموعی لاگت سے کم نہیں ہوسکتا، مالک بھی نہیں؛ پہلے ہر line کا اپنا cost guard بھی برقرار۔ لہٰذا cap20 کا مطلب ہر bill پر لازماً20 دینے کی اجازت نہیں۔</li>
+<li>بند کرنا ہو تو جاری cart میں Remove؛ مالک اس شخص کا Extra tick بند کرکے الگ Save کرے۔ محفوظ پرانے bills unchanged۔ پرانی exe/backup اوپر ڈالنا بندش کا طریقہ نہیں۔ محفوظ عملی مشق، errors اور B واپسی <a href="POS-PHASE3-TEST-URDU.md">فیز3 نامہ</a> میں۔</li>
+</ol>
+<p><a id="lesson-10"></a></p>
+<h2 id="10-not-in-stock">سبق 10 — Not in stock اور بغیر قیمت کی وارننگ</h2>
+<ol>
+<li>پہلی بار cart میں stock کم/ختم یا catalog retail missing ہونے پر Counter availability popup پڑھیں، OK کریں۔ <strong>اسی live bill میں دوبارہ حساب/typing پر popup بار بار نہیں آئے گا۔</strong> یہ وارننگ غائب ہونے سے رکاوٹ ختم نہیں ہوتی۔</li>
+<li>stock کم ہو تو مقدار کم کریں، غلط unit ٹھیک کریں یا اصل stock وصول کریں۔ <strong>مالک/مینیجر بھی صفر یا ناکافی stock کا بل نہیں بنا سکتے۔</strong> ایک ہی product کی الگ لائنیں مجموعی stock استعمال کرتی ہیں؛ expired-only stock بھی sellable نہیں۔</li>
+<li>stock موجود لیکن retail درج نہیں تو مالک کی rate-edit اجازت والا شخص item editor کے manual mode میں مثبت درست فروخت ریٹ دے۔ reference قیمت نہ ہو تو فیصد کمی نہیں ناپ سکتے، مگر actual batch cost/stock پابندی برقرار۔ اجازت نہ ہو تو خود ریٹ لکھ کر رکاوٹ عبور نہیں؛ مستقل حل product میں صحیح Retail محفوظ کرنا ہے۔</li>
+<li>Clear، کامیاب sale، cart park یا دوسرے draft/cart کو load کرنے پر نئے live bill کی warning یاد دوبارہ شروع ہوتی ہے؛ آخری چیز ہٹانے سے cart خالی ہو تب بھی اگلی شروعات نئی ہے۔</li>
+<li><strong>رسید/چٹ پر availability کا لفظ، اضافی سطر یا اوپر کا نشان نہیں آتا۔</strong> قیمت کو popup میں دوبارہ نہیں دکھایا گیا؛ معمول کی Rate والی جگہ دیکھیں۔ سٹاک نہ ہونے کا ناکام bill کوئی فروخت نہیں۔</li>
+</ol>
+<p><a id="lesson-11"></a></p>
+<h2 id="11-park-drafts">سبق 11 — Park، مشترکہ drafts اور ادھورا کام</h2>
+<ol>
+<li>گاہک انتظار کر رہا ہو تو نیچے مختصر toolbar کا Park cart یا Save draft استعمال کریں۔ یہ پرانے Park this cart for later / Save as draft کے وہی commands ہیں؛ Open drafts اور Reprint بھی اسی مستقل پٹی میں ہیں۔ Parked carts کے بٹن سے فہرست کھولیں؛ فہرست ہر وقت Cart کی جگہ نہیں لیتی۔ اس وقت کوئی sale/stock deduction/رقم وصولی پوسٹ نہیں ہوتی۔</li>
+<li>Parked carts کا Bring back یا Open drafts → Open on the page سے کام واپس لائیں۔ واپس لانے پر stock/ریٹ/قواعد دوبارہ چیک ہوں گے؛ park کرنے سے stock reserve ہونے کی ضمانت نہیں۔</li>
+<li>purchase کا بھی Save as draft ہے؛ Open drafts سے اس کی delivery واپس لیں۔ draft مشترکہ ہے: متعلقہ اجازت والا شخص اسے کھول/پوسٹ کر سکتا ہے۔ اپنے ادھورے کام کو راز یا ذاتی lock نہ سمجھیں۔</li>
+<li>Post now حتمی document بنانے کی کوشش ہے، صرف کھولنا نہیں۔ Discard/Throw away draft ترک کرتا ہے، پہلے سے posted document کو الٹتا نہیں۔</li>
+<li>Post was interrupted جیسا پیغام ہو تو پہلے اصل Bills/purchase record/status چیک کریں؛ کہیں document بن چکا ہو تو دوبارہ post نہ کریں۔ draft history محفوظ ہونے کا مطلب یہ نہیں کہ editor میں ابھی کی ہر غیر محفوظ typing بھی محفوظ ہے۔</li>
+</ol>
+<p><a id="lesson-12"></a></p>
+<h2 id="12-bills">سبق 12 — Bills، دوبارہ رسید اور غلط وقت</h2>
+<ol>
+<li>SELL → Bills میں Today، 7 days، 30 days یا From/To منتخب کریں۔ bill number، customer name/phone اور Paid by فلٹر؛ Search۔ Clear فلٹر صاف کرتا ہے۔</li>
+<li>bill منتخب کریں؛ اشیا، مقدار، subtotal، discount، <strong>Before Extra Discount، Extra Discount، final Total</strong>، tax/round-off اگر ہوں، Paid، Due، returns اور Money that came in دیکھیں۔ انتخاب پڑھنے سے نیا bill نہیں بنتا۔</li>
+<li>Print this bill again ایک نقل؛ Print selected… متعدد منتخب بل؛ Preview اصل کاغذ کی عبارت/چوڑائی دکھاتا ہے؛ WhatsApp… کا PDF خود attach کرنا ہوتا ہے۔ returns والے حصے سے اسی return کی رسید نکال سکتے ہیں۔</li>
+<li>مالک کے لیے Fix wrong time… ہے۔ پہلے اصل Windows clock درست رکھیں اور time server کا جواب دستیاب ہو۔ From/To دے کر List bills؛ Wrong time اور Correct time کی پیش کش غور سے ملائیں۔</li>
+<li>Fix every bill above فہرست والے bills اور متعلقہ زمانی ریکارڈ ایک ساتھ درست کرنے کی کارروائی ہے؛ انتخاب پڑھے بغیر نہ دبائیں۔ اصل اور درست وقت کا ثبوت ریکارڈ میں محفوظ رہتا ہے۔ وقت بدلا ہونے سے تاریخ وار reports میں bill دوسری تاریخ پر آ سکتا ہے، رقم کی نئی فروخت نہیں بنتی۔</li>
+<li>انٹرنیٹ/time source نہ ملنے پر batch وقت درستگی دستیاب نہیں سمجھی جائے؛ اندازے سے تاریخ یا ڈیٹابیس کی فائل خود نہ بدلیں۔</li>
+</ol>
+<p><strong>فیز4 حصہ6 — وقت کی correction کی حفاظتی حد:</strong> صرف پرانا owner label کافی نہیں؛ preview اور Apply موجودہ active مالک مانگتے ہیں۔ Apply موجودہ bills دوبارہ پڑھ کر owner/read/plan/date/payment/audit ایک ہی فوری transaction میں کرتا ہے؛ پہلے سے تیار preview permission نہیں۔ اصل created_at/رقم unchanged، same offset دوبارہ Apply سے مزید shift نہیں؛ غلط payment date/audit fault پر پوری کارروائی واپس ہونی چاہیے۔ یہ Windows/.NET concurrency PASS نہیں؛ <strong>اصل shop کے bills کی تاریخ محض test کے لیے نہ بدلیں</strong>۔ <a href="POS-PHASE4-PART6-URDU.md">محفوظ PT-26</a>۔</p>
+<p><a id="lesson-13"></a></p>
+<h2 id="13-returns-quarantine">سبق 13 — اصل بل والی Returns اور Quarantine</h2>
+<ol>
+<li>SELL → Returns میں Bill number → Find bill۔ نمبر نہ ہو تو No bill number? Find it سے فون/نام/دوا/تاریخ تلاش کریں؛ صحیح bill کھولیں۔ یہ تلاش ہے، بل کے بغیر refund بنانے کا راستہ نہیں۔</li>
+<li>Sold، Returned اور Can return دیکھیں۔ Coming back میں حقیقی واپس آئی مقدار لکھیں؛ فروخت سے زیادہ واپس نہیں ہو سکتی۔ Refund، Reason اور ضرورت کا Note پڑھیں/لکھیں۔</li>
+<li>قابل فروخت صحیح مال Back on the shelf now؛ فیصلہ باقی یا مشکوک مال Quarantine۔ خراب/expired چیز فوراً shelf پر واپس نہ ڈالیں۔</li>
+<li>Total refund، Cash out اور Khata reduced ملائیں؛ Take the return (RET)۔ credit والے bill میں پہلے ادھار کم ہو سکتا ہے؛ ہر refund لازماً پوری نقد ادائیگی نہیں۔ وصول شدہ رقم اور باقی مقدار کی حدیں لاگو ہیں۔</li>
+<li>Quarantine tab میں مجاز شخص Q-number والی چیز چن کر Back in stock، Damaged / expired یا Sold on کا اصل نتیجہ درج کرے۔ ہر نتیجے کا وقت/شخص/نوٹ مستقل رہتا ہے۔</li>
+<li>پہلے سے محفوظ return کو دوبارہ نیا return نہ لکھیں۔ رسید Bills کے returns حصے سے بھی مل سکتی ہے۔</li>
+</ol>
+<h3 id="extra-b">Extra والے بل کی جزوی واپسی — مالک کا منتخب طریقہ B</h3>
+<p>A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A کی اصل محفوظ رقم <strong>560</strong>؛ بعد میں B آئے تو صرف باقی <strong>540</strong>۔ یہ proportional550/550 نہیں، اور اصل sale-item rates/discounts نہیں بدلتے۔ Returns preview میں Extra اور باقی cap کی وجہ پڑھیں، گاہک کو پہلے سمجھائیں، پھر Take the return۔ دونوں ایک request میں ہوں تو بھی کل1100؛ cap کا فرق آخری درج return line سے کم ہوگا۔ واقعی وصول cash سے زائد نقد واپسی نہیں؛ credit کی صورت میں باقی کھاتہ کم ہوگا، فرضی cash نہیں۔ ایک بار واپس کی ہوئی quantity دوبارہ نہیں۔ الگ test data میں اس مثال کی مشق کریں؛ اصل دکان پر فرضی return نہ بنائیں۔</p>
+<p><a id="lesson-14"></a></p>
+<h2 id="14-no-bill-pr">سبق 14 — اصل بل ہاتھ میں نہ ہو: No bill (PR)</h2>
+<ol>
+<li>No bill (PR) عام refund کا آسان متبادل نہیں؛ اس میں اصل bill کی فوری تصدیق نہیں ہوتی۔ product، حقیقی واپس مقدار اور Unit ڈالیں؛ customer name/phone، واقعی دی گئی رقم، وجہ/نوٹ لکھیں۔</li>
+<li>Save and give the slip سے PR نمبر بنتا ہے، stock/مال اور refund کا الگ ریکارڈ بنتا ہے۔ slip گاہک کو دیں اور بعد میں اصل bill لانے کا طریقہ واضح کریں۔ غیر تصدیق شدہ رقم میں خاص احتیاط کریں۔</li>
+<li>Waiting for a bill میں PR منتخب کریں؛ Print this slip نقل ہے۔ مالک/مینیجر Attach the real bill میں INV نمبر دیں، یا فون/نام/دوا/تاریخ سے Find bills کرکے Use the selected bill؛ پھر Attach this bill۔</li>
+<li>اصل bill جوڑنے سے وہی stock اور refund دوسری بار نہیں لگتے۔ alert کا رنگ/حالت بدل سکتی ہے مگر مالک کو وجہ لکھ کر معاملہ بند کرنا پڑتا ہے۔</li>
+<li>واقعی duplicate/غلط PR ہو تو مالک/مینیجر وجہ دے کر Cancel this entry and take the stock back۔ اگر مطلوبہ stock باقی نہیں تو cancellation رک سکتی ہے؛ یہ نیا منفی stock بنانے کا راستہ نہیں۔</li>
+<li>Linked/cancelled entries ہمیشہ تاریخ میں رہتی ہیں؛ slip پھاڑنے سے اندراج ختم نہیں ہوتا۔</li>
+</ol>
+<p><a id="lesson-15"></a></p>
+<h2 id="15-customers">سبق 15 — Customers، کھاتہ اور وصولی</h2>
+<ol>
+<li>CUSTOMERS &amp; SUPPLIERS → Customers میں نام/فون تلاش؛ Only with udhaar صرف مقروض۔ + New سے الگ کسٹمر بنائیں۔ ایک فون کو دو کھاتوں میں بانٹنے سے بچیں۔</li>
+<li>Edit میں name، phone، category اور مجاز شخص کے لیے Credit limit۔ <strong>Balance کو براہ راست نئی رقم بنا کر نہیں لکھتے</strong>؛ bill، receipt اور return سے کھاتہ چلتا ہے۔ limit صفر کا مطلب کوئی مقررہ حد نہیں، صفر ادھار کی اجازت نہیں۔</li>
+<li>کسٹمر منتخب کرکے Khata book کی Debit/Udhaar، Paid اور Balance قطاریں پڑھیں۔ Lifetime اور Profit اجازت/visibility کے تابع ہیں۔</li>
+<li>پیسے ہاتھ/بینک میں آ چکے ہوں تو Money received میں رقم، How میں صحیح طریقہ اور Note؛ Receive۔ ادھار سے زیادہ وصولی رد ہو سکتی ہے؛ اضافی customer advance کا فرضی اندراج یہاں نہ کریں۔</li>
+<li>Statement پورا بیان؛ Month میں YYYY-MM دے کر Month statement؛ Receipt (last collection) آخری وصولی کی نقل۔ متعدد منتخب کسٹمر کے Print selected، Preview، WhatsApp statement یا WhatsApp nudge دستیاب ہیں۔</li>
+<li>Photos شناخت میں مدد کے لیے ہیں۔ دکھائی گئی ادھار کی رقم بدلنے کے بجائے غلطی کی اصل entry تلاش کریں اور مجاز correction کا طریقہ اپنائیں۔</li>
+</ol>
+<p><strong>فیز4 حصہ3 — کھاتے کی read اجازت:</strong> Customers کی فہرست/منتخب account/full یا monthly statement/bulk اور PAY receipt اب Core میں بھی موجودہ active reader اور Customers permission چیک کرتے ہیں۔ متعلقہ global switch یا profit permission بند ہو تو explicit customer profit screen کے ساتھ returned list/page میں بھی mask؛ balance/loyalty/اصل history unchanged۔ stale account/role ہو تو صحیح active account سے دوبارہ sign in؛ پہلے سے دکھائی/کاپی/پرنٹ معلومات مٹنے کی ضمانت نہیں۔ یہ RecoveryService کے ہر الگ راستے کی مکمل certification نہیں۔</p>
+<p><a id="lesson-16"></a></p>
+<h2 id="16-udhaar-recovery">سبق 16 — Udhaar recovery میں پرانا ادھار</h2>
+<ol>
+<li>Customers &amp; suppliers کے recovery حصے میں TOTAL UDHAAR اور 0–30، 31–60، 61–90، 90+ دن والے خانے پڑھیں۔ یہ رقم کی عمر ہے، جرمانہ یا خودکار سود نہیں۔</li>
+<li>Only over two months اور Find سے فہرست محدود کریں۔ Carried in، Last paid اور Oldest سے سمجھیں کہ واجب الادا کہاں سے ہے؛ بہت پرانا opening balance بھی الگ ہو سکتا ہے۔</li>
+<li>کسٹمر چنیں، اصل Amount received اور Method لکھیں؛ Receive and print سے PAY نمبر اور رسید بنتی ہے۔ ادائیگی پرانے بقایا کے اصول کے مطابق لگتی ہے۔</li>
+<li>Print slip again نئی وصولی نہیں۔ رقم غلط لکھ دی ہو تو اسے چپکے سے edit/delete کرنے کا راستہ نہ ڈھونڈیں؛ مالک اصل ریکارڈ دیکھ کر درست corrective entry کروائے۔</li>
+</ol>
+<p><a id="lesson-17"></a></p>
+<h2 id="17-suppliers-sr">سبق 17 — Suppliers، ادائیگی اور SR</h2>
+<ol>
+<li>Suppliers میں supplier منتخب کریں؛ Only with money to pay فلٹر صرف واجب الادا دکھاتا ہے۔ Account، Purchases، Credit notes اور Money paid سے payable کا سبب ملائیں۔</li>
+<li>اصل ادائیگی کے لیے رقم، How اور Note دیں، Pay۔ مالک/مینیجر ادائیگی یا supplier return کر سکتے ہیں۔ purchase کے Paid now کو دوبارہ supplier Pay میں نہ دہرائیں۔</li>
+<li>Statement، Print selected، Preview، WhatsApp statement یا WhatsApp note سے حساب بھیجیں۔ bank سے دی ہوئی رقم کو cash کہنا گلے کو غلط کرتا ہے۔</li>
+<li>Return goods (SR) میں اصل product/batch چنیں، Quantity اور Unit، Add this batch to the tray۔ expired batch کا متعلقہ quick button بھی موجود ہے؛ tray، Value اور اصل مال ملائیں۔</li>
+<li>Reason لکھیں۔ عام SR سے stock نکلتا اور payable credit note سے کم ہوتا ہے۔ <strong>The supplier gave the money in cash</strong> صرف تب tick کریں جب واقعی نقد واپس لیا—یہ credit note کے ساتھ دگنی رقم لینے کے لیے نہیں۔</li>
+<li>Save the return (SR) سے پہلے رقم اور tray دیکھیں؛ منفی stock کی اجازت نہیں۔ واپسی کی cutoff یاد دہانی supplier کے معاہدے کی جگہ خود فیصلہ نہیں کرتی۔</li>
+</ol>
+<p><strong>فیز4 حصہ3 — supplier read حد:</strong> Suppliers module کے بغیر list/account/statement/bulk/expired-batch reads سے انکار، بشمول PDF/WhatsApp/print کی نئی preparation۔ مالک کی واضح Suppliers grant والا سابق جائز workflow برقرار؛ نئی owner-only blanket پابندی نہیں۔ next read پر account/role/module check ہوتا ہے؛ پہلے سے جائز حالت میں تیار preview/file واپس مٹانے یا catalog/دوسرے cost-bearing راستوں کی مکمل secrecy کا دعویٰ نہیں۔ عام cashier کو خودبخود Suppliers اجازت نہیں۔ <a href="POS-PHASE4-PART3-URDU.md">PT-23</a> صرف محفوظ الگ data پر۔</p>
+<p><strong>حصہ9 — expired list:</strong> الگ View Purchase Cost + main ON کے بغیر valuation hidden؛quantity/batch/date برقرار۔ expired quick-add تازہ موجودہ500حد کی row دوبارہ پڑھتا ہے؛ممنوع/نامعلوم cost،ناکام read یا row نہ ملنے پر tray بدلنے سے پہلے انکار،اصل مجاز0 الگ known۔ پہلے سے بنے tray/manual SR اور ordinary account paid/payable/Pay/SR policy ابھی الگ باقی؛یہ تمام Supplier posting کی نئی cost gate نہیں۔ <a href="POS-PHASE4-PART9-URDU.md">PT-29</a>۔</p>
+<p><strong>حصہ10 — manual batch کی تازہ حد:</strong> عام supplier batch picker کا raw cost/valuation بھی Cost+main کے بغیر hidden۔ Manual Add line سے پہلے موجودہ product/batch/pack/cost دوبارہ پڑھتا ہے؛اجازت ختم یا batch اب غلط ہو تو tray بدلنے سے پہلے انکار۔ یہ ordinary supplier paid/payable/Pay/SR posting policy یا پہلے بنے tray کی واپسی کا فیصلہ نہیں۔ <a href="POS-PHASE4-PART10-URDU.md">PT-30</a>۔</p>
+<p><a id="lesson-18"></a></p>
+<h2 id="18-doctors-reps">سبق 18 — Doctors &amp; reps</h2>
+<ol>
+<li>کسی doctor کو Customers میں Category = Doctor کے ساتھ رکھیں؛ اسی سے prescription doctor کی فہرست بنتی ہے۔ doctor کا customer کھاتہ اور bill پر نسخہ لکھنے والے doctor کا انتخاب الگ مقصد رکھ سکتے ہیں۔</li>
+<li>Doctors &amp; reps کے متعلقہ tabs/حصے کھولیں۔ Counter پر اصل prescription doctor منتخب کریں؛ بعد میں اس کے Bills، Sales، Profit اور Last bill دیکھیں۔</li>
+<li>کمپنی منتخب کرکے rep کا نام، فون، Visits on لکھیں؛ مالک/مینیجر Save the rep کرے۔ company کی غلط entry پر کسی دوسری کمپنی کا نمائندہ نہ لگا دیں۔</li>
+<li>Customer lifetime profit پوری تاریخ کے حساب کا اشارہ ہے، وصول شدہ نقدی نہیں۔ returns اور cost اثر ڈالتے ہیں، visibility بند ہو تو منافع چھپ سکتا ہے۔</li>
+</ol>
+<p><strong>منافع کی موجودہ حد:</strong> Doctors کا explicit profit اب global <code>profit.showMargins</code> اور اس شخص کی profit permission دونوں سے مشروط ہے۔ global OFF ہو تو مالک/الگ grantee کے لیے بھی profit hidden، اصل sales/counts اپنی permission کے مطابق برقرار؛ ON سے اصل محفوظ snapshot کا عدد واپس۔ یہ ہر cost-bearing راستے سے حساب اخذ کرنے کی ناممکن ہونے کی ضمانت نہیں؛ مکمل service access review ابھی جاری ہے۔</p>
+<p><a id="lesson-19"></a></p>
+<h2 id="19-reorder-pad">سبق 19 — Reorder pad</h2>
+<ol>
+<li>STOCK → Reorder pad پر Refresh۔ صفحہ کہے switched off تو پہلے متعلقہ setting/مالک سے حالت چیک کریں۔ supplier اور Find سے چیزیں محدود کریں۔</li>
+<li>Stock اور Minimum ملائیں۔ minimum اصل base units میں رکھیں؛ منتخب product کا Keep at least → Save minimum۔ یہ نہ purchase ہے، نہ stock correction۔</li>
+<li>مطلوبہ چیزیں tick کریں؛ Order میں کتنی base units مانگنی ہیں لکھیں۔ Tick all/Untick all صرف فہرست کا انتخاب ہیں۔</li>
+<li><strong>ایک پیغام میں ایک supplier۔</strong> Products کے preferred-supplier فلٹر اور یہاں کے order supplier کو ایک ہی قاعدہ نہ سمجھیں: reorder فہرست supplier کو آخری حقیقی خریداری سے دکھاتی ہے۔ supplier غلط لگے تو اصل history دیکھیں؛ کسی دوسرے agent کو mixed order نہ بھیجیں۔</li>
+<li>Supplier mobile اور Your note دیں؛ Copy text، Open WhatsApp یا Print order pad۔ پیغام بننے سے stock نہیں بڑھتا؛ delivery آنے پر Purchases کریں۔</li>
+</ol>
+<p><strong>فیز4 حصہ7 — Reorder کی cost حد:</strong> page grant + View Purchase Cost + main ON پر آخری خرید cost؛ manager خودکار اجازت نہیں۔ denied rawcost mask/hidden؛ quantity/stock/minimum/supplier/order message unchanged۔ account active ہونا بھی لازم؛ minimum-save سمیت ہر write/session راستے کی مکمل جانچ ابھی باقی۔</p>
+<p><a id="lesson-20"></a></p>
+<h2 id="20-write-off-stock-minus">سبق 20 — Write-off اور Stock minus</h2>
+<ol>
+<li>Write-off میں صحیح medicine، واقعی موجود batch، quantity/unit اور Reason منتخب کریں؛ loss purchase cost پر شمار ہوتا ہے۔ Expired، broken، lost جیسے حقیقی اسباب لکھیں۔</li>
+<li>Write this off سے پہلے quantity دوبارہ دیکھیں۔ Save کے بعد یہ عام editable note نہیں؛ غلطی کی correction الگ وجہ والی کارروائی سے ہو گی۔ نقصانی مال پھر سے موجود نہ سمجھیں۔</li>
+<li>سٹاک سے زیادہ write-off رکے گا؛ owner bypass نہیں۔ supplier کو بھیجا مال SR سے جائے، اسی چیز پر دوبارہ write-off نہ کریں۔</li>
+<li>Stock minus پر پرانے منفی balances، کتنے دن، cost value اور review دیکھیں۔ Monthly review میں جو پایا وہ لکھ کر Mark reviewed کریں۔ <strong>Review سے quantity نہیں بدلتی۔</strong></li>
+<li>حقیقی shelf count لے کر Stock-take میں مالک سے correction منظور کروائیں۔ محض فہرست صاف کرنے کے لیے فرضی purchase یا خود SQL سے صفر نہ کریں۔</li>
+</ol>
+<p><strong>حصہ10 — batch اور Write-off preview:</strong> Stock grant کے ساتھ metadata،Cost+main سے خرید کی valuation؛preview ہر متعلقہ interaction پر تازہ cost/stock/pack لیتا ہے۔ ناکامی پر hidden/error،پرانے product کی رقم یا fake0 نہیں۔ <strong>Write-off history/today totals اور save result ابھی الگ open مالی راستے ہیں</strong>؛اس محدود preview fix سے پورے صفحے کی secrecy نہ سمجھیں۔ اصل stock posting unchanged۔ <a href="POS-PHASE4-PART10-URDU.md">PT-30</a>۔</p>
+<p><a id="lesson-21"></a></p>
+<h2 id="21-stock-take">سبق 21 — Stock-take: اصل گنتی سے حساب ملانا</h2>
+<ol>
+<li>counting کے وقت کاروباری حرکت روک کر سب کو بتائیں۔ Stock-take میں Room خالی تو پوری دکان، ورنہ متعلقہ کمرہ؛ Open ST session۔ ایک جاری گنتی کے درمیان خریدوفروخت ہو تو جسمانی گنتی دوبارہ ملانا پڑ سکتی ہے۔</li>
+<li>Print count sheet سے شیلف گنیں؛ ہر medicine/batch کی اصل تعداد درج کریں۔ Counted quantity میں درست Unit اور Note دے کر Save this count۔ Clear this count دوبارہ گننے کے لیے ہے، shelf سے چیز مٹانے کے لیے نہیں۔</li>
+<li>Book، Counted، Diff اور Value دیکھیں؛ Only rows with a difference مدد دیتا ہے۔ کوئی چیز shelf پر ہے مگر book میں نہیں تو Found on the shelf… سے اصل product منتخب کریں؛ apply پر اس کے لیے GINTI batch بن سکتا ہے۔</li>
+<li>صرف manager counting/cancel کی مجاز حدود میں کام کرے؛ <strong>Apply this stock-take صرف مالک</strong>۔ ہر row، shortage/excess اور cost اثر دیکھ کر ایک بار apply کریں۔ counted quantity کو حقیقی غیر منفی گنتی رکھیں۔</li>
+<li>Apply کے بعد book count کے مطابق corrections اور audit بنتا ہے؛ دوبارہ apply نہیں۔ Cancel کے لیے وجہ لازم ہے۔ Earlier counts سے تاریخ ملتی ہے۔ غلط count کو صحیح دکھانے کے لیے بار بار sessions نہ بنائیں۔</li>
+</ol>
+<p><a id="lesson-22"></a></p>
+<h2 id="22-expenses">سبق 22 — Expenses اور مالک کی ذاتی نکاسی</h2>
+<ol>
+<li>Expenses میں Money the shop spent کے لیے Category، What was it، Amount اور Note لکھیں؛ Save the expense۔ cash/shift permission درکار ہے۔ <strong>اس سے stock نہیں آتا، supplier account نہیں بدلتا۔</strong></li>
+<li>Manage categories… سے مالک کی ترتیب کے مطابق running/stock labels سنبھالیں۔ نام میں stock لکھا ہونے سے یہ purchase نہیں بنتا۔ کرایہ، بجلی، چائے جیسے اصل اخراجات الگ عنوان سے رکھیں۔</li>
+<li>Owner took money or goods میں Kind منتخب کریں۔ Cash taken اصل نقدی کم کرتا ہے؛ Goods میں medicine/batch، quantity/unit سے shelf کم اور purchase cost پر drawing شمار ہوتی ہے، cash نہیں نکلتا۔</li>
+<li>ایک ہی نکاسی Expense اور Drawing دونوں میں مت لکھیں۔ goods drawing سٹاک سے زیادہ نہیں ہو سکتی۔</li>
+<li>What went out میں entry منتخب کرکے Print voucher۔ محفوظ entry edit/delete نہیں؛ غلطی سامنے ہو تو مالک ریکارڈ دیکھ کر واضح corrective entry کرے۔</li>
+</ol>
+<p><strong>حصہ10 — Goods drawing preview:</strong> Cash workflow کی batch list اور نئی cost preview الگ Cost+main کے تحت؛ممنوع رقم hidden،missing/stale selection سے fake0 حساب نہیں۔ Pack/quantity تازہ read سے؛یہ stock reservation یا posting authorization نہیں۔ Expense/drawing history/results/voucher اور frozen stock-take ابھی اگلا audit؛عام expense cash rule نہیں بدلا۔ <a href="POS-PHASE4-PART10-URDU.md">PT-30</a>۔</p>
+<p><a id="lesson-23"></a></p>
+<h2 id="23-reports-tax-report">سبق 23 — Reports اور Tax report</h2>
+<ol>
+<li>Reports میں Today، Last 7 days، Last 30 days، This month یا متعلقہ تاریخیں دیں؛ Refresh۔ Bills، Items sold، Sales، Discount، Average bill، Cash received، On khata اور Refunded کو الگ مطلب سے پڑھیں۔</li>
+<li>profit میں sale کے وقت کا cost استعمال ہوتا ہے؛ موجودہ cost بدلنے سے ہر پرانا bill اسی نئے cost پر دوبارہ نہیں بنتا۔ cash in drawer، sales، profit اور net ایک ہی عدد نہیں۔</li>
+<li>Day by day میں خاموش دن بھی آ سکتے ہیں؛ Category، Top 10 by quantity/profit، shelf/dead-stock متعلقہ فہرستیں کاروباری جائزے کے لیے ہیں۔ returns کے بعد net figures دیکھیں۔ Print report یا WhatsApp سے نقل لے سکتے ہیں۔</li>
+<li>Tax report میں مہینہ Previous/Next/This month سے بدلیں؛ bill پر واقعی charged tax اور روزانہ کی جمع دکھتی ہے۔ یہ نیا tax لگانے والا بٹن نہیں۔ refund کے tax کی علیحدہ تقسیم خودکار نہیں؛ accountant کے لیے refunds بھی پڑھیں۔</li>
+<li>مالک کی موجودہ ہدایت <strong>sales tax نہیں لینا</strong> ہے؛ Settings میں tax محض سبق دیکھنے کے لیے آن نہ کریں۔ Copy for the accountant متن کی نقل ہے، قانونی filing خودکار نہیں۔</li>
+</ol>
+<p><strong>Extra Discount کی رپورٹ:</strong> overall/day sales اور profit آخری payable سے؛ customer profit سے الگ Extra ایک بار کم۔ product history/top medicines کے item amounts/profit <strong>bill Extra سے پہلے</strong> دکھتے ہیں کیونکہ Extra کسی product کو تقسیم نہیں کی گئی۔ category report میں الگ منفی <strong>Bill Extra Discount (not assigned to products)</strong> row ہے؛ category مجموعہ final sales سے ملے گا۔ مثال1120−Extra20، cost800: overall profit300، نہ320۔ product figures کو final overall profit نہ سمجھیں۔</p>
+<p><strong>فیز4 حصہ7 — Reports کے دو الگ مالی gates:</strong> Reports page + main ON کے بعد sale/restock cost اور Purchases aggregate کے لیے View Purchase Cost؛ explicit profit کے لیے الگ View Profit۔ denied cost/raw aggregate mask اور label hidden، actual0 سے الگ۔ underlying snapshots/SQL نہیں بدلتے۔ دیگر finance/payable/export inference مکمل audit سے پاس نہیں۔ <a href="POS-PHASE4-FINANCIAL-VISIBILITY-REVIEW.md">شواہد/باقی rollout</a>۔</p>
+<p><strong>فیز4 حصہ7 — Dead stock اور daily rows:</strong> Dead stock کی <strong>Money at cost/Value</strong> اب Reports + View Purchase Cost + main ON سے؛ denied raw ValuePaisa0 masked اور label hidden، permitted genuine0 الگ معلوم0۔ daily/top explicit profit اپنی View Profit/main policy پر۔ cost-sort/top50 اپنی سابق ترتیب پر، اسے ہر inference یا دوسرے report/export کی مکمل confidentiality نہ سمجھیں۔ <a href="POS-PHASE4-PART7-URDU.md">PT-27</a>۔</p>
+<p><a id="lesson-24"></a></p>
+<h2 id="24-alerts">سبق 24 — Alerts: یاد دہانی اور اصل مسئلہ</h2>
+<ol>
+<li>گھنٹی → Alerts، Refresh۔ رقم، stock، expiry، PR یا گلے کے فرق کا سبب پڑھیں؛ ہر سرخ چیز خرابی والا dialog نہیں۔</li>
+<li>عام reminder الگ رکھنا مجاز عام شخص کر سکتا ہے؛ مالی/stock مسئلے کو ختم کرنا مالک کا کام اور وجہ ضروری ہے۔</li>
+<li>گلے کی alert ہو تو Open the Shift page سے اصل counted cash/وجہ/شخص ملائیں۔ PR ہو تو پہلے bill link یا درست cancellation کا عمل مکمل کریں۔</li>
+<li>مالک End an alert میں اصل وجہ لکھ کر End this alert۔ alert بند کرنا <strong>رقم یا stock کی correction نہیں</strong>۔ اصل مسئلہ واپس آئے یا نئی حرکت ہو تو alert دوبارہ آ سکتی ہے۔</li>
+<li>سابق alerts/history سے پڑھے بغیر بار بار خاموش نہ کریں؛ یہ audit trail کا حصہ ہیں۔</li>
+</ol>
+<p><a id="lesson-25"></a></p>
+<h2 id="25-black-box-books-check">سبق 25 — Black box اور Books check</h2>
+<ol>
+<li>Black box میں Search، Module، Action، Lines اور When فلٹر؛ Today/7/30/All time۔ رقم یا چیز کا اختلاف ہو تو متعلقہ entry منتخب کریں۔</li>
+<li>Earlier state — Before this line اور Recorded new state — After this line اس وقت ریکارڈ ہوئی عبارت ہیں، ضروری نہیں آج کا live balance ہوں۔ محفوظ correction والی ہدایت پڑھیں۔ Save CSV سے جائزے کی نقل۔</li>
+<li>نئے Extra والے bill میں <strong>unchanged item sum − الگ Extra = final total</strong>؛ header میں points/rounding کے بعد بھی یہی رقم۔ Black box کی <strong>sale_extra_discount</strong> entry میں اصل/Extra/final دیکھیں۔ یہاں <strong>عام Undo نہیں</strong>؛ صرف پرانی حالت دکھنے سے transaction واپس نہیں ہوئی۔ بغیر سمجھے پوری shop restore کرنا ایک غلط رقم کا معمولی حل نہیں۔</li>
+<li>Books check → Check again سے گیارہ حسابی identities کا صرف پڑھنے والا جائزہ۔ Says، Rows say اور Gap کو document کے ساتھ دیکھیں؛ Save this list سے ماہر کو ثبوت دیں۔</li>
+<li>Books check خود repair نہیں کرتا۔ فرق آئے تو اصل bill/return/payment اور backup محفوظ کریں؛ DB فائل پر براہ راست رقم مت لکھیں۔</li>
+</ol>
+<p><a id="lesson-26"></a></p>
+<h2 id="26-excel-csv-bulk">سبق 26 — Excel / CSV: نئی فہرست اور bulk تبدیلی</h2>
+<ol>
+<li>import سے <strong>پہلے photos-inclusive backup الگ جگہ رکھیں</strong>۔ Excel / CSV → Import میں مطلوبہ entity منتخب، Save a blank template۔ اصل headings برقرار رکھ کر matching sheet بھریں؛ existing UTF-8 CSV بھی نئے records کے لیے قبول ہو سکتی ہے۔</li>
+<li>Choose the file… کے بعد preview کی ہر error/skipped/new حالت پڑھیں۔ import کا حتمی بٹن صرف صحیح فائل/تعداد ملانے کے بعد دبائیں؛ Choose file بذات خود کامیاب import کا ثبوت نہیں۔ duplicate کو نیا product بنا کر پرانا ادھار تقسیم نہ کریں۔</li>
+<li>opening stock/balances صرف متعلقہ import اصول کے مطابق ایک بار؛ پہلے سے وصول مال دوبارہ opening stock نہ بنائیں۔ موجودہ records بدلنے کے لیے Bulk update والا راستہ استعمال کریں۔</li>
+<li>Export سے Medicines and stock، Customers and udhaar، Suppliers and payable کی .xlsx نقل نکلتی ہے۔ Excel کی تنصیب لازمی نہیں۔ تصاویر ان فائلوں میں نہیں ہوتیں۔</li>
+<li>Bulk update → Download your data؛ اسی workbook میں Products، Customers، Suppliers، Categories، Companies، Batches، Settings اور Instructions sheets ہوتی ہیں۔ row IDs/headings برقرار رکھیں۔ <strong>خالی cell = کوئی تبدیلی نہیں؛ <code>__CLEAR__</code> = صرف جہاں اجازت ہو وہاں صاف کرنا۔</strong></li>
+<li>Stock، balances، secrets اور numbering counters محفوظ/protected ہیں؛ workbook کو منفی سٹاک یا PIN بدلنے کا راستہ نہ سمجھیں۔ Include Settings changes الگ confirmation مانگتا ہے، JSON value کی قسم برقرار رکھنی ہے۔</li>
+<li>Choose edited workbook… کے بعد old/new preview دیکھیں؛ database بدل گئی ہو تو نیا download/preview چاہیے ہو سکتا ہے۔ Apply these changes حتمی مرحلہ ہے۔</li>
+<li>Prices tab میں Percent یا Rupees، متعلقہ منتخب records اور Change the purchase cost too صرف حقیقی cost تبدیلی پر؛ Preview → پرانے/نئے ریٹ ملائیں → Apply these prices۔ below-cost سے رد قطار کو نظرانداز کرکے کامیاب نہ سمجھیں۔</li>
+</ol>
+<p><a id="lesson-27"></a></p>
+<h2 id="27-backup-restore">سبق 27 — Backup اور Restore: سب سے اہم حفاظت</h2>
+<ol>
+<li>Backup &amp; restore → Include the photos رکھیں؛ Back up now یا Back up as… سے ZIP لیں۔ Open the folder/Refresh سے فائل دیکھیں۔ تازہ ZIP کو USB یا دوسرے محفوظ کمپیوٹر پر نقل کریں؛ اسی disk کی دوسری directory مکمل آفت سے حفاظت نہیں۔</li>
+<li>Automatic backup میں on/off، Every (hours)، Keep this many؛ Save the schedule۔ صرف automatic فائلوں کی retention الگ ہے؛ دستی backup خود سنبھالیں۔ schedule ہونے سے پروگرام بند رہنے کے دوران ہر وقت backup بننے کی ضمانت نہیں۔</li>
+<li>اصل data عموماً C:\ProgramData\Area11 میں رہتا ہے؛ اگر data location بدلی ہو تو موجودہ حالت/backup page دیکھیں۔ کھلی DB کی اکیلی .db فائل نقل کرنا مکمل ZIP backup کے برابر نہیں، متعلقہ journal/تصاویر رہ سکتی ہیں۔</li>
+<li>Restore پورے موجودہ حساب کی جگہ <strong>منتخب پرانی حالت</strong> لاتا ہے۔ آج کے نئے بل/وصولیاں پرانے backup میں نہ ہوں تو restore کے بعد وہاں نہیں دکھیں گے۔ ایک غلط bill ٹھیک کرنے کے لیے یہ معمول کا Undo نہیں۔</li>
+<li>صرف مالک، کام روک کر، درست تاریخ/فائل دیکھ کر Restore this backup… منتخب کرے، تنبیہ پڑھے، پھر Restore now۔ پروگرام پہلے موجودہ حالت کی recovery copy بنانے کی کوشش/جانچ کرتا ہے؛ ناکامی کا پیغام ہو تو آگے محفوظ سمجھ کر نہ بڑھیں۔</li>
+<li>بحالی کے بعد records، bills، balances اور تصاویر ملائیں۔ Last restore and recovery میں پہلے کی حفاظتی ZIP محفوظ رکھیں۔ restore fail ہو تو فائلیں delete یا بار بار الگ backups نہ چلاتے رہیں؛ پیغام اور recovery location نوٹ کرکے مدد لیں۔</li>
+<li>نئی مشین پر مکمل جانچ <strong>الگ test environment</strong> میں کریں۔ محض Area11 کی دوسری program folder بنا لینے سے الگ test data نہیں بنتا؛ دونوں ایک ہی shop data استعمال کر سکتی ہیں۔</li>
+</ol>
+<p><a id="lesson-28"></a></p>
+<h2 id="28-shop-details">سبق 28 — ایپ کی شناخت اور Shop details الگ</h2>
+<p><strong>فیز4 حصہ2 کی source درستگی:</strong> App name &amp; icon اب shell کا اپنا section0، Shop1 سے Fields7 تک اصل contents وہی؛ Fields کی selection اب App words پر نہیں رکے گی۔ Windows پر تمام8 buttons/keyboard/چھوٹی screen کی عملی تصدیق باقی۔ section بدلنے سے half-typed values نہیں مٹنی چاہئیں؛ خرابی ہو تو <a href="POS-PHASE4-PART2-URDU.md">حصہ2 آزمائش</a> کے مطابق بتائیں۔</p>
+<ol>
+<li>Settings → App name &amp; icon: App name ایک سے چالیس حرف؛ Choose app icon… میں .ico، زیادہ سے زیادہ 2 MB؛ Use default icon واپس اصل۔ پھر Save settings۔</li>
+<li>یہ نام/icon window، login اور taskbar کے لیے ہیں۔ نصب executable اور پہلے سے بنے desktop shortcuts کا اپنا icon الگ رہ سکتا ہے۔ app icon بدلنے سے رسید پر لوگو نہیں لگتا۔</li>
+<li>Shop tab: Product photos کا thumbnail size صرف Counter/Products کی دکھائی جانے والی تصویر کا حجم۔ Shop name، Phone، Address، Note at the bottom of the receipt <strong>کاغذ والی دکان</strong> ہیں۔</li>
+<li>Show the discount line on the receipt صرف رسید کی line دکھانے/چھپانے کے لیے ہے؛ بل میں حقیقتاً دی گئی رعایت یا حساب خود ختم نہیں کرتا۔</li>
+<li>idle sign-out منتخب کریں؛ Never والے انتخاب کے باوجود sign-in سے بارہ گھنٹے کی حد برقرار ہے۔ session ختم ہونے سے drawer خود نہیں گنا جاتا؛ اگلا شخص Shift page پر سنبھالے۔</li>
+<li>Where the time comes from میں server/PC clock کی حالت پڑھیں۔ network نہ ملے تو PC clock استعمال ہو سکتی ہے؛ Windows کا وقت خود درست رکھیں۔ time settings بدلنے سے پہلے سبق 12 دیکھیں۔ عمومی تبدیلیوں کے بعد Save settings اور کامیابی کا status دیکھیں۔</li>
+</ol>
+<p><a id="lesson-29"></a></p>
+<h2 id="29-printing">سبق 29 — Printing اور اصل پرنٹر/سکینر</h2>
+<ol>
+<li>Settings → Printing میں 58 mm (32 characters) یا 80 mm (48 characters) اپنے paper کے مطابق۔ Printer name خالی ہو تو Windows default؛ Copies ایک، دو یا تین۔ printer driver بھی Windows میں موجود ہو۔</li>
+<li>Print the receipt automatically after each sale آن تو محفوظ بل کے بعد پرنٹ؛ بند ہو تو Counter کا Print last bill again۔ Cut the paper صرف cutter والے printer کے لیے۔ پرنٹ fail سے محفوظ sale خود cancel نہیں ہوتی۔</li>
+<li>The Print button prints every ticked row اور bulk format سمجھ کر رکھیں: Separate receipts الگ slips؛ One A4 list صرف summary، ہر مکمل bill کی الگ رسید نہیں۔ Preview میں width دیکھیں۔</li>
+<li>Prepare a PDF file with every WhatsApp send اور Folder for prepared PDFs منتخب کریں؛ blank folder سے عام exports جگہ استعمال ہو سکتی ہے۔ اس سے PDF خود WhatsApp میں attach نہیں ہوتی۔</li>
+<li>SYSTEM → Printer &amp; scanner میں پرنٹر چنیں؛ Open Windows printers سے driver/default درست؛ Print test slip۔ ruler، آخری حروف، paper width اور copies دیکھیں۔ یہ کوئی کاروباری bill نہیں۔</li>
+<li>scanner والے خانے میں click کرکے حقیقی pack scan کریں؛ Check this code۔ اس کی unit بھی Counter کی محفوظ مشق میں چیک کریں، صرف digits آنا کافی نہیں۔</li>
+<li>What you checked کی اصل ticks دیں؛ کوئی چیز نہ چلی ہو تو Note میں لکھیں، Save the result۔ جھوٹی tick hardware کو درست نہیں کرتی؛ note audit میں جاتا ہے، stock نہیں بدلتا۔</li>
+</ol>
+<p><a id="lesson-30"></a></p>
+<h2 id="30-sales-rules">سبق 30 — Sales rules: کیا بدلتا ہے، کیا نہیں</h2>
+<ol>
+<li><strong>Default bill discount basis (owner only)</strong> میں profit یا retail؛ عام Save۔ پہلی update کے بعد آئندہ bills کا default profit ہے، retail پر واپس انتخاب ممکن۔ موجودہ user کو one-bill override کی اجازت ہو تو Counter پر صرف اس bill کے لیے popup کے بعد بدل سکے؛ نیا bill Settings default۔ محفوظ draft/held basis اپنی واپس آئے، موجودہ permissions دوبارہ چیک۔</li>
+<li><strong>Purchase cost protection — always ON</strong>: اصل batch خرید سے نیچے کسی کو، حتیٰ کہ مالک، اجازت نہیں۔ پرانا checkbox/lock-off اب راستہ نہیں۔ ہر شخص کی edit/manual reduction/profit%/retail%/override limits <strong>Staff &amp; permissions</strong> کے الگ panel میں، یہاں role-wide cashier/manager caps نہیں۔</li>
+<li>Stop a bill that crosses the customer's khata limit بھی قابل انتخاب ہے؛ customer کی limit صفر ہو تو مقررہ ceiling نہیں۔ مالک exempt ہے؛ manager override موجودہ manager-override configuration کے مطابق ہے—صرف ظاہری متن دیکھ کر ہر manager کو لازماً مجاز نہ سمجھیں۔</li>
+<li>Show profit and margins بند ہو تو منافع مختلف صفحات سے چھپتا ہے، مالک سے بھی؛ کاروبار کے اصل اعداد نہیں مٹتے۔ Done / invoice / cash-change popup صرف کامیابی کے بعد کی اطلاع ہے، پرنٹ یا transaction کا متبادل نہیں۔</li>
+<li>Give loyalty points آن/آف؛ Rupees spent for 1 point سے earning rate؛ Points that make a customer VIP سے threshold۔ points خرچ ہونے والے خانے کا 1 point = 1 روپیہ الگ اصول ہے۔ مالک نے موجودہ loyalty rate برقرار رکھا ہے۔</li>
+<li>Tax آن/فیصد کا اختیار موجود ہے مگر <strong>اس دکان کی ہدایت sales tax نہیں</strong>۔ اسے آن کرنے سے آئندہ bills اور receipt پر اثر پڑ سکتا ہے؛ بلااجازت تبدیل نہ کریں۔</li>
+<li>Stock: نئے کام میں negative stock کی checkbox/owner bypass نہیں۔ یہ sale، write-off، goods drawing، SR اور PR cancellation پر بھی لاگو ہے۔</li>
+<li>Expiry Level 1 سب سے دور، Level 3 قریب کی warning؛ دن منطقی ترتیب میں رکھیں۔ یہ approaching-expiry رنگ بدلتے ہیں؛ گزر چکی expiry والی batch الگ expired ہے اور عام sellable batch نہیں۔</li>
+<li>Supplier returns کے Start reminding اور Last return day cutoff میں مثلاً 180 اور 90 ہوں تو 120 دن باقی والی چیز یاد دہانی میں آتی ہے، واپسی آخری 90 دن سے پہلے مطلوب ہے۔ supplier کا اصل معاہدہ بھی ملائیں۔ Save settings کے بعد status دیکھیں۔</li>
+</ol>
+<p><a id="lesson-31"></a></p>
+<h2 id="31-app-words">سبق 31 — عملہ، اجازتیں، راز اور App words</h2>
+<p><strong>نیا الگ pricing panel (صرف مالک):</strong> Settings → Staff &amp; permissions میں شخص منتخب کریں، <strong>This person's pricing limits</strong> میں rate-edit اجازت، retail-reference سے manual reduction%، profit اجازت/حد، selling-total اجازت/حد اور one-bill override tick/حدیں دیں۔ الگ <strong>May give separate Extra Discount</strong> اور <strong>Extra Discount limit (Rs per whole bill, not per click)</strong> بھی یہیں ہیں؛ مالک سمیت اس نئی Extra اجازت کا کوئی خودکار grant نہیں، اپنی بھی واضح حد save کریں۔ <strong>Save this person's pricing limits</strong> اسی panel کا الگ Save ہے۔ non-owner کو بغیر محفوظ grant کے خودکار اختیار نہیں، manager بھی نہیں۔ module-role reset pricing panel کو reset نہیں کرتا۔ پہلے محفوظ bill دوبارہ حساب نہیں ہوگا۔ تفصیلی مثال/آزمائش/واپسی <a href="POS-PHASE2-TEST-URDU.md">فیز2 نامہ</a> اور <a href="POS-PHASE3-TEST-URDU.md">فیز3 Extra Discount نامہ</a> میں ہے۔</p>
+<ol>
+<li>مالک Settings → Staff &amp; permissions کھولے۔ Add a person میں Name، Role اور چار ہندسوں کا PIN؛ Add this person۔ مشترکہ PIN کے بجائے ہر شخص کا اپنا نام رکھیں۔</li>
+<li>شخص منتخب کرکے account Switch on / off سے رسائی روک/بحال کریں۔ ماڈیول کی ticks مخصوص کام کی اجازت دیتی ہیں؛ checkbox بدلنے پر اس کا status دیکھیں۔ Reset page permissions for this role (pricing unchanged) صرف module exceptions ہٹاتا ہے؛ pricing limits کا الگ Save ہے۔ مالک کے module rights اس سے محدود نہیں ہوتے، pricing caps الگ ہیں۔</li>
+<li>password/PIN بدلنے کے لیے شخص منتخب، New PIN or password میں نیا راز، Change it for the selected person۔ پرانا راز جاننا ضروری نہیں۔ غلط منتخب شخص کا password نہ بدلیں۔</li>
+<li>Your own recovery word میں اپنا یاد رہنے والا محفوظ لفظ، Save this recovery word۔ خالی چھوڑ کر فیکٹری area11 پر واپس جانا کم محفوظ ہے؛ اسے عملے کے سامنے نہ دکھائیں۔</li>
+<li>Photos… شناخت کی مدد ہے، login کا بدل نہیں۔ Close the program ایک خاص اجازت ہے؛ صرف عمومی manager نام رکھنے سے ہر بندش مجاز مت سمجھیں۔</li>
+<li>App words میں اصل section کے مقابل اپنا نام لکھیں؛ Save settings سے navigation/headings بدلتے ہیں۔ Restore original words سب labels واپس کرتا ہے؛ پرانے بل/رسید کی عبارت یا تاریخی record دوبارہ نہیں لکھتا۔</li>
+</ol>
+<p><strong>فیز4 حصہ1 — راز کی تبدیلی:</strong> اب نیا password مقرر کرنے سے سابق PIN، اور نیا PIN مقرر کرنے سے سابق password صاف ہوتا ہے۔ صرف نیا مقرر کردہ راز استعمال کریں؛ اس سے تمام پہلے کھلے sessions کے فوراً ختم ہونے کا دعویٰ نہیں۔ owner-only متعلقہ writes میں database کا موجودہ active owner چیک؛ manager کو administration نہیں۔ recovery کا مخصوص owner راستہ استعمال کریں؛ hash اور غیرخفیہ audit ایک transaction، عام settings سے recovery hash لکھنا ممنوع۔ factory recovery کی موجودہ پالیسی برقرار۔</p>
+<h3 id="8">حساس مالی اجازتوں کی نئی تفصیل (حصہ8)</h3>
+<p>شخص منتخب کریں؛ مالی group میں <strong>View Profit</strong>، <strong>View Purchase Cost</strong>، <strong>Supplier ledger access (Suppliers)</strong> اور <strong>Customer ledger access (Customers)</strong> ہیں۔ ہر tick الگ database key ہے؛ Ledger tick، cost/profit کی متبادل اجازت نہیں۔ Main profit/cost switch Sales rules میں ہے؛ غیر محفوظ Settings تبدیلی کو saved اجازت نہ سمجھیں۔</p>
+<ul>
+<li>Hover سے مختصر کام؛ <strong>double-click یا Details…</strong> سے scope اور current users کی enabled/disabled list۔ Disabled owner module کے لیے Details بٹن استعمال کریں۔</li>
+<li>List میں <strong>Grant</strong> اور <strong>Access</strong> الگ پڑھیں: enabled tick کے باوجود account inactive یا financial main OFF ہوسکتا ہے۔ Role default اور explicit override الگ دکھتے ہیں؛ relevant page grant اب بھی لازم۔</li>
+<li>تقریباً3s refresh یا Refresh now؛ owner grant/read ناکام ہو تو نام صاف، پرانی list کو تازہ حالت نہ سمجھیں۔ یہ instantaneous session revocation نہیں۔</li>
+<li>Single mouse click OS double-click وقفے کے بعد tick save کرتا ہے، تاکہ صرف تفصیل کھولنے سے grant نہ بدل جائے۔ Space عام checkbox کی طرح؛ per-person pricing limits کا الگ Save برقرار۔</li>
+<li><strong>Backend rollout OPEN:</strong> حصہ9 میں نئے invoice/expired reads منتقل؛purchase entry/draft/result،عام supplier ledger،stock/expense history/results،frozen stock-take،audit/export کے باقی راستوں سے leakage بند ہونے کا دعویٰ نہیں۔ Supplier payable/payment کا مالی-policy سوال اس نئی UI سے خودکار طے نہیں ہوا۔ اصل cost/posting کبھی hidden0 سے نہ بنائیں۔ <a href="POS-PHASE4-PART8-URDU.md">محفوظ PT-28</a>۔</li>
+</ul>
+<p><strong>حصہ9 کی scope update:</strong> permission Details میں نئے purchase invoice اور expired-list masks شامل؛line total کے ساتھPaid/Due بھی hidden۔ الگ ticks/main rule unchanged؛purchase entry/draft/result،عام supplier ledger/Pay/SR اور دوسرے نامکمل راستے واضح باقی۔ <a href="POS-PHASE4-PURCHASE-READ-REVIEW.md">trace</a>۔</p>
+<p><strong>حصہ10 کی scope update:</strong> permission Details میں عام batch read masks اور تازہ Write-off/Expenses/manualSR preparation شامل۔ تاریخ/quantity برقرار؛history/totals/results اور frozen stock-take valuation ابھی واضح باقی۔ <a href="POS-PHASE4-BATCH-READ-REVIEW.md">trace</a>۔</p>
+<p><a id="lesson-32"></a></p>
+<h2 id="32-fields">سبق 32 — Fields: پہلے موجود خانے، پھر اپنے سوال</h2>
+<h3 id="built-in-fields">Built-in fields کو استعمال کرنے کے قدم</h3>
+<ol>
+<li>مالک Settings → Fields → Built-in fields کھولے۔ Form کالم سے متعلقہ فارم پہچانے، پھر اصل Field کی row منتخب کرے۔ Data type اور Input پہچان کے لیے ہیں، SQL یا حساب کا فارمولا نہیں۔</li>
+<li>Mark required سے کاروباری ضرورت فعال؛ Mark optional… سے نرم کرنا۔ Critical row نرم کرنے پر اضافی confirmation آ سکتا ہے؛ ہر جگہ ایک جیسے معنی نہ سمجھیں۔</li>
+<li>Product کے خانے، خصوصاً Selling price، خالی ہوں تو Save product پر ان کے ناموں کا popup آتا ہے۔ <strong>Save anyway موجود ہے</strong>؛ No سے فارم واپس، Yes سے نامکمل چیز محفوظ۔ یہ ہر Save کوشش کی warning ہے، Counter والے فی بل popup سے الگ ہے۔</li>
+<li>Customer/supplier phone اور agency کے built-in flags <strong>file import</strong> پر چیک ہوتے ہیں، عام ہر editor میں نیا تالا نہیں لگاتے۔ Sale/purchase rows ترجیحات ہیں؛ posting کے اپنے stock، amount، permission اور دوسری پابندیاں پھر بھی موجود ہیں۔</li>
+<li>required بدلنے سے پرانے rows خود پورے یا حذف نہیں ہوتے۔ تصویر نہ ہونے کو product save کا لازمی دروازہ نہ بنائیں۔ setting کے بعد متعلقہ product کو test copy میں کھول کر اثر دیکھیں، صرف row کا رنگ نہ دیکھیں۔</li>
+</ol>
+<h3 id="extra-fields-own-fields">Extra fields / Own fields کے قدم</h3>
+<ol>
+<li>Settings → Fields → Extra fields یا Own fields میں Form منتخب کریں: Medicines، Customers، Suppliers، Bills، Purchases یا Expenses۔ صرف مالک field definitions سنبھالتا ہے؛ اجازت والا staff جواب دے سکتا ہے۔</li>
+<li>New field، Name on the form، Kind of answer اور ضرورت کی Help لکھیں۔ Text عام عبارت، Number عدد، Amount (Rs) روپے، Date تاریخ، List (pick one) ایک انتخاب، Yes / no ہاں/نہیں، اور جائز فارموں پر Photo تصویر کے لیے ہیں۔ Quick add صرف شروعات کا نمونہ بھرتا ہے، حتمی سوال خود پڑھیں۔</li>
+<li>choice والے سوال میں Choices commas سے الگ؛ Required سوچ کر رکھیں۔ دستاویزی Bills/Purchases/Expenses پر photo قسم دستیاب نہیں؛ دوسرے جائز photo fields بھی لازمی تصویر کا تالا نہیں بنتے۔</li>
+<li>Save کے بعد متعلقہ فارم میں سوال دیکھیں۔ Stable key نام بدلنے کے باوجود شناخت قائم رکھتا ہے؛ اسے نئے سوال کے لیے پرانے جواب کا مطلب بدلنے میں استعمال نہ کریں۔</li>
+<li>Move up/down ترتیب؛ Put away سوال چھپاتا ہے، پرانے جواب حذف نہیں؛ Bring back واپس دکھاتا ہے۔ document answers اسی bill/draft کے ہیں، اگلے customer کے bill میں جان بوجھ کر نقل نہ کریں۔</li>
+</ol>
+<p><strong>Built-in fields — حصہ2:</strong> مالک کے لیے metadata کھولتے/تبدیل کرتے وقت موجودہ active owner database سے چیک ہوتا ہے؛ critical field optional کرنے کا risk confirmation پہلے کی طرح لازم۔ audit/acknowledgement میں database کا موجودہ owner نام، صرف پرانا display label نہیں۔ یہ final post کی product/quantity validation ختم نہیں کرتا؛ مالک نہ ہوں یا account بدل/بند ہو تو تبدیلی نہ ہونے پر صحیح active owner سے دوبارہ sign in کریں۔ یہ تمام کھلے sessions کی فوری revocation کا دعویٰ نہیں۔</p>
+<p><strong>فیز4 حصہ6 — custom definitions اور answers الگ اختیار:</strong> سوال Add/Update/on-off/order اور inactive/admin list صرف database کے موجودہ active مالک کے لیے؛ same tick/no-op بھی پرانی owner snapshot سے اجازت نہیں۔ عام List/Values/Describe/public Save answers متعلقہ current module مانگتے ہیں؛ Customers مجاز cashier جواب دے سکتا ہے، definition کا اصول نہیں بدل سکتا۔ audit میں اس public save/definition write کا موجودہ محفوظ نام آتا ہے۔ parent record کے اندر atomic answers کی delegation اپنی سابق policy پر ہے، مکمل parent/session جانچ باقی۔ <a href="POS-PHASE4-PART6-URDU.md">PT-26/حدود</a>۔</p>
+<p><a id="lesson-33"></a></p>
+<h2 id="33-screen-lock">سبق 33 — خودکار آغاز، محفوظ بندش اور Screen lock</h2>
+<ol>
+<li>Settings → Shop میں startup منتخب کریں: By hand/manual = ہاتھ سے آغاز؛ Start with Windows/auto = Windows sign-in پر آغاز؛ Protected = خود آغاز اور × پر password/PIN کی اجازت۔ auto-start خود login نہیں کرتا۔</li>
+<li>تمام Windows اکاؤنٹس پر startup رکھنے کے لیے administrator اختیار چاہیے۔ نہ ہو تو موجودہ implementation صرف اس Windows account کی entry رکھ سکتی ہے؛ save کے بعد اصل ScopeText پڑھیں، ہر اکاؤنٹ پر لگ جانے کا اندازہ نہ کریں۔ دوسری account سے جانچ الگ ضروری ہے۔</li>
+<li>خودکار startup کے login پر fullscreen/چھپی taskbar کی حالت ہو سکتی ہے؛ یہ عام دستی launch کے ہر صفحے کا مستقل نیا layout نہیں۔ دوسری copy کھولیں تو already-running پیغام کے ساتھ نئی copy رکتی ہے۔</li>
+<li>Protected یا signed-in screen lock میں × پر اصل Close اجازت والا شخص نام اور PIN/password دے۔ غلط/نامکمل اجازت پر بندش نہیں۔ Sign out الگ کارروائی ہے، drawer بندش الگ۔</li>
+<li>Lock the screen while signed in آن ہو تو maximize/no-minimize اور taskbar چھپانے کے ساتھ واپس جانے پر تنبیہ/واپسی، اور کس نے کب کتنی دیر چھوڑا اس کا record رکھنا مقصود ہے۔ Task Manager، Windows administrator، shortcut یا بجلی کے خلاف اسے مکمل Windows kiosk security نہ سمجھیں۔</li>
+<li>Shift دبا کر startup پر manual/protection reset کا امدادی راستہ موجود ہے؛ یہ login password recovery نہیں، اور اس کا audit ہوتا ہے۔ صرف مجاز مالک اس کی ضرورت سمجھے؛ اسے عملے کی معمول کی بندش نہ بنائیں۔</li>
+<li>غیر معمولی بندش کی رپورٹ اگلے آغاز پر آ سکتی ہے۔ ڈیٹابیس کی transaction حفاظت کے باوجود unsaved editor کی ہر typing محفوظ رہنے یا بجلی/disk کی ہر خرابی میں data کبھی نہ کھونے کی ضمانت نہیں—تازہ external backups لازماً رکھیں۔</li>
+</ol>
+<p><a id="lesson-34"></a></p>
+<h2 id="34-cloud">سبق 34 — Cloud اور دوسرا کاؤنٹر</h2>
+<ol>
+<li>Cloud اختیاری mirror ہے؛ offline Counter چل سکتا ہے۔ Settings → Cloud sync میں مجاز شخص on/off، address/table/shop id اور key دے۔ <strong>key chat، screenshot یا report میں نہ بھیجیں۔</strong> عام tutorial کے لیے کوئی connection درکار نہیں۔</li>
+<li>Automatic push اور وقفہ (5 سے 1440 منٹ) صرف مقررہ push؛ failed push سے اگلی کوشش تک cloud پرانی ہو سکتی ہے۔ Remove the saved key کے بعد status ملائیں۔</li>
+<li>SYSTEM → Cloud sync میں Push the shop's data to the cloud مقامی ریکارڈ کی نقل بھیجتا ہے؛ See what the cloud has (writes nothing) صرف preview ہے۔</li>
+<li>Bring the cloud data here overwrite والی خطرناک کارروائی ہے۔ cloud میں آج کا bill نہ ہو سکتا ہے؛ counts/differences اور confirmation پڑھے بغیر نہ کریں۔ پہلے backup، پھر مجاز شخص کی دانستہ اجازت؛ اسے خودکار دوطرفہ merge نہ سمجھیں۔</li>
+<li>catalog/master rows وسیع، transactions عموماً گزشتہ 90 دن اور ان کے ضروری متعلقہ records کے scope میں جاتے ہیں؛ <strong>photos نہیں</strong>۔ اس لیے مکمل، تصاویر والا ZIP backup ضروری ہے۔</li>
+<li>Second counter (LAN) کا صفحہ موجود ہے مگر مالک نے دوسرا counter <strong>ملتوی</strong> رکھا ہے۔ ابھی data folder/share یا database mode نہ بدلیں۔ دو فولڈر بنا لینا دو الگ دکانیں نہیں۔ جب منظور ہو تو ماہر موجودہ location، journal، network/share permissions، backup اور اصل دونوں PC پر جانچ کے بعد ہی آگے بڑھے۔</li>
+</ol>
+<p><a id="lesson-35"></a></p>
+<h2 id="35-preview-whatsapp">سبق 35 — Preview، WhatsApp اور پرنٹ کی مشترکہ سمجھ</h2>
+<ol>
+<li>Preview جہاں موجود ہو، اصل printer کو جانے والی عبارت دکھاتا ہے۔ آخری ہندسہ کٹ رہا ہو تو width/driver درست کریں، customer کو نامکمل رقم والی slip نہ دیں۔ Preview window کا Print وہی انتخاب چھاپتا ہے؛ Close صرف دیکھنا ختم کرتا ہے۔</li>
+<li>Print selected… صرف متعلقہ منتخب قطاروں کے لیے؛ عام Print کی bulk setting بھی دیکھیں۔ A4 summary اور مکمل الگ bill slips ایک چیز نہیں۔</li>
+<li>WhatsApp سے message/browser کھل سکتا ہے اور اگر on ہو تو PDF تیار ہوتا ہے۔ <strong>PDF فائل کو خود attach اور send کریں</strong>؛ تیار ہونے کا پیغام customer تک پہنچنے کا ثبوت نہیں۔ غلط فون پر کھاتہ نہ بھیجیں۔</li>
+<li>Auto-print بند، paper ختم یا printer fail ہو تو پہلے Bills میں saved invoice دیکھیں، پھر اسی کی نقل نکالیں؛ دوبارہ Complete sale نئی sale بنا سکتی ہے۔ واپس مال/رقم دینا ہو تو Returns والا راستہ ہے، کاغذ نہ نکالنا cancellation نہیں۔</li>
+<li>دستیابی کی اندرونی وارننگ رسید پر کبھی نہیں؛ app name/icon کو کاغذ کا shop name/logo نہ سمجھیں۔ Slip دینے سے پہلے نام، unit، quantity، rate، total، paid/due اور change ملانا کیشیئر کی ذمہ داری ہے۔</li>
+</ol>
+<p><strong>خرید invoice کی تازہ حد:</strong> نئے purchase ReceiptDocument کی print/PDF/text preparation میں ایک ہی cost rule؛منع ہونے پرline amounts/Total/Paid/Due hidden۔ یہ نئے document کی جانچ ہے؛پہلے محفوظ PDF،کاغذ یا دوسرے ابھی غیرمنتقل exports خود واپس محفوظ نہیں ہوتے۔ <a href="POS-PHASE4-PART9-URDU.md">PT-29</a>۔</p>
+<p><a id="lesson-36"></a></p>
+<h2 id="36">سبق 36 — روزانہ ترتیب، محفوظ مشق اور خرابی کا اگلا قدم</h2>
+<h3 id="_5">صبح سے بندش تک</h3>
+<ol>
+<li>اپنے نام سے Sign in؛ Windows وقت/تاریخ، printer/paper اور ضروری alerts دیکھیں۔</li>
+<li>Shift میں اصل float سے گلا کھولیں؛ پہلے سے کھلا drawer صحیح گنتی/ہینڈ اوور سے سنبھالیں۔</li>
+<li>حقیقی delivery Purchases، فروخت Counter، بل والی واپسی Returns، وصولی Customers/Recovery، supplier payment Suppliers؛ ایک ہی رقم دو صفحات پر دوبارہ نہ دیں۔</li>
+<li>کرایہ وغیرہ Expenses؛ مالک کی ذاتی نقد/مال Drawings؛ ضائع مال Write-off؛ فرضی purchase سے فرق نہ چھپائیں۔</li>
+<li>دن کے اختتام Reports، کھاتوں اور alerts کا جائزہ؛ اصل cash گن کر shift بند یا hand over؛ تازہ photos-inclusive ZIP الگ محفوظ جگہ نقل؛ Sign out۔</li>
+</ol>
+<h3 id="_6">پہلے صرف یہ محفوظ عملی مشق کریں</h3>
+<ul>
+<li>الگ، تصدیق شدہ <strong>test data environment</strong> پر مالک اور ایک test cashier بنائیں۔ دوسری program folder کو الگ test database نہ سمجھیں؛ اصل shop کو fake entries سے نہ بھریں۔</li>
+<li>ایک test product، درست pack formula اور اصلی جیسی future expiry کے test batch سے purchase؛ ایک cash sale اور اس کی دوبارہ رسید؛ پھر اس bill کی return۔ ہر جگہ stock اور cash اثر الگ نوٹ کریں۔</li>
+<li>صفر-stock item کا bill مالک سے بھی رد ہو؛ missing retail لیکن موجود stock پر صرف مالک/مینیجر custom rate دے سکے؛ cashier کو اجازت نہ ہو۔ warning اسی live bill میں ایک بار ہو، Clear کے بعد پھر ممکن ہو، slip پر کوئی availability لائن نہ ہو۔</li>
+<li>Settings Fields میں product retail required کرکے product save warning دیکھیں؛ Save anyway ہو مگر Counter کی پابندیاں الگ رہیں۔</li>
+<li>printer test slip، gallery cover، draft save/open، backup ZIP اور صرف الگ ماحول میں restore آزمائیں۔ اصل stock-take apply، live cloud pull یا LAN configuration کو مشق کا پہلا قدم نہ بنائیں۔</li>
+</ul>
+<h3 id="_7">اگر کام رک جائے</h3>
+<table>
+<thead>
+<tr>
+<th>حالت</th>
+<th>محفوظ اگلا قدم</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Total پر dash/قیمت missing</td>
+<td>cart کی Rate Rs، product retail، stock، unit اور نیچے message دیکھیں؛ سبق 10</td>
+</tr>
+<tr>
+<td>گلا بند</td>
+<td>Shift میں مجاز شخص اصل float/پچھلی بندش ملائے؛ فرضی cash entry نہ بنائیں</td>
+</tr>
+<tr>
+<td>سٹاک موجود لگتا ہے مگر sale رکے</td>
+<td>unit/pack، cart کی مجموعی مقدار، active/unexpired batches اور پرانا minus ملائیں</td>
+</tr>
+<tr>
+<td>ریٹ/رعایت رد</td>
+<td>اس شخص کے محفوظ manual/profit/retail caps، درست basis، مثبت ریٹ، stock اور مستقل purchase-cost guard دیکھیں</td>
+</tr>
+<tr>
+<td>credit bill رکے</td>
+<td>customer، باقی limit، payment split اور اصل permissions چیک</td>
+</tr>
+<tr>
+<td>صفحہ نہ دکھے</td>
+<td>Staff permissions یا فلٹر/بدلا ہوا App words؛ فوراً reinstall/data reset نہ کریں</td>
+</tr>
+<tr>
+<td>print نہ نکلے</td>
+<td>پہلے saved invoice معلوم کریں؛ Windows printer/width/paper؛ اسی bill کی reprint</td>
+</tr>
+<tr>
+<td>تصویر غائب</td>
+<td>gallery میں missing file دیکھیں، photos-inclusive backup تلاش؛ record دوبارہ نہ بنائیں</td>
+</tr>
+<tr>
+<td>کریش/صفحہ کھلنے کی خرابی</td>
+<td>error کی پوری عبارت، version، صفحہ اور کیا دبایا نوٹ؛ غیر محفوظ کام کا حال دیکھیں؛ DB نہ مٹائیں</td>
+</tr>
+<tr>
+<td>حساب میں فرق</td>
+<td>اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ</td>
+</tr>
+<tr>
+<td>restore/cloud کے بعد پرانا data</td>
+<td>مزید posting روکیں، منتخب snapshot اور pre-operation recovery ZIP/پیغام دیکھیں؛ بار بار overwrite نہ کریں</td>
+</tr>
+</tbody>
+</table>
+<p>خرابی کی اطلاع میں <strong>version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ</strong> دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.86.0 کا متوقع test count 1469 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔</p>
+<h2 id="_8">نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی</h2>
+<p>یہ متن v0.78.0 کی navigation اور Views/ViewModels کے مطابق لکھا ہے، تصاویر یا حقیقی Windows session کے مشاہدے کا دعویٰ نہیں۔ بنیادی نقشہ ShellViewModel اور AppLabelService؛ SettingsView، NativeFieldsView، CustomFieldsView؛ متعلقہ Products/Counter/Purchases/Returns/Partners/Shift/Reports/System views سے ملا۔ مالی/stock حدود SaleService، StockPolicy، PurchaseService، ReturnService، ProvisionalReturnService، SupplierLedgerService، AuthService اور StartupService سے ملائی گئیں۔</p>
+<p>پرانے HOW-TO-RUN، سابق version rows یا پرانے handoff میں tutorial سے متصادم installation/receipt/negative-stock عبارت تاریخی ہو سکتی ہے۔ نئی receipt-unavailable لائن منسوخ، D-93 برقرار، app identity اور receipt shop details الگ ہیں۔ مالک نے مستقل search pane B منتخب کیا؛ فیز1 space/keyboard code موجود، Windows ثبوت باقی۔ فیز2 مالی editor/permissions code موجود، Windows/PT-21 باقی؛ فیز3 Extra Discount/طریقہB source موجود، Windows/PT-22 باقی؛ فیز4 مکمل page-by-page review ابھی باقی ہے۔ پروگرام کی نئی release میں بٹن/قاعدہ بدلے تو اس کتاب کو بھی نئے source کے ساتھ دوبارہ ملانا ضروری ہے۔</p></main></div>
+<footer>یہ فائل انٹرنیٹ کے بغیر پڑھیں۔ اصل دکان پر فرضی مشق نہ کریں؛ پہلے محفوظ test ماحول اور تازہ backup۔</footer>
+</body></html>

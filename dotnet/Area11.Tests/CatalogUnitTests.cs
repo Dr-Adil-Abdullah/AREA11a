@@ -28,7 +28,7 @@ public sealed class CatalogUnitTests
         var id = created.Value;
         AddBatch(test, id, 10, 100, 200);
 
-        var product = products.Get(id).Value!;
+        var product = products.Get(TestData.Owner, id).Value!;
         Assert.Equal("injection", product.BaseUnit);
         Assert.Equal(50, product.StrengthValue);
         Assert.Equal("ml", product.StrengthUnit);
@@ -48,7 +48,7 @@ public sealed class CatalogUnitTests
 
         Assert.True(sale.Ok, sale.Error);
         Assert.Equal(200, sale.Value!.TotalPaisa);
-        Assert.Equal(9, products.Get(id).Value!.StockBase);
+        Assert.Equal(9, products.Get(TestData.Owner, id).Value!.StockBase);
         Assert.Equal(1, test.Database.Tx(connection => Convert.ToInt32(test.Database.Scalar(connection,
             "SELECT qty_base FROM sale_items WHERE product_id = @id;", new { id }) ?? 0)));
 
@@ -99,13 +99,13 @@ public sealed class CatalogUnitTests
         AddBatch(test, first, 10, 100, 200);
         AddBatch(test, second, 10, 100, 300);
 
-        var filtered = products.Search(categoryId: tag);
+        var filtered = products.Search(TestData.Owner, categoryId: tag);
         Assert.True(filtered.Ok, filtered.Error);
         Assert.Equal(new[] { first, second }, filtered.Value!.Select(row => row.Id).OrderBy(id => id));
         Assert.Equal(1, filtered.Value.Count(row => row.Id == first));
         Assert.Equal(2, products.GetCategories().Value!.Single(row => row.Id == tag).ProductCount);
         Assert.False(products.Update(TestData.Owner, first, new ProductPatch { CategoryId = tag }).Ok);
-        Assert.Equal(primary, products.Get(first).Value!.CategoryId);
+        Assert.Equal(primary, products.Get(TestData.Owner, first).Value!.CategoryId);
 
         var sale = TestData.Sales(test).Create(new SaleInput
         {
@@ -148,7 +148,7 @@ public sealed class CatalogUnitTests
 
         var plain = products.Create(TestData.Owner, new ProductPatch { Name = "No category", BaseUnit = "tablet" });
         Assert.True(plain.Ok, plain.Error);
-        Assert.Null(products.Get(plain.Value).Value!.CategoryId);
+        Assert.Null(products.Get(TestData.Owner, plain.Value).Value!.CategoryId);
     }
 
     [Fact]
@@ -165,7 +165,7 @@ public sealed class CatalogUnitTests
         });
         Assert.False(rejected.Ok);
         Assert.Contains("primary category", rejected.Error ?? string.Empty);
-        var unchanged = products.Get(id).Value!;
+        var unchanged = products.Get(TestData.Owner, id).Value!;
         Assert.Equal("Original medicine", unchanged.Name);
         Assert.Null(unchanged.CategoryId);
         Assert.Empty(unchanged.CategoryTagIds);
@@ -179,10 +179,10 @@ public sealed class CatalogUnitTests
             CategoryId = primary, CategoryTagIds = new List<int> { tag }
         });
         Assert.True(accepted.Ok, accepted.Error);
-        var saved = products.Get(id).Value!;
+        var saved = products.Get(TestData.Owner, id).Value!;
         Assert.Equal(primary, saved.CategoryId);
         Assert.Equal(new[] { tag }, saved.CategoryTagIds);
-        Assert.Single(products.Search(categoryId: tag).Value!.Where(row => row.Id == id));
+        Assert.Single(products.Search(TestData.Owner, categoryId: tag).Value!.Where(row => row.Id == id));
     }
 
     [Fact]
@@ -196,19 +196,19 @@ public sealed class CatalogUnitTests
         test.Database.Tx(connection => test.Database.Execute(connection,
             "INSERT INTO product_category_tags(product_id, category_id) VALUES(@id, @tag);", new { id, tag }));
 
-        var legacy = products.Get(id).Value!;
+        var legacy = products.Get(TestData.Owner, id).Value!;
         Assert.Null(legacy.CategoryId);
         Assert.Equal(new[] { tag }, legacy.CategoryTagIds);
         Assert.True(products.Update(TestData.Owner, id, new ProductPatch { RackNo = "B2" }).Ok);
-        Assert.Equal(new[] { tag }, products.Get(id).Value!.CategoryTagIds);
+        Assert.Equal(new[] { tag }, products.Get(TestData.Owner, id).Value!.CategoryTagIds);
         var refused = products.Update(TestData.Owner, id, new ProductPatch { CategoryTagIds = new List<int> { tag } });
         Assert.False(refused.Ok);
-        Assert.Equal(new[] { tag }, products.Get(id).Value!.CategoryTagIds);
+        Assert.Equal(new[] { tag }, products.Get(TestData.Owner, id).Value!.CategoryTagIds);
         Assert.True(products.Update(TestData.Owner, id, new ProductPatch
         {
             CategoryId = primary, CategoryTagIds = new List<int> { tag }
         }).Ok);
-        var repaired = products.Get(id).Value!;
+        var repaired = products.Get(TestData.Owner, id).Value!;
         Assert.Equal(primary, repaired.CategoryId);
         Assert.Equal(new[] { tag }, repaired.CategoryTagIds);
     }
@@ -221,9 +221,9 @@ public sealed class CatalogUnitTests
         var primary = products.AddCategory(TestData.Owner, "Medicine group").Value;
         var tag = products.AddCategory(TestData.Owner, "Shelf group").Value;
         var id = Create(products, "Two category item", primary, tag);
-        var listed = products.Search().Value!.Single(row => row.Id == id);
+        var listed = products.Search(TestData.Owner).Value!.Single(row => row.Id == id);
         Assert.Contains("Shelf group", listed.CategoryTags ?? string.Empty);
-        var full = products.Get(id);
+        var full = products.Get(TestData.Owner, id);
         Assert.True(full.Ok, full.Error);
         Assert.Equal(primary, full.Value!.CategoryId);
         Assert.Equal(new[] { tag }, full.Value.CategoryTagIds);
@@ -231,7 +231,7 @@ public sealed class CatalogUnitTests
         {
             Name = "Renamed item", CategoryId = full.Value.CategoryId, CategoryTagIds = full.Value.CategoryTagIds
         }).Ok);
-        Assert.Equal(new[] { tag }, products.Get(id).Value!.CategoryTagIds);
+        Assert.Equal(new[] { tag }, products.Get(TestData.Owner, id).Value!.CategoryTagIds);
     }
 
     [Fact]
@@ -250,7 +250,7 @@ public sealed class CatalogUnitTests
 
         var renamed = products.UpdateUnit(TestData.Owner, unit, "  AMPoule  ", 25);
         Assert.True(renamed.Ok, renamed.Error);
-        var after = products.Get(id).Value!;
+        var after = products.Get(TestData.Owner, id).Value!;
         Assert.Equal("ampoule", after.BaseUnit);
         Assert.Equal("ml", after.StrengthUnit);
         Assert.Equal(7, after.StockBase);
@@ -269,7 +269,7 @@ public sealed class CatalogUnitTests
             StrengthUnit = string.Empty
         });
         Assert.True(cleared.Ok, cleared.Error);
-        Assert.Equal(0, products.Get(id).Value!.StrengthValue);
+        Assert.Equal(0, products.Get(TestData.Owner, id).Value!.StrengthValue);
         Assert.True(products.SetUnitActive(TestData.Owner, unit, false).Ok);
         Assert.False(products.Create(TestData.Owner, new ProductPatch
         {
@@ -304,14 +304,14 @@ public sealed class CatalogUnitTests
             patch.StrengthUnit = "ml";
         });
 
-        var exact = products.Search(strength: " 50 ML ");
+        var exact = products.Search(TestData.Owner, strength: " 50 ML ");
         Assert.True(exact.Ok, exact.Error);
         Assert.Equal(fifty, Assert.Single(exact.Value!).Id);
-        Assert.Equal(3, products.Search(strength: "ml").Value!.Count);
+        Assert.Equal(3, products.Search(TestData.Owner, strength: "ml").Value!.Count);
         Assert.Equal(3, new[] { ten, fifty, hundred }.Distinct().Count());
-        Assert.Equal(0, products.Get(ten).Value!.StockBase);
-        Assert.Equal(0, products.Get(fifty).Value!.StockBase);
-        Assert.Equal(0, products.Get(hundred).Value!.StockBase);
+        Assert.Equal(0, products.Get(TestData.Owner, ten).Value!.StockBase);
+        Assert.Equal(0, products.Get(TestData.Owner, fifty).Value!.StockBase);
+        Assert.Equal(0, products.Get(TestData.Owner, hundred).Value!.StockBase);
     }
 
     private static ProductService Service(TestDatabase test) => new(test.Database, test.Audit, test.Log);

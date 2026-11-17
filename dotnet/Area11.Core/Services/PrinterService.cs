@@ -44,6 +44,58 @@ public sealed class PrinterService
         }
     }
 
+    /// <summary>
+    /// Portion 11: prints several documents as one job. The owner's printer.bulkFormat decides the
+    /// shape: separate_receipts spools every full receipt with its own cut, a4_list spools the one
+    /// compact summary. Both render through the same receipt path, so nothing here can move money.
+    /// </summary>
+    public ServiceResult PrintBulk(BulkPrintJob job)
+    {
+        try
+        {
+            if (job.Documents.Count == 0)
+            {
+                return ServiceResult.Fail("There is nothing to print.");
+            }
+
+            var format = (_settings.GetString("printer.bulkFormat") ?? string.Empty).Trim();
+            if (string.Equals(format, MasterFoundationSettings.A4List, StringComparison.OrdinalIgnoreCase)
+                && job.Summary is not null)
+            {
+                return Print(job.Summary);
+            }
+
+            // Separate receipts, and the safe fallback for any unknown format word.
+            return SendRaw(ComposeBulk(job, MasterFoundationSettings.SeparateReceipts), job.Title);
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The bulk print could not be prepared.", exception);
+            return ServiceResult.Fail("The bulk print could not be prepared: " + exception.Message);
+        }
+    }
+
+    /// <summary>
+    /// Portion 11: the bytes of a bulk job, without touching the spooler - which is what the tests
+    /// assert. A4-list callers pass the summary document itself; this composes the receipts.
+    /// </summary>
+    public static byte[] ComposeBulk(BulkPrintJob job, string? format)
+    {
+        if (!string.Equals((format ?? string.Empty).Trim(), MasterFoundationSettings.A4List, StringComparison.OrdinalIgnoreCase)
+            || job.Summary is null)
+        {
+            var buffer = new List<byte>();
+            foreach (var document in job.Documents)
+            {
+                buffer.AddRange(EscPosBuilder.Build(document));
+            }
+
+            return buffer.ToArray();
+        }
+
+        return EscPosBuilder.Build(job.Summary);
+    }
+
     /// <summary>Sends already-built bytes. Used by the receipt, and later by the return slip.</summary>
     public ServiceResult SendRaw(byte[] data, string documentName = "Area11")
     {

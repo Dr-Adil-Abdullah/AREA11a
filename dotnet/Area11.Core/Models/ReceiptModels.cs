@@ -52,3 +52,16 @@ public sealed class ReceiptDocument
     /// <summary>The text form - what a text-only printer or the on-screen preview shows.</summary>
     public string PlainText => string.Join(Environment.NewLine, Lines.Select(line => line.Text));
 }
+
+/// <summary>
+/// Portion 11: several documents printed as one job. Documents holds the full receipts;
+/// Summary holds the one compact list used when printer.bulkFormat is a4_list.
+/// </summary>
+public sealed class BulkPrintJob
+{
+    public string Title { get; init; } = "Bulk print";
+
+    public List<ReceiptDocument> Documents { get; init; } = new();
+
+    public ReceiptDocument? Summary { get; init; }
+}

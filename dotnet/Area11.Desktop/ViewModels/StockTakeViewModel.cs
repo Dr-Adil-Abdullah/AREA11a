@@ -54,6 +54,7 @@ public sealed class StockTakeViewModel : ObservableObject, IEmptyPage
         RefreshCommand = new RelayCommand(Load);
         FoundSearchCommand = new RelayCommand(SearchFound);
         AddFoundCommand = new RelayCommand(AddFound);
+        PrintSheetCommand = new RelayCommand(PrintSheet);
 
         Load();
     }
@@ -81,6 +82,9 @@ public sealed class StockTakeViewModel : ObservableObject, IEmptyPage
     public RelayCommand FoundSearchCommand { get; }
 
     public RelayCommand AddFoundCommand { get; }
+
+    /// <summary>Portion 11: the sheet on paper, to walk the shop with and tick off.</summary>
+    public RelayCommand PrintSheetCommand { get; }
 
     public bool IsOwner => _user.IsOwner;
 
@@ -217,9 +221,15 @@ public sealed class StockTakeViewModel : ObservableObject, IEmptyPage
         }
 
         var sessionId = _session.Id;
+        var sheet = _services.StockTake.Sheet(sessionId, DifferencesOnly);
 
-        foreach (var line in _services.StockTake.Sheet(sessionId, DifferencesOnly))
+        // Portion 17: one cover query for the whole sheet, then each line takes its own.
+        var covers = _services.Photos.CoversFor(_user, PhotoEntity.Product,
+            sheet.Select(line => line.ProductId));
+
+        foreach (var line in sheet)
         {
+            line.PhotoPath = covers.TryGetValue(line.ProductId, out var path) ? path : null;
             Lines.Add(line);
         }
 
@@ -231,6 +241,31 @@ public sealed class StockTakeViewModel : ObservableObject, IEmptyPage
             ?? Lines.FirstOrDefault();
 
         RaiseSession();
+    }
+
+    /// <summary>
+    /// The sheet on paper: book next to counted, differences bolded. Whatever the screen shows is
+    /// what prints - with "only differences" ticked, the paper carries only the differences.
+    /// </summary>
+    private void PrintSheet()
+    {
+        if (_session is null)
+        {
+            SetStatus("Open a stock-take session first.", true);
+            return;
+        }
+
+        var document = _services.StockTake.BuildSheetDocument(_session.Id, _user, DifferencesOnly);
+        if (!document.Ok || document.Value is null)
+        {
+            SetStatus(document.Error ?? "The sheet could not be prepared.", true);
+            return;
+        }
+
+        var printed = _services.Printer.Print(document.Value);
+        SetStatus(printed.Ok
+            ? "Stock-take sheet sent to the printer (" + _session.Code + ")."
+            : "The printer did not answer: " + printed.Error, !printed.Ok);
     }
 
     private void RaiseSession()
@@ -375,6 +410,7 @@ public sealed class StockTakeViewModel : ObservableObject, IEmptyPage
 
         foreach (var product in _services.StockTake.NotOnSheet(_session.Id, FoundText))
         {
+            product.PhotoPath = _services.Photos.CoverPath(product.PhotoFileName);
             Found.Add(product);
         }
 

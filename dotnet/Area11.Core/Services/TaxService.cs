@@ -133,7 +133,7 @@ FROM (
         if (report.HasRoundOff)
         {
             text.AppendLine();
-            text.AppendLine("Round-off down on the bills (Z-03): " + report.RoundOffLabel
+            text.AppendLine("Round-off down on the bills: " + report.RoundOffLabel
                 + " - the total is not exactly sales before tax plus tax.");
         }
 

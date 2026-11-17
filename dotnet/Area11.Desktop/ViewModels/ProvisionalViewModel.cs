@@ -237,7 +237,7 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
 
     private void Search()
     {
-        var result = _services.Products.Search(SearchText);
+        var result = _services.Products.Search(_user, SearchText, purpose: ProductReadPurpose.ProvisionalReturn);
 
         Results.Clear();
 

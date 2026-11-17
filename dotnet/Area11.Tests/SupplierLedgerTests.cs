@@ -84,7 +84,7 @@ public sealed class SupplierLedgerTests
 
         Assert.Equal(800000L, StoredPayable(test, supplier));
 
-        var page = Ledger(test).Page(supplier);
+        var page = Ledger(test).Page(TestData.Owner, supplier);
 
         Assert.True(page.Ok, page.Error);
         Assert.Equal(800000L, page.Value!.StoredPaisa);
@@ -106,7 +106,7 @@ public sealed class SupplierLedgerTests
 
         Assert.Equal(500000L, StoredPayable(test, supplier));
 
-        var page = Ledger(test).Page(supplier);
+        var page = Ledger(test).Page(TestData.Owner, supplier);
 
         Assert.True(page.Ok, page.Error);
 
@@ -139,7 +139,7 @@ SELECT COUNT(1) FROM payments
 WHERE supplier_id = @id AND purchase_id IS NULL AND amount_paisa = 300000;", new { id = supplier });
         Assert.Equal(1, standalone);
 
-        var page = Ledger(test).Page(supplier);
+        var page = Ledger(test).Page(TestData.Owner, supplier);
         Assert.True(page.Value!.BooksMatch, page.Value!.BooksLabel);
         Assert.Equal(500000L, page.Value!.ExpectedPaisa);
     }
@@ -211,7 +211,7 @@ SELECT type FROM stock_movements WHERE ref_code = 'SR-0001' ORDER BY id DESC LIM
 SELECT qty_base FROM stock_movements WHERE ref_code = 'SR-0001' ORDER BY id DESC LIMIT 1;");
         Assert.Equal(-10d, movedQty);
 
-        var page = Ledger(test).Page(supplier);
+        var page = Ledger(test).Page(TestData.Owner, supplier);
         Assert.True(page.Value!.BooksMatch, page.Value!.BooksLabel);
         Assert.Equal(2, page.Value!.Lines.Count);           // the purchase, then the credit note
     }
@@ -285,7 +285,7 @@ SELECT qty_base FROM stock_movements WHERE ref_code = 'SR-0001' ORDER BY id DESC
         Assert.Equal(-1200000L, StoredPayable(test, supplier));
         Assert.Contains(result.Value!.Warnings, w => w.Contains("favour", StringComparison.OrdinalIgnoreCase));
 
-        var page = Ledger(test).Page(supplier);
+        var page = Ledger(test).Page(TestData.Owner, supplier);
         Assert.True(page.Value!.BooksMatch, page.Value!.BooksLabel);
     }
 
@@ -351,7 +351,7 @@ SELECT qty_base FROM stock_movements WHERE ref_code = 'SR-0001' ORDER BY id DESC
             "SELECT settled FROM supplier_returns WHERE code = 'SR-0001';");
         Assert.Equal(1, settled);
 
-        var page = Ledger(test).Page(supplier);
+        var page = Ledger(test).Page(TestData.Owner, supplier);
         Assert.True(page.Value!.BooksMatch, page.Value!.BooksLabel);
         Assert.Equal("cash_return", page.Value!.Lines[1].Kind);
         Assert.Equal(800000L, page.Value!.Lines[1].RunningPaisa);
@@ -366,7 +366,7 @@ SELECT qty_base FROM stock_movements WHERE ref_code = 'SR-0001' ORDER BY id DESC
 
         Buy(test, supplier, product);
 
-        var page = Ledger(test).Page(supplier);
+        var page = Ledger(test).Page(TestData.Owner, supplier);
 
         Assert.True(page.Ok, page.Error);
         Assert.Equal(1300000L, page.Value!.StoredPaisa);
@@ -426,7 +426,7 @@ VALUES(@productId, 'OLD-1', '2025-01-31', '2025-01', 12, 20000, 30000, 0, @suppl
             return 0;
         });
 
-        var expired = Ledger(test).ExpiredBatches();
+        var expired = Ledger(test).ExpiredBatches(TestData.Owner);
 
         Assert.True(expired.Ok, expired.Error);
         Assert.Single(expired.Value!);
@@ -444,7 +444,7 @@ VALUES(@productId, 'OLD-1', '2025-01-31', '2025-01', 12, 20000, 30000, 0, @suppl
 
         Buy(test, supplier, product, paidPaisa: 100000);
 
-        var statement = Ledger(test).Statement(supplier);
+        var statement = Ledger(test).Statement(TestData.Owner, supplier);
 
         Assert.True(statement.Ok, statement.Error);
 

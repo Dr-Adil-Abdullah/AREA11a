@@ -189,14 +189,14 @@ WHERE product_id = @productId;",
         var product = TestData.AddProduct(test, batchQty: 50);
         SetExpiry(test, product, 75);
 
-        var shipped = Stock(test).Batches(product).Value!.Single();
+        var shipped = Stock(test).Batches(TestData.Owner, product).Value!.Single();
         Assert.Equal("Level 3 · 75 days", shipped.ExpiryLabel);
 
         test.Settings.SetMany(
             new Dictionary<string, object?> { ["expiry.levels"] = Bands(400, 120, 45) },
             TestData.Owner);
 
-        var changed = Stock(test).Batches(product).Value!.Single();
+        var changed = Stock(test).Batches(TestData.Owner, product).Value!.Single();
         Assert.Equal("Level 2 · 75 days", changed.ExpiryLabel);
 
         // The colour trigger the shelf list reads moves with the band as well.

@@ -151,10 +151,13 @@ public sealed class BookCheckTests
         // header is the same fault seen from the other side, and both are reported rather than one.
         Assert.Single(Rule(report, "A bill's header adds up").Findings);
 
-        // The same rupee is seen from three sides - the lines, the header and "paid or owed" - and
-        // all three are reported. One root cause is one fault for a reader, but three rules really
-        // did fail, and hiding two of them would hide which rows disagree.
-        Assert.Equal(3, report.Problems);
+        // New sales also retain pre-extra/final snapshots. All four independent checks report
+        // this deliberate total corruption; the owner-facing money summary counts the bill once.
+        var snapshot = Assert.Single(Rule(report, "No bill carries impossible money").Findings);
+        Assert.Equal(30500L, snapshot.ExpectedPaisa); Assert.Equal(30000L, snapshot.FoundPaisa);
+        Assert.Equal(4, report.Problems);
+        Assert.Equal(1, report.DocumentsWithFaults); Assert.Equal(500L, report.MissingPaisa);
+        Assert.Equal(0L, report.TooMuchPaisa);
     }
 
     [Fact]
@@ -365,7 +368,8 @@ VALUES(@at, 'cash', 7500, 'no owner');", new { at = Clock.Now() }));
         // A header, then one line per finding - the file is what leaves the shop, so its shape is
         // part of the contract, not an implementation detail.
         Assert.Equal("Rule,Document,Says,Rows say,Gap,Gap in words", lines[0]);
-        Assert.Equal(4, lines.Length);
+        Assert.Equal(5, lines.Length); // header + lines/header/settlement/snapshot findings
+        Assert.Single(lines.Where(line => line.StartsWith("No bill carries impossible money,", StringComparison.Ordinal)));
 
         var bill = lines.First(line => line.StartsWith("A bill's lines add up to the bill", StringComparison.Ordinal));
 
@@ -374,6 +378,32 @@ VALUES(@at, 'cash', 7500, 'no owner');", new { at = Clock.Now() }));
         // column is the same sentence the screen shows, so it keeps its "Rs" - and the CSV writer
         // quotes it if the amount ever grows a thousands comma.
         Assert.Contains(",INV-0001,305,300,5,Rs 5 missing", bill);
+    }
+
+    [Fact]
+    public void SnapshotOnlyMismatchReportsTheGapNotTheWholeBill()
+    {
+        using var test = new TestDatabase(); var code = MakeBill(test, out _);
+        test.Database.Tx(c => test.Database.Execute(c,
+            "UPDATE sales SET pre_extra_total_paisa = pre_extra_total_paisa + 100 WHERE code = @code;", new { code }));
+        var report = Run(test);
+        var finding = Assert.Single(Rule(report, "No bill carries impossible money").Findings);
+        Assert.Equal(30000L, finding.ExpectedPaisa); Assert.Equal(30100L, finding.FoundPaisa);
+        Assert.Equal(-100L, finding.DifferencePaisa); Assert.Equal(1, report.Problems);
+        Assert.Equal(100L, report.TooMuchPaisa); Assert.Equal(0L, report.MissingPaisa);
+        Assert.Contains(",INV-0001,300,301,-1,Rs 1 too much", report.ToCsv());
+    }
+
+    [Fact]
+    public void LegacyNullSnapshotDoesNotInventAFourthFinding()
+    {
+        using var test = new TestDatabase(); var code = MakeBill(test, out _);
+        test.Database.Tx(c => test.Database.Execute(c,
+            "UPDATE sales SET pre_extra_total_paisa = NULL, total_paisa = total_paisa + 500 WHERE code = @code;", new { code }));
+        var report = Run(test);
+        Assert.True(Rule(report, "No bill carries impossible money").Clean);
+        Assert.Equal(3, report.Problems); Assert.Equal(500L, report.MissingPaisa);
+        Assert.Equal(0L, report.TooMuchPaisa);
     }
 
     [Fact]

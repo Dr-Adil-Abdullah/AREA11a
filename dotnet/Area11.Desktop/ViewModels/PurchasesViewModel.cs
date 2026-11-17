@@ -34,9 +34,12 @@ public sealed class PurchasesViewModel : ObservableObject
     private string _retailText = string.Empty;
     private bool _isSample;
     private string _paidText = string.Empty;
+    private string _paidMethod = "cash";
     private string _statusMessage = "Enter a delivery and add lines.";
     private bool _isStatusError;
     private int _openDraftId;
+    private int _lastPurchaseId;
+    private string _lastPurchaseCode = string.Empty;
 
     public PurchasesViewModel(AppServices services, User user)
     {
@@ -52,6 +55,7 @@ public sealed class PurchasesViewModel : ObservableObject
         SaveCommand = new RelayCommand(Save);
         SaveDraftCommand = new RelayCommand(SavePurchaseDraft);
         DraftsCommand = new RelayCommand(OpenDrafts);
+        WhatsAppCommand = new RelayCommand(SendLastOnWhatsApp);
         AddSupplierCommand = new RelayCommand(AddSupplier);
         RefreshCommand = new RelayCommand(LoadLookups);
 
@@ -72,7 +76,7 @@ public sealed class PurchasesViewModel : ObservableObject
 
     public ObservableCollection<PurchaseLineRow> Lines { get; } = new();
 
-    public ObservableCollection<string> Units { get; } = new() { "box", "strip", "base" };
+    public ObservableCollection<string> Units { get; } = new() { "box", "strip", "unit" };
 
     public RelayCommand AddLineCommand { get; }
 
@@ -84,8 +88,14 @@ public sealed class PurchasesViewModel : ObservableObject
 
     public RelayCommand DraftsCommand { get; }
 
+    /// <summary>Portion 12: the just-saved invoice as WhatsApp text plus a PDF the owner attaches by hand.</summary>
+    public RelayCommand WhatsAppCommand { get; }
+
     /// <summary>True while the page shows an open draft; saving it posts the draft.</summary>
     public bool HasOpenDraft => _openDraftId > 0;
+
+    /// <summary>Portion 12: the just-saved purchase can go to WhatsApp until the next save.</summary>
+    public bool CanSendLastOnWhatsApp => _lastPurchaseId > 0;
 
     public RelayCommand AddSupplierCommand { get; }
 
@@ -272,6 +282,15 @@ public sealed class PurchasesViewModel : ObservableObject
         set => SetProperty(ref _paidText, value);
     }
 
+    /// <summary>How the "paid now" money leaves the shop - the same three ways the Suppliers page pays with.</summary>
+    public IReadOnlyList<string> Methods { get; } = SupplierLedgerService.PaymentMethods;
+
+    public string PaidMethod
+    {
+        get => _paidMethod;
+        set => SetProperty(ref _paidMethod, value);
+    }
+
     public string StatusMessage
     {
         get => _statusMessage;
@@ -300,11 +319,17 @@ public sealed class PurchasesViewModel : ObservableObject
 
         SelectedSupplier ??= Suppliers.FirstOrDefault();
 
-        var products = _services.Products.Search();
+        var products = _services.Products.Search(_user, purpose: ProductReadPurpose.Purchase);
         _catalog.Clear();
         if (products.Ok && products.Value is not null)
         {
             _catalog.AddRange(products.Value);
+
+            // Portion 17: the picker and the lines show the same covers as the Counter.
+            foreach (var product in _catalog)
+            {
+                product.PhotoPath = _services.Photos.CoverPath(product.PhotoFileName);
+            }
         }
 
         FilterProducts();
@@ -379,12 +404,7 @@ public sealed class PurchasesViewModel : ObservableObject
             return;
         }
 
-        var unitsPerSelected = Unit switch
-        {
-            "box" => SelectedProduct.UnitsPerBox,
-            "strip" => SelectedProduct.UnitsPerStrip,
-            _ => 1
-        };
+        var unitsPerSelected = SelectedProduct.QuantityPerSelectedUnit(Unit);
 
         Lines.Add(new PurchaseLineRow
         {
@@ -397,7 +417,8 @@ public sealed class PurchasesViewModel : ObservableObject
             Expiry = Expiry.Trim(),
             CostPaisa = Money.ToPaisa(cost),
             RetailPaisa = Money.ToPaisa(retail),
-            IsSample = IsSample
+            IsSample = IsSample,
+            PhotoPath = SelectedProduct.PhotoPath
         });
 
         BatchNo = string.Empty;
@@ -444,6 +465,7 @@ public sealed class PurchasesViewModel : ObservableObject
         {
             SupplierId = SelectedSupplier.Id,
             PaidPaisa = Money.ToPaisa(paid),
+            PaidMethod = PaidMethod,
             CustomAnswers = DocEditor.AnswerValues().ToDictionary(pair => pair.Key, pair => pair.Value),
             Lines = Lines.Select(line => new PurchaseLineInput
             {
@@ -473,13 +495,70 @@ public sealed class PurchasesViewModel : ObservableObject
         SetStatus($"{purchase.Code} saved{(wasDraft ? " - its draft is posted" : string.Empty)} — {Money.Format(purchase.TotalPaisa)}.{warnings}",
             purchase.Warnings.Count > 0);
 
+        // Portion 11: the saved purchase prints its own invoice, like a sale prints its bill (Z-07).
+        // The paper is a copy for the file; a silent printer must never unsave the purchase.
+        PrintInvoice(purchase.PurchaseId, purchase.Code);
+
+        // Portion 12: the same invoice can go to WhatsApp while it is still "the last save".
+        _lastPurchaseId = purchase.PurchaseId;
+        _lastPurchaseCode = purchase.Code;
+        OnPropertyChanged(nameof(CanSendLastOnWhatsApp));
+
         Lines.Clear();
         PaidText = string.Empty;
+        // Back to cash after every save: a forgotten "online" would silently spare the drawer.
+        PaidMethod = "cash";
         _openDraftId = 0;
         OnPropertyChanged(nameof(HasOpenDraft));
         DocEditor.LoadNew();
         OnPropertyChanged(nameof(TotalText));
         LoadLookups();
+    }
+
+    /// <summary>
+    /// The just-saved invoice to WhatsApp: the invoice text in the message, the same invoice as a
+    /// PDF file. The invoice is read back from the database, so it matches the black box.
+    /// </summary>
+    private void SendLastOnWhatsApp()
+    {
+        if (_lastPurchaseId <= 0)
+        {
+            SetStatus("Save a purchase first.", true);
+            return;
+        }
+
+        var document = _services.Purchases.BuildInvoiceDocument(_lastPurchaseId, _user);
+        if (!document.Ok || document.Value is null)
+        {
+            SetStatus(document.Error ?? "The invoice could not be prepared.", true);
+            return;
+        }
+
+        var sent = WhatsAppFlow.Send(_services, null, document.Value.PlainText,
+            document.Value.Title, document.Value.Lines.Select(line => line.Text),
+            "purchase-" + _lastPurchaseCode + ".pdf");
+        SetStatus(sent.Message, !sent.Ok);
+    }
+
+    private void PrintInvoice(int purchaseId, string code)
+    {
+        if (!_services.Settings.GetBool("printer.autoPrint", true))
+        {
+            return;
+        }
+
+        var document = _services.Purchases.BuildInvoiceDocument(purchaseId, _user);
+        if (!document.Ok || document.Value is null)
+        {
+            SetStatus(code + " is saved, but its invoice could not be prepared: " + (document.Error ?? "unknown reason"), true);
+            return;
+        }
+
+        var printed = _services.Printer.Print(document.Value);
+        if (!printed.Ok)
+        {
+            SetStatus($"{code} is saved. The printer did not answer: {printed.Error}", true);
+        }
     }
 
     /// <summary>
@@ -504,6 +583,7 @@ public sealed class PurchasesViewModel : ObservableObject
         {
             SupplierId = SelectedSupplier?.Id ?? 0,
             PaidPaisa = Money.ToPaisa(paid),
+            PaidMethod = PaidMethod,
             CustomAnswers = DocEditor.AnswerValues().ToDictionary(pair => pair.Key, pair => pair.Value),
             Lines = Lines.Select(line => new PurchaseLineInput
             {
@@ -559,6 +639,9 @@ public sealed class PurchasesViewModel : ObservableObject
             ? Suppliers.FirstOrDefault(supplier => supplier.Id == input.SupplierId)
             : null;
         PaidText = input.PaidPaisa > 0 ? Money.Edit(input.PaidPaisa) : string.Empty;
+        // An old draft has no method stored; it was written when everything was cash.
+        var draftMethod = (input.PaidMethod ?? "cash").Trim().ToLowerInvariant();
+        PaidMethod = draftMethod is "cash" or "online" or "card" ? draftMethod : "cash";
 
         var skipped = 0;
         Lines.Clear();
@@ -566,12 +649,7 @@ public sealed class PurchasesViewModel : ObservableObject
         {
             var product = _catalog.FirstOrDefault(item => item.Id == line.ProductId);
             var name = product?.Name ?? "Unknown product";
-            var unitsPerSelected = product is null ? 1 : line.Unit switch
-            {
-                "box" => product.UnitsPerBox,
-                "strip" => product.UnitsPerStrip,
-                _ => 1
-            };
+            var unitsPerSelected = product is null ? 1 : product.QuantityPerSelectedUnit(line.Unit);
             if (product is null)
             {
                 skipped++;
@@ -587,7 +665,8 @@ public sealed class PurchasesViewModel : ObservableObject
                 Expiry = line.Expiry,
                 CostPaisa = line.CostPaisa,
                 RetailPaisa = line.RetailPaisa,
-                IsSample = line.IsSample
+                IsSample = line.IsSample,
+                PhotoPath = product?.PhotoPath
             });
         }
 
@@ -632,9 +711,14 @@ public sealed class PurchaseLineRow
 
     public bool IsSample { get; init; }
 
+    /// <summary>Portion 17: the cover copied from the picked catalog product - display only.</summary>
+    public string? PhotoPath { get; init; }
+
+    public bool HasNoPhoto => string.IsNullOrWhiteSpace(PhotoPath);
+
     public long LineTotalPaisa => IsSample ? 0 : Calc.Round(CostPaisa * QtyBase);
 
-    public string QuantityText => $"{Qty.Format(Quantity)} {Unit}";
+    public string QuantityText => $"{Qty.Format(Quantity)} {Packs.Display(Unit)}";
 
     public string CostText => IsSample ? "sample" : Money.Format(LineTotalPaisa);
 }

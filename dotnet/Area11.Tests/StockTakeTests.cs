@@ -17,7 +17,7 @@ namespace Area11.Tests;
 public sealed class StockTakeTests
 {
     private static StockTakeService Takes(TestDatabase test) =>
-        new(test.Database, test.Audit, new NumberingService(test.Settings),
+        new(test.Database, test.Audit, new NumberingService(test.Settings), test.Settings,
             new PermissionService(test.Database, test.Log, test.Audit), test.Log);
 
     private static double StockOf(TestDatabase test, int productId)

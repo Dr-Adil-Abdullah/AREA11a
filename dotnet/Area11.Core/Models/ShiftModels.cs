@@ -303,3 +303,50 @@ public sealed class ShiftPersonReport
         }
     }
 }
+
+/// <summary>
+/// Portion 14: one drawer difference that needed a reason - the readable face of the
+/// `shift_discrepancies` contract (migration 030). Opening rows compare the float with the last
+/// counted cash; closing rows compare the count with the rebuilt expected. Short and over are both
+/// kept; an exact drawer leaves no row.
+/// </summary>
+public sealed class ShiftDiscrepancy
+{
+    public int Id { get; set; }
+
+    public int ShiftId { get; set; }
+
+    /// <summary>opening | closing</summary>
+    public string Stage { get; set; } = string.Empty;
+
+    public long ExpectedPaisa { get; set; }
+
+    public long CountedPaisa { get; set; }
+
+    /// <summary>counted - expected. Positive = extra money, negative = short.</summary>
+    public long DifferencePaisa { get; set; }
+
+    public string Reason { get; set; } = string.Empty;
+
+    public string? AlertedAt { get; set; }
+
+    public string? CreatedAt { get; set; }
+
+    public string OpenedBy { get; set; } = string.Empty;
+
+    public string OpenedAt { get; set; } = string.Empty;
+
+    public bool IsShort => DifferencePaisa < 0;
+
+    public string StageLabel => Stage == "opening" ? "Opening" : "Closing";
+
+    public string DifferenceLabel => ShiftWords.Difference(DifferencePaisa);
+
+    public string ExpectedLabel => Money.Format(ExpectedPaisa);
+
+    public string CountedLabel => Money.Format(CountedPaisa);
+
+    public string WhenLabel => string.IsNullOrWhiteSpace(CreatedAt) || CreatedAt!.Length < 16
+        ? (CreatedAt ?? string.Empty)
+        : CreatedAt[..16];
+}

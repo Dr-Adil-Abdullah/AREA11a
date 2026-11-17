@@ -13,6 +13,14 @@ internal static class TestData
 {
     public static readonly User Owner = new() { Id = 1, Name = "Owner", Role = "owner" };
 
+    /// <summary>
+    /// The name the seed gives the owner-role account (SeedService + migration 033). Tests that read
+    /// a name back through the users table (shifts, expenses, stock history, alerts, shift report)
+    /// must expect THIS, not the fixture above: the fixture is only the actor passed in, while those
+    /// services resolve the stored name by id.
+    /// </summary>
+    public const string SeedOwnerName = "admin";
+
     /// <summary>Adds a medicine that has stock sitting on one batch (expiry far away).</summary>
     public static int AddProduct(
         TestDatabase test,
@@ -99,7 +107,7 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, @role, 1, @at);"
     public static User Cashier(TestDatabase test) => AddUser(test, "cashier");
 
     public static PurchaseService Purchases(TestDatabase test) =>
-        new(test.Database, test.Audit, new NumberingService(test.Settings),
+        new(test.Database, test.Audit, new NumberingService(test.Settings), test.Settings,
             new PermissionService(test.Database, test.Log, test.Audit), test.Log);
 
     /// <summary>
@@ -122,7 +130,7 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, @role, 1, @at);"
 
     /// <summary>Reports (F-34). One factory, so a constructor change breaks in one place.</summary>
     public static ReportService Reports(TestDatabase test) =>
-        new(test.Database, new PermissionService(test.Database, test.Log, test.Audit), test.Log);
+        new(test.Database, test.Settings, new PermissionService(test.Database, test.Log, test.Audit), test.Log);
 
     /// <summary>The reading side of the black box (F-35). One factory, one constructor change.</summary>
     public static AuditHistoryService AuditHistory(TestDatabase test) =>

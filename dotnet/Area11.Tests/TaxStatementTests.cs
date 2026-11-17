@@ -136,7 +136,7 @@ public sealed class TaxStatementTests
 
         // Rs 702 on the bill, Rs 700 taken: the Rs 2 is the round-off, and it is on the paper.
         Assert.Equal(-200L, report.RoundOffPaisa);
-        Assert.Contains("Round-off down on the bills (Z-03): " + report.RoundOffLabel, text);
+        Assert.Contains("Round-off down on the bills: " + report.RoundOffLabel, text);
         Assert.Equal(report.GrossPaisa, report.NetPaisa + report.TaxPaisa + report.RoundOffPaisa);
     }
 
@@ -157,7 +157,7 @@ public sealed class TaxStatementTests
         var lastMonth = DateTime.Now.AddMonths(-1).ToString("yyyy-MM");
         var thisMonth = DateTime.Now.ToString("yyyy-MM");
 
-        var oldPaper = Ledger(test).Statement(customer, lastMonth);
+        var oldPaper = Ledger(test).Statement(TestData.Owner, customer, lastMonth);
 
         Assert.True(oldPaper.Ok, oldPaper.Error);
         Assert.Contains(older.Code, oldPaper.Value!.PlainText);
@@ -165,7 +165,7 @@ public sealed class TaxStatementTests
         Assert.Contains("OPENING BALANCE", oldPaper.Value!.PlainText);
         Assert.Contains("CLOSING BALANCE", oldPaper.Value!.PlainText);
 
-        var newPaper = Ledger(test).Statement(customer, thisMonth);
+        var newPaper = Ledger(test).Statement(TestData.Owner, customer, thisMonth);
 
         Assert.True(newPaper.Ok, newPaper.Error);
         Assert.Contains(newer.Code, newPaper.Value!.PlainText);
@@ -186,11 +186,11 @@ public sealed class TaxStatementTests
 
         foreach (var month in new[] { "2026-13", "28-10-2026", "Oct 2026", "2026-1", " 2026-10-01 " })
         {
-            Assert.False(Ledger(test).Statement(customer, month).Ok, month + " should be refused");
+            Assert.False(Ledger(test).Statement(TestData.Owner, customer, month).Ok, month + " should be refused");
         }
 
-        Assert.True(Ledger(test).Statement(customer, "2026-10").Ok);
-        Assert.True(Ledger(test).Statement(customer, " ").Ok);   // empty = every movement, as before
+        Assert.True(Ledger(test).Statement(TestData.Owner, customer, "2026-10").Ok);
+        Assert.True(Ledger(test).Statement(TestData.Owner, customer, " ").Ok);   // empty = every movement, as before
     }
 
     [Fact]
@@ -202,7 +202,7 @@ public sealed class TaxStatementTests
 
         CreditBill(test, product, customer, qty: 2);
 
-        var paper = Ledger(test).Statement(customer, "2025-01");
+        var paper = Ledger(test).Statement(TestData.Owner, customer, "2025-01");
 
         Assert.True(paper.Ok, paper.Error);
         Assert.Contains("MONTHLY STATEMENT", paper.Value!.PlainText);
@@ -220,7 +220,7 @@ public sealed class TaxStatementTests
 
         CreditBill(test, product, customer, qty: 2);
 
-        var paper = Ledger(test).Statement(customer);
+        var paper = Ledger(test).Statement(TestData.Owner, customer);
 
         Assert.True(paper.Ok, paper.Error);
 

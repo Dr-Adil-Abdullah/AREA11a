@@ -235,7 +235,7 @@ public sealed class ImportTests
         Assert.True(imported.Ok, imported.Error);
         Assert.Equal(2, imported.Value!.Added);
 
-        var page = TestData.Ledger(test).Page(CustomerId(test, "Ali Raza"));
+        var page = TestData.Ledger(test).Page(TestData.Owner, CustomerId(test, "Ali Raza"));
 
         Assert.True(page.Ok, page.Error);
 

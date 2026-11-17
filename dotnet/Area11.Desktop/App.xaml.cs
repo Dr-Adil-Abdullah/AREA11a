@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Threading;
 using Area11.Core.Models;
 using Area11.Core.Utils;
@@ -12,26 +13,104 @@ public partial class App : Application
     private AppServices? _services;
     private LoginWindow? _loginWindow;
     private bool _loggingOut;
+    private SingleInstanceGuard? _instance;
+
+    /// <summary>
+    /// Portion 16: true once Windows announced it is going down. The protected-close prompt must
+    /// never block an OS shutdown - the honest limit is that it cannot, so it does not try.
+    /// </summary>
+    internal static bool IsSystemShutdown { get; private set; }
+
+    /// <summary>
+    /// The shop's app name for the boxes (v0.69.0): read once the services exist, the product name
+    /// before that or when the settings cannot be read. A box caption is never worth an exception.
+    /// </summary>
+    private string ShopAppName()
+    {
+        try
+        {
+            var name = _services?.Settings.GetString("brand.appName")?.Trim() ?? string.Empty;
+            return name.Length == 0 ? "Area11" : name;
+        }
+        catch (Exception)
+        {
+            return "Area11";
+        }
+    }
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
+        // One shop, one copy (owner's word, Nov 2026): asked FIRST, before the database or any
+        // window exists, so the refused copy leaves nothing behind - no window, no log line it
+        // would have to explain, and no second writer on the shop's file.
+        _instance = SingleInstanceGuard.TryAcquire(SingleInstanceGuard.ApplicationName);
+
+        if (!_instance.IsFirst)
+        {
+            _instance.Dispose();
+            _instance = null;
+
+            // De-workshop note (v0.69.0): this box keeps the product name on purpose - it is shown
+            // BEFORE the database exists, and opening the shop's file from a refused copy just to
+            // read its app name would risk a lock on the copy that is already selling.
+            MessageBox.Show(
+                "Area11 is already running on this Windows account. Use the open window - " +
+                "a second copy is not allowed, because two copies would sell from the same shelf.",
+                "Area11", MessageBoxButton.OK, MessageBoxImage.Information);
+            Shutdown();
+            return;
+        }
+
+        // Kiosk login (owner's word, Nov 2026): only the first copy touches the taskbar. A Task
+        // Manager kill during a previous kiosk login can orphan it hidden - this heals that on the
+        // next start. A refused second copy must NOT run this: it would unhide the taskbar under
+        // the first copy's fullscreen login.
+        TaskbarHider.EnsureVisible();
+
         // A WinExe has no console, so an exception that escapes would vanish. Both hooks write a
         // crash file and print the same text on the console the batch file is watching.
         DispatcherUnhandledException += OnDispatcherException;
         AppDomain.CurrentDomain.UnhandledException += OnDomainException;
+        SessionEnding += (_, _) => IsSystemShutdown = true;
 
         try
         {
             _services = AppServices.Create();
+            CrashReporter.AppName = ShopAppName();
             LabelResources.Apply(_services.AppLabels);
             IconAssets.Apply(_services);
+
+            // The Shift-at-startup recovery (Portion 16, owner's word): protection off, back to
+            // manual. Said out loud in a box, because a silent reset would read as a bug the next
+            // time × closes without asking.
+            if ((Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift))
+                && _services.Startup.IsProtected)
+            {
+                _services.Startup.ResetToManual();
+                RunTrail.Step("startup protection reset by Shift-at-startup");
+                MessageBox.Show(
+                    "Closing protection was switched off and " + ShopAppName() + " is back to manual start. " +
+                    "This was written to the black box. Pick a mode again in Settings, Shop " +
+                    "when you are ready.",
+                    ShopAppName(), MessageBoxButton.OK, MessageBoxImage.Information);
+            }
 
             // Every button that fails writes one line to the same log the rest of the program uses
             // (v0.34.0, D-90). Set once, here, because this is the first moment the log exists.
             CommandGuard.Sink = (message, exception) => _services!.Log.Error(message, exception);
             RunTrail.Step("database ready");
+
+            // A run that never said goodbye (Task Manager, power loss) is reported now, once, to
+            // the black box - before the sign-in window, so there is no one on the screen to blame
+            // and no way to start without the line being written.
+            var previousRun = _services.Focus.CheckPreviousRun();
+
+            if (!string.IsNullOrWhiteSpace(previousRun))
+            {
+                RunTrail.Step("previous run: " + previousRun);
+            }
 
             // The shop's time (v0.35.0, D-92): asked from the internet in the background, from this
             // moment and every 20 minutes after it. Nothing waits for the answer - if the line is
@@ -67,6 +146,35 @@ public partial class App : Application
             CrashReporter.Report("starting the application", exception, note);
             Shutdown(1);
         }
+    }
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        // The opposite of a kill: a Task Manager end never reaches here, so the stamp below is
+        // exactly what the next startup checks for. Never throws - an exit that crashes is the one
+        // thing this override must not become.
+        try
+        {
+            _services?.Focus.MarkCleanExit();
+        }
+        catch (Exception)
+        {
+        }
+
+        // The kiosk login restores the taskbar when it closes, but a crash-box survival or a late
+        // exit path can skip that - leaving the PC with no taskbar. The exit forces it back. Only
+        // the first copy: a refused second copy never hid anything. Never throws (see the class).
+        if (_instance is not null)
+        {
+            TaskbarHider.EnsureVisible();
+        }
+
+        // Letting go of the single-instance lock. Dispose never throws, and even a kill that skips
+        // this override is safe: the mutex dies with the process and the next start takes it over.
+        _instance?.Dispose();
+        _instance = null;
+
+        base.OnExit(e);
     }
 
     private void OnDispatcherException(object sender, DispatcherUnhandledExceptionEventArgs e)
@@ -136,6 +244,7 @@ public partial class App : Application
         {
             _loggingOut = true;
             ShowLogin();
+            shell.AllowClose = true;
             shell.Close();
             _loggingOut = false;
         };
@@ -146,11 +255,17 @@ public partial class App : Application
         {
             _loggingOut = true;
             ShowLogin();
+            shell.AllowClose = true;
             shell.Close();
             _loggingOut = false;
         };
 
-        _loginWindow?.Close();
+        if (_loginWindow is not null)
+        {
+            _loginWindow.AllowClose = true;
+            _loginWindow.Close();
+        }
+
         _loginWindow = null;
 
         MainWindow = shell;

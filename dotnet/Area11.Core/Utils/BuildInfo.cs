@@ -19,19 +19,19 @@ namespace Area11.Core.Utils;
 public static class BuildInfo
 {
     /// <summary>Version shown in the window title and on the sign-in screen.</summary>
-    public const string Version = "0.47.0";
+    public const string Version = "0.88.0";
 
     /// <summary>The colour of this version, in one word - also the name of the release.</summary>
-    public const string CodeName = "Moss";
+    public const string CodeName = "Skylark";
 
     /// <summary>The exact brand colour of this version (must equal BrandBrush in Theme.xaml).</summary>
-    public const string BrandHex = "#4A5D23";
+    public const string BrandHex = "#4A6175";
 
     /// <summary>Hover / pressed shade of the same colour.</summary>
-    public const string BrandDarkHex = "#33401A";
+    public const string BrandDarkHex = "#304354";
 
     /// <summary>Very light tint used for stripes and badges.</summary>
-    public const string BrandSoftHex = "#ECEFE2";
+    public const string BrandSoftHex = "#ECF1F6";
 
     public const string ReleasedOn = "2026-11-10";
 
