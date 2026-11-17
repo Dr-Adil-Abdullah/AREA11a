@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
@@ -23,6 +24,9 @@ namespace Area11.Desktop.ViewModels;
 public sealed class ShellViewModel : ObservableObject
 {
     private readonly AppServices _services;
+
+    /// <summary>Portion 16: the frame needs the startup policy for the protected-close prompt.</summary>
+    public AppServices Services => _services;
     private readonly User _user;
     private readonly List<NavGroup> _groups = new();
 
@@ -51,7 +55,9 @@ public sealed class ShellViewModel : ObservableObject
         _user = user;
 
         LogoutCommand = new RelayCommand(Logout);
-        OpenOwnerSettingsCommand = new RelayCommand(() => ShowSettings(4));
+        // "My settings" opens the Staff & permissions tab (owner's word, Nov 2026): the number is
+        // a true SettingsView tab index - kept in step with the section list below, tab for tab.
+        OpenOwnerSettingsCommand = new RelayCommand(() => ShowSettings(5));
         OpenAlertsCommand = new RelayCommand(ShowAlerts);
         GoHomeCommand = new RelayCommand(GoHome);
         OpenModuleCommand = new RelayCommand<NavItem>(OpenModule);
@@ -86,7 +92,15 @@ public sealed class ShellViewModel : ObservableObject
         // out twice.
         SessionWatch.Start();
         _sessionTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
-        _sessionTimer.Tick += (_, _) => CheckSession();
+        _sessionTimer.Tick += (_, _) =>
+        {
+            CheckSession();
+            TryAutomaticSync();
+
+            // Still alive, still this operator: the next startup reads this stamp to tell a kill
+            // from a clean exit. Never throws, never blocks the till.
+            _services.Focus.Heartbeat(_user.Name);
+        };
         _sessionTimer.Start();
     }
 
@@ -98,6 +112,12 @@ public sealed class ShellViewModel : ObservableObject
     /// program must never invent that number (D-92).
     /// </summary>
     public event Action? SessionExpired;
+
+    /// <summary>
+    /// Lockdown chrome (v0.67.0): re-raised when the settings page saves the guard tick, so the
+    /// frame re-reads it at once. A re-raise, because a page must never reach the window directly.
+    /// </summary>
+    public event Action? LockdownChromeChanged;
 
     /// <summary>Any click or key press on the frame counts as work - the idle clock starts again.</summary>
     public void TouchSession() => SessionWatch.Touch();
@@ -121,6 +141,40 @@ public sealed class ShellViewModel : ObservableObject
     /// Reads both clocks once every 30 seconds (v0.35.0, D-92). The rule is in `SessionPolicy`, so
     /// the tests can prove it without a window; this method only carries out the verdict.
     /// </summary>
+    /// <summary>
+    /// Portion 15: the automatic cloud push, once per timer tick when it is due. The due check is
+    /// cheap (settings only, no network); the push itself runs on a background thread, so the counter
+    /// never freezes for the cloud. Nothing here can throw out: the service swallows everything, and
+    /// this method keeps its own catch for the handoff itself. Only while signed in - the shell and
+    /// its timer die on sign-out, and the tick quietly does nothing when automatic is off.
+    /// </summary>
+    private void TryAutomaticSync()
+    {
+        try
+        {
+            if (!_services.Cloud.IsAutomaticDue())
+            {
+                return;
+            }
+
+            Task.Run(() =>
+            {
+                try
+                {
+                    _services.Cloud.RunAutomaticIfDue();
+                }
+                catch (Exception exception)
+                {
+                    _services.Log.Error("The automatic push did not run.", exception);
+                }
+            });
+        }
+        catch (Exception exception)
+        {
+            _services.Log.Error("The automatic push did not run.", exception);
+        }
+    }
+
     private void CheckSession()
     {
         if (!SessionWatch.Running)
@@ -177,10 +231,17 @@ public sealed class ShellViewModel : ObservableObject
     public void Detach()
     {
         CommandGuard.Failed -= OnCommandFailed;
+        // Equivalent to null-conditional event removal, also readable by the static C# grammar.
+        if (_settingsPage is not null)
+        {
+            _settingsPage.LockdownChromeChanged -= ForwardChromeChanged;
+        }
         _sessionTimer.Stop();
         SessionWatch.Stop();
         UserMenuOpen = false;
     }
+
+    private void ForwardChromeChanged() => LockdownChromeChanged?.Invoke();
 
     /// <summary>
     /// The line above the page after a button failed, or empty when nothing has failed
@@ -344,6 +405,9 @@ public sealed class ShellViewModel : ObservableObject
     }
 
     public string UserName => _user.Name;
+
+    /// <summary>The operator on this screen - the frame names them in black-box episodes.</summary>
+    public User CurrentUser => _user;
 
     public string RoleText => _user.RoleLabel;
 
@@ -738,16 +802,21 @@ public sealed class ShellViewModel : ObservableObject
         }
     }
 
-    /// <summary>The existing six Settings tab indices, now acted on by the shell header.</summary>
+    /// <summary>
+    /// Repair (owner's word, Nov 2026): every section opened its NEIGHBOUR's tab - the numbers
+    /// below are true SettingsView tab indices. Include identity at 0: the headerless view
+    /// has no other clickable tab strip. Shop stays 1 through Fields at 7.
+    /// </summary>
     private void BuildSettingsTabs()
     {
-        SettingsTabItems.Add(new SettingsTabItem(0, "Shop"));
-        SettingsTabItems.Add(new SettingsTabItem(1, "Printing"));
-        SettingsTabItems.Add(new SettingsTabItem(2, "Sales rules"));
-        SettingsTabItems.Add(new SettingsTabItem(3, _services.AppLabels.Get("cloud"), "cloud"));
-        SettingsTabItems.Add(new SettingsTabItem(4, "Staff & permissions"));
-        SettingsTabItems.Add(new SettingsTabItem(5, "App words"));
-        SettingsTabItems.Add(new SettingsTabItem(6, "Fields"));
+        SettingsTabItems.Add(new SettingsTabItem(0, "App name & icon"));
+        SettingsTabItems.Add(new SettingsTabItem(1, "Shop"));
+        SettingsTabItems.Add(new SettingsTabItem(2, "Printing"));
+        SettingsTabItems.Add(new SettingsTabItem(3, "Sales rules"));
+        SettingsTabItems.Add(new SettingsTabItem(4, _services.AppLabels.Get("cloud"), "cloud"));
+        SettingsTabItems.Add(new SettingsTabItem(5, "Staff & permissions"));
+        SettingsTabItems.Add(new SettingsTabItem(6, "App words"));
+        SettingsTabItems.Add(new SettingsTabItem(7, "Fields"));
     }
 
     /// <summary>Adds a top-row module heading only when at least one permitted page follows it.</summary>
@@ -1136,6 +1205,7 @@ public sealed class ShellViewModel : ObservableObject
             if (_settingsPage is null)
             {
                 _settingsPage = new SettingsViewModel(_services, _user, RefreshHeader);
+                _settingsPage.LockdownChromeChanged += ForwardChromeChanged;
             }
 
             var page = _settingsPage;
@@ -1157,7 +1227,7 @@ public sealed class ShellViewModel : ObservableObject
         new BackupViewModel(_services, _user, AppRestart.Restart);
 
     /// <summary>
-    /// Opens Settings on a section: 0 = Shop, 4 = Staff &amp; permissions (the person's shortcut).
+    /// Opens Settings on a section: 0 = App name &amp; icon, 5 = Staff &amp; permissions (the person's shortcut).
     /// The page is created on the way, because the Settings destination may not have been opened yet
     /// in this session.
     /// </summary>
@@ -1199,7 +1269,7 @@ public sealed class ShellViewModel : ObservableObject
         {
             if (_alertsPage is null)
             {
-                _alertsPage = new AlertsViewModel(_services, _user, RefreshAlerts);
+                _alertsPage = new AlertsViewModel(_services, _user, RefreshAlerts, row => GoToShift());
             }
 
             var page = _alertsPage;
@@ -1229,6 +1299,18 @@ public sealed class ShellViewModel : ObservableObject
         BellSummaryText = report.BellText;
     }
 
+    /// <summary>Owner's word (Nov 2026, reverses D-77): the window title carries his app name.</summary>
+    public string AppDisplayName
+    {
+        get
+        {
+            var name = _services.Settings.GetString("brand.appName").Trim();
+            return name.Length == 0 ? "Area11" : name;
+        }
+    }
+
+    public string WindowTitle => AppDisplayName + " — " + BuildInfo.Label;
+
     private void ApplyProductPhotoSize()
     {
         if (Application.Current is { } app)
@@ -1240,6 +1322,8 @@ public sealed class ShellViewModel : ObservableObject
 
     private void RefreshHeader()
     {
+        OnPropertyChanged(nameof(AppDisplayName));
+        OnPropertyChanged(nameof(WindowTitle));
         ApplyProductPhotoSize();
         RefreshUserPhoto();
         LabelResources.Apply(_services.AppLabels);

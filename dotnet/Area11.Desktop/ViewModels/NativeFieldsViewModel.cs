@@ -72,9 +72,11 @@ public sealed class NativeFieldsViewModel : ObservableObject
         }
         var result = _services.NativeFields.SetRequired(_user, field.Id, required, confirmed);
         StatusText = result.Ok
-            ? field.FieldKey is "customer.phone" or "supplier.phone" or "product.generic" or "product.brand" or "product.rack" or "product.pack" or "supplier.agency"
-                ? "Field policy saved and audited; it applies to new records, changes and import."
-                : "Preference saved in the audit. Current posting validation is unchanged; drafts are not yet available."
+            ? field.FieldKey is "product.generic" or "product.brand" or "product.rack" or "product.pack" or "product.retail"
+                ? "Saved. The product form pops up a warning when these are empty - saving anyway stays your choice."
+                : field.FieldKey is "customer.phone" or "supplier.phone" or "supplier.agency"
+                    ? "Saved for file import. The customer and supplier forms do not check it yet."
+                    : "Preference saved in the audit. Sale and purchase posting still enforce their own rules."
             : result.Error ?? "The preference could not be saved.";
         if (result.Ok) Refresh();
     }

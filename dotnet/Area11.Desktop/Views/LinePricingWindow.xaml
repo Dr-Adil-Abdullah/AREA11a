@@ -1,0 +1,30 @@
+<Window Icon="{DynamicResource Area11WindowIcon}" x:Class="Area11.Desktop.Views.LinePricingWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{Binding WindowTitle}" Width="510" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="20">
+            <TextBlock Text="{Binding Title}" Style="{StaticResource SectionTitle}" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding Reference}" Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+            <TextBlock Text="Pricing mode" Style="{StaticResource FieldLabel}" Margin="0,12,0,0" />
+            <ComboBox ItemsSource="{Binding Modes}" SelectedItem="{Binding Mode, Mode=TwoWay}" />
+            <TextBlock Text="normal = use bill discount; manual = final rate; discount = this item's own percentage. Edited items never receive bill discount as well."
+                       Style="{StaticResource FieldHint}" TextWrapping="Wrap" />
+            <TextBlock Text="Final rate per selected unit (manual mode only)" Style="{StaticResource FieldLabel}" Margin="0,10,0,0" />
+            <TextBox Text="{Binding Rate, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBlock Text="Item discount percent (discount mode only)" Style="{StaticResource FieldLabel}" Margin="0,10,0,0" />
+            <TextBox Text="{Binding Percent, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBlock Text="Item discount basis: profit / selling total (retail)" Style="{StaticResource FieldLabel}" />
+            <ComboBox ItemsSource="{Binding Bases}" SelectedItem="{Binding Basis, Mode=TwoWay}" />
+            <Border Background="{StaticResource BrandSoftBrush}" CornerRadius="8" Padding="12" Margin="0,12,0,0">
+                <TextBlock Text="{Binding Preview}" TextWrapping="Wrap" />
+            </Border>
+            <WrapPanel Margin="0,14,0,0">
+                <Button Content="Apply" Command="{Binding ApplyCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,6" />
+                <Button Content="Reset to normal" Command="{Binding ResetCommand}" Style="{StaticResource GhostButton}" Margin="0,0,8,6" />
+                <Button Content="Cancel" Command="{Binding CancelCommand}" Style="{StaticResource GhostButton}" IsCancel="True" Margin="0,0,0,6" />
+            </WrapPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Window>

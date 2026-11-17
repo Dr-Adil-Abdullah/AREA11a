@@ -58,6 +58,7 @@ public sealed class ReorderViewModel : ObservableObject, IEmptyPage
         SaveLevelCommand = new RelayCommand(SaveLevel);
         CopyCommand = new RelayCommand(CopyText);
         OpenWhatsAppCommand = new RelayCommand(OpenWhatsApp);
+        PrintPadCommand = new RelayCommand(PrintPad);
         TickAllCommand = new RelayCommand(() => SetAllTicked(true));
         UntickAllCommand = new RelayCommand(() => SetAllTicked(false));
 
@@ -71,6 +72,9 @@ public sealed class ReorderViewModel : ObservableObject, IEmptyPage
     public RelayCommand CopyCommand { get; }
 
     public RelayCommand OpenWhatsAppCommand { get; }
+
+    /// <summary>Portion 11: the ticked lines as a printed order pad for the file or the agent.</summary>
+    public RelayCommand PrintPadCommand { get; }
 
     public RelayCommand TickAllCommand { get; }
 
@@ -297,9 +301,17 @@ public sealed class ReorderViewModel : ObservableObject, IEmptyPage
         OnPropertyChanged(nameof(Supplier));
 
         _all.Clear();
+
+        // Portion 17: one cover query for the whole pad.
+        var covers = _services.Photos.CoversFor(_user, PhotoEntity.Product,
+            _report.Rows.Select(row => row.ProductId));
+
         foreach (var row in _report.Rows)
         {
-            _all.Add(new ReorderPadLine(row, BuildPreview));
+            _all.Add(new ReorderPadLine(row, BuildPreview)
+            {
+                PhotoPath = covers.TryGetValue(row.ProductId, out var path) ? path : null
+            });
         }
 
         ApplyFilter();
@@ -483,6 +495,34 @@ public sealed class ReorderViewModel : ObservableObject, IEmptyPage
         }
     }
 
+    /// <summary>
+    /// The same ticked lines as the WhatsApp message, on paper. Same "one supplier at a time"
+    /// rule - a pad that mixes two agents is an order neither of them can fill.
+    /// </summary>
+    private void PrintPad()
+    {
+        if (!CanSend)
+        {
+            SetStatus(HasMixedSuppliers
+                ? "One order, one supplier. Untick the other supplier's medicines first."
+                : "Tick at least one medicine with a quantity.", true);
+            return;
+        }
+
+        var lines = Rows.Where(line => line.IsSelected && line.OrderQty > 0).Select(line => line.ToLine()).ToList();
+        var document = _services.Reorder.BuildPadDocument(lines, TickedSupplier());
+        if (!document.Ok || document.Value is null)
+        {
+            SetStatus(document.Error ?? "The order pad could not be prepared.", true);
+            return;
+        }
+
+        var printed = _services.Printer.Print(document.Value);
+        SetStatus(printed.Ok
+            ? "Order pad sent to the printer (" + lines.Count + " item(s))."
+            : "The printer did not answer: " + printed.Error, !printed.Ok);
+    }
+
     private void OpenWhatsApp()
     {
         if (!CanSend)
@@ -496,21 +536,28 @@ public sealed class ReorderViewModel : ObservableObject, IEmptyPage
         // The audit names the supplier the MESSAGE names, not the one in the filter: the owner may
         // be looking at "All suppliers" while every ticked line belongs to one agent.
         var supplierName = TickedSupplier();
-        var link = ReorderService.BuildLink(PhoneText, OrderText);
-
-        try
+        var lines = Rows.Where(line => line.IsSelected && line.OrderQty > 0).Select(line => line.ToLine()).ToList();
+        var document = _services.Reorder.BuildPadDocument(lines, supplierName);
+        if (!document.Ok || document.Value is null)
         {
-            Process.Start(new ProcessStartInfo { FileName = link, UseShellExecute = true });
-
-            // Leaving the shop is a business event: who, how many, and when (Spec 22).
-            _services.Reorder.RecordOrder(_user, supplierName, SendableCount);
-
-            SetStatus("WhatsApp opened with the order. Send it from there.", false);
+            SetStatus(document.Error ?? "The order pad could not be prepared.", true);
+            return;
         }
-        catch (Exception exception)
+
+        // Portion 12: the native app opens with the order text, and the same pad is prepared as a
+        // PDF the owner attaches by hand; opening is not evidence of sending.
+        var sent = WhatsAppFlow.Send(_services, PhoneText, OrderText,
+            document.Value.Title, document.Value.Lines.Select(line => line.Text), "order-pad.pdf");
+        if (!sent.Ok)
         {
-            SetStatus("WhatsApp could not be opened (" + exception.Message + "). Copy the text instead.", true);
+            SetStatus(sent.Message, true);
+            return;
         }
+
+        // Leaving the shop is a business event: who, how many, and when (Spec 22).
+        _services.Reorder.RecordOrder(_user, supplierName, SendableCount);
+
+        SetStatus(sent.Message, false);
     }
 
     /// <summary>The single supplier behind the ticked, sendable rows - null when they are mixed or blank.</summary>
@@ -572,6 +619,11 @@ public sealed class ReorderPadLine : ObservableObject
     }
 
     public ReorderRow Row { get; }
+
+    /// <summary>Portion 17: the cover path, filled by the page - display only.</summary>
+    public string? PhotoPath { get; set; }
+
+    public bool HasNoPhoto => string.IsNullOrWhiteSpace(PhotoPath);
 
     public bool IsSelected
     {

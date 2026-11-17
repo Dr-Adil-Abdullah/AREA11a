@@ -95,7 +95,7 @@
                     <TextBlock Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,6,0,0"
                                Text="The tax is what each bill actually took. A rate changed in the middle of the month therefore shows the truth, not today's rate multiplied over old bills." />
                     <TextBlock Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,6,0,0"
-                               Text="A refund is stored as one amount, so its tax part is not separated. Refunds are listed below for the accountant to adjust by hand (D-63)." />
+                               Text="A refund is stored as one amount, so its tax part is not separated. Refunds are listed below for the accountant to adjust by hand." />
 
                     <TextBlock Text="{Binding SettingLabel}" Style="{StaticResource FieldHint}" TextWrapping="Wrap"
                                Margin="0,10,0,0" />

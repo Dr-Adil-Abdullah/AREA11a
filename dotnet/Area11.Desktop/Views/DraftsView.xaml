@@ -1,7 +1,7 @@
 <Window Icon="{DynamicResource Area11WindowIcon}" x:Class="Area11.Desktop.Views.DraftsView"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Drafts - Area11" Height="560" Width="760"
+        Title="{Binding WindowTitle}" Height="560" Width="760"
         MinHeight="440" MinWidth="620" WindowStartupLocation="CenterOwner"
         Background="{StaticResource CanvasBrush}">
     <Grid Margin="18">

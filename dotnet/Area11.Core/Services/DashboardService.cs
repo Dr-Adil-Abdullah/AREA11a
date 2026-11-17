@@ -68,16 +68,11 @@ public sealed class DashboardService
     /// </summary>
     public ServiceResult<DashboardSnapshot> GetSnapshot(User? user)
     {
-        if (!_permissions.Can(user, Modules.Pos) && !_permissions.Can(user, Modules.Reports))
-        {
-            return ServiceResult<DashboardSnapshot>.Fail("You do not have permission to see the dashboard.");
-        }
-
         try
         {
-            var canSeeProfit = _permissions.Can(user, Modules.Profit);
-
             using var connection = _db.Open();
+            var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Pos, Modules.Reports);
+            var canSeeProfit = ProfitPolicy.CanSee(_permissions, _settings, reader);
 
             var products = Convert.ToInt32(_db.Scalar(connection,
                 "SELECT COUNT(1) FROM products WHERE active = 1;") ?? 0);
@@ -220,6 +215,10 @@ FROM (
                 SupplierPayablePaisa = payable,
                 ShiftOpen = shiftOpen
             });
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult<DashboardSnapshot>.Fail(exception.Message);
         }
         catch (Exception exception)
         {

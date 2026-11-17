@@ -45,8 +45,6 @@ public static class Money
         return decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out rupees);
     }
 
-    public static long ParseOrZero(string? text) => TryParse(text, out var rupees) ? ToPaisa(rupees) : 0L;
-
     /// <summary>
     /// Round the bill DOWN to a multiple of <paramref name="stepRupees"/> (always in the
     /// customer's favour), but never below the purchase cost of the items.

@@ -62,6 +62,8 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
     private string _returnsText = "Rs 0";
     private string _lastBillText = "-";
     private CustomerSummary? _selected;
+    private List<CustomerSummary> _printSelection = new();
+    private bool _canPrintSelection;
 
     private bool _isAdding;
     private string _newName = string.Empty;
@@ -88,6 +90,10 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
         EditEditor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Customer, saveWithParent: true);
         CollectCommand = new RelayCommand(Collect);
         StatementCommand = new RelayCommand(PrintStatement);
+        PrintSelectionCommand = new RelayCommand(PrintSelection);
+        PreviewCommand = new RelayCommand(Preview);
+        WhatsAppStatementCommand = new RelayCommand(SendStatementOnWhatsApp);
+        WhatsAppProfileCommand = new RelayCommand(SendProfileOnWhatsApp);
         MonthStatementCommand = new RelayCommand(PrintMonthStatement);
         ReceiptCommand = new RelayCommand(PrintReceipt);
         EditCommand = new RelayCommand(BeginEdit);
@@ -119,6 +125,18 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
     public RelayCommand CollectCommand { get; }
 
     public RelayCommand StatementCommand { get; }
+
+    /// <summary>Portion 11: the ticked customers, as one bulk job (the "Print selected" button).</summary>
+    public RelayCommand PrintSelectionCommand { get; }
+
+    /// <summary>Portion 11: the exact paper text on the screen before anything prints.</summary>
+    public RelayCommand PreviewCommand { get; }
+
+    /// <summary>Portion 12: the open statement as WhatsApp text plus a PDF the owner attaches by hand.</summary>
+    public RelayCommand WhatsAppStatementCommand { get; }
+
+    /// <summary>Portion 12: the short khata nudge (who owes what) as WhatsApp text, no file.</summary>
+    public RelayCommand WhatsAppProfileCommand { get; }
 
     public RelayCommand MonthStatementCommand { get; }
 
@@ -214,6 +232,23 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
                 ShowCustomer();
             }
         }
+    }
+
+    /// <summary>True when two or more customers are ticked for the bulk buttons.</summary>
+    public bool CanPrintSelection
+    {
+        get => _canPrintSelection;
+        private set => SetProperty(ref _canPrintSelection, value);
+    }
+
+    /// <summary>
+    /// The list's ticked rows, carried over by the code-behind (a list cannot bind its own
+    /// multi-selection). Only ids are kept: the paper is rebuilt from the database at print time.
+    /// </summary>
+    public void SetPrintSelection(IEnumerable<CustomerSummary> rows)
+    {
+        _printSelection = (rows ?? Enumerable.Empty<CustomerSummary>()).Where(row => row is not null).Distinct().ToList();
+        CanPrintSelection = _printSelection.Count > 1;
     }
 
     public bool HasCustomer
@@ -419,7 +454,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
     {
         var keep = Selected?.Id;
 
-        var result = _services.Ledger.List(SearchText, OnlyCredit);
+        var result = _services.Ledger.List(_user, SearchText, OnlyCredit);
 
         Customers.Clear();
 
@@ -470,12 +505,16 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
         PointsText = Selected.PointsLabel;
         BillsText = Selected.BillsCount.ToString();
         LifetimeText = Selected.LifetimeText;
-        ProfitText = Selected.ProfitText;
+        // Portion 13: the customer's profit was visible to everyone who opened this page. Now the
+        // same gate as every other margin: the `profit` permission plus the global switch.
+        ProfitText = ProfitPolicy.CanSee(_services.Permissions, _services.Settings, _user)
+            ? Selected.ProfitText
+            : "hidden";
         ReturnsText = Selected.ReturnsText;
         LastBillText = Selected.LastBillLabel;
         BalanceText = Selected.BalanceText;
 
-        var page = _services.Ledger.Page(Selected.Id);
+        var page = _services.Ledger.Page(_user, Selected.Id);
 
         if (!page.Ok || page.Value is null)
         {
@@ -556,13 +595,21 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
 
     private void PrintStatement()
     {
+        // Portion 11: with `printer.defaultBulk` on and several customers ticked, the main button
+        // prints the whole ticked set; otherwise it prints the open customer, as it always has.
+        if (_printSelection.Count > 1 && _services.Settings.GetBool("printer.defaultBulk", false))
+        {
+            PrintBulk(_printSelection.Select(row => row.Id).ToList());
+            return;
+        }
+
         if (Selected is null)
         {
             SetStatus("Pick a customer first.", true);
             return;
         }
 
-        var statement = _services.Ledger.Statement(Selected.Id);
+        var statement = _services.Ledger.Statement(_user, Selected.Id);
 
         if (!statement.Ok || statement.Value is null)
         {
@@ -578,6 +625,109 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
             : "The printer did not answer: " + printed.Error, !printed.Ok);
     }
 
+    /// <summary>The explicit bulk button: always the ticked customers, whatever the setting says.</summary>
+    private void PrintSelection()
+    {
+        if (_printSelection.Count < 2)
+        {
+            SetStatus("Tick two or more customers first (hold Ctrl and click).", true);
+            return;
+        }
+
+        PrintBulk(_printSelection.Select(row => row.Id).ToList());
+    }
+
+    private void PrintBulk(List<int> ids)
+    {
+        var job = _services.Ledger.BuildBulkStatements(_user, ids);
+        if (!job.Ok || job.Value is null)
+        {
+            SetStatus(job.Error ?? "The statements could not be prepared.", true);
+            return;
+        }
+
+        var printed = _services.Printer.PrintBulk(job.Value);
+        SetStatus(printed.Ok
+            ? "Printed " + ids.Count + " statements."
+            : "The printer did not answer: " + printed.Error, !printed.Ok);
+    }
+
+    /// <summary>
+    /// The paper text on the screen first: the ticked set when several are ticked, else the open
+    /// customer's statement.
+    /// </summary>
+    private void Preview()
+    {
+        if (_printSelection.Count > 1)
+        {
+            var job = _services.Ledger.BuildBulkStatements(_user, _printSelection.Select(row => row.Id).ToList());
+            if (!job.Ok || job.Value is null)
+            {
+                SetStatus(job.Error ?? "The statements could not be prepared.", true);
+                return;
+            }
+
+            PrintPreviewDoor.ShowBulk(_services, job.Value);
+            return;
+        }
+
+        if (Selected is null)
+        {
+            SetStatus("Pick a customer first.", true);
+            return;
+        }
+
+        var statement = _services.Ledger.Statement(_user, Selected.Id);
+        if (!statement.Ok || statement.Value is null)
+        {
+            SetStatus(statement.Error ?? "The statement could not be prepared.", true);
+            return;
+        }
+
+        PrintPreviewDoor.Show(_services, statement.Value);
+    }
+
+    /// <summary>
+    /// The open customer's statement to WhatsApp: the statement text in the message, the same
+    /// statement as a PDF file. The customer's own phone is dialled when the book has one.
+    /// </summary>
+    private void SendStatementOnWhatsApp()
+    {
+        if (Selected is null)
+        {
+            SetStatus("Pick a customer first.", true);
+            return;
+        }
+
+        var statement = _services.Ledger.Statement(_user, Selected.Id);
+        if (!statement.Ok || statement.Value is null)
+        {
+            SetStatus(statement.Error ?? "The statement could not be prepared.", true);
+            return;
+        }
+
+        var sent = WhatsAppFlow.Send(_services, Selected.Phone, statement.Value.PlainText,
+            statement.Value.Title, statement.Value.Lines.Select(line => line.Text),
+            "statement-" + Selected.Name + ".pdf");
+        SetStatus(sent.Message, !sent.Ok);
+    }
+
+    /// <summary>The short khata nudge to WhatsApp: who owes what, in one message, no file.</summary>
+    private void SendProfileOnWhatsApp()
+    {
+        if (Selected is null)
+        {
+            SetStatus("Pick a customer first.", true);
+            return;
+        }
+
+        var text = _services.WhatsApp.BuildCustomerProfile(
+            Selected.Name, Selected.Phone, Selected.BalancePaisa, Selected.CreditLimitPaisa);
+        var sent = WhatsAppFlow.Send(_services, Selected.Phone, text,
+            "Profile", Enumerable.Empty<string>(), "profile.pdf", withPdf: false);
+        SetStatus(sent.Message, !sent.Ok);
+    }
+
     /// <summary>The month's statement (F-49): one month between an opening and a closing balance.</summary>
     private void PrintMonthStatement()
     {
@@ -587,7 +737,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
             return;
         }
 
-        var statement = _services.Ledger.Statement(Selected.Id, StatementMonth);
+        var statement = _services.Ledger.Statement(_user, Selected.Id, StatementMonth);
 
         if (!statement.Ok || statement.Value is null)
         {

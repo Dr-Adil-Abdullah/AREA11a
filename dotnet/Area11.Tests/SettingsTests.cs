@@ -44,6 +44,20 @@ public sealed class SettingsTests
     }
 
     [Fact]
+    public void AppNameRequiresOwnerAndOneToFortyLetters()
+    {
+        using var test = new TestDatabase();
+        Assert.Equal("Area11", test.Settings.GetString("brand.appName"));
+        Assert.False(test.Settings.Set("brand.appName", "MediCare", TestData.Cashier(test)).Ok);
+        Assert.False(test.Settings.Set("brand.appName", "   ", Owner).Ok);
+        Assert.False(test.Settings.Set("brand.appName", new string('A', 41), Owner).Ok);
+        Assert.False(test.Settings.SetUiOnly("brand.appName", "MediCare").Ok);
+        Assert.True(test.Settings.Set("brand.appName", "MediCare", Owner).Ok);
+        test.Settings.Reload();
+        Assert.Equal("MediCare", test.Settings.GetString("brand.appName"));
+    }
+
+    [Fact]
     public void BothPaperWidths_AreAccepted()
     {
         using var test = new TestDatabase();

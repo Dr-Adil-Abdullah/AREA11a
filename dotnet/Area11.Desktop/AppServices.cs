@@ -21,17 +21,19 @@ public sealed class AppServices
         Database = new Database();
         Audit = new AuditService(Database, Log);
         Permissions = new PermissionService(Database, Log, Audit);
+        PermissionInspector = new PermissionInspectionService(Database, Log);
         Settings = new SettingsService(Database, Audit, Log, Permissions);
         Auth = new AuthService(Database, Audit, Settings, Log);
         AppLabels = new AppLabelService(Settings, Permissions);
         Numbering = new NumberingService(Settings);
-        Products = new ProductService(Database, Audit, Log);
+        Products = new ProductService(Database, Audit, Log, permissions: Permissions, settings: Settings);
         Dashboard = new DashboardService(Database, Settings, Permissions, Log);
         Partners = new PartnerService(Database, Audit, Log);
         Ledger = new CustomerLedgerService(Database, Audit, Settings, Permissions, Log);
         SupplierLedger = new SupplierLedgerService(Database, Audit, Numbering, Settings, Permissions, Log);
+        Pricing = new PricingAllowanceService(Database, Audit, Log);
         Sales = new SaleService(Database, Audit, Numbering, Settings, Permissions, Log);
-        Purchases = new PurchaseService(Database, Audit, Numbering, Permissions, Log);
+        Purchases = new PurchaseService(Database, Audit, Numbering, Settings, Permissions, Log);
         Holds = new HoldCartService(Database, Audit, Numbering, Permissions, Sales, Log);
         Drafts = new DraftService(Database, Audit, Sales, Purchases, Permissions, Log);
         Returns = new ReturnService(Database, Audit, Numbering, Settings, Permissions, Log);
@@ -42,35 +44,43 @@ public sealed class AppServices
         Alert = new AlertService(Database, Settings, Audit, Permissions, Log);
         Provisional = new ProvisionalReturnService(Database, Audit, Numbering, Permissions, Log);
         Stock = new StockService(Database, Audit, Settings, Permissions, Log);
-        StockTake = new StockTakeService(Database, Audit, Numbering, Permissions, Log);
+        StockTake = new StockTakeService(Database, Audit, Numbering, Settings, Permissions, Log);
         Shifts = new ShiftService(Database, Audit, Permissions, Log);
         CashOut = new ExpenseService(Database, Audit, Settings, Permissions, Log);
+        ExpenseCategories = new ExpenseCategoryService(Database, Audit, Permissions, Log);
         Recovery = new RecoveryService(Database, Audit, Settings, Permissions, Log);
-        Reports = new ReportService(Database, Permissions, Log);
+        Reports = new ReportService(Database, Settings, Permissions, Log);
         Tax = new TaxService(Database, Settings, Permissions, Log);
         AuditHistory = new AuditHistoryService(Database, Permissions, Log);
         ProvisionalReceipts = new ProvisionalReceiptService(Provisional, Settings, Log);
         Receipts = new ReceiptService(Database, Settings, Log);
         Printer = new PrinterService(Settings, Log);
+        WhatsApp = new WhatsAppService(Settings, Log);
         Backup = new BackupService(Database, Settings, Audit, Permissions, Log);
         Import = new ImportService(Database, Audit, Permissions, Log);
         Workbooks = new WorkbookService(Database, Audit, Permissions, Settings, Log, Import);
         Reorder = new ReorderService(Database, Audit, Settings, Permissions, Log);
+        ProductHistory = new ProductHistoryService(Database, Settings, Permissions, Log);
         StockMinus = new StockMinusService(Database, Audit, Permissions, Log);
         Photos = new PhotoService(Database, Audit, Permissions, Log);
         CustomFields = new CustomFieldService(Database, Audit, Permissions, Log);
         NativeFields = new NativeFieldPolicyService(Database, Audit, Log);
         Barcodes = new BarcodeService(Database, Audit, Permissions, Log);
-        Reps = new RepService(Database, Audit, Permissions, Log);
+        Reps = new RepService(Database, Audit, Settings, Permissions, Log);
         Hardware = new HardwareService(Settings, Audit, Permissions, Log);
         // The one service that talks to the internet. Its rules are in Core; the wire is a
         // replaceable piece so every test runs without a network (F-48).
         Cloud = new SyncService(Database, Settings, Audit, Permissions, Log, Backup, new SupabaseTransport());
+        // Startup and protected close: the policy is Core, the registry entry is Windows-only, so
+        // the store is constructed here at the composition root (Portion 16).
+        Startup = new StartupService(Settings, Auth, Permissions, Audit, Log, new HklmRunStore(), new HkcuRunStore());
         // The bill history and its reprint: the same ReceiptService that printed the original (F-52).
         History = new SaleHistoryService(Database, Receipts, ReturnReceipts, Audit, Permissions, Log);
+        TimeCorrection = new TimeCorrectionService(Database, Audit, Log);
         // Do the books add up? A read-only check over the shop's own rows (F-54).
         Books = new BookCheckService(Database, Permissions, Log);
         Lan = new LanService(Database, Audit, Log, Config);
+        Focus = new FocusGuardService(Settings, Audit, Log);
     }
 
     public Database Database { get; }
@@ -94,6 +104,8 @@ public sealed class AppServices
 
     public PermissionService Permissions { get; }
 
+    public PermissionInspectionService PermissionInspector { get; }
+
     public NumberingService Numbering { get; }
 
     public ProductService Products { get; }
@@ -105,6 +117,8 @@ public sealed class AppServices
     public CustomerLedgerService Ledger { get; }
 
     public SupplierLedgerService SupplierLedger { get; }
+
+    public PricingAllowanceService Pricing { get; }
 
     public SaleService Sales { get; }
 
@@ -131,6 +145,8 @@ public sealed class AppServices
 
     public ExpenseService CashOut { get; }
 
+    public ExpenseCategoryService ExpenseCategories { get; }
+
     public RecoveryService Recovery { get; }
 
     public ReportService Reports { get; }
@@ -144,8 +160,15 @@ public sealed class AppServices
     /// <summary>The Supabase mirror: push, look, bring (F-48).</summary>
     public SyncService Cloud { get; }
 
+    public StartupService Startup { get; }
+
+    /// <summary>The screen lockdown's memory: away-episodes and killed runs (owner, Nov 2026).</summary>
+    public FocusGuardService Focus { get; }
+
     /// <summary>Find any bill and print it again (F-52).</summary>
     public SaleHistoryService History { get; }
+
+    public TimeCorrectionService TimeCorrection { get; }
 
     /// <summary>The read-only "do the books add up?" check (F-54) - it never writes a row.</summary>
     public BookCheckService Books { get; }
@@ -158,12 +181,18 @@ public sealed class AppServices
 
     public PrinterService Printer { get; }
 
+    /// <summary>Portion 12: the native-app link and the prepared PDF, shared by every page.</summary>
+    public WhatsAppService WhatsApp { get; }
+
     /// <summary>The handover slip - the same receipt object as the sale receipt, printed the same way.</summary>
     public HandoverSlipService HandoverSlips { get; }
 
     public BackupService Backup { get; }
 
     public ReorderService Reorder { get; }
+
+    /// <summary>Portion 13: every purchase and sale of one medicine, with honest totals.</summary>
+    public ProductHistoryService ProductHistory { get; }
 
     public StockMinusService StockMinus { get; }
 

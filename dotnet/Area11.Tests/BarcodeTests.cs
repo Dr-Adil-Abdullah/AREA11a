@@ -235,7 +235,7 @@ VALUES(@product, '5012345678900', 'base', 'copied from the old single barcode', 
 
         Assert.True(barcodes.Add(TestData.Owner, product, StripCode, BarcodePack.Strip, null).Ok);
 
-        var found = products.Search(StripCode);
+        var found = products.Search(TestData.Owner, StripCode);
 
         Assert.True(found.Ok, found.Error);
         Assert.Single(found.Value!);
@@ -253,7 +253,7 @@ VALUES(@product, '5012345678900', 'base', 'copied from the old single barcode', 
         var added = barcodes.Add(TestData.Owner, product, StripCode, BarcodePack.Strip, null);
 
         Assert.True(barcodes.SetActive(TestData.Owner, added.Value!.Id, false).Ok);
-        Assert.Empty(products.Search(StripCode).Value!);
+        Assert.Empty(products.Search(TestData.Owner, StripCode).Value!);
     }
 
     // ============================== helpers ==============================

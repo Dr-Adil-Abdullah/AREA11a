@@ -8,7 +8,7 @@ namespace Area11.Core.Services;
 /// <summary>
 /// The counter (Spec 12.2). One transaction:
 ///   validate → FEFO batches → tier price → discount guard → tax → round down with cost guard →
-///   reconcile the lines → deduct stock through the D-93 non-negative policy → sale + payments →
+///   reconcile the lines → separate sale-level Extra/cap/final-cost guard → deduct stock through the D-93 non-negative policy → sale + payments →
 ///   customer khata → black box.
 /// The same calculation produces both the live quote and the saved bill, so the cashier can
 /// never see a total different from the one stored.
@@ -43,8 +43,59 @@ public sealed class SaleService
         _log = log;
     }
 
+    /// <summary>
+    /// Cashier-screen guidance only (batch 2, portion 2). Read current stock, including cumulative
+    /// pack quantities and expired batches, without saving warnings on a sale or receipt. Quote
+    /// and Create still enforce D-93 independently; even the owner cannot oversell.
+    /// </summary>
+    public ServiceResult<List<string>> CounterWarnings(SaleInput input)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            var warnings = new List<string>();
+            foreach (var group in input.Lines.GroupBy(line => line.ProductId))
+            {
+                var product = _db.QuerySingle<Product>(connection, @"
+SELECT id, name, base_unit, box_strips, strip_tablets, retail_paisa
+FROM products WHERE id = @id AND active = 1;", new { id = group.Key });
+                if (product is null)
+                {
+                    continue;
+                }
+
+                var requested = group.Sum(line => line.Quantity * product.QuantityPerSelectedUnit(line.Unit));
+                var book = _db.QuerySingle<double>(connection, @"
+SELECT COALESCE(SUM(qty_base), 0) FROM batches
+WHERE product_id = @id AND active = 1;", new { id = group.Key });
+                var sellable = _db.QuerySingle<double>(connection, @"
+SELECT COALESCE(SUM(qty_base), 0) FROM batches
+WHERE product_id = @id AND active = 1 AND qty_base > 0
+  AND (expiry_date IS NULL OR expiry_date = '' OR date(expiry_date) >= date('now','localtime'));",
+                    new { id = group.Key });
+                if (double.IsFinite(requested) && requested > 0
+                    && requested - Math.Min(book, sellable) > PlanningTolerance(requested))
+                {
+                    warnings.Add(product.Name + ": not in stock for this quantity. No one can make this bill; receive stock or reduce the quantity.");
+                }
+                if (product.RetailPaisa <= 0)
+                {
+                    warnings.Add(product.Name + ": no retail price is set. A person granted rate-edit permission may enter a rate; stock and purchase-cost checks still apply.");
+                }
+            }
+            return ServiceResult<List<string>>.Success(warnings);
+        }
+        catch (Exception exception)
+        {
+            _log.Error("Counter availability could not be checked.", exception);
+            return ServiceResult<List<string>>.Fail("Availability could not be checked. Refresh and try again.");
+        }
+    }
+
     public ServiceResult<SaleQuote> Quote(SaleInput input, User user)
     {
+        if (!_permissions.Can(user, Modules.Pos))
+            return ServiceResult<SaleQuote>.Fail("You do not have permission to quote a sale.");
         try
         {
             using var connection = _db.Open();
@@ -74,12 +125,30 @@ public sealed class SaleService
                 change = input.TenderedPaisa - split.CashPartPaisa;
             }
 
+            var canSeeCost = CostPolicy.CanSee(_permissions, _settings, user);
+            var canSeeProfit = ProfitPolicy.CanSee(_permissions, _settings, user);
+
             return ServiceResult<SaleQuote>.Success(new SaleQuote
             {
+                DiscountBasis = input.DiscountBasis ?? _settings.GetString("discount.billBasis"),
+                Lines = computed.Lines.GroupBy(line => line.InputIndex).OrderBy(group => group.Key)
+                    .Select(group => new SaleLinePricing
+                    {
+                        CostKnown = canSeeCost,
+                        ProfitKnown = canSeeProfit,
+                        CostPaisa = canSeeCost
+                            ? group.Sum(line => line.LineCostPaisa) : 0,
+                        ProfitPaisa = canSeeProfit
+                            ? group.Sum(line => line.GrossPaisa - line.DiscountPaisa - line.LineCostPaisa) : 0,
+                        GrossPaisa = group.Sum(line => line.GrossPaisa),
+                        NetPaisa = group.Sum(line => line.GrossPaisa - line.DiscountPaisa)
+                    }).ToList(),
                 SubtotalPaisa = computed.SubtotalPaisa,
                 DiscountPaisa = computed.DiscountPaisa,
                 TaxPaisa = computed.TaxPaisa,
                 RoundPaisa = computed.RoundPaisa,
+                PreExtraTotalPaisa = computed.PreExtraTotalPaisa,
+                ExtraDiscountPaisa = computed.ExtraDiscountPaisa,
                 TotalPaisa = computed.TotalPaisa,
                 ChangePaisa = change,
                 CashPartPaisa = split.CashPartPaisa,
@@ -159,7 +228,16 @@ public sealed class SaleService
     private ServiceResult<SaleResult> Save(SqliteConnection connection, SaleInput input, User user)
     {
         var computed = Compute(connection, input, user);
+        var basis = PricingAllowanceService.Basis(input.DiscountBasis ?? _settings.GetString("discount.billBasis"));
+        if (basis == "retail" && input.DiscountPercent > 5 && !input.RetailDiscountConfirmed)
+            throw new ValidationException("Confirm the selling-total discount above 5% before saving this bill.");
+        input.RetailDiscountConfirmed = false; // Acknowledgement is consumed, never reusable for another post.
+
         var stamp = Clock.Now();
+
+        // The drift in force when this bill is stamped (v0.68.0): if a time server later shows the
+        // clock was wrong, TimeCorrectionService moves exactly the bills stamped under that drift.
+        var timeOffsetSeconds = Calc.Round(TimeSource.Offset.TotalSeconds);
 
         var customer = ResolveCustomer(connection, input.CustomerId);
         var doctor = ResolveDoctor(connection, input.DoctorId);
@@ -193,10 +271,10 @@ public sealed class SaleService
         _db.Execute(connection, @"
 INSERT INTO sales(code, date, customer_id, doctor_id, user_id, subtotal_paisa, discount_paisa,
                   tax_paisa, round_off_paisa, total_paisa, paid_paisa, due_paisa, status,
-                  payment_method, notes, created_at, change_paisa)
+                  payment_method, notes, created_at, change_paisa, time_offset_seconds, discount_basis, pre_extra_total_paisa, extra_discount_paisa)
 VALUES(@code, @date, @customerId, @doctorId, @userId, @subtotal, @discount,
        @tax, @roundOff, @total, @paid, @due, @status,
-       @method, @notes, @createdAt, @change);",
+       @method, @notes, @createdAt, @change, @timeOffset, @basis, @preExtra, @extra);",
             new
             {
                 code,
@@ -208,6 +286,8 @@ VALUES(@code, @date, @customerId, @doctorId, @userId, @subtotal, @discount,
                 discount = computed.DiscountPaisa,
                 tax = computed.TaxPaisa,
                 roundOff = computed.RoundPaisa,
+                preExtra = computed.PreExtraTotalPaisa,
+                extra = computed.ExtraDiscountPaisa,
                 total = computed.TotalPaisa,
                 paid,
                 due,
@@ -215,7 +295,9 @@ VALUES(@code, @date, @customerId, @doctorId, @userId, @subtotal, @discount,
                 method,
                 notes = string.IsNullOrWhiteSpace(input.Notes) ? null : input.Notes.Trim(),
                 createdAt = stamp,
-                change
+                change,
+                timeOffset = timeOffsetSeconds,
+                basis
             });
 
         var saleId = (int)_db.NextId(connection);
@@ -262,9 +344,10 @@ VALUES(@at, 'loyalty', @amount, @saleId, @customerId, @userId, @note);",
         {
             _db.Execute(connection, @"
 INSERT INTO sale_items(sale_id, product_id, batch_id, name_snapshot, qty_base, unit_sold, qty_entered,
-                       unit_price_paisa, discount_paisa, line_total_paisa, cost_paisa_at_sale)
+                       unit_price_paisa, discount_paisa, line_total_paisa, cost_paisa_at_sale,
+                       pricing_mode, discount_basis, discount_percent)
 VALUES(@saleId, @productId, @batchId, @name, @qtyBase, @unitSold, @qtyEntered,
-       @unitPrice, @discount, @lineTotal, @costUnit);",
+       @unitPrice, @discount, @lineTotal, @costUnit, @pricingMode, @discountBasis, @discountPercent);",
                 new
                 {
                     saleId,
@@ -277,7 +360,10 @@ VALUES(@saleId, @productId, @batchId, @name, @qtyBase, @unitSold, @qtyEntered,
                     unitPrice = line.UnitPricePaisa,
                     discount = line.DiscountPaisa,
                     lineTotal = line.LineTotalPaisa,
-                    costUnit = line.CostUnitPaisa
+                    costUnit = line.CostUnitPaisa,
+                    pricingMode = line.PricingMode,
+                    discountBasis = line.DiscountBasis,
+                    discountPercent = (double)line.AppliedDiscountPercent
                 });
 
             saleItemIds.Add((int)_db.NextId(connection));
@@ -344,6 +430,16 @@ VALUES(@at, @method, @amount, @saleId, @customerId, @userId, @note);",
         _audit.Record(connection, user, "POS", "sale_create", "sales", saleId.ToString(),
             newValue: $"{{\"code\":\"{code}\",\"total\":{computed.TotalPaisa},\"discount\":{computed.DiscountPaisa},\"round\":{computed.RoundPaisa},\"method\":\"{method}\"}}");
 
+        if (computed.ExtraDiscountPaisa > 0)
+            _audit.Record(connection, user, "POS", "sale_extra_discount", "sales", saleId.ToString(),
+                newValue: System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    preExtraTotalPaisa = computed.PreExtraTotalPaisa,
+                    extraDiscountPaisa = computed.ExtraDiscountPaisa,
+                    finalTotalPaisa = computed.TotalPaisa,
+                    returnPolicy = "original-item-value-then-remaining-bill-cap"
+                }));
+
         return ServiceResult<SaleResult>.Success(new SaleResult
         {
             SaleId = saleId,
@@ -352,8 +448,14 @@ VALUES(@at, @method, @amount, @saleId, @customerId, @userId, @note);",
             DiscountPaisa = computed.DiscountPaisa,
             TaxPaisa = computed.TaxPaisa,
             RoundPaisa = computed.RoundPaisa,
+            PreExtraTotalPaisa = computed.PreExtraTotalPaisa,
+            ExtraDiscountPaisa = computed.ExtraDiscountPaisa,
             TotalPaisa = computed.TotalPaisa,
             PaidPaisa = paid,
+            // Report the committed payment plan, never a later quote of an already-cleared cart.
+            CashReceivedPaisa = plan.CashPartPaisa > 0
+                ? Math.Max(input.TenderedPaisa, plan.CashPartPaisa) : 0,
+            CashReceivedAssumed = plan.CashPartPaisa > 0 && input.TenderedPaisa <= 0,
             DuePaisa = due,
             ChangePaisa = change,
             SaleItemIds = saleItemIds,
@@ -369,23 +471,20 @@ VALUES(@at, @method, @amount, @saleId, @customerId, @userId, @note);",
             throw new ValidationException("The cart is empty.");
         }
 
-        if (!_settings.GetBool("discount.enabled") && input.DiscountPercent > 0)
-        {
+        var pricing = new PricingAllowanceService(_db, _audit, _log).Read(connection, user);
+        var defaultBasis = PricingAllowanceService.Basis(_settings.GetString("discount.billBasis"));
+        var billBasis = PricingAllowanceService.Basis(input.DiscountBasis ?? defaultBasis);
+        if (billBasis != defaultBasis && !pricing.OverrideBasis)
+            throw new ValidationException("You are not allowed to change the discount basis for a bill.");
+        if (!_settings.GetBool("discount.enabled")
+            && (input.DiscountPercent > 0 || input.Lines.Any(item => item.LineDiscountPercent > 0)))
             throw new ValidationException("Discounts are switched off in Settings.");
-        }
+        PricingAllowanceService.CheckDiscount(pricing, billBasis, input.DiscountPercent);
 
-        var allowedPercent = user.Kind switch
-        {
-            UserRole.Owner => 100m,
-            UserRole.Manager => _settings.GetInt("discount.maxPercentManager", 20),
-            _ => _settings.GetInt("discount.maxPercentCashier", 5)
-        };
-
-        if (input.DiscountPercent < 0 || input.DiscountPercent > allowedPercent)
-        {
-            throw new ValidationException(
-                $"{user.RoleLabel} can give at most {allowedPercent:0.##}% discount.");
-        }
+        if (input.ExtraDiscountPaisa < 0)
+            throw new ValidationException("Extra Discount can only reduce a bill; enter zero or a positive amount.");
+        if (input.ExtraDiscountPaisa > 0 && (!pricing.ExtraDiscount || input.ExtraDiscountPaisa > pricing.ExtraLimitPaisa))
+            throw new ValidationException($"Your Extra Discount limit is {Money.Format(pricing.ExtraDiscount ? pricing.ExtraLimitPaisa : 0)} per bill. Ask the owner to configure your allowance.");
 
         var customer = ResolveCustomer(connection, input.CustomerId);
         var warnings = new List<string>();
@@ -396,8 +495,24 @@ VALUES(@at, @method, @amount, @saleId, @customerId, @userId, @note);",
         var reservedByBatch = new Dictionary<int, double>();
         var requestedByProduct = new Dictionary<int, double>();
 
-        foreach (var lineInput in input.Lines)
+        for (var inputIndex = 0; inputIndex < input.Lines.Count; inputIndex++)
         {
+            var lineInput = input.Lines[inputIndex];
+            var mode = lineInput.PricingMode;
+            if (mode == "normal" && lineInput.UnitPricePaisa > 0) mode = "manual"; // old drafts
+            if (mode is not ("normal" or "manual" or "discount"))
+                throw new ValidationException("Choose normal, manual rate or line discount.");
+            if (lineInput.UnitPricePaisa < 0 || (mode == "manual" && lineInput.UnitPricePaisa <= 0))
+                throw new ValidationException("A manual rate must be greater than zero.");
+            if (mode != "discount" && lineInput.LineDiscountPercent != 0)
+                throw new ValidationException("Reset the line discount before changing the pricing mode.");
+            if (mode == "discount" && lineInput.UnitPricePaisa != 0)
+                throw new ValidationException("A manual rate and a line discount cannot be combined.");
+            if (mode == "discount" && (lineInput.DiscountBasis == "profit" ? !pricing.ProfitDiscount : !pricing.RetailDiscount))
+                throw new ValidationException("You are not allowed to give this type of item discount.");
+            var lineBasis = mode == "discount" ? PricingAllowanceService.Basis(lineInput.DiscountBasis) : billBasis;
+            var linePercent = mode == "discount" ? lineInput.LineDiscountPercent : mode == "manual" ? 0 : input.DiscountPercent;
+            PricingAllowanceService.CheckDiscount(pricing, lineBasis, linePercent);
             if (!double.IsFinite(lineInput.Quantity) || lineInput.Quantity <= 0)
             {
                 throw new ValidationException("Every line needs a real quantity greater than zero.");
@@ -411,8 +526,10 @@ FROM products WHERE id = @id AND active = 1;",
 
             var requestedUnit = (lineInput.Unit ?? "base").Trim().ToLowerInvariant();
             // Older callers sometimes sent the actual base-unit label instead of the "base" token.
-            // Keep that harmless spelling, but never treat a different strength unit (ml) as stock.
+            // The screens now say "unit" for one loose single; both spellings mean the base token,
+            // but never treat a different strength unit (ml) as stock.
             var unit = requestedUnit.Equals(product.BaseUnit, StringComparison.OrdinalIgnoreCase)
+                || requestedUnit == "unit"
                 ? "base"
                 : requestedUnit;
             if (unit is not ("base" or "strip" or "box"))
@@ -437,7 +554,7 @@ FROM products WHERE id = @id AND active = 1;",
 
             // Special rates are opt-in guidance, never a silent customer-category default. An
             // explicit discount uses the retail-plus-discount path instead of stacking both rules.
-            var tierPrice = input.UseSpecialRate && input.DiscountPercent == 0
+            var tierPrice = mode == "normal" && input.UseSpecialRate && input.DiscountPercent == 0
                 ? customer?.Category?.ToLowerInvariant() switch
                 {
                     "vip" => product.VipPaisa > 0 ? product.VipPaisa : product.RetailPaisa,
@@ -446,15 +563,21 @@ FROM products WHERE id = @id AND active = 1;",
                 }
                 : product.RetailPaisa;
 
-            if (tierPrice <= 0)
+            if (tierPrice <= 0 && lineInput.UnitPricePaisa <= 0)
             {
-                throw new ValidationException($"{product.Name}: no retail rate is set.");
+                throw new ValidationException($"{product.Name}: no retail rate is set. Ask a person granted rate-edit permission to enter a selling rate.");
             }
 
-            if (lineInput.UnitPricePaisa > 0 && !user.CanManage)
+            var referencePrice = Calc.Round(product.RetailPaisa * unitsPerSelected);
+            if (mode == "manual")
             {
-                throw new ValidationException(
-                    "Only the owner or a manager can enter a custom selling rate. Use the allowed discount or the customer's special rate.");
+                if (!pricing.EditRate) throw new ValidationException("You are not allowed to edit selling rates.");
+                // With no catalog reference, there is no percentage reduction to measure;
+                // the owner's explicit rate-edit grant and the actual batch cost floor still apply.
+                var maximumReduction = (long)decimal.Floor(referencePrice * pricing.ManualReductionPercent / 100m);
+                var minimumRate = Math.Max(1, referencePrice - maximumReduction);
+                if (lineInput.UnitPricePaisa < minimumRate)
+                    throw new ValidationException($"{product.Name}: maximum reduction {Money.Format(maximumReduction)}; minimum permitted rate {Money.Format(minimumRate)} (purchase-cost check also applies).");
             }
 
             var pricePerSelected = lineInput.UnitPricePaisa > 0
@@ -527,6 +650,10 @@ ORDER BY CASE WHEN expiry_date IS NULL OR expiry_date = '' THEN 1 ELSE 0 END, ex
                 lineDrafts.Add(new SaleDraftLine
                 {
                     ProductId = product.Id,
+                    InputIndex = inputIndex,
+                    PricingMode = mode,
+                    DiscountBasis = lineBasis,
+                    AppliedDiscountPercent = linePercent,
                     Name = product.Name,
                     BatchId = batch.Id,
                     BatchNo = batch.BatchNo,
@@ -569,31 +696,19 @@ ORDER BY CASE WHEN expiry_date IS NULL OR expiry_date = '' THEN 1 ELSE 0 END, ex
             lines.AddRange(lineDrafts);
         }
 
-        // Owner's 27-Oct rule: an explicit percentage is of the full retail/selling-price total,
-        // not merely the profit margin. The below-cost lock and integer-paisa rounding still apply.
-        var blockBelowCost = _settings.GetBool("discount.blockBelowCost");
-
-        // A custom/special rate is not a back door around the cost lock. Refuse before saving rather
-        // than clamping only the displayed total while the receipt keeps a contradictory unit rate.
-        if (blockBelowCost && lines.FirstOrDefault(line => line.GrossPaisa < line.LineCostPaisa) is { } belowCost)
-        {
-            throw new ValidationException(
-                $"{belowCost.Name}: the selling rate is below purchase cost. Increase the rate or ask the owner to correct it.");
-        }
-
+        // Phase 2 supersedes PRICE-01: per-line basis and explicit exclusion, real FEFO cost.
+        const bool blockBelowCost = true; // Owner included; legacy switch can no longer bypass it.
         foreach (var line in lines)
         {
-            var costs = line.LineCostPaisa;
-            var discount = Calc.RoundMoney(line.GrossPaisa * input.DiscountPercent / 100m);
-
-            if (blockBelowCost && line.GrossPaisa - discount < costs)
-            {
-                discount = Math.Max(0, line.GrossPaisa - costs);
-                warnings.Add($"{line.Name}: discount limited so the price never falls below cost.");
-            }
-
-            line.DiscountPaisa = Math.Max(0, discount);
-            line.LineTotalPaisa = line.GrossPaisa - line.DiscountPaisa;
+            if (line.GrossPaisa < line.LineCostPaisa)
+                throw new ValidationException($"{line.Name}: the selling rate is below purchase cost. No role may sell below cost.");
+            var discountBase = line.DiscountBasis == "profit"
+                ? Math.Max(0, line.GrossPaisa - line.LineCostPaisa) : line.GrossPaisa;
+            var discount = Calc.RoundMoney(discountBase * line.AppliedDiscountPercent / 100m);
+            if (line.GrossPaisa - discount < line.LineCostPaisa)
+                throw new ValidationException($"{line.Name}: this discount would sell below purchase cost. Reduce the discount.");
+            line.DiscountPaisa = discount;
+            line.LineTotalPaisa = line.GrossPaisa - discount;
         }
 
         var subtotal = lines.Sum(line => line.GrossPaisa);
@@ -633,6 +748,27 @@ ORDER BY CASE WHEN expiry_date IS NULL OR expiry_date = '' THEN 1 ELSE 0 END, ex
 
         // Spread tax, round-off and the points rebate over the lines so their sum is the total.
         Spread(lines, taxPaisa + roundPaisa - redeem.Paisa, totalPaisa);
+        // Redistribution can put a near-cost allocation below cost despite a safe overall total.
+        foreach (var line in lines.Where(item => item.LineTotalPaisa < item.LineCostPaisa))
+        {
+            var needed = line.LineCostPaisa - line.LineTotalPaisa;
+            foreach (var donor in lines.Where(item => item.LineTotalPaisa > item.LineCostPaisa))
+            {
+                var transfer = Math.Min(needed, donor.LineTotalPaisa - donor.LineCostPaisa);
+                donor.LineTotalPaisa -= transfer;
+                line.LineTotalPaisa += transfer;
+                needed -= transfer;
+                if (needed == 0) break;
+            }
+            if (needed > 0) throw new ValidationException("This bill would fall below purchase cost.");
+        }
+
+        // Strictly AFTER rounding/points and line cost checks. Never Spread Extra Discount:
+        // product rates, quantities and all previous line/bill discounts stay byte-for-byte equal.
+        var preExtraTotal = totalPaisa;
+        if (input.ExtraDiscountPaisa > Math.Max(0, preExtraTotal - costTotal))
+            throw new ValidationException("Extra Discount would take this bill below actual purchase cost. Reduce it; no role can bypass this safeguard.");
+        totalPaisa = preExtraTotal - input.ExtraDiscountPaisa;
 
         return new ComputedSale
         {
@@ -641,6 +777,8 @@ ORDER BY CASE WHEN expiry_date IS NULL OR expiry_date = '' THEN 1 ELSE 0 END, ex
             DiscountPaisa = discountTotal,
             TaxPaisa = taxPaisa,
             RoundPaisa = roundPaisa,
+            PreExtraTotalPaisa = preExtraTotal,
+            ExtraDiscountPaisa = input.ExtraDiscountPaisa,
             TotalPaisa = totalPaisa,
             RedeemPoints = redeem.Points,
             RedeemPaisa = redeem.Paisa,
@@ -672,7 +810,7 @@ ORDER BY CASE WHEN expiry_date IS NULL OR expiry_date = '' THEN 1 ELSE 0 END, ex
             }
         }
 
-        // The bill total must equal the sum of its lines, always (Spec 11.4).
+        // Before the separate sale-level Extra Discount, this total must equal the sum of lines.
         var difference = expectedTotal - lines.Sum(line => line.LineTotalPaisa);
         if (difference != 0)
         {
@@ -936,6 +1074,8 @@ WHERE id = @id AND active = 1 AND LOWER(IFNULL(category, '')) = 'doctor';",
 
         public long RoundPaisa { get; init; }
 
+        public long PreExtraTotalPaisa { get; init; }
+        public long ExtraDiscountPaisa { get; init; }
         public long TotalPaisa { get; init; }
 
         public int RedeemPoints { get; init; }

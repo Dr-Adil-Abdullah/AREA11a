@@ -44,6 +44,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     private string _strengthFilter = string.Empty;
     private int? _categoryFilter;
     private int? _companyFilter;
+    private int? _supplierFilter;
     private bool _lowStockOnly;
     private string _boxStripsText = "0";
     private string _stripTabletsText = "0";
@@ -56,6 +57,22 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     private Company? _selectedCompany;
     private string _newCategoryName = string.Empty;
     private string _newCompanyName = string.Empty;
+    private GenericFormula? _selectedFormula;
+    private BrandDefinition? _selectedBrand;
+    private string _newFormulaName = string.Empty;
+    private string _newBrandName = string.Empty;
+    private Supplier? _selectedPreferredSupplier;
+    private string _preferredSupplierHint = string.Empty;
+    private string _supplierHistoryText = string.Empty;
+    private int? _preferredSupplierId;
+    private bool _clearPreferredSupplier;
+    private string _formulaLinkHint = string.Empty;
+    private string _brandLinkHint = string.Empty;
+    private int? _formulaLinkId;
+    private int? _brandLinkId;
+    private bool _unlinkFormula;
+    private bool _unlinkBrand;
+    private bool _fillingLink;
     private string _statusMessage = "Select a product to edit, or start a new one.";
     private bool _isStatusError;
 
@@ -71,6 +88,11 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         RefreshCommand = new RelayCommand(Load);
         AddCategoryCommand = new RelayCommand(AddCategory);
         AddCompanyCommand = new RelayCommand(AddCompany);
+        AddFormulaCommand = new RelayCommand(AddFormula);
+        AddBrandCommand = new RelayCommand(AddBrand);
+        ClearPreferredSupplierCommand = new RelayCommand(ClearPreferredSupplier);
+        UnlinkFormulaCommand = new RelayCommand(UnlinkFormula);
+        UnlinkBrandCommand = new RelayCommand(UnlinkBrand);
         ManageCatalogCommand = new RelayCommand(ManageCatalog);
         ManageUnitsCommand = new RelayCommand(ManageUnits);
         ClearFilterCommand = new RelayCommand(ClearFilter);
@@ -79,6 +101,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         OpenProductPhotoCommand = new RelayCommand<int>(OpenProductPhoto);
         PhotosCommand = new RelayCommand(OpenPhotos);
         BarcodesCommand = new RelayCommand(OpenBarcodes);
+        HistoryCommand = new RelayCommand(OpenHistory);
 
         Editor = new CustomFieldsEditorViewModel(services, user, CustomFieldEntity.Product, saveWithParent: true);
 
@@ -86,11 +109,31 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         Load();
     }
 
+    /// <summary>The editor window title carries the shop's app name (v0.69.0, de-workshop).</summary>
+    public string WindowTitle => AppDisplayName + " — Product editor";
+
+    private string AppDisplayName
+    {
+        get
+        {
+            var name = _services.Settings.GetString("brand.appName").Trim();
+            return name.Length == 0 ? "Area11" : name;
+        }
+    }
+
     public ObservableCollection<Product> Items { get; } = new();
 
     public ObservableCollection<Category> Categories { get; } = new();
 
     public ObservableCollection<Company> Companies { get; } = new();
+
+    public ObservableCollection<GenericFormula> Formulas { get; } = new();
+
+    public ObservableCollection<BrandDefinition> Brands { get; } = new();
+
+    public ObservableCollection<Supplier> Suppliers { get; } = new();
+
+    public ObservableCollection<ProductSupplierOption> SupplierFilterOptions { get; } = new();
 
     /// <summary>Active managed units; the service validates the same names again on save.</summary>
     public ObservableCollection<string> BaseUnits { get; } = new();
@@ -118,12 +161,25 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     /// <summary>The several printed codes of this medicine (F-43). Needs a saved product.</summary>
     public RelayCommand BarcodesCommand { get; }
 
+    /// <summary>Portion 13: every purchase and sale of the medicine on the form.</summary>
+    public RelayCommand HistoryCommand { get; }
+
     /// <summary>The owner's own questions for a medicine (F-42) - drawn only if he made any.</summary>
     public CustomFieldsEditorViewModel Editor { get; }
 
     public RelayCommand AddCompanyCommand { get; }
 
     /// <summary>E-04: rename, order, put away and restore catalog rows in one small window.</summary>
+    public RelayCommand AddFormulaCommand { get; }
+
+    public RelayCommand AddBrandCommand { get; }
+
+    public RelayCommand UnlinkFormulaCommand { get; }
+
+    public RelayCommand UnlinkBrandCommand { get; }
+
+    public RelayCommand ClearPreferredSupplierCommand { get; }
+
     public RelayCommand ManageCatalogCommand { get; }
 
     public RelayCommand ManageUnitsCommand { get; }
@@ -168,13 +224,51 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     public string Generic
     {
         get => _generic;
-        set => SetProperty(ref _generic, value);
+        set
+        {
+            if (!SetProperty(ref _generic, value))
+            {
+                return;
+            }
+
+            if (_fillingLink)
+            {
+                return;
+            }
+
+            // Retyping away from the picked spelling silently unlinks; Core drops the stale
+            // link on save as well, so the text can never disagree with its link.
+            if (_formulaLinkId is not null && !LinkTextMatches(SelectedFormula?.Name, value))
+            {
+                _formulaLinkId = null;
+                SelectedFormula = null;
+                UpdateFormulaHint();
+            }
+        }
     }
 
     public string Brand
     {
         get => _brand;
-        set => SetProperty(ref _brand, value);
+        set
+        {
+            if (!SetProperty(ref _brand, value))
+            {
+                return;
+            }
+
+            if (_fillingLink)
+            {
+                return;
+            }
+
+            if (_brandLinkId is not null && !LinkTextMatches(SelectedBrand?.Name, value))
+            {
+                _brandLinkId = null;
+                SelectedBrand = null;
+                UpdateBrandHint();
+            }
+        }
     }
 
     public string Barcode
@@ -246,6 +340,10 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
             {
                 parts.Add("company: " + (Companies.FirstOrDefault(row => row.Id == companyId)?.Name ?? companyId.ToString()));
             }
+            if (_supplierFilter is int supplierId)
+            {
+                parts.Add("supplier: " + (SupplierFilterOptions.FirstOrDefault(row => row.SupplierId == supplierId)?.Name ?? supplierId.ToString()));
+            }
             if (_lowStockOnly)
             {
                 parts.Add("low stock");
@@ -258,7 +356,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         }
     }
 
-    public bool HasFilter => _categoryFilter.HasValue || _companyFilter.HasValue || _lowStockOnly || !string.IsNullOrWhiteSpace(_strengthFilter);
+    public bool HasFilter => _categoryFilter.HasValue || _companyFilter.HasValue || _supplierFilter.HasValue || _lowStockOnly || !string.IsNullOrWhiteSpace(_strengthFilter);
 
     public string BoxStripsText
     {
@@ -332,6 +430,113 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         set => SetProperty(ref _newCompanyName, value);
     }
 
+    public GenericFormula? SelectedFormula
+    {
+        get => _selectedFormula;
+        set
+        {
+            if (!SetProperty(ref _selectedFormula, value))
+            {
+                return;
+            }
+
+            if (value is null)
+            {
+                _formulaLinkId = null;
+                return;
+            }
+
+            // An explicit pick links and fills the canonical spelling. Typing never links.
+            _formulaLinkId = value.Id;
+            _unlinkFormula = false;
+            _fillingLink = true;
+            Generic = value.Name;
+            _fillingLink = false;
+            UpdateFormulaHint();
+        }
+    }
+
+    public BrandDefinition? SelectedBrand
+    {
+        get => _selectedBrand;
+        set
+        {
+            if (!SetProperty(ref _selectedBrand, value))
+            {
+                return;
+            }
+
+            if (value is null)
+            {
+                _brandLinkId = null;
+                return;
+            }
+
+            _brandLinkId = value.Id;
+            _unlinkBrand = false;
+            _fillingLink = true;
+            Brand = value.Name;
+            _fillingLink = false;
+            UpdateBrandHint();
+        }
+    }
+
+    public string NewFormulaName
+    {
+        get => _newFormulaName;
+        set => SetProperty(ref _newFormulaName, value);
+    }
+
+    public string NewBrandName
+    {
+        get => _newBrandName;
+        set => SetProperty(ref _newBrandName, value);
+    }
+
+    public string FormulaLinkHint
+    {
+        get => _formulaLinkHint;
+        private set => SetProperty(ref _formulaLinkHint, value);
+    }
+
+    public string BrandLinkHint
+    {
+        get => _brandLinkHint;
+        private set => SetProperty(ref _brandLinkHint, value);
+    }
+
+    public Supplier? SelectedPreferredSupplier
+    {
+        get => _selectedPreferredSupplier;
+        set
+        {
+            if (!SetProperty(ref _selectedPreferredSupplier, value))
+            {
+                return;
+            }
+
+            _preferredSupplierId = value?.Id;
+            if (value is not null)
+            {
+                _clearPreferredSupplier = false;
+            }
+
+            UpdatePreferredHint();
+        }
+    }
+
+    public string PreferredSupplierHint
+    {
+        get => _preferredSupplierHint;
+        private set => SetProperty(ref _preferredSupplierHint, value);
+    }
+
+    public ProductSupplierOption? SelectedSupplierFilter
+    {
+        get => SupplierFilterOptions.FirstOrDefault(option => option.SupplierId == _supplierFilter);
+        set => ApplyFilter(supplierId: value?.SupplierId);
+    }
+
     public string StatusMessage
     {
         get => _statusMessage;
@@ -396,6 +601,76 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
             }
         }
 
+        var formulaId = _formulaLinkId;
+        var formulas = _services.Products.GetFormulas();
+        Formulas.Clear();
+        if (formulas.Ok && formulas.Value is not null)
+        {
+            foreach (var formula in formulas.Value)
+            {
+                Formulas.Add(formula);
+            }
+        }
+
+        var brandId = _brandLinkId;
+        var brands = _services.Products.GetBrands();
+        Brands.Clear();
+        if (brands.Ok && brands.Value is not null)
+        {
+            foreach (var brand in brands.Value)
+            {
+                Brands.Add(brand);
+            }
+        }
+
+        // A row just put away can no longer be linked by this form; Core already unlinked it.
+        SelectedFormula = Formulas.FirstOrDefault(c => c.Id == formulaId);
+        SelectedBrand = Brands.FirstOrDefault(c => c.Id == brandId);
+        if (SelectedFormula is null)
+        {
+            _formulaLinkId = null;
+            _unlinkFormula = false;
+        }
+
+        if (SelectedBrand is null)
+        {
+            _brandLinkId = null;
+            _unlinkBrand = false;
+        }
+
+        UpdateFormulaHint();
+        UpdateBrandHint();
+
+        var preferredId = _preferredSupplierId;
+        var suppliers = _services.Partners.GetSuppliers();
+        Suppliers.Clear();
+        if (suppliers.Ok && suppliers.Value is not null)
+        {
+            foreach (var supplier in suppliers.Value)
+            {
+                Suppliers.Add(supplier);
+            }
+        }
+
+        SelectedPreferredSupplier = Suppliers.FirstOrDefault(row => row.Id == preferredId);
+        if (SelectedPreferredSupplier is null)
+        {
+            _preferredSupplierId = null;
+        }
+
+        var options = _services.Products.GetProductSupplierOptions();
+        SupplierFilterOptions.Clear();
+        if (options.Ok && options.Value is not null)
+        {
+            foreach (var option in options.Value)
+            {
+                SupplierFilterOptions.Add(option);
+            }
+        }
+
+        OnPropertyChanged(nameof(SelectedSupplierFilter));
+        UpdatePreferredHint();
+
         var units = _services.Products.GetUnits();
         BaseUnits.Clear();
         if (units.Ok && units.Value is not null)
@@ -419,7 +694,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     private void Load()
     {
         // F-50: exact first; when nothing matches, the closest medicines with a sentence saying so.
-        var result = _services.Products.SearchSmart(SearchText, _categoryFilter, _companyFilter, _lowStockOnly, _strengthFilter);
+        var result = _services.Products.SearchSmart(_user, SearchText, _categoryFilter, _companyFilter, _lowStockOnly, _strengthFilter, _supplierFilter);
 
         if (!result.Ok || result.Value is null)
         {
@@ -446,12 +721,24 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
 
     private void BeginNewProduct()
     {
+        if (!_user.CanManage)
+        {
+            SetStatus("Only the owner or a manager can edit products.", true);
+            return;
+        }
+
         NewProduct();
         ProductEditorDoor.Show(this);
     }
 
     private void BeginEditProduct()
     {
+        if (!_user.CanManage)
+        {
+            SetStatus("Only the owner or a manager can edit products.", true);
+            return;
+        }
+
         var product = SelectedProduct;
         if (product is null)
         {
@@ -461,10 +748,15 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
 
         // Search rows carry display text but not CategoryTagIds. Fetch the complete record before
         // editing; otherwise an ordinary save would silently replace its existing tags with none.
-        var full = _services.Products.Get(product.Id);
+        var full = _services.Products.Get(_user, product.Id);
         if (!full.Ok || full.Value is null || !full.Value.Active)
         {
             SetStatus(full.Error ?? "That medicine is no longer active. Refresh and try again.", true);
+            return;
+        }
+        if (!full.Value.CostKnown)
+        {
+            SetStatus("View Purchase Cost permission and the main financial visibility switch are required to edit stored cost. No values were changed.", true);
             return;
         }
 
@@ -503,6 +795,19 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         ReorderText = "0";
         SelectedCategory = Categories.FirstOrDefault();
         SelectedCompany = Companies.FirstOrDefault();
+        _formulaLinkId = null;
+        _brandLinkId = null;
+        _unlinkFormula = false;
+        _unlinkBrand = false;
+        SelectedFormula = null;
+        SelectedBrand = null;
+        UpdateFormulaHint();
+        UpdateBrandHint();
+        _preferredSupplierId = null;
+        _clearPreferredSupplier = false;
+        _supplierHistoryText = string.Empty;
+        SelectedPreferredSupplier = null;
+        UpdatePreferredHint();
 
         OnPropertyChanged(nameof(HeaderText));
         SetStatus("New product — fill the name and rates.", false);
@@ -512,6 +817,13 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     {
         _editingId = product.Id;
 
+        _formulaLinkId = null;
+        _brandLinkId = null;
+        _unlinkFormula = false;
+        _unlinkBrand = false;
+        _preferredSupplierId = null;
+        _clearPreferredSupplier = false;
+        _supplierHistoryText = string.Empty;
         Name = product.Name;
         Generic = product.Generic ?? string.Empty;
         Brand = product.Brand ?? string.Empty;
@@ -538,6 +850,20 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
 
         SelectedCategory = Categories.FirstOrDefault(c => c.Id == product.CategoryId);
         SelectedCompany = Companies.FirstOrDefault(c => c.Id == product.CompanyId);
+        SelectedFormula = Formulas.FirstOrDefault(c => c.Id == product.GenericFormulaId);
+        SelectedBrand = Brands.FirstOrDefault(c => c.Id == product.BrandId);
+        // The setters above skip unchanged selections, so re-sync the saved link by hand.
+        _formulaLinkId = SelectedFormula?.Id;
+        _brandLinkId = SelectedBrand?.Id;
+        _unlinkFormula = false;
+        _unlinkBrand = false;
+        UpdateFormulaHint();
+        UpdateBrandHint();
+        SelectedPreferredSupplier = Suppliers.FirstOrDefault(row => row.Id == product.PreferredSupplierId);
+        _preferredSupplierId = SelectedPreferredSupplier?.Id;
+        _clearPreferredSupplier = false;
+        LoadSupplierHistory(product.Id);
+        UpdatePreferredHint();
 
         OnPropertyChanged(nameof(HeaderText));
         SetStatus($"Editing {product.Name}.", false);
@@ -584,6 +910,12 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
             CategoryTagIds = CategoryTagOptions.Where(option => option.IsSelected && option.Id != SelectedCategory?.Id)
                 .Select(option => option.Id).Distinct().ToList(),
             CompanyId = SelectedCompany?.Id,
+            GenericFormulaId = _formulaLinkId,
+            BrandId = _brandLinkId,
+            ClearGenericFormula = _unlinkFormula,
+            ClearBrand = _unlinkBrand,
+            PreferredSupplierId = _preferredSupplierId,
+            ClearPreferredSupplier = _clearPreferredSupplier,
             RackNo = RackNo,
             Room = Room,
             PackSizeLabel = PackSizeLabel,
@@ -604,11 +936,29 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
             SetStatus("Extra fields could not be loaded. Reopen the editor before saving.", true);
             return;
         }
+        // Warn-once (v0.70.0, owner's word): the necessary fields are named, and saving anyway
+        // stays one press. This asks on every Save press - never more than once per press.
+        var missing = _services.Products.MissingRequiredLabels(patch);
+        if (missing.Count > 0)
+        {
+            var answer = MessageBox.Show(
+                "These are marked necessary in Settings, Fields: " + string.Join(", ", missing)
+                + ".\n\nSave anyway?",
+                AppDisplayName, MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
+            if (answer != MessageBoxResult.Yes)
+            {
+                SetStatus("Not saved - fill the necessary fields, or press Save and choose Save anyway.", false);
+                return;
+            }
+        }
+
         var answers = Editor.AnswerValues();
         var isNew = _editingId is null;
+        IReadOnlyList<string> saveWarnings = Array.Empty<string>();
         if (isNew)
         {
             var created = _services.Products.Create(_user, patch, answers, Editor.StagedPhotoForSave());
+            saveWarnings = created.Warnings;
             if (!created.Ok || created.Value <= 0)
             {
                 SetStatus(created.Error ?? "The product could not be saved.", true);
@@ -631,9 +981,8 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         }
 
         Load();
-        SetStatus(isNew
-            ? "Product and extra fields saved."
-            : "Product and extra fields saved.", false);
+        var warningText = saveWarnings.Count > 0 ? " ⚠ " + string.Join(" ", saveWarnings) : string.Empty;
+        SetStatus("Product and extra fields saved." + warningText, saveWarnings.Count > 0);
     }
 
     /// <summary>One predictable doorway for category, company, dashboard and strength links.</summary>
@@ -641,14 +990,17 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         int? categoryId = null,
         int? companyId = null,
         bool lowStockOnly = false,
-        string? strength = null)
+        string? strength = null,
+        int? supplierId = null)
     {
         _categoryFilter = categoryId is > 0 ? categoryId : null;
         _companyFilter = companyId is > 0 ? companyId : null;
+        _supplierFilter = supplierId is > 0 ? supplierId : null;
         _lowStockOnly = lowStockOnly;
         _strengthFilter = (strength ?? string.Empty).Trim();
         _searchText = string.Empty;
         OnPropertyChanged(nameof(CategoryFilterId));
+        OnPropertyChanged(nameof(SelectedSupplierFilter));
         OnPropertyChanged(nameof(SearchText));
         OnPropertyChanged(nameof(FilterText));
         OnPropertyChanged(nameof(HasFilter));
@@ -692,7 +1044,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         SelectedCategory = Categories.FirstOrDefault(row => row.Id == categoryId);
         SelectedCompany = Companies.FirstOrDefault(row => row.Id == companyId);
         Load();
-        SetStatus("Category and company lists refreshed; the product form was kept.", false);
+        SetStatus("Catalog lists refreshed; the product form was kept.", false);
     }
 
     /// <summary>The barcode list of the medicine on the form. A new, unsaved medicine has no id yet.</summary>
@@ -705,6 +1057,18 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         }
 
         BarcodeWindowDoor.Show(_services, _user, id, Name);
+    }
+
+    /// <summary>The history of the medicine on the form. A new, unsaved medicine has no story yet.</summary>
+    private void OpenHistory()
+    {
+        if (_editingId is not int id || id <= 0)
+        {
+            SetStatus("Save the medicine first - a new row has no history yet.", true);
+            return;
+        }
+
+        ProductHistoryDoor.Show(_services, _user, id, Name);
     }
 
     /// <summary>Photo gallery for the medicine on the form. A new, unsaved medicine has no id yet.</summary>
@@ -762,6 +1126,123 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         SetStatus("Category added.", false);
     }
 
+    private void AddFormula()
+    {
+        var result = _services.Products.AddFormula(_user, NewFormulaName);
+        if (!result.Ok)
+        {
+            SetStatus(result.Error ?? "The salt could not be saved.", true);
+            return;
+        }
+
+        var id = result.Value;
+        NewFormulaName = string.Empty;
+        LoadLookups();
+        SelectedFormula = Formulas.FirstOrDefault(c => c.Id == id);
+        SetStatus("Salt added and picked.", false);
+    }
+
+    private void AddBrand()
+    {
+        var result = _services.Products.AddBrand(_user, NewBrandName);
+        if (!result.Ok)
+        {
+            SetStatus(result.Error ?? "The brand could not be saved.", true);
+            return;
+        }
+
+        var id = result.Value;
+        NewBrandName = string.Empty;
+        LoadLookups();
+        SelectedBrand = Brands.FirstOrDefault(c => c.Id == id);
+        SetStatus("Brand added and picked.", false);
+    }
+
+    private void UnlinkFormula()
+    {
+        if (_formulaLinkId is null)
+        {
+            SetStatus("No salt is linked; the typed text stays as it is.", false);
+            return;
+        }
+
+        _formulaLinkId = null;
+        _unlinkFormula = _editingId is not null;
+        SelectedFormula = null;
+        UpdateFormulaHint();
+        SetStatus("Salt link dropped. The typed text stays; save to keep it that way.", false);
+    }
+
+    private void UnlinkBrand()
+    {
+        if (_brandLinkId is null)
+        {
+            SetStatus("No brand is linked; the typed text stays as it is.", false);
+            return;
+        }
+
+        _brandLinkId = null;
+        _unlinkBrand = _editingId is not null;
+        SelectedBrand = null;
+        UpdateBrandHint();
+        SetStatus("Brand link dropped. The typed text stays; save to keep it that way.", false);
+    }
+
+    private void UpdateFormulaHint() =>
+        FormulaLinkHint = _formulaLinkId is null
+            ? "Typed text — pick a salt to link it, or add a new salt below."
+            : "Linked salt: " + (SelectedFormula?.Name ?? string.Empty) + ". Retyping the text drops the link.";
+
+    private void UpdateBrandHint() =>
+        BrandLinkHint = _brandLinkId is null
+            ? "Typed text — pick a brand to link it, or add a new brand below."
+            : "Linked brand: " + (SelectedBrand?.Name ?? string.Empty) + ". Retyping the text drops the link.";
+
+    private static bool LinkTextMatches(string? linked, string? typed) =>
+        string.Equals((linked ?? string.Empty).Trim(), (typed ?? string.Empty).Trim(),
+            StringComparison.OrdinalIgnoreCase);
+
+    private void ClearPreferredSupplier()
+    {
+        if (_preferredSupplierId is null && !_clearPreferredSupplier)
+        {
+            SetStatus("No preferred supplier is set; purchase history is untouched.", false);
+            return;
+        }
+
+        _preferredSupplierId = null;
+        _clearPreferredSupplier = _editingId is not null;
+        SelectedPreferredSupplier = null;
+        UpdatePreferredHint();
+        SetStatus("Preferred supplier cleared. Purchase history is untouched; save to keep it that way.", false);
+    }
+
+    private void LoadSupplierHistory(int productId)
+    {
+        _supplierHistoryText = string.Empty;
+        var history = _services.Products.GetProductSuppliers(productId);
+        if (!history.Ok || history.Value is null)
+        {
+            return;
+        }
+
+        var names = history.Value
+            .Where(row => !row.IsPreferred && !string.IsNullOrWhiteSpace(row.SupplierName))
+            .Select(row => row.SupplierName!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (names.Count > 0)
+        {
+            _supplierHistoryText = " Bought before from: " + string.Join(", ", names) + ".";
+        }
+    }
+
+    private void UpdatePreferredHint() =>
+        PreferredSupplierHint = (_preferredSupplierId is null
+            ? "No preferred supplier — pick one above. History never picks for you."
+            : "Preferred supplier: " + (SelectedPreferredSupplier?.Name ?? string.Empty) + ".")
+            + _supplierHistoryText;
+
     private void AddCompany()
     {
         var result = _services.Products.AddCompany(_user, NewCompanyName);
@@ -778,15 +1259,9 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         SetStatus("Company added.", false);
     }
 
-    private static string? ResolvePhotoPath(Product product)
-    {
-        if (string.IsNullOrWhiteSpace(product.PhotoFileName))
-        {
-            return null;
-        }
-        var path = Path.Combine(AppPaths.PhotosFolder, product.PhotoFileName);
-        return File.Exists(path) ? path : null;
-    }
+    private string? ResolvePhotoPath(Product product) =>
+        // Portion 17: the one formula lives on the service; this page only points at it.
+        _services.Photos.CoverPath(product.PhotoFileName);
 
     private void SetStatus(string message, bool isError)
     {

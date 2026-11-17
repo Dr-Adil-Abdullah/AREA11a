@@ -34,7 +34,7 @@ public sealed class NegativeStockPolicyTests
             new PermissionService(test.Database, test.Log, test.Audit), test.Log);
 
     private static StockTakeService Takes(TestDatabase test) =>
-        new(test.Database, test.Audit, new NumberingService(test.Settings),
+        new(test.Database, test.Audit, new NumberingService(test.Settings), test.Settings,
             new PermissionService(test.Database, test.Log, test.Audit), test.Log);
 
     private static StockMinusService Minus(TestDatabase test) =>
@@ -456,7 +456,7 @@ VALUES(@productId, @batchNo, @expiry, @expiryYm, @quantity, 20000, 30000, 0, 1, 
         Assert.True(returned.Ok, returned.Error);
         Assert.Equal(-2d, ProductQty(test, product)); // a historical return is still an increment
 
-        var catalog = new ProductService(test.Database, test.Audit, test.Log).Get(product);
+        var catalog = new ProductService(test.Database, test.Audit, test.Log).Get(TestData.Owner, product);
         Assert.True(catalog.Ok, catalog.Error);
         Assert.Equal(-2d, catalog.Value!.StockBase);
 

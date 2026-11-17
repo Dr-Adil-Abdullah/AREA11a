@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using Area11.Core.Models;
+using Area11.Core.Services;
 using Area11.Core.Utils;
 
 namespace Area11.Desktop.ViewModels;
@@ -27,6 +28,8 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
 
     private SaleHistoryRow? _selected;
     private SaleHistoryReturn? _selectedReturn;
+    private List<SaleHistoryRow> _printSelection = new();
+    private bool _canPrintSelection;
     private string _searchText = string.Empty;
     private string _fromText = string.Empty;
     private string _toText = string.Empty;
@@ -53,6 +56,8 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
     private bool _hasPayments;
     private string _statusText = "Pick a range and press Search. Every bill in it can be printed again.";
     private bool _isStatusError;
+    private bool _hasDriftHint;
+    private string _driftHintText = string.Empty;
 
     private const string AllMethods = "All methods";
 
@@ -71,7 +76,11 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
         MonthCommand = new RelayCommand(() => SetRange(30));
         ClearCommand = new RelayCommand(Clear);
         PrintCommand = new RelayCommand(PrintAgain);
+        PrintSelectionCommand = new RelayCommand(PrintSelection);
+        PreviewCommand = new RelayCommand(Preview);
+        WhatsAppCommand = new RelayCommand(SendOnWhatsApp);
         PrintReturnCommand = new RelayCommand(PrintSelectedReturn);
+        FixTimeCommand = new RelayCommand(FixTime);
 
         Load();
     }
@@ -102,8 +111,35 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
 
     public RelayCommand PrintCommand { get; }
 
+    /// <summary>Portion 11: the ticked bills, as one bulk job (the "Print selected" button).</summary>
+    public RelayCommand PrintSelectionCommand { get; }
+
+    /// <summary>Portion 11: the exact paper text on the screen before anything prints.</summary>
+    public RelayCommand PreviewCommand { get; }
+
+    /// <summary>Portion 12: the open bill as WhatsApp text plus a PDF the owner attaches by hand.</summary>
+    public RelayCommand WhatsAppCommand { get; }
+
     /// <summary>Prints the return receipt of the row picked in the returns list.</summary>
     public RelayCommand PrintReturnCommand { get; }
+
+    /// <summary>The owner-only modal that lists the wrongly-stamped bills and fixes them in one press.</summary>
+    public RelayCommand FixTimeCommand { get; }
+
+    public bool IsOwner => _user.IsOwner;
+
+    /// <summary>True when the computer clock stands far enough from true time to warn about.</summary>
+    public bool HasDriftHint
+    {
+        get => _hasDriftHint;
+        private set => SetProperty(ref _hasDriftHint, value);
+    }
+
+    public string DriftHintText
+    {
+        get => _driftHintText;
+        private set => SetProperty(ref _driftHintText, value);
+    }
 
     // ------------------------------ the filters ------------------------------
 
@@ -153,6 +189,23 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
     {
         get => _canPrint;
         private set => SetProperty(ref _canPrint, value);
+    }
+
+    /// <summary>True when two or more bills are ticked for the bulk buttons.</summary>
+    public bool CanPrintSelection
+    {
+        get => _canPrintSelection;
+        private set => SetProperty(ref _canPrintSelection, value);
+    }
+
+    /// <summary>
+    /// The grid's ticked rows, carried over by the code-behind (a grid cannot bind its own
+    /// multi-selection). Only ids are kept: the paper is rebuilt from the database at print time.
+    /// </summary>
+    public void SetPrintSelection(IEnumerable<SaleHistoryRow> rows)
+    {
+        _printSelection = (rows ?? Enumerable.Empty<SaleHistoryRow>()).Where(row => row is not null).Distinct().ToList();
+        CanPrintSelection = _printSelection.Count > 1;
     }
 
     /// <summary>The return picked in the bill's return list; null when the bill has none.</summary>
@@ -208,6 +261,9 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
         private set => SetProperty(ref _previewText, value);
     }
 
+    private string _preExtraTotalText = "-", _extraDiscountText = "-";
+    public string PreExtraTotalText { get => _preExtraTotalText; private set => SetProperty(ref _preExtraTotalText, value); }
+    public string ExtraDiscountText { get => _extraDiscountText; private set => SetProperty(ref _extraDiscountText, value); }
     public string SubtotalLabel
     {
         get => _subtotalLabel;
@@ -321,6 +377,8 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
 
     public void Load()
     {
+        RefreshDriftHint();
+
         var page = _services.History.Search(_user, new SaleHistoryFilter
         {
             Search = SearchText,
@@ -362,6 +420,33 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
                 ? "No bills in this range."
                 : "Pick a bill on the left. The paper is shown here before it prints, and nothing is changed by looking.",
             false);
+    }
+
+    /// <summary>
+    /// Minutes matter (v0.68.0): when the computer clock stands far enough from true time, the Bills
+    /// page says so under its heading - so no sale hides in the wrong day unnoticed.
+    /// </summary>
+    private void RefreshDriftHint()
+    {
+        if (TimeSource.IsOnline && TimeSource.Offset.Duration() >= TimeCorrectionService.SuspectThreshold)
+        {
+            HasDriftHint = true;
+            DriftHintText = "This computer's clock is " + TimeSource.Describe(TimeSource.Offset) +
+                            " away from true time - bills stamped before the fix may carry the wrong day. " +
+                            "Press 'Fix wrong time…'.";
+        }
+        else
+        {
+            HasDriftHint = false;
+            DriftHintText = string.Empty;
+        }
+    }
+
+    /// <summary>Opens the fix modal, then reloads: the fix may have moved bills across the range.</summary>
+    private void FixTime()
+    {
+        TimeCorrectionDoor.Show(_services, _user);
+        Load();
     }
 
     private void Open()
@@ -406,6 +491,8 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
         OnPropertyChanged(nameof(CanPrintReturn));
 
         SelectedTitle = detail.TitleLabel;
+        PreExtraTotalText = detail.Sale.PreExtraTotalText;
+        ExtraDiscountText = detail.Sale.ExtraDiscountText;
         SubtotalLabel = detail.SubtotalLabel;
         DiscountLabel = detail.DiscountLabel;
         TaxLabel = detail.TaxLabel;
@@ -445,6 +532,14 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
 
     private void PrintAgain()
     {
+        // Portion 11: with `printer.defaultBulk` on and several bills ticked, the main button prints
+        // the whole ticked set; otherwise it prints the one open bill, as it always has.
+        if (_printSelection.Count > 1 && _services.Settings.GetBool("printer.defaultBulk", false))
+        {
+            PrintBulk(_printSelection.Select(row => row.Id).ToList());
+            return;
+        }
+
         if (Selected is null)
         {
             SetStatus("Pick a bill first.", true);
@@ -475,6 +570,110 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
             "Printed " + Selected.Code + " again (" + Selected.TotalLabel + ")."
             + (noted.Ok ? string.Empty : " The black box did not record it: " + noted.Error),
             !noted.Ok);
+    }
+
+    /// <summary>The explicit bulk button: always the ticked bills, whatever the setting says.</summary>
+    private void PrintSelection()
+    {
+        if (_printSelection.Count < 2)
+        {
+            SetStatus("Tick two or more bills first (hold Ctrl and click).", true);
+            return;
+        }
+
+        PrintBulk(_printSelection.Select(row => row.Id).ToList());
+    }
+
+    private void PrintBulk(List<int> ids)
+    {
+        var job = _services.History.BuildBulkBills(_user, ids);
+        if (!job.Ok || job.Value is null)
+        {
+            SetStatus(job.Error ?? "The bills could not be prepared.", true);
+            return;
+        }
+
+        var printed = _services.Printer.PrintBulk(job.Value);
+        if (!printed.Ok)
+        {
+            SetStatus(printed.Error ?? "The printer did not answer.", true);
+            return;
+        }
+
+        // Every copy in the set is a reprint of its own bill, so every one is written to the black
+        // box; a paper that went out unrecorded is the copy nobody can trace.
+        var unrecorded = new List<string>();
+        foreach (var id in ids)
+        {
+            var noted = _services.History.RecordReprint(_user, id);
+            if (!noted.Ok)
+            {
+                unrecorded.Add(id.ToString());
+            }
+        }
+
+        SetStatus("Printed " + ids.Count + " bills."
+            + (unrecorded.Count == 0 ? string.Empty : " The black box did not record: " + string.Join(", ", unrecorded) + "."),
+            unrecorded.Count > 0);
+    }
+
+    /// <summary>
+    /// The paper text on the screen first: the ticked set when several are ticked, else the open bill.
+    /// </summary>
+    private void Preview()
+    {
+        if (_printSelection.Count > 1)
+        {
+            var job = _services.History.BuildBulkBills(_user, _printSelection.Select(row => row.Id).ToList());
+            if (!job.Ok || job.Value is null)
+            {
+                SetStatus(job.Error ?? "The bills could not be prepared.", true);
+                return;
+            }
+
+            PrintPreviewDoor.ShowBulk(_services, job.Value);
+            return;
+        }
+
+        if (Selected is null)
+        {
+            SetStatus("Pick a bill first.", true);
+            return;
+        }
+
+        var document = _services.History.BuildReceipt(_user, Selected.Id);
+        if (!document.Ok || document.Value is null)
+        {
+            SetStatus(document.Error ?? "The bill could not be prepared.", true);
+            return;
+        }
+
+        PrintPreviewDoor.Show(_services, document.Value);
+    }
+
+    /// <summary>
+    /// The open bill to WhatsApp: the receipt text in the message, the same bill as a PDF file.
+    /// No phone is known here, so the owner picks the contact after the app opens.
+    /// </summary>
+    private void SendOnWhatsApp()
+    {
+        if (Selected is null)
+        {
+            SetStatus("Pick a bill first.", true);
+            return;
+        }
+
+        var document = _services.History.BuildReceipt(_user, Selected.Id);
+        if (!document.Ok || document.Value is null)
+        {
+            SetStatus(document.Error ?? "The bill could not be prepared.", true);
+            return;
+        }
+
+        var sent = WhatsAppFlow.Send(_services, null, document.Value.PlainText,
+            document.Value.Title, document.Value.Lines.Select(line => line.Text),
+            "bill-" + Selected.Code + ".pdf");
+        SetStatus(sent.Message, !sent.Ok);
     }
 
     private void PrintSelectedReturn()
@@ -545,6 +744,8 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
         Returns.Clear();
         PreviewText = string.Empty;
         SelectedTitle = "Open a bill to see its lines.";
+        PreExtraTotalText = "-";
+        ExtraDiscountText = "-";
         SubtotalLabel = "-";
         DiscountLabel = "-";
         TaxLabel = "-";

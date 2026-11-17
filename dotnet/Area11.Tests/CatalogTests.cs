@@ -26,7 +26,7 @@ public sealed class CatalogTests
         var childProduct = AddProduct(service, "Child medicine", child.Value, null);
         var otherProduct = AddProduct(service, "Other medicine", other.Value, null);
 
-        var found = service.Search(categoryId: parent.Value);
+        var found = service.Search(TestData.Owner, categoryId: parent.Value);
         Assert.True(found.Ok, found.Error);
         var foundRows = found.Value!;
         Assert.Equal(childProduct, Assert.Single(foundRows).Id);
@@ -49,7 +49,7 @@ public sealed class CatalogTests
         Assert.Equal("Catalog parent", saved.ParentName);
         Assert.Equal(5, saved.SortOrder);
         Assert.Equal(1, saved.ProductCount);
-        Assert.Equal("Renamed child", service.Get(childProduct).Value!.CategoryName);
+        Assert.Equal("Renamed child", service.Get(TestData.Owner, childProduct).Value!.CategoryName);
         Assert.Equal(1L, Rows(test, "SELECT COUNT(1) FROM audit_logs WHERE action = 'category_update';"));
     }
 
@@ -65,8 +65,8 @@ public sealed class CatalogTests
 
         var putAway = service.SetCategoryActive(TestData.Owner, parent, false);
         Assert.True(putAway.Ok, putAway.Error);
-        Assert.Null(service.Get(direct).Value!.CategoryId);
-        Assert.Equal(child, service.Get(nested).Value!.CategoryId);
+        Assert.Null(service.Get(TestData.Owner, direct).Value!.CategoryId);
+        Assert.Equal(child, service.Get(TestData.Owner, nested).Value!.CategoryId);
         Assert.Equal(2L, Rows(test, "SELECT COUNT(1) FROM products WHERE id IN (@direct, @nested);", new { direct, nested }));
         Assert.DoesNotContain(service.GetCategories().Value!, row => row.Id == parent);
         Assert.Contains(service.GetCategories().Value!, row => row.Id == child && row.ParentId == parent);
@@ -84,7 +84,7 @@ public sealed class CatalogTests
 
         Assert.True(service.SetCategoryActive(TestData.Owner, parent, true).Ok);
         Assert.True(service.GetCategories(activeOnly: false).Value!.Single(row => row.Id == parent).Active);
-        Assert.Null(service.Get(direct).Value!.CategoryId);
+        Assert.Null(service.Get(TestData.Owner, direct).Value!.CategoryId);
         Assert.Equal(1L, Rows(test, "SELECT COUNT(1) FROM audit_logs WHERE action = 'category_put_away';"));
         Assert.Equal(1L, Rows(test, "SELECT COUNT(1) FROM audit_logs WHERE action = 'category_restore';"));
         Assert.Contains(direct.ToString(), Text(test,
@@ -117,16 +117,16 @@ WHERE id = @company;", new { company }));
         Assert.Equal("0300-100", row.RepPhone);
         Assert.Equal(2, row.VisitDay);
         Assert.Equal(1, row.ProductCount);
-        Assert.Equal("Renamed company", service.Get(product).Value!.CompanyName);
+        Assert.Equal("Renamed company", service.Get(TestData.Owner, product).Value!.CompanyName);
 
         Assert.True(service.SetCompanyActive(TestData.Owner, company, false).Ok);
-        Assert.Null(service.Get(product).Value!.CompanyId);
+        Assert.Null(service.Get(TestData.Owner, product).Value!.CompanyId);
         Assert.False(service.GetCompanies(activeOnly: false).Value!.Single(item => item.Id == company).Active);
         Assert.DoesNotContain(service.GetCompanies().Value!, item => item.Id == company);
         Assert.False(AddProductResult(service, "Inactive company link", null, company).Ok);
 
         Assert.True(service.SetCompanyActive(TestData.Owner, company, true).Ok);
-        Assert.Null(service.Get(product).Value!.CompanyId);
+        Assert.Null(service.Get(TestData.Owner, product).Value!.CompanyId);
         Assert.Equal(1L, Rows(test, "SELECT COUNT(1) FROM audit_logs WHERE action = 'company_update';"));
         Assert.Equal(1L, Rows(test, "SELECT COUNT(1) FROM audit_logs WHERE action = 'company_put_away';"));
         Assert.Equal(1L, Rows(test, "SELECT COUNT(1) FROM audit_logs WHERE action = 'company_restore';"));
@@ -258,7 +258,7 @@ FROM companies c JOIN products p ON p.company_id = c.id WHERE c.id = 1;");
         var empty = AddProduct(service, "A empty product", null, null);
         var stocked = TestData.AddProduct(test, batchQty: 3.5, name: "B stocked product");
 
-        var result = service.Search();
+        var result = service.Search(TestData.Owner);
 
         Assert.True(result.Ok, result.Error);
         var rows = result.Value!;

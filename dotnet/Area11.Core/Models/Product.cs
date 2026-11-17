@@ -22,6 +22,15 @@ public sealed class Product
 
     public int? CompanyId { get; set; }
 
+    /// <summary>Explicit salt link, or null for legacy typed text. Never guessed from the text.</summary>
+    public int? GenericFormulaId { get; set; }
+
+    /// <summary>Explicit brand link, or null for legacy typed text. Never guessed from the text.</summary>
+    public int? BrandId { get; set; }
+
+    /// <summary>Explicit preferred supplier, or null. Purchase history never sets this (P9).</summary>
+    public int? PreferredSupplierId { get; set; }
+
     public string? CategoryName { get; set; }
 
     /// <summary>Additional filter-only tags; never joined into financial category totals.</summary>
@@ -78,7 +87,15 @@ public sealed class Product
     /// <summary>1 Strip = ? base units.</summary>
     public int StripTablets { get; set; }
 
+    /// <summary>Masked in denied read projections, not the authoritative purchase/sale cost.</summary>
     public long CostPaisa { get; set; }
+
+    public bool CostKnown { get; set; }
+
+    public bool MarginKnown { get; set; }
+
+    /// <summary>Projected before cost masking; independent Profit permission controls this value.</summary>
+    public decimal MarginPercent { get; set; }
 
     public long RetailPaisa { get; set; }
 
@@ -109,14 +126,14 @@ public sealed class Product
 
     public double UnitsPerBox => Math.Max(1, BoxStrips) * Math.Max(1, StripTablets);
 
-    /// <summary>One shared box/strip/base conversion for screen quotes and the committed sale.</summary>
+    /// <summary>One shared box/strip/unit conversion for screen quotes and the committed sale.</summary>
     public double QuantityPerSelectedUnit(string? unit) =>
         QuantityPerSelectedUnit(unit, BoxStrips, StripTablets);
 
     public static double QuantityPerSelectedUnit(string? unit, int boxStrips, int stripTablets) =>
         unit?.Trim().ToLowerInvariant() switch
         {
-            "box" => (double)(Math.Max(1, boxStrips) * Math.Max(1, stripTablets)),
+            "box" => boxStrips > 0 ? (double)(Math.Max(1, boxStrips) * Math.Max(1, stripTablets)) : 1d,
             "strip" => (double)Math.Max(1, stripTablets),
             _ => 1d
         };
@@ -128,7 +145,7 @@ public sealed class Product
 
     public string StockLabel => $"{StockBase:0.###} {BaseUnit}";
 
-    public string CostText => Money.Format(CostPaisa);
+    public string CostText => CostKnown ? Money.Format(CostPaisa) : "hidden";
 
     public string RetailText => Money.Format(RetailPaisa);
 
@@ -140,13 +157,12 @@ public sealed class Product
     {
         get
         {
-            if (RetailPaisa <= 0)
+            if (!MarginKnown || RetailPaisa <= 0)
             {
                 return "—";
             }
 
-            var margin = (RetailPaisa - CostPaisa) * 100m / RetailPaisa;
-            return $"{margin:0.#}%";
+            return $"{MarginPercent:0.#}%";
         }
     }
 
@@ -173,6 +189,24 @@ public sealed class ProductPatch
     public List<int>? CategoryTagIds { get; set; }
 
     public int? CompanyId { get; set; }
+
+    /// <summary>Link this product to a salt, or null to leave the link unchanged.</summary>
+    public int? GenericFormulaId { get; set; }
+
+    /// <summary>Link this product to a brand, or null to leave the link unchanged.</summary>
+    public int? BrandId { get; set; }
+
+    /// <summary>True drops the salt link and keeps the typed text (re-linking sets the id instead).</summary>
+    public bool ClearGenericFormula { get; set; }
+
+    /// <summary>True drops the brand link and keeps the typed text.</summary>
+    public bool ClearBrand { get; set; }
+
+    /// <summary>Link this product to a preferred supplier, or null to leave it unchanged.</summary>
+    public int? PreferredSupplierId { get; set; }
+
+    /// <summary>True drops the preferred supplier. History rows are never touched.</summary>
+    public bool ClearPreferredSupplier { get; set; }
 
     public string? RackNo { get; set; }
 

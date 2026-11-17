@@ -47,9 +47,13 @@
                                        Style="{StaticResource FieldHint}" />
 
                             <TextBlock Text="Category" Style="{StaticResource FieldLabel}" Margin="0,12,0,0" />
-                            <ComboBox ItemsSource="{Binding Categories}" DisplayMemberPath="Label"
-                                      SelectedItem="{Binding Category, Mode=TwoWay}" Width="220"
-                                      HorizontalAlignment="Left" />
+                            <StackPanel Orientation="Horizontal">
+                                <ComboBox ItemsSource="{Binding Categories}" DisplayMemberPath="Label"
+                                          SelectedItem="{Binding Category, Mode=TwoWay}" Width="220" />
+                                <Button Content="Manage categories…" Command="{Binding ManageCategoriesCommand}"
+                                        Visibility="{Binding CanManageCategories, Converter={StaticResource BoolToVis}}"
+                                        Margin="8,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
 
                             <TextBlock Text="What was it" Style="{StaticResource FieldLabel}" Margin="0,10,0,0" />
                             <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}"
@@ -153,13 +157,20 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <StackPanel Grid.Row="0" Margin="0,0,0,8">
-                        <TextBlock Text="What went out" Style="{StaticResource SectionTitle}" />
-                        <TextBlock Text="{Binding TodayText}" Style="{StaticResource FieldHint}" />
-                    </StackPanel>
+                    <DockPanel Grid.Row="0" Margin="0,0,0,8">
+                        <StackPanel DockPanel.Dock="Left">
+                            <TextBlock Text="What went out" Style="{StaticResource SectionTitle}" />
+                            <TextBlock Text="{Binding TodayText}" Style="{StaticResource FieldHint}" />
+                        </StackPanel>
+                        <Button DockPanel.Dock="Right" Content="Print voucher" Style="{StaticResource GhostButton}"
+                                HorizontalAlignment="Right" VerticalAlignment="Center"
+                                Command="{Binding PrintVoucherCommand}" IsEnabled="{Binding CanPrintVoucher}"
+                                ToolTip="Print the picked entry as a voucher" />
+                    </DockPanel>
 
-                    <DataGrid Grid.Row="1" ItemsSource="{Binding Rows}" IsReadOnly="True"
-                              AutoGenerateColumns="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal">
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Rows}" SelectedItem="{Binding SelectedRow, Mode=TwoWay}"
+                              IsReadOnly="True" AutoGenerateColumns="False" HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal">
                         <DataGrid.RowStyle>
                             <Style TargetType="DataGridRow">
                                 <Style.Triggers>

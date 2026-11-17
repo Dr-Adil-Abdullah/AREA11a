@@ -80,6 +80,8 @@ public sealed class CustomFieldService
         try
         {
             using var connection = _db.Open();
+            var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, module);
+            if (manage || includeInactive) OwnerAccess.Require(_db, connection, reader);
 
             var rows = _db.Query<CustomField>(connection, @"
 SELECT id AS id, entity AS entity, field_key AS fieldKey, label AS label, type AS type,
@@ -91,6 +93,10 @@ ORDER BY sort, id;",
                 new { entity = key, includeInactive = includeInactive ? 1 : 0 });
 
             return ServiceResult<List<CustomField>>.Success(rows);
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult<List<CustomField>>.Fail(exception.Message);
         }
         catch (Exception exception)
         {
@@ -141,6 +147,7 @@ ORDER BY sort, id;",
         {
             return _db.Tx(connection =>
             {
+                var owner = OwnerAccess.Require(_db, connection, user);
                 if (LabelExists(connection, key, cleanLabel, exceptId: 0))
                 {
                     return ServiceResult<CustomField>.Fail(
@@ -171,7 +178,7 @@ VALUES(@entity, NULL, @label, @type, @optionsJson, @helpText, @required, 1, @sor
                 _db.Execute(connection, "UPDATE custom_fields SET field_key = @fieldKey WHERE id = @id;",
                     new { fieldKey, id });
 
-                _audit.Record(connection, user, Modules.Settings, "custom_field_add",
+                _audit.Record(connection, owner, Modules.Settings, "custom_field_add",
                     "custom_fields", id.ToString(), newValue: Describe(cleanLabel, cleanType, optionsJson, required, cleanHelp),
                     details: CustomFieldEntity.LabelFor(key));
 
@@ -190,6 +197,10 @@ VALUES(@entity, NULL, @label, @type, @optionsJson, @helpText, @required, 1, @sor
                     CreatedAt = Clock.Now()
                 });
             });
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult<CustomField>.Fail(exception.Message);
         }
         catch (Exception exception)
         {
@@ -235,6 +246,7 @@ VALUES(@entity, NULL, @label, @type, @optionsJson, @helpText, @required, 1, @sor
         {
             return _db.Tx(connection =>
             {
+                var owner = OwnerAccess.Require(_db, connection, user);
                 var field = ReadField(connection, fieldId);
 
                 if (field is null)
@@ -280,7 +292,7 @@ WHERE id = @id;",
 
                 if (!string.Equals(before, after, StringComparison.Ordinal))
                 {
-                    _audit.Record(connection, user, Modules.Settings, "custom_field_update",
+                    _audit.Record(connection, owner, Modules.Settings, "custom_field_update",
                         "custom_fields", fieldId.ToString(),
                         oldValue: before, newValue: after, details: field.Entity);
                 }
@@ -295,6 +307,10 @@ WHERE id = @id;",
                         "The kind of field changed. The answers already saved keep their old text - open the records and check them.")
                     : ServiceResult.Success();
             });
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult.Fail(exception.Message);
         }
         catch (Exception exception)
         {
@@ -315,6 +331,7 @@ WHERE id = @id;",
         {
             return _db.Tx(connection =>
             {
+                var owner = OwnerAccess.Require(_db, connection, user);
                 var field = ReadField(connection, fieldId);
 
                 if (field is null)
@@ -330,7 +347,7 @@ WHERE id = @id;",
                 _db.Execute(connection, "UPDATE custom_fields SET active = @active WHERE id = @id;",
                     new { active = active ? 1 : 0, id = fieldId });
 
-                _audit.Record(connection, user, Modules.Settings,
+                _audit.Record(connection, owner, Modules.Settings,
                     active ? "custom_field_on" : "custom_field_off", "custom_fields", fieldId.ToString(),
                     oldValue: field.Active ? "shown" : "put away",
                     newValue: active ? "shown" : "put away",
@@ -338,6 +355,10 @@ WHERE id = @id;",
 
                 return ServiceResult.Success();
             });
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult.Fail(exception.Message);
         }
         catch (Exception exception)
         {
@@ -363,6 +384,7 @@ WHERE id = @id;",
         {
             return _db.Tx(connection =>
             {
+                var owner = OwnerAccess.Require(_db, connection, user);
                 var field = ReadField(connection, fieldId);
 
                 if (field is null)
@@ -398,7 +420,7 @@ ORDER BY sort, id;", new { entity = field.Entity });
                         new { sort = position + 1, id = ordered[position].Id });
                 }
 
-                _audit.Record(connection, user, Modules.Settings, "custom_field_order",
+                _audit.Record(connection, owner, Modules.Settings, "custom_field_order",
                     "custom_fields", fieldId.ToString(),
                     oldValue: field.Sort.ToString(CultureInfo.InvariantCulture),
                     newValue: (target + 1).ToString(CultureInfo.InvariantCulture),
@@ -406,6 +428,10 @@ ORDER BY sort, id;", new { entity = field.Entity });
 
                 return ServiceResult.Success();
             });
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult.Fail(exception.Message);
         }
         catch (Exception exception)
         {
@@ -433,6 +459,7 @@ ORDER BY sort, id;", new { entity = field.Entity });
         try
         {
             using var connection = _db.Open();
+            var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, CustomFieldEntity.ModuleFor(key));
 
             var rows = _db.Query<CustomValue>(connection, @"
 SELECT id AS id, field_id AS fieldId, entity AS entity, entity_id AS entityId,
@@ -452,6 +479,10 @@ WHERE entity = @entity AND entity_id = @entityId;",
             }
 
             return ServiceResult<Dictionary<int, string>>.Success(answers);
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult<Dictionary<int, string>>.Fail(exception.Message);
         }
         catch (Exception exception)
         {
@@ -484,6 +515,7 @@ WHERE entity = @entity AND entity_id = @entityId;",
         try
         {
             using var connection = _db.Open();
+            var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, CustomFieldEntity.ModuleFor(key));
 
             var lines = _db.Query<CustomAnswerLine>(connection, @"
 SELECT v.field_id AS fieldId, IFNULL(f.label, '') AS label, IFNULL(v.value, '') AS value
@@ -495,6 +527,10 @@ ORDER BY IFNULL(f.sort, 0), v.field_id;",
                 new { entity = key, entityId });
 
             return ServiceResult<List<CustomAnswerLine>>.Success(lines);
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult<List<CustomAnswerLine>>.Fail(exception.Message);
         }
         catch (Exception exception)
         {
@@ -528,7 +564,15 @@ ORDER BY IFNULL(f.sort, 0), v.field_id;",
 
         try
         {
-            return _db.Tx(connection => SaveValuesInTransaction(connection, user, key, entityId, values));
+            return _db.Tx(connection =>
+            {
+                var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, CustomFieldEntity.ModuleFor(key));
+                return SaveValuesInTransaction(connection, reader, key, entityId, values);
+            });
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult.Fail(exception.Message);
         }
         catch (Exception exception)
         {

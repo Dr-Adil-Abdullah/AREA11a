@@ -36,6 +36,7 @@ public sealed class ReportsViewModel : ObservableObject, IEmptyPage
     private string _itemsText = "0";
     private string _salesText = "Rs 0";
     private string _discountText = "Rs 0";
+    private string _extraDiscountText = "Rs 0";
     private string _averageBillText = "Rs 0";
     private string _cashText = "Rs 0";
     private string _creditText = "Rs 0";
@@ -62,6 +63,8 @@ public sealed class ReportsViewModel : ObservableObject, IEmptyPage
         Month30Command = new RelayCommand(() => Select(ReportRange.Last30));
         MonthCommand = new RelayCommand(() => Select(ReportRange.ThisMonth));
         RefreshCommand = new RelayCommand(Load);
+        PrintCommand = new RelayCommand(PrintReport);
+        WhatsAppCommand = new RelayCommand(SendOnWhatsApp);
 
         Load();
     }
@@ -85,6 +88,12 @@ public sealed class ReportsViewModel : ObservableObject, IEmptyPage
     public RelayCommand MonthCommand { get; }
 
     public RelayCommand RefreshCommand { get; }
+
+    /// <summary>Portion 11: the open period as a printed sales report.</summary>
+    public RelayCommand PrintCommand { get; }
+
+    /// <summary>Portion 12: the open period as WhatsApp text plus a PDF the owner attaches by hand.</summary>
+    public RelayCommand WhatsAppCommand { get; }
 
     public string PeriodLabel
     {
@@ -135,6 +144,7 @@ public sealed class ReportsViewModel : ObservableObject, IEmptyPage
         private set => SetProperty(ref _salesText, value);
     }
 
+    public string ExtraDiscountText { get => _extraDiscountText; private set => SetProperty(ref _extraDiscountText, value); }
     public string DiscountText
     {
         get => _discountText;
@@ -234,6 +244,48 @@ public sealed class ReportsViewModel : ObservableObject, IEmptyPage
         Load();
     }
 
+    /// <summary>
+    /// The open period on paper. The profit lines travel only for eyes the service allows -
+    /// the document builder honours the same `profit` permission the screen does.
+    /// </summary>
+    private void PrintReport()
+    {
+        var document = _services.Reports.BuildDocument(_range, _user);
+        if (!document.Ok || document.Value is null)
+        {
+            IsStatusError = true;
+            StatusText = document.Error ?? "The report could not be prepared.";
+            return;
+        }
+
+        var printed = _services.Printer.Print(document.Value);
+        IsStatusError = !printed.Ok;
+        StatusText = printed.Ok
+            ? "Sales report sent to the printer (" + Area11.Core.Services.ReportService.RangeLabel(_range) + ")."
+            : "The printer did not answer: " + printed.Error;
+    }
+
+    /// <summary>
+    /// The open period to WhatsApp: the report text in the message, the same report as a PDF file.
+    /// The profit lines travel only for eyes the service allows - the same gate as the print.
+    /// </summary>
+    private void SendOnWhatsApp()
+    {
+        var document = _services.Reports.BuildDocument(_range, _user);
+        if (!document.Ok || document.Value is null)
+        {
+            IsStatusError = true;
+            StatusText = document.Error ?? "The report could not be prepared.";
+            return;
+        }
+
+        var sent = WhatsAppFlow.Send(_services, null, document.Value.PlainText,
+            document.Value.Title, document.Value.Lines.Select(line => line.Text),
+            "sales-report-" + Area11.Core.Services.ReportService.RangeLabel(_range) + ".pdf");
+        IsStatusError = !sent.Ok;
+        StatusText = sent.Message;
+    }
+
     private void Load()
     {
         Days.Clear();
@@ -268,6 +320,7 @@ public sealed class ReportsViewModel : ObservableObject, IEmptyPage
         ItemsText = value.Totals.ItemsText;
         SalesText = value.Totals.SalesText;
         DiscountText = value.Totals.DiscountText;
+        ExtraDiscountText = value.Totals.ExtraDiscountText;
         AverageBillText = value.Totals.AverageBillText;
         CashText = value.Totals.CashText;
         CreditText = value.Totals.CreditText;

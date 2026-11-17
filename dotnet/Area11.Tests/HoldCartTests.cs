@@ -154,8 +154,8 @@ public sealed class HoldCartTests
         var holds = TestData.Holds(test);
 
         var cart = TestData.Cart(product);
-        cart.DiscountPercent = 90;             // a cashier may give 5% - parking it would hide the error
-        var cashier = new User { Id = 2, Name = "Bilal", Role = "cashier" };
+        cart.DiscountPercent = 90;             // new per-person default is no discount; parking must not hide the error
+        var cashier = TestData.Cashier(test);
 
         var result = holds.Hold(cart, cashier);
 

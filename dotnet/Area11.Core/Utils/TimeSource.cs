@@ -28,16 +28,29 @@ public enum TimeOrigin
 /// The rules, in the order they matter:
 ///   * **Nothing here may throw or block a bill.** Every call is wrapped; a failed probe keeps the
 ///     last good offset and never stops the counter.
-///   * **A wild answer is refused.** A server that says the year is 1980, or a clock that is a
-///     month off, must not move every bill of the shop - a difference larger than two days is
-///     treated as an error and the computer clock is kept.
+///   * **A wild answer is refused.** A server that says the year is 1980 must not move every
+///     bill of the shop - a difference larger than thirty days is treated as garbage and the
+///     computer clock is kept. Anything smaller is ACCEPTED (owner's word, Nov 2026): even minutes
+///     matter, because a bill stamped two minutes before midnight belongs to the wrong day - and a
+///     wrong day or month hides the shop's حساب. Bills already stamped with the wrong clock are
+///     fixed together afterwards by `TimeCorrectionService`, never here.
 ///   * **The shop must be able to see which time was used.** `Origin`, `Offset` and `Note` are
 ///     written into the log and shown on Settings → Shift &amp; session.
 /// </summary>
 public static class TimeSource
 {
-    /// <summary>Anything larger than this is not drift, it is a wrong answer.</summary>
-    public static readonly TimeSpan LargestAcceptedOffset = TimeSpan.FromDays(2);
+    /// <summary>
+    /// Anything larger than this is not drift, it is a garbage answer. Thirty days, not two: the
+    /// two-day refusal is gone on the owner's word (Nov 2026) - a wrong day or month in the books
+    /// costs more than a cautious refusal ever saved.
+    /// </summary>
+    public static readonly TimeSpan LargestAcceptedOffset = TimeSpan.FromDays(30);
+
+    /// <summary>
+    /// True when an answer is close enough to believe. A pure question with no memory, so the tests
+    /// can ask it about a three-day drift without moving every stamp in the program for a moment.
+    /// </summary>
+    public static bool IsPlausible(TimeSpan difference) => difference.Duration() <= LargestAcceptedOffset;
 
     private static readonly object Gate = new();
 
@@ -181,7 +194,7 @@ public static class TimeSource
             difference = TimeSpan.Zero;
         }
 
-        if (difference.Duration() > LargestAcceptedOffset)
+        if (!IsPlausible(difference))
         {
             lock (Gate)
             {
@@ -299,6 +312,13 @@ public static class TimeSource
             return sign + size.TotalMinutes.ToString("0.0", CultureInfo.InvariantCulture) + " min";
         }
 
-        return sign + size.TotalHours.ToString("0.0", CultureInfo.InvariantCulture) + " h";
+        if (size.TotalDays < 1)
+        {
+            return sign + size.TotalHours.ToString("0.0", CultureInfo.InvariantCulture) + " h";
+        }
+
+        // Days exist because the two-day refusal is gone (v0.68.0): the owner reads "+3.0 days",
+        // not "+72.0 h", when his PC has been a weekend out.
+        return sign + size.TotalDays.ToString("0.0", CultureInfo.InvariantCulture) + " days";
     }
 }

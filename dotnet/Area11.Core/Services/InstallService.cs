@@ -161,15 +161,15 @@ public static class InstallService
 
     private static InstallCheck ArchitectureCheck(MachineFacts facts) => facts.IsArm64
         ? new InstallCheck("architecture", "Processor", InstallState.Note,
-            "This is an ARM PC. Area11 installs its x64 build and Windows 10 runs it under emulation - slower, but it works.",
+            "This is an ARM PC. This program installs its x64 build and Windows 10 runs it under emulation - slower, but it works.",
             "Nothing to do.")
         : new InstallCheck("architecture", "Processor", InstallState.Ready,
-            "64-bit Intel/AMD PC - the build Area11 is made for.",
+            "64-bit Intel/AMD PC - the build this program is made for.",
             string.Empty);
 
     private static InstallCheck RuntimeCheck() => new(
         "runtime", "What has to be installed", InstallState.Ready,
-        "Nothing else: the .NET runtime travels inside the program (D-19), the database engine ships with it, and there is no Python anywhere.",
+        "Nothing else: the .NET runtime travels inside the program, the database engine ships with it, and there is no Python anywhere.",
         string.Empty);
 
     private static InstallCheck SourceCheck(MachineFacts facts)
@@ -235,7 +235,7 @@ public static class InstallService
 
         return new InstallCheck("spooler", "Print spooler", InstallState.Note,
             "Windows did not say whether the print spooler is running.",
-            "The installer starts it anyway; a printer problem never stops Area11 (Z-07).");
+            "The installer starts it anyway; a printer problem never stops the shop.");
     }
 
     private static InstallCheck PrinterCheck(MachineFacts facts)
@@ -438,6 +438,32 @@ public static class InstallService
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
                                              or ArgumentException or NotSupportedException)
+        {
+            return 3;
+        }
+    }
+
+    /// <summary>
+    /// Runs the installer's auto-start step and answers with an exit code setup can read:
+    ///   0 - start-with-Windows is on for every account;
+    ///   2 - refused with a sentence (not really an administrator, bad path) - setup shows the
+    ///       sentence and carries on, because the program itself is installed and works;
+    ///   3 - something unexpected broke - setup shows its own fallback sentence and carries on.
+    ///
+    /// The sentence also goes to the console, so running this verb by hand in a terminal says what
+    /// happened instead of answering in exit codes only.
+    /// </summary>
+    public static int RunEnableAutoStart(StartupService startup, string exePath)
+    {
+        try
+        {
+            var result = startup.SetMachineAutoStart(exePath);
+
+            Console.WriteLine(result.Ok ? "Start-with-Windows is on for every account." : result.Error);
+
+            return result.Ok ? 0 : 2;
+        }
+        catch (Exception)
         {
             return 3;
         }

@@ -271,5 +271,5 @@ public sealed class FuzzySearchTests
 
     private static ServiceResult<ProductSearchResult> Smart(
         TestDatabase test, string term, int? companyId = null) =>
-        new ProductService(test.Database, test.Audit, test.Log).SearchSmart(term, companyId: companyId);
+        new ProductService(test.Database, test.Audit, test.Log).SearchSmart(TestData.Owner, term, companyId: companyId);
 }

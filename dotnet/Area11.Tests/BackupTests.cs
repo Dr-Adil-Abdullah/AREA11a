@@ -351,6 +351,9 @@ VALUES(@at, 'owner', 'test_new_work', 'Products', 'work after the backup');",
 
         var service = folders.Backups(test);
 
+        // Since v0.63.0 a new shop starts switched ON (owner's word: data loss is the biggest
+        // fear), so the "switched off" half of this test now switches off explicitly.
+        Assert.True(test.Settings.Set("backup.autoEnabled", false, TestData.Owner).Ok);
         Assert.Null(service.RunAutomaticIfDue());
         Assert.Empty(service.List());
 
@@ -365,6 +368,15 @@ VALUES(@at, 'owner', 'test_new_work', 'Products', 'work after the backup');",
         Assert.Null(service.RunAutomaticIfDue());
         Assert.Single(service.List());
         Assert.False(string.IsNullOrWhiteSpace(test.Settings.GetString("backup.lastRunAt")));
+    }
+
+    [Fact]
+    public void ANewShop_HasTheDailyBackupSwitchedOn()
+    {
+        using var test = new TestDatabase();
+        using var folders = new TempFolders();
+
+        Assert.True(folders.Backups(test).AutomaticEnabled);
     }
 
     [Theory]

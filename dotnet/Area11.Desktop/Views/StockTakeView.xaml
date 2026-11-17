@@ -44,11 +44,27 @@
                     <DockPanel Grid.Row="1" Margin="0,8,0,8">
                         <CheckBox DockPanel.Dock="Left" Content="Only rows with a difference"
                                   IsChecked="{Binding DifferencesOnly, Mode=TwoWay}" VerticalAlignment="Center" />
+                        <Button DockPanel.Dock="Right" Content="Print count sheet" Style="{StaticResource GhostButton}"
+                                HorizontalAlignment="Right" Command="{Binding PrintSheetCommand}"
+                                ToolTip="Print the sheet to walk the shop with" />
                     </DockPanel>
 
                     <DataGrid Grid.Row="2" ItemsSource="{Binding Lines}"
                               SelectedItem="{Binding SelectedLine, Mode=TwoWay}" IsReadOnly="True">
                         <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="Photo" Width="90">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border Width="{DynamicResource ProductThumbnailSize}" Height="{DynamicResource ProductThumbnailSize}"
+                                                CornerRadius="12" BorderThickness="1" BorderBrush="{StaticResource LineBrush}">
+                                            <Border.Background><ImageBrush ImageSource="{Binding PhotoPath}" Stretch="UniformToFill" /></Border.Background>
+                                            <TextBlock Text="No photo" FontSize="9" TextWrapping="Wrap" TextAlignment="Center"
+                                                       VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}"
+                                                       Visibility="{Binding HasNoPhoto, Converter={StaticResource BoolToVis}}" />
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                             <DataGridTextColumn Header="Medicine" Binding="{Binding ProductName}" Width="2*" />
                             <DataGridTextColumn Header="Batch" Binding="{Binding WhereLabel, Mode=OneWay}" Width="1.3*" />
                             <DataGridTextColumn Header="Book" Binding="{Binding BookLabel, Mode=OneWay}" Width="75" />
@@ -114,8 +130,22 @@
                             </DockPanel>
 
                             <ListBox ItemsSource="{Binding Found}" Height="90" Margin="0,6,0,0"
-                                     DisplayMemberPath="Name"
-                                     SelectedItem="{Binding FoundProduct, Mode=TwoWay}" />
+                                     SelectedItem="{Binding FoundProduct, Mode=TwoWay}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Width="36" Height="36" CornerRadius="8" BorderThickness="1" BorderBrush="{StaticResource LineBrush}" Margin="0,0,8,0">
+                                                <Border.Background><ImageBrush ImageSource="{Binding PhotoPath}" Stretch="UniformToFill" /></Border.Background>
+                                                <TextBlock Text="-" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}"
+                                                           Visibility="{Binding HasNoPhoto, Converter={StaticResource BoolToVis}}" />
+                                            </Border>
+                                            <TextBlock Text="{Binding Name}" Width="170" VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding StrengthLabel, Mode=OneWay}" Width="70" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding PackSizeLabel, Mode=OneWay}" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
 
                             <Button Content="Add the selected medicine" Style="{StaticResource GhostButton}"
                                     HorizontalAlignment="Left" Margin="0,6,0,0" Command="{Binding AddFoundCommand}" />

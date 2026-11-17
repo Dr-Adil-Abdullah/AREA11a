@@ -24,7 +24,7 @@ public sealed class CustomerCreateTests
 
         Assert.True(created.Ok, created.Error);
 
-        var row = TestData.Ledger(test).List().Value!.Single(customer => customer.Id == created.Value);
+        var row = TestData.Ledger(test).List(TestData.Owner).Value!.Single(customer => customer.Id == created.Value);
 
         Assert.Equal("Bilal", row.Name);
         Assert.Equal("0321-9876543", row.Phone);
@@ -40,7 +40,7 @@ public sealed class CustomerCreateTests
         var created = Partners(test).CreateCustomer(TestData.Owner, "Sara", null, "DOCTOR");
 
         Assert.True(created.Ok, created.Error);
-        Assert.Equal("Doctor", TestData.Ledger(test).List().Value!
+        Assert.Equal("Doctor", TestData.Ledger(test).List(TestData.Owner).Value!
             .Single(customer => customer.Id == created.Value).CategoryLabel);
     }
 
@@ -52,7 +52,7 @@ public sealed class CustomerCreateTests
         var created = Partners(test).CreateCustomer(TestData.Owner, "Sara", null, "wholesale");
 
         Assert.True(created.Ok, created.Error);
-        Assert.Equal("Normal", TestData.Ledger(test).List().Value!
+        Assert.Equal("Normal", TestData.Ledger(test).List(TestData.Owner).Value!
             .Single(customer => customer.Id == created.Value).CategoryLabel);
     }
 
@@ -65,7 +65,7 @@ public sealed class CustomerCreateTests
 
         Assert.False(created.Ok);
         Assert.Contains("name", created.Error!);
-        Assert.Empty(TestData.Ledger(test).List().Value!);
+        Assert.Empty(TestData.Ledger(test).List(TestData.Owner).Value!);
     }
 
     [Fact]
@@ -80,7 +80,7 @@ public sealed class CustomerCreateTests
 
         // The message must name the person who holds the number, or the cashier cannot act on it.
         Assert.Contains("Ali Raza", created.Error!);
-        Assert.Single(TestData.Ledger(test).List().Value!);
+        Assert.Single(TestData.Ledger(test).List(TestData.Owner).Value!);
     }
 
     [Fact]
@@ -91,7 +91,7 @@ public sealed class CustomerCreateTests
         Assert.True(Partners(test).CreateCustomer(TestData.Owner, "Sara", "", "normal").Ok);
         Assert.True(Partners(test).CreateCustomer(TestData.Owner, "Bilal", "   ", "normal").Ok);
 
-        Assert.Equal(2, TestData.Ledger(test).List().Value!.Count);
+        Assert.Equal(2, TestData.Ledger(test).List(TestData.Owner).Value!.Count);
     }
 
     [Fact]
@@ -122,7 +122,7 @@ ORDER BY id DESC LIMIT 1;",
 
         // The counter finds a khata by a few digits of the phone - that is the only search a cashier
         // has time for while a customer waits.
-        var found = TestData.Ledger(test).List("9876543").Value!;
+        var found = TestData.Ledger(test).List(TestData.Owner, "9876543").Value!;
 
         Assert.Single(found);
         Assert.Equal(created.Value, found[0].Id);

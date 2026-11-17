@@ -28,12 +28,14 @@ public sealed class ReportService
     public const int TopCount = 10;
 
     private readonly Database _db;
+    private readonly SettingsService _settings;
     private readonly PermissionService _permissions;
     private readonly LogService _log;
 
-    public ReportService(Database db, PermissionService permissions, LogService log)
+    public ReportService(Database db, SettingsService settings, PermissionService permissions, LogService log)
     {
         _db = db;
+        _settings = settings;
         _permissions = permissions;
         _log = log;
     }
@@ -89,19 +91,16 @@ public sealed class ReportService
     /// <summary>Builds one report. A cashier is refused; a manager sees everything except the profit.</summary>
     public ServiceResult<SalesReport> Build(ReportRange range, User? user)
     {
-        if (!_permissions.Can(user, Modules.Reports))
-        {
-            return ServiceResult<SalesReport>.Fail("You do not have permission to see the reports.");
-        }
-
         try
         {
-            var canSeeProfit = _permissions.Can(user, Modules.Profit);
             var period = Period(range);
 
             using var connection = _db.Open();
+            var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Reports);
+            var canSeeProfit = ProfitPolicy.CanSee(_permissions, _settings, reader);
+            var canSeeCost = CostPolicy.CanSee(_permissions, _settings, reader);
 
-            var totals = ReadTotals(connection, period, canSeeProfit);
+            var totals = ReadTotals(connection, period, canSeeProfit, canSeeCost);
             var days = ReadDays(connection, period, canSeeProfit);
 
             var report = new SalesReport
@@ -114,7 +113,7 @@ public sealed class ReportService
                     ? ReadTop(connection, period, byProfit: true, canSeeProfit: true)
                     : new List<ReportItemRow>(),
                 Categories = ReadCategories(connection, period),
-                DeadStock = ReadDeadStock(connection),
+                DeadStock = ReadDeadStock(connection, canSeeCost),
                 CanSeeProfit = canSeeProfit,
                 DeadStockDays = ReportService.DeadStockDays,
                 BestDayLabel = Extremes(connection, best: true),
@@ -122,6 +121,10 @@ public sealed class ReportService
             };
 
             return ServiceResult<SalesReport>.Success(report);
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult<SalesReport>.Fail(exception.Message);
         }
         catch (Exception exception)
         {
@@ -131,20 +134,128 @@ public sealed class ReportService
     }
 
     /// <summary>One row per day, for a future printed sheet. Opens and closes its own connection.</summary>
-    public List<ReportDayRow> Days(ReportRange range)
+    /// <summary>
+    /// Portion 11: the sales report on paper. Totals, best/worst day and the top sellers; profit
+    /// lines appear only when the report itself may show them (the owner's permission gate).
+    /// </summary>
+    public ServiceResult<ReceiptDocument> BuildDocument(ReportRange range, User? user)
     {
-        using var connection = _db.Open();
-        return ReadDays(connection, Period(range), canSeeProfit: true);
+        var built = Build(range, user);
+        if (!built.Ok || built.Value is null)
+        {
+            return ServiceResult<ReceiptDocument>.Fail(built.Error ?? "The report could not be prepared.");
+        }
+
+        try
+        {
+            var report = built.Value;
+            var width = ReceiptService.ColumnsForMillimetres(_settings.GetInt("printer.width", 58));
+            var document = new ReceiptDocument
+            {
+                Title = "Sales report " + report.Period.Title,
+                Width = width,
+                AutoCut = _settings.GetBool("printer.autoCut", true),
+                Copies = 1
+            };
+
+            void Add(string text, ReceiptAlign align = ReceiptAlign.Left, bool bold = false, bool big = false) =>
+                document.Lines.Add(new ReceiptLine(ReceiptService.Fit(text, width), align, bold, big));
+
+            void Pair(string left, string right, bool bold = false) =>
+                document.Lines.Add(new ReceiptLine(ReceiptService.TwoColumns(left, right, width), ReceiptAlign.Left, bold));
+
+            var shop = _settings.GetString("store.name");
+            if (!string.IsNullOrWhiteSpace(shop))
+            {
+                Add(shop!.Trim(), ReceiptAlign.Center, bold: true);
+            }
+
+            Add("SALES REPORT", ReceiptAlign.Center, bold: true, big: true);
+            Add(report.Period.Title + ": " + report.Period.FromDate + " - " + report.Period.ToDate, ReceiptAlign.Center);
+            document.Lines.Add(ReceiptLine.Sep(width));
+
+            var totals = report.Totals;
+            Pair("Bills", totals.Bills.ToString(CultureInfo.InvariantCulture));
+            Pair("Sales", Money.Format(totals.SalesPaisa), bold: true);
+            if (totals.DiscountPaisa != 0)
+            {
+                Pair("Discount", Money.Format(totals.DiscountPaisa));
+            }
+
+            if (totals.ExtraDiscountPaisa != 0)
+                Pair("Extra Discount", Money.Format(totals.ExtraDiscountPaisa));
+            Add("Items: before Extra Discount.");
+
+            if (totals.RefundPaisa != 0)
+            {
+                Pair("Refunds", Money.Format(totals.RefundPaisa));
+            }
+
+            if (report.CanSeeProfit)
+            {
+                Pair("Profit", Money.Format(totals.ProfitPaisa), bold: true);
+            }
+
+            Pair("Cash in", Money.Format(totals.CashPaisa));
+            if (totals.CreditPaisa != 0)
+            {
+                Pair("On credit", Money.Format(totals.CreditPaisa));
+            }
+
+            document.Lines.Add(ReceiptLine.Sep(width));
+            Add("Best day: " + report.BestDayLabel);
+            Add("Worst day: " + report.WorstDayLabel);
+
+            if (report.HasTop)
+            {
+                document.Lines.Add(ReceiptLine.Sep(width));
+                Add("TOP SELLERS", ReceiptAlign.Center, bold: true);
+                foreach (var row in report.TopByQty.Take(TopCount))
+                {
+                    Add(row.Rank + ". " + row.Name);
+                    Pair("    " + Qty.Format(row.QtyBase) + " sold", Money.Format(row.SalesPaisa));
+                }
+            }
+
+            return ServiceResult<ReceiptDocument>.Success(document);
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The sales report could not be prepared.", exception);
+            return ServiceResult<ReceiptDocument>.Fail("The sales report could not be prepared. " + exception.Message);
+        }
+    }
+
+    /// <summary>Daily rows use the same reader/profit boundary as the full report.</summary>
+    public ServiceResult<List<ReportDayRow>> Days(ReportRange range, User? user)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Reports);
+            var canSeeProfit = ProfitPolicy.CanSee(_permissions, _settings, reader);
+            return ServiceResult<List<ReportDayRow>>.Success(ReadDays(connection, Period(range), canSeeProfit));
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult<List<ReportDayRow>>.Fail(exception.Message);
+        }
+        catch (Exception exception)
+        {
+            _log.Error("Daily report rows could not be read.", exception);
+            return ServiceResult<List<ReportDayRow>>.Fail("Daily report rows could not be read. " + exception.Message);
+        }
     }
 
     // ------------------------------------------------------------------ reading
 
-    private ReportTotals ReadTotals(SqliteConnection connection, ReportPeriod period, bool canSeeProfit)
+    private ReportTotals ReadTotals(SqliteConnection connection, ReportPeriod period, bool canSeeProfit, bool canSeeCost)
     {
         var totals = _db.QuerySingle<TotalsRow>(connection, @"
 SELECT COUNT(1) AS bills,
        IFNULL(SUM(total_paisa), 0) AS sales,
        IFNULL(SUM(discount_paisa), 0) AS discount,
+       IFNULL(SUM(extra_discount_paisa), 0) AS extraDiscount,
        IFNULL(SUM(due_paisa), 0) AS credit
 FROM sales
 WHERE status IN ('paid','partial','credit') AND date >= @from AND date < @until;",
@@ -205,9 +316,11 @@ SELECT (SELECT IFNULL(SUM(amount_paisa), 0) FROM expenses
             ItemsBase = items.Items,
             SalesPaisa = totals.Sales,
             DiscountPaisa = totals.Discount,
+            ExtraDiscountPaisa = totals.ExtraDiscount,
             RefundPaisa = returns.Refunds,
-            CostPaisa = items.Cost,
-            RestockCostPaisa = returns.RestockCost,
+            CostKnown = canSeeCost,
+            CostPaisa = canSeeCost ? items.Cost : 0,
+            RestockCostPaisa = canSeeCost ? returns.RestockCost : 0,
             ProfitPaisa = canSeeProfit ? profit : 0,
             MarginPercent = canSeeProfit && netSales > 0 ? profit * 100.0 / netSales : 0,
             AverageBillPaisa = totals.Bills > 0 ? totals.Sales / totals.Bills : 0,
@@ -215,7 +328,7 @@ SELECT (SELECT IFNULL(SUM(amount_paisa), 0) FROM expenses
             CreditPaisa = totals.Credit,
             ExpensesPaisa = outflow.Expenses,
             DrawingsCashPaisa = outflow.Drawings,
-            PurchasesPaisa = outflow.Purchases,
+            PurchasesPaisa = canSeeCost ? outflow.Purchases : 0,
             NetPaisa = canSeeProfit ? profit - outflow.Expenses - outflow.Drawings : 0
         };
 
@@ -430,7 +543,14 @@ LEFT JOIN back ON back.name = keys.name
 ORDER BY sales DESC;",
             new { from = period.FromStamp, until = period.UntilStamp });
 
-        var total = rows.Sum(row => row.Sales);
+        var extra = Convert.ToInt64(_db.Scalar(connection, @"
+SELECT IFNULL(SUM(extra_discount_paisa), 0) FROM sales
+WHERE status IN ('paid','partial','credit') AND date >= @from AND date < @until;",
+            new { from = period.FromStamp, until = period.UntilStamp }) ?? 0L);
+        if (extra != 0)
+            rows.Add(new CategoryRow { Name = "Bill Extra Discount (not assigned to products)", Sales = -extra });
+        // Percentages use pre-extra positive activity; a separate negative allowance has no bar.
+        var total = rows.Where(row => row.Sales > 0).Sum(row => row.Sales);
 
         return rows.Select(row => new ReportCategoryRow
         {
@@ -444,7 +564,7 @@ ORDER BY sales DESC;",
     /// Stock that has not moved for 60 days. "Has stock" means the batches on the shelf add up to more
     /// than zero, so a product with negative book stock is not called dead - that is a different alert.
     /// </summary>
-    private List<ReportDeadRow> ReadDeadStock(SqliteConnection connection)
+    private List<ReportDeadRow> ReadDeadStock(SqliteConnection connection, bool canSeeCost)
     {
         var cutoff = DateTime.ParseExact(Clock.Today(), "yyyy-MM-dd", CultureInfo.InvariantCulture)
             .AddDays(-DeadStockDays)
@@ -466,7 +586,13 @@ ORDER BY valuePaisa DESC, p.name COLLATE NOCASE
 LIMIT 50;",
             new { cutoff });
 
-        return rows.Select(row => row.ToRow()).ToList();
+        return rows.Select(row =>
+        {
+            var projected = row.ToRow();
+            projected.CostKnown = canSeeCost;
+            if (!canSeeCost) projected.ValuePaisa = 0;
+            return projected;
+        }).ToList();
     }
 
     /// <summary>Spec 21.4: the best and the worst selling day the shop has ever had.</summary>
@@ -514,6 +640,7 @@ LIMIT 1;";
         public long Sales { get; set; }
 
         public long Discount { get; set; }
+        public long ExtraDiscount { get; set; }
 
         public long Credit { get; set; }
     }

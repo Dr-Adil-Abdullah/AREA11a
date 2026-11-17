@@ -178,15 +178,15 @@ public sealed class LoyaltyTests
     public void TheBillNeverGoesBelowZero()
     {
         using var test = new TestDatabase();
-        // Rs 45.50, and the below-cost lock is OFF: the only cap left is the bill itself, which
+        // A zero-cost Rs45.50 product: the cost lock stays ON; the bill itself
         // gives whole rupees away (Spec 13.6.1) - at most 45 points on a bill of 45.50.
-        var product = TestData.AddProduct(test, costPaisa: 1000, retailPaisa: 4550, batchQty: 100);
+        var product = TestData.AddProduct(test, costPaisa: 0, retailPaisa: 4550, batchQty: 100);
         var customer = TestData.AddCustomer(test);
 
         EnableLoyalty(test, perRupeePoint: 100);
         Give(test, customer, points: 900);
 
-        Assert.True(test.Settings.Set("discount.blockBelowCost", false, TestData.Owner).Ok);
+        Assert.False(test.Settings.Set("discount.blockBelowCost", false, TestData.Owner).Ok);
 
         // The bill is rounded down to Rs 10 by default, which would hide the case this test is
         // about: switch the rounding off so the bill keeps its 50 paisa.
@@ -230,7 +230,7 @@ public sealed class LoyaltyTests
     }
 
     [Fact]
-    public void WithTheLockOffTheOwnerMayGiveAwayEvenTheCost()
+    public void TheOwnerCannotSwitchOffTheCostFloorToGiveAwayTheCost()
     {
         using var test = new TestDatabase();
         var product = TestData.AddProduct(test, costPaisa: 20000, retailPaisa: 30000, batchQty: 100);
@@ -239,7 +239,7 @@ public sealed class LoyaltyTests
         EnableLoyalty(test, perRupeePoint: 100);
         Give(test, customer, points: 900);
 
-        Assert.True(test.Settings.Set("discount.blockBelowCost", false, TestData.Owner).Ok);
+        Assert.False(test.Settings.Set("discount.blockBelowCost", false, TestData.Owner).Ok);
         test.Settings.Reload();
 
         var sale = TestData.Sales(test).Create(
@@ -247,7 +247,7 @@ public sealed class LoyaltyTests
             TestData.Owner);
 
         Assert.True(sale.Ok, sale.Error);
-        Assert.Equal(0L, sale.Value!.TotalPaisa);
+        Assert.Equal(20000L, sale.Value!.TotalPaisa);
     }
 
     [Fact]

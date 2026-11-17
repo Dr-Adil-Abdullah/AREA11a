@@ -182,7 +182,7 @@ public sealed class TaxViewModel : ObservableObject, IEmptyPage
         HasRefunds = value.RefundPaisa != 0;
         HasRoundOff = value.HasRoundOff;
         RoundOffText = value.HasRoundOff
-            ? "Round-off down on the bills (Z-03): " + value.RoundOffLabel +
+            ? "Round-off down on the bills: " + value.RoundOffLabel +
               ". Every bill is rounded down to the shop's step, so the total is not exactly " +
               "sales before tax plus tax - the difference is the customer's gain, not a missing rupee."
             : string.Empty;

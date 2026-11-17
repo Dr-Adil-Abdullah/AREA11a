@@ -2,10 +2,46 @@ using Area11.Core.Utils;
 
 namespace Area11.Core.Models;
 
+/// <summary>The two main kinds of shop spending (owner's word, Nov 2026).</summary>
+public static class ExpenseCategoryType
+{
+    /// <summary>Keeping the shop open: rent, power, salary, tea, repairs.</summary>
+    public const string Running = "running";
+
+    /// <summary>Goods for the shelf. A label only - stock itself arrives via Purchases.</summary>
+    public const string Stock = "stock";
+
+    public static readonly string[] All = { Running, Stock };
+
+    public static string Label(string? type) => (type ?? Running).Trim().ToLowerInvariant() switch
+    {
+        Stock => "Stock goods",
+        _ => "Running cost"
+    };
+}
+
+/// <summary>One row of the shop's own category list (migration 031).</summary>
+public sealed class ExpenseCategory
+{
+    public int Id { get; set; }
+
+    public string Name { get; set; } = string.Empty;
+
+    public string Type { get; set; } = ExpenseCategoryType.Running;
+
+    public bool Active { get; set; } = true;
+
+    public string? CreatedAt { get; set; }
+
+    public string TypeLabel => ExpenseCategoryType.Label(Type);
+
+    public string StateLabel => Active ? "Shown" : "Put away";
+}
+
 /// <summary>
-/// The eight words the shop uses for its own costs. They live in the model layer so the list on
-/// screen and the text in the audit log can never drift apart, and so a model never has to call a
-/// service just to print a word.
+/// The eight historical words, now the seeds of the shop's own list (migration 031). They live in
+/// the model layer so the list on screen and the text in the audit log can never drift apart, and
+/// so a model never has to call a service just to print a word.
 /// </summary>
 public static class ExpenseCategories
 {

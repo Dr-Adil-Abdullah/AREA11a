@@ -1,7 +1,7 @@
 <Window Icon="{DynamicResource Area11WindowIcon}" x:Class="Area11.Desktop.Views.UnitWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Manage units - Area11" Height="610" Width="760" MinHeight="480" MinWidth="620"
+        Title="{Binding WindowTitle}" Height="610" Width="760" MinHeight="480" MinWidth="620"
         WindowStartupLocation="CenterOwner" Background="{StaticResource CanvasBrush}">
     <Grid Margin="18">
         <Grid.RowDefinitions>

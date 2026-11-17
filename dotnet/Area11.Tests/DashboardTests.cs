@@ -183,23 +183,13 @@ VALUES('INV-9002', @at, @userId, 400000, 0, 0, 0, 400000, 0, 0, 'hold', 'cash', 
 
         var snapshot = Snapshot(test);
 
-        // Owner's 27-Oct physical-testing decision: 10% is of full retail, not only the margin.
-        // Two strips bring Rs 600, so the discount is Rs 60 and the bill is Rs 540. The old
-        // margin-only expectation (Rs 580) is deliberately superseded, not preserved as a second path.
-        Assert.Equal(54000L, sale.Value!.TotalPaisa);
-        Assert.Equal(54000L, snapshot.TodaySalesPaisa);
-
-        // Rs 540 in, Rs 400 of goods out: the day earned Rs 140. Ignoring the discount would
-        // overstate profit; the same full-retail rule also feeds this dashboard total.
-        Assert.Equal(14000L, snapshot.TodayProfitPaisa);
-
-        // A legacy mode value cannot quietly bring the superseded margin calculation back.
-        test.Settings.SetMany(
-            new Dictionary<string, object?> { ["discount.mode"] = "retail" },
-            TestData.Owner);
-
+        // Phase 2's approved default is actual gross profit: Rs600 - 10% of Rs200 = Rs580.
+        Assert.Equal(58000L, sale.Value!.TotalPaisa);
+        Assert.Equal(58000L, snapshot.TodaySalesPaisa);
+        Assert.Equal(18000L, snapshot.TodayProfitPaisa);
+        Assert.True(test.Settings.Set("discount.billBasis", "retail", TestData.Owner).Ok);
+        cart.RetailDiscountConfirmed = true;
         var retail = TestData.Sales(test).Create(cart, TestData.Owner);
-
         Assert.True(retail.Ok, retail.Error);
         Assert.Equal(54000L, retail.Value!.TotalPaisa);
     }

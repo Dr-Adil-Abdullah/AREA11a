@@ -10,9 +10,16 @@
                     <TextBlock Text="{DynamicResource AppLabel.reports}" Style="{StaticResource PageTitle}" />
                     <TextBlock Text="{Binding PeriodLabel}" Style="{StaticResource PageSubtitle}" />
                 </StackPanel>
-                <Button Content="Refresh" Style="{StaticResource GhostButton}"
-                        HorizontalAlignment="Right" VerticalAlignment="Center"
-                        Command="{Binding RefreshCommand}" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Content="Print report" Style="{StaticResource GhostButton}" Margin="0,0,8,0"
+                            Command="{Binding PrintCommand}"
+                            ToolTip="Print this period's sales report" />
+                    <Button Content="WhatsApp…" Style="{StaticResource GhostButton}" Margin="0,0,8,0"
+                            Command="{Binding WhatsAppCommand}"
+                            ToolTip="Send this report on WhatsApp (PDF prepared for attaching by hand)" />
+                    <Button Content="Refresh" Style="{StaticResource GhostButton}"
+                            Command="{Binding RefreshCommand}" />
+                </StackPanel>
             </DockPanel>
 
             <!-- The four periods of Spec 21.1. Each button says exactly what it counts. -->
@@ -54,6 +61,7 @@
                     <StackPanel>
                         <TextBlock Text="DISCOUNT GIVEN" Style="{StaticResource MetricLabel}" />
                         <TextBlock Text="{Binding DiscountText}" Style="{StaticResource MetricValue}" />
+                        <TextBlock Text="{Binding ExtraDiscountText, StringFormat='Separate Extra Discount: {0}'}" TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
             </UniformGrid>
@@ -231,10 +239,10 @@
                 <Border Grid.Column="0" Style="{StaticResource Card}" Margin="0,0,6,0">
                     <StackPanel>
                         <TextBlock Text="TOP 10 BY QUANTITY" Style="{StaticResource SectionTitle}" />
-                        <TextBlock Text="What the counter really sells."
+                        <TextBlock Text="Item sales after returns, before separate bill Extra Discount."
                                    Style="{StaticResource PageSubtitle}" Margin="0,3,0,8" />
 
-                        <DataGrid ItemsSource="{Binding TopByQty}" IsReadOnly="True"
+                        <DataGrid ToolTip="Item values before sale-level Extra Discount; see the separate allowance and final overall totals." ItemsSource="{Binding TopByQty}" IsReadOnly="True"
                                   AutoGenerateColumns="False" HeadersVisibility="Column"
                                   GridLinesVisibility="Horizontal" MaxHeight="280">
                             <DataGrid.Columns>
@@ -259,7 +267,7 @@
                     </Border.Style>
                     <StackPanel>
                         <TextBlock Text="TOP 10 BY PROFIT" Style="{StaticResource SectionTitle}" />
-                        <TextBlock Text="Profit per medicine, after returns came back."
+                        <TextBlock Text="Profit per medicine after returns, BEFORE bill Extra Discount. The separate bill allowance is deducted only in overall profit; it is never assigned to product rates."
                                    Style="{StaticResource PageSubtitle}" Margin="0,3,0,8" />
 
                         <DataGrid ItemsSource="{Binding TopByProfit}" IsReadOnly="True"

@@ -61,6 +61,9 @@ public sealed class ReorderRow
 
     public long LastCostPaisa { get; set; }
 
+    /// <summary>True only with an actual last supplier purchase and a management reader.</summary>
+    public bool LastCostKnown { get; set; }
+
     /// <summary>One of <see cref="ReorderTier"/> - the colour trigger on screen.</summary>
     public string Tier { get; set; } = ReorderTier.Low;
 

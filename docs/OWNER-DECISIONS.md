@@ -1,8 +1,176 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
-## تازہ status — نیا Portion 18 مکمل، v0.47.0 Moss
+## D-112 — continuous source publication and test-installer request (2026-11-10)
 
-بل، خرید اور اخراجات پر مالک کے اپنے سوالات: ہر فارم کے لیے الگ تعریف (تصویر نہیں — دستاویز کی گیلری نہیں ہوتی)؛ جواب post کے ساتھ ہی محفوظ، لازمی جواب چھوٹے تو پوری post انکار (کھانے کا نام بتا کر)؛ drafts جوابات ساتھ رکھتے ہیں؛ بل کی history اور اخراجات کی فہرست میں نظر آتے ہیں۔ خرید کے جوابات محفوظ/لاگو/audited، اسکرین history بعد میں (صفحہ موجود نہیں)۔ **1010 written cases، 57/57 static؛ Windows/xUnit اور physical pending**۔ طے شدہ ترتیب (5، 6، 18) مکمل؛ اگلا portion مالک بتائے گا (7 یا 17)؛ Portion 17 paused۔
+Owner requests every portion include both documentation and same-current-branch Git commit/push, plus a clear remaining-work/next-count estimate. Test installer is now authorized if feasible; not a production-readiness waiver. Never claim an artifact without a successful Windows publish/pack. Real isolated test data/backup restrictions remain. Current Linux toolchain cannot build WPF/Inno; no active Actions workflow. [Remaining plan / installer limitations](REMAINING-WORK-AND-TEST-INSTALLER-URDU.md). Supplier payment inference policy is still unanswered; separate financial checkboxes remain settled.
+
+## D-111 — Staff permissions میں الگ حساس مالی حصہ، hover، double-click scope اور live assignment list
+
+مالک نے supplier مالی-policy سوال کے custom جواب میں نئی واضح UI درخواست دی: advanced financial/ledger section، ہر permission کی hover summary، double-click تفصیلی dialog، عملی scope اور enabled/disabled users کی موجودہ list، database persistence اور backend leak prevention۔ پہلے کا **D-110 Profit/Cost الگ checkboxes** فیصلہ برقرار؛ مثال کے combined label کو اسے ملانے کی اجازت نہیں سمجھا۔ Existing Suppliers/Customers module keys dedicated group میں، نئے blanket grants نہیں۔
+
+v0.86.0 میں grouped UI، shared help metadata، owner-only secret-free current-DB read snapshot inspector، nominal3s refresh، grant/source vs inactive/main-gate labels؛ double-click سے accidental save روکنے کے لیے deferred single-click، native Space اور Details fallback۔ Writes موجودہ audited PermissionService.Set سے، failed save پر tick واپس۔ **Global backend propagation کی درخواست ابھی مکمل نہیں**؛ invoice/ledger/batch/stock/expense/audit/export/stale paths باقی اور UI میں صاف warning۔ Supplier balances/payments کے سابق دو متبادل اس نئے UI متن سے منتخب نہیں ہوئے؛ ان کا مالی-action اثر خود سے طے نہیں کرنا۔20 نئے/1469 C# cases UNRUN،75 static checks PASS، Windows mouse/keyboard/live-modal pending۔ [شواہد](POS-PHASE4-PERMISSION-INSPECTOR-REVIEW.md)، [PT-28](POS-PHASE4-PART8-URDU.md)۔
+
+## D-110 — View Profit اور View Purchase Cost الگ؛ مشترک main switch، ہر شخص کی اپنی اجازت
+
+مالک کا تازہ واضح جواب **“keep both seprat checkbox”** ہے۔ یہ D-109 کا management-only History/Reorder انتخاب **منسوخ کرکے بدلتا ہے**۔ دو الگ ticks: `profit` / **View Profit** اور `purchasecost` / **View Purchase Cost**۔ موجودہ `profit.showMargins` main switch دونوں کو gate کرے؛ OFF پر مالک سمیت دونوں ممنوع۔ ON پر متعلقہ page/module اور شخص کی الگ tick لازم؛ صرف Reports یا manager عہدہ cost اجازت نہیں۔ صرف مالک grants/revocations اور main switch بدل سکتا ہے، اپنی دونوں مالی ticks بھی؛ مالک کا administrative module access ان سے ختم نہ ہو۔
+
+cost منع ہو تو خرید rate کے ساتھ related line total/Bought aggregate/valuation بھی چھپیں؛ raw masks اور labels الگ genuine0 کو hidden نہ کہیں۔ Profit-only سے raw cost field نہیں، Cost-only سے explicit profit نہیں؛ تاہم مجاز profit/margin/quote سے cost یا cost+sale سے profit حساب کرکے نکل سکتا ہے، مطلق secrecy کا دعویٰ نہیں۔ پہلے تیار file/print واپس نہیں مٹ سکتا۔ Posting/actual batch cost اور ہر role کا cost floor اپنی اصل data سے، hidden0 سے نہیں۔
+
+v0.85.0 checkpoint میں catalog/History/Reorder/DeadStock/ReportTotals/item quote اور product-preparation gates منتقل؛ **global everywhere rollout ابھی OPEN**: invoice، supplier ledger/batch، stock-take/variance، expense/audit/workbook/export اور stale preparation paths باقی۔ یہ release-wide security PASS نہیں۔24 نئے/1445 written C# cases UNEXECUTED؛73 static checks PASS؛ [trace/حدود](POS-PHASE4-FINANCIAL-VISIBILITY-REVIEW.md)، [محفوظ PT-27](POS-PHASE4-PART7-URDU.md)۔ الگ checkbox سوال دوبارہ نہ پوچھیں؛ اگلا کام باقی منظورشدہ rollout ہے۔
+
+
+## D-109 — تاریخی فیصلہ؛ D-110 سے superseded — History/Reorder management-only
+
+فیز4 اگلے حصے میں مثال دی: خرید200/فروخت300، quantity10/total2000 سے rate چھپانے کے باوجود cost200 نکل آتی ہے۔ تین واضح متبادل پوچھے؛ مالک نے **صرف مالک/مینیجر (management)** منتخب کیا۔ متعلقہ Products History/Reorder module اجازت بھی لازم؛ عام staff کو خرید rate، line total، Bought مالی aggregate اور Reorder raw LastCost نہیں ملے۔ خرید quantity/date/supplier اور مجاز sale معلومات برقرار، پورا feature نہیں ہٹانا۔ Purchases/Suppliers یا Profit grants عام staff کو اس تاریخی purchase-cost rule سے مستثنیٰ نہیں کرتیں۔ مجاز operational receiving/SR/Write-off/Expenses تیاری اور واضح sale-profit کی الگ سابق permission/global policy unchanged۔
+
+v0.83.0 Snipe میں raw rate+total masks، known flags، screen/print/CSV summary/cells اور current-reader snapshot gates شامل؛ public Report Days کا actorless profit bypass بند۔24 نئے/1401 written cases یہاں UNEXECUTED؛ Windows/PT-25 باقی۔ Report DeadStock valuation الگ موجود workflow ہے، اس فیصلے کو اس پر خودکار نہیں پھیلایا؛ اگلا review/واضح policy باقی۔ [شواہد/حدود](POS-PHASE4-SNAPSHOT-REVIEW.md)، [محفوظ PT-25](POS-PHASE4-PART5-URDU.md)۔ installer منظور نہیں۔
+
+
+## D-108 — next سے فیز3، پھر واضح جواب b سے جزوی واپسی طریقہ B
+
+- مالک نے فیز3 کی اجازت دی؛ جزوی return کا سوال مثال کے ساتھ پوچھا گیا۔ جواب **b**: A560+B560، الگ Extra20، paid1100؛ پہلے لوٹنے والے item کی560، بعد والے کی صرف باقی540۔ proportional550/550 تجویز منتخب نہیں ہوئی۔ ایک request میں cap آخری درج return line سے کم ہوگا؛ preview میں وجہ واضح، اصل sale-item قیمتیں untouched۔
+- Extra سختی سے sale-level، ordinary line/bill discounts/points/rounding کے بعد؛ per-person owner-only enabled/rupee cap، owner سمیت automatic grant نہیں۔ repeated Apply پوری amount replace کرتا ہے؛ cap دوبارہ نہیں بنتی۔ final actual allocated cost floor سب پر۔
+- v0.78.0 Avocet source،30 نئے/1300 written tests،66 static checks، independent memory-only SQLite migration/BookCheck proof۔ Windows/Desktop/xUnit/PT-22 باقی؛ نہ مکمل financial/security certification، نہ full audit۔
+- مکمل مرحلہ وار نامہ: [فیز3](POS-PHASE3-TEST-URDU.md)۔ اگلا next فیز4 جامع page/settings/15-point review؛ installer صرف بنا دو پر۔
+
+
+## D-107 — next سے فیز2؛ per-person limits، item editor اور اصل حساب (v0.77.0 Sandpiper)
+
+صرف مالک ہر شخص کے لیے manual rate اجازت/حد، profit فیصد اجازت/حد، retail فیصد اجازت/حد اور one-bill basis override کی اجازت محفوظ کرے گا؛ عہدہ خود اجازت نہیں۔ غیر مالک کی پرانی/نئی account کو نئی pricing row کے بغیر خودکار رعایت/ریٹ اجازت نہیں۔ مالک خود اپنی limits بھی مقرر کرسکے۔ Settings کا نیا active key discount.billBasis (profit/retail)، ابتدائی future-bill default profit existing shop پر بھی؛ retired discount.mode inert رہتا ہے۔ allowed override صرف ایک bill، واضح popup اور next bill Settings default۔ total-basis bill >5% ہر save سے پہلے fresh confirmation، Core بھی check/consume، draftJSON میں approval نہیں۔
+
+Owned item editor: normal/manual/itemprofit/itemretail؛ manual اوپر یا نیچے ہو، یا item % ہو، bill% دوبارہ نہیں؛ reset normal، بعد کی untouched lines پر موجودہ bill%۔ فی selected-unit reference سے manual cap، 1200−20%=960؛ actualcost اس سے اوپر ہو تو cost floor۔ reference retail missing ہو تو فیصد کمی ناپنا ممکن نہیں؛ مالک کی explicit rate-edit اجازت والا شخص مثبت rate دے سکتا ہے، actual cost سے نیچے پھر بھی نہیں۔ ہر role پر mandatory actual FEFO cost؛ پرانی optional-lock اور silent-clamp پالیسی اس نئی واضح شرط سے superseded۔ اس لیے پرانے bill-test expectations بھی updated، پرانے saved bills نہیں۔
+
+فیز1 میں ملا ReadOnly/template مسئلہ اب dedicated guarded editor سے حل؛ پورا grid کھول کر permissions bypass نہیں۔ Settings UI-only اور workbook protected-policy write paths بھی بند۔ cost visibility محفوظ مگر profit-based percentage کا نتیجہ ریاضی سے cost کا اندازہ دے سکتا ہے؛ اسے absolute secrecy نہ سمجھیں۔ Extra Discount ابھی نہیں، فیز3 میں bill-level الگ ہوگا، product lines rewrite نہیں۔ تمام source checks Windows physical PASS نہیں۔
+
+
+## D-106 — یکجا منصوبہ منظور؛ next سے صرف فیز 1 (v0.76.0 Osprey)
+
+مالک نے B کا مستقل چھوٹا سرچ پینل پسند کیا۔ اندر دہرایا POS/cashier ہٹانا، نرم گول ہلکے نمایاں actions، keyboard سے پورا Counter، سادہ تیر اندر اور Shift+تیر حصوں کے درمیان، exact barcode Enter اور selected-result Enter/double-click Add۔ مالی editor اور per-person caps فیز2 میں، فیز1 میں ان کے بننے کا دعویٰ نہیں۔
+
+صرف مالک لوگوں کی price/profit-discount/retail-discount/manual-reduction اور one-bill-basis/Extra Discount permissions بدل سکے۔ separate per-person caps، no below-cost even owner، adjusted item bill-discount سے باہر، reset معمول میں۔ default profit owner Settings سے بدل سکے، one-bill override popup پھر Settings default reset۔ یہ سب مالی قواعد ابھی queued۔
+
+آخری واضح Extra Discount فیصلہ: مکمل بل کے بعد الگ روپے کی چھوٹ، تمام products پہلے adjusted ہوں تب بھی ممکن؛ ان کے rates/line discounts/bill-percent نہ بدلیں۔ 1120−20=1100، receipt پر الگ Extra Discount اور final payable؛ صرف owner کی دی ہوئی per-person rupee allowance، repeated cap bypass نہیں، cost safety برقرار۔ اسے product-line price/discount میں تقسیم کرکے لکھنا مالک نے رد کیا۔ returns/refund settlement میں نئی policy درکار ہو تو پہلے مثال/MCQ؛ خاموش مفروضہ نہیں۔ مکمل scope/15 checks: [منصوبہ](POS-NEXT-REVIEW-PLAN-URDU.md)۔ ہر next پر ایک فیز، الگ Windows/physical ثبوت، installer authorized نہیں۔
+
+
+## D-105 — مالک نے Trial B کہا؛ حتمی پسند ابھی نہیں دی (v0.75.0 Kestrel)
+
+دوسرا انداز: چھوٹا مستقل سرچ پینل اور اس کے ساتھ بڑا Cart۔ خالی سرچ پر ساری مصنوعات نہیں؛ منتخب چیز ڈالنے کے بعد matches صاف، پینل کی جگہ قائم۔ نام، طاقت، pack، stock، retail اور تصویر ایک عمودی card میں تاکہ تنگ پینل میں لمبی چوڑی table نہ گھمانا پڑے۔ باقی compact buttons/checkout/F4/modal وہی۔ A = v0.74.0 Marlin؛ B = v0.75.0 Kestrel۔ مالک دونوں کے بعد final چنے گا؛ کوئی preference یا physical PASS فرض نہیں۔ D-104 والے مالی فیصلے اب بھی queued، ابھی کوئی discount/default/receipt/stock تبدیلی نہیں۔ موجودہ code میں فیصد سابق کل فروخت کی رقم پر ہی ہے، profit پر منتقل نہیں ہوا۔ Installer کی اجازت نہیں۔
+
+
+## D-104 — پہلے POS کے دونوں انداز آزماؤ؛ ڈسکاؤنٹ کا نیا حکم الگ زیرِ انتظار
+
+- مالک نے سرچ layout کے سوال پر کہا: “now one then in next 2nd both test which i prefer will done finel later”۔ پہلے عارضی نتائج، اگلے next پر چھوٹا مستقل search panel؛ دونوں آزمانے کے بعد حتمی انتخاب۔ پہلے انداز کو final منظوری نہیں۔
+- compact Park/Save draft/Open drafts/Parked carts/Reprint/More بٹن، Cart بڑی جگہ، عام fields اور Complete sale مستقل سامنے؛ details صرف ضرورت پر۔ v0.74.0 Marlin اس پہلے UI تجربے کا کوڈ ہے؛ Windows/اصل پرکھ باقی۔
+- **ڈسکاؤنٹ کا نیا فیصلہ، ابھی لاگو نہیں:** Settings میں مالک profit یا total بنیاد چن سکے۔ اپ ڈیٹ والے مالی حصے میں موجودہ دکان کے **آئندہ** بل بھی خود profit بنیاد پر منتقل ہوں۔ total بنیاد پر 5% سے زیادہ ہو تو ہر bill محفوظ کرنے سے پہلے واضح Yes/No تصدیق؛ مستقل بنیاد کا نشان ساتھ۔ یہ پچھلے retail-only حکم کی آئندہ مالی implementation کے لیے تبدیلی ہے، پرانے محفوظ bills دوبارہ حساب نہیں ہوں گے۔
+- profit کی پیش کردہ مثال: cost 200، sale 300، profit 100، اس کا 10% = 10 رعایت؛ total بنیاد کا 10% = 30۔ اصل فروخت ہونے والے batch کی cost استعمال ہوگی، دکان کے کرایے کے بعد والے net-profit کی نہیں۔ اس UI تجربے میں حساب، موجودہ discount.mode، permissions، cost lock یا رسید نہیں بدلے۔ ابھی رعایت پرانا full-selling-total حساب ہے؛ queued کام کو shipped سمجھنا خطرناک ہے۔
+
+
+## D-103 — چھوٹی سکرین پر بل بٹن اور الگ کامیابی popup (v0.73.0 Laurel)
+
+مالک کی دو Heather تصاویر: Complete sale نیچے نظر نہیں آتا، F4 بھی کچھ نہیں کرتا؛ بائیں product list کم چوڑی، دائیں فروخت کا حصہ چوڑا مگر بٹن ہمیشہ نظر آئے۔ بل کے بعد ✓، invoice، کل، وصول نقدی اور بہت بڑا واپس دینے والا بقایا چاہیے؛ سوال پر **درمیان میں الگ پاپ اَپ** منتخب، Done سے بند۔ Auto-print آن ہو تو کوشش، آف ہو تو نہیں؛ success-popup کی موجودہ setting الگ برقرار۔ modal صرف کامیاب محفوظ bill پر، دوبارہ save/print نہیں۔ سٹرپ/باکس/base unit، pack label، strength/volume کی وضاحت چار مثالوں اور screenshot کے 1×1 injection/5 gram کے فرق سے دی؛ product data/labels بدلنے کی اجازت فرض نہیں کی۔ 6 نئے Core tests لکھے، 1240 کل؛ Desktop کے لیے نیا ساختی گیٹ، Windows/عملی ثبوت باقی۔ اصل دکان/رسید/رعایت نہیں بدلی۔
+
+
+## D-102 — next پر آخری اردو ٹیوٹوریل (دستاویزی حصہ 4)
+
+مالک نے حصہ 4 کے لیے next کہا۔ پہلے دی گئی ہدایت کے مطابق مکمل خلاصہ الگ، پھر عملی تفصیل الگ لکھی گئی: [آف لائن قابل پرنٹ کتاب](USER-GUIDE-URDU.html)، [اصل متن](USER-GUIDE-URDU.md)، 36 اسباق، تمام مرکزی صفحات اور Settings کے گروپ۔ بٹنوں کے English نام ساتھ، کوئی فرضی screenshot یا Windows جانچ کا دعویٰ نہیں۔ یہ صرف دستاویز ہے؛ app ورژن/رنگ/حساب/ڈسکاؤنٹ/رسید نہیں بدلے۔ مالک کا سمجھنا/عملی قبولیت اور v0.72.0 کے 1234 tests کا Windows رن باقی۔ Installer یا Phase 6 کو اجازت نہیں سمجھنا؛ اس کے لیے الگ بنا دو ضروری ہے۔
+
+
+## D-101 — Counter unavailable: آخری واضح جواب (v0.72.0 Heather)
+
+- پہلے سوال میں minus کی اجازت والا جواب سمجھ نہیں آیا تھا؛ مالک نے دوبارہ سادہ مثال سن کر **بل نہ بنے، پہلے سٹاک لاؤ** منتخب کیا۔ یہی آخری فیصلہ ہے۔ سٹاک صفر/کم ہو تو مالک یا مینیجر بھی نہیں بیچ سکتے؛ D-93 قائم۔
+- سٹاک ختم اور قیمت نہ ہونے، دونوں پر Counter میں فی بل ایک بار پاپ اپ۔ نیا/صاف/مکمل/پارک/لوڈ کیا ہوا بل اس یاد کو دوبارہ شروع کرتا ہے۔ قیمت وارننگ میں دوبارہ نہیں دکھانی۔
+- سٹاک موجود ہو، قیمت نہ ہو: صرف مالک/مینیجر ریٹ درج کر کے بیچیں؛ کیشیئر نہیں۔ نیچے لاگت والا لاک اور ڈسکاؤنٹ پہلے جیسے رہیں۔
+- رسید/چٹ پر دستیابی کا **کچھ بھی نہیں**؛ پہلے والا اوپر لائن کا جواب منسوخ۔ نیچے کے پرانے اندراج تاریخ ہیں، موجودہ حکم نہیں۔
+- سات نئے ٹیسٹ لکھے، کل 1234؛ 61 static checks۔ Windows build/test + اصل Counter/رسید کی پرکھ باقی۔ اگلا حصہ اردو ٹیوٹوریل، مالک کے next پر۔
+
+
+## تازہ status — v0.70.0 گرین + حصہ 3/4 مکمل v0.71.0 Heron (Windows/physical pending)
+
+v0.70.0 Claret ونڈوز پر گرین (مالک کا مکمل لاگ: 1227/1227، 0 فیل، 1m37s) 🎉۔ Purchase والا کریش ٹھیک: پروڈکٹ چننے والے ڈبے میں دو چیزیں اکٹھی لگی تھیں جنہیں ونڈوز منع کرتی ہے (اسی لیے صفحہ کھلتے ہی مرتا تھا) — ایک ہٹا دی، شکل وہی، اب صفحہ کھلتا ہے؛ پرانا پن بھی نئی جگہ پر لگا دیا؛ باقی ساری سکرینیں چیک — کہیں یہ جوڑا نہیں۔ نیا `check_template_conflict` گیٹ (توڑ کر ثابت)۔ **1227 cases وہی، 60/60؛ rebuild + reinstall + اصل پرکھ pending۔** حصہ 2 اور 4 مالک کے "next" پر۔ باقی صرف Phase 6 مالک کے \"بنا دو\" پر۔
+
+## تازہ status — نیا بیچ حصہ 1/4 مکمل v0.70.0 Claret (Windows/physical pending)
+
+Fields کا بٹن اب واقعی چلتا ہے: قیمت فہرست میں شامل اور ڈیفالٹ لازمی؛ پروڈکٹ سیو پر پاپ اپ (لازمی چیزوں کے نام + "پھر بھی سیو کرو" — مالک کا warn-once فیصلہ)؛ سروس کبھی سیو نہیں روکتی؛ سٹیٹس سچ بولتا ہے (پروڈکٹ = پاپ اپ، فون/ایجنسی = صرف import، سیل/پرچیز = ترجیح)۔ مالک کے فیصلے: سیو وارننگ warn-once، پرنٹ لائن سٹاک+قیمت دونوں کے لیے، ڈسکاؤنٹ بات ختم، Purchase ایرر کی تصویر مالک بھیجے گا۔ **1227 cases (+4)، 59/59؛ Windows رن + اصل پرکھ pending۔** حصہ 2-4 مالک کے "next" پر۔ باقی صرف Phase 6 مالک کے \"بنا دو\" پر۔
+
+## تازہ status — پورشن 3/4 مکمل v0.69.0 Mallard (Windows/physical pending)
+
+ہر کھڑکی دکان کے ایپ نام سے (9 ڈائیلاگ + بندش/پاس ورڈ + کریش/شفٹ/گارڈ باکس)؛ سکرین سے اندرونی کوڈ ختم (F-52 وغیرہ + ٹیکس کاغذ + انسٹالر؛ ایک ٹیسٹ توقع بدلی، گنتی وہی)، 'Supabase'→'cloud'، کریش/خراب صفحہ/بٹن کے الفاظ شائستہ (فائل + سپورٹ والا؛ 'چیٹ' اور کمانڈ ختم)۔ جان کر رکھا: ٹائٹل میں ورژن (مالک کا فیصلہ)، سیکنڈ کاپی میں پروڈکٹ نام (ڈیٹابیس سے پہلے، چھونا منع)۔ نیا `check_deworkshop` گیٹ (توڑ کر ثابت)۔ **1223 cases، 58/58؛ Windows رن + اصل پرکھ pending۔** پورشن 4 مالک کے "next" پر۔ باقی صرف Phase 6 مالک کے \"بنا دو\" پر۔
+
+## تازہ status — پورشن 2/4 مکمل v0.68.0 Jasper (Windows/physical pending)
+
+ہر بل پر اس وقت کا فرق لکھا جاتا ہے (migration 034)؛ Bills میں 'Fix wrong time…' (صرف مالک) غلط وقت والے بل اکٹھے دکھاتا ہے، ایک دباؤ سب کو درست وقت پر لے جاتا ہے — رپورٹ والا وقت + پیسے کی قطاریں، ایک ٹرانزیکشن، بلیک باکس میں دونوں وقت۔ پرنٹ پر غلط چھوٹا + صحیح بڑا۔ 2 دن کی رکاوٹ ختم (مالک کا حکم): 30 دن تک فرق قبول، اس سے آگے بےہودہ جواب ٹھکرایا جائے؛ آف لائن کوئی فہرست/درستگی نہیں جب تک ٹائم سرور جواب نہ دے؛ 5 منٹ سے Bills پر اشارہ۔ **1223 cases (+17)، 57/57؛ Windows رن + اصل پرکھ pending۔** پورشن 3/4 مالک کے "next" پر۔ باقی صرف Phase 6 مالک کے \"بنا دو\" پر۔
+
+## تازہ status — پورشن 1/4 مکمل v0.67.0 Charcoal (Windows/physical pending)
+
+سیٹنگز کے نام اور ٹیب ایک خانہ ادھر ادھر تھے (اصل بگ) — درست: ہر نام اپنا ٹیب کھولتا ہے، "My settings" عملہ کھولتا ہے (مالک کا جواب)۔ لاک آن = minimize غائب، فل اسکرین، ٹاسک بار چھپی، Win+Down خاموش واپسی، Save پر فوراً لاگو۔ **1206 cases، 57/57؛ Windows رن + اصل پرکھ pending۔** ٹائم فیصلے محفوظ (پورشن 2): غلط وقت والے بل اکٹھے، اونر ایک ساتھ OK کرے، پرنٹ پر صحیح وقت بڑا + اصل چھوٹا، بلیک باکس میں دونوں، اثر صحیح وقت کا؛ 2 دن کی رکاوٹ ختم (منٹ بھی قیمتی، مہینے کا حساب نہ بگڑے)، صرف بےہودہ جواب ٹھکرایا جائے۔ پورشن 2/3/4 مالک کے "next" پر۔ باقی صرف Phase 6 مالک کے \"بنا دو\" پر۔
+
+## تازہ status — v0.66.0 سبز: Windows پر 1206/1206 پاس (11 نومبر 2026)
+
+مالک کے رن میں **1206 پاس، 0 فیل** — 9 مرمتیں ثابت، پرانے 6 بھی سبز۔ xUnit تصدیق مکمل؛ باقی صرف اصل پرکھ: دوبارہ build + انسٹال، کیوسک ثبوت (فل اسکرین، ٹاسک بار، کریش باکس)، اصل دکان کا ٹیسٹ۔ دوسرا کریش بھی پکڑا (× + انلاک پر re-entrant Close، stack trace کے ساتھ) — مرمت پش، ورژن وہی۔ پھر Phase 6 مالک کے \"بنا دو\" پر۔
+
+## تازہ status — کیوسک لاگ اِن v0.66.0 Crimson (Windows/physical pending)
+
+مالک کے جواب: فل اسکرین صرف auto-start میں، ٹاسک بار واقعی چھپے، صرف لاگ اِن (مین اسکرین وہی)۔ نیا: auto/protected دکان پر سائن اِن پوری اسکرین + ٹاسک بار غائب (تمام مانیٹر)؛ manual پر عام ونڈو؛ ٹاسک بار بندش پر واپس، اسٹارٹ پر مرمت، exit پر زبردستی واپس؛ کریش باکس لاگ اِن کے اوپر۔ ڈائیلاگ کریش کی مرمت بھی اسی میں۔ **1206 written cases، 57/57 static؛ Windows رن + دوبارہ انسٹال + اصل پرکھ (فل اسکرین؟ ٹاسک بار گئی اور واپس؟) pending۔** باقی صرف Phase 6 مالک کے "بنا دو" پر۔
+
+## تازہ status — آخری صفائی (پروفیشنل) مکمل، v0.65.0 Gold
+
+مالک کے جواب: پہلا لاگ اِن admin + area11، ڈیفالٹ area11 ہی، ٹیسٹ مشینری نکال دو (نوٹ کے ساتھ، حتمی فیصلہ ٹیسٹ رزلٹ پر)، ورژن بیج ابھی ہٹاؤ۔ نیا: seed میں admin، پرانی دکان migration سے admin (اپنا نام رکھا ہو تو وہی، دوسرا admin ہو تو تبدیلی نہیں)، خالی نام بھی admin؛ لاگ اِن سے بیج گیا (ونڈو ٹائٹل میں ورژن رہا)؛ IsolatedTestCopyService نکلی (checker میں غیرموجودگی پکی، git سے واپس آسکتی ہے)۔ **1206 written cases، 57/57 static؛ Windows/xUnit اور اصل زندگی کا ٹیسٹ pending۔** مرمت (ورژن وہی v0.65.0): پہلے رن کے سرخ ٹیسٹوں کی توقع درست کی (8 نام + 1 پرانا)، پروگرام میں کوئی تبدیلی نہیں — دوبارہ رن باقی۔ کریش مرمت (ورژن وہی): × پاس ورڈ اور forgot-password ڈائیلاگ ہر کلک پر کریش کرتے تھے (DialogResult کے بعد فالتو Close) — 4 لائنیں نکال دیں، checker میں پابندی لگا دی؛ انسٹال شدہ v0.64.0 میں بگ باقی ہے، دوبارہ build/انسٹال پر جائے گا۔ باقی صرف Phase 6 (آخری اجازت) مالک کے \"بنا دو\" پر۔
+
+## تازہ status — Production Phase 5 (انسٹالر) مکمل، v0.64.0 Pine
+
+مالک کے جواب: شارٹ کٹ دونوں جگہ، انسٹال کے بعد خود چلے، سادہ انگریزی۔ نیا: ایک فائل والا انسٹالر (`Area11-Setup-vX.exe` — ڈبل کلک، permission، next-next-finish)؛ Program Files میں پروگرام، ProgramData کبھی نہیں چھوتا (انسٹال/اپ ڈیٹ/اَن انسٹال)؛ آخر میں خود چلنا آن؛ اردو گائیڈ `docs/INSTALL-URDU.md`؛ پرانا zip راستہ بیک اپ۔ **1206 written cases، 57/57 static؛ Windows/xUnit، اصل setup build اور test-PC انسٹال/اپ ڈیٹ/اَن انسٹال pending** (v0.63.0 تا v0.59.0 بھی pending، v0.58.0 کی Windows 1163/1163 گرین)۔ باقی صرف Phase 6 (آخری اجازت) مالک کے \"بنا دو\" پر۔
+
+## تازہ status — Production Phase 4 (حادثے) مکمل، v0.63.0 Copper
+
+مالک کے جواب: دوسری کاپی بند، دوسرا کاؤنٹر بعد میں، سب سے بڑا ڈر ڈیٹا گم ہونا۔ جانچ میں درست ملے: بجلی/کریش حفاظت، بحالی سے پہلے safety بیک اپ، پرنٹر بند پر بھی سیو۔ نیا: (1) ایک دکان ایک کاپی — دوسری بار کھولنے پر ایک جملہ اور بند، Task Manager سے ماری ہوئی کاپی اگلے اسٹارٹ پر رکاوٹ نہیں؛ (2) روزانہ بیک اپ اب آن (نئی دکان + پرانی دکان migration سے، بند کرنے کا ٹک موجود)؛ ساتھ startup مرمت بھی شامل۔ **1200 written cases، 57/57 static؛ Windows/xUnit اور physical pending** (v0.62.0 تا v0.59.0 بھی pending، v0.58.0 کی Windows 1163/1163 گرین)۔ باقی مرحلے 5-6 مالک کی اجازت سے۔
+
+## تازہ status — Production Phase 3 (پیسے کی درستگی) مکمل، v0.62.0 Moss
+
+سات مالی اصول کوڈ + ٹیسٹ سے ثابت (رعایت کی حد، راؤنڈ ڈاؤن، بقایا، زائد وصولی، واپسی کی حد، ڈراؤر فارمولا، ایک تحریر میں کھاتے)۔ مالک کے جواب: سپلائر ادائیگی mix (کیش/بینک) — خریداری میں \"کس طرح\" کا انتخاب، بینک والی ڈراؤر سے نہیں کٹتی، رسید پر طریقہ چھپتا ہے؛ ٹیکس نہیں؛ پوائنٹ شرح وہی؛ دونوں تالے Settings میں (لاگت والا آن، حد والا بند — ڈیفالٹ وہی)۔ **1192 written cases، 57/57 static؛ Windows/xUnit اور physical pending** (v0.61.0 تا v0.59.0 بھی pending، v0.58.0 کی Windows 1163/1163 گرین)۔ باقی مرحلے 4-6 مالک کی اجازت سے۔
+
+## تازہ status — Production Phase 2 (فالتو کوڈ + پاس ورڈ) مکمل، v0.61.0 Taupe
+
+مالک کے اکٹھے جواب: چھوٹا فالتو خود ہٹا (5 مردہ methods، 14 سوئی keys، ٹیسٹ نئی keys پر)؛ 3 keys پرانی دکانوں کے لیے رکھیں (`discount.mode`، `stock.allowNegative`، `stock.warnNegative`)؛ Staff ٹیب سے کسی کا بھی PIN/پاس ورڈ بدلے؛ لاگ اِن پر "forgot password" — "area11" لکھے تو مالک لاگ اِن (غلط پر پابندی، اپنا لفظ لگ سکتا ہے، خالی = فیکٹری، بلیک باکس میں لفظ کبھی نہیں)۔ **1189 written cases، 57/57 static؛ Windows/xUnit اور physical pending** (v0.60.0 اور v0.59.0 بھی pending، v0.58.0 کی Windows 1163/1163 گرین)۔ باقی مرحلے 3-6 مالک کی اجازت سے۔
+
+## تازہ status — Production Phase 1 (lockdown) مکمل، v0.60.0 Basalt
+
+مالک نے Phase 1 بدل دیا: لاگ اِن خود کھلے؛ × پاس ورڈ مانگے اور پیچھے نہ ہٹے؛ چھوڑنے/چھوٹا کرنے پر پہلے چھوٹا "not allowed" باکس + اسکرین واپس؛ شارٹ کٹ یا Task Manager سے فرار بلیک باکس میں (کون/کب/کتنی دیر)۔ لاک آن ہو تو × ہر کھڑکی پر پاس ورڈ مانگے چاہے startup mode کچھ بھی ہو؛ Task Manager سے بند ہونا اگلے اسٹارٹ پر پکڑا جائے؛ لاک پہلے سے بند (off) ہے، مالک ٹک کرے تو چلے۔ **1180 written cases، 57/57 static؛ Windows/xUnit اور physical pending** (v0.59.0 بھی pending، v0.58.0 کی Windows 1163/1163 گرین ہو چکی)۔ باقی مرحلے 2-6 مالک کی اجازت سے۔
+
+## تازہ status — Owner fixes، v0.59.0 Aegean
+
+تین مانگیں ایک ساتھ: (1) نام+ائیکن ہر جگہ — الگ Settings ٹیب (Shop details سے باہر)، نام ہر کھڑکی/لاگ اِن/ٹاسک بار پر، ائیکن ہر کھڑکی پر، پرچی/WhatsApp پر نام پہلے سے تھا؛ (2) startup — ایڈمن نہ ہو تو اسی اکاؤنٹ پر لگے، سب پر ایڈمن سے، ایک entry، دائرہ صفحے پر لکھا آئے؛ فلمیں روکنا ایپ کا کام نہیں (Windows kiosk الگ ہے)؛ (3) expense categories اپنی — دو قسموں (running/stock) کے نیچے، صرف مالک بنائے، پرانا ریکارڈ ویسا رہے۔ فالتو کوڈ اکٹھا پوچھ کر ہٹے گا۔ پیداواری (production) منصوبہ `docs/PRODUCTION-PLAN.md` میں (5 مرحلے)۔ **1175 written cases، 57/57 static؛ Windows/xUnit اور physical pending** (v0.58.0 کی Windows 1163/1163 گرین ہو چکی)۔
+
+## تازہ status — Portion 17 مکمل، v0.58.0 Burgundy
+
+تصاویر کا جائزہ + ہر چننے والی فہرست پر کور: مالک نے Portion 17 کا pause ختم کیا اور سب لائنوں پر تصویر مانگی؛ پرانی گیلریاں/کور/سائز درست نکلے اور وہی رہے؛ ایک کور فارمولا + ایک سوال میں پوری فہرست کی تصویریں؛ Purchases، stock-take، Returns اور Reorder سب پر دوا کی تصویر؛ لوگوں کی تصویریں اجازت سے بندھی؛ بیک اپ میں تصویریں، cloud میں کبھی نہیں؛ نئی اردو دستاویز `docs/PHOTOS.md`۔ **1163 written cases، 57/57 static؛ Windows 1163/1163 گرین (10 نومبر 2026)، physical pending**۔ تمام master portions 4-18 code-complete؛ صرف Windows/physical تصدیق باقی۔
+
+## تازہ status — Portion 16 مکمل، v0.57.0 Harbor
+
+ونڈوز آغاز + محفوظ بندش: مالک کے چار فیصلے (× ہمیشہ پوچھے، لاگ اِن کھڑکی بھی محفوظ، سب اکاؤنٹ آغاز، Shift بحالی) نافذ؛ manual/auto/protected صرف مالک چنے؛ بند وہی کرے جو secret بتائے + اجازت رکھے؛ سچی حد دستاویز میں۔ **1159 written cases، 57/57 static؛ Windows/xUnit اور physical pending** (v0.52.0 کی Windows 1086/1086 گرین ہو چکی)۔ طے شدہ ترتیب (5، 6، 18) مکمل؛ صرف Portion 17 باقی، paused — مالک کے حکم پر شروع ہوگا۔
+
+## تازہ status — Portion 15 مکمل، v0.56.0 Flint
+
+خودکار cloud بھیج: ٹک لگانے پر دکان خود ہر چند منٹ بعد بھیجتی ہے (پسِ پردہ، دکان رُکے بغیر)؛ ایک وقت میں ایک push، ناکامی اگلے وقفے پر خود دوبارہ، آخری غلطی صفحے پر نظر آئے؛ «Bring» ہمیشہ آپ کے دو کلک سے؛ اصل cloud جانچ کا طریقہ بھی لکھ دیا۔ **1144 written cases، 57/57 static؛ Windows/xUnit، physical اور real-cloud pending** (v0.52.0 کی Windows 1086/1086 گرین ہو چکی)۔ طے شدہ ترتیب (5، 6، 18) مکمل؛ اگلا 16 ہے جب تک مالک کچھ اور نہ کہے؛ Portion 17 paused۔
+
+## تازہ status — Portion 14 مکمل، v0.55.0 Ember
+
+گلّے کا حساب صاف: کھولنے/بند کرنے/حوالگی پر ہر کمی بیشی اب اپنی قطار میں (کتنا ہونا چاہیے تھا، کتنا نکلا، وجہ، کس نے گنا)؛ Shift صفحے پر نئی فہرست؛ Alerts صفحے سے Shift کا صفحہ ایک کلک پر؛ پرانے فرق ویسے ہی الرٹ دیتے ہیں، کوئی رقم نہیں بدلتی۔ **1130 written cases، 57/57 static؛ Windows/xUnit اور physical pending** (v0.52.0 کی Windows 1086/1086 گرین ہو چکی)۔ طے شدہ ترتیب (5، 6، 18) مکمل؛ اگلا 15 ہے جب تک مالک کچھ اور نہ کہے؛ Portion 17 paused۔
+
+## تازہ status — Portion 13 مکمل، v0.54.0 Dusk
+
+دوائی کی مکمل تاریخ: ہر خرید (کب، کس سے، کس بھاؤ) اور ہر فروخت (کب، کس بل، کس کو) — پرنٹ، واٹس ایپ اور CSV بھی۔ نفع اب ایک ہی سوئچ سے ہر جگہ چھپے یا دکھے؛ گاہک صفحے پر نفع ہر ایک کو دکھتا تھا، اب بند۔ **1116 written cases، 57/57 static؛ Windows/xUnit اور physical pending** (v0.52.0 کی Windows 1086/1086 گرین ہو چکی)۔ طے شدہ ترتیب (5، 6، 18) مکمل؛ اگلا 14 ہے جب تک مالک کچھ اور نہ کہے؛ Portion 17 paused۔
+
+## تازہ status — Portion 12 مکمل، v0.53.0 Midnight
+
+واٹس ایپ + PDF: ہر صفحے سے ایک ہی طریقہ — موبائل نمبر خود درست (03xx → 92)، ایپ میں متن تیار، ساتھ PDF فائل جو مالک خود لگائے؛ ایپ نہ ہو تو صاف غلطی۔ ٹرگر: آرڈر پیڈ، بل، گاہک/سپلائر گوشوارہ + مختصر یاددہانی، سیل رپورٹ، خریداری انوائس، حوالگی پرچی۔ **1102 written cases، 57/57 static؛ Windows/xUnit اور physical pending** (v0.52.0 کی Windows 1086/1086 گرین ہو چکی)۔ طے شدہ ترتیب (5، 6، 18) مکمل؛ اگلا 13 ہے جب تک مالک کچھ اور نہ کہے؛ Portion 17 paused۔
+
+## تازہ status — Portion 11 مکمل، v0.52.0 Espresso
+
+ہر جگہ پرنٹ: Reorder پیڈ، Sales رپورٹ، StockTake شیٹ، Purchase انوائس (Save پر خودکار) اور Expense واؤچر — نئی پرچیاں؛ Bills/Customers/Suppliers پر کئی قطاریں ٹک کر کے ایک ساتھ پرنٹ (`defaultBulk` سے مین بٹن، `bulkFormat` سے الگ پرچیاں یا ایک A4 فہرست)؛ چھاپنے سے پہلے پیش نظارہ (preview)؛ ہر پرنٹ صرف پڑھتا ہے، کچھ بدلتا نہیں۔ **1086 written cases، 57/57 static؛ Windows 1086/1086 گرین (10 نومبر 2026)، physical pending**۔ طے شدہ ترتیب (5، 6، 18) مکمل؛ اگلا 12 ہے جب تک مالک کچھ اور نہ کہے؛ Portion 17 paused۔
+
+## تازہ status — Portion 10 مکمل، v0.51.0 Coffee
+
+لفظوں والی تلاش: تینوں صفحوں (Products، Counter، Purchase) پر ایک ہی اصول — ہر لفظ کہیں نہ کہیں ملنا چاہیے، ترتیب کوئی بھی ہو؛ «panadol 100ml» صرف 100ml والی نکالے؛ «50 ml» اور «50ml» ایک ہی؛ ایک لفظ کی تلاش پہلے جیسی؛ کچھ نہ ملے تبھی تجویز۔ **1070 written cases، 57/57 static؛ Windows/xUnit اور physical pending** (v0.50.0 کی Windows 1055/1055 گرین ہو چکی)۔ طے شدہ ترتیب (5، 6، 18) مکمل؛ اگلا 11 ہے جب تک مالک کچھ اور نہ کہے؛ Portion 17 paused۔
 
 ## تازہ status — Master Portion 6 مکمل، v0.46.0 Rust
 
@@ -2708,6 +2876,13 @@ restart نہیں (Spec 8.4.3)۔
 
 | تاریخ | کیا |
 |---|---|
+| 10 نومبر 2026 | **لفظوں والی تلاش — v0.51.0 Coffee `#4B3621`**: ایک ہی ٹوکن اصول تینوں صفحوں پر، ہر لفظ لازم، ترتیب آزاد، «50 ml» = «50ml»، ایک لفظ پہلے جیسا، تجویز صرف مکمل ناکامی پر؛ **1070 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
+| 10 نومبر 2026 | **ہر جگہ پرنٹ + بلک — v0.52.0 Espresso `#3B2314`**: پیڈ/رپورٹ/شیٹ/انوائس/واؤچر، ٹک-کر-پرنٹ تین صفحوں پر، `defaultBulk`/`bulkFormat` سیٹنگز، preview ونڈو، ہر پرنٹ read-only؛ **1086 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
+| 10 نومبر 2026 | **واٹس ایپ + PDF — v0.53.0 Midnight `#1B2A4A`**: مشترکہ لنک + اپنی PDF، ساتوں صفحوں پر ٹرگر، مالک خود فائل لگائے اور Send دبائے، ہر شیئر read-only؛ **1102 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
+| 10 نومبر 2026 | **تاریخ + نفع سوئچ — v0.54.0 Dusk `#3D315B`**: دوائی کی خرید/فروخت تاریخ (پرنٹ/واٹس ایپ/CSV)، ایک عالمی نفع سوئچ، گاہک نفع لیک بند، تعریف ہر جگہ آڈٹ؛ **1116 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
+| 10 نومبر 2026 | **سپلائر + فلٹر — v0.50.0 Walnut `#4E3B2C`**: برانڈ کے ساتھ اختیاری کمپنی، ایک پسندیدہ سپلائر صرف چننے سے (تاریخ سے اندازہ نہیں)، پسندیدہ + اصل تاریخ پر فلٹر، ایڈیٹر میں چناؤ + Clear + تاریخ کی سطر؛ **1055 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
+| 10 نومبر 2026 | **نمک + برانڈ فہرستیں — v0.49.0 Mahogany `#5C2E1F`**: مرکزی CRUD، ایک درست ہجے، صرف چننے سے لنک (اندازہ کبھی نہیں)، نام صرف جڑی rows پر، ہٹانے پر لنک ٹوٹے متن رہے، 4 خانوں والی Catalogs کھڑکی، ایڈیٹر میں چناؤ + اضافہ + Unlink + hint؛ **1040 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
+| 10 نومبر 2026 | **پیکنگ، اکائیاں اور variants — v0.48.0 Russet `#80461B`**: ایک ہی box/strip/unit حساب ہر راستے پر، ساتوں خانوں میں «unit»، رسید/history میں «unit» (پرانی «base» بھی چلے)، گاہک + بلا-بل واپسی میں whole-only انکار، ایک ہی نام پر variants بتا کر انتباہ، stock-take تلاش میں strength + pack؛ **1025 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
 | 10 نومبر 2026 | **D-100 / دستاویزات پر اپنے خانے — v0.47.0 Moss `#4A5D23`**: بل/خرید/اخراجات کے الگ فارم (تصویر انکار — گیلری نہیں)، جواب post کے ساتھ atomic، لازمی چھوٹے تو نام بتا کر انکار، drafts ساتھ رکھیں، بل history + اخراجات فہرست میں نمائش؛ **1010 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
 | 10 نومبر 2026 | **Expiry picker — v0.46.0 Rust `#B7410E`**: خرید صفحے پر مہینہ/سال + کیلنڈر، لکھنا/خالی ویسے ہی، زندہ stored-form لائن، `MM/YY` ہمیشہ 2000–2099، پرانی صورتیں بعینہ؛ **996 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
 | 10 نومبر 2026 | **D-100 / محفوظ مشترکہ drafts — v0.45.0 Sienna `#A0522D`**: بل اور خرید دونوں کے مسودے (save/open/update/discard/final-post)، مسودہ رہنے تک کوئی مالی/اسٹاک/sync اثر نہیں، حتمی post وہی guarded Create، دوہرا post ناممکن، ناکام post پر بحالی، مشترکہ visibility، وجہ+audited discard؛ **988 written cases، 57/57 static**؛ Windows/xUnit/physical pending |
