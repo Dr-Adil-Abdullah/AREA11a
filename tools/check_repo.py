@@ -5237,7 +5237,7 @@ def check_phase_three_packaging() -> None:
     for needle in ("MessageBoxResult.No", "ConfirmEditorClosing", "_viewModel.EditorSaved -= OnEditorSaved"):
         if needle not in editor_code:
             fail(f"Product form is missing a safe close/unsubscribe guard: {needle}")
-    for needle in ("ProductEditorDoor.Show(this)", "_editingId = created.Value", "Editor.Load(created.Value)",
+    for needle in ("ProductEditorDoor.Show(this)", "_editingId = created.Value", "Editor.Load(_editingId!.Value)",
                    "Product and extra fields saved.", "MessageBoxResult.No"):
         if needle not in products_vm:
             fail(f"Product editor lost a save, dialog or removal guard: {needle}")
@@ -7947,6 +7947,82 @@ def check_custom_manager_current_boundaries():
         FAILURES.append('Owner stable1–36 work IDs must remain complete and in order;not36Nexts')
     REPORT.append('Phase4 portion26/number8: current definition manager/stale selection and input cleanup,persisted target comparison,stable allowed ticks,SAVED postcommit reload verdict;32 facts/2009cases UNRUN,not atomic CAS/session/Windows/globalPhase4 certification')
 
+def check_record_write_current_boundaries():
+    """Stable5/6/7 source contracts, not executable authorization, rollback or WPF proof."""
+    product = (DOTNET / 'Area11.Core/Services/ProductService.cs').read_text()
+    partner = (DOTNET / 'Area11.Core/Services/PartnerService.cs').read_text()
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/ProductsViewModel.cs').read_text()
+    customer = (DOTNET / 'Area11.Desktop/ViewModels/CustomersViewModel.cs').read_text()
+    window = (DOTNET / 'Area11.Desktop/Views/ProductEditorWindow.xaml.cs').read_text()
+    view = (DOTNET / 'Area11.Desktop/Views/ProductEditorWindow.xaml').read_text()
+    tests = (DOTNET / 'Area11.Tests/RecordWriteCurrentAccessTests.cs').read_text()
+    def need(text, tokens, label):
+        for token in tokens:
+            if token not in text: FAILURES.append('Record current boundary ' + label + ': ' + token)
+    update = partner.split('public ServiceResult<CustomerEditResult> UpdateCustomer(', 1)[-1].split('private ServiceResult<CustomerEditResult> SaveCustomer(', 1)[0]
+    gate = 'actor = SnapshotReadAccess.Require(_db, connection, new PermissionService(_db, _log, _audit), actor, Modules.Customers);'
+    need(update, [gate, 'var result = SaveCustomer(connection, actor, input, name, phone, category);', 'if (!result.Ok || customValues is null) return result;'], 'customer null-map writer')
+    if gate in update and update.index(gate) > update.index('var result = SaveCustomer('):
+        FAILURES.append('Customer current writer must precede SaveCustomer even without optional answers')
+    if product.count('actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage') != 3:
+        FAILURES.append('All three reviewed product writers need active-positive manager preflight')
+    if product.count('actor = RequireProductWriter(connection, actor);') != 3:
+        FAILURES.append('Create/Update/Deactivate must use stored actor for checks and audit')
+    for start, end in (('public ServiceResult<int> Create(', 'public IReadOnlyList<string> MissingRequiredLabels('),
+                       ('public ServiceResult Update(', 'public ServiceResult Deactivate('),
+                       ('public ServiceResult Deactivate(', 'public ServiceResult CheckEditorAccess(')):
+        body = product.split(start, 1)[-1].split(end, 1)[0]
+        need(body, ['actor = RequireProductWriter(connection, actor);'], start)
+        pos = body.find('actor = RequireProductWriter(connection, actor);')
+        first_write = body.find('_db.Execute(connection,')
+        if first_write >= 0 and pos > first_write: FAILURES.append('Product stored writer follows mutation: ' + start)
+    need(product, ['SnapshotReadAccess.Require(_db, connection, _permissions, actor, Modules.Products)',
+                   'if (!current.CanManage)', 'if (id <= 0) throw new ValidationException',
+                   'if (patch.CostPaisa is not null) RequireStoredCostEdit(connection, actor);',
+                   'if (active is null) throw new ValidationException',
+                   'if (Convert.ToInt64(active) == 0) return;',
+                   'SELECT value FROM settings WHERE key = @key;', 'MasterFoundationSettings.ProfitShowMargins',
+                   'raw is null || (bool.TryParse(raw, out var flag) ? flag',
+                   'System.Globalization.CultureInfo.InvariantCulture, out var number) && number != 0',
+                   '!enabled || !_permissions.Can(writer, Modules.PurchaseCost)',
+                   'var writer = RequireProductWriter(connection, actor);', 'RequireStoredCostEdit(connection, writer);',
+                   'if (active is null || Convert.ToInt64(active) == 0)'], 'Core parent/cost/editor')
+    need(customer, ['_editingCustomerId = Selected.Id;',
+                    'if (!IsEditing || _editingCustomerId <= 0 || Selected?.Id != _editingCustomerId)',
+                    'Id = _editingCustomerId,', 'SAVED. The customer change was stored, but the page could not refresh.'], 'pinned customer form')
+    cleanup = customer.split('private void ClearEditForm()', 1)[-1].split('private void ClearSensitiveData()', 1)[0]
+    need(cleanup, ['IsEditing = false;', '_editingCustomerId = 0;', 'EditName = EditPhone = EditLimitText = string.Empty;',
+                   'EditCategory = "Normal";', 'EditEditor.Load(0);'], 'customer cleanup')
+    need(customer.split('private void ClearSensitiveData()',1)[-1], ['ClearEditForm();', 'NewName = NewPhone = string.Empty;', 'NewEditor.Load(0);', 'Editor.Load(0);'], 'customer denied state')
+    need(vm, ['_lastProductLoadSucceeded && Items.Count == 0,',
+              '_services.Products.CheckEditorAccess(_user, product.Id)',
+              'public bool CanSaveEditor => !_editorAccessLost;',
+              'if (_editorAccessLost) return false;', '_services.Products.CheckEditorAccess(_user, _editingId)',
+              'NewProduct(loadFields: false);', 'else Editor.Load(0);',
+              'SAVED. Product and extra fields were stored, but could not refresh.',
+              'SAVED. The product was put away, but the list could not refresh.',
+              '_services.Log.Error("Product was saved but its editor could not refresh.", exception);',
+              'InvalidateEditor(full.Error ??', 'InvalidateEditor("Extra fields could not be loaded.'], 'product stale/SAVED')
+    for method in ('Save()', 'OpenBarcodes()', 'OpenHistory()', 'OpenPhotos()', 'DeactivateSelected()'):
+        body = vm.split('void ' + method,1)[-1].split('}',1)[0]
+        need(body, ['if (!RefreshEditorAccess()) return;'], method)
+    if vm.count('if (!RefreshEditorAccess()) return;') < 8:
+        FAILURES.append('Product modal needs fresh access after confirmations as well as action entry')
+    cleanup = vm.split('private void InvalidateEditor(',1)[-1].split('public void ApplyFilter(',1)[0]
+    need(cleanup, ['NewProduct(loadFields: false);', 'CostText = RetailText = VipText = DoctorText = string.Empty;',
+                   'BaseUnit = StrengthUnit = string.Empty;', 'Items.Clear();', 'Categories.Clear();', 'Companies.Clear();',
+                   'Formulas.Clear();', 'Brands.Clear();', 'Suppliers.Clear();', 'SupplierFilterOptions.Clear();',
+                   'CategoryTagOptions.Clear();', 'BaseUnits.Clear();', '_lastProductLoadSucceeded = false;'], 'product cleanup')
+    need(window, ['TimeSpan.FromSeconds(3)', '_viewModel.RefreshEditorAccess()', 'accessTimer.Start();', 'accessTimer.Stop();'], 'modal lifetime')
+    need(view, ['IsEnabled="{Binding CanSaveEditor}"'], 'save button')
+    if tests.count('[Fact]') != 36: FAILURES.append('Reviewed record writes need36 real-schema regression facts')
+    need(tests, ['FreshMainReadDoesNotTrustInjectedSettingsCache', 'ReviewedWritesAuditStoredCurrentActorName',
+                 'CustomerAuditFailureRollsBackNullMapEdit', 'ProductEditAuditFailureRollsBackTagsPriceAndName',
+                 'ProductCreateAuditFailureRollsBackPhotoAndOnlyNewFile', 'ProductHideAuditFailureKeepsProductActive',
+                 'RevokedCustomersGrantBlocksNullMapCustomerEdit', 'NonCostCorePatchRemainsAllowedWithoutCostGrant',
+                 'NewProductTypedCostWorkflowDoesNotRequireStoredCostGrant'], 'regressions')
+    REPORT.append('Phase4 portion27/stable5,6,7: current customer null-map writer,pinned editor;stored product writer/audit,parent checks,fresh stored-cost gate,stale modal cleanup/SAVED;36 facts/2045cases UNRUN,not authenticated session/CAS/WPF/globalPhase4 proof')
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -8038,6 +8114,7 @@ def main() -> int:
     check_photo_current_boundaries()
     check_custom_value_current_boundaries()
     check_custom_manager_current_boundaries()
+    check_record_write_current_boundaries()
     check_csharp_grammar()
 
     if not quiet:

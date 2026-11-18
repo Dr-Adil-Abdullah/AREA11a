@@ -193,6 +193,7 @@ VALUES(@name, @phone, @category, 0, 0, 0, 1, 1, @at);",
         {
             return _db.Tx(connection =>
             {
+                actor = SnapshotReadAccess.Require(_db, connection, new PermissionService(_db, _log, _audit), actor, Modules.Customers);
                 var result = SaveCustomer(connection, actor, input, name, phone, category);
                 if (!result.Ok || customValues is null) return result;
                 var custom = new CustomFieldService(_db, _audit, new PermissionService(_db, _log, _audit), _log);

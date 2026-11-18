@@ -18,7 +18,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     /// has rows**, so nothing in this page has to keep a second flag in step with its list.
     /// </summary>
     public EmptyHint? EmptyHint => EmptyPage.When(
-        Items.Count == 0,
+        _lastProductLoadSucceeded && Items.Count == 0,
         "Products",
         searched: SearchText.Trim().Length > 0 || HasFilter);
 
@@ -27,6 +27,8 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
 
     private Product? _selectedProduct;
     private int? _editingId;
+    private bool _editorAccessLost;
+    private bool _lastProductLoadSucceeded;
 
     private string _searchText = string.Empty;
     private string _searchNote = string.Empty;
@@ -139,6 +141,8 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     public ObservableCollection<string> BaseUnits { get; } = new();
 
     public ObservableCollection<CategoryTagOption> CategoryTagOptions { get; } = new();
+
+    public bool CanSaveEditor => !_editorAccessLost;
 
     public RelayCommand SaveCommand { get; }
 
@@ -693,15 +697,21 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
 
     private void Load()
     {
+        _lastProductLoadSucceeded = false;
         // F-50: exact first; when nothing matches, the closest medicines with a sentence saying so.
         var result = _services.Products.SearchSmart(_user, SearchText, _categoryFilter, _companyFilter, _lowStockOnly, _strengthFilter, _supplierFilter);
 
         if (!result.Ok || result.Value is null)
         {
+            Items.Clear();
+            _selectedProduct = null;
+            OnPropertyChanged(nameof(SelectedProduct));
+            OnPropertyChanged(nameof(EmptyHint));
             SetStatus(result.Error ?? "The product list could not be loaded.", true);
             return;
         }
 
+        _lastProductLoadSucceeded = true;
         Items.Clear();
 
         foreach (var product in result.Value.Items)
@@ -727,6 +737,9 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
             return;
         }
 
+        var access = _services.Products.CheckEditorAccess(_user);
+        if (!access.Ok) { InvalidateEditor(access.Error ?? "Current product access is required."); return; }
+        LoadLookups();
         NewProduct();
         ProductEditorDoor.Show(this);
     }
@@ -746,31 +759,46 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
             return;
         }
 
+        var access = _services.Products.CheckEditorAccess(_user, product.Id);
+        if (!access.Ok) { InvalidateEditor(access.Error ?? "Current product editor access is required."); return; }
+        _editorAccessLost = false;
+        OnPropertyChanged(nameof(CanSaveEditor));
+        LoadLookups();
+
         // Search rows carry display text but not CategoryTagIds. Fetch the complete record before
         // editing; otherwise an ordinary save would silently replace its existing tags with none.
         var full = _services.Products.Get(_user, product.Id);
         if (!full.Ok || full.Value is null || !full.Value.Active)
         {
-            SetStatus(full.Error ?? "That medicine is no longer active. Refresh and try again.", true);
+            InvalidateEditor(full.Error ?? "That medicine is no longer active. Refresh and try again.");
             return;
         }
         if (!full.Value.CostKnown)
         {
-            SetStatus("View Purchase Cost permission and the main financial visibility switch are required to edit stored cost. No values were changed.", true);
+            InvalidateEditor("View Purchase Cost permission and the main financial visibility switch are required to edit stored cost. No values were changed.");
             return;
         }
 
         LoadForm(full.Value);
         Editor.Load(full.Value.Id);
+        if (!Editor.LoadedSuccessfully)
+        {
+            InvalidateEditor("Extra fields could not be loaded. Reopen the product editor.");
+            return;
+        }
+        if (!RefreshEditorAccess()) return;
         ProductEditorDoor.Show(this);
     }
 
-    private void NewProduct()
+    private void NewProduct(bool loadFields = true)
     {
+        _editorAccessLost = !loadFields;
+        OnPropertyChanged(nameof(CanSaveEditor));
         _editingId = null;
         _selectedProduct = null;
         OnPropertyChanged(nameof(SelectedProduct));
-        Editor.LoadNew();
+        if (loadFields) Editor.LoadNew();
+        else Editor.Load(0);
 
         Name = string.Empty;
         Generic = string.Empty;
@@ -871,6 +899,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
 
     private void Save()
     {
+        if (!RefreshEditorAccess()) return;
         if (!Money.TryParse(CostText, out var cost) || !Money.TryParse(RetailText, out var retail)
             || !Money.TryParse(VipText, out var vip) || !Money.TryParse(DoctorText, out var doctor))
         {
@@ -952,6 +981,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
             }
         }
 
+        if (!RefreshEditorAccess()) return;
         var answers = Editor.AnswerValues();
         var isNew = _editingId is null;
         IReadOnlyList<string> saveWarnings = Array.Empty<string>();
@@ -961,28 +991,81 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
             saveWarnings = created.Warnings;
             if (!created.Ok || created.Value <= 0)
             {
+                if (!RefreshEditorAccess()) return;
                 SetStatus(created.Error ?? "The product could not be saved.", true);
                 return;
             }
             _editingId = created.Value;
-            // A newly saved product can now have its own extra fields, photos and barcodes.
-            Editor.Load(created.Value);
-            OnPropertyChanged(nameof(HeaderText));
+            // The committed ID is pinned before attempting any UI refresh.
         }
         else
         {
             var updated = _services.Products.Update(_user, _editingId!.Value, patch, answers);
             if (!updated.Ok)
             {
+                if (!RefreshEditorAccess()) return;
                 SetStatus(updated.Error ?? "The product could not be saved.", true);
                 return;
             }
-            Editor.Load(_editingId.Value);
         }
 
-        Load();
-        var warningText = saveWarnings.Count > 0 ? " ⚠ " + string.Join(" ", saveWarnings) : string.Empty;
-        SetStatus("Product and extra fields saved." + warningText, saveWarnings.Count > 0);
+        try
+        {
+            Editor.Load(_editingId!.Value);
+            OnPropertyChanged(nameof(HeaderText));
+            Load();
+            if (!RefreshEditorAccess())
+            {
+                SetStatus("SAVED. Product changes were stored, but current editor access changed. Close, refresh and reopen; do not repeat the save.", true);
+                return;
+            }
+            var warningText = saveWarnings.Count > 0 ? " ⚠ " + string.Join(" ", saveWarnings) : string.Empty;
+            if (!Editor.LoadedSuccessfully || !_lastProductLoadSucceeded)
+            {
+                InvalidateEditor("SAVED. Product and extra fields were stored, but could not refresh. Do not repeat the save; close, refresh and reopen.");
+                return;
+            }
+            SetStatus("Product and extra fields saved." + warningText, saveWarnings.Count > 0);
+        }
+        catch (Exception exception)
+        {
+            _services.Log.Error("Product was saved but its editor could not refresh.", exception);
+            InvalidateEditor("SAVED. Product changes were stored, but could not refresh. Do not repeat the save; close, refresh and reopen.");
+        }
+    }
+
+    /// <summary>Modal access checks; after denial discard edits and require explicit reopen.</summary>
+    public bool RefreshEditorAccess()
+    {
+        if (_editorAccessLost) return false;
+        var access = _services.Products.CheckEditorAccess(_user, _editingId);
+        if (access.Ok) return true;
+        InvalidateEditor(access.Error ?? "Current product editor access is required. Close, refresh and reopen.");
+        return false;
+    }
+
+    private void InvalidateEditor(string error)
+    {
+        NewProduct(loadFields: false);
+        CostText = RetailText = VipText = DoctorText = string.Empty;
+        BaseUnit = StrengthUnit = string.Empty;
+        SelectedCategory = null;
+        SelectedCompany = null;
+        Categories.Clear();
+        Companies.Clear();
+        Formulas.Clear();
+        Brands.Clear();
+        Suppliers.Clear();
+        SupplierFilterOptions.Clear();
+        CategoryTagOptions.Clear();
+        BaseUnits.Clear();
+        NewCategoryName = NewCompanyName = NewFormulaName = NewBrandName = string.Empty;
+        SearchNote = string.Empty;
+        IsSearchGuessing = false;
+        Items.Clear();
+        _lastProductLoadSucceeded = false;
+        OnPropertyChanged(nameof(EmptyHint));
+        SetStatus(error + " Unsaved editor values were discarded; close, refresh and reopen before another action.", true);
     }
 
     /// <summary>One predictable doorway for category, company, dashboard and strength links.</summary>
@@ -1050,6 +1133,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     /// <summary>The barcode list of the medicine on the form. A new, unsaved medicine has no id yet.</summary>
     private void OpenBarcodes()
     {
+        if (!RefreshEditorAccess()) return;
         if (_editingId is not int id || id <= 0)
         {
             SetStatus("Save the medicine first, then add its barcodes.", true);
@@ -1062,6 +1146,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     /// <summary>The history of the medicine on the form. A new, unsaved medicine has no story yet.</summary>
     private void OpenHistory()
     {
+        if (!RefreshEditorAccess()) return;
         if (_editingId is not int id || id <= 0)
         {
             SetStatus("Save the medicine first - a new row has no history yet.", true);
@@ -1074,6 +1159,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     /// <summary>Photo gallery for the medicine on the form. A new, unsaved medicine has no id yet.</summary>
     private void OpenPhotos()
     {
+        if (!RefreshEditorAccess()) return;
         if (_editingId is not int id || id <= 0)
         {
             SetStatus("Save the medicine first, then add its photos.", true);
@@ -1085,6 +1171,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
 
     private void DeactivateSelected()
     {
+        if (!RefreshEditorAccess()) return;
         if (_editingId is not int id || id <= 0)
         {
             SetStatus("Save or edit an existing product first.", true);
@@ -1097,17 +1184,32 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         {
             return;
         }
+        if (!RefreshEditorAccess()) return;
         var result = _services.Products.Deactivate(_user, id);
         if (!result.Ok)
         {
+            if (!RefreshEditorAccess()) return;
             SetStatus(result.Error ?? "The product could not be removed.", true);
             return;
         }
 
-        Load();
-        NewProduct();
-        SetStatus($"{name} was removed from the list (history is kept).", false);
-        EditorSaved?.Invoke();
+        try
+        {
+            Load();
+            if (!_lastProductLoadSucceeded)
+            {
+                InvalidateEditor("SAVED. The product was put away, but the list could not refresh. Do not repeat the action.");
+                return;
+            }
+            NewProduct();
+            SetStatus($"{name} was removed from the list (history is kept).", false);
+            EditorSaved?.Invoke();
+        }
+        catch (Exception exception)
+        {
+            _services.Log.Error("Product was put away but its editor could not refresh.", exception);
+            InvalidateEditor("SAVED. The product was put away, but could not refresh. Do not repeat the action.");
+        }
     }
 
     private void AddCategory()

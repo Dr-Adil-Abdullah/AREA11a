@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Threading;
 using Area11.Desktop.ViewModels;
 
 namespace Area11.Desktop.Views;
@@ -17,7 +18,10 @@ public partial class ProductEditorWindow : Window
         DataContext = viewModel;
         _viewModel.EditorSaved += OnEditorSaved;
         Closing += ConfirmEditorClosing;
-        Closed += (_, _) => _viewModel.EditorSaved -= OnEditorSaved;
+        var accessTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+        accessTimer.Tick += (_, _) => _viewModel.RefreshEditorAccess();
+        Loaded += (_, _) => { _viewModel.RefreshEditorAccess(); accessTimer.Start(); };
+        Closed += (_, _) => { accessTimer.Stop(); _viewModel.EditorSaved -= OnEditorSaved; };
     }
 
     private void OnEditorSaved()

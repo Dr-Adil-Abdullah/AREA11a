@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-47 — stable5/6/7 customer/product writes and stale editors (v0.105.0) — UNRUN
+
+[Urdu isolated test steps](docs/POS-PHASE4-PART27-URDU.md),[trace/limits](docs/POS-PHASE4-RECORD-WRITE-CURRENT-REVIEW.md),[stable1–36tracker](docs/NUMBERED-WORK-STATUS-URDU.md). Test current/null-map Customer writes, preserved Cashier phone/manager limit rules, current Product writers/audit/no-op/target, fresh stored-cost main+Cost vs preserved authored new cost/non-cost patches; pinned customer selection, stale modal cleanup/regrant/reopen/timer/Closed, failed reads not empty, SAVED after committed refresh failures.36newfacts/2045C#cases plus Core/Tests/Desktop/WPF all UNRUN here. Actual actor/audit/file fault execution and Windows logs required. Python/static not runtime certification;no live synthetic posts. Verified backup plus genuinely separate DB/photos/config,not just exe folder. FullPhase4/installer OPEN.
+
 ## PT-46 — stable item8 custom-definition manager (v0.104.0) — UNRUN
 
 [Isolated Urdu steps8.1–8.10](docs/POS-PHASE4-PART26-URDU.md),[trace](docs/POS-PHASE4-CUSTOM-MANAGER-CURRENT-REVIEW.md),[stable36items](docs/NUMBERED-WORK-STATUS-URDU.md). CurrentOwner/failedread clearsrows/selection/typedinputs,changedselectedmetadata abort+review,wrongtab/detachedtargetrefusal,unchangedtick preservesedit,HideRestore/Move/AddUpdateSAVEDreloadfailure,Loaded/Unloaded lifecycle,stablekey/history/documentPhoto rules.32newfacts/2009C#cases/Core/Tests/Desktop/WPFUNRUN;source/PythonNOT runtimePASS. NotatomicCAS/session/fullPhase4/installer. No fake shop posts;verifiedbackup+truly separateDB/photos/config,notexealone.

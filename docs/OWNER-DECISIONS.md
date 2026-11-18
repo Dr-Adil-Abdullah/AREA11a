@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## v0.105.0 portion27 — stable5/6/7؛نئیbusinesspolicyنہیں
+
+LatestNextمیںCustomer Update کےnull-custom-map current-account bypass،Product stored writer/audit/target،پہلےسےموجودexisting-editor Cost+main شرطکےCore stored-cost patch،اورstale customer/product forms پرمحدودکام۔ Cashier phone/name correction،Owner/Manager limit/product rules،authorednewproductcost/non-costCorepatch،POSquickcustomer،SupplierB،pricing/Extra/returnB،backupA اورBlackbox/BookCheck scope برقرار۔ [PT-47](POS-PHASE4-PART27-URDU.md)،[trace](POS-PHASE4-RECORD-WRITE-CURRENT-REVIEW.md)،[1–36حیثیت](NUMBERED-WORK-STATUS-URDU.md)۔36newfacts/2045cases WindowsUNRUN؛authenticatedsession/CAS/remainingcallers/fullPhase4/installerOPEN۔ ہررپورٹ میںان ہی مستقلنمبروںکیdone-source/actualexecution/باقیوجوہ/next/docs/actualGitpublication الگبتائیں۔
+
 ## Standing reporting instruction / D-110,D-115 scope preservation — v0.104.0 portion26
 
 مالک نے ہرکام کی **مکمل نمبر وار done/remaining تفصیل** مانگی؛[مستقل1–36tracker](NUMBERED-WORK-STATUS-URDU.md) کے نمبر برقرار رکھیں،یہ36Nextنہیں۔ LatestNextمیں **نمبر8** managerکیcurrentOwner/selection/inputcleanup،selecteddefinitioncomparisonاورSAVEDfailureپرکام؛نئیbusinesspolicyنہیں۔ SupplierB/CostProfitmain/Extra/returnB/belowcost/backupA/BlackboxBookCheck settledscopeبرقرار۔ [PT-46](POS-PHASE4-PART26-URDU.md)،[trace/حدود](POS-PHASE4-CUSTOM-MANAGER-CURRENT-REVIEW.md)۔32facts/2009casesWindowsUNRUN؛actualsession/atomicCAS/record/fullPhase4/installerOPEN۔ ہررپورٹمیںsourcevsactualexecution،اسی نمبرکےباقیکام،nextnumbersاوراصلGitpublicationالگلکھیں۔

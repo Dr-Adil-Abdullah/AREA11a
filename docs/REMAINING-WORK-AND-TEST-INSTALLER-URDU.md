@@ -1,5 +1,18 @@
 # باقی کام، GitHub اور test installer — v0.104.0
 
+## تازہ checkpoint — v0.105.0 Harbor / حصہ27؛مستقل نمبر5/6/7
+
+[1–36کیالگالگحیثیت](NUMBERED-WORK-STATUS-URDU.md)،[PT-47](POS-PHASE4-PART27-URDU.md)،[trace/حدود](POS-PHASE4-RECORD-WRITE-CURRENT-REVIEW.md)۔ Customer null-custom-map updateپرcurrentCustomersaccount،Product کےتینwritesمیںstoredProductsmanager/audit،stored-cost patchمیںfreshmain+Cost،pinnedcustomerform/staleproductmodalcleanup/SAVEDsourceشامل۔ Cashierphone/managerlimit،authorednewcost/non-costCorepatch/POSquickcustomer برقرار۔ **36نئےfacts/2045C#casesWindowsUNRUN**؛Python/staticکوruntimePASSنہکہیں۔
+
+1. **5:** باقیcaller/account/sessionreconciliation؛storedIDکوauthenticatedsessionنہکہیں۔
+2. **6:** باقیparent/workflow/catalogroutes،versionCASاورactualTxfaults۔
+3. **7:** باقیeditors/cache/dialogs،حقیقیWindowsfocus/timers/regrant/failedread/SAVEDثبوت۔
+4. **23–25:** integratedfault/retry/duplicates/concurrency؛**26–29:**files/encryptedbackup/restore/newPC/cloud۔
+5. **2/4/30–35:**2045+tests/build/results/fixes،Windows/hardware/isolation۔
+6. **36:** کامیابWindows/build/test/installgatesکےبعدواحدsendabledouble-clicktestinstaller؛**ابھینہیںبنا**۔
+
+پوریPhase4OPEN؛36نمبر36Nextنہیں،3–6مزیدintegratedroundsمشروطاندازہنہdeadlineنہحد۔ ہرportiondocs+samebranchcommit/push+actualremoteverification۔ نیچےتمامپرانیگنتیاںتاریخیہیں؛SupplierBطےہے،دوبارہسوالنہیں۔ اصلshopپرsyntheticpostsنہیں؛verifiedbackup+الگDB/photos/configلازم۔
+
 ## تازہ checkpoint — v0.104.0 Knot / حصہ26؛مستقل نمبر8
 
 [مکمل نمبر وار1–36حیثیت](NUMBERED-WORK-STATUS-URDU.md)،[PT-46](POS-PHASE4-PART26-URDU.md)،[trace/حدود](POS-PHASE4-CUSTOM-MANAGER-CURRENT-REVIEW.md)۔ ManagerمیںcurrentOwnerUI،failedlist/selection/inputsصفائی،selectedpersisteddefinitioncomparison،stableallowedtickاورSAVEDpostcommitreloadfailureشامل۔ **32نئےfacts/کل2009C#casesWindowsUNRUN۔** نمبر8کیlimitedsourceاصلاحہوئی؛Windows/timer/focus،check-use/atomicCAS/othereditorssyncابھیباقی۔ حساب/parentservices/Photo/Native/backup/Blackbox/BookCheckunchanged۔

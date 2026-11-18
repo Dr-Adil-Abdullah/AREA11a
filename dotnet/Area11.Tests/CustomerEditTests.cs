@@ -19,10 +19,6 @@ public sealed class CustomerEditTests
     private static PartnerService Partners(TestDatabase test) =>
         new(test.Database, test.Audit, test.Log);
 
-    private static readonly User Cashier = new() { Id = 2, Name = "Cashier", Role = "cashier" };
-
-    private static readonly User Manager = new() { Id = 3, Name = "Manager", Role = "manager" };
-
     private static Customer Read(TestDatabase test, int id)
     {
         using var connection = test.Database.Open();
@@ -116,19 +112,20 @@ ORDER BY id DESC LIMIT 1;", new { id = customer.ToString() });
     public void ACashierMayFixThePhone_ButNotTheLimit()
     {
         using var test = new TestDatabase();
+        var cashier = TestData.Cashier(test);
         var product = TestData.AddProduct(test, retailPaisa: 30000, batchQty: 100);
         var customer = TestData.AddCustomer(test);
         CreditBill(test, product, customer, 1);
 
         // The phone number: allowed, because the counter cannot work with a wrong number.
-        var phoneOnly = Partners(test).UpdateCustomer(Cashier,
+        var phoneOnly = Partners(test).UpdateCustomer(cashier,
             Form(customer, "Ali Raza", "0333-7654321"));
 
         Assert.True(phoneOnly.Ok, phoneOnly.Error);
         Assert.Equal("0333-7654321", Read(test, customer).Phone);
 
         // The limit: refused, and the name sent with it must not be saved either.
-        var limit = Partners(test).UpdateCustomer(Cashier,
+        var limit = Partners(test).UpdateCustomer(cashier,
             Form(customer, "Someone Else", limit: 900000));
 
         Assert.False(limit.Ok);
@@ -143,9 +140,10 @@ ORDER BY id DESC LIMIT 1;", new { id = customer.ToString() });
     public void AManagerMaySetTheLimit_ButNotForNegativeMoney()
     {
         using var test = new TestDatabase();
+        var manager = TestData.AddUser(test, "manager");
         var customer = TestData.AddCustomer(test);
 
-        var saved = Partners(test).UpdateCustomer(Manager, Form(customer, "Ali Raza", limit: 150000));
+        var saved = Partners(test).UpdateCustomer(manager, Form(customer, "Ali Raza", limit: 150000));
         Assert.True(saved.Ok, saved.Error);
         Assert.Equal(150000L, Read(test, customer).CreditLimitPaisa);
 

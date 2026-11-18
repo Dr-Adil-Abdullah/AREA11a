@@ -245,7 +245,7 @@
                                 Style="{StaticResource PrimaryButton}"
                                 Height="38"
                                 Margin="0,16,0,0"
-                                Command="{Binding SaveCommand}" />
+                                Command="{Binding SaveCommand}" IsEnabled="{Binding CanSaveEditor}" />
 
                         <Button Content="Cancel / close" Style="{StaticResource GhostButton}"
                                 Margin="0,8,0,0" Click="OnCancel" />

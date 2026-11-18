@@ -73,6 +73,8 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
     private string _newCategory = "Normal";
 
     private bool _isEditing;
+    private int _editingCustomerId;
+    private bool _lastCustomerLoadSucceeded;
     private string _editName = string.Empty;
     private string _editPhone = string.Empty;
     private string _editCategory = "Normal";
@@ -460,6 +462,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
 
     public void Load()
     {
+        _lastCustomerLoadSucceeded = false;
         if (!UpdateAccess()) return;
         var keep = Selected?.Id;
 
@@ -479,6 +482,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
             Customers.Add(row);
         }
 
+        _lastCustomerLoadSucceeded = true;
         Selected = Customers.FirstOrDefault(row => row.Id == keep) ?? Customers.FirstOrDefault();
 
         if (Customers.Count == 0)
@@ -493,7 +497,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
     private void ShowCustomer()
     {
         Lines.Clear();
-        IsEditing = false;
+        ClearEditForm();
         Editor.Load(Selected?.Id ?? 0);
 
         ClearAccount();
@@ -883,6 +887,13 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
 
         IsAdding = false;
         EditEditor.Load(Selected.Id);
+        if (!EditEditor.LoadedSuccessfully)
+        {
+            ClearEditForm();
+            SetStatus("Extra fields could not be loaded. Reopen the customer editor.", true);
+            return;
+        }
+        _editingCustomerId = Selected.Id;
         EditName = Selected.Name;
         EditPhone = Selected.Phone ?? string.Empty;
         EditCategory = Selected.CategoryLabel;
@@ -894,17 +905,17 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
 
     private void CancelEdit()
     {
-        IsEditing = false;
+        ClearEditForm();
         SetStatus("Nothing was changed.", false);
     }
 
     private void SaveEdit()
     {
         if (!UpdateAccess()) return;
-        if (Selected is null)
+        if (!IsEditing || _editingCustomerId <= 0 || Selected?.Id != _editingCustomerId)
         {
-            IsEditing = false;
-            SetStatus("Pick a customer first.", true);
+            ClearEditForm();
+            SetStatus("Reopen the intended customer editor before saving.", true);
             return;
         }
 
@@ -924,7 +935,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
 
         var edit = new CustomerEditInput
         {
-            Id = Selected.Id,
+            Id = _editingCustomerId,
             Name = EditName,
             Phone = EditPhone,
             Category = EditCategory,
@@ -940,16 +951,31 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
 
         if (!result.Ok || result.Value is null)
         {
+            UpdateAccess();
             SetStatus(result.Error ?? "The customer could not be saved.", true);
             return;
         }
 
         var saved = result.Value;
-        IsEditing = false;
-
-        Load();
-        ShowCustomer();
-        _onChanged?.Invoke();
+        ClearEditForm();
+        try
+        {
+            Load();
+            ShowCustomer();
+            if (!_lastCustomerLoadSucceeded)
+            {
+                SetStatus("SAVED. The customer change was stored, but the page could not refresh. Do not repeat the save; refresh to check.", true);
+                return;
+            }
+            _onChanged?.Invoke();
+        }
+        catch (Exception exception)
+        {
+            _services.Log.Error("Customer edit was saved but its page could not refresh.", exception);
+            ClearSensitiveData();
+            SetStatus("SAVED. The customer change was stored, but the page could not refresh. Do not repeat the save; refresh to check.", true);
+            return;
+        }
 
         var message = "Saved: " + saved.Name
                       + (saved.LimitChanged ? ", limit " + saved.LimitLabel : string.Empty) + ".";
@@ -1011,8 +1037,23 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
         BooksLabel = "Select a customer with current Customer access.";
     }
 
+    private void ClearEditForm()
+    {
+        IsEditing = false;
+        _editingCustomerId = 0;
+        EditName = EditPhone = EditLimitText = string.Empty;
+        EditCategory = "Normal";
+        EditEditor.Load(0);
+    }
+
     private void ClearSensitiveData()
     {
+        _lastCustomerLoadSucceeded = false;
+        ClearEditForm();
+        NewName = NewPhone = string.Empty;
+        NewCategory = "Normal";
+        NewEditor.Load(0);
+        Editor.Load(0);
         StatusText = string.Empty;
         IsStatusError = false;
         Customers.Clear();

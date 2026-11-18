@@ -320,7 +320,7 @@ WHERE p.active = 1
     public ServiceResult<int> Create(User actor, ProductPatch input, IReadOnlyDictionary<int, string?>? customValues = null,
         string? stagedPhotoPath = null)
     {
-        if (!actor.CanManage)
+        if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
             return ServiceResult<int>.Fail("Only the owner or a manager can add products.");
         }
@@ -371,6 +371,7 @@ WHERE p.active = 1
         {
             var id = _db.Tx(connection =>
             {
+                actor = RequireProductWriter(connection, actor);
                 var linkedGeneric = LinkedCatalogText(connection, "generic_formulas", input.GenericFormulaId, input.Generic, "salt");
                 var linkedBrand = LinkedCatalogText(connection, "brands", input.BrandId, input.Brand, "brand");
                 foreach (var (key, label, value) in new[]
@@ -516,7 +517,7 @@ VALUES
     /// </summary>
     public ServiceResult Update(User actor, int id, ProductPatch patch, IReadOnlyDictionary<int, string?>? customValues = null)
     {
-        if (!actor.CanManage)
+        if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
             return ServiceResult.Fail("Only the owner or a manager can edit products.");
         }
@@ -525,6 +526,9 @@ VALUES
         {
             _db.Tx(connection =>
             {
+                actor = RequireProductWriter(connection, actor);
+                if (id <= 0) throw new ValidationException("Choose an existing product to edit.");
+                if (patch.CostPaisa is not null) RequireStoredCostEdit(connection, actor);
                 var before = _db.QuerySingle<Product>(connection, SelectSql + "WHERE p.id = @id;", new { id });
                 if (before is null)
                 {
@@ -827,7 +831,7 @@ VALUES
     /// <summary>Soft delete only — history, batches and bills stay intact (Spec 5.1.5).</summary>
     public ServiceResult Deactivate(User actor, int id)
     {
-        if (!actor.CanManage)
+        if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
             return ServiceResult.Fail("Only the owner or a manager can remove products.");
         }
@@ -836,6 +840,11 @@ VALUES
         {
             _db.Tx(connection =>
             {
+                actor = RequireProductWriter(connection, actor);
+                if (id <= 0) throw new ValidationException("Choose an existing product to put away.");
+                var active = _db.Scalar(connection, "SELECT active FROM products WHERE id = @id;", new { id });
+                if (active is null) throw new ValidationException("That product no longer exists.");
+                if (Convert.ToInt64(active) == 0) return; // Authorized idempotent hide, no invented audit.
                 _db.Execute(connection, "UPDATE products SET active = 0, updated_at = @at WHERE id = @id;",
                     new { at = Clock.Now(), id });
 
@@ -845,11 +854,62 @@ VALUES
 
             return ServiceResult.Success();
         }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"Product {id} could not be deactivated.", exception);
             return ServiceResult.Fail("The product could not be removed.");
         }
+    }
+
+    /// <summary>Modal preflight only; current supplied ID is not authenticated session proof.</summary>
+    public ServiceResult CheckEditorAccess(User? actor, int? productId = null)
+    {
+        try
+        {
+            _db.Read(connection =>
+            {
+                var writer = RequireProductWriter(connection, actor);
+                if (productId is int id)
+                {
+                    if (id <= 0) throw new ValidationException("Choose an existing product to edit.");
+                    RequireStoredCostEdit(connection, writer);
+                    var active = _db.Scalar(connection, "SELECT active FROM products WHERE id = @id;", new { id });
+                    if (active is null || Convert.ToInt64(active) == 0)
+                        throw new ValidationException("That product is no longer active. Refresh before editing.");
+                }
+                return true;
+            });
+            return ServiceResult.Success();
+        }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
+        catch (Exception exception)
+        {
+            _log.Error("Product editor access could not be checked.", exception);
+            return ServiceResult.Fail("Product editor access could not be checked. Close, refresh and reopen the editor.");
+        }
+    }
+
+    private User RequireProductWriter(SqliteConnection connection, User? actor)
+    {
+        var current = SnapshotReadAccess.Require(_db, connection, _permissions, actor, Modules.Products);
+        if (!current.CanManage)
+            throw new ValidationException("Only the owner or a manager can change products.");
+        return current;
+    }
+
+    private void RequireStoredCostEdit(SqliteConnection connection, User writer)
+    {
+        // Existing full editor already requires Cost+main. Re-read the main key on the write
+        // connection rather than trusting another SettingsService instance's cached ON state.
+        // Missing keeps the shipped true default; malformed/query failure never authorizes a write.
+        var raw = _db.Scalar(connection, "SELECT value FROM settings WHERE key = @key;",
+            new { key = MasterFoundationSettings.ProfitShowMargins })?.ToString();
+        var enabled = raw is null || (bool.TryParse(raw, out var flag) ? flag
+            : long.TryParse(raw, System.Globalization.NumberStyles.Integer,
+                System.Globalization.CultureInfo.InvariantCulture, out var number) && number != 0);
+        if (!enabled || !_permissions.Can(writer, Modules.PurchaseCost))
+            throw new ValidationException("View Purchase Cost permission and the main financial visibility switch are required to edit stored cost.");
     }
 
     public ServiceResult<List<Category>> GetCategories(bool activeOnly = true)
