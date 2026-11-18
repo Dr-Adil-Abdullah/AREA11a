@@ -74,6 +74,9 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     private int _openDraftId;
     private bool _autoPrint;
     private bool _isCompletingSale;
+    private bool _committedCartNeedsReset;
+    private bool _lastLookupsSucceeded;
+    private bool _lastBarcodeLoadSucceeded;
     private bool _shiftClosed;
     private string _handoverNote = string.Empty;
     private string _blockedText = string.Empty;
@@ -678,6 +681,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
     private void LoadLookups()
     {
+        _lastLookupsSucceeded = false;
         var products = _services.Products.Search(_user, purpose: ProductReadPurpose.Counter);
         _catalog.Clear();
         if (products.Ok && products.Value is not null)
@@ -721,6 +725,8 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         FilterProducts();
         CheckDrawer();
         Recalculate();
+        _lastLookupsSucceeded = products.Ok && products.Value is not null
+            && customers.Ok && customers.Value is not null && _lastBarcodeLoadSucceeded;
     }
 
     /// <summary>
@@ -855,6 +861,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     /// <summary>All live codes once, so the filter and the scan never disagree.</summary>
     private void LoadBarcodeMap()
     {
+        _lastBarcodeLoadSucceeded = false;
         _codesByProduct.Clear();
 
         var all = _services.Barcodes.All(_user);
@@ -874,6 +881,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
             codes.Add(match.Barcode);
         }
+        _lastBarcodeLoadSucceeded = true;
     }
 
     private string? ResolvePhotoPath(Product product) =>
@@ -1007,6 +1015,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         DocEditor.LoadNew();
         SetStatus("Cart cleared.", false);
         Recalculate();
+        _committedCartNeedsReset = false;
     }
 
     private void CompleteSale()
@@ -1026,6 +1035,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
     private void CompleteSaleOnce()
     {
+        if (RefuseCommittedCart()) return;
         // Asked again here even though the page shows a card: the drawer can be closed from another
         // window while this cart is open, and the bill is the last place it may be discovered.
         CheckDrawer();
@@ -1098,48 +1108,65 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         var result = wasDraft
             ? _services.Drafts.PostSale(_user, _openDraftId, input)
             : _services.Sales.Create(input, _user);
-        if (!result.Ok || result.Value is null)
+        if (!result.Ok)
         {
             SetStatus(result.Error ?? "The bill could not be saved.", true);
             return;
         }
 
         var sale = result.Value;
-        LastBill = $"{sale.Code} · total {Money.Format(sale.TotalPaisa)}" +
-                   (sale.ChangePaisa > 0 ? $" · change {Money.Format(sale.ChangePaisa)}" : string.Empty) +
-                   (sale.DuePaisa > 0 ? $" · due {Money.Format(sale.DuePaisa)}" : string.Empty);
-
-        var warnings = sale.Warnings.Count > 0 ? "  ⚠ " + string.Join(" ", sale.Warnings) : string.Empty;
-        SetStatus($"Bill saved.{(wasDraft ? " Its draft is posted." : string.Empty)}{warnings}", sale.Warnings.Count > 0);
-
-        // Owner rules D-05 / D-23: printing is instant, with no dialog. The bill is already saved,
-        // so a printer problem is a warning on this screen - never a lost sale (Z-07).
-        _lastSaleId = sale.SaleId;
-        PrintLastCommand.RaiseCanExecuteChanged();
-
-        var printStatus = AutoPrint
-            ? (Print(_lastSaleId) ? "Receipt sent to the printer." : "Receipt could not be printed. The bill is saved; use Print last bill again.")
-            : "Automatic printing is off. Use Print last bill again if needed.";
-        var showSuccess = _services.Settings.GetBool("sale.successPopup", true);
-
-        _availabilityWarningShown = false;
-        Cart.Clear();
-        TenderedText = string.Empty;
-        SecondAmountText = string.Empty;
-        _appliedExtraDiscount = 0;
-        ExtraDiscountEntry = "0";
-        DiscountPercent = "0";
-        ResetBillBasis();
+        // Block reuse even if a binding exception prevents clearing the committed collection.
+        _committedCartNeedsReset = true;
+        // Core acknowledged success: no posted draft/cart may survive into nested print/modal work.
         _openDraftId = 0;
-        OnPropertyChanged(nameof(HasOpenDraft));
-        DocEditor.LoadNew();
-        LoadLookups();
-
-        // Clear/refresh the cart BEFORE the modal. Dismissal cannot save or print again.
-        if (showSuccess && !SaleSuccessDoor.Show(_services, sale, printStatus))
+        _lastSaleId = 0;
+        try
         {
-            SetStatus("Bill saved. The confirmation could not open; check the bill above. " + printStatus, true);
+            _availabilityWarningShown = false;
+            Cart.Clear();
+            TenderedText = string.Empty;
+            SecondAmountText = string.Empty;
+            _appliedExtraDiscount = 0;
+            ExtraDiscountEntry = "0";
+            DiscountPercent = "0";
+            ResetBillBasis();
+            OnPropertyChanged(nameof(HasOpenDraft));
+            if (sale is null) throw new InvalidOperationException("Acknowledged sale has no result document.");
+            _lastSaleId = sale.SaleId;
+            LastBill = $"{sale.Code} · total {Money.Format(sale.TotalPaisa)}" +
+                       (sale.ChangePaisa > 0 ? $" · change {Money.Format(sale.ChangePaisa)}" : string.Empty) +
+                       (sale.DuePaisa > 0 ? $" · due {Money.Format(sale.DuePaisa)}" : string.Empty);
+            PrintLastCommand.RaiseCanExecuteChanged();
+            DocEditor.LoadNew();
+            LoadLookups();
+            if (!_lastLookupsSucceeded || !DocEditor.LoadedSuccessfully)
+            {
+                SetStatus("SAVED. Bill was stored, but the counter could not refresh. Do not bill or collect this sale again; refresh and check bill history before reprinting.", true);
+                return;
+            }
+            _committedCartNeedsReset = false;
+            var printOk = !AutoPrint || Print(_lastSaleId);
+            var printStatus = !AutoPrint ? "Automatic printing is off. Use Print last bill again if needed."
+                : printOk ? "Receipt sent to the printer."
+                : "Receipt could not be printed. The bill is saved; use Print last bill again.";
+            var warnings = sale.Warnings.Count > 0 ? "  ⚠ " + string.Join(" ", sale.Warnings) : string.Empty;
+            SetStatus($"SAVED. {sale.Code}.{(wasDraft ? " Its draft is posted." : string.Empty)} {printStatus}{warnings}", !printOk || sale.Warnings.Count > 0);
+            var showSuccess = _services.Settings.GetBool("sale.successPopup", true);
+            if (showSuccess && !SaleSuccessDoor.Show(_services, sale, printStatus))
+                SetStatus("SAVED. Bill was stored, but the confirmation could not open. Do not bill or collect this sale again; check bill history. " + printStatus, true);
         }
+        catch (Exception exception)
+        {
+            _services.Log.Error("Sale was committed but its counter, receipt or confirmation could not finish.", exception);
+            SetStatus("SAVED. Bill was stored, but the page or receipt could not finish. Do not bill or collect this sale again; refresh and check bill history before reprinting.", true);
+        }
+    }
+
+    private bool RefuseCommittedCart()
+    {
+        if (!_committedCartNeedsReset) return false;
+        SetStatus("SAVED. The previous bill was stored, but its cart could not reset. Do not bill or collect this sale again; check bill history, then Clear cart before starting a new bill.", true);
+        return true;
     }
 
     private bool TryGetDiscount(out decimal percent)
@@ -1354,6 +1381,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     /// </summary>
     private void SaveSaleDraft()
     {
+        if (RefuseCommittedCart()) return;
         if (Cart.Count == 0)
         {
             SetStatus("The cart is empty - nothing to save.", true);
@@ -1452,6 +1480,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     /// <summary>Parks the cart so the next customer can be served (Spec 8.5.1). Nothing is sold.</summary>
     private void HoldCart()
     {
+        if (RefuseCommittedCart()) return;
         if (Cart.Count == 0)
         {
             SetStatus("The cart is empty - there is nothing to park.", true);

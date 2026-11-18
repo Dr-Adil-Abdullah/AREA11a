@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-51 — stable15/17/19/23–25 Sale/customerReturn (v0.109.0) — UNRUN
+
+[Urdu isolated steps](docs/POS-PHASE4-PART31-URDU.md),[trace/limits](docs/POS-PHASE4-COUNTER-POSTING-INTEGRITY-REVIEW.md).55newC#cases/2231suiteUNRUN:18Sale+26Returnfaults,5methods,2drawer,2seconditem,redeemrollback,ExtraReturnB560then540. Acknowledgedcommitform/IDcleanup/SAVED/localresetblock;Returnquarantineverdict/printerwarning. Saleunknown-drawerfailclosedandtransactionrecheck;financialSave-tailunchanged. PythonSQL/lexicalnotC#/provider/WPF/session/COMMITproof. Backup+truly separateDB/photos/config;no live synthetic posts. FullPhase4/installerOPEN.
+
 ## PT-50 — stable16/18/23/24/25 Purchase/SupplierReturn (v0.108.0) — UNRUN
 
 [Urdu isolated steps](docs/POS-PHASE4-PART30-URDU.md),[trace/limits](docs/POS-PHASE4-STOCK-POSTING-INTEGRITY-REVIEW.md).50newC#cases/2176suite UNRUN:18Purchase+26SR BEFORE/AFTER faults/snapshot/number/retry/stock/payment/audit/books/drawer,3methods,sample,2late-line faults. Local UI latches/consumed committed forms/SAVED/lookup-expiredlist verdict/callbackaccess source changes. Python SQL/lexical negatives not C#/WPF/provider proof. Draft marker separate Tx,actual COMMIT-I/O/requestidentity/Sale/customerReturn OPEN. Verified encrypted backup+separate DB/photos/config;no live synthetic posts. Installer NOT BUILT.

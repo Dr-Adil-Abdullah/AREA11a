@@ -1,5 +1,16 @@
 # باقی کام، GitHub اور test installer — v0.104.0
 
+## تازہ checkpoint — v0.109.0 Harbour / حصہ31؛مستقل15/17/19/23–25
+
+[1–36حیثیت](NUMBERED-WORK-STATUS-URDU.md)،[PT-51](POS-PHASE4-PART31-URDU.md)،[trace](POS-PHASE4-COUNTER-POSTING-INTEGRITY-REVIEW.md)۔ Sale/customerReturn55نئےC#cases/2231suiteUNRUN؛acknowledgedcommitSAVED/localresetblock/consumedform/quarantineverdict۔ CoreSaleunknowndrawerابdenyاورsameTxrecheck؛مالیSave-tailاور167otherCorefilesunchanged۔
+
+1. **23–25/15/17/19:** C#execution؛دیگرstock/expense/files،partialrecoveries/PR/returns،draftpremark-finalize-restore/actualCOMMIT-I/O،provider/busy/productionjournal/crossprocess؛durablerequestidentityOPEN۔
+2. **5/6/7:** Sale/Returnسمیتremainingcurrent-session/modulecallers،parentworkflows/CAS/cachesاورWindowsfocus/regrant۔
+3. **26–29/2/4/30–35:** files/encryptedbackup/restore/newPC/cloud،Windows2231+build/logs/results/fixes/hardware/isolation۔
+4. **36:** انgatesکےبعدمجازsingle-doubleclicktestinstaller؛**ابھینہیںبنا،FullPhase4OPEN۔**
+
+36نمبر36Nextنہیں؛3–6roundsمشروط،deadlineنہیں۔ ہرportiondocs+samebranchcommit/push+actualremoteverify؛اصلshopپرsyntheticpostsنہیں،verifiedbackup+الگDB/photos/config۔ نیچےپرانےcheckpointsتاریخیہیں۔
+
 ## تازہ checkpoint — v0.108.0 Headland / حصہ30؛مستقل16/18/23–25
 
 [1–36حیثیت](NUMBERED-WORK-STATUS-URDU.md)،[PT-50](POS-PHASE4-PART30-URDU.md)،[trace](POS-PHASE4-STOCK-POSTING-INTEGRITY-REVIEW.md)۔ Purchase/SupplierReturn50نئےC#cases/2176suiteUNRUN؛acknowledgedcommitSAVED/localreentry/postedformcleanupاورloadverdictsourceمکمل۔ Coreمالیpolicyunchanged؛DraftpremarkالگTx،پورےdraftatomicrollbackکادعویٰنہیں۔

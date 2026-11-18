@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## v0.109.0 portion31 — Sale/customerReturn؛unknown drawerپرbillنہیں
+
+Nextکےتحت15/17/19/23–25میںfault/retryاورacknowledgedcommitSAVED/localresetblock/formcleanup۔ CoreSaleکاdrawerreadexceptionallowختم،اسیTxمیںقبلSaveدوبارہچیک؛یہطےشدہclosed/unknowndrawerپرbillنہبنانےکےاصولکیاصلاحہے،نیاoptionنہیں۔ Pricing/Extra/ReturnB/SupplierB/loyaltyformulaاورReturnServiceunchanged؛card/onlinerefundکیexistingcashpolicyنہیںبدلی۔ Localflagdurableexactlyonceنہیں۔ [PT-51](POS-PHASE4-PART31-URDU.md)،[trace](POS-PHASE4-COUNTER-POSTING-INTEGRITY-REVIEW.md)۔55نئےcases/2231C#/WindowsUNRUN؛session/othermoney/draft/COMMIT/files/fullPhase4/installerOPEN۔
+
 ## v0.108.0 portion30 — Purchase/SupplierReturn؛نئیsettlementیاdeduppolicyنہیں
 
 Nextکےتحت16/18/23–25میںfault/retryregressionsاورacknowledgedcommitکےبعدSAVED/consumedinput/localreentryUI۔ Samplestock،paidclamp،SupplierB،Cost+main،SRcash-vs-credit/negativecreditاورDraftterminalpremarkالگTxبرقرار؛Coreمالیcodeunchanged۔ LocalUIlatchdurableexactlyonceنہیں،بعدکیجائزdelivery/returnکودedupنہیںکیا۔ [PT-50](POS-PHASE4-PART30-URDU.md)،[trace](POS-PHASE4-STOCK-POSTING-INTEGRITY-REVIEW.md)۔50نئےcases/2176suiteC#/WindowsUNRUN؛Sale/customerReturn/COMMIT-I/O/draftfaults/fullPhase4/installerOPEN۔

@@ -46,6 +46,8 @@ public sealed class ReturnsViewModel : ObservableObject, IEmptyPage
 
     private string _quarantineCaption = "No goods are waiting for a decision.";
     private bool _busy;
+    private bool _returnInProgress;
+    private bool _lastQuarantineLoadSucceeded;
 
     public ReturnsViewModel(AppServices services, User user)
     {
@@ -404,73 +406,79 @@ public sealed class ReturnsViewModel : ObservableObject, IEmptyPage
 
     private void TakeReturn()
     {
-        if (_saleId <= 0)
+        if (_returnInProgress) return;
+        _returnInProgress = true;
+        try
         {
-            SetStatus("Find the bill first.", true);
-            return;
+            if (_saleId <= 0)
+            {
+                SetStatus("Find the bill first.", true);
+                return;
+            }
+            var input = BuildInput();
+            if (input.Lines.Count == 0)
+            {
+                SetStatus("Type how many units are coming back.", true);
+                return;
+            }
+            var result = _services.Returns.Create(input, _user);
+            if (!result.Ok)
+            {
+                SetStatus(result.Error ?? "The return could not be saved.", true);
+                return;
+            }
+            var saved = result.Value;
+            // Invalidate the consumed bill before binding callbacks can enter another return.
+            _saleId = 0;
+            try
+            {
+                ResetBill();
+                BillCode = string.Empty;
+                Note = string.Empty;
+                Reason = ReturnService.ReasonChangedMind;
+                Restock = true;
+                if (saved is null) throw new InvalidOperationException("Acknowledged return has no result document.");
+                var where = saved.QuarantineCodes.Count > 0
+                    ? " In quarantine: " + string.Join(", ", saved.QuarantineCodes) + "." : " Back in stock.";
+                var message = $"SAVED. {saved.Code} · refund {Money.Format(saved.RefundPaisa)}" +
+                              (saved.CreditReducedPaisa > 0 ? $", of which {Money.Format(saved.CreditReducedPaisa)} off the khata" : string.Empty) + "." + where;
+                LoadQuarantine();
+                if (!_lastQuarantineLoadSucceeded)
+                {
+                    SetStatus("SAVED. Return was stored, but quarantine history could not refresh. Do not return or refund these goods again; refresh and check return history.", true);
+                    return;
+                }
+                SetStatus(message + " " + string.Join(" ", saved.Warnings), false);
+                Print(saved.Code); // Expected print failure must not be overwritten by success.
+            }
+            catch (Exception exception)
+            {
+                _services.Log.Error("Customer return was committed but its page or receipt could not finish.", exception);
+                SetStatus("SAVED. Return was stored, but the page or receipt could not finish. Do not return or refund these goods again; refresh and check return history.", true);
+            }
         }
-
-        var input = BuildInput();
-        if (input.Lines.Count == 0)
-        {
-            SetStatus("Type how many units are coming back.", true);
-            return;
-        }
-
-        var result = _services.Returns.Create(input, _user);
-        if (!result.Ok || result.Value is null)
-        {
-            SetStatus(result.Error ?? "The return could not be saved.", true);
-            return;
-        }
-
-        var saved = result.Value;
-        var where = saved.QuarantineCodes.Count > 0
-            ? " In quarantine: " + string.Join(", ", saved.QuarantineCodes) + "."
-            : " Back in stock.";
-
-        var message = $"{saved.Code} saved · refund {Money.Format(saved.RefundPaisa)}" +
-                      (saved.CreditReducedPaisa > 0
-                          ? $", of which {Money.Format(saved.CreditReducedPaisa)} off the khata"
-                          : string.Empty) + "." + where;
-
-        Print(saved.Code);
-        LoadQuarantine();
-
-        // Clear the form but keep the message: the cashier must be able to read the RET number.
-        BillCode = string.Empty;
-        Note = string.Empty;
-        Reason = ReturnService.ReasonChangedMind;
-        Restock = true;
-        ResetBill();
-        SetStatus(message + " " + string.Join(" ", saved.Warnings), false);
+        finally { _returnInProgress = false; }
     }
 
     private void Print(string returnCode)
     {
-        if (!_services.Settings.GetBool("printer.autoPrint", true))
-        {
-            return;
-        }
-
+        if (!_services.Settings.GetBool("printer.autoPrint", true)) return;
         var document = _services.ReturnReceipts.Build(returnCode);
         if (!document.Ok || document.Value is null)
         {
-            SetStatus(document.Error ?? "The return was saved, but its receipt could not be prepared.", true);
+            SetStatus("SAVED. " + returnCode + ". Do not refund again. Its receipt could not be prepared: " + (document.Error ?? "unknown reason"), true);
             return;
         }
-
         var printed = _services.Printer.Print(document.Value);
         if (!printed.Ok)
-        {
-            SetStatus($"{returnCode} is saved. The printer did not answer: {printed.Error}", true);
-        }
+            SetStatus($"SAVED. {returnCode}. Do not refund again. The printer did not answer: {printed.Error}", true);
     }
 
     // --------------------------------------------------------- quarantine
 
     public void LoadQuarantine()
     {
+        _lastQuarantineLoadSucceeded = false;
         Pending.Clear();
         History.Clear();
 
@@ -492,6 +500,14 @@ public sealed class ReturnsViewModel : ObservableObject, IEmptyPage
             }
         }
 
+        if (!pending.Ok || pending.Value is null || !history.Ok || history.Value is null)
+        {
+            Pending.Clear();
+            History.Clear();
+            QuarantineCaption = "Quarantine was not loaded. Refresh before reviewing goods.";
+            return;
+        }
+        _lastQuarantineLoadSucceeded = true;
         QuarantineCaption = Pending.Count == 0
             ? "No goods are waiting for a decision."
             : $"{Pending.Count} item(s) waiting. Goods stay here (and the alert stays on) until you decide.";

@@ -5806,7 +5806,7 @@ def check_counter_checkout() -> None:
         fail("Counter checkout: connect the F4 preview handler")
     for needle in ["Key.F4", "e.IsRepeat", "e.Handled = true", "CartGrid.CommitEdit", "viewModel.CompleteCommand.Execute(null)"]:
         if needle not in view: fail("Counter checkout: missing F4 safeguard: " + needle)
-    for needle in ["if (_isCompletingSale) return;", "finally", "_isCompletingSale = false;", 'GetBool("sale.successPopup", true)', "? (Print(_lastSaleId)", "SaleSuccessDoor.Show(_services, sale, printStatus)"]:
+    for needle in ["if (_isCompletingSale) return;", "finally", "_isCompletingSale = false;", 'GetBool("sale.successPopup", true)', "var printOk = !AutoPrint || Print(_lastSaleId);", "SaleSuccessDoor.Show(_services, sale, printStatus)"]:
         if needle not in vm: fail("Counter checkout: missing completion safeguard: " + needle)
     if vm.index("SaleSuccessDoor.Show") < vm.index("var sale = result.Value;"):
         fail("Counter checkout: success modal must follow a successful save")
@@ -5831,7 +5831,7 @@ def check_counter_availability() -> None:
             fail("Counter availability: missing popup-once wiring: " + needle)
     if vm.index('_availabilityWarningShown = true;') > vm.index('MessageBox.Show(string.Join'):
         fail("Counter availability: set the once flag before the modal opens")
-    if vm.count('_availabilityWarningShown = false;\n        Cart.Clear();') != vm.count('        Cart.Clear();'):
+    if len(re.findall(r'_availabilityWarningShown = false;\s*Cart.Clear\(\);', vm)) != vm.count('Cart.Clear();'):
         fail("Counter availability: each new/cleared/restored cart must reset the popup")
     if 'tierPrice <= 0 && lineInput.UnitPricePaisa <= 0' not in core:
         fail("Counter availability: an owner/manager rate must work without a catalog rate")
@@ -8206,6 +8206,64 @@ def check_stock_posting_integrity():
         if token not in tests: FAILURES.append('Stock posting regression missing '+token)
     REPORT.append('Phase4 portion30/stable16,18,23,24,25:Purchase/SupplierReturn50sourcecases and acknowledged-commit UI reentry/consumed input/refresh/receipt clarity;2176suiteUNRUN,not global idempotency/draft atomicity/commit-I-O/WPF certification')
 
+def check_counter_posting_integrity():
+    """Portion31 acknowledged counter outcomes and closed/unknown drawer source contracts."""
+    pos = (DOTNET / 'Area11.Desktop/ViewModels/PosViewModel.cs').read_text()
+    returns = (DOTNET / 'Area11.Desktop/ViewModels/ReturnsViewModel.cs').read_text()
+    sales = (DOTNET / 'Area11.Core/Services/SaleService.cs').read_text()
+    create = sales.split('public ServiceResult<SaleResult> Create(',1)[-1].split('private bool HasOpenDrawer()',1)[0]
+    for token in ('if (!HasOpenDrawer())', '_db.Tx(connection =>', 'if (!HasOpenDrawer(connection))', 'return Save(connection, input, user);'):
+        if token not in create: FAILURES.append('Sale drawer gate missing '+token)
+    tx = create.split('_db.Tx(connection =>',1)[-1]
+    if not 0 <= tx.find('if (!HasOpenDrawer(connection))') < tx.find('return Save(connection, input, user);'):
+        FAILURES.append('Sale transaction must check drawer before any Save writes')
+    drawer = sales.split('private bool HasOpenDrawer()',1)[-1].split('private ServiceResult<SaleResult> Save(',1)[0]
+    if 'return false;' not in drawer or 'return true;' in drawer or 'return HasOpenDrawer(connection);' not in drawer:
+        FAILURES.append('Unknown drawer cannot authorize a sale')
+    for source, method, consumed, last, action in (
+        (pos, 'CompleteSaleOnce', 'Cart.Clear();', '_openDraftId = 0;', 'bill or collect this sale'),
+        (returns, 'TakeReturn', 'ResetBill();', '_saleId = 0;', 'return or refund these goods')):
+        body = source.split('private void '+method+'()',1)[-1].split('\n    private ',1)[0]
+        for token in ('if (!result.Ok)', 'catch (Exception exception)', 'SAVED.', 'Do not '+action+' again;'):
+            if token not in body: FAILURES.append('Counter acknowledged boundary '+method+': '+token)
+        committed = body.split('var '+('sale' if method=='CompleteSaleOnce' else 'saved')+' = result.Value;',1)[-1]
+        if not 0 <= committed.find(last) < committed.find('try') < committed.find(consumed) < committed.find('Print(' if method=='TakeReturn' else 'Print(_lastSaleId)'):
+            FAILURES.append('Counter committed input/identity must be consumed before printing: '+method)
+        if method == 'CompleteSaleOnce':
+            for token in ('TenderedText = string.Empty;', 'SecondAmountText = string.Empty;', '_appliedExtraDiscount = 0;',
+                          'ResetBillBasis();', 'if (!_lastLookupsSucceeded || !DocEditor.LoadedSuccessfully)', 'var printOk = !AutoPrint || Print(_lastSaleId);',
+                          'SaleSuccessDoor.Show(_services, sale, printStatus)'):
+                if token not in committed: FAILURES.append('Sale committed cleanup/result missing '+token)
+        else:
+            for token in ('if (_returnInProgress) return;', '_returnInProgress = true;', 'finally { _returnInProgress = false; }',
+                          'if (!_lastQuarantineLoadSucceeded)', 'Note = string.Empty;'):
+                if token not in body: FAILURES.append('Customer return committed cleanup/reentry missing '+token)
+            if not committed.find('SetStatus(message') < committed.find('Print(saved.Code);'):
+                FAILURES.append('Return print failure overwritten by success')
+    for token in ('_lastLookupsSucceeded = false;', 'products.Ok && products.Value is not null',
+                  '&& customers.Ok && customers.Value is not null && _lastBarcodeLoadSucceeded;',
+                  '_lastBarcodeLoadSucceeded = false;', '_lastBarcodeLoadSucceeded = true;'):
+        if token not in pos: FAILURES.append('Counter refresh verdict missing '+token)
+    if pos.count('if (RefuseCommittedCart()) return;') != 3 or '_committedCartNeedsReset = true;' not in pos:
+        FAILURES.append('Committed cart reset failure must block sale/draft/hold reuse')
+    refuse = pos.split('private bool RefuseCommittedCart()',1)[-1].split('private bool TryGetDiscount(',1)[0]
+    if 'if (!_committedCartNeedsReset) return false;' not in refuse or 'then Clear cart before starting a new bill.' not in refuse:
+        FAILURES.append('Committed cart block needs explicit safe reset guidance')
+    quarantine = returns.split('public void LoadQuarantine()',1)[-1].split('private void Decide(',1)[0]
+    for token in ('_lastQuarantineLoadSucceeded = false;', 'if (!pending.Ok || pending.Value is null || !history.Ok || history.Value is null)',
+                  'Quarantine was not loaded.', '_lastQuarantineLoadSucceeded = true;'):
+        if token not in quarantine: FAILURES.append('Quarantine unknown read verdict missing '+token)
+    tests = (DOTNET / 'Area11.Tests/CounterPostingIntegrityTests.cs').read_text()
+    if tests.count('[InlineData(')!=53 or tests.count('[Fact]')!=2: FAILURES.append('Counter posting needs55 registered source cases')
+    for token in ('SaleFaultRestoresStockMoneyPointsAuditAndNumberThenRetryReconciles',
+                  'CustomerReturnFaultPreservesOriginalBillThenRetryReconciles', 'ClosedOrUnreadableDrawerCannotPostAnyRows',
+                  'SecondItemAbortRestoresFirstItemAndKeepsEarlierCommittedBill', 'RedeemedPointsAndNegativeLoyaltyPaymentRollBackWithLateAuditFault',
+                  'ExtraReturnBStillRefunds560Then540AfterLateFaultAndRetry', 'FullReturnUsesOriginalBillCashCreditAndDrawerAcrossMethods',
+                  'Assert.Equal(before, f.Snapshot());', 'BooksMatch', 'CashRefundsPaisa', 'nextQuarantineNo',
+                  '"sqlite_sequence"', '56000L', '54000L'):
+        if token not in tests: FAILURES.append('Counter posting regression missing '+token)
+    REPORT.append('Phase4 portion31/stable15,17,19,23–25:Sale/customerReturn55sourcecases,acknowledgedcommit form cleanup/SAVED/refresh/print clarity;Sale unknown-drawerfailclosed+transaction recheck;2231suiteUNRUN,not session/durableidentity/draft/COMMIT/WPF certification')
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -8301,6 +8359,7 @@ def main() -> int:
     check_catalog_current_boundaries()
     check_ledger_posting_integrity()
     check_stock_posting_integrity()
+    check_counter_posting_integrity()
     check_csharp_grammar()
 
     if not quiet:

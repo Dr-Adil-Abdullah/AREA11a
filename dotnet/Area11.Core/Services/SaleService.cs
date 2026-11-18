@@ -184,12 +184,18 @@ WHERE product_id = @id AND active = 1 AND qty_base > 0
         if (!HasOpenDrawer())
         {
             return ServiceResult<SaleResult>.Fail(
-                "The drawer (galla) is closed. Open the shift on the Shift (galla) page, then make the bill.");
+                "The drawer (galla) is closed or could not be checked. Open or refresh the shift, then make the bill.");
         }
 
         try
         {
-            var result = _db.Tx(connection => Save(connection, input, user));
+            var result = _db.Tx(connection =>
+            {
+                // A preflight read is not authority to post after the drawer changes.
+                if (!HasOpenDrawer(connection))
+                    throw new ValidationException("The drawer is closed. Open the shift, then make the bill.");
+                return Save(connection, input, user);
+            });
             return result;
         }
         catch (ValidationException exception)
@@ -204,26 +210,25 @@ WHERE product_id = @id AND active = 1 AND qty_base > 0
     }
 
     /// <summary>
-    /// True when a shift is open. Why it is not a failure when the read breaks: refusing every bill
-    /// because one query failed would stop the shop on the busiest day. The fault is logged, the
-    /// bill goes through, and the drawer report will show the money that was never counted.
+    /// Unknown drawer state must not authorize a bill. Preflight denies read errors; the owning
+    /// transaction checks again before numbering, stock or money writes.
     /// </summary>
     private bool HasOpenDrawer()
     {
         try
         {
             using var connection = _db.Open();
-            var count = Convert.ToInt64(
-                _db.Scalar(connection, "SELECT COUNT(1) FROM shifts WHERE status = 'open';") ?? 0L);
-
-            return count > 0;
+            return HasOpenDrawer(connection);
         }
         catch (Exception exception)
         {
-            _log.Error("The open drawer could not be read, so the bill was allowed.", exception);
-            return true;
+            _log.Error("The open drawer could not be read; the bill was refused.", exception);
+            return false;
         }
     }
+
+    private bool HasOpenDrawer(SqliteConnection connection) =>
+        Convert.ToInt64(_db.Scalar(connection, "SELECT COUNT(1) FROM shifts WHERE status = 'open';") ?? 0L) > 0;
 
     private ServiceResult<SaleResult> Save(SqliteConnection connection, SaleInput input, User user)
     {
