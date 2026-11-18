@@ -6683,6 +6683,61 @@ def check_definition_time_boundaries():
     REPORT.append('Phase4 portion6: current owner inside four custom-definition write transactions, public field read/save current account/module, resolved audits and immediate one-transaction owner/read/plan/write time correction; delegated parent workflows/full sessions/concurrency/Windows pending')
 
 
+def check_photo_current_boundaries():
+    """Bounded photo-source guards only, not file/SQLite/C#/WPF execution."""
+    photo = (DOTNET / 'Area11.Core/Services/PhotoService.cs').read_text()
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/PhotoGalleryViewModel.cs').read_text()
+    window = (DOTNET / 'Area11.Desktop/Views/PhotoGalleryWindow.xaml.cs').read_text()
+    tests = (DOTNET / 'Area11.Tests/PhotoCurrentAccessTests.cs').read_text()
+    for token in ('public ServiceResult CheckAccess(User? user, string entity, int entityId)',
+                  'actor is not { Active: true } || actor.Id <= 0',
+                  'current is not { Active: true } || current.Kind != actor.Kind',
+                  '!PhotoEntity.IsKnown(entity) || entityId <= 0',
+                  'SnapshotReadAccess.Require(_db, connection, _permissions, actor, PhotoEntity.ModuleFor(key))',
+                  'if (key == PhotoEntity.Product) RequireActor(connection, user);',
+                  'else SnapshotReadAccess.Require(_db, connection, _permissions, user, PhotoEntity.ModuleFor(key));',
+                  'WHERE id=@id;', 'That photo record no longer exists.'):
+        if token not in photo: FAILURES.append(f'Current photo boundary missing {token}')
+    for start,end,token in (
+        ('public ServiceResult<List<PhotoItem>> List(', 'public ServiceResult<PhotoItem> Add(', 'RequireGallery(connection, user, key, entityId);'),
+        ('internal ServiceResult<PhotoItem> AddInTransaction(', 'internal void DiscardCopy(', 'var writer = RequireGallery(connection, user, key, entityId);'),
+        ('public ServiceResult SetProductCover(', 'public ServiceResult Restore(', 'var writer = RequireGallery(connection, user, selected.Entity, selected.EntityId);'),
+        ('private ServiceResult ChangeActive(', 'private ServiceResult<PhotoItem> Read(', 'var writer = RequireGallery(connection, user, row.Entity, row.EntityId);'),
+        ('private ServiceResult<PhotoItem> Read(', 'public ServiceResult CheckAccess(', 'RequireGallery(connection, user, row.Entity, row.EntityId);'),
+        ('public ServiceResult<string> OwnAvatar(', 'public ServiceResult<string> PathOf(', 'RequireActor(connection, user);')):
+        body = photo.split(start,1)[-1].split(end,1)[0]
+        if token not in body: FAILURES.append(f'Current photo check missing in {start}')
+    add = photo.split('internal ServiceResult<PhotoItem> AddInTransaction(',1)[-1].split('internal void DiscardCopy(',1)[0]
+    if not (add.find('RequireGallery(') < add.find('File.Copy(') < add.find('_audit.Record(connection, writer,')):
+        FAILURES.append('Current photo writer must be checked before file copy and stored audit')
+    if photo.count('_audit.Record(connection, writer,') != 3 or 'DiscardCopy(copiedPath);' not in photo:
+        FAILURES.append('Photo add/cover/visibility audit needs stored current writer; failed new copy cleanup retained')
+    for token in ('public bool RefreshAccess()', '_services.Photos.CheckAccess(_user, Entity, EntityId)',
+                  'Selected = null;', 'Preview = null;', 'CountText = "Photos not loaded";',
+                  'Title = "Photos";', 'HiddenText = string.Empty;',
+                  'var path = _services.Photos.PathOf(_user, row.Item.Id);', 'Preview = Decode(path.Value, decodeWidth: null);',
+                  'CanEdit = true;', '_lastLoadSucceeded = CanEdit;', 'public bool HasNoPhotos => CanEdit && Photos.Count == 0;',
+                  'SAVED. The photo change was stored, but the gallery could not refresh.'):
+        if token not in vm: FAILURES.append(f'Current gallery lifecycle missing {token}')
+    if vm.count('SAVED. The photo change was stored, but the gallery could not refresh.') != 4:
+        FAILURES.append('Each of four gallery write actions needs explicit postcommit SAVED refresh failure')
+    if 'Preview = Decode(row.Item.FullPath' in vm: FAILURES.append('Gallery preview must not open cached path without current service read')
+    for method in ('Add()', 'AddFile(string path)', 'TakePhoto()', 'SetCover()', 'Hide()', 'Restore()', 'OpenFile()'):
+        body = vm.split('void ' + method,1)[-1].split('}',1)[0]
+        if 'if (!RefreshAccess()) return;' not in body: FAILURES.append(f'Current gallery command missing check: {method}')
+    for token in ('TimeSpan.FromSeconds(3)', 'viewModel.RefreshAccess()', 'accessTimer.Start()', 'Closed += (_, _) => accessTimer.Stop();'):
+        if token not in window: FAILURES.append(f'Current gallery window lifecycle missing {token}')
+    if 'Title = "Photos - " + viewModel.Title;' in window:
+        FAILURES.append('Gallery OS title must not retain a denied record name')
+    if tests.count('[Fact]') != 30:
+        FAILURES.append('Current photo30 isolated regression facts missing')
+    for name in ('RevokedCustomerGrantDeniesCachedGalleryActions','ProductCoversRemainAvailableToCurrentPosOnlyReader',
+                 'CurrentWriterStoredNameIsUsedForPhotoAudit','StagedPhotoCurrentActorFailureRollsBackParentCreation',
+                 'AddAuditFaultRemovesOnlyTheNewCopiedFileAndRollsBackRow','InactiveParentRetainsHistoricalReadAndPutAwayButCannotAdd'):
+        if 'void ' + name + '(' not in tests: FAILURES.append(f'Current photo regression missing {name}')
+    REPORT.append('Phase4 portion24: current gallery/own-avatar/cover readers and transactional photo writers with stored audits,known parent checks,stale gallery/preview/path/timer cleanup;30 facts written, native/custom/session/files/Windows/globalPhase4 OPEN')
+
+
 def check_settings_current_boundaries():
     """Source contracts only; actual C#/WPF/provider checks remain required."""
     core = DOTNET / 'Area11.Core/Services'
@@ -7829,6 +7884,7 @@ def main() -> int:
     check_shift_current_boundaries()
     check_transaction_permission_boundaries()
     check_settings_current_boundaries()
+    check_photo_current_boundaries()
     check_csharp_grammar()
 
     if not quiet:

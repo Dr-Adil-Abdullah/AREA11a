@@ -1,4 +1,16 @@
-# باقی کام، GitHub اور test installer — v0.101.0
+# باقی کام، GitHub اور test installer — v0.102.0
+
+## تازہ checkpoint — v0.102.0 Whimbrel / حصہ24؛کیا باقی ہے؟
+
+PhotoServiceکےcurrentgallery/writers/covers/ownavatar،stalegallery/preview/recordtitleصفائی،freshpath/timer/stagedparentrollback/SAVEDstatusشامل۔ [PT-44](POS-PHASE4-PART24-URDU.md)،[trace/حدود](POS-PHASE4-PHOTO-CURRENT-REVIEW.md)۔ **30نئےfacts/کل1945C#casesWindowsUNRUN۔** Native/customfieldsکےموجودہchecksدیکھنےسےانکیپوریاجازت/sessionreviewمکملنہیںہوا؛اسحصےمیںانکاسورسunchanged۔ حساب/Blackbox/BookCheck/backupformatunchanged۔
+
+1. Native/customfieldvalues،recordcallers،staleeditors/outputsاوراصلsessionidentity؛دوسرےpagesکیcachedcovers/shellavatarبھیباقی۔
+2. Cross-servicefault/rollback/retry/concurrency/cache،duplicateactionsاورfilecopy/collision/cleanup/powerloss۔
+3. Files/cloud،passwordA/DPAPI/new-PCencryptedrestore،interruptedrestore/rollbackاورالگDB/photos/configintegration۔
+4. Windows1945cases،Desktop/WPFbuild،keyboard/timers/camera/viewer/printer/scanner/screenshotsاورنتائجکیfixes۔
+5. پھرمجازواحدsendabledouble-clicktestinstaller؛shortcuts/startup/upgrade/uninstall/new-PCجانچ۔ **ابھیinstallerنہیںبنا۔**
+
+**تقریباً3–6مزیدمربوطreview/resultچکر**مشروطاندازہہے،deadline/upperboundنہیں؛findingsسےبڑھسکتا۔ ہرportiondocs+samebranchcommit/push+actualremoteverifyلازم؛نیچےتاریخیcheckpointsہیں۔
 
 ## تازہ checkpoint — v0.101.0 Dunlin / حصہ23؛کیا باقی ہے؟
 

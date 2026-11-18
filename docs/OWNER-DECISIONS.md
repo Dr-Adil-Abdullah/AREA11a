@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## D-110 / D-115 continuation — Photos checkpoint v0.102.0 (2026-11-10 release label)
+
+Photosکےcurrentaccount/modulechecks،cachedpreview/selection/titleصفائی،stagedphotoکیcurrentwriterfailureپرparentrollback؛نئیbusinesspolicyنہیں۔ ProductcoverdecorationکوProductsکیاضافشرطنہیں،galleryکیالگgrantبرقرار؛ownavatarبغیرStaffgrantمگرcurrentaccountسے؛Staffgalleryکیپہلےکیdelegationنہیںبدلی۔ Existinginactiveparentکیhistoricalread/Hide/Restoreبرقرار،Addکےلیےactiveparent۔ [Trace](POS-PHASE4-PHOTO-CURRENT-REVIEW.md)،[PT-44](POS-PHASE4-PART24-URDU.md)۔30facts/1945casesWindowsUNRUN؛Native/custom/session/record/fullPhase4/installerOPEN۔ حساب/SupplierB/backupA/Blackbox/BookCheckunchanged۔
+
 ## D-110 / D-115 continuation — Settings checkpoint v0.101.0 (2026-11-10 release label)
 
 نئیbusinesspolicyنہیں:Settingscurrentwriter،POSکااکیلاautoPrint،BackupکےscheduleاورSyncکےcloudconfigurationکیجائزdelegationبرقرار؛Owner-onlysecurity/startup/caps/workbookبھیcurrentOwnerسے۔ Quietsetter17runtimekeysتک،عامconfigurationنہیں۔ آئندہcloudkeyauditمیںاصلold/newkeyنہیں؛پرانےstoredrecordsنہیںبدلے۔ StaleSettings/cloudinputsصاف/hidden؛PIN/recoveryکےموجودہAuthrulesunchanged۔ [Trace](POS-PHASE4-SETTINGS-CURRENT-REVIEW.md)،[PT-43](POS-PHASE4-PART23-URDU.md)۔36facts/1915casesWindowsUNRUN؛حساب/SupplierB/backupA/Blackbox/BookCheckunchanged؛fullSettings/session/field/photo/record/globalPhase4/installerOPEN۔

@@ -2,6 +2,7 @@ using System.Dynamic;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using Microsoft.Data.Sqlite;
 using Area11.Core.Data;
 using Area11.Core.Models;
 using Area11.Core.Utils;
@@ -95,7 +96,8 @@ public sealed class PhotoService
     ///
     /// The reviewed privacy rule (P17): product covers are open to whoever sees the list (the
     /// Counter has always shown them); customer, supplier and staff covers keep their module's
-    /// gate, exactly like their galleries.
+    /// gate, exactly like their galleries. All covers require a current active same-role account;
+    /// product decoration is not a grant to open the Products gallery.
     /// </summary>
     public Dictionary<int, string> CoversFor(User? user, string entity, IEnumerable<int> ids)
     {
@@ -122,6 +124,8 @@ public sealed class PhotoService
         try
         {
             using var connection = _db.Open();
+            if (key == PhotoEntity.Product) RequireActor(connection, user);
+            else SnapshotReadAccess.Require(_db, connection, _permissions, user, PhotoEntity.ModuleFor(key));
 
             // One row per record: the cover subquery is the same rule as the product list's.
             // Expando carries a number of ids no anonymous object can spell (the P10 precedent).
@@ -187,6 +191,7 @@ FROM photos WHERE entity = @entity AND entity_id IN (");
         try
         {
             using var connection = _db.Open();
+            RequireGallery(connection, user, key, entityId);
 
             var rows = _db.Query<PhotoItem>(connection, @"
 SELECT id AS id, entity AS entity, entity_id AS entityId, file_name AS fileName,
@@ -205,11 +210,12 @@ ORDER BY sort_order, id;",
 
             return ServiceResult<List<PhotoItem>>.Success(rows);
         }
+        catch (ValidationException exception) { return ServiceResult<List<PhotoItem>>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"The photos of {key} {entityId} could not be listed.", exception);
             return ServiceResult<List<PhotoItem>>.Fail(
-                "The photos could not be loaded. " + exception.Message);
+                "The photos could not be loaded. Refresh and try again.");
         }
     }
 
@@ -253,7 +259,7 @@ ORDER BY sort_order, id;",
             DiscardCopy(copiedPath);
 
             _log.Error($"A photo of {key} {entityId} could not be added.", exception);
-            return ServiceResult<PhotoItem>.Fail("The photo could not be added. " + exception.Message);
+            return ServiceResult<PhotoItem>.Fail("The photo could not be added. Refresh and try again.");
         }
     }
 
@@ -309,10 +315,7 @@ ORDER BY sort_order, id;",
     {
         copiedPath = null;
 
-        if (!_permissions.Can(user, PhotoEntity.ModuleFor(key)))
-        {
-            return ServiceResult<PhotoItem>.Fail("You do not have permission to add a photo.");
-        }
+        var writer = RequireGallery(connection, user, key, entityId);
 
         var recordExists = RecordExists(connection, key, entityId);
 
@@ -371,7 +374,7 @@ VALUES(@entity, @entityId, @fileName, @sortOrder, 1, @at);",
 
         var photoId = (int)_db.NextId(connection);
 
-        _audit.Record(connection, user, PhotoEntity.ModuleFor(key), "photo_add",
+        _audit.Record(connection, writer, PhotoEntity.ModuleFor(key), "photo_add",
             "photos", photoId.ToString(), newValue: name,
             details: PhotoEntity.LabelFor(key) + " " + entityId);
 
@@ -430,6 +433,7 @@ FROM photos WHERE id = @id;", new { id = photoId });
                 {
                     return ServiceResult.Fail("Choose an active product photo.");
                 }
+                var writer = RequireGallery(connection, user, selected.Entity, selected.EntityId);
                 if (CoverPath(selected.FileName) is null)
                 {
                     return ServiceResult.Fail("That photo file is missing; choose an available photo.");
@@ -453,12 +457,13 @@ WHERE entity = @entity AND entity_id = @entityId ORDER BY sort_order, id;",
                     _db.Execute(connection, "UPDATE photos SET sort_order = @sort WHERE id = @id;",
                         new { sort = index + 1, id = ordered[index].Id });
                 }
-                _audit.Record(connection, user, Modules.Products, "photo_cover_changed", "photos",
+                _audit.Record(connection, writer, Modules.Products, "photo_cover_changed", "photos",
                     selected.Id.ToString(), oldValue: firstActive?.Id.ToString(),
                     newValue: selected.Id.ToString(), details: "Product " + selected.EntityId);
                 return ServiceResult.Success();
             });
         }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"The product photo {photoId} could not be made the cover.", exception);
@@ -486,6 +491,7 @@ WHERE entity = @entity AND entity_id = @entityId ORDER BY sort_order, id;",
         try
         {
             using var connection = _db.Open();
+            RequireActor(connection, user);
             var file = _db.QuerySingle<string>(connection, @"
 SELECT p.file_name FROM photos p JOIN users u ON u.id = p.entity_id AND u.active = 1
 WHERE p.entity = 'user' AND p.entity_id = @id AND IFNULL(p.active, 1) = 1
@@ -540,10 +546,7 @@ FROM photos WHERE id = @id;", new { id = photoId });
                     return ServiceResult.Fail("That photo is not in the list any more.");
                 }
 
-                if (!_permissions.Can(user, PhotoEntity.ModuleFor(row.Entity)))
-                {
-                    return ServiceResult.Fail("You do not have permission to change these photos.");
-                }
+                var writer = RequireGallery(connection, user, row.Entity, row.EntityId);
 
                 if (row.IsActive == active)
                 {
@@ -553,7 +556,7 @@ FROM photos WHERE id = @id;", new { id = photoId });
                 _db.Execute(connection, "UPDATE photos SET active = @active WHERE id = @id;",
                     new { active = active ? 1 : 0, id = photoId });
 
-                _audit.Record(connection, user, PhotoEntity.ModuleFor(row.Entity),
+                _audit.Record(connection, writer, PhotoEntity.ModuleFor(row.Entity),
                     active ? "photo_restore" : "photo_hide", "photos", photoId.ToString(),
                     oldValue: row.IsActive ? "visible" : "put away",
                     newValue: active ? "visible" : "put away",
@@ -562,10 +565,11 @@ FROM photos WHERE id = @id;", new { id = photoId });
                 return ServiceResult.Success();
             });
         }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"The photo {photoId} could not be changed.", exception);
-            return ServiceResult.Fail("The photo could not be changed. " + exception.Message);
+            return ServiceResult.Fail("The photo could not be changed. Refresh and try again.");
         }
     }
 
@@ -585,10 +589,7 @@ FROM photos WHERE id = @id;", new { id = photoId });
                 return ServiceResult<PhotoItem>.Fail("That photo is not in the list any more.");
             }
 
-            if (!_permissions.Can(user, PhotoEntity.ModuleFor(row.Entity)))
-            {
-                return ServiceResult<PhotoItem>.Fail("You do not have permission to see this photo.");
-            }
+            RequireGallery(connection, user, row.Entity, row.EntityId);
 
             var path = CoverPath(row.FileName);
             if (path is null)
@@ -598,14 +599,61 @@ FROM photos WHERE id = @id;", new { id = photoId });
 
             return ServiceResult<PhotoItem>.Success(row);
         }
+        catch (ValidationException exception) { return ServiceResult<PhotoItem>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"The photo {photoId} could not be read.", exception);
-            return ServiceResult<PhotoItem>.Fail("The photo could not be read. " + exception.Message);
+            return ServiceResult<PhotoItem>.Fail("The photo could not be read. Refresh and try again.");
         }
     }
 
-    /// <summary>True when the record the photo belongs to still exists and is active.</summary>
+    /// <summary>Current local gallery check only, not proof of a signed-in session.</summary>
+    public ServiceResult CheckAccess(User? user, string entity, int entityId)
+    {
+        try
+        {
+            _db.Read(connection => RequireGallery(connection, user, entity, entityId));
+            return ServiceResult.Success();
+        }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
+        catch (Exception exception)
+        {
+            _log.Error("Photo access could not be checked.", exception);
+            return ServiceResult.Fail("Photo access could not be checked. Refresh and try again.");
+        }
+    }
+
+    private User RequireActor(SqliteConnection connection, User? actor)
+    {
+        if (actor is not { Active: true } || actor.Id <= 0)
+            throw new ValidationException("Sign in with an active account to use photos.");
+        var current = _db.QuerySingle<User>(connection,
+            "SELECT id, name, role, active FROM users WHERE id = @id;", new { id = actor.Id });
+        if (current is not { Active: true } || current.Kind != actor.Kind)
+            throw new ValidationException("The account has changed. Sign in again to use photos.");
+        return current;
+    }
+
+    private User RequireGallery(SqliteConnection connection, User? actor, string entity, int entityId)
+    {
+        if (!PhotoEntity.IsKnown(entity) || entityId <= 0)
+            throw new ValidationException("Choose a supported record for photos.");
+        var key = PhotoEntity.Clean(entity);
+        var current = SnapshotReadAccess.Require(_db, connection, _permissions, actor, PhotoEntity.ModuleFor(key));
+        var table = key switch
+        {
+            PhotoEntity.Product => "products", PhotoEntity.Customer => "customers",
+            PhotoEntity.Supplier => "suppliers", PhotoEntity.User => "users",
+            _ => throw new ValidationException("Choose a supported record for photos.")
+        };
+        // Read/put-away/restore historical photos of inactive parents as before; adding still
+        // separately requires an active parent. No new archival-state policy is imposed here.
+        if (Convert.ToInt64(_db.Scalar(connection, "SELECT COUNT(1) FROM " + table + " WHERE id=@id;", new { id = entityId })) == 0)
+            throw new ValidationException("That photo record no longer exists.");
+        return current;
+    }
+
+    /// <summary>Adding a photo still requires an active parent.</summary>
     private bool RecordExists(Microsoft.Data.Sqlite.SqliteConnection connection, string entity, int entityId)
     {
         var table = entity switch

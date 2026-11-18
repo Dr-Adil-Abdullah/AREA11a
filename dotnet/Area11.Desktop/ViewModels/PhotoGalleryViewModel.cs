@@ -33,6 +33,9 @@ public sealed class PhotoGalleryViewModel : ObservableObject
     private bool _canEdit;
     private string _countText = "no photos";
     private string _hiddenText = string.Empty;
+    private bool _lastLoadSucceeded;
+    private readonly string _recordTitle;
+    private string _title = string.Empty;
 
     public PhotoGalleryViewModel(AppServices services, User user, string entity, int entityId, string title)
     {
@@ -41,6 +44,7 @@ public sealed class PhotoGalleryViewModel : ObservableObject
 
         Entity = PhotoEntity.Clean(entity);
         EntityId = entityId;
+        _recordTitle = title;
         Title = title;
         Subtitle = PhotoEntity.LabelFor(Entity) + " · " + PhotoItem.CountLabel(0);
 
@@ -53,7 +57,7 @@ public sealed class PhotoGalleryViewModel : ObservableObject
         RefreshCommand = new RelayCommand(Load);
         ShowHiddenCommand = new RelayCommand(ToggleHidden);
 
-        _canEdit = services.Permissions.Can(user, PhotoEntity.ModuleFor(Entity));
+        _canEdit = false; // first successful current gallery read enables actions
 
         Load();
     }
@@ -74,7 +78,7 @@ public sealed class PhotoGalleryViewModel : ObservableObject
 
     public int EntityId { get; }
 
-    public string Title { get; }
+    public string Title { get => _title; private set => SetProperty(ref _title, value); }
 
     public RelayCommand AddCommand { get; }
 
@@ -146,6 +150,7 @@ public sealed class PhotoGalleryViewModel : ObservableObject
                 OnPropertyChanged(nameof(IsReadOnly));
                 OnPropertyChanged(nameof(CanHide));
                 OnPropertyChanged(nameof(CanRestore));
+                OnPropertyChanged(nameof(CanSetCover));
             }
         }
     }
@@ -164,7 +169,7 @@ public sealed class PhotoGalleryViewModel : ObservableObject
     /// <summary>True when the row is there but the file is not - said plainly, never hidden.</summary>
     public bool SelectedMissing => _selected is { Item.Exists: false };
 
-    public bool HasNoPhotos => Photos.Count == 0;
+    public bool HasNoPhotos => CanEdit && Photos.Count == 0;
 
     public string SelectedCaption => _selected?.Caption ?? "No photo chosen";
 
@@ -216,19 +221,18 @@ public sealed class PhotoGalleryViewModel : ObservableObject
 
     public void Load()
     {
+        _lastLoadSucceeded = false;
         var keep = _selected?.Item.Id;
         var result = _services.Photos.List(_user, Entity, EntityId, IncludeHidden);
 
         if (!result.Ok || result.Value is null)
         {
-            Photos.Clear();
-            CanEdit = false;
-            CountText = PhotoItem.CountLabel(0);
-            SetStatus(result.Error ?? "The photos could not be loaded.", true);
-            RaiseListState();
+            ClearGallery(result.Error ?? "The photos could not be loaded.");
             return;
         }
 
+        CanEdit = true;
+        Title = _recordTitle;
         var all = result.Value;
         var active = all.Count(photo => photo.IsActive);
         var hidden = all.Count - active;
@@ -255,7 +259,36 @@ public sealed class PhotoGalleryViewModel : ObservableObject
             OnPropertyChanged(nameof(SelectedMissing));
         }
 
+        _lastLoadSucceeded = CanEdit; // a failed current preview read may have cleared access
         RaiseListState();
+    }
+
+    public bool RefreshAccess()
+    {
+        var access = _services.Photos.CheckAccess(_user, Entity, EntityId);
+        if (!access.Ok)
+        {
+            ClearGallery(access.Error ?? "Photo access is not available.");
+            return false;
+        }
+        if (!CanEdit) Load();
+        return CanEdit;
+    }
+
+    private void ClearGallery(string message)
+    {
+        CanEdit = false;
+        _lastLoadSucceeded = false;
+        Selected = null;
+        Preview = null;
+        Photos.Clear();
+        Title = "Photos";
+        CountText = "Photos not loaded";
+        HiddenText = string.Empty;
+        Subtitle = "Photo access needs checking";
+        OnPropertyChanged(nameof(HasPreview));
+        RaiseListState();
+        SetStatus(message, true);
     }
 
     private void RaiseListState()
@@ -278,7 +311,18 @@ public sealed class PhotoGalleryViewModel : ObservableObject
 
         try
         {
-            Preview = Decode(row.Item.FullPath, decodeWidth: null);
+            if (row.Item.Entity != Entity || row.Item.EntityId != EntityId)
+            {
+                ClearGallery("Choose a photo from this record.");
+                return;
+            }
+            var path = _services.Photos.PathOf(_user, row.Item.Id);
+            if (!path.Ok || string.IsNullOrWhiteSpace(path.Value))
+            {
+                ClearGallery(path.Error ?? "The picture could not be read.");
+                return;
+            }
+            Preview = Decode(path.Value, decodeWidth: null);
         }
         catch (Exception exception)
         {
@@ -321,6 +365,7 @@ public sealed class PhotoGalleryViewModel : ObservableObject
 
     private void Add()
     {
+        if (!RefreshAccess()) return;
         var dialog = new OpenFileDialog
         {
             Title = "Choose a photo",
@@ -348,6 +393,7 @@ public sealed class PhotoGalleryViewModel : ObservableObject
     /// <summary>Adds one file - also the door the camera button uses once the picture exists.</summary>
     public void AddFile(string path)
     {
+        if (!RefreshAccess()) return;
         var added = _services.Photos.Add(_user, Entity, EntityId, path);
 
         if (!added.Ok || added.Value is null)
@@ -357,7 +403,17 @@ public sealed class PhotoGalleryViewModel : ObservableObject
         }
 
         Load();
+        if (!_lastLoadSucceeded)
+        {
+            SetStatus("SAVED. The photo change was stored, but the gallery could not refresh. Do not repeat the action; refresh to check.", true);
+            return;
+        }
         Selected = Photos.FirstOrDefault(photo => photo.Item.Id == added.Value.Id) ?? Selected;
+        if (!CanEdit)
+        {
+            SetStatus("SAVED. The photo was added, but current preview access failed. Refresh before retrying.", true);
+            return;
+        }
         SetStatus("Photo added. The original file is still where it was - this is a copy.", false);
     }
 
@@ -367,6 +423,7 @@ public sealed class PhotoGalleryViewModel : ObservableObject
     /// </summary>
     private void TakePhoto()
     {
+        if (!RefreshAccess()) return;
         try
         {
             Process.Start(new ProcessStartInfo("microsoft.windows.camera:") { UseShellExecute = true });
@@ -381,6 +438,7 @@ public sealed class PhotoGalleryViewModel : ObservableObject
 
     private void SetCover()
     {
+        if (!RefreshAccess()) return;
         if (_selected is null || !CanSetCover)
         {
             SetStatus("Choose an active product photo first.", true);
@@ -393,11 +451,17 @@ public sealed class PhotoGalleryViewModel : ObservableObject
             return;
         }
         Load();
+        if (!_lastLoadSucceeded)
+        {
+            SetStatus("SAVED. The photo change was stored, but the gallery could not refresh. Do not repeat the action; refresh to check.", true);
+            return;
+        }
         SetStatus("Cover selected. It will be shown in product lists after refresh.", false);
     }
 
     private void Hide()
     {
+        if (!RefreshAccess()) return;
         if (_selected is null)
         {
             SetStatus("Choose a photo first.", true);
@@ -414,11 +478,17 @@ public sealed class PhotoGalleryViewModel : ObservableObject
         }
 
         Load();
+        if (!_lastLoadSucceeded)
+        {
+            SetStatus("SAVED. The photo change was stored, but the gallery could not refresh. Do not repeat the action; refresh to check.", true);
+            return;
+        }
         SetStatus(name + " is put away. The file is still in the photos folder and the change is in the black box.", false);
     }
 
     private void Restore()
     {
+        if (!RefreshAccess()) return;
         if (_selected is null)
         {
             SetStatus("Choose a photo first.", true);
@@ -434,11 +504,17 @@ public sealed class PhotoGalleryViewModel : ObservableObject
         }
 
         Load();
+        if (!_lastLoadSucceeded)
+        {
+            SetStatus("SAVED. The photo change was stored, but the gallery could not refresh. Do not repeat the action; refresh to check.", true);
+            return;
+        }
         SetStatus("The photo is back in the list.", false);
     }
 
     private void OpenFile()
     {
+        if (!RefreshAccess()) return;
         if (_selected is null)
         {
             SetStatus("Choose a photo first.", true);

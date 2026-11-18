@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.101.0 Dunlin۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.102.0 Whimbrel۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**حصہ24 — Photos:** موجودہgallery/module/actor،photoIDسےfreshpreviewpath،staleimage/selection/rows/title/countصفائی،windowaccess-timerاورpostcommit **SAVED**۔ Productcoversکیجائزcross-workflowdecorationاورownavatarبغیرStaffgrantبرقرار،galleryکیالگmoduleشرطبدستور؛historicalinactiveparentpolicyنہیںبدلی۔ [PT-44](POS-PHASE4-PART24-URDU.md)،[trace](POS-PHASE4-PHOTO-CURRENT-REVIEW.md)۔ **30نئےfacts/1945C#casesWindowsUNRUN۔** Native/custom/session/record/files/hardware/installerباقی؛حساب/Blackbox/BookCheck/backupunchanged۔ نیچےپرانےcheckpointتاریخیہیں۔
 
 **حصہ23 — Settings کی موجودہ اجازت:** Save میں currentactive/same-rolemodulewriter،cloudکےلیےSync،owner-protectedkeys/workbookکےلیےcurrentOwner؛POSکااکیلاautoPrintاورBackupscheduleبرقرار۔ Quietsetterصرف17runtimekeys؛آئندہCloudkeyauditمیںاصلold/newkeyنہیں،پرانےauditنہیںبدلے۔ DeniedSettingsکےtabsچھپیں،typedcloud/PIN/recoveryاورstaffstateصاف؛cloud-onlylossپرعامادھورےeditsبرقرار۔ [PT-43](POS-PHASE4-PART23-URDU.md)،[trace](POS-PHASE4-SETTINGS-CURRENT-REVIEW.md)۔ **36نئےfacts/1915C#casesWindowsUNRUN۔** Native/custom/photo/session/recordاورfullPhase4/installerباقی؛حساب/Blackbox/BookCheck/backupunchanged۔ نیچےپرانےcheckpointتاریخیہیں۔
 
@@ -223,6 +225,8 @@ Recovery سے داخلہ پرانی فروخت یا کھاتے کو reset نہی
 **فیز4 حصہ7 — History کی خرید رقم (D-110، پرانا management-only اصول بدل گیا):** متعلقہ Products/History page grant + **View Purchase Cost** + main ON پر خرید Rate، Total اور Bought مالی خلاصہ؛ کسی بھی role کے لیے۔ cost منع ہو تو تینوں raw/labels mask؛ quantity/date/supplier برقرار۔ print/WhatsApp/PDF preparation یہی labels، CSV دونوں purchase money cells خالی۔ صرف Profit/Purchases/Suppliers grant cost کا بدل نہیں۔ واضح sale-profit الگ View Profit/main policy پر؛ مجاز profit سے cost حساب کرکے نکل سکتی ہے، مطلق secrecy نہیں۔ [PT-27](POS-PHASE4-PART7-URDU.md)۔
 
 **حصہ13 کی موجودہ شرط:** نئی خرید Save کرنے سے پہلے Core میں current stored Purchases+View Purchase Cost+main ON دوبارہ چیک ہوتا ہے۔ Cost/main منع ہو تو قابلِ Save masked0 فارم نہیں،انکار ہے۔ کھلے unsaved فارم کی line/cost/paid اصل حالت محفوظ رہتی ہے مگر اگلی action/timer check پر رقم hidden/blank،Save بند؛بحالی پر review کے بعد خود Save کریں۔ پہلے سے محفوظ invoice کی hidden-aware copy الگ ہے۔ [PT-33](POS-PHASE4-PART13-URDU.md)۔
+
+**حصہ24 — galleryکیعملیمشق:** CustomerکیPhotosکھولیں،صرفالگtestcopyمیںgrantواپسلیں؛اگلےcommand/nominal3secondcheckپرpicture/selection/thumbnailrows/recordtitle/countصافاورactionsمنع۔ Regrantپرتازہread؛failedreadمصدقہ“no photos”نہیں۔ Open/fullpreviewسےپہلےphotoIDسےfreshPathOf،لیکنپہلےکھلاWindowsviewerواپسlockنہیںہوتا۔ Photochangeکےبعدrefreshfailتو **SAVED،actionدوبارہنہکریں**۔ ActiveparentکیپرانیAddشرط،inactiveparentکیhistoricalread/Hide/Restoreبرقرار۔ [PT-44](POS-PHASE4-PART24-URDU.md)۔ حقیقیcamera/codecs/Windowsجانچابھیباقی؛extension/sizecheckاصلimagevalidationنہیں۔
 
 <a id="lesson-08"></a>
 
@@ -714,7 +718,7 @@ Recoveryکیfailedslipپرپرنٹرکوخالیdocumentنہیںدیاجاتا۔
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.101.0 کا متوقع test count 1915 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.102.0 کا متوقع test count 1945 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 

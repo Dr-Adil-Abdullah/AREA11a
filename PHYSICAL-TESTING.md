@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-44 — current photo/gallery/cover/avatar access and stale preview (v0.102.0) — UNRUN
+
+[Isolated Windows steps](docs/POS-PHASE4-PART24-URDU.md):currentactor/module/revoke/regrant,productcover-vs-galleryexception,ownavatar-vsStaffgallery,existinginactive-vs-missingparent,stalepreview/rows/title/count/timer/Closed,freshPathOf/action,currentwriteraudit,Add/Hide/Restoreauditfault/stagedparentrollback,SAVEDrefreshfailure,actualcamera/codec/Windowsviewer.30newfacts/1945C#cases+DesktopWPF/hardware/WindowsUNRUN,not runtimePASS. Native/custom/session/record/files/restore/globalPhase4/installerOPEN. [Trace](docs/POS-PHASE4-PHOTO-CURRENT-REVIEW.md). No fake shop photos/posts;separateexealoneNOTisolation.
+
 ## PT-43 — current Settings / precise delegated saves / quiet allowlist / secret-safe future audit (v0.101.0) — UNRUN
 
 [Isolated Windows steps](docs/POS-PHASE4-PART23-URDU.md):currentidentity/revoke/regrant/settingsfailure,POSautoPrintonly,Backup3keysschedule,SyncvsSettings/combinedgrants,17runtimekeys/noconfigbypass,Ownersecurity/startup/caps,direct+workbookall-or-nothing,auditfault/cache,cloudkeystored+newauditredacted,staleUI/typedsecrets/timers/8tabs,systemstartup/recovery/failure,SAVEDpostcommitstatus;1915C#cases+Desktop/WPF/registry/DPAPI/hardware/screenshotUNRUN.36newfacts,not runtimePASS. Native/custom/photo/record/session/fullPhase4/installerOPEN. [Trace](docs/POS-PHASE4-SETTINGS-CURRENT-REVIEW.md). No fake live-shop posts;separateexealoneNOTisolation.
