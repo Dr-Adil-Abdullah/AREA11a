@@ -1,5 +1,16 @@
 # باقی کام، GitHub اور test installer — v0.104.0
 
+## تازہ checkpoint — v0.108.0 Headland / حصہ30؛مستقل16/18/23–25
+
+[1–36حیثیت](NUMBERED-WORK-STATUS-URDU.md)،[PT-50](POS-PHASE4-PART30-URDU.md)،[trace](POS-PHASE4-STOCK-POSTING-INTEGRITY-REVIEW.md)۔ Purchase/SupplierReturn50نئےC#cases/2176suiteUNRUN؛acknowledgedcommitSAVED/localreentry/postedformcleanupاورloadverdictsourceمکمل۔ Coreمالیpolicyunchanged؛DraftpremarkالگTx،پورےdraftatomicrollbackکادعویٰنہیں۔
+
+1. **23–25:** Sale/customerReturnکےintegratedfault/retry/postcommitflows؛پھرremainingstock/expense/files/draftpremark-finalize-restore/actualCOMMIT-I/O،provider/busy/productionjournal/crossprocess؛durablerequestidentityOPEN۔
+2. **5/6/7:** حقیقیsession/CAS/remainingcallers/parentworkflows/cachesاورWindowsregrant/focus۔
+3. **26–29/2/4/30–35:** files/encryptedbackup/restore/newPC/cloud،Windows2176+build/logs/results/fixes/hardware/isolation۔
+4. **36:** انgatesکےبعدمجازsingle-doubleclicktestinstaller؛**ابھینہیںبنا،FullPhase4OPEN۔**
+
+36نمبر36Nextنہیں؛3–6integratedroundsمشروط،deadlineنہیں۔ ہرportiondocs+samebranchcommit/push+actualremoteverify؛اصلshopپرsyntheticpostsنہیں،verifiedbackup+الگDB/photos/config۔ نیچےپرانےcheckpointsتاریخیہیں۔
+
 ## تازہ checkpoint — v0.107.0 Breakwater / حصہ29؛مستقل23/24/25
 
 [1–36حیثیت](NUMBERED-WORK-STATUS-URDU.md)،[PT-49](POS-PHASE4-PART29-URDU.md)،[trace/حدود](POS-PHASE4-LEDGER-POSTING-INTEGRITY-REVIEW.md)۔ Ledger-pairCollect/Pay32C#cases/2126suiteلکھے:statementfault/retry/books/payment/drawer/concurrency؛سبC#UNRUN۔ UIlocalreentry/acknowledgedsuccessSAVEDاورfailedreloadcleanupsourceشامل؛Coreمالی/transactioncodeunchanged۔

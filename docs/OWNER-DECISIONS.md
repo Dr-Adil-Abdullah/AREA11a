@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## v0.108.0 portion30 — Purchase/SupplierReturn؛نئیsettlementیاdeduppolicyنہیں
+
+Nextکےتحت16/18/23–25میںfault/retryregressionsاورacknowledgedcommitکےبعدSAVED/consumedinput/localreentryUI۔ Samplestock،paidclamp،SupplierB،Cost+main،SRcash-vs-credit/negativecreditاورDraftterminalpremarkالگTxبرقرار؛Coreمالیcodeunchanged۔ LocalUIlatchdurableexactlyonceنہیں،بعدکیجائزdelivery/returnکودedupنہیںکیا۔ [PT-50](POS-PHASE4-PART30-URDU.md)،[trace](POS-PHASE4-STOCK-POSTING-INTEGRITY-REVIEW.md)۔50نئےcases/2176suiteC#/WindowsUNRUN؛Sale/customerReturn/COMMIT-I/O/draftfaults/fullPhase4/installerOPEN۔
+
 ## v0.107.0 portion29 — مستقل23/24/25؛نئیidempotencypolicyنہیں
 
 NextمیںCustomerCollect/SupplierPay کےstatementfault/retry/books/payments/drawer/concurrencyregressionsاورacknowledgedcommitکےبعدSAVED/reentryUIپرکام۔ CoreمالیSQL/Database/permissions/SupplierB/Extra/returnB/backupA/BlackboxBookCheckنہیںبدلے۔ Partialیکساںamountکیبعدوالیادائیگیاںجائزnewpaymentsہوسکتیہیں؛amount/time/noteکیخودکارdedup/clampنہیںلگائی۔ LocalUIlatchکومکملrequesttoken/exactlyonceنہکہیں۔ [PT-49](POS-PHASE4-PART29-URDU.md)،[trace](POS-PHASE4-LEDGER-POSTING-INTEGRITY-REVIEW.md)۔32نئےcases/2126suiteC#/WindowsUNRUN؛COMMIT-I/Oambiguity/othermoneyroutes/session/fullPhase4/installerOPEN۔

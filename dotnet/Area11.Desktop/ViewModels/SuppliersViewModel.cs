@@ -34,6 +34,7 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
     private string _method = "cash";
     private string _payNote = string.Empty;
     private bool _payInProgress;
+    private bool _returnInProgress;
     private bool _lastSupplierLoadSucceeded;
     private string _productSearch = string.Empty;
     private string _qtyText = string.Empty;
@@ -437,20 +438,16 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
         LoadExpired();
     }
 
-    private void LoadExpired()
+    private bool LoadExpired()
     {
         SelectedExpired = null;
         Expired.Clear();
 
         var result = _services.SupplierLedger.ExpiredBatches(_user);
 
-        if (result.Ok)
-        {
-            foreach (var row in result.Value!)
-            {
-                Expired.Add(row);
-            }
-        }
+        if (!result.Ok || result.Value is null) return false;
+        foreach (var row in result.Value) Expired.Add(row);
+        return true;
     }
 
     private void ShowSupplier()
@@ -902,68 +899,91 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
 
     private void PostReturn()
     {
-        if (!UpdateAccess()) return;
-        if (Selected is null)
+        if (_returnInProgress) return;
+        _returnInProgress = true;
+        try
         {
-            SetStatus("Pick a supplier first.", true);
-            return;
-        }
-
-        if (Tray.Count == 0)
-        {
-            SetStatus("Add at least one batch to the tray.", true);
-            return;
-        }
-
-        var supplierId = Selected.Id;
-        var name = Selected.Name;
-
-        var input = new SupplierReturnInput
-        {
-            SupplierId = supplierId,
-            Reason = Reason,
-            Note = string.IsNullOrWhiteSpace(SrNote) ? LineNote : SrNote,
-            CashReceived = CashReceived
-        };
-
-        foreach (var row in Tray)
-        {
-            input.Lines.Add(new SupplierReturnLineInput
+            if (!UpdateAccess()) return;
+            if (Selected is null)
             {
-                ProductId = row.ProductId,
-                BatchId = row.BatchId,
-                QtyEntered = row.QtyEntered,
-                Unit = row.Unit
-            });
+                SetStatus("Pick a supplier first.", true);
+                return;
+            }
+
+            if (Tray.Count == 0)
+            {
+                SetStatus("Add at least one batch to the tray.", true);
+                return;
+            }
+
+            var supplierId = Selected.Id;
+            var name = Selected.Name;
+
+            var input = new SupplierReturnInput
+            {
+                SupplierId = supplierId,
+                Reason = Reason,
+                Note = string.IsNullOrWhiteSpace(SrNote) ? LineNote : SrNote,
+                CashReceived = CashReceived
+            };
+
+            foreach (var row in Tray)
+            {
+                input.Lines.Add(new SupplierReturnLineInput
+                {
+                    ProductId = row.ProductId,
+                    BatchId = row.BatchId,
+                    QtyEntered = row.QtyEntered,
+                    Unit = row.Unit
+                });
+            }
+
+            var result = _services.SupplierLedger.Return(_user, input);
+
+            if (!result.Ok)
+            {
+                if (!UpdateAccess()) return;
+                SetStatus(result.Error ?? "The return could not be saved.", true);
+                return;
+            }
+
+            var saved = result.Value!;
+            try
+            {
+                ClearTray();
+                SrNote = string.Empty;
+                CashReceived = false;
+                ReloadKeeping(supplierId);
+                if (!_lastSupplierLoadSucceeded)
+                {
+                    SetStatus("SAVED. Supplier return was stored, but the account could not refresh. Do not return these goods again; refresh and check return history.", true);
+                    return;
+                }
+                if (!LoadExpired())
+                {
+                    SetStatus("SAVED. Supplier return was stored, but the expired-stock list could not refresh. Do not return these goods again; refresh and check return history.", true);
+                    return;
+                }
+                _onChanged?.Invoke();
+                if (!UpdateAccess())
+                {
+                    SetStatus("SAVED. Supplier return was stored, but current access changed. Do not return these goods again; sign in or refresh to check return history.", true);
+                    return;
+                }
+                var message = "SAVED. " + saved.Code + ": " + name + " took back " + saved.TotalText + " ("
+                              + saved.SettlementLabel.ToLowerInvariant() + "). Payable now "
+                              + Money.Format(saved.NewPayablePaisa) + ".";
+                foreach (var warning in saved.Warnings) message += " " + warning;
+                SetStatus(message, false);
+            }
+            catch (Exception exception)
+            {
+                _services.Log.Error("Supplier return was committed but its page or callback could not finish.", exception);
+                ClearSensitiveData();
+                SetStatus("SAVED. Supplier return was stored, but the page could not finish. Do not return these goods again; refresh and check return history.", true);
+            }
         }
-
-        var result = _services.SupplierLedger.Return(_user, input);
-
-        if (!result.Ok)
-        {
-            SetStatus(result.Error ?? "The return could not be saved.", true);
-            return;
-        }
-
-        var saved = result.Value!;
-        ClearTray();
-        SrNote = string.Empty;
-        CashReceived = false;
-
-        ReloadKeeping(supplierId);
-        LoadExpired();
-        _onChanged?.Invoke();
-
-        var message = saved.Code + ": " + name + " took back " + saved.TotalText + " ("
-                      + saved.SettlementLabel.ToLowerInvariant() + "). Payable now "
-                      + Money.Format(saved.NewPayablePaisa) + ".";
-
-        foreach (var warning in saved.Warnings)
-        {
-            message += " " + warning;
-        }
-
-        SetStatus(message, false);
+        finally { _returnInProgress = false; }
     }
 
     /// <summary>Reloads the list but keeps the same supplier open on the right.</summary>

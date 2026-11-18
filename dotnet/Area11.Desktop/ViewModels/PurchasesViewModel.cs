@@ -18,6 +18,8 @@ public sealed class PurchasesViewModel : ObservableObject
     private readonly User _user;
     private readonly List<Product> _catalog = new();
     private bool _entryAllowed;
+    private bool _saveInProgress;
+    private bool _lastLookupsSucceeded;
     private string _entryAccessMessage = string.Empty;
 
     private Supplier? _selectedSupplier;
@@ -344,9 +346,19 @@ public sealed class PurchasesViewModel : ObservableObject
 
     private void LoadLookups()
     {
+        _lastLookupsSucceeded = false;
         if (!RefreshEntryAccess()) return;
         var suppliers = _services.Partners.GetSuppliers();
         Suppliers.Clear();
+        if (!suppliers.Ok || suppliers.Value is null)
+        {
+            SelectedSupplier = null;
+            _catalog.Clear();
+            FilteredProducts.Clear();
+            SelectedProduct = null;
+            SetStatus(suppliers.Error ?? "Suppliers could not be loaded.", true);
+            return;
+        }
         if (suppliers.Ok && suppliers.Value is not null)
         {
             foreach (var supplier in suppliers.Value)
@@ -355,10 +367,18 @@ public sealed class PurchasesViewModel : ObservableObject
             }
         }
 
-        SelectedSupplier ??= Suppliers.FirstOrDefault();
+        var supplierId = SelectedSupplier?.Id;
+        SelectedSupplier = Suppliers.FirstOrDefault(item => item.Id == supplierId) ?? Suppliers.FirstOrDefault();
 
         var products = _services.Products.Search(_user, purpose: ProductReadPurpose.Purchase);
         _catalog.Clear();
+        if (!products.Ok || products.Value is null)
+        {
+            FilteredProducts.Clear();
+            SelectedProduct = null;
+            SetStatus(products.Error ?? "Products could not be loaded.", true);
+            return;
+        }
         if (products.Ok && products.Value is not null)
         {
             _catalog.AddRange(products.Value);
@@ -371,6 +391,7 @@ public sealed class PurchasesViewModel : ObservableObject
         }
 
         FilterProducts();
+        _lastLookupsSucceeded = CanPrepare;
     }
 
     private void FilterProducts()
@@ -490,78 +511,94 @@ public sealed class PurchasesViewModel : ObservableObject
 
     private void Save()
     {
-        if (!RefreshEntryAccess()) return;
-        if (SelectedSupplier is null)
+        if (_saveInProgress) return;
+        _saveInProgress = true;
+        try
         {
-            SetStatus("Select or add a supplier first.", true);
-            return;
-        }
-
-        if (Lines.Count == 0)
-        {
-            SetStatus("Add at least one line.", true);
-            return;
-        }
-
-        if (!Money.TryParse(PaidText, out var paid))
-        {
-            SetStatus("Paid amount must be a number.", true);
-            return;
-        }
-
-        var input = new PurchaseInput
-        {
-            SupplierId = SelectedSupplier.Id,
-            PaidPaisa = Money.ToPaisa(paid),
-            PaidMethod = PaidMethod,
-            CustomAnswers = DocEditor.AnswerValues().ToDictionary(pair => pair.Key, pair => pair.Value),
-            Lines = Lines.Select(line => new PurchaseLineInput
+            if (!RefreshEntryAccess()) return;
+            if (SelectedSupplier is null)
             {
-                ProductId = line.ProductId,
-                Unit = line.Unit,
-                Quantity = line.Quantity,
-                BatchNo = line.BatchNo,
-                Expiry = line.Expiry,
-                CostPaisa = line.CostPaisa,
-                RetailPaisa = line.RetailPaisa,
-                IsSample = line.IsSample
-            }).ToList()
-        };
+                SetStatus("Select or add a supplier first.", true);
+                return;
+            }
 
-        var wasDraft = _openDraftId > 0;
-        var result = wasDraft
-            ? _services.Drafts.PostPurchase(_user, _openDraftId, input)
-            : _services.Purchases.Create(input, _user);
-        if (!result.Ok || result.Value is null)
-        {
-            RefreshEntryAccess();
-            SetStatus(result.Error ?? "The purchase could not be saved.", true);
-            return;
+            if (Lines.Count == 0)
+            {
+                SetStatus("Add at least one line.", true);
+                return;
+            }
+
+            if (!Money.TryParse(PaidText, out var paid))
+            {
+                SetStatus("Paid amount must be a number.", true);
+                return;
+            }
+
+            var input = new PurchaseInput
+            {
+                SupplierId = SelectedSupplier.Id,
+                PaidPaisa = Money.ToPaisa(paid),
+                PaidMethod = PaidMethod,
+                CustomAnswers = DocEditor.AnswerValues().ToDictionary(pair => pair.Key, pair => pair.Value),
+                Lines = Lines.Select(line => new PurchaseLineInput
+                {
+                    ProductId = line.ProductId,
+                    Unit = line.Unit,
+                    Quantity = line.Quantity,
+                    BatchNo = line.BatchNo,
+                    Expiry = line.Expiry,
+                    CostPaisa = line.CostPaisa,
+                    RetailPaisa = line.RetailPaisa,
+                    IsSample = line.IsSample
+                }).ToList()
+            };
+
+            var wasDraft = _openDraftId > 0;
+            var result = wasDraft
+                ? _services.Drafts.PostPurchase(_user, _openDraftId, input)
+                : _services.Purchases.Create(input, _user);
+            if (!result.Ok)
+            {
+                RefreshEntryAccess();
+                SetStatus(result.Error ?? "The purchase could not be saved.", true);
+                return;
+            }
+
+            var purchase = result.Value;
+            // Consume the committed draft ID before any binding/receipt callback can reenter.
+            _openDraftId = 0;
+            _lastPurchaseId = 0;
+            _lastPurchaseCode = string.Empty;
+            try
+            {
+                // Never leave the committed delivery available to resubmit after printer failure.
+                Lines.Clear();
+                PaidText = string.Empty;
+                PaidMethod = "cash";
+                if (purchase is null) throw new InvalidOperationException("Acknowledged purchase has no result document.");
+                _lastPurchaseId = purchase.PurchaseId;
+                _lastPurchaseCode = purchase.Code;
+                OnPropertyChanged(nameof(HasOpenDraft));
+                OnPropertyChanged(nameof(CanSendLastOnWhatsApp));
+                OnPropertyChanged(nameof(TotalText));
+                DocEditor.LoadNew();
+                LoadLookups();
+                if (!_lastLookupsSucceeded || !DocEditor.LoadedSuccessfully || !RefreshEntryAccess())
+                {
+                    SetStatus("SAVED. Purchase was stored, but the entry page could not refresh. Do not receive or post this delivery again; refresh and check purchase history.", true);
+                    return;
+                }
+                var warnings = purchase.Warnings.Count > 0 ? "  ⚠ " + string.Join(" ", purchase.Warnings) : string.Empty;
+                SetStatus($"SAVED. {purchase.Code}{(wasDraft ? " - its draft is posted" : string.Empty)} — {purchase.TotalLabel}.{warnings}", purchase.Warnings.Count > 0);
+                PrintInvoice(purchase.PurchaseId, purchase.Code);
+            }
+            catch (Exception exception)
+            {
+                _services.Log.Error("Purchase was committed but its entry page or invoice could not finish.", exception);
+                SetStatus("SAVED. Purchase was stored, but the page or invoice could not finish. Do not receive or post this delivery again; refresh and check purchase history before reprinting.", true);
+            }
         }
-
-        var purchase = result.Value;
-        var warnings = purchase.Warnings.Count > 0 ? "  ⚠ " + string.Join(" ", purchase.Warnings) : string.Empty;
-        SetStatus($"{purchase.Code} saved{(wasDraft ? " - its draft is posted" : string.Empty)} — {purchase.TotalLabel}.{warnings}",
-            purchase.Warnings.Count > 0);
-
-        // Portion 11: the saved purchase prints its own invoice, like a sale prints its bill (Z-07).
-        // The paper is a copy for the file; a silent printer must never unsave the purchase.
-        PrintInvoice(purchase.PurchaseId, purchase.Code);
-
-        // Portion 12: the same invoice can go to WhatsApp while it is still "the last save".
-        _lastPurchaseId = purchase.PurchaseId;
-        _lastPurchaseCode = purchase.Code;
-        OnPropertyChanged(nameof(CanSendLastOnWhatsApp));
-
-        Lines.Clear();
-        PaidText = string.Empty;
-        // Back to cash after every save: a forgotten "online" would silently spare the drawer.
-        PaidMethod = "cash";
-        _openDraftId = 0;
-        OnPropertyChanged(nameof(HasOpenDraft));
-        DocEditor.LoadNew();
-        OnPropertyChanged(nameof(TotalText));
-        LoadLookups();
+        finally { _saveInProgress = false; }
     }
 
     /// <summary>
@@ -599,14 +636,14 @@ public sealed class PurchasesViewModel : ObservableObject
         var document = _services.Purchases.BuildInvoiceDocument(purchaseId, _user);
         if (!document.Ok || document.Value is null)
         {
-            SetStatus(code + " is saved, but its invoice could not be prepared: " + (document.Error ?? "unknown reason"), true);
+            SetStatus("SAVED. " + code + " invoice could not be prepared. Do not post the delivery again: " + (document.Error ?? "unknown reason"), true);
             return;
         }
 
         var printed = _services.Printer.Print(document.Value);
         if (!printed.Ok)
         {
-            SetStatus($"{code} is saved. The printer did not answer: {printed.Error}", true);
+            SetStatus($"SAVED. {code}. Do not post the delivery again. The printer did not answer: {printed.Error}", true);
         }
     }
 

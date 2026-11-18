@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-50 — stable16/18/23/24/25 Purchase/SupplierReturn (v0.108.0) — UNRUN
+
+[Urdu isolated steps](docs/POS-PHASE4-PART30-URDU.md),[trace/limits](docs/POS-PHASE4-STOCK-POSTING-INTEGRITY-REVIEW.md).50newC#cases/2176suite UNRUN:18Purchase+26SR BEFORE/AFTER faults/snapshot/number/retry/stock/payment/audit/books/drawer,3methods,sample,2late-line faults. Local UI latches/consumed committed forms/SAVED/lookup-expiredlist verdict/callbackaccess source changes. Python SQL/lexical negatives not C#/WPF/provider proof. Draft marker separate Tx,actual COMMIT-I/O/requestidentity/Sale/customerReturn OPEN. Verified encrypted backup+separate DB/photos/config;no live synthetic posts. Installer NOT BUILT.
+
 ## PT-49 — stable23/24/25 ledger-pair integrity / acknowledged-commit UI (v0.107.0) — UNRUN
 
 [Urdu isolated steps](docs/POS-PHASE4-PART29-URDU.md),[trace/limits](docs/POS-PHASE4-LEDGER-POSTING-INTEGRITY-REVIEW.md),[1–36status](docs/NUMBERED-WORK-STATUS-URDU.md).32newcases/2126suite:Collect/Pay12statementfaults+retry,books/payment/receipt/drawer by method,4same/separate-Database competitions,full settlement vs legitimate partial repeats,read revocation. Customer/Supplier local reentry/SAVEDpostcommit reload/callback/receipt clarity and load failure cleanup. AllC#/Core/Tests/Desktop/WPF UNRUN;Python guards/Tx/threads not C# proof. Actual COMMIT-I/O/ambiguity/global request identity/other monetary routes OPEN. No live synthetic posts;verified encrypted backup+genuinely separate DB/photos/config. Installer NOT BUILT.

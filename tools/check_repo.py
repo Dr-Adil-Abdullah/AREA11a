@@ -7286,7 +7286,12 @@ def check_purchase_preparation():
     for method in ('LoadLookups()', 'FilterProducts()', 'AddLine()', 'Save()', 'SavePurchaseDraft()', 'OpenPurchaseDraft(int draftId)'):
         prefix = 'public void ' if method.startswith('OpenPurchaseDraft') else 'private void '
         part = vm.split(prefix + method, 1)[-1]
-        if not part.lstrip().startswith('{\n        if (!RefreshEntryAccess()) return;'):
+        gate_prefix = '{\n        if (!RefreshEntryAccess()) return;'
+        if method == 'LoadLookups()':
+            gate_prefix = '{\n        _lastLookupsSucceeded = false;\n        if (!RefreshEntryAccess()) return;'
+        elif method == 'Save()':
+            gate_prefix = '{\n        if (_saveInProgress) return;\n        _saveInProgress = true;\n        try\n        {\n            if (!RefreshEntryAccess()) return;'
+        if not part.lstrip().startswith(gate_prefix):
             FAILURES.append(f'Purchase interaction must check before using retained money: {method}')
     refresh = vm.split('public bool RefreshEntryAccess()', 1)[-1].split('private void LoadLookups()', 1)[0]
     if any(token in refresh for token in ('Lines.Clear(', '_costText =', '_paidText =', '.CostPaisa =')):
@@ -8155,6 +8160,52 @@ def check_ledger_posting_integrity():
         if token not in tests: FAILURES.append('Ledger integration regression missing '+token)
     REPORT.append('Phase4 portion29/stable23,24,25:ledger-pair stage-fault/retry/books/payments/drawer/concurrency regressions;Customer Collect/Supplier Pay reentry latch and committed reload/callback/receipt SAVED clarity;32cases/2126total UNRUN,not global idempotency/C#/WPF/session/commit-I/O certification')
 
+def check_stock_posting_integrity():
+    """Bounded portion30 stock posting source contracts; not provider/WPF/commit certification."""
+    purchase = (DOTNET / 'Area11.Desktop/ViewModels/PurchasesViewModel.cs').read_text()
+    supplier = (DOTNET / 'Area11.Desktop/ViewModels/SuppliersViewModel.cs').read_text()
+    for source, method, flag, consumed, reload in (
+        (purchase, 'Save', '_saveInProgress', 'Lines.Clear();', 'LoadLookups();'),
+        (supplier, 'PostReturn', '_returnInProgress', 'ClearTray();', 'ReloadKeeping(supplierId);')):
+        body = source.split('private void '+method+'()',1)[-1].split('\n    private ',1)[0]
+        for token in ('if ('+flag+') return;', flag+' = true;', 'finally { '+flag+' = false; }',
+                      'if (!result.Ok)', 'catch (Exception exception)', 'SAVED.', consumed, reload):
+            if token not in body: FAILURES.append('Stock posting committed/reentry boundary '+method+': '+token)
+        committed = body.split('var '+('purchase' if method=='Save' else 'saved')+' = result.Value',1)[-1]
+        if not 0 <= committed.find('try') < committed.find(consumed) < committed.find(reload):
+            FAILURES.append('Stock posting consumed input must clear inside postcommit try before reload: '+method)
+        if method == 'Save':
+            for token in ('_openDraftId = 0;', 'PaidText = string.Empty;', 'PaidMethod = "cash";',
+                          'if (!_lastLookupsSucceeded || !DocEditor.LoadedSuccessfully || !RefreshEntryAccess())',
+                          'Do not receive or post this delivery again;', 'PrintInvoice(purchase.PurchaseId, purchase.Code);'):
+                if token not in committed: FAILURES.append('Committed purchase boundary missing '+token)
+            if not 0 <= committed.find('Lines.Clear();') < committed.find('PrintInvoice('): FAILURES.append('Invoice precedes consumed purchase cleanup')
+        else:
+            for token in ('SrNote = string.Empty;', 'CashReceived = false;', 'if (!_lastSupplierLoadSucceeded)',
+                          'if (!LoadExpired())', '_onChanged?.Invoke();\n                if (!UpdateAccess())',
+                          'Do not return these goods again;', 'ClearSensitiveData();'):
+                if token not in committed: FAILURES.append('Committed supplier return boundary missing '+token)
+    lookups = purchase.split('private void LoadLookups()',1)[-1].split('private void FilterProducts()',1)[0]
+    for token in ('_lastLookupsSucceeded = false;', 'if (!suppliers.Ok || suppliers.Value is null)',
+                  'if (!products.Ok || products.Value is null)', '_lastLookupsSucceeded = CanPrepare;'):
+        if token not in lookups: FAILURES.append('Purchase lookup success verdict missing '+token)
+    expired = supplier.split('private bool LoadExpired()',1)[-1].split('private void ShowSupplier()',1)[0]
+    if 'if (!result.Ok || result.Value is null) return false;' not in expired or 'return true;' not in expired:
+        FAILURES.append('Supplier expired-stock refresh must expose failed read verdict')
+    tests = (DOTNET / 'Area11.Tests/StockPostingIntegrityTests.cs').read_text()
+    if tests.count('[InlineData(')!=47 or tests.count('[Fact]')!=3: FAILURES.append('Stock posting needs50 registered real-schema cases')
+    for token in ('DeliveryStageFaultRestoresAllRowsAndNumberThenRetryReconciles',
+                  'GoodsBackStageFaultPreservesCommittedDeliveryThenRetryReconciles',
+                  'DeliveryPaymentMethodAndCashGoodsBackMatchSupplierBooksAndDrawer',
+                  'SampleDeliveryStillAddsStockAtZeroCostWithoutInventingPayable',
+                  'InvalidSecondDeliveryLineRollsBackAlreadyInsertedFirstLine',
+                  'SecondGoodsBackItemFaultRollsBackFirstBatchDecreaseAndKeepsOriginalDelivery',
+                  'Assert.Equal(before, f.Snapshot());', 'BooksMatch', 'SupplierCashInPaisa', 'SupplierCashOutPaisa',
+                  '"custom_values"', '"sqlite_sequence"', 'nextSupplierReturnNo', 'nextPurchaseNo',
+                  'BEFORE UPDATE OF value ON settings', 'BEFORE INSERT ON purchase_items', 'BEFORE INSERT ON supplier_return_items'):
+        if token not in tests: FAILURES.append('Stock posting regression missing '+token)
+    REPORT.append('Phase4 portion30/stable16,18,23,24,25:Purchase/SupplierReturn50sourcecases and acknowledged-commit UI reentry/consumed input/refresh/receipt clarity;2176suiteUNRUN,not global idempotency/draft atomicity/commit-I-O/WPF certification')
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -8249,6 +8300,7 @@ def main() -> int:
     check_record_write_current_boundaries()
     check_catalog_current_boundaries()
     check_ledger_posting_integrity()
+    check_stock_posting_integrity()
     check_csharp_grammar()
 
     if not quiet:
