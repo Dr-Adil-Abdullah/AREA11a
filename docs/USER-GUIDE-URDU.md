@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.103.0 Turnstone۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.104.0 Knot۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**حصہ26 / مستقل نمبر8 — سوال بنانے کا manager:** currentOwnerreadکےبعدcontrolsenable؛failedreadپرrows/selection/editID/label/options/help/required/typeصاف،Fieldsnotloaded۔ Selecteddefinitionبدلےتواگلاactionرکے،واضحdiscard/reviewwarning؛unchangedtickunsavedtextنہیںبدلتا۔ Save/Move/HideRestorecommitمگرreloadfailتو **SAVED،دوبارہactionنہکریں**۔ [PT-46](POS-PHASE4-PART26-URDU.md)،[trace](POS-PHASE4-CUSTOM-MANAGER-CURRENT-REVIEW.md)،[مکملنمبر1–36حیثیت](NUMBERED-WORK-STATUS-URDU.md)۔ **32نئےfacts/2009C#casesWindowsUNRUN**؛نمبر8runtimeاورباقیrecord/session/files/Windows/installerکھلےہیں۔ SnapshotatomicCASنہیں؛نیچےپرانےcheckpointتاریخیہیں۔
 
 **حصہ25 — Extra answers / Native fields:** current internal actor/stored custom audit،missing parent failure،editor کی پرانی rows/staged photo metadata صفائی اور fresh outputs،Save کے بعد failed reload پر **SAVED**؛Native failed selection صاف/current definition پہلے پڑھی جاتی ہے۔ POS quick customer create پر نئی Customers grant نہیں؛public answer panel کی الگ grant برقرار۔ [PT-45](POS-PHASE4-PART25-URDU.md)،[trace](POS-PHASE4-CUSTOM-VALUES-CURRENT-REVIEW.md)۔ **32 نئے facts/1977 C# cases Windows UNRUN**؛باقیcustom admin/parent records/session/files/Windows/installer کھلے ہیں۔ نیچےپرانےcheckpointتاریخیہیں۔
 
@@ -641,6 +643,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 
 **حصہ25 کی محفوظ مشق:** صرف الگ test DB/photos/config میں customer کے Extra answers کھولیں،grant/account واپس لیں؛اگلےcommand/nominal3secondcheck پر rows اورstaged تصویر کا نام صاف،failure status نظر آئے۔ اجازت واپس آئے تو parent form دوبارہ load کریں؛timer unsaved edits خود overwrite نہیں کرتا۔ Missing record کو مصدقہ empty answers نہیں کہتے۔ Separate save commit مگر reload fail ہو تو **SAVED،دوبارہsave نہ کریں**۔ Native policy risk prompt سے پہلے تازہ definition پڑھی جاتی ہے؛critical optional کی confirmation برقرار۔ [PT-45](POS-PHASE4-PART25-URDU.md)۔ اصل session/تمام parent commands/definition-version synchronization کی blanket ضمانت نہیں۔
 
+**حصہ26 — managerکیعملیمشق:** صرفالگtestcopyمیںdefinitioneditکھولیں،Ownerinactiveیااسیdefinitionکو دوسریwindowسےبدلیں؛اگلےcommand/nominal3secondcheckپرپراناactionرکےاورselection/typedinputsصاف،واضحwarningآئے۔ Unchangedtickپرآپکاتازہtypedtextبرقرار۔ Failedreadمصدقہemptylistنہیں۔ Save/Move/HideRestorecommitمگرreloadfailتو **SAVED،دوبارہactionنہکریں**۔ [PT-46](POS-PHASE4-PART26-URDU.md)۔ Selecteddefinitionبدلےتودوبارہselect/reviewاورضرورتپرمتنلکھیں؛یہautomaticmergeیاatomiclockنہیں۔ Stablekeys/oldanswersاورdocumentnoPhotoبرقرار؛Windowsfocus/timer/selectionثبوتباقی۔
+
 <a id="lesson-33"></a>
 
 ## سبق 33 — خودکار آغاز، محفوظ بندش اور Screen lock
@@ -722,7 +726,7 @@ Recoveryکیfailedslipپرپرنٹرکوخالیdocumentنہیںدیاجاتا۔
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.103.0 کا متوقع test count 1977 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.104.0 کا متوقع test count 2009 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 

@@ -8,7 +8,8 @@ namespace Area11.Desktop.ViewModels;
 /// <summary>
 /// The screen where the owner makes his own fields (F-42, Spec 2.2 &amp; 8.4).
 ///
-/// Three forms, one list each: **Medicines**, **Customers**, **Suppliers**. A field is a name, a kind
+/// Six forms: three masters (Medicines, Customers, Suppliers) and three documents (Bills,
+/// Purchases, Expenses). A field is a name, a kind
 /// of answer, an optional list of choices and a tick that says whether the answer is required. The
 /// moment it is saved it appears on that form - there is no rebuild and no restart (Spec 8.4.3).
 ///
@@ -22,10 +23,10 @@ namespace Area11.Desktop.ViewModels;
 public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
 {
     /// <summary>
-    /// Why this page has nothing on it, in the shop's words (v0.33.0, D-89). **Null when it
-    /// has rows**, so nothing in this page has to keep a second flag in step with its list.
+    /// Only a successful authorized empty list gets an empty hint. A failed read is unknown,
+    /// not proof that this form has no definitions.
     /// </summary>
-    public EmptyHint? EmptyHint => EmptyPage.When(Fields.Count == 0, "Own fields");
+    public EmptyHint? EmptyHint => EmptyPage.When(HasNoFields, "Own fields");
 
     private readonly AppServices _services;
     private readonly User _user;
@@ -42,6 +43,9 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
     private bool _required;
     private bool _isEditing;
     private int _editingId;
+    private bool _canManage;
+    private bool _lastLoadSucceeded;
+    private bool _updatingList;
     private string _statusText = "Pick a form, then add a field. It appears there the moment you save it.";
     private bool _isStatusError;
     private string _countText = "no fields";
@@ -113,7 +117,16 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
 
     public RelayCommand<CustomFieldSuggestion> UseSuggestionCommand { get; }
 
-    public bool CanManage => _user.IsOwner;
+    public bool CanManage
+    {
+        get => _canManage;
+        private set
+        {
+            if (SetProperty(ref _canManage, value)) OnPropertyChanged(nameof(IsNotAllowed));
+        }
+    }
+
+    public bool HasNoFields => _lastLoadSucceeded && CanManage && Fields.Count == 0;
 
     public bool IsNotAllowed => !CanManage;
 
@@ -131,7 +144,7 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
             OnPropertyChanged(nameof(Suggestions));
             OnPropertyChanged(nameof(DocumentTabNote));
             OnPropertyChanged(nameof(HasDocumentTabNote));
-            BeginNew();
+            ResetEditor();
             Load();
         }
     }
@@ -141,10 +154,14 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
         get => _selectedField;
         set
         {
-            if (!SetProperty(ref _selectedField, value))
+            if (_updatingList) return;
+            if (value is not null)
             {
-                return;
+                if (!CanManage || !Fields.Contains(value) || value.Field.Entity != SelectedTab.Entity) return;
+                if (!RefreshAccess() || !Fields.Contains(value)) return;
             }
+            if (!SetProperty(ref _selectedField, value)) return;
+            if (value is null) ResetEditor();
 
             OnPropertyChanged(nameof(ToggleLabel));
             OnPropertyChanged(nameof(HasSelection));
@@ -266,37 +283,98 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
 
     // ------------------------------------------------------------------ loading
 
+    /// <summary>The shell Refresh action uses a deliberate fresh read, not a cached selection.</summary>
+    public void Refresh() => Load();
+
     private void Load()
     {
         var keep = _editingId;
-
         var result = _services.CustomFields.List(_user, SelectedTab.Entity, includeInactive: true, manage: true);
-
         if (!result.Ok || result.Value is null)
         {
-            Fields.Clear();
-            CountText = "no fields";
-            SetStatus(result.Error ?? "The fields could not be loaded.", true);
+            ClearManager(result.Error ?? "The fields could not be loaded.");
             return;
         }
+        CanManage = true;
+        _lastLoadSucceeded = true;
+        ReplaceRows(result.Value, keep);
+        if (_selectedField is not null) Edit(_selectedField.Field);
+        else ResetEditor();
+        SetStatus("Fields loaded. Pick a field or add a new one.", false);
+    }
 
-        Fields.Clear();
-
-        foreach (var field in result.Value)
+    /// <summary>
+    /// Current management read, with persisted selected-definition comparison before commands.
+    /// An unchanged tick never replaces rows or overwrites unsaved editor text. Not an atomic CAS.
+    /// </summary>
+    public bool RefreshAccess()
+    {
+        var result = _services.CustomFields.List(_user, SelectedTab.Entity, includeInactive: true, manage: true);
+        if (!result.Ok || result.Value is null)
         {
-            Fields.Add(new CustomFieldAdminRow(field));
+            ClearManager(result.Error ?? "Field access needs checking. Refresh before editing.");
+            return false;
         }
+        if (!_lastLoadSucceeded)
+        {
+            CanManage = true;
+            _lastLoadSucceeded = true;
+            ReplaceRows(result.Value, 0);
+            ResetEditor();
+            SetStatus("Access restored. Pick a field again; discarded edits were not saved.", false);
+            return true;
+        }
+        var current = result.Value.FirstOrDefault(field => field.Id == _editingId);
+        if (_editingId > 0 && !CustomFieldDefinitionState.Matches(_selectedField?.Field, current))
+        {
+            ReplaceRows(result.Value, 0);
+            ResetEditor();
+            SetStatus("The selected field changed or disappeared. Unsaved edits were discarded; pick it again and review before repeating the action.", true);
+            return false;
+        }
+        if (Fields.Count != result.Value.Count || Fields.Where((row, index) =>
+            !CustomFieldDefinitionState.Matches(row.Field, result.Value[index])).Any())
+            ReplaceRows(result.Value, _editingId);
+        return true;
+    }
 
-        var active = result.Value.Count(field => field.Active);
-        var hidden = result.Value.Count - active;
+    private void ClearManager(string error)
+    {
+        CanManage = false;
+        _lastLoadSucceeded = false;
+        ReplaceRows(Array.Empty<CustomField>(), 0);
+        ResetEditor();
+        CountText = "Fields not loaded";
+        RaiseListState();
+        SetStatus(error, true);
+    }
 
-        CountText = active + (active == 1 ? " field" : " fields")
-                    + (hidden > 0 ? " · " + hidden + " put away" : string.Empty);
+    private void ReplaceRows(IReadOnlyList<CustomField> fields, int keep)
+    {
+        _updatingList = true;
+        try
+        {
+            Fields.Clear();
+            foreach (var field in fields) Fields.Add(new CustomFieldAdminRow(field));
+            _selectedField = keep <= 0 ? null : Fields.FirstOrDefault(row => row.Field.Id == keep);
+            var active = fields.Count(field => field.Active);
+            var hidden = fields.Count - active;
+            CountText = active + (active == 1 ? " field" : " fields")
+                + (hidden > 0 ? " · " + hidden + " put away" : string.Empty);
+            RaiseSelection();
+            RaiseListState();
+        }
+        finally { _updatingList = false; }
+    }
 
-        _selectedField = keep <= 0
-            ? null
-            : Fields.FirstOrDefault(row => row.Field.Id == keep);
+    private void RaiseListState()
+    {
+        OnPropertyChanged(nameof(HasNoFields));
+        OnPropertyChanged(nameof(EmptyHint));
+    }
 
+    private void RaiseSelection()
+    {
         OnPropertyChanged(nameof(SelectedField));
         OnPropertyChanged(nameof(HasSelection));
         OnPropertyChanged(nameof(SelectedFieldKey));
@@ -307,22 +385,22 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
 
     private void BeginNew()
     {
+        if (!RefreshAccess()) return;
+        ResetEditor();
+        SetStatus("Type a name, choose the kind of answer, then save.", false);
+    }
+
+    private void ResetEditor()
+    {
         _editingId = 0;
         IsEditing = false;
         _selectedField = null;
-
-        OnPropertyChanged(nameof(SelectedField));
-        OnPropertyChanged(nameof(HasSelection));
-        OnPropertyChanged(nameof(SelectedFieldKey));
-        OnPropertyChanged(nameof(ToggleLabel));
-
         LabelText = string.Empty;
         OptionsText = string.Empty;
         HelpText = string.Empty;
         Required = false;
         SelectedType = Types[0];
-
-        SetStatus("Type a name, choose the kind of answer, then save.", false);
+        RaiseSelection();
     }
 
     private void Edit(CustomField field)
@@ -341,6 +419,7 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
 
     private void Save()
     {
+        if (!RefreshAccess()) return;
         var type = SelectedType.Key;
         ServiceResult result;
 
@@ -363,15 +442,14 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
 
         if (!result.Ok)
         {
+            RefreshAccess();
             SetStatus(result.Error ?? "The field could not be saved.", true);
             return;
         }
 
         var warnings = result.Warnings.Count > 0 ? " " + string.Join(" ", result.Warnings) : string.Empty;
 
-        Load();
-        IsEditing = _editingId > 0;
-        SetStatus("Saved. The form shows it now." + warnings, false);
+        FinishWrite(_editingId, "Saved. The form shows it now." + warnings);
     }
 
     private void MoveUp() => Move(-1);
@@ -380,6 +458,7 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
 
     private void Move(int direction)
     {
+        if (!RefreshAccess()) return;
         if (_selectedField is null)
         {
             SetStatus("Pick a field first.", true);
@@ -392,16 +471,17 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
 
         if (!result.Ok)
         {
+            RefreshAccess();
             SetStatus(result.Error ?? "The field could not be moved.", true);
             return;
         }
 
-        Load();
-        SetStatus("The order is saved.", false);
+        FinishWrite(_editingId, "The order is saved.");
     }
 
     private void ToggleActive()
     {
+        if (!RefreshAccess()) return;
         if (_selectedField is null)
         {
             SetStatus("Pick a field first.", true);
@@ -413,21 +493,21 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
 
         if (!result.Ok)
         {
+            RefreshAccess();
             SetStatus(result.Error ?? "The field could not be changed.", true);
             return;
         }
 
         _editingId = field.Id;
-        Load();
-
-        SetStatus(field.Active
+        FinishWrite(field.Id, field.Active
             ? "\"" + field.Label + "\" is put away. Its answers are still saved."
-            : "\"" + field.Label + "\" is on the form again.", false);
+            : "\"" + field.Label + "\" is on the form again.");
     }
 
     private void UseSuggestion(CustomFieldSuggestion? suggestion)
     {
-        if (suggestion is null)
+        if (!RefreshAccess()) return;
+        if (suggestion is null || !Types.Any(option => option.Key == suggestion.Type))
         {
             return;
         }
@@ -437,6 +517,17 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
         SelectedType = Types.FirstOrDefault(option => option.Key == suggestion.Type) ?? Types[0];
 
         SetStatus("Filled in from \"" + suggestion.Label + "\". Change anything you like, then save.", false);
+    }
+
+    private void FinishWrite(int savedId, string success)
+    {
+        Load();
+        if (!_lastLoadSucceeded || _selectedField?.Field.Id != savedId)
+        {
+            SetStatus("SAVED. The field change was stored, but could not be reloaded. Do not repeat the action; refresh to check.", true);
+            return;
+        }
+        SetStatus(success, false);
     }
 
     private void SetStatus(string text, bool isError)

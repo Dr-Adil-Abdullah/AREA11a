@@ -7876,6 +7876,77 @@ def check_custom_value_current_boundaries():
         if 'void ' + name + '(' not in tests: FAILURES.append(f'Custom current regression missing {name}')
     REPORT.append('Phase4 portion25: current internal custom-answer actor/stored audit,existing-parent read checks,stale editor/output and native metadata cleanup;32 facts written/1977cases UNRUN,caller policy/session/records/Windows/fullPhase4 OPEN')
 
+def check_custom_manager_current_boundaries():
+    """Number8 bounded definition manager source contracts; not WPF or atomic concurrency proof."""
+    core = DOTNET / 'Area11.Core'
+    service = (core / 'Services/CustomFieldService.cs').read_text()
+    state = (core / 'Models/CustomFieldDefinitionState.cs').read_text()
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/CustomFieldsViewModel.cs').read_text()
+    view = (DOTNET / 'Area11.Desktop/Views/CustomFieldsView.xaml').read_text()
+    window = (DOTNET / 'Area11.Desktop/Views/CustomFieldsView.xaml.cs').read_text()
+    tests = (DOTNET / 'Area11.Tests/CustomDefinitionCurrentAccessTests.cs').read_text()
+    if service.count('!user.Active || user.Id <= 0') != 4:
+        FAILURES.append('All four definition writers require supplied active-positive Owner before existing stored-owner Tx checks')
+    if '(manage || includeInactive) && (user is not { Active: true } || user.Id <= 0)' not in service:
+        FAILURES.append('Management/inactive definition list requires supplied active-positive Owner')
+    for text in ('The extra fields could not be loaded.', 'The field could not be added.',
+                 'The field could not be changed.', 'The field could not be moved.'):
+        if '"' + text + ' " + exception.Message' in service:
+            FAILURES.append('Definition infrastructure error exposes provider details: ' + text)
+    for field in ('Id', 'Entity', 'FieldKey', 'Label', 'Type', 'OptionsJson', 'HelpText', 'Required', 'Active', 'Sort', 'CreatedAt'):
+        if not re.search(r'expected\.' + field + r'(?: == current\.' + field + r'|, current\.' + field + r', StringComparison.Ordinal)', state):
+            FAILURES.append('Persisted manager snapshot comparison missing ' + field)
+    if 'expected is not null && current is not null' not in state:
+        FAILURES.append('Missing definitions must not compare as matching')
+    if 'public bool CanManage => _user.IsOwner;' in vm:
+        FAILURES.append('Definition manager must not enable commands from stale supplied Owner role')
+    for token in ('public bool HasNoFields => _lastLoadSucceeded && CanManage && Fields.Count == 0;',
+                  'public void Refresh() => Load();',
+                  'if (_updatingList) return;', 'value.Field.Entity != SelectedTab.Entity',
+                  'if (!RefreshAccess() || !Fields.Contains(value)) return;'):
+        if token not in vm: FAILURES.append('Definition manager lifecycle/selection boundary missing ' + token)
+    cleanup = vm.split('private void ClearManager(',1)[-1].split('private void ReplaceRows(',1)[0]
+    for token in ('CanManage = false;', '_lastLoadSucceeded = false;',
+                  'ReplaceRows(Array.Empty<CustomField>(), 0);', 'ResetEditor();', 'CountText = "Fields not loaded";', 'RaiseListState();'):
+        if token not in cleanup: FAILURES.append('Definition denial must clear all stale state: ' + token)
+    reset = vm.split('private void ResetEditor()',1)[-1].split('private void Edit(',1)[0]
+    for token in ('_editingId = 0;', 'IsEditing = false;', '_selectedField = null;',
+                  'LabelText = string.Empty;', 'OptionsText = string.Empty;', 'HelpText = string.Empty;',
+                  'Required = false;', 'SelectedType = Types[0];', 'RaiseSelection();'):
+        if token not in reset: FAILURES.append('Definition denial/editor reset missing ' + token)
+    refresh = vm.split('public bool RefreshAccess()',1)[-1].split('private void ClearManager(',1)[0]
+    for token in ('includeInactive: true, manage: true', 'ClearManager(',
+                  'CustomFieldDefinitionState.Matches(_selectedField?.Field, current)',
+                  'The selected field changed or disappeared.', 'ResetEditor();',
+                  'Fields.Count != result.Value.Count || Fields.Where((row, index) =>',
+                  'CustomFieldDefinitionState.Matches(row.Field, result.Value[index])'):
+        if token not in refresh: FAILURES.append('Definition current snapshot conflict/stable-tick boundary missing ' + token)
+    for method in ('BeginNew()', 'Save()', 'Move(int direction)', 'ToggleActive()', 'UseSuggestion(CustomFieldSuggestion? suggestion)'):
+        body = vm.split('void ' + method,1)[-1].split('}',1)[0]
+        if 'if (!RefreshAccess()) return;' not in body:
+            FAILURES.append('Definition action requires current management/snapshot check: ' + method)
+    if vm.count('FinishWrite(') != 4:
+        FAILURES.append('Definition Add/Update,Move,Toggle must all use shared postcommit reload verdict')
+    for token in ('if (!_lastLoadSucceeded || _selectedField?.Field.Id != savedId)',
+                  'SAVED. The field change was stored, but could not be reloaded.',
+                  'suggestion is null || !Types.Any(option => option.Key == suggestion.Type)'):
+        if token not in vm: FAILURES.append('Definition postcommit/document suggestion guard missing ' + token)
+    if 'Visibility="{Binding HasNoFields, Converter={StaticResource BoolToVis}}"' not in view:
+        FAILURES.append('Definition failure must not show successful empty-list overlay')
+    for token in ('TimeSpan.FromSeconds(3)', '(DataContext as CustomFieldsViewModel)?.RefreshAccess()',
+                  'accessTimer.Start()', 'Unloaded += (_, _) => accessTimer.Stop();'):
+        if token not in window: FAILURES.append('Definition manager loaded/unloaded lifecycle missing ' + token)
+    if tests.count('[Fact]') != 32:
+        FAILURES.append('Definition manager needs32 source regression facts (14 snapshot +18 real-schema Core)')
+    for name in ('InactiveSuppliedOwnerCannotManageDefinitions','AllDefinitionWritesAuditStoredCurrentOwnerName',
+                 'MoveAuditFailureRollsBackWholeOrdering','HideRestoreAndRenamePreserveStableKeyAndHistoricalAnswer',
+                 'ChangedActiveFlagDoesNotMatch','ChangedOrderDoesNotMatch'):
+        if 'void ' + name + '(' not in tests: FAILURES.append('Definition regression missing ' + name)
+    tracker = (ROOT / 'docs/NUMBERED-WORK-STATUS-URDU.md').read_text()
+    if [int(x) for x in re.findall(r'^\|(\d+)۔', tracker, re.M)] != list(range(1, 37)):
+        FAILURES.append('Owner stable1–36 work IDs must remain complete and in order;not36Nexts')
+    REPORT.append('Phase4 portion26/number8: current definition manager/stale selection and input cleanup,persisted target comparison,stable allowed ticks,SAVED postcommit reload verdict;32 facts/2009cases UNRUN,not atomic CAS/session/Windows/globalPhase4 certification')
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -7966,6 +8037,7 @@ def main() -> int:
     check_settings_current_boundaries()
     check_photo_current_boundaries()
     check_custom_value_current_boundaries()
+    check_custom_manager_current_boundaries()
     check_csharp_grammar()
 
     if not quiet:

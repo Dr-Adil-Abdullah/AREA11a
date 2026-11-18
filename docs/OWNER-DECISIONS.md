@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## Standing reporting instruction / D-110,D-115 scope preservation — v0.104.0 portion26
+
+مالک نے ہرکام کی **مکمل نمبر وار done/remaining تفصیل** مانگی؛[مستقل1–36tracker](NUMBERED-WORK-STATUS-URDU.md) کے نمبر برقرار رکھیں،یہ36Nextنہیں۔ LatestNextمیں **نمبر8** managerکیcurrentOwner/selection/inputcleanup،selecteddefinitioncomparisonاورSAVEDfailureپرکام؛نئیbusinesspolicyنہیں۔ SupplierB/CostProfitmain/Extra/returnB/belowcost/backupA/BlackboxBookCheck settledscopeبرقرار۔ [PT-46](POS-PHASE4-PART26-URDU.md)،[trace/حدود](POS-PHASE4-CUSTOM-MANAGER-CURRENT-REVIEW.md)۔32facts/2009casesWindowsUNRUN؛actualsession/atomicCAS/record/fullPhase4/installerOPEN۔ ہررپورٹمیںsourcevsactualexecution،اسی نمبرکےباقیکام،nextnumbersاوراصلGitpublicationالگلکھیں۔
+
 ## D-110 / D-115 continuation — custom values checkpoint v0.103.0 (2026-11-10 release label)
 
 Custom answers کے اندر current active/same-role actor اور stored custom audit؛missing parent کو successful empty نہیں کہتے۔ Stale editor rows/staged metadata صاف،Native failed metadata/selection صاف،postcommit reload fail پر SAVED۔ **POS quick customer creation پر نئی Customers grant نہیں**؛public answer routes/editor کی اپنی module شرط برقرار،internal workflow policy caller-owned۔ کوئی نئی accounting/Owner/free-text financial classification policy نہیں؛تمام parent/session authorization ابھی certified نہیں۔ [Trace](POS-PHASE4-CUSTOM-VALUES-CURRENT-REVIEW.md)،[PT-45](POS-PHASE4-PART25-URDU.md)۔32facts/1977casesWindowsUNRUN؛fullPhase4/installerOPEN۔ SupplierB/backupA/Blackbox/BookCheck unchanged۔

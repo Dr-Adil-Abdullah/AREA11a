@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-46 — stable item8 custom-definition manager (v0.104.0) — UNRUN
+
+[Isolated Urdu steps8.1–8.10](docs/POS-PHASE4-PART26-URDU.md),[trace](docs/POS-PHASE4-CUSTOM-MANAGER-CURRENT-REVIEW.md),[stable36items](docs/NUMBERED-WORK-STATUS-URDU.md). CurrentOwner/failedread clearsrows/selection/typedinputs,changedselectedmetadata abort+review,wrongtab/detachedtargetrefusal,unchangedtick preservesedit,HideRestore/Move/AddUpdateSAVEDreloadfailure,Loaded/Unloaded lifecycle,stablekey/history/documentPhoto rules.32newfacts/2009C#cases/Core/Tests/Desktop/WPFUNRUN;source/PythonNOT runtimePASS. NotatomicCAS/session/fullPhase4/installer. No fake shop posts;verifiedbackup+truly separateDB/photos/config,notexealone.
+
 ## PT-45 — custom values / Native metadata current access (v0.103.0) — UNRUN
 
 [Isolated Windows steps](docs/POS-PHASE4-PART25-URDU.md):staleactor/revoke/regrant,parentexists-vs-missing/inactive/history,internalcreatorrollback/noanswers/storedcustomaudit,POSquickcreatepolicyretained,editorrows/stagedfilecleanup/freshoutputs/picker/Save/SAVEDreloadfailure,Nativecurrentselection/riskconfirm/Loaded-Unloadedtimers.32newfacts/1977C#cases+DesktopWPF/hardwareUNRUN;source/PythonNOT runtimePASS. Customadmin/remainingrecords/session/globalPhase4/installerOPEN. [Trace](docs/POS-PHASE4-CUSTOM-VALUES-CURRENT-REVIEW.md). No fake shop posts;separateexealoneNOTisolation.

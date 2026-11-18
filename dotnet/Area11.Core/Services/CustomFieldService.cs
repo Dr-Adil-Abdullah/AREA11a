@@ -72,6 +72,9 @@ public sealed class CustomFieldService
             return ServiceResult<List<CustomField>>.Fail("Only the owner can manage the extra fields.");
         }
 
+        if ((manage || includeInactive) && (user is not { Active: true } || user.Id <= 0))
+            return ServiceResult<List<CustomField>>.Fail("Only the active owner can manage the extra fields.");
+
         if (!_permissions.Can(user, module))
         {
             return ServiceResult<List<CustomField>>.Fail("You do not have permission to see these fields.");
@@ -102,7 +105,7 @@ ORDER BY sort, id;",
         {
             _log.Error($"The custom fields of {key} could not be listed.", exception);
             return ServiceResult<List<CustomField>>.Fail(
-                "The extra fields could not be loaded. " + exception.Message);
+                "The extra fields could not be loaded. Refresh and try again.");
         }
     }
 
@@ -116,7 +119,7 @@ ORDER BY sort, id;",
         bool required,
         string? helpText = null)
     {
-        if (user is null || !user.IsOwner)
+        if (user is null || !user.IsOwner || !user.Active || user.Id <= 0)
         {
             return ServiceResult<CustomField>.Fail(
                 "Only the owner can add a field.");
@@ -205,7 +208,7 @@ VALUES(@entity, NULL, @label, @type, @optionsJson, @helpText, @required, 1, @sor
         catch (Exception exception)
         {
             _log.Error($"A custom field ({cleanLabel}) could not be added.", exception);
-            return ServiceResult<CustomField>.Fail("The field could not be added. " + exception.Message);
+            return ServiceResult<CustomField>.Fail("The field could not be added. Refresh and try again.");
         }
     }
 
@@ -223,7 +226,7 @@ VALUES(@entity, NULL, @label, @type, @optionsJson, @helpText, @required, 1, @sor
         bool required,
         string? helpText = null)
     {
-        if (user is null || !user.IsOwner)
+        if (user is null || !user.IsOwner || !user.Active || user.Id <= 0)
         {
             return ServiceResult.Fail("Only the owner can change a field.");
         }
@@ -315,14 +318,14 @@ WHERE id = @id;",
         catch (Exception exception)
         {
             _log.Error($"The custom field {fieldId} could not be changed.", exception);
-            return ServiceResult.Fail("The field could not be changed. " + exception.Message);
+            return ServiceResult.Fail("The field could not be changed. Refresh and try again.");
         }
     }
 
     /// <summary>Switches a field off or on. The answers are never touched (D-00b).</summary>
     public ServiceResult SetActive(User? user, int fieldId, bool active)
     {
-        if (user is null || !user.IsOwner)
+        if (user is null || !user.IsOwner || !user.Active || user.Id <= 0)
         {
             return ServiceResult.Fail("Only the owner can switch a field on or off.");
         }
@@ -363,14 +366,14 @@ WHERE id = @id;",
         catch (Exception exception)
         {
             _log.Error($"The custom field {fieldId} could not be switched.", exception);
-            return ServiceResult.Fail("The field could not be changed. " + exception.Message);
+            return ServiceResult.Fail("The field could not be changed. Refresh and try again.");
         }
     }
 
     /// <summary>Moves a field one place up (-1) or down (+1) - the order the form asks its questions.</summary>
     public ServiceResult Move(User? user, int fieldId, int direction)
     {
-        if (user is null || !user.IsOwner)
+        if (user is null || !user.IsOwner || !user.Active || user.Id <= 0)
         {
             return ServiceResult.Fail("Only the owner can reorder the fields.");
         }
@@ -436,7 +439,7 @@ ORDER BY sort, id;", new { entity = field.Entity });
         catch (Exception exception)
         {
             _log.Error($"The custom field {fieldId} could not be moved.", exception);
-            return ServiceResult.Fail("The field could not be moved. " + exception.Message);
+            return ServiceResult.Fail("The field could not be moved. Refresh and try again.");
         }
     }
 

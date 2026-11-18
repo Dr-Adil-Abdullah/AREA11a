@@ -1,4 +1,15 @@
-# باقی کام، GitHub اور test installer — v0.103.0
+# باقی کام، GitHub اور test installer — v0.104.0
+
+## تازہ checkpoint — v0.104.0 Knot / حصہ26؛مستقل نمبر8
+
+[مکمل نمبر وار1–36حیثیت](NUMBERED-WORK-STATUS-URDU.md)،[PT-46](POS-PHASE4-PART26-URDU.md)،[trace/حدود](POS-PHASE4-CUSTOM-MANAGER-CURRENT-REVIEW.md)۔ ManagerمیںcurrentOwnerUI،failedlist/selection/inputsصفائی،selectedpersisteddefinitioncomparison،stableallowedtickاورSAVEDpostcommitreloadfailureشامل۔ **32نئےfacts/کل2009C#casesWindowsUNRUN۔** نمبر8کیlimitedsourceاصلاحہوئی؛Windows/timer/focus،check-use/atomicCAS/othereditorssyncابھیباقی۔ حساب/parentservices/Photo/Native/backup/Blackbox/BookCheckunchanged۔
+
+1. اگلا **5/6/7**: باقیrecord/sessioncallersاورstaleoutputs؛UserIDکوauthenticatedsessionproofنہکہیں۔
+2. **23–25**: integratedfault/rollback/retry/duplicates/concurrency؛**26–29**files/encryptedbackup/restore/newPC/cloud۔
+3. **2/4/30–35**: اصلWindows2009+tests/build/results/fixes/screens/hardware/isolation۔
+4. آخر **36**: مجازواحدsendabledouble-clicktestinstaller؛**ابھینہیںبنا**۔
+
+آئندہ ہرNextپرکامکےوہی مستقلنمبر،sourceمیںکیاہوا،اصلجانچvsUNRUN،اسینمبرکےباقیکاماورnextnumbers/docs/actualcommitpushremoteverificationکیالگتفصیللازم۔36items،36Nextنہیں؛3–6مزیدمربوطroundsمشروطاندازہ،حدیاوعدہنہیں۔ **نیچےتمامپرانےcheckpointsتاریخیہیں؛گنتی/کھلےفیصلے/installerمثالکےلیےموجودہاوپروالیحیثیتدیکھیں۔ SupplierBطےہے،دوبارہسوالنہیں۔**
 
 ## تازہ checkpoint — v0.103.0 Turnstone / حصہ25
 
@@ -106,7 +117,7 @@ Explicit owner-default bulk gate اورAuditmetadata/search boundary source می
 
 **تاریخ:2026-11-10۔** یہ موجودہ source/evidence کی صورت حال ہے؛ مکمل audit یا Windows منظوری نہیں۔ مالک کی نئی ہدایت: ہر مرحلے میں دستاویزات اپڈیٹ اور اسی Arena branch پر commit/push بھی لازم؛ کامیابی صرف اصل Git نتیجے کے بعد کہیں۔ Installer بنانے کی اجازت اب test کے لیے مل گئی ہے؛ اس کا مطلب production منظوری نہیں۔
 
-## کتنا باقی / کتنے “next”؟
+## تاریخی v0.92 منصوبہ — نیچے کی پرانی گنتی موجودہ حیثیت نہیں
 
 Feature board میں57 میں52 done/5 in progress ہے، لیکن یہ **audit کی90% تکمیل نہیں**۔ بڑے features بنے ہوئے ہیں؛ہر permission route،fault اور Windows action کی تصدیق الگ باقی ہے۔ صاف قابل عمل تخمینہ: **3–6 مزید مربوط code-review مرحلے +1–2 Windows result/fix چکر،یعنی تقریباً4–8 مرتبہ**۔ یہ وعدہ یا upper limit نہیں؛runtime failures یا نئے فیصلے سے بڑھ سکتا ہے۔ باریک غیرضروری حصوں کی بجائے مربوط bounded کام ایک ساتھ کریں؛ہر مرحلے میں باقی فہرست کم/اپڈیٹ کریں۔
 
@@ -122,9 +133,9 @@ Feature board میں57 میں52 done/5 in progress ہے، لیکن یہ **audit 
 
 جدول کام کے بڑے حصے دکھاتا ہے،لازماً اتنے الگ “next” نہیں۔ متعلقہ چھوٹے audits ایک ساتھ ہوسکتے ہیں؛fault/Windows میں نئی خرابی ملے تو مزید چکر لگیں گے۔ یہ صرف cost چھپانا نہیں،منظورشدہ Phase4 کی15-dimensional جانچ بھی ہے۔
 
-### صرف ایک اہم غیرطے شدہ مالی فیصلہ
+### تاریخی Supplier سوال — اب حل شدہ،دوبارہ نہ پوچھیں
 
-Supplier مثال: خرید2000،paid500،payable1500۔اگرcost چھپا کرpaid+payable کھلے چھوڑیں توخرید دوبارہ معلوم ہے۔ابھی عامSupplier account/Pay/SR کے لیے **تمام متعلقہ رقم/عمل روکنا** یا **واضح منظور شدہ accounting exception** میں فیصلہ باقی ہے۔الگProfit/Cost checkbox اور main switch کا فیصلہ طے ہے،اسے دوبارہ نہیں پوچھنا۔نئےinvoice میںPaid/Due دونوں hidden ہیں؛عامledger پر یہ فیصلہ خود سے نافذ نہیں کیا۔
+یہ جگہ پہلےSupplieraccount/Pay/SRpolicyکاopenسوالتھی۔ بعدمیںمالکنے **exceptionB** منظورکیا،حصہ17/D-114میںsourceشامل:Suppliersکیجائزاجازتسےaccountingamounts/Pay/SRبرقرار،directitem/batchcostالگCost+main۔ [PT-37](POS-PHASE4-PART17-URDU.md)۔ **موجودہکاماسفیصلےکیexecution/reconciliationہے،نیاMCQنہیں۔**
 
 ## ابھی کون سے checks کیے جاسکتے ہیں؟
 
