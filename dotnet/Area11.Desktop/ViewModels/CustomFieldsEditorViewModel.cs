@@ -46,7 +46,7 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
 
         _entity = CustomFieldEntity.Clean(entity);
         _saveWithParent = saveWithParent;
-        _canEdit = services.Permissions.Can(user, CustomFieldEntity.ModuleFor(_entity));
+        _canEdit = false;
 
         SaveCommand = new RelayCommand(Save);
         ChooseStagedPhotoCommand = new RelayCommand(ChooseStagedPhoto);
@@ -72,7 +72,7 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
     public string StagedPhotoName => HasStagedPhoto ? _stagedPhotoName : "No photo chosen yet.";
 
     /// <summary>The chosen file for the creator, or null when the owner chose nothing.</summary>
-    public string? StagedPhotoForSave() => HasStagedPhoto ? _stagedPhotoPath : null;
+    public string? StagedPhotoForSave() => RefreshAccess() && HasStagedPhoto ? _stagedPhotoPath : null;
 
     public string Subtitle => "Questions the owner added for the " + EntityWord + " form."
         + (_saveWithParent ? " Saved together with the record." : " Saved separately.");
@@ -98,6 +98,8 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
     /// <summary>The panel draws itself only when the form really has fields (Spec 8.4.3).</summary>
     public bool HasFields => Rows.Count > 0;
 
+    public bool ShowPanel => HasFields || HasStatus;
+
     public bool HasStatus => StatusText.Length > 0;
 
     public string StatusText
@@ -108,6 +110,7 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
             if (SetProperty(ref _statusText, value))
             {
                 OnPropertyChanged(nameof(HasStatus));
+                OnPropertyChanged(nameof(ShowPanel));
             }
         }
     }
@@ -131,6 +134,7 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
     private void LoadCore(int entityId, bool forNewRecord)
     {
         LoadedSuccessfully = false;
+        CanEdit = false;
         _entityId = entityId;
         _stagedMode = forNewRecord;
         _hasPhotoField = false;
@@ -179,14 +183,14 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
         }
 
         LoadedSuccessfully = true;
-        CanEdit = _services.Permissions.Can(_user, CustomFieldEntity.ModuleFor(_entity));
+        CanEdit = true;
         RaiseListState();
         RaiseStagedState();
     }
 
     private void ChooseStagedPhoto()
     {
-        if (!CanEdit || !ShowStagedPhoto) return;
+        if (!RefreshAccess() || !CanEdit || !ShowStagedPhoto) return;
         var dialog = new OpenFileDialog
         {
             Title = "Choose a photo for this new record",
@@ -197,6 +201,7 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
         var pictures = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
         if (Directory.Exists(pictures)) dialog.InitialDirectory = pictures;
         if (dialog.ShowDialog() != true || string.IsNullOrWhiteSpace(dialog.FileName)) return;
+        if (!RefreshAccess()) return;
         _stagedPhotoPath = dialog.FileName;
         _stagedPhotoName = Path.GetFileName(dialog.FileName);
         RaiseStagedState();
@@ -215,6 +220,7 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
     /// </summary>
     private void Save()
     {
+        if (!RefreshAccess() || !LoadedSuccessfully) return;
         if (_entityId <= 0)
         {
             SetStatus("Save the record first, then fill its own fields.", true);
@@ -232,6 +238,7 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
 
         if (!result.Ok)
         {
+            RefreshAccess();
             SetStatus(result.Error ?? "The answers could not be saved.", true);
             return;
         }
@@ -239,12 +246,18 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
         // Reload so the boxes show exactly what the database holds (1200.50 becomes 1200.5,
         // 22/10/2026 becomes 2026-10-22).
         Load(_entityId);
+        if (!LoadedSuccessfully)
+        {
+            SetStatus("SAVED. Extra answers were stored, but could not be reloaded. Do not repeat the save; refresh to check.", true);
+            return;
+        }
         SetStatus("Saved.", false);
     }
 
     public IReadOnlyDictionary<int, string?> AnswerValues()
     {
         var values = new Dictionary<int, string?>();
+        if (!RefreshAccess() || !LoadedSuccessfully) return values;
 
         foreach (var row in Rows)
         {
@@ -277,7 +290,7 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
     /// </summary>
     public void SetAnswers(IReadOnlyDictionary<int, string?>? values)
     {
-        if (values is null) return;
+        if (values is null || !RefreshAccess() || !LoadedSuccessfully) return;
 
         foreach (var row in Rows)
         {
@@ -294,13 +307,34 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
         }
     }
 
-    private void RaiseListState() => OnPropertyChanged(nameof(HasFields));
+    private void RaiseListState()
+    {
+        OnPropertyChanged(nameof(HasFields));
+        OnPropertyChanged(nameof(ShowPanel));
+    }
 
     private void RaiseStagedState()
     {
         OnPropertyChanged(nameof(ShowStagedPhoto));
         OnPropertyChanged(nameof(HasStagedPhoto));
         OnPropertyChanged(nameof(StagedPhotoName));
+    }
+
+    /// <summary>Bounded periodic/pre-command cleanup, not instant revocation or session authentication.</summary>
+    public bool RefreshAccess()
+    {
+        if (_entityId <= 0 && !_stagedMode) return false;
+        var access = _services.CustomFields.CheckValueAccess(_user, _entity, _entityId);
+        if (access.Ok) return true; // Do not silently reload and overwrite unsaved edits on each tick.
+        CanEdit = false;
+        LoadedSuccessfully = false;
+        Rows.Clear();
+        _hasPhotoField = false;
+        ClearStagedPhoto();
+        RaiseListState();
+        RaiseStagedState();
+        SetStatus(access.Error ?? "Extra answer access needs checking. Reload before editing.", true);
+        return false;
     }
 
     private void SetStatus(string text, bool isError)

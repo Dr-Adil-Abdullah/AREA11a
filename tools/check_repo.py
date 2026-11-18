@@ -7796,6 +7796,86 @@ def check_shift_current_boundaries():
     REPORT.append('Phase4 portion21: current Cash Page/ByPerson, POS/session state-only unknown-aware reads, transactional Open/Close and current actor+recipient Handover, stale UI/cached output cleanup;35 facts written, real concurrency/Windows/session/globalPhase4 OPEN')
 
 
+def check_custom_value_current_boundaries():
+    """Bounded custom-value identity/record/editor and native stale metadata source contracts."""
+    core = DOTNET / 'Area11.Core/Services'
+    fields = (core / 'CustomFieldService.cs').read_text()
+    native = (core / 'NativeFieldPolicyService.cs').read_text()
+    editor = (DOTNET / 'Area11.Desktop/ViewModels/CustomFieldsEditorViewModel.cs').read_text()
+    policy_vm = (DOTNET / 'Area11.Desktop/ViewModels/NativeFieldsViewModel.cs').read_text()
+    view = (DOTNET / 'Area11.Desktop/Views/CustomFieldsEditorView.xaml').read_text()
+    tests = (DOTNET / 'Area11.Tests/CustomValueCurrentAccessTests.cs').read_text()
+    native_tests = (DOTNET / 'Area11.Tests/NativeFieldCurrentAccessTests.cs').read_text()
+    for name in ('Values', 'DescribeValues'):
+        marker = re.search(r'public ServiceResult<[^\n]+?>\s+' + name + r'\(', fields)
+        body = fields[marker.end():].split('\n    public ',1)[0] if marker else ''
+        gate, query = body.find('RequireValueRecord(connection, key, entityId);'), body.find('var rows = _db.Query' if name == 'Values' else 'var lines = _db.Query')
+        if not 0 <= gate < query: FAILURES.append(f'Custom {name} requires existing positive parent before answer query')
+    internal = fields.split('internal ServiceResult SaveValuesInTransaction(',1)[-1].split('public ServiceResult CheckValueAccess(',1)[0]
+    stages = [internal.find(t) for t in ('!CustomFieldEntity.IsKnown(key) || entityId <= 0',
+              'key = CustomFieldEntity.Clean(key);', 'var writer = RequireValueActor(connection, user);',
+              'if (!RecordExists(connection, key, entityId))', 'var fields = _db.Query', 'foreach (var (field, stored) in prepared)',
+              '_audit.Record(connection, writer, CustomFieldEntity.ModuleFor(key), "custom_value_set",')]
+    if any(x < 0 for x in stages) or stages != sorted(stages):
+        FAILURES.append('Internal custom save must validate known positive record/current stored actor before reads/writes/stored audit')
+    actor = fields.split('private User RequireValueActor(',1)[-1].split('private void RequireValueRecord(',1)[0]
+    for token in ('actor is not { Active: true } || actor.Id <= 0',
+                  'SELECT id, name, role, active FROM users WHERE id = @id;',
+                  'current is not { Active: true } || current.Kind != actor.Kind', 'return current;'):
+        if token not in actor: FAILURES.append(f'Current custom actor resolution missing {token}')
+    if 'SnapshotReadAccess.Require' in internal or 'SnapshotReadAccess.Require' in actor or '_permissions.Can' in actor:
+        FAILURES.append('Internal quick-create answer path must not invent a new module gate; caller owns workflow authorization')
+    preflight = fields.split('public ServiceResult CheckValueAccess(',1)[-1].split('private User RequireValueActor(',1)[0]
+    for token in ('!CustomFieldEntity.IsKnown(entity) || entityId < 0',
+                  'SnapshotReadAccess.Require(_db, connection, _permissions, user, CustomFieldEntity.ModuleFor(key));',
+                  'if (entityId > 0) RequireValueRecord(connection, key, entityId);'):
+        if token not in preflight: FAILURES.append(f'Custom editor current access missing {token}')
+    if '"The answers could not be loaded. " + exception.Message' in fields or '"The answers could not be saved. " + exception.Message' in fields:
+        FAILURES.append('Custom answer infrastructure failures must not expose provider exception text')
+    for token in ('_canEdit = false;', 'public bool ShowPanel => HasFields || HasStatus;',
+                  'if (!RefreshAccess() || !LoadedSuccessfully) return values;',
+                  'if (values is null || !RefreshAccess() || !LoadedSuccessfully) return;',
+                  'RefreshAccess() && HasStagedPhoto', 'if (!RefreshAccess() || !LoadedSuccessfully) return;',
+                  'SAVED. Extra answers were stored, but could not be reloaded.'):
+        if token not in editor: FAILURES.append(f'Custom editor current output/save boundary missing {token}')
+    cleanup = editor.split('public bool RefreshAccess()',1)[-1].split('private void SetStatus(',1)[0]
+    for token in ('_services.CustomFields.CheckValueAccess(_user, _entity, _entityId)',
+                  'CanEdit = false;', 'LoadedSuccessfully = false;', 'Rows.Clear();',
+                  '_hasPhotoField = false;', 'ClearStagedPhoto();', 'RaiseListState();', 'RaiseStagedState();'):
+        if token not in cleanup: FAILURES.append(f'Custom editor denial must drop stale data: {token}')
+    if 'Visibility="{Binding ShowPanel, Converter={StaticResource BoolToVis}}"' not in view:
+        FAILURES.append('Custom editor failure status must remain visible after rows cleared')
+    for name, action in (('CustomFieldsEditorView','(DataContext as CustomFieldsEditorViewModel)?.RefreshAccess()'),
+                         ('NativeFieldsView','(DataContext as NativeFieldsViewModel)?.RefreshAccess()')):
+        lifecycle = (DOTNET / f'Area11.Desktop/Views/{name}.xaml.cs').read_text()
+        for token in ('TimeSpan.FromSeconds(3)', action, 'accessTimer.Start()', 'Unloaded += (_, _) => accessTimer.Stop();'):
+            if token not in lifecycle: FAILURES.append(f'{name} loaded access timer missing {token}')
+    if native.count('!user.Active || user.Id <= 0') != 2:
+        FAILURES.append('Native policy supplied active-positive owner preflight required on read/write')
+    for token in ('Selected = null;', 'Fields.Clear();', 'if (!_lastLoadSucceeded) return;',
+                  'SAVED. The preference was stored, but fields could not be reloaded.'):
+        if token not in policy_vm: FAILURES.append(f'Native metadata stale/failure boundary missing {token}')
+    for start, end in (('public void Refresh()', 'public bool RefreshAccess()'),
+                       ('public bool RefreshAccess()', 'private void Change(bool required)')):
+        body = policy_vm.split(start,1)[-1].split(end,1)[0]
+        for token in ('Selected = null;', 'Fields.Clear();', '_lastLoadSucceeded = false;'):
+            if token not in body: FAILURES.append(f'Native metadata failed {start} must clear stale data: {token}')
+    allowed_tick = policy_vm.split('public bool RefreshAccess()',1)[-1].split('private void Change(bool required)',1)[0]
+    if 'if (result.Ok && result.Value is not null) return true;' not in allowed_tick:
+        FAILURES.append('Native allowed timer check must not churn its grid/selection')
+    change = policy_vm.split('private void Change(bool required)',1)[-1]
+    if not 0 <= change.find('Refresh();') < change.find('MessageBox.Show('):
+        FAILURES.append('Native change must reload current metadata before risk prompt')
+    if tests.count('[Fact]') != 26 or native_tests.count('[Fact]') != 6:
+        FAILURES.append('Portion25 requires26custom+6native isolated regression facts')
+    for name in ('InternalQuickCustomerCreationDoesNotAddCustomersGrantRequirement',
+                 'InternalCreationChecksActorEvenWhenNoAnswersWereSupplied',
+                 'MissingParentIsNotCertifiedEmptyOrOrphanAnswerOutput',
+                 'AuditFaultRollsBackAllAnswersAndParentCreation',
+                 'InternalCustomValueAuditUsesStoredCurrentActorName'):
+        if 'void ' + name + '(' not in tests: FAILURES.append(f'Custom current regression missing {name}')
+    REPORT.append('Phase4 portion25: current internal custom-answer actor/stored audit,existing-parent read checks,stale editor/output and native metadata cleanup;32 facts written/1977cases UNRUN,caller policy/session/records/Windows/fullPhase4 OPEN')
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -7885,6 +7965,7 @@ def main() -> int:
     check_transaction_permission_boundaries()
     check_settings_current_boundaries()
     check_photo_current_boundaries()
+    check_custom_value_current_boundaries()
     check_csharp_grammar()
 
     if not quiet:

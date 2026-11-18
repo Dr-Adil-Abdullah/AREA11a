@@ -11,6 +11,7 @@ public sealed class NativeFieldsViewModel : ObservableObject
     private readonly AppServices _services;
     private readonly User _user;
     private FormFieldDefinition? _selected;
+    private bool _lastLoadSucceeded;
     private string _statusText = string.Empty;
 
     public NativeFieldsViewModel(AppServices services, User user)
@@ -39,22 +40,47 @@ public sealed class NativeFieldsViewModel : ObservableObject
 
     public void Refresh()
     {
-        if (!IsOwner) return;
+        var wasLoaded = _lastLoadSucceeded;
+        _lastLoadSucceeded = false;
         var id = Selected?.Id;
         var result = _services.NativeFields.List(_user);
         if (!result.Ok || result.Value is null)
         {
+            Selected = null;
+            Fields.Clear();
             StatusText = result.Error ?? "The fields could not be loaded.";
             return;
         }
         Fields.Clear();
         foreach (var field in result.Value) Fields.Add(field);
         Selected = Fields.FirstOrDefault(field => field.Id == id) ?? Fields.FirstOrDefault();
+        _lastLoadSucceeded = true;
+        if (!wasLoaded) StatusText = string.Empty;
+    }
+
+    /// <summary>Keep allowed grid/selection stable between explicit refreshes and commands.</summary>
+    public bool RefreshAccess()
+    {
+        if (!_lastLoadSucceeded)
+        {
+            Refresh();
+            return _lastLoadSucceeded;
+        }
+        var result = _services.NativeFields.List(_user);
+        if (result.Ok && result.Value is not null) return true;
+        _lastLoadSucceeded = false;
+        Selected = null;
+        Fields.Clear();
+        StatusText = result.Error ?? "The fields could not be loaded.";
+        return false;
     }
 
     private void Change(bool required)
     {
-        if (!IsOwner || Selected is not { } field)
+        var selectedId = Selected?.Id;
+        Refresh(); // Re-read current owner and definition before a risk prompt, not only after save.
+        if (!_lastLoadSucceeded) return;
+        if (!IsOwner || selectedId is null || Selected is not { } field || field.Id != selectedId)
         {
             StatusText = "The owner must select a field first.";
             return;
@@ -78,6 +104,9 @@ public sealed class NativeFieldsViewModel : ObservableObject
                     ? "Saved for file import. The customer and supplier forms do not check it yet."
                     : "Preference saved in the audit. Sale and purchase posting still enforce their own rules."
             : result.Error ?? "The preference could not be saved.";
-        if (result.Ok) Refresh();
+        var outcome = StatusText;
+        Refresh();
+        if (_lastLoadSucceeded) StatusText = outcome;
+        else if (result.Ok) StatusText = "SAVED. The preference was stored, but fields could not be reloaded. Refresh before retrying.";
     }
 }

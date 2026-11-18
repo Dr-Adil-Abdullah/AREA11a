@@ -88,7 +88,7 @@ ON CONFLICT(field_key) DO NOTHING;", new
 
     public ServiceResult<List<FormFieldDefinition>> List(User? user)
     {
-        if (user is null || !user.IsOwner)
+        if (user is null || !user.IsOwner || !user.Active || user.Id <= 0)
         {
             return ServiceResult<List<FormFieldDefinition>>.Fail("Only the owner can manage built-in fields.");
         }
@@ -114,7 +114,7 @@ ON CONFLICT(field_key) DO NOTHING;", new
     /// </summary>
     public ServiceResult SetRequired(User? user, int fieldId, bool required, bool confirmedRisk)
     {
-        if (user is null || !user.IsOwner || string.IsNullOrWhiteSpace(user.Name))
+        if (user is null || !user.IsOwner || !user.Active || user.Id <= 0 || string.IsNullOrWhiteSpace(user.Name))
         {
             return ServiceResult.Fail("Only a named owner can change built-in field requirements.");
         }

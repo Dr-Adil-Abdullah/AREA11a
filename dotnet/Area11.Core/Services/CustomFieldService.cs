@@ -460,6 +460,7 @@ ORDER BY sort, id;", new { entity = field.Entity });
         {
             using var connection = _db.Open();
             var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, CustomFieldEntity.ModuleFor(key));
+            RequireValueRecord(connection, key, entityId);
 
             var rows = _db.Query<CustomValue>(connection, @"
 SELECT id AS id, field_id AS fieldId, entity AS entity, entity_id AS entityId,
@@ -488,7 +489,7 @@ WHERE entity = @entity AND entity_id = @entityId;",
         {
             _log.Error($"The custom values of {key} {entityId} could not be read.", exception);
             return ServiceResult<Dictionary<int, string>>.Fail(
-                "The answers could not be loaded. " + exception.Message);
+                "The answers could not be loaded. Refresh and try again.");
         }
     }
 
@@ -516,6 +517,7 @@ WHERE entity = @entity AND entity_id = @entityId;",
         {
             using var connection = _db.Open();
             var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, CustomFieldEntity.ModuleFor(key));
+            RequireValueRecord(connection, key, entityId);
 
             var lines = _db.Query<CustomAnswerLine>(connection, @"
 SELECT v.field_id AS fieldId, IFNULL(f.label, '') AS label, IFNULL(v.value, '') AS value
@@ -577,7 +579,7 @@ ORDER BY IFNULL(f.sort, 0), v.field_id;",
         catch (Exception exception)
         {
             _log.Error($"The custom values of {key} {entityId} could not be saved.", exception);
-            return ServiceResult.Fail("The answers could not be saved. " + exception.Message);
+            return ServiceResult.Fail("The answers could not be saved. Refresh and try again.");
         }
     }
 
@@ -590,11 +592,16 @@ ORDER BY IFNULL(f.sort, 0), v.field_id;",
         return SaveValuesInTransaction(connection, actor, entity, id, values ?? new Dictionary<int, string?>());
     }
 
-    // Caller owns the transaction and permission check. A failed result must be converted to an
+    // Caller owns the transaction and workflow/module check. Current actor is re-read here.
+    // A failed result must be converted to an
     // exception by a caller that already wrote the parent row, so Database.Tx rolls it all back.
     internal ServiceResult SaveValuesInTransaction(Microsoft.Data.Sqlite.SqliteConnection connection,
         User? user, string key, int entityId, IReadOnlyDictionary<int, string?> values)
     {
+        if (!CustomFieldEntity.IsKnown(key) || entityId <= 0)
+            throw new ValidationException("Choose a supported record for extra answers.");
+        key = CustomFieldEntity.Clean(key);
+        var writer = RequireValueActor(connection, user);
         if (!RecordExists(connection, key, entityId))
         {
             return ServiceResult.Fail(
@@ -676,7 +683,7 @@ ON CONFLICT(field_id, entity_id) DO UPDATE SET value = excluded.value, updated_a
                     at = Clock.Now()
                 });
 
-            _audit.Record(connection, user, CustomFieldEntity.ModuleFor(key), "custom_value_set",
+            _audit.Record(connection, writer, CustomFieldEntity.ModuleFor(key), "custom_value_set",
                 "custom_values", entityId.ToString(CultureInfo.InvariantCulture),
                 oldValue: before ?? string.Empty,
                 newValue: stored ?? string.Empty,
@@ -684,6 +691,58 @@ ON CONFLICT(field_id, entity_id) DO UPDATE SET value = excluded.value, updated_a
         }
 
         return ServiceResult.Success();
+    }
+
+    /// <summary>Editor preflight; zero means a new form, not an existing record.</summary>
+    public ServiceResult CheckValueAccess(User? user, string entity, int entityId = 0)
+    {
+        try
+        {
+            if (!CustomFieldEntity.IsKnown(entity) || entityId < 0)
+                throw new ValidationException("Choose a supported form for extra answers.");
+            var key = CustomFieldEntity.Clean(entity);
+            _db.Read(connection =>
+            {
+                SnapshotReadAccess.Require(_db, connection, _permissions, user, CustomFieldEntity.ModuleFor(key));
+                if (entityId > 0) RequireValueRecord(connection, key, entityId);
+                return true;
+            });
+            return ServiceResult.Success();
+        }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
+        catch (Exception exception)
+        {
+            _log.Error("Extra answer access could not be checked.", exception);
+            return ServiceResult.Fail("Extra answer access could not be checked. Refresh and try again.");
+        }
+    }
+
+    // Deliberately not a new module gate: quick-create callers retain their existing workflow policy.
+    // This is current local account resolution, not proof of a signed-in session.
+    private User RequireValueActor(Microsoft.Data.Sqlite.SqliteConnection connection, User? actor)
+    {
+        if (actor is not { Active: true } || actor.Id <= 0)
+            throw new ValidationException("Sign in with an active account to save extra answers.");
+        var current = _db.QuerySingle<User>(connection,
+            "SELECT id, name, role, active FROM users WHERE id = @id;", new { id = actor.Id });
+        if (current is not { Active: true } || current.Kind != actor.Kind)
+            throw new ValidationException("The account has changed. Sign in again before saving extra answers.");
+        return current;
+    }
+
+    // Read history of inactive masters as before. Writes still use the active RecordExists rule.
+    private void RequireValueRecord(Microsoft.Data.Sqlite.SqliteConnection connection, string key, int entityId)
+    {
+        var table = key switch
+        {
+            CustomFieldEntity.Product => "products", CustomFieldEntity.Customer => "customers",
+            CustomFieldEntity.Supplier => "suppliers", CustomFieldEntity.Sale => "sales",
+            CustomFieldEntity.Purchase => "purchases", CustomFieldEntity.Expense => "expenses",
+            _ => throw new ValidationException("Choose a supported record for extra answers.")
+        };
+        if (entityId <= 0 || Convert.ToInt64(_db.Scalar(connection,
+            "SELECT COUNT(1) FROM " + table + " WHERE id=@id;", new { id = entityId })) == 0)
+            throw new ValidationException("That record no longer exists. Its extra answers cannot be loaded.");
     }
 
     /// <summary>

@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-45 — custom values / Native metadata current access (v0.103.0) — UNRUN
+
+[Isolated Windows steps](docs/POS-PHASE4-PART25-URDU.md):staleactor/revoke/regrant,parentexists-vs-missing/inactive/history,internalcreatorrollback/noanswers/storedcustomaudit,POSquickcreatepolicyretained,editorrows/stagedfilecleanup/freshoutputs/picker/Save/SAVEDreloadfailure,Nativecurrentselection/riskconfirm/Loaded-Unloadedtimers.32newfacts/1977C#cases+DesktopWPF/hardwareUNRUN;source/PythonNOT runtimePASS. Customadmin/remainingrecords/session/globalPhase4/installerOPEN. [Trace](docs/POS-PHASE4-CUSTOM-VALUES-CURRENT-REVIEW.md). No fake shop posts;separateexealoneNOTisolation.
+
 ## PT-44 — current photo/gallery/cover/avatar access and stale preview (v0.102.0) — UNRUN
 
 [Isolated Windows steps](docs/POS-PHASE4-PART24-URDU.md):currentactor/module/revoke/regrant,productcover-vs-galleryexception,ownavatar-vsStaffgallery,existinginactive-vs-missingparent,stalepreview/rows/title/count/timer/Closed,freshPathOf/action,currentwriteraudit,Add/Hide/Restoreauditfault/stagedparentrollback,SAVEDrefreshfailure,actualcamera/codec/Windowsviewer.30newfacts/1945C#cases+DesktopWPF/hardware/WindowsUNRUN,not runtimePASS. Native/custom/session/record/files/restore/globalPhase4/installerOPEN. [Trace](docs/POS-PHASE4-PHOTO-CURRENT-REVIEW.md). No fake shop photos/posts;separateexealoneNOTisolation.

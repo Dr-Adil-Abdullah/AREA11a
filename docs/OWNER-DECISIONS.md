@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## D-110 / D-115 continuation — custom values checkpoint v0.103.0 (2026-11-10 release label)
+
+Custom answers کے اندر current active/same-role actor اور stored custom audit؛missing parent کو successful empty نہیں کہتے۔ Stale editor rows/staged metadata صاف،Native failed metadata/selection صاف،postcommit reload fail پر SAVED۔ **POS quick customer creation پر نئی Customers grant نہیں**؛public answer routes/editor کی اپنی module شرط برقرار،internal workflow policy caller-owned۔ کوئی نئی accounting/Owner/free-text financial classification policy نہیں؛تمام parent/session authorization ابھی certified نہیں۔ [Trace](POS-PHASE4-CUSTOM-VALUES-CURRENT-REVIEW.md)،[PT-45](POS-PHASE4-PART25-URDU.md)۔32facts/1977casesWindowsUNRUN؛fullPhase4/installerOPEN۔ SupplierB/backupA/Blackbox/BookCheck unchanged۔
+
 ## D-110 / D-115 continuation — Photos checkpoint v0.102.0 (2026-11-10 release label)
 
 Photosکےcurrentaccount/modulechecks،cachedpreview/selection/titleصفائی،stagedphotoکیcurrentwriterfailureپرparentrollback؛نئیbusinesspolicyنہیں۔ ProductcoverdecorationکوProductsکیاضافشرطنہیں،galleryکیالگgrantبرقرار؛ownavatarبغیرStaffgrantمگرcurrentaccountسے؛Staffgalleryکیپہلےکیdelegationنہیںبدلی۔ Existinginactiveparentکیhistoricalread/Hide/Restoreبرقرار،Addکےلیےactiveparent۔ [Trace](POS-PHASE4-PHOTO-CURRENT-REVIEW.md)،[PT-44](POS-PHASE4-PART24-URDU.md)۔30facts/1945casesWindowsUNRUN؛Native/custom/session/record/fullPhase4/installerOPEN۔ حساب/SupplierB/backupA/Blackbox/BookCheckunchanged۔

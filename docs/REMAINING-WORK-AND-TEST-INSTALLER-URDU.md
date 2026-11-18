@@ -1,4 +1,16 @@
-# باقی کام، GitHub اور test installer — v0.102.0
+# باقی کام، GitHub اور test installer — v0.103.0
+
+## تازہ checkpoint — v0.103.0 Turnstone / حصہ25
+
+Custom values کے shared writer میں current actor/stored audit،answers reader میں existing parent،editor کی stale rows/staged file metadata صفائی اور SAVED؛Native metadata کی failed selection صفائی/current definition check/timers۔ **32 نئے facts/کل1977 C# cases Windows UNRUN۔** [PT-45](POS-PHASE4-PART25-URDU.md)،[trace/حدود](POS-PHASE4-CUSTOM-VALUES-CURRENT-REVIEW.md)۔ POS quick-create کی موجودہ caller-owned module policy برقرار؛تمام parent commands/session کی blanket certification نہیں۔ حساب/Photo/backup/Blackbox/BookCheck unchanged۔
+
+1. Custom-definition manager stale UI،باقی parent record create/update/read/session اوردوسرے cached outputs۔
+2. Cross-service fault/rollback/retry/concurrency،duplicate saves/file cleanup/collision/powerloss۔
+3. Files/cloud،password A/DPAPI/new-PC encrypted restore،interrupted swap/rollback،واقعی الگ DB/photos/config integration۔
+4. Windows1977+ tests،Desktop/WPF/timers/keyboard/printer/scanner/camera/screenshots اور نتائج کی fixes۔
+5. پھر مجاز واحد sendable double-click test installer،shortcuts/startup/upgrade/uninstall/new-PC جانچ۔ **ابھی installer نہیں بنا۔**
+
+**3–6 مزید مربوط review/result چکر مشروط اندازہ ہے**؛حد یا وعدہ نہیں،findings سے بڑھ سکتا ہے۔ ہرportion docs+sameactivebranchcommit/push+actualremoteverification؛نیچےپرانےcheckpointتاریخیہیں۔
 
 ## تازہ checkpoint — v0.102.0 Whimbrel / حصہ24؛کیا باقی ہے؟
 

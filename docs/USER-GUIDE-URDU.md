@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.102.0 Whimbrel۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.103.0 Turnstone۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**حصہ25 — Extra answers / Native fields:** current internal actor/stored custom audit،missing parent failure،editor کی پرانی rows/staged photo metadata صفائی اور fresh outputs،Save کے بعد failed reload پر **SAVED**؛Native failed selection صاف/current definition پہلے پڑھی جاتی ہے۔ POS quick customer create پر نئی Customers grant نہیں؛public answer panel کی الگ grant برقرار۔ [PT-45](POS-PHASE4-PART25-URDU.md)،[trace](POS-PHASE4-CUSTOM-VALUES-CURRENT-REVIEW.md)۔ **32 نئے facts/1977 C# cases Windows UNRUN**؛باقیcustom admin/parent records/session/files/Windows/installer کھلے ہیں۔ نیچےپرانےcheckpointتاریخیہیں۔
 
 **حصہ24 — Photos:** موجودہgallery/module/actor،photoIDسےfreshpreviewpath،staleimage/selection/rows/title/countصفائی،windowaccess-timerاورpostcommit **SAVED**۔ Productcoversکیجائزcross-workflowdecorationاورownavatarبغیرStaffgrantبرقرار،galleryکیالگmoduleشرطبدستور؛historicalinactiveparentpolicyنہیںبدلی۔ [PT-44](POS-PHASE4-PART24-URDU.md)،[trace](POS-PHASE4-PHOTO-CURRENT-REVIEW.md)۔ **30نئےfacts/1945C#casesWindowsUNRUN۔** Native/custom/session/record/files/hardware/installerباقی؛حساب/Blackbox/BookCheck/backupunchanged۔ نیچےپرانےcheckpointتاریخیہیں۔
 
@@ -637,6 +639,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 
 **فیز4 حصہ6 — custom definitions اور answers الگ اختیار:** سوال Add/Update/on-off/order اور inactive/admin list صرف database کے موجودہ active مالک کے لیے؛ same tick/no-op بھی پرانی owner snapshot سے اجازت نہیں۔ عام List/Values/Describe/public Save answers متعلقہ current module مانگتے ہیں؛ Customers مجاز cashier جواب دے سکتا ہے، definition کا اصول نہیں بدل سکتا۔ audit میں اس public save/definition write کا موجودہ محفوظ نام آتا ہے۔ parent record کے اندر atomic answers کی delegation اپنی سابق policy پر ہے، مکمل parent/session جانچ باقی۔ [PT-26/حدود](POS-PHASE4-PART6-URDU.md)۔
 
+**حصہ25 کی محفوظ مشق:** صرف الگ test DB/photos/config میں customer کے Extra answers کھولیں،grant/account واپس لیں؛اگلےcommand/nominal3secondcheck پر rows اورstaged تصویر کا نام صاف،failure status نظر آئے۔ اجازت واپس آئے تو parent form دوبارہ load کریں؛timer unsaved edits خود overwrite نہیں کرتا۔ Missing record کو مصدقہ empty answers نہیں کہتے۔ Separate save commit مگر reload fail ہو تو **SAVED،دوبارہsave نہ کریں**۔ Native policy risk prompt سے پہلے تازہ definition پڑھی جاتی ہے؛critical optional کی confirmation برقرار۔ [PT-45](POS-PHASE4-PART25-URDU.md)۔ اصل session/تمام parent commands/definition-version synchronization کی blanket ضمانت نہیں۔
+
 <a id="lesson-33"></a>
 
 ## سبق 33 — خودکار آغاز، محفوظ بندش اور Screen lock
@@ -718,7 +722,7 @@ Recoveryکیfailedslipپرپرنٹرکوخالیdocumentنہیںدیاجاتا۔
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.102.0 کا متوقع test count 1945 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.103.0 کا متوقع test count 1977 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 
