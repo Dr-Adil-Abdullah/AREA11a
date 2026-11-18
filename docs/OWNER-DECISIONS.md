@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## D-110 / D-115 continuation — Recovery/monthly checkpoint v0.97.0 (2026-11-10)
+
+نیا فیصلہ نہیں مانگا اور کوئی tax/business rule نہیں بدلا: Recovery current Customers،محفوظ ماہانہ report current Reports؛ordinary account/report کے لیے Cost/Profit/main کی نئی شرط نہیں۔ Fresh read/copy،failed output پرstale screen cleanup،actual document ہی print،post-save refresh failure پرSAVED/don't receive again۔ [Trace](POS-PHASE4-RECOVERY-MONTHLY-REVIEW.md)،[PT-39](POS-PHASE4-PART19-URDU.md)۔ Blackbox/BookCheck،SupplierB،backupA اور posting rules unchanged۔1789C#cases/Windows/installerUNRUN؛fullPhase4OPEN۔
+
 ## D-110 / D-115 continuation — Customer/Doctors checkpoint v0.96.0 (2026-11-10)
 
 کوئینئیbusinesspolicyنہیں:CustomercollectionکےلیےcurrentCustomers،explicitprofitکےلیےالگProfit/mainاورCustomers؛companyrepکےلیےProducts۔ اندرTxcurrentactor،freshprofile/receiptreaderاورstaleUIcleanup۔ **D-115کےمطابقBlackbox/Audit/BookCheckunchanged**؛SupplierBاورbackupAبرقرار۔ [Trace](POS-PHASE4-CUSTOMER-CURRENT-REVIEW.md)،[PT-38](POS-PHASE4-PART18-URDU.md)۔1765C#cases/Windows/installerUNRUN؛fullPhase4OPEN۔

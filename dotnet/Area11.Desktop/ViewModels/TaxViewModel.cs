@@ -40,6 +40,7 @@ public sealed class TaxViewModel : ObservableObject, IEmptyPage
     private bool _hasRoundOff;
     private string _statusText = string.Empty;
     private bool _isStatusError;
+    private bool _accessAllowed = true;
 
     public TaxViewModel(AppServices services, User user)
     {
@@ -157,19 +158,12 @@ public sealed class TaxViewModel : ObservableObject, IEmptyPage
 
         if (!report.Ok || report.Value is null)
         {
-            MonthLabel = MonthName(_year, _month);
-            BillsText = "0";
-            NetText = "Rs 0";
-            TaxText = "Rs 0";
-            GrossText = "Rs 0";
-            RefundText = "Rs 0";
-            HasRefunds = false;
-            RoundOffText = string.Empty;
-            HasRoundOff = false;
+            ClearReport();
             SetStatus(report.Error ?? "The tax report could not be built.", true);
             return;
         }
 
+        _accessAllowed = true;
         var value = report.Value;
 
         MonthLabel = value.MonthLabel;
@@ -219,6 +213,7 @@ public sealed class TaxViewModel : ObservableObject, IEmptyPage
 
         if (!report.Ok || report.Value is null)
         {
+            ClearReport();
             SetStatus(report.Error ?? "The tax report could not be built.", true);
             return;
         }
@@ -228,10 +223,35 @@ public sealed class TaxViewModel : ObservableObject, IEmptyPage
             Clipboard.SetText(TaxService.ToText(report.Value));
             SetStatus("The table is on the clipboard - paste it into the accountant's message.", false);
         }
-        catch (Exception exception)
+        catch (Exception)
         {
-            SetStatus("The clipboard did not answer: " + exception.Message, true);
+            SetStatus("The clipboard did not answer. Try copying again.", true);
         }
+    }
+
+    public void RefreshAccess()
+    {
+        var wasAllowed = _accessAllowed;
+        var access = _services.Tax.CheckAccess(_user);
+        _accessAllowed = access.Ok;
+        if (!access.Ok)
+        {
+            ClearReport();
+            SetStatus(access.Error ?? "Current Reports access is required.", true);
+        }
+        else if (!wasAllowed) Load();
+    }
+
+    private void ClearReport()
+    {
+        Rows.Clear();
+        MonthLabel = MonthName(_year, _month);
+        SettingLabel = string.Empty;
+        BillsText = "not available";
+        NetText = TaxText = GrossText = RefundText = "hidden";
+        HasRefunds = HasRoundOff = false;
+        RoundOffText = string.Empty;
+        StatusText = string.Empty;
     }
 
     private void SetStatus(string text, bool isError)

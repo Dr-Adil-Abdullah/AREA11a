@@ -7439,6 +7439,51 @@ def check_customer_current_boundaries():
     REPORT.append('Phase4 portion18: current transactional customer collection/rep actor, current Customers doctor/profit and Products rep readers, safe ledger errors/fresh profile and stale UI timers;24 facts written, Windows/runtime/globalPhase4 OPEN')
 
 
+def check_recovery_monthly_boundaries():
+    """Portion19 structural guard, deliberately not a runtime or authentication claim."""
+    recovery = (DOTNET / 'Area11.Core/Services/RecoveryService.cs').read_text()
+    tax = (DOTNET / 'Area11.Core/Services/TaxService.cs').read_text()
+    def need(source, tokens, label):
+        for token in tokens:
+            if token not in source: FAILURES.append(f'{label}: missing {token}')
+    for source, method, gate, query in (
+        (recovery, 'Report', 'LedgerReadAccess.Require(_db, connection, _permissions, user, Modules.Customers);', 'return ServiceResult<RecoveryReport>.Success(Build('),
+        (recovery, 'Slip', 'LedgerReadAccess.Require(_db, connection, _permissions, user, Modules.Customers);', 'var payment = _db.QuerySingle<PaymentRow>'),
+        (tax, 'Report', 'SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Reports);', 'var rows = _db.Query<TaxDayRow>')):
+        part = source.split(' ' + method + '(', 1)[1].split('\n    }', 1)[0]
+        if part.count(gate) != 1 or not 0 <= part.find(gate) < part.find(query):
+            FAILURES.append(f'{method}: exactly one current own-module reader must precede data query')
+        if 'CostPolicy' in part or 'ProfitPolicy' in part or '_permissions.Can(user' in part:
+            FAILURES.append(f'{method}: ordinary account/monthly reads must use current own-module access without financial prerequisite')
+    need(recovery, ['public ServiceResult CheckAccess(User? user)', 'CustomerSettlementLedger.Read(_db, connection, payment.CustomerId, payment.Id)',
+                    'WHERE p.id = @id AND p.customer_id IS NOT NULL AND p.sale_id IS NULL AND p.purchase_id IS NULL',
+                    'AND p.provisional_return_id IS NULL;', 'ReceivedBy = payment.UserName,'], 'Recovery typed historical slip')
+    need(tax, ['public ServiceResult CheckAccess(User? user)', "WHERE s.status IN ('paid', 'partial', 'credit') AND s.date LIKE @like", 'TaxPaisa = rows.Sum(row => row.TaxPaisa)'], 'Stored monthly witness')
+    if ' + exception.Message' in tax: FAILURES.append('Monthly report must not expose raw DB exception')
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/RecoveryViewModel.cs').read_text()
+    need(vm, ['public bool CanRead => _accessAllowed;', 'public void RefreshAccess()', '_services.Recovery.CheckAccess(_user)',
+              'private void ClearSensitiveData()', 'if (!_accessAllowed) return;', '_lastPaymentId = 0;', 'BooksMatch = false;',
+              'OpeningText = AutoPrintHint = string.Empty;', 'TotalText = OverdueText = Bucket0Text = Bucket1Text = Bucket2Text = Bucket3Text = "hidden";',
+              'if (!_reportLoaded)', 'SAVED, but the recovery list could not refresh. Do not receive again;', 'if (Selected is null) ClearSelection();'], 'Recovery stale-state/save-result')
+    printing = vm.split('private (bool Ok, string? Error) PrintSlip(', 1)[1].split('public void RefreshAccess()', 1)[0]
+    need(printing, ['_services.Recovery.SlipDocument(paymentId, _user)', 'if (!document.Ok || document.Value is null)', 'return (false, document.Error', '_services.Printer.Print(document.Value)'], 'Fail-closed actual slip')
+    if 'new ReceiptDocument' in vm: FAILURES.append('Failed Recovery slip must not hand printer a fabricated empty document')
+    tax_vm = (DOTNET / 'Area11.Desktop/ViewModels/TaxViewModel.cs').read_text()
+    need(tax_vm, ['public void RefreshAccess()', '_services.Tax.CheckAccess(_user)', 'SettingLabel = string.Empty;', 'GrossText = RefundText = "hidden";'], 'Monthly stale-state')
+    for method, end in [('Load', 'private void Previous'), ('Copy', 'public void RefreshAccess')]:
+        part = tax_vm.split(' ' + method + '()', 1)[1].split(end, 1)[0]
+        need(part, ['_services.Tax.Report(_user, _year, _month)', 'ClearReport();'], f'Monthly {method} fresh read and failure cleanup')
+    for name in ('Recovery', 'Tax'):
+        view = (DOTNET / f'Area11.Desktop/Views/{name}View.xaml.cs').read_text()
+        need(view, ['TimeSpan.FromSeconds(3)', 'Loaded +=', 'Unloaded +=', '_accessTimer.Stop()', 'viewModel.RefreshAccess()'], f'{name} timer lifecycle')
+    tests = (DOTNET / 'Area11.Tests/RecoveryReportAccessTests.cs').read_text()
+    if tests.count('[Fact]') != 24: FAILURES.append('Portion19 needs 24 written regression facts')
+    need(tests, ['RecoveryRevocationBlocksFreshReportAndPreparedSlipId', 'ReportRevocationBlocksFreshTextPreparationSource',
+                 'MainOffAndFinancialDenialsDoNotBlockOrdinaryModuleReports', 'LaterCollectionDoesNotRewriteOldSlipBalance',
+                 'MonthReadsStoredAmountsWithoutEnablingOrRecalculatingTax', 'FreshReportAndSlipReadsDoNotWriteFinancialOrAuditRows'], 'Portion19 regressions')
+    REPORT.append('Phase4 portion19: current own-module Recovery/monthly report/slip, fresh copy and failed read/active-view stale cleanup, real-document-only print;24 facts written, C#/Windows/fullPhase4 OPEN')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -7522,6 +7567,7 @@ def main() -> int:
     check_stock_minus_visibility()
     check_supplier_accounting_exception()
     check_customer_current_boundaries()
+    check_recovery_monthly_boundaries()
     check_csharp_grammar()
 
     if not quiet:

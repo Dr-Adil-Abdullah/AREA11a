@@ -45,25 +45,38 @@ public sealed class RecoveryService
         _log = log;
     }
 
+    /// <summary>Current own-module access only; no report data and not an authorization token.</summary>
+    public ServiceResult CheckAccess(User? user)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            LedgerReadAccess.Require(_db, connection, _permissions, user, Modules.Customers);
+            return ServiceResult.Success();
+        }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
+        catch (Exception) { return ServiceResult.Fail("Current Customers access could not be confirmed."); }
+    }
+
     /// <summary>
     /// The recovery list, oldest debt first.
     ///
     /// Reading it needs the **customers** permission - the same one that opens the khata page - because
-    /// the person who takes the money at the counter must be able to find the customer. A cashier has
-    /// that by default; a shop that does not want it can switch it off per person (D-43).
+    /// the person who takes the money at the counter must be able to find the customer.
+    /// The current stored account and its delegated grant are checked, not a cached role label.
     /// </summary>
     public ServiceResult<RecoveryReport> Report(User? user, DateTime? today = null)
     {
-        if (!_permissions.Can(user, Modules.Customers))
-        {
-            return ServiceResult<RecoveryReport>.Fail("You do not have permission to see the udhaar list.");
-        }
-
         try
         {
             using var connection = _db.Open();
+            LedgerReadAccess.Require(_db, connection, _permissions, user, Modules.Customers);
 
             return ServiceResult<RecoveryReport>.Success(Build(connection, (today ?? TimeSource.Now).Date));
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult<RecoveryReport>.Fail(exception.Message);
         }
         catch (Exception exception)
         {
@@ -204,11 +217,6 @@ ORDER BY customerId, date, id;");
     /// </summary>
     public ServiceResult<RecoverySlip> Slip(int paymentId, User? user)
     {
-        if (!_permissions.Can(user, Modules.Customers))
-        {
-            return ServiceResult<RecoverySlip>.Fail("You do not have permission to print a recovery slip.");
-        }
-
         if (paymentId <= 0)
         {
             return ServiceResult<RecoverySlip>.Fail("Pick a collection first.");
@@ -217,6 +225,7 @@ ORDER BY customerId, date, id;");
         try
         {
             using var connection = _db.Open();
+            LedgerReadAccess.Require(_db, connection, _permissions, user, Modules.Customers);
 
             var payment = _db.QuerySingle<PaymentRow>(connection, @"
 SELECT p.id AS id, p.date AS date, p.customer_id AS customerId, p.amount_paisa AS amountPaisa,
@@ -278,6 +287,10 @@ WHERE p.id = @id AND p.customer_id IS NOT NULL AND p.sale_id IS NULL AND p.purch
             }
 
             return ServiceResult<RecoverySlip>.Success(slip);
+        }
+        catch (ValidationException exception)
+        {
+            return ServiceResult<RecoverySlip>.Fail(exception.Message);
         }
         catch (Exception exception)
         {

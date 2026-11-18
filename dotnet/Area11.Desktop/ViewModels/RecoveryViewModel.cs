@@ -33,6 +33,8 @@ public sealed class RecoveryViewModel : ObservableObject, IEmptyPage
     private string _note = string.Empty;
     private bool _onlyOverdue;
     private bool _isBusy;
+    private bool _accessAllowed = true;
+    private bool _reportLoaded;
 
     private string _totalText = "Rs 0";
     private string _overdueText = "Rs 0";
@@ -85,7 +87,7 @@ public sealed class RecoveryViewModel : ObservableObject, IEmptyPage
     public RelayCommand SlipCommand { get; }
 
     /// <summary>Reading the whole shop's debts is the customers permission (D-43).</summary>
-    public bool CanRead => _services.Permissions.Can(_user, Modules.Customers);
+    public bool CanRead => _accessAllowed;
 
     public bool IsNotAllowed => !CanRead;
 
@@ -144,8 +146,10 @@ public sealed class RecoveryViewModel : ObservableObject, IEmptyPage
         get => _selected;
         set
         {
-            if (!SetProperty(ref _selected, value) || value is null)
+            if (!SetProperty(ref _selected, value)) return;
+            if (value is null)
             {
+                ClearSelection();
                 return;
             }
 
@@ -270,9 +274,7 @@ public sealed class RecoveryViewModel : ObservableObject, IEmptyPage
 
     public void Load()
     {
-        _all.Clear();
-        Rows.Clear();
-
+        _reportLoaded = false;
         AutoPrintHint = _services.Settings.GetBool("printer.autoPrint", true)
             ? "The slip prints by itself after every payment."
             : "Printing is manual (Settings): press 'Print slip' after a payment.";
@@ -281,16 +283,18 @@ public sealed class RecoveryViewModel : ObservableObject, IEmptyPage
 
         if (!report.Ok || report.Value is null)
         {
+            ClearSensitiveData();
             SetStatus(report.Error ?? "The udhaar list could not be built.", true);
-            OnPropertyChanged(nameof(CanRead));
-            OnPropertyChanged(nameof(IsNotAllowed));
             return;
         }
 
         var data = report.Value;
-
+        SetAccessAllowed(true);
+        _all.Clear();
         _all.AddRange(data.Rows);
         ApplyFilter();
+        if (!_accessAllowed) return;
+        _reportLoaded = true;
 
         TotalText = data.TotalText;
         OverdueText = data.OverdueText;
@@ -313,6 +317,8 @@ public sealed class RecoveryViewModel : ObservableObject, IEmptyPage
 
     private void ApplyFilter()
     {
+        if (!UpdateAccess()) return;
+        var keep = Selected?.CustomerId;
         var term = (SearchText ?? string.Empty).Trim();
 
         Rows.Clear();
@@ -336,10 +342,13 @@ public sealed class RecoveryViewModel : ObservableObject, IEmptyPage
 
             Rows.Add(row);
         }
+        Selected = Rows.FirstOrDefault(row => row.CustomerId == keep);
+        if (Selected is null) ClearSelection();
     }
 
     private void Receive()
     {
+        if (!UpdateAccess()) return;
         if (Selected is null)
         {
             SetStatus("Pick the customer who is paying.", true);
@@ -375,6 +384,12 @@ public sealed class RecoveryViewModel : ObservableObject, IEmptyPage
 
             Note = string.Empty;
             Load();
+            if (!_reportLoaded)
+            {
+                SetStatus(name + ": " + Money.Format(saved.AmountPaisa) + " received (" + saved.Code
+                    + "). SAVED, but the recovery list could not refresh. Do not receive again; refresh to check the account.", true);
+                return;
+            }
 
             // Load() rebuilt the list, so the row object the customer was selected with is gone;
             // find him again by id and re-fill the amount box with what is still owed.
@@ -394,7 +409,7 @@ public sealed class RecoveryViewModel : ObservableObject, IEmptyPage
 
             if (_services.Settings.GetBool("printer.autoPrint", true))
             {
-                var printed = _services.Printer.Print(SlipDocument(saved.PaymentId));
+                var printed = PrintSlip(saved.PaymentId);
 
                 message += printed.Ok
                     ? " Slip sent to the printer."
@@ -411,33 +426,78 @@ public sealed class RecoveryViewModel : ObservableObject, IEmptyPage
 
     private void PrintLastSlip()
     {
+        if (!UpdateAccess()) return;
         if (_lastPaymentId <= 0)
         {
             SetStatus("Receive a payment first - the slip carries its PAY number.", true);
             return;
         }
 
-        var printed = _services.Printer.Print(SlipDocument(_lastPaymentId));
+        var printed = PrintSlip(_lastPaymentId);
 
         SetStatus(printed.Ok
             ? "Recovery slip sent to the printer."
             : "The printer did not answer: " + printed.Error, !printed.Ok);
     }
 
-    private ReceiptDocument SlipDocument(int paymentId)
+    private (bool Ok, string? Error) PrintSlip(int paymentId)
     {
         var document = _services.Recovery.SlipDocument(paymentId, _user);
+        if (!document.Ok || document.Value is null)
+            return (false, document.Error ?? "The recovery slip could not be built.");
+        var printed = _services.Printer.Print(document.Value);
+        return (printed.Ok, printed.Error);
+    }
 
-        if (document.Ok && document.Value is not null)
+    public void RefreshAccess()
+    {
+        var wasAllowed = _accessAllowed;
+        if (UpdateAccess() && !wasAllowed) Load();
+    }
+
+    private bool UpdateAccess()
+    {
+        var access = _services.Recovery.CheckAccess(_user);
+        if (!access.Ok)
         {
-            return document.Value;
+            SetAccessAllowed(false);
+            ClearSensitiveData();
+            SetStatus(access.Error ?? "Current Customer access is required.", true);
+            return false;
         }
+        SetAccessAllowed(true);
+        return true;
+    }
 
-        // A failed slip must never stop the money that is already saved: hand the printer an empty
-        // page and let PrintDocument's own check report the problem in the status line.
-        SetStatus(document.Error ?? "The slip could not be built.", true);
+    private void SetAccessAllowed(bool allowed)
+    {
+        if (SetProperty(ref _accessAllowed, allowed, nameof(CanRead)))
+            OnPropertyChanged(nameof(IsNotAllowed));
+    }
 
-        return new ReceiptDocument { Title = "Recovery slip", Width = 32 };
+    private void ClearSelection()
+    {
+        CustomerText = PhoneText = AgeText = string.Empty;
+        BalanceText = "hidden";
+        AmountText = string.Empty;
+    }
+
+    private void ClearSensitiveData()
+    {
+        _reportLoaded = false;
+        _all.Clear();
+        Rows.Clear();
+        Selected = null;
+        ClearSelection();
+        TotalText = OverdueText = Bucket0Text = Bucket1Text = Bucket2Text = Bucket3Text = "hidden";
+        CountText = "not available";
+        BooksMatch = false;
+        BooksLabel = "Recovery access/data could not be confirmed.";
+        HasOpeningTotal = false;
+        OpeningText = AutoPrintHint = string.Empty;
+        _lastPaymentId = 0;
+        OnPropertyChanged(nameof(HasLastSlip));
+        StatusText = string.Empty;
     }
 
     private void SetStatus(string message, bool isError)

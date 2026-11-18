@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.96.0 Grebe۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.97.0 Lapwing۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**حصہ19 — Recovery اور ماہانہ report:** موجودہ Customers سے Recovery/collection-slip،موجودہ Reports سے محفوظ monthly report؛Cost/Profit/main کی نئی شرط نہیں،tax ON نہیں کیا۔ Failed report/copy پر stale rows/totals/setting label صاف؛Recovery میں selection/amount/phone/opening/books/last-slip صاف۔ ناکام slip کی جگہ خالی page نہیں چھپتا؛وصولی save مگر refresh fail تو **SAVED،دوبارہ وصول نہ کریں**۔ Nominal3s activeview checks فوریrecall نہیں۔ [PT-39](POS-PHASE4-PART19-URDU.md)،[حدود](POS-PHASE4-RECOVERY-MONTHLY-REVIEW.md)۔ **1789C#cases/WindowsUNRUN؛86staticPASS**۔ Blackbox/BookCheck/financialrulesunchanged۔
 
 **حصہ18 — Customer/Doctor/rep کی موجودہ اجازت:** collection/repSaveکےtransactionمیںcurrentactive/same-roleactor؛DoctorاورlifetimeprofitcurrentCustomers+الگProfit/main،repProducts۔ Customerکھاتہ/وصولیCost/Profit/mainبندہونےسےنہیںرکتی۔ Freshprofile/receipt،staleaccount/selection/lastreceiptصفائیاورnominal3secondactiveviewchecks؛profitبدلےتوادھورےedit/repformخودsave/resetنہیں۔ [PT-38](POS-PHASE4-PART18-URDU.md)،[حدود](POS-PHASE4-CUSTOMER-CURRENT-REVIEW.md)۔ **1765C#cases/WindowsUNRUN؛85staticPASS**۔ Blackbox/BookCheckunchanged،D-115برقرار۔
 
@@ -349,6 +351,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 
 ## سبق 16 — Udhaar recovery میں پرانا ادھار
 
+حصہ19: اس صفحے پر filter/receive/reprint fresh Customers check کرتے ہیں؛permission loss یا report fail پرپرانا account/amount/last-slip/totalsصاف۔ Note/search/methodبلاوجہresetنہیں۔ وصولیsavedمگرrefreshfailتو**دوبارہReceiveنہکریں**؛refreshکرکےaccountدیکھیں۔ Recovery slip میںاصلpaymentکےcollectorکاstoredنام،printingreaderکانام نہیں۔ [محفوظمشقPT-39](POS-PHASE4-PART19-URDU.md)۔
+
 1. Customers & suppliers کے recovery حصے میں TOTAL UDHAAR اور 0–30، 31–60، 61–90، 90+ دن والے خانے پڑھیں۔ یہ رقم کی عمر ہے، جرمانہ یا خودکار سود نہیں۔
 2. Only over two months اور Find سے فہرست محدود کریں۔ Carried in، Last paid اور Oldest سے سمجھیں کہ واجب الادا کہاں سے ہے؛ بہت پرانا opening balance بھی الگ ہو سکتا ہے۔
 3. کسٹمر چنیں، اصل Amount received اور Method لکھیں؛ Receive and print سے PAY نمبر اور رسید بنتی ہے۔ ادائیگی پرانے بقایا کے اصول کے مطابق لگتی ہے۔
@@ -437,6 +441,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 <a id="lesson-23"></a>
 
 ## سبق 23 — Reports اور Tax report
+
+حصہ19: `Tax report` موجودہReportsgrantسے،Cost/Profit/mainکیاضافیشرطنہیں۔ Copyپرمہینےکاتازہread؛انکار/خرابیپرstalerows/رقم/settinglabel/refund/roundoffصاف،پراناclipboardمتنواپسنہیںلیاجاتا۔ Billsکیstoredtax/roundoffہی،نیاtaxONنہیں؛blankfailedreportکوknownzeroنہسمجھیں۔
 
 1. Reports میں Today، Last 7 days، Last 30 days، This month یا متعلقہ تاریخیں دیں؛ Refresh۔ Bills، Items sold، Sales، Discount، Average bill، Cash received، On khata اور Refunded کو الگ مطلب سے پڑھیں۔
 2. profit میں sale کے وقت کا cost استعمال ہوتا ہے؛ موجودہ cost بدلنے سے ہر پرانا bill اسی نئے cost پر دوبارہ نہیں بنتا۔ cash in drawer، sales، profit اور net ایک ہی عدد نہیں۔
@@ -632,6 +638,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 
 ## سبق 35 — Preview، WhatsApp اور پرنٹ کی مشترکہ سمجھ
 
+Recoveryکیfailedslipپرپرنٹرکوخالیdocumentنہیںدیاجاتا۔ وصولیsaveہوجانےکےبعدprinterیاrefreshکیخرابیسےpaymentختمیادوبارہنہیںہوتی؛statusپڑھیںاورکھاتہcheckکریں۔
+
 1. Preview جہاں موجود ہو، اصل printer کو جانے والی عبارت دکھاتا ہے۔ آخری ہندسہ کٹ رہا ہو تو width/driver درست کریں، customer کو نامکمل رقم والی slip نہ دیں۔ Preview window کا Print وہی انتخاب چھاپتا ہے؛ Close صرف دیکھنا ختم کرتا ہے۔
 2. Print selected… صرف متعلقہ منتخب قطاروں کے لیے؛ عام Print کی bulk setting بھی دیکھیں۔ A4 summary اور مکمل الگ bill slips ایک چیز نہیں۔
 3. WhatsApp سے message/browser کھل سکتا ہے اور اگر on ہو تو PDF تیار ہوتا ہے۔ **PDF فائل کو خود attach اور send کریں**؛ تیار ہونے کا پیغام customer تک پہنچنے کا ثبوت نہیں۔ غلط فون پر کھاتہ نہ بھیجیں۔
@@ -680,7 +688,7 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.96.0 کا متوقع test count 1765 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.97.0 کا متوقع test count 1789 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 

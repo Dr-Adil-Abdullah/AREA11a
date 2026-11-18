@@ -1,5 +1,9 @@
 # باقی کام، GitHub اور test installer — v0.96.0
 
+## تازہ checkpoint — v0.97.0 Lapwing / حصہ19
+
+Recovery/ماہانہ report کے current module reads،fresh copy،failed read پرstale labels/selection/last-slip cleanup اورactiveviewchecksشامل؛حساب/taxsettingsunchanged۔ [PT-39](POS-PHASE4-PART19-URDU.md)،[trace](POS-PHASE4-RECOVERY-MONTHLY-REVIEW.md)۔ **1789C#cases/WindowsUNRUN؛86static،14syntheticSQLprobes،15source mutationsruntimeنہیں۔** اگلی ترجیح parent/container/admin navigation اورsession/record/fault/concurrency،پھرfiles/cloud/Windows/installerگنجائش؛Blackbox/BookCheckکوD-115سےآگےنہیںکھولا۔ **تقریباً3–6مزیدمربوطreview/resultچکر** مشروط اندازہ،deadline/upperboundنہیں۔ Single double-click test installer مجاز مگرابھیSDK/Windows/Inno/build/test/isolatedrestore/packagingثبوتنہیں؛exeنہیںبنا۔ ہرportiondocs+samebranchcommit/push/actualremoteverificationلازم۔ نیچےکی checkpointentries تاریخی ہیں۔
+
 ## حصہ18 کے بعد موجودہ ترجیح
 
 Customercollection/repSaveمیںاندرTxcurrentactor؛Doctor/lifetimeprofitcurrentCustomers+Profit/main،repProducts؛freshprofile/receipt،staleUIcleanupاورtimersشامل۔ [PT-38](POS-PHASE4-PART18-URDU.md)،[trace](POS-PHASE4-CUSTOMER-CURRENT-REVIEW.md)۔ **1765C#cases/WindowsUNRUN؛85static،13syntheticSQLprobes،13mutationsruntimeنہیں۔** Blackbox/Audit/BookCheckنہیںبدلے؛D-115کےمطابقنئیBookCheckmaskingشروعنہیںکی۔ باقیoutputs/Tax/parentadmin/session/record/fault/concurrency/files/cloudاورWindowsPT-35تا38/installerکھلےہیں۔ اندازہ **3–6مزیدمربوطreview/resultچکر**،نتائجسےبڑھسکتا؛وعدہنہیں۔ اسLinuxمیںSDK/WPF/Innoنہیں،installerابھینہیںبنا۔ ہرportiondocs+samebranchcommit/push/remoteverificationلازم۔ نیچےکیترجیحاتتاریخیہیں۔

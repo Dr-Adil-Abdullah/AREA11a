@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-39 — Recovery / stored monthly report current access (v0.97.0) — UNRUN
+
+[Isolated Windows steps](docs/POS-PHASE4-PART19-URDU.md): own Customers/Reports current reader, financial/main independence,revocation/deactivation/role/restoration,failed report/copy setting+totals cleanup,filtered selection and last-slip cleanup,real-document-only print,postcommit refresh SAVED/no duplicate receipt,collector vs printer identity,carried opening/age/return/month/status/stored-tax/roundoff,58/80mm output/clipboard faults,timer lifecycle.1789C#cases/WPF/Windows/DPAPI/installer UNRUN;86static/14syntheticSQLprobes/15source mutations NOT runtime. Blackbox/BookCheck unchanged;PT-35 through38/D-115 still open. No fake live-shop posts;separate exe folder alone not isolation.
+
 ## PT-38 — Current Customer collection / Doctor profit / rep access (v0.96.0) — UNRUN
 
 [Isolated Windows steps](docs/POS-PHASE4-PART18-URDU.md): own-module current reader,insideTxcollection/repactor,receiptboundtype/currentreadername,freshprofile,ordinaryCustomersaccountingwithoutfinancialgrant,DoctorsCustomers+Profit/main,repProducts,known/hiddenprofit,role/deactivation/revocation,faultrollback/selectionandreceiptcleanup/nominal3stimers,authoredformretention.1765C#cases/WPF/Windows/DPAPI/installer UNRUN;85static/13syntheticSQLprobesnotruntime. Blackbox/BookCheck unchanged;PT-35/36/37/D-115 stillopen. No fake live-shop posts.

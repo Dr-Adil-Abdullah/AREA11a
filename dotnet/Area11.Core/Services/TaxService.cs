@@ -35,14 +35,22 @@ public sealed class TaxService
         _log = log;
     }
 
+    /// <summary>Current own-module access only; no report data and not an authorization token.</summary>
+    public ServiceResult CheckAccess(User? user)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Reports);
+            return ServiceResult.Success();
+        }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
+        catch (Exception) { return ServiceResult.Fail("Current Reports access could not be confirmed."); }
+    }
+
     /// <summary>One month for the accountant: bills, sales before tax, tax and gross, day by day.</summary>
     public ServiceResult<TaxReport> Report(User? user, int year, int month)
     {
-        if (!_permissions.Can(user, Modules.Reports))
-        {
-            return ServiceResult<TaxReport>.Fail("You do not have permission to see the reports.");
-        }
-
         if (year < 2000 || year > 2100 || month < 1 || month > 12)
         {
             return ServiceResult<TaxReport>.Fail("That is not a real month. Choose a month between 2000 and 2100.");
@@ -54,6 +62,7 @@ public sealed class TaxService
         try
         {
             using var connection = _db.Open();
+            SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Reports);
 
             var rows = _db.Query<TaxDayRow>(connection, @"
 SELECT substr(s.date, 1, 10) AS day,
@@ -93,10 +102,14 @@ FROM (
 
             return ServiceResult<TaxReport>.Success(report);
         }
+        catch (ValidationException exception)
+        {
+            return ServiceResult<TaxReport>.Fail(exception.Message);
+        }
         catch (Exception exception)
         {
             _log.Error("The tax report for " + prefix + " could not be built.", exception);
-            return ServiceResult<TaxReport>.Fail("The tax report could not be built. " + exception.Message);
+            return ServiceResult<TaxReport>.Fail("The tax report could not be built. Refresh and check current Reports access.");
         }
     }
 

@@ -224,6 +224,7 @@ table below**; a shade listed there has been used and must not come back.
 | 0.95.0 | 2026-11-10 | Avocet | `#3C6473` | Phase4 portion17 / D-114: Supplier accounting exception, current transactional Pay/SR actor, masked quantity-only return preparation and stale access cleanup. 24 new facts / 1740 C# cases UNRUN; Windows/installer/full Phase4 OPEN. |
 | 0.95.1 | 2026-11-10 | Plover | `#4D6157` | D-115 focused Black box menu visibility: current Audit + Cost + Profit + main ON via existing CheckAccess. BookCheck/Audit reads, SQL and stored records unchanged. One regression fact;1741 C# cases/Windows UNRUN. Dark `#35453D`,soft `#EFF5F1`. |
 | 0.96.0 | 2026-11-10 | Grebe | `#595D7C` | Phase4 portion18: current transactional customer collection/rep actor, current customer/doctor/profit and company-rep reads, fresh profile, stale UI cleanup.24 new facts/1765 C# cases UNRUN;Windows/fullPhase4 OPEN. Black box/BookCheck unchanged. Dark `#3E4159`,soft `#F0F1F8`. |
+| 0.97.0 | 2026-11-10 | Lapwing | `#527466` | Phase4 portion19: current own-module Recovery/report/slip and monthly copy; fail-closed stale totals/selection/last-slip cleanup, real-document-only printer call.24 new facts/1789 C# cases UNRUN;Windows/fullPhase4 OPEN. Financial rules/Black box/BookCheck unchanged. Dark `#375044`,soft `#EDF5F0`. |
 
 ## Notes for the next agent
 
