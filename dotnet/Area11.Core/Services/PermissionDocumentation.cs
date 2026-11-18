@@ -26,7 +26,7 @@ public static class PermissionDocumentation
             Modules.Reorder => "Reorder quantities, suppliers and order messages. Last purchase cost needs the separate cost grant.",
             Modules.Cash => "Cash/shift and expense workflows. Goods-cost preparation/history/totals/results/vouchers have independent cost/main visibility; ordinary cash amounts retain Cash access.",
             Modules.Reports => "Read reports. Reports access alone does not grant explicit profit or migrated purchase-cost fields.",
-            Modules.Audit => "Read Black box metadata. Raw old/new/details and entity references require BOTH financial grants and main ON; CSV also requires the dedicated bulk-file permission.",
+            Modules.Audit => "Black box menu visibility requires current Audit + View Purchase Cost + View Profit + main ON (D-115). Existing metadata/detail behavior is unchanged; CSV also requires the dedicated bulk-file permission.",
             Modules.Import => "Allow Excel/CSV Bulk Export & Import: owner by default; managers/staff require an explicit owner grant. Product cost files need Cost/main; mixed shop workbook needs both financial grants/main. No masked-zero editable file.",
             Modules.Backup => "Backup/restore workflows involving the whole shop dataset, including financial history and photos.",
             Modules.Settings => "Edit ordinary settings. Owner-only identity, financial main switch and secret controls keep their extra guards.",

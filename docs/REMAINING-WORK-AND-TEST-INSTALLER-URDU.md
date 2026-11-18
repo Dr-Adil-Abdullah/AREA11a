@@ -1,4 +1,8 @@
-# باقی کام، GitHub اور test installer — v0.95.0
+# باقی کام، GitHub اور test installer — v0.95.1
+
+## تازہ چھوٹا patch — D-115
+
+آپکیہدایتپرصرفBlackboxmenuvisibility:Audit+Cost+Profit+mainON۔ [Scope/حدود](BLACK-BOX-MENU-VISIBILITY.md)۔ BookCheck/Auditinternalsنہیںبدلے؛fullPhase4،باقیreviewاورWindows/installerابھیopen۔1741C#casesUNRUN؛permission/mainتبدیلیکےبعدنیاsign-inmenuبناتاہے،فوریrebuildنہیں۔ حصہ17کےباقی3–6integratedroundsکااندازہاسچھوٹےpatchسےcompletionوعدہنہیںبنتا۔
 
 ## حصہ17 کے بعد موجودہ ترجیح
 

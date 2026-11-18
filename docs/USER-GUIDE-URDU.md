@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.95.0 Avocet۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.95.1 Plover۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**D-115 — صرف Black box menu کی نئی حد:** نئےsign-inپرموجودہ **Audit + View Purchase Cost + View Profit + main ON** ہوںتوBlackboxنظرآئےگا؛صرفAudittickکافینہیں۔ Permissions/mainبدلنےکےبعدsignout/signinکریں؛یہpatchفوریlive-menurebuildنہیںکرتی۔ Blackboxکےاندرونیrecords/metadata/detailbehaviorاورBookCheckunchanged۔ [مختصرscope/Windowsمشق](BLACK-BOX-MENU-VISIBILITY.md)۔ **1741C#cases/WindowsUNRUN؛84staticPASS**۔
 
 **حصہ17 — Supplier کا منتخب B استثنا:** Supplier page grant سےaccount/paid/payable/statement/sharing/Pay/SRکےحسابCost/mainOFFپربھی؛paid500+due1500سےpurchase2000کاinferenceآپنےقبولکیا۔ Directitem/batch/traycostصرفCost+main؛manual/expiredSRquantity-onlyتیار،unknowncostکوknown0نہیںکہتے۔ CurrenttransactionalPay/SRactor،freshaccount/profile،اگلےcheck/nominal3secondپرstaleclear/mask؛فوریrecallنہیں۔ [PT-37](POS-PHASE4-PART17-URDU.md)،[حدود](POS-PHASE4-SUPPLIER-ACCOUNTING-REVIEW.md)۔ **1740C#cases/WindowsUNRUN؛84staticPASS**۔ پرانےnumberedcheckpointخلاصےتاریخیہیں؛Supplierunanswered/known-cost-onlytrayہدایتD-114سےبدلگئی۔
 
@@ -674,7 +676,7 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.95.0 کا متوقع test count 1740 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.95.1 کا متوقع test count 1741 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 

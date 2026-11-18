@@ -319,4 +319,27 @@ public sealed class BulkAndAuditAccessTests
         Assert.Equal(0L, Number(t, "SELECT COUNT(*) FROM products WHERE name='Edited synthetic product';"));
     }
 
+    [Fact]
+    public void BlackBoxMenuEligibilityRequiresCurrentAuditBothFinancialAndMain()
+    {
+        using var t = new TestDatabase(); var user = TestData.Cashier(t); var audit = Audit(t);
+        foreach (var auditGrant in new[] { false, true })
+        foreach (var costGrant in new[] { false, true })
+        foreach (var profitGrant in new[] { false, true })
+        {
+            Grant(t, user, Modules.Audit, auditGrant);
+            Grant(t, user, Modules.PurchaseCost, costGrant);
+            Grant(t, user, Modules.Profit, profitGrant);
+            var access = audit.CheckAccess(user);
+            Assert.Equal(auditGrant && costGrant && profitGrant, access is { Ok: true, Value: true });
+        }
+        Assert.True(t.Settings.Set(MasterFoundationSettings.ProfitShowMargins, false, TestData.Owner).Ok);
+        Assert.False(audit.CheckAccess(user) is { Ok: true, Value: true });
+        Assert.False(audit.CheckAccess(TestData.Owner) is { Ok: true, Value: true });
+        Assert.True(t.Settings.Set(MasterFoundationSettings.ProfitShowMargins, true, TestData.Owner).Ok);
+        Assert.True(audit.CheckAccess(user) is { Ok: true, Value: true });
+        Execute(t, "UPDATE users SET active=0 WHERE id=" + user.Id);
+        Assert.False(audit.CheckAccess(user) is { Ok: true, Value: true });
+    }
+
 }

@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## D-115 — Black box menu (v0.95.1) — UNRUN
+
+[Focused isolated Windows steps](docs/BLACK-BOX-MENU-VISIBILITY.md): new sign-in requires Audit+Cost+Profit+mainON;missing grants/mainOFF/Ownerfinancialdenial hide Blackbox. ExistingAuditreader/BookCheck/layout unchanged. No instant menu rebuild added.1741C#cases/WPF/Windows/installerUNRUN;84static/2syntheticSQLprobesnotruntime.
+
 ## PT-37 — Supplier accounting exception / quantity-only SR / current Pay-SR actor (v0.95.0) — UNRUN
 
 [Safe isolated checklist](docs/POS-PHASE4-PART17-URDU.md): Supplier-only accounting2000/500/1500 and statement/profile money retained even Cost/mainOFF;direct product/batch/traycost masked with knownflag,manual/expiredquantity-onlySR,currenttransactionalPay/SRactor,creditvscash/fallback/zero/overpayment/stockguard,revocation/deactivation/role/known0/auditname/auditfaultrollback,timerstalecleanup/freshoutput.1740C#cases/WPF/Windows/DPAPI/installer UNRUN;84static/12syntheticSQLprobes/13mutations NOT runtime. PT-35/36 still OPEN. No fake live-shop posts; separate exe folder NOT isolation.

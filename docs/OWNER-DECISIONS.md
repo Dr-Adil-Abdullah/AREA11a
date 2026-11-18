@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## D-115 — صرف Black box کی menu visibility (2026-11-10)
+
+مالک نے BookCheck کی نئی masking تجویز کے بجائے صرف چھوٹی تبدیلی کہی: متعلقہ حساس معلومات کی مکمل اجازت نہ ہو تو Black box نظر نہ آئے؛باقیBlackboxکےساتھمزیدتبدیلیضروری نہیں۔ CurrentAudit + Cost + Profit + mainONکاexistingCheckAccessنتیجہmenuمیںلاگو،نہتمامغیرمتعلقmodulesکیgrants۔ موجودہmetadata/detailreads،BookCheck،Auditrecords/SQLunchanged۔ Menuکےلیےpermissionsتبدیلیکےبعددوبارہsign-in؛فوریlive-menu/oldfileواپسیوعدہنہیں۔ [Scope/teststeps](BLACK-BOX-MENU-VISIBILITY.md)۔ v0.95.1،1741C#cases/WindowsUNRUN؛fullPhase4/installeropen۔
+
 ## D-114 — Supplier accounting exception B (2026-11-10)
 
 مالک نے purchase2000،paid500،payable1500کی مثال کے بعد **B / accounting_exception** منتخب کیا۔ Current Suppliers page grant سے account/paid/payable/purchases،statements/sharing،Pay اورSR settlement money مجاز،چاہے Cost یاmainOFF؛ان رقموں/SR total÷quantity سےpurchasecost inference واضح طورپر قبول۔ Direct item/batchcostاورtraypreviews اب بھی الگCost+mainسے۔ Quantity-onlySRکوhidden0کیقیمتنہبنائیں؛اصلpostingcurrentservercostسے۔ فیصلہدوبارہنہپوچھیں۔ [حصہ17 trace](POS-PHASE4-SUPPLIER-ACCOUNTING-REVIEW.md)،[PT-37](POS-PHASE4-PART17-URDU.md)۔ Source implemented،1740C#cases/Windows/installer UNRUN؛باقیPhase4OPEN۔ D-110کیعامcostvisibilityاسSupplieraccountingاستثناکےساتھپڑھیں؛D-113bulk/Audit/passwordA unchanged۔ نیچےSupplierunansweredوالےپرانےentriesتاریخیہیں۔

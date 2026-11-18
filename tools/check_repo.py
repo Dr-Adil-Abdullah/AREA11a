@@ -7185,6 +7185,11 @@ def check_bulk_audit_access():
                  'NoCostRefusesWholeEditableProductFileRatherThanBlankingItsPrice', 'MetadataSearchCannotMatchHiddenValueDetailsOrEntity',
                  'AuditExportRereadsAfterRevocationInsteadOfUsingEarlierRawPage', 'MetadataReadsNeverRewriteStoredAuditValues'):
         if name not in tests: FAILURES.append(f'Bulk/audit regression missing {name}')
+    shell = (DOTNET / 'Area11.Desktop/ViewModels/ShellViewModel.cs').read_text()
+    if 'var canAudit = _services.AuditHistory.CheckAccess(_user) is { Ok: true, Value: true };' not in shell:
+        FAILURES.append('D-115 Black box menu must require successful current Audit access AND full financial visibility')
+    if 'BlackBoxMenuEligibilityRequiresCurrentAuditBothFinancialAndMain' not in tests:
+        FAILURES.append('D-115 Black box menu eligibility regression missing')
     REPORT.append('Phase4 portion14/D-113: owner-default explicit bulk gate, editable data refused not zeroed, actorful previews/current Tx checks; audit metadata/search boundary and fresh details/CSV; all four CSV doors gated; password backup was pending at portion14 (portion15 has its own gate), global/Windows OPEN')
 
 

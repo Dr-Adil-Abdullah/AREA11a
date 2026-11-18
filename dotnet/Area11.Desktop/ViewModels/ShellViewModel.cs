@@ -591,7 +591,8 @@ public sealed class ShellViewModel : ObservableObject
         var canSuppliers = permissions.Can(_user, Modules.Suppliers);
         var canCash = permissions.Can(_user, Modules.Cash);
         var canReports = permissions.Can(_user, Modules.Reports);
-        var canAudit = permissions.Can(_user, Modules.Audit);
+        // D-115: show Black box only with current Audit + Cost + Profit + main ON.
+        var canAudit = _services.AuditHistory.CheckAccess(_user) is { Ok: true, Value: true };
         var canBackup = permissions.Can(_user, Modules.Backup);
         var canImport = permissions.Can(_user, Modules.Import);
         var canSettings = CanOpenSettings;
