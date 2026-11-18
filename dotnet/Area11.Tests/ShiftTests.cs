@@ -62,7 +62,7 @@ INSERT INTO users(name, role, active, created_at) VALUES('Cashier', 'cashier', 1
         Assert.Equal(50000L, opened.Value.ExpectedPaisa);      // nothing sold yet
         Assert.Equal("morning", opened.Value.Note);
 
-        var current = Shifts(test).Current();
+        var current = Shifts(test).Page(TestData.Owner).Value!.Current;
         Assert.NotNull(current);
         Assert.Equal(TestData.SeedOwnerName, current!.OpenedBy);
     }
@@ -78,7 +78,7 @@ INSERT INTO users(name, role, active, created_at) VALUES('Cashier', 'cashier', 1
 
         Assert.False(second.Ok);
         Assert.Contains("already open", second.Error!, StringComparison.OrdinalIgnoreCase);
-        Assert.Equal(10000L, Shifts(test).Current()!.OpeningFloatPaisa);
+        Assert.Equal(10000L, Shifts(test).Page(TestData.Owner).Value!.Current!.OpeningFloatPaisa);
     }
 
     [Fact]
@@ -97,7 +97,7 @@ INSERT INTO users(name, role, active, created_at) VALUES('Cashier', 'cashier', 1
 
         Assert.True(cash.Ok && card.Ok && credit.Ok, cash.Error ?? card.Error ?? credit.Error);
 
-        var shift = Shifts(test).Current()!;
+        var shift = Shifts(test).Page(TestData.Owner).Value!.Current!;
 
         Assert.Equal(90000L, shift.CashSalesPaisa);            // 3 x Rs 300 cash
         Assert.Equal(140000L, shift.ExpectedPaisa);            // float 500 + 900
@@ -126,7 +126,7 @@ INSERT INTO users(name, role, active, created_at) VALUES('Cashier', 'cashier', 1
         var collected = ledger.Collect(TestData.Owner, customer, 40000, "cash", "part payment");
         Assert.True(collected.Ok, collected.Error);
 
-        var shift = Shifts(test).Current()!;
+        var shift = Shifts(test).Page(TestData.Owner).Value!.Current!;
 
         Assert.Equal(40000L, shift.CashCollectionsPaisa);
         Assert.Equal(0L, shift.CashSalesPaisa);                // the credit bill itself gave no cash
@@ -151,7 +151,7 @@ INSERT INTO users(name, role, active, created_at) VALUES('Cashier', 'cashier', 1
         Assert.True(returned.Ok, returned.Error);
         Assert.Equal(30000L, returned.Value!.CashPaisa);
 
-        var shift = Shifts(test).Current()!;
+        var shift = Shifts(test).Page(TestData.Owner).Value!.Current!;
 
         Assert.Equal(90000L, shift.CashSalesPaisa);
         Assert.Equal(30000L, shift.CashRefundsPaisa);
@@ -207,7 +207,7 @@ INSERT INTO users(name, role, active, created_at) VALUES('Cashier', 'cashier', 1
 
         Assert.True(returned.Ok, returned.Error);
 
-        var shift = Shifts(test).Current()!;
+        var shift = Shifts(test).Page(TestData.Owner).Value!.Current!;
 
         // This shift has no float, no cash bill and no khata collection: only the two supplier
         // movements exist, so the drawer holds exactly Rs 4,000 in minus Rs 2,000 out.
@@ -243,7 +243,7 @@ INSERT INTO users(name, role, active, created_at) VALUES('Cashier', 'cashier', 1
 
         Assert.True(bought.Ok, bought.Error);
 
-        var shift = Shifts(test).Current()!;
+        var shift = Shifts(test).Page(TestData.Owner).Value!.Current!;
 
         // The drawer still holds exactly the float: bank money leaves the bank.
         Assert.Equal(0L, shift.SupplierCashOutPaisa);
@@ -270,7 +270,7 @@ INSERT INTO users(name, role, active, created_at) VALUES('Cashier', 'cashier', 1
 
         var again = Shifts(test).Close(TestData.Owner, 40000, null);
         Assert.False(again.Ok);
-        Assert.Null(Shifts(test).Current());
+        Assert.Null(Shifts(test).Page(TestData.Owner).Value!.Current);
     }
 
     [Fact]
@@ -320,7 +320,7 @@ INSERT INTO users(name, role, active, created_at) VALUES('Cashier', 'cashier', 1
 
         Assert.False(refused.Ok);
         Assert.Contains("permission", refused.Error!, StringComparison.OrdinalIgnoreCase);
-        Assert.Null(Shifts(test).Current());
+        Assert.Null(Shifts(test).Page(TestData.Owner).Value!.Current);
     }
 
     [Fact]
@@ -333,7 +333,7 @@ INSERT INTO users(name, role, active, created_at) VALUES('Cashier', 'cashier', 1
         Assert.True(TestData.Sales(test).Create(TestData.Cart(product, qty: 1, method: "cash"), TestData.Owner).Ok);
         Assert.True(Shifts(test).Close(TestData.Owner, 55000, "counted twice").Ok);
 
-        var row = Assert.Single(Shifts(test).History());
+        var row = Assert.Single(Shifts(test).Page(TestData.Owner).Value!.History);
 
         Assert.Equal("Closed", row.StatusLabel);
         Assert.Equal(25000L, row.OpeningFloatPaisa);
@@ -354,14 +354,14 @@ INSERT INTO users(name, role, active, created_at) VALUES('Cashier', 'cashier', 1
 
         Assert.True(service.Open(TestData.Owner, 600000, null).Ok);
         Assert.True(service.Close(TestData.Owner, 600000, null).Ok);
-        Assert.Equal(600000L, service.LastCounted()!.ActualPaisa);
+        Assert.Equal(600000L, service.Page(TestData.Owner).Value!.Previous!.ActualPaisa);
 
         var refused = service.Open(TestData.Owner, opening, null);
 
         Assert.False(refused.Ok);
         Assert.Contains("reason", refused.Error!, StringComparison.OrdinalIgnoreCase);
-        Assert.Null(service.Current());
-        Assert.Single(service.History());
+        Assert.Null(service.Page(TestData.Owner).Value!.Current);
+        Assert.Single(service.Page(TestData.Owner).Value!.History);
 
         var opened = service.Open(TestData.Owner, opening, "opening difference explained");
         Assert.True(opened.Ok, opened.Error);
@@ -395,7 +395,7 @@ SELECT details FROM audit_logs WHERE action = 'shift_open' ORDER BY id DESC LIMI
 
         Assert.False(refused.Ok);
         Assert.Contains("reason", refused.Error!, StringComparison.OrdinalIgnoreCase);
-        Assert.True(service.Current()!.IsOpen);
+        Assert.True(service.Page(TestData.Owner).Value!.Current!.IsOpen);
 
         var closed = service.Close(TestData.Owner, counted, "one rupee difference explained");
         Assert.True(closed.Ok, closed.Error);

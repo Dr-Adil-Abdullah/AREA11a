@@ -730,11 +730,12 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     /// </summary>
     private void CheckDrawer()
     {
-        var shift = _services.Shifts.Current();
-        ShiftClosed = shift is null;
+        var state = _services.Shifts.DrawerState(_user);
+        ShiftClosed = !state.Ok || !state.Value;
         _handoverNote = SessionHandover.Read(_services.Settings);
 
-        BlockedText = _handoverNote.Length > 0
+        BlockedText = !state.Ok ? (state.Error ?? "Drawer state is unknown. Refresh before making a bill.")
+            : _handoverNote.Length > 0
             ? _handoverNote
             : "The drawer (galla) is closed, so no bill can be made. Count the opening cash on the Shift " +
               "(galla) page and open the drawer - the counter works again the moment it is open.";

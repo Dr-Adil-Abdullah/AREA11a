@@ -163,7 +163,9 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, @role, 1, @at);"
     {
         var shifts = Shifts(test);
 
-        if (shifts.Current() is null)
+        var page = shifts.Page(Owner);
+        if (!page.Ok || page.Value is null) throw new InvalidOperationException(page.Error);
+        if (page.Value.Current is null)
         {
             shifts.Open(Owner, 0, "test");
         }

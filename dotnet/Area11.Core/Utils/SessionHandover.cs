@@ -51,8 +51,10 @@ public static class SessionHandover
             var who = settings.GetString(ByKey);
             var person = string.IsNullOrWhiteSpace(who) ? "the last person" : who;
 
-            return "The drawer was left open by " + person + " at " + at +
-                   " and has not been counted. Count the cash on the Shift (galla) page and open your own drawer before making a bill.";
+            // Expiry can leave this note on a failed/unknown state read too. Do not certify that
+            // the drawer was open (or closed) when the application could not read its state.
+            return "The drawer needs checking after " + person + " signed out at " + at +
+                   ". Count the cash on the Shift (galla) page and open your own drawer before making a bill.";
         }
         catch (Exception)
         {

@@ -277,7 +277,7 @@ public sealed class ExpenseVisibilityTests
         var shifts = new ShiftService(t.Database, t.Audit, TestData.Permissions(t), t.Log);
         Assert.True(shifts.Open(TestData.Owner, 100000, null).Ok);
         Assert.True(t.Settings.Set(MasterFoundationSettings.ProfitShowMargins, false, TestData.Owner).Ok);
-        Assert.True(Cash(t).AddDrawing(TestData.Owner, Goods(p)).Ok); Assert.Equal(100000L, shifts.Current()!.ExpectedPaisa);
+        Assert.True(Cash(t).AddDrawing(TestData.Owner, Goods(p)).Ok); Assert.Equal(100000L, shifts.Page(TestData.Owner).Value!.Current!.ExpectedPaisa);
         Assert.Equal(0L, Cash(t).Today(TestData.Owner).CashOutPaisa);
     }
 

@@ -350,3 +350,13 @@ public sealed class ShiftDiscrepancy
         ? (CreatedAt ?? string.Empty)
         : CreatedAt[..16];
 }
+
+/// <summary>Authorized drawer read; a failure has no Page, a successfully closed drawer has Current null.</summary>
+public sealed class ShiftPage
+{
+    public ShiftMoney? Current { get; init; }
+    public ShiftMoney? Previous { get; init; }
+    public List<ShiftMoney> History { get; init; } = new();
+    public List<ShiftDiscrepancy> Discrepancies { get; init; } = new();
+    public bool CanSeePeople { get; init; }
+}

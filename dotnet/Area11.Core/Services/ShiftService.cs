@@ -34,51 +34,67 @@ public sealed class ShiftService
         _log = log;
     }
 
-    /// <summary>The open shift with its money so far, or null when the drawer is closed.</summary>
-    public ShiftMoney? Current()
+    /// <summary>Current Cash reader and current senior flag; not an authorization token.</summary>
+    public ServiceResult<bool> CheckAccess(User? user)
     {
         try
         {
             using var connection = _db.Open();
-            var shift = ReadOpen(connection);
-
-            if (shift is not null)
-            {
-                FillDrawer(connection, shift, shift.OpenedAt, Clock.Now());
-            }
-
-            return shift;
+            var reader = RequireCash(connection, user);
+            return ServiceResult<bool>.Success(reader.CanManage);
         }
+        catch (ValidationException exception) { return ServiceResult<bool>.Fail(exception.Message); }
+        catch (Exception) { return ServiceResult<bool>.Fail("Current Cash access could not be confirmed."); }
+    }
+
+    /// <summary>Only open/closed state for Counter/session callers; never exposes drawer money.</summary>
+    public ServiceResult<bool> DrawerState(User? user)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Cash, Modules.Pos);
+            var count = Convert.ToInt64(_db.Scalar(connection, "SELECT COUNT(1) FROM shifts WHERE status = 'open';") ?? 0L);
+            return ServiceResult<bool>.Success(count > 0);
+        }
+        catch (ValidationException exception) { return ServiceResult<bool>.Fail(exception.Message); }
         catch (Exception exception)
         {
-            _log.Error("The open shift could not be read.", exception);
-            return null;
+            _log.Error("Drawer state could not be read.", exception);
+            return ServiceResult<bool>.Fail("Drawer state could not be confirmed. Refresh before making a bill.");
         }
     }
 
-    /// <summary>The most recent counted closing, used as the next galla's default opening cash.</summary>
-    public ShiftMoney? LastCounted()
+    /// <summary>Failing reads are not a closed drawer or an empty certified history.</summary>
+    public ServiceResult<ShiftPage> Page(User? user, int limit = 60)
     {
+        if (limit < 1 || limit > 500) return ServiceResult<ShiftPage>.Fail("Choose between 1 and 500 shifts.");
         try
         {
             using var connection = _db.Open();
-            return ReadLastCounted(connection);
+            var reader = RequireCash(connection, user);
+            var current = ReadOpen(connection);
+            if (current is not null) FillDrawer(connection, current, current.OpenedAt, Clock.Now());
+            return ServiceResult<ShiftPage>.Success(new ShiftPage
+            {
+                Current = current,
+                Previous = ReadLastCounted(connection),
+                History = ReadHistory(connection, limit),
+                Discrepancies = ReadDiscrepancies(connection, limit),
+                CanSeePeople = reader.CanManage
+            });
         }
+        catch (ValidationException exception) { return ServiceResult<ShiftPage>.Fail(exception.Message); }
         catch (Exception exception)
         {
-            _log.Error("The previous counted drawer could not be read.", exception);
-            return null;
+            _log.Error("The drawer page could not be read.", exception);
+            return ServiceResult<ShiftPage>.Fail("The drawer could not be read. Refresh; its open/closed state is not confirmed.");
         }
     }
 
     /// <summary>Opens the drawer with a float. Refused while another shift is open.</summary>
     public ServiceResult<ShiftMoney> Open(User user, long openingFloatPaisa, string? note)
     {
-        if (!_permissions.Can(user, Modules.Cash))
-        {
-            return ServiceResult<ShiftMoney>.Fail("You do not have permission to open the till.");
-        }
-
         if (openingFloatPaisa < 0)
         {
             return ServiceResult<ShiftMoney>.Fail("The opening float cannot be negative.");
@@ -86,67 +102,70 @@ public sealed class ShiftService
 
         try
         {
-            using var connection = _db.Open();
-
-            if (ReadOpen(connection) is not null)
+            return _db.Tx(connection =>
             {
-                return ServiceResult<ShiftMoney>.Fail(
-                    "A shift is already open. Close it before counting the drawer again.");
-            }
+                var reader = RequireCash(connection, user);
+                if (ReadOpen(connection) is not null)
+                {
+                    return ServiceResult<ShiftMoney>.Fail(
+                        "A shift is already open. Close it before counting the drawer again.");
+                }
 
-            var cleanNote = string.IsNullOrWhiteSpace(note) ? null : note!.Trim();
-            var previous = ReadLastCounted(connection);
-            var openingDifference = previous?.ActualPaisa is long counted
-                ? openingFloatPaisa - counted
-                : 0L;
+                var cleanNote = string.IsNullOrWhiteSpace(note) ? null : note!.Trim();
+                var previous = ReadLastCounted(connection);
+                var openingDifference = previous?.ActualPaisa is long counted
+                    ? openingFloatPaisa - counted
+                    : 0L;
 
-            if (openingDifference != 0 && !HasDifferenceReason(cleanNote))
-            {
-                return ServiceResult<ShiftMoney>.Fail(
-                    $"Opening cash differs from the previous counted {Money.Format(previous!.ActualPaisa!.Value)} " +
-                    $"by {Money.Format(Math.Abs(openingDifference))}. Write the reason before opening the shift.");
-            }
+                if (openingDifference != 0 && !HasDifferenceReason(cleanNote))
+                {
+                    return ServiceResult<ShiftMoney>.Fail(
+                        $"Opening cash differs from the previous counted {Money.Format(previous!.ActualPaisa!.Value)} " +
+                        $"by {Money.Format(Math.Abs(openingDifference))}. Write the reason before opening the shift.");
+                }
 
-            var at = Clock.Now();
+                var at = Clock.Now();
 
-            _db.Execute(connection, @"
+                _db.Execute(connection, @"
 INSERT INTO shifts(user_id, opened_at, opening_float_paisa, status, note)
 VALUES(@userId, @at, @openingFloat, 'open', @note);",
-                new
+                    new
+                    {
+                        userId = reader.Id,
+                        at,
+                        openingFloat = openingFloatPaisa,
+                        note = cleanNote
+                    });
+
+                var id = (int)_db.NextId(connection);
+
+                // Portion 14: the opening difference gets its own contract row (migration 030) - the
+                // reason stops hiding inside a general note. Exact floats leave no row.
+                if (openingDifference != 0 && previous?.ActualPaisa is long previousCash)
                 {
-                    userId = user.Id,
-                    at,
-                    openingFloat = openingFloatPaisa,
-                    note = cleanNote
-                });
+                    RecordDiscrepancy(connection, id, "opening", previousCash, openingFloatPaisa,
+                        openingDifference, cleanNote ?? string.Empty, at);
+                }
 
-            var id = (int)_db.NextId(connection);
+                _audit.Record(connection, reader, "Cash", "shift_open", "shifts", id.ToString(),
+                    newValue: Money.Format(openingFloatPaisa),
+                    details: previous?.ActualPaisa is long previousCounted
+                        ? $"Previous counted {Money.Format(previousCounted)}; opening " +
+                          $"{ShiftWords.Difference(openingDifference)}; reason: {cleanNote ?? "(not required)"}"
+                        : cleanNote);
 
-            // Portion 14: the opening difference gets its own contract row (migration 030) - the
-            // reason stops hiding inside a general note. Exact floats leave no row.
-            if (openingDifference != 0 && previous?.ActualPaisa is long previousCash)
-            {
-                RecordDiscrepancy(connection, id, "opening", previousCash, openingFloatPaisa,
-                    openingDifference, cleanNote ?? string.Empty, at);
-            }
+                var shift = ReadOpen(connection);
 
-            _audit.Record(connection, user, "Cash", "shift_open", "shifts", id.ToString(),
-                newValue: Money.Format(openingFloatPaisa),
-                details: previous?.ActualPaisa is long previousCounted
-                    ? $"Previous counted {Money.Format(previousCounted)}; opening " +
-                      $"{ShiftWords.Difference(openingDifference)}; reason: {cleanNote ?? "(not required)"}"
-                    : cleanNote);
+                if (shift is null)
+                {
+                    throw new ValidationException("The shift could not be opened. Nothing was changed.");
+                }
 
-            var shift = ReadOpen(connection);
-
-            if (shift is null)
-            {
-                return ServiceResult<ShiftMoney>.Fail("The shift could not be opened.");
-            }
-
-            FillDrawer(connection, shift, shift.OpenedAt, Clock.Now());
-            return ServiceResult<ShiftMoney>.Success(shift);
+                FillDrawer(connection, shift, shift.OpenedAt, Clock.Now());
+                return ServiceResult<ShiftMoney>.Success(shift);
+            });
         }
+        catch (ValidationException exception) { return ServiceResult<ShiftMoney>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error("The shift could not be opened.", exception);
@@ -160,11 +179,6 @@ VALUES(@userId, @at, @openingFloat, 'open', @note);",
     /// </summary>
     public ServiceResult<ShiftMoney> Close(User user, long actualPaisa, string? note)
     {
-        if (!_permissions.Can(user, Modules.Cash))
-        {
-            return ServiceResult<ShiftMoney>.Fail("You do not have permission to close the till.");
-        }
-
         if (actualPaisa < 0)
         {
             return ServiceResult<ShiftMoney>.Fail("The counted cash cannot be negative.");
@@ -172,73 +186,77 @@ VALUES(@userId, @at, @openingFloat, 'open', @note);",
 
         try
         {
-            using var connection = _db.Open();
-            var shift = ReadOpen(connection);
-
-            if (shift is null)
+            return _db.Tx(connection =>
             {
-                return ServiceResult<ShiftMoney>.Fail("There is no open shift to close.");
-            }
+                var reader = RequireCash(connection, user);
+                var shift = ReadOpen(connection);
 
-            // The person who opened the drawer closes it, or somebody senior does it for him.
-            if (shift.UserId != user.Id && !user.CanManage)
-            {
-                return ServiceResult<ShiftMoney>.Fail(
-                    "Only the person who opened this shift, or the owner or a manager, can close it.");
-            }
+                if (shift is null)
+                {
+                    return ServiceResult<ShiftMoney>.Fail("There is no open shift to close.");
+                }
 
-            var closedAt = Clock.Now();
-            FillDrawer(connection, shift, shift.OpenedAt, closedAt);
+                // The person who opened the drawer closes it, or somebody senior does it for him.
+                if (shift.UserId != reader.Id && !reader.CanManage)
+                {
+                    return ServiceResult<ShiftMoney>.Fail(
+                        "Only the person who opened this shift, or the owner or a manager, can close it.");
+                }
 
-            shift.ActualPaisa = actualPaisa;
-            shift.DifferencePaisa = actualPaisa - shift.ExpectedPaisa;
-            shift.Status = "closed";
+                var closedAt = Clock.Now();
+                FillDrawer(connection, shift, shift.OpenedAt, closedAt);
 
-            var cleanNote = string.IsNullOrWhiteSpace(note) ? null : note!.Trim();
+                shift.ActualPaisa = actualPaisa;
+                shift.DifferencePaisa = actualPaisa - shift.ExpectedPaisa;
+                shift.Status = "closed";
 
-            if (shift.DifferencePaisa != 0 && !HasDifferenceReason(cleanNote))
-            {
-                return ServiceResult<ShiftMoney>.Fail(
-                    $"The drawer is {shift.DifferenceLabel}. Write the reason before closing the shift; " +
-                    "even a Rs 1 difference needs one.");
-            }
+                var cleanNote = string.IsNullOrWhiteSpace(note) ? null : note!.Trim();
 
-            _db.Execute(connection, @"
+                if (shift.DifferencePaisa != 0 && !HasDifferenceReason(cleanNote))
+                {
+                    return ServiceResult<ShiftMoney>.Fail(
+                        $"The drawer is {shift.DifferenceLabel}. Write the reason before closing the shift; " +
+                        "even a Rs 1 difference needs one.");
+                }
+
+                _db.Execute(connection, @"
 UPDATE shifts
 SET closed_at = @closedAt, expected_paisa = @expected, actual_paisa = @actual,
     difference_paisa = @difference, status = 'closed', note = IFNULL(@note, note)
 WHERE id = @id;",
-                new
+                    new
+                    {
+                        closedAt,
+                        expected = shift.ExpectedPaisa,
+                        actual = actualPaisa,
+                        difference = shift.DifferencePaisa,
+                        note = cleanNote,
+                        id = shift.Id
+                    });
+
+                _audit.RecordChange(connection, reader, "Cash", "shift_close", "shifts", shift.Id.ToString(),
+                    new { Status = "open" },
+                    new
+                    {
+                        Status = "closed",
+                        Expected = shift.ExpectedPaisa,
+                        Actual = actualPaisa,
+                        Difference = shift.DifferencePaisa
+                    },
+                    cleanNote);
+
+                // Portion 14: the closing difference gets its own contract row (migration 030), next to
+                // the audit line. An exact count leaves no row.
+                if (shift.DifferencePaisa != 0)
                 {
-                    closedAt,
-                    expected = shift.ExpectedPaisa,
-                    actual = actualPaisa,
-                    difference = shift.DifferencePaisa,
-                    note = cleanNote,
-                    id = shift.Id
-                });
+                    RecordDiscrepancy(connection, shift.Id, "closing", shift.ExpectedPaisa, actualPaisa,
+                        shift.DifferencePaisa.Value, cleanNote ?? string.Empty, closedAt);
+                }
 
-            _audit.RecordChange(connection, user, "Cash", "shift_close", "shifts", shift.Id.ToString(),
-                new { Status = "open" },
-                new
-                {
-                    Status = "closed",
-                    Expected = shift.ExpectedPaisa,
-                    Actual = actualPaisa,
-                    Difference = shift.DifferencePaisa
-                },
-                cleanNote);
-
-            // Portion 14: the closing difference gets its own contract row (migration 030), next to
-            // the audit line. An exact count leaves no row.
-            if (shift.DifferencePaisa != 0)
-            {
-                RecordDiscrepancy(connection, shift.Id, "closing", shift.ExpectedPaisa, actualPaisa,
-                    shift.DifferencePaisa.Value, cleanNote ?? string.Empty, closedAt);
-            }
-
-            return ServiceResult<ShiftMoney>.Success(shift);
+                return ServiceResult<ShiftMoney>.Success(shift);
+            });
         }
+        catch (ValidationException exception) { return ServiceResult<ShiftMoney>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error("The shift could not be closed.", exception);
@@ -265,11 +283,6 @@ WHERE id = @id;",
         ArgumentNullException.ThrowIfNull(user);
         ArgumentNullException.ThrowIfNull(next);
 
-        if (!_permissions.Can(user, Modules.Cash))
-        {
-            return ServiceResult<ShiftHandover>.Fail("You do not have permission to hand over the till.");
-        }
-
         if (next.Id == user.Id)
         {
             return ServiceResult<ShiftHandover>.Fail(
@@ -286,12 +299,6 @@ WHERE id = @id;",
             return ServiceResult<ShiftHandover>.Fail(next.Name + " is switched off and cannot take the drawer.");
         }
 
-        if (!_permissions.Can(next, Modules.Cash))
-        {
-            return ServiceResult<ShiftHandover>.Fail(
-                next.Name + " cannot work the till (no Cash / shifts permission).");
-        }
-
         if (countedPaisa < 0)
         {
             return ServiceResult<ShiftHandover>.Fail("The counted cash cannot be negative.");
@@ -303,6 +310,8 @@ WHERE id = @id;",
         {
             return _db.Tx(connection =>
             {
+                var reader = RequireCash(connection, user);
+                var recipient = RequireCash(connection, next);
                 var shift = ReadOpen(connection);
 
                 if (shift is null)
@@ -311,7 +320,7 @@ WHERE id = @id;",
                 }
 
                 // The same rule as closing: the person who opened the drawer, or somebody senior.
-                if (shift.UserId != user.Id && !user.CanManage)
+                if (shift.UserId != reader.Id && !reader.CanManage)
                 {
                     return ServiceResult<ShiftHandover>.Fail(
                         "Only the person who opened this shift, or the owner or a manager, can hand it over.");
@@ -323,7 +332,7 @@ WHERE id = @id;",
                 shift.ActualPaisa = countedPaisa;
                 shift.DifferencePaisa = countedPaisa - shift.ExpectedPaisa;
                 shift.Status = "closed";
-                shift.HandedToName = next.Name.Trim();
+                shift.HandedToName = recipient.Name.Trim();
 
                 if (shift.DifferencePaisa != 0 && !HasDifferenceReason(cleanNote))
                 {
@@ -345,8 +354,8 @@ WHERE id = @id;",
                         actual = countedPaisa,
                         difference = shift.DifferencePaisa,
                         note = cleanNote,
-                        nextId = next.Id,
-                        nextName = next.Name.Trim(),
+                        nextId = recipient.Id,
+                        nextName = recipient.Name.Trim(),
                         id = shift.Id
                     });
 
@@ -355,16 +364,16 @@ INSERT INTO shifts(user_id, opened_at, opening_float_paisa, status, note, opened
 VALUES(@userId, @at, @openingFloat, 'open', @note, @fromId);",
                     new
                     {
-                        userId = next.Id,
+                        userId = recipient.Id,
                         at,
                         openingFloat = countedPaisa,
-                        note = "Handover from " + user.Name.Trim(),
+                        note = "Handover from " + reader.Name.Trim(),
                         fromId = shift.Id
                     });
 
                 var nextShiftId = (int)_db.NextId(connection);
 
-                _audit.RecordChange(connection, user, "Cash", "shift_handover", "shifts", shift.Id.ToString(),
+                _audit.RecordChange(connection, reader, "Cash", "shift_handover", "shifts", shift.Id.ToString(),
                     new { Status = "open" },
                     new
                     {
@@ -372,11 +381,11 @@ VALUES(@userId, @at, @openingFloat, 'open', @note, @fromId);",
                         Expected = shift.ExpectedPaisa,
                         Actual = countedPaisa,
                         Difference = shift.DifferencePaisa,
-                        GivenTo = next.Name.Trim()
+                        GivenTo = recipient.Name.Trim()
                     },
                     cleanNote);
 
-                _audit.Record(connection, user, "Cash", "shift_open", "shifts", nextShiftId.ToString(),
+                _audit.Record(connection, reader, "Cash", "shift_open", "shifts", nextShiftId.ToString(),
                     newValue: Money.Format(countedPaisa) + " from drawer " + shift.Id);
 
                 // Portion 14: the handed-over drawer's difference gets its own contract row, inside
@@ -388,7 +397,8 @@ VALUES(@userId, @at, @openingFloat, 'open', @note, @fromId);",
                         shift.DifferencePaisa.Value, cleanNote ?? string.Empty, at);
                 }
 
-                var closedShift = ReadShift(connection, shift.Id) ?? shift;
+                var closedShift = ReadShift(connection, shift.Id)
+                    ?? throw new ValidationException("The recorded handover could not be read. Nothing was changed.");
 
                 // The stored row keeps the expected/actual/difference, but the six lines that
                 // explain *how* that expected figure was reached are not columns - they are read
@@ -401,7 +411,7 @@ VALUES(@userId, @at, @openingFloat, 'open', @note, @fromId);",
 
                 if (openedShift is null)
                 {
-                    return ServiceResult<ShiftHandover>.Fail("The next shift could not be opened.");
+                    throw new ValidationException("The next shift could not be opened. Nothing was changed.");
                 }
 
                 FillDrawer(connection, openedShift, openedShift.OpenedAt, at);
@@ -410,12 +420,13 @@ VALUES(@userId, @at, @openingFloat, 'open', @note, @fromId);",
                 {
                     From = closedShift,
                     To = openedShift,
-                    GivenBy = user.Name.Trim(),
-                    GivenTo = next.Name.Trim(),
+                    GivenBy = reader.Name.Trim(),
+                    GivenTo = recipient.Name.Trim(),
                     GivenAt = at
                 });
             });
         }
+        catch (ValidationException exception) { return ServiceResult<ShiftHandover>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error("The shift could not be handed over.", exception);
@@ -441,12 +452,6 @@ VALUES(@userId, @at, @openingFloat, 'open', @note, @fromId);",
     /// </summary>
     public ServiceResult<ShiftPersonReport> ByPerson(User? user, int days = 30)
     {
-        if (!_permissions.Can(user, Modules.Cash) || user is null || !user.CanManage)
-        {
-            return ServiceResult<ShiftPersonReport>.Fail(
-                "Only the owner or a manager can see who was short on the drawer.");
-        }
-
         if (days < 1 || days > 3650)
         {
             return ServiceResult<ShiftPersonReport>.Fail("Choose a window between 1 and 3650 days.");
@@ -455,6 +460,9 @@ VALUES(@userId, @at, @openingFloat, 'open', @note, @fromId);",
         try
         {
             using var connection = _db.Open();
+            var reader = RequireCash(connection, user);
+            if (!reader.CanManage)
+                return ServiceResult<ShiftPersonReport>.Fail("Only the owner or a manager can see who was short on the drawer.");
 
             // A closed shift always has both numbers: Close() writes them in the same statement that
             // marks the row closed. The filter is belt-and-braces for a file written by something
@@ -516,6 +524,7 @@ WHERE s.status = 'closed'
 
             return ServiceResult<ShiftPersonReport>.Success(report);
         }
+        catch (ValidationException exception) { return ServiceResult<ShiftPersonReport>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error("The per-person shift report could not be read.", exception);
@@ -523,16 +532,8 @@ WHERE s.status = 'closed'
         }
     }
 
-    /// <summary>
-    /// Portion 14: every drawer difference that needed a reason, newest first, with who counted
-    /// and why. Short and over are both here; exact drawers never made a row. Read-only.
-    /// </summary>
-    public List<ShiftDiscrepancy> Discrepancies(int limit = 60)
-    {
-        try
-        {
-            using var connection = _db.Open();
-            return _db.Query<ShiftDiscrepancy>(connection, @"
+    private List<ShiftDiscrepancy> ReadDiscrepancies(Microsoft.Data.Sqlite.SqliteConnection connection, int limit) =>
+        _db.Query<ShiftDiscrepancy>(connection, @"
 SELECT d.id AS id, d.shift_id AS shiftId, d.stage AS stage,
        d.expected_paisa AS expectedPaisa, d.counted_paisa AS countedPaisa,
        d.difference_paisa AS differencePaisa, d.reason AS reason,
@@ -543,22 +544,9 @@ JOIN shifts s ON s.id = d.shift_id
 LEFT JOIN users u ON u.id = s.user_id
 ORDER BY d.id DESC
 LIMIT @limit;", new { limit });
-        }
-        catch (Exception exception)
-        {
-            _log.Error("The drawer differences could not be read.", exception);
-            return new List<ShiftDiscrepancy>();
-        }
-    }
 
-    /// <summary>The last shifts, newest first - the day-by-day record of the drawer.</summary>
-    public List<ShiftMoney> History(int limit = 60)
-    {
-        try
-        {
-            using var connection = _db.Open();
-
-            return _db.Query<ShiftMoney>(connection, @"
+    private List<ShiftMoney> ReadHistory(Microsoft.Data.Sqlite.SqliteConnection connection, int limit) =>
+        _db.Query<ShiftMoney>(connection, @"
 SELECT s.id AS id, s.opened_at AS openedAt, IFNULL(u.name, '') AS openedBy,
        s.opening_float_paisa AS openingFloatPaisa, IFNULL(s.expected_paisa, 0) AS expectedPaisa,
        s.actual_paisa AS actualPaisa, s.difference_paisa AS differencePaisa,
@@ -567,14 +555,26 @@ SELECT s.id AS id, s.opened_at AS openedAt, IFNULL(u.name, '') AS openedBy,
 FROM shifts s
 LEFT JOIN users u ON u.id = s.user_id
 ORDER BY s.id DESC
-LIMIT @limit;",
-                new { limit });
-        }
-        catch (Exception exception)
-        {
-            _log.Error("The shift history could not be read.", exception);
-            return new List<ShiftMoney>();
-        }
+LIMIT @limit;", new { limit });
+
+    // Same connection is essential inside Database.Tx: PermissionService.Can opens another
+    // connection, while Database attaches its active transaction to commands. Do not turn that
+    // cross-connection error into a role-default grant/refusal for a delegated Cash operator.
+    private User RequireCash(Microsoft.Data.Sqlite.SqliteConnection connection, User? actor)
+    {
+        if (actor is not { Active: true } || actor.Id <= 0)
+            throw new ValidationException("Sign in with an active account to work the drawer.");
+        var current = _db.QuerySingle<User>(connection,
+            "SELECT id, name, role, active FROM users WHERE id = @id;", new { id = actor.Id });
+        if (current is not { Active: true } || current.Kind != actor.Kind)
+            throw new ValidationException("The account has changed. Sign in again before working the drawer.");
+        if (current.IsOwner) return current;
+        var grant = _db.QuerySingle<int?>(connection,
+            "SELECT allowed FROM user_permissions WHERE user_id = @userId AND module_key = @module;",
+            new { userId = current.Id, module = Modules.Cash });
+        if (!(grant is int saved ? saved != 0 : PermissionService.RoleDefault(current.Kind, Modules.Cash)))
+            throw new ValidationException("You do not have permission to work the drawer.");
+        return current;
     }
 
     private static bool HasDifferenceReason(string? note) =>

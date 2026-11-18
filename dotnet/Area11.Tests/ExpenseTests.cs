@@ -126,7 +126,7 @@ SELECT category AS category, title AS title, amount_paisa AS amountPaisa FROM ex
         Assert.True(Shifts(test).Open(TestData.Owner, 100000, null).Ok);          // float Rs 1,000
         Assert.True(TestData.CashOut(test).AddExpense(TestData.Owner, Rent(15000)).Ok);
 
-        var shift = Shifts(test).Current()!;
+        var shift = Shifts(test).Page(TestData.Owner).Value!.Current!;
 
         Assert.Equal(15000L, shift.ExpensesPaisa);
         Assert.Equal(85000L, shift.ExpectedPaisa);                                 // 1,000 - 150
@@ -165,7 +165,7 @@ SELECT category AS category, title AS title, amount_paisa AS amountPaisa FROM ex
 
         Assert.True(saved.Ok, saved.Error);
 
-        var shift = Shifts(test).Current()!;
+        var shift = Shifts(test).Page(TestData.Owner).Value!.Current!;
         Assert.Equal(50000L, shift.DrawingsPaisa);
         Assert.Equal(150000L, shift.ExpectedPaisa);                                // 2,000 - 500
     }
@@ -193,7 +193,7 @@ SELECT category AS category, title AS title, amount_paisa AS amountPaisa FROM ex
         Assert.Equal(100000L, saved.Value!.AmountPaisa);
         Assert.Equal(95d, StockOf(test, product));
 
-        var shift = Shifts(test).Current()!;
+        var shift = Shifts(test).Page(TestData.Owner).Value!.Current!;
         Assert.Equal(0L, shift.DrawingsPaisa);                                     // no cash moved
         Assert.Equal(100000L, shift.ExpectedPaisa);                                // the float, untouched
 

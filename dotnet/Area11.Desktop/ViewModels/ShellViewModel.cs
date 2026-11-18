@@ -222,7 +222,9 @@ public sealed class ShellViewModel : ObservableObject
 
         // A drawer that is still open must be counted by a person, so it stays open and a note is
         // left where the next sign-in will find it (SessionHandover).
-        if (_services.Shifts.Current() is not null)
+        var drawer = _services.Shifts.DrawerState(_user);
+        if (!drawer.Ok) _services.Log.Info("Drawer state was unknown during session expiry; sign-out continues without claiming it is closed.");
+        if (!drawer.Ok || drawer.Value)
         {
             SessionHandover.Mark(_services.Settings, _user.Name);
         }

@@ -226,6 +226,7 @@ table below**; a shade listed there has been used and must not come back.
 | 0.96.0 | 2026-11-10 | Grebe | `#595D7C` | Phase4 portion18: current transactional customer collection/rep actor, current customer/doctor/profit and company-rep reads, fresh profile, stale UI cleanup.24 new facts/1765 C# cases UNRUN;Windows/fullPhase4 OPEN. Black box/BookCheck unchanged. Dark `#3E4159`,soft `#F0F1F8`. |
 | 0.97.0 | 2026-11-10 | Lapwing | `#527466` | Phase4 portion19: current own-module Recovery/report/slip and monthly copy; fail-closed stale totals/selection/last-slip cleanup, real-document-only printer call.24 new facts/1789 C# cases UNRUN;Windows/fullPhase4 OPEN. Financial rules/Black box/BookCheck unchanged. Dark `#375044`,soft `#EDF5F0`. |
 | 0.98.0 | 2026-11-10 | Godwit | `#796044` | Phase4 portion20: current parent Customers/Suppliers tabs and current Owner-only staff roster, separate current-Cash active-person picker;stale staff cleanup/timers.28 new facts/1817 C# cases UNRUN;Windows/fullPhase4 OPEN. Accounting/Black box/BookCheck unchanged. Dark `#54412D`,soft `#F7F1E9`. |
+| 0.99.0 | 2026-11-10 | Curlew | `#526F85` | Phase4 portion21: current Cash drawer Page/ByPerson, status-only POS/session read, transactional Open/Close and current actor+recipient Handover;stale UI/output cleanup.35 new facts/1852 C# cases UNRUN;Windows/fullPhase4/installer OPEN. All13 accounting SQL blocks unchanged. Dark `#374C5D`,soft `#EDF3F8`. |
 
 ## Notes for the next agent
 

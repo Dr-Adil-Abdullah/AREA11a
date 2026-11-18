@@ -25,6 +25,9 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
     private readonly User _user;
 
     private bool _hasShift;
+    private bool _accessAllowed;
+    private bool _canSeePeople;
+    private bool _pageLoaded;
     private string _headerText = "The drawer is closed.";
     private string _previousClosingText = string.Empty;
     private string _floatText = "Rs 0";
@@ -89,7 +92,7 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
     public RelayCommand RefreshCommand { get; }
 
     /// <summary>The till is money: the page needs the Cash / shifts permission (owner always has it).</summary>
-    public bool CanWork => _services.Permissions.Can(_user, Modules.Cash);
+    public bool CanWork => _accessAllowed;
 
     public bool IsBlocked => !CanWork;
 
@@ -144,7 +147,7 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
     /// even when the cashier is allowed to open the till. The service enforces the same rule, so a
     /// hidden card and a refused call can never disagree.
     /// </summary>
-    public bool CanSeePeople => _user.CanManage;
+    public bool CanSeePeople => _canSeePeople;
 
     /// <summary>The sentence under the table: how many shifts, how many people, and what it found.</summary>
     public string PeopleSummaryText
@@ -251,12 +254,22 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
 
     public void Load()
     {
+        _pageLoaded = false;
+        var page = _services.Shifts.Page(_user);
+        if (!page.Ok || page.Value is null)
+        {
+            ClearSensitiveData();
+            SetStatus(page.Error ?? "The drawer could not be read; its state is unknown.", true);
+            return;
+        }
+        SetAccess(true, page.Value.CanSeePeople);
         HandoverNote = SessionHandover.Read(_services.Settings);
         OnPropertyChanged(nameof(HasHandoverNote));
 
-        var current = _services.Shifts.Current();
+        var current = page.Value.Current;
 
         HasShift = current is not null;
+        OpenFloatText = string.Empty;
 
         if (current is null)
         {
@@ -271,7 +284,7 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
             DrawingsText = "Rs 0";
             ExpectedText = "Rs 0";
 
-            var previous = _services.Shifts.LastCounted();
+            var previous = page.Value.Previous;
 
             if (previous?.ActualPaisa is long counted)
             {
@@ -304,24 +317,31 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
 
         History.Clear();
 
-        foreach (var row in _services.Shifts.History())
+        foreach (var row in page.Value.History)
         {
             History.Add(row);
         }
 
         Discrepancies.Clear();
 
-        foreach (var row in _services.Shifts.Discrepancies())
+        foreach (var row in page.Value.Discrepancies)
         {
             Discrepancies.Add(row);
         }
+        _pageLoaded = true;
     }
 
     /// <summary>
     /// Current Cash reader gets active other people only. Recipient Cash permission is still
     /// validated by Handover at posting time; appearing here is not proof of eligibility.
     /// </summary>
-    public void RefreshPeople() => LoadPeople();
+    public void RefreshPeople()
+    {
+        var wasAllowed = _accessAllowed;
+        if (!UpdateAccess()) return;
+        if (!wasAllowed) Load();
+        else LoadPeople();
+    }
 
     private void LoadPeople()
     {
@@ -379,6 +399,7 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
 
     private void HandOver()
     {
+        if (!UpdateAccess()) return;
         if (SelectedPerson is null)
         {
             SetStatus("Choose who is taking the drawer.", true);
@@ -408,6 +429,12 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
         SessionHandover.Clear(_services.Settings);
         Load();
 
+        if (!_pageLoaded || !UpdateAccess())
+        {
+            SetStatus("Handover SAVED, but the drawer page/access could not refresh. Do not hand over again; refresh to check.", true);
+            return;
+        }
+
         // The money has already moved, so a printer that is off must not look like a failed
         // handover: the sentence says both things separately.
         var printed = _services.Printer.Print(_services.HandoverSlips.Build(handover));
@@ -421,6 +448,7 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
 
     private void PrintSlip()
     {
+        if (!UpdateAccess()) return;
         if (_lastHandover is null)
         {
             SetStatus("Hand the drawer over first - there is no slip to print yet.", true);
@@ -436,11 +464,12 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
     }
 
     /// <summary>
-    /// The handover slip to WhatsApp: the slip text in the message, the same slip as a PDF file.
-    /// The slip is rebuilt from the recorded handover, so it always matches the black box.
+    /// The handover slip to WhatsApp: the saved in-memory result as text and the same PDF.
+    /// Current Cash access is rechecked; this is not a fresh database reconstruction or artifact recall.
     /// </summary>
     private void SendSlipOnWhatsApp()
     {
+        if (!UpdateAccess()) return;
         if (_lastHandover is null)
         {
             SetStatus("Hand the drawer over first - there is no slip to send yet.", true);
@@ -455,6 +484,7 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
 
     private void OpenShift()
     {
+        if (!UpdateAccess()) return;
         if (!Money.TryParse(OpenFloatText, out var rupees) || rupees < 0)
         {
             SetStatus("Type the cash you are starting with, for example 5000.", true);
@@ -474,11 +504,13 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
         SessionHandover.Clear(_services.Settings);
         Load();
 
-        SetStatus("Shift opened with " + result.Value.FloatLabel + ".", false);
+        SetStatus(_pageLoaded ? "Shift opened with " + result.Value.FloatLabel + "."
+            : "Opening SAVED, but the drawer page could not refresh. Do not open again; refresh to check.", !_pageLoaded);
     }
 
     private void CloseShift()
     {
+        if (!UpdateAccess()) return;
         if (!Money.TryParse(ActualText, out var rupees) || rupees < 0)
         {
             SetStatus("Count the drawer and type the total cash, for example 12450.", true);
@@ -499,8 +531,63 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
         SessionHandover.Clear(_services.Settings);
         Load();
 
-        SetStatus("Shift closed. Expected " + closed.ExpectedLabel + ", counted " + closed.ActualLabel
-                  + " - " + closed.DifferenceLabel + ".", !closed.IsExact);
+        SetStatus(_pageLoaded ? "Shift closed. Expected " + closed.ExpectedLabel + ", counted " + closed.ActualLabel
+                  + " - " + closed.DifferenceLabel + "."
+            : "Closing SAVED, but the drawer page could not refresh. Do not close again; refresh to check.", !_pageLoaded || !closed.IsExact);
+    }
+
+    private bool UpdateAccess()
+    {
+        var access = _services.Shifts.CheckAccess(_user);
+        if (!access.Ok)
+        {
+            SetAccess(false, false);
+            ClearSensitiveData();
+            SetStatus(access.Error ?? "Current Cash permission is required.", true);
+            return false;
+        }
+        var seniorChanged = _canSeePeople != access.Value;
+        SetAccess(true, access.Value);
+        if (seniorChanged)
+        {
+            PeopleSummary.Clear();
+            PeopleSummaryText = string.Empty;
+            if (CanSeePeople) LoadPeopleSummary();
+        }
+        return true;
+    }
+
+    private void SetAccess(bool allowed, bool senior)
+    {
+        if (SetProperty(ref _accessAllowed, allowed, nameof(CanWork)))
+        {
+            OnPropertyChanged(nameof(IsBlocked));
+            OnPropertyChanged(nameof(CanHandover));
+        }
+        SetProperty(ref _canSeePeople, senior, nameof(CanSeePeople));
+    }
+
+    private void ClearSensitiveData()
+    {
+        SetAccess(false, false);
+        _pageLoaded = false;
+        HasShift = false;
+        HeaderText = "Drawer state is not confirmed. Refresh before making changes.";
+        PreviousClosingText = string.Empty;
+        FloatText = CashSalesText = CollectionsText = SupplierInText = SupplierOutText = RefundsText
+            = ExpensesText = DrawingsText = ExpectedText = "hidden";
+        OpenFloatText = ActualText = HandoverCashText = string.Empty;
+        HandoverNote = string.Empty;
+        OnPropertyChanged(nameof(HasHandoverNote));
+        History.Clear();
+        Discrepancies.Clear();
+        NextPeople.Clear();
+        SelectedPerson = null;
+        PeopleSummary.Clear();
+        PeopleSummaryText = string.Empty;
+        _lastHandover = null;
+        OnPropertyChanged(nameof(HasLastHandover));
+        StatusText = string.Empty;
     }
 
     private void SetStatus(string message, bool isError)

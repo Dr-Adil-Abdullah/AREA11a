@@ -43,7 +43,7 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, 'cashier', 1, @a
 
         Assert.True(Shifts(test).Open(TestData.Owner, 50000, "morning").Ok);
 
-        Assert.Empty(Shifts(test).Discrepancies());
+        Assert.Empty(Shifts(test).Page(TestData.Owner).Value!.Discrepancies);
     }
 
     [Fact]
@@ -56,7 +56,7 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, 'cashier', 1, @a
         var closed = Shifts(test).Close(TestData.Owner, 50000, null);
 
         Assert.True(closed.Ok, closed.Error);
-        Assert.Empty(Shifts(test).Discrepancies());
+        Assert.Empty(Shifts(test).Page(TestData.Owner).Value!.Discrepancies);
     }
 
     [Fact]
@@ -71,7 +71,7 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, 'cashier', 1, @a
 
         Assert.True(opened.Ok, opened.Error);
 
-        var rows = Shifts(test).Discrepancies();
+        var rows = Shifts(test).Page(TestData.Owner).Value!.Discrepancies;
 
         var row = Assert.Single(rows);
         Assert.Equal("opening", row.Stage);
@@ -95,7 +95,7 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, 'cashier', 1, @a
 
         Assert.True(opened.Ok, opened.Error);
 
-        var row = Assert.Single(Shifts(test).Discrepancies());
+        var row = Assert.Single(Shifts(test).Page(TestData.Owner).Value!.Discrepancies);
         Assert.Equal("opening", row.Stage);
         Assert.Equal(50000L, row.ExpectedPaisa);
         Assert.Equal(45000L, row.CountedPaisa);
@@ -119,7 +119,7 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, 'cashier', 1, @a
 
         Assert.True(closed.Ok, closed.Error);
 
-        var row = Assert.Single(Shifts(test).Discrepancies());
+        var row = Assert.Single(Shifts(test).Page(TestData.Owner).Value!.Discrepancies);
         Assert.Equal("closing", row.Stage);
         Assert.Equal(80000L, row.ExpectedPaisa);
         Assert.Equal(75000L, row.CountedPaisa);
@@ -139,7 +139,7 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, 'cashier', 1, @a
 
         Assert.True(closed.Ok, closed.Error);
 
-        var row = Assert.Single(Shifts(test).Discrepancies());
+        var row = Assert.Single(Shifts(test).Page(TestData.Owner).Value!.Discrepancies);
         Assert.Equal("closing", row.Stage);
         Assert.Equal(50000L, row.ExpectedPaisa);
         Assert.Equal(52000L, row.CountedPaisa);
@@ -159,7 +159,7 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, 'cashier', 1, @a
         var handed = Shifts(test).Handover(TestData.Owner, bilal, 50000, "going home");
 
         Assert.True(handed.Ok, handed.Error);
-        Assert.Empty(Shifts(test).Discrepancies());
+        Assert.Empty(Shifts(test).Page(TestData.Owner).Value!.Discrepancies);
     }
 
     [Fact]
@@ -177,7 +177,7 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, 'cashier', 1, @a
 
         Assert.True(handed.Ok, handed.Error);
 
-        var row = Assert.Single(Shifts(test).Discrepancies());
+        var row = Assert.Single(Shifts(test).Page(TestData.Owner).Value!.Discrepancies);
         Assert.Equal("closing", row.Stage);
         Assert.Equal(80000L, row.ExpectedPaisa);
         Assert.Equal(78000L, row.CountedPaisa);
@@ -202,7 +202,7 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, 'cashier', 1, @a
 
         Assert.True(handed.Ok, handed.Error);
 
-        var row = Assert.Single(Shifts(test).Discrepancies());
+        var row = Assert.Single(Shifts(test).Page(TestData.Owner).Value!.Discrepancies);
         Assert.Equal("closing", row.Stage);
         Assert.Equal(500L, row.DifferencePaisa);
         Assert.Equal(handed.Value!.From.Id, row.ShiftId);
@@ -219,7 +219,7 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, 'cashier', 1, @a
         var refused = Shifts(test).Close(TestData.Owner, 49000, null);
 
         Assert.False(refused.Ok);
-        Assert.Empty(Shifts(test).Discrepancies());
+        Assert.Empty(Shifts(test).Page(TestData.Owner).Value!.Discrepancies);
     }
 
     [Fact]
@@ -233,7 +233,7 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, 'cashier', 1, @a
         var refused = Shifts(test).Open(TestData.Owner, 60000, null);
 
         Assert.False(refused.Ok);
-        Assert.Empty(Shifts(test).Discrepancies());
+        Assert.Empty(Shifts(test).Page(TestData.Owner).Value!.Discrepancies);
     }
 
     [Fact]
@@ -246,7 +246,7 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, 'cashier', 1, @a
         Assert.True(Shifts(test).Open(TestData.Owner, 49000, "carried over").Ok);
         Assert.True(Shifts(test).Close(TestData.Owner, 50000, "second over").Ok);
 
-        var rows = Shifts(test).Discrepancies();
+        var rows = Shifts(test).Page(TestData.Owner).Value!.Discrepancies;
 
         Assert.Equal(2, rows.Count);
         Assert.Equal("second over", rows[0].Reason);
@@ -263,7 +263,7 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, 'cashier', 1, @a
         Assert.True(Shifts(test).Open(bilal, 50000, null).Ok);
         Assert.True(Shifts(test).Close(bilal, 48000, "bilal was short").Ok);
 
-        var row = Assert.Single(Shifts(test).Discrepancies());
+        var row = Assert.Single(Shifts(test).Page(TestData.Owner).Value!.Discrepancies);
 
         Assert.Equal("Bilal", row.OpenedBy);
         Assert.False(string.IsNullOrWhiteSpace(row.OpenedAt));

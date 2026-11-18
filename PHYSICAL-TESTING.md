@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-41 — current Cash / transactional drawer / unknown-state handling (v0.99.0) — UNRUN
+
+[Isolated Windows steps](docs/POS-PHASE4-PART21-URDU.md): currentCashPage/ByPerson/senior/revoke/restore/identity,Pos-onlyboolean/currentunknownstate,OpenCloseTx/currentHandoveractors/storednames/recipientgrants,one-rupeereason/countedfloat/audit+discrepancy+postreadfaultrollback,staleUI/cache/printshare/SAVEDrefreshfailure,conservativeexpirycountnote,realparallelOpen/retry/boundary/timer/hardware.1852C#cases/WPF/Windows/DPAPI/installerUNRUN;88static/16syntheticSQLprobes/19source mutationsNOT runtime. SharedDatabase/permissioncrossconnectionhazardelsewhere,fullSettings/session/fault/concurrency/files/cloud/restore/globalPhase4stillOPEN. Blackbox/BookCheckunchanged. No fake shop posts;separateexealoneNOTisolation.
+
 ## PT-40 — current parent tabs / Owner roster / Cash picker (v0.98.0) — UNRUN
 
 [Isolated Windows steps](docs/POS-PHASE4-PART20-URDU.md): Customers-or-Suppliers grants/fallback/deniedemptyhint/detach/regrant/allowedformretention,storedreaderidentity,Owner-onlystafflistandtargetactions/ownfinancialcheckboxes/stalepermissions/pricing/typedsecretscleanup,Cash-onlyactiveotherpersonpicker/revocation/inactivefilter,delayedpointerstalerow/keyboard/header/timerunloadchecks.1817C#cases/WPF/Windows/DPAPI/installerUNRUN;87static/15syntheticSQLprobes/17source mutations NOTruntime. Fullgallafinancialreads/posting/fullSettings/sessionstillOPEN;Blackbox/BookCheckunchanged. No fake shop posts;separateexefolderaloneNOTisolation.

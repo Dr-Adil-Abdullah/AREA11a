@@ -1,5 +1,17 @@
 # باقی کام، GitHub اور test installer — v0.96.0
 
+## تازہ checkpoint — v0.99.0 Curlew / حصہ21؛کیا باقی ہے؟
+
+گلہکےcurrentCashreads،Open/ClosetransactionاورHandovercurrentactor/recipient،unknown-vs-closed،staleUI/outputsکےsourceراستےبدلے؛13accountingSQLunchanged۔ [PT-41](POS-PHASE4-PART21-URDU.md)،[trace/حدود](POS-PHASE4-SHIFT-CURRENT-REVIEW.md)۔ **1852C#cases/WindowsUNRUN؛88static،16syntheticSQLprobes،19source mutationsruntimeنہیں۔**
+
+1. **اگلیsourceترجیح:** sharedDatabase._transactionاورPermissionServiceکےدوسرےconnectionکابرتاؤباقیtransactionalservicesمیں؛گلہsameconnectionاستعمالکرتاہےمگرglobalhazardابھینہیںحل/executeہوا۔
+2. باقیSettings/native/custom/photo/secretfields،shell/session/recordauthorizationاورcross-servicefault/rollback/retry/concurrency۔
+3. Files/cloud،originalpasswordA/DPAPI/new-PCbackuprestore،interruptedrestore/rollbackاورواقعیالگDB/photosکیintegration۔
+4. اصلWindowsپرتمام1852cases،Desktop/WPFbuild،keyboard/timers/printer/scanner/screenshotsاوراننتائجکیfixes۔
+5. پھرauthorizedواحدsendabledouble-clicktestinstaller،shortcuts/startup/upgrade/uninstall/new-PCverification؛**ابھیexeinstallerنہیںبنا۔**
+
+**تقریباً3–6مزیدمربوطreview/resultچکر** مشروطاندازہ،deadline/upperboundنہیں؛connection/Windowsنتائجسےبڑھسکتا۔ Version0.99productionreadyنہیں۔ Blackbox/BookCheckD-115سےآگےنہیںکھولا۔ ہرportiondocs+samebranchcommit/push/actualremoteverifyلازم۔ نیچےکےcheckpointsتاریخیہیں۔
+
 ## تازہ checkpoint — v0.98.0 Godwit / حصہ20
 
 Parenttabsابcurrentown-modulevisibility/detach/fallback،fullstaffrostercurrentOwner-only،گلہکےلیےالگcurrentCashactive-personpicker؛stalesettingsstaffselection/permissions/pricing/secretsصاف،allowedformsبرقرار۔ [PT-40](POS-PHASE4-PART20-URDU.md)،[trace](POS-PHASE4-PARENT-ROSTER-REVIEW.md)۔ **1817C#cases/WindowsUNRUN؛87static،15syntheticSQLprobes،17source mutationsruntimeنہیں۔** اگلاموزوںباقیراستہگلہکےmonetaryreads/Open-Close-Handoverfault/atomicity،پھرfullSettings/session/record/concurrency/files/cloud/restore/Windows۔ Blackbox/BookCheckD-115سےآگےنہیںکھولا۔ **تقریباً3–6مزیدمربوطreview/resultچکر** مشروط،deadline/upperboundنہیں؛Windowsنتائجسےبڑھسکتا۔ Single double-click test installer مجازمگرSDK/Windows/Inno/build/test/isolatedrestore/packagingثبوتابھیباقی؛installerنہیںبنا۔ ہرportiondocs+samebranchcommit/push/actualremoteverifyلازم۔ نیچےcheckpointتاریخیہیں۔

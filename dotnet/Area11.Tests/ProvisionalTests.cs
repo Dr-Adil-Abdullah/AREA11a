@@ -330,7 +330,7 @@ FROM provisional_items WHERE provisional_id = @id ORDER BY id;", new { id = save
         var rush = TestData.Provisionals(test).Create(TestData.RushReturn(product), TestData.Owner);
         Assert.True(rush.Ok, rush.Error);
 
-        var beforeClose = shifts.Current()!;
+        var beforeClose = shifts.Page(TestData.Owner).Value!.Current!;
         Assert.Equal(60000L, beforeClose.CashRefundsPaisa);
         Assert.Equal(40000L, beforeClose.ExpectedPaisa);
         Assert.True(shifts.Close(TestData.Owner, 40000, "counted").Ok);
@@ -357,11 +357,11 @@ UPDATE shifts SET opened_at = datetime('now','localtime','-20 seconds'),
         var cancelled = TestData.Provisionals(test).Cancel(rush.Value!.Id, "typed twice by mistake", TestData.Owner);
         Assert.True(cancelled.Ok, cancelled.Error);
 
-        var current = shifts.Current()!;
+        var current = shifts.Page(TestData.Owner).Value!.Current!;
         Assert.Equal(0L, current.CashRefundsPaisa);
         Assert.Equal(0L, current.ExpectedPaisa);  // no customer cash came back: cancelling is not cash-in
 
-        var firstRow = shifts.History().Single(row => row.Id == firstShift.Value!.Id);
+        var firstRow = shifts.Page(TestData.Owner).Value!.History.Single(row => row.Id == firstShift.Value!.Id);
         Assert.Equal(40000L, firstRow.ExpectedPaisa);  // the later cancellation did not rewrite history
 
         using var connection = test.Database.Open();

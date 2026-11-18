@@ -73,7 +73,7 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, @role, @active, 
         Assert.Equal("Bilal", handover.To.OpenedBy);
 
         // The open shift is now the second one, and the first one is closed.
-        var current = Shifts(test).Current()!;
+        var current = Shifts(test).Page(TestData.Owner).Value!.Current!;
         Assert.Equal(handover.To.Id, current.Id);
         Assert.Equal(bilal.Id, current.UserId);
     }
@@ -146,8 +146,8 @@ FROM shifts ORDER BY id;");
         Assert.Contains("same person", refused.Error!, StringComparison.OrdinalIgnoreCase);
 
         // The drawer stayed exactly as it was.
-        Assert.True(Shifts(test).Current()!.IsOpen);
-        Assert.Equal(TestData.Owner.Id, Shifts(test).Current()!.UserId);
+        Assert.True(Shifts(test).Page(TestData.Owner).Value!.Current!.IsOpen);
+        Assert.Equal(TestData.Owner.Id, Shifts(test).Page(TestData.Owner).Value!.Current!.UserId);
     }
 
     [Fact]
@@ -162,7 +162,7 @@ FROM shifts ORDER BY id;");
 
         Assert.False(refused.Ok);
         Assert.Contains("switched off", refused.Error!, StringComparison.OrdinalIgnoreCase);
-        Assert.True(Shifts(test).Current()!.IsOpen);
+        Assert.True(Shifts(test).Page(TestData.Owner).Value!.Current!.IsOpen);
     }
 
     [Fact]
@@ -183,7 +183,7 @@ FROM shifts ORDER BY id;");
 
         Assert.False(refused.Ok);
         Assert.Contains("cannot work the till", refused.Error!, StringComparison.OrdinalIgnoreCase);
-        Assert.True(Shifts(test).Current()!.IsOpen);
+        Assert.True(Shifts(test).Page(TestData.Owner).Value!.Current!.IsOpen);
     }
 
     [Fact]
@@ -201,13 +201,13 @@ FROM shifts ORDER BY id;");
 
         Assert.False(refused.Ok);
         Assert.Contains("Only the person who opened", refused.Error!);
-        Assert.Equal(first.Id, Shifts(test).Current()!.UserId);
+        Assert.Equal(first.Id, Shifts(test).Page(TestData.Owner).Value!.Current!.UserId);
 
         // The owner may hand over on behalf of the person who went home.
         var byOwner = Shifts(test).Handover(TestData.Owner, third, 20000, "no one at the counter");
 
         Assert.True(byOwner.Ok, byOwner.Error);
-        Assert.Equal(third.Id, Shifts(test).Current()!.UserId);
+        Assert.Equal(third.Id, Shifts(test).Page(TestData.Owner).Value!.Current!.UserId);
     }
 
     [Fact]
@@ -250,7 +250,7 @@ FROM audit_logs WHERE action IN ('shift_handover', 'shift_open') ORDER BY id;");
         Assert.Equal(2, openLines.Count);
         Assert.Equal(handover.To.Id.ToString(), openLines[^1].EntityId);
 
-        var history = Shifts(test).History();
+        var history = Shifts(test).Page(TestData.Owner).Value!.History;
         Assert.Equal(2, history.Count);
         Assert.Equal(handover.To.Id, history[0].Id);              // newest first
         Assert.True(history[1].WasHandedOver);
@@ -283,12 +283,12 @@ FROM audit_logs WHERE action IN ('shift_handover', 'shift_open') ORDER BY id;");
         // are pinned instead: first bill at -15 s, handover at -10 s, second bill at -5 s.
         PinAroundTheHandover(test, handover, before.Value!.Code, after.Value!.Code);
 
-        var second = Shifts(test).Current()!;
+        var second = Shifts(test).Page(TestData.Owner).Value!.Current!;
 
         Assert.Equal(30000L, second.CashSalesPaisa);        // only the bill after the handover
         Assert.Equal(90000L, second.ExpectedPaisa);         // the counted float + that bill
 
-        var history = Shifts(test).History();
+        var history = Shifts(test).Page(TestData.Owner).Value!.History;
         var first = history.Single(row => row.Id == handover.From.Id);
 
         // The two shifts together say exactly what the shop sold: 6 + 3 = 9, never 15. The first
@@ -311,7 +311,7 @@ FROM audit_logs WHERE action IN ('shift_handover', 'shift_open') ORDER BY id;");
         Assert.True(bill.Ok, bill.Error);
 
         var handover = Shifts(test).Handover(TestData.Owner, bilal, 30000, null).Value!;
-        var opened = Shifts(test).Current()!;
+        var opened = Shifts(test).Page(TestData.Owner).Value!.Current!;
 
         // No pinning needed here: whichever seconds the two land in, the bill is never after the
         // count, because it was written before the handover ran.

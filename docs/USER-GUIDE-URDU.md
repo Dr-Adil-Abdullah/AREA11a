@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.98.0 Godwit۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.99.0 Curlew۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**حصہ21 — گلہ:** currentCashPage/ByPerson،OpenClosetransaction،Handoverمیںcurrentدینے/لینےوالے؛storedنام،countedfloatاورone-rupeereasonبرقرار۔ Failedreadکوclosed/Rs0نہیںکہتے؛POSصرفstatus،unknownپربلblock؛expiryopen/unknownپرcheck/countnote،فرضیcloseنہیں۔ Stalenumbers/history/recipient/lastslipصاف؛savedمگرrefreshfailتو**SAVED،actionدوبارہنہکریں**۔ [PT-41](POS-PHASE4-PART21-URDU.md)،[traceاورکیاباقیہے](POS-PHASE4-SHIFT-CURRENT-REVIEW.md)۔ **1852C#cases/WindowsUNRUN؛88staticPASS**۔ Othertransactionalservicesکےconnectionpattern،Settings/session/Windows/installer/fullPhase4باقی؛Blackbox/BookCheckunchanged۔
 
 **حصہ20 — parent tabs اور staff list:** Customers/RecoveryاورSuppliersاپنےcurrentmodulegrantsسے؛منعbranchdetach،selectionجائزfallback،allowedchildformsہرtickدوبارہنہیںبنتے۔ FullstaffrostercurrentactiveOwner-only؛گلہhandoverکاالگcurrentCashactive-other-personpicker،Staffpanelنہیں۔ Denial/failedrosterپرstaffselection/permissions/pricing/typedsecretsصاف؛nominal3sviewchecks،فوریrecallنہیں۔ [PT-40](POS-PHASE4-PART20-URDU.md)،[حدود](POS-PHASE4-PARENT-ROSTER-REVIEW.md)۔ **1817C#cases/WindowsUNRUN؛87staticPASS**۔ FullSettings/gallareviewباقی؛Blackbox/BookCheck/حسابunchanged۔
 
@@ -139,6 +141,8 @@ Recovery سے داخلہ پرانی فروخت یا کھاتے کو reset نہی
 
 ## سبق 03 — صبح گلا کھولنا، رات گننا
 
+حصہ21: currentCashreaderکےبغیرگلہکےnumbers/عملنہیں؛ByPersonaggregateکےلیےcurrentOwner/Managerبھی۔ Open/Close/Handoverکےwritesاکٹھےtransactionمیں؛readخرابہوتوunknownنہکہclosed۔ ActionSAVEDمگرrefresh/printerfailہوتودوبارہنہکریں،کھاتہ/گلہrefreshسےدیکھیں۔ Handoverreprint/shareسےپہلےfreshCash،slipآخریsavedin-memorysnapshotہے،freshDBreconstructionنہیں۔ [PT-41](POS-PHASE4-PART21-URDU.md)۔
+
 حصہ20: handoverکاname-pickercurrentCashreaderکوصرفactiveدوسرےلوگدکھاتاہے،fullOwnerstaffdirectoryنہیں۔ نامچننےسےrecipientکیCashpostingاجازتثابتنہیں؛اصلHandovervalidationالگبرقرار۔ Pickerکیجانچسےگلہکےباقیfinancialreads/postingatomicitycertifiedنہیںہوتے۔
 
 1. MONEY → Shift (galla) کھولیں۔ پہلے سے کھلا drawer ہو تو اسے دوبارہ نیا سمجھ کر نہ کھولیں؛ پچھلے شخص/مالک سے اصل نقدی گنوا کر بندش یا handover کریں۔
@@ -235,6 +239,8 @@ Supplier statement پر پہلے سے ادا شدہ رقم دوبارہ Pay نہ
 <a id="lesson-09"></a>
 
 ## سبق 09 — Counter پر بل بنانا
+
+حصہ21: Counterگلہکےmonetarytotalsنہیںپڑھتا،صرفcurrentCash/Posاجازتسےstatus۔ Stateunknownہوتو“refreshکریں”کےساتھبلblock،غلط“گلہبند”دعویٰنہیں۔ اصلSaleServiceکیopen-drawergateبرقرار۔
 
 1. گلا کھلا ہو؛ Counter کے اوپر دوا تلاش کریں یا barcode سکین کریں۔ خالی search پر پوری catalog فہرست نہیں آئے گی؛ نام لکھیں تو Cart کے ساتھ مستقل چھوٹے پینل میں نتیجوں کے cards آئیں گے؛ ہر card میں تصویر/نام، طاقت، pack، stock، retail اور salt/rack دیکھیں۔ صحیح طاقت/pack منتخب کرکے Unit، Quantity اور Add to cart؛ کامیاب add پر نتائج اور search صاف، scanner focus واپس، مگر پینل کی جگہ قائم رہے گی۔ Esc یا Hide صرف matches چھپاتا ہے؛ query بدلیں تو دوبارہ آئیں گے۔ name کے Enter سے guessed medicine خود نہیں ڈلتی، درست barcode Enter اپنی pack unit کے مطابق کام کرتا ہے۔
 2. Cart میں Item، Unit، Qty اور Rate Rs دیکھیں۔ Rate اسی لائن کی unit کا روپے والا ریٹ ہے۔ غلط چیز Remove؛ پورا غیر محفوظ cart ختم کرنا ہو تو Clear۔
@@ -623,6 +629,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 
 ## سبق 33 — خودکار آغاز، محفوظ بندش اور Screen lock
 
+حصہ21: Sessionexpiryمیںگلہopenیاstateunknownہوتوcheck/countnote؛knownclosedہوتونیاnoteنہیں۔ Programخودگنتیکرکےcloseنہیںکرتا؛noteکےالفاظunknownکوknownopenنہیںکہتے۔ Existingbest-effortnote-storageکیخرابی/مکملsessionauthenticationاورWindowsثبوتابھیباقی۔
+
 1. Settings → Shop میں startup منتخب کریں: By hand/manual = ہاتھ سے آغاز؛ Start with Windows/auto = Windows sign-in پر آغاز؛ Protected = خود آغاز اور × پر password/PIN کی اجازت۔ auto-start خود login نہیں کرتا۔
 2. تمام Windows اکاؤنٹس پر startup رکھنے کے لیے administrator اختیار چاہیے۔ نہ ہو تو موجودہ implementation صرف اس Windows account کی entry رکھ سکتی ہے؛ save کے بعد اصل ScopeText پڑھیں، ہر اکاؤنٹ پر لگ جانے کا اندازہ نہ کریں۔ دوسری account سے جانچ الگ ضروری ہے۔
 3. خودکار startup کے login پر fullscreen/چھپی taskbar کی حالت ہو سکتی ہے؛ یہ عام دستی launch کے ہر صفحے کا مستقل نیا layout نہیں۔ دوسری copy کھولیں تو already-running پیغام کے ساتھ نئی copy رکتی ہے۔
@@ -645,6 +653,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 <a id="lesson-35"></a>
 
 ## سبق 35 — Preview، WhatsApp اور پرنٹ کی مشترکہ سمجھ
+
+گلہhandoverکیslipکےtext/PDF/printسےپہلےcurrentCashچیک؛پراناpermission/cachedsnapshotخودauthorizationنہیں۔ پہلےسےبنPaper/PDF/clipboardواپسنہیںلیاجاتے،accesscheckاورhandoffکےدرمیانraceابھیحدہے۔
 
 Recoveryکیfailedslipپرپرنٹرکوخالیdocumentنہیںدیاجاتا۔ وصولیsaveہوجانےکےبعدprinterیاrefreshکیخرابیسےpaymentختمیادوبارہنہیںہوتی؛statusپڑھیںاورکھاتہcheckکریں۔
 
@@ -696,7 +706,7 @@ Recoveryکیfailedslipپرپرنٹرکوخالیdocumentنہیںدیاجاتا۔
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.98.0 کا متوقع test count 1817 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.99.0 کا متوقع test count 1852 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 

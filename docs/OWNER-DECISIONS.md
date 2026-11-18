@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## D-110 / D-115 continuation — گلہ checkpoint v0.99.0 (2026-11-10)
+
+نئیbusinesspolicyنہیں:Cashoperatingmoneyاپنیgrantسے،ByPersonaggregatecurrentOwner/Manager+Cash،POSصرفstatus۔ Open/Closeابtransaction،Handovercurrentgiver/recipient،countedcashہیnextfloat/one-rupeereasonبرقرار۔ Readfailureunknown،sessionexpiryپرopen/unknowncountchecknoteنہفرضیclose۔ [Trace](POS-PHASE4-SHIFT-CURRENT-REVIEW.md)،[PT-41](POS-PHASE4-PART21-URDU.md)۔ SupplierB/backupA/Blackbox/BookCheckاور13accountingSQLunchanged۔1852C#cases/WindowsUNRUN؛دیگرservicesکےtransaction/permissionconnectionhazardاورfullPhase4/installerابھیOPEN۔
+
 ## D-110 / D-115 continuation — parent/roster checkpoint v0.98.0 (2026-11-10)
 
 نیاbusinesspolicyنہیں:parentCustomers/RecoveryاپنےCustomersgrantسے،Suppliersاپنےgrantسے؛staffadministrationموجودہactiveOwnerہی،Staff/SettingsgrantیاManagerنامOwnerنہیںبناتا۔ گلہhandoverکےلیےالگcurrentCashactive-other-personpicker؛یہrecipientpostingeligibilityثبوتنہیں۔ Staleparent/staffstatecleanup/timers،ordinaryجائزformsبرقرار۔ [Trace](POS-PHASE4-PARENT-ROSTER-REVIEW.md)،[PT-40](POS-PHASE4-PART20-URDU.md)۔ SupplierB/backupA/financialposting/Blackbox/BookCheckunchanged؛1817C#cases/WindowsUNRUN،fullPhase4/installerOPEN۔

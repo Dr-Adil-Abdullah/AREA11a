@@ -2997,10 +2997,11 @@ def check_shift_report_gate() -> None:
         return
 
     start = code.index(marker)
-    try_at = code.find("try", start)
-    guard = code[start:try_at if try_at > start else start + 1500]
+    # Current role/module is resolved inside try, before the first money query.
+    query_at = code.find("var people = _db.Query<ShiftPersonSummary>", start)
+    guard = code[start:query_at if query_at > start else start + 2000]
 
-    if "Modules.Cash" not in guard or "CanManage" not in guard:
+    if "RequireCash(connection, user)" not in guard or "reader.CanManage" not in guard:
         fail("ByPerson does not ask for both the Cash permission and a manager - "
              "a cashier with the till permission could read a colleague's differences")
 
@@ -3025,7 +3026,7 @@ def check_shift_report_gate() -> None:
     if not can_line:
         fail("ShiftViewModel has no CanSeePeople - the card's visibility has no rule")
 
-    if "CanManage" not in can_line:
+    if "_canSeePeople" not in can_line or "SetAccess(true, page.Value.CanSeePeople)" not in screen:
         fail("ShiftViewModel shows the per-person card to somebody who is not a manager - "
              "CanSeePeople must be the same rule the service refuses on")
 
@@ -7533,7 +7534,7 @@ def check_parent_roster_boundaries():
         part = settings.split('private void ' + method + '()', 1)[1].split('\n    }', 1)[0]
         need(part, ['if (!UpdateStaffAccess()) return;'], 'Fresh owner staff command ' + method)
     shift = (DOTNET / 'Area11.Desktop/ViewModels/ShiftViewModel.cs').read_text()
-    need(shift, ['public void RefreshPeople() => LoadPeople();', '_services.Auth.ListHandoverPeople(_user)', 'NextPeople.Clear();'], 'Operational picker UI')
+    need(shift, ['public void RefreshPeople()', '_services.Auth.ListHandoverPeople(_user)', 'NextPeople.Clear();'], 'Operational picker UI')
     if '_services.Auth.ListUsers()' in settings or '_services.Auth.ListUsers()' in shift:
         FAILURES.append('All administrative roster callers must explicitly supply current actor/purpose')
     for name, timer, method in [('Partners', '_accessTimer', 'RefreshAccess'), ('Settings', '_staffAccessTimer', 'RefreshStaffAccess'), ('Shift', '_accessTimer', 'RefreshPeople')]:
@@ -7545,6 +7546,75 @@ def check_parent_roster_boundaries():
                  'CashDelegationAllowsOperationalPickerButNotAdministration', 'PickerRechecksCashRevocationAndRestore',
                  'ParentAndBothRosterReadsDoNotWriteAuditOrAccountData', 'SupplierOnlyAlwaysSelectsItsPhysicalIndexTwo'], 'Parent/roster regressions')
     REPORT.append('Phase4 portion20: current Customers/Suppliers parent tabs with detach/fallback, current-owner administrative roster vs current-Cash active-person picker, stale staff state cleanup/timers;28 facts written, fullSettings/galla/session/Windows/globalPhase4 OPEN')
+
+
+def check_shift_current_boundaries():
+    """Portion21 structural contracts, never C#/concurrency/Windows certification."""
+    def need(source, tokens, label):
+        for token in tokens:
+            if token not in source: FAILURES.append(f'{label}: missing {token}')
+    core = (DOTNET / 'Area11.Core/Services/ShiftService.cs').read_text()
+    gate = 'var reader = RequireCash(connection, user);'
+    for name in ('Open', 'Close', 'Handover'):
+        part = core.split(' ' + name + '(', 1)[1].split('\n    }', 1)[0]
+        if not 0 <= part.find('return _db.Tx(connection =>') < part.find(gate) < part.find('ReadOpen(connection)'):
+            FAILURES.append(f'Shift {name}: current Cash actor must be inside Tx before drawer lookup')
+        need(part, ['connection, reader, "Cash"'], 'Stored shift actor ' + name)
+        if name == 'Open': need(part, ['userId = reader.Id', 'throw new ValidationException("The shift could not be opened.'], 'Opening rollback/actor')
+        if name == 'Close': need(part, ['shift.UserId != reader.Id && !reader.CanManage', 'RecordDiscrepancy(connection'], 'Closing current senior/reason')
+        if name == 'Handover':
+            recipient = 'var recipient = RequireCash(connection, next);'
+            if not 0 <= part.find(recipient) < part.find('ReadOpen(connection)'):
+                FAILURES.append('Handover needs current same-role active Cash recipient inside transaction')
+            need(part, ['GivenBy = reader.Name.Trim()', 'GivenTo = recipient.Name.Trim()', 'userId = recipient.Id',
+                        'openingFloat = countedPaisa', '?? throw new ValidationException("The recorded handover',
+                        'throw new ValidationException("The next shift could not be opened.'], 'Handover result/rollback')
+        if 'CostPolicy' in part or 'ProfitPolicy' in part or '_permissions.Can(user' in part:
+            FAILURES.append('Ordinary Cash operation must use current Cash only, not financial or cached-role shortcut')
+    cash = core.split('private User RequireCash(', 1)[1].split('private static bool HasDifferenceReason', 1)[0]
+    need(cash, ['actor is not { Active: true } || actor.Id <= 0', 'current.Kind != actor.Kind',
+                'if (current.IsOwner) return current;', 'SELECT allowed FROM user_permissions WHERE user_id = @userId AND module_key = @module;',
+                'new { userId = current.Id, module = Modules.Cash }', 'PermissionService.RoleDefault(current.Kind, Modules.Cash)'], 'Same-connection Cash reader')
+    if '_db.Open(' in cash or '_permissions.Can(' in cash or 'catch (' in cash:
+        FAILURES.append('Cash authorization must use provided connection and propagate grant query errors, not cross-connection/default fallback')
+    need(core, ['shift.ExpectedPaisa = shift.OpeningFloatPaisa + shift.CashSalesPaisa + shift.CashCollectionsPaisa',
+                'sql.Replace(">= @from", "> @from", StringComparison.Ordinal)'], 'Preserved drawer formula/boundary')
+    page = core.split('public ServiceResult<ShiftPage> Page(', 1)[1].split('\n    }', 1)[0]
+    if not 0 <= page.find(gate) < page.find('ReadOpen(connection)'):
+        FAILURES.append('Drawer Page must current-check before any money lookup')
+    need(page, ['Previous = ReadLastCounted(connection)', 'History = ReadHistory(connection, limit)',
+                'Discrepancies = ReadDiscrepancies(connection, limit)', 'CanSeePeople = reader.CanManage', 'ServiceResult<ShiftPage>.Fail'], 'Known page vs failed read')
+    for old in ('public ShiftMoney? Current()', 'public ShiftMoney? LastCounted()', 'public List<ShiftMoney> History(', 'public List<ShiftDiscrepancy> Discrepancies('):
+        if old in core: FAILURES.append('Actorless financial shift read must not remain: ' + old)
+    state = core.split('public ServiceResult<bool> DrawerState(', 1)[1].split('\n    }', 1)[0]
+    need(state, ['SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Cash, Modules.Pos)',
+                 'SELECT COUNT(1) FROM shifts WHERE status =', 'ServiceResult<bool>.Fail'], 'State-only Cash/POS read')
+    if 'ReadOpen(' in state or 'FillDrawer(' in state: FAILURES.append('POS state check must not fetch drawer money')
+    people = core.split('public ServiceResult<ShiftPersonReport> ByPerson(', 1)[1].split('\n    }', 1)[0]
+    if not 0 <= people.find(gate) < people.find('if (!reader.CanManage)') < people.find('_db.Query<ShiftPersonSummary>'):
+        FAILURES.append('ByPerson requires current Cash + stored senior role before monetary aggregates')
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/ShiftViewModel.cs').read_text()
+    need(vm, ['_services.Shifts.Page(_user)', 'public bool CanWork => _accessAllowed;', 'public bool CanSeePeople => _canSeePeople;',
+              'if (!UpdateAccess()) return;', '_services.Shifts.CheckAccess(_user)', 'private void ClearSensitiveData()',
+              '_lastHandover = null;', 'History.Clear();', 'Discrepancies.Clear();', 'PeopleSummary.Clear();',
+              'SelectedPerson = null;', 'OpenFloatText = ActualText = HandoverCashText = string.Empty;',
+              '= ExpensesText = DrawingsText = ExpectedText = "hidden";', 'Handover SAVED,', 'Opening SAVED,', 'Closing SAVED,'], 'Shift stale data/output/save-result')
+    for name in ('HandOver', 'PrintSlip', 'SendSlipOnWhatsApp', 'OpenShift', 'CloseShift'):
+        part = vm.split('private void ' + name + '()', 1)[1].split('\n    }', 1)[0]
+        need(part, ['if (!UpdateAccess()) return;'], 'Shift fresh action ' + name)
+    pos = (DOTNET / 'Area11.Desktop/ViewModels/PosViewModel.cs').read_text()
+    need(pos, ['_services.Shifts.DrawerState(_user)', 'ShiftClosed = !state.Ok || !state.Value;', 'BlockedText = !state.Ok ?'], 'Counter unknown status blocks, not closed claim')
+    shell = (DOTNET / 'Area11.Desktop/ViewModels/ShellViewModel.cs').read_text()
+    need(shell, ['_services.Shifts.DrawerState(_user)', 'if (!drawer.Ok || drawer.Value)', 'Drawer state was unknown during session expiry'], 'Session status-only known open')
+    note = (DOTNET / 'Area11.Core/Utils/SessionHandover.cs').read_text()
+    need(note, ['The drawer needs checking after ', 'signed out at '], 'Conservative session count note')
+    tests = (DOTNET / 'Area11.Tests/ShiftCurrentAccessTests.cs').read_text()
+    if tests.count('[Fact]') != 35: FAILURES.append('Portion21 requires35 written regression facts')
+    need(tests, ['OpenAuditFaultRollsBackInsertedShift', 'CloseAuditFaultRestoresOpenShift',
+                 'HandoverDiscrepancyFaultRollsBackUpdateInsertAndAudits', 'PosOnlyGetsStateButNotDrawerMoney',
+                 'DatabaseFailureIsNotSuccessfulClosedOrEmpty', 'TwoDatabaseInstancesCannotBothOpenTheDrawer',
+                 'HandoverPostwriteRereadFailureRollsBackBothHalves'], 'Shift regression suite')
+    REPORT.append('Phase4 portion21: current Cash Page/ByPerson, POS/session state-only unknown-aware reads, transactional Open/Close and current actor+recipient Handover, stale UI/cached output cleanup;35 facts written, real concurrency/Windows/session/globalPhase4 OPEN')
 
 
 def main() -> int:
@@ -7632,6 +7702,7 @@ def main() -> int:
     check_customer_current_boundaries()
     check_recovery_monthly_boundaries()
     check_parent_roster_boundaries()
+    check_shift_current_boundaries()
     check_csharp_grammar()
 
     if not quiet:
