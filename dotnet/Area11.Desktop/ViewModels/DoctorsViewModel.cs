@@ -33,6 +33,7 @@ public sealed class DoctorsViewModel : ObservableObject, IEmptyPage
     private bool _hasDoctors = true;
     private bool _canSeeDoctors;
     private bool _canSeeProfit;
+    private RepAccess? _access;
     private string _statusText = "Pick a company to write down who visits you and on which day.";
     private bool _isStatusError;
     private string _doctorCountText = "0 doctors";
@@ -173,7 +174,7 @@ public sealed class DoctorsViewModel : ObservableObject, IEmptyPage
     /// <summary>True when the doctor tab is open but empty - one line explains how a doctor is made.</summary>
     public bool HasNoDoctors => !HasDoctors;
 
-    /// <summary>False for a manager: the profit tab is hidden, not filled with zeros.</summary>
+    /// <summary>False without current Customers + Profit/main, independent of rank.</summary>
     public bool CanSeeProfit
     {
         get => _canSeeProfit;
@@ -208,9 +209,33 @@ public sealed class DoctorsViewModel : ObservableObject, IEmptyPage
 
     public void Load()
     {
-        LoadReps();
-        LoadDoctors();
-        LoadCustomerProfit();
+        _access = null;
+        RefreshAccess();
+    }
+
+    public void RefreshAccess()
+    {
+        var access = _services.Reps.CheckAccess(_user);
+        if (!access.Ok || access.Value is null)
+        {
+            _access = null;
+            Rows.Clear();
+            SelectedCompany = null;
+            Doctors.Clear();
+            Customers.Clear();
+            CanSeeReps = CanEditReps = CanSeeDoctors = CanSeeProfit = HasDoctors = false;
+            DoctorCountText = CustomerCountText = "access not confirmed";
+            SetStatus(access.Error ?? "Current Doctor/rep access is required.", true);
+            return;
+        }
+        var previous = _access;
+        _access = access.Value;
+        if (previous is null || previous.Reps != _access.Reps) LoadReps();
+        if (previous is null || previous.Customers != _access.Customers || previous.Profit != _access.Profit)
+        {
+            LoadDoctors();
+            LoadCustomerProfit();
+        }
     }
 
     private void LoadReps()
@@ -220,6 +245,7 @@ public sealed class DoctorsViewModel : ObservableObject, IEmptyPage
         if (!companies.Ok || companies.Value is null)
         {
             Rows.Clear();
+            SelectedCompany = null;
             CanSeeReps = false;
             CanEditReps = false;
             SetStatus(companies.Error ?? "The companies could not be loaded.", true);
@@ -227,7 +253,6 @@ public sealed class DoctorsViewModel : ObservableObject, IEmptyPage
         }
 
         var keep = _selectedCompany?.Id ?? 0;
-        var canEdit = _services.Permissions.Can(_user, Modules.Products);
 
         Rows.Clear();
 
@@ -237,7 +262,7 @@ public sealed class DoctorsViewModel : ObservableObject, IEmptyPage
         }
 
         CanSeeReps = true;
-        CanEditReps = canEdit;
+        CanEditReps = true; // ListReps already resolved the current Products grant.
         SelectedCompany = Rows.FirstOrDefault(row => row.Id == keep) ?? Rows.FirstOrDefault();
     }
 
@@ -278,7 +303,7 @@ public sealed class DoctorsViewModel : ObservableObject, IEmptyPage
 
         if (!CanSeeProfit || profit.Value is null)
         {
-            CustomerCountText = "owner only";
+            CustomerCountText = "Customers + Profit permission and main ON required";
             return;
         }
 
@@ -292,6 +317,8 @@ public sealed class DoctorsViewModel : ObservableObject, IEmptyPage
 
     private void SaveRep()
     {
+        RefreshAccess();
+        if (!CanEditReps) return;
         if (_selectedCompany is null)
         {
             SetStatus("Pick a company on the left first.", true);

@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-38 — Current Customer collection / Doctor profit / rep access (v0.96.0) — UNRUN
+
+[Isolated Windows steps](docs/POS-PHASE4-PART18-URDU.md): own-module current reader,insideTxcollection/repactor,receiptboundtype/currentreadername,freshprofile,ordinaryCustomersaccountingwithoutfinancialgrant,DoctorsCustomers+Profit/main,repProducts,known/hiddenprofit,role/deactivation/revocation,faultrollback/selectionandreceiptcleanup/nominal3stimers,authoredformretention.1765C#cases/WPF/Windows/DPAPI/installer UNRUN;85static/13syntheticSQLprobesnotruntime. Blackbox/BookCheck unchanged;PT-35/36/37/D-115 stillopen. No fake live-shop posts.
+
 ## D-115 — Black box menu (v0.95.1) — UNRUN
 
 [Focused isolated Windows steps](docs/BLACK-BOX-MENU-VISIBILITY.md): new sign-in requires Audit+Cost+Profit+mainON;missing grants/mainOFF/Ownerfinancialdenial hide Blackbox. ExistingAuditreader/BookCheck/layout unchanged. No instant menu rebuild added.1741C#cases/WPF/Windows/installerUNRUN;84static/2syntheticSQLprobesnotruntime.

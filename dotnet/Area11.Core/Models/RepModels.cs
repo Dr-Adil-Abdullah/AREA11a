@@ -150,3 +150,11 @@ public sealed class CustomerProfitRow
 
     public string BillsText => Bills == 1 ? "1 bill" : Bills + " bills";
 }
+
+/// <summary>Current Doctors/reps page flags; no financial data and not an authorization token.</summary>
+public sealed class RepAccess
+{
+    public bool Reps { get; set; }
+    public bool Customers { get; set; }
+    public bool Profit { get; set; }
+}

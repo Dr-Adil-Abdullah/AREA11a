@@ -1,4 +1,8 @@
-# باقی کام، GitHub اور test installer — v0.95.1
+# باقی کام، GitHub اور test installer — v0.96.0
+
+## حصہ18 کے بعد موجودہ ترجیح
+
+Customercollection/repSaveمیںاندرTxcurrentactor؛Doctor/lifetimeprofitcurrentCustomers+Profit/main،repProducts؛freshprofile/receipt،staleUIcleanupاورtimersشامل۔ [PT-38](POS-PHASE4-PART18-URDU.md)،[trace](POS-PHASE4-CUSTOMER-CURRENT-REVIEW.md)۔ **1765C#cases/WindowsUNRUN؛85static،13syntheticSQLprobes،13mutationsruntimeنہیں۔** Blackbox/Audit/BookCheckنہیںبدلے؛D-115کےمطابقنئیBookCheckmaskingشروعنہیںکی۔ باقیoutputs/Tax/parentadmin/session/record/fault/concurrency/files/cloudاورWindowsPT-35تا38/installerکھلےہیں۔ اندازہ **3–6مزیدمربوطreview/resultچکر**،نتائجسےبڑھسکتا؛وعدہنہیں۔ اسLinuxمیںSDK/WPF/Innoنہیں،installerابھینہیںبنا۔ ہرportiondocs+samebranchcommit/push/remoteverificationلازم۔ نیچےکیترجیحاتتاریخیہیں۔
 
 ## تازہ چھوٹا patch — D-115
 

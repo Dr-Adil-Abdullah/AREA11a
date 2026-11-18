@@ -6426,7 +6426,7 @@ def check_phase_four_access_projections():
     if not (write.find('OwnerAccess.Require') >= 0 and write.find('OwnerAccess.Require') < write.find('if (field.Required == required)')):
         FAILURES.append('Phase4 native-field current owner check must precede no-op success inside transaction')
     reps = (core / 'RepService.cs').read_text()
-    if 'MaskProfit(rows, ProfitPolicy.CanSee(_permissions, _settings, user));' not in reps:
+    if 'MaskProfit(rows, ProfitPolicy.CanSee(_permissions, _settings, reader));' not in reps:
         FAILURES.append('Phase4 Doctors must respect the same global-plus-person profit policy')
     history = (core / 'ProductHistoryService.cs').read_text()
     if 'if (!history.CanSeeProfit)\n                foreach (var row in history.Sales) row.ProfitPaisa = 0;' not in history:
@@ -7378,6 +7378,67 @@ def check_supplier_accounting_exception():
     REPORT.append('Phase4 portion17: D-114 Supplier accounting exception, current transactional Pay/SR actor, masked quantity-only preparation and stale UI lifecycle;24 facts written, Windows/runtime/globalPhase4 OPEN')
 
 
+
+def check_customer_current_boundaries():
+    """Portion18 structural contracts only; no authentication/Windows guarantee."""
+    core = DOTNET / 'Area11.Core'
+    ledger = (core / 'Services/CustomerLedgerService.cs').read_text()
+    collect = ledger.split('public ServiceResult<CollectionResult> Collect(', 1)[1].split('public ServiceResult<ReceiptDocument> Statement(', 1)[0]
+    gate = 'var reader = LedgerReadAccess.Require(_db, connection, _permissions, user, Modules.Customers);'
+    if collect.count(gate) != 1 or not (collect.find('_db.Tx(connection =>') < collect.find(gate) < collect.find('_db.QuerySingle<BalanceRow>')):
+        FAILURES.append('Customer collection needs one current reader inside Tx before customer lookup')
+    for token in ('userId = reader.Id,', '_audit.Record(connection, reader, "Customers", "customer_collect"',
+                  'if (amountPaisa > customer.BalancePaisa)', 'var newBalance = customer.BalancePaisa - amountPaisa;'):
+        if token not in collect: FAILURES.append(f'Collection current actor/cap/accounting missing {token}')
+    if 'CostPolicy' in collect or 'ProfitPolicy' in collect:
+        FAILURES.append('Customer collection must not acquire financial-visibility prerequisite')
+    receipt = ledger.split('public ServiceResult<ReceiptDocument> PaymentReceipt(',1)[1].split('private long? BalanceAt',1)[0]
+    for token in (gate, 'WHERE p.id = @id AND p.sale_id IS NULL AND p.purchase_id IS NULL',
+                  'AND p.provisional_return_id IS NULL;', 'Add("Received by: " + reader.Name);'):
+        if token not in receipt: FAILURES.append(f'Collection receipt current reader/typed ID missing {token}')
+    if ' + exception.Message' in ledger:
+        FAILURES.append('Customer ledger must not concatenate raw DB exception into returned error')
+    reps = (core / 'Services/RepService.cs').read_text()
+    methods = [('ListReps', 'SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Products);', '_db.Query<RepCompanyRow>'),
+               ('SaveRep', 'var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Products);', '_db.QuerySingle<RepCompanyRow>'),
+               ('ListDoctors', 'var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Customers);', '_db.Query<DoctorRow>'),
+               ('ListCustomerProfit', 'var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Customers);', '_db.Query<CustomerProfitRow>')]
+    for name, token, query in methods:
+        part = reps.split(' '+name+'(',1)[1].split('\n    }',1)[0]
+        if part.count(token) != 1 or part.find(token) > part.find(query):
+            FAILURES.append(f'{name} needs exactly one current workflow reader before lookup')
+        if name == 'SaveRep' and not part.find('_db.Tx(connection =>') < part.find(token):
+            FAILURES.append('Rep update current reader must be inside Tx')
+        if name == 'ListCustomerProfit' and not (0 <= part.find('if (!ProfitPolicy.CanSee(_permissions, _settings, reader))') < part.find(query)):
+            FAILURES.append('Lifetime profit requires separate Profit/main before query')
+    if '_audit.Record(connection, reader, Modules.Products, "company_rep_update"' not in reps or ' + exception.Message' in reps:
+        FAILURES.append('Rep write must use current actor and safe errors')
+    customer = (DOTNET / 'Area11.Desktop/ViewModels/CustomersViewModel.cs').read_text()
+    for token in ('public void RefreshAccess()', '_services.Ledger.CheckAccess(_user)', 'row.ProfitKnown = false;',
+                  'row.ProfitPaisa = 0;', 'ProfitText = "hidden";', 'ClearSensitiveData();', 'LastPaymentId = 0;',
+                  'CanPrintReceipt = false;', 'OnPropertyChanged(nameof(IsNotAllowed))'):
+        if token not in customer: FAILURES.append(f'Customer stale UI cleanup contract missing {token}')
+    profile = customer.split('private void SendProfileOnWhatsApp()',1)[1].split('private void PrintMonthStatement()',1)[0]
+    for token in ('if (!UpdateAccess()) return;', '_services.Ledger.Page(_user, Selected.Id)',
+                  'summary.Name, summary.Phone, summary.BalancePaisa, summary.CreditLimitPaisa'):
+        if token not in profile: FAILURES.append(f'Customer profile must re-read current account: {token}')
+    doctors = (DOTNET / 'Area11.Desktop/ViewModels/DoctorsViewModel.cs').read_text()
+    for token in ('public void RefreshAccess()', '_services.Reps.CheckAccess(_user)', 'SelectedCompany = null;',
+                  'Doctors.Clear();', 'Customers.Clear();', 'previous.Profit != _access.Profit', 'if (!CanEditReps) return;'):
+        if token not in doctors: FAILURES.append(f'Doctor/rep stale flags/clear contract missing {token}')
+    for name in ('Customers','Doctors'):
+        view = (DOTNET / f'Area11.Desktop/Views/{name}View.xaml.cs').read_text()
+        for token in ('TimeSpan.FromSeconds(3)', 'Loaded +=', 'Unloaded +=', '_accessTimer.Stop()', 'viewModel.RefreshAccess()'):
+            if token not in view: FAILURES.append(f'{name} active-view timer lifecycle missing {token}')
+    tests = (DOTNET / 'Area11.Tests/CustomerCurrentAccessTests.cs').read_text()
+    if tests.count('[Fact]') != 24: FAILURES.append('Portion18 requires all24 written regression facts')
+    for name in ('CollectionDoesNotRequireCostOrProfitAndReconciles', 'AuditFailureRollsBackCollectionAndBalanceWithSafeError',
+                 'RevocationAfterReadBlocksCollectionAndReprint', 'ProfitGrantWithoutCustomersCannotReadLifetimeProfit',
+                 'ProductsOnlyCanReadAndEditRepButNotCustomerSummaries', 'RepAuditUsesCurrentStoredName'):
+        if name not in tests: FAILURES.append(f'Customer/rep current-boundary regression missing {name}')
+    REPORT.append('Phase4 portion18: current transactional customer collection/rep actor, current Customers doctor/profit and Products rep readers, safe ledger errors/fresh profile and stale UI timers;24 facts written, Windows/runtime/globalPhase4 OPEN')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -7460,6 +7521,7 @@ def main() -> int:
     check_encrypted_backup_contract()
     check_stock_minus_visibility()
     check_supplier_accounting_exception()
+    check_customer_current_boundaries()
     check_csharp_grammar()
 
     if not quiet:

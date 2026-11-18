@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## D-110 / D-115 continuation — Customer/Doctors checkpoint v0.96.0 (2026-11-10)
+
+کوئینئیbusinesspolicyنہیں:CustomercollectionکےلیےcurrentCustomers،explicitprofitکےلیےالگProfit/mainاورCustomers؛companyrepکےلیےProducts۔ اندرTxcurrentactor،freshprofile/receiptreaderاورstaleUIcleanup۔ **D-115کےمطابقBlackbox/Audit/BookCheckunchanged**؛SupplierBاورbackupAبرقرار۔ [Trace](POS-PHASE4-CUSTOMER-CURRENT-REVIEW.md)،[PT-38](POS-PHASE4-PART18-URDU.md)۔1765C#cases/Windows/installerUNRUN؛fullPhase4OPEN۔
+
 ## D-115 — صرف Black box کی menu visibility (2026-11-10)
 
 مالک نے BookCheck کی نئی masking تجویز کے بجائے صرف چھوٹی تبدیلی کہی: متعلقہ حساس معلومات کی مکمل اجازت نہ ہو تو Black box نظر نہ آئے؛باقیBlackboxکےساتھمزیدتبدیلیضروری نہیں۔ CurrentAudit + Cost + Profit + mainONکاexistingCheckAccessنتیجہmenuمیںلاگو،نہتمامغیرمتعلقmodulesکیgrants۔ موجودہmetadata/detailreads،BookCheck،Auditrecords/SQLunchanged۔ Menuکےلیےpermissionsتبدیلیکےبعددوبارہsign-in؛فوریlive-menu/oldfileواپسیوعدہنہیں۔ [Scope/teststeps](BLACK-BOX-MENU-VISIBILITY.md)۔ v0.95.1،1741C#cases/WindowsUNRUN؛fullPhase4/installeropen۔

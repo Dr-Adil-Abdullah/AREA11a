@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.95.1 Plover۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.96.0 Grebe۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**حصہ18 — Customer/Doctor/rep کی موجودہ اجازت:** collection/repSaveکےtransactionمیںcurrentactive/same-roleactor؛DoctorاورlifetimeprofitcurrentCustomers+الگProfit/main،repProducts۔ Customerکھاتہ/وصولیCost/Profit/mainبندہونےسےنہیںرکتی۔ Freshprofile/receipt،staleaccount/selection/lastreceiptصفائیاورnominal3secondactiveviewchecks؛profitبدلےتوادھورےedit/repformخودsave/resetنہیں۔ [PT-38](POS-PHASE4-PART18-URDU.md)،[حدود](POS-PHASE4-CUSTOMER-CURRENT-REVIEW.md)۔ **1765C#cases/WindowsUNRUN؛85staticPASS**۔ Blackbox/BookCheckunchanged،D-115برقرار۔
 
 **D-115 — صرف Black box menu کی نئی حد:** نئےsign-inپرموجودہ **Audit + View Purchase Cost + View Profit + main ON** ہوںتوBlackboxنظرآئےگا؛صرفAudittickکافینہیں۔ Permissions/mainبدلنےکےبعدsignout/signinکریں؛یہpatchفوریlive-menurebuildنہیںکرتی۔ Blackboxکےاندرونیrecords/metadata/detailbehaviorاورBookCheckunchanged۔ [مختصرscope/Windowsمشق](BLACK-BOX-MENU-VISIBILITY.md)۔ **1741C#cases/WindowsUNRUN؛84staticPASS**۔
 
@@ -341,6 +343,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 
 **فیز4 حصہ3 — کھاتے کی read اجازت:** Customers کی فہرست/منتخب account/full یا monthly statement/bulk اور PAY receipt اب Core میں بھی موجودہ active reader اور Customers permission چیک کرتے ہیں۔ متعلقہ global switch یا profit permission بند ہو تو explicit customer profit screen کے ساتھ returned list/page میں بھی mask؛ balance/loyalty/اصل history unchanged۔ stale account/role ہو تو صحیح active account سے دوبارہ sign in؛ پہلے سے دکھائی/کاپی/پرنٹ معلومات مٹنے کی ضمانت نہیں۔ یہ RecoveryService کے ہر الگ راستے کی مکمل certification نہیں۔
 
+**حصہ18کیcurrentحد:** وصولیtransactionمیںموجودہCustomersاجازت؛account/WhatsAppprofileتازہPageسے۔ User/role/grantdenyپراگلےcheckمیںپراناaccount/receiptselectionصاف۔ CustomerبدلنےپرپچھلےCustomerکاReceiptbuttonreset۔ صرفProfit/mainبدلےتوprofitmask/تازہread،عامکھاتہاورلکھاہواeditformبلاوجہresetنہیں۔ Nominal3secondtimerفوریguaranteeنہیں۔ [PT-38](POS-PHASE4-PART18-URDU.md)۔
+
 <a id="lesson-16"></a>
 
 ## سبق 16 — Udhaar recovery میں پرانا ادھار
@@ -371,10 +375,10 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 
 1. کسی doctor کو Customers میں Category = Doctor کے ساتھ رکھیں؛ اسی سے prescription doctor کی فہرست بنتی ہے۔ doctor کا customer کھاتہ اور bill پر نسخہ لکھنے والے doctor کا انتخاب الگ مقصد رکھ سکتے ہیں۔
 2. Doctors & reps کے متعلقہ tabs/حصے کھولیں۔ Counter پر اصل prescription doctor منتخب کریں؛ بعد میں اس کے Bills، Sales، Profit اور Last bill دیکھیں۔
-3. کمپنی منتخب کرکے rep کا نام، فون، Visits on لکھیں؛ مالک/مینیجر Save the rep کرے۔ company کی غلط entry پر کسی دوسری کمپنی کا نمائندہ نہ لگا دیں۔
+3. کمپنی منتخب کرکے rep کا نام، فون، Visits on لکھیں؛ موجودہProductsاجازتوالاشخص Save the rep کرے؛صرفعہدہکافینہیں۔ company کی غلط entry پر کسی دوسری کمپنی کا نمائندہ نہ لگا دیں۔
 4. Customer lifetime profit پوری تاریخ کے حساب کا اشارہ ہے، وصول شدہ نقدی نہیں۔ returns اور cost اثر ڈالتے ہیں، visibility بند ہو تو منافع چھپ سکتا ہے۔
 
-**منافع کی موجودہ حد:** Doctors کا explicit profit اب global `profit.showMargins` اور اس شخص کی profit permission دونوں سے مشروط ہے۔ global OFF ہو تو مالک/الگ grantee کے لیے بھی profit hidden، اصل sales/counts اپنی permission کے مطابق برقرار؛ ON سے اصل محفوظ snapshot کا عدد واپس۔ یہ ہر cost-bearing راستے سے حساب اخذ کرنے کی ناممکن ہونے کی ضمانت نہیں؛ مکمل service access review ابھی جاری ہے۔
+**حصہ18 — منافع کی موجودہ حد:** Doctorsاورcustomerlifetimeprofitدونوںسےپہلےcurrentactive/same-role **Customers** reader؛explicitprofitکےلیےالگ **View Profit + mainON**۔ صرفProfitبغیرCustomersنہیں،صرفCost/managerعہدہنہیں؛جائزdelegatedstaffprofitدیکھسکتاہے۔ MainOFFپرOwnerبھیprofitنہدیکھے،عامDoctorssales/countsبرقرار۔ RepکےلیےProductsاورSaveکےtransactionمیںcurrentactor،Auditمیںstoredنام۔ Timerپرrelevantflagsبدلیںتوصرفمتاثرہحصےreload/clear؛profitبدلنےسےrepکالکھاہوافارمنہیںمٹتا۔ مجازprofitسےcostاخذہوسکتیہے،مطلقsecrecyنہیں۔ [PT-38](POS-PHASE4-PART18-URDU.md)۔
 
 <a id="lesson-19"></a>
 
@@ -676,7 +680,7 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.95.1 کا متوقع test count 1741 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.96.0 کا متوقع test count 1765 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 

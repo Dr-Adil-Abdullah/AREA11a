@@ -52,6 +52,18 @@ public sealed class CustomerLedgerService
     /// <summary>Collection methods the counter may use. "credit" is never one of them.</summary>
     public static readonly string[] CollectionMethods = { "cash", "online", "card" };
 
+    /// <summary>Current Customers access and independent profit visibility; not a session token.</summary>
+    public ServiceResult<bool> CheckAccess(User? user)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            var reader = LedgerReadAccess.Require(_db, connection, _permissions, user, Modules.Customers);
+            return ServiceResult<bool>.Success(ProfitPolicy.CanSee(_permissions, _settings, reader));
+        }
+        catch (Exception) { return ServiceResult<bool>.Fail("Current Customer access could not be confirmed."); }
+    }
+
     /// <summary>The customer list: search by name or phone, optional "only with udhaar".</summary>
     public ServiceResult<List<CustomerSummary>> List(User? user, string? search = null, bool onlyCredit = false)
     {
@@ -107,10 +119,7 @@ ORDER BY c.balance_paisa DESC, c.name COLLATE NOCASE;",
         {
             _log.Error("The customer list could not be loaded.", exception);
 
-            // The technical reason is shown, not hidden: "database is locked" tells the owner to close
-            // the second copy of Area11, while a bare "could not be loaded" tells him nothing.
-            return ServiceResult<List<CustomerSummary>>.Fail(
-                "The customers could not be loaded. (" + exception.GetType().Name + ": " + exception.Message + ")");
+            return ServiceResult<List<CustomerSummary>>.Fail("The customers could not be loaded. Refresh and try again.");
         }
     }
 
@@ -204,8 +213,7 @@ FROM customers c WHERE c.id = @id;", new { id = customerId });
         {
             _log.Error("The page of customer " + customerId + " could not be loaded.", exception);
             return ServiceResult<CustomerPage>.Fail(
-                "The customer's account could not be loaded. (" + exception.GetType().Name + ": "
-                + exception.Message + ")");
+                "The customer's account could not be loaded. Refresh and try again.");
         }
     }
 
@@ -220,11 +228,6 @@ FROM customers c WHERE c.id = @id;", new { id = customerId });
     /// </summary>
     public ServiceResult<CollectionResult> Collect(User? user, int customerId, long amountPaisa, string? method, string? note)
     {
-        if (!_permissions.Can(user, Modules.Customers))
-        {
-            return ServiceResult<CollectionResult>.Fail("You do not have permission to receive customer money.");
-        }
-
         if (amountPaisa <= 0)
         {
             return ServiceResult<CollectionResult>.Fail("The amount must be more than zero.");
@@ -240,6 +243,7 @@ FROM customers c WHERE c.id = @id;", new { id = customerId });
         {
             return _db.Tx(connection =>
             {
+                var reader = LedgerReadAccess.Require(_db, connection, _permissions, user, Modules.Customers);
                 var customer = _db.QuerySingle<BalanceRow>(connection,
                     "SELECT id, name, balance_paisa AS balancePaisa FROM customers WHERE id = @id AND active = 1;",
                     new { id = customerId })
@@ -269,7 +273,7 @@ VALUES(@at, @method, @amount, @customerId, @userId, @note);",
                         method = cleanMethod,
                         amount = amountPaisa,
                         customerId,
-                        userId = user?.Id,
+                        userId = reader.Id,
                         note = cleanNote
                     });
 
@@ -279,7 +283,7 @@ VALUES(@at, @method, @amount, @customerId, @userId, @note);",
                 _db.Execute(connection, "UPDATE customers SET balance_paisa = @balance WHERE id = @id;",
                     new { balance = newBalance, id = customerId });
 
-                _audit.Record(connection, user, "Customers", "customer_collect", "customers", customerId.ToString(),
+                _audit.Record(connection, reader, "Customers", "customer_collect", "customers", customerId.ToString(),
                     oldValue: customer.BalancePaisa.ToString(CultureInfo.InvariantCulture),
                     newValue: newBalance.ToString(CultureInfo.InvariantCulture),
                     details: cleanMethod + " " + Money.Format(amountPaisa) + " - " + cleanNote);
@@ -521,21 +525,16 @@ VALUES(@at, @method, @amount, @customerId, @userId, @note);",
         catch (Exception exception)
         {
             _log.Error("The bulk statements could not be prepared.", exception);
-            return ServiceResult<BulkPrintJob>.Fail("The bulk statements could not be prepared. " + exception.Message);
+            return ServiceResult<BulkPrintJob>.Fail("The bulk statements could not be prepared. Check current Customer access and try again.");
         }
     }
 
     public ServiceResult<ReceiptDocument> PaymentReceipt(User? user, int paymentId)
     {
-        if (!_permissions.Can(user, Modules.Customers))
-        {
-            return ServiceResult<ReceiptDocument>.Fail("You do not have permission to print customer receipts.");
-        }
-
         try
         {
             using var connection = _db.Open();
-            LedgerReadAccess.Require(_db, connection, _permissions, user, Modules.Customers);
+            var reader = LedgerReadAccess.Require(_db, connection, _permissions, user, Modules.Customers);
 
             var payment = _db.QuerySingle<PaymentRow>(connection, @"
 SELECT p.id AS id, p.date AS date, p.method AS method, p.amount_paisa AS amountPaisa,
@@ -601,7 +600,7 @@ WHERE p.id = @id AND p.sale_id IS NULL AND p.purchase_id IS NULL
             }
 
             document.Lines.Add(ReceiptLine.Sep(width));
-            Add("Received by: " + (user?.Name ?? "the shop"));
+            Add("Received by: " + reader.Name);
             Add("Signature: ______________");
             document.Lines.Add(ReceiptLine.Sep(width));
 
@@ -620,7 +619,7 @@ WHERE p.id = @id AND p.sale_id IS NULL AND p.purchase_id IS NULL
         catch (Exception exception)
         {
             _log.Error("The receipt for payment " + paymentId + " could not be prepared.", exception);
-            return ServiceResult<ReceiptDocument>.Fail("The receipt could not be prepared. " + exception.Message);
+            return ServiceResult<ReceiptDocument>.Fail("The receipt could not be prepared. Refresh and try again.");
         }
     }
 

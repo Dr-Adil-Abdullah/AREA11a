@@ -64,6 +64,8 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
     private CustomerSummary? _selected;
     private List<CustomerSummary> _printSelection = new();
     private bool _canPrintSelection;
+    private bool _accessAllowed = true;
+    private bool? _profitKnown;
 
     private bool _isAdding;
     private string _newName = string.Empty;
@@ -162,7 +164,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
     /// <summary>The limit is money: only the owner or a manager may change it (F-11).</summary>
     public bool CanEditLimit => _user.CanManage;
 
-    public bool CanCollect => _services.Permissions.Can(_user, Modules.Customers);
+    public bool CanCollect => _accessAllowed;
 
     public bool IsNotAllowed => !CanCollect;
 
@@ -227,8 +229,14 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
         get => _selected;
         set
         {
+            var differentCustomer = _selected?.Id != value?.Id;
             if (SetProperty(ref _selected, value))
             {
+                if (differentCustomer)
+                {
+                    LastPaymentId = 0;
+                    CanPrintReceipt = false;
+                }
                 ShowCustomer();
             }
         }
@@ -452,6 +460,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
 
     public void Load()
     {
+        if (!UpdateAccess()) return;
         var keep = Selected?.Id;
 
         var result = _services.Ledger.List(_user, SearchText, OnlyCredit);
@@ -460,6 +469,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
 
         if (!result.Ok)
         {
+            ClearSensitiveData();
             SetStatus(result.Error ?? "The customers could not be loaded.", true);
             return;
         }
@@ -486,44 +496,29 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
         IsEditing = false;
         Editor.Load(Selected?.Id ?? 0);
 
-        if (Selected is null)
-        {
-            HasCustomer = false;
-            BooksLabel = "Pick a customer to see the khata.";
-            BooksMatch = true;
-            return;
-        }
-
-        HasCustomer = true;
-        NameText = Selected.Name;
-        PhoneText = Selected.PhoneLabel;
-        CategoryText = Selected.CategoryLabel;
-        LimitText = Selected.LimitText;
-        // The stars with the word behind them ("***** VIP"), and the points in money the customer can
-        // actually spend - the two things the cashier says out loud (F-40).
-        StarsText = Selected.StarsLabel + " " + Selected.TitleLabel;
-        PointsText = Selected.PointsLabel;
-        BillsText = Selected.BillsCount.ToString();
-        LifetimeText = Selected.LifetimeText;
-        // Portion 13: the customer's profit was visible to everyone who opened this page. Now the
-        // same gate as every other margin: the `profit` permission plus the global switch.
-        ProfitText = ProfitPolicy.CanSee(_services.Permissions, _services.Settings, _user)
-            ? Selected.ProfitText
-            : "hidden";
-        ReturnsText = Selected.ReturnsText;
-        LastBillText = Selected.LastBillLabel;
-        BalanceText = Selected.BalanceText;
-
+        ClearAccount();
+        if (Selected is null) return;
         var page = _services.Ledger.Page(_user, Selected.Id);
-
         if (!page.Ok || page.Value is null)
         {
-            BooksMatch = false;
+            ClearSensitiveData();
             BooksLabel = page.Error ?? "The account could not be loaded.";
             return;
         }
-
         var data = page.Value;
+        var summary = data.Summary;
+        HasCustomer = true;
+        NameText = summary.Name;
+        PhoneText = summary.PhoneLabel;
+        CategoryText = summary.CategoryLabel;
+        LimitText = summary.LimitText;
+        StarsText = summary.StarsLabel + " " + summary.TitleLabel;
+        PointsText = summary.PointsLabel;
+        BillsText = summary.BillsCount.ToString();
+        LifetimeText = summary.LifetimeText;
+        ProfitText = summary.ProfitText;
+        ReturnsText = summary.ReturnsText;
+        LastBillText = summary.LastBillLabel;
 
         foreach (var line in data.Lines)
         {
@@ -549,6 +544,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
 
     private void Collect()
     {
+        if (!UpdateAccess()) return;
         if (Selected is null)
         {
             SetStatus("Pick a customer first.", true);
@@ -595,6 +591,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
 
     private void PrintStatement()
     {
+        if (!UpdateAccess()) return;
         // Portion 11: with `printer.defaultBulk` on and several customers ticked, the main button
         // prints the whole ticked set; otherwise it prints the open customer, as it always has.
         if (_printSelection.Count > 1 && _services.Settings.GetBool("printer.defaultBulk", false))
@@ -628,6 +625,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
     /// <summary>The explicit bulk button: always the ticked customers, whatever the setting says.</summary>
     private void PrintSelection()
     {
+        if (!UpdateAccess()) return;
         if (_printSelection.Count < 2)
         {
             SetStatus("Tick two or more customers first (hold Ctrl and click).", true);
@@ -658,6 +656,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
     /// </summary>
     private void Preview()
     {
+        if (!UpdateAccess()) return;
         if (_printSelection.Count > 1)
         {
             var job = _services.Ledger.BuildBulkStatements(_user, _printSelection.Select(row => row.Id).ToList());
@@ -693,6 +692,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
     /// </summary>
     private void SendStatementOnWhatsApp()
     {
+        if (!UpdateAccess()) return;
         if (Selected is null)
         {
             SetStatus("Pick a customer first.", true);
@@ -715,15 +715,24 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
     /// <summary>The short khata nudge to WhatsApp: who owes what, in one message, no file.</summary>
     private void SendProfileOnWhatsApp()
     {
+        if (!UpdateAccess()) return;
         if (Selected is null)
         {
             SetStatus("Pick a customer first.", true);
             return;
         }
 
+        var page = _services.Ledger.Page(_user, Selected.Id);
+        if (!page.Ok || page.Value is null)
+        {
+            ClearSensitiveData();
+            SetStatus(page.Error ?? "The current customer account could not be loaded.", true);
+            return;
+        }
+        var summary = page.Value.Summary;
         var text = _services.WhatsApp.BuildCustomerProfile(
-            Selected.Name, Selected.Phone, Selected.BalancePaisa, Selected.CreditLimitPaisa);
-        var sent = WhatsAppFlow.Send(_services, Selected.Phone, text,
+            summary.Name, summary.Phone, summary.BalancePaisa, summary.CreditLimitPaisa);
+        var sent = WhatsAppFlow.Send(_services, summary.Phone, text,
             "Profile", Enumerable.Empty<string>(), "profile.pdf", withPdf: false);
         SetStatus(sent.Message, !sent.Ok);
     }
@@ -731,6 +740,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
     /// <summary>The month's statement (F-49): one month between an opening and a closing balance.</summary>
     private void PrintMonthStatement()
     {
+        if (!UpdateAccess()) return;
         if (Selected is null)
         {
             SetStatus("Pick a customer first.", true);
@@ -755,6 +765,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
     /// <summary>Prints the slip of the last collection on this page.</summary>
     private void PrintReceipt()
     {
+        if (!UpdateAccess()) return;
         if (Selected is null || LastPaymentId <= 0)
         {
             SetStatus("Receive money first - the receipt belongs to a collection.", true);
@@ -793,6 +804,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
     /// </summary>
     private void BeginAdd()
     {
+        if (!UpdateAccess()) return;
         if (!CanCollect)
         {
             SetStatus("You are not allowed to add customers.", true);
@@ -822,6 +834,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
     /// </summary>
     private void SaveNew()
     {
+        if (!UpdateAccess()) return;
         if (!CanCollect)
         {
             SetStatus("You are not allowed to add customers.", true);
@@ -861,6 +874,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
 
     private void BeginEdit()
     {
+        if (!UpdateAccess()) return;
         if (Selected is null)
         {
             SetStatus("Pick a customer first.", true);
@@ -886,6 +900,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
 
     private void SaveEdit()
     {
+        if (!UpdateAccess()) return;
         if (Selected is null)
         {
             IsEditing = false;
@@ -940,6 +955,76 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
                       + (saved.LimitChanged ? ", limit " + saved.LimitLabel : string.Empty) + ".";
 
         SetStatus(saved.HasWarning ? message + " " + saved.WarningText : message, false);
+    }
+
+    public void RefreshAccess()
+    {
+        var wasAllowed = _accessAllowed;
+        if (UpdateAccess() && !wasAllowed) Load();
+    }
+
+    private bool UpdateAccess()
+    {
+        var access = _services.Ledger.CheckAccess(_user);
+        if (!access.Ok)
+        {
+            SetAccessAllowed(false);
+            _profitKnown = null;
+            ClearSensitiveData();
+            SetStatus(access.Error ?? "Current Customer access is required.", true);
+            return false;
+        }
+        SetAccessAllowed(true);
+        if (_profitKnown != access.Value)
+        {
+            _profitKnown = access.Value;
+            ProfitText = "hidden";
+            foreach (var row in Customers)
+            {
+                row.ProfitKnown = false;
+                row.ProfitPaisa = 0;
+            }
+            // Re-read only the displayed profit on restoration; do not reset authored edit forms.
+            if (access.Value && Selected is not null)
+            {
+                var page = _services.Ledger.Page(_user, Selected.Id);
+                if (page.Ok && page.Value is not null) ProfitText = page.Value.Summary.ProfitText;
+            }
+        }
+        return true;
+    }
+
+    private void SetAccessAllowed(bool allowed)
+    {
+        if (SetProperty(ref _accessAllowed, allowed, nameof(CanCollect)))
+            OnPropertyChanged(nameof(IsNotAllowed));
+    }
+
+    private void ClearAccount()
+    {
+        HasCustomer = false;
+        Lines.Clear();
+        NameText = PhoneText = CategoryText = string.Empty;
+        BalanceText = LimitText = LifetimeText = ProfitText = ReturnsText = "hidden";
+        StarsText = PointsText = BillsText = LastBillText = "—";
+        BooksMatch = false;
+        BooksLabel = "Select a customer with current Customer access.";
+    }
+
+    private void ClearSensitiveData()
+    {
+        StatusText = string.Empty;
+        IsStatusError = false;
+        Customers.Clear();
+        Selected = null;
+        ClearAccount();
+        LastPaymentId = 0;
+        CanPrintReceipt = false;
+        _printSelection.Clear();
+        CanPrintSelection = false;
+        IsAdding = false;
+        IsEditing = false;
+        EditLimitText = string.Empty;
     }
 
     private void SetStatus(string message, bool isError)

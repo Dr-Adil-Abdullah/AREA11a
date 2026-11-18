@@ -36,20 +36,32 @@ public sealed class RepService
         _log = log;
     }
 
+    /// <summary>Current page flags, without fetching companies, doctors or financial totals.</summary>
+    public ServiceResult<RepAccess> CheckAccess(User? user)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Customers, Modules.Products);
+            var customers = _permissions.Can(reader, Modules.Customers);
+            return ServiceResult<RepAccess>.Success(new RepAccess
+            {
+                Reps = _permissions.Can(reader, Modules.Products), Customers = customers,
+                Profit = customers && ProfitPolicy.CanSee(_permissions, _settings, reader)
+            });
+        }
+        catch (Exception) { return ServiceResult<RepAccess>.Fail("Current Doctor/rep access could not be confirmed."); }
+    }
+
     // ============================== the reps ==============================
 
     /// <summary>Every company with its rep, ordered the way the week runs.</summary>
     public ServiceResult<List<RepCompanyRow>> ListReps(User? user)
     {
-        if (!_permissions.Can(user, Modules.Products))
-        {
-            return ServiceResult<List<RepCompanyRow>>.Fail(
-                "You do not have permission to see the companies and their reps.");
-        }
-
         try
         {
             using var connection = _db.Open();
+            SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Products);
 
             var rows = _db.Query<RepCompanyRow>(connection, @"
 SELECT id AS id, name AS name, rep_name AS repName, rep_phone AS repPhone, visit_day AS visitDay
@@ -72,11 +84,6 @@ ORDER BY CASE WHEN visit_day IS NULL THEN 1 ELSE 0 END, visit_day, name COLLATE 
     /// </summary>
     public ServiceResult SaveRep(User? user, int companyId, string? repName, string? repPhone, int? visitDay)
     {
-        if (!_permissions.Can(user, Modules.Products))
-        {
-            return ServiceResult.Fail("You do not have permission to change a company's rep.");
-        }
-
         var name = (repName ?? string.Empty).Trim();
         var phone = (repPhone ?? string.Empty).Trim();
         var day = visitDay is null or VisitDays.None ? (int?)null : visitDay;
@@ -112,6 +119,7 @@ ORDER BY CASE WHEN visit_day IS NULL THEN 1 ELSE 0 END, visit_day, name COLLATE 
         {
             return _db.Tx(connection =>
             {
+                var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Products);
                 var current = _db.QuerySingle<RepCompanyRow>(connection, @"
 SELECT id AS id, name AS name, rep_name AS repName, rep_phone AS repPhone, visit_day AS visitDay
 FROM companies WHERE id = @companyId AND active = 1;",
@@ -134,7 +142,7 @@ WHERE id = @companyId;",
                         companyId
                     });
 
-                _audit.Record(connection, user, Modules.Products, "company_rep_update",
+                _audit.Record(connection, reader, Modules.Products, "company_rep_update",
                     "companies", companyId.ToString(),
                     oldValue: DescribeRep(current), newValue: DescribeRep(name, phone, day),
                     details: current.Name);
@@ -145,7 +153,7 @@ WHERE id = @companyId;",
         catch (Exception exception)
         {
             _log.Error($"The rep of company {companyId} could not be saved.", exception);
-            return ServiceResult.Fail("The rep could not be saved. " + exception.Message);
+            return ServiceResult.Fail("The rep could not be saved. Check current Products access and try again.");
         }
     }
 
@@ -157,18 +165,13 @@ WHERE id = @companyId;",
     /// </summary>
     public ServiceResult<List<DoctorRow>> ListDoctors(User? user)
     {
-        if (!_permissions.Can(user, Modules.Customers))
-        {
-            return ServiceResult<List<DoctorRow>>.Fail(
-                "You do not have permission to see the doctors.");
-        }
-
         try
         {
             using var connection = _db.Open();
+            var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Customers);
             var rows = _db.Query<DoctorRow>(connection, DoctorSql);
 
-            MaskProfit(rows, ProfitPolicy.CanSee(_permissions, _settings, user));
+            MaskProfit(rows, ProfitPolicy.CanSee(_permissions, _settings, reader));
 
             return ServiceResult<List<DoctorRow>>.Success(rows);
         }
@@ -180,20 +183,17 @@ WHERE id = @companyId;",
     }
 
     /// <summary>
-    /// Lifetime profit per customer (Spec 17.5). Owner-only: it is the shop's margin spread over
-    /// the people who bought it, and a manager has no business seeing another customer's value.
+    /// Lifetime profit per customer (Spec 17.5): current Customers + independent Profit/main.
+    /// Rank alone is not a profit grant (D-110).
     /// </summary>
     public ServiceResult<List<CustomerProfitRow>> ListCustomerProfit(User? user)
     {
-        if (!ProfitPolicy.CanSee(_permissions, _settings, user))
-        {
-            return ServiceResult<List<CustomerProfitRow>>.Fail(
-                "Only the owner can see what a customer has earned the shop.");
-        }
-
         try
         {
             using var connection = _db.Open();
+            var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Customers);
+            if (!ProfitPolicy.CanSee(_permissions, _settings, reader))
+                throw new ValidationException("View Profit and the main financial switch are required for customer profit.");
             var rows = _db.Query<CustomerProfitRow>(connection, CustomerProfitSql);
 
             foreach (var row in rows)
@@ -207,7 +207,7 @@ WHERE id = @companyId;",
         {
             _log.Error("The lifetime profit per customer could not be loaded.", exception);
             return ServiceResult<List<CustomerProfitRow>>.Fail(
-                "The lifetime profit could not be loaded. " + exception.Message);
+                "The lifetime profit could not be loaded. Check current Customers and Profit access and try again.");
         }
     }
 
