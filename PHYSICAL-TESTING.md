@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-36 — Stock Minus valuation / Audit note / current review writer (v0.94.0) — UNRUN
+
+[Safe isolated checklist](docs/POS-PHASE4-PART16-URDU.md): Stock-only/Cost-only/Profit-only/both/main/Owner masks,raw row+aggregate and review notes,quantity/episode invariance,known0 vs hidden,fresh reader/role/deactivation/revocation,flags-only active-view timer/selected summary cleanup,legitimate delegated review without financial grant,insideTx writer/current name/audit failure.1716C#cases/Desktop/Windows UNRUN;83static/11syntheticSQLiteprobes are not runtime proof. PT-35 encrypted backup/DPAPI/new-PC also OPEN. No installer/live-shop fake posts.
+
 ## PT-35 — Password backup / DPAPI / original-password recovery (v0.93.0) — UNRUN
 
 [Safe isolated checklist](docs/POS-PHASE4-PART15-URDU.md): missing/locked secret no fallback, Owner confirmation/current role, manual/auto/safety/rollback, Windows profile ACL/different account/path, original password on genuine new PC, rotation/local safety password independence, tamper/bounds/legacy, A/B/C/photos, disk-full/access-denied/locks/crash/concurrency, retention/Sync.1692C#cases/Desktop/Windows UNRUN.82static + independent Python model6roundtrips/24negative +10SQLiteprobes are NOT runtime proof. [Format/limits](docs/POS-PHASE4-ENCRYPTED-BACKUP-REVIEW.md). No installer/live-shop fake posts.

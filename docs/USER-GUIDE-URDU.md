@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.93.0 Shearwater۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.94.0 Cormorant۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**حصہ16 — Stock Minus:** مقدار/episode/review metadata برقرار؛purchase valuation اورمجموعہ صرف Cost+main سے،raw Audit review note دونوں مالی grants/main سے۔ موجودہ Stock reader اورreview transaction میں current account چیک؛review stock نہیں بدلتا،جائز Stock delegation پرnote لکھنے کے لیے Cost/Profit کی نئی شرط نہیں۔ Active-view access change پر selected/details/totals refresh/clear؛فوری recall کی ضمانت نہیں۔ [PT-36](POS-PHASE4-PART16-URDU.md)،[حدود](POS-PHASE4-STOCK-MINUS-REVIEW.md)۔ **1716 C# cases/Windows UNRUN**؛83 static checks PASS۔
 
 **حصہ15 — الگ password backup:** `.a11bak` کے لیے Owner کا Set / change backup password؛Automatic کے لیے اسی Windows account کی protected local storage،setup نہ ہو توFAIL/no plain fallback۔ Manual/auto/full safety/rollback ایک ہی encrypted format؛restore پہلے authentication/checksum،پھرZIP/DB validation،پھر encrypted safety اورlive swap۔ نئےPC/oldbackup کے لیےاصلpassword؛local safety password پہلےsetup،rotationپرoldpasswordبرقرار۔ Legacy ZIP/DB الگ Owner-only UNVERIFIED acceptance؛پرانےbackupsنہdeleteکریں۔ [PT-35](POS-PHASE4-PART15-URDU.md)،[format/حدود](POS-PHASE4-ENCRYPTED-BACKUP-REVIEW.md)۔ **1692C#cases/Windows/DPAPI/new-PC UNRUN**؛82static اورindependentPythonmodel PASS،certificationنہیں۔
 
@@ -394,9 +396,11 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 4. Stock minus پر پرانے منفی balances، کتنے دن، cost value اور review دیکھیں۔ Monthly review میں جو پایا وہ لکھ کر Mark reviewed کریں۔ **Review سے quantity نہیں بدلتی۔**
 5. حقیقی shelf count لے کر Stock-take میں مالک سے correction منظور کروائیں۔ محض فہرست صاف کرنے کے لیے فرضی purchase یا خود SQL سے صفر نہ کریں۔
 
-**حصہ10 — batch اور Write-off preview:** Stock grant کے ساتھ metadata،Cost+main سے خرید کی valuation؛preview ہر متعلقہ interaction پر تازہ cost/stock/pack لیتا ہے۔ ناکامی پر hidden/error،پرانے product کی رقم یا fake0 نہیں۔ **حصہ11 میں Write-off history/today totals اور save result بھی منتقل**؛StockMinus/audit/generic export اور دوسرے نامکمل راستوں سے global secrecy نہ سمجھیں۔ اصل stock posting unchanged۔ [PT-30](POS-PHASE4-PART10-URDU.md)۔
+**حصہ10 — batch اور Write-off preview:** Stock grant کے ساتھ metadata،Cost+main سے خرید کی valuation؛preview ہر متعلقہ interaction پر تازہ cost/stock/pack لیتا ہے۔ ناکامی پر hidden/error،پرانے product کی رقم یا fake0 نہیں۔ **حصہ11 میں Write-off history/today totals اور save result بھی منتقل**؛StockMinus حصہ16 میں،audit حصہ14 میں منتقل؛generic export اور دوسرے نامکمل راستوں سے global secrecy نہ سمجھیں۔ اصل stock posting unchanged۔ [PT-30](POS-PHASE4-PART10-URDU.md)۔
 
-**حصہ11 — Write-off کے باقی output:** history کی رقم،today total اور نئی save-result loss الگ Cost+main؛منع ہو تو hidden،مجاز اصل0 الگ۔ اصل adjustment/audit/stock حساب کو چھپی0 سے نہیں بدلتے۔ Account/page دوبارہ چیک؛StockMinus/generic exports/audit/session الگ باقی۔ [PT-31](POS-PHASE4-PART11-URDU.md)۔
+**حصہ11 — Write-off کے باقی output:** history کی رقم،today total اور نئی save-result loss الگ Cost+main؛منع ہو تو hidden،مجاز اصل0 الگ۔ اصل adjustment/audit/stock حساب کو چھپی0 سے نہیں بدلتے۔ Account/page دوبارہ چیک؛StockMinus حصہ16 اورAudit حصہ14 میں منتقل؛generic exports/session الگ باقی۔ [PT-31](POS-PHASE4-PART11-URDU.md)۔
+
+**حصہ16 — Stock Minus:** Stock page کی موجودہ اجازت پر دوا،منفی مقدار،کب سے/کیوں اورreview کی تاریخ/شخص/حالت نظر آتی ہے۔ خرید valuation،raw row value،کل اورsummary کے لیے الگ **View Purchase Cost + main switch**؛Manager یاProfit-only کافی نہیں۔ اصل0 مجاز ہو تو معلوم0،ورنہhidden۔ ReviewNote اصل Audit details ہے؛**دونوں مالی grants + main** کے بغیر raw note واپس نہیں آتا،stored note نہیں بدلتا۔ Note لکھنے کی موجودہ Stock delegation برقرار؛review stock نہیں بدلتا۔ Refresh/denial پر پرانی selection/total صاف،nominal3second active-view access check،مگرSettings cache/dispatcher/پہلےcopyکی گئی چیزوں کی فوری recall نہیں۔ [PT-36](POS-PHASE4-PART16-URDU.md)۔
 
 <a id="lesson-21"></a>
 
@@ -670,7 +674,7 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.93.0 کا متوقع test count 1692 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.94.0 کا متوقع test count 1716 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 

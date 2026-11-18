@@ -1,15 +1,32 @@
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
+using Area11.Desktop.ViewModels;
 
 namespace Area11.Desktop.Views;
 
-/// <summary>
-/// Code-behind stays empty: the registry is built by StockMinusService and the review is written by
-/// the same service (no business logic in a view).
-/// </summary>
+/// <summary>Active-view access refresh only. Service owns reads, projections and writes.</summary>
 public partial class StockMinusView : UserControl
 {
+    private readonly DispatcherTimer _accessTimer;
+
     public StockMinusView()
     {
         InitializeComponent();
+        _accessTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+        _accessTimer.Tick += CheckAccess;
+        Loaded += OnLoaded;
+        Unloaded += (_, _) => _accessTimer.Stop();
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        CheckAccess(this, EventArgs.Empty);
+        _accessTimer.Start();
+    }
+
+    private void CheckAccess(object? sender, EventArgs e)
+    {
+        if (DataContext is StockMinusViewModel viewModel) viewModel.RefreshAccess();
     }
 }

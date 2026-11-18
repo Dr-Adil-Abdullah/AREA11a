@@ -32,7 +32,9 @@ public sealed class StockMinusViewModel : ObservableObject, IEmptyPage
     private bool _canRead = true;
     private string _summaryText = string.Empty;
     private string _countText = "0";
-    private string _totalText = "Rs 0";
+    private string _totalText = "hidden";
+    private bool? _lastCostKnown;
+    private bool? _lastReviewNotesKnown;
     private string _oldestText = "-";
     private string _reviewedText = "0 of 0";
 
@@ -82,7 +84,7 @@ public sealed class StockMinusViewModel : ObservableObject, IEmptyPage
     public string SelectedReview => _selected?.ReviewLabel ?? string.Empty;
 
     /// <summary>True while the chosen medicine still needs the owner's note for this episode.</summary>
-    public bool CanReview => _selected is not null && !_selected.IsReviewed;
+    public bool CanReview => CanRead && _selected is not null && !_selected.IsReviewed;
 
     public string NoteText
     {
@@ -154,6 +156,7 @@ public sealed class StockMinusViewModel : ObservableObject, IEmptyPage
     private void Load()
     {
         var keep = _selected?.ProductId;
+        Selected = null; // never leave a detached authorized row selected after refresh/denial
 
         var result = _services.StockMinus.Report(_user);
 
@@ -161,6 +164,12 @@ public sealed class StockMinusViewModel : ObservableObject, IEmptyPage
         {
             Rows.Clear();
             CanRead = false;
+            _lastCostKnown = null;
+            _lastReviewNotesKnown = null;
+            CountText = "—";
+            TotalText = "hidden";
+            OldestText = "—";
+            ReviewedText = "—";
             SummaryText = result.Error ?? "The stock-minus registry could not be built.";
             SetStatus(result.Error ?? "The stock-minus registry could not be built.", true);
             RaiseListState();
@@ -170,6 +179,8 @@ public sealed class StockMinusViewModel : ObservableObject, IEmptyPage
         var report = result.Value;
 
         CanRead = true;
+        _lastCostKnown = report.CostKnown;
+        _lastReviewNotesKnown = report.ReviewNotesKnown;
         Rows.Clear();
 
         foreach (var row in report.Rows)
@@ -192,6 +203,18 @@ public sealed class StockMinusViewModel : ObservableObject, IEmptyPage
         SetStatus(report.Count == 0
             ? "Nothing is below zero. Keep this page for the monthly check - it will be empty."
             : "Choose a medicine and write what you found. A review changes no stock.", false);
+    }
+
+    public void RefreshAccess()
+    {
+        var access = _services.StockMinus.CheckReadAccess(_user);
+        if (!access.Ok || access.Value is null)
+        {
+            if (CanRead) Load();
+            return;
+        }
+        if (!CanRead || _lastCostKnown != access.Value.CostKnown
+            || _lastReviewNotesKnown != access.Value.ReviewNotesKnown) Load();
     }
 
     private void RaiseListState()

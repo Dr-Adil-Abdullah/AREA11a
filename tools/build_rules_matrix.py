@@ -169,7 +169,7 @@ STATUS: dict[str, tuple[str, str, str]] = {
     "M-02": ("DONE", "schema + settings + audit + login running", "-"),
     "M-03": ("DONE", "purchases, the counter and the receipt are written and the owner prints", "SaleTests.*"),
     "M-04": ("DONE", "returns, quarantine, alerts, write-off and stock-take", "ReturnTests.*"),
-    "M-05": ("DONE", "ledgers, reports, backup, Excel/CSV, reorder/WhatsApp and the stock-minus registry; the sample list was deleted on the owner's word (D-77)", "ReportTests.*"),
+    "M-05": ("DONE", "ledgers, reports, backup, Excel/CSV, reorder/WhatsApp and the stock-minus registry; the sample list was deleted on the owner's word (D-77)", "ReportTests.*, StockMinusVisibilityTests.* (portion16 Windows UNRUN)"),
     "M-06": ("DONE", "loyalty, photos, own fields, barcodes, reps/doctors, the LAN second counter, the installer and the hardware test - its scan half still waits for the shop", "HardwareTests.*"),
     "M-07": ("DONE", "the black box, stock-take, backup and cloud sync", "BackupTests.*"),
     "M-08": ("DONE", "settings and data-driven from the first migration", "-"),

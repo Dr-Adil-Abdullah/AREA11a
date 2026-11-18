@@ -1,6 +1,7 @@
 using Area11.Core.Data;
 using Area11.Core.Models;
 using Area11.Core.Utils;
+using Microsoft.Data.Sqlite;
 
 namespace Area11.Core.Services;
 
@@ -31,33 +32,30 @@ public sealed class StockMinusService
     private readonly AuditService _audit;
     private readonly PermissionService _permissions;
     private readonly LogService _log;
+    private readonly SettingsService _settings;
 
     public StockMinusService(
         Database db,
         AuditService audit,
         PermissionService permissions,
-        LogService log)
+        LogService log,
+        SettingsService settings)
     {
         _db = db;
         _audit = audit;
         _permissions = permissions;
         _log = log;
+        _settings = settings;
     }
 
     /// <summary>Every minus shelf, oldest first, with its review state.</summary>
     public ServiceResult<StockMinusReport> Report(User? user)
     {
-        if (!_permissions.Can(user, Modules.Stock))
-        {
-            return ServiceResult<StockMinusReport>.Fail(
-                "You do not have permission to see the stock-minus registry.");
-        }
-
-        var report = new StockMinusReport();
-
         try
         {
             using var connection = _db.Open();
+            var access = ReadAccess(connection, user);
+            var report = new StockMinusReport { CostKnown = access.CostKnown, ReviewNotesKnown = access.ReviewNotesKnown };
 
             var products = _db.Query<ProductRow>(connection, @"
 SELECT p.id AS productId, p.name AS name, p.generic AS generic, p.base_unit AS baseUnit,
@@ -107,7 +105,9 @@ ORDER BY at DESC, id DESC;")
                     Generic = product.Generic,
                     BaseUnit = string.IsNullOrWhiteSpace(product.BaseUnit) ? "unit" : product.BaseUnit,
                     StockQty = product.StockQty,
-                    ValuePaisa = product.ValuePaisa
+                    CostKnown = access.CostKnown,
+                    ValuePaisa = access.CostKnown ? product.ValuePaisa : 0,
+                    ReviewNoteKnown = access.ReviewNotesKnown
                 };
 
                 if (episodes.TryGetValue(product.ProductId, out var start))
@@ -122,7 +122,7 @@ ORDER BY at DESC, id DESC;")
                 {
                     row.ReviewAt = review.At;
                     row.ReviewBy = review.UserName;
-                    row.ReviewNote = review.Details;
+                    row.ReviewNote = access.ReviewNotesKnown ? review.Details : null;
 
                     // A review only counts for THIS episode: the note that explained last month's
                     // minus does not explain a new one.
@@ -148,8 +148,34 @@ ORDER BY at DESC, id DESC;")
         {
             _log.Error("The stock-minus registry could not be built.", exception);
             return ServiceResult<StockMinusReport>.Fail(
-                "The stock-minus registry could not be built. " + exception.Message);
+                "The stock-minus registry could not be built. Check current Stock access and try again.");
         }
+    }
+
+    /// <summary>Small current access snapshot for active-view cleanup, never a posting token.</summary>
+    public ServiceResult<StockMinusAccess> CheckReadAccess(User? user)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            return ServiceResult<StockMinusAccess>.Success(ReadAccess(connection, user));
+        }
+        catch (Exception)
+        {
+            return ServiceResult<StockMinusAccess>.Fail("Current Stock access could not be confirmed.");
+        }
+    }
+
+    private StockMinusAccess ReadAccess(SqliteConnection connection, User? user)
+    {
+        var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Stock);
+        var costKnown = CostPolicy.CanSee(_permissions, _settings, reader);
+        return new StockMinusAccess
+        {
+            CostKnown = costKnown,
+            // These are raw Audit details: same BOTH-financial/main rule as the Audit page.
+            ReviewNotesKnown = costKnown && ProfitPolicy.CanSee(_permissions, _settings, reader)
+        };
     }
 
     /// <summary>
@@ -159,11 +185,6 @@ ORDER BY at DESC, id DESC;")
     /// </summary>
     public ServiceResult Review(User? user, int productId, string? note)
     {
-        if (!_permissions.Can(user, Modules.Stock))
-        {
-            return ServiceResult.Fail("You do not have permission to review the stock-minus registry.");
-        }
-
         var clean = (note ?? string.Empty).Trim();
 
         if (clean.Length < MinNoteLength)
@@ -176,6 +197,7 @@ ORDER BY at DESC, id DESC;")
         {
             return _db.Tx(connection =>
             {
+                var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Stock);
                 var product = _db.QuerySingle<ProductRow>(connection, @"
 SELECT p.id AS productId, p.name AS name, p.base_unit AS baseUnit,
        IFNULL((SELECT SUM(b.qty_base) FROM batches b WHERE b.product_id = p.id AND b.active = 1), 0) AS stockQty,
@@ -193,7 +215,7 @@ FROM products p WHERE p.id = @id;", new { id = productId });
                         "That medicine is not below zero any more - there is nothing to review.");
                 }
 
-                _audit.Record(connection, user, Modules.Stock, "stock_minus_review", "products",
+                _audit.Record(connection, reader, Modules.Stock, "stock_minus_review", "products",
                     productId.ToString(),
                     oldValue: null,
                     newValue: Qty.Format(product.StockQty) + " " + product.BaseUnit,
@@ -205,7 +227,7 @@ FROM products p WHERE p.id = @id;", new { id = productId });
         catch (Exception exception)
         {
             _log.Error("A stock-minus review could not be written.", exception);
-            return ServiceResult.Fail("The review could not be saved. " + exception.Message);
+            return ServiceResult.Fail("The review could not be saved. Check current Stock access and try again.");
         }
     }
 

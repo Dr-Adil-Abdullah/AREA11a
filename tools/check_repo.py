@@ -7251,6 +7251,56 @@ def check_encrypted_backup_contract() -> None:
     REPORT.append('Phase4 portion15: bounded AES-GCM/password package, current-user DPAPI host store, no plaintext fallback, atomic manual/auto/safety, authenticated staged restore/rollback, explicit owner-only legacy recovery. Structural proof only; C#/Windows/DPAPI/fault/new-PC execution OPEN')
 
 
+def check_stock_minus_visibility() -> None:
+    """Structural D-110/D-113 regression guard; not authorization/runtime proof."""
+    service = (DOTNET / 'Area11.Core/Services/StockMinusService.cs').read_text()
+    models = (DOTNET / 'Area11.Core/Models/StockMinusModels.cs').read_text()
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/StockMinusViewModel.cs').read_text()
+    view = (DOTNET / 'Area11.Desktop/Views/StockMinusView.xaml.cs').read_text()
+    tests = (DOTNET / 'Area11.Tests/StockMinusVisibilityTests.cs').read_text()
+    for token in ('var access = ReadAccess(connection, user);',
+                  'SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Stock)',
+                  'CostPolicy.CanSee(_permissions, _settings, reader)',
+                  'ReviewNotesKnown = costKnown && ProfitPolicy.CanSee(_permissions, _settings, reader)',
+                  'CostKnown = access.CostKnown',
+                  'ValuePaisa = access.CostKnown ? product.ValuePaisa : 0',
+                  'row.ReviewNote = access.ReviewNotesKnown ? review.Details : null;',
+                  'public ServiceResult<StockMinusAccess> CheckReadAccess(User? user)',
+                  '_audit.Record(connection, reader, Modules.Stock, "stock_minus_review"'):
+        if token not in service: fail(f'StockMinus current reader/projection missing {token}')
+    if service.count('CostKnown = access.CostKnown') != 2:
+        fail('StockMinus report AND row must carry the actual CostKnown flag')
+    report = service.split('public ServiceResult<StockMinusReport> Report(',1)[-1].split('public ServiceResult<StockMinusAccess>',1)[0]
+    if not 0 <= report.find('ReadAccess(connection, user)') < report.find('_db.Query<ProductRow>'):
+        fail('StockMinus must authorize current reader before registry query')
+    review = service.split('public ServiceResult Review(',1)[-1].split('private static Dictionary',1)[0]
+    tx = review.find('_db.Tx(connection =>'); reader = review.find('SnapshotReadAccess.Require('); lookup = review.find('_db.QuerySingle<ProductRow>')
+    if not 0 <= tx < reader < lookup: fail('StockMinus Review must check current reader INSIDE transaction before lookup/audit')
+    if '+ exception.Message' in service: fail('StockMinus errors must not echo raw DB details')
+    for token in ('CostKnown ? Money.Format(ValuePaisa) : "hidden"',
+                  'private bool TotalKnown => CostKnown && Rows.All(row => row.CostKnown);',
+                  'TotalKnown ? Rows.Sum(row => row.ValuePaisa) : 0',
+                  'TotalKnown ? Money.Format(TotalValuePaisa) : "hidden"',
+                  '(ReviewNoteKnown ? ReviewNote! : "hidden")'):
+        if token not in models: fail(f'StockMinus known/hidden model missing {token}')
+    for token in ('Selected = null;', 'TotalText = "hidden";',
+                  'public bool CanReview => CanRead &&',
+                  'public void RefreshAccess()', '_services.StockMinus.CheckReadAccess(_user)',
+                  '_lastCostKnown != access.Value.CostKnown',
+                  '_lastReviewNotesKnown != access.Value.ReviewNotesKnown'):
+        if token not in vm: fail(f'StockMinus selected/status/access cleanup missing {token}')
+    for token in ('TimeSpan.FromSeconds(3)', 'Unloaded += (_, _) => _accessTimer.Stop();', 'viewModel.RefreshAccess();'):
+        if token not in view: fail(f'StockMinus active-view cleanup missing {token}')
+    for name in ('StockOnlyKeepsQuantityButMasksRawRowAggregateAndSummary',
+                 'CostOnlySeesExactValuationButNotRawAuditDetails', 'BothFinancialGrantsRevealStoredReviewDetails',
+                 'FinancialPermissionDatabaseFailureDoesNotFallBackToOwnerCost',
+                 'ReviewRechecksRevokedStockBeforeAuditWrite', 'StockAuthorizedReviewDoesNotRequireCostOrProfit',
+                 'MetadataReadNeverRewritesStoredNegativeValuationOrReview',
+                 'AuditFailureRollsBackReviewWithoutChangingStockOrMovement'):
+        if name not in tests: fail(f'StockMinus regression missing {name}')
+    REPORT.append('Phase4 portion16: current Stock registry reader, independent Cost/main raw row+aggregate masking; raw audit notes BOTH-financial/main; current review writer inside transaction, stock/episode SQL unchanged; active-view stale selection/access cleanup. Windows/runtime/session/fullPhase4 OPEN')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -7331,6 +7381,7 @@ def main() -> int:
     check_purchase_preparation()
     check_bulk_audit_access()
     check_encrypted_backup_contract()
+    check_stock_minus_visibility()
     check_csharp_grammar()
 
     if not quiet:

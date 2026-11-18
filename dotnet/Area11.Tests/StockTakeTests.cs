@@ -187,7 +187,7 @@ public sealed class StockTakeTests
         var service = Takes(test);
         var opened = service.Open(TestData.Owner).Value!;
         var minus = new StockMinusService(test.Database, test.Audit,
-            new PermissionService(test.Database, test.Log, test.Audit), test.Log);
+            new PermissionService(test.Database, test.Log, test.Audit), test.Log, test.Settings);
 
         Assert.Equal(-5d, LineOf(service, opened.Id, product).SystemQtyBase);
         var before = minus.Report(TestData.Owner);

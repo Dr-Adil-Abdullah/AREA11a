@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## D-110 / D-113 continuation — Stock Minus checkpoint v0.94.0 (2026-11-10)
+
+No new financial/business-policy choice: existing separate Cost/Profit/main rules applied to StockMinus valuation;stored raw audit review details require bothfinancial/main just like Audit. Current Stock delegation for writing a review retained;review does not change stock. Source written,Windows/session/fullPhase4 open. [Trace](POS-PHASE4-STOCK-MINUS-REVIEW.md),[PT-36](POS-PHASE4-PART16-URDU.md). Owner password-change support from portion15 remains unchanged: new backups use new password;older files need original password. Supplier paid/payable/PaySR decision still unanswered.
+
 ## D-113 implementation checkpoint — v0.93.0 (2026-11-10)
 
 Approved password A implemented in source across manual/auto/safety/rollback with current-user DPAPI and explicit Owner legacy recovery. Original password needed for older/new-PC restore; local safety password setup required first. No actual secret in chat.51new cases/1692total UNRUN;Windows/DPAPI/new-PC/fault/installer not certified. [Trace](POS-PHASE4-ENCRYPTED-BACKUP-REVIEW.md),[PT-35](POS-PHASE4-PART15-URDU.md). Supplier monetary-policy question remains unanswered; no new business-rule choice made. Earlier v0.92 status below is historical.

@@ -2,6 +2,8 @@
 
 **v0.93.0 Shearwater · 2026-11-10 · PT-35**
 
+> نئے v0.94 source کے لیے مکمل suite کا متوقع count **1716** ہے؛ذیل میں1692 حصہ15 کے اصل v0.93 checkpoint کا count ہے۔ تازہ [PT-36](POS-PHASE4-PART16-URDU.md) بھی کریں۔
+
 ## اس حصے میں کیا شامل ہوا؟
 
 - نیا **`.a11bak` encrypted package**: پورا SQLite database، اور Include the photos کے مطابق تصاویر۔ عام ZIP کی طرح کھول کر Excel میں بدلنے والی فائل نہیں۔ AES-GCM authentication اور اس کے اندر SHA256 completion check؛صرف باہر رکھی ہوئی hash پر اعتماد نہیں۔

@@ -18,7 +18,7 @@ namespace Area11.Tests;
 /// </summary>
 public sealed class StockMinusTests
 {
-    private const string OwnerName = "Owner";
+    private const string OwnerName = TestData.SeedOwnerName;
 
     // ============================== the list ==============================
 
@@ -265,7 +265,7 @@ VALUES(@at, 'Owner', 'stock_minus_review', 'stock', 'products', @id, 'Seen last 
     // ============================== helpers ==============================
 
     private static StockMinusService Registry(TestDatabase test) =>
-        new(test.Database, test.Audit, TestData.Permissions(test), test.Log);
+        new(test.Database, test.Audit, TestData.Permissions(test), test.Log, test.Settings);
 
     /// <summary>A whole-day stamp in the past, so "days since" never depends on the day of the run.</summary>
     private static string DaysAgo(int days) =>

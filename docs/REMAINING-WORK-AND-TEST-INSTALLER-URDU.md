@@ -1,6 +1,10 @@
-# باقی کام، GitHub اور test installer — v0.93.0
+# باقی کام، GitHub اور test installer — v0.94.0
 
-## حصہ15 کے بعد موجودہ ترجیح
+## حصہ16 کے بعد موجودہ ترجیح
+
+Stock Minus میں current reader،الگ Cost/main valuation/total masks،raw Audit note کے لیے دونوں مالی grants/main،اور transaction کے اندر موجودہ reviewer check شامل ہے۔ اصل stock/episode/valuation SQL نہیں بدلا۔ [PT-36](POS-PHASE4-PART16-URDU.md)،[trace/حدود](POS-PHASE4-STOCK-MINUS-REVIEW.md)۔ **1716 C# cases اورWindows UNRUN**؛83 static/11 SQLite probes runtime نہیں۔ اگلی اہم عملی gates PT-36 اورPT-35 کے الگ Windows tests/DPAPI/new-PC restore ہیں۔ باقی financial outputs،Supplier policy،session/record/stale objects،fault/concurrency/files/cloud اورinstaller کھلے ہیں۔ اندازہ **3–6 مربوط review/result چکر**،نتائج سے بڑھ سکتا ہے؛وعدہ نہیں۔ Board51/57 audit فیصد نہیں؛ذیل کے حصوں کے اندازے تاریخی ہیں۔
+
+## تاریخی حصہ15 کے بعد ترجیح
 
 Password backup کا coherent source راستہ شامل:manual/auto/full safety/rollback/current-user DPAPI/اصلpasswordrestore/Owner-onlylegacy۔ [PT-35](POS-PHASE4-PART15-URDU.md)،[حدود/evidence](POS-PHASE4-ENCRYPTED-BACKUP-REVIEW.md)۔ **Windows1692C#cases،DPAPI/ACL،حقیقیnew-PCrestore/faultmatrix UNRUN**؛82static اورPythonmodel runtimeنہیں۔ Installerنہیںبنا۔ اگلیاہمgateواقعیالگWindowsVMمیںencryptedbackup+restoreہے؛اسکےبغیرپرانےbackupsنہdeleteکریں۔ باقیاندازہتقریباً **3–7 مربوط review/result چکر**؛Supplierpolicy/session/StockMinus/otheroutputs/fault/files/cloud/fullPhase4کھلےہیں۔ موجودہ feature board **51 done/6 partial** ہے: F-36 کی نئی security extension کو Windows/PT-35 کے لیے دوبارہ partial رکھا،feature حذف نہیں ہوا۔ یہ audit فیصد نہیں۔ ذیل کے حصہ14 اور پرانے اندازے تاریخی ہیں۔
 

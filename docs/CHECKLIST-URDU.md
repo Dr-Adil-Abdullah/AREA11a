@@ -1,6 +1,6 @@
 # Area11 — مکمل فیچر ٹک لسٹ (پرنٹ کرنے کے لیے)
 
-**ورژن:** v0.93.0 (Shearwater `#475E69`) · **تاریخ:** 2026-11-10
+**ورژن:** v0.94.0 (Cormorant `#60516D`) · **تاریخ:** 2026-11-10
 
 > یہ فائل **خودکار** بنتی ہے: `python3 tools/make_checklist.py`۔ ہاتھ سے نہ بدلیں۔
 > اصلی فیصلہ `docs/PROGRESS.md` کے بورڈ میں ہوتا ہے، اور `tools/check_repo.py` اُس سے میل
@@ -109,7 +109,7 @@
 | ☐ | F-36 | Backup | 🟡 جاری |
 | ☐ | F-37 | Import / export / bulk price change | ✅ مکمل |
 | ☐ | F-38 | Reorder levels + WhatsApp order text | ✅ مکمل |
-| ☐ | F-39 | Stock-minus registry: every shelf below zero, the movement that took it there, valu... | ✅ مکمل |
+| ☐ | F-39 | Stock-minus registry | ✅ مکمل |
 
 **دکان میں کیسے دیکھیں (5 منٹ):**
 
@@ -120,7 +120,7 @@
 
 **اِس حصے میں باقی:**
 
-- 🟡 **F-36 — Backup**: PT-35:1692C#cases,DPAPI/ACL,new-PC original password,rotation,isolated full restore/fault matrix;no runtime certification
+- 🟡 **F-36 — Backup**: PT-35 plus current1716C#cases,DPAPI/ACL,new-PC original password,rotation,isolated full restore/fault matrix;no runtime certification
 
 ## فیز 4 — باقی سب (دکان کے لیے اضافی سہولتیں)
 

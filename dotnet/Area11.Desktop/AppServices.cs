@@ -62,7 +62,7 @@ public sealed class AppServices
         Workbooks = new WorkbookService(Database, Audit, Permissions, Settings, Log, Import);
         Reorder = new ReorderService(Database, Audit, Settings, Permissions, Log);
         ProductHistory = new ProductHistoryService(Database, Settings, Permissions, Log);
-        StockMinus = new StockMinusService(Database, Audit, Permissions, Log);
+        StockMinus = new StockMinusService(Database, Audit, Permissions, Log, Settings);
         Photos = new PhotoService(Database, Audit, Permissions, Log);
         CustomFields = new CustomFieldService(Database, Audit, Permissions, Log);
         NativeFields = new NativeFieldPolicyService(Database, Audit, Log);

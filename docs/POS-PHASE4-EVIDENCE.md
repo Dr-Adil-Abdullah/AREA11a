@@ -1,5 +1,7 @@
 # Phase 4 — source evidence register, portion 1 (v0.79.0 Tern)
 
+> **Latest v0.94 portion16:** [Stock Minus trace](POS-PHASE4-STOCK-MINUS-REVIEW.md),[PT-36](POS-PHASE4-PART16-URDU.md). Current Stock registry reader,Cost/main raw valuation+aggregate masks,raw review Audit details BOTHfinancial/main,current writer insideTx;stock/4SQL/episode unchanged.1716C#cases/Windows UNRUN;83static/11memorySQLprobes/12source mutations PASS,not runtime. Settings/session/otheroutputs/Supplier policy/fault/cloud/fullPhase4 OPEN.
+
 > **Latest v0.93 portion15/D-113:** [Encrypted-backup trace](POS-PHASE4-ENCRYPTED-BACKUP-REVIEW.md),[PT-35](POS-PHASE4-PART15-URDU.md). Password package/current-user DPAPI/manual-auto-safety-rollback integrated in SOURCE; explicit unverified Owner legacy.82static PASS, independent Python model6roundtrips/24negative PASS;1692C#cases/Windows/DPAPI/new-PC/fault matrix UNRUN. No installer/security certification; global Phase4 OPEN. Earlier entries below are historical.
 
 > **Latest v0.92 portion14/D-113:** [Bulk/Audit trace](POS-PHASE4-BULK-AUDIT-REVIEW.md),[PT-34](POS-PHASE4-PART14-URDU.md). Owner-default explicit bulk grant;editable product/mixed-file all-or-refuse gates,actorful previews/current Apply checks;Audit metadata+search boundary and freshCSV/snapshot.1641C#cases UNRUN;81static/10memorySQLprobes PASS,not runtime. **PasswordA approved;backup encryption NOT implemented** ([next contract](SECURE-BACKUP-PASSWORD-PLAN.md));global/Windows OPEN.

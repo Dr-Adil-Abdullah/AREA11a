@@ -25,6 +25,10 @@ public sealed class StockMinusRow
     /// <summary>What the missing goods are worth at purchase cost; negative, like the shelf.</summary>
     public long ValuePaisa { get; set; }
 
+    public bool CostKnown { get; set; }
+
+    public bool ReviewNoteKnown { get; set; }
+
     // ---- the episode: the movement that took the shelf below zero ----
 
     public string? SinceAt { get; set; }
@@ -50,7 +54,7 @@ public sealed class StockMinusRow
 
     public string StockText => Qty.Format(StockQty) + " " + BaseUnit;
 
-    public string ValueText => Money.Format(ValuePaisa);
+    public string ValueText => CostKnown ? Money.Format(ValuePaisa) : "hidden";
 
     public string SinceLabel => string.IsNullOrWhiteSpace(SinceAt)
         ? "no stock movement on record"
@@ -67,8 +71,8 @@ public sealed class StockMinusRow
         : "not reviewed yet";
 
     public string ReviewNoteLabel => IsReviewed && !string.IsNullOrWhiteSpace(ReviewNote)
-        ? ReviewNote!
-        : string.Empty;
+        ? (ReviewNoteKnown ? ReviewNote! : "hidden")
+        : IsReviewed && !ReviewNoteKnown ? "hidden" : string.Empty;
 
     /// <summary>"old" once the shelf has been minus for a month - the colour trigger on the row.</summary>
     public string Tone => DaysNegative >= 30 ? "old" : "fresh";
@@ -79,9 +83,15 @@ public sealed class StockMinusReport
 {
     public List<StockMinusRow> Rows { get; } = new();
 
+    public bool CostKnown { get; set; }
+
+    public bool ReviewNotesKnown { get; set; }
+
+    private bool TotalKnown => CostKnown && Rows.All(row => row.CostKnown);
+
     public int Count => Rows.Count;
 
-    public long TotalValuePaisa => Rows.Sum(row => row.ValuePaisa);
+    public long TotalValuePaisa => TotalKnown ? Rows.Sum(row => row.ValuePaisa) : 0;
 
     public int ReviewedCount => Rows.Count(row => row.IsReviewed);
 
@@ -89,7 +99,7 @@ public sealed class StockMinusReport
 
     public int OldestDays => Rows.Count == 0 ? 0 : Rows.Max(row => row.DaysNegative);
 
-    public string TotalText => Money.Format(TotalValuePaisa);
+    public string TotalText => TotalKnown ? Money.Format(TotalValuePaisa) : "hidden";
 
     public string OldestText => OldestDays == 0 ? "-" : OldestDays + " day(s)";
 
@@ -125,4 +135,11 @@ public static class StockMinusCause
 
         return string.IsNullOrWhiteSpace(refCode) ? verb : verb + " " + refCode!.Trim();
     }
+}
+
+/// <summary>Current reader flags only. Not authorization to reuse an old report or write.</summary>
+public sealed class StockMinusAccess
+{
+    public bool CostKnown { get; set; }
+    public bool ReviewNotesKnown { get; set; }
 }

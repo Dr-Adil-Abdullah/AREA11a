@@ -39,7 +39,7 @@ public sealed class NegativeStockPolicyTests
 
     private static StockMinusService Minus(TestDatabase test) =>
         new(test.Database, test.Audit,
-            new PermissionService(test.Database, test.Log, test.Audit), test.Log);
+            new PermissionService(test.Database, test.Log, test.Audit), test.Log, test.Settings);
 
     private static long ScalarLong(TestDatabase test, string sql, object? parameters = null)
     {
