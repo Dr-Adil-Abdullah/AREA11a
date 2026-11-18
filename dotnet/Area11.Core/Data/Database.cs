@@ -17,6 +17,9 @@ public sealed class Database
     private readonly bool _durable;
     private int _journalReady;
     private SqliteTransaction? _transaction;
+    // Sync-only unit of work. A reentrant monitor rejects same-thread nested Tx and serializes
+    // other callers on this Database instance; no ambient transaction is lent to another connection.
+    private readonly object _transactionGate = new();
 
     static Database()
     {
@@ -125,56 +128,87 @@ public sealed class Database
         return connection;
     }
 
+    // Every command is associated with a transaction ONLY when that transaction owns this exact
+    // connection. A separately opened connection must never receive a foreign transaction.
+    private SqliteTransaction? TransactionFor(SqliteConnection connection) =>
+        ReferenceEquals(_transaction?.Connection, connection) ? _transaction : null;
+
+    private T Command<T>(SqliteConnection connection, Func<SqliteTransaction?, T> command)
+    {
+        lock (_transactionGate) return command(TransactionFor(connection));
+    }
+
     public int Execute(SqliteConnection connection, string sql, object? parameters = null) =>
-        connection.Execute(sql, parameters, _transaction);
+        Command(connection, transaction => connection.Execute(sql, parameters, transaction));
 
     public List<T> Query<T>(SqliteConnection connection, string sql, object? parameters = null) =>
-        connection.Query<T>(sql, parameters, _transaction).ToList();
+        Command(connection, transaction => connection.Query<T>(sql, parameters, transaction).ToList());
 
     public T? QuerySingle<T>(SqliteConnection connection, string sql, object? parameters = null) =>
-        connection.QueryFirstOrDefault<T>(sql, parameters, _transaction);
+        Command(connection, transaction => connection.QueryFirstOrDefault<T>(sql, parameters, transaction));
 
     public object? Scalar(SqliteConnection connection, string sql, object? parameters = null) =>
-        connection.ExecuteScalar(sql, parameters, _transaction);
+        Command(connection, transaction => connection.ExecuteScalar(sql, parameters, transaction));
 
     public long NextId(SqliteConnection connection) =>
-        connection.ExecuteScalar<long>("SELECT last_insert_rowid();", null, _transaction);
+        Command(connection, transaction => connection.ExecuteScalar<long>("SELECT last_insert_rowid();", null, transaction));
 
-    /// <summary>All-or-nothing write. Nested calls are a programming error, not a silent bug.</summary>
+    /// <summary>
+    /// Synchronous read unit: reuse this caller's active Tx connection, otherwise own/dispose a new
+    /// one. A borrowed connection must not be closed, returned, retained or used asynchronously.
+    /// Never wait inside the callback for another thread to call this Database (the gate is held).
+    /// This does not make an outside-Tx multi-query read a coherent SQLite snapshot.
+    /// </summary>
+    public T Read<T>(Func<SqliteConnection, T> read)
+    {
+        lock (_transactionGate)
+        {
+            if (_transaction is not null)
+                return read(_transaction.Connection ?? throw new InvalidOperationException("The transaction connection is closed."));
+            using var connection = Open();
+            return read(connection);
+        }
+    }
+
+    /// <summary>All-or-nothing synchronous write. Nested calls are a programming error.
+    /// Do not return tasks or wait for another thread to call this Database while this gate is held.</summary>
     public T Tx<T>(Func<SqliteConnection, T> work)
     {
-        if (_transaction is not null)
+        lock (_transactionGate)
         {
-            throw new InvalidOperationException("A database transaction is already open; do not nest Tx calls.");
-        }
+            if (_transaction is not null)
+            {
+                throw new InvalidOperationException("A database transaction is already open; do not nest Tx calls.");
+            }
 
-        using var connection = Open();
-        using var transaction = connection.BeginTransaction(deferred: false);
-        _transaction = transaction;
+            using var connection = Open();
+            using var transaction = connection.BeginTransaction(deferred: false);
+            _transaction = transaction;
 
-        try
-        {
-            var result = work(connection);
-            transaction.Commit();
-            return result;
-        }
-        catch
-        {
             try
             {
-                transaction.Rollback();
+                var result = work(connection);
+                transaction.Commit();
+                return result;
             }
-            catch (InvalidOperationException)
+            catch
             {
-                // The connection already rolled back (for example a failing statement);
-                // the original exception is the useful one, so it is rethrown below.
-            }
+                try
+                {
+                    transaction.Rollback();
+                }
+                catch (InvalidOperationException)
+                {
+                    // The connection already rolled back (for example a failing statement);
+                    // the original exception is the useful one, so it is rethrown below.
+                }
 
-            throw;
-        }
-        finally
-        {
-            _transaction = null;
+                throw;
+            }
+            finally
+            {
+                _transaction = null;
+            }
         }
     }
 

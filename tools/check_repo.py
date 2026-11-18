@@ -6683,6 +6683,64 @@ def check_definition_time_boundaries():
     REPORT.append('Phase4 portion6: current owner inside four custom-definition write transactions, public field read/save current account/module, resolved audits and immediate one-transaction owner/read/plan/write time correction; delegated parent workflows/full sessions/concurrency/Windows pending')
 
 
+def check_transaction_permission_boundaries():
+    """Source-only connection ownership/fail-closed contracts, not SQLite/.NET execution."""
+    database = (DOTNET / 'Area11.Core/Data/Database.cs').read_text()
+    permission = (DOTNET / 'Area11.Core/Services/PermissionService.cs').read_text()
+    tests = (DOTNET / 'Area11.Tests/TransactionPermissionTests.cs').read_text()
+    for token in ('private readonly object _transactionGate = new();',
+                  'ReferenceEquals(_transaction?.Connection, connection) ? _transaction : null;',
+                  'lock (_transactionGate) return command(TransactionFor(connection));'):
+        if token not in database:
+            FAILURES.append(f'Transaction/permission connection ownership missing {token}')
+    for method in ('Execute', 'Query', 'QuerySingle', 'Scalar', 'NextId'):
+        # All five wrappers must select by connection before invoking Dapper.
+        declaration = re.search(r'public [^\n]+ ' + method + r'(?:<T>)?\(SqliteConnection connection[^\n]*\) =>\s*([^;]+);', database)
+        if declaration is None or 'Command(connection, transaction =>' not in declaration[1]:
+            FAILURES.append(f'Transaction/permission wrapper must bind its own connection: {method}')
+    read = database.split('public T Read<T>', 1)[-1].split('/// <summary>All-or-nothing', 1)[0]
+    for token in ('lock (_transactionGate)', 'return read(_transaction.Connection ?? throw',
+                  'using var connection = Open();', 'return read(connection);'):
+        if token not in read:
+            FAILURES.append(f'Transaction/permission synchronous read contract missing {token}')
+    tx = database.split('public T Tx<T>', 1)[-1].split('public void Tx(', 1)[0]
+    for token in ('lock (_transactionGate)', 'if (_transaction is not null)', 'BeginTransaction(deferred: false)',
+                  '_transaction = transaction;', 'transaction.Commit();', 'transaction.Rollback();', '_transaction = null;'):
+        if token not in tx:
+            FAILURES.append(f'Transaction/permission Tx cleanup/serialization missing {token}')
+    ordinary = permission.split('public bool Can(', 1)[-1].split('public static bool IsFinancialVisibility', 1)[0]
+    financial = permission.split('private bool CanSeeFinancial', 1)[-1].split('public IReadOnlyDictionary', 1)[0]
+    for label, body in (('ordinary', ordinary), ('financial', financial)):
+        if 'return _db.Read(connection =>' not in body or '_db.Open()' in body:
+            FAILURES.append(f'Transaction/permission {label} grant must use synchronous current read')
+        failure = body.split('catch (Exception exception)', 1)[-1]
+        if 'return false;' not in failure or 'return RoleDefault(' in failure:
+            FAILURES.append(f'Transaction/permission {label} failed grant read must deny')
+    if 'return row is null ? RoleDefault(user.Kind, module) : row.Value != 0;' not in ordinary:
+        FAILURES.append('Transaction/permission successful missing ordinary grant must retain role defaults')
+    mapping = permission.split('public IReadOnlyDictionary<string, bool> MapFor', 1)[-1].split('public ServiceResult Set', 1)[0]
+    if 'var rows = _db.Read(connection => _db.Query<PermissionRow>' not in mapping:
+        FAILURES.append('Transaction/permission assignment map must use current read')
+    for name in (
+        'ExecuteDoesNotLendTransactionToForeignConnection', 'QueryDoesNotLendTransactionToForeignConnection',
+        'QuerySingleDoesNotLendTransactionToForeignConnection', 'ScalarDoesNotLendTransactionToForeignConnection',
+        'NextIdDoesNotLendTransactionToForeignConnection', 'ReadBorrowsCurrentConnectionWithoutDisposingIt',
+        'OutsideReadOwnsAndDisposesItsConnection', 'ReadFailureDoesNotDisposeBorrowedTransaction',
+        'SameConnectionCommandsStillRollBackTogetherAndNextTxWorks', 'NestedTxStillRejectedWithoutLosingOuterTransaction',
+        'OtherThreadReadWaitsUntilCommitAndDoesNotBorrowTheWriterConnection', 'OtherThreadTxWaitsInsteadOfReceivingNestedTxError',
+        'CommittedDelegatedCashIsAllowedInsideTx', 'CommittedRevokedCustomersCannotRegainCashierDefaultInsideTx',
+        'PendingDelegatedGrantIsVisibleInsideTx', 'PendingRevocationIsVisibleAndRollbackRestoresRoleDefault',
+        'RolledBackDelegationDoesNotLeakThroughPermissionCache', 'MissingGrantKeepsRoleDefaultWhenReadSucceeds',
+        'OrdinaryPermissionReadFailureIsDeniedOutsideTx', 'OrdinaryPermissionReadFailureIsDeniedInsideTx',
+        'OwnerOrdinaryBypassAndExplicitFinancialRevocationRemainSeparate', 'BothFinancialGrantsReadPendingChangesIndependently',
+        'FinancialGrantReadsCurrentPendingAccountState', 'FinancialReadFailureStillFailsClosedForOwner',
+        'AssignmentMapReadsPendingAssignmentsWithoutBecomingAuthorizationApi',
+        'DelegatedCustomerCollectionStillPostsExactlyOnePayment', 'RevokedCustomerCollectionDoesNotPostOrAudit'):
+        if 'public void ' + name + '(' not in tests:
+            FAILURES.append(f'Transaction/permission regression missing {name}')
+    REPORT.append('Phase4 portion22: connection-owned five command wrappers, synchronous current Read/Tx serialization, permission own-write visibility and failed grant read deny;27 facts written, C#/Windows/global concurrency/session/settings certification OPEN')
+
+
 def check_financial_visibility_grants():
     """D-110 independent financial grants. Named paths only, not whole-application secrecy proof."""
     core = DOTNET / 'Area11.Core'
@@ -7703,6 +7761,7 @@ def main() -> int:
     check_recovery_monthly_boundaries()
     check_parent_roster_boundaries()
     check_shift_current_boundaries()
+    check_transaction_permission_boundaries()
     check_csharp_grammar()
 
     if not quiet:

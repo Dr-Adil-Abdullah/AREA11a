@@ -110,17 +110,19 @@ public sealed class PermissionService
 
         try
         {
-            using var connection = _db.Open();
-            var row = _db.QuerySingle<int?>(connection,
-                "SELECT allowed FROM user_permissions WHERE user_id = @userId AND module_key = @module;",
-                new { userId = user.Id, module });
+            return _db.Read(connection =>
+            {
+                var row = _db.QuerySingle<int?>(connection,
+                    "SELECT allowed FROM user_permissions WHERE user_id = @userId AND module_key = @module;",
+                    new { userId = user.Id, module });
 
-            return row is null ? RoleDefault(user.Kind, module) : row.Value != 0;
+                return row is null ? RoleDefault(user.Kind, module) : row.Value != 0;
+            });
         }
         catch (Exception exception)
         {
             _log.Error($"Permission check failed for user {user.Id}/{module}.", exception);
-            return RoleDefault(user.Kind, module);
+            return false; // a failed grant read is unknown, never an invented role-default allow
         }
     }
 
@@ -131,14 +133,16 @@ public sealed class PermissionService
         if (!actor.Active || actor.Id <= 0) return false;
         try
         {
-            using var connection = _db.Open();
-            var current = _db.QuerySingle<User>(connection,
-                "SELECT id, name, role, active FROM users WHERE id = @id;", new { id = actor.Id });
-            if (current is not { Active: true } || current.Kind != actor.Kind) return false;
-            var grant = _db.QuerySingle<int?>(connection,
-                "SELECT allowed FROM user_permissions WHERE user_id = @userId AND module_key = @module;",
-                new { userId = current.Id, module });
-            return grant is null ? RoleDefault(current.Kind, module) : grant.Value != 0;
+            return _db.Read(connection =>
+            {
+                var current = _db.QuerySingle<User>(connection,
+                    "SELECT id, name, role, active FROM users WHERE id = @id;", new { id = actor.Id });
+                if (current is not { Active: true } || current.Kind != actor.Kind) return false;
+                var grant = _db.QuerySingle<int?>(connection,
+                    "SELECT allowed FROM user_permissions WHERE user_id = @userId AND module_key = @module;",
+                    new { userId = current.Id, module });
+                return grant is null ? RoleDefault(current.Kind, module) : grant.Value != 0;
+            });
         }
         catch (Exception exception)
         {
@@ -154,10 +158,9 @@ public sealed class PermissionService
 
         try
         {
-            using var connection = _db.Open();
-            var rows = _db.Query<PermissionRow>(connection,
+            var rows = _db.Read(connection => _db.Query<PermissionRow>(connection,
                 "SELECT module_key, allowed FROM user_permissions WHERE user_id = @userId;",
-                new { userId = user.Id });
+                new { userId = user.Id }));
 
             foreach (var row in rows)
             {

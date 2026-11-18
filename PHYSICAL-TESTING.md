@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-42 — transaction-owned commands / current permission read (v0.100.0) — UNRUN
+
+[Isolated Windows steps](docs/POS-PHASE4-PART22-URDU.md): explicit revoke vs role default,delegated Cash insideTx,pending grants/revokes and rollback,ordinary failed grant read deny,independent financial/Owner behavior,five foreign-connection wrappers,read ownership/disposal/nested rejection,same-instance two-thread wait and full1879 regression suite+Desktop/WPF.27newfacts UNRUN;source/synthetic evidence NOT C#/provider/concurrency certification. Settings/session/record/cross-instancefault/retry/files/cloud/new-PCrestore/globalPhase4/installer OPEN. No fake live-shop posts;separateexealoneNOTisolation. [Trace](docs/POS-PHASE4-TRANSACTION-PERMISSION-REVIEW.md).
+
 ## PT-41 — current Cash / transactional drawer / unknown-state handling (v0.99.0) — UNRUN
 
 [Isolated Windows steps](docs/POS-PHASE4-PART21-URDU.md): currentCashPage/ByPerson/senior/revoke/restore/identity,Pos-onlyboolean/currentunknownstate,OpenCloseTx/currentHandoveractors/storednames/recipientgrants,one-rupeereason/countedfloat/audit+discrepancy+postreadfaultrollback,staleUI/cache/printshare/SAVEDrefreshfailure,conservativeexpirycountnote,realparallelOpen/retry/boundary/timer/hardware.1852C#cases/WPF/Windows/DPAPI/installerUNRUN;88static/16syntheticSQLprobes/19source mutationsNOT runtime. SharedDatabase/permissioncrossconnectionhazardelsewhere,fullSettings/session/fault/concurrency/files/cloud/restore/globalPhase4stillOPEN. Blackbox/BookCheckunchanged. No fake shop posts;separateexealoneNOTisolation.

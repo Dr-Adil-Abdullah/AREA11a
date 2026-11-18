@@ -1,4 +1,16 @@
-# باقی کام، GitHub اور test installer — v0.96.0
+# باقی کام، GitHub اور test installer — v0.100.0
+
+## تازہ checkpoint — v0.100.0 Sanderling / حصہ22؛کیا باقی ہے؟
+
+Database/permissionconnectionکیsourceاصلاح:اپنیconnectionکاہیtransaction،جاریtransactionسےgrant/revokeکیread؛failedgrantreaddeny،کامیابmissinggrantپرrole-defaultبرقرار۔ Same-instance synchronous serializationپورےپروگرامکیthread/sessioncertificationنہیں۔ [PT-42](POS-PHASE4-PART22-URDU.md)،[trace/حدود](POS-PHASE4-TRANSACTION-PERMISSION-REVIEW.md)۔ **27نئےfacts،1879C#cases/WindowsUNRUN۔** Accounting/Blackbox/BookCheck/SupplierB/backupAunchanged۔
+
+1. باقیSettings/native/custom/photo/secretfields،shell/sessionاورrecordauthorization؛ordinaryCan/MapForمکملsigned-insessionproofنہیں۔
+2. Cross-servicefault/rollback/retry/concurrency/locking،duplicatesاورpostcommitfailures؛sharedinstancegateسےcross-instance/processproofنہیںملتا۔ Settingscache/reloadاورreturnedFail-commitsکیحدباقی۔
+3. Files/cloud،passwordA/DPAPI/new-PCencryptedrestore،interruptedrestore/rollbackاورواقعیالگDB/photosکیintegration۔
+4. اصلWindowsپر1879cases،Desktop/WPFbuild،keyboard/timers/printer/scanner/screenshots؛پھراننتائجکیfixes۔
+5. پھرمجازواحدsendabledouble-clicktestinstaller؛shortcuts/startup/upgrade/uninstall/new-PCجانچ۔ **ابھیinstallerنہیںبنا۔**
+
+**تقریباً3–6مزیدمربوطreview/resultچکر**مشروطاندازہ،deadline/upperboundنہیں؛findingsسےبڑھسکتا۔ ہرportiondocs+samebranchcommit/push+actualremoteverifyلازم؛نیچےتاریخیcheckpointہیں۔
 
 ## تازہ checkpoint — v0.99.0 Curlew / حصہ21؛کیا باقی ہے؟
 
