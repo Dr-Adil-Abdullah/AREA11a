@@ -23,6 +23,7 @@ public sealed class AppServices
         Permissions = new PermissionService(Database, Log, Audit);
         PermissionInspector = new PermissionInspectionService(Database, Log);
         Settings = new SettingsService(Database, Audit, Log, Permissions);
+        PartnerAccess = new PartnerAccessService(Database, Permissions, Log);
         Auth = new AuthService(Database, Audit, Settings, Log);
         AppLabels = new AppLabelService(Settings, Permissions);
         Numbering = new NumberingService(Settings);
@@ -104,6 +105,8 @@ public sealed class AppServices
     public AuthService Auth { get; }
 
     public PermissionService Permissions { get; }
+
+    public PartnerAccessService PartnerAccess { get; }
 
     public PermissionInspectionService PermissionInspector { get; }
 

@@ -97,6 +97,7 @@ public sealed class SettingsViewModel : ObservableObject
     private bool _pricingEditRate, _pricingProfit, _pricingRetail, _pricingOverride;
     private string _pricingManualLimit = "0", _pricingProfitLimit = "0", _pricingRetailLimit = "0";
 
+    private bool _staffAccessAllowed;
     private string _newStaffName = string.Empty;
     private string _newStaffPin = string.Empty;
     private string _resetStaffSecret = string.Empty;
@@ -269,7 +270,7 @@ public sealed class SettingsViewModel : ObservableObject
     public RelayCommand ClearSyncKeyCommand { get; }
 
     public RelayCommand SavePricingCommand { get; }
-    public bool IsOwner => _user.IsOwner;
+    public bool IsOwner => _staffAccessAllowed;
     public IReadOnlyList<string> DiscountBases { get; } = new[] { "profit", "retail" };
     public string BillDiscountBasis { get => _billDiscountBasis; set => SetProperty(ref _billDiscountBasis, value); }
     public bool PricingExtra { get => _pricingExtra; set => SetProperty(ref _pricingExtra, value); }
@@ -284,7 +285,8 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void LoadPricing()
     {
-        if (_selectedUser is null || !_user.IsOwner) return;
+        ClearPricing();
+        if (_selectedUser is null || !UpdateStaffAccess()) return;
         try
         {
             var allowance = _services.Pricing.ForUser(_selectedUser);
@@ -303,7 +305,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void SavePricing()
     {
-        if (!_user.IsOwner || _selectedUser is null) { SetStatus("Only the owner can set a person's pricing limits.", true); return; }
+        if (!UpdateStaffAccess() || _selectedUser is null) { SetStatus("Only the owner can set a person's pricing limits.", true); return; }
         if (!decimal.TryParse(PricingManualLimit, NumberStyles.Number, CultureInfo.InvariantCulture, out var manual)
             || !decimal.TryParse(PricingProfitLimit, NumberStyles.Number, CultureInfo.InvariantCulture, out var profit)
             || !decimal.TryParse(PricingRetailLimit, NumberStyles.Number, CultureInfo.InvariantCulture, out var retail))
@@ -321,9 +323,9 @@ public sealed class SettingsViewModel : ObservableObject
         SetStatus(result.Ok ? "Pricing limits saved for " + _selectedUser.Name + "." : result.Error ?? "Could not save pricing limits.", !result.Ok);
     }
 
-    public bool CanManageStaff => _user.IsOwner && _services.Permissions.Can(_user, Modules.Staff);
+    public bool CanManageStaff => _staffAccessAllowed;
 
-    public bool CanManageFinancialVisibility => _user.IsOwner;
+    public bool CanManageFinancialVisibility => _staffAccessAllowed;
 
     public bool CannotManageStaff => !CanManageStaff;
 
@@ -614,6 +616,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void OpenStaffPhotos()
     {
+        if (!UpdateStaffAccess()) return;
         if (!CanManageStaff || _selectedUser is not { Active: true } person)
         {
             SetStatus("Choose an active staff member first.", true);
@@ -628,6 +631,7 @@ public sealed class SettingsViewModel : ObservableObject
         get => _selectedUser;
         set
         {
+            if (value is not null && (!UpdateStaffAccess() || !Users.Contains(value))) return;
             if (!SetProperty(ref _selectedUser, value))
             {
                 return;
@@ -811,10 +815,12 @@ public sealed class SettingsViewModel : ObservableObject
     public void LoadUsers()
     {
         var currentId = _selectedUser?.Id;
-        var result = _services.Auth.ListUsers();
+        if (!UpdateStaffAccess()) return;
+        var result = _services.Auth.ListUsers(_user);
 
         if (!result.Ok || result.Value is null)
         {
+            ClearStaffData();
             SetStatus(result.Error ?? "The staff list could not be loaded.", true);
             return;
         }
@@ -833,8 +839,61 @@ public sealed class SettingsViewModel : ObservableObject
         LoadPermissions();
     }
 
+    public void RefreshStaffAccess()
+    {
+        var wasAllowed = _staffAccessAllowed;
+        if (UpdateStaffAccess() && !wasAllowed) LoadUsers();
+    }
+
+    private bool UpdateStaffAccess()
+    {
+        var access = _services.Auth.CheckStaffAccess(_user);
+        var changed = SetProperty(ref _staffAccessAllowed, access.Ok, nameof(CanManageStaff));
+        if (changed)
+        {
+            OnPropertyChanged(nameof(CannotManageStaff));
+            OnPropertyChanged(nameof(CanManageFinancialVisibility));
+            OnPropertyChanged(nameof(CanChangeSelectedUser));
+            OnPropertyChanged(nameof(IsOwner));
+        }
+        if (!access.Ok)
+        {
+            // Avoid replacing unrelated Settings-page status on every non-owner timer tick.
+            if (Users.Count > 0 || _selectedUser is not null || changed)
+            {
+                ClearStaffData();
+                SetStatus(access.Error ?? "Current Owner access is required for staff administration.", true);
+            }
+            return false;
+        }
+        return true;
+    }
+
+    private void ClearPricing()
+    {
+        PricingEditRate = PricingProfit = PricingRetail = PricingOverride = PricingExtra = false;
+        PricingManualLimit = PricingProfitLimit = PricingRetailLimit = PricingExtraLimit = string.Empty;
+    }
+
+    private void ClearStaffData()
+    {
+        // Clear selection directly: the normal setter reads pricing/permissions.
+        _selectedUser = null;
+        Users.Clear();
+        Permissions.Clear();
+        PagePermissions.Clear();
+        FinancialPermissions.Clear();
+        ClearPricing();
+        NewStaffName = NewStaffPin = ResetStaffSecret = NewRecoveryWord = string.Empty;
+        OnPropertyChanged(nameof(SelectedUser));
+        OnPropertyChanged(nameof(SelectedUserCaption));
+        OnPropertyChanged(nameof(CanChangeSelectedUser));
+        StatusText = string.Empty;
+    }
+
     private void LoadPermissions()
     {
+        if (!UpdateStaffAccess()) return;
         LoadPricing();
         Permissions.Clear();
         PagePermissions.Clear();
@@ -853,7 +912,7 @@ public sealed class SettingsViewModel : ObservableObject
         foreach (var module in Modules.All)
         {
             var toggle = new PermissionToggle(module, PermissionDocumentation.For(module).Title, map[module],
-                editable || (_user.IsOwner && PermissionService.IsFinancialVisibility(module)))
+                editable || (CanManageFinancialVisibility && PermissionService.IsFinancialVisibility(module)))
             {
                 Allowed = map[module]
             };
@@ -1261,6 +1320,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void AddStaff()
     {
+        if (!UpdateStaffAccess()) return;
         if (!CanManageStaff)
         {
             SetStatus("Only the owner can add staff.", true);
@@ -1285,6 +1345,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void ToggleActive()
     {
+        if (!UpdateStaffAccess()) return;
         if (_selectedUser is null)
         {
             SetStatus("Select a person first.", true);
@@ -1320,6 +1381,7 @@ public sealed class SettingsViewModel : ObservableObject
     /// </summary>
     private void ResetSecret()
     {
+        if (!UpdateStaffAccess()) return;
         if (_selectedUser is null)
         {
             SetStatus("Select a person first.", true);
@@ -1353,6 +1415,7 @@ public sealed class SettingsViewModel : ObservableObject
     /// </summary>
     private void SaveRecoveryWord()
     {
+        if (!UpdateStaffAccess()) return;
         if (!CanManageStaff)
         {
             SetStatus("Only the owner can change the recovery word.", true);
@@ -1407,6 +1470,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void ResetPermissions()
     {
+        if (!UpdateStaffAccess()) return;
         if (_selectedUser is null)
         {
             SetStatus("Select a person first.", true);
@@ -1429,12 +1493,14 @@ public sealed class SettingsViewModel : ObservableObject
     // the native checkbox. A selection/reload replaces objects, so a pending old row cannot save.
     public void TogglePermissionFromPointer(PermissionToggle toggle)
     {
+        if (!UpdateStaffAccess()) return;
         if (!CanManageStaff || !toggle.CanEdit || !Permissions.Contains(toggle)) return;
         toggle.Allowed = !toggle.Allowed;
     }
 
     public void OpenPermissionDetails(PermissionToggle toggle)
     {
+        if (!UpdateStaffAccess()) return;
         if (!Permissions.Contains(toggle)) return;
         var result = _services.PermissionInspector.Inspect(_user, toggle.Module);
         if (!result.Ok)
@@ -1452,6 +1518,7 @@ public sealed class SettingsViewModel : ObservableObject
             return;
         }
 
+        if (!UpdateStaffAccess() || !Permissions.Contains(toggle)) return;
         var result = _services.Permissions.Set(_user, _selectedUser.Id, toggle.Module, toggle.Allowed);
 
         if (result.Ok)

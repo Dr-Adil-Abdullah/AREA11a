@@ -1,5 +1,9 @@
 # باقی کام، GitHub اور test installer — v0.96.0
 
+## تازہ checkpoint — v0.98.0 Godwit / حصہ20
+
+Parenttabsابcurrentown-modulevisibility/detach/fallback،fullstaffrostercurrentOwner-only،گلہکےلیےالگcurrentCashactive-personpicker؛stalesettingsstaffselection/permissions/pricing/secretsصاف،allowedformsبرقرار۔ [PT-40](POS-PHASE4-PART20-URDU.md)،[trace](POS-PHASE4-PARENT-ROSTER-REVIEW.md)۔ **1817C#cases/WindowsUNRUN؛87static،15syntheticSQLprobes،17source mutationsruntimeنہیں۔** اگلاموزوںباقیراستہگلہکےmonetaryreads/Open-Close-Handoverfault/atomicity،پھرfullSettings/session/record/concurrency/files/cloud/restore/Windows۔ Blackbox/BookCheckD-115سےآگےنہیںکھولا۔ **تقریباً3–6مزیدمربوطreview/resultچکر** مشروط،deadline/upperboundنہیں؛Windowsنتائجسےبڑھسکتا۔ Single double-click test installer مجازمگرSDK/Windows/Inno/build/test/isolatedrestore/packagingثبوتابھیباقی؛installerنہیںبنا۔ ہرportiondocs+samebranchcommit/push/actualremoteverifyلازم۔ نیچےcheckpointتاریخیہیں۔
+
 ## تازہ checkpoint — v0.97.0 Lapwing / حصہ19
 
 Recovery/ماہانہ report کے current module reads،fresh copy،failed read پرstale labels/selection/last-slip cleanup اورactiveviewchecksشامل؛حساب/taxsettingsunchanged۔ [PT-39](POS-PHASE4-PART19-URDU.md)،[trace](POS-PHASE4-RECOVERY-MONTHLY-REVIEW.md)۔ **1789C#cases/WindowsUNRUN؛86static،14syntheticSQLprobes،15source mutationsruntimeنہیں۔** اگلی ترجیح parent/container/admin navigation اورsession/record/fault/concurrency،پھرfiles/cloud/Windows/installerگنجائش؛Blackbox/BookCheckکوD-115سےآگےنہیںکھولا۔ **تقریباً3–6مزیدمربوطreview/resultچکر** مشروط اندازہ،deadline/upperboundنہیں۔ Single double-click test installer مجاز مگرابھیSDK/Windows/Inno/build/test/isolatedrestore/packagingثبوتنہیں؛exeنہیںبنا۔ ہرportiondocs+samebranchcommit/push/actualremoteverificationلازم۔ نیچےکی checkpointentries تاریخی ہیں۔

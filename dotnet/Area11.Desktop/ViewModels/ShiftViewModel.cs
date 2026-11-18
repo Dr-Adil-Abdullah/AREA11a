@@ -318,14 +318,15 @@ public sealed class ShiftViewModel : ObservableObject, IEmptyPage
     }
 
     /// <summary>
-    /// The next person must be on the staff list, switched on, and somebody else. The service
-    /// refuses an inactive account or one without the cash permission; this list only shows the
-    /// people who could actually take the drawer, so the page cannot offer a choice that fails.
+    /// Current Cash reader gets active other people only. Recipient Cash permission is still
+    /// validated by Handover at posting time; appearing here is not proof of eligibility.
     /// </summary>
+    public void RefreshPeople() => LoadPeople();
+
     private void LoadPeople()
     {
         var keeper = SelectedPerson?.Id;
-        var people = _services.Auth.ListUsers();
+        var people = _services.Auth.ListHandoverPeople(_user);
 
         NextPeople.Clear();
 

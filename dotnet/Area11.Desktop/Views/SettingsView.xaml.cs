@@ -11,6 +11,7 @@ namespace Area11.Desktop.Views;
 public partial class SettingsView : UserControl
 {
     private readonly DispatcherTimer _permissionClickTimer;
+    private readonly DispatcherTimer _staffAccessTimer;
     private Action? _pendingPermissionClick;
 
     [DllImport("user32.dll")]
@@ -19,6 +20,10 @@ public partial class SettingsView : UserControl
     public SettingsView()
     {
         InitializeComponent();
+        _staffAccessTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+        _staffAccessTimer.Tick += CheckStaffAccess;
+        Loaded += (_, _) => { CheckStaffAccess(this, EventArgs.Empty); _staffAccessTimer.Start(); };
+        Unloaded += (_, _) => _staffAccessTimer.Stop();
         _permissionClickTimer = new DispatcherTimer
         {
             Interval = TimeSpan.FromMilliseconds(GetDoubleClickTime() + 1)
@@ -26,6 +31,11 @@ public partial class SettingsView : UserControl
         _permissionClickTimer.Tick += CommitPermissionClick;
         Unloaded += (_, _) => CancelPermissionClick();
         DataContextChanged += (_, _) => CancelPermissionClick();
+    }
+
+    private void CheckStaffAccess(object? sender, EventArgs e)
+    {
+        if (DataContext is SettingsViewModel viewModel) viewModel.RefreshStaffAccess();
     }
 
     private void PermissionMouseDown(object sender, MouseButtonEventArgs e)

@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## D-110 / D-115 continuation — parent/roster checkpoint v0.98.0 (2026-11-10)
+
+نیاbusinesspolicyنہیں:parentCustomers/RecoveryاپنےCustomersgrantسے،Suppliersاپنےgrantسے؛staffadministrationموجودہactiveOwnerہی،Staff/SettingsgrantیاManagerنامOwnerنہیںبناتا۔ گلہhandoverکےلیےالگcurrentCashactive-other-personpicker؛یہrecipientpostingeligibilityثبوتنہیں۔ Staleparent/staffstatecleanup/timers،ordinaryجائزformsبرقرار۔ [Trace](POS-PHASE4-PARENT-ROSTER-REVIEW.md)،[PT-40](POS-PHASE4-PART20-URDU.md)۔ SupplierB/backupA/financialposting/Blackbox/BookCheckunchanged؛1817C#cases/WindowsUNRUN،fullPhase4/installerOPEN۔
+
 ## D-110 / D-115 continuation — Recovery/monthly checkpoint v0.97.0 (2026-11-10)
 
 نیا فیصلہ نہیں مانگا اور کوئی tax/business rule نہیں بدلا: Recovery current Customers،محفوظ ماہانہ report current Reports؛ordinary account/report کے لیے Cost/Profit/main کی نئی شرط نہیں۔ Fresh read/copy،failed output پرstale screen cleanup،actual document ہی print،post-save refresh failure پرSAVED/don't receive again۔ [Trace](POS-PHASE4-RECOVERY-MONTHLY-REVIEW.md)،[PT-39](POS-PHASE4-PART19-URDU.md)۔ Blackbox/BookCheck،SupplierB،backupA اور posting rules unchanged۔1789C#cases/Windows/installerUNRUN؛fullPhase4OPEN۔

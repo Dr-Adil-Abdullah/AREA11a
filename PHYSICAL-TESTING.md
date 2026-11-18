@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-40 — current parent tabs / Owner roster / Cash picker (v0.98.0) — UNRUN
+
+[Isolated Windows steps](docs/POS-PHASE4-PART20-URDU.md): Customers-or-Suppliers grants/fallback/deniedemptyhint/detach/regrant/allowedformretention,storedreaderidentity,Owner-onlystafflistandtargetactions/ownfinancialcheckboxes/stalepermissions/pricing/typedsecretscleanup,Cash-onlyactiveotherpersonpicker/revocation/inactivefilter,delayedpointerstalerow/keyboard/header/timerunloadchecks.1817C#cases/WPF/Windows/DPAPI/installerUNRUN;87static/15syntheticSQLprobes/17source mutations NOTruntime. Fullgallafinancialreads/posting/fullSettings/sessionstillOPEN;Blackbox/BookCheckunchanged. No fake shop posts;separateexefolderaloneNOTisolation.
+
 ## PT-39 — Recovery / stored monthly report current access (v0.97.0) — UNRUN
 
 [Isolated Windows steps](docs/POS-PHASE4-PART19-URDU.md): own Customers/Reports current reader, financial/main independence,revocation/deactivation/role/restoration,failed report/copy setting+totals cleanup,filtered selection and last-slip cleanup,real-document-only print,postcommit refresh SAVED/no duplicate receipt,collector vs printer identity,carried opening/age/return/month/status/stored-tax/roundoff,58/80mm output/clipboard faults,timer lifecycle.1789C#cases/WPF/Windows/DPAPI/installer UNRUN;86static/14syntheticSQLprobes/15source mutations NOT runtime. Blackbox/BookCheck unchanged;PT-35 through38/D-115 still open. No fake live-shop posts;separate exe folder alone not isolation.

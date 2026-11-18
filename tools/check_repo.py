@@ -6350,7 +6350,9 @@ def check_owner_boundary_review():
                  'IsOwner: true, Active: true', 'throw new ValidationException'], 'live owner')
     auth = (core / 'AuthService.cs').read_text()
     permission = (core / 'PermissionService.cs').read_text()
-    if auth.count('OwnerAccess.Require(_db, connection, actor)') != 3:
+    # Count the write region only: owner-only roster reads now use the same current-owner helper.
+    auth_writes = auth.split('public ServiceResult<int> CreateStaff(', 1)[1]
+    if auth_writes.count('OwnerAccess.Require(_db, connection, actor)') != 3:
         FAILURES.append('Phase4 Auth create/reset/activation must each validate owner in write transaction')
     if permission.count('OwnerAccess.Require(_db, connection, actor)') != 2:
         FAILURES.append('Phase4 Permission Set/Reset must validate current owner')
@@ -6731,7 +6733,7 @@ def check_financial_visibility_grants():
             FAILURES.append(f'Quote independent financial projection missing {token}')
     ui = DOTNET / 'Area11.Desktop'
     vm = (ui / 'ViewModels/SettingsViewModel.cs').read_text()
-    if 'editable || (_user.IsOwner && PermissionService.IsFinancialVisibility(module))' not in vm:
+    if 'editable || (CanManageFinancialVisibility && PermissionService.IsFinancialVisibility(module))' not in vm:
         FAILURES.append('Owner must be able to edit own two financial visibility checkboxes')
     if 'if (_user.IsOwner) values[MasterFoundationSettings.ProfitShowMargins] = ShowMargins;' not in vm or '["profit.showMargins"] = ShowMargins,' in vm:
         FAILURES.append('Ordinary manager Settings save must omit the owner-only main financial switch')
@@ -7484,6 +7486,67 @@ def check_recovery_monthly_boundaries():
     REPORT.append('Phase4 portion19: current own-module Recovery/monthly report/slip, fresh copy and failed read/active-view stale cleanup, real-document-only print;24 facts written, C#/Windows/fullPhase4 OPEN')
 
 
+def check_parent_roster_boundaries():
+    """Portion20 source contracts only, not a compiler/session or live-view guarantee."""
+    def need(source, tokens, label):
+        for token in tokens:
+            if token not in source: FAILURES.append(f'{label}: missing {token}')
+    auth = (DOTNET / 'Area11.Core/Services/AuthService.cs').read_text()
+    roster = auth.split('public ServiceResult<List<User>> ListUsers(User? actor)', 1)[1].split('public ServiceResult<List<User>> ListHandoverPeople', 1)[0]
+    if not 0 <= roster.find('RequireStaffReader(connection, actor);') < roster.find('_db.Query<User>'):
+        FAILURES.append('Administrative roster needs current owner before SELECT')
+    need(auth, ['private User RequireStaffReader(SqliteConnection connection, User? actor)',
+                'actor is not { Active: true, IsOwner: true } || actor.Id <= 0',
+                'return OwnerAccess.Require(_db, connection, actor);', 'public ServiceResult CheckStaffAccess(User? actor)'], 'Current roster owner')
+    picker = auth.split('public ServiceResult<List<User>> ListHandoverPeople(User? actor)', 1)[1].split('public ServiceResult CheckStaffAccess', 1)[0]
+    gate = 'SnapshotReadAccess.Require(_db, connection, permissions, actor, Modules.Cash);'
+    if not 0 <= picker.find(gate) < picker.find('_db.Query<User>'):
+        FAILURES.append('Operational picker needs current Cash reader before SELECT')
+    need(picker, ['SELECT id, name, role, active FROM users WHERE active = 1 AND id <> @id', 'new { id = reader.Id }'], 'Bound active other-person roster')
+    if 'public ServiceResult<List<User>> ListUsers()' in auth:
+        FAILURES.append('No actorless administrative roster API may remain')
+    for part in (roster, picker):
+        if 'password_hash' in part or 'pin_hash' in part or '_audit.Record(' in part or ' + exception.Message' in part:
+            FAILURES.append('Roster reads must not query secrets/write audit/expose raw DB exceptions')
+    service = (DOTNET / 'Area11.Core/Services/PartnerAccessService.cs').read_text()
+    need(service, ['SnapshotReadAccess.Require(_db, connection, _permissions, user,', 'Modules.Customers, Modules.Suppliers);',
+                   'Customers = _permissions.Can(reader, Modules.Customers)', 'Suppliers = _permissions.Can(reader, Modules.Suppliers)'], 'Current partner parent')
+    if 'CostPolicy' in service or 'ProfitPolicy' in service:
+        FAILURES.append('Partner navigation must not gain financial prerequisite')
+    model = (DOTNET / 'Area11.Core/Models/PartnerAccess.cs').read_text()
+    need(model, ['0 or 1 when Customers => requested', '2 when Suppliers => 2', '_ => Customers ? 0 : Suppliers ? 2 : -1'], 'Allowed physical tab index')
+    parent = (DOTNET / 'Area11.Desktop/ViewModels/PartnersViewModel.cs').read_text()
+    need(parent, ['public void RefreshAccess()', '_services.PartnerAccess.Read(_user)', 'result.Value : new PartnerAccess()',
+                  'if (!next.Customers', 'if (!next.Suppliers', '_customers = null;', '_recovery = null;', '_suppliers = null;',
+                  'Unwatch(_customers);', 'Unwatch(_recovery);', 'Unwatch(_suppliers);', '_access.SelectTab(value)',
+                  '0 when HasCustomers', '1 when HasRecovery', '2 when HasSuppliers', 'if (_customers is null)', 'if (_recovery is null)', 'if (next.Suppliers && _suppliers is null)'], 'Parent detach/retain/fallback')
+    settings = (DOTNET / 'Area11.Desktop/ViewModels/SettingsViewModel.cs').read_text()
+    need(settings, ['public void RefreshStaffAccess()', '_services.Auth.CheckStaffAccess(_user)', '_services.Auth.ListUsers(_user)',
+                    'public bool CanManageStaff => _staffAccessAllowed;', 'public bool CanManageFinancialVisibility => _staffAccessAllowed;',
+                    'private void ClearStaffData()', '_selectedUser = null;', 'Users.Clear();', 'Permissions.Clear();',
+                    'PagePermissions.Clear();', 'FinancialPermissions.Clear();', 'ClearPricing();',
+                    'NewStaffName = NewStaffPin = ResetStaffSecret = NewRecoveryWord = string.Empty;',
+                    '!Permissions.Contains(toggle)', '!Users.Contains(value)'], 'Owner staff UI cleanup')
+    load = settings.split('public void LoadUsers()', 1)[1].split('public void RefreshStaffAccess()', 1)[0]
+    need(load, ['if (!UpdateStaffAccess()) return;', 'ClearStaffData();'], 'Failed roster must clear stale data')
+    for method in ('OpenStaffPhotos', 'AddStaff', 'ToggleActive', 'ResetSecret', 'SaveRecoveryWord', 'ResetPermissions'):
+        part = settings.split('private void ' + method + '()', 1)[1].split('\n    }', 1)[0]
+        need(part, ['if (!UpdateStaffAccess()) return;'], 'Fresh owner staff command ' + method)
+    shift = (DOTNET / 'Area11.Desktop/ViewModels/ShiftViewModel.cs').read_text()
+    need(shift, ['public void RefreshPeople() => LoadPeople();', '_services.Auth.ListHandoverPeople(_user)', 'NextPeople.Clear();'], 'Operational picker UI')
+    if '_services.Auth.ListUsers()' in settings or '_services.Auth.ListUsers()' in shift:
+        FAILURES.append('All administrative roster callers must explicitly supply current actor/purpose')
+    for name, timer, method in [('Partners', '_accessTimer', 'RefreshAccess'), ('Settings', '_staffAccessTimer', 'RefreshStaffAccess'), ('Shift', '_accessTimer', 'RefreshPeople')]:
+        view = (DOTNET / f'Area11.Desktop/Views/{name}View.xaml.cs').read_text()
+        need(view, ['TimeSpan.FromSeconds(3)', 'Loaded +=', 'Unloaded +=', timer + '.Stop()', 'viewModel.' + method + '()'], name + ' timer lifecycle')
+    tests = (DOTNET / 'Area11.Tests/ParentRosterAccessTests.cs').read_text()
+    if tests.count('[Fact]') != 28: FAILURES.append('Portion20 requires 28 written regression facts')
+    need(tests, ['ParentRechecksRevokeAndRestoreOnSameService', 'OwnerRosterIncludesInactiveAccountsWithoutSecretFields',
+                 'CashDelegationAllowsOperationalPickerButNotAdministration', 'PickerRechecksCashRevocationAndRestore',
+                 'ParentAndBothRosterReadsDoNotWriteAuditOrAccountData', 'SupplierOnlyAlwaysSelectsItsPhysicalIndexTwo'], 'Parent/roster regressions')
+    REPORT.append('Phase4 portion20: current Customers/Suppliers parent tabs with detach/fallback, current-owner administrative roster vs current-Cash active-person picker, stale staff state cleanup/timers;28 facts written, fullSettings/galla/session/Windows/globalPhase4 OPEN')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -7568,6 +7631,7 @@ def main() -> int:
     check_supplier_accounting_exception()
     check_customer_current_boundaries()
     check_recovery_monthly_boundaries()
+    check_parent_roster_boundaries()
     check_csharp_grammar()
 
     if not quiet:

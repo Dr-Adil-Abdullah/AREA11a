@@ -140,20 +140,64 @@ public sealed class AuthService
         }
     }
 
-    public ServiceResult<List<User>> ListUsers()
+    /// <summary>Full administrative roster: current active Owner only, never a sign-in directory.</summary>
+    public ServiceResult<List<User>> ListUsers(User? actor)
     {
         try
         {
             using var connection = _db.Open();
+            RequireStaffReader(connection, actor);
             var users = _db.Query<User>(connection,
                 "SELECT id, name, role, active FROM users ORDER BY CASE role WHEN 'owner' THEN 0 WHEN 'manager' THEN 1 ELSE 2 END, name COLLATE NOCASE;");
             return ServiceResult<List<User>>.Success(users);
         }
+        catch (ValidationException exception) { return ServiceResult<List<User>>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error("The staff list could not be loaded.", exception);
             return ServiceResult<List<User>>.Fail("The staff list could not be loaded.");
         }
+    }
+
+    /// <summary>Small active-person picker for existing Cash handover, not staff administration.</summary>
+    public ServiceResult<List<User>> ListHandoverPeople(User? actor)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            var permissions = new PermissionService(_db, _log, _audit);
+            var reader = SnapshotReadAccess.Require(_db, connection, permissions, actor, Modules.Cash);
+            var users = _db.Query<User>(connection,
+                "SELECT id, name, role, active FROM users WHERE active = 1 AND id <> @id ORDER BY CASE role WHEN 'owner' THEN 0 WHEN 'manager' THEN 1 ELSE 2 END, name COLLATE NOCASE;",
+                new { id = reader.Id });
+            return ServiceResult<List<User>>.Success(users);
+        }
+        catch (ValidationException exception) { return ServiceResult<List<User>>.Fail(exception.Message); }
+        catch (Exception exception)
+        {
+            _log.Error("The handover people could not be read.", exception);
+            return ServiceResult<List<User>>.Fail("The handover people could not be read. Refresh or sign in again.");
+        }
+    }
+
+    /// <summary>No roster data; UI check, not a reusable authorization token.</summary>
+    public ServiceResult CheckStaffAccess(User? actor)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            RequireStaffReader(connection, actor);
+            return ServiceResult.Success();
+        }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
+        catch (Exception) { return ServiceResult.Fail("Current owner access could not be confirmed."); }
+    }
+
+    private User RequireStaffReader(SqliteConnection connection, User? actor)
+    {
+        if (actor is not { Active: true, IsOwner: true } || actor.Id <= 0)
+            throw new ValidationException("Only the active owner can read staff administration.");
+        return OwnerAccess.Require(_db, connection, actor);
     }
 
     /// <summary>Owner creates staff (Spec 7.1.2). Staff sign in with a PIN.</summary>

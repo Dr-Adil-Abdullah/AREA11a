@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.97.0 Lapwing۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.98.0 Godwit۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**حصہ20 — parent tabs اور staff list:** Customers/RecoveryاورSuppliersاپنےcurrentmodulegrantsسے؛منعbranchdetach،selectionجائزfallback،allowedchildformsہرtickدوبارہنہیںبنتے۔ FullstaffrostercurrentactiveOwner-only؛گلہhandoverکاالگcurrentCashactive-other-personpicker،Staffpanelنہیں۔ Denial/failedrosterپرstaffselection/permissions/pricing/typedsecretsصاف؛nominal3sviewchecks،فوریrecallنہیں۔ [PT-40](POS-PHASE4-PART20-URDU.md)،[حدود](POS-PHASE4-PARENT-ROSTER-REVIEW.md)۔ **1817C#cases/WindowsUNRUN؛87staticPASS**۔ FullSettings/gallareviewباقی؛Blackbox/BookCheck/حسابunchanged۔
 
 **حصہ19 — Recovery اور ماہانہ report:** موجودہ Customers سے Recovery/collection-slip،موجودہ Reports سے محفوظ monthly report؛Cost/Profit/main کی نئی شرط نہیں،tax ON نہیں کیا۔ Failed report/copy پر stale rows/totals/setting label صاف؛Recovery میں selection/amount/phone/opening/books/last-slip صاف۔ ناکام slip کی جگہ خالی page نہیں چھپتا؛وصولی save مگر refresh fail تو **SAVED،دوبارہ وصول نہ کریں**۔ Nominal3s activeview checks فوریrecall نہیں۔ [PT-39](POS-PHASE4-PART19-URDU.md)،[حدود](POS-PHASE4-RECOVERY-MONTHLY-REVIEW.md)۔ **1789C#cases/WindowsUNRUN؛86staticPASS**۔ Blackbox/BookCheck/financialrulesunchanged۔
 
@@ -123,6 +125,8 @@ Recovery سے داخلہ پرانی فروخت یا کھاتے کو reset نہی
 
 ## سبق 02 — صفحے کھولنا اور Dashboard
 
+حصہ20: Customers & suppliersکےtabscurrentmodulegrantsسےبدلتےہیں؛CustomersکیاجازتسےCustomers/Recovery،SuppliersکیالگاجازتسےSupplierchapter۔ منعتابکاoldcontent/emptyhintنہیں؛جائزtabfallback،دونوںمنعہوںتوکوئیselectionنہیں۔ Nominal3secondactive-viewcheckفوریguaranteeنہیں۔
+
 1. اوپر پہلے کام کا گروپ منتخب کریں: SELL، STOCK، CUSTOMERS & SUPPLIERS، MONEY یا SYSTEM۔ نیچے اسی گروپ کے اجازت والے صفحات آتے ہیں۔
 2. Counter کی اجازت ہو تو آغاز وہاں ہوتا ہے؛ اجازت نہ ہو تو Dashboard۔ Dashboard کی الگ عام tab کے بجائے اوپر ایپ کے نام/wordmark سے وہاں جا سکتے ہیں۔
 3. Dashboard پر آج کے بل، فروخت، منافع، ادھار، مصنوعات، کم سٹاک، منفی سٹاک، میعاد اور گلے کے کارڈ دیکھیں۔ متعلقہ کارڈ متعلقہ صفحہ کھول سکتا ہے؛ اجازت یا profit visibility کے سبب کچھ چیزیں چھپی ہو سکتی ہیں۔
@@ -134,6 +138,8 @@ Recovery سے داخلہ پرانی فروخت یا کھاتے کو reset نہی
 <a id="lesson-03"></a>
 
 ## سبق 03 — صبح گلا کھولنا، رات گننا
+
+حصہ20: handoverکاname-pickercurrentCashreaderکوصرفactiveدوسرےلوگدکھاتاہے،fullOwnerstaffdirectoryنہیں۔ نامچننےسےrecipientکیCashpostingاجازتثابتنہیں؛اصلHandovervalidationالگبرقرار۔ Pickerکیجانچسےگلہکےباقیfinancialreads/postingatomicitycertifiedنہیںہوتے۔
 
 1. MONEY → Shift (galla) کھولیں۔ پہلے سے کھلا drawer ہو تو اسے دوبارہ نیا سمجھ کر نہ کھولیں؛ پچھلے شخص/مالک سے اصل نقدی گنوا کر بندش یا handover کریں۔
 2. Cash you start with میں **واقعی موجود نقدی** لکھیں، فروخت کا ہدف نہیں۔ پچھلی گنتی سے فرق آئے تو صحیح وجہ لکھیں۔ Open the shift دبائیں۔
@@ -553,6 +559,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 
 ## سبق 31 — عملہ، اجازتیں، راز اور App words
 
+حصہ20: Staff/SettingsgrantیاManagerroleپوراstaffpanelنہیںکھولتا؛موجودہactiveOwnerہیstaffroster/permissions/pricingassignmentsدیکھتا/بدلتاہے۔ Owneraccessختمہوتواگلےcommand/checkپرnames/selection/permissions/pricingاورtypedstaffPIN/reset/recoveryمتنصاف؛removedtoggleکاpendingclickنہیںsaveہوناچاہیے۔ Ownerاپنےدوfinancialcheckboxesاببھیالگeditکرسکتاہے۔ عامSettingsformاورجائزchildformبلاوجہہر3secondresetنہیں۔ [PT-40](POS-PHASE4-PART20-URDU.md)۔
+
 **نیا الگ pricing panel (صرف مالک):** Settings → Staff & permissions میں شخص منتخب کریں، **This person's pricing limits** میں rate-edit اجازت، retail-reference سے manual reduction%، profit اجازت/حد، selling-total اجازت/حد اور one-bill override tick/حدیں دیں۔ الگ **May give separate Extra Discount** اور **Extra Discount limit (Rs per whole bill, not per click)** بھی یہیں ہیں؛ مالک سمیت اس نئی Extra اجازت کا کوئی خودکار grant نہیں، اپنی بھی واضح حد save کریں۔ **Save this person's pricing limits** اسی panel کا الگ Save ہے۔ non-owner کو بغیر محفوظ grant کے خودکار اختیار نہیں، manager بھی نہیں۔ module-role reset pricing panel کو reset نہیں کرتا۔ پہلے محفوظ bill دوبارہ حساب نہیں ہوگا۔ تفصیلی مثال/آزمائش/واپسی [فیز2 نامہ](POS-PHASE2-TEST-URDU.md) اور [فیز3 Extra Discount نامہ](POS-PHASE3-TEST-URDU.md) میں ہے۔
 
 1. مالک Settings → Staff & permissions کھولے۔ Add a person میں Name، Role اور چار ہندسوں کا PIN؛ Add this person۔ مشترکہ PIN کے بجائے ہر شخص کا اپنا نام رکھیں۔
@@ -688,7 +696,7 @@ Recoveryکیfailedslipپرپرنٹرکوخالیdocumentنہیںدیاجاتا۔
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.97.0 کا متوقع test count 1789 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.98.0 کا متوقع test count 1817 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 
