@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## v0.107.0 portion29 — مستقل23/24/25؛نئیidempotencypolicyنہیں
+
+NextمیںCustomerCollect/SupplierPay کےstatementfault/retry/books/payments/drawer/concurrencyregressionsاورacknowledgedcommitکےبعدSAVED/reentryUIپرکام۔ CoreمالیSQL/Database/permissions/SupplierB/Extra/returnB/backupA/BlackboxBookCheckنہیںبدلے۔ Partialیکساںamountکیبعدوالیادائیگیاںجائزnewpaymentsہوسکتیہیں؛amount/time/noteکیخودکارdedup/clampنہیںلگائی۔ LocalUIlatchکومکملrequesttoken/exactlyonceنہکہیں۔ [PT-49](POS-PHASE4-PART29-URDU.md)،[trace](POS-PHASE4-LEDGER-POSTING-INTEGRITY-REVIEW.md)۔32نئےcases/2126suiteC#/WindowsUNRUN؛COMMIT-I/Oambiguity/othermoneyroutes/session/fullPhase4/installerOPEN۔
+
 ## v0.106.0 portion28 — Catalog/Units؛مستقل5/6/7/24/25
 
 ContinueمیںباقیCatalog/Unit Owner/Manager writersکےcurrentProductsaccount/audit،staleforms/failedreadsاورSAVED/partialBrandresultپرکام؛نئیbusinesspolicyنہیں۔ ValidProductsread-onlyreaderبرقرار،Cost/Profit/maincatalogکیشرطنہیں۔ Categoryunlink/restore،unitwholequantity/history،Brandname/linkکیالگTxpolicy،SupplierB/Extra/returnB/backupA/BlackboxBookCheckunchanged۔ [PT-48](POS-PHASE4-PART28-URDU.md)،[trace](POS-PHASE4-CATALOG-CURRENT-REVIEW.md)۔49نئےcases/2094suiteWindowsUNRUN؛session/CAS/remainingcallers/fullPhase4/installerOPEN۔ Next23–25integratedfault/retry/concurrency،ہرreportمستقل1–36done-source/actualexecution/باقیوجوہ/actualGitالگ۔

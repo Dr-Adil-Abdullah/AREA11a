@@ -75,6 +75,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
     private bool _isEditing;
     private int _editingCustomerId;
     private bool _lastCustomerLoadSucceeded;
+    private bool _collectInProgress;
     private string _editName = string.Empty;
     private string _editPhone = string.Empty;
     private string _editCategory = "Normal";
@@ -548,49 +549,70 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
 
     private void Collect()
     {
-        if (!UpdateAccess()) return;
-        if (Selected is null)
+        if (_collectInProgress) return;
+        _collectInProgress = true;
+        try
         {
-            SetStatus("Pick a customer first.", true);
-            return;
+            if (!UpdateAccess()) return;
+            if (Selected is null)
+            {
+                SetStatus("Pick a customer first.", true);
+                return;
+            }
+
+            if (!Money.TryParse(AmountText, out var rupees) || rupees <= 0)
+            {
+                SetStatus("Type the money received, for example 500.", true);
+                return;
+            }
+
+            var customerId = Selected.Id;
+            var name = Selected.Name;
+
+            var result = _services.Ledger.Collect(_user, customerId, Money.ToPaisa(rupees), Method, Note);
+
+            if (!result.Ok)
+            {
+                if (!UpdateAccess()) return;
+                SetStatus(result.Error ?? "The money could not be recorded.", true);
+                return;
+            }
+
+            var collection = result.Value!;
+            // Clear the authored amount immediately after commit, before callbacks/printing.
+            try
+            {
+                AmountText = string.Empty;
+                Note = string.Empty;
+                Load();
+                ShowCustomer();
+                if (!_lastCustomerLoadSucceeded)
+                {
+                    SetStatus("SAVED. Collection was stored, but the account could not refresh. Do not receive again; refresh and check the payment history.", true);
+                    return;
+                }
+                _onChanged?.Invoke();
+                if (!UpdateAccess())
+                {
+                    SetStatus("SAVED. Collection was stored, but current access changed. Do not receive again; sign in or refresh to check the payment history.", true);
+                    return;
+                }
+                LastPaymentId = collection.PaymentId;
+                CanPrintReceipt = true;
+                (bool Ok, string Message) printed = _services.Settings.GetBool("printer.autoPrint", true)
+                    ? PrintPaymentReceipt(collection.PaymentId)
+                    : (true, "Press Receipt for the paper.");
+                SetStatus("SAVED. " + name + ": " + Money.Format(collection.AmountPaisa) + " received (" + collection.Code
+                          + "). Khata now " + Money.Format(collection.NewBalancePaisa) + ". " + printed.Message, !printed.Ok);
+            }
+            catch (Exception exception)
+            {
+                _services.Log.Error("Collection was committed but its page, callback or receipt could not finish.", exception);
+                ClearSensitiveData();
+                SetStatus("SAVED. Collection was stored, but the page or receipt could not finish. Do not receive again; refresh and check the payment history before reprinting.", true);
+            }
         }
-
-        if (!Money.TryParse(AmountText, out var rupees) || rupees <= 0)
-        {
-            SetStatus("Type the money received, for example 500.", true);
-            return;
-        }
-
-        var customerId = Selected.Id;
-        var name = Selected.Name;
-
-        var result = _services.Ledger.Collect(_user, customerId, Money.ToPaisa(rupees), Method, Note);
-
-        if (!result.Ok)
-        {
-            SetStatus(result.Error ?? "The money could not be recorded.", true);
-            return;
-        }
-
-        var collection = result.Value!;
-        AmountText = string.Empty;
-        Note = string.Empty;
-
-        Load();
-
-        // Load() re-selects the same customer; make sure the page shows the new balance.
-        ShowCustomer();
-        _onChanged?.Invoke();
-
-        LastPaymentId = collection.PaymentId;
-        CanPrintReceipt = true;
-
-        (bool Ok, string Message) printed = _services.Settings.GetBool("printer.autoPrint", true)
-            ? PrintPaymentReceipt(collection.PaymentId)
-            : (true, "Press Receipt for the paper.");
-
-        SetStatus(name + ": " + Money.Format(collection.AmountPaisa) + " received (" + collection.Code
-                  + "). Khata now " + Money.Format(collection.NewBalancePaisa) + ". " + printed.Message, !printed.Ok);
+        finally { _collectInProgress = false; }
     }
 
     private void PrintStatement()
@@ -1048,6 +1070,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
 
     private void ClearSensitiveData()
     {
+        AmountText = Note = string.Empty;
         _lastCustomerLoadSucceeded = false;
         ClearEditForm();
         NewName = NewPhone = string.Empty;

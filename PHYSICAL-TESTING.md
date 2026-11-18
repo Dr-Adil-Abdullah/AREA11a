@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-49 — stable23/24/25 ledger-pair integrity / acknowledged-commit UI (v0.107.0) — UNRUN
+
+[Urdu isolated steps](docs/POS-PHASE4-PART29-URDU.md),[trace/limits](docs/POS-PHASE4-LEDGER-POSTING-INTEGRITY-REVIEW.md),[1–36status](docs/NUMBERED-WORK-STATUS-URDU.md).32newcases/2126suite:Collect/Pay12statementfaults+retry,books/payment/receipt/drawer by method,4same/separate-Database competitions,full settlement vs legitimate partial repeats,read revocation. Customer/Supplier local reentry/SAVEDpostcommit reload/callback/receipt clarity and load failure cleanup. AllC#/Core/Tests/Desktop/WPF UNRUN;Python guards/Tx/threads not C# proof. Actual COMMIT-I/O/ambiguity/global request identity/other monetary routes OPEN. No live synthetic posts;verified encrypted backup+genuinely separate DB/photos/config. Installer NOT BUILT.
+
 ## PT-48 — stable5/6/7 Catalog/Units current authority,24/25 fault/result clarity (v0.106.0) — UNRUN
 
 [Urdu isolated steps](docs/POS-PHASE4-PART28-URDU.md),[trace/limits](docs/POS-PHASE4-CATALOG-CURRENT-REVIEW.md),[1–36status](docs/NUMBERED-WORK-STATUS-URDU.md).16 current catalog writers/stored audit;valid read-only Products reader,no financial gates;stale name/order/parent/company/WholeOnly/rows cleanup,explicit Refresh/regrant,access-only timer/Closed,failed read not empty,SAVED and Brand partial name/link commits.49newcases/2094suite+Core/Tests/Desktop/WPF UNRUN. No fake shop posts;verified encrypted backup+genuinely separate DB/photos/config before tests. Python/static not C#/WPF/session proof;fullPhase4/installer OPEN.

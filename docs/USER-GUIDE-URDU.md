@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.106.0 Estuary۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.107.0 Breakwater۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**حصہ29 / مستقل23/24/25 — moneyreceive/pay:** Customercollection/SupplierpaymentمیںCoreکاsuccessfulsaveملنےکےبعدpage/callback/receiptfailہوتو **SAVED،دوبارہرقموصول/ادانہکریں؛Refresh/historyچیککریں**۔ Amount/noteصاف،جاریاسیactionکیreentrantcallرکتیہے،finallyrelease؛یہrestart/دوسرےPCکیexactly-onceضمانتنہیں۔ Failedsupplierreloadمصدقہempty/successنہیں۔ Fullsettlementکےبعدsameamountردbalanceguardہے؛بعدمیںجائزpartialpaymentدوبارہہوسکتیہے،خودکارamount-baseddedupنہیں۔ [PT-49](POS-PHASE4-PART29-URDU.md)،[trace/حدود](POS-PHASE4-LEDGER-POSTING-INTEGRITY-REVIEW.md)،[1–36حیثیت](NUMBERED-WORK-STATUS-URDU.md)۔ **32نئےC#cases/2126suiteUNRUN**؛Coreمالیcodeunchanged،COMMIT-I/Oambiguity/fullPhase4/installerOPEN۔
 
 **حصہ28 / مستقل5/6/7 — Catalogs/Units:** تمام16catalogwriterscurrentProductsOwner/Managerسے؛جائزread-onlyProductsreaderبرقرار،Cost/Profit/mainکیcatalogپرنئیشرطنہیں۔ Account/module/readfailureپرrows/selection/نام/order/parent/company/WholeOnlyصاف،editingبند؛grantواپسآئےتوexplicitRefreshاورreview،پرانامتنبھالنےکادعوینہیں۔ Stableallowed3sticktypedinputsنہیںبدلتا؛windowبندہوتوtimerstop۔ Saveہوچکاہوreloadناکامتو **SAVED،دوبارہactionنہیں**۔ Brandnameاورcompanylinkالگtransactions؛partialsuccessواضح۔ [PT-48](POS-PHASE4-PART28-URDU.md)،[trace/حدود](POS-PHASE4-CATALOG-CURRENT-REVIEW.md)،[1–36حیثیت](NUMBERED-WORK-STATUS-URDU.md)۔ **49نئےC#cases/2094suiteWindowsUNRUN**؛session/CAS/fullPhase4/installerOPEN۔
 
@@ -653,6 +655,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 
 **حصہ28کیالگtestcopyمیںمشق:** Catalog/Uniteditorمیںunsavedname/order/link/WholeOnlyلکھیں؛testOwnerسےProductsgrantواپسلیں۔ اگلےaction/nominal3stickپرinputs/selection/rowsصاف،Saveبند؛regrantکےبعدRefreshاورrowreviewلازم۔ Stableticktextنہبدلے،failedlistمصدقہemptyنہہو۔ Savecommitمگرreloadfailتو **SAVED،دوبارہنہیں**؛Brandname/linkpartialsuccessملاکرfullatomicنہسمجھیں۔ [PT-48](POS-PHASE4-PART28-URDU.md)۔ اصلshopپرنہیں؛verifiedbackup+واقعیالگDB/photos/config،Windowsثبوتباقی۔
 
+**حصہ29کیالگtestcopyمیںمشق:** Customerسے300اورsupplierکو200cashروپے؛دونوںbooks/paymentrowsملاکرdrawerکانتیجہ+100دیکھیں۔ Card/onlineمیںdrawerنہبدلے۔ CorepostsuccessکےبعدصرفUIcallback/receiptfailfixtureپر **SAVED،دوبارہreceive/payنہیں**؛historyسےentryچیک/reprintکریں۔ Localreentrylatchglobalrequesttokenنہیں۔ [PT-49](POS-PHASE4-PART29-URDU.md)۔ اصلshopپرنہیں؛verifiedbackup+الگDB/photos/config؛Windows2126tests/actualfault/timingproofباقی۔
+
 <a id="lesson-33"></a>
 
 ## سبق 33 — خودکار آغاز، محفوظ بندش اور Screen lock
@@ -734,7 +738,7 @@ Recoveryکیfailedslipپرپرنٹرکوخالیdocumentنہیںدیاجاتا۔
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.106.0 کا متوقع test count 2094 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.107.0 کا متوقع test count 2126 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 

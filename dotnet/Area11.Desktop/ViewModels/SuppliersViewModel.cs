@@ -33,6 +33,8 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
     private string _amountText = string.Empty;
     private string _method = "cash";
     private string _payNote = string.Empty;
+    private bool _payInProgress;
+    private bool _lastSupplierLoadSucceeded;
     private string _productSearch = string.Empty;
     private string _qtyText = string.Empty;
     private string _unit = "unit";
@@ -404,6 +406,7 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
 
     public void Load()
     {
+        _lastSupplierLoadSucceeded = false;
         if (!UpdateAccess()) return;
         var keep = Selected?.Id;
 
@@ -411,7 +414,7 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
 
         Suppliers.Clear();
 
-        if (!result.Ok)
+        if (!result.Ok || result.Value is null)
         {
             ClearSensitiveData();
             SetStatus(result.Error ?? "The suppliers could not be loaded.", true);
@@ -423,6 +426,7 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
             Suppliers.Add(row);
         }
 
+        _lastSupplierLoadSucceeded = true;
         Selected = Suppliers.FirstOrDefault(row => row.Id == keep) ?? Suppliers.FirstOrDefault();
 
         if (Suppliers.Count == 0)
@@ -491,39 +495,63 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
 
     private void Pay()
     {
-        if (!UpdateAccess()) return;
-        if (Selected is null)
+        if (_payInProgress) return;
+        _payInProgress = true;
+        try
         {
-            SetStatus("Pick a supplier first.", true);
-            return;
+            if (!UpdateAccess()) return;
+            if (Selected is null)
+            {
+                SetStatus("Pick a supplier first.", true);
+                return;
+            }
+
+            if (!Money.TryParse(AmountText, out var rupees) || rupees <= 0)
+            {
+                SetStatus("Type the money paid, for example 5000.", true);
+                return;
+            }
+
+            var supplierId = Selected.Id;
+            var name = Selected.Name;
+
+            var result = _services.SupplierLedger.Pay(_user, supplierId, Money.ToPaisa(rupees), Method, PayNote);
+
+            if (!result.Ok)
+            {
+                if (!UpdateAccess()) return;
+                SetStatus(result.Error ?? "The payment could not be recorded.", true);
+                return;
+            }
+
+            var payment = result.Value!;
+            try
+            {
+                AmountText = string.Empty;
+                PayNote = string.Empty;
+                ReloadKeeping(supplierId);
+                if (!_lastSupplierLoadSucceeded)
+                {
+                    SetStatus("SAVED. Supplier payment was stored, but the account could not refresh. Do not pay again; refresh and check the payment history.", true);
+                    return;
+                }
+                _onChanged?.Invoke();
+                if (!UpdateAccess())
+                {
+                    SetStatus("SAVED. Supplier payment was stored, but current access changed. Do not pay again; sign in or refresh to check the payment history.", true);
+                    return;
+                }
+                SetStatus("SAVED. " + name + ": " + Money.Format(payment.AmountPaisa) + " paid (" + payment.Code + "). Payable now "
+                          + Money.Format(payment.NewBalancePaisa) + ".", false);
+            }
+            catch (Exception exception)
+            {
+                _services.Log.Error("Supplier payment was committed but its page or callback could not finish.", exception);
+                ClearSensitiveData();
+                SetStatus("SAVED. Supplier payment was stored, but the page could not finish. Do not pay again; refresh and check the payment history.", true);
+            }
         }
-
-        if (!Money.TryParse(AmountText, out var rupees) || rupees <= 0)
-        {
-            SetStatus("Type the money paid, for example 5000.", true);
-            return;
-        }
-
-        var supplierId = Selected.Id;
-        var name = Selected.Name;
-
-        var result = _services.SupplierLedger.Pay(_user, supplierId, Money.ToPaisa(rupees), Method, PayNote);
-
-        if (!result.Ok)
-        {
-            SetStatus(result.Error ?? "The payment could not be recorded.", true);
-            return;
-        }
-
-        var payment = result.Value!;
-        AmountText = string.Empty;
-        PayNote = string.Empty;
-
-        ReloadKeeping(supplierId);
-        _onChanged?.Invoke();
-
-        SetStatus(name + ": " + Money.Format(payment.AmountPaisa) + " paid (" + payment.Code + "). Payable now "
-                  + Money.Format(payment.NewBalancePaisa) + ".", false);
+        finally { _payInProgress = false; }
     }
 
     /// <summary>True when two or more suppliers are ticked for the bulk buttons.</summary>
@@ -941,22 +969,19 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
     /// <summary>Reloads the list but keeps the same supplier open on the right.</summary>
     private void ReloadKeeping(int supplierId)
     {
+        _lastSupplierLoadSucceeded = false;
+        if (!UpdateAccess()) return;
         var result = _services.SupplierLedger.List(_user, SearchText, OnlyOwing);
-
-        Suppliers.Clear();
-
-        if (result.Ok)
+        if (!result.Ok || result.Value is null)
         {
-            foreach (var row in result.Value!)
-            {
-                Suppliers.Add(row);
-            }
+            ClearSensitiveData();
+            SetStatus(result.Error ?? "The suppliers could not be loaded.", true);
+            return;
         }
-
+        Suppliers.Clear();
+        foreach (var row in result.Value) Suppliers.Add(row);
+        _lastSupplierLoadSucceeded = true;
         Selected = Suppliers.FirstOrDefault(row => row.Id == supplierId) ?? Suppliers.FirstOrDefault();
-
-        // The list hands back fresh objects, so Selected may not raise a change event; the page is
-        // refreshed directly to be certain the new payable is on screen.
         ShowSupplier();
     }
 
@@ -1039,6 +1064,8 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
 
     private void ClearSensitiveData()
     {
+        AmountText = PayNote = string.Empty;
+        _lastSupplierLoadSucceeded = false;
         StatusText = string.Empty;
         IsStatusError = false;
         Suppliers.Clear();

@@ -8103,6 +8103,58 @@ def check_catalog_current_boundaries():
         if 'void ' + name + '(' not in tests: FAILURES.append('Catalog regression missing ' + name)
     REPORT.append('Phase4 portion28/stable5,6,7,24,25:16 current catalog/unit writers and stored audits;current reader/edit capability,stale forms/failed lists cleanup,access-only timers,explicit refresh,SAVED/partial-brand verdicts;49cases/2094total UNRUN,not session/CAS/WPF/runtime certification')
 
+def check_ledger_posting_integrity():
+    """Portion29 ledger-pair transaction/source contracts; not C#/WPF execution or idempotency proof."""
+    for file, signature, end, table, action in (
+        ('CustomerLedgerService.cs','public ServiceResult<CollectionResult> Collect(', 'public ServiceResult<ReceiptDocument> Statement(', 'customers','customer_collect'),
+        ('SupplierLedgerService.cs','public ServiceResult<SupplierPayment> Pay(', 'public ServiceResult<SupplierReturnResult> Return(', 'suppliers','supplier_pay')):
+        source = (DOTNET / ('Area11.Core/Services/' + file)).read_text()
+        body = source.split(signature,1)[-1].split(end,1)[0]
+        tokens = ('_db.Tx(connection =>','LedgerReadAccess.Require(', 'INSERT INTO payments(',
+                  'UPDATE '+table+' SET balance_paisa = @balance WHERE id = @id;',
+                  '_audit.Record(connection, reader,', 'return ServiceResult<')
+        positions = [body.find(token) for token in tokens[:-1]]
+        if -1 in positions or positions != sorted(positions): FAILURES.append('Ledger posting mutation order/Tx/authority changed: '+file)
+        if '"'+action+'"' not in body: FAILURES.append('Ledger posting audit action missing: '+file)
+        tx = body.split('_db.Tx(connection =>',1)[-1].split('catch (ValidationException',1)[0]
+        if '.Fail(' in tx: FAILURES.append('Ledger Tx must not return failure after partial writes: '+file)
+    for who, method, flag, note, reload in (
+        ('Customers','Collect','_collectInProgress','Note','Load();'),
+        ('Suppliers','Pay','_payInProgress','PayNote','ReloadKeeping(supplierId);')):
+        vm = (DOTNET / ('Area11.Desktop/ViewModels/'+who+'ViewModel.cs')).read_text()
+        body = vm.split('private void '+method+'()',1)[-1].split('\n    private ',1)[0]
+        for token in ('if ('+flag+') return;', flag+' = true;', 'finally { '+flag+' = false; }',
+                      'if (!UpdateAccess()) return;', 'AmountText = string.Empty;', note+' = string.Empty;',
+                      reload, '_onChanged?.Invoke();', 'catch (Exception exception)',
+                      'ClearSensitiveData();', 'Do not '+('receive' if who=='Customers' else 'pay')+' again;',
+                      'SAVED. '+('Collection' if who=='Customers' else 'Supplier payment')+' was stored, but'):
+            if token not in body: FAILURES.append('Ledger payment committed/reentry boundary '+who+': '+token)
+        committed = body.split('var '+('collection' if who=='Customers' else 'payment')+' = result.Value!;',1)[-1]
+        if not 0 <= committed.find('try') < committed.find('AmountText = string.Empty;') < committed.find(reload):
+            FAILURES.append('Committed ledger cleanup must be inside postcommit try before UI reload: '+who)
+        if '_onChanged?.Invoke();\n                if (!UpdateAccess())' not in committed:
+            FAILURES.append('Ledger callback must be followed by current access check: '+who)
+        clear = vm.split('private void ClearSensitiveData()',1)[-1]
+        if 'AmountText = '+note+' = string.Empty;' not in clear: FAILURES.append('Revoked ledger payment input retained: '+who)
+        success_flag = '_lastCustomerLoadSucceeded' if who=='Customers' else '_lastSupplierLoadSucceeded'
+        if 'if (!'+success_flag+')' not in committed: FAILURES.append('Failed ledger reload overwritten by success: '+who)
+    supplier = (DOTNET / 'Area11.Desktop/ViewModels/SuppliersViewModel.cs').read_text()
+    reload = supplier.split('private void ReloadKeeping(int supplierId)',1)[-1].split('private void OpenPhotos()',1)[0]
+    for token in ('_lastSupplierLoadSucceeded = false;', 'if (!UpdateAccess()) return;', 'if (!result.Ok || result.Value is null)',
+                  'ClearSensitiveData();', '_lastSupplierLoadSucceeded = true;'):
+        if token not in reload: FAILURES.append('Supplier payment reload must not certify unknown data: '+token)
+    tests = (DOTNET / 'Area11.Tests/LedgerPostingIntegrityTests.cs').read_text()
+    if tests.count('[Fact]') != 5 or tests.count('[InlineData(') != 27: FAILURES.append('Ledger pair needs32 real-schema source cases')
+    for token in ('StageFaultRollsBackPaymentBalanceAuditAndDrawerThenOneRetrySucceeds',
+                  'CompetingOverSettlementCannotCommitBothOnSameOrSeparateDatabaseInstances',
+                  'FreshServiceAfterFullSettlementRejectsSameAmountWithoutSecondPayment',
+                  'PartialRepeatsAreDistinctNewPaymentsNotGlobalIdempotency', 'FailedSecondActionDoesNotRollBackFirstCommittedAction',
+                  'AccountingPostsKeepIndependentFinancialGrantsAndSupplierExceptionB', 'durable:false', 'new Barrier(2)',
+                  'BEFORE INSERT ON payments','AFTER INSERT ON payments','BEFORE UPDATE OF balance_paisa',
+                  'AFTER UPDATE OF balance_paisa','BEFORE INSERT ON audit_logs','AFTER INSERT ON audit_logs'):
+        if token not in tests: FAILURES.append('Ledger integration regression missing '+token)
+    REPORT.append('Phase4 portion29/stable23,24,25:ledger-pair stage-fault/retry/books/payments/drawer/concurrency regressions;Customer Collect/Supplier Pay reentry latch and committed reload/callback/receipt SAVED clarity;32cases/2126total UNRUN,not global idempotency/C#/WPF/session/commit-I/O certification')
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -8196,6 +8248,7 @@ def main() -> int:
     check_custom_manager_current_boundaries()
     check_record_write_current_boundaries()
     check_catalog_current_boundaries()
+    check_ledger_posting_integrity()
     check_csharp_grammar()
 
     if not quiet:

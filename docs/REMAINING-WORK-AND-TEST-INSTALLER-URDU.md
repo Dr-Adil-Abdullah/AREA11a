@@ -1,5 +1,18 @@
 # باقی کام، GitHub اور test installer — v0.104.0
 
+## تازہ checkpoint — v0.107.0 Breakwater / حصہ29؛مستقل23/24/25
+
+[1–36حیثیت](NUMBERED-WORK-STATUS-URDU.md)،[PT-49](POS-PHASE4-PART29-URDU.md)،[trace/حدود](POS-PHASE4-LEDGER-POSTING-INTEGRITY-REVIEW.md)۔ Ledger-pairCollect/Pay32C#cases/2126suiteلکھے:statementfault/retry/books/payment/drawer/concurrency؛سبC#UNRUN۔ UIlocalreentry/acknowledgedsuccessSAVEDاورfailedreloadcleanupsourceشامل؛Coreمالی/transactioncodeunchanged۔
+
+1. **23:** اصلC#provider/parallel/busy،productionjournal،cross-process/PCاورCOMMIT-I/Oambiguityباقی۔
+2. **24:**32نئےcasesواقعیچلانا،پھرSale/Purchase/Return/stock/payment/audit/file/commitfaultmatrix۔
+3. **25:** localUIlatchglobalidempotencyنہیں؛requestidentity/restart/timeout/partialrepeatsاورباقیpostcommitpathsباقی۔
+4. **5/6/7:** حقیقیsession/remainingcallers/parentworkflows/CAS/othercachesاورWindowsregrant/focus۔
+5. **26–29/2/4/30–35:**files/encryptedbackup/restore/newPC/cloud،Windows2126+build/tests/results/fixes/hardware/isolation۔
+6. **36:** انgatesکےبعدمجازsingle-doubleclicktestinstaller؛**ابھینہیںبنا،Phase4OPEN۔**
+
+ہرportiondocs+samebranchcommit/push+actualremoteverify۔36نمبر36Nextنہیں؛مشروطroundestimate deadlineنہیں۔ نیچےکےcheckpointsتاریخی؛اصلshopپرsyntheticpostsنہیں،verifiedbackup+الگDB/photos/configلازم۔
+
 ## تازہ checkpoint — v0.106.0 Estuary / حصہ28؛مستقل5/6/7/24/25
 
 [مکمل1–36حیثیت](NUMBERED-WORK-STATUS-URDU.md)،[PT-48](POS-PHASE4-PART28-URDU.md)،[trace](POS-PHASE4-CATALOG-CURRENT-REVIEW.md)۔16catalog/unitwriterscurrentProductsOwner/Manager/storedaudit،read-onlyreaderبرقرار،staleforms/failedlistscleanup،explicitRefresh،SAVED/Brandpartialcommit claritysourceشامل۔49نئےC#cases/2094suiteUNRUN۔
