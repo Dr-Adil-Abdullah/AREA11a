@@ -105,7 +105,9 @@ ORDER BY p.name COLLATE NOCASE;";
             using var connection = _db.Open();
             var reader = ProductReadAccess.Require(_db, connection, _permissions, user, purpose);
             var settings = _settings ?? new SettingsService(_db, _audit, _log, _permissions);
-            ProductReadAccess.RequirePreparationCost(reader, purpose, _permissions, settings);
+            // D-114: SR accepts IDs/quantity only; direct cost is still projected below.
+            if (purpose != ProductReadPurpose.SupplierReturn)
+                ProductReadAccess.RequirePreparationCost(reader, purpose, _permissions, settings);
             var canSeeCost = CostPolicy.CanSee(_permissions, settings, reader);
             var canSeeProfit = ProfitPolicy.CanSee(_permissions, settings, reader);
             var tokens = PackagingPolicy.Tokens(text);
@@ -281,7 +283,9 @@ WHERE p.active = 1
             using var connection = _db.Open();
             var reader = ProductReadAccess.Require(_db, connection, _permissions, user, purpose);
             var settings = _settings ?? new SettingsService(_db, _audit, _log, _permissions);
-            ProductReadAccess.RequirePreparationCost(reader, purpose, _permissions, settings);
+            // D-114: SR accepts IDs/quantity only; direct cost is still projected below.
+            if (purpose != ProductReadPurpose.SupplierReturn)
+                ProductReadAccess.RequirePreparationCost(reader, purpose, _permissions, settings);
             var canSeeCost = CostPolicy.CanSee(_permissions, settings, reader);
             var canSeeProfit = ProfitPolicy.CanSee(_permissions, settings, reader);
             var product = _db.QuerySingle<Product>(connection, SelectSql + "WHERE p.id = @id;", new { id });

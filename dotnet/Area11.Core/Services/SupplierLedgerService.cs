@@ -199,6 +199,57 @@ LIMIT @limit;", new { limit = Math.Clamp(limit, 1, 500) });
         }
     }
 
+    /// <summary>D-114: accounting stays module-authorized; only direct cost previews need Cost/main.</summary>
+    public ServiceResult<SupplierAccess> CheckReadAccess(User? user)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            var reader = LedgerReadAccess.Require(_db, connection, _permissions, user, Modules.Suppliers);
+            return ServiceResult<SupplierAccess>.Success(new SupplierAccess
+                { CostKnown = CostPolicy.CanSee(_permissions, _settings, reader) });
+        }
+        catch (Exception) { return ServiceResult<SupplierAccess>.Fail("Current Supplier access could not be confirmed."); }
+    }
+
+    /// <summary>Quantity-only SR preparation is allowed by D-114. Never accepts a caller price.</summary>
+    public ServiceResult<SupplierReturnPreparation> PrepareReturnLine(User? user, int productId, int batchId)
+    {
+        try
+        {
+            using var connection = _db.Open();
+            var reader = LedgerReadAccess.Require(_db, connection, _permissions, user, Modules.Suppliers);
+            var product = _db.QuerySingle<ProductDbRow>(connection, @"
+SELECT id, name, base_unit AS baseUnit, box_strips AS boxStrips, strip_tablets AS stripTablets,
+       cost_paisa AS costPaisa
+FROM products WHERE id = @id AND active = 1;", new { id = productId })
+                ?? throw new ValidationException("Choose a current active medicine.");
+            var batch = _db.QuerySingle<BatchDbRow>(connection, @"
+SELECT id, product_id AS productId, batch_no AS batchNo, qty_base AS qtyBase,
+       cost_paisa AS costPaisa, expiry_date AS expiryDate, supplier_id AS supplierId
+FROM batches WHERE id = @id AND product_id = @productId AND active = 1;",
+                new { id = batchId, productId })
+                ?? throw new ValidationException("Choose a current batch belonging to this medicine.");
+            if (!double.IsFinite(batch.QtyBase) || batch.QtyBase <= 0)
+                throw new ValidationException("There is no positive stock in that batch to send back.");
+            var costKnown = CostPolicy.CanSee(_permissions, _settings, reader);
+            return ServiceResult<SupplierReturnPreparation>.Success(new SupplierReturnPreparation
+            {
+                ProductId = product.Id, ProductName = product.Name, BatchId = batch.Id,
+                BatchNo = batch.BatchNo, QtyBase = batch.QtyBase, BaseUnit = product.BaseUnit,
+                BoxStrips = product.BoxStrips, StripTablets = product.StripTablets,
+                CostKnown = costKnown,
+                CostPaisa = costKnown ? (batch.CostPaisa > 0 ? batch.CostPaisa : product.CostPaisa) : 0
+            });
+        }
+        catch (ValidationException exception) { return ServiceResult<SupplierReturnPreparation>.Fail(exception.Message); }
+        catch (Exception exception)
+        {
+            _log.Error("Supplier return preparation failed.", exception);
+            return ServiceResult<SupplierReturnPreparation>.Fail("The return line could not be prepared. Refresh and try again.");
+        }
+    }
+
     // -------------------------------------------------------------------- paying
 
     /// <summary>
@@ -208,11 +259,6 @@ LIMIT @limit;", new { limit = Math.Clamp(limit, 1, 500) });
     public ServiceResult<SupplierPayment> Pay(
         User? user, int supplierId, long amountPaisa, string? method, string? note)
     {
-        if (!_permissions.Can(user, Modules.Suppliers))
-        {
-            return ServiceResult<SupplierPayment>.Fail("You do not have permission to pay a supplier.");
-        }
-
         if (amountPaisa <= 0)
         {
             return ServiceResult<SupplierPayment>.Fail("The amount must be more than zero.");
@@ -228,6 +274,7 @@ LIMIT @limit;", new { limit = Math.Clamp(limit, 1, 500) });
         {
             return _db.Tx(connection =>
             {
+                var reader = LedgerReadAccess.Require(_db, connection, _permissions, user, Modules.Suppliers);
                 var supplier = _db.QuerySingle<SupplierBalanceRow>(connection, @"
 SELECT id, name, balance_paisa AS payablePaisa FROM suppliers WHERE id = @id AND active = 1;",
                     new { id = supplierId })
@@ -265,7 +312,7 @@ VALUES(@at, @method, @amount, @supplierId, @userId, @note);",
                         method = cleanMethod,
                         amount = amountPaisa,
                         supplierId,
-                        userId = user?.Id,
+                        userId = reader.Id,
                         note = cleanNote
                     });
 
@@ -275,7 +322,7 @@ VALUES(@at, @method, @amount, @supplierId, @userId, @note);",
                 _db.Execute(connection, "UPDATE suppliers SET balance_paisa = @balance WHERE id = @id;",
                     new { balance = newBalance, id = supplierId });
 
-                _audit.Record(connection, user, "Suppliers", "supplier_pay", "suppliers", supplierId.ToString(),
+                _audit.Record(connection, reader, "Suppliers", "supplier_pay", "suppliers", supplierId.ToString(),
                     oldValue: supplier.PayablePaisa.ToString(CultureInfo.InvariantCulture),
                     newValue: newBalance.ToString(CultureInfo.InvariantCulture),
                     details: cleanMethod + " " + Money.Format(amountPaisa) + " - " + cleanNote);
@@ -308,15 +355,13 @@ VALUES(@at, @method, @amount, @supplierId, @userId, @note);",
     /// </summary>
     public ServiceResult<SupplierReturnResult> Return(User user, SupplierReturnInput input)
     {
-        if (!_permissions.Can(user, Modules.Suppliers))
-        {
-            return ServiceResult<SupplierReturnResult>.Fail(
-                "Only the owner or a manager can send goods back to a supplier.");
-        }
-
         try
         {
-            return _db.Tx(connection => SaveReturn(connection, input, user));
+            return _db.Tx(connection =>
+            {
+                var reader = LedgerReadAccess.Require(_db, connection, _permissions, user, Modules.Suppliers);
+                return SaveReturn(connection, input, reader);
+            });
         }
         catch (ValidationException exception)
         {
@@ -400,7 +445,7 @@ VALUES(@at, @method, @amount, @supplierId, @userId, @note);",
         catch (Exception exception)
         {
             _log.Error("The bulk statements could not be prepared.", exception);
-            return ServiceResult<BulkPrintJob>.Fail("The bulk statements could not be prepared. " + exception.Message);
+            return ServiceResult<BulkPrintJob>.Fail("The bulk statements could not be prepared. Check current Supplier access and try again.");
         }
     }
 

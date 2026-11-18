@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-37 — Supplier accounting exception / quantity-only SR / current Pay-SR actor (v0.95.0) — UNRUN
+
+[Safe isolated checklist](docs/POS-PHASE4-PART17-URDU.md): Supplier-only accounting2000/500/1500 and statement/profile money retained even Cost/mainOFF;direct product/batch/traycost masked with knownflag,manual/expiredquantity-onlySR,currenttransactionalPay/SRactor,creditvscash/fallback/zero/overpayment/stockguard,revocation/deactivation/role/known0/auditname/auditfaultrollback,timerstalecleanup/freshoutput.1740C#cases/WPF/Windows/DPAPI/installer UNRUN;84static/12syntheticSQLprobes/13mutations NOT runtime. PT-35/36 still OPEN. No fake live-shop posts; separate exe folder NOT isolation.
+
 ## PT-36 — Stock Minus valuation / Audit note / current review writer (v0.94.0) — UNRUN
 
 [Safe isolated checklist](docs/POS-PHASE4-PART16-URDU.md): Stock-only/Cost-only/Profit-only/both/main/Owner masks,raw row+aggregate and review notes,quantity/episode invariance,known0 vs hidden,fresh reader/role/deactivation/revocation,flags-only active-view timer/selected summary cleanup,legitimate delegated review without financial grant,insideTx writer/current name/audit failure.1716C#cases/Desktop/Windows UNRUN;83static/11syntheticSQLiteprobes are not runtime proof. PT-35 encrypted backup/DPAPI/new-PC also OPEN. No installer/live-shop fake posts.

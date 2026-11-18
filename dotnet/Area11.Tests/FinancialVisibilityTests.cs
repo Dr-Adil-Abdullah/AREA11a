@@ -236,10 +236,10 @@ public sealed class FinancialVisibilityTests
     public void CostPreparationRequiresCostGrantRatherThanReturningFakeZeroInputs()
     {
         using var t = new TestDatabase(); var ids = Seed(t); var user = TestData.AddUser(t, "manager");
-        foreach (var purpose in new[] { ProductReadPurpose.Purchase, ProductReadPurpose.SupplierReturn, ProductReadPurpose.WriteOff, ProductReadPurpose.Expense })
+        foreach (var purpose in new[] { ProductReadPurpose.Purchase, ProductReadPurpose.WriteOff, ProductReadPurpose.Expense })
             Assert.False(Products(t).Get(user, ids.Sold, purpose).Ok);
         Grant(t, user, Modules.PurchaseCost);
-        foreach (var purpose in new[] { ProductReadPurpose.Purchase, ProductReadPurpose.SupplierReturn, ProductReadPurpose.WriteOff, ProductReadPurpose.Expense })
+        foreach (var purpose in new[] { ProductReadPurpose.Purchase, ProductReadPurpose.WriteOff, ProductReadPurpose.Expense })
             Assert.True(Products(t).Get(user, ids.Sold, purpose).Value!.CostKnown);
     }
     [Fact]

@@ -6870,10 +6870,11 @@ def check_purchase_read_visibility():
     add = vm.split('private void AddExpired()', 1)[-1].split('private void RefreshTrayTotal()', 1)[0]
     for token in ('_services.SupplierLedger.ExpiredBatches(_user, 500)',
                   'current.Value?.FirstOrDefault(item => item.BatchId == selectedBatchId)',
-                  'if (!current.Ok || row is null)', 'if (!row.CostKnown)'):
+                  'if (!current.Ok || row is null)', '_services.SupplierLedger.PrepareReturnLine(_user, row.ProductId, row.BatchId)',
+                  'if (!prepared.Ok || prepared.Value is null)', 'CostKnown = fresh.CostKnown'):
         if token not in add:
             FAILURES.append(f'One-click expired preparation must re-read/refuse masked/stale inputs: {token}')
-    if add.find('if (!row.CostKnown)') > add.find('Tray.Remove('):
+    if add.find('if (!prepared.Ok') > add.find('Tray.Remove('):
         FAILURES.append('Do not mutate supplier return tray before the current known-cost gate')
     tests = (DOTNET / 'Area11.Tests/PurchaseReadVisibilityTests.cs').read_text()
     for name in ('ProfitOnlyCannotRevealInvoiceLineTotalPaidOrDue', 'MainOffMasksOwnerInvoiceAndOnRestoresWithoutReposting',
@@ -6881,7 +6882,7 @@ def check_purchase_read_visibility():
                  'FinancialGrantDatabaseFailureDoesNotFallBackToOwnerCost', 'MaskedReadsDoNotRewriteMoneyStockPaymentsOrAudits'):
         if name not in tests:
             FAILURES.append(f'Purchase/expired read regression missing {name}')
-    REPORT.append('Phase4 portion9: current-reader purchase invoice masks line/Total/Paid/Due money, expired supplier batch raw cost/valuation + known flags, one-click current-row preparation refuses masked0; posting/supplier payable policy/global route rollout and Windows remain OPEN')
+    REPORT.append('Phase4 portion9: current-reader purchase invoice masks line/Total/Paid/Due money, expired supplier batch raw cost/valuation + known flags, one-click current-row preparation uses D-114 quantity-only DTO, never masked0 as known; posting/supplier payable policy/global route rollout and Windows remain OPEN')
 
 
 def check_batch_read_visibility():
@@ -6922,8 +6923,9 @@ def check_batch_read_visibility():
             FAILURES.append(f'{name} batch picker must pass current actor and own workflow')
         part = vm.split('private void AddLine()' if name == 'Suppliers' else 'private void RefreshPreview()', 1)[-1]
         part = part.split('private void RemoveLine()' if name == 'Suppliers' else 'private void Save()', 1)[0]
-        for token in ('_services.Stock.PrepareBatchCost(_user, SelectedProduct.Id, SelectedBatch',
-                      f'ProductReadPurpose.{purpose}', 'if (!prepared.Ok || prepared.Value is null)',
+        prep_tokens = ('_services.SupplierLedger.PrepareReturnLine(_user, SelectedProduct.Id, SelectedBatch.Id)',) if name == 'Suppliers' else (
+            '_services.Stock.PrepareBatchCost(_user, SelectedProduct.Id, SelectedBatch', f'ProductReadPurpose.{purpose}')
+        for token in (*prep_tokens, 'if (!prepared.Ok || prepared.Value is null)',
                       'var cost = fresh.CostPaisa;', 'Packs.PerUnit(fresh.BoxStrips, fresh.StripTablets, Unit)'):
             if token not in part:
                 FAILURES.append(f'{name} preview/tray must use fresh authorized input: {token}')
@@ -7301,6 +7303,76 @@ def check_stock_minus_visibility() -> None:
     REPORT.append('Phase4 portion16: current Stock registry reader, independent Cost/main raw row+aggregate masking; raw audit notes BOTH-financial/main; current review writer inside transaction, stock/episode SQL unchanged; active-view stale selection/access cleanup. Windows/runtime/session/fullPhase4 OPEN')
 
 
+
+def check_supplier_accounting_exception():
+    """D-114 bounded source contracts, not session/Windows/runtime proof."""
+    core = DOTNET / 'Area11.Core'
+    source = (core / 'Services/SupplierLedgerService.cs').read_text()
+    prep = source.split('public ServiceResult<SupplierReturnPreparation> PrepareReturnLine(', 1)[1].split('// -------------------------------------------------------------------- paying', 1)[0]
+    required = ('LedgerReadAccess.Require(_db, connection, _permissions, user, Modules.Suppliers);',
+                'FROM products WHERE id = @id AND active = 1;',
+                'FROM batches WHERE id = @id AND product_id = @productId AND active = 1;',
+                '!double.IsFinite(batch.QtyBase) || batch.QtyBase <= 0',
+                'var costKnown = CostPolicy.CanSee(_permissions, _settings, reader);',
+                'CostKnown = costKnown,',
+                'CostPaisa = costKnown ? (batch.CostPaisa > 0 ? batch.CostPaisa : product.CostPaisa) : 0')
+    for token in required:
+        if prep.count(token) != 1:
+            FAILURES.append(f'Supplier quantity preparation needs exactly one checked binding/mask: {token}')
+    if prep.count('CostKnown =') != 1 or prep.count('CostPaisa =') != 1:
+        FAILURES.append('Supplier preparation must not override checked cost visibility in its DTO')
+    if prep.find('LedgerReadAccess.Require') > prep.find('_db.QuerySingle<ProductDbRow>'):
+        FAILURES.append('Supplier preparation must authorize before product lookup')
+    if 'RequirePreparationCost' in prep or ' + exception.Message' in prep:
+        FAILURES.append('Supplier quantity preparation must not require cost or expose DB error')
+    for start, end in (('public ServiceResult<SupplierPayment> Pay(', '// ------------------------------------------------------------------ returning'),
+                       ('public ServiceResult<SupplierReturnResult> Return(', '// ------------------------------------------------------------------ statement')):
+        part = source.split(start, 1)[1].split(end, 1)[0]
+        gate = 'var reader = LedgerReadAccess.Require(_db, connection, _permissions, user, Modules.Suppliers);'
+        if part.count(gate) != 1 or not (part.find('_db.Tx(connection =>') < part.find(gate) < min(
+                [x for x in (part.find('_db.QuerySingle<'), part.find('SaveReturn(connection')) if x >= 0])):
+            FAILURES.append('Supplier Pay/Return current-account gate must be inside Tx before data/write')
+        if 'CostPolicy' in part or 'Modules.PurchaseCost' in part:
+            FAILURES.append('Supplier accounting writes may not acquire a direct-cost prerequisite')
+    if 'SaveReturn(connection, input, reader)' not in source or '_audit.Record(connection, reader, "Suppliers", "supplier_pay"' not in source:
+        FAILURES.append('Supplier writes must use current stored actor in posting/audit')
+    products = (core / 'Services/ProductService.cs').read_text()
+    if products.count('if (purpose != ProductReadPurpose.SupplierReturn)\n                ProductReadAccess.RequirePreparationCost') != 2:
+        FAILURES.append('Only SupplierReturn product selection may bypass cost preparation prerequisite')
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/SuppliersViewModel.cs').read_text()
+    for token in ('public void RefreshAccess()', '_services.SupplierLedger.CheckReadAccess(_user)',
+                  'ClearSensitiveData();', 'MaskDirectCosts();', 'row.CostKnown = false;', 'row.CostPaisa = 0;',
+                  'public bool CanWork => _accessAllowed;', 'OnPropertyChanged(nameof(IsNotAllowed))',
+                  'Tray.Any(row => !row.CostKnown)', 'CostKnown ? Calc.Round(QtyBase * CostPaisa) : 0',
+                  'CostKnown ? Money.Format(ValuePaisa) : "hidden"'):
+        if token not in vm:
+            FAILURES.append(f'Supplier stale UI/known flag contract missing {token}')
+    if vm.count('CostKnown = fresh.CostKnown') != 2 or 'if (!row.CostKnown)' in vm:
+        FAILURES.append('Both Supplier tray paths must preserve fresh known flags without requiring cost')
+    profile = vm.split('private void SendProfileOnWhatsApp()', 1)[1].split('private void SearchProducts()', 1)[0]
+    for token in ('if (!UpdateAccess()) return;', '_services.SupplierLedger.Page(_user, Selected.Id)',
+                  'var summary = page.Value.Summary;', 'BuildSupplierProfile(summary.Name, summary.Agency, summary.PayablePaisa)'):
+        if token not in profile:
+            FAILURES.append(f'Supplier profile sharing must rebuild current account before output: {token}')
+    if 'BuildSupplierProfile(Selected.' in profile:
+        FAILURES.append('Supplier profile must not share cached financial summary')
+    view = (DOTNET / 'Area11.Desktop/Views/SuppliersView.xaml.cs').read_text()
+    for token in ('TimeSpan.FromSeconds(3)', 'Loaded +=', 'Unloaded +=', '_accessTimer.Stop()', 'viewModel.RefreshAccess()'):
+        if token not in view:
+            FAILURES.append(f'Supplier active-view lifecycle check missing {token}')
+    tests = (DOTNET / 'Area11.Tests/SupplierAccountingAccessTests.cs').read_text()
+    if len(re.findall(r'\.Pay\([^(),]+, supplier, \d+, "cash", null\)', tests)) != 6:
+        FAILURES.append('Supplier regressions must pass all five required Pay arguments')
+    if tests.count('[Fact]') != 24:
+        FAILURES.append('Supplier accounting exception requires all24 written regression facts')
+    for name in ('SupplierOnlyCreditReturnUsesServerCostAndReconciles', 'MainOffMasksCostEvenForOwnerButReturnStillSettles',
+                 'SupplierProductSearchAndGetReturnMaskedRowsWithoutCostGrant', 'RevocationAfterPreparationBlocksBothWrites',
+                 'KnownGenuineZeroIsDifferentFromHiddenZero', 'CurrentStoredNameIsUsedForReturnAudit'):
+        if name not in tests:
+            FAILURES.append(f'Supplier accounting exception regression missing {name}')
+    REPORT.append('Phase4 portion17: D-114 Supplier accounting exception, current transactional Pay/SR actor, masked quantity-only preparation and stale UI lifecycle;24 facts written, Windows/runtime/globalPhase4 OPEN')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -7382,6 +7454,7 @@ def main() -> int:
     check_bulk_audit_access()
     check_encrypted_backup_contract()
     check_stock_minus_visibility()
+    check_supplier_accounting_exception()
     check_csharp_grammar()
 
     if not quiet:

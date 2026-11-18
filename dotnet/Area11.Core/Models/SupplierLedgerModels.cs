@@ -230,3 +230,24 @@ public sealed class ExpiredBatchRow
     /// <summary>"Panadol 500mg - B-1 (2026-01-31)" - the one line the owner taps.</summary>
     public string Caption => ProductName + " - " + BatchNo + " (" + ExpiryLabel + "), " + QtyLabel;
 }
+
+/// <summary>Current Supplier module access; accounting exception does not expose direct cost.</summary>
+public sealed class SupplierAccess
+{
+    public bool CostKnown { get; set; }
+}
+
+/// <summary>Read-only quantity/pack preparation. Cost0 is unknown unless CostKnown; not a posting price.</summary>
+public sealed class SupplierReturnPreparation
+{
+    public int ProductId { get; set; }
+    public int BatchId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public string BatchNo { get; set; } = string.Empty;
+    public string BaseUnit { get; set; } = "unit";
+    public int BoxStrips { get; set; }
+    public int StripTablets { get; set; }
+    public double QtyBase { get; set; }
+    public bool CostKnown { get; set; }
+    public long CostPaisa { get; set; }
+}

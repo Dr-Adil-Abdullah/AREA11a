@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## D-114 — Supplier accounting exception B (2026-11-10)
+
+مالک نے purchase2000،paid500،payable1500کی مثال کے بعد **B / accounting_exception** منتخب کیا۔ Current Suppliers page grant سے account/paid/payable/purchases،statements/sharing،Pay اورSR settlement money مجاز،چاہے Cost یاmainOFF؛ان رقموں/SR total÷quantity سےpurchasecost inference واضح طورپر قبول۔ Direct item/batchcostاورtraypreviews اب بھی الگCost+mainسے۔ Quantity-onlySRکوhidden0کیقیمتنہبنائیں؛اصلpostingcurrentservercostسے۔ فیصلہدوبارہنہپوچھیں۔ [حصہ17 trace](POS-PHASE4-SUPPLIER-ACCOUNTING-REVIEW.md)،[PT-37](POS-PHASE4-PART17-URDU.md)۔ Source implemented،1740C#cases/Windows/installer UNRUN؛باقیPhase4OPEN۔ D-110کیعامcostvisibilityاسSupplieraccountingاستثناکےساتھپڑھیں؛D-113bulk/Audit/passwordA unchanged۔ نیچےSupplierunansweredوالےپرانےentriesتاریخیہیں۔
+
 ## D-110 / D-113 continuation — Stock Minus checkpoint v0.94.0 (2026-11-10)
 
 No new financial/business-policy choice: existing separate Cost/Profit/main rules applied to StockMinus valuation;stored raw audit review details require bothfinancial/main just like Audit. Current Stock delegation for writing a review retained;review does not change stock. Source written,Windows/session/fullPhase4 open. [Trace](POS-PHASE4-STOCK-MINUS-REVIEW.md),[PT-36](POS-PHASE4-PART16-URDU.md). Owner password-change support from portion15 remains unchanged: new backups use new password;older files need original password. Supplier paid/payable/PaySR decision still unanswered.

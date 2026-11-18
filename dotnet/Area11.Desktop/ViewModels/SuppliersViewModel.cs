@@ -14,8 +14,8 @@ namespace Area11.Desktop.ViewModels;
 /// back under `SR-nnnn`.
 ///
 /// No rule lives here. SupplierLedgerService refuses a payment bigger than the debt, lowers the
-/// payable by a credit note, and lets the stock go negative (U-30) with a warning instead of
-/// stopping the shop.
+/// payable by a credit note, and refuses stock below zero under D-93.
+/// D-114 keeps accounting amounts readable under the Supplier module, not direct cost previews.
 /// </summary>
 public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
 {    /// <summary>
@@ -61,6 +61,8 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
     private SupplierSummary? _selected;
     private List<SupplierSummary> _printSelection = new();
     private bool _canPrintSelection;
+    private bool _accessAllowed = true;
+    private bool? _lastCostKnown;
     private Product? _selectedProduct;
     private BatchRow? _selectedBatch;
     private ExpiredBatchRow? _selectedExpired;
@@ -146,7 +148,7 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
 
     public RelayCommand AddExpiredCommand { get; }
 
-    public bool CanWork => _services.Permissions.Can(_user, Modules.Suppliers);
+    public bool CanWork => _accessAllowed;
 
     public bool IsNotAllowed => !CanWork;
 
@@ -402,6 +404,7 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
 
     public void Load()
     {
+        if (!UpdateAccess()) return;
         var keep = Selected?.Id;
 
         var result = _services.SupplierLedger.List(_user, SearchText, OnlyOwing);
@@ -410,6 +413,7 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
 
         if (!result.Ok)
         {
+            ClearSensitiveData();
             SetStatus(result.Error ?? "The suppliers could not be loaded.", true);
             return;
         }
@@ -431,6 +435,7 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
 
     private void LoadExpired()
     {
+        SelectedExpired = null;
         Expired.Clear();
 
         var result = _services.SupplierLedger.ExpiredBatches(_user);
@@ -449,36 +454,28 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
         Movements.Clear();
         Editor.Load(Selected?.Id ?? 0);
 
-        if (Selected is null)
-        {
-            HasSupplier = false;
-            BooksLabel = "Pick a supplier to see the account.";
-            BooksMatch = true;
-            return;
-        }
-
-        HasSupplier = true;
-        NameText = Selected.Name;
-        AgencyText = Selected.AgencyLabel;
-        PhoneText = Selected.PhoneLabel;
-        PayableText = Selected.PayableText;
-        PayableLabel = Selected.PayableLabel;
-        PurchasesText = Selected.PurchasesText;
-        PaidText = Selected.PaidText;
-        CreditedText = Selected.CreditedText;
-        ActivityText = Selected.ActivityText;
-        LastPurchaseText = "Last purchase: " + Selected.LastPurchaseLabel;
-
+        ClearAccount();
+        if (Selected is null) return;
         var page = _services.SupplierLedger.Page(_user, Selected.Id);
-
         if (!page.Ok || page.Value is null)
         {
+            ClearSensitiveData();
             BooksMatch = false;
             BooksLabel = page.Error ?? "The account could not be loaded.";
             return;
         }
-
         var data = page.Value;
+        HasSupplier = true;
+        NameText = data.Summary.Name;
+        AgencyText = data.Summary.AgencyLabel;
+        PhoneText = data.Summary.PhoneLabel;
+        PayableText = data.Summary.PayableText;
+        PayableLabel = data.Summary.PayableLabel;
+        PurchasesText = data.Summary.PurchasesText;
+        PaidText = data.Summary.PaidText;
+        CreditedText = data.Summary.CreditedText;
+        ActivityText = data.Summary.ActivityText;
+        LastPurchaseText = "Last purchase: " + data.Summary.LastPurchaseLabel;
 
         foreach (var line in data.Lines)
         {
@@ -494,6 +491,7 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
 
     private void Pay()
     {
+        if (!UpdateAccess()) return;
         if (Selected is null)
         {
             SetStatus("Pick a supplier first.", true);
@@ -547,6 +545,7 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
 
     private void PrintStatement()
     {
+        if (!UpdateAccess()) return;
         // Portion 11: with `printer.defaultBulk` on and several suppliers ticked, the main button
         // prints the whole ticked set; otherwise it prints the open supplier, as it always has.
         if (_printSelection.Count > 1 && _services.Settings.GetBool("printer.defaultBulk", false))
@@ -580,6 +579,7 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
     /// <summary>The explicit bulk button: always the ticked suppliers, whatever the setting says.</summary>
     private void PrintSelection()
     {
+        if (!UpdateAccess()) return;
         if (_printSelection.Count < 2)
         {
             SetStatus("Tick two or more suppliers first (hold Ctrl and click).", true);
@@ -610,6 +610,7 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
     /// </summary>
     private void Preview()
     {
+        if (!UpdateAccess()) return;
         if (_printSelection.Count > 1)
         {
             var job = _services.SupplierLedger.BuildBulkStatements(_user, _printSelection.Select(row => row.Id).ToList());
@@ -645,6 +646,7 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
     /// </summary>
     private void SendStatementOnWhatsApp()
     {
+        if (!UpdateAccess()) return;
         if (Selected is null)
         {
             SetStatus("Pick a supplier first.", true);
@@ -667,20 +669,30 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
     /// <summary>The short payable note to WhatsApp: what the shop owes, in one message, no file.</summary>
     private void SendProfileOnWhatsApp()
     {
+        if (!UpdateAccess()) return;
         if (Selected is null)
         {
             SetStatus("Pick a supplier first.", true);
             return;
         }
 
-        var text = _services.WhatsApp.BuildSupplierProfile(Selected.Name, Selected.Agency, Selected.PayablePaisa);
-        var sent = WhatsAppFlow.Send(_services, Selected.Phone, text,
+        var page = _services.SupplierLedger.Page(_user, Selected.Id);
+        if (!page.Ok || page.Value is null)
+        {
+            ClearSensitiveData();
+            SetStatus(page.Error ?? "The current supplier account could not be loaded.", true);
+            return;
+        }
+        var summary = page.Value.Summary;
+        var text = _services.WhatsApp.BuildSupplierProfile(summary.Name, summary.Agency, summary.PayablePaisa);
+        var sent = WhatsAppFlow.Send(_services, summary.Phone, text,
             "Profile", Enumerable.Empty<string>(), "profile.pdf", withPdf: false);
         SetStatus(sent.Message, !sent.Ok);
     }
 
     private void SearchProducts()
     {
+        if (!UpdateAccess()) return;
         var result = _services.Products.Search(_user, ProductSearch, purpose: ProductReadPurpose.SupplierReturn);
 
         Found.Clear();
@@ -734,6 +746,7 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
 
     private void AddLine()
     {
+        if (!UpdateAccess()) return;
         if (SelectedBatch is null || SelectedProduct is null)
         {
             SetStatus("Pick a medicine and a batch first.", true);
@@ -746,11 +759,10 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
             return;
         }
 
-        var prepared = _services.Stock.PrepareBatchCost(_user, SelectedProduct.Id, SelectedBatch.Id,
-            ProductReadPurpose.SupplierReturn);
+        var prepared = _services.SupplierLedger.PrepareReturnLine(_user, SelectedProduct.Id, SelectedBatch.Id);
         if (!prepared.Ok || prepared.Value is null)
         {
-            SetStatus(prepared.Error ?? "The current batch cost could not be prepared. No tray values were changed.", true);
+            SetStatus(prepared.Error ?? "The current batch could not be prepared. No tray values were changed.", true);
             return;
         }
         var fresh = prepared.Value;
@@ -775,7 +787,8 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
             QtyEntered = qty,
             Unit = Unit,
             QtyBase = qtyBase,
-            CostPaisa = cost
+            CostPaisa = cost,
+            CostKnown = fresh.CostKnown
         });
 
         QtyText = string.Empty;
@@ -803,6 +816,7 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
 
     private void AddExpired()
     {
+        if (!UpdateAccess()) return;
         if (SelectedExpired is null)
         {
             SetStatus("Pick an expired batch in the list first.", true);
@@ -818,11 +832,13 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
             SetStatus(current.Error ?? "That batch is no longer in the current expired-stock selection. Refresh and try again.", true);
             return;
         }
-        if (!row.CostKnown)
+        var prepared = _services.SupplierLedger.PrepareReturnLine(_user, row.ProductId, row.BatchId);
+        if (!prepared.Ok || prepared.Value is null)
         {
-            SetStatus("View Purchase Cost and the main financial switch are required for this return preparation. No tray values were changed.", true);
+            SetStatus(prepared.Error ?? "The expired return line could not be prepared.", true);
             return;
         }
+        var fresh = prepared.Value;
 
         var existing = Tray.FirstOrDefault(line => line.BatchId == row.BatchId);
         if (existing is not null)
@@ -837,10 +853,11 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
             BatchId = row.BatchId,
             ProductName = row.ProductName,
             BatchNo = row.BatchNo,
-            QtyEntered = row.QtyBase,
+            QtyEntered = fresh.QtyBase,
             Unit = "unit",
-            QtyBase = row.QtyBase,
-            CostPaisa = row.CostPaisa
+            QtyBase = fresh.QtyBase,
+            CostPaisa = fresh.CostPaisa,
+            CostKnown = fresh.CostKnown
         });
 
         RefreshTrayTotal();
@@ -850,11 +867,14 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
     private void RefreshTrayTotal()
     {
         var total = Tray.Sum(row => row.ValuePaisa);
-        TrayTotalText = Money.Format(total) + " in " + Tray.Count + " batch(es)";
+        TrayTotalText = Tray.Any(row => !row.CostKnown)
+            ? "Cost hidden — quantity-only tray (" + Tray.Count + " batch(es)); settlement calculated on save"
+            : Money.Format(total) + " in " + Tray.Count + " batch(es)";
     }
 
     private void PostReturn()
     {
+        if (!UpdateAccess()) return;
         if (Selected is null)
         {
             SetStatus("Pick a supplier first.", true);
@@ -952,6 +972,85 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
         PhotoWindow.Show(_services, _user, PhotoEntity.Supplier, Selected.Id, Selected.Name);
     }
 
+    public void RefreshAccess()
+    {
+        var wasAllowed = _accessAllowed;
+        if (!UpdateAccess()) return;
+        if (!wasAllowed) Load();
+    }
+
+    private bool UpdateAccess()
+    {
+        var access = _services.SupplierLedger.CheckReadAccess(_user);
+        if (!access.Ok || access.Value is null)
+        {
+            SetAccessAllowed(false);
+            _lastCostKnown = null;
+            ClearSensitiveData();
+            SetStatus(access.Error ?? "Current Supplier access is required.", true);
+            return false;
+        }
+        SetAccessAllowed(true);
+        if (_lastCostKnown != access.Value.CostKnown)
+        {
+            _lastCostKnown = access.Value.CostKnown;
+            MaskDirectCosts();
+            LoadExpired();
+        }
+        return true;
+    }
+
+    private void SetAccessAllowed(bool allowed)
+    {
+        if (SetProperty(ref _accessAllowed, allowed, nameof(CanWork)))
+            OnPropertyChanged(nameof(IsNotAllowed));
+    }
+
+    private void MaskDirectCosts()
+    {
+        Found.Clear();
+        SelectedProduct = null;
+        Batches.Clear();
+        SelectedBatch = null;
+        SelectedExpired = null;
+        SelectedTrayRow = null;
+        BatchHint = "Choose a fresh batch. Direct costs require Cost permission and main ON.";
+        var rows = Tray.ToList();
+        Tray.Clear();
+        foreach (var row in rows)
+        {
+            row.CostKnown = false;
+            row.CostPaisa = 0;
+            Tray.Add(row); // rebind computed labels; quantities/IDs remain intact
+        }
+        RefreshTrayTotal();
+    }
+
+    private void ClearAccount()
+    {
+        HasSupplier = false;
+        Movements.Clear();
+        NameText = string.Empty;
+        AgencyText = PhoneText = ActivityText = LastPurchaseText = "—";
+        PayableText = PayableLabel = PurchasesText = PaidText = CreditedText = "hidden";
+        BooksLabel = "Select a supplier with current Supplier access.";
+        BooksMatch = false;
+    }
+
+    private void ClearSensitiveData()
+    {
+        StatusText = string.Empty;
+        IsStatusError = false;
+        Suppliers.Clear();
+        Selected = null;
+        ClearAccount();
+        Expired.Clear();
+        MaskDirectCosts();
+        ClearTray();
+        _printSelection.Clear();
+        CanPrintSelection = false;
+    }
+
     private void SetStatus(string message, bool isError)
     {
         StatusText = message;
@@ -977,11 +1076,13 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
 
         public long CostPaisa { get; set; }
 
-        public long ValuePaisa => Calc.Round(QtyBase * CostPaisa);
+        public bool CostKnown { get; set; }
+
+        public long ValuePaisa => CostKnown ? Calc.Round(QtyBase * CostPaisa) : 0;
 
         public string QtyLabel => Qty.Format(QtyEntered) + " " + Unit;
 
-        public string ValueLabel => Money.Format(ValuePaisa);
+        public string ValueLabel => CostKnown ? Money.Format(ValuePaisa) : "hidden";
 
         public string Caption => ProductName + " - " + BatchNo;
     }

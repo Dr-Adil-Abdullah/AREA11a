@@ -1,6 +1,10 @@
-# باقی کام، GitHub اور test installer — v0.94.0
+# باقی کام، GitHub اور test installer — v0.95.0
 
-## حصہ16 کے بعد موجودہ ترجیح
+## حصہ17 کے بعد موجودہ ترجیح
+
+SupplierکےلیےآپکاBاستثناابsourceمیںشامل:account/paid/payable/statement/Pay/SRمالیرقمCost/mainOFFکےباوجود،inferenceقبول؛directitem/batch/traycostالگCost+main۔ Quantity-onlySR,currenttransactionalactor,staleUIcleanupاورfreshprofilesharing۔ [PT-37](POS-PHASE4-PART17-URDU.md)،[trace](POS-PHASE4-SUPPLIER-ACCOUNTING-REVIEW.md)۔ **1740C#cases/WindowsUNRUN**؛84static،12memorySQLprobes،13mutationsruntimeنہیں۔ WindowsPT-35/36/37،باقیoutputs/BookCheck/session/record/fault/concurrency/files/cloudاورinstallerباقی۔ اندازہ **3–6 مزید مربوطreview/resultچکر**،نتائجسےبڑھسکتا؛وعدہنہیں۔ TestinstallerکیاجازتہےمگرLinuxمیںWPF/Innoنہیں؛installerابھینہیںبنا۔ ہرportiondocs+samebranchcommit/push+remoteverificationلازم۔ نیچےکیترجیحاتتاریخیہیں۔
+
+## تاریخی حصہ16 کے بعد ترجیح
 
 Stock Minus میں current reader،الگ Cost/main valuation/total masks،raw Audit note کے لیے دونوں مالی grants/main،اور transaction کے اندر موجودہ reviewer check شامل ہے۔ اصل stock/episode/valuation SQL نہیں بدلا۔ [PT-36](POS-PHASE4-PART16-URDU.md)،[trace/حدود](POS-PHASE4-STOCK-MINUS-REVIEW.md)۔ **1716 C# cases اورWindows UNRUN**؛83 static/11 SQLite probes runtime نہیں۔ اگلی اہم عملی gates PT-36 اورPT-35 کے الگ Windows tests/DPAPI/new-PC restore ہیں۔ باقی financial outputs،Supplier policy،session/record/stale objects،fault/concurrency/files/cloud اورinstaller کھلے ہیں۔ اندازہ **3–6 مربوط review/result چکر**،نتائج سے بڑھ سکتا ہے؛وعدہ نہیں۔ Board51/57 audit فیصد نہیں؛ذیل کے حصوں کے اندازے تاریخی ہیں۔
 

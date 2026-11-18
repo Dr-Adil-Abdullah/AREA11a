@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.94.0 Cormorant۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.95.0 Avocet۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**حصہ17 — Supplier کا منتخب B استثنا:** Supplier page grant سےaccount/paid/payable/statement/sharing/Pay/SRکےحسابCost/mainOFFپربھی؛paid500+due1500سےpurchase2000کاinferenceآپنےقبولکیا۔ Directitem/batch/traycostصرفCost+main؛manual/expiredSRquantity-onlyتیار،unknowncostکوknown0نہیںکہتے۔ CurrenttransactionalPay/SRactor،freshaccount/profile،اگلےcheck/nominal3secondپرstaleclear/mask؛فوریrecallنہیں۔ [PT-37](POS-PHASE4-PART17-URDU.md)،[حدود](POS-PHASE4-SUPPLIER-ACCOUNTING-REVIEW.md)۔ **1740C#cases/WindowsUNRUN؛84staticPASS**۔ پرانےnumberedcheckpointخلاصےتاریخیہیں؛Supplierunanswered/known-cost-onlytrayہدایتD-114سےبدلگئی۔
 
 **حصہ16 — Stock Minus:** مقدار/episode/review metadata برقرار؛purchase valuation اورمجموعہ صرف Cost+main سے،raw Audit review note دونوں مالی grants/main سے۔ موجودہ Stock reader اورreview transaction میں current account چیک؛review stock نہیں بدلتا،جائز Stock delegation پرnote لکھنے کے لیے Cost/Profit کی نئی شرط نہیں۔ Active-view access change پر selected/details/totals refresh/clear؛فوری recall کی ضمانت نہیں۔ [PT-36](POS-PHASE4-PART16-URDU.md)،[حدود](POS-PHASE4-STOCK-MINUS-REVIEW.md)۔ **1716 C# cases/Windows UNRUN**؛83 static checks PASS۔
 
@@ -351,7 +353,7 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 ## سبق 17 — Suppliers، ادائیگی اور SR
 
 1. Suppliers میں supplier منتخب کریں؛ Only with money to pay فلٹر صرف واجب الادا دکھاتا ہے۔ Account، Purchases، Credit notes اور Money paid سے payable کا سبب ملائیں۔
-2. اصل ادائیگی کے لیے رقم، How اور Note دیں، Pay۔ مالک/مینیجر ادائیگی یا supplier return کر سکتے ہیں۔ purchase کے Paid now کو دوبارہ supplier Pay میں نہ دہرائیں۔
+2. اصل ادائیگی کے لیے رقم، How اور Note دیں، Pay۔ موجودہ active account اور Suppliers اجازت والا شخص ادائیگی یا supplier return کر سکتا ہے؛صرف عہدہ کافی نہیں۔ purchase کے Paid now کو دوبارہ supplier Pay میں نہ دہرائیں۔
 3. Statement، Print selected، Preview، WhatsApp statement یا WhatsApp note سے حساب بھیجیں۔ bank سے دی ہوئی رقم کو cash کہنا گلے کو غلط کرتا ہے۔
 4. Return goods (SR) میں اصل product/batch چنیں، Quantity اور Unit، Add this batch to the tray۔ expired batch کا متعلقہ quick button بھی موجود ہے؛ tray، Value اور اصل مال ملائیں۔
 5. Reason لکھیں۔ عام SR سے stock نکلتا اور payable credit note سے کم ہوتا ہے۔ **The supplier gave the money in cash** صرف تب tick کریں جب واقعی نقد واپس لیا—یہ credit note کے ساتھ دگنی رقم لینے کے لیے نہیں۔
@@ -359,9 +361,7 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 
 **فیز4 حصہ3 — supplier read حد:** Suppliers module کے بغیر list/account/statement/bulk/expired-batch reads سے انکار، بشمول PDF/WhatsApp/print کی نئی preparation۔ مالک کی واضح Suppliers grant والا سابق جائز workflow برقرار؛ نئی owner-only blanket پابندی نہیں۔ next read پر account/role/module check ہوتا ہے؛ پہلے سے جائز حالت میں تیار preview/file واپس مٹانے یا catalog/دوسرے cost-bearing راستوں کی مکمل secrecy کا دعویٰ نہیں۔ عام cashier کو خودبخود Suppliers اجازت نہیں۔ [PT-23](POS-PHASE4-PART3-URDU.md) صرف محفوظ الگ data پر۔
 
-**حصہ9 — expired list:** الگ View Purchase Cost + main ON کے بغیر valuation hidden؛quantity/batch/date برقرار۔ expired quick-add تازہ موجودہ500حد کی row دوبارہ پڑھتا ہے؛ممنوع/نامعلوم cost،ناکام read یا row نہ ملنے پر tray بدلنے سے پہلے انکار،اصل مجاز0 الگ known۔ پہلے سے بنے tray/manual SR اور ordinary account paid/payable/Pay/SR policy ابھی الگ باقی؛یہ تمام Supplier posting کی نئی cost gate نہیں۔ [PT-29](POS-PHASE4-PART9-URDU.md)۔
-
-**حصہ10 — manual batch کی تازہ حد:** عام supplier batch picker کا raw cost/valuation بھی Cost+main کے بغیر hidden۔ Manual Add line سے پہلے موجودہ product/batch/pack/cost دوبارہ پڑھتا ہے؛اجازت ختم یا batch اب غلط ہو تو tray بدلنے سے پہلے انکار۔ یہ ordinary supplier paid/payable/Pay/SR posting policy یا پہلے بنے tray کی واپسی کا فیصلہ نہیں۔ [PT-30](POS-PHASE4-PART10-URDU.md)۔
+**حصہ17 / D-114 — موجودہ Supplier حد:** صرفSuppliersgrantبھیaccount/statement/Pay/SRکےلیےکافی،mainOFFپرمالیaccountingاستثنا؛براہِراستitem/batchcostکیاجازتاسسےنہیںملتی۔ Expiredlistاورbatchpickerکیcost/valuationhiddenہوسکتیہے،مگرmanual/expiredquick-addcurrentbatch/quantity/packکےساتھquantity-onlytrayبناسکتےہیں۔ Trayvalue/aggregateunknownہوتوhidden،نہfake0؛Saveاصلservercostسے۔ Batchcost0ہوتوپراناproductcostfallbackبرقرار۔ Known0مجازقیمتسےالگپہچان۔ Currentaccount/moduleدونوںwritesکےtransactionمیںدوبارہچیک؛costکیpreviewاجازتreturnpostingکیشرطنہیں۔ Cost/mainبدلنےپرtrayquantitiesبرقرارمگرpreviewmasked،واپسknownpreviewکےلیےlineدوبارہaddکریں؛moduledenyپرtrayصاف،خودpostنہیں۔ [PT-37](POS-PHASE4-PART17-URDU.md)،[trace](POS-PHASE4-SUPPLIER-ACCOUNTING-REVIEW.md)۔ حصہ9/10کیknown-cost-onlytrayہدایتاسسےبدلگئی۔
 
 <a id="lesson-18"></a>
 
@@ -554,7 +554,7 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 
 ### حساس مالی اجازتوں کی نئی تفصیل (حصہ8)
 
-شخص منتخب کریں؛ مالی group میں **View Profit**، **View Purchase Cost**، **Supplier ledger access (Suppliers)** اور **Customer ledger access (Customers)** ہیں۔ ہر tick الگ database key ہے؛ Ledger tick، cost/profit کی متبادل اجازت نہیں۔ Main profit/cost switch Sales rules میں ہے؛ غیر محفوظ Settings تبدیلی کو saved اجازت نہ سمجھیں۔
+شخص منتخب کریں؛ مالی group میں **View Profit**، **View Purchase Cost**، **Supplier ledger access (Suppliers)** اور **Customer ledger access (Customers)** ہیں۔ ہر tick الگ database key ہے؛ Ledger tick، cost/profit کی متبادل اجازت نہیں۔ **D-114 Supplier accounting exception:** ledger/paid/payable/statement/Pay/SR mainOFFپربھی،costinferenceقبول؛directitem/batchcostالگCost+main۔ Main profit/cost switch Sales rules میں ہے؛ غیر محفوظ Settings تبدیلی کو saved اجازت نہ سمجھیں۔
 
 - Hover سے مختصر کام؛ **double-click یا Details…** سے scope اور current users کی enabled/disabled list۔ Disabled owner module کے لیے Details بٹن استعمال کریں۔
 - List میں **Grant** اور **Access** الگ پڑھیں: enabled tick کے باوجود account inactive یا financial main OFF ہوسکتا ہے۔ Role default اور explicit override الگ دکھتے ہیں؛ relevant page grant اب بھی لازم۔
@@ -674,7 +674,7 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.94.0 کا متوقع test count 1716 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.95.0 کا متوقع test count 1740 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 
