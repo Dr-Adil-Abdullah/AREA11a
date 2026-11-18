@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-43 — current Settings / precise delegated saves / quiet allowlist / secret-safe future audit (v0.101.0) — UNRUN
+
+[Isolated Windows steps](docs/POS-PHASE4-PART23-URDU.md):currentidentity/revoke/regrant/settingsfailure,POSautoPrintonly,Backup3keysschedule,SyncvsSettings/combinedgrants,17runtimekeys/noconfigbypass,Ownersecurity/startup/caps,direct+workbookall-or-nothing,auditfault/cache,cloudkeystored+newauditredacted,staleUI/typedsecrets/timers/8tabs,systemstartup/recovery/failure,SAVEDpostcommitstatus;1915C#cases+Desktop/WPF/registry/DPAPI/hardware/screenshotUNRUN.36newfacts,not runtimePASS. Native/custom/photo/record/session/fullPhase4/installerOPEN. [Trace](docs/POS-PHASE4-SETTINGS-CURRENT-REVIEW.md). No fake live-shop posts;separateexealoneNOTisolation.
+
 ## PT-42 — transaction-owned commands / current permission read (v0.100.0) — UNRUN
 
 [Isolated Windows steps](docs/POS-PHASE4-PART22-URDU.md): explicit revoke vs role default,delegated Cash insideTx,pending grants/revokes and rollback,ordinary failed grant read deny,independent financial/Owner behavior,five foreign-connection wrappers,read ownership/disposal/nested rejection,same-instance two-thread wait and full1879 regression suite+Desktop/WPF.27newfacts UNRUN;source/synthetic evidence NOT C#/provider/concurrency certification. Settings/session/record/cross-instancefault/retry/files/cloud/new-PCrestore/globalPhase4/installer OPEN. No fake live-shop posts;separateexealoneNOTisolation. [Trace](docs/POS-PHASE4-TRANSACTION-PERMISSION-REVIEW.md).

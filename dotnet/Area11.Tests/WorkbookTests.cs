@@ -592,6 +592,37 @@ VALUES(@id, 'import', 1), (@id, 'settings', 1);", new { id = cashier.Id }));
 
     // ================================ helpers ================================
 
+    [Fact]
+    public void DelegatedWorkbookCannotSmuggleOwnerOnlySettingWithOrdinaryChange()
+    {
+        using var test = new TestDatabase(); var workbook = Download(test); var settings = workbook.Sheet("Settings")!;
+        Set(settings, RowWithKey(settings, "store.name"), "Value", "Synthetic denied workbook shop");
+        Set(settings, RowWithKey(settings, "discount.maxPercentManager"), "Value", "25");
+        var staff = TestData.Cashier(test); var permissions = TestData.Permissions(test);
+        foreach (var module in new[] { Modules.Import, Modules.Settings, Modules.Profit, Modules.PurchaseCost })
+            Assert.True(permissions.Set(TestData.Owner, staff.Id, module, true).Ok);
+        var service = Workbooks(test); var preview = service.PreviewBulk(staff, XlsxFile.Write(workbook), true);
+        Assert.True(preview.Ok, preview.Error); Assert.True(preview.Value!.CanApply, preview.Value.SummaryText);
+        var before = test.Settings.GetString("store.name");
+        Assert.False(service.ApplyBulk(staff, preview.Value).Ok);
+        Assert.Equal(before, test.Settings.GetString("store.name")); test.Settings.Reload();
+        Assert.Equal(before, test.Settings.GetString("store.name")); Assert.Equal(20, test.Settings.GetInt("discount.maxPercentManager"));
+    }
+
+    [Fact]
+    public void WorkbookSettingsRevokedAfterPreviewDeniesWholeFile()
+    {
+        using var test = new TestDatabase(); var workbook = Download(test); var settings = workbook.Sheet("Settings")!;
+        Set(settings, RowWithKey(settings, "store.name"), "Value", "Synthetic revoked workbook shop");
+        var staff = TestData.Cashier(test); var permissions = TestData.Permissions(test);
+        foreach (var module in new[] { Modules.Import, Modules.Settings, Modules.Profit, Modules.PurchaseCost })
+            Assert.True(permissions.Set(TestData.Owner, staff.Id, module, true).Ok);
+        var service = Workbooks(test); var preview = service.PreviewBulk(staff, XlsxFile.Write(workbook), true);
+        Assert.True(preview.Ok, preview.Error); Assert.True(preview.Value!.CanApply, preview.Value.SummaryText);
+        var before = test.Settings.GetString("store.name"); Assert.True(permissions.Set(TestData.Owner, staff.Id, Modules.Settings, false).Ok);
+        Assert.False(service.ApplyBulk(staff, preview.Value).Ok); test.Settings.Reload(); Assert.Equal(before, test.Settings.GetString("store.name"));
+    }
+
     private static ImportService Imports(TestDatabase test) =>
         new(test.Database, test.Audit, new PermissionService(test.Database, test.Log, test.Audit), test.Log, test.Settings);
 

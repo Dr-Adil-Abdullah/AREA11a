@@ -6683,6 +6683,72 @@ def check_definition_time_boundaries():
     REPORT.append('Phase4 portion6: current owner inside four custom-definition write transactions, public field read/save current account/module, resolved audits and immediate one-transaction owner/read/plan/write time correction; delegated parent workflows/full sessions/concurrency/Windows pending')
 
 
+def check_settings_current_boundaries():
+    """Source contracts only; actual C#/WPF/provider checks remain required."""
+    core = DOTNET / 'Area11.Core/Services'
+    settings = (core / 'SettingsService.cs').read_text()
+    startup = (core / 'StartupService.cs').read_text()
+    workbook = (core / 'WorkbookService.cs').read_text()
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/SettingsViewModel.cs').read_text()
+    view = (DOTNET / 'Area11.Desktop/Views/SettingsView.xaml').read_text()
+    tests = (DOTNET / 'Area11.Tests/SettingsCurrentAccessTests.cs').read_text()
+    runtime = settings.split('private static bool IsRuntimePreference', 1)[-1].split('/// <summary>', 1)[0]
+    expected = {'session.lastUser','session.lastStart','session.lastSeen','session.cleanExit','session.handoverAt','session.handoverBy',
+                'backup.lastRunAt','backup.lastFile','backup.lastRestoreSummary','sync.lastSyncAt','sync.status','sync.lastError',
+                'hardware.testedAt','hardware.testedBy','hardware.note','hardware.testedWidth','hardware.passed'}
+    if set(re.findall(r'"([^"\n]+)"', runtime)) != expected or 'if (!IsRuntimePreference(key))' not in settings:
+        FAILURES.append('Current Settings quiet door must allow exactly17 runtime metadata keys')
+    for token in ('public ServiceResult CheckAccess(User? actor)', 'public ServiceResult CheckCloudAccess(User? actor)',
+                  'SnapshotReadAccess.Require(_db, connection, _permissions, actor, module, Modules.Settings)',
+                  'if (_permissions is null) throw', 'keyList.All(IsCloudConfiguration)', 'keyList.All(IsBackupSchedule)',
+                  'keyList.Length == 1 && keyList[0] == "printer.autoPrint"',
+                  'keyList.Any(IsCloudConfiguration) && !_permissions.Can(current, Modules.Sync)',
+                  'var ownerOnly = values.Keys.Any(RequiresOwner);',
+                  'var writer = RequireWriter(connection, actor, values.Keys);',
+                  '_audit.Record(connection, writer, "Settings", "settings_change"',
+                  'var secret = pair.Key == SyncService.KeyKey;',
+                  'secret ? "{\\"secret\\":\\"not disclosed\\"}" : old',
+                  'secret ? "{\\"secret\\":\\"changed\\"}" : json',
+                  'if (keyList.Any(RequiresOwner)) OwnerAccess.Require(_db, connection, actor);'):
+        if token not in settings:
+            FAILURES.append(f'Current Settings writer/secret contract missing {token}')
+    owner = settings.split('private static bool RequiresOwner',1)[-1].split('// Workbook',1)[0]
+    for token in ('"security."', '"startup.mode"', '"discount.maxPercentCashier"', '"discount.maxPercentManager"',
+                  '"brand.appName"', '"appearance.iconFileName"', '"lockdown.focusGuard"', 'MasterFoundationSettings.ProfitShowMargins'):
+        if token not in owner: FAILURES.append(f'Current Settings owner policy missing {token}')
+    write = settings.split('public ServiceResult SetMany(', 1)[-1].split('internal ServiceResult SaveRecoveryHash',1)[0]
+    if not (write.find('_db.Tx(connection =>') < write.find('RequireWriter(') < write.find('foreach (var pair in values)')):
+        FAILURES.append('Current Settings writer must be checked inside Tx before first write')
+    for token in ('_settings.SaveSystemStartupMode(automatic: true)', '_settings.SaveSystemStartupMode(automatic: false)',
+                  'var access = _settings.CheckAccess(actor);', 'if (!saved.Ok) return saved;'):
+        if token not in startup: FAILURES.append(f'Current startup settings boundary missing {token}')
+    if '_settings.SetUiOnly(ModeKey,' in startup or 'actor: null' in startup:
+        FAILURES.append('Startup must not use a general actorless configuration setter')
+    if workbook.count('!_settings.CheckAccess(user).Ok') != 2:
+        FAILURES.append('Workbook Settings preview/apply each need current Settings access')
+    token = 'if (hasSettings) _settings.RequireBulkWriter(connection, user, preview.SettingValues.Keys);'
+    if token not in workbook:
+        FAILURES.append('Workbook Settings require current writer inside apply Tx')
+    for token in ('public bool CanUseSettings => _settingsAccessAllowed;', '_services.Settings.CheckAccess(_user)',
+                  '_services.Settings.CheckCloudAccess(_user).Ok', 'ClearCloudData(); ClearStaffData(); LabelRows.Clear();',
+                  'SyncKey = SyncUrl = SyncTable = SyncShopId = SyncAutomaticMinutesText = string.Empty;',
+                  'public bool CanChangeCloud => CanUseSettings && _cloudAccessAllowed;',
+                  'if (CanChangeCloud && (!int.TryParse', 'Settings SAVED; startup mode was not saved.',
+                  'Settings SAVED; screen lock was not saved.'):
+        if token not in vm: FAILURES.append(f'Current Settings UI lifecycle missing {token}')
+    if '_services.Cloud.KeyLabel' in vm or 'Visibility="{Binding CanUseSettings, Converter={StaticResource BoolToVis}}"' not in view:
+        FAILURES.append('Settings must hide denied content and avoid showing key fragments')
+    if tests.count('[Fact]') != 32:
+        FAILURES.append('Current Settings32 isolated regression facts missing')
+    for file, names in (
+        ('StartupCloseTests.cs', ('InactiveStoredOwnerCannotTouchStartupStores','ForgedOwnerCannotTouchStartupStores')),
+        ('WorkbookTests.cs', ('DelegatedWorkbookCannotSmuggleOwnerOnlySettingWithOrdinaryChange','WorkbookSettingsRevokedAfterPreviewDeniesWholeFile'))):
+        body = (DOTNET / 'Area11.Tests' / file).read_text()
+        for name in names:
+            if 'public void ' + name + '(' not in body: FAILURES.append(f'Current Settings regression missing {name}')
+    REPORT.append('Phase4 portion23: current transactional Settings/own-module exceptions and workbook settings writer,17-key quiet allowlist,future cloud-key audit redaction,fixed startup system paths and stale Settings/cloud UI cleanup;36 facts written, C#/Windows/session/record/globalPhase4 OPEN')
+
+
 def check_transaction_permission_boundaries():
     """Source-only connection ownership/fail-closed contracts, not SQLite/.NET execution."""
     database = (DOTNET / 'Area11.Core/Data/Database.cs').read_text()
@@ -6801,7 +6867,7 @@ def check_financial_visibility_grants():
         if token not in pricing:
             FAILURES.append(f'Item editor must render independent Core quote flags: {token}')
     settings = (core / 'Services/SettingsService.cs').read_text()
-    if 'if (key == MasterFoundationSettings.ProfitShowMargins)' not in settings or 'or MasterFoundationSettings.ProfitShowMargins);' not in settings:
+    if 'if (key == MasterFoundationSettings.ProfitShowMargins)' not in settings or 'or MasterFoundationSettings.ProfitShowMargins;' not in settings:
         FAILURES.append('Main financial switch must be protected from UI-only/manager saves')
     if 'or MasterFoundationSettings.ProfitShowMargins ||' not in (core / 'Services/WorkbookService.cs').read_text():
         FAILURES.append('Workbook must not bypass owner-only main financial switch')
@@ -7762,6 +7828,7 @@ def main() -> int:
     check_parent_roster_boundaries()
     check_shift_current_boundaries()
     check_transaction_permission_boundaries()
+    check_settings_current_boundaries()
     check_csharp_grammar()
 
     if not quiet:

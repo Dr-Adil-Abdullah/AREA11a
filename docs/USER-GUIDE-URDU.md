@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.100.0 Sanderling۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.101.0 Dunlin۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**حصہ23 — Settings کی موجودہ اجازت:** Save میں currentactive/same-rolemodulewriter،cloudکےلیےSync،owner-protectedkeys/workbookکےلیےcurrentOwner؛POSکااکیلاautoPrintاورBackupscheduleبرقرار۔ Quietsetterصرف17runtimekeys؛آئندہCloudkeyauditمیںاصلold/newkeyنہیں،پرانےauditنہیںبدلے۔ DeniedSettingsکےtabsچھپیں،typedcloud/PIN/recoveryاورstaffstateصاف؛cloud-onlylossپرعامادھورےeditsبرقرار۔ [PT-43](POS-PHASE4-PART23-URDU.md)،[trace](POS-PHASE4-SETTINGS-CURRENT-REVIEW.md)۔ **36نئےfacts/1915C#casesWindowsUNRUN۔** Native/custom/photo/session/recordاورfullPhase4/installerباقی؛حساب/Blackbox/BookCheck/backupunchanged۔ نیچےپرانےcheckpointتاریخیہیں۔
 
 **حصہ22 — اجازت اور transaction:** جائز delegated grant اسیtransactionمیںقائم؛explicitrevokeیاgrant-readerrorسےپراناrole-defaultallowنہیں۔ کامیابreadمیںrowواقعیغائبہوتوdefaultبرقرار۔ اپنیconnectionکاہیtransaction،permissionکیpendingstateاسیconnectionسے؛per-instance synchronous serializationپورےsession/concurrencyکاثبوتنہیں۔ [PT-42](POS-PHASE4-PART22-URDU.md)،[traceاورحدود](POS-PHASE4-TRANSACTION-PERMISSION-REVIEW.md)۔ **27نئےfacts/1879C#casesWindowsUNRUN۔** حساب/Blackbox/BookCheck/backupunchanged؛Settings/session/record/fault/files/cloud/Windows/installerباقی۔ نیچےپرانےnumberedcheckpointتاریخیہیں۔
 
@@ -602,6 +604,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 
 **حصہ22 کی permission-read اصلاح:** کیشیئرکیCustomersاجازتuntickہوتووصولیtransactionمیںgrantپڑھنےکیخرابیسےدوبارہdefaultallowنہیں؛OwnerکیخاصCashgrantبھیtransactionشروعہونےسےغائبنہیں۔ حقیقیgrantrowنہہونااورDBreadfailالگہیں۔ OrdinaryOwnerbypassاورMapForassignment/defaultنقشہsigned-insessionکیضمانتنہیں؛Settingssecret/sessionکیباقیجانچکھلیہے۔ [PT-42](POS-PHASE4-PART22-URDU.md)۔
 
+**حصہ23 — عملیSettingsمشق:** OwnerسےSettingsgrantدیں،عامfooterبدلیں؛grantواپسلےکرپراناصفحہSaveکریںتومنعاوراگلےcheckپرcontentچھپا/حساسinputsصافہو۔ SettingsاکیلےCloudconfigurationنہیں؛Syncکیالگgrantچاہیے۔ Cloudkeyکیصرفsaved/not-savedlabel،اصلkeyکےٹکڑےنہیں؛نئیauditentryمیںبھیاصلkeyنہیں۔ Security/startup/legacydiscountcapsاورمحفوظOwnerkeysکوworkbookسےبھیstaffنہبدلسکے؛پورافائلردہو،partialsaveنہیں۔ Saveکےبعدstartup/focusfailتوموجودہعامSettings **SAVED**ہیں؛refreshکرکےدیکھیں۔ [PT-43](POS-PHASE4-PART23-URDU.md)۔ Native/custom/photo/record/sessionکیباقیجانچکھلیہے۔
+
 <a id="lesson-32"></a>
 
 ## سبق 32 — Fields: پہلے موجود خانے، پھر اپنے سوال
@@ -710,7 +714,7 @@ Recoveryکیfailedslipپرپرنٹرکوخالیdocumentنہیںدیاجاتا۔
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.100.0 کا متوقع test count 1879 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.101.0 کا متوقع test count 1915 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 

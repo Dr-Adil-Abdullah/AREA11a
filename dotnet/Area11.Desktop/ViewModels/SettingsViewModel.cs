@@ -108,6 +108,8 @@ public sealed class SettingsViewModel : ObservableObject
     private bool _isStatusError;
     private bool _suppressPermissionSave;
     private bool _confirmLabelReset;
+    private bool _settingsAccessAllowed;
+    private bool _cloudAccessAllowed;
 
     public SettingsViewModel(AppServices services, User user, Action? onSaved = null)
     {
@@ -200,7 +202,7 @@ public sealed class SettingsViewModel : ObservableObject
     }
 
     /// <summary>Portion 16: only the owner picks how the program starts and closes.</summary>
-    public bool CanChangeStartup => _user.IsOwner;
+    public bool CanChangeStartup => CanUseSettings && _staffAccessAllowed;
 
     public IdleHourOption? SelectedIdleHour
     {
@@ -249,10 +251,11 @@ public sealed class SettingsViewModel : ObservableObject
 
     public RelayCommand ResetAppIconCommand { get; }
 
-    public bool CanChangeAppIcon => _user.IsOwner;
+    public bool CanChangeAppIcon => CanUseSettings && _staffAccessAllowed;
 
     private void ChooseAppIcon()
     {
+        if (!UpdateSettingsAccess() || !UpdateStaffAccess()) return;
         if (!CanChangeAppIcon) { SetStatus("Only the owner can change the icon.", true); return; }
         var dialog = new OpenFileDialog { Title = "Choose application icon", Filter = "Windows icon (*.ico)|*.ico", CheckFileExists = true };
         if (dialog.ShowDialog() != true) return;
@@ -262,6 +265,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void ResetAppIcon()
     {
+        if (!UpdateSettingsAccess() || !UpdateStaffAccess()) return;
         var result = IconAssets.Reset(_services, _user);
         SetStatus(result.Ok ? "The default window icon is restored." : result.Error ?? "Icon reset failed.", !result.Ok);
     }
@@ -364,7 +368,7 @@ public sealed class SettingsViewModel : ObservableObject
         set => SetProperty(ref _appDisplayName, value);
     }
 
-    public bool CanChangeAppName => _user.IsOwner;
+    public bool CanChangeAppName => CanUseSettings && _staffAccessAllowed;
 
     public string StoreAddress
     {
@@ -705,6 +709,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void Load()
     {
+        if (!UpdateSettingsAccess()) return;
         var settings = _services.Settings;
 
         var photoSize = settings.GetString("appearance.productPhotoSize");
@@ -768,6 +773,13 @@ public sealed class SettingsViewModel : ObservableObject
         LoyaltyVipText = settings.GetLong("loyalty.vipThreshold", 500).ToString(CultureInfo.InvariantCulture);
         RaiseLoyaltySummary();
 
+        LoadCloud();
+    }
+
+    private void LoadCloud()
+    {
+        if (!CanChangeCloud) { ClearCloudData(); return; }
+        var settings = _services.Settings;
         // Cloud sync (F-48): the key is the one value that is shown as a masked label, never as text.
         SyncEnabled = settings.GetBool(SyncService.EnabledKey);
         SyncUrl = settings.GetString(SyncService.UrlKey);
@@ -841,8 +853,56 @@ public sealed class SettingsViewModel : ObservableObject
 
     public void RefreshStaffAccess()
     {
+        var hadSettings = CanUseSettings;
+        if (!UpdateSettingsAccess()) return;
+        if (!hadSettings) Load();
         var wasAllowed = _staffAccessAllowed;
         if (UpdateStaffAccess() && !wasAllowed) LoadUsers();
+    }
+
+    public bool CanUseSettings => _settingsAccessAllowed;
+
+    private bool UpdateSettingsAccess()
+    {
+        var access = _services.Settings.CheckAccess(_user);
+        var changed = SetProperty(ref _settingsAccessAllowed, access.Ok, nameof(CanUseSettings));
+        if (!access.Ok)
+        {
+            ClearCloudData(); ClearStaffData(); LabelRows.Clear();
+            _cloudAccessAllowed = false;
+            _staffAccessAllowed = false;
+            OnPropertyChanged(nameof(CanManageStaff));
+            OnPropertyChanged(nameof(CannotManageStaff));
+            OnPropertyChanged(nameof(IsOwner));
+            OnPropertyChanged(nameof(CanManageFinancialVisibility));
+            OnPropertyChanged(nameof(CanChangeSelectedUser));
+            OnPropertyChanged(nameof(CanChangeAppName));
+            OnPropertyChanged(nameof(CanChangeAppIcon));
+            OnPropertyChanged(nameof(CanChangeStartup));
+            OnPropertyChanged(nameof(CanChangeCloud));
+            SetStatus(access.Error ?? "Settings access is not available. Sign in again or refresh.", true);
+            return false;
+        }
+        var cloud = _services.Settings.CheckCloudAccess(_user).Ok;
+        var cloudChanged = SetProperty(ref _cloudAccessAllowed, cloud, nameof(CanChangeCloud));
+        if (!cloud) ClearCloudData();
+        else if (cloudChanged) LoadCloud();
+        if (changed)
+        {
+            OnPropertyChanged(nameof(CanChangeAppName));
+            OnPropertyChanged(nameof(CanChangeAppIcon));
+            OnPropertyChanged(nameof(CanChangeStartup));
+        }
+        return true;
+    }
+
+    private void ClearCloudData()
+    {
+        SyncKey = SyncUrl = SyncTable = SyncShopId = SyncAutomaticMinutesText = string.Empty;
+        SyncEnabled = SyncAutomatic = false;
+        _syncKeyCleared = false;
+        SyncKeyLabel = "Cloud settings access is required.";
+        SyncSummary = "Cloud settings are hidden until access is verified.";
     }
 
     private bool UpdateStaffAccess()
@@ -855,6 +915,9 @@ public sealed class SettingsViewModel : ObservableObject
             OnPropertyChanged(nameof(CanManageFinancialVisibility));
             OnPropertyChanged(nameof(CanChangeSelectedUser));
             OnPropertyChanged(nameof(IsOwner));
+            OnPropertyChanged(nameof(CanChangeAppName));
+            OnPropertyChanged(nameof(CanChangeAppIcon));
+            OnPropertyChanged(nameof(CanChangeStartup));
         }
         if (!access.Ok)
         {
@@ -930,11 +993,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void Save()
     {
-        if (!_services.Permissions.Can(_user, Modules.Settings))
-        {
-            SetStatus("You are not allowed to change the settings.", true);
-            return;
-        }
+        if (!UpdateSettingsAccess()) return;
 
         var paper = SelectedPaper;
         if (paper is null)
@@ -949,9 +1008,10 @@ public sealed class SettingsViewModel : ObservableObject
             return;
         }
 
-        if (!int.TryParse(SyncAutomaticMinutesText.Trim(), NumberStyles.Integer,
-                CultureInfo.InvariantCulture, out var automaticMinutes)
-            || automaticMinutes is < 5 or > 1440)
+        var automaticMinutes = 15;
+        if (CanChangeCloud && (!int.TryParse(SyncAutomaticMinutesText.Trim(), NumberStyles.Integer,
+                CultureInfo.InvariantCulture, out automaticMinutes)
+            || automaticMinutes is < 5 or > 1440))
         {
             SetStatus("Automatic sync must be a whole number of minutes from 5 to 1440.", true);
             return;
@@ -1159,7 +1219,7 @@ public sealed class SettingsViewModel : ObservableObject
 
             if (!startup.Ok)
             {
-                SetStatus(startup.Error ?? "The startup mode could not be saved.", true);
+                SetStatus("Settings SAVED; startup mode was not saved. Refresh before retrying. " + startup.Error, true);
                 return;
             }
 
@@ -1176,7 +1236,7 @@ public sealed class SettingsViewModel : ObservableObject
 
             if (!focus.Ok)
             {
-                SetStatus(focus.Error ?? "The screen lock could not be saved.", true);
+                SetStatus("Settings SAVED; screen lock was not saved. Refresh before retrying. " + focus.Error, true);
                 return;
             }
 
@@ -1196,7 +1256,7 @@ public sealed class SettingsViewModel : ObservableObject
     // ---------------------------- Cloud sync ----------------------------
 
     /// <summary>Only someone the owner ticked for cloud sync may see or change these four boxes.</summary>
-    public bool CanChangeCloud => _services.Cloud.CanSync(_user);
+    public bool CanChangeCloud => CanUseSettings && _cloudAccessAllowed;
 
     public bool SyncEnabled
     {
@@ -1275,6 +1335,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void ClearSyncKey()
     {
+        if (!UpdateSettingsAccess()) return;
         if (!CanChangeCloud)
         {
             SetStatus("Only a person the owner ticked for cloud sync can change the key.", true);
@@ -1288,8 +1349,9 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void RaiseSyncLabels()
     {
+        if (!CanChangeCloud) { SyncKeyLabel = "Cloud settings access is required."; return; }
         SyncKeyLabel = _services.Cloud.HasKey
-            ? "A key is saved (" + _services.Cloud.KeyLabel + "). Leave the box empty to keep it."
+            ? "A key is saved. Leave the box empty to keep it."
             : "No key is saved yet.";
 
         RaiseSyncSummary();

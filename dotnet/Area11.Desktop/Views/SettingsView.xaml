@@ -20,12 +20,13 @@
 
             <Button DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center"
                     Content="Save settings" Style="{StaticResource PrimaryButton}"
-                    Command="{Binding SaveCommand}" />
+                    Command="{Binding SaveCommand}" IsEnabled="{Binding CanUseSettings}" />
         </DockPanel>
 
         <!-- The shell owns the clickable section row. This headerless template keeps the existing
              eight tab contents and SelectedTabIndex semantics without drawing a second tab strip. -->
-        <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
+        <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}"
+                    Visibility="{Binding CanUseSettings, Converter={StaticResource BoolToVis}}">
             <TabControl.Template>
                 <ControlTemplate TargetType="TabControl">
                     <ContentPresenter x:Name="PART_SelectedContentHost" ContentSource="SelectedContent" />

@@ -388,7 +388,7 @@ VALUES(901, 'Sync medicine', 901, 901, 901);");
         };
         var cloud = Cloud(test, wire, backups);
         var preview = cloud.Preview(TestData.Owner).Value!;
-        Assert.True(test.Settings.SetUiOnly(SyncService.EnabledKey, false).Ok);
+        TestData.SeedRawSetting(test, SyncService.EnabledKey, false);
 
         var refused = cloud.Apply(TestData.Owner, preview.Envelope, confirmed: true);
 
@@ -692,7 +692,7 @@ VALUES(901, 'Sync medicine', 901, 901, 901);");
     {
         using var test = new TestDatabase();
         Configure(test);
-        Assert.True(test.Settings.SetUiOnly(SyncService.EnabledKey, false).Ok);
+        TestData.SeedRawSetting(test, SyncService.EnabledKey, false);
 
         var refused = Cloud(test, new FakeCloud()).Push(TestData.Owner);
 
@@ -706,7 +706,7 @@ VALUES(901, 'Sync medicine', 901, 901, 901);");
     {
         using var test = new TestDatabase();
         Configure(test);
-        Assert.True(test.Settings.SetUiOnly(SyncService.EnabledKey, false).Ok);
+        TestData.SeedRawSetting(test, SyncService.EnabledKey, false);
 
         var status = Cloud(test, new FakeCloud()).Status(TestData.Owner).Value!;
 
@@ -808,14 +808,14 @@ VALUES(901, 'Sync medicine', 901, 901, 901);");
 
     private static void Configure(TestDatabase test, string shopId = "shop-1")
     {
-        // SetUiOnly: the point of these tests is not to audit a settings screen, it is the sync itself.
-        // The switch is ticked here because it is the same door the owner uses (v0.26.0): a shop whose
+        // Direct synthetic fixture seed: this tests sync, not the authorized settings save path.
+        // Seed the enabled state without settings audit noise: a shop whose
         // `sync.enabled` is off is told so, and never sends anything.
-        Assert.True(test.Settings.SetUiOnly(SyncService.EnabledKey, true).Ok);
-        Assert.True(test.Settings.SetUiOnly("sync.url", "https://shop.supabase.co").Ok);
-        Assert.True(test.Settings.SetUiOnly("sync.key", "secret-key-1234-5678").Ok);
-        Assert.True(test.Settings.SetUiOnly("sync.table", "area11_sync").Ok);
-        Assert.True(test.Settings.SetUiOnly("sync.shopId", shopId).Ok);
+        TestData.SeedRawSetting(test, SyncService.EnabledKey, true);
+        TestData.SeedRawSetting(test, "sync.url", "https://shop.supabase.co");
+        TestData.SeedRawSetting(test, "sync.key", "secret-key-1234-5678");
+        TestData.SeedRawSetting(test, "sync.table", "area11_sync");
+        TestData.SeedRawSetting(test, "sync.shopId", shopId);
     }
 
     private static string CloudBody(

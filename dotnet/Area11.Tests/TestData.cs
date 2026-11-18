@@ -103,6 +103,18 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, @role, 1, @at);"
         return new User { Id = id, Name = char.ToUpperInvariant(role[0]) + role[1..], Role = role };
     }
 
+    /// <summary>Test-only direct seeding/corruption, not a production settings authorization door.</summary>
+    public static void SeedRawSetting(TestDatabase test, string key, object? value)
+    {
+        test.Database.Tx(c =>
+        {
+            var changed = test.Database.Execute(c, "UPDATE settings SET value=@value WHERE key=@key;",
+                new { key, value = System.Text.Json.JsonSerializer.Serialize(value) });
+            if (changed != 1) throw new InvalidOperationException("A synthetic setting fixture key was not found.");
+        });
+        test.Settings.Reload();
+    }
+
     /// <summary>A cashier: makes bills, cannot take money out of the shop.</summary>
     public static User Cashier(TestDatabase test) => AddUser(test, "cashier");
 

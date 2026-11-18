@@ -130,7 +130,7 @@ public sealed class WorkbookService
             return ServiceResult<BulkUpdatePreview>.Fail("The owner or an explicitly authorized bulk-data user may preview a bulk update.");
         }
 
-        if (includeSettings && !_permissions.Can(user, Modules.Settings))
+        if (includeSettings && !_settings.CheckAccess(user).Ok)
         {
             return ServiceResult<BulkUpdatePreview>.Fail("Settings changes need Settings permission as well as the separate tick.");
         }
@@ -204,7 +204,7 @@ public sealed class WorkbookService
         }
 
         var hasSettings = preview.Pending.Any(record => record.Table == "settings");
-        if (hasSettings && (!preview.IncludeSettings || !_permissions.Can(user, Modules.Settings)))
+        if (hasSettings && (!preview.IncludeSettings || !_settings.CheckAccess(user).Ok))
         {
             return ServiceResult<BulkUpdateOutcome>.Fail("Settings need their own tick and Settings permission.");
         }
@@ -227,6 +227,7 @@ public sealed class WorkbookService
             var outcome = _db.Tx(connection =>
             {
                 BulkDataAccess.Require(_db, connection, _permissions, _settings, user, mixed: true);
+                if (hasSettings) _settings.RequireBulkWriter(connection, user, preview.SettingValues.Keys);
                 var result = new BulkUpdateOutcome();
 
                 // Validate EVERY record before the first UPDATE. A late stale row or a cross-record

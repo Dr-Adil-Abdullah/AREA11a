@@ -412,9 +412,28 @@ public sealed class StartupCloseTests
 
     // ============================== the rig ==============================
 
+    [Fact]
+    public void InactiveStoredOwnerCannotTouchStartupStores()
+    {
+        using var test = new TestDatabase(); var machine = new FakeAutoStart(); var user = new FakeAutoStart();
+        test.Database.Tx(c => { test.Database.Execute(c, "UPDATE users SET active=0 WHERE id=1;"); });
+        Assert.False(Startup(test, machine, user).SetMode(TestData.Owner, StartupService.Auto, @"C:\Area11\Area11.exe").Ok);
+        Assert.Equal(0, machine.Mutations); Assert.Equal(0, user.Mutations);
+    }
+
+    [Fact]
+    public void ForgedOwnerCannotTouchStartupStores()
+    {
+        using var test = new TestDatabase(); var staff = TestData.Cashier(test); var machine = new FakeAutoStart(); var user = new FakeAutoStart();
+        var forged = new User { Id = staff.Id, Role = "owner" };
+        Assert.False(Startup(test, machine, user).SetMode(forged, StartupService.Auto, @"C:\Area11\Area11.exe").Ok);
+        Assert.Equal(0, machine.Mutations); Assert.Equal(0, user.Mutations);
+    }
+
     private sealed class FakeAutoStart : IAutoStartStore
     {
         public bool Enabled { get; private set; }
+        public int Mutations { get; private set; }
 
         public string? ExePath { get; private set; }
 
@@ -426,6 +445,7 @@ public sealed class StartupCloseTests
 
         public void Enable(string exePath)
         {
+            Mutations++;
             if (ThrowAdmin)
             {
                 throw new UnauthorizedAccessException("access denied");
@@ -442,6 +462,7 @@ public sealed class StartupCloseTests
 
         public void Disable()
         {
+            Mutations++;
             if (ThrowAdmin)
             {
                 throw new UnauthorizedAccessException("access denied");

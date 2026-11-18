@@ -182,6 +182,10 @@ public sealed class SettingsService
             return ServiceResult.Fail($"Unknown setting '{key}'.");
         }
 
+        // Actorless writes are runtime bookkeeping, never arbitrary shop/security/cloud configuration.
+        if (!IsRuntimePreference(key))
+            return ServiceResult.Fail("This setting must use the authorized, audited settings path.");
+
         if (key == AuthService.RecoveryWordKey)
             return ServiceResult.Fail("The recovery word must use the owner-only secret settings path.");
         if (key == FocusGuardService.GuardKey)
@@ -233,6 +237,102 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
             return ServiceResult.Fail("The preference could not be saved.");
         }
     }
+
+    private static bool IsRuntimePreference(string key) => key is
+        "session.lastUser" or "session.lastStart" or "session.lastSeen" or "session.cleanExit"
+        or "session.handoverAt" or "session.handoverBy"
+        or "backup.lastRunAt" or "backup.lastFile" or "backup.lastRestoreSummary"
+        or "sync.lastSyncAt" or "sync.status" or "sync.lastError"
+        or "hardware.testedAt" or "hardware.testedBy" or "hardware.note" or "hardware.testedWidth" or "hardware.passed";
+
+    /// <summary>Fixed local installer/emergency-start paths only, not a general actorless setter.
+    /// Windows registry/CLI trust is separate from in-app session authorization.</summary>
+    internal ServiceResult SaveSystemStartupMode(bool automatic)
+    {
+        var json = JsonSerializer.Serialize(automatic ? StartupService.Auto : StartupService.Manual);
+        try
+        {
+            _db.Tx(connection =>
+            {
+                var old = _db.Scalar(connection, "SELECT value FROM settings WHERE key = @key;", new { key = StartupService.ModeKey })?.ToString();
+                _db.Execute(connection, @"
+INSERT INTO settings(key, value, updated_at) VALUES(@key, @value, @at)
+ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at;",
+                    new { key = StartupService.ModeKey, value = json, at = Clock.Now() });
+                if (automatic)
+                    _audit.Record(connection, null, "Settings", "settings_change", "settings", StartupService.ModeKey, old, json);
+            });
+            lock (_gate) { _cache[StartupService.ModeKey] = json; }
+            return ServiceResult.Success();
+        }
+        catch (Exception exception)
+        {
+            _log.Error("The system startup mode could not be saved.", exception);
+            return ServiceResult.Fail("The startup mode could not be saved.");
+        }
+    }
+
+    /// <summary>Current local Settings reader; this is not proof of an authenticated session.</summary>
+    public ServiceResult CheckAccess(User? actor)
+    {
+        try
+        {
+            _db.Read(connection => RequireWriter(connection, actor, new[] { "store.name" }));
+            return ServiceResult.Success();
+        }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
+        catch (Exception exception)
+        {
+            _log.Error("Settings access could not be checked.", exception);
+            return ServiceResult.Fail("Settings access could not be checked. Refresh and try again.");
+        }
+    }
+
+    public ServiceResult CheckCloudAccess(User? actor)
+    {
+        try
+        {
+            _db.Read(connection => RequireWriter(connection, actor, new[] { SyncService.KeyKey }));
+            return ServiceResult.Success();
+        }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
+        catch (Exception exception)
+        {
+            _log.Error("Cloud settings access could not be checked.", exception);
+            return ServiceResult.Fail("Cloud settings access could not be checked.");
+        }
+    }
+
+    private User RequireWriter(SqliteConnection connection, User? actor, IEnumerable<string> keys)
+    {
+        if (_permissions is null) throw new ValidationException("Settings permissions are not available.");
+        // Resolve identity and the first gate together on this connection. For write callers the
+        // Database.Read used by Can borrows this exact transaction connection.
+        var keyList = keys.ToArray();
+        var module = keyList.Length > 0 && keyList.All(IsCloudConfiguration) ? Modules.Sync
+            : keyList.Length > 0 && keyList.All(IsBackupSchedule) ? Modules.Backup
+            : keyList.Length == 1 && keyList[0] == "printer.autoPrint" ? Modules.Pos : Modules.Settings;
+        var current = SnapshotReadAccess.Require(_db, connection, _permissions, actor, module, Modules.Settings);
+        if (keyList.Any(IsCloudConfiguration) && !_permissions.Can(current, Modules.Sync))
+            throw new ValidationException("You do not have permission to change cloud configuration.");
+        return current;
+    }
+
+    private static bool RequiresOwner(string key) => key.StartsWith("security.", StringComparison.Ordinal)
+        || key is "discount.billBasis" or "appearance.iconFileName" or "brand.appName" or "lockdown.focusGuard"
+            or "startup.mode" or "discount.maxPercentCashier" or "discount.maxPercentManager" or MasterFoundationSettings.ProfitShowMargins;
+
+    // Workbook applies prevalidated settings within its existing ONE transaction, never via nested Tx.
+    internal void RequireBulkWriter(SqliteConnection connection, User? actor, IEnumerable<string> keys)
+    {
+        var keyList = keys.ToArray();
+        RequireWriter(connection, actor, keyList);
+        if (keyList.Any(RequiresOwner)) OwnerAccess.Require(_db, connection, actor);
+    }
+
+    private static bool IsCloudConfiguration(string key) => key is
+        "sync.enabled" or "sync.url" or "sync.key" or "sync.table" or "sync.shopId" or "sync.automaticEnabled" or "sync.automaticMinutes";
+    private static bool IsBackupSchedule(string key) => key is "backup.autoEnabled" or "backup.everyHours" or "backup.keep";
 
     /// <summary>Owner-visible change: old → new is written into the black box.</summary>
     public ServiceResult Set(string key, object? value, User? actor) =>
@@ -297,8 +397,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
             }
         }
 
-        var ownerOnly = values.Keys.Any(key => key is "discount.billBasis" or "appearance.iconFileName"
-            or "brand.appName" or "lockdown.focusGuard" or MasterFoundationSettings.ProfitShowMargins);
+        var ownerOnly = values.Keys.Any(RequiresOwner);
         if (ownerOnly && !IsCurrentOwner(actor))
             return ServiceResult.Fail("Only the active owner can change these protected settings.");
 
@@ -314,6 +413,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         {
             _db.Tx(connection =>
             {
+                var writer = RequireWriter(connection, actor, values.Keys);
                 if (ownerOnly) OwnerAccess.Require(_db, connection, actor);
                 foreach (var pair in values)
                 {
@@ -327,7 +427,12 @@ INSERT INTO settings(key, value, updated_at) VALUES(@key, @value, @at)
 ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at;",
                         new { key = pair.Key, value = json, at = Clock.Now() });
 
-                    _audit.Record(connection, actor, "Settings", "settings_change", "settings", pair.Key, old, json);
+                    // New cloud credentials must never be copied into audit old/new payloads.
+                    // Existing historical audit rows are deliberately not rewritten.
+                    var secret = pair.Key == SyncService.KeyKey;
+                    _audit.Record(connection, writer, "Settings", "settings_change", "settings", pair.Key,
+                        secret ? "{\"secret\":\"not disclosed\"}" : old,
+                        secret ? "{\"secret\":\"changed\"}" : json);
                 }
             });
 
@@ -376,7 +481,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
 
     private bool IsCurrentOwner(User? actor)
     {
-        if (actor?.IsOwner != true) return false;
+        if (actor is not { IsOwner: true, Active: true } || actor.Id <= 0) return false;
         try
         {
             using var connection = _db.Open();

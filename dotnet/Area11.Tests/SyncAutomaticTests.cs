@@ -44,7 +44,7 @@ public sealed class SyncAutomaticTests
         TestData.AddProduct(test);
 
         // Automatic on, but the main switch off: "do not talk to the cloud" wins.
-        Assert.True(test.Settings.SetUiOnly(SyncService.EnabledKey, false).Ok);
+        TestData.SeedRawSetting(test, SyncService.EnabledKey, false);
         EnableAutomatic(test);
 
         var wire = new FakeCloud();
@@ -62,7 +62,7 @@ public sealed class SyncAutomaticTests
         EnableAutomatic(test);
 
         // The address goes missing after setup: the tick must not send half a configuration.
-        Assert.True(test.Settings.SetUiOnly("sync.url", string.Empty).Ok);
+        TestData.SeedRawSetting(test, "sync.url", string.Empty);
 
         var wire = new FakeCloud();
         var cloud = Cloud(test, wire);
@@ -271,13 +271,13 @@ public sealed class SyncAutomaticTests
     {
         using var test = new TestDatabase();
 
-        Assert.True(test.Settings.SetUiOnly(SyncService.AutomaticMinutesKey, 0).Ok);
+        TestData.SeedRawSetting(test, SyncService.AutomaticMinutesKey, 0);
         Assert.Equal(5, Cloud(test, new FakeCloud()).AutomaticMinutes);
 
-        Assert.True(test.Settings.SetUiOnly(SyncService.AutomaticMinutesKey, 9999).Ok);
+        TestData.SeedRawSetting(test, SyncService.AutomaticMinutesKey, 9999);
         Assert.Equal(1440, Cloud(test, new FakeCloud()).AutomaticMinutes);
 
-        Assert.True(test.Settings.SetUiOnly(SyncService.AutomaticMinutesKey, 30).Ok);
+        TestData.SeedRawSetting(test, SyncService.AutomaticMinutesKey, 30);
         Assert.Equal(30, Cloud(test, new FakeCloud()).AutomaticMinutes);
     }
 
@@ -357,16 +357,16 @@ public sealed class SyncAutomaticTests
 
     private static void Configure(TestDatabase test, string shopId = "shop-1")
     {
-        Assert.True(test.Settings.SetUiOnly(SyncService.EnabledKey, true).Ok);
-        Assert.True(test.Settings.SetUiOnly("sync.url", "https://shop.supabase.co").Ok);
-        Assert.True(test.Settings.SetUiOnly("sync.key", "secret-key-1234-5678").Ok);
-        Assert.True(test.Settings.SetUiOnly("sync.table", "area11_sync").Ok);
-        Assert.True(test.Settings.SetUiOnly("sync.shopId", shopId).Ok);
+        TestData.SeedRawSetting(test, SyncService.EnabledKey, true);
+        TestData.SeedRawSetting(test, "sync.url", "https://shop.supabase.co");
+        TestData.SeedRawSetting(test, "sync.key", "secret-key-1234-5678");
+        TestData.SeedRawSetting(test, "sync.table", "area11_sync");
+        TestData.SeedRawSetting(test, "sync.shopId", shopId);
     }
 
     private static void EnableAutomatic(TestDatabase test)
     {
-        Assert.True(test.Settings.SetUiOnly(SyncService.AutomaticEnabledKey, true).Ok);
+        TestData.SeedRawSetting(test, SyncService.AutomaticEnabledKey, true);
     }
 
     private static void Backdate(TestDatabase test)

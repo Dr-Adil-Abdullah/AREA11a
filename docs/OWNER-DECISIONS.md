@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## D-110 / D-115 continuation — Settings checkpoint v0.101.0 (2026-11-10 release label)
+
+نئیbusinesspolicyنہیں:Settingscurrentwriter،POSکااکیلاautoPrint،BackupکےscheduleاورSyncکےcloudconfigurationکیجائزdelegationبرقرار؛Owner-onlysecurity/startup/caps/workbookبھیcurrentOwnerسے۔ Quietsetter17runtimekeysتک،عامconfigurationنہیں۔ آئندہcloudkeyauditمیںاصلold/newkeyنہیں؛پرانےstoredrecordsنہیںبدلے۔ StaleSettings/cloudinputsصاف/hidden؛PIN/recoveryکےموجودہAuthrulesunchanged۔ [Trace](POS-PHASE4-SETTINGS-CURRENT-REVIEW.md)،[PT-43](POS-PHASE4-PART23-URDU.md)۔36facts/1915casesWindowsUNRUN؛حساب/SupplierB/backupA/Blackbox/BookCheckunchanged؛fullSettings/session/field/photo/record/globalPhase4/installerOPEN۔
+
 ## D-110 / D-115 continuation — transaction/permission checkpoint v0.100.0 (2026-11-10 release label)
 
 نئیbusinesspolicyنہیں:جائزgranttransactionمیںغائبنہہو،explicitrevokeکوgrant-readerrorسےrole-defaultallowنہملے۔ کامیابmissingrowپرپراناdefault؛ordinaryOwnerbypassاورالگfinancial/mainبرقرار۔ SameconnectionpermissionReadاورconnection-ownedcommands؛per-instance synchronous serialization،globalconcurrency/sessionproofنہیں۔ [Trace](POS-PHASE4-TRANSACTION-PERMISSION-REVIEW.md)،[PT-42](POS-PHASE4-PART22-URDU.md)۔ SupplierB/backupA/accounting/Blackbox/BookCheckunchanged؛27facts/1879casesWindowsUNRUN؛Settings/session/record/files/cloud/fault/restore/fullPhase4/installerOPEN۔

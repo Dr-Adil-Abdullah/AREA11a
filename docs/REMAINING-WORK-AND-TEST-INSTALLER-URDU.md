@@ -1,4 +1,16 @@
-# باقی کام، GitHub اور test installer — v0.100.0
+# باقی کام، GitHub اور test installer — v0.101.0
+
+## تازہ checkpoint — v0.101.0 Dunlin / حصہ23؛کیا باقی ہے؟
+
+Settingsکیcurrenttransactionalwrites،precisePOS/Backup/Syncdelegation،17runtimequietkeys،fixedsystemstartup،workbookOwnergate،futureCloudkeyauditredactionاورstaleSettings/typedsecretcleanupشامل۔ پرانےauditنہیںبدلے؛حساب/Blackbox/BookCheck/backupformatunchanged۔ [PT-43](POS-PHASE4-PART23-URDU.md)،[trace/حدود](POS-PHASE4-SETTINGS-CURRENT-REVIEW.md)۔ **36نئےfacts؛1915C#cases/WindowsUNRUN۔**
+
+1. اگلاboundedجائزہ:Native/customfields،photo/secret/recordread-write-outputاوراصلsessionidentity؛یہحصہپورےSettings/sessionکاسرٹیفکیٹنہیں۔
+2. Cross-servicefault/rollback/retry/concurrency/locking،Settingscachefreshness/ordering،postcommitfailuresاورduplicateactions۔
+3. Files/cloud،اصلpasswordA/DPAPI/new-PCencryptedrestore،interruptedrestore/rollbackاورالگDB/photos/configintegration۔
+4. اصلWindows1915cases،Desktop/WPFbuild،keyboard/timers/registry/printer/scanner/screenshotsاوراننتائجکیfixes۔
+5. پھرمجازواحدsendabledouble-clicktestinstaller؛shortcuts/startup/upgrade/uninstall/new-PCجانچ۔ **ابھیinstallerنہیںبنا۔**
+
+**تقریباً3–6مزیدمربوطreview/resultچکر**مشروطاندازہ،deadline/upperboundنہیں؛findingsسےبڑھسکتا۔ ہرportiondocs+samebranchcommit/push+actualremoteverifyلازم؛نیچےتاریخیcheckpointہیں۔
 
 ## تازہ checkpoint — v0.100.0 Sanderling / حصہ22؛کیا باقی ہے؟
 

@@ -127,6 +127,9 @@ public sealed class StartupService
             return ServiceResult.Fail("Only the owner can change how Area11 starts and closes.");
         }
 
+        var access = _settings.CheckAccess(actor);
+        if (!access.Ok) return ServiceResult.Fail(access.Error ?? "Current Owner access is required.");
+
         var clean = (mode ?? string.Empty).Trim().ToLowerInvariant();
 
         if (clean is not (Manual or Auto or Protected))
@@ -231,7 +234,7 @@ public sealed class StartupService
                 "Area11 is installed and works - switch auto-start on in Settings, Shop.");
         }
 
-        var saved = _settings.Set(ModeKey, Auto, actor: null);
+        var saved = _settings.SaveSystemStartupMode(automatic: true);
 
         if (!saved.Ok)
         {
@@ -339,7 +342,8 @@ public sealed class StartupService
             DisableQuietly(_machine);
             DisableQuietly(_userStore);
 
-            _settings.SetUiOnly(ModeKey, Manual);
+            var saved = _settings.SaveSystemStartupMode(automatic: false);
+            if (!saved.Ok) return saved;
             _audit.RecordStandalone(null, "Auth", "protection_reset",
                 details: "Startup mode reset to manual by Shift-at-startup recovery.");
 
