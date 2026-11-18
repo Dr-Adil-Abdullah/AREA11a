@@ -16,16 +16,17 @@ public sealed class UnitWindowViewModel : ObservableObject
     private string _statusText = "Add a unit such as injection or ml. Used units cannot be put away.";
     private bool _isStatusError;
     private bool _loading;
+    private bool _lastLoadSucceeded;
+    private bool _canEdit;
 
     public UnitWindowViewModel(AppServices services, User user)
     {
         _services = services;
         _user = user;
-        CanEdit = user.CanManage;
         NewCommand = new RelayCommand(NewUnit);
         SaveCommand = new RelayCommand(Save);
         ToggleCommand = new RelayCommand(Toggle);
-        RefreshCommand = new RelayCommand(Load);
+        RefreshCommand = new RelayCommand(() => Load());
         Load();
     }
 
@@ -48,9 +49,18 @@ public sealed class UnitWindowViewModel : ObservableObject
     public RelayCommand ToggleCommand { get; }
     public RelayCommand RefreshCommand { get; }
 
-    public bool CanEdit { get; }
+    public bool CanEdit
+    {
+        get => _canEdit;
+        private set
+        {
+            if (!SetProperty(ref _canEdit, value)) return;
+            OnPropertyChanged(nameof(IsReadOnly));
+            OnPropertyChanged(nameof(CanToggle));
+        }
+    }
     public bool IsReadOnly => !CanEdit;
-    public bool HasNoUnits => Units.Count == 0;
+    public bool HasNoUnits => _lastLoadSucceeded && Units.Count == 0;
     public bool CanToggle => CanEdit && SelectedUnit is not null;
     public string ToggleLabel => SelectedUnit is { Active: false } ? "Bring back" : "Put away";
 
@@ -59,6 +69,7 @@ public sealed class UnitWindowViewModel : ObservableObject
         get => _selectedUnit;
         set
         {
+            if (!_loading && value is not null && (!RefreshAccess() || !_lastLoadSucceeded || !Units.Contains(value))) return;
             if (!SetProperty(ref _selectedUnit, value))
             {
                 return;
@@ -104,15 +115,17 @@ public sealed class UnitWindowViewModel : ObservableObject
         private set => SetProperty(ref _isStatusError, value);
     }
 
-    private void Load()
+    private bool Load()
     {
+        if (!RefreshAccess()) return false;
         var result = _services.Products.GetUnits(activeOnly: false);
         if (!result.Ok || result.Value is null)
         {
-            SetStatus(result.Error ?? "Units could not be loaded.", true);
-            return;
+            ClearManager(result.Error ?? "Units could not be loaded.");
+            return false;
         }
 
+        if (!RefreshAccess()) return false;
         var selectedId = SelectedUnit?.Id;
         _loading = true;
         try
@@ -128,14 +141,18 @@ public sealed class UnitWindowViewModel : ObservableObject
         {
             _loading = false;
         }
+        _lastLoadSucceeded = true;
+        if (!RefreshAccess()) return false;
         Name = SelectedUnit?.Name ?? string.Empty;
         OrderText = SelectedUnit?.SortOrder.ToString() ?? "0";
         WholeOnly = SelectedUnit?.WholeOnly ?? false;
         OnPropertyChanged(nameof(HasNoUnits));
+        return true;
     }
 
     private void NewUnit()
     {
+        if (!RequireEdit()) return;
         SelectedUnit = null;
         Name = string.Empty;
         OrderText = ((Units.Select(row => row.SortOrder).DefaultIfEmpty(0).Max() + 10)).ToString();
@@ -145,40 +162,43 @@ public sealed class UnitWindowViewModel : ObservableObject
 
     private void Save()
     {
+        if (!RequireEdit()) return;
         if (!int.TryParse(OrderText, out var order) || order < 0)
         {
             SetStatus("Order must be a whole number of zero or more.", true);
             return;
         }
 
+        int id;
         if (SelectedUnit is null)
         {
             var added = _services.Products.AddUnit(_user, Name, order, WholeOnly);
             if (!added.Ok)
             {
+                if (!RefreshAccess()) return;
                 SetStatus(added.Error ?? "The unit could not be saved.", true);
                 return;
             }
-            Load();
-            SelectedUnit = Units.FirstOrDefault(row => row.Id == added.Value);
+            id = added.Value;
         }
         else
         {
-            var updated = _services.Products.UpdateUnit(_user, SelectedUnit.Id, Name, order, WholeOnly);
+            id = SelectedUnit.Id;
+            var updated = _services.Products.UpdateUnit(_user, id, Name, order, WholeOnly);
             if (!updated.Ok)
             {
+                if (!RefreshAccess()) return;
                 SetStatus(updated.Error ?? "The unit could not be saved.", true);
                 return;
             }
-            var id = SelectedUnit.Id;
-            Load();
-            SelectedUnit = Units.FirstOrDefault(row => row.Id == id);
         }
+        if (!ReloadAfterWrite(id)) return;
         SetStatus("Unit saved. Current product labels use the canonical name; stock quantities are unchanged. The whole-unit rule follows the unit, not its name.", false);
     }
 
     private void Toggle()
     {
+        if (!RequireEdit()) return;
         if (SelectedUnit is null)
         {
             SetStatus("Pick a unit first.", true);
@@ -189,12 +209,70 @@ public sealed class UnitWindowViewModel : ObservableObject
         var result = _services.Products.SetUnitActive(_user, id, bringBack);
         if (!result.Ok)
         {
+            if (!RefreshAccess()) return;
             SetStatus(result.Error ?? "The unit could not be changed.", true);
             return;
         }
-        Load();
-        SelectedUnit = Units.FirstOrDefault(row => row.Id == id);
+        if (!ReloadAfterWrite(id)) return;
         SetStatus(bringBack ? "Unit brought back." : "Unit put away; no product or history was deleted.", false);
+    }
+
+    /// <summary>Access-only tick. Regrant requires explicit Refresh, not stale input restoration.</summary>
+    public bool RefreshAccess()
+    {
+        var access = _services.Products.CheckCatalogAccess(_user);
+        if (!access.Ok)
+        {
+            ClearManager(access.Error ?? "Current Products access is required.");
+            return false;
+        }
+        CanEdit = _lastLoadSucceeded && access.Value;
+        return true;
+    }
+
+    private bool RequireEdit()
+    {
+        if (!RefreshAccess()) return false;
+        if (CanEdit) return true;
+        SetStatus("Current Products Owner/Manager access and an explicit successful Refresh are required before editing.", true);
+        return false;
+    }
+
+    private void ClearManager(string error)
+    {
+        CanEdit = false;
+        _lastLoadSucceeded = false;
+        _loading = true;
+        try
+        {
+            SelectedUnit = null;
+            Units.Clear();
+            Name = OrderText = string.Empty;
+            WholeOnly = false;
+            OnPropertyChanged(nameof(HasNoUnits));
+        }
+        finally { _loading = false; }
+        SetStatus(error + " Unsaved unit inputs were discarded. Refresh and review before editing.", true);
+    }
+
+    private bool ReloadAfterWrite(int id)
+    {
+        try
+        {
+            if (Load())
+            {
+                SelectedUnit = Units.FirstOrDefault(row => row.Id == id);
+                if (SelectedUnit?.Id == id && RefreshAccess() && _lastLoadSucceeded) return true;
+            }
+            ClearManager("The saved unit selection could not be reloaded.");
+        }
+        catch (Exception exception)
+        {
+            _services.Log.Error("Unit change was saved but could not reload.", exception);
+            ClearManager("The saved unit could not be reloaded.");
+        }
+        SetStatus("SAVED. The unit change was stored, but could not reload. Do not repeat the action; refresh and review first.", true);
+        return false;
     }
 
     private void SetStatus(string text, bool error)

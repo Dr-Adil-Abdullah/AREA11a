@@ -7964,9 +7964,10 @@ def check_record_write_current_boundaries():
     need(update, [gate, 'var result = SaveCustomer(connection, actor, input, name, phone, category);', 'if (!result.Ok || customValues is null) return result;'], 'customer null-map writer')
     if gate in update and update.index(gate) > update.index('var result = SaveCustomer('):
         FAILURES.append('Customer current writer must precede SaveCustomer even without optional answers')
-    if product.count('actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage') != 3:
+    record_writes = product.split('public ServiceResult<List<Category>> GetCategories(', 1)[0]
+    if record_writes.count('actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage') != 3:
         FAILURES.append('All three reviewed product writers need active-positive manager preflight')
-    if product.count('actor = RequireProductWriter(connection, actor);') != 3:
+    if record_writes.count('actor = RequireProductWriter(connection, actor);') != 3:
         FAILURES.append('Create/Update/Deactivate must use stored actor for checks and audit')
     for start, end in (('public ServiceResult<int> Create(', 'public IReadOnlyList<string> MissingRequiredLabels('),
                        ('public ServiceResult Update(', 'public ServiceResult Deactivate('),
@@ -7976,6 +7977,8 @@ def check_record_write_current_boundaries():
         pos = body.find('actor = RequireProductWriter(connection, actor);')
         first_write = body.find('_db.Execute(connection,')
         if first_write >= 0 and pos > first_write: FAILURES.append('Product stored writer follows mutation: ' + start)
+    writer = product.split('private User RequireProductWriter(', 1)[-1].split('private void RequireStoredCostEdit(', 1)[0]
+    need(writer, ['SnapshotReadAccess.Require(_db, connection, _permissions, actor, Modules.Products)', 'if (!current.CanManage)'], 'shared product writer')
     need(product, ['SnapshotReadAccess.Require(_db, connection, _permissions, actor, Modules.Products)',
                    'if (!current.CanManage)', 'if (id <= 0) throw new ValidationException',
                    'if (patch.CostPaisa is not null) RequireStoredCostEdit(connection, actor);',
@@ -8022,6 +8025,83 @@ def check_record_write_current_boundaries():
                  'RevokedCustomersGrantBlocksNullMapCustomerEdit', 'NonCostCorePatchRemainsAllowedWithoutCostGrant',
                  'NewProductTypedCostWorkflowDoesNotRequireStoredCostGrant'], 'regressions')
     REPORT.append('Phase4 portion27/stable5,6,7: current customer null-map writer,pinned editor;stored product writer/audit,parent checks,fresh stored-cost gate,stale modal cleanup/SAVED;36 facts/2045cases UNRUN,not authenticated session/CAS/WPF/globalPhase4 proof')
+
+def check_catalog_current_boundaries():
+    """Portion28 lexical contracts. Not C# transaction/session or WPF execution."""
+    product = (DOTNET / 'Area11.Core/Services/ProductService.cs').read_text()
+    methods = ('AddCategory', 'UpdateCategory', 'SetCategoryActive', 'AddCompany', 'UpdateCompany',
+               'SetCompanyActive', 'AddFormula', 'AddBrand', 'UpdateFormula', 'UpdateBrand',
+               'SetFormulaActive', 'SetBrandActive', 'SetBrandCompany', 'AddUnit', 'UpdateUnit', 'SetUnitActive')
+    for method in methods:
+        match = re.search(r'    public ServiceResult(?:<int>)? ' + method + r'\(', product)
+        if not match:
+            FAILURES.append('Catalog writer missing ' + method); continue
+        body = product[match.start():].split('\n    public ', 1)[0]
+        for token in ('actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage',
+                      'return _db.Tx(connection =>\n            {\n                actor = RequireProductWriter(connection, actor);',
+                      'catch (ValidationException exception)'):
+            if token not in body: FAILURES.append('Current catalog writer ' + method + ' missing ' + token)
+        generic = body.split('catch (Exception exception)',1)[-1]
+        if '+ exception.Message' in generic: FAILURES.append('Catalog provider details exposed: ' + method)
+    capability = product.split('public ServiceResult<bool> CheckCatalogAccess(',1)[-1].split('public ServiceResult<List<Category>> GetCategories',1)[0]
+    for token in ('SnapshotReadAccess.Require(_db, connection, _permissions, actor, Modules.Products)',
+                  'ServiceResult<bool>.Success(reader.CanManage)', 'Catalog access could not be checked.'):
+        if token not in capability: FAILURES.append('Catalog current reader/capability missing ' + token)
+    if 'PurchaseCost' in capability or 'ProfitShowMargins' in capability:
+        FAILURES.append('Catalog access must not gain financial requirements')
+    for name, actions, cleanup in (
+        ('Catalog', ('NewCategory','SaveCategory','ToggleCategory','NewCompany','SaveCompany','ToggleCompany',
+                     'NewFormula','SaveFormula','ToggleFormula','NewBrand','SaveBrand','ToggleBrand','ClearBrandCompany'),
+         ('SelectedCategory = null;', 'SelectedCompany = null;', 'SelectedFormula = null;', 'SelectedBrand = null;',
+          'SelectedParent = null;', 'SelectedBrandCompany = null;', '_brandCompanyId = null;',
+          'Categories.Clear(); ParentOptions.Clear(); Companies.Clear();', 'Formulas.Clear(); Brands.Clear(); ActiveCompanies.Clear();',
+          'CategoryName = CompanyName = FormulaName = BrandName = string.Empty;',
+          'CategoryOrderText = CompanyOrderText = FormulaOrderText = BrandOrderText = string.Empty;', 'Catalogs not loaded')),
+        ('Unit', ('NewUnit','Save','Toggle'), ('SelectedUnit = null;', 'Units.Clear();', 'Name = OrderText = string.Empty;', 'WholeOnly = false;'))):
+        vm = (DOTNET / ('Area11.Desktop/ViewModels/' + name + 'WindowViewModel.cs')).read_text()
+        for token in ('CanEdit = user.CanManage;', 'public bool CanEdit { get; }'):
+            if token in vm: FAILURES.append('Catalog stale supplied-role capability: ' + name)
+        for method in actions:
+            if 'void ' + method + '()\n    {\n        if (!RequireEdit()) return;' not in vm:
+                FAILURES.append('Catalog current UI action missing: ' + name + '.' + method)
+        for token in ('_services.Products.CheckCatalogAccess(_user)', 'CanEdit = _lastLoadSucceeded && access.Value;',
+                      'if (!RefreshAccess()) return false;', '_lastLoadSucceeded &&', '!_lastLoadSucceeded || !',
+                      'SAVED. The ' + ('catalog' if name == 'Catalog' else 'unit') + ' change was stored, but could not reload.',
+                      'Do not repeat the action; refresh and review first.'):
+            if token not in vm: FAILURES.append('Catalog current UI lifecycle ' + name + ': ' + token)
+        names = ('Categories', 'Companies', 'Formulas', 'Brands') if name == 'Catalog' else ('Units',)
+        for rows in names:
+            if 'public bool HasNo' + rows + ' => _lastLoadSucceeded && ' + rows + '.Count == 0;' not in vm:
+                FAILURES.append('Failed catalog read must not be certified empty: ' + rows)
+        clear = vm.split('private void ClearManager(',1)[-1].split('private bool ReloadAfterWrite(',1)[0]
+        for token in ('CanEdit = false;', '_lastLoadSucceeded = false;', '_loading = true;', '_loading = false;') + cleanup:
+            if token not in clear: FAILURES.append('Catalog denial cleanup ' + name + ': ' + token)
+        refresh = vm.split('public bool RefreshAccess()',1)[-1].split('private bool RequireEdit()',1)[0]
+        if 'Load(' in refresh: FAILURES.append('Access-only timer must preserve allowed authored edits: ' + name)
+        window = (DOTNET / ('Area11.Desktop/Views/' + name + 'Window.xaml.cs')).read_text()
+        for token in ('TimeSpan.FromSeconds(3)', 'viewModel.RefreshAccess()', 'accessTimer.Start();', 'Closed += (_, _) => accessTimer.Stop();'):
+            if token not in window: FAILURES.append('Catalog timer lifetime ' + name + ': ' + token)
+    catalog = (DOTNET / 'Area11.Desktop/ViewModels/CatalogWindowViewModel.cs').read_text()
+    unit = (DOTNET / 'Area11.Desktop/ViewModels/UnitWindowViewModel.cs').read_text()
+    if catalog.count('if (ReloadAfterWrite(') != 9: FAILURES.append('All catalog save/toggle/partial-brand paths need committed-result reload verdict')
+    if unit.count('if (!ReloadAfterWrite(id)) return;') != 2: FAILURES.append('Both unit write paths need committed-result verdict')
+    for token in ('categoryId is null || SelectedCategory?.Id == categoryId', 'companyId is null || SelectedCompany?.Id == companyId',
+                  'formulaId is null || SelectedFormula?.Id == formulaId', 'brandId is null || SelectedBrand?.Id == brandId',
+                  'SAVED. Brand saved, but the company link failed:',
+                  'the company link failed and the lists could not reload. Do not repeat the whole save;'):
+        if token not in catalog: FAILURES.append('Catalog postcommit target/partial verdict missing ' + token)
+    if 'SelectedUnit?.Id == id && RefreshAccess() && _lastLoadSucceeded' not in unit:
+        FAILURES.append('Unit postcommit target/access must match')
+    tests = (DOTNET / 'Area11.Tests/CatalogCurrentAccessTests.cs').read_text()
+    if tests.count('[Fact]') != 9 or tests.count('[InlineData(') != 40:
+        FAILURES.append('Catalog source regressions need9facts+40inlinecases=49')
+    for name in ('AllSixteenWritersRejectInvalidCurrentAuthorityWithoutMutation',
+                 'EachWriterAuditsCurrentStoredManagerNameWithoutFinancialGrants',
+                 'EachWriterRollsBackOnAuditFaultWithoutProviderDisclosure',
+                 'UnitRenameAuditFaultPreservesLinkedBaseAndStrengthLabelsAndBatchQuantity',
+                 'BrandNameCommitAndCompanyLinkRemainSeparateTransactions'):
+        if 'void ' + name + '(' not in tests: FAILURES.append('Catalog regression missing ' + name)
+    REPORT.append('Phase4 portion28/stable5,6,7,24,25:16 current catalog/unit writers and stored audits;current reader/edit capability,stale forms/failed lists cleanup,access-only timers,explicit refresh,SAVED/partial-brand verdicts;49cases/2094total UNRUN,not session/CAS/WPF/runtime certification')
 
 def main() -> int:
     quiet = "--quiet" in sys.argv
@@ -8115,6 +8195,7 @@ def main() -> int:
     check_custom_value_current_boundaries()
     check_custom_manager_current_boundaries()
     check_record_write_current_boundaries()
+    check_catalog_current_boundaries()
     check_csharp_grammar()
 
     if not quiet:

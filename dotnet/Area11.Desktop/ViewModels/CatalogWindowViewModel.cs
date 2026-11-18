@@ -13,6 +13,8 @@ public sealed class CatalogWindowViewModel : ObservableObject
     private readonly AppServices _services;
     private readonly User _user;
     private bool _loading;
+    private bool _lastLoadSucceeded;
+    private bool _canEdit;
     private Category? _selectedCategory;
     private Company? _selectedCompany;
     private GenericFormula? _selectedFormula;
@@ -39,7 +41,6 @@ public sealed class CatalogWindowViewModel : ObservableObject
     {
         _services = services;
         _user = user;
-        CanEdit = user.CanManage;
 
         NewCategoryCommand = new RelayCommand(NewCategory);
         SaveCategoryCommand = new RelayCommand(SaveCategory);
@@ -111,7 +112,19 @@ public sealed class CatalogWindowViewModel : ObservableObject
 
     public RelayCommand RefreshCommand { get; }
 
-    public bool CanEdit { get; }
+    public bool CanEdit
+    {
+        get => _canEdit;
+        private set
+        {
+            if (!SetProperty(ref _canEdit, value)) return;
+            OnPropertyChanged(nameof(IsReadOnly));
+            OnPropertyChanged(nameof(CanToggleCategory));
+            OnPropertyChanged(nameof(CanToggleCompany));
+            OnPropertyChanged(nameof(CanToggleFormula));
+            OnPropertyChanged(nameof(CanToggleBrand));
+        }
+    }
 
     public bool IsReadOnly => !CanEdit;
 
@@ -120,6 +133,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
         get => _selectedCategory;
         set
         {
+            if (!_loading && value is not null && (!RefreshAccess() || !_lastLoadSucceeded || !Categories.Contains(value))) return;
             if (!SetProperty(ref _selectedCategory, value))
             {
                 return;
@@ -141,6 +155,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
         get => _selectedCompany;
         set
         {
+            if (!_loading && value is not null && (!RefreshAccess() || !_lastLoadSucceeded || !Companies.Contains(value))) return;
             if (!SetProperty(ref _selectedCompany, value))
             {
                 return;
@@ -162,6 +177,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
         get => _selectedFormula;
         set
         {
+            if (!_loading && value is not null && (!RefreshAccess() || !_lastLoadSucceeded || !Formulas.Contains(value))) return;
             if (!SetProperty(ref _selectedFormula, value))
             {
                 return;
@@ -183,6 +199,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
         get => _selectedBrand;
         set
         {
+            if (!_loading && value is not null && (!RefreshAccess() || !_lastLoadSucceeded || !Brands.Contains(value))) return;
             if (!SetProperty(ref _selectedBrand, value))
             {
                 return;
@@ -295,13 +312,13 @@ public sealed class CatalogWindowViewModel : ObservableObject
         private set => SetProperty(ref _isStatusError, value);
     }
 
-    public bool HasNoCategories => Categories.Count == 0;
+    public bool HasNoCategories => _lastLoadSucceeded && Categories.Count == 0;
 
-    public bool HasNoCompanies => Companies.Count == 0;
+    public bool HasNoCompanies => _lastLoadSucceeded && Companies.Count == 0;
 
-    public bool HasNoFormulas => Formulas.Count == 0;
+    public bool HasNoFormulas => _lastLoadSucceeded && Formulas.Count == 0;
 
-    public bool HasNoBrands => Brands.Count == 0;
+    public bool HasNoBrands => _lastLoadSucceeded && Brands.Count == 0;
 
     public bool CanToggleCategory => CanEdit && SelectedCategory is not null;
 
@@ -321,34 +338,36 @@ public sealed class CatalogWindowViewModel : ObservableObject
 
     private bool Load(int? selectCategory = null, int? selectCompany = null, int? selectFormula = null, int? selectBrand = null)
     {
+        if (!RefreshAccess()) return false;
         var categoryResult = _services.Products.GetCategories(activeOnly: false);
         if (!categoryResult.Ok || categoryResult.Value is null)
         {
-            SetStatus(categoryResult.Error ?? "Categories could not be loaded.", true);
+            ClearManager(categoryResult.Error ?? "Categories could not be loaded.");
             return false;
         }
 
         var companyResult = _services.Products.GetCompanies(activeOnly: false);
         if (!companyResult.Ok || companyResult.Value is null)
         {
-            SetStatus(companyResult.Error ?? "Companies could not be loaded.", true);
+            ClearManager(companyResult.Error ?? "Companies could not be loaded.");
             return false;
         }
 
         var formulaResult = _services.Products.GetFormulas(activeOnly: false);
         if (!formulaResult.Ok || formulaResult.Value is null)
         {
-            SetStatus(formulaResult.Error ?? "Salts could not be loaded.", true);
+            ClearManager(formulaResult.Error ?? "Salts could not be loaded.");
             return false;
         }
 
         var brandResult = _services.Products.GetBrands(activeOnly: false);
         if (!brandResult.Ok || brandResult.Value is null)
         {
-            SetStatus(brandResult.Error ?? "Brands could not be loaded.", true);
+            ClearManager(brandResult.Error ?? "Brands could not be loaded.");
             return false;
         }
 
+        if (!RefreshAccess()) return false;
         _loading = true;
         try
         {
@@ -408,6 +427,8 @@ public sealed class CatalogWindowViewModel : ObservableObject
             _loading = false;
         }
 
+        _lastLoadSucceeded = true;
+        if (!RefreshAccess()) return false;
         // The selection was assigned while loading, so fill the editors once after the guard lifts.
         FillCategoryEditor(SelectedCategory);
         FillCompanyEditor(SelectedCompany);
@@ -462,6 +483,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
 
     private void NewCategory()
     {
+        if (!RequireEdit()) return;
         SelectedCategory = null;
         CategoryName = string.Empty;
         SelectedParent = ParentOptions.FirstOrDefault();
@@ -471,6 +493,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
 
     private void SaveCategory()
     {
+        if (!RequireEdit()) return;
         if (!TryOrder(CategoryOrderText, out var order))
         {
             SetStatus("Category order must be a whole number.", true);
@@ -484,6 +507,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
             var added = _services.Products.AddCategory(_user, CategoryName, parentId, order);
             if (!added.Ok)
             {
+                if (!RefreshAccess()) return;
                 SetStatus(added.Error ?? "The category could not be saved.", true);
                 return;
             }
@@ -496,12 +520,13 @@ public sealed class CatalogWindowViewModel : ObservableObject
             var updated = _services.Products.UpdateCategory(_user, id, CategoryName, parentId, order);
             if (!updated.Ok)
             {
+                if (!RefreshAccess()) return;
                 SetStatus(updated.Error ?? "The category could not be saved.", true);
                 return;
             }
         }
 
-        if (Load(id, null, null, null))
+        if (ReloadAfterWrite(id, null, null, null))
         {
             SetStatus("Category saved. Product and report reads use the current name.", false);
         }
@@ -509,6 +534,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
 
     private void ToggleCategory()
     {
+        if (!RequireEdit()) return;
         if (SelectedCategory is null)
         {
             SetStatus("Pick a category first.", true);
@@ -521,11 +547,12 @@ public sealed class CatalogWindowViewModel : ObservableObject
         var result = _services.Products.SetCategoryActive(_user, id, bringBack);
         if (!result.Ok)
         {
+            if (!RefreshAccess()) return;
             SetStatus(result.Error ?? "The category could not be changed.", true);
             return;
         }
 
-        if (Load(id, null, null, null))
+        if (ReloadAfterWrite(id, null, null, null))
         {
             SetStatus(bringBack
                 ? name + " is back. Former product links were not recreated."
@@ -535,6 +562,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
 
     private void NewCompany()
     {
+        if (!RequireEdit()) return;
         SelectedCompany = null;
         CompanyName = string.Empty;
         CompanyOrderText = NextOrder(Companies.Select(row => row.SortOrder));
@@ -543,6 +571,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
 
     private void SaveCompany()
     {
+        if (!RequireEdit()) return;
         if (!TryOrder(CompanyOrderText, out var order))
         {
             SetStatus("Company order must be a whole number.", true);
@@ -555,6 +584,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
             var added = _services.Products.AddCompany(_user, CompanyName, order);
             if (!added.Ok)
             {
+                if (!RefreshAccess()) return;
                 SetStatus(added.Error ?? "The company could not be saved.", true);
                 return;
             }
@@ -567,12 +597,13 @@ public sealed class CatalogWindowViewModel : ObservableObject
             var updated = _services.Products.UpdateCompany(_user, id, CompanyName, order);
             if (!updated.Ok)
             {
+                if (!RefreshAccess()) return;
                 SetStatus(updated.Error ?? "The company could not be saved.", true);
                 return;
             }
         }
 
-        if (Load(null, id, null, null))
+        if (ReloadAfterWrite(null, id, null, null))
         {
             SetStatus("Company saved. Phone, notes and medical-rep fields were not rewritten.", false);
         }
@@ -580,6 +611,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
 
     private void ToggleCompany()
     {
+        if (!RequireEdit()) return;
         if (SelectedCompany is null)
         {
             SetStatus("Pick a company first.", true);
@@ -592,11 +624,12 @@ public sealed class CatalogWindowViewModel : ObservableObject
         var result = _services.Products.SetCompanyActive(_user, id, bringBack);
         if (!result.Ok)
         {
+            if (!RefreshAccess()) return;
             SetStatus(result.Error ?? "The company could not be changed.", true);
             return;
         }
 
-        if (Load(null, id, null, null))
+        if (ReloadAfterWrite(null, id, null, null))
         {
             SetStatus(bringBack
                 ? name + " is back. Former product links were not recreated."
@@ -606,6 +639,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
 
     private void NewFormula()
     {
+        if (!RequireEdit()) return;
         SelectedFormula = null;
         FormulaName = string.Empty;
         FormulaOrderText = NextOrder(Formulas.Select(row => row.SortOrder));
@@ -614,6 +648,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
 
     private void SaveFormula()
     {
+        if (!RequireEdit()) return;
         if (!TryOrder(FormulaOrderText, out var order))
         {
             SetStatus("Salt order must be a whole number.", true);
@@ -626,6 +661,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
             var added = _services.Products.AddFormula(_user, FormulaName, order);
             if (!added.Ok)
             {
+                if (!RefreshAccess()) return;
                 SetStatus(added.Error ?? "The salt could not be saved.", true);
                 return;
             }
@@ -638,12 +674,13 @@ public sealed class CatalogWindowViewModel : ObservableObject
             var updated = _services.Products.UpdateFormula(_user, id, FormulaName, order);
             if (!updated.Ok)
             {
+                if (!RefreshAccess()) return;
                 SetStatus(updated.Error ?? "The salt could not be saved.", true);
                 return;
             }
         }
 
-        if (Load(null, null, id, null))
+        if (ReloadAfterWrite(null, null, id, null))
         {
             SetStatus("Salt saved. Linked products show the current spelling; typed text elsewhere was not rewritten.", false);
         }
@@ -651,6 +688,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
 
     private void ToggleFormula()
     {
+        if (!RequireEdit()) return;
         if (SelectedFormula is null)
         {
             SetStatus("Pick a salt first.", true);
@@ -663,11 +701,12 @@ public sealed class CatalogWindowViewModel : ObservableObject
         var result = _services.Products.SetFormulaActive(_user, id, bringBack);
         if (!result.Ok)
         {
+            if (!RefreshAccess()) return;
             SetStatus(result.Error ?? "The salt could not be changed.", true);
             return;
         }
 
-        if (Load(null, null, id, null))
+        if (ReloadAfterWrite(null, null, id, null))
         {
             SetStatus(bringBack
                 ? name + " is back. Former product links were not recreated."
@@ -677,6 +716,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
 
     private void NewBrand()
     {
+        if (!RequireEdit()) return;
         SelectedBrand = null;
         _brandCompanyId = null;
         SelectedBrandCompany = null;
@@ -687,6 +727,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
 
     private void SaveBrand()
     {
+        if (!RequireEdit()) return;
         if (!TryOrder(BrandOrderText, out var order))
         {
             SetStatus("Brand order must be a whole number.", true);
@@ -699,6 +740,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
             var added = _services.Products.AddBrand(_user, BrandName, order);
             if (!added.Ok)
             {
+                if (!RefreshAccess()) return;
                 SetStatus(added.Error ?? "The brand could not be saved.", true);
                 return;
             }
@@ -711,6 +753,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
             var updated = _services.Products.UpdateBrand(_user, id, BrandName, order);
             if (!updated.Ok)
             {
+                if (!RefreshAccess()) return;
                 SetStatus(updated.Error ?? "The brand could not be saved.", true);
                 return;
             }
@@ -722,16 +765,20 @@ public sealed class CatalogWindowViewModel : ObservableObject
             var linked = _services.Products.SetBrandCompany(_user, id, wantCompanyId);
             if (!linked.Ok)
             {
-                if (Load(null, null, null, id))
+                if (ReloadAfterWrite(null, null, null, id))
                 {
-                    SetStatus("Brand saved, but the company link failed: " + (linked.Error ?? "unknown error"), true);
+                    SetStatus("SAVED. Brand saved, but the company link failed: " + (linked.Error ?? "unknown error"), true);
+                }
+                else
+                {
+                    SetStatus("SAVED. Brand saved, but the company link failed and the lists could not reload. Do not repeat the whole save; refresh and review the name and link separately.", true);
                 }
 
                 return;
             }
         }
 
-        if (Load(null, null, null, id))
+        if (ReloadAfterWrite(null, null, null, id))
         {
             SetStatus("Brand saved. Linked products show the current spelling; typed text elsewhere was not rewritten.", false);
         }
@@ -739,12 +786,14 @@ public sealed class CatalogWindowViewModel : ObservableObject
 
     private void ClearBrandCompany()
     {
+        if (!RequireEdit()) return;
         SelectedBrandCompany = null;
         SetStatus("Company cleared from this form. Save the brand to keep it that way.", false);
     }
 
     private void ToggleBrand()
     {
+        if (!RequireEdit()) return;
         if (SelectedBrand is null)
         {
             SetStatus("Pick a brand first.", true);
@@ -757,16 +806,86 @@ public sealed class CatalogWindowViewModel : ObservableObject
         var result = _services.Products.SetBrandActive(_user, id, bringBack);
         if (!result.Ok)
         {
+            if (!RefreshAccess()) return;
             SetStatus(result.Error ?? "The brand could not be changed.", true);
             return;
         }
 
-        if (Load(null, null, null, id))
+        if (ReloadAfterWrite(null, null, null, id))
         {
             SetStatus(bringBack
                 ? name + " is back. Former product links were not recreated."
                 : name + " is put away. Product links were removed; typed brand text was kept.", false);
         }
+    }
+
+    /// <summary>Periodic access-only check; never reload/overwrite an allowed authored edit.</summary>
+    public bool RefreshAccess()
+    {
+        var access = _services.Products.CheckCatalogAccess(_user);
+        if (!access.Ok)
+        {
+            ClearManager(access.Error ?? "Current Products access is required.");
+            return false;
+        }
+        CanEdit = _lastLoadSucceeded && access.Value;
+        return true;
+    }
+
+    private bool RequireEdit()
+    {
+        if (!RefreshAccess()) return false;
+        if (CanEdit) return true;
+        SetStatus("Current Products Owner/Manager access and an explicit successful Refresh are required before editing.", true);
+        return false;
+    }
+
+    private void ClearManager(string error)
+    {
+        CanEdit = false;
+        _lastLoadSucceeded = false;
+        _loading = true;
+        try
+        {
+            SelectedCategory = null;
+            SelectedCompany = null;
+            SelectedFormula = null;
+            SelectedBrand = null;
+            SelectedParent = null;
+            SelectedBrandCompany = null;
+            _brandCompanyId = null;
+            Categories.Clear(); ParentOptions.Clear(); Companies.Clear();
+            Formulas.Clear(); Brands.Clear(); ActiveCompanies.Clear();
+            CategoryName = CompanyName = FormulaName = BrandName = string.Empty;
+            CategoryOrderText = CompanyOrderText = FormulaOrderText = BrandOrderText = string.Empty;
+            CategoryCountText = CompanyCountText = FormulaCountText = BrandCountText = "Catalogs not loaded";
+            OnPropertyChanged(nameof(HasNoCategories));
+            OnPropertyChanged(nameof(HasNoCompanies));
+            OnPropertyChanged(nameof(HasNoFormulas));
+            OnPropertyChanged(nameof(HasNoBrands));
+        }
+        finally { _loading = false; }
+        SetStatus(error + " Unsaved catalog inputs were discarded. Refresh and review before editing.", true);
+    }
+
+    private bool ReloadAfterWrite(int? categoryId, int? companyId, int? formulaId, int? brandId)
+    {
+        try
+        {
+            if (Load(categoryId, companyId, formulaId, brandId)
+                && (categoryId is null || SelectedCategory?.Id == categoryId)
+                && (companyId is null || SelectedCompany?.Id == companyId)
+                && (formulaId is null || SelectedFormula?.Id == formulaId)
+                && (brandId is null || SelectedBrand?.Id == brandId)) return true;
+            ClearManager("The saved catalog selection could not be reloaded.");
+        }
+        catch (Exception exception)
+        {
+            _services.Log.Error("Catalog change was saved but could not reload.", exception);
+            ClearManager("The saved catalog could not be reloaded.");
+        }
+        SetStatus("SAVED. The catalog change was stored, but could not reload. Do not repeat the action; refresh and review first.", true);
+        return false;
     }
 
     private static string NextOrder(IEnumerable<int> values)

@@ -1,18 +1,18 @@
 # نمبر وار کام اور باقی جانچ — مستقل1تا36فہرست
 
-**موجودہ source: v0.105.0 Harbor / حصہ27۔** یہ وہی36نمبر ہیں جن کی مالک نے تفصیلی وضاحت مانگی۔ اگلے حصوں میں نمبر تبدیل نہیں کریں؛done-source،یہاں کی جانچ،Windowsثبوت اورباقی کام الگ لکھیں۔ **36نمبر،36Next نہیں؛فیچرboardکی فیصد Phase4 safety فیصد نہیں۔**
+**موجودہ source: v0.106.0 Estuary / حصہ28۔** یہ وہی36نمبر ہیں جن کی مالک نے تفصیلی وضاحت مانگی۔ اگلے حصوں میں نمبر تبدیل نہیں کریں؛done-source،یہاں کی جانچ،Windowsثبوت اورباقی کام الگ لکھیں۔ **36نمبر،36Next نہیں؛فیچرboardکی فیصد Phase4 safety فیصد نہیں۔**
 
-تازہ محدود کام **نمبر5/6/7** پر ہے: [PT-47](POS-PHASE4-PART27-URDU.md)،[trace/ثبوت/حدود](POS-PHASE4-RECORD-WRITE-CURRENT-REVIEW.md)۔ یہ صرف reviewed Customer/Product راستوں کی source اصلاح ہے،ان تینوںcategories کی مکمل closure نہیں۔ پوری Phase4/installer OPEN۔ بعض باقی کام معلوم gaps،بعض runtime تصدیق ہیں؛ہرrowکوثابت شدہbugنہسمجھیں۔
+تازہ محدود کام **5/6/7 Catalog/Units اور24/25 fault/result clarity**: [PT-48](POS-PHASE4-PART28-URDU.md)،[trace](POS-PHASE4-CATALOG-CURRENT-REVIEW.md)۔16writers/currentreader،staleformcleanup،SAVED/partialcommitsource؛یہcategoriesکیfullclosureنہیں۔ پوریPhase4/installerOPEN؛بعضremainingitemsمعلومgaps،بعضruntimeverificationہیں۔
 
 | مستقل نمبر / دائرہ | کیا ہوگیا؟ | کیا باقی ہے؟ |
 |---|---|---|
-|1۔ ورژن/GitHub | v0.105 Harbor source/docs/theme/icon/scripts aligned؛اسیbranchpublicationلازم | actualcommit/push/remoteverificationآخریرپورٹمیں؛Windowsbuild/installerالگ |
-|2۔ C#tests | 2045متوقعcases؛حصہ27میں36نئےreal-schemafacts،2legacyfixturespersisted | تازہfullsuitecompile/run/fix/retest؛یہاںسبUNRUN |
-|3۔ Source/syntheticchecks | 94static/18syntheticSQL/30نئےsource-negative+پرانے32اورPythonbackupreferencePASS؛traceمیںحدود | compiler/provider/WPF/Windowsکابدلنہیں؛actualfinalresultsآخریرپورٹمیں |
+|1۔ ورژن/GitHub | v0.106Estuarysource/docs/theme/icon/scriptsaligned؛اسیbranchpublicationلازم | actualcommit/push/remoteverifyآخریرپورٹمیں؛Windowsbuild/installerالگ |
+|2۔ C#tests | 2094متوقعcases؛حصہ28میں49نئے(9facts+40inlinecases) | تازہcompile/run/fix/retest؛یہاںC#سبUNRUN |
+|3۔ Source/syntheticchecks | 95static/19syntheticSQL/49نئے+30p27+32p26lexical-negativeاورPythonbackupreferencePASS | traceمیںحدود؛compiler/provider/WPFکابدلنہیں |
 |4۔ پرانےWindowsfailures | v0.80کے1333PASS/4FAILکیچاروںوجوہ/sourcefixشناخت | تازہsuiteپرretestاورنئیfailuresکیfix؛پرانانتیجہنیاPASSنہیں |
-|5۔ Account/role/session | حصہ27CustomerUpdateاور3Productwritesمیںstoredactive/same-role/module/managercheckاورstoredaudit؛nullmapbypassبند | اصلauthenticatedsessionbindingاورباقیcallers؛UserIDخودsessionproofنہیں |
-|6۔ Parentrecordcreate/edit/read | حصہ27CustomerUpdateoptionalmapسےآزاد؛Producttarget/no-op/freshstoredcostguard؛oldSQLpreserved | باقیcommands/catalog/workflows،versionCAS،actualTxfaults؛directinactiveUpdateکیپرانیpolicyنہیںبدلی |
-|7۔ Revocation/staleoutputs | حصہ27pinnedCustomerID/cleanup،Productmodalpreflight/3stimer/Closedstop،cost/form/lookupsصاف،disabledSave/reopen،SAVED | باقیeditors/cache/dialogs؛Windowsfocus/timing/regrantثبوت؛periodicinstantrecallنہیں،paper/fileواپسنہیں |
+|5۔ Account/role/session | حصہ28تمام16catalog/unitwriterscurrentstoredProductsmanager/audit؛reader capability | حقیقیauthenticatedsessionbinding،remainingcallers؛storedIDخودsessionproofنہیں |
+|6۔ Parentrecordcreate/edit/read | حصہ27Customer/Product،حصہ28Catalog/Unitswritesقبلno-op/mutationguard؛oldSQL/rulesبرقرار | باقیparent/workflows/actorlesslookupcallers،versionCAS؛Brandname/linkالگTxہیں |
+|7۔ Revocation/staleoutputs | حصہ28Catalog/Unitrows/selection/typedinputs/WholeOnlycleanup،currentcapability/explicitRefresh،timer/Closed،SAVED | حقیقیWindowsfocus/bindings/timing،otherdialogs/cache،inlinequickaddrefreshUX؛instantrecallنہیں |
 |8۔ Customdefinitionmanager | **حصہ26:currentownerUI،selection/inputcleanup،selectedsnapshotcomparison،stabletick،SAVED** | WPF/runtimeثبوت؛check/use/atomicversionCASاورothereditorssyncOPEN |
 |9۔ Customanswersservice | sharedinternalcurrentactor/storedaudit؛existingparentreads؛historicalinactiveپالیسیبرقرار | باقیcallers،اصلTxexecution،read/loadraces؛internalworkflowgatecaller-owned |
 |10۔ Customanswereditor | stalerecordrows/stagedpathcleanup،freshoutputs،SAVED،loadedtimer | اصلbindings/focus/regrant/parentdraftconsistency؛definitionversionsyncالگ |
@@ -29,8 +29,8 @@
 |21۔ Reports/files/exports | کئیcurrentoutputgates/masks؛editablebulkOwner-defaultwholefilegate | باقیoutputdoors،preparedfiles،realExcel/CSVroundtrip/bounds/formulas/print/PDFملاپ |
 |22۔ Blackbox/BookCheck | صرفapprovednavigationgateAudit+Cost+Profit+main؛حالیہinternalsunchanged | تازہWindowsnavigationproof؛بغیراجازتغیرمتعلقredesignنہیں |
 |23۔ DB/permissiontransaction | connection-ownedTx،currentTxgrantread،failedgrantdeny | cross-instance/processlocking/parallel/busy/retry/concurrency |
-|24۔ Fault/rollback | حصہ27چارمزیدreal-schemaauditfaultfacts(Customer/Productedit/createphoto/hide)لکھے؛PythonSQLtriggerprobe | C#سبUNRUN؛ہرcriticalstageپرparent/child/stock/payment/audit/file/commit-vs-UIfailurematrix |
-|25۔ Duplicate/retry | بعضguards؛حصہ27Customer/Productsave/hideمیںcommittedbutrefreshfailedپرSAVED | universalidempotencyنہیں؛repeatedsubmit/timeout/restart/parallelmonetaryactionsintegration |
+|24۔ Fault/rollback | حصہ28ہر16writerکےauditfaultcasesاورlinkedunitlabelrollback؛نیاactualSQLprobe | C#سبUNRUN؛cross-serviceparent/child/stock/payment/audit/file/commit-vs-UIfailurematrix |
+|25۔ Duplicate/retry | Catalog/UnitscommittedreloadfailپرSAVED،savedtargetmatch،Brandpartialname/linkواضح | universaltoken/idempotencyنہیں؛restart/timeout/parallelmonetaryactionsintegration |
 |26۔ Encryptedbackup | passwordA .a11bakcode،manual/auto/safety/rollbackintegration،referencechecks | اصلC#service/DPAPI/ACL/passwordrotation/large-photo/interruptionverification |
 |27۔ Restore/newPC | stagedvalidation/safety/rollback/explicitlegacycode | نئےPCپرoriginalpassword،wrong/corrupt/interruptedrestore،پراناDB/photosبچنااورstartupثبوت |
 |28۔ Files/bounds | متعدددخل/path/size/extension/archivelimits | malformed/largeimage/archive/import،codec/replacement/collision/cleanup/powerloss |
@@ -39,7 +39,7 @@
 |31۔ Keyboard/scanner | permanentsearch/approvednavigationcode | arrows/Shift-arrows/nativecaret/combo/grid/TabاوراصلUSBlookup/focus |
 |32۔ Printer/PDF/camera | receipt/print/PDFcode؛پراناownerprinter-slipproofمحفوظ | تازہreceipts/width/printer/no-printer/scanner/camera/viewerاورfiguresملاپ |
 |33۔ Startup/login/lock | approvedstartup/singleinstance/FocusGuard/recoverycode | حقیقیregistry/reboot/re-entry/escape/reset/recovery/shortcuts/taskbar/icon |
-|34۔ Guide/actionreconciliation | اردوMD/HTML،PT-47/trace/1–36tracker،36lessonanchorsاورstandingnumberedreportinstruction | تمامroutes/settings/actionsکاحقیقیappسےملاپ؛Windows/PTsignoffs،historicalnotesواضحرکھیں |
+|34۔ Guide/actionreconciliation | اردوMD/HTML،PT-48/trace/1–36trackerاور36lessonanchorsاپڈیٹ | اصلappکےتمامroutes/settings/actionsسےملاپ،Windows/PTsignoffsباقی |
 |35۔ Isolatedtestinstallation | verifiedbackup+separateDB/photos/configکیشرطdocumented | اصلVM/sparePC/storageproof،startup/migrationسےshopdataمحفوظ؛exefolderاکیلاکافینہیں |
 |36۔ Singleinstaller | مالککیاجازت؛build/installerconfig/scriptsموجود | کامیابWindowsbuild/tests،exeبننا،cleaninstall/upgrade/uninstall/datapreservation/shortcuts/startup،پھرsendablefile؛**ابھینہیںبنا** |
 
@@ -51,6 +51,6 @@
 4. اسی نمبرکےاندرکیاباقیہےاورکیوں؟
 5. اگلےنمبروںکیترتیب،docs/GitHubکیاصلحیثیت،installerکےباقیدروازے۔
 
-موجودہترتیب: **5/6/7** کےباقیcurrentrecord/sessioncallers،پھر **23–25** integratedfault/retry/concurrency،**26–29**files/restore/cloud،**2/4/30–35**Windows/results/hardware/isolation،آخر **36**۔ یہلچکدارترتیبہے؛dependencyیاحقیقیfindingسےتبدیلہوسکتیہے۔3–6مزیدمربوطreview/resultچکرمشروطاندازہ،نہdeadlineنہupperbound۔
+موجودہترتیب: **23–25** integratedfault/retry/concurrency؛اسکےساتھ **5/6/7** remainingcaller/sessionreconciliation،**26–29**files/restore/cloud،**2/4/30–35**Windows/results/hardware/isolation،آخر **36**۔ یہلچکدارترتیبہے؛dependencyیاحقیقیfindingسےتبدیلہوسکتیہے۔3–6مزیدمربوطreview/resultچکرمشروطاندازہ،نہdeadlineنہupperbound۔
 
 اصلshopپرsyntheticpostsنہیں؛secret/datachatمیںنہیں؛ہرportiondocs+sameactivebranchcommit/push+actualremoteverification۔ Static/Python/featureboardکوproduction/runtime/securityPASSنہکہیں۔

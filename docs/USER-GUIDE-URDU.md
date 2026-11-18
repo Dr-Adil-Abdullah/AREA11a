@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.105.0 Harbor۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.106.0 Estuary۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**حصہ28 / مستقل5/6/7 — Catalogs/Units:** تمام16catalogwriterscurrentProductsOwner/Managerسے؛جائزread-onlyProductsreaderبرقرار،Cost/Profit/mainکیcatalogپرنئیشرطنہیں۔ Account/module/readfailureپرrows/selection/نام/order/parent/company/WholeOnlyصاف،editingبند؛grantواپسآئےتوexplicitRefreshاورreview،پرانامتنبھالنےکادعوینہیں۔ Stableallowed3sticktypedinputsنہیںبدلتا؛windowبندہوتوtimerstop۔ Saveہوچکاہوreloadناکامتو **SAVED،دوبارہactionنہیں**۔ Brandnameاورcompanylinkالگtransactions؛partialsuccessواضح۔ [PT-48](POS-PHASE4-PART28-URDU.md)،[trace/حدود](POS-PHASE4-CATALOG-CURRENT-REVIEW.md)،[1–36حیثیت](NUMBERED-WORK-STATUS-URDU.md)۔ **49نئےC#cases/2094suiteWindowsUNRUN**؛session/CAS/fullPhase4/installerOPEN۔
 
 **حصہ27 / مستقل5/6/7 — customer/product edits:** Customer کاphone/name edit currentCustomersaccountسے؛Cashier کیجائزcorrectionبرقرار،limitOwner/Manager۔ FormکیintendedIDpin،selection/cancel/accesslossپرauthored/customstateصاف۔ Productcreate/update/put-awaycurrentProductsOwner/Managerسے؛existingstoredcost/full-editorCost+main،Profitاسکابدلنہیں۔ Authorednewproductcostاورnon-costCorepatchکیپرانیworkflowبرقرار۔ کھلےProducteditorکیاجازتبدلےتوnominal3second/actioncheckپرپراناcost/form/lookupsصاف،Saveبند،explicitclose/refresh/reopen؛grantواپسدینےسےdiscardedformخودبحالنہیں۔ Commitمگرrefreshfailتو **SAVED،دوبارہactionنہکریں**۔ [PT-47](POS-PHASE4-PART27-URDU.md)،[trace/حدود](POS-PHASE4-RECORD-WRITE-CURRENT-REVIEW.md)،[1–36حیثیت](NUMBERED-WORK-STATUS-URDU.md)۔ **36نئےfacts/2045C#casesWindowsUNRUN**؛authenticatedsession/instantrecall/CAS/fullPhase4/installerکیضمانتنہیں۔ نیچےپرانےcheckpointsتاریخیہیں۔
 
@@ -649,6 +651,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 
 **حصہ27کیالگtestcopyمیںمشق:** CustomerAکاphoneeditلکھیں،Bمنتخبکریں؛AکامتنBپرنہلگے۔ ProducteditکھولکرtestOwnerسےCost/main/Products/accountبدلیں؛اگلےaction/nominal3stickپرcost/formصاف،Saveبنداورreopenwarning۔ Regrantکےبعدeditorبند/refresh/reopen؛پراناdiscardedمتنواپس نہیں۔ Stored-costpatchCost+mainمانگتاہے؛newproductخودtypedcostکیworkflowنہیںبدلی۔ Saveہوچکاہومگرrefreshناکامتو **SAVED،دوبارہنہیں**۔ [PT-47](POS-PHASE4-PART27-URDU.md)۔ اصلshopپرکسیفرضیpost/permissionexerciseنہیں؛verifiedbackup+واقعیالگDB/photos/config،Windowsثبوتباقی۔
 
+**حصہ28کیالگtestcopyمیںمشق:** Catalog/Uniteditorمیںunsavedname/order/link/WholeOnlyلکھیں؛testOwnerسےProductsgrantواپسلیں۔ اگلےaction/nominal3stickپرinputs/selection/rowsصاف،Saveبند؛regrantکےبعدRefreshاورrowreviewلازم۔ Stableticktextنہبدلے،failedlistمصدقہemptyنہہو۔ Savecommitمگرreloadfailتو **SAVED،دوبارہنہیں**؛Brandname/linkpartialsuccessملاکرfullatomicنہسمجھیں۔ [PT-48](POS-PHASE4-PART28-URDU.md)۔ اصلshopپرنہیں؛verifiedbackup+واقعیالگDB/photos/config،Windowsثبوتباقی۔
+
 <a id="lesson-33"></a>
 
 ## سبق 33 — خودکار آغاز، محفوظ بندش اور Screen lock
@@ -730,7 +734,7 @@ Recoveryکیfailedslipپرپرنٹرکوخالیdocumentنہیںدیاجاتا۔
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.105.0 کا متوقع test count 2045 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.106.0 کا متوقع test count 2094 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 

@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## v0.106.0 portion28 — Catalog/Units؛مستقل5/6/7/24/25
+
+ContinueمیںباقیCatalog/Unit Owner/Manager writersکےcurrentProductsaccount/audit،staleforms/failedreadsاورSAVED/partialBrandresultپرکام؛نئیbusinesspolicyنہیں۔ ValidProductsread-onlyreaderبرقرار،Cost/Profit/maincatalogکیشرطنہیں۔ Categoryunlink/restore،unitwholequantity/history،Brandname/linkکیالگTxpolicy،SupplierB/Extra/returnB/backupA/BlackboxBookCheckunchanged۔ [PT-48](POS-PHASE4-PART28-URDU.md)،[trace](POS-PHASE4-CATALOG-CURRENT-REVIEW.md)۔49نئےcases/2094suiteWindowsUNRUN؛session/CAS/remainingcallers/fullPhase4/installerOPEN۔ Next23–25integratedfault/retry/concurrency،ہرreportمستقل1–36done-source/actualexecution/باقیوجوہ/actualGitالگ۔
+
 ## v0.105.0 portion27 — stable5/6/7؛نئیbusinesspolicyنہیں
 
 LatestNextمیںCustomer Update کےnull-custom-map current-account bypass،Product stored writer/audit/target،پہلےسےموجودexisting-editor Cost+main شرطکےCore stored-cost patch،اورstale customer/product forms پرمحدودکام۔ Cashier phone/name correction،Owner/Manager limit/product rules،authorednewproductcost/non-costCorepatch،POSquickcustomer،SupplierB،pricing/Extra/returnB،backupA اورBlackbox/BookCheck scope برقرار۔ [PT-47](POS-PHASE4-PART27-URDU.md)،[trace](POS-PHASE4-RECORD-WRITE-CURRENT-REVIEW.md)،[1–36حیثیت](NUMBERED-WORK-STATUS-URDU.md)۔36newfacts/2045cases WindowsUNRUN؛authenticatedsession/CAS/remainingcallers/fullPhase4/installerOPEN۔ ہررپورٹ میںان ہی مستقلنمبروںکیdone-source/actualexecution/باقیوجوہ/next/docs/actualGitpublication الگبتائیں۔

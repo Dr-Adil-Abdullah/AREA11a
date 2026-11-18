@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-48 — stable5/6/7 Catalog/Units current authority,24/25 fault/result clarity (v0.106.0) — UNRUN
+
+[Urdu isolated steps](docs/POS-PHASE4-PART28-URDU.md),[trace/limits](docs/POS-PHASE4-CATALOG-CURRENT-REVIEW.md),[1–36status](docs/NUMBERED-WORK-STATUS-URDU.md).16 current catalog writers/stored audit;valid read-only Products reader,no financial gates;stale name/order/parent/company/WholeOnly/rows cleanup,explicit Refresh/regrant,access-only timer/Closed,failed read not empty,SAVED and Brand partial name/link commits.49newcases/2094suite+Core/Tests/Desktop/WPF UNRUN. No fake shop posts;verified encrypted backup+genuinely separate DB/photos/config before tests. Python/static not C#/WPF/session proof;fullPhase4/installer OPEN.
+
 ## PT-47 — stable5/6/7 customer/product writes and stale editors (v0.105.0) — UNRUN
 
 [Urdu isolated test steps](docs/POS-PHASE4-PART27-URDU.md),[trace/limits](docs/POS-PHASE4-RECORD-WRITE-CURRENT-REVIEW.md),[stable1–36tracker](docs/NUMBERED-WORK-STATUS-URDU.md). Test current/null-map Customer writes, preserved Cashier phone/manager limit rules, current Product writers/audit/no-op/target, fresh stored-cost main+Cost vs preserved authored new cost/non-cost patches; pinned customer selection, stale modal cleanup/regrant/reopen/timer/Closed, failed reads not empty, SAVED after committed refresh failures.36newfacts/2045C#cases plus Core/Tests/Desktop/WPF all UNRUN here. Actual actor/audit/file fault execution and Windows logs required. Python/static not runtime certification;no live synthetic posts. Verified backup plus genuinely separate DB/photos/config,not just exe folder. FullPhase4/installer OPEN.

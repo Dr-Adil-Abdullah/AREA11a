@@ -912,6 +912,26 @@ VALUES
             throw new ValidationException("View Purchase Cost permission and the main financial visibility switch are required to edit stored cost.");
     }
 
+    /// <summary>Current catalog reader and edit capability. No stored cost/profit data is returned.
+    /// Actorless lookup APIs remain caller-gated workflow helpers, not authenticated endpoints.</summary>
+    public ServiceResult<bool> CheckCatalogAccess(User? actor)
+    {
+        try
+        {
+            return _db.Read(connection =>
+            {
+                var reader = SnapshotReadAccess.Require(_db, connection, _permissions, actor, Modules.Products);
+                return ServiceResult<bool>.Success(reader.CanManage);
+            });
+        }
+        catch (ValidationException exception) { return ServiceResult<bool>.Fail(exception.Message); }
+        catch (Exception exception)
+        {
+            _log.Error("Catalog access could not be checked.", exception);
+            return ServiceResult<bool>.Fail("Catalog access could not be checked. Refresh before another action.");
+        }
+    }
+
     public ServiceResult<List<Category>> GetCategories(bool activeOnly = true)
     {
         try
@@ -964,7 +984,7 @@ FROM companies c
         int? parentId = null,
         int? sortOrder = null)
     {
-        if (!actor.CanManage)
+        if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
             return ServiceResult<int>.Fail("Only the owner or a manager can change categories.");
         }
@@ -989,6 +1009,7 @@ FROM companies c
         {
             return _db.Tx(connection =>
             {
+                actor = RequireProductWriter(connection, actor);
                 if (CatalogNameTaken(connection, "categories", clean, 0))
                 {
                     return ServiceResult<int>.Fail(
@@ -1020,17 +1041,18 @@ VALUES(@name, @parentId, @sortOrder, 1, @at);",
                 return ServiceResult<int>.Success(id);
             });
         }
+        catch (ValidationException exception) { return ServiceResult<int>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"Category '{clean}' could not be added.", exception);
-            return ServiceResult<int>.Fail("The category could not be saved. " + exception.Message);
+            return ServiceResult<int>.Fail("The category could not be saved.");
         }
     }
 
     /// <summary>Rename, choose a top-level parent, or change order without touching product history.</summary>
     public ServiceResult UpdateCategory(User actor, int id, string? name, int? parentId, int sortOrder)
     {
-        if (!actor.CanManage)
+        if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
             return ServiceResult.Fail("Only the owner or a manager can change categories.");
         }
@@ -1055,6 +1077,7 @@ VALUES(@name, @parentId, @sortOrder, 1, @at);",
         {
             return _db.Tx(connection =>
             {
+                actor = RequireProductWriter(connection, actor);
                 var before = FindCategory(connection, id);
                 if (before is null)
                 {
@@ -1089,10 +1112,11 @@ WHERE id = @id;",
                 return ServiceResult.Success();
             });
         }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"Category {id} could not be updated.", exception);
-            return ServiceResult.Fail("The category could not be saved. " + exception.Message);
+            return ServiceResult.Fail("The category could not be saved.");
         }
     }
 
@@ -1102,7 +1126,7 @@ WHERE id = @id;",
     /// </summary>
     public ServiceResult SetCategoryActive(User actor, int id, bool active)
     {
-        if (!actor.CanManage)
+        if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
             return ServiceResult.Fail("Only the owner or a manager can change categories.");
         }
@@ -1111,6 +1135,7 @@ WHERE id = @id;",
         {
             return _db.Tx(connection =>
             {
+                actor = RequireProductWriter(connection, actor);
                 var before = FindCategory(connection, id);
                 if (before is null)
                 {
@@ -1154,16 +1179,17 @@ UPDATE products SET category_id = NULL, updated_at = @at WHERE category_id = @id
                 return ServiceResult.Success();
             });
         }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"Category {id} active state could not be changed.", exception);
-            return ServiceResult.Fail("The category could not be changed. " + exception.Message);
+            return ServiceResult.Fail("The category could not be changed.");
         }
     }
 
     public ServiceResult<int> AddCompany(User actor, string? name, int? sortOrder = null)
     {
-        if (!actor.CanManage)
+        if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
             return ServiceResult<int>.Fail("Only the owner or a manager can change companies.");
         }
@@ -1188,6 +1214,7 @@ UPDATE products SET category_id = NULL, updated_at = @at WHERE category_id = @id
         {
             return _db.Tx(connection =>
             {
+                actor = RequireProductWriter(connection, actor);
                 if (CatalogNameTaken(connection, "companies", clean, 0))
                 {
                     return ServiceResult<int>.Fail(
@@ -1211,17 +1238,18 @@ INSERT INTO companies(name, sort_order, active) VALUES(@name, @sortOrder, 1);",
                 return ServiceResult<int>.Success(id);
             });
         }
+        catch (ValidationException exception) { return ServiceResult<int>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"Company '{clean}' could not be added.", exception);
-            return ServiceResult<int>.Fail("The company could not be saved. " + exception.Message);
+            return ServiceResult<int>.Fail("The company could not be saved.");
         }
     }
 
     /// <summary>Only name and order change; phone, notes and the medical rep stay on the row.</summary>
     public ServiceResult UpdateCompany(User actor, int id, string? name, int sortOrder)
     {
-        if (!actor.CanManage)
+        if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
             return ServiceResult.Fail("Only the owner or a manager can change companies.");
         }
@@ -1246,6 +1274,7 @@ INSERT INTO companies(name, sort_order, active) VALUES(@name, @sortOrder, 1);",
         {
             return _db.Tx(connection =>
             {
+                actor = RequireProductWriter(connection, actor);
                 var before = FindCompany(connection, id);
                 if (before is null)
                 {
@@ -1272,17 +1301,18 @@ INSERT INTO companies(name, sort_order, active) VALUES(@name, @sortOrder, 1);",
                 return ServiceResult.Success();
             });
         }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"Company {id} could not be updated.", exception);
-            return ServiceResult.Fail("The company could not be saved. " + exception.Message);
+            return ServiceResult.Fail("The company could not be saved.");
         }
     }
 
     /// <summary>Soft put-away only; restore deliberately does not recreate former product links.</summary>
     public ServiceResult SetCompanyActive(User actor, int id, bool active)
     {
-        if (!actor.CanManage)
+        if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
             return ServiceResult.Fail("Only the owner or a manager can change companies.");
         }
@@ -1291,6 +1321,7 @@ INSERT INTO companies(name, sort_order, active) VALUES(@name, @sortOrder, 1);",
         {
             return _db.Tx(connection =>
             {
+                actor = RequireProductWriter(connection, actor);
                 var before = FindCompany(connection, id);
                 if (before is null)
                 {
@@ -1335,10 +1366,11 @@ UPDATE brands SET company_id = NULL, updated_at = @at WHERE company_id = @id;",
                 return ServiceResult.Success();
             });
         }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"Company {id} active state could not be changed.", exception);
-            return ServiceResult.Fail("The company could not be changed. " + exception.Message);
+            return ServiceResult.Fail("The company could not be changed.");
         }
     }
 
@@ -1390,7 +1422,7 @@ LEFT JOIN companies co ON co.id = b.company_id
 
     public ServiceResult<int> AddFormula(User actor, string? name, int? sortOrder = null)
     {
-        if (!actor.CanManage)
+        if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
             return ServiceResult<int>.Fail("Only the owner or a manager can change salts.");
         }
@@ -1413,6 +1445,7 @@ LEFT JOIN companies co ON co.id = b.company_id
         {
             return _db.Tx(connection =>
             {
+                actor = RequireProductWriter(connection, actor);
                 var key = CatalogKeyOf(clean);
                 if (CatalogKeyTaken(connection, "generic_formulas", key, 0))
                 {
@@ -1435,16 +1468,17 @@ INSERT INTO generic_formulas(name, name_key, sort_order, active) VALUES(@name, @
                 return ServiceResult<int>.Success(id);
             });
         }
+        catch (ValidationException exception) { return ServiceResult<int>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"Salt '{clean}' could not be added.", exception);
-            return ServiceResult<int>.Fail("The salt could not be saved. " + exception.Message);
+            return ServiceResult<int>.Fail("The salt could not be saved.");
         }
     }
 
     public ServiceResult<int> AddBrand(User actor, string? name, int? sortOrder = null)
     {
-        if (!actor.CanManage)
+        if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
             return ServiceResult<int>.Fail("Only the owner or a manager can change brands.");
         }
@@ -1467,6 +1501,7 @@ INSERT INTO generic_formulas(name, name_key, sort_order, active) VALUES(@name, @
         {
             return _db.Tx(connection =>
             {
+                actor = RequireProductWriter(connection, actor);
                 var key = CatalogKeyOf(clean);
                 if (CatalogKeyTaken(connection, "brands", key, 0))
                 {
@@ -1490,17 +1525,18 @@ INSERT INTO brands(name, name_key, sort_order, active) VALUES(@name, @key, @sort
                 return ServiceResult<int>.Success(id);
             });
         }
+        catch (ValidationException exception) { return ServiceResult<int>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"Brand '{clean}' could not be added.", exception);
-            return ServiceResult<int>.Fail("The brand could not be saved. " + exception.Message);
+            return ServiceResult<int>.Fail("The brand could not be saved.");
         }
     }
 
     /// <summary>Rename relabels explicitly linked products; legacy typed text is never touched.</summary>
     public ServiceResult UpdateFormula(User actor, int id, string? name, int sortOrder)
     {
-        if (!actor.CanManage)
+        if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
             return ServiceResult.Fail("Only the owner or a manager can change salts.");
         }
@@ -1523,6 +1559,7 @@ INSERT INTO brands(name, name_key, sort_order, active) VALUES(@name, @key, @sort
         {
             return _db.Tx(connection =>
             {
+                actor = RequireProductWriter(connection, actor);
                 var before = FindFormula(connection, id);
                 if (before is null)
                 {
@@ -1554,17 +1591,18 @@ WHERE id = @id;", new { clean, key, order = sortOrder, at = Clock.Now(), id });
                 return ServiceResult.Success();
             });
         }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"Salt {id} could not be updated.", exception);
-            return ServiceResult.Fail("The salt could not be saved. " + exception.Message);
+            return ServiceResult.Fail("The salt could not be saved.");
         }
     }
 
     /// <summary>Rename relabels explicitly linked products; legacy typed text is never touched.</summary>
     public ServiceResult UpdateBrand(User actor, int id, string? name, int sortOrder)
     {
-        if (!actor.CanManage)
+        if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
             return ServiceResult.Fail("Only the owner or a manager can change brands.");
         }
@@ -1587,6 +1625,7 @@ WHERE id = @id;", new { clean, key, order = sortOrder, at = Clock.Now(), id });
         {
             return _db.Tx(connection =>
             {
+                actor = RequireProductWriter(connection, actor);
                 var before = FindBrand(connection, id);
                 if (before is null)
                 {
@@ -1618,17 +1657,18 @@ WHERE id = @id;", new { clean, key, order = sortOrder, at = Clock.Now(), id });
                 return ServiceResult.Success();
             });
         }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"Brand {id} could not be updated.", exception);
-            return ServiceResult.Fail("The brand could not be saved. " + exception.Message);
+            return ServiceResult.Fail("The brand could not be saved.");
         }
     }
 
     /// <summary>Put-away unlinks current products but keeps their typed text; nothing is deleted.</summary>
     public ServiceResult SetFormulaActive(User actor, int id, bool active)
     {
-        if (!actor.CanManage)
+        if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
             return ServiceResult.Fail("Only the owner or a manager can change salts.");
         }
@@ -1637,6 +1677,7 @@ WHERE id = @id;", new { clean, key, order = sortOrder, at = Clock.Now(), id });
         {
             return _db.Tx(connection =>
             {
+                actor = RequireProductWriter(connection, actor);
                 var before = FindFormula(connection, id);
                 if (before is null)
                 {
@@ -1672,17 +1713,18 @@ UPDATE products SET generic_formula_id = NULL, updated_at = @at WHERE generic_fo
                 return ServiceResult.Success();
             });
         }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"Salt {id} active state could not be changed.", exception);
-            return ServiceResult.Fail("The salt could not be changed. " + exception.Message);
+            return ServiceResult.Fail("The salt could not be changed.");
         }
     }
 
     /// <summary>Put-away unlinks current products but keeps their typed text; nothing is deleted.</summary>
     public ServiceResult SetBrandActive(User actor, int id, bool active)
     {
-        if (!actor.CanManage)
+        if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
             return ServiceResult.Fail("Only the owner or a manager can change brands.");
         }
@@ -1691,6 +1733,7 @@ UPDATE products SET generic_formula_id = NULL, updated_at = @at WHERE generic_fo
         {
             return _db.Tx(connection =>
             {
+                actor = RequireProductWriter(connection, actor);
                 var before = FindBrand(connection, id);
                 if (before is null)
                 {
@@ -1726,10 +1769,11 @@ UPDATE products SET brand_id = NULL, updated_at = @at WHERE brand_id = @id;",
                 return ServiceResult.Success();
             });
         }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"Brand {id} active state could not be changed.", exception);
-            return ServiceResult.Fail("The brand could not be changed. " + exception.Message);
+            return ServiceResult.Fail("The brand could not be changed.");
         }
     }
 
@@ -1739,7 +1783,7 @@ UPDATE products SET brand_id = NULL, updated_at = @at WHERE brand_id = @id;",
     /// </summary>
     public ServiceResult SetBrandCompany(User actor, int brandId, int? companyId)
     {
-        if (!actor.CanManage)
+        if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
             return ServiceResult.Fail("Only the owner or a manager can change brands.");
         }
@@ -1753,6 +1797,7 @@ UPDATE products SET brand_id = NULL, updated_at = @at WHERE brand_id = @id;",
         {
             return _db.Tx(connection =>
             {
+                actor = RequireProductWriter(connection, actor);
                 var before = FindBrand(connection, brandId);
                 if (before is null)
                 {
@@ -1787,10 +1832,11 @@ UPDATE brands SET company_id = @companyId, updated_at = @at WHERE id = @brandId;
                 return ServiceResult.Success();
             });
         }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"Brand {brandId} company could not be changed.", exception);
-            return ServiceResult.Fail("The brand company could not be changed. " + exception.Message);
+            return ServiceResult.Fail("The brand company could not be changed.");
         }
     }
 
@@ -1871,7 +1917,7 @@ FROM units u
 
     public ServiceResult<int> AddUnit(User actor, string? name, int? sortOrder = null, bool wholeOnly = false)
     {
-        if (!actor.CanManage)
+        if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
             return ServiceResult<int>.Fail("Only the owner or a manager can change units.");
         }
@@ -1890,6 +1936,7 @@ FROM units u
         {
             return _db.Tx(connection =>
             {
+                actor = RequireProductWriter(connection, actor);
                 if (UnitNameTaken(connection, clean, 0))
                 {
                     return ServiceResult<int>.Fail("That unit is already on the list, including a put-away unit.");
@@ -1911,17 +1958,18 @@ FROM units u
                 return ServiceResult<int>.Success(id);
             });
         }
+        catch (ValidationException exception) { return ServiceResult<int>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error("A unit could not be added.", exception);
-            return ServiceResult<int>.Fail("The unit could not be saved. " + exception.Message);
+            return ServiceResult<int>.Fail("The unit could not be saved.");
         }
     }
 
     /// <summary>Renames current product labels atomically; historical quantities and documents are untouched.</summary>
     public ServiceResult UpdateUnit(User actor, int id, string? name, int sortOrder, bool? wholeOnly = null)
     {
-        if (!actor.CanManage)
+        if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
             return ServiceResult.Fail("Only the owner or a manager can change units.");
         }
@@ -1936,6 +1984,7 @@ FROM units u
         {
             return _db.Tx(connection =>
             {
+                actor = RequireProductWriter(connection, actor);
                 var before = FindUnit(connection, id);
                 if (before is null)
                 {
@@ -1960,17 +2009,18 @@ WHERE strength_value > 0 AND LOWER(TRIM(strength_unit)) = @old;", parameters);
                 return ServiceResult.Success();
             });
         }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error("A unit could not be updated.", exception);
-            return ServiceResult.Fail("The unit could not be saved. " + exception.Message);
+            return ServiceResult.Fail("The unit could not be saved.");
         }
     }
 
     /// <summary>Put-away is refused while a current product uses the unit; no stock label is silently cleared.</summary>
     public ServiceResult SetUnitActive(User actor, int id, bool active)
     {
-        if (!actor.CanManage)
+        if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
             return ServiceResult.Fail("Only the owner or a manager can change units.");
         }
@@ -1979,6 +2029,7 @@ WHERE strength_value > 0 AND LOWER(TRIM(strength_unit)) = @old;", parameters);
         {
             return _db.Tx(connection =>
             {
+                actor = RequireProductWriter(connection, actor);
                 var before = FindUnit(connection, id);
                 if (before is null)
                 {
@@ -2005,10 +2056,11 @@ WHERE strength_value > 0 AND LOWER(TRIM(strength_unit)) = @old;", parameters);
                 return ServiceResult.Success();
             });
         }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error("A unit's active state could not be changed.", exception);
-            return ServiceResult.Fail("The unit could not be changed. " + exception.Message);
+            return ServiceResult.Fail("The unit could not be changed.");
         }
     }
 

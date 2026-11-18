@@ -1,5 +1,18 @@
 # باقی کام، GitHub اور test installer — v0.104.0
 
+## تازہ checkpoint — v0.106.0 Estuary / حصہ28؛مستقل5/6/7/24/25
+
+[مکمل1–36حیثیت](NUMBERED-WORK-STATUS-URDU.md)،[PT-48](POS-PHASE4-PART28-URDU.md)،[trace](POS-PHASE4-CATALOG-CURRENT-REVIEW.md)۔16catalog/unitwriterscurrentProductsOwner/Manager/storedaudit،read-onlyreaderبرقرار،staleforms/failedlistscleanup،explicitRefresh،SAVED/Brandpartialcommit claritysourceشامل۔49نئےC#cases/2094suiteUNRUN۔
+
+1. **5:** حقیقیsessionbinding/remainingcallers؛storedIDsessionproofنہیں۔
+2. **6:** باقیparent/workflow/actorlesslookupcallerreconciliation،versionCAS؛Brandname/linkالگTxہیں۔
+3. **7:** Windowsfocus/bindings/timers/regrant/otherdialogs/cache/inlinequickaddrefreshUX۔
+4. **23–25:** اگلیintegratedfault/retry/duplicates/concurrencypriority؛C#faulttestsواقعیچلاناباقی۔
+5. **26–29:** files/encryptedbackup/restore/newPC/cloudintegration؛**2/4/30–35:**2094+Windowsbuild/tests/results/fixes/hardware/isolation۔
+6. **36:** اصلbuild/test/installgatesکےبعدمجازsingle-doubleclicktestinstaller؛**ابھینہیںبنا**۔
+
+Phase4OPEN؛ہرحصہdocs+samebranchcommit/push+actualremoteverify۔36نمبر36Nextنہیں،مشروطroundestimate deadlineنہیں۔ نیچےکےcheckpointsتاریخی؛SupplierBطےہے،اصلshopپرsyntheticpostsنہیں؛verifiedbackup+الگDB/photos/configلازم۔
+
 ## تازہ checkpoint — v0.105.0 Harbor / حصہ27؛مستقل نمبر5/6/7
 
 [1–36کیالگالگحیثیت](NUMBERED-WORK-STATUS-URDU.md)،[PT-47](POS-PHASE4-PART27-URDU.md)،[trace/حدود](POS-PHASE4-RECORD-WRITE-CURRENT-REVIEW.md)۔ Customer null-custom-map updateپرcurrentCustomersaccount،Product کےتینwritesمیںstoredProductsmanager/audit،stored-cost patchمیںfreshmain+Cost،pinnedcustomerform/staleproductmodalcleanup/SAVEDsourceشامل۔ Cashierphone/managerlimit،authorednewcost/non-costCorepatch/POSquickcustomer برقرار۔ **36نئےfacts/2045C#casesWindowsUNRUN**؛Python/staticکوruntimePASSنہکہیں۔

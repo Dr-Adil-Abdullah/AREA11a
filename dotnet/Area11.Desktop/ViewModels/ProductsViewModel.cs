@@ -1094,8 +1094,14 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
 
     private void ManageUnits()
     {
+        var access = _services.Products.CheckCatalogAccess(_user);
+        if (!access.Ok) { InvalidateEditor(access.Error ?? "Current Products access is required."); return; }
         var selected = BaseUnit;
         UnitWindowDoor.Show(_services, _user);
+        if (_editorAccessLost) return;
+        access = _services.Products.CheckCatalogAccess(_user);
+        if (!access.Ok) { InvalidateEditor(access.Error ?? "Current Products access is required."); return; }
+        if (_editingId is not null && !RefreshEditorAccess()) return;
         LoadLookups();
         BaseUnit = BaseUnits.Contains(selected) ? selected : BaseUnits.FirstOrDefault() ?? selected;
         Load();
@@ -1116,10 +1122,16 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
 
     private void ManageCatalog()
     {
+        var access = _services.Products.CheckCatalogAccess(_user);
+        if (!access.Ok) { InvalidateEditor(access.Error ?? "Current Products access is required."); return; }
         var categoryId = SelectedCategory?.Id;
         var companyId = SelectedCompany?.Id;
 
         CatalogWindowDoor.Show(_services, _user);
+        if (_editorAccessLost) return;
+        access = _services.Products.CheckCatalogAccess(_user);
+        if (!access.Ok) { InvalidateEditor(access.Error ?? "Current Products access is required."); return; }
+        if (_editingId is not null && !RefreshEditorAccess()) return;
 
         // Keep every other unsaved form field exactly as the person left it. A renamed id is
         // selected again; a row just put away can no longer be linked by this form.
