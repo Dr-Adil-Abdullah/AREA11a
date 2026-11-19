@@ -8652,6 +8652,57 @@ def check_expense_stock_fault_boundaries():
     REPORT.append('P38 expense/stock observed failures + local acknowledgement/reset guard lexical contracts; C#/provider/WPF UNRUN')
 
 
+def check_provisional_posting_fault_boundaries():
+    """Lexical regression contract, not actual service/provider/WPF execution."""
+    core=(DOTNET/'Area11.Core/Services/ProvisionalReturnService.cs').read_text()
+    for start,end,tx in [('public ServiceResult<ProvisionalResult> Create(', '/// <summary>The blinking list', '_db.Tx(connection => Save(connection, input, user), outcome);'),
+                         ('public ServiceResult Link(', 'public ServiceResult Cancel(', '}, outcome);'),
+                         ('public ServiceResult Cancel(', 'public ServiceResult<List<BillSearchRow>> SearchBills(', '}, outcome);')]:
+        body=core.split(start,1)[-1].split(end,1)[0]
+        for token in ('var outcome = new TransactionOutcome();',tx,'outcome.NoCommitConfirmed ? exception.Message',
+                      'NoCommitConfirmed = true','no commit was made.','could not be confirmed. Verify'):
+            if token not in body: FAILURES.append('P39 PR outcome wrapper missing '+start+':'+token)
+        if body.count('NoCommitConfirmed = outcome.NoCommitConfirmed')!=2: FAILURES.append('P39 PR both catches need observed failure '+start)
+        caught=body.split('catch (ValidationException exception)',1)[-1]
+        if 'Nothing was changed.' in caught or 'Technical detail:' in caught: FAILURES.append('P39 unknown must not promise rollback or expose raw technical detail')
+    vm=(DOTNET/'Area11.Desktop/ViewModels/ProvisionalViewModel.cs').read_text()
+    for name in ('Save','LinkBill','CancelEntry'):
+        if f'private void {name}() => RunPosting({name}Once);' not in vm: FAILURES.append('P39 unguarded PR action '+name)
+        body=vm.split(f'private void {name}Once()',1)[-1].split('\n    private ',1)[0]
+        for token in ('_posting.ObserveFailure(result);','_posting.AcknowledgeCommit();','_posting.CompleteReset();','SAVED. ',
+                      'BillCode = string.Empty;','CancelReason = string.Empty;','LookupText = string.Empty;','Lookup.Clear();'):
+            if token not in body: FAILURES.append('P39 PR cleanup missing '+name+':'+token)
+        order=['_posting.AcknowledgeCommit();','ForgetPostingTarget();','Load();','_posting.CompleteReset();']
+        ix=[body.find(t) for t in order]
+        if -1 in ix or ix!=sorted(ix) or body.count('ForgetPostingTarget();')!=2 or body.rfind('ForgetPostingTarget();')<body.find('Load();'):
+            FAILURES.append('P39 PR consume selection before callbacks AND after Load '+name)
+        if name=='Save':
+            if body.find('_posting.AcknowledgeCommit();')>body.find('if (result.Value is null)') or body.find('Lines.Clear();')>body.find('Print(code)'):
+                FAILURES.append('P39 Save acknowledgement/cleanup before result/print')
+        else:
+            if 'var entryId = SelectedEntry.Id;' not in body or 'var caption = SelectedEntry.Code;' not in body or body.find('var caption =')>body.find('_services.Provisional.'):
+                FAILURES.append('P39 pin PR identity/caption before service '+name)
+    for token in ('private readonly PostingAttemptGuard _posting = new();','if (RefusePendingPosting()) return;',
+                  'if (!_posting.TryBegin()) return;', '_postingInProgress = true;', 'try { action(); }',
+                  '_posting.ObserveException();','_posting.WasAcknowledged','finally',
+                  'if (_posting.InFlight) _posting.CancelBeforeWrite();','_postingInProgress = false;'):
+        if token not in vm: FAILURES.append('P39 PR shared guard missing '+token)
+    for name in ('AddLine','RemoveLine'):
+        body=vm.split(f'private void {name}()',1)[-1].split('\n    private ',1)[0]
+        if 'if (RefusePendingPosting()) return;' not in body: FAILURES.append('P39 PR pending tray edit '+name)
+    forget=vm.split('private void ForgetPostingTarget()',1)[-1].split('private bool RefusePendingPosting()',1)[0]
+    order=['_selectedEntry = null;', '_selectedLookup = null;','OnPropertyChanged(nameof(SelectedEntry));']
+    ix=[forget.find(t) for t in order]
+    if -1 in ix or ix!=sorted(ix): FAILURES.append('P39 target backing fields before callbacks')
+    tests=(DOTNET/'Area11.Tests/ProvisionalPostingFaultTests.cs').read_text()
+    for token in ('StatementFaultRestoresSnapshotThenOneRetryReconciles','Assert.True(failed.NoCommitConfirmed);','Assert.Equal(before, f.Snapshot());',
+                  'LegacyUnallocatedLinkKeepsItsSameBillAndNoNewMoney','ZeroRefundStillAddsGoodsButNoCashPaymentOrDrawerOutflow',
+                  'KnownRefusalsPermitCorrectionWithoutMutation','Assert.Equal(financial, f.Snapshot(', 'Assert.Equal(stock, f.Snapshot('):
+        if token not in tests: FAILURES.append('P39 PR regression source missing '+token)
+    if len(re.findall(r'\[(?:Fact|InlineData)(?:\(|\])',tests))!=45: FAILURES.append('P39 expected45 PR source cases')
+    REPORT.append('P39 PR Create/Link/Cancel observed failure + acknowledged cleanup/target/reentry lexical contracts;45 C# cases UNRUN')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -8755,6 +8806,7 @@ def main() -> int:
     check_draft_recovery_fault_boundaries()
     check_automatic_shared_draft_posting()
     check_expense_stock_fault_boundaries()
+    check_provisional_posting_fault_boundaries()
     check_csharp_grammar()
 
     if not quiet:

@@ -26,6 +26,8 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
 
     private readonly AppServices _services;
     private readonly User _user;
+    private readonly PostingAttemptGuard _posting = new();
+    private bool _postingInProgress;
 
     private string _searchText = string.Empty;
     private string _qtyText = "1";
@@ -259,6 +261,7 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
 
     private void AddLine()
     {
+        if (RefusePendingPosting()) return;
         if (SelectedProduct is null)
         {
             SetStatus("Pick a medicine from the list first.", true);
@@ -298,6 +301,7 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
 
     private void RemoveLine()
     {
+        if (RefusePendingPosting()) return;
         if (SelectedLine is null)
         {
             SetStatus("Pick a line in the list to remove it.", true);
@@ -310,7 +314,9 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
         SetStatus("Line removed.", false);
     }
 
-    private void Save()
+    private void Save() => RunPosting(SaveOnce);
+
+    private void SaveOnce()
     {
         if (Lines.Count == 0)
         {
@@ -343,14 +349,22 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
 
         if (!result.Ok)
         {
+            _posting.ObserveFailure(result);
             SetStatus(result.Error ?? "The no-bill return could not be saved.", true);
             return;
         }
 
-        var saved = result.Value!;
+        _posting.AcknowledgeCommit();
+        if (result.Value is null) throw new InvalidOperationException("Acknowledged PR has no result.");
+        var saved = result.Value;
         var code = saved.Code;
 
         // Fields are cleared by hand; Load() must not wipe the message (v0.3.0 lesson).
+        ForgetPostingTarget();
+        BillCode = string.Empty;
+        CancelReason = string.Empty;
+        LookupText = string.Empty;
+        Lookup.Clear();
         Lines.Clear();
         RefundText = string.Empty;
         Notes = string.Empty;
@@ -362,21 +376,26 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
         SelectedLine = null;
         RefreshTotal();
         Load();
+        // Load may choose another pending row; a completed action must not auto-target it.
+        ForgetPostingTarget();
 
+        _posting.CompleteReset();
         var printerProblem = Print(code);
         var extra = saved.Warnings.Count > 0 ? " " + saved.Warnings[0] : string.Empty;
 
         if (printerProblem is null)
         {
-            SetStatus(code + " saved - " + Money.Format(saved.RefundPaisa) + " paid back, goods on the shelf." + extra, false);
+            SetStatus("SAVED. " + code + " saved - " + Money.Format(saved.RefundPaisa) + " paid back, goods on the shelf." + extra, false);
         }
         else
         {
-            SetStatus(code + " saved - " + Money.Format(saved.RefundPaisa) + " paid back. " + printerProblem + extra, true);
+            SetStatus("SAVED. " + code + " saved - " + Money.Format(saved.RefundPaisa) + " paid back. " + printerProblem + extra, true);
         }
     }
 
-    private void LinkBill()
+    private void LinkBill() => RunPosting(LinkBillOnce);
+
+    private void LinkBillOnce()
     {
         if (SelectedEntry is null)
         {
@@ -384,26 +403,36 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
             return;
         }
 
-        var result = _services.Provisional.Link(SelectedEntry.Id, BillCode, _user);
+        var entryId = SelectedEntry.Id;
+        var caption = SelectedEntry.Code;
+        var result = _services.Provisional.Link(entryId, BillCode, _user);
 
         if (!result.Ok)
         {
+            _posting.ObserveFailure(result);
             SetStatus(result.Error ?? "The bill could not be attached.", true);
             return;
         }
 
-        var caption = SelectedEntry.Code;
+        _posting.AcknowledgeCommit();
+        ForgetPostingTarget();
         BillCode = string.Empty;
-        Lookup.Clear();
+        CancelReason = string.Empty;
         LookupText = string.Empty;
+        Lookup.Clear();
         Load();
+        // Load may choose another pending row; a completed action must not auto-target it.
+        ForgetPostingTarget();
+        _posting.CompleteReset();
         var warning = result.Warnings.Count == 0 ? string.Empty : " " + string.Join(" ", result.Warnings);
-        SetStatus(caption + ": bill attached; quantities and refund reconciled. " +
+        SetStatus("SAVED. " + caption + ": bill attached; quantities and refund reconciled. " +
                   "Stock and payment were NOT created again; the alert waits for the owner." + warning,
             result.Warnings.Count > 0);
     }
 
-    private void CancelEntry()
+    private void CancelEntry() => RunPosting(CancelEntryOnce);
+
+    private void CancelEntryOnce()
     {
         if (SelectedEntry is null)
         {
@@ -411,18 +440,28 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
             return;
         }
 
-        var result = _services.Provisional.Cancel(SelectedEntry.Id, CancelReason, _user);
+        var entryId = SelectedEntry.Id;
+        var caption = SelectedEntry.Code;
+        var result = _services.Provisional.Cancel(entryId, CancelReason, _user);
 
         if (!result.Ok)
         {
+            _posting.ObserveFailure(result);
             SetStatus(result.Error ?? "The entry could not be cancelled.", true);
             return;
         }
 
-        var caption = SelectedEntry.Code;
+        _posting.AcknowledgeCommit();
+        ForgetPostingTarget();
+        BillCode = string.Empty;
         CancelReason = string.Empty;
+        LookupText = string.Empty;
+        Lookup.Clear();
         Load();
-        SetStatus(caption + " cancelled - the stock that was added has been taken back out.", false);
+        // Load may choose another pending row; a completed action must not auto-target it.
+        ForgetPostingTarget();
+        _posting.CompleteReset();
+        SetStatus("SAVED. " + caption + " cancelled - the stock that was added has been taken back out.", false);
     }
 
     // -------------------------------------------------------------------- loading
@@ -536,6 +575,45 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
         TotalText = Lines.Count == 0
             ? "No items yet"
             : Lines.Count + " item(s): " + string.Join(", ", Lines.Select(line => line.Label));
+    }
+
+    private void ForgetPostingTarget()
+    {
+        _selectedEntry = null;
+        _selectedLookup = null;
+        OnPropertyChanged(nameof(SelectedEntry));
+        OnPropertyChanged(nameof(SelectedLookup));
+        OnPropertyChanged(nameof(SelectedCaption));
+    }
+
+    private bool RefusePendingPosting()
+    {
+        if (!_postingInProgress && _posting.Ready) return false;
+        SetStatus(_posting.WasAcknowledged
+            ? "SAVED. The PR action was stored but its page could not reset. Do not refund, link or cancel again; verify history, then reopen the page."
+            : "The earlier PR action is in progress or unconfirmed. Verify history, stock and payment before retrying; do not create another copy.", true);
+        return true;
+    }
+
+    private void RunPosting(Action action)
+    {
+        if (RefusePendingPosting()) return;
+        if (!_posting.TryBegin()) return;
+        _postingInProgress = true;
+        try { action(); }
+        catch (Exception exception)
+        {
+            _posting.ObserveException();
+            _services.Log.Error("PR action or its result cleanup failed; verify before reuse.", exception);
+            SetStatus(_posting.WasAcknowledged
+                ? "SAVED. The PR action was stored, but cleanup, refresh or printing failed. Do not refund, link or cancel again; verify history, then reopen the page."
+                : "The PR outcome could not be confirmed. Verify history, stock and payment before retrying; do not create another copy.", true);
+        }
+        finally
+        {
+            if (_posting.InFlight) _posting.CancelBeforeWrite();
+            _postingInProgress = false;
+        }
     }
 
     private void SetStatus(string message, bool isError)

@@ -1,5 +1,9 @@
 # POS، رعایت اور مکمل جائزہ — مالک کی جانچ کے لیے یکجا منصوبہ
 
+## ⏳ تازہ حیثیت — v0.117.0 Bracken / حصہ39
+
+⏳ مستقل17/19/23–25:PRSave/Link/Cancelexplicitoutcome/localretry/ackcleanupguard؛پراناtargetاورLoadکااگلاautomaticselectionصاف،دونوںdecisionfieldsصاف۔45نئےC#cases/2789suiteUNRUN۔ ✅financialSQL/privatehelpers/Link+CancelTxbodyunchanged؛نئیrefund/draftpolicyنہیں۔ ✅36SQLfaults+retry/29lexicalnegativechecksمقامیPASS،C#/WPF/providerCOMMITنہیں۔ [⏳ PT-59](POS-PHASE4-PART39-URDU.md)،[⏳ trace](POS-PHASE4-PROVISIONAL-POSTING-REVIEW.md)،[⏳1–36](NUMBERED-WORK-STATUS-URDU.md)۔ ⏳اگلاPRcurrentactor/read/receipt/read-verdict5–7/17/21،باقیrecovery/files/provider/durableidentity/parallel؛26–29restore/cloud،2/4/30–35Windows/results/hardware/isolation۔ ❌36installerbinaryنہیںبنی؛⏳FullPhase4OPEN۔ ⏳ہرportiondocs+samebranchpublication+actualremoteverification؛36categories≠36Nexts،3–6roundsمشروطتخمینہ۔
+
 ## ⏳ تازہ حیثیت — v0.116.0 Tarn / حصہ38
 
 ⏳ مستقل20/23–25:expense/drawing/write-off/Applyمیںexplicitno-commit،localretry/unknown/acknowledgedcleanupguards؛59نئےcases/2744C#suiteUNRUN۔ ✅financialSQL/privatehelpers/once-onlyApplyبرقرار،expenseauto-draftنہیں۔ ✅34SQLfaults+retry/33lexicalnegativechecksمقامیPASS؛یہC#/WPF/providerCOMMITنہیں۔ [⏳ PT-58](POS-PHASE4-PART38-URDU.md)،[⏳ trace](POS-PHASE4-EXPENSE-STOCK-FAULT-REVIEW.md)،[⏳1–36](NUMBERED-WORK-STATUS-URDU.md)۔ ⏳اگلاباقیrecoveryPR/files/provider/identity/parallel،5–7session/callers،26–29restore/cloud،2/4/30–35Windows/results/hardware/isolation۔ ❌36installerbinaryنہیںبنی؛⏳FullPhase4OPEN۔ ⏳docs+samebranchpublication+actualremoteverificationہرportion؛36categories≠36Nexts،3–6roundsمشروطاندازہنہupperbound۔

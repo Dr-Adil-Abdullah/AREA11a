@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.116.0 Tarn۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.117.0 Bracken۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**⏳ حصہ39 — PRSave/Attach/Cancel:** کامیاب action کے بعد fields/selection/refresh/printخرابہوتو **SAVED**؛وہیrefund/attach/cancelدوبارہنہیں۔ Unknownمیںپہلےhistory/stock/paymentverify؛صرفexplicitno-commitپرlocalretry۔ کامیابیکےبعددونوںdecisionfields/lookupاورLoadکااگلاautomaticpendingselectionصاف،اگلاactionتازہexplicitselectionسے۔ Linkدوسراstock/paymentنہیں،Cancelcashrefundخودواپسنہیںلاتا۔ یہlocalguardہے،restart/globalidentityنہیں؛PRcurrentaccess/read/receiptجانچالگباقی۔ [⏳ PT-59](POS-PHASE4-PART39-URDU.md)،[⏳ حدود](POS-PHASE4-PROVISIONAL-POSTING-REVIEW.md)۔ ⏳45نئےcases/2789suiteUNRUN؛FullPhase4OPEN؛❌installerbinaryنہیںبنی۔
 
 **⏳ حصہ38 — خرچ/مالک کی drawing/Write-off/Stock-take Apply:** کامیاب save کے بعد page/field/editor/refresh خراب ہو تو **SAVED**؛وہی خرچ/مال دوبارہ نہ لکھیں۔ ادھوری صفائی یا نامعلوم outcome میں اسی page پر posting بند؛پہلے history verify،پھر page دوبارہ کھولیں۔ صرف واضح no-commit پر retry۔ Unknown Apply میں count/clear/cancel/open/found بھی بند؛پراناappliedsessiononce-onlyبرقرار۔ یہlocalflagہے،restart/cross-PCduplicateprotectionنہیں؛expenseکےلیےautomaticdraftنہیںبنا۔ [⏳ PT-58](POS-PHASE4-PART38-URDU.md)،[⏳ حدود](POS-PHASE4-EXPENSE-STOCK-FAULT-REVIEW.md)۔ ⏳59نئےcases/2744C#suiteUNRUN؛FullPhase4OPEN؛❌installerbinaryنہیںبنی۔
 
@@ -378,6 +380,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 <a id="lesson-14"></a>
 
 ## سبق 14 — اصل بل ہاتھ میں نہ ہو: No bill (PR)
+
+⏳ حصہ39: Save/Attach/Cancel کا کامیاب جواب مل چکا ہو تو page/print error کے بعد وہی action دوبارہ نہیں۔ **SAVED** warning میںhistoryverifyکریں؛ادھوریصفائیہوتوpageدوبارہکھولنےسےپہلےنتیجہضروردیکھیں۔ Unknownمیںدوسریcopy/refundنہیں؛localflagrestartپرنہیںرہتا۔ کامیابیپرپراناtargetاورLoadکاخودکاراگلاانتخابصاف،bill/reasonدوبارہخودنہیںلگتے۔ Linkسےرقم/stockدوبارہنہیں،Cancelسےcash-inخودنہیں۔ CurrentPRreader/permission/receiptاوراصلWindowsثبوتباقی۔
 
 1. No bill (PR) عام refund کا آسان متبادل نہیں؛ اس میں اصل bill کی فوری تصدیق نہیں ہوتی۔ product، حقیقی واپس مقدار اور Unit ڈالیں؛ customer name/phone، واقعی دی گئی رقم، وجہ/نوٹ لکھیں۔
 2. Save and give the slip سے PR نمبر بنتا ہے، stock/مال اور refund کا الگ ریکارڈ بنتا ہے۔ slip گاہک کو دیں اور بعد میں اصل bill لانے کا طریقہ واضح کریں۔ غیر تصدیق شدہ رقم میں خاص احتیاط کریں۔
@@ -774,7 +778,7 @@ Recoveryکیfailedslipپرپرنٹرکوخالیdocumentنہیںدیاجاتا۔
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.116.0 کا متوقع test count 2744 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.117.0 کا متوقع test count 2789 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 

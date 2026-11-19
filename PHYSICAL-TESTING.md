@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## ⏳ PT-59 — PR Save/Link/Cancel outcomes,selection,cleanup (v0.117.0 Bracken)
+
+[⏳ Urdu steps](docs/POS-PHASE4-PART39-URDU.md),[⏳ trace](docs/POS-PHASE4-PROVISIONAL-POSTING-REVIEW.md). ⏳45newC#cases/2789suiteUNRUN;real runner/build/TRX/fix/retest,36service statement faults,refund remainder/OPEN batch/later line-allocation rollback/terminal repeat/legacy same-bill/zero refund/drawer reconciliation,WPF callback/reentry/next-row auto-selection/print faults required. ⏳ProviderCOMMIT/rollbackfailure/restart/parallel/currentPRaccess remainOPEN;Python/lexical probes not equivalent. ⏳Verifiedencryptedbackup AND trulyseparateDB/photos/config first;no shop fault injection. ❌Installerbinary NOT BUILT;⏳FullPhase4OPEN.
+
 ## ⏳ PT-58 — expense/drawing/write-off/Apply outcomes and cleanup (v0.116.0 Tarn)
 
 [⏳ Urdu steps](docs/POS-PHASE4-PART38-URDU.md),[⏳ trace](docs/POS-PHASE4-EXPENSE-STOCK-FAULT-REVIEW.md). ⏳59newC#cases/2744suite UNRUN;build/TRX/service faults/drawer-stock reconciliation,callback failures,reentry,unknown-vs-safe retry,once-only Apply/frozen cost/uncounted/found/multi-line rollback require real runner. ⏳ActualWPF/providerCOMMIT/rollbackfailure/parallel/powercut/restart not proved by34SQL faults or33lexicalmutations. ⏳Verifiedencryptedbackup AND trulyseparateDB/photos/config first;no shop fault injection. ❌Installerbinary NOT BUILT;⏳FullPhase4OPEN.

@@ -55,23 +55,28 @@ public sealed class ProvisionalReturnService
     /// <summary>Takes the medicine back, adds it to the shelf and pays the customer out.</summary>
     public ServiceResult<ProvisionalResult> Create(ProvisionalInput input, User user)
     {
+        var outcome = new TransactionOutcome();
         if (!_permissions.Can(user, Modules.Returns))
         {
-            return ServiceResult<ProvisionalResult>.Fail("You do not have permission to take a return.");
+            return new ServiceResult<ProvisionalResult> { Error = "You do not have permission to take a return.", NoCommitConfirmed = true };
         }
 
         try
         {
-            return _db.Tx(connection => Save(connection, input, user));
+            return _db.Tx(connection => Save(connection, input, user), outcome);
         }
         catch (ValidationException exception)
         {
-            return ServiceResult<ProvisionalResult>.Fail(exception.Message);
+            return new ServiceResult<ProvisionalResult> { Error = outcome.NoCommitConfirmed ? exception.Message
+                : "The PR outcome could not be confirmed. Verify its history before retrying.", NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
         catch (Exception exception)
         {
             _log.Error("The no-bill return could not be saved.", exception);
-            return ServiceResult<ProvisionalResult>.Fail("The no-bill return could not be saved. Nothing was changed.");
+            return new ServiceResult<ProvisionalResult> { Error = outcome.NoCommitConfirmed
+                ? "The PR action was not saved; no commit was made."
+                : "The PR outcome could not be confirmed. Verify its history, stock and payment before retrying.",
+                NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
     }
 
@@ -162,15 +167,16 @@ ORDER BY i.id;", new { id = provisionalId });
     /// </summary>
     public ServiceResult Link(int provisionalId, string? saleCode, User user)
     {
+        var outcome = new TransactionOutcome();
         if (!CanClose(user))
         {
-            return ServiceResult.Fail("Only the owner or a manager can attach the bill.");
+            return new ServiceResult { Error = "Only the owner or a manager can attach the bill.", NoCommitConfirmed = true };
         }
 
         var clean = (saleCode ?? string.Empty).Trim();
         if (clean.Length == 0)
         {
-            return ServiceResult.Fail("Type the bill number, for example INV-0001.");
+            return new ServiceResult { Error = "Type the bill number, for example INV-0001.", NoCommitConfirmed = true };
         }
 
         try
@@ -304,23 +310,20 @@ WHERE id = @id
                         $"allocated {line.RefundPaisa} paisa")));
 
                 return ServiceResult.Success(warnings.ToArray());
-            });
+            }, outcome);
         }
         catch (ValidationException exception)
         {
-            return ServiceResult.Fail(exception.Message);
+            return new ServiceResult { Error = outcome.NoCommitConfirmed ? exception.Message
+                : "The PR outcome could not be confirmed. Verify its history before retrying.", NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
         catch (Exception exception)
         {
             _log.Error("The bill could not be attached to no-bill return " + provisionalId + ".", exception);
-
-            // The owner runs the written suite on the shop PC. Keep the plain rollback promise, but
-            // do not hide the only useful diagnostic behind a log file that a throw-away test deletes.
-            var detail = exception.InnerException is null
-                ? exception.Message
-                : exception.Message + " " + exception.InnerException.Message;
-            return ServiceResult.Fail(
-                "The bill could not be attached. Nothing was changed. Technical detail: " + detail);
+            return new ServiceResult { Error = outcome.NoCommitConfirmed
+                ? "The PR action was not saved; no commit was made."
+                : "The PR outcome could not be confirmed. Verify its history, stock and payment before retrying.",
+                NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
     }
 
@@ -331,16 +334,17 @@ WHERE id = @id
     /// </summary>
     public ServiceResult Cancel(int provisionalId, string? reason, User user)
     {
+        var outcome = new TransactionOutcome();
         if (!CanClose(user))
         {
-            return ServiceResult.Fail("Only the owner or a manager can cancel a no-bill return.");
+            return new ServiceResult { Error = "Only the owner or a manager can cancel a no-bill return.", NoCommitConfirmed = true };
         }
 
         var clean = (reason ?? string.Empty).Trim();
         if (clean.Length < MinimumReasonLength)
         {
-            return ServiceResult.Fail(
-                "Write a reason of at least " + MinimumReasonLength + " characters for cancelling this entry.");
+            return new ServiceResult { Error =
+                "Write a reason of at least " + MinimumReasonLength + " characters for cancelling this entry.", NoCommitConfirmed = true };
         }
 
         try
@@ -407,16 +411,20 @@ WHERE id = @id;",
                     oldValue: "pending", newValue: "cancelled: " + clean);
 
                 return ServiceResult.Success();
-            });
+            }, outcome);
         }
         catch (ValidationException exception)
         {
-            return ServiceResult.Fail(exception.Message);
+            return new ServiceResult { Error = outcome.NoCommitConfirmed ? exception.Message
+                : "The PR outcome could not be confirmed. Verify its history before retrying.", NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
         catch (Exception exception)
         {
             _log.Error("No-bill return " + provisionalId + " could not be cancelled.", exception);
-            return ServiceResult.Fail("The no-bill return could not be cancelled. Nothing was changed.");
+            return new ServiceResult { Error = outcome.NoCommitConfirmed
+                ? "The PR action was not saved; no commit was made."
+                : "The PR outcome could not be confirmed. Verify its history, stock and payment before retrying.",
+                NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
     }
 
