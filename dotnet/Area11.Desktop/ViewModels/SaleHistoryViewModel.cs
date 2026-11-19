@@ -204,6 +204,7 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
     /// </summary>
     public void SetPrintSelection(IEnumerable<SaleHistoryRow> rows)
     {
+        if (!RefreshReadAccess()) return;
         _printSelection = (rows ?? Enumerable.Empty<SaleHistoryRow>()).Where(row => row is not null).Distinct().ToList();
         CanPrintSelection = _printSelection.Count > 1;
     }
@@ -375,8 +376,48 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
         Load();
     }
 
+    private bool _checkingReadAccess;
+    private bool _clearingHistoryPayload;
+
+    /// <summary>Refresh authority, not data. Stable allowed ticks preserve the current selection.</summary>
+    public bool RefreshReadAccess()
+    {
+        if (_checkingReadAccess || _clearingHistoryPayload) return false;
+        _checkingReadAccess = true;
+        try
+        {
+            var access = _services.History.CheckReadAccess(_user);
+            if (access.Ok) return true;
+            ClearHistoryPayload();
+            SetStatus(access.Error ?? "Current sales history access could not be checked.", true);
+            return false;
+        }
+        finally { _checkingReadAccess = false; }
+    }
+
+    private void ClearHistoryPayload()
+    {
+        if (_clearingHistoryPayload) return;
+        _clearingHistoryPayload = true;
+        try
+        {
+            _printSelection = new List<SaleHistoryRow>();
+            CanPrintSelection = false;
+            Selected = null;
+            Rows.Clear();
+            ClearDetail();
+            CountText = "-";
+            TotalText = "-";
+            DueText = "-";
+            HasSelection = false;
+        }
+        finally { _clearingHistoryPayload = false; }
+    }
+
+
     public void Load()
     {
+        if (!RefreshReadAccess()) return;
         RefreshDriftHint();
 
         var page = _services.History.Search(_user, new SaleHistoryFilter
@@ -389,13 +430,14 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
 
         if (!page.Ok || page.Value is null)
         {
+            ClearHistoryPayload();
             SetStatus(page.Error ?? "The bill history could not be read.", true);
             return;
         }
 
         var value = page.Value;
 
-        Rows.Clear();
+        ClearHistoryPayload();
 
         foreach (var row in value.Rows)
         {
@@ -445,12 +487,14 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
     /// <summary>Opens the fix modal, then reloads: the fix may have moved bills across the range.</summary>
     private void FixTime()
     {
+        if (!RefreshReadAccess()) return;
         TimeCorrectionDoor.Show(_services, _user);
         Load();
     }
 
     private void Open()
     {
+        if (!RefreshReadAccess()) return;
         if (Selected is null)
         {
             ClearDetail();
@@ -461,6 +505,7 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
 
         if (!opened.Ok || opened.Value is null)
         {
+            ClearHistoryPayload();
             ClearDetail();
             SetStatus(opened.Error ?? "That bill could not be opened.", true);
             return;
@@ -525,13 +570,18 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
 
         var document = _services.History.BuildReceipt(_user, Selected.Id);
 
-        return document.Ok && document.Value is not null
-            ? document.Value.PlainText
-            : document.Error ?? "The paper could not be prepared.";
+        if (!document.Ok || document.Value is null)
+        {
+            ClearHistoryPayload();
+            SetStatus(document.Error ?? "The paper could not be prepared.", true);
+            return string.Empty;
+        }
+        return document.Value.PlainText;
     }
 
     private void PrintAgain()
     {
+        if (!RefreshReadAccess()) return;
         // Portion 11: with `printer.defaultBulk` on and several bills ticked, the main button prints
         // the whole ticked set; otherwise it prints the one open bill, as it always has.
         if (_printSelection.Count > 1 && _services.Settings.GetBool("printer.defaultBulk", false))
@@ -540,16 +590,19 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
             return;
         }
 
-        if (Selected is null)
+        // A modal printer can pump the access timer and clear the bound selection.
+        var selected = Selected;
+        if (selected is null)
         {
             SetStatus("Pick a bill first.", true);
             return;
         }
 
-        var document = _services.History.BuildReceipt(_user, Selected.Id);
+        var document = _services.History.BuildReceipt(_user, selected.Id);
 
         if (!document.Ok || document.Value is null)
         {
+            ClearHistoryPayload();
             SetStatus(document.Error ?? "The bill could not be prepared.", true);
             return;
         }
@@ -564,10 +617,11 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
 
         // The paper is out, so the black box may say so. If that line cannot be written the owner is told,
         // because an unrecorded reprint is exactly the copy nobody can trace.
-        var noted = _services.History.RecordReprint(_user, Selected.Id);
+        var noted = _services.History.RecordReprint(_user, selected.Id);
 
+        var stillAllowed = RefreshReadAccess();
         SetStatus(
-            "Printed " + Selected.Code + " again (" + Selected.TotalLabel + ")."
+            (stillAllowed ? "Printed " + selected.Code + " again (" + selected.TotalLabel + ")." : "Printed the bill again.")
             + (noted.Ok ? string.Empty : " The black box did not record it: " + noted.Error),
             !noted.Ok);
     }
@@ -575,6 +629,7 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
     /// <summary>The explicit bulk button: always the ticked bills, whatever the setting says.</summary>
     private void PrintSelection()
     {
+        if (!RefreshReadAccess()) return;
         if (_printSelection.Count < 2)
         {
             SetStatus("Tick two or more bills first (hold Ctrl and click).", true);
@@ -589,6 +644,7 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
         var job = _services.History.BuildBulkBills(_user, ids);
         if (!job.Ok || job.Value is null)
         {
+            ClearHistoryPayload();
             SetStatus(job.Error ?? "The bills could not be prepared.", true);
             return;
         }
@@ -622,11 +678,13 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
     /// </summary>
     private void Preview()
     {
+        if (!RefreshReadAccess()) return;
         if (_printSelection.Count > 1)
         {
             var job = _services.History.BuildBulkBills(_user, _printSelection.Select(row => row.Id).ToList());
             if (!job.Ok || job.Value is null)
             {
+                ClearHistoryPayload();
                 SetStatus(job.Error ?? "The bills could not be prepared.", true);
                 return;
             }
@@ -644,6 +702,7 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
         var document = _services.History.BuildReceipt(_user, Selected.Id);
         if (!document.Ok || document.Value is null)
         {
+            ClearHistoryPayload();
             SetStatus(document.Error ?? "The bill could not be prepared.", true);
             return;
         }
@@ -657,6 +716,7 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
     /// </summary>
     private void SendOnWhatsApp()
     {
+        if (!RefreshReadAccess()) return;
         if (Selected is null)
         {
             SetStatus("Pick a bill first.", true);
@@ -666,6 +726,7 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
         var document = _services.History.BuildReceipt(_user, Selected.Id);
         if (!document.Ok || document.Value is null)
         {
+            ClearHistoryPayload();
             SetStatus(document.Error ?? "The bill could not be prepared.", true);
             return;
         }
@@ -678,6 +739,7 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
 
     private void PrintSelectedReturn()
     {
+        if (!RefreshReadAccess()) return;
         var row = SelectedReturn;
 
         if (row is null || !row.CanPrint)
@@ -690,6 +752,7 @@ public sealed class SaleHistoryViewModel : ObservableObject, IEmptyPage
 
         if (!document.Ok || document.Value is null)
         {
+            ClearHistoryPayload();
             SetStatus(document.Error ?? "The return receipt could not be prepared.", true);
             return;
         }

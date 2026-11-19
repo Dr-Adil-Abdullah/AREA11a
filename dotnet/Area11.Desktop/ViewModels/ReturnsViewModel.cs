@@ -506,7 +506,7 @@ public sealed class ReturnsViewModel : ObservableObject, IEmptyPage
             return;
         }
         if (!_services.Settings.GetBool("printer.autoPrint", true)) return;
-        var document = _services.ReturnReceipts.Build(returnCode);
+        var document = _services.ReturnReceipts.Build(returnCode, _user);
         if (!document.Ok || document.Value is null)
         {
             SetStatus("SAVED. " + returnCode + ". Do not refund again. Its receipt could not be prepared: " + (document.Error ?? "unknown reason"), true);

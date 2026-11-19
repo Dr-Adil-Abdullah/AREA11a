@@ -226,7 +226,7 @@ public sealed class SplitPaymentTests
         var sale = sales.Create(input, TestData.Owner);
         Assert.True(sale.Ok, sale.Error);
 
-        var receipt = new ReceiptService(test.Database, test.Settings, test.Log).Build(sale.Value!.SaleId);
+        var receipt = new ReceiptService(test.Database, test.Settings, test.Log, TestData.Permissions(test)).Build(sale.Value!.SaleId, TestData.Owner);
         Assert.True(receipt.Ok, receipt.Error);
 
         var text = receipt.Value!.PlainText;

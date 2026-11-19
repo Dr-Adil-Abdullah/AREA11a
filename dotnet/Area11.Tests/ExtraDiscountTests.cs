@@ -298,12 +298,12 @@ VALUES(@id,'EXPENSIVE','2028-06-30','2028-06',5,55000,56000,1);",
     {
         using var t = new TestDatabase(); Grant(t); var sale = Post(t, Cart(t));
         t.Settings.Set("receipt.showDiscount", false, TestData.Owner);
-        var receipts = new ReceiptService(t.Database, t.Settings, t.Log);
-        var first = receipts.Build(sale.SaleId); Assert.True(first.Ok, first.Error);
+        var receipts = new ReceiptService(t.Database, t.Settings, t.Log, TestData.Permissions(t));
+        var first = receipts.Build(sale.SaleId, TestData.Owner); Assert.True(first.Ok, first.Error);
         Assert.Contains("Before Extra Discount", first.Value!.PlainText);
         Assert.Contains("Extra Discount", first.Value.PlainText);
         Assert.Contains("1,100.00", first.Value.PlainText);
-        Assert.Equal(first.Value.PlainText, receipts.Build(sale.SaleId).Value!.PlainText);
+        Assert.Equal(first.Value.PlainText, receipts.Build(sale.SaleId, TestData.Owner).Value!.PlainText);
     }
 
     [Fact]

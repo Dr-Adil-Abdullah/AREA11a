@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## v0.111.0 portion33 — receipt/history current access؛ کوئی نئی financial policy نہیں
+
+Continue کے تحت5/6/7/15/17/21/23/24: Counter receipt=POS،Counter returnreceipt=Returns،دونوں History reprints=Sales؛grants کو union نہیں کیا۔ موجودہstoredactive/sameparsedrole چیک؛audit transaction میںstoredنام،غائبreturn کاجھوٹاauditنہیں،writefault واضحfailure۔ BillsstaleUI/action/nominal3stimerصفائی؛already-openpreview/file/paperrecallنہیں۔ Pricing/Extra/ReturnB/SupplierB/main/Cost/Profitunchanged۔ [PT-53](POS-PHASE4-PART33-URDU.md)،[trace](POS-PHASE4-RECEIPT-CURRENT-REVIEW.md)۔95نئےcases/2400C#/WindowsUNRUN؛FullPhase4/installerOPEN۔
+
 ## v0.110.0 portion32 — current Sale/Return account/module؛نئیfinancialpolicyنہیں
 
 Continueکےتحت5/6/7/15/17/23میںstoredactive/sameparsedroleaccount،POS/Returnsgrant،transactionstoredactorاورrequiredlookupactor؛SaleDraftpremarkguard،Returnstaletimerصفائی۔ Authenticatedsessiontoken/same-roleIDproof/CASنہیںبنایا؛remainingreceipt/history/quarantine/draftsaveopen/held/quickadd/fullPOSstaleUIباقی۔ Pricing/Extra/ReturnB/SupplierB/main/Cost/Profitاورfinancialtailsunchanged۔ [PT-52](POS-PHASE4-PART32-URDU.md)،[trace](POS-PHASE4-COUNTER-CURRENT-ACCESS-REVIEW.md)۔74نئےcases/2305C#/WindowsUNRUN؛FullPhase4/installerOPEN۔

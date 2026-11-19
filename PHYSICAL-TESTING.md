@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-53 — stable5/6/7/15/17/21/23/24 receipt/history (v0.111.0) — all Windows steps UNRUN
+
+[Urdu isolated steps](docs/POS-PHASE4-PART33-URDU.md),[trace/limits](docs/POS-PHASE4-RECEIPT-CURRENT-REVIEW.md).95newC#cases/2400suiteUNRUN:11routes currentchanges/invalidactors,independentSales/POS/Returns,storedreprintaudit,triggerfailure,missingreturn,invalidpurpose,Ownercurrentcheck,bulkpartialrefusal. Test stale history/action/timer/regrant; actual spooler/auditfault after printing must report printed-but-unrecorded, never invite duplicate. Already-openpreview/exportedfile/paper not recalled. Verified backup+truly separateDB/photos/config;no live synthetic posts. FullPhase4/installerOPEN.
+
 ## PT-52 — stable5/6/7/15/17/23 current Sale/Return account/module (v0.110.0) — UNRUN
 
 [Urdu isolated steps](docs/POS-PHASE4-PART32-URDU.md),[trace/limits](docs/POS-PHASE4-COUNTER-CURRENT-ACCESS-REVIEW.md).74newC#cases/2305suiteUNRUN:currentchanges/invalidactors/regrant8routes,SaleDraftdenial,Ownerstoredchange,storedaudit/financialindependence. Requiredlookupactors/transactionreader;Returnstaleformtimer/regrantfreshread;POSnextaction/printchecks,NO fullPOStimerclaim. Python/lexicalnotC#/session/CAS/provider/WPFproof. Backup+trulyseparateDB/photos/config;no live synthetic posts. FullPhase4/installerOPEN.

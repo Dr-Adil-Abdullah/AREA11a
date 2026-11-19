@@ -39,7 +39,7 @@ public sealed class AppServices
         Drafts = new DraftService(Database, Audit, Sales, Purchases, Permissions, Log);
         Returns = new ReturnService(Database, Audit, Numbering, Settings, Permissions, Log);
         Quarantine = new QuarantineService(Database, Audit, Permissions, Log);
-        ReturnReceipts = new ReturnReceiptService(Database, Settings, Log);
+        ReturnReceipts = new ReturnReceiptService(Database, Settings, Log, Permissions);
         // The paper two people sign when the drawer changes hands (F-55).
         HandoverSlips = new HandoverSlipService(Settings);
         Alert = new AlertService(Database, Settings, Audit, Permissions, Log);
@@ -54,7 +54,7 @@ public sealed class AppServices
         Tax = new TaxService(Database, Settings, Permissions, Log);
         AuditHistory = new AuditHistoryService(Database, Permissions, Log, Settings);
         ProvisionalReceipts = new ProvisionalReceiptService(Provisional, Settings, Log);
-        Receipts = new ReceiptService(Database, Settings, Log);
+        Receipts = new ReceiptService(Database, Settings, Log, Permissions);
         Printer = new PrinterService(Settings, Log);
         WhatsApp = new WhatsAppService(Settings, Log);
         Backup = new BackupService(Database, Settings, Audit, Permissions, Log,

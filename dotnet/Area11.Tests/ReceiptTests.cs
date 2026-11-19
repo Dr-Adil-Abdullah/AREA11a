@@ -18,7 +18,7 @@ public sealed class ReceiptTests
 {
     private const int ProductId = 1;
 
-    private static ReceiptService Service(TestDatabase test) => new(test.Database, test.Settings, test.Log);
+    private static ReceiptService Service(TestDatabase test) => new(test.Database, test.Settings, test.Log, TestData.Permissions(test));
 
     /// <summary>Writes one product, one bill and its lines - the minimum the receipt needs.</summary>
     private static int SeedSale(
@@ -80,7 +80,7 @@ VALUES(@saleId, @productId, NULL, @name, @qty, 'strip', @qty, @price, 0, @lineTo
 
     private static ReceiptDocument Receipt(TestDatabase test, int saleId)
     {
-        var result = Service(test).Build(saleId);
+        var result = Service(test).Build(saleId, TestData.Owner);
         Assert.True(result.Ok, result.Error);
         Assert.NotNull(result.Value);
         return result.Value!;
@@ -244,7 +244,7 @@ VALUES(@saleId, @productId, NULL, @name, @qty, 'strip', @qty, @price, 0, @lineTo
     {
         using var test = new TestDatabase();
 
-        var result = Service(test).Build(9999);
+        var result = Service(test).Build(9999, TestData.Owner);
 
         Assert.False(result.Ok);
         Assert.NotNull(result.Error);

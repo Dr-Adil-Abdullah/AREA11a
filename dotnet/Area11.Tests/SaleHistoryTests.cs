@@ -178,7 +178,7 @@ public sealed class SaleHistoryTests
         var history = History(test);
 
         var again = history.BuildReceipt(TestData.Owner, sale.SaleId).Value!;
-        var original = new ReceiptService(test.Database, test.Settings, test.Log).Build(sale.SaleId).Value!;
+        var original = new ReceiptService(test.Database, test.Settings, test.Log, TestData.Permissions(test)).Build(sale.SaleId, TestData.Owner).Value!;
 
         // Same paper, because a reprint is not a new document - it is the stored bill, rendered again.
         Assert.Equal(original.PlainText, again.PlainText);
@@ -256,8 +256,8 @@ public sealed class SaleHistoryTests
 
     private static SaleHistoryService History(TestDatabase test) =>
         new(test.Database,
-            new ReceiptService(test.Database, test.Settings, test.Log),
-            new ReturnReceiptService(test.Database, test.Settings, test.Log),
+            new ReceiptService(test.Database, test.Settings, test.Log, TestData.Permissions(test)),
+            new ReturnReceiptService(test.Database, test.Settings, test.Log, TestData.Permissions(test)),
             test.Audit,
             new PermissionService(test.Database, test.Log, test.Audit),
             test.Log);

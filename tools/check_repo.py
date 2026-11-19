@@ -8320,6 +8320,62 @@ def check_counter_current_access():
         if token not in tests: FAILURES.append('Current counter regression missing '+token)
     REPORT.append('Phase4 portion32/stable5,6,7,15,17,23:current Sale/Return readers and transactional stored writer,required lookup actors,Sale draft premark/final actor,Return stale page cleanup/timer;74sourcecases/2305suiteUNRUN,not authenticatedsession/CAS/durableidentity/provider/WPF proof')
 
+def check_receipt_current_access():
+    """Lexical regression guard only; not execution or session certification."""
+    for stem,module,signature,payload in (
+        ('Receipt','Pos','Build(int saleId, User? user, ReceiptReadPurpose purpose = ReceiptReadPurpose.Counter)','var sale = _db.QuerySingle'),
+        ('ReturnReceipt','Returns','Build(string? returnCode, User? user, ReceiptReadPurpose purpose = ReceiptReadPurpose.Counter)','var rows = _db.Query')):
+        source=(DOTNET/('Area11.Core/Services/'+stem+'Service.cs')).read_text()
+        body=source.split(signature,1)[-1].split('catch (ValidationException',1)[0]
+        gate='SnapshotReadAccess.Require(_db, connection, _permissions, user, module);'
+        for token in (signature,'ReceiptReadPurpose.Counter => Modules.'+module,'ReceiptReadPurpose.History => Modules.Sales',
+                      '_ => throw new ValidationException',gate):
+            if token not in source: FAILURES.append('Receipt current contract missing '+stem+':'+token)
+        if gate not in body or payload not in body or body.find(gate)>body.find(payload): FAILURES.append('Receipt payload must follow current gate '+stem)
+    source=(DOTNET/'Area11.Core/Services/SaleHistoryService.cs').read_text()
+    for token in ('CanLook(User? user) => CheckReadAccess(user).Ok;',
+                  'SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Sales)',
+                  '_receipts.Build(saleId, user, ReceiptReadPurpose.History)',
+                  '_returnReceipts.Build(code, user, ReceiptReadPurpose.History)',
+                  '_receipts.Build(id, user, ReceiptReadPurpose.History)',
+                  'RequireReader(receiptConnection, user);','A selected bill changed.',
+                  'if (exists == 0) throw new ValidationException'):
+        if token not in source: FAILURES.append('History current contract missing '+token)
+    for signature in ('public ServiceResult<SaleHistoryPage> Search(', 'public ServiceResult<SaleHistoryDetail> Open(', 'public ServiceResult<BulkPrintJob> BuildBulkBills('):
+        body=source.split(signature,1)[-1].split('\n    public ',1)[0]
+        gate='RequireReader(connection, user);'
+        if gate not in body or body.find(gate)>body.find('_db.Query'): FAILURES.append('History direct payload gate missing '+signature)
+    for signature in ('public ServiceResult RecordReprint(', 'public ServiceResult RecordReturnReprint('):
+        body=source.split(signature,1)[-1].split('\n    public ',1)[0]
+        tokens=['_db.Tx(connection =>','var reader = RequireReader(connection, user);','_audit.Record(connection, reader, Modules.Sales']
+        positions=[body.find(t) for t in tokens]
+        if -1 in positions or positions!=sorted(positions) or 'RecordStandalone(' in body: FAILURES.append('History current transactional audit missing '+signature)
+    vm=(DOTNET/'Area11.Desktop/ViewModels/SaleHistoryViewModel.cs').read_text()
+    for token in ('_services.History.CheckReadAccess(_user)', '_checkingReadAccess = true;', 'finally { _checkingReadAccess = false; }',
+                  '_printSelection = new List<SaleHistoryRow>();','CanPrintSelection = false;', 'Rows.Clear();', 'Selected = null;',
+                  'CountText = "-";', 'TotalText = "-";', 'DueText = "-";', 'ClearDetail();',
+                  'if (_checkingReadAccess || _clearingHistoryPayload) return false;',
+                  'var selected = Selected;', 'RecordReprint(_user, selected.Id)'):
+        if token not in vm: FAILURES.append('History stale cleanup missing '+token)
+    for signature in ('public void Load()', 'public void SetPrintSelection(', 'private void Open()', 'private void PrintAgain()', 'private void PrintSelection()', 'private void Preview()', 'private void SendOnWhatsApp()', 'private void PrintSelectedReturn()'):
+        body=vm.split(signature,1)[-1].split('\n    private ',1)[0].split('\n    public ',1)[0]
+        if 'if (!RefreshReadAccess()) return;' not in body: FAILURES.append('History action current gate missing '+signature)
+    for stem in ('Pos','Returns'):
+        text=(DOTNET/('Area11.Desktop/ViewModels/'+stem+'ViewModel.cs')).read_text()
+        token='_services.'+('Receipts.Build(saleId, _user)' if stem=='Pos' else 'ReturnReceipts.Build(returnCode, _user)')
+        if token not in text: FAILURES.append('Receipt actor propagation missing '+stem)
+    view=(DOTNET/'Area11.Desktop/Views/SaleHistoryView.xaml.cs').read_text()
+    for token in ('TimeSpan.FromSeconds(3)', '_accessTimer.Start();', 'Unloaded += (_, _) => _accessTimer.Stop();', 'model.RefreshReadAccess();'):
+        if token not in view: FAILURES.append('History timer lifecycle missing '+token)
+    tests=(DOTNET/'Area11.Tests/ReceiptCurrentAccessTests.cs').read_text()
+    if tests.count('[InlineData(')!=88 or tests.count('[Fact]')!=7: FAILURES.append('Receipt current requires95 registered source regressions')
+    for token in ('Assert.Equal(before, f.Snapshot());','Assert.Equal(default(T), result.Value);','IndependentSalesPosAndReturnsGrantsCannotSubstituteForEachOther',
+                  'BothReprintAuditsUseStoredCurrentNameNotCallerAuthoredName','AuditInsertFaultIsFailureAndDoesNotSilentlyClaimRecorded',
+                  'MissingReturnCannotInventAReprintAudit','UnknownReceiptPurposeFailsClosedWithoutPayloadOrMutation',
+                  'StoredOwnerMustStillBeActiveAndSameRoleBeforeOrdinaryBypass','BulkMissingBillReturnsNoPartialJobAndDoesNotWrite'):
+        if token not in tests: FAILURES.append('Receipt regression missing '+token)
+    REPORT.append('Phase4 portion33/stable5,6,7,15,17,21,23,24:current receipt/history actors,independent purpose/module gates,transactional stored reprint audit,history stale cleanup/timer;95sourcecases/2400suiteUNRUN;NOT C#/session/CAS/printer/prepared-output revocation proof')
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -8417,6 +8473,7 @@ def main() -> int:
     check_stock_posting_integrity()
     check_counter_posting_integrity()
     check_counter_current_access()
+    check_receipt_current_access()
     check_csharp_grammar()
 
     if not quiet:

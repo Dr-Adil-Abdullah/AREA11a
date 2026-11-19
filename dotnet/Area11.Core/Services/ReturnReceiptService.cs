@@ -21,12 +21,14 @@ public sealed class ReturnReceiptService
     private readonly Database _db;
     private readonly SettingsService _settings;
     private readonly LogService _log;
+    private readonly PermissionService _permissions;
 
-    public ReturnReceiptService(Database db, SettingsService settings, LogService log)
+    public ReturnReceiptService(Database db, SettingsService settings, LogService log, PermissionService permissions)
     {
         _db = db;
         _settings = settings;
         _log = log;
+        _permissions = permissions;
     }
 
     public int PaperWidth
@@ -39,7 +41,7 @@ public sealed class ReturnReceiptService
     }
 
     /// <summary>Builds the receipt of one return, found by its permanent number (RET-0001).</summary>
-    public ServiceResult<ReceiptDocument> Build(string? returnCode)
+    public ServiceResult<ReceiptDocument> Build(string? returnCode, User? user, ReceiptReadPurpose purpose = ReceiptReadPurpose.Counter)
     {
         var code = (returnCode ?? string.Empty).Trim();
         if (code.Length == 0)
@@ -50,6 +52,13 @@ public sealed class ReturnReceiptService
         try
         {
             using var connection = _db.Open();
+            var module = purpose switch
+            {
+                ReceiptReadPurpose.Counter => Modules.Returns,
+                ReceiptReadPurpose.History => Modules.Sales,
+                _ => throw new ValidationException("Choose a supported receipt workflow.")
+            };
+            SnapshotReadAccess.Require(_db, connection, _permissions, user, module);
 
             var rows = _db.Query<Row>(connection, @"
 SELECT r.code, r.date, r.reason, r.note, r.qty_entered AS qtyEntered, r.unit_sold AS unitSold,
@@ -73,6 +82,7 @@ ORDER BY r.id;", new { code });
 
             return ServiceResult<ReceiptDocument>.Success(Compose(rows));
         }
+        catch (ValidationException exception) { return ServiceResult<ReceiptDocument>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"The return receipt {code} could not be built.", exception);

@@ -1370,7 +1370,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             SetStatus(access.Error ?? "Current Counter access is required before printing.", true);
             return false;
         }
-        var document = _services.Receipts.Build(saleId);
+        var document = _services.Receipts.Build(saleId, _user);
         if (!document.Ok || document.Value is null)
         {
             SetStatus(document.Error ?? "The receipt could not be prepared.", true);

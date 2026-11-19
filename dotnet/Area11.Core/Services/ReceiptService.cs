@@ -5,6 +5,13 @@ using Area11.Core.Utils;
 
 namespace Area11.Core.Services;
 
+/// <summary>Explicit entrypoint; invalid values fail closed, never a permissive module union.</summary>
+public enum ReceiptReadPurpose
+{
+    Counter,
+    History
+}
+
 /// <summary>
 /// Turns a saved bill into the lines of a thermal receipt (Spec 14).
 ///
@@ -21,12 +28,14 @@ public sealed class ReceiptService
     private readonly Database _db;
     private readonly SettingsService _settings;
     private readonly LogService _log;
+    private readonly PermissionService _permissions;
 
-    public ReceiptService(Database db, SettingsService settings, LogService log)
+    public ReceiptService(Database db, SettingsService settings, LogService log, PermissionService permissions)
     {
         _db = db;
         _settings = settings;
         _log = log;
+        _permissions = permissions;
     }
 
     /// <summary>Paper width in characters: 32 for 58 mm, 48 for 80 mm.</summary>
@@ -41,11 +50,18 @@ public sealed class ReceiptService
     public static int ColumnsForMillimetres(int millimetres) => millimetres >= 80 ? 48 : 32;
 
     /// <summary>Builds the receipt of one sale. A missing sale is an error, never an empty paper.</summary>
-    public ServiceResult<ReceiptDocument> Build(int saleId)
+    public ServiceResult<ReceiptDocument> Build(int saleId, User? user, ReceiptReadPurpose purpose = ReceiptReadPurpose.Counter)
     {
         try
         {
             using var connection = _db.Open();
+            var module = purpose switch
+            {
+                ReceiptReadPurpose.Counter => Modules.Pos,
+                ReceiptReadPurpose.History => Modules.Sales,
+                _ => throw new ValidationException("Choose a supported receipt workflow.")
+            };
+            SnapshotReadAccess.Require(_db, connection, _permissions, user, module);
 
             var sale = _db.QuerySingle<SaleRow>(connection, @"
 SELECT id, code, date, created_at, customer_id, user_id, subtotal_paisa, discount_paisa, tax_paisa,
@@ -79,6 +95,7 @@ WHERE sale_id = @id AND method <> 'credit' ORDER BY id;", new { id = saleId });
 
             return ServiceResult<ReceiptDocument>.Success(Compose(sale, items, payments, cashier, customer));
         }
+        catch (ValidationException exception) { return ServiceResult<ReceiptDocument>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"The receipt for sale {saleId} could not be built.", exception);

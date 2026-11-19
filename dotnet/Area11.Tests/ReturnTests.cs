@@ -259,7 +259,7 @@ FROM sales WHERE id = @id;", new { id = saleId }) ?? string.Empty;
         var result = returns.Create(TestData.Return(sale.Value!, 2, restock: false, reason: "defective"), TestData.Owner);
         Assert.True(result.Ok, result.Error);
 
-        var receipt = TestData.ReturnReceipts(test).Build(result.Value!.Code);
+        var receipt = TestData.ReturnReceipts(test).Build(result.Value!.Code, TestData.Owner);
 
         Assert.True(receipt.Ok, receipt.Error);
         var text = receipt.Value!.PlainText;
@@ -316,7 +316,7 @@ FROM sales WHERE id = @id;", new { id = saleId }) ?? string.Empty;
         Assert.Equal(50000L, result.Value!.CashPaisa);
         Assert.Equal(10000L, result.Value.CreditReducedPaisa);
 
-        var receipt = TestData.ReturnReceipts(test).Build(result.Value.Code);
+        var receipt = TestData.ReturnReceipts(test).Build(result.Value.Code, TestData.Owner);
         Assert.True(receipt.Ok, receipt.Error);
         Assert.Contains("Cash refunded", receipt.Value!.PlainText);
         Assert.Contains("Khata reduced", receipt.Value.PlainText);

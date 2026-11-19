@@ -50,7 +50,25 @@ public sealed class SaleHistoryService
     }
 
     /// <summary>Looking at the shop's bills is a sales-counter right, not an owner-only one (Spec 12.3.3).</summary>
-    public bool CanLook(User? user) => _permissions.Can(user, Modules.Sales);
+    public bool CanLook(User? user) => CheckReadAccess(user).Ok;
+
+    public ServiceResult CheckReadAccess(User? user)
+    {
+        try
+        {
+            _db.Read(connection => { RequireReader(connection, user); return true; });
+            return ServiceResult.Success();
+        }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
+        catch (Exception exception)
+        {
+            _log.Error("Sales history access could not be checked.", exception);
+            return ServiceResult.Fail("Current sales history access could not be checked. Refresh or sign in again.");
+        }
+    }
+
+    private User RequireReader(Microsoft.Data.Sqlite.SqliteConnection connection, User? user) =>
+        SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Sales);
 
     /// <summary>
     /// The bills in the range, newest first. A bad date is a refusal with a reason, never a silent "no
@@ -94,6 +112,7 @@ public sealed class SaleHistoryService
             var query = search.Length == 0 ? string.Empty : "%" + search + "%";
 
             using var connection = _db.Open();
+            RequireReader(connection, user);
 
             var rows = _db.Query<SaleHistoryRow>(connection, @"
 SELECT s.id AS id, s.code AS code, s.date AS date, s.status AS status,
@@ -132,12 +151,13 @@ LIMIT 501;",
 
             return ServiceResult<SaleHistoryPage>.Success(page);
         }
+        catch (ValidationException exception) { return ServiceResult<SaleHistoryPage>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error("The bill history could not be read.", exception);
 
             return ServiceResult<SaleHistoryPage>.Fail(
-                "The bill history could not be read. " + exception.Message);
+                "The bill history could not be read.");
         }
     }
 
@@ -153,6 +173,7 @@ LIMIT 501;",
         try
         {
             using var connection = _db.Open();
+            RequireReader(connection, user);
 
             var header = _db.QuerySingle<SaleHistoryRow>(connection, @"
 SELECT s.id AS id, s.code AS code, s.date AS date, s.status AS status,
@@ -201,12 +222,13 @@ ORDER BY r.id;", new { id = saleId }));
 
             return ServiceResult<SaleHistoryDetail>.Success(detail);
         }
+        catch (ValidationException exception) { return ServiceResult<SaleHistoryDetail>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"The bill {saleId} could not be opened.", exception);
 
             return ServiceResult<SaleHistoryDetail>.Fail(
-                "That bill could not be opened. " + exception.Message);
+                "That bill could not be opened.");
         }
     }
 
@@ -219,7 +241,7 @@ ORDER BY r.id;", new { id = saleId }));
                 "Only a person who may look at the sales can print a bill again.");
         }
 
-        return _receipts.Build(saleId);
+        return _receipts.Build(saleId, user, ReceiptReadPurpose.History);
     }
 
     /// <summary>The paper for a return, found from its number on the bill page (Spec 14.3.2).</summary>
@@ -231,7 +253,7 @@ ORDER BY r.id;", new { id = saleId }));
                 "Only a person who may look at the sales can print a return receipt again.");
         }
 
-        return _returnReceipts.Build(code);
+        return _returnReceipts.Build(code, user, ReceiptReadPurpose.History);
     }
 
     /// <summary>
@@ -255,10 +277,13 @@ ORDER BY r.id;", new { id = saleId }));
 
         try
         {
+            using var receiptConnection = _db.Open();
+            RequireReader(receiptConnection, user);
             var documents = new List<ReceiptDocument>();
             foreach (var id in clean)
             {
-                var built = _receipts.Build(id);
+                RequireReader(receiptConnection, user);
+                var built = _receipts.Build(id, user, ReceiptReadPurpose.History);
                 if (!built.Ok || built.Value is null)
                 {
                     return ServiceResult<BulkPrintJob>.Fail(
@@ -269,16 +294,15 @@ ORDER BY r.id;", new { id = saleId }));
             }
 
             using var connection = _db.Open();
+            RequireReader(connection, user);
             var rows = new List<BulkBillRow>();
             foreach (var id in clean)
             {
                 var row = _db.QuerySingle<BulkBillRow>(connection,
                     "SELECT code AS Code, date AS Date, total_paisa AS TotalPaisa FROM sales WHERE id = @id;",
                     new { id });
-                if (row is not null)
-                {
-                    rows.Add(row);
-                }
+                if (row is null) throw new ValidationException("A selected bill changed. Refresh; no bulk job was prepared.");
+                rows.Add(row);
             }
 
             var width = _receipts.PaperWidth;
@@ -303,6 +327,7 @@ ORDER BY r.id;", new { id = saleId }));
                 ReceiptService.TwoColumns("TOTAL", Money.Format(rows.Sum(row => row.TotalPaisa)), width),
                 ReceiptAlign.Left, bold: true));
 
+            RequireReader(connection, user);
             return ServiceResult<BulkPrintJob>.Success(new BulkPrintJob
             {
                 Title = "Bills (" + rows.Count + ")",
@@ -310,10 +335,11 @@ ORDER BY r.id;", new { id = saleId }));
                 Summary = summary
             });
         }
+        catch (ValidationException exception) { return ServiceResult<BulkPrintJob>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error("The bulk bills could not be prepared.", exception);
-            return ServiceResult<BulkPrintJob>.Fail("The bulk bills could not be prepared. " + exception.Message);
+            return ServiceResult<BulkPrintJob>.Fail("The bulk bills could not be prepared.");
         }
     }
 
@@ -332,72 +358,53 @@ ORDER BY r.id;", new { id = saleId }));
     /// </summary>
     public ServiceResult RecordReprint(User? user, int saleId)
     {
-        if (!CanLook(user))
-        {
-            return ServiceResult.Fail("Only a person who may look at the sales can print a bill again.");
-        }
-
         try
         {
-            using var connection = _db.Open();
-
-            var row = _db.QuerySingle<SaleHistoryRow>(connection, @"
-SELECT code AS code, date AS date, created_at AS createdAt, total_paisa AS totalPaisa
-FROM sales WHERE id = @id;",
-                new { id = saleId });
-
-            if (row is null)
+            return _db.Tx(connection =>
             {
-                return ServiceResult.Fail("That bill is not in this shop's database.");
-            }
-
-            // A corrected bill (v0.68.0) carries two times on the paper - the black box names both as
-            // well, so the copy in the customer's hand traces to the minute either way.
-            var bothTimes = !string.IsNullOrWhiteSpace(row.CreatedAt)
-                && !string.Equals(row.Date, row.CreatedAt, StringComparison.Ordinal)
-                ? " First stamped " + row.CreatedAt + ", corrected to " + row.Date + "."
-                : string.Empty;
-
-            _audit.RecordStandalone(user, Modules.Sales, "sale_reprint",
-                details: "Printed the bill " + row.Code + " again (" + Money.Format(row.TotalPaisa) + ")." + bothTimes);
-
-            return ServiceResult.Success();
+                var reader = RequireReader(connection, user);
+                var row = _db.QuerySingle<SaleHistoryRow>(connection, @"
+SELECT code AS code, date AS date, created_at AS createdAt, total_paisa AS totalPaisa
+FROM sales WHERE id = @id;", new { id = saleId })
+                    ?? throw new ValidationException("That bill is not in this shop's database.");
+                var bothTimes = !string.IsNullOrWhiteSpace(row.CreatedAt)
+                    && !string.Equals(row.Date, row.CreatedAt, StringComparison.Ordinal)
+                    ? " First stamped " + row.CreatedAt + ", corrected to " + row.Date + "." : string.Empty;
+                _audit.Record(connection, reader, Modules.Sales, "sale_reprint",
+                    details: "Printed the bill " + row.Code + " again (" + Money.Format(row.TotalPaisa) + ")." + bothTimes);
+                return ServiceResult.Success();
+            });
         }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"The reprint of the bill {saleId} could not be recorded.", exception);
-
             return ServiceResult.Fail("The reprint could not be recorded in the black box.");
         }
     }
 
-    /// <summary>The same line for a return receipt, named by its own number.</summary>
+    /// <summary>Records the actual return copy, after print; a missing return is not a reprint.</summary>
     public ServiceResult RecordReturnReprint(User? user, string? code)
     {
-        if (!CanLook(user))
-        {
-            return ServiceResult.Fail(
-                "Only a person who may look at the sales can print a return receipt again.");
-        }
-
         var clean = (code ?? string.Empty).Trim();
-
-        if (clean.Length == 0)
-        {
-            return ServiceResult.Fail("There is no return number to record.");
-        }
-
+        if (clean.Length == 0) return ServiceResult.Fail("There is no return number to record.");
         try
         {
-            _audit.RecordStandalone(user, Modules.Sales, "return_reprint",
-                details: "Printed the return receipt " + clean + " again.");
-
-            return ServiceResult.Success();
+            return _db.Tx(connection =>
+            {
+                var reader = RequireReader(connection, user);
+                var exists = Convert.ToInt64(_db.Scalar(connection,
+                    "SELECT COUNT(1) FROM sale_returns WHERE upper(code) = upper(@code);", new { code = clean }) ?? 0L);
+                if (exists == 0) throw new ValidationException("That return is not in this shop's database.");
+                _audit.Record(connection, reader, Modules.Sales, "return_reprint",
+                    details: "Printed the return receipt " + clean + " again.");
+                return ServiceResult.Success();
+            });
         }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"The reprint of the return {clean} could not be recorded.", exception);
-
             return ServiceResult.Fail("The reprint could not be recorded in the black box.");
         }
     }

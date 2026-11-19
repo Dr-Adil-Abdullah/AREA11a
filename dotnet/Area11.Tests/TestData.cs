@@ -212,7 +212,7 @@ INSERT INTO users(name, role, active, created_at) VALUES(@name, @role, 1, @at);"
         new(test.Database, test.Audit, new PermissionService(test.Database, test.Log, test.Audit), test.Log);
 
     public static ReturnReceiptService ReturnReceipts(TestDatabase test) =>
-        new(test.Database, test.Settings, test.Log);
+        new(test.Database, test.Settings, test.Log, Permissions(test));
 
     public static ProvisionalReturnService Provisionals(TestDatabase test) =>
         new(test.Database, test.Audit, new NumberingService(test.Settings),

@@ -246,8 +246,8 @@ public sealed class BulkPrintTests
 
     private static SaleHistoryService History(TestDatabase test) =>
         new(test.Database,
-            new ReceiptService(test.Database, test.Settings, test.Log),
-            new ReturnReceiptService(test.Database, test.Settings, test.Log),
+            new ReceiptService(test.Database, test.Settings, test.Log, TestData.Permissions(test)),
+            new ReturnReceiptService(test.Database, test.Settings, test.Log, TestData.Permissions(test)),
             test.Audit,
             new PermissionService(test.Database, test.Log, test.Audit),
             test.Log);
