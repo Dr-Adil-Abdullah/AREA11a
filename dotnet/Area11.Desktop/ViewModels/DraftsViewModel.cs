@@ -22,6 +22,8 @@ public sealed class DraftsViewModel : ObservableObject
     private DraftSummary? _selected;
     private string _statusText = string.Empty;
     private bool _isStatusError;
+    private bool _listLoaded;
+    private bool _busy;
 
     public DraftsViewModel(AppServices services, User user, string draftType, Action<int> onOpen, Action close)
     {
@@ -80,7 +82,7 @@ public sealed class DraftsViewModel : ObservableObject
 
     public bool HasDrafts => Drafts.Count > 0;
 
-    public bool HasNoDraft => Drafts.Count == 0;
+    public bool HasNoDraft => _listLoaded && Drafts.Count == 0;
 
     public bool HasStatus => StatusText.Length > 0;
 
@@ -102,13 +104,44 @@ public sealed class DraftsViewModel : ObservableObject
         private set => SetProperty(ref _isStatusError, value);
     }
 
+    public bool RefreshReadAccess()
+    {
+        var access = _services.Drafts.CheckReadAccess(_user, _type);
+        if (access.Ok) return true;
+        ClearDrafts();
+        SetStatus(access.Error ?? "Current draft access is required.", true);
+        return false;
+    }
+
+    private void ClearDrafts()
+    {
+        _listLoaded = false;
+        Selected = null;
+        Drafts.Clear();
+        OnPropertyChanged(nameof(HasDrafts));
+        OnPropertyChanged(nameof(HasNoDraft));
+    }
+
+    private bool CurrentSelection(DraftSummary draft, bool includePayload)
+    {
+        if (!RefreshReadAccess()) return false;
+        if (!_listLoaded || !Drafts.Contains(draft))
+        {
+            SetStatus("Refresh drafts and choose a current row.", true);
+            return false;
+        }
+        var access = _services.Drafts.CheckReadAccess(_user, _type, includePayload);
+        if (access.Ok) return true;
+        Selected = null;
+        SetStatus(access.Error ?? "Current payload access is required.", true);
+        return false;
+    }
+
     public void Refresh()
     {
         var id = Selected?.Id;
-        Drafts.Clear();
-        Selected = null;
-        OnPropertyChanged(nameof(HasDrafts));
-        OnPropertyChanged(nameof(HasNoDraft));
+        ClearDrafts();
+        if (!RefreshReadAccess()) return;
         var result = _services.Drafts.List(_user, _type);
         if (!result.Ok || result.Value is null)
         {
@@ -118,6 +151,7 @@ public sealed class DraftsViewModel : ObservableObject
 
         Drafts.Clear();
         foreach (var draft in result.Value) Drafts.Add(draft);
+        _listLoaded = true;
         Selected = Drafts.FirstOrDefault(draft => draft.Id == id) ?? Drafts.FirstOrDefault();
         OnPropertyChanged(nameof(HasDrafts));
         OnPropertyChanged(nameof(HasNoDraft));
@@ -131,6 +165,7 @@ public sealed class DraftsViewModel : ObservableObject
             SetStatus("Pick a draft first.", true);
             return;
         }
+        if (!CurrentSelection(draft, includePayload: true)) return;
         if (draft.NeedsPostCheck)
         {
             SetStatus("That draft cannot be opened: a previous post was interrupted. If its document is on the page, discard this row.", true);
@@ -143,33 +178,42 @@ public sealed class DraftsViewModel : ObservableObject
 
     private void Post()
     {
-        if (Selected is not { } draft)
-        {
-            SetStatus("Pick a draft first.", true);
-            return;
-        }
+        if (_busy || Selected is not { } draft) return;
+        if (!CurrentSelection(draft, includePayload: true)) return;
         if (draft.NeedsPostCheck)
         {
-            SetStatus("That draft can never post again: a previous post was interrupted. Discard it once its document is verified.", true);
+            SetStatus("That draft cannot post again. Verify its document before discarding the marker.", true);
             return;
         }
-
-        var answer = MessageBox.Show(
-            "Post '" + draft.DraftKey + "' now as a real " + _type + "? Stock, money and reports will move.",
-            "Post draft", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
-        if (answer != MessageBoxResult.Yes) return;
-
-        var posted = _type == DraftType.Purchase
-            ? PostPurchase(draft.Id)
-            : PostSale(draft.Id);
-        if (!posted.Ok)
+        _busy = true;
+        var saved = false;
+        try
         {
-            SetStatus(posted.Error ?? "The draft could not be posted. It is kept.", true);
-            return;
+            var answer = MessageBox.Show("Post '" + draft.DraftKey + "' now as a real " + _type + "? Stock, money and reports will move.",
+                "Post draft", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            if (answer != MessageBoxResult.Yes || !CurrentSelection(draft, includePayload: true)) return;
+            var posted = _type == DraftType.Purchase ? PostPurchase(draft.Id) : PostSale(draft.Id);
+            if (!posted.Ok)
+            {
+                Refresh();
+                SetStatus(posted.Error ?? "Check the draft and document before retrying.", true);
+                return;
+            }
+            saved = true;
+            Selected = null;
+            Drafts.Remove(draft);
+            Refresh();
+            SetStatus("SAVED. Posted as " + posted.Code + ". Do not post this draft again."
+                + (_listLoaded ? string.Empty : " Drafts were not reloaded; refresh."), !_listLoaded);
         }
-
-        SetStatus("Posted as " + posted.Code + ".", false);
-        Refresh();
+        catch (Exception exception)
+        {
+            ClearDrafts();
+            _services.Log.Error("Draft post or post-result refresh failed.", exception);
+            SetStatus(saved ? "SAVED. Do not post this draft again; refresh drafts and verify its document."
+                : "The outcome could not be confirmed. Refresh drafts and verify the document before retrying.", true);
+        }
+        finally { _busy = false; }
     }
 
     private (bool Ok, string? Error, string Code) PostSale(int draftId)
@@ -190,26 +234,36 @@ public sealed class DraftsViewModel : ObservableObject
 
     private void Discard()
     {
-        if (Selected is not { } draft)
+        if (_busy || Selected is not { } draft) return;
+        if (!CurrentSelection(draft, includePayload: false)) return;
+        _busy = true;
+        var saved = false;
+        try
         {
-            SetStatus("Pick a draft first.", true);
-            return;
+            var answer = MessageBox.Show("Put away '" + draft.DraftKey + "'? The row stays in history; nothing else changes.",
+                "Discard draft", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
+            if (answer != MessageBoxResult.Yes || !CurrentSelection(draft, includePayload: false)) return;
+            var result = _services.Drafts.Discard(_user, draft.Id);
+            if (!result.Ok)
+            {
+                Refresh();
+                SetStatus(result.Error ?? "Check the draft before retrying.", true);
+                return;
+            }
+            saved = true;
+            Selected = null;
+            Drafts.Remove(draft);
+            Refresh();
+            SetStatus("SAVED. Draft put away." + (_listLoaded ? string.Empty : " Drafts were not reloaded; refresh."), !_listLoaded);
         }
-
-        var answer = MessageBox.Show(
-            "Put away '" + draft.DraftKey + "'? The row stays in history; nothing else changes.",
-            "Discard draft", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
-        if (answer != MessageBoxResult.Yes) return;
-
-        var result = _services.Drafts.Discard(_user, draft.Id);
-        if (!result.Ok)
+        catch (Exception exception)
         {
-            SetStatus(result.Error ?? "The draft could not be discarded.", true);
-            return;
+            ClearDrafts();
+            _services.Log.Error("Draft discard or post-result refresh failed.", exception);
+            SetStatus(saved ? "SAVED. Draft put away; refresh the list."
+                : "The outcome could not be confirmed. Refresh drafts before retrying.", true);
         }
-
-        SetStatus("Draft put away.", false);
-        Refresh();
+        finally { _busy = false; }
     }
 
     private void SetStatus(string text, bool isError)

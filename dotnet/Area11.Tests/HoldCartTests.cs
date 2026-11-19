@@ -49,7 +49,7 @@ public sealed class HoldCartTests
         Assert.Equal(2, summary.ItemsCount);
         Assert.Equal(quote.Value!.TotalPaisa, summary.TotalPaisa);
 
-        Assert.Equal(1, holds.Count());
+        Assert.Equal(1, holds.Count(TestData.Owner).Value);
     }
 
     [Fact]
@@ -131,7 +131,7 @@ public sealed class HoldCartTests
 
         Assert.True(discarded.Ok, discarded.Error);
         Assert.Empty(holds.List(TestData.Owner).Value!);
-        Assert.Equal(0, holds.Count());
+        Assert.Equal(0, holds.Count(TestData.Owner).Value);
     }
 
     [Fact]
@@ -160,7 +160,7 @@ public sealed class HoldCartTests
         var result = holds.Hold(cart, cashier);
 
         Assert.False(result.Ok);
-        Assert.Equal(0, holds.Count());
+        Assert.Equal(0, holds.Count(TestData.Owner).Value);
     }
 
     [Fact]
@@ -175,7 +175,7 @@ public sealed class HoldCartTests
         // A brand-new service on the same database is what a restart looks like.
         var afterRestart = TestData.Holds(test);
 
-        Assert.Equal(1, afterRestart.Count());
+        Assert.Equal(1, afterRestart.Count(TestData.Owner).Value);
         Assert.Equal("H-0001", afterRestart.List(TestData.Owner).Value!.Single().Code);
 
         var resumed = afterRestart.Resume(TestData.Owner, afterRestart.List(TestData.Owner).Value![0].Id);
@@ -192,6 +192,6 @@ public sealed class HoldCartTests
 
         Assert.Equal("H-0001", holds.Hold(TestData.Cart(product), TestData.Owner).Value);
         Assert.Equal("H-0002", holds.Hold(TestData.Cart(product), TestData.Owner).Value);
-        Assert.Equal(2, holds.Count());
+        Assert.Equal(2, holds.Count(TestData.Owner).Value);
     }
 }

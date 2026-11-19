@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## v0.113.0 portion35 — Draft/Hold current access؛settledpolicyنہیںبدلی
+
+Continueکےتحت5/6/7/15/16/23/25: Saledraft/held=POS؛Purchasedraftlist/discard=Purchases،payloadsave/open/update=Purchases+Cost/main۔ Sharedownershipبرقرار؛currentstoredcreator/audit؛typeonlydiscardprobeقبلpayload۔ UIstaledrawers/timer/modalrecheck/SAVED؛unsavedPOScartنہیںمٹایا۔ Draftpremark/Create/finalizeاورHeldResume/UIreconstructionالگباقی۔ [PT-55](POS-PHASE4-PART35-URDU.md)،[trace](POS-PHASE4-DRAFT-HELD-CURRENT-REVIEW.md)۔136نئےcases/2615C#/WindowsUNRUN؛session/CAS/COMMIT/fullPhase4/installerOPEN۔
+
 ## v0.112.0 portion34 — Quarantine current access؛نئیstock/refundpolicyنہیں
 
 Continue کے تحت5/6/7/17/20/23/24/25: Quarantine reads/count=موجودہReturnsreader؛decision=موجودہReturnsOwner/Manager،Txمیںstoredactor۔ Countreadfailureکوzeroنہیںکہا۔ UIcurrentcapability/detachedrowguard/commitcleanup/SAVED؛restocked/expired/sold،destroy-note،AddBack/stockSQL/refunds/Cost/Profit/mainunchanged۔ Alertscannerکاالگراستہنہیںبدلا۔ [PT-54](POS-PHASE4-PART34-URDU.md)،[trace](POS-PHASE4-QUARANTINE-CURRENT-REVIEW.md)۔79نئےcases/2479C#/WindowsUNRUN؛session/CAS/actualCOMMIT/fullPhase4/installerOPEN۔

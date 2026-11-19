@@ -124,19 +124,13 @@ public sealed class DraftService
             return ServiceResult<DocumentDraft>.Fail("This draft is too large to save.");
         }
 
-        var name = (user?.Name ?? string.Empty).Trim();
-        if (name.Length == 0)
-        {
-            return ServiceResult<DocumentDraft>.Fail("The signed-in user has no name, so a draft cannot be saved.");
-        }
-
         try
         {
             if (draftId > 0)
             {
                 var updated = _db.Tx(connection =>
                 {
-                    if (type == DraftType.Purchase) _purchases.RequireEntryReader(connection, user);
+                    var reader = RequireReader(connection, user, type, includePayload: true);
                     var row = ReadRow(connection, draftId);
                     if (row is null)
                     {
@@ -150,7 +144,7 @@ public sealed class DraftService
                     _db.Execute(connection, @"
 UPDATE document_drafts SET payload_json = @payload, updated_at = @at WHERE id = @id;",
                         new { payload, at = Clock.Now(), id = draftId });
-                    _audit.Record(connection, user, DraftType.ModuleFor(type), "draft_updated",
+                    _audit.Record(connection, reader, DraftType.ModuleFor(type), "draft_updated",
                         "document_drafts", draftId.ToString(), newValue: row.DraftKey);
                     row.PayloadJson = payload;
                     return ServiceResult<DocumentDraft>.Success(row);
@@ -167,7 +161,9 @@ UPDATE document_drafts SET payload_json = @payload, updated_at = @at WHERE id = 
                 {
                     var created = _db.Tx(connection =>
                     {
-                        if (type == DraftType.Purchase) _purchases.RequireEntryReader(connection, user);
+                        var reader = RequireReader(connection, user, type, includePayload: true);
+                        if (string.IsNullOrWhiteSpace(reader.Name))
+                            throw new ValidationException("The current account has no name, so a draft cannot be saved.");
                         _db.Execute(connection, @"
 INSERT INTO document_drafts(draft_key, draft_type, payload_json, status, created_by_id,
                             created_by_name, created_at, updated_at)
@@ -177,12 +173,12 @@ VALUES(@key, @type, @payload, 'draft', @byId, @by, @at, @at);",
                                 key,
                                 type,
                                 payload,
-                                byId = user!.Id,
-                                by = name,
+                                byId = reader.Id,
+                                by = reader.Name.Trim(),
                                 at = Clock.Now()
                             });
                         var id = (int)_db.NextId(connection);
-                        _audit.Record(connection, user, DraftType.ModuleFor(type), "draft_saved",
+                        _audit.Record(connection, reader, DraftType.ModuleFor(type), "draft_saved",
                             "document_drafts", id.ToString(), newValue: key);
                         return ReadRow(connection, id)!;
                     });
@@ -226,8 +222,7 @@ VALUES(@key, @type, @payload, 'draft', @byId, @by, @at, @at);",
         try
         {
             using var connection = _db.Open();
-            if (type == DraftType.Purchase)
-                SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Purchases);
+            RequireReader(connection, user, type, includePayload: false);
             var rows = _db.Query<DocumentDraft>(connection, @"
 SELECT id, draft_key AS draftKey, draft_type AS draftType, payload_json AS payloadJson,
        status, created_by_id AS createdById, created_by_name AS createdByName,
@@ -282,7 +277,7 @@ ORDER BY updated_at DESC, id DESC;",
         try
         {
             using var connection = _db.Open();
-            if (type == DraftType.Purchase) _purchases.RequireEntryReader(connection, user);
+            var reader = RequireReader(connection, user, type, includePayload: true);
             var row = ReadRow(connection, draftId);
             if (row is null || row.DraftType != type)
             {
@@ -333,65 +328,34 @@ ORDER BY updated_at DESC, id DESC;",
     /// </summary>
     public ServiceResult Discard(User? user, int draftId, string? reason = null)
     {
-        // The kind is read first so the permission gate runs before any transaction opens.
-        DocumentDraft? probe;
-        try
-        {
-            using var probeConnection = _db.Open();
-            probe = ReadRow(probeConnection, draftId);
-        }
-        catch (Exception exception)
-        {
-            _log.Error("A draft could not be discarded.", exception);
-            return ServiceResult.Fail("The draft could not be discarded.");
-        }
-
-        if (probe is null)
-        {
-            return ServiceResult.Fail("That draft is not in the list any more.");
-        }
-        if (!_permissions.Can(user, DraftType.ModuleFor(probe.DraftType)))
-        {
-            return ServiceResult.Fail("You do not have permission to discard this draft.");
-        }
-
         var cleanReason = (reason ?? string.Empty).Trim();
         if (cleanReason.Length > 200)
-        {
             return ServiceResult.Fail("The reason is too long - keep it under 200 letters.");
-        }
-
         try
         {
             return _db.Tx(connection =>
             {
-                if (probe.DraftType == DraftType.Purchase)
-                    SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Purchases);
+                // Classify only the module before authorization; never pre-read payload_json.
+                var type = _db.QuerySingle<string>(connection,
+                    "SELECT draft_type FROM document_drafts WHERE id = @id;", new { id = draftId });
+                var reader = RequireReader(connection, user, type, includePayload: false);
                 var row = ReadRow(connection, draftId);
-                if (row is null || row.DraftType != probe.DraftType)
-                {
-                    return ServiceResult.Fail("That draft is not in the list any more.");
-                }
-                if (row.Status == DraftStatus.Discarded)
-                {
-                    return ServiceResult.Success();
-                }
+                if (row is null || row.DraftType != type)
+                    throw new ValidationException("That draft is not in the list any more.");
+                if (row.Status == DraftStatus.Discarded) return ServiceResult.Success();
                 if (row is { Status: DraftStatus.Posted, PostedDocumentId: not PostingMarkerId })
-                {
                     return ServiceResult.Fail("A posted draft is history and cannot be discarded.");
-                }
-
                 _db.Execute(connection, @"
 UPDATE document_drafts
 SET status = 'discarded', discard_reason = @reason, updated_at = @at
 WHERE id = @id;",
                     new { reason = cleanReason.Length == 0 ? null : cleanReason, at = Clock.Now(), id = draftId });
-                _audit.Record(connection, user, DraftType.ModuleFor(row.DraftType), "draft_discarded",
-                    "document_drafts", draftId.ToString(), oldValue: row.DraftKey,
-                    details: cleanReason);
+                _audit.Record(connection, reader, DraftType.ModuleFor(row.DraftType), "draft_discarded",
+                    "document_drafts", draftId.ToString(), oldValue: row.DraftKey, details: cleanReason);
                 return ServiceResult.Success();
             });
         }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error("A draft could not be discarded.", exception);
@@ -476,7 +440,7 @@ WHERE id = @id;",
 
         return Post(draftId, DraftType.Purchase, input,
             payload => _purchases.Create(payload, user!),
-            (connection, id) => Finalize(connection, user, draftId, DraftType.Purchase, id),
+            (connection, id) => Finalize(connection, _purchases.RequireEntryReader(connection, user), draftId, DraftType.Purchase, id),
             connection => { _purchases.RequireEntryReader(connection, user); });
     }
 
@@ -604,6 +568,32 @@ UPDATE document_drafts SET posted_document_id = @document, updated_at = @at WHER
         _audit.Record(connection, user, DraftType.ModuleFor(type), "draft_posted",
             "document_drafts", draftId.ToString(), newValue: documentId.ToString());
         return ServiceResult.Success();
+    }
+
+    /// <summary>Access-only preflight; payload access preserves the separate purchase Cost/main rule.</summary>
+    public ServiceResult CheckReadAccess(User? user, string draftType, bool includePayload = false)
+    {
+        try
+        {
+            _db.Read(connection => { RequireReader(connection, user, draftType, includePayload); return true; });
+            return ServiceResult.Success();
+        }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
+        catch (Exception exception)
+        {
+            _log.Error("Draft access could not be checked.", exception);
+            return ServiceResult.Fail("Current draft access could not be checked. Refresh or sign in again.");
+        }
+    }
+
+    private User RequireReader(Microsoft.Data.Sqlite.SqliteConnection connection, User? user, string? type, bool includePayload)
+    {
+        type = DraftType.Clean(type);
+        if (!DraftType.IsKnown(type))
+            throw new ValidationException("That kind of draft does not exist.");
+        if (includePayload && type == DraftType.Purchase)
+            return _purchases.RequireEntryReader(connection, user);
+        return SnapshotReadAccess.Require(_db, connection, _permissions, user, DraftType.ModuleFor(type!));
     }
 
     // ------------------------------------------------------------------ readers

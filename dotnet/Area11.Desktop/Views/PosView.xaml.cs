@@ -10,9 +10,18 @@ namespace Area11.Desktop.Views;
 
 public partial class PosView : UserControl
 {
+    private readonly DispatcherTimer _parkedAccessTimer;
     public PosView()
     {
         InitializeComponent();
+        _parkedAccessTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+        _parkedAccessTimer.Tick += (_, _) => CheckParkedAccess();
+        Loaded += (_, _) => { CheckParkedAccess(); _parkedAccessTimer.Start(); };
+        Unloaded += (_, _) => _parkedAccessTimer.Stop();
+    }
+    private void CheckParkedAccess()
+    {
+        if (DataContext is PosViewModel model) model.RefreshParkedAccess();
     }
 
     private void OnCounterLoaded(object sender, RoutedEventArgs e)

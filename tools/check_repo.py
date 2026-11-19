@@ -7259,14 +7259,16 @@ def check_purchase_preparation():
         FAILURES.append('Purchase result must distinguish known0 from hidden')
     drafts = (core / 'Services/DraftService.cs').read_text()
     save = drafts.split('private ServiceResult<DocumentDraft> Save<TInput>(', 1)[-1].split('// ------------------------------------------------------------------ list & open', 1)[0]
-    if save.count('if (type == DraftType.Purchase) _purchases.RequireEntryReader(connection, user);') != 2:
+    if save.count('var reader = RequireReader(connection, user, type, includePayload: true);') != 2:
         FAILURES.append('Purchase draft insert AND update transactions must recheck preparation')
     opened = drafts.split('private ServiceResult<TInput> Open<TInput>(', 1)[-1].split('// ------------------------------------------------------------------ discard', 1)[0]
-    if 'if (type == DraftType.Purchase) _purchases.RequireEntryReader(connection, user);' not in opened or opened.find('RequireEntryReader') > opened.find('ReadRow(connection, draftId)'):
+    if 'RequireReader(connection, user, type, includePayload: true);' not in opened or opened.find('RequireReader') > opened.find('ReadRow(connection, draftId)'):
         FAILURES.append('Purchase draft open must gate before reading/deserializing raw payload')
     listed = drafts.split('public ServiceResult<List<DraftSummary>> List(', 1)[-1].split('public ServiceResult<SaleInput> OpenSale', 1)[0]
-    if 'SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Purchases);' not in listed or 'RequireEntryReader(' in listed:
+    if 'RequireReader(connection, user, type, includePayload: false);' not in listed or 'RequireEntryReader(' in listed:
         FAILURES.append('Purchase draft summaries need current module, not cost-bearing preparation')
+    if 'if (includePayload && type == DraftType.Purchase)' not in drafts or 'return _purchases.RequireEntryReader(connection, user);' not in drafts:
+        FAILURES.append('Shared draft reader must retain current purchase Cost/main payload gate')
     posted = drafts.split('public ServiceResult<PurchaseResult> PostPurchase(', 1)[-1].split('private ServiceResult<TResult> Post<', 1)[0]
     for token in ('_purchases.CheckEntryAccess(user)', 'payload => _purchases.Create(payload, user!)',
                   'connection => { _purchases.RequireEntryReader(connection, user); }'):
@@ -7275,7 +7277,7 @@ def check_purchase_preparation():
     if 'authorizeBeforeMark?.Invoke(connection);' not in post or post.find('authorizeBeforeMark?.Invoke(connection);') > post.find('var row = ReadRow(connection, draftId);'):
         FAILURES.append('Recheck purchase preparation before terminal draft marker')
     discard = drafts.split('public ServiceResult Discard(', 1)[-1].split('// ------------------------------------------------------------------ post', 1)[0]
-    if 'SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Purchases);' not in discard or 'row.DraftType != probe.DraftType' not in discard:
+    if 'RequireReader(connection, user, type, includePayload: false);' not in discard or 'row.DraftType != type' not in discard:
         FAILURES.append('Purchase draft discard needs current module/type recheck')
     vm = (DOTNET / 'Area11.Desktop/ViewModels/PurchasesViewModel.cs').read_text()
     for token in ('get => CanPrepare ? _costText : string.Empty;', 'get => CanPrepare ? _paidText : string.Empty;',
@@ -8422,6 +8424,72 @@ def check_quarantine_current_access():
         if token not in tests: FAILURES.append('Quarantine regression missing '+token)
     REPORT.append('Phase4 portion34/stable5,6,7,17,20,23,24,25:current quarantine readers/explicitcountverdict/Txstoreddecider,Returnsreadonlyvsmanage,detachedrowguard/commitcleanup/SAVED;79sourcecases/2479suiteUNRUN;not session/CAS/actualCOMMIT/WPF/stockcertification')
 
+def check_draft_held_current_access():
+    d=(DOTNET/'Area11.Core/Services/DraftService.cs').read_text()
+    for token in ('type = DraftType.Clean(type);', 'if (!DraftType.IsKnown(type))',
+                  'if (includePayload && type == DraftType.Purchase)', 'return _purchases.RequireEntryReader(connection, user);',
+                  'SnapshotReadAccess.Require(_db, connection, _permissions, user, DraftType.ModuleFor(type!))',
+                  'public ServiceResult CheckReadAccess(User? user, string draftType, bool includePayload = false)',
+                  'byId = reader.Id,','by = reader.Name.Trim(),',
+                  '_audit.Record(connection, reader, DraftType.ModuleFor(type), "draft_saved"',
+                  '_audit.Record(connection, reader, DraftType.ModuleFor(type), "draft_updated"',
+                  'Finalize(connection, _purchases.RequireEntryReader(connection, user), draftId, DraftType.Purchase, id)'):
+        if token not in d: FAILURES.append('Draft current contract missing '+token)
+    save=d.split('private ServiceResult<DocumentDraft> Save<TInput>(',1)[-1].split('// ------------------------------------------------------------------ list & open',1)[0]
+    if save.count('var reader = RequireReader(connection, user, type, includePayload: true);')!=2: FAILURES.append('Both draft save Tx need current payload writer')
+    for block in save.split('_db.Tx(connection =>')[1:]:
+        gate = block.find('var reader = RequireReader(connection, user, type, includePayload: true);')
+        payload = min((x for x in (block.find('ReadRow(connection, draftId)'), block.find('INSERT INTO document_drafts')) if x >= 0), default=-1)
+        if gate < 0 or payload < 0 or gate > payload: FAILURES.append('Draft save must authorize inside Tx before payload/mutation')
+    discard=d.split('public ServiceResult Discard(',1)[-1].split('// ------------------------------------------------------------------ final post',1)[0]
+    tokens=['_db.Tx(connection =>','SELECT draft_type FROM document_drafts WHERE id = @id;',
+            'var reader = RequireReader(connection, user, type, includePayload: false);','var row = ReadRow(connection, draftId);',
+            '_audit.Record(connection, reader, DraftType.ModuleFor(row.DraftType), "draft_discarded"']
+    positions=[discard.find(t) for t in tokens]
+    if -1 in positions or positions!=sorted(positions) or 'probeConnection' in discard: FAILURES.append('Discard must classify type only,authorize,then read payload inside Tx')
+    h=(DOTNET/'Area11.Core/Services/HoldCartService.cs').read_text()
+    for signature,payload in (('List(User? user)','var rows ='),('Count(User? user)','var count =')):
+        body=h.split(signature,1)[-1].split('\n    public ',1)[0]
+        if 'RequireReader(connection, user);' not in body or body.find('RequireReader')>body.find(payload): FAILURES.append('Held current read missing '+signature)
+    for signature,tx,first in (('Hold(SaleInput input, User? user)','var code = _db.Tx(connection =>','var number ='),
+                               ('Resume(User? user, int cartId)','var cart = _db.Tx(connection =>','var row ='),
+                               ('Discard(User? user, int cartId)','_db.Tx(connection =>','var code =')):
+        body=h.split(signature,1)[-1].split('\n    public ',1)[0]
+        tokens=[tx,'var reader = RequireReader(connection, user);',first]
+        positions=[body.find(t) for t in tokens]
+        if -1 in positions or positions!=sorted(positions) or '_audit.Record(connection, reader, "POS",' not in body: FAILURES.append('Held current Tx/audit missing '+signature)
+    for token in ('public ServiceResult<int> Count(User? user)', 'ServiceResult<int>.Fail("The held carts could not be counted.")',
+                  'SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Pos);', 'userId = reader.Id,'):
+        if token not in h: FAILURES.append('Held contract missing '+token)
+    vm=(DOTNET/'Area11.Desktop/ViewModels/DraftsViewModel.cs').read_text()
+    for token in ('_services.Drafts.CheckReadAccess(_user, _type)', 'private void ClearDrafts()', '_listLoaded = false;',
+                  'public bool HasNoDraft => _listLoaded && Drafts.Count == 0;', 'if (!_listLoaded || !Drafts.Contains(draft))',
+                  'if (answer != MessageBoxResult.Yes || !CurrentSelection(draft, includePayload: true)) return;',
+                  'if (answer != MessageBoxResult.Yes || !CurrentSelection(draft, includePayload: false)) return;',
+                  'Do not post this draft again.', 'SAVED. Draft put away.', 'finally { _busy = false; }'):
+        if token not in vm: FAILURES.append('Draft stale/modal/SAVED UI missing '+token)
+    pos=(DOTNET/'Area11.Desktop/ViewModels/PosViewModel.cs').read_text()
+    for token in ('public bool RefreshParkedAccess()', 'private bool _heldLoadSucceeded;', 'Parked carts are not loaded.',
+                  'if (!_heldLoadSucceeded || !HeldCarts.Contains(row))'):
+        if token not in pos: FAILURES.append('Parked stale UI missing '+token)
+    for signature in ('private void SaveSaleDraft()', 'public void OpenSaleDraft(int draftId)', 'private void HoldCart()',
+                      'private void LoadHeldCarts()', 'private void ResumeHeld(HeldCartRow row)', 'private void DiscardHeld(HeldCartRow row)'):
+        body=pos.split(signature,1)[-1].split('\n    private ',1)[0].split('\n    public ',1)[0]
+        if 'if (!RefreshParkedAccess()) return;' not in body: FAILURES.append('Parked/draft POS preflight missing '+signature)
+    for name,stop,refresh in (('Drafts','Closed += (_, _) => _accessTimer.Stop();','viewModel.RefreshReadAccess();'),
+                              ('Pos','Unloaded += (_, _) => _parkedAccessTimer.Stop();','model.RefreshParkedAccess();')):
+        view=(DOTNET/('Area11.Desktop/Views/'+name+'View.xaml.cs')).read_text()
+        for token in ('TimeSpan.FromSeconds(3)',stop,refresh):
+            if token not in view: FAILURES.append('Draft/held timer lifecycle missing '+name+':'+token)
+    tests=(DOTNET/'Area11.Tests/DraftHeldCurrentAccessTests.cs').read_text()
+    if tests.count('[InlineData(')!=129 or tests.count('[Fact]')!=7: FAILURES.append('Draft/held requires136 registered source cases')
+    for token in ('Assert.Equal(before, f.Snapshot());', 'Assert.Equal(money, f.MoneySnapshot());',
+                  'WritersUseStoredActorNameNotCallerText','PurchaseMetadataAndDiscardRemainAllowedWithoutCostButPayloadDoesNot',
+                  'CountReadFailureCannotClaimSuccessfulZero','WrongKindOrUnknownKindCannotReadPayloadOrOverwriteDraft',
+                  'DraftsStaySharedAcrossAllowedPeopleAndCreatorRemainsHistorical'):
+        if token not in tests: FAILURES.append('Draft/held regression missing '+token)
+    REPORT.append('Phase4 portion35/stable5,6,7,15,16,23,25:currentdraft/heldreaders+writeraudit,metadata-vs-purchasepayloadpolicy,typeonlydiscardprobe,explicitheldcount,staledrawers/timers/modalrecheck;136sourcecases/2615suiteUNRUN;NOT session/CAS/whole-draftatomicity/heldreconstruction/COMMIT/WPFproof')
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -8521,6 +8589,7 @@ def main() -> int:
     check_counter_current_access()
     check_receipt_current_access()
     check_quarantine_current_access()
+    check_draft_held_current_access()
     check_csharp_grammar()
 
     if not quiet:

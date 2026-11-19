@@ -42,7 +42,7 @@ public sealed class HoldCartService
     }
 
     /// <summary>Parks a cart and returns its code (H-0001).</summary>
-    public ServiceResult<string> Hold(SaleInput input, User user)
+    public ServiceResult<string> Hold(SaleInput input, User? user)
     {
         if (!_permissions.Can(user, Modules.Pos))
         {
@@ -57,7 +57,7 @@ public sealed class HoldCartService
         // The total is what the same calculation would charge right now. If the cart cannot be
         // priced (a limit, a missing rate, a switched-off discount), parking it would only move the
         // error to a later cashier, so it is refused here with the same words.
-        var quote = _sales.Quote(input, user);
+        var quote = _sales.Quote(input, user!);
         if (!quote.Ok || quote.Value is null)
         {
             return ServiceResult<string>.Fail(quote.Error ?? "This cart cannot be held.");
@@ -67,6 +67,7 @@ public sealed class HoldCartService
         {
             var code = _db.Tx(connection =>
             {
+                var reader = RequireReader(connection, user);
                 var number = _numbering.Take(connection, "hold");
                 var stamp = Clock.Now();
 
@@ -78,7 +79,7 @@ VALUES(@code, @at, @at, @userId, @customerId, @discount, @note, @total, @count, 
                     {
                         code = number,
                         at = stamp,
-                        userId = user.Id,
+                        userId = reader.Id,
                         customerId = input.CustomerId is > 0 ? input.CustomerId.Value : (int?)null,
                         discount = (double)input.DiscountPercent,
                         note = string.IsNullOrWhiteSpace(input.Notes) ? null : input.Notes.Trim(),
@@ -115,7 +116,7 @@ VALUES(@cartId, @productId, @name, @unit, @quantity, @price, @position, @mode, @
                         });
                 }
 
-                _audit.Record(connection, user, "POS", "cart_hold", "held_carts", cartId.ToString(),
+                _audit.Record(connection, reader, "POS", "cart_hold", "held_carts", cartId.ToString(),
                     newValue: $"{{\"code\":\"{number}\",\"total\":{quote.Value.TotalPaisa},\"lines\":{input.Lines.Count}}}");
 
                 return number;
@@ -123,6 +124,7 @@ VALUES(@cartId, @productId, @name, @unit, @quantity, @price, @position, @mode, @
 
             return ServiceResult<string>.Success(code);
         }
+        catch (ValidationException exception) { return ServiceResult<string>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error("The cart could not be held.", exception);
@@ -131,11 +133,12 @@ VALUES(@cartId, @productId, @name, @unit, @quantity, @price, @position, @mode, @
     }
 
     /// <summary>Parked carts, newest first. Resumed and discarded carts are history, not a list.</summary>
-    public ServiceResult<List<HeldCartSummary>> List(User user)
+    public ServiceResult<List<HeldCartSummary>> List(User? user)
     {
         try
         {
             using var connection = _db.Open();
+            RequireReader(connection, user);
 
             var rows = _db.Query<HeldCartSummary>(connection, @"
 SELECT h.id, h.code, h.created_at AS createdAt, c.name AS customerName,
@@ -149,6 +152,7 @@ ORDER BY h.created_at DESC, h.id DESC;");
 
             return ServiceResult<List<HeldCartSummary>>.Success(rows.ToList(), new[] { $"{rows.Count} held cart(s)." });
         }
+        catch (ValidationException exception) { return ServiceResult<List<HeldCartSummary>>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error("The held carts could not be listed.", exception);
@@ -160,7 +164,7 @@ ORDER BY h.created_at DESC, h.id DESC;");
     /// Brings a parked cart back and marks it resumed in the same transaction, so two counters
     /// pressing "Resume" at the same moment cannot both get the same cart.
     /// </summary>
-    public ServiceResult<HeldCart> Resume(User user, int cartId)
+    public ServiceResult<HeldCart> Resume(User? user, int cartId)
     {
         if (!_permissions.Can(user, Modules.Pos))
         {
@@ -171,6 +175,7 @@ ORDER BY h.created_at DESC, h.id DESC;");
         {
             var cart = _db.Tx(connection =>
             {
+                var reader = RequireReader(connection, user);
                 var row = _db.QuerySingle<CartRow>(connection, @"
 SELECT id, code, customer_id, discount_percent, discount_basis, extra_discount_paisa, status
 FROM held_carts WHERE id = @id;", new { id = cartId });
@@ -193,7 +198,7 @@ FROM held_carts WHERE id = @id;", new { id = cartId });
 SELECT product_id AS productId, name_snapshot AS name, unit, quantity, unit_price_paisa AS unitPricePaisa, pricing_mode, discount_basis, discount_percent AS lineDiscountPercent
 FROM held_cart_items WHERE cart_id = @id ORDER BY position, id;", new { id = cartId });
 
-                _audit.Record(connection, user, "POS", "cart_resume", "held_carts", cartId.ToString(),
+                _audit.Record(connection, reader, "POS", "cart_resume", "held_carts", cartId.ToString(),
                     details: $"{row.Code} brought back to the counter.");
 
                 return new HeldCart
@@ -222,7 +227,7 @@ FROM held_cart_items WHERE cart_id = @id ORDER BY position, id;", new { id = car
     }
 
     /// <summary>Throws a parked cart away. It stays in the table as history; the audit says who did it.</summary>
-    public ServiceResult Discard(User user, int cartId)
+    public ServiceResult Discard(User? user, int cartId)
     {
         if (!_permissions.Can(user, Modules.Pos))
         {
@@ -233,6 +238,7 @@ FROM held_cart_items WHERE cart_id = @id ORDER BY position, id;", new { id = car
         {
             _db.Tx(connection =>
             {
+                var reader = RequireReader(connection, user);
                 var code = _db.QuerySingle<string>(connection,
                     "SELECT code FROM held_carts WHERE id = @id AND status = 'held';", new { id = cartId });
 
@@ -245,7 +251,7 @@ FROM held_cart_items WHERE cart_id = @id ORDER BY position, id;", new { id = car
                     "UPDATE held_carts SET status = 'discarded', updated_at = @at WHERE id = @id;",
                     new { at = Clock.Now(), id = cartId });
 
-                _audit.Record(connection, user, "POS", "cart_discard", "held_carts", cartId.ToString(),
+                _audit.Record(connection, reader, "POS", "cart_discard", "held_carts", cartId.ToString(),
                     details: $"{code} discarded.");
             });
 
@@ -263,20 +269,26 @@ FROM held_cart_items WHERE cart_id = @id ORDER BY position, id;", new { id = car
     }
 
     /// <summary>How many carts are waiting - the badge on the counter.</summary>
-    public int Count()
+    public ServiceResult<int> Count(User? user)
     {
         try
         {
             using var connection = _db.Open();
-            return (int)Convert.ToInt64(_db.Scalar(connection,
+            RequireReader(connection, user);
+            var count = (int)Convert.ToInt64(_db.Scalar(connection,
                 "SELECT COUNT(1) FROM held_carts WHERE status = 'held';") ?? 0L);
+            return ServiceResult<int>.Success(count);
         }
+        catch (ValidationException exception) { return ServiceResult<int>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error("The number of held carts could not be counted.", exception);
-            return 0;
+            return ServiceResult<int>.Fail("The held carts could not be counted.");
         }
     }
+
+    private User RequireReader(Microsoft.Data.Sqlite.SqliteConnection connection, User? user) =>
+        SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Pos);
 
     private sealed class CartRow
     {

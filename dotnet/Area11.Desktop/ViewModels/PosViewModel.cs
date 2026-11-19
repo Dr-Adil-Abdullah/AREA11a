@@ -573,7 +573,10 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         private set => SetProperty(ref _creditPartText, value);
     }
 
-    public string HeldCartsCaption => HeldCarts.Count == 0
+    private bool _heldLoadSucceeded;
+    public string HeldCartsCaption => !_heldLoadSucceeded
+        ? "Parked carts are not loaded. Refresh with current Counter access."
+        : HeldCarts.Count == 0
         ? "No parked carts. Parked carts survive a restart."
         : $"{HeldCarts.Count} parked cart(s) - press 'Bring back' to serve that customer again.";
 
@@ -1396,6 +1399,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     /// </summary>
     private void SaveSaleDraft()
     {
+        if (!RefreshParkedAccess()) return;
         if (RefuseCommittedCart()) return;
         if (Cart.Count == 0)
         {
@@ -1427,6 +1431,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     /// </summary>
     public void OpenSaleDraft(int draftId)
     {
+        if (!RefreshParkedAccess()) return;
         if (Cart.Count > 0)
         {
             SetStatus("Complete or clear the current cart before opening a draft.", true);
@@ -1495,6 +1500,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     /// <summary>Parks the cart so the next customer can be served (Spec 8.5.1). Nothing is sold.</summary>
     private void HoldCart()
     {
+        if (!RefreshParkedAccess()) return;
         if (RefuseCommittedCart()) return;
         if (Cart.Count == 0)
         {
@@ -1533,14 +1539,29 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         SetStatus($"{code} parked. The counter is free for the next customer.", false);
     }
 
+    /// <summary>Only parked-list authority; deliberately does not erase an authored unsaved cart.</summary>
+    public bool RefreshParkedAccess()
+    {
+        var access = _services.Sales.CheckPostingAccess(_user);
+        if (access.Ok) return true;
+        _heldLoadSucceeded = false;
+        HeldCarts.Clear();
+        OnPropertyChanged(nameof(HeldCartsCaption));
+        SetStatus(access.Error ?? "Current Counter access is required.", true);
+        return false;
+    }
+
     private void LoadHeldCarts()
     {
+        _heldLoadSucceeded = false;
+        if (!RefreshParkedAccess()) return;
         var result = _services.Holds.List(_user);
 
         HeldCarts.Clear();
 
         if (result.Ok && result.Value is not null)
         {
+            _heldLoadSucceeded = true;
             foreach (var summary in result.Value)
             {
                 HeldCarts.Add(new HeldCartRow(summary, ResumeHeld, DiscardHeld));
@@ -1556,6 +1577,12 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
     private void ResumeHeld(HeldCartRow row)
     {
+        if (!RefreshParkedAccess()) return;
+        if (!_heldLoadSucceeded || !HeldCarts.Contains(row))
+        {
+            SetStatus("Refresh parked carts and choose a current row.", true);
+            return;
+        }
         if (Cart.Count > 0)
         {
             SetStatus("The current cart is not empty. Complete it or park it first.", true);
@@ -1602,6 +1629,12 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
     private void DiscardHeld(HeldCartRow row)
     {
+        if (!RefreshParkedAccess()) return;
+        if (!_heldLoadSucceeded || !HeldCarts.Contains(row))
+        {
+            SetStatus("Refresh parked carts and choose a current row.", true);
+            return;
+        }
         var result = _services.Holds.Discard(_user, row.Id);
         if (!result.Ok)
         {

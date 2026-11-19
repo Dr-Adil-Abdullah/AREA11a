@@ -145,7 +145,7 @@ public sealed class DraftTests
         var list = drafts.List(cashier, DraftType.Sale);
         Assert.True(list.Ok, list.Error);
         Assert.Single(list.Value!);
-        Assert.Equal("Owner", list.Value![0].CreatedByName);
+        Assert.Equal(TestData.SeedOwnerName, list.Value![0].CreatedByName);
         Assert.Equal(1, list.Value![0].Lines);
 
         var posted = drafts.PostSale(cashier, saved.Value!.Id);
