@@ -58,7 +58,7 @@ FROM provisional_return_allocations;");
             Assert.Equal(30000L, allocation.RefundPaisa);
         }
 
-        var remaining = TestData.Returns(test).Lines(sale.Value.SaleId);
+        var remaining = TestData.Returns(test).Lines(sale.Value.SaleId, TestData.Owner);
         Assert.True(remaining.Ok, remaining.Error);
         var line = Assert.Single(remaining.Value!);
         Assert.Equal(1d, line.AlreadyReturnedBase);
@@ -137,7 +137,7 @@ FROM provisional_return_allocations ORDER BY sale_item_id;");
             Assert.Equal(new[] { 60000L, 60000L }, allocations.Select(row => row.RefundPaisa));
         }
 
-        var lines = TestData.Returns(test).Lines(sale.Value.SaleId).Value!;
+        var lines = TestData.Returns(test).Lines(sale.Value.SaleId, TestData.Owner).Value!;
         Assert.Equal(0d, lines[0].RemainingBase);
         Assert.Equal(1d, lines[1].RemainingBase);
         Assert.Equal(30000L, lines[1].RemainingPaisa);
@@ -169,7 +169,7 @@ FROM provisional_return_allocations ORDER BY sale_item_id;");
         }
 
         Assert.Equal(2L, ScalarLong(test, "SELECT COUNT(1) FROM provisional_return_allocations;"));
-        var lines = TestData.Returns(test).Lines(sale.Value!.SaleId);
+        var lines = TestData.Returns(test).Lines(sale.Value!.SaleId, TestData.Owner);
         Assert.True(lines.Ok, lines.Error);
         var line = Assert.Single(lines.Value!);
         Assert.Equal(2d, line.AlreadyReturnedBase);
@@ -276,7 +276,7 @@ WHERE id = @id;", new { saleId = sale.Value!.SaleId, code = sale.Value!.Code, id
         Assert.Contains("before line reconciliation", oldAlert.Detail);
         Assert.Contains(sale.Value!.Code, oldAlert.Detail);
 
-        var blocked = TestData.Returns(test).Lines(sale.Value!.SaleId);
+        var blocked = TestData.Returns(test).Lines(sale.Value!.SaleId, TestData.Owner);
         Assert.False(blocked.Ok);
         Assert.Contains(rush.Value!.Code, blocked.Error);
 
@@ -289,7 +289,7 @@ WHERE id = @id;", new { saleId = sale.Value!.SaleId, code = sale.Value!.Code, id
         Assert.True(repaired.Ok, repaired.Error);
         Assert.False(TestData.Provisionals(test).Get(rush.Value!.Code)!.NeedsReconciliation);
 
-        var lines = TestData.Returns(test).Lines(sale.Value!.SaleId);
+        var lines = TestData.Returns(test).Lines(sale.Value!.SaleId, TestData.Owner);
         Assert.True(lines.Ok, lines.Error);
         Assert.Equal(1d, Assert.Single(lines.Value!).RemainingBase);
 

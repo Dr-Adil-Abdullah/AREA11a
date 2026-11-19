@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-52 — stable5/6/7/15/17/23 current Sale/Return account/module (v0.110.0) — UNRUN
+
+[Urdu isolated steps](docs/POS-PHASE4-PART32-URDU.md),[trace/limits](docs/POS-PHASE4-COUNTER-CURRENT-ACCESS-REVIEW.md).74newC#cases/2305suiteUNRUN:currentchanges/invalidactors/regrant8routes,SaleDraftdenial,Ownerstoredchange,storedaudit/financialindependence. Requiredlookupactors/transactionreader;Returnstaleformtimer/regrantfreshread;POSnextaction/printchecks,NO fullPOStimerclaim. Python/lexicalnotC#/session/CAS/provider/WPFproof. Backup+trulyseparateDB/photos/config;no live synthetic posts. FullPhase4/installerOPEN.
+
 ## PT-51 — stable15/17/19/23–25 Sale/customerReturn (v0.109.0) — UNRUN
 
 [Urdu isolated steps](docs/POS-PHASE4-PART31-URDU.md),[trace/limits](docs/POS-PHASE4-COUNTER-POSTING-INTEGRITY-REVIEW.md).55newC#cases/2231suiteUNRUN:18Sale+26Returnfaults,5methods,2drawer,2seconditem,redeemrollback,ExtraReturnB560then540. Acknowledgedcommitform/IDcleanup/SAVED/localresetblock;Returnquarantineverdict/printerwarning. Saleunknown-drawerfailclosedandtransactionrecheck;financialSave-tailunchanged. PythonSQL/lexicalnotC#/provider/WPF/session/COMMITproof. Backup+truly separateDB/photos/config;no live synthetic posts. FullPhase4/installerOPEN.

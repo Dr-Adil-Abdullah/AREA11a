@@ -1036,6 +1036,12 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     private void CompleteSaleOnce()
     {
         if (RefuseCommittedCart()) return;
+        var access = _services.Sales.CheckPostingAccess(_user);
+        if (!access.Ok)
+        {
+            SetStatus(access.Error ?? "Current Counter access is required.", true);
+            return;
+        }
         // Asked again here even though the page shows a card: the drawer can be closed from another
         // window while this cart is open, and the bill is the last place it may be discovered.
         CheckDrawer();
@@ -1304,7 +1310,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         }
 
         var input = BuildInput();
-        var availability = _services.Sales.CounterWarnings(input);
+        var availability = _services.Sales.CounterWarnings(input, _user);
         if (availability.Ok && availability.Value is { Count: > 0 } warnings
             && !_availabilityWarningShown)
         {
@@ -1323,6 +1329,9 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             ExtraDiscountText = Money.Format(_appliedExtraDiscount);
             TotalText = "—";
             ChangeText = "—";
+            CashPartText = CreditPartText = "—";
+            PointsUsedText = string.Empty;
+            HasPointsUsed = false;
             SetStatus(quote.Error ?? "The total could not be calculated.", true);
             return;
         }
@@ -1355,6 +1364,12 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
     private bool Print(int saleId)
     {
+        var access = _services.Sales.CheckPostingAccess(_user);
+        if (!access.Ok)
+        {
+            SetStatus(access.Error ?? "Current Counter access is required before printing.", true);
+            return false;
+        }
         var document = _services.Receipts.Build(saleId);
         if (!document.Ok || document.Value is null)
         {

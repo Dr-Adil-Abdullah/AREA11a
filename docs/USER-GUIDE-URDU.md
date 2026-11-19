@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.109.0 Harbour۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.110.0 Sandbar۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**حصہ32 / مستقل5/6/7/15/17/23 — موجودہCounter/Returnsاجازت:** accountبند/roleبدل/modulegrantواپسہوتواگلیSalewarning/quote/postیاReturnlookup/quote/postمیںپراناUserobjectکافی نہیں؛Txمیںcurrentstoredactorچیک۔ Returnصفحہnominal3second/actionپرپراناbill/form/search/quarantinerowsصافاورeditingبند؛grantبحالکرتازہFind/Refresh،پرانامتنخودبحالنہیں۔ POSمیںnextaction/printchecksہیں،پورےcachedcartکیفوریtimerصفائییاسessiontokenکادعویٰنہیں۔ Cost/Profit/main،Extra/ReturnBunchanged۔ [PT-52](POS-PHASE4-PART32-URDU.md)،[trace](POS-PHASE4-COUNTER-CURRENT-ACCESS-REVIEW.md)۔ **74نئےC#cases/2305suiteUNRUN؛remainingcallers/session/CAS/Windows/fullPhase4/installerOPEN۔**
 
 **حصہ31 / مستقل15/17/19/23–25 — billاورcustomerواپسی:** Saleکاکامیابsaveملےتوcart/paid/split/Extra/draftIDprint/modalسےپہلےconsume؛بعدکیreceipt/pageخرابیپر **SAVED،دوبارہbill/رقموصولنہیں،historyچیککریں**۔ صفائیادھوریہوتوlocalblockSale/draft/holdروکے؛historyکےبعدClearcart۔ ReturnsuccessپربillID/formپہلےصاف؛quarantinefailedreadمصدقہemptyنہیں،printwarningچھپتینہیں؛ **دوبارہgoods/refundنہیں**۔ CoreunknowndrawerپرابbilldenyاورSaleTxکےاندرپہلےrecheck۔ Pricing/Extra/ReturnBunchanged؛localflagrestart/crossPCexactlyonceنہیں۔ [PT-51](POS-PHASE4-PART31-URDU.md)،[trace](POS-PHASE4-COUNTER-POSTING-INTEGRITY-REVIEW.md)۔ **55نئےC#cases/2231suiteUNRUN؛session/COMMIT/Windows/fullPhase4/installerOPEN۔**
 
@@ -665,6 +667,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 
 **حصہ31کیالگtestcopyمیںمشق:**10+10گولیاںretail20،bill400،cash100/credit300:stock200سے180،balance300،drawer+100۔ پوریواپسی:credit300کم/cash100واپس،restockپرstock200یاquarantineپر180/Qcodes؛loyaltyfixture40سے44پھر40۔ Saveکےبعدreceiptfailپر **SAVED،دوبارہbill/refundنہیں**؛historyچیککریں۔ [PT-51](POS-PHASE4-PART31-URDU.md)؛یہWindowsمشقUNRUNہے،اصلshopپرنہیں؛verifiedbackup+الگDB/photos/configلازم۔
 
+**حصہ32کیالگtestcopyمیںمشق:** managerکےکھلےReturnbillکیReturnsgrantواپس؛اگلےaction/nominaltickپربill/form/rowsصاف،editingبند۔ GrantبحالپرنیاFind/Refresh؛roleبدلاہوتونئیsignin۔ POSgrantاورReturnsgrantالگ؛مالیvisibilityگرantsاسکابدلنہیں۔ [PT-52](POS-PHASE4-PART32-URDU.md)؛WindowsمشقUNRUN،اصلshopپرنہیں؛verifiedbackup+الگDB/photos/configلازم۔
+
 <a id="lesson-33"></a>
 
 ## سبق 33 — خودکار آغاز، محفوظ بندش اور Screen lock
@@ -746,7 +750,7 @@ Recoveryکیfailedslipپرپرنٹرکوخالیdocumentنہیںدیاجاتا۔
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.109.0 کا متوقع test count 2231 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.110.0 کا متوقع test count 2305 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 

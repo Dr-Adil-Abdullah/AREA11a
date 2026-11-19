@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## v0.110.0 portion32 — current Sale/Return account/module؛نئیfinancialpolicyنہیں
+
+Continueکےتحت5/6/7/15/17/23میںstoredactive/sameparsedroleaccount،POS/Returnsgrant،transactionstoredactorاورrequiredlookupactor؛SaleDraftpremarkguard،Returnstaletimerصفائی۔ Authenticatedsessiontoken/same-roleIDproof/CASنہیںبنایا؛remainingreceipt/history/quarantine/draftsaveopen/held/quickadd/fullPOSstaleUIباقی۔ Pricing/Extra/ReturnB/SupplierB/main/Cost/Profitاورfinancialtailsunchanged۔ [PT-52](POS-PHASE4-PART32-URDU.md)،[trace](POS-PHASE4-COUNTER-CURRENT-ACCESS-REVIEW.md)۔74نئےcases/2305C#/WindowsUNRUN؛FullPhase4/installerOPEN۔
+
 ## v0.109.0 portion31 — Sale/customerReturn؛unknown drawerپرbillنہیں
 
 Nextکےتحت15/17/19/23–25میںfault/retryاورacknowledgedcommitSAVED/localresetblock/formcleanup۔ CoreSaleکاdrawerreadexceptionallowختم،اسیTxمیںقبلSaveدوبارہچیک؛یہطےشدہclosed/unknowndrawerپرbillنہبنانےکےاصولکیاصلاحہے،نیاoptionنہیں۔ Pricing/Extra/ReturnB/SupplierB/loyaltyformulaاورReturnServiceunchanged؛card/onlinerefundکیexistingcashpolicyنہیںبدلی۔ Localflagdurableexactlyonceنہیں۔ [PT-51](POS-PHASE4-PART31-URDU.md)،[trace](POS-PHASE4-COUNTER-POSTING-INTEGRITY-REVIEW.md)۔55نئےcases/2231C#/WindowsUNRUN؛session/othermoney/draft/COMMIT/files/fullPhase4/installerOPEN۔

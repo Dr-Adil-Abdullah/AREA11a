@@ -21,7 +21,7 @@ public sealed class CounterAvailabilityTests
     {
         using var test = new TestDatabase();
         var product = TestData.AddProduct(test, retailPaisa: 0, batchQty: 0);
-        var result = TestData.Sales(test).CounterWarnings(Cart(product));
+        var result = TestData.Sales(test).CounterWarnings(Cart(product), TestData.Owner);
         Assert.True(result.Ok, result.Error);
         Assert.Equal(2, result.Value!.Count);
         Assert.Contains(result.Value, text => text.Contains("not in stock"));
@@ -37,7 +37,7 @@ public sealed class CounterAvailabilityTests
         var product = TestData.AddProduct(test);
         test.Database.Tx(connection => test.Database.Execute(connection,
             "UPDATE batches SET expiry_date = '2000-01-01' WHERE product_id = @id;", new { id = product }));
-        var result = TestData.Sales(test).CounterWarnings(Cart(product));
+        var result = TestData.Sales(test).CounterWarnings(Cart(product), TestData.Owner);
         Assert.True(result.Ok, result.Error);
         Assert.Single(result.Value!);
         Assert.Contains("not in stock", result.Value![0]);
@@ -51,11 +51,11 @@ public sealed class CounterAvailabilityTests
         var input = Cart(product);
         input.Lines.Add(new SaleLineInput { ProductId = product, Unit = "strip", Quantity = 1 });
         var sales = TestData.Sales(test);
-        var shortStock = sales.CounterWarnings(input);
+        var shortStock = sales.CounterWarnings(input, TestData.Owner);
         Assert.True(shortStock.Ok, shortStock.Error);
         Assert.Single(shortStock.Value!); // 1 tablet + 10 tablets > 10
         input.Lines.RemoveAt(0);
-        var exact = sales.CounterWarnings(input);
+        var exact = sales.CounterWarnings(input, TestData.Owner);
         Assert.True(exact.Ok, exact.Error);
         Assert.Empty(exact.Value!); // exactly one strip is allowed
     }

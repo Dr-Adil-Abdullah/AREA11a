@@ -413,6 +413,9 @@ WHERE id = @id;",
             return ServiceResult<SaleResult>.Fail("You do not have permission to post sale drafts.");
         }
 
+        var access = _sales.CheckPostingAccess(user);
+        if (!access.Ok) return ServiceResult<SaleResult>.Fail(access.Error ?? "Counter posting is not allowed.");
+
         SaleInput input;
         if (current is not null)
         {
@@ -434,7 +437,8 @@ WHERE id = @id;",
 
         return Post(draftId, DraftType.Sale, input,
             payload => _sales.Create(payload, user!),
-            (connection, id) => Finalize(connection, user, draftId, DraftType.Sale, id));
+            (connection, id) => Finalize(connection, _sales.RequirePostingReader(connection, user), draftId, DraftType.Sale, id),
+            connection => { _sales.RequirePostingReader(connection, user); });
     }
 
     /// <summary>

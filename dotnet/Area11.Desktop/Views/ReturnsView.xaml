@@ -16,7 +16,7 @@
                        Style="{StaticResource PageSubtitle}" />
         </StackPanel>
 
-        <TabControl views:HeaderSectionTabs.InHeader="True" Grid.Row="1">
+        <TabControl views:HeaderSectionTabs.InHeader="True" Grid.Row="1" IsEnabled="{Binding CanWork}">
             <TabControl.Template>
                 <ControlTemplate TargetType="TabControl">
                     <ContentPresenter x:Name="PART_SelectedContentHost" ContentSource="SelectedContent" />

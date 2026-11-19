@@ -5824,7 +5824,7 @@ def check_counter_availability() -> None:
     """Counter popup wiring cannot be unit-tested by the Core-only test project."""
     vm = (DOTNET / "Area11.Desktop/ViewModels/PosViewModel.cs").read_text(encoding="utf-8-sig")
     core = (DOTNET / "Area11.Core/Services/SaleService.cs").read_text(encoding="utf-8-sig")
-    for needle in ["_services.Sales.CounterWarnings(input)", "&& !_availabilityWarningShown",
+    for needle in ["_services.Sales.CounterWarnings(input, _user)", "&& !_availabilityWarningShown",
                    '_availabilityWarningShown = true;', '"Counter availability"',
                    'MessageBoxButton.OK, MessageBoxImage.Warning']:
         if needle not in vm:
@@ -8212,10 +8212,10 @@ def check_counter_posting_integrity():
     returns = (DOTNET / 'Area11.Desktop/ViewModels/ReturnsViewModel.cs').read_text()
     sales = (DOTNET / 'Area11.Core/Services/SaleService.cs').read_text()
     create = sales.split('public ServiceResult<SaleResult> Create(',1)[-1].split('private bool HasOpenDrawer()',1)[0]
-    for token in ('if (!HasOpenDrawer())', '_db.Tx(connection =>', 'if (!HasOpenDrawer(connection))', 'return Save(connection, input, user);'):
+    for token in ('if (!HasOpenDrawer())', '_db.Tx(connection =>', 'if (!HasOpenDrawer(connection))', 'return Save(connection, input, reader);'):
         if token not in create: FAILURES.append('Sale drawer gate missing '+token)
     tx = create.split('_db.Tx(connection =>',1)[-1]
-    if not 0 <= tx.find('if (!HasOpenDrawer(connection))') < tx.find('return Save(connection, input, user);'):
+    if not 0 <= tx.find('if (!HasOpenDrawer(connection))') < tx.find('return Save(connection, input, reader);'):
         FAILURES.append('Sale transaction must check drawer before any Save writes')
     drawer = sales.split('private bool HasOpenDrawer()',1)[-1].split('private ServiceResult<SaleResult> Save(',1)[0]
     if 'return false;' not in drawer or 'return true;' in drawer or 'return HasOpenDrawer(connection);' not in drawer:
@@ -8263,6 +8263,62 @@ def check_counter_posting_integrity():
                   '"sqlite_sequence"', '56000L', '54000L'):
         if token not in tests: FAILURES.append('Counter posting regression missing '+token)
     REPORT.append('Phase4 portion31/stable15,17,19,23–25:Sale/customerReturn55sourcecases,acknowledgedcommit form cleanup/SAVED/refresh/print clarity;Sale unknown-drawerfailclosed+transaction recheck;2231suiteUNRUN,not session/durableidentity/draft/COMMIT/WPF certification')
+
+def check_counter_current_access():
+    """Portion32 current local account/module; not session authentication or WPF runtime proof."""
+    for stem, module, readers in (
+        ('Sale', 'Pos', [('CounterWarnings(SaleInput input, User? user)', 'RequirePostingReader(connection, user);'),
+                         ('Quote(SaleInput input, User user)', 'user = RequirePostingReader(connection, user);')]),
+        ('Return', 'Returns', [('FindSale(string? code, User? user)', 'RequirePostingReader(connection, user);'),
+                              ('Search(SaleLookupInput? input, User? user)', 'RequirePostingReader(connection, user);'),
+                              ('Lines(int saleId, User? user)', 'RequirePostingReader(connection, user);'),
+                              ('Quote(ReturnInput input, User user)', 'user = RequirePostingReader(connection, user);')])):
+        source = (DOTNET / ('Area11.Core/Services/'+stem+'Service.cs')).read_text()
+        for signature, gate in readers:
+            body = source.split(signature,1)[-1].split('\n    public ',1)[0]
+            if signature not in source or gate not in body: FAILURES.append('Counter current reader missing '+stem+':'+signature)
+            if gate in body:
+                before = body.split(gate,1)[0].split('try',1)[-1]
+                if any(token in before for token in ('_db.Query', 'LoadSale(connection', 'Compute(connection')):
+                    FAILURES.append('Counter reads financial payload before current gate: '+signature)
+        for token in ('public ServiceResult CheckPostingAccess(User? user)', 'internal User RequirePostingReader(SqliteConnection connection, User? user)',
+                      'SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.'+module+');'):
+            if token not in source: FAILURES.append('Counter current helper missing '+stem+':'+token)
+        create = source.split('public ServiceResult<'+stem+'Result> Create(',1)[-1].split('private bool HasOpenDrawer()',1)[0].split('// ------------------------------------------------------------------ saving',1)[0]
+        tokens = ['_db.Tx(connection =>', 'var reader = RequirePostingReader(connection, user);', 'return Save(connection, input, reader);']
+        positions = [create.find(t) for t in tokens]
+        if -1 in positions or positions != sorted(positions): FAILURES.append('Current counter writer/actor must resolve inside Tx before Save: '+stem)
+    draft = (DOTNET / 'Area11.Core/Services/DraftService.cs').read_text().split('public ServiceResult<SaleResult> PostSale(',1)[-1].split('public ServiceResult<PurchaseResult> PostPurchase(',1)[0]
+    for token in ('_sales.CheckPostingAccess(user)', 'connection => { _sales.RequirePostingReader(connection, user); }',
+                  'Finalize(connection, _sales.RequirePostingReader(connection, user), draftId, DraftType.Sale, id)'):
+        if token not in draft: FAILURES.append('Current Sale draft premark/final actor missing '+token)
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/ReturnsViewModel.cs').read_text()
+    refresh = vm.split('public bool RefreshPostingAccess()',1)[-1].split('private void Find()',1)[0]
+    for token in ('_services.Returns.CheckPostingAccess(_user)', '_saleId = 0;', 'Clear();', 'Pending.Clear();', 'History.Clear();',
+                  '_lastQuarantineLoadSucceeded = false;', 'old selections were cleared.'):
+        if token not in refresh: FAILURES.append('Return stale cleanup missing '+token)
+    for signature in ('private void Find()', 'private void SearchBills()', 'private void Recalculate()', 'private void TakeReturn()', 'public void LoadQuarantine()', 'private void Decide('):
+        body = vm.split(signature,1)[-1].split('\n    private ',1)[0].split('\n    public ',1)[0]
+        if 'if (!RefreshPostingAccess()) return;' not in body: FAILURES.append('Return next-action gate missing '+signature)
+    for token in ('FindSale(BillCode, _user)', 'Lines(saleId, _user)', '}, _user);'):
+        if token not in vm: FAILURES.append('Return actor propagation missing '+token)
+    view = (DOTNET / 'Area11.Desktop/Views/ReturnsView.xaml.cs').read_text()
+    for token in ('TimeSpan.FromSeconds(3)', '_accessTimer.Start();', 'Unloaded += (_, _) => _accessTimer.Stop();', 'model.RefreshPostingAccess();'):
+        if token not in view: FAILURES.append('Return access timer lifecycle missing '+token)
+    if 'IsEnabled="{Binding CanWork}"' not in (DOTNET/'Area11.Desktop/Views/ReturnsView.xaml').read_text(): FAILURES.append('Denied Return editing must disable')
+    pos = (DOTNET/'Area11.Desktop/ViewModels/PosViewModel.cs').read_text()
+    for token in ('_services.Sales.CounterWarnings(input, _user)', '_services.Sales.CheckPostingAccess(_user)',
+                  'CashPartText = CreditPartText = "—";'):
+        if token not in pos: FAILURES.append('Counter actor/output propagation missing '+token)
+    tests = (DOTNET/'Area11.Tests/CounterCurrentAccessTests.cs').read_text()
+    if tests.count('[InlineData(')!=69 or tests.count('[Fact]')!=5: FAILURES.append('Current counter requires74 registered source regressions')
+    for token in ('CurrentChangeDeniesNextReadOrPostWithoutMutationAndRegrantUsesSameServices',
+                  'InvalidSuppliedActorCannotReadOrPostEvenWithDefaultAllowedRole', 'DeniedSaleDraftPostCannotPremarkOrConsumeDraft',
+                  'SuccessfulPostsUseStoredCurrentNameNotCallerAuthoredName', 'IndependentFinancialGrantsAndMainOffDoNotDisableOrdinarySaleOrRefund',
+                  'CounterAndReturnsModuleGrantsRemainIndependent', 'DenialBeforeSaveDoesNotConsumeRetailDiscountConfirmation',
+                  'Assert.Equal(before, f.Snapshot());', 'grant-read', 'forged-owner'):
+        if token not in tests: FAILURES.append('Current counter regression missing '+token)
+    REPORT.append('Phase4 portion32/stable5,6,7,15,17,23:current Sale/Return readers and transactional stored writer,required lookup actors,Sale draft premark/final actor,Return stale page cleanup/timer;74sourcecases/2305suiteUNRUN,not authenticatedsession/CAS/durableidentity/provider/WPF proof')
 
 def main() -> int:
     quiet = "--quiet" in sys.argv
@@ -8360,6 +8416,7 @@ def main() -> int:
     check_ledger_posting_integrity()
     check_stock_posting_integrity()
     check_counter_posting_integrity()
+    check_counter_current_access()
     check_csharp_grammar()
 
     if not quiet:

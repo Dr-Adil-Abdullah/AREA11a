@@ -48,11 +48,12 @@ public sealed class SaleService
     /// pack quantities and expired batches, without saving warnings on a sale or receipt. Quote
     /// and Create still enforce D-93 independently; even the owner cannot oversell.
     /// </summary>
-    public ServiceResult<List<string>> CounterWarnings(SaleInput input)
+    public ServiceResult<List<string>> CounterWarnings(SaleInput input, User? user)
     {
         try
         {
             using var connection = _db.Open();
+            RequirePostingReader(connection, user);
             var warnings = new List<string>();
             foreach (var group in input.Lines.GroupBy(line => line.ProductId))
             {
@@ -85,6 +86,7 @@ WHERE product_id = @id AND active = 1 AND qty_base > 0
             }
             return ServiceResult<List<string>>.Success(warnings);
         }
+        catch (ValidationException exception) { return ServiceResult<List<string>>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error("Counter availability could not be checked.", exception);
@@ -94,11 +96,10 @@ WHERE product_id = @id AND active = 1 AND qty_base > 0
 
     public ServiceResult<SaleQuote> Quote(SaleInput input, User user)
     {
-        if (!_permissions.Can(user, Modules.Pos))
-            return ServiceResult<SaleQuote>.Fail("You do not have permission to quote a sale.");
         try
         {
             using var connection = _db.Open();
+            user = RequirePostingReader(connection, user);
             var computed = Compute(connection, input, user);
 
             var split = Plan(input, computed.TotalPaisa);
@@ -170,13 +171,27 @@ WHERE product_id = @id AND active = 1 AND qty_base > 0
         }
     }
 
+    /// <summary>Current local account/module preflight; not a login-session token.</summary>
+    public ServiceResult CheckPostingAccess(User? user)
+    {
+        try
+        {
+            _db.Read(connection => { RequirePostingReader(connection, user); return true; });
+            return ServiceResult.Success();
+        }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
+        catch (Exception exception)
+        {
+            _log.Error("Counter access could not be checked.", exception);
+            return ServiceResult.Fail("Counter access could not be checked. Sign in or refresh before billing.");
+        }
+    }
+
+    internal User RequirePostingReader(SqliteConnection connection, User? user) =>
+        SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Pos);
+
     public ServiceResult<SaleResult> Create(SaleInput input, User user)
     {
-        if (!_permissions.Can(user, Modules.Pos))
-        {
-            return ServiceResult<SaleResult>.Fail("You do not have permission to make bills.");
-        }
-
         // No bill before the drawer is counted (v0.35.0, D-92). The owner's rule, in his words:
         // "no work happens while the galla is closed". A bill made outside a drawer is money that
         // nobody counted at the end of the day, and the difference looks like theft. There is no
@@ -191,10 +206,11 @@ WHERE product_id = @id AND active = 1 AND qty_base > 0
         {
             var result = _db.Tx(connection =>
             {
+                var reader = RequirePostingReader(connection, user);
                 // A preflight read is not authority to post after the drawer changes.
                 if (!HasOpenDrawer(connection))
                     throw new ValidationException("The drawer is closed. Open the shift, then make the bill.");
-                return Save(connection, input, user);
+                return Save(connection, input, reader);
             });
             return result;
         }

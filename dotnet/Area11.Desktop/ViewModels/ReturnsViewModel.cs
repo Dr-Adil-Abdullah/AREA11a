@@ -47,6 +47,8 @@ public sealed class ReturnsViewModel : ObservableObject, IEmptyPage
     private string _quarantineCaption = "No goods are waiting for a decision.";
     private bool _busy;
     private bool _returnInProgress;
+    private bool _postingAllowed = true;
+    private bool _checkingPostingAccess;
     private bool _lastQuarantineLoadSucceeded;
 
     public ReturnsViewModel(AppServices services, User user)
@@ -173,9 +175,40 @@ public sealed class ReturnsViewModel : ObservableObject, IEmptyPage
 
     // -------------------------------------------------------------- the bill
 
+    public bool CanWork => _postingAllowed;
+
+    /// <summary>Next interaction/nominal timer; revoked history is not a certified empty page.</summary>
+    public bool RefreshPostingAccess()
+    {
+        if (_checkingPostingAccess) return _postingAllowed;
+        _checkingPostingAccess = true;
+        try
+        {
+            var access = _services.Returns.CheckPostingAccess(_user);
+            var wasAllowed = _postingAllowed;
+            _postingAllowed = access.Ok;
+            OnPropertyChanged(nameof(CanWork));
+            if (!access.Ok)
+            {
+                _saleId = 0;
+                Clear();
+                Pending.Clear();
+                History.Clear();
+                _lastQuarantineLoadSucceeded = false;
+                QuarantineCaption = "Returns are not loaded. Current account and Returns access are required.";
+                SetStatus(access.Error ?? "Current Returns access is required.", true);
+            }
+            else if (!wasAllowed)
+                SetStatus("Returns access is available. Find the bill or refresh quarantine again; old selections were cleared.", false);
+            return access.Ok;
+        }
+        finally { _checkingPostingAccess = false; }
+    }
+
     private void Find()
     {
-        var found = _services.Returns.FindSale(BillCode);
+        if (!RefreshPostingAccess()) return;
+        var found = _services.Returns.FindSale(BillCode, _user);
 
         // `ServiceResult<int>.Value` is a plain `int`, not `int?`: the `T?` in the model is only a
         // nullable annotation, and a value type stays non-nullable. So the answer is checked with
@@ -189,7 +222,7 @@ public sealed class ReturnsViewModel : ObservableObject, IEmptyPage
 
         var saleId = found.Value;
 
-        var lines = _services.Returns.Lines(saleId);
+        var lines = _services.Returns.Lines(saleId, _user);
         if (!lines.Ok || lines.Value is null)
         {
             ResetBill();
@@ -264,12 +297,13 @@ public sealed class ReturnsViewModel : ObservableObject, IEmptyPage
 
     private void SearchBills()
     {
+        if (!RefreshPostingAccess()) return;
         var found = _services.Returns.Search(new SaleLookupInput
         {
             Text = SearchText,
             FromDate = FromDate,
             ToDate = ToDate
-        });
+        }, _user);
 
         if (!found.Ok || found.Value is null)
         {
@@ -372,6 +406,7 @@ public sealed class ReturnsViewModel : ObservableObject, IEmptyPage
 
     private void Recalculate()
     {
+        if (!RefreshPostingAccess()) return;
         if (_saleId <= 0)
         {
             return;
@@ -410,6 +445,7 @@ public sealed class ReturnsViewModel : ObservableObject, IEmptyPage
         _returnInProgress = true;
         try
         {
+            if (!RefreshPostingAccess()) return;
             if (_saleId <= 0)
             {
                 SetStatus("Find the bill first.", true);
@@ -424,6 +460,7 @@ public sealed class ReturnsViewModel : ObservableObject, IEmptyPage
             var result = _services.Returns.Create(input, _user);
             if (!result.Ok)
             {
+                if (!RefreshPostingAccess()) return;
                 SetStatus(result.Error ?? "The return could not be saved.", true);
                 return;
             }
@@ -462,6 +499,12 @@ public sealed class ReturnsViewModel : ObservableObject, IEmptyPage
 
     private void Print(string returnCode)
     {
+        var access = _services.Returns.CheckPostingAccess(_user);
+        if (!access.Ok)
+        {
+            SetStatus("SAVED. " + returnCode + ". Do not refund again. Current Returns access is required before printing.", true);
+            return;
+        }
         if (!_services.Settings.GetBool("printer.autoPrint", true)) return;
         var document = _services.ReturnReceipts.Build(returnCode);
         if (!document.Ok || document.Value is null)
@@ -479,6 +522,7 @@ public sealed class ReturnsViewModel : ObservableObject, IEmptyPage
     public void LoadQuarantine()
     {
         _lastQuarantineLoadSucceeded = false;
+        if (!RefreshPostingAccess()) return;
         Pending.Clear();
         History.Clear();
 
@@ -515,6 +559,7 @@ public sealed class ReturnsViewModel : ObservableObject, IEmptyPage
 
     private void Decide(QuarantineRow row, string outcome)
     {
+        if (!RefreshPostingAccess()) return;
         if (_busy)
         {
             return;

@@ -57,7 +57,7 @@ public sealed class ReturnTests
         Assert.True(first.Ok, first.Error);
         Assert.Equal(30000L, first.Value!.RefundPaisa);
 
-        var lines = returns.Lines(sale.Value!.SaleId);
+        var lines = returns.Lines(sale.Value!.SaleId, TestData.Owner);
         Assert.True(lines.Ok, lines.Error);
         var line = lines.Value!.Single();
         Assert.Equal(3d, line.RemainingBase);
@@ -394,7 +394,7 @@ FROM sales WHERE id = @id;", new { id = saleId }) ?? string.Empty;
         Assert.True(first.Ok, first.Error);
         Assert.Equal(300000L, first.Value!.RefundPaisa);
 
-        var remaining = returns.Lines(sale.Value.SaleId).Value!.Single();
+        var remaining = returns.Lines(sale.Value.SaleId, TestData.Owner).Value!.Single();
         Assert.Equal(1d, remaining.RemainingUnits);
 
         var second = returns.Create(TestData.Return(sale.Value!, 10), TestData.Owner);

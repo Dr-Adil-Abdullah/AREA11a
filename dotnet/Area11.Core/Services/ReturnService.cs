@@ -61,7 +61,7 @@ public sealed class ReturnService
     }
 
     /// <summary>Finds a bill by its printed number (INV-0001) - what the cashier types.</summary>
-    public ServiceResult<int> FindSale(string? code)
+    public ServiceResult<int> FindSale(string? code, User? user)
     {
         var clean = (code ?? string.Empty).Trim();
         if (clean.Length == 0)
@@ -72,6 +72,7 @@ public sealed class ReturnService
         try
         {
             using var connection = _db.Open();
+            RequirePostingReader(connection, user);
 
             var id = _db.QuerySingle<int?>(connection,
                 "SELECT id FROM sales WHERE upper(code) = upper(@code);", new { code = clean });
@@ -80,6 +81,7 @@ public sealed class ReturnService
                 ? ServiceResult<int>.Fail($"No bill found with the number {clean}.")
                 : ServiceResult<int>.Success(id.Value);
         }
+        catch (ValidationException exception) { return ServiceResult<int>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"The bill {clean} could not be looked up.", exception);
@@ -96,7 +98,7 @@ public sealed class ReturnService
     /// date, the customer and the total, and a person chooses. Nothing is written here, so a wrong
     /// search costs nothing.
     /// </summary>
-    public ServiceResult<List<SaleLookupRow>> Search(SaleLookupInput? input)
+    public ServiceResult<List<SaleLookupRow>> Search(SaleLookupInput? input, User? user)
     {
         var term = (input?.Text ?? string.Empty).Trim();
 
@@ -128,6 +130,7 @@ public sealed class ReturnService
             var digits = new string(term.Where(char.IsDigit).ToArray());
 
             using var connection = _db.Open();
+            RequirePostingReader(connection, user);
 
             var rows = _db.Query<SaleLookupRow>(connection, @"
 SELECT s.id AS saleId, s.code AS code, s.date AS date,
@@ -158,6 +161,7 @@ LIMIT 100;",
 
             return ServiceResult<List<SaleLookupRow>>.Success(rows);
         }
+        catch (ValidationException exception) { return ServiceResult<List<SaleLookupRow>>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error("The bills could not be searched.", exception);
@@ -195,11 +199,12 @@ LIMIT 100;",
     }
 
     /// <summary>Every line of a bill, with what already came back and what a full return would refund.</summary>
-    public ServiceResult<List<ReturnLineOption>> Lines(int saleId)
+    public ServiceResult<List<ReturnLineOption>> Lines(int saleId, User? user)
     {
         try
         {
             using var connection = _db.Open();
+            RequirePostingReader(connection, user);
             var sale = LoadSale(connection, saleId);
 
             var items = ReadItemRows(connection, sale).Cast<ReturnLineOption>().ToList();
@@ -219,14 +224,10 @@ LIMIT 100;",
     /// <summary>What the refund would be, without writing anything (the number the cashier reads out).</summary>
     public ServiceResult<ReturnQuote> Quote(ReturnInput input, User user)
     {
-        if (!_permissions.Can(user, Modules.Returns))
-        {
-            return ServiceResult<ReturnQuote>.Fail("You do not have permission to take a return.");
-        }
-
         try
         {
             using var connection = _db.Open();
+            user = RequirePostingReader(connection, user);
             var plan = Plan(connection, input, user);
 
             return ServiceResult<ReturnQuote>.Success(new ReturnQuote
@@ -249,16 +250,34 @@ LIMIT 100;",
         }
     }
 
-    public ServiceResult<ReturnResult> Create(ReturnInput input, User user)
+    /// <summary>Current local account/module preflight; not a login-session token.</summary>
+    public ServiceResult CheckPostingAccess(User? user)
     {
-        if (!_permissions.Can(user, Modules.Returns))
-        {
-            return ServiceResult<ReturnResult>.Fail("You do not have permission to take a return.");
-        }
-
         try
         {
-            var result = _db.Tx(connection => Save(connection, input, user));
+            _db.Read(connection => { RequirePostingReader(connection, user); return true; });
+            return ServiceResult.Success();
+        }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
+        catch (Exception exception)
+        {
+            _log.Error("Return access could not be checked.", exception);
+            return ServiceResult.Fail("Return access could not be checked. Sign in or refresh before taking returns.");
+        }
+    }
+
+    internal User RequirePostingReader(SqliteConnection connection, User? user) =>
+        SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Returns);
+
+    public ServiceResult<ReturnResult> Create(ReturnInput input, User user)
+    {
+        try
+        {
+            var result = _db.Tx(connection =>
+            {
+                var reader = RequirePostingReader(connection, user);
+                return Save(connection, input, reader);
+            });
             return result;
         }
         catch (ValidationException exception)

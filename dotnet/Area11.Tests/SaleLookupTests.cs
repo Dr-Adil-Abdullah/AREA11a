@@ -127,7 +127,7 @@ public sealed class SaleLookupTests
         using var test = new TestDatabase();
         Sale(test, "INV-0001", "2026-10-01 10:00:00", null, items: "Panadol 500mg");
 
-        var refused = TestData.Returns(test).Search(new SaleLookupInput());
+        var refused = TestData.Returns(test).Search(new SaleLookupInput(), TestData.Owner);
 
         Assert.False(refused.Ok);
         Assert.Contains("every bill", refused.Error!);
@@ -139,7 +139,7 @@ public sealed class SaleLookupTests
         using var test = new TestDatabase();
 
         var refused = TestData.Returns(test).Search(
-            new SaleLookupInput { FromDate = "2026-10-20", ToDate = "2026-10-01" });
+            new SaleLookupInput { FromDate = "2026-10-20", ToDate = "2026-10-01" }, TestData.Owner);
 
         Assert.False(refused.Ok);
         Assert.Contains("after the 'To' date", refused.Error!);
@@ -151,7 +151,7 @@ public sealed class SaleLookupTests
         using var test = new TestDatabase();
 
         var refused = TestData.Returns(test).Search(
-            new SaleLookupInput { Text = "panadol", FromDate = "31/31/2026" });
+            new SaleLookupInput { Text = "panadol", FromDate = "31/31/2026" }, TestData.Owner);
 
         Assert.False(refused.Ok);
         Assert.Contains("31/31/2026", refused.Error!);
@@ -194,7 +194,7 @@ public sealed class SaleLookupTests
         using var test = new TestDatabase();
         Sale(test, "INV-0001", "2026-10-01 10:00:00", null, items: "Panadol 500mg");
 
-        var found = TestData.Returns(test).Search(new SaleLookupInput { Text = "xyzzy" });
+        var found = TestData.Returns(test).Search(new SaleLookupInput { Text = "xyzzy" }, TestData.Owner);
 
         Assert.True(found.Ok);
         Assert.Empty(found.Value!);
@@ -206,7 +206,7 @@ public sealed class SaleLookupTests
         TestDatabase test, string text, string from = "", string to = "")
     {
         var found = TestData.Returns(test).Search(
-            new SaleLookupInput { Text = text, FromDate = from, ToDate = to });
+            new SaleLookupInput { Text = text, FromDate = from, ToDate = to }, TestData.Owner);
 
         Assert.True(found.Ok, found.Error);
         return found.Value!;
