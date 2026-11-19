@@ -591,6 +591,8 @@ public sealed class PurchasesViewModel : ObservableObject
                 var warnings = purchase.Warnings.Count > 0 ? "  ⚠ " + string.Join(" ", purchase.Warnings) : string.Empty;
                 SetStatus($"SAVED. {purchase.Code}{(wasDraft ? " - its draft is posted" : string.Empty)} — {purchase.TotalLabel}.{warnings}", purchase.Warnings.Count > 0);
                 PrintInvoice(purchase.PurchaseId, purchase.Code);
+                if (warnings.Length > 0 && !StatusMessage.Contains(warnings, StringComparison.Ordinal))
+                    SetStatus(StatusMessage + warnings, true);
             }
             catch (Exception exception)
             {

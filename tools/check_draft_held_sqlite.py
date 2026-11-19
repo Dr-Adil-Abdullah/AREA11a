@@ -22,7 +22,7 @@ def run():
     row_sql=quoted(d.split('private DocumentDraft? ReadRow(',1)[1],'SELECT id, draft_key')
     hold_insert=quoted(h,'INSERT INTO held_carts');item_insert=quoted(h,'INSERT INTO held_cart_items')
     resume=quoted(h,"UPDATE held_carts SET status = 'resumed'");discard=quoted(h,"UPDATE held_carts SET status = 'discarded'")
-    held_count=quoted(h,'SELECT COUNT(1) FROM held_carts')
+    held_count=quoted(h,"SELECT COUNT(1) FROM held_carts WHERE status = 'held'")
     held_list=quoted(h,'SELECT h.id, h.code')
     held_row=quoted(h,'SELECT id, code, customer_id');held_lines=quoted(h,'SELECT product_id AS productId')
     migrations=sorted((ROOT/'dotnet/Area11.Core/Data/Migrations').glob('*.sql'))
@@ -76,7 +76,7 @@ INSERT INTO held_cart_items(cart_id,product_id,name_snapshot,unit,quantity,unit_
         else:raise AssertionError('cost payload allowed')
     params={'id':1,'type':'sale','marker':-1,'key':'sale-NEW','payload':'{}','byId':2,'by':'Stored author',
             'at':'2026-11-10 12:00:00','reason':'Synthetic','code':'H-NEW','userId':2,'customerId':None,'discount':0,
-            'note':'Synthetic','total':30000,'count':1,'basis':'profit','extra':0,'cartId':1,'productId':1,'name':'SYNTHETIC',
+            'draft':1,'note':'Synthetic','total':30000,'count':1,'basis':'profit','extra':0,'cartId':1,'productId':1,'name':'SYNTHETIC',
             'unit':'base','quantity':1,'price':30000,'position':0,'mode':'normal','percent':0}
     for sql in (type_probe,list_sql,row_sql,held_count,held_list,held_row,held_lines):assert list(db.execute(sql,params)),sql
     assert list(db.execute(type_probe,params))[0][0]=='sale'

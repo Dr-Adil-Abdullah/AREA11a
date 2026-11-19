@@ -37,14 +37,15 @@ public sealed class PurchaseService
 
     public ServiceResult<PurchaseResult> Create(PurchaseInput input, User? user)
     {
+        var outcome = new TransactionOutcome();
         if (!_permissions.Can(user, Modules.Purchases))
         {
-            return ServiceResult<PurchaseResult>.Fail("You do not have permission to enter purchases.");
+            return new ServiceResult<PurchaseResult> { Error = "You do not have permission to enter purchases.", NoCommitConfirmed = true };
         }
 
         if (input.Lines.Count == 0)
         {
-            return ServiceResult<PurchaseResult>.Fail("Add at least one line to the purchase.");
+            return new ServiceResult<PurchaseResult> { Error = "Add at least one line to the purchase.", NoCommitConfirmed = true };
         }
 
         try
@@ -55,17 +56,19 @@ public sealed class PurchaseService
                 var saved = Save(connection, input, user!);
                 if (saved.Value is { } value) value.CostKnown = true;
                 return saved;
-            });
+            }, outcome);
             return result;
         }
         catch (ValidationException exception)
         {
-            return ServiceResult<PurchaseResult>.Fail(exception.Message);
+            return new ServiceResult<PurchaseResult> { Error = exception.Message, NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
         catch (Exception exception)
         {
             _log.Error("The purchase could not be saved.", exception);
-            return ServiceResult<PurchaseResult>.Fail("The purchase could not be saved. Please try again.");
+            return new ServiceResult<PurchaseResult> { Error = outcome.NoCommitConfirmed
+                ? "The purchase was not saved; its transaction did not commit."
+                : "The posting outcome could not be confirmed. Check history before retrying.", NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
     }
 

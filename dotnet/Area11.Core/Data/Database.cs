@@ -172,10 +172,11 @@ public sealed class Database
 
     /// <summary>All-or-nothing synchronous write. Nested calls are a programming error.
     /// Do not return tasks or wait for another thread to call this Database while this gate is held.</summary>
-    public T Tx<T>(Func<SqliteConnection, T> work)
+    public T Tx<T>(Func<SqliteConnection, T> work, TransactionOutcome? outcome = null)
     {
         lock (_transactionGate)
         {
+            if (outcome is not null) { outcome.WorkStarted = false; outcome.CommitAttempted = false; outcome.RollbackConfirmed = false; }
             if (_transaction is not null)
             {
                 throw new InvalidOperationException("A database transaction is already open; do not nest Tx calls.");
@@ -187,7 +188,9 @@ public sealed class Database
 
             try
             {
+                if (outcome is not null) outcome.WorkStarted = true;
                 var result = work(connection);
+                if (outcome is not null) outcome.CommitAttempted = true;
                 transaction.Commit();
                 return result;
             }
@@ -196,6 +199,7 @@ public sealed class Database
                 try
                 {
                     transaction.Rollback();
+                    if (outcome is not null) outcome.RollbackConfirmed = true;
                 }
                 catch (InvalidOperationException)
                 {

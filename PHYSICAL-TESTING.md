@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## PT-56 — stable15/23/24/25 recovery/draft faults (v0.114.0) — ALL Windows steps UNRUN
+
+[Urdu isolated steps](docs/POS-PHASE4-PART36-URDU.md),[trace/limits](docs/POS-PHASE4-RECOVERY-FAULT-REVIEW.md).29newC#sourcecases/2644suiteUNRUN. Test atomic Resume insert/consume/two-audit rollback+single retry, recovery draft after restart, linked Counter/missing-product/partial reconstruction guard, Clear leaves saved draft, no repark duplicate. Validate premark failure/no creator, known no-commit restores, unknown/throw/commit-then-throw retains marker, restore ABORT/IGNORE uncertainty, finalization audit fault SAVED warnings/no duplicate. Real provider COMMIT/powercut/parallel/WPF still UNRUN;direct non-draft durable retries remain OPEN. Verified backup AND truly separateDB/photos/config;never inject shop faults. Installer NOT BUILT,FullPhase4 OPEN.
+
 ## PT-55 — stable5/6/7/15/16/23/25 current drafts/held (v0.113.0) — all Windows steps UNRUN
 
 [Urdu isolated steps](docs/POS-PHASE4-PART35-URDU.md),[trace/limits](docs/POS-PHASE4-DRAFT-HELD-CURRENT-REVIEW.md).136newC#cases/2615suiteUNRUN:15routes×4currentchanges+15×4invalidactors,9storedwriter,7facts. Preserve Purchase metadata-vs-Cost/main payload,shared drafts,terminal guards,no money/stock changes;explicitheldcountfailure. Draft/parkedlistsaction+3stimer,modalrecheck/detachedrow,SAVEDafterdraftpost/discardrefreshfault. FullPOScartnoterased;whole-draftTx/heldUIreconstruction/actualCOMMITfaultsremainOPEN. Verifiedbackup+trulyseparateDB/photos/config;no live synthetic posts. FullPhase4/installerOPEN.

@@ -1,14 +1,14 @@
 # نمبر وار کام اور باقی جانچ — مستقل1تا36فہرست
 
-**موجودہ source: v0.113.0 Dune / حصہ35۔** یہ وہی36نمبر ہیں جن کی مالک نے تفصیلی وضاحت مانگی۔ اگلے حصوں میں نمبر تبدیل نہیں کریں؛done-source،یہاں کی جانچ،Windowsثبوت اورباقی کام الگ لکھیں۔ **36نمبر،36Next نہیں؛فیچرboardکی فیصد Phase4 safety فیصد نہیں۔**
+**موجودہ source: v0.114.0 Lichen / حصہ36۔** یہ وہی36نمبر ہیں جن کی مالک نے تفصیلی وضاحت مانگی۔ اگلے حصوں میں نمبر تبدیل نہیں کریں؛done-source،یہاں کی جانچ،Windowsثبوت اورباقی کام الگ لکھیں۔ **36نمبر،36Next نہیں؛فیچرboardکی فیصد Phase4 safety فیصد نہیں۔**
 
-تازہ محدود کام **5/6/7/15/16/23/25 draft/held**: [PT-55](POS-PHASE4-PART35-URDU.md)،[trace](POS-PHASE4-DRAFT-HELD-CURRENT-REVIEW.md)۔136نئےC#cases/2615UNRUN؛currentreaders/Txstoredwriters،Purchasemetadata-vs-costpayload،typeonlydiscardprobe،heldcountverdict،stalelists/timer/modalrecheck/SAVED۔ session/CAS/fullPOS/quickadd/preparedoutputs/whole-draftfaults/heldreconstruction/COMMIT/Windows/fullPhase4/installerOPEN۔
+تازہ محدود کام **15/23/24/25 recovery/faults**: [PT-56](POS-PHASE4-PART36-URDU.md)،[trace](POS-PHASE4-RECOVERY-FAULT-REVIEW.md)۔29نئےC#cases/2644suite ALL UNRUN۔ Resume کا atomic linked recovery draft،Counter reconstruction guard/Clear confirmation،explicit no-commit vs unknown marker،restore/finalize fault warnings۔103static/synthetic checks C#/Windows نہیں؛providerCOMMIT/parallel/globalidentity/directnon-draftunknownretry/session/fullPOS/restore/cloud/installer OPEN۔ باقی rows کے پچھلے حصوں کے source نتائج برقرار ہیں۔
 
 | مستقل نمبر / دائرہ | کیا ہوگیا؟ | کیا باقی ہے؟ |
 |---|---|---|
-|1۔ ورژن/GitHub | v0.113Dunesource/docs/branding/scriptsaligned؛samebranchpublicationلازم | actualcommit/push/remoteverifyآخریرپورٹمیں؛Windowsbuild/installerالگ |
-|2۔ C#tests | 2615متوقعcases؛حصہ35میں136نئے(7facts+129inlinecases) | تازہC#compile/run/fix/retestیہاںسبUNRUN |
-|3۔ Source/syntheticchecks | 102static/424grammar،26syntheticSQL،27نئے+235پرانےlexicalnegatives/exactrestore،backup6roundtrips/24negativePASS | traceمیںحدود؛PythonpolicyC#authorization/session/WPFنہیں |
+|1۔ورژن/GitHub | v0.114Lichensource/docs/branding/scriptsaligned؛samebranchpublicationلازم | actualcommit/push/remoteverifyآخریرپورٹمیں؛Windowsbuild/installerالگ |
+|2۔C#tests | 2644متوقعcases؛حصہ36میں29نئے(5facts+24inlinecases) | تمام نئے C#compile/run/fix/retestیہاںUNRUN |
+|3۔Source/syntheticchecks | 103static؛نیا37migration recoverySQLprobe اور24lexicalnegatives؛تفصیلtraceمیں | Python/grammar/source probes C#/Database.Tx/WPF/providerنہیں |
 |4۔ پرانےWindowsfailures | v0.80کے1333PASS/4FAILکیچاروںوجوہ/sourcefixشناخت | تازہsuiteپرretestاورنئیfailuresکیfix؛پرانانتیجہنیاPASSنہیں |
 |5۔ Account/role/session | حصہ35draft/heldcurrentstoredactive/sameparsedrole/modulechecks؛validOwnercurrentcheck | authenticatedsessiontoken/same-roleIDimpersonation،remainingcallers؛یہfullsessionproofنہیں |
 |6۔ Parentrecordcreate/edit/read | حصہ35draftsave/update/open/list/discard،heldList/Count/writerscurrent؛discardقبلpayloadtypeonly | remainingquickadd/parent/sessioncallers،atomicCAS؛legacy/otherworkflowreviewباقی |
@@ -20,17 +20,17 @@
 |12۔ Photos/gallery | currentreviewedreads/writes/parent/path؛stalegallerycleanup؛approvedcover/avatarexceptions | camera/codec/viewer،othercachedcovers/avatar،filefault/collision/cleanup/powerloss |
 |13۔ Cost/Profit/main | الگgrants/main/masks؛حصہ27stored-costpatchfreshDBmain+Cost؛authorednewcost/non-costCorepatchبرقرار | باقیroute/output/Windowscombinations؛free-textclassificationنہیں،preflightCASنہیں |
 |14۔ Pricing/discount/Extra | approvedbelow-actual-costfloor،sale-onlyExtra،limits/returnBکےsource/tests | تازہruntimeاورcross-page/retryreconciliation؛settledrulesدوبارہنہیںکھولنے |
-|15۔ Counter/bill/stock | حصہ35SaleDraft/Hold/Resume/Discardcurrent،parkedloadverdict/stalerowguard | unsavedfullPOScartpolicy/quickadd/session/heldreconstruction/scanner/durableidentityباقی |
-|16۔ Purchase/delivery | حصہ35Purchasedraftcurrentcreator/audit،metadata-vs-Cost/mainpayloadpolicy/finalauditreader | actualC#/WPF/mixedsupplier؛Draftpremark/Create/finalize/restorefaultsالگباقی |
+|15۔Counter/bill/stock | حصہ36ResumeمیںatomiclinkedSaleDraft؛Counterقبلcallbackslinked،partial/missingproductpost/save/parkبند؛Clearصرفcounterconfirmation | actualWPF/restart/powercut،fullPOS/quickadd/session/scanner،ordinaryHoldackfaults،durableglobalidentity |
+|16۔Purchase/delivery | حصہ36Purchasedraftknownrollbackrestore/unknownmarker/finalizewarning؛حصہ35current/costpayloadrulesبرقرار | actualC#/WPF/mixedsupplier/providerCOMMIT؛directnon-draftunknownretrydurableguardنہیں |
 |17۔ Customer/Recovery | حصہ34quarantinecurrentReturnsreader+storeddecider؛ReturnB/refundsunchanged | actualC#/WPF،recoveryPR/partialreturn/sessionintegration |
 |18۔ Supplier/Pay/SR | exceptionBبرقرار؛حصہ30SRlocalreentry/traycleanup/reloadverdict/callbackSAVED؛26stagefaults/cash-credit/second-itemC#source | اصلC#/WPFstock/books/cash/results؛ambiguouscommit/durableidentity؛policyدوبارہنہیںپوچھنا |
 |19۔ Cashdrawer/handover | حصہ31CoreSaleunknownreaddeny+sameTxopencheck،5methodSale/Returnderiveddrawerregressions | اصلprovider/race/C#/WPF/handover/closing/print/cashreconciliation |
 |20۔ Expenses/stocktake/writeoff | حصہ34quarantinestockstatementfaults+3outcomes/retrysource؛AddBack/SQLunchanged | integratedstock/expense/drawer/return/reportreconciliation،legacybatch/fallbackedges،Windowsvouchers |
 |21۔ Reports/files/exports | حصہ33Historyreprint/preview/WhatsApp/bulkbuilderscurrentSales؛bulkwholejobrefusal | alreadyopenedpreview/preparedfilesnotrecalled،باقیoutputs،Excel/CSV/print/PDF/Windows |
 |22۔ Blackbox/BookCheck | صرفapprovednavigationgateAudit+Cost+Profit+main؛حالیہinternalsunchanged | تازہWindowsnavigationproof؛بغیراجازتغیرمتعلقredesignنہیں |
-|23۔ DB/permissiontransaction | حصہ35draftsave/discardاورheldwritersمیںcurrentactorاسیTxمیںقبلtarget/mutation/number؛storedaudit | sessionbinding/CAS/provider/busy/parallel/productionjournal/actualCOMMIT-I-O،remainingcallers |
-|24۔ Fault/rollback | حصہ34denialsnapshots/regrant،20BEFORE/AFTERfaults+retry،countfailure/3outcomes/storedname | تمامC#UNRUN؛دیگرstock/expense/recoveryPR/file/draft/actualcommitfaults |
-|25۔ Duplicate/retry | حصہ35terminaldraft/heldrulesبرقرار،UIselection/modalchecks،draftpost/discardSAVED | whole-draftatomicityنہیں؛heldresumeUIreconstruction/durableidentity/restart/timeout/parallel/COMMIT/WPFباقی |
+|23۔DB/permissiontransaction | حصہ36optionalTxoutcome؛صرفpreCOMMITconfirmedrollback/no-worksafe؛Resumeمیںdraft/link/2auditsایکTx | sessionbinding/CAS/provider/busy/parallel/productionjournal/COMMIT-I-O؛observationdurablereceiptنہیں |
+|24۔Fault/rollback | حصہ36premark/creator/restore/finalize،4Resumefaults/retry،exactsnapshotکے29C#sourcecases؛syntheticSQL | تمامC#UNRUN؛دیگرstock/expense/recoveryPR/file/providerCOMMITfaultsباقی |
+|25۔Duplicate/retry | حصہ36unknownmarker،linkedrecoveryno-repark،partialcartguard،restore/finalizeSAVEDwarning | whole-draftatomicityنہیں؛globalidentity/parallel/COMMIT،عامHoldUIack،directnon-draftunknownretryاوراصلWPFباقی |
 |26۔ Encryptedbackup | passwordA .a11bakcode،manual/auto/safety/rollbackintegration،referencechecks | اصلC#service/DPAPI/ACL/passwordrotation/large-photo/interruptionverification |
 |27۔ Restore/newPC | stagedvalidation/safety/rollback/explicitlegacycode | نئےPCپرoriginalpassword،wrong/corrupt/interruptedrestore،پراناDB/photosبچنااورstartupثبوت |
 |28۔ Files/bounds | متعدددخل/path/size/extension/archivelimits | malformed/largeimage/archive/import،codec/replacement/collision/cleanup/powerloss |

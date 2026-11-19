@@ -204,7 +204,7 @@ public sealed class DraftsViewModel : ObservableObject
             Drafts.Remove(draft);
             Refresh();
             SetStatus("SAVED. Posted as " + posted.Code + ". Do not post this draft again."
-                + (_listLoaded ? string.Empty : " Drafts were not reloaded; refresh."), !_listLoaded);
+                + (_listLoaded ? string.Empty : " Drafts were not reloaded; refresh.") + posted.Warning, !_listLoaded || posted.Warning.Length > 0);
         }
         catch (Exception exception)
         {
@@ -216,20 +216,20 @@ public sealed class DraftsViewModel : ObservableObject
         finally { _busy = false; }
     }
 
-    private (bool Ok, string? Error, string Code) PostSale(int draftId)
+    private (bool Ok, string? Error, string Code, string Warning) PostSale(int draftId)
     {
         var result = _services.Drafts.PostSale(_user, draftId);
         return result.Ok && result.Value is not null
-            ? (true, null, result.Value.Code)
-            : (false, result.Error, string.Empty);
+            ? (true, null, result.Value.Code, (result.Value.Warnings.Count > 0 ? " " + string.Join(" ", result.Value.Warnings) : string.Empty))
+            : (false, result.Error, string.Empty, string.Empty);
     }
 
-    private (bool Ok, string? Error, string Code) PostPurchase(int draftId)
+    private (bool Ok, string? Error, string Code, string Warning) PostPurchase(int draftId)
     {
         var result = _services.Drafts.PostPurchase(_user, draftId);
         return result.Ok && result.Value is not null
-            ? (true, null, result.Value.Code)
-            : (false, result.Error, string.Empty);
+            ? (true, null, result.Value.Code, (result.Value.Warnings.Count > 0 ? " " + string.Join(" ", result.Value.Warnings) : string.Empty))
+            : (false, result.Error, string.Empty, string.Empty);
     }
 
     private void Discard()

@@ -1,5 +1,9 @@
 # باقی کام، GitHub اور test installer — v0.104.0
 
+## تازہ حیثیت — v0.114.0 Lichen / حصہ36
+
+آپ کے منظور کردہ linked recovery draft اور unknown posting marker کی source implementation؛مستقل15/23/24/25۔ [PT-56](POS-PHASE4-PART36-URDU.md)،[trace/حدود](POS-PHASE4-RECOVERY-FAULT-REVIEW.md)،[1–36حیثیت](NUMBERED-WORK-STATUS-URDU.md)۔29نئےcases/2644C#suite یہاں UNRUN؛103static،synthetic SQLite/lexical checks اصل Windows نہیں۔ اگلا23–25کے باقیintegratedfaults/provider/identity،5–7remainingcallers/session/fullPOS،26–29restore/cloud،2/4/30–35Windows/results/hardware/isolation؛36installer NOT BUILT۔ FullPhase4 OPEN؛36categories≠36Nexts،3–6rounds مشروط تخمینہ۔ نیچے پرانے checkpoints تاریخی ہیں؛ہر حصہ docs+samebranchcommit/push+actualremoteverify۔
+
 ## تازہ checkpoint — v0.113.0 Dune / حصہ35؛مستقل5/6/7/15/16/23/25
 
 [1–36حیثیت](NUMBERED-WORK-STATUS-URDU.md)،[PT-55](POS-PHASE4-PART35-URDU.md)،[trace](POS-PHASE4-DRAFT-HELD-CURRENT-REVIEW.md)۔136نئےC#cases/2615suiteUNRUN؛currentdraft/heldreaders/writers،Purchasemetadata-vs-costpayload،typeonlydiscardprobe،explicitheldcount،stalelist/timer/modalrecheck/SAVED۔

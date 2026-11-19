@@ -192,14 +192,15 @@ WHERE product_id = @id AND active = 1 AND qty_base > 0
 
     public ServiceResult<SaleResult> Create(SaleInput input, User user)
     {
+        var outcome = new TransactionOutcome();
         // No bill before the drawer is counted (v0.35.0, D-92). The owner's rule, in his words:
         // "no work happens while the galla is closed". A bill made outside a drawer is money that
         // nobody counted at the end of the day, and the difference looks like theft. There is no
         // switch for it: a rule with a switch is a rule the next person turns off.
         if (!HasOpenDrawer())
         {
-            return ServiceResult<SaleResult>.Fail(
-                "The drawer (galla) is closed or could not be checked. Open or refresh the shift, then make the bill.");
+            return new ServiceResult<SaleResult> { Error =
+                "The drawer (galla) is closed or could not be checked. Open or refresh the shift, then make the bill.", NoCommitConfirmed = true };
         }
 
         try
@@ -211,17 +212,19 @@ WHERE product_id = @id AND active = 1 AND qty_base > 0
                 if (!HasOpenDrawer(connection))
                     throw new ValidationException("The drawer is closed. Open the shift, then make the bill.");
                 return Save(connection, input, reader);
-            });
+            }, outcome);
             return result;
         }
         catch (ValidationException exception)
         {
-            return ServiceResult<SaleResult>.Fail(exception.Message);
+            return new ServiceResult<SaleResult> { Error = exception.Message, NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
         catch (Exception exception)
         {
             _log.Error("The bill could not be saved.", exception);
-            return ServiceResult<SaleResult>.Fail("The bill could not be saved. Please try again.");
+            return new ServiceResult<SaleResult> { Error = outcome.NoCommitConfirmed
+                ? "The bill was not saved; its transaction did not commit."
+                : "The posting outcome could not be confirmed. Check history before retrying.", NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
     }
 

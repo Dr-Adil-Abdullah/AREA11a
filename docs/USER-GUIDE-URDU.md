@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.113.0 Dune۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.114.0 Lichen۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**حصہ36 — محفوظ Resume اور posting:** Bring back اسی transaction میں linked recovery Sale draft بناتا ہے؛restart پر Open drafts میں `held-…` سے saved کام واپس لیں۔ Counter اسی draft سے Complete کرتا ہے؛دوبارہ Park کرکے copy نہیں۔ Reconstruction یا missing-product error پر partial cart Save/Post نہیں؛Clear confirmation saved draft کو نہیں مٹاتی،unsaved edits ضائع ہوسکتے ہیں۔ Unknown posting میں marker رہے؛پہلے Bills/Purchases verify کریں۔ Confirmed no-commit پر ہی draft بحال؛finalization fault میں **SAVED،دوبارہ post نہیں** warning۔ [PT-56](POS-PHASE4-PART36-URDU.md)،[حدود](POS-PHASE4-RECOVERY-FAULT-REVIEW.md)۔29نئےcases/2644C#suite/WindowsUNRUN؛FullPhase4/installer OPEN۔
 
 **حصہ35 / مستقل5/6/7/15/16/23/25 — Drafts/Parked cartsکی موجودہ اجازت:** Saledraft/held=POS؛Purchasedraftکیفہرست/discard=Purchases،لیکنpayloadکھولنا/بدلنا/saveکرناCost+mainبھیچاہتاہے۔ Currentaccountبند/roleبدل/grantواپسہوتوپراناdraft/cartIDکافینہیں۔ Drawersاگلےaction/nominal3secondtickپرdeniedlist/selectionصاف؛regrantپرتازہRefresh۔ Countfailureکوzeroنہیںکہا۔ ModalYesکےبعدپھراجازت/rowcheck؛draftpost/discardکےبعدreloadfailمیںSAVED۔ UnsavedPOScartنہیںمٹایا؛HeldResumeکےبعدUIreconstructionاورwhole-draftfaultsالگباقی۔ [PT-55](POS-PHASE4-PART35-URDU.md)،[trace](POS-PHASE4-DRAFT-HELD-CURRENT-REVIEW.md)۔ **136نئےC#cases/2615UNRUN؛Windows/fullPhase4/installerOPEN۔**
 
@@ -334,6 +336,9 @@ Supplier statement پر پہلے سے ادا شدہ رقم دوبارہ Pay نہ
 3. purchase کا بھی Save as draft ہے؛ Open drafts سے اس کی delivery واپس لیں۔ draft مشترکہ ہے: متعلقہ اجازت والا شخص اسے کھول/پوسٹ کر سکتا ہے۔ اپنے ادھورے کام کو راز یا ذاتی lock نہ سمجھیں۔
 4. Post now حتمی document بنانے کی کوشش ہے، صرف کھولنا نہیں۔ Discard/Throw away draft ترک کرتا ہے، پہلے سے posted document کو الٹتا نہیں۔
 5. Post was interrupted جیسا پیغام ہو تو پہلے اصل Bills/purchase record/status چیک کریں؛ کہیں document بن چکا ہو تو دوبارہ post نہ کریں۔ draft history محفوظ ہونے کا مطلب یہ نہیں کہ editor میں ابھی کی ہر غیر محفوظ typing بھی محفوظ ہے۔
+6. Bring back اب اسی transaction میں recovery draft بھی محفوظ کرتا ہے؛Counter اسی ID سے جڑا ہے۔ App بند ہوجائے تو Open drafts میں `held-…` کھولیں،نیا غیرمنسلک bill نہ بنائیں۔ Save اسی draft پر؛دوبارہ Park کا انکار جان بوجھ کر ہے۔
+7. Reconstruction/missing-product error آئے تو partial cart کو Save/Complete نہ کریں؛Clear کی confirmation saved draft باقی رکھتی ہے،صرف counter چھوڑتی ہے۔ اصل محفوظ کام Drafts میں،بعد کی unsaved typing نہیں۔
+8. صرف validation/confirmed no-commit پر draft دوبارہ کھلتا ہے۔ نامعلوم نتیجے پر verification marker رہتا ہے؛اگر **SAVED / finalization failed** ملے تو document بن چکا ہے،دوبارہ post نہ کریں۔ Marker کو verification کے بغیر discard کرکےنئیcopy نہ بنائیں۔
 
 <a id="lesson-12"></a>
 
@@ -756,7 +761,7 @@ Recoveryکیfailedslipپرپرنٹرکوخالیdocumentنہیںدیاجاتا۔
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.113.0 کا متوقع test count 2615 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.114.0 کا متوقع test count 2644 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 

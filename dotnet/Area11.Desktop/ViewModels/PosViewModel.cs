@@ -72,9 +72,11 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     private string _lastBill = string.Empty;
     private int _lastSaleId;
     private int _openDraftId;
+    private string? _savedDraftNotes;
     private bool _autoPrint;
     private bool _isCompletingSale;
     private bool _committedCartNeedsReset;
+    private bool _draftReconstructionFailed;
     private bool _lastLookupsSucceeded;
     private bool _lastBarcodeLoadSucceeded;
     private bool _shiftClosed;
@@ -1006,6 +1008,9 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
     private void ClearCart()
     {
+        if (_openDraftId > 0 && MessageBox.Show(
+                "Leave this draft on disk and clear only the counter? Unsaved edits will be lost. Open Drafts to recover the saved work or verify a posting marker.",
+                "Keep saved draft", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
         _availabilityWarningShown = false;
         Cart.Clear();
         TenderedText = string.Empty;
@@ -1014,11 +1019,13 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         DiscountPercent = "0";
         ResetBillBasis();
         _openDraftId = 0;
+        _savedDraftNotes = null;
         OnPropertyChanged(nameof(HasOpenDraft));
         DocEditor.LoadNew();
         SetStatus("Cart cleared.", false);
         Recalculate();
         _committedCartNeedsReset = false;
+        _draftReconstructionFailed = false;
     }
 
     private void CompleteSale()
@@ -1128,6 +1135,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         _committedCartNeedsReset = true;
         // Core acknowledged success: no posted draft/cart may survive into nested print/modal work.
         _openDraftId = 0;
+        _savedDraftNotes = null;
         _lastSaleId = 0;
         try
         {
@@ -1173,6 +1181,11 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
     private bool RefuseCommittedCart()
     {
+        if (_draftReconstructionFailed)
+        {
+            SetStatus("Draft reconstruction failed. Do not save, park or post a partial cart. Clear only the counter, then recover the saved work from Drafts.", true);
+            return true;
+        }
         if (!_committedCartNeedsReset) return false;
         SetStatus("SAVED. The previous bill was stored, but its cart could not reset. Do not bill or collect this sale again; check bill history, then Clear cart before starting a new bill.", true);
         return true;
@@ -1270,6 +1283,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
         return new SaleInput
         {
+            Notes = _savedDraftNotes,
             CustomerId = SelectedCustomer is { Id: > 0 } ? SelectedCustomer.Id : null,
             DoctorId = SelectedDoctor is { Id: > 0 } ? SelectedDoctor.Id : null,
             DiscountPercent = percent,
@@ -1432,7 +1446,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     public void OpenSaleDraft(int draftId)
     {
         if (!RefreshParkedAccess()) return;
-        if (Cart.Count > 0)
+        if (Cart.Count > 0 || _openDraftId > 0)
         {
             SetStatus("Complete or clear the current cart before opening a draft.", true);
             return;
@@ -1446,55 +1460,67 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         }
 
         var input = opened.Value;
-        SelectedCustomer = input.CustomerId is > 0
-            ? Customers.FirstOrDefault(customer => customer.Id == input.CustomerId)
-            : null;
-        SelectedDoctor = input.DoctorId is > 0
-            ? Doctors.FirstOrDefault(doctor => doctor.Id == input.DoctorId)
-            : null;
-        _appliedExtraDiscount = input.ExtraDiscountPaisa;
-        ExtraDiscountEntry = Money.Edit(_appliedExtraDiscount);
-        RestoreBillBasis(input.DiscountBasis);
-        DiscountPercent = input.DiscountPercent.ToString("0.##", CultureInfo.InvariantCulture);
-        PaymentMethod = string.IsNullOrWhiteSpace(input.PaymentMethod) ? "cash" : input.PaymentMethod;
-        TenderedText = input.TenderedPaisa > 0 ? Money.Edit(input.TenderedPaisa) : string.Empty;
-        var split = input.Payments.FirstOrDefault();
-        if (split is not null)
-        {
-            SecondMethod = split.Method;
-            SecondAmountText = split.AmountPaisa > 0 ? Money.Edit(split.AmountPaisa) : string.Empty;
-        }
-        else
-        {
-            SecondAmountText = string.Empty;
-        }
-        RedeemPointsText = input.RedeemPoints > 0
-            ? input.RedeemPoints.ToString(CultureInfo.InvariantCulture)
-            : string.Empty;
-
-        var skipped = 0;
-        _availabilityWarningShown = false;
-        Cart.Clear();
-        foreach (var line in input.Lines)
-        {
-            var product = _catalog.FirstOrDefault(item => item.Id == line.ProductId);
-            if (product is null)
-            {
-                skipped++;
-                continue;
-            }
-            Cart.Add(NewCartLine(line.ProductId, product.Name, line.Unit, line.Quantity, line.UnitPricePaisa,
-                line.PricingMode, line.DiscountBasis, line.LineDiscountPercent));
-        }
-
         _openDraftId = draftId;
-        OnPropertyChanged(nameof(HasOpenDraft));
-        DocEditor.SetAnswers(input.CustomAnswers);
-        Recalculate();
-        SetStatus(skipped == 0
-            ? "Draft opened. Review and complete the sale."
-            : "Draft opened, but " + skipped + " line(s) skipped - product no longer available.",
-            skipped > 0);
+        _savedDraftNotes = input.Notes;
+        _draftReconstructionFailed = true;
+        try
+        {
+            SelectedCustomer = input.CustomerId is > 0
+                ? Customers.FirstOrDefault(customer => customer.Id == input.CustomerId)
+                : null;
+            SelectedDoctor = input.DoctorId is > 0
+                ? Doctors.FirstOrDefault(doctor => doctor.Id == input.DoctorId)
+                : null;
+            _appliedExtraDiscount = input.ExtraDiscountPaisa;
+            ExtraDiscountEntry = Money.Edit(_appliedExtraDiscount);
+            RestoreBillBasis(input.DiscountBasis);
+            DiscountPercent = input.DiscountPercent.ToString("0.##", CultureInfo.InvariantCulture);
+            PaymentMethod = string.IsNullOrWhiteSpace(input.PaymentMethod) ? "cash" : input.PaymentMethod;
+            TenderedText = input.TenderedPaisa > 0 ? Money.Edit(input.TenderedPaisa) : string.Empty;
+            var split = input.Payments.FirstOrDefault();
+            if (split is not null)
+            {
+                SecondMethod = split.Method;
+                SecondAmountText = split.AmountPaisa > 0 ? Money.Edit(split.AmountPaisa) : string.Empty;
+            }
+            else
+            {
+                SecondAmountText = string.Empty;
+            }
+            RedeemPointsText = input.RedeemPoints > 0
+                ? input.RedeemPoints.ToString(CultureInfo.InvariantCulture)
+                : string.Empty;
+
+            var skipped = 0;
+            _availabilityWarningShown = false;
+            Cart.Clear();
+            foreach (var line in input.Lines)
+            {
+                var product = _catalog.FirstOrDefault(item => item.Id == line.ProductId);
+                if (product is null)
+                {
+                    skipped++;
+                    continue;
+                }
+                Cart.Add(NewCartLine(line.ProductId, product.Name, line.Unit, line.Quantity, line.UnitPricePaisa,
+                    line.PricingMode, line.DiscountBasis, line.LineDiscountPercent));
+            }
+
+            OnPropertyChanged(nameof(HasOpenDraft));
+            DocEditor.SetAnswers(input.CustomAnswers);
+            Recalculate();
+            SetStatus(skipped == 0
+                ? "Draft opened. Review and complete the sale."
+                : "Draft opened, but " + skipped + " line(s) skipped - product no longer available. Partial-cart save/post/park is blocked; the saved draft is unchanged.",
+                skipped > 0);
+            // Never replace the durable original with a silently shortened draft.
+            _draftReconstructionFailed = skipped > 0;
+        }
+        catch (Exception exception)
+        {
+            _services.Log.Error("Draft counter reconstruction failed; saved work remains linked.", exception);
+            SetStatus("Draft reconstruction failed. The saved draft remains in Drafts; clear only the counter and recover it there.", true);
+        }
     }
 
     /// <summary>Parks the cart so the next customer can be served (Spec 8.5.1). Nothing is sold.</summary>
@@ -1514,7 +1540,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         }
 
         if (!RequireAppliedExtraEntry()) return;
-        var result = _services.Holds.Hold(BuildInput(), _user);
+        var result = _services.Holds.Hold(BuildInput(), _user, _openDraftId);
         if (!result.Ok || string.IsNullOrEmpty(result.Value))
         {
             SetStatus(result.Error ?? "The cart could not be parked.", true);
@@ -1583,9 +1609,9 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             SetStatus("Refresh parked carts and choose a current row.", true);
             return;
         }
-        if (Cart.Count > 0)
+        if (Cart.Count > 0 || _openDraftId > 0)
         {
-            SetStatus("The current cart is not empty. Complete it or park it first.", true);
+            SetStatus("The current cart is not empty or has a linked draft. Complete it or clear only the counter first.", true);
             return;
         }
 
@@ -1598,33 +1624,46 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         }
 
         var cart = result.Value;
-
-        foreach (var line in cart.Lines)
+        _openDraftId = cart.RecoveryDraftId;
+        _savedDraftNotes = cart.Notes;
+        _draftReconstructionFailed = true;
+        try
         {
-            // The parked cart already stores integer-paisa custom rates; do not silently replace
-            // them with retail when the customer returns to the counter.
-            Cart.Add(NewCartLine(line.ProductId, line.Name, line.Unit, line.Quantity, line.UnitPricePaisa,
-                line.PricingMode, line.DiscountBasis, line.LineDiscountPercent));
+            if (_openDraftId <= 0) throw new InvalidOperationException("Resumed cart has no recovery draft.");
+            OnPropertyChanged(nameof(HasOpenDraft));
+            foreach (var line in cart.Lines)
+            {
+                // The parked cart already stores integer-paisa custom rates; do not silently replace
+                // them with retail when the customer returns to the counter.
+                Cart.Add(NewCartLine(line.ProductId, line.Name, line.Unit, line.Quantity, line.UnitPricePaisa,
+                    line.PricingMode, line.DiscountBasis, line.LineDiscountPercent));
+            }
+
+            _appliedExtraDiscount = cart.ExtraDiscountPaisa;
+            ExtraDiscountEntry = Money.Edit(_appliedExtraDiscount);
+            RestoreBillBasis(cart.DiscountBasis);
+            DiscountPercent = cart.DiscountPercent.ToString("0.##", CultureInfo.InvariantCulture);
+
+            // A parked customer may have been switched off since. Fall back to the walk-in line rather
+            // than binding the bill to somebody the shop no longer serves.
+            var walkIn = Customers.Count > 0 ? Customers[0] : null;
+            var parkedCustomer = cart.CustomerId is int customerId
+                ? Customers.FirstOrDefault(person => person.Id == customerId)
+                : null;
+
+            SelectedCustomer = parkedCustomer ?? walkIn;
+
+            Recalculate();
+            LoadHeldCarts();
+            ShowParkedCarts = false;
+            SetStatus($"{cart.Code} is back on the counter ({cart.Lines.Count} line(s)), linked to its recovery draft. Save or complete it; restart recovery is in Drafts.", false);
+            _draftReconstructionFailed = false;
         }
-
-        _appliedExtraDiscount = cart.ExtraDiscountPaisa;
-        ExtraDiscountEntry = Money.Edit(_appliedExtraDiscount);
-        RestoreBillBasis(cart.DiscountBasis);
-        DiscountPercent = cart.DiscountPercent.ToString("0.##", CultureInfo.InvariantCulture);
-
-        // A parked customer may have been switched off since. Fall back to the walk-in line rather
-        // than binding the bill to somebody the shop no longer serves.
-        var walkIn = Customers.Count > 0 ? Customers[0] : null;
-        var parkedCustomer = cart.CustomerId is int customerId
-            ? Customers.FirstOrDefault(person => person.Id == customerId)
-            : null;
-
-        SelectedCustomer = parkedCustomer ?? walkIn;
-
-        Recalculate();
-        LoadHeldCarts();
-        ShowParkedCarts = false;
-        SetStatus($"{cart.Code} is back on the counter ({cart.Lines.Count} line(s)).", false);
+        catch (Exception exception)
+        {
+            _services.Log.Error("Held cart counter reconstruction failed; its recovery draft remains on disk.", exception);
+            SetStatus("Resume was saved, but counter reconstruction failed. Do not post this partial cart. Clear only the counter, then open its recovery draft in Drafts.", true);
+        }
     }
 
     private void DiscardHeld(HeldCartRow row)

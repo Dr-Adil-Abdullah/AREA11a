@@ -24,12 +24,12 @@ namespace Area11.Core.Services;
 ///      open/update/post; purchase list/discard retain current page-only access;
 ///   4. a post can never happen twice: the draft is pre-marked `posted` with a marker id **before**
 ///      the document is created, so a second post - or a retry after a crash - is refused;
-///   5. a failed post restores the draft to `draft` with the latest payload, so no work is lost and
-///      no half-written document exists.
+///   5. only a confirmed no-commit failure restores `draft` with the latest payload. Unknown
+///      creator/COMMIT outcomes retain the verification marker; restore/finalize faults are reported.
 ///
 /// **Crash honesty.** `Database.Tx` cannot nest, so the pre-mark, the document and the final mark are
 /// three separate transactions. If the process dies between the document commit and the final mark,
-/// the draft stays `posted` with marker id -1: the document **exists** (see the Bills / Purchases
+/// the draft stays `posted` with marker id -1: the document **may exist** (verify the Bills / Purchases
 /// page) and the draft can never post again. Such rows are listed flagged (`NeedsPostCheck`) and can
 /// only be discarded, never reopened - reopening could double the money. Discarding one is audited.
 /// </summary>
@@ -368,7 +368,7 @@ WHERE id = @id;",
     /// <summary>
     /// Posts an open sale draft through the counter's own `Create`: every guard is re-checked at
     /// post time. Pass the cart's current input when the opener edited it; otherwise the stored
-    /// payload posts. A failure restores the draft with the latest payload.
+    /// payload posts. Only a confirmed no-commit failure restores the latest payload; unknown outcomes stay marked.
     /// </summary>
     public ServiceResult<SaleResult> PostSale(User? user, int draftId, SaleInput? current = null)
     {
@@ -509,15 +509,18 @@ WHERE id = @id;",
         }
         catch (Exception exception)
         {
-            RestoreAfterFailure(draftId, type);
-            _log.Error("A draft could not be posted.", exception);
-            return ServiceResult<TResult>.Fail("The draft could not be posted. It is kept as a draft.");
+            _log.Error("A draft creator returned no confirmed outcome.", exception);
+            return ServiceResult<TResult>.Fail("The posting outcome is unknown. Its verification marker is kept; check the document before any retry.");
         }
 
         if (!created.Ok || created.Value is null)
         {
-            RestoreAfterFailure(draftId, type);
-            return ServiceResult<TResult>.Fail((created.Error ?? "The draft could not be posted.") + " The draft is kept.");
+            if (!created.NoCommitConfirmed)
+                return ServiceResult<TResult>.Fail("The posting outcome is unknown. Its verification marker is kept; check the document before any retry.");
+            var restored = RestoreAfterFailure(draftId, type);
+            return ServiceResult<TResult>.Fail((created.Error ?? "The draft could not be posted.") + (restored
+                ? " The draft was restored with the latest work."
+                : " Draft restoration was not confirmed; refresh and check its marker before retrying."));
         }
 
         try
@@ -528,43 +531,52 @@ WHERE id = @id;",
                 PurchaseResult purchase => purchase.PurchaseId,
                 _ => 0
             };
-            _db.Tx(connection => finalize(connection, documentId));
+            var marked = _db.Tx(connection => finalize(connection, documentId));
+            if (!marked.Ok) throw new ValidationException("The final draft mark was not confirmed.");
         }
         catch (Exception exception)
         {
             // The document EXISTS (its transaction committed); only the final mark failed. The
             // draft stays flagged for a post check and can never post again - see the class note.
             _log.Error("A posted draft could not be marked final.", exception);
+            const string warning = "SAVED. Its draft finalization failed. Do not post again; verify the document before clearing its marker.";
+            if (created.Value is SaleResult sale) sale.Warnings.Add(warning);
+            if (created.Value is PurchaseResult purchase) purchase.Warnings.Add(warning);
+            return ServiceResult<TResult>.Success(created.Value, created.Warnings.Concat(new[] { warning }).ToArray());
         }
 
         return created;
     }
 
-    private void RestoreAfterFailure(int draftId, string type)
+    private bool RestoreAfterFailure(int draftId, string type)
     {
         try
         {
-            _db.Tx(connection =>
+            return _db.Tx(connection =>
             {
-                _db.Execute(connection, @"
+                var changed = _db.Execute(connection, @"
 UPDATE document_drafts
 SET status = 'draft', posted_document_id = NULL, posted_at = NULL, updated_at = @at
-WHERE id = @id AND status = 'posted' AND posted_document_id = @marker;",
-                    new { at = Clock.Now(), id = draftId, marker = PostingMarkerId });
+WHERE id = @id AND draft_type = @type AND status = 'posted' AND posted_document_id = @marker;",
+                    new { at = Clock.Now(), id = draftId, type, marker = PostingMarkerId });
+                var row = ReadRow(connection, draftId);
+                return changed == 1 && row is { Status: DraftStatus.Draft, PostedDocumentId: null } && row.DraftType == type;
             });
         }
         catch (Exception exception)
         {
             _log.Error("A failed draft post could not restore the draft row.", exception);
+            return false;
         }
     }
 
     private ServiceResult Finalize(
         Microsoft.Data.Sqlite.SqliteConnection connection, User? user, int draftId, string type, int documentId)
     {
-        _db.Execute(connection, @"
-UPDATE document_drafts SET posted_document_id = @document, updated_at = @at WHERE id = @id;",
-            new { document = documentId, at = Clock.Now(), id = draftId });
+        var changed = _db.Execute(connection, @"
+UPDATE document_drafts SET posted_document_id = @document, updated_at = @at WHERE id = @id AND draft_type = @type AND status = 'posted' AND posted_document_id = @marker;",
+            new { document = documentId, at = Clock.Now(), id = draftId, type, marker = PostingMarkerId });
+        if (changed != 1) throw new ValidationException("The draft marker changed; verify the saved document.");
         _audit.Record(connection, user, DraftType.ModuleFor(type), "draft_posted",
             "document_drafts", draftId.ToString(), newValue: documentId.ToString());
         return ServiceResult.Success();

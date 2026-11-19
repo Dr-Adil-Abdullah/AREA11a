@@ -10,6 +10,10 @@ public class ServiceResult
 
     public string? Error { get; init; }
 
+    /// <summary>Failure only: creator did not run, or a pre-COMMIT transaction rollback returned successfully.
+    /// Default false is unknown, never infer safety from wording. Not a durable exactly-once token.</summary>
+    public bool NoCommitConfirmed { get; init; }
+
     public IReadOnlyList<string> Warnings { get; init; } = Array.Empty<string>();
 
     public static ServiceResult Success(params string[] warnings) =>

@@ -1,5 +1,9 @@
 # POS، رعایت اور مکمل جائزہ — مالک کی جانچ کے لیے یکجا منصوبہ
 
+## تازہ حیثیت — v0.114.0 Lichen / حصہ36
+
+آپ کے منظور کردہ linked recovery draft اور unknown posting marker کی source implementation؛مستقل15/23/24/25۔ [PT-56](POS-PHASE4-PART36-URDU.md)،[trace/حدود](POS-PHASE4-RECOVERY-FAULT-REVIEW.md)،[1–36حیثیت](NUMBERED-WORK-STATUS-URDU.md)۔29نئےcases/2644C#suite یہاں UNRUN؛103static،synthetic SQLite/lexical checks اصل Windows نہیں۔ اگلا23–25کے باقیintegratedfaults/provider/identity،5–7remainingcallers/session/fullPOS،26–29restore/cloud،2/4/30–35Windows/results/hardware/isolation؛36installer NOT BUILT۔ FullPhase4 OPEN؛36categories≠36Nexts،3–6rounds مشروط تخمینہ۔ نیچے پرانے checkpoints تاریخی ہیں؛ہر حصہ docs+samebranchcommit/push+actualremoteverify۔
+
 **تازہ حیثیت — فیز4 حصہ6، v0.84.0 Lapwing:** سابق owner-only اصول کے مطابق custom definitions/live-owner transaction checks، public field read/save current modules اور bill-time correction کا ایک فوری read-plan-write transaction شامل۔ [شواہد/باقی حدود](POS-PHASE4-DEFINITION-TIME-REVIEW.md)، [PT-26](POS-PHASE4-PART6-URDU.md)۔1421 written C# cases یہاں UNEXECUTED؛72 static checks/الگ synthetic SQLite runtime نہیں۔ parent/session/valuation/finance/files/cloud/Windows audit جاری، installer نہیں؛ نیچے سابق نوٹس تاریخی ہیں۔
 
 **تازہ حیثیت — فیز4 حصہ5، v0.83.0 Snipe:** اسی جاری فیز4 میں مالک کے واضح management انتخاب D-109 کے مطابق History purchase rate/total/summary اور Reorder LastCost mask؛ snapshot current-reader gates اور checked Report Days شامل۔ [شواہد/باقی حدود](POS-PHASE4-SNAPSHOT-REVIEW.md)، [PT-25](POS-PHASE4-PART5-URDU.md)۔1401 C# cases لکھے مگر یہاں نہیں چلائے؛71 static checks runtime نہیں۔ Reports DeadStock valuation اور عمومی session/finance/files/cloud/Windows audit ابھی OPEN؛ اگلا حصہ اسی فیز4 کا، installer نہیں۔ نیچے سابق حصوں کے نوٹس تاریخی ہیں۔

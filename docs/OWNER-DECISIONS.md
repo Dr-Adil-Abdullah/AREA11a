@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## v0.114.0 حصہ36 — دو نئے recovery فیصلے واضح طور پر منظور
+
+H-0001 کی consume-before-UI مثال کے بعد مالک نے MCQ میں **linked_draft** منتخب کیا: Resume کے اسی DB transaction میں Sale recovery draft؛Counter اسی سے جڑا،restart پر Drafts،unlinked copy نہیں۔ دوسری MCQ **keep_marker**: نامعلوم posting outcome پر document verification تک marker؛عام validation/تصدیق شدہ no-commit پر draft بحال۔ Error wording سے فیصلہ نہیں۔ [PT-56](POS-PHASE4-PART36-URDU.md)،[trace](POS-PHASE4-RECOVERY-FAULT-REVIEW.md)۔29نئےC#cases/2644suiteUNRUN؛pricing/refunds/SupplierB/permissions/Blackbox/BookCheck پالیسی نہیں بدلی۔ FullPhase4/installer OPEN۔
+
 ## v0.113.0 portion35 — Draft/Hold current access؛settledpolicyنہیںبدلی
 
 Continueکےتحت5/6/7/15/16/23/25: Saledraft/held=POS؛Purchasedraftlist/discard=Purchases،payloadsave/open/update=Purchases+Cost/main۔ Sharedownershipبرقرار؛currentstoredcreator/audit؛typeonlydiscardprobeقبلpayload۔ UIstaledrawers/timer/modalrecheck/SAVED؛unsavedPOScartنہیںمٹایا۔ Draftpremark/Create/finalizeاورHeldResume/UIreconstructionالگباقی۔ [PT-55](POS-PHASE4-PART35-URDU.md)،[trace](POS-PHASE4-DRAFT-HELD-CURRENT-REVIEW.md)۔136نئےcases/2615C#/WindowsUNRUN؛session/CAS/COMMIT/fullPhase4/installerOPEN۔

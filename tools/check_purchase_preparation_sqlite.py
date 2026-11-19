@@ -59,7 +59,7 @@ def run():
     assert c.execute('SELECT status FROM document_drafts WHERE id=1').fetchone()[0] == 'draft'
     assert c.execute('SELECT payload_json FROM document_drafts WHERE id=1').fetchone()[0] == payload
     c.execute(premark, args)
-    c.execute(finalize, dict(document=42, id=1, at=args['at']))
+    c.execute(finalize, dict(document=42, id=1, at=args['at'], type='purchase', marker=-1))
     assert not c.execute(listed, args).fetchall()
     c.execute(restore, args)  # cannot restore an actual finalized document as an unposted draft
     assert c.execute('SELECT posted_document_id FROM document_drafts WHERE id=1').fetchone()[0] == 42

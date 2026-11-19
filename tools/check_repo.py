@@ -7273,7 +7273,7 @@ def check_purchase_preparation():
     for token in ('_purchases.CheckEntryAccess(user)', 'payload => _purchases.Create(payload, user!)',
                   'connection => { _purchases.RequireEntryReader(connection, user); }'):
         if token not in posted: FAILURES.append(f'Purchase draft post must guard current payload and premark/Create: {token}')
-    post = drafts.split('private ServiceResult<TResult> Post<', 1)[-1].split('private void RestoreAfterFailure', 1)[0]
+    post = drafts.split('private ServiceResult<TResult> Post<', 1)[-1].split('private bool RestoreAfterFailure', 1)[0]
     if 'authorizeBeforeMark?.Invoke(connection);' not in post or post.find('authorizeBeforeMark?.Invoke(connection);') > post.find('var row = ReadRow(connection, draftId);'):
         FAILURES.append('Recheck purchase preparation before terminal draft marker')
     discard = drafts.split('public ServiceResult Discard(', 1)[-1].split('// ------------------------------------------------------------------ post', 1)[0]
@@ -8451,7 +8451,7 @@ def check_draft_held_current_access():
     for signature,payload in (('List(User? user)','var rows ='),('Count(User? user)','var count =')):
         body=h.split(signature,1)[-1].split('\n    public ',1)[0]
         if 'RequireReader(connection, user);' not in body or body.find('RequireReader')>body.find(payload): FAILURES.append('Held current read missing '+signature)
-    for signature,tx,first in (('Hold(SaleInput input, User? user)','var code = _db.Tx(connection =>','var number ='),
+    for signature,tx,first in (('Hold(SaleInput input, User? user, int sourceDraftId = 0)','var code = _db.Tx(connection =>','var number ='),
                                ('Resume(User? user, int cartId)','var cart = _db.Tx(connection =>','var row ='),
                                ('Discard(User? user, int cartId)','_db.Tx(connection =>','var code =')):
         body=h.split(signature,1)[-1].split('\n    public ',1)[0]
@@ -8489,6 +8489,63 @@ def check_draft_held_current_access():
                   'DraftsStaySharedAcrossAllowedPeopleAndCreatorRemainsHistorical'):
         if token not in tests: FAILURES.append('Draft/held regression missing '+token)
     REPORT.append('Phase4 portion35/stable5,6,7,15,16,23,25:currentdraft/heldreaders+writeraudit,metadata-vs-purchasepayloadpolicy,typeonlydiscardprobe,explicitheldcount,staledrawers/timers/modalrecheck;136sourcecases/2615suiteUNRUN;NOT session/CAS/whole-draftatomicity/heldreconstruction/COMMIT/WPFproof')
+
+def check_draft_recovery_fault_boundaries():
+    core=DOTNET/'Area11.Core'
+    sources={name:(core/path).read_text() for name,path in {
+        'db':'Data/Database.cs','outcome':'Data/TransactionOutcome.cs','draft':'Services/DraftService.cs',
+        'hold':'Services/HoldCartService.cs','sale':'Services/SaleService.cs','purchase':'Services/PurchaseService.cs'}.items()}
+    required={
+        'outcome':['public bool CommitAttempted', '!WorkStarted || (!CommitAttempted && RollbackConfirmed)'],
+        'db':['TransactionOutcome? outcome = null','outcome.WorkStarted = true;', 'outcome.CommitAttempted = true;', 'outcome.RollbackConfirmed = true;'],
+        'draft':['if (!created.NoCommitConfirmed)', 'var restored = RestoreAfterFailure(draftId, type);',
+                 'if (!marked.Ok) throw new ValidationException', 'created.Warnings.Concat(new[] { warning })',
+                 'sale.Warnings.Add(warning);','purchase.Warnings.Add(warning);',
+                 "WHERE id = @id AND draft_type = @type AND status = 'posted' AND posted_document_id = @marker;",
+                 'return changed == 1 && row is { Status: DraftStatus.Draft, PostedDocumentId: null }',
+                 'if (changed != 1) throw new ValidationException', 'Draft restoration was not confirmed'],
+        'hold':['int sourceDraftId = 0','WHERE recovery_draft_id = @id;',"AND status = 'draft';",
+                'var recoveryInput = new SaleInput','JsonSerializer.Serialize(recoveryInput, Json.WriterOptions)',
+                'payload.Length > DraftService.MaxPayloadChars','INSERT INTO document_drafts(',
+                'var recoveryId = (int)_db.NextId(connection);', 'Notes = row.Note,', 'recovery_draft_id = @draft',
+                "WHERE id = @id AND status = 'held';",'if (consumed != 1)', 'RecoveryDraftId = recoveryId,',
+                '"draft_saved", "document_drafts", recoveryId.ToString()', 'LineDiscountPercent = line.LineDiscountPercent'],
+        'sale':['}, outcome);','NoCommitConfirmed = outcome.NoCommitConfirmed','NoCommitConfirmed = true'],
+        'purchase':['}, outcome);','NoCommitConfirmed = outcome.NoCommitConfirmed','NoCommitConfirmed = true']}
+    for name,tokens in required.items():
+        for token in tokens:
+            if token not in sources[name]: FAILURES.append('P36 '+name+' missing '+token)
+    db=sources['db'];order=['outcome.WorkStarted = true;','var result = work(connection);','outcome.CommitAttempted = true;','transaction.Commit();']
+    if [db.find(t) for t in order]!=sorted(db.find(t) for t in order): FAILURES.append('P36 transaction outcome ordering')
+    d=sources['draft'];unknown=d.split('created = create(input);',1)[-1].split('if (!created.Ok',1)[0]
+    if 'RestoreAfterFailure(' in unknown: FAILURES.append('P36 throwing creator must retain marker')
+    failure=d.split('if (!created.Ok || created.Value is null)',1)[-1].split('var marked =',1)[0]
+    if failure.find('if (!created.NoCommitConfirmed)')>failure.find('RestoreAfterFailure('): FAILURES.append('P36 unknown must stop before restore')
+    h=sources['hold'].split('Resume(User? user, int cartId)',1)[-1].split('public ServiceResult Discard',1)[0]
+    order=['var reader = RequireReader','var row =','var recoveryInput =','INSERT INTO document_drafts','var recoveryId =',"UPDATE held_carts SET status = 'resumed'",'"draft_saved"','"cart_resume"','return new HeldCart']
+    positions=[h.find(t) for t in order]
+    if -1 in positions or positions!=sorted(positions): FAILURES.append('P36 atomic linked recovery ordering')
+    pos=(DOTNET/'Area11.Desktop/ViewModels/PosViewModel.cs').read_text()
+    for token in ('private bool _draftReconstructionFailed;', 'Notes = _savedDraftNotes,', '_savedDraftNotes = cart.Notes;', '_services.Holds.Hold(BuildInput(), _user, _openDraftId)',
+                  'if (_draftReconstructionFailed)', '_draftReconstructionFailed = skipped > 0;',
+                  'Unsaved edits will be lost.', 'recover the saved work from Drafts.', 'Do not post this partial cart.'):
+        if token not in pos: FAILURES.append('P36 Counter missing '+token)
+    for start,link in [('private void ResumeHeld(', '_openDraftId = cart.RecoveryDraftId;'),('public void OpenSaleDraft(', '_openDraftId = draftId;')]:
+        block=pos.split(start,1)[-1].split('\n    private ',1)[0]
+        first=next((block.find(t) for t in ('SelectedCustomer =','Cart.Add(') if block.find(t)>=0),-1)
+        if link not in block or block.find(link)>first or '_draftReconstructionFailed = true;' not in block or 'catch (Exception exception)' not in block: FAILURES.append('P36 link and guard before Counter callbacks '+start)
+    vm=(DOTNET/'Area11.Desktop/ViewModels/DraftsViewModel.cs').read_text()
+    if 'posted.Warning' not in vm or vm.count('string.Join(" ", result.Value.Warnings)')!=2: FAILURES.append('P36 draft drawer must surface saved warnings')
+    migration=(core/'Data/Migrations/037_held_recovery.sql').read_text()
+    for token in ('REFERENCES document_drafts(id)', 'CREATE UNIQUE INDEX idx_held_recovery_draft'):
+        if token not in migration: FAILURES.append('P36 recovery migration missing '+token)
+    tests=(DOTNET/'Area11.Tests/DraftRecoveryFaultTests.cs').read_text()
+    if tests.count('[InlineData(')!=24 or tests.count('[Fact]')!=5: FAILURES.append('P36 requires29 registered fault/recovery source cases')
+    for token in ('CreatorOutcomeControlsRestoreNotErrorWording','FinalizeAuditFaultReturnsSavedWarningAndNeverRecreatesDocument',
+                  'ResumeFaultRollsBackDraftConsumeAndAuditThenOneRetryRecovers','TransactionObservationRequiresPreCommitRollbackAndIsNotACommitReceipt',
+                  'Assert.Equal(before, f.Snapshot());','Assert.Equal(money, f.Money());'):
+        if token not in tests: FAILURES.append('P36 regression missing '+token)
+    REPORT.append('Phase4 portion36/stable15,23,24,25:atomiclinkedheldrecoverydraft+Counterguard;explicitpreCOMMITrollbackclassification,unknownmarker,restore/finalizewarnings;29C#sourcecases/2644suiteUNRUN;NOTdurableglobalidentity/providerCOMMIT/powercut/parallel/WPFcertification')
 
 def main() -> int:
     quiet = "--quiet" in sys.argv
@@ -8590,6 +8647,7 @@ def main() -> int:
     check_receipt_current_access()
     check_quarantine_current_access()
     check_draft_held_current_access()
+    check_draft_recovery_fault_boundaries()
     check_csharp_grammar()
 
     if not quiet:

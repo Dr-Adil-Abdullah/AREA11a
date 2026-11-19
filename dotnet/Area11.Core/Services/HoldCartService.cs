@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Area11.Core.Data;
 using Area11.Core.Models;
 using Area11.Core.Utils;
@@ -42,7 +43,7 @@ public sealed class HoldCartService
     }
 
     /// <summary>Parks a cart and returns its code (H-0001).</summary>
-    public ServiceResult<string> Hold(SaleInput input, User? user)
+    public ServiceResult<string> Hold(SaleInput input, User? user, int sourceDraftId = 0)
     {
         if (!_permissions.Can(user, Modules.Pos))
         {
@@ -68,6 +69,12 @@ public sealed class HoldCartService
             var code = _db.Tx(connection =>
             {
                 var reader = RequireReader(connection, user);
+                if (sourceDraftId > 0 && Convert.ToInt64(_db.Scalar(connection,
+                    "SELECT COUNT(1) FROM document_drafts WHERE id = @id AND draft_type = 'sale' AND status = 'draft';", new { id = sourceDraftId }) ?? 0L) != 1)
+                    throw new ValidationException("This draft is not open. Check Drafts and its document before parking any copy.");
+                if (sourceDraftId > 0 && Convert.ToInt64(_db.Scalar(connection,
+                    "SELECT COUNT(1) FROM held_carts WHERE recovery_draft_id = @id;", new { id = sourceDraftId }) ?? 0L) > 0)
+                    throw new ValidationException("This cart already has a recovery draft. Save or complete that draft instead of parking another copy.");
                 var number = _numbering.Take(connection, "hold");
                 var stamp = Clock.Now();
 
@@ -177,7 +184,7 @@ ORDER BY h.created_at DESC, h.id DESC;");
             {
                 var reader = RequireReader(connection, user);
                 var row = _db.QuerySingle<CartRow>(connection, @"
-SELECT id, code, customer_id, discount_percent, discount_basis, extra_discount_paisa, status
+SELECT id, code, customer_id, discount_percent, discount_basis, extra_discount_paisa, status, note
 FROM held_carts WHERE id = @id;", new { id = cartId });
 
                 if (row is null)
@@ -190,20 +197,44 @@ FROM held_carts WHERE id = @id;", new { id = cartId });
                     throw new ValidationException("That cart was already taken or thrown away.");
                 }
 
-                _db.Execute(connection,
-                    "UPDATE held_carts SET status = 'resumed', updated_at = @at WHERE id = @id;",
-                    new { at = Clock.Now(), id = cartId });
-
                 var lines = _db.Query<HeldCartLine>(connection, @"
 SELECT product_id AS productId, name_snapshot AS name, unit, quantity, unit_price_paisa AS unitPricePaisa, pricing_mode, discount_basis, discount_percent AS lineDiscountPercent
 FROM held_cart_items WHERE cart_id = @id ORDER BY position, id;", new { id = cartId });
 
+                var recoveryInput = new SaleInput
+                {
+                    CustomerId = row.CustomerId, DiscountPercent = (decimal)row.DiscountPercent,
+                    DiscountBasis = row.DiscountBasis, ExtraDiscountPaisa = row.ExtraDiscountPaisa, Notes = row.Note,
+                    Lines = lines.Select(line => new SaleLineInput
+                    {
+                        ProductId = line.ProductId, Unit = line.Unit, Quantity = line.Quantity,
+                        UnitPricePaisa = line.UnitPricePaisa, PricingMode = line.PricingMode,
+                        DiscountBasis = line.DiscountBasis, LineDiscountPercent = line.LineDiscountPercent
+                    }).ToList()
+                };
+                var payload = JsonSerializer.Serialize(recoveryInput, Json.WriterOptions);
+                if (payload.Length > DraftService.MaxPayloadChars)
+                    throw new ValidationException("The recovery draft is too large; the cart is still parked.");
+                var key = "held-" + row.Id + "-" + Guid.NewGuid().ToString("N");
+                var stamp = Clock.Now();
+                _db.Execute(connection, @"
+INSERT INTO document_drafts(draft_key, draft_type, payload_json, status, created_by_id, created_by_name, created_at, updated_at)
+VALUES(@key, 'sale', @payload, 'draft', @byId, @by, @at, @at);",
+                    new { key, payload, byId = reader.Id, by = reader.Name, at = stamp });
+                var recoveryId = (int)_db.NextId(connection);
+                var consumed = _db.Execute(connection,
+                    "UPDATE held_carts SET status = 'resumed', recovery_draft_id = @draft, updated_at = @at WHERE id = @id AND status = 'held';",
+                    new { draft = recoveryId, at = stamp, id = cartId });
+                if (consumed != 1) throw new ValidationException("That cart could not be consumed. Refresh parked carts.");
+                _audit.Record(connection, reader, Modules.Pos, "draft_saved", "document_drafts", recoveryId.ToString(), newValue: key);
                 _audit.Record(connection, reader, "POS", "cart_resume", "held_carts", cartId.ToString(),
-                    details: $"{row.Code} brought back to the counter.");
+                    details: $"{row.Code} brought back with recovery draft {key}.");
 
                 return new HeldCart
                 {
                     Id = row.Id,
+                    RecoveryDraftId = recoveryId,
+                    Notes = row.Note,
                     Code = row.Code,
                     CustomerId = row.CustomerId,
                     DiscountPercent = (decimal)row.DiscountPercent,
@@ -222,7 +253,7 @@ FROM held_cart_items WHERE cart_id = @id ORDER BY position, id;", new { id = car
         catch (Exception exception)
         {
             _log.Error($"Held cart {cartId} could not be resumed.", exception);
-            return ServiceResult<HeldCart>.Fail("The cart could not be brought back.");
+            return ServiceResult<HeldCart>.Fail("The resume outcome could not be confirmed. Check parked carts and recovery drafts before retrying.");
         }
     }
 
@@ -303,5 +334,6 @@ FROM held_cart_items WHERE cart_id = @id ORDER BY position, id;", new { id = car
         public long ExtraDiscountPaisa { get; set; }
 
         public string Status { get; set; } = "held";
+        public string? Note { get; set; }
     }
 }
