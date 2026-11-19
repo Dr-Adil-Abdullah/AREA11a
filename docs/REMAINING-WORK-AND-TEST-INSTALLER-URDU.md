@@ -1,5 +1,16 @@
 # باقی کام، GitHub اور test installer — v0.104.0
 
+## تازہ checkpoint — v0.112.0 Shore / حصہ34؛مستقل5/6/7/17/20/23/24/25
+
+[1–36حیثیت](NUMBERED-WORK-STATUS-URDU.md)،[PT-54](POS-PHASE4-PART34-URDU.md)،[trace](POS-PHASE4-QUARANTINE-CURRENT-REVIEW.md)۔79نئےC#cases/2479suiteUNRUN؛Quarantinecurrentread/count/Txstoreddecider،readfailure!=zero،UIcapability/detachedrowguard/consume-before-reload/SAVED۔
+
+1. **5/6/7/15/17/21/23:** باقیdraft-save-open/held/quickadd/fullPOS/session/preparedoutputcallers،same-role-ID/CAS؛Alertscannerseparaterouteunchanged۔
+2. **24/25:** باقیstock/expense/recoveryPR/draft/file/actualCOMMIT-I-O/provider/busy/productionjournal/crossprocess/durableidentity؛legacybatch/fallbackedgecasesکیالگجانچ۔
+3. **26–29/2/4/30–35:** encryptedbackup/restore/newPC/cloud،Windows2479+build/logs/results/fixes/hardware/isolation۔
+4. **36:** کامیابgatesکےبعدمجازsingle-doubleclicktestinstaller؛**ابھینہیںبنا،FullPhase4OPEN۔**
+
+36categories،36Nextنہیں؛3–6roundsمشروطاندازہ،deadlineیاupperboundنہیں۔ ہرportiondocs+samebranchcommit/push+actualremoteverify؛اصلshopپرsyntheticpostsنہیں۔ نیچےپرانےcheckpointsتاریخیہیں۔
+
 ## تازہ checkpoint — v0.111.0 Inlet / حصہ33؛مستقل5/6/7/15/17/21/23/24
 
 [1–36حیثیت](NUMBERED-WORK-STATUS-URDU.md)،[PT-53](POS-PHASE4-PART33-URDU.md)،[trace](POS-PHASE4-RECEIPT-CURRENT-REVIEW.md)۔95نئےC#cases/2400suiteUNRUN؛receipt/historycurrentreaders،independentpurpose/modulegrants،Txstoredreprintaudit،Historydeniedpayload/timercleanup۔

@@ -167,7 +167,7 @@ FROM sales WHERE id = @id;", new { id = saleId }) ?? string.Empty;
         Assert.Equal("Q-0001", result.Value.QuarantineCodes[0]);
         Assert.Equal(before, BatchQty(test, product));        // the shelf did NOT gain stock
 
-        var pending = TestData.Quarantine(test).Pending();
+        var pending = TestData.Quarantine(test).Pending(TestData.Owner);
         Assert.True(pending.Ok, pending.Error);
         Assert.Single(pending.Value!);
         Assert.Equal("Q-0001", pending.Value![0].QCode);

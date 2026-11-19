@@ -8376,6 +8376,52 @@ def check_receipt_current_access():
         if token not in tests: FAILURES.append('Receipt regression missing '+token)
     REPORT.append('Phase4 portion33/stable5,6,7,15,17,21,23,24:current receipt/history actors,independent purpose/module gates,transactional stored reprint audit,history stale cleanup/timer;95sourcecases/2400suiteUNRUN;NOT C#/session/CAS/printer/prepared-output revocation proof')
 
+def check_quarantine_current_access():
+    """Bounded lexical source guard, not runtime authorization/stock/GUI evidence."""
+    source=(DOTNET/'Area11.Core/Services/QuarantineService.cs').read_text()
+    for signature,payload in (('Pending(User? user)','var rows = _db.Query'),('History(User? user)','var rows = _db.Query'),('PendingCount(User? user)','var count =')):
+        body=source.split(signature,1)[-1].split('\n    public ',1)[0]
+        gate='RequireReader(connection, user);'
+        if signature not in source or gate not in body or body.find(gate)>body.find(payload): FAILURES.append('Quarantine current reader missing '+signature)
+    for token in ('public ServiceResult<int> PendingCount(User? user)', 'ServiceResult<int>.Fail("The quarantine count could not be read.")',
+                  'SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Returns);',
+                  'public ServiceResult CheckDecisionAccess(User? user)', 'if (!reader.CanManage)',
+                  'var reader = RequireReader(connection, user);'):
+        if token not in source: FAILURES.append('Quarantine current contract missing '+token)
+    dispose=source.split('public ServiceResult Dispose(User? user,',1)[-1].split('public ServiceResult CheckDecisionAccess(',1)[0]
+    tokens=['_db.Tx(connection =>','var reader = RequireDecider(connection, user);','var row = _db.QuerySingle<PendingRow>',
+            'UPDATE sale_returns','AddBack(connection, row, clean, stamp, reader);','_audit.Record(connection, reader,']
+    positions=[dispose.find(t) for t in tokens]
+    if -1 in positions or positions!=sorted(positions): FAILURES.append('Quarantine current transaction/actor order missing')
+    for token in ('userId = reader.Id','That item already has a decision;', 'if (clean == Expired && cleanNote.Length < 3)',
+                  'if (clean is Restocked or Sold)'):
+        if token not in dispose: FAILURES.append('Quarantine decision guard/actor missing '+token)
+    vm=(DOTNET/'Area11.Desktop/ViewModels/ReturnsViewModel.cs').read_text()
+    for token in ('_services.Quarantine.Pending(_user)', '_services.Quarantine.History(_user)',
+                  'access.Ok && _services.Quarantine.CheckDecisionAccess(_user).Ok',
+                  'public bool CanDecideQuarantine => _postingAllowed && _decisionAllowed && _lastQuarantineLoadSucceeded;'):
+        if token not in vm: FAILURES.append('Quarantine UI authority missing '+token)
+    decide=vm.split('private void Decide(QuarantineRow row, string outcome)',1)[-1].split('private void SetStatus(',1)[0]
+    for token in ('if (!RefreshPostingAccess()) return;', 'if (_busy) return;', 'if (!CanDecideQuarantine || !Pending.Contains(row))',
+                  '_busy = true;', 'finally { _busy = false; }','var saved = false;', 'saved = true;', 'row.NoteText = string.Empty;',
+                  'Pending.Remove(row);', 'Do not decide these goods again.', 'The decision outcome could not be confirmed.',
+                  'catch (Exception exception)', '_lastQuarantineLoadSucceeded = false;', 'Pending.Clear();', 'History.Clear();'):
+        if token not in decide: FAILURES.append('Quarantine decision UI integrity missing '+token)
+    committed=decide.split('saved = true;',1)[-1]
+    if not (committed.find('row.NoteText = string.Empty;')<committed.find('Pending.Remove(row);')<committed.find('LoadQuarantine();')):
+        FAILURES.append('Committed quarantine row must be consumed before reload')
+    xaml=(DOTNET/'Area11.Desktop/Views/ReturnsView.xaml').read_text()
+    if xaml.count('IsEnabled="{Binding DataContext.CanDecideQuarantine, RelativeSource={RelativeSource AncestorType=UserControl}}"')!=2:
+        FAILURES.append('Quarantine note and decisions require current decision capability')
+    tests=(DOTNET/'Area11.Tests/QuarantineCurrentAccessTests.cs').read_text()
+    if tests.count('[InlineData(')!=74 or tests.count('[Fact]')!=5: FAILURES.append('Quarantine needs79 registered source regressions')
+    for token in ('Assert.Equal(before, f.Snapshot());','Assert.Equal(money, f.MoneySnapshot());','CurrentChangeDeniesWithoutMutationThenSameServiceRegrants',
+                  'StatementFaultRollsBackThenOneRetryReconciles','DecisionsUseStoredNameAndIdForAuditAndStock',
+                  'ACommittedDecisionCannotBeReplacedByAnotherOutcome','FailedCountIsNotCertifiedZeroAndUnreadableRowsHaveNoPayload',
+                  'LegitimateReturnsReaderCanReadButCannotDecide','ValidOwnerBypassStillRequiresStoredActiveSameRoleAccount'):
+        if token not in tests: FAILURES.append('Quarantine regression missing '+token)
+    REPORT.append('Phase4 portion34/stable5,6,7,17,20,23,24,25:current quarantine readers/explicitcountverdict/Txstoreddecider,Returnsreadonlyvsmanage,detachedrowguard/commitcleanup/SAVED;79sourcecases/2479suiteUNRUN;not session/CAS/actualCOMMIT/WPF/stockcertification')
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -8474,6 +8520,7 @@ def main() -> int:
     check_counter_posting_integrity()
     check_counter_current_access()
     check_receipt_current_access()
+    check_quarantine_current_access()
     check_csharp_grammar()
 
     if not quiet:

@@ -41,8 +41,8 @@ public sealed class QuarantineTests
         Assert.Equal("Q-0001", returned.QuarantineCodes.Single());
 
         var quarantine = TestData.Quarantine(test);
-        Assert.Equal(1, quarantine.PendingCount());
-        Assert.Single(quarantine.Pending().Value!);
+        Assert.Equal(1, quarantine.PendingCount(TestData.Owner).Value);
+        Assert.Single(quarantine.Pending(TestData.Owner).Value!);
     }
 
     [Fact]
@@ -58,9 +58,9 @@ public sealed class QuarantineTests
 
         Assert.True(result.Ok, result.Error);
         Assert.Equal(100d, Stock(test, product));
-        Assert.Equal(0, quarantine.PendingCount());
-        Assert.Single(quarantine.History().Value!);
-        Assert.Equal("restocked", quarantine.History().Value![0].Disposition);
+        Assert.Equal(0, quarantine.PendingCount(TestData.Owner).Value);
+        Assert.Single(quarantine.History(TestData.Owner).Value!);
+        Assert.Equal("restocked", quarantine.History(TestData.Owner).Value![0].Disposition);
     }
 
     [Fact]
@@ -74,7 +74,7 @@ public sealed class QuarantineTests
 
         Assert.True(result.Ok, result.Error);
         Assert.Equal(97d, Stock(test, product));       // they were never in stock; nothing is added
-        Assert.Equal("expired", quarantine.History().Value![0].Disposition);
+        Assert.Equal("expired", quarantine.History(TestData.Owner).Value![0].Disposition);
     }
 
     [Fact]
@@ -116,7 +116,7 @@ public sealed class QuarantineTests
         Assert.False(again.Ok);
         Assert.Contains("already has a decision", again.Error);
 
-        Assert.Equal("expired", quarantine.History().Value![0].Disposition);
+        Assert.Equal("expired", quarantine.History(TestData.Owner).Value![0].Disposition);
     }
 
     [Fact]
@@ -130,7 +130,7 @@ public sealed class QuarantineTests
 
         Assert.False(result.Ok);
         Assert.Contains("owner or a manager", result.Error);
-        Assert.Equal(1, TestData.Quarantine(test).PendingCount());
+        Assert.Equal(1, TestData.Quarantine(test).PendingCount(TestData.Owner).Value);
         Assert.Equal(97d, Stock(test, product));
     }
 

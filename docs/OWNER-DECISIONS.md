@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## v0.112.0 portion34 — Quarantine current access؛نئیstock/refundpolicyنہیں
+
+Continue کے تحت5/6/7/17/20/23/24/25: Quarantine reads/count=موجودہReturnsreader؛decision=موجودہReturnsOwner/Manager،Txمیںstoredactor۔ Countreadfailureکوzeroنہیںکہا۔ UIcurrentcapability/detachedrowguard/commitcleanup/SAVED؛restocked/expired/sold،destroy-note،AddBack/stockSQL/refunds/Cost/Profit/mainunchanged۔ Alertscannerکاالگراستہنہیںبدلا۔ [PT-54](POS-PHASE4-PART34-URDU.md)،[trace](POS-PHASE4-QUARANTINE-CURRENT-REVIEW.md)۔79نئےcases/2479C#/WindowsUNRUN؛session/CAS/actualCOMMIT/fullPhase4/installerOPEN۔
+
 ## v0.111.0 portion33 — receipt/history current access؛ کوئی نئی financial policy نہیں
 
 Continue کے تحت5/6/7/15/17/21/23/24: Counter receipt=POS،Counter returnreceipt=Returns،دونوں History reprints=Sales؛grants کو union نہیں کیا۔ موجودہstoredactive/sameparsedrole چیک؛audit transaction میںstoredنام،غائبreturn کاجھوٹاauditنہیں،writefault واضحfailure۔ BillsstaleUI/action/nominal3stimerصفائی؛already-openpreview/file/paperrecallنہیں۔ Pricing/Extra/ReturnB/SupplierB/main/Cost/Profitunchanged۔ [PT-53](POS-PHASE4-PART33-URDU.md)،[trace](POS-PHASE4-RECEIPT-CURRENT-REVIEW.md)۔95نئےcases/2400C#/WindowsUNRUN؛FullPhase4/installerOPEN۔

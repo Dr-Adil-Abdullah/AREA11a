@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.111.0 Inlet۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.112.0 Shore۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**حصہ34 / مستقل5/6/7/17/20/23/24/25 — Quarantine کی موجودہ اجازت:** Pending/History/CountموجودہReturnsaccountسے؛صرفجائزOwner/Managerفیصلہکرسکتاہے،عامReturnsreaderفہرستدیکھسکتاہے۔ Countreadناکامہو توzeroکہہکرچیزیںصافنہیںسمجھیں۔ پرانی/detachedrowپرactionنہیں؛SAVEDdecisionکےبعدrefreshناکامہوتودوبارہفیصلہنہکریں،تازہRefreshکریں۔ Restocked/Soldکیواپسی،Expiredمیںstockنہبڑھنااورrefundrulesنہیںبدلے۔ [PT-54](POS-PHASE4-PART34-URDU.md)،[trace](POS-PHASE4-QUARANTINE-CURRENT-REVIEW.md)۔ **79نئےC#cases/2479UNRUN؛Windows/fullPhase4/installerOPEN۔**
 
 **حصہ33 / مستقل5/6/7/15/17/21/23/24 — receipt/Bills کی موجودہ اجازت:** accountبند،roleبدلا یاgrantواپسہوتوپراناbillIDreceiptنہیںدیتا۔ Counterreceipt=POS،Counterreturnreceipt=Returns،Billsسےدونوںreprints=Sales؛یہآزادgrantsہیں۔ Billsصفحہاگلےaction/nominal3secondtickپرrows/detail/preview/totals/tickedsetصافکرتاہے؛grantبحالپرRefresh،پراناselectionخودواپسنہیں۔ Stableallowedtickselectionبرقرار۔ Reprintauditلکھناناکامہوتوچھپیcopyکونہچھپنےکیغلطدعوتنہیں؛printed-but-unrecordedwarning۔ پہلےسےکھلاpreview/exportedfile/کاغذواپسنہیںلیاگیا۔ [PT-53](POS-PHASE4-PART33-URDU.md)،[trace](POS-PHASE4-RECEIPT-CURRENT-REVIEW.md)۔ **95نئےC#cases/2400UNRUN؛Windows/fullPhase4/installerOPEN۔**
 
@@ -752,7 +754,7 @@ Recoveryکیfailedslipپرپرنٹرکوخالیdocumentنہیںدیاجاتا۔
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.111.0 کا متوقع test count 2400 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.112.0 کا متوقع test count 2479 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 

@@ -177,6 +177,9 @@ public sealed class ReturnsViewModel : ObservableObject, IEmptyPage
 
     public bool CanWork => _postingAllowed;
 
+    private bool _decisionAllowed;
+    public bool CanDecideQuarantine => _postingAllowed && _decisionAllowed && _lastQuarantineLoadSucceeded;
+
     /// <summary>Next interaction/nominal timer; revoked history is not a certified empty page.</summary>
     public bool RefreshPostingAccess()
     {
@@ -200,6 +203,8 @@ public sealed class ReturnsViewModel : ObservableObject, IEmptyPage
             }
             else if (!wasAllowed)
                 SetStatus("Returns access is available. Find the bill or refresh quarantine again; old selections were cleared.", false);
+            _decisionAllowed = access.Ok && _services.Quarantine.CheckDecisionAccess(_user).Ok;
+            OnPropertyChanged(nameof(CanDecideQuarantine));
             return access.Ok;
         }
         finally { _checkingPostingAccess = false; }
@@ -522,11 +527,12 @@ public sealed class ReturnsViewModel : ObservableObject, IEmptyPage
     public void LoadQuarantine()
     {
         _lastQuarantineLoadSucceeded = false;
+        OnPropertyChanged(nameof(CanDecideQuarantine));
         if (!RefreshPostingAccess()) return;
         Pending.Clear();
         History.Clear();
 
-        var pending = _services.Quarantine.Pending();
+        var pending = _services.Quarantine.Pending(_user);
         if (pending.Ok && pending.Value is not null)
         {
             foreach (var item in pending.Value)
@@ -535,7 +541,7 @@ public sealed class ReturnsViewModel : ObservableObject, IEmptyPage
             }
         }
 
-        var history = _services.Quarantine.History();
+        var history = _services.Quarantine.History(_user);
         if (history.Ok && history.Value is not null)
         {
             foreach (var item in history.Value)
@@ -552,6 +558,7 @@ public sealed class ReturnsViewModel : ObservableObject, IEmptyPage
             return;
         }
         _lastQuarantineLoadSucceeded = true;
+        OnPropertyChanged(nameof(CanDecideQuarantine));
         QuarantineCaption = Pending.Count == 0
             ? "No goods are waiting for a decision."
             : $"{Pending.Count} item(s) waiting. Goods stay here (and the alert stays on) until you decide.";
@@ -560,26 +567,47 @@ public sealed class ReturnsViewModel : ObservableObject, IEmptyPage
     private void Decide(QuarantineRow row, string outcome)
     {
         if (!RefreshPostingAccess()) return;
-        if (_busy)
+        if (_busy) return;
+        if (!CanDecideQuarantine || !Pending.Contains(row))
         {
+            row.NoteText = string.Empty;
+            SetStatus("Refresh quarantine and use a current row. Only an allowed owner or manager can decide.", true);
             return;
         }
-
         _busy = true;
-
+        var saved = false;
+        var description = row.QCode + ": " + row.OutcomeLabel(outcome) + ".";
         try
         {
             var result = _services.Quarantine.Dispose(_user, row.ReturnId, outcome, row.NoteText);
-            SetStatus(result.Ok
-                ? $"{row.QCode}: {row.OutcomeLabel(outcome)}."
-                : (result.Error ?? "The decision could not be saved."), !result.Ok);
+            if (!result.Ok)
+            {
+                LoadQuarantine();
+                SetStatus(result.Error ?? "The decision could not be saved. Refresh before trying again.", true);
+                return;
+            }
+            saved = true;
+            // Consume the committed row/note before a reload that can fail or pump UI events.
+            row.NoteText = string.Empty;
+            Pending.Remove(row);
+            LoadQuarantine();
+            SetStatus("SAVED. " + description + " Do not decide these goods again."
+                + (_lastQuarantineLoadSucceeded ? string.Empty : " Quarantine was not reloaded; refresh to see current goods."),
+                !_lastQuarantineLoadSucceeded);
         }
-        finally
+        catch (Exception exception)
         {
-            _busy = false;
+            _lastQuarantineLoadSucceeded = false;
+            Pending.Clear();
+            History.Clear();
+            OnPropertyChanged(nameof(CanDecideQuarantine));
+            QuarantineCaption = "Quarantine was not loaded. Refresh before reviewing goods.";
+            _services.Log.Error("Quarantine decision or post-decision refresh failed.", exception);
+            SetStatus(saved
+                ? "SAVED. " + description + " Do not decide these goods again; refresh quarantine."
+                : "The decision outcome could not be confirmed. Refresh quarantine before trying again.", true);
         }
-
-        LoadQuarantine();
+        finally { _busy = false; }
     }
 
     private void SetStatus(string message, bool isError)

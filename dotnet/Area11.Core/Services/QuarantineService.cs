@@ -43,17 +43,19 @@ public sealed class QuarantineService
     }
 
     /// <summary>Goods still waiting for a decision - the list that keeps the alert alive (15.4.4).</summary>
-    public ServiceResult<List<QuarantineItem>> Pending()
+    public ServiceResult<List<QuarantineItem>> Pending(User? user)
     {
         try
         {
             using var connection = _db.Open();
+            RequireReader(connection, user);
             var rows = _db.Query<QuarantineItem>(connection, SelectSql + @"
 WHERE r.disposition = 'quarantine'
 ORDER BY r.created_at DESC, r.id DESC;");
 
             return ServiceResult<List<QuarantineItem>>.Success(rows.ToList(), $"{rows.Count} item(s) in quarantine.");
         }
+        catch (ValidationException exception) { return ServiceResult<List<QuarantineItem>>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error("The quarantine list could not be loaded.", exception);
@@ -62,17 +64,19 @@ ORDER BY r.created_at DESC, r.id DESC;");
     }
 
     /// <summary>Which goods went where - every decision ever made (U-34).</summary>
-    public ServiceResult<List<QuarantineItem>> History()
+    public ServiceResult<List<QuarantineItem>> History(User? user)
     {
         try
         {
             using var connection = _db.Open();
+            RequireReader(connection, user);
             var rows = _db.Query<QuarantineItem>(connection, SelectSql + @"
 WHERE r.qcode IS NOT NULL AND r.disposition <> 'quarantine'
 ORDER BY r.created_at DESC, r.id DESC;");
 
             return ServiceResult<List<QuarantineItem>>.Success(rows.ToList());
         }
+        catch (ValidationException exception) { return ServiceResult<List<QuarantineItem>>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error("The quarantine history could not be loaded.", exception);
@@ -80,18 +84,21 @@ ORDER BY r.created_at DESC, r.id DESC;");
         }
     }
 
-    public int PendingCount()
+    public ServiceResult<int> PendingCount(User? user)
     {
         try
         {
             using var connection = _db.Open();
-            return (int)Convert.ToInt64(_db.Scalar(connection,
+            RequireReader(connection, user);
+            var count = (int)Convert.ToInt64(_db.Scalar(connection,
                 "SELECT COUNT(1) FROM sale_returns WHERE disposition = 'quarantine';") ?? 0L);
+            return ServiceResult<int>.Success(count);
         }
+        catch (ValidationException exception) { return ServiceResult<int>.Fail(exception.Message); }
         catch (Exception exception)
         {
             _log.Error("The quarantine count could not be read.", exception);
-            return 0;
+            return ServiceResult<int>.Fail("The quarantine count could not be read.");
         }
     }
 
@@ -99,16 +106,11 @@ ORDER BY r.created_at DESC, r.id DESC;");
     /// Decides one item's fate. Owner or manager only (15.4.3), and the note is compulsory for the
     /// two outcomes that lose money, so the reason is on record for the audit.
     /// </summary>
-    public ServiceResult Dispose(User user, int returnId, string outcome, string? note)
+    public ServiceResult Dispose(User? user, int returnId, string outcome, string? note)
     {
-        if (!user.CanManage)
+        if (user is not { CanManage: true })
         {
             return ServiceResult.Fail("Only the owner or a manager can decide what happens to quarantine goods.");
-        }
-
-        if (!_permissions.Can(user, Modules.Returns))
-        {
-            return ServiceResult.Fail("You do not have permission to handle returns.");
         }
 
         var clean = (outcome ?? string.Empty).Trim().ToLowerInvariant();
@@ -127,6 +129,7 @@ ORDER BY r.created_at DESC, r.id DESC;");
         {
             _db.Tx(connection =>
             {
+                var reader = RequireDecider(connection, user);
                 var row = _db.QuerySingle<PendingRow>(connection, @"
 SELECT id, qcode, product_id AS productId, batch_id AS batchId, qty_base AS qtyBase, disposition
 FROM sale_returns WHERE id = @id;", new { id = returnId });
@@ -152,7 +155,7 @@ WHERE id = @id;",
                     {
                         disposition = clean,
                         at = stamp,
-                        userId = user.Id,
+                        userId = reader.Id,
                         note = cleanNote.Length == 0 ? null : cleanNote,
                         restock = clean == Expired ? 0 : 1,
                         id = returnId
@@ -160,11 +163,11 @@ WHERE id = @id;",
 
                 if (clean is Restocked or Sold)
                 {
-                    AddBack(connection, row, clean, stamp, user);
+                    AddBack(connection, row, clean, stamp, reader);
                 }
 
                 var where = cleanNote.Length == 0 ? string.Empty : $", note: {cleanNote}";
-                _audit.Record(connection, user, "Quarantine", "quarantine_" + clean, "sale_returns",
+                _audit.Record(connection, reader, "Quarantine", "quarantine_" + clean, "sale_returns",
                     returnId.ToString(),
                     oldValue: "quarantine",
                     newValue: $"{row.QCode} -> {clean} ({Qty.Format(row.QtyBase)} base){where}");
@@ -181,6 +184,35 @@ WHERE id = @id;",
             _log.Error($"Quarantine item {returnId} could not be decided.", exception);
             return ServiceResult.Fail("The decision could not be saved.");
         }
+    }
+
+    /// <summary>Capability preflight for UI only; Dispose repeats it inside its own transaction.</summary>
+    public ServiceResult CheckDecisionAccess(User? user)
+    {
+        try
+        {
+            _db.Read(connection => { RequireDecider(connection, user); return true; });
+            return ServiceResult.Success();
+        }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
+        catch (Exception exception)
+        {
+            _log.Error("Quarantine decision access could not be checked.", exception);
+            return ServiceResult.Fail("Current quarantine decision access could not be checked.");
+        }
+    }
+
+    private User RequireReader(SqliteConnection connection, User? user) =>
+        SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Returns);
+
+    private User RequireDecider(SqliteConnection connection, User? user)
+    {
+        if (user is not { CanManage: true })
+            throw new ValidationException("Only the owner or a manager can decide what happens to quarantine goods.");
+        var reader = RequireReader(connection, user);
+        if (!reader.CanManage)
+            throw new ValidationException("Only the owner or a manager can decide what happens to quarantine goods.");
+        return reader;
     }
 
     private void AddBack(SqliteConnection connection, PendingRow row, string outcome, string stamp, User user)
