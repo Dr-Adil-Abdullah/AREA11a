@@ -8603,6 +8603,55 @@ def check_automatic_shared_draft_posting():
         if token not in tests: FAILURES.append('P37 regression missing '+token)
     REPORT.append('Phase4 portion37/stable15,16,23,24,25:auto shared draft before UI post,sameID/unknownsaveguard,all draft Hold refused,Holdoutcome/reset and Purchasecleanup/reconstructionguards;41C#sourcecases/2685suiteUNRUN;NOTWPF/providerCOMMIT/parallel/globalidentityproof')
 
+def check_expense_stock_fault_boundaries():
+    """Lexical contract only, never service execution or provider/WPF proof."""
+    for name,start,end,count in [
+        ('Expense','public ServiceResult<ExpenseResult> AddExpense','private ServiceResult<DrawingResult> SaveGoods',3),
+        ('Stock','public ServiceResult<WriteOffResult> WriteOff','/// <summary>The write-off history',1),
+        ('StockTake','public ServiceResult<StockTakeResult> Apply','private ServiceResult<StockTakeResult> ApplyInside',1)]:
+        body=(DOTNET/f'Area11.Core/Services/{name}Service.cs').read_text().split(start,1)[-1].split(end,1)[0]
+        if body.count('var outcome = new TransactionOutcome();')!=count or body.count('}, outcome);')!=count:
+            FAILURES.append('P38 observed Tx wrappers missing '+name)
+        if body.count('NoCommitConfirmed = outcome.NoCommitConfirmed')!=2*count: FAILURES.append('P38 failure evidence missing '+name)
+        if 'could not be confirmed. Check' not in body or 'Nothing was written.' in body or 'Nothing was changed.' in body:
+            FAILURES.append('P38 no blanket no-write claim '+name)
+    guard=(DOTNET/'Area11.Core/Utils/PostingAttemptGuard.cs').read_text()
+    for token in ('if (!Ready) return false;', 'WasAcknowledged = false;', 'if (failure.Ok) throw',
+                  'failure.NoCommitConfirmed ? PostingAttemptState.Ready : PostingAttemptState.NeedsVerification',
+                  'WasAcknowledged = true;', 'State = PostingAttemptState.CommittedNeedsReset;',
+                  'Require(PostingAttemptState.CommittedNeedsReset);', 'if (InFlight) State = PostingAttemptState.NeedsVerification;'):
+        if token not in guard: FAILURES.append('P38 local outcome guard missing '+token)
+    for page,methods in [('Expenses',['SaveExpense','SaveCashDrawing','SaveGoodsDrawing']),('WriteOff',['Save']),('StockTake',['Apply'])]:
+        vm=(DOTNET/f'Area11.Desktop/ViewModels/{page}ViewModel.cs').read_text()
+        for token in ('private readonly PostingAttemptGuard _posting = new();','if (_postingInProgress) return;',
+                      'if (!_posting.TryBegin())','_postingInProgress = true;', 'try { action(); }', '_posting.ObserveException();',
+                      '_posting.WasAcknowledged', 'finally','if (_posting.InFlight) _posting.CancelBeforeWrite();','_postingInProgress = false;'):
+            if token not in vm: FAILURES.append('P38 UI guard missing '+page+':'+token)
+        for method in methods:
+            if f'private void {method}() => RunPosting({method}Once);' not in vm: FAILURES.append('P38 unguarded UI '+page+method)
+            body=vm.split(f'private void {method}Once()',1)[-1].split('\n    private ',1)[0]
+            for token in ('_posting.ObserveFailure(result);','_posting.AcknowledgeCommit();','_posting.CompleteReset();','SAVED. '):
+                if token not in body: FAILURES.append('P38 post cleanup missing '+page+method+':'+token)
+            order=['_posting.AcknowledgeCommit();','if (result.Value is null)', '_posting.CompleteReset();']
+            ix=[body.find(t) for t in order]
+            if -1 in ix or ix!=sorted(ix): FAILURES.append('P38 acknowledged success precedes callbacks '+page+method)
+        if page=='Expenses' and 'if (!DocEditor.LoadedSuccessfully) throw' not in vm: FAILURES.append('P38 editor reset result must be checked')
+        if page=='StockTake':
+            body=vm.split('private void ApplyOnce()',1)[-1].split('private void Cancel()',1)[0]
+            order=['_posting.AcknowledgeCommit();','_session = null;','_selectedLine = null;','RaiseSession();','Load();','_posting.CompleteReset();']
+            ix=[body.find(t) for t in order]
+            if -1 in ix or ix!=sorted(ix): FAILURES.append('P38 stale applied session must be consumed before refresh')
+            if vm.count('if (_postingInProgress || !_posting.Ready)')!=5: FAILURES.append('P38 pending Apply blocks count/open/cancel/found')
+    tests=(DOTNET/'Area11.Tests/ExpenseStockPostingFaultTests.cs').read_text()
+    for token in ('StatementFaultRestoresWholeSnapshotThenOneRetryReconciles','Assert.True(failure.NoCommitConfirmed);',
+                  'Assert.Equal(before, f.Snapshot());','SecondStockTakeLineFaultRollsBackFirstThenApplyRemainsTerminal',
+                  'ApplyStillUsesFrozenCostAndLeavesUncountedStockAlone','ExplicitFailureOutcomeNotWordingControlsLocalRetry',
+                  'ExceptionDoesNotForgetAcknowledgedCommit','ResetCannotReleaseUnknownOrUnacknowledgedWork'):
+        if token not in tests: FAILURES.append('P38 regression source missing '+token)
+    if len(re.findall(r'\[(?:Fact|InlineData)(?:\(|\])',tests))!=59: FAILURES.append('P38 expected 59 regression cases')
+    REPORT.append('P38 expense/stock observed failures + local acknowledgement/reset guard lexical contracts; C#/provider/WPF UNRUN')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -8705,6 +8754,7 @@ def main() -> int:
     check_draft_held_current_access()
     check_draft_recovery_fault_boundaries()
     check_automatic_shared_draft_posting()
+    check_expense_stock_fault_boundaries()
     check_csharp_grammar()
 
     if not quiet:

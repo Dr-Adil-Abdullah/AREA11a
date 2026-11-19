@@ -1,5 +1,9 @@
 # POS، رعایت اور مکمل جائزہ — مالک کی جانچ کے لیے یکجا منصوبہ
 
+## ⏳ تازہ حیثیت — v0.116.0 Tarn / حصہ38
+
+⏳ مستقل20/23–25:expense/drawing/write-off/Applyمیںexplicitno-commit،localretry/unknown/acknowledgedcleanupguards؛59نئےcases/2744C#suiteUNRUN۔ ✅financialSQL/privatehelpers/once-onlyApplyبرقرار،expenseauto-draftنہیں۔ ✅34SQLfaults+retry/33lexicalnegativechecksمقامیPASS؛یہC#/WPF/providerCOMMITنہیں۔ [⏳ PT-58](POS-PHASE4-PART38-URDU.md)،[⏳ trace](POS-PHASE4-EXPENSE-STOCK-FAULT-REVIEW.md)،[⏳1–36](NUMBERED-WORK-STATUS-URDU.md)۔ ⏳اگلاباقیrecoveryPR/files/provider/identity/parallel،5–7session/callers،26–29restore/cloud،2/4/30–35Windows/results/hardware/isolation۔ ❌36installerbinaryنہیںبنی؛⏳FullPhase4OPEN۔ ⏳docs+samebranchpublication+actualremoteverificationہرportion؛36categories≠36Nexts،3–6roundsمشروطاندازہنہupperbound۔
+
 ## ⏳ تازہ حیثیت — v0.115.0 Cairn / حصہ37
 
 ✅ مالک کے نئے انتخاب درج:عامSave→sharedDraft→اسیIDسےPost؛عامdraftکوParkنہیں؛✅مکمل/⏳جاری/❌شروعنہیں۔ ⏳مستقل15/16/23/24/25sourceمیںhandoff،unknownsave/partialcleanupguards؛41نئےC#cases/2685suiteUNRUN۔ [⏳ PT-57](POS-PHASE4-PART37-URDU.md)،[⏳ trace](POS-PHASE4-AUTOMATIC-DRAFT-REVIEW.md)،[⏳1–36](NUMBERED-WORK-STATUS-URDU.md)۔ ⏳اگلا23–25باقیfaults/provider/identity،5–7remainingcallers/session/fullPOS،26–29restore/cloud،2/4/30–35Windows/results/hardware/isolation۔ ❌36installerbinaryنہیںبنی؛⏳FullPhase4OPEN،36categories≠36Nexts،3–6roundsمشروطتخمینہ۔ ⏳ہرportiondocs+samebranchpublication+actualremoteverification۔

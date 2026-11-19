@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.115.0 Cairn۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.116.0 Tarn۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**⏳ حصہ38 — خرچ/مالک کی drawing/Write-off/Stock-take Apply:** کامیاب save کے بعد page/field/editor/refresh خراب ہو تو **SAVED**؛وہی خرچ/مال دوبارہ نہ لکھیں۔ ادھوری صفائی یا نامعلوم outcome میں اسی page پر posting بند؛پہلے history verify،پھر page دوبارہ کھولیں۔ صرف واضح no-commit پر retry۔ Unknown Apply میں count/clear/cancel/open/found بھی بند؛پراناappliedsessiononce-onlyبرقرار۔ یہlocalflagہے،restart/cross-PCduplicateprotectionنہیں؛expenseکےلیےautomaticdraftنہیںبنا۔ [⏳ PT-58](POS-PHASE4-PART38-URDU.md)،[⏳ حدود](POS-PHASE4-EXPENSE-STOCK-FAULT-REVIEW.md)۔ ⏳59نئےcases/2744C#suiteUNRUN؛FullPhase4OPEN؛❌installerbinaryنہیںبنی۔
 
 **⏳ حصہ37 — عامSaveبھیsharedDraftسے:** عامCounterComplete/PurchaseSaveابپہلےخودکارsharedDraft،پھراسیIDسےpost؛مجازstaffبھیDraftsمیںمحفوظکامدیکھسکتاہے۔ Validationکےبعداسیdraftکودرستکریں؛unknownpostingmarkerمیںdocumentverifyکیےبغیرretryنہیں۔ ابتدائیdraftsavingہیunknownہوتوpostingشروعنہیں؛پہلےDraftscheck،ممکنہopenrowسےکامکریں۔ عامکھلےdraftکاParkبھیمنع؛Save/Completeاسیپر۔ HoldکےبعدcleanupخرابہوتوPARKED،دوسریsale/parkنہیں؛PurchasepartialcleanupمیںSAVED،historyverifyپھرصفحہدوبارہکھولیں۔ [⏳ PT-57](POS-PHASE4-PART37-URDU.md)،[⏳ حدود](POS-PHASE4-AUTOMATIC-DRAFT-REVIEW.md)۔ ⏳41نئےcases/2685C#suiteUNRUN؛FullPhase4OPEN؛❌installerbinaryنہیںبنی۔ ✅reportاصول:✅صرف100%مکمل؛⏳کچھباقی؛❌شروعنہیں۔
 
@@ -452,6 +454,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 
 ## سبق 20 — Write-off اور Stock minus
 
+⏳ حصہ38: Save کا کامیاب جواب مل جائے مگر quantity/notes/فہرست صاف نہ ہو تو SAVED؛وہی stock دوبارہ write-off نہ کریں۔ Unknown میں تاریخ دیکھے بغیر retry نہیں؛یہ local guard ہے،restart پر محفوظ identity نہیں۔
+
 1. Write-off میں صحیح medicine، واقعی موجود batch، quantity/unit اور Reason منتخب کریں؛ loss purchase cost پر شمار ہوتا ہے۔ Expired، broken، lost جیسے حقیقی اسباب لکھیں۔
 2. Write this off سے پہلے quantity دوبارہ دیکھیں۔ Save کے بعد یہ عام editable note نہیں؛ غلطی کی correction الگ وجہ والی کارروائی سے ہو گی۔ نقصانی مال پھر سے موجود نہ سمجھیں۔
 3. سٹاک سے زیادہ write-off رکے گا؛ owner bypass نہیں۔ supplier کو بھیجا مال SR سے جائے، اسی چیز پر دوبارہ write-off نہ کریں۔
@@ -468,6 +472,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 
 ## سبق 21 — Stock-take: اصل گنتی سے حساب ملانا
 
+⏳ حصہ38: Apply کامیاب ہوتے ہی پرانا session/row چھوڑا جاتا ہے؛refresh ناکام ہو تو دوبارہ Apply نہیں۔ Unknown Apply کے بعد اسی page کے count/clear/cancel/open/found بند؛پہلے history verify۔ Frozen cost/uncounted/found/once-only حساب برقرار؛دوسرے actions کی اپنی fault review باقی۔
+
 1. counting کے وقت کاروباری حرکت روک کر سب کو بتائیں۔ Stock-take میں Room خالی تو پوری دکان، ورنہ متعلقہ کمرہ؛ Open ST session۔ ایک جاری گنتی کے درمیان خریدوفروخت ہو تو جسمانی گنتی دوبارہ ملانا پڑ سکتی ہے۔
 2. Print count sheet سے شیلف گنیں؛ ہر medicine/batch کی اصل تعداد درج کریں۔ Counted quantity میں درست Unit اور Note دے کر Save this count۔ Clear this count دوبارہ گننے کے لیے ہے، shelf سے چیز مٹانے کے لیے نہیں۔
 3. Book، Counted، Diff اور Value دیکھیں؛ Only rows with a difference مدد دیتا ہے۔ کوئی چیز shelf پر ہے مگر book میں نہیں تو Found on the shelf… سے اصل product منتخب کریں؛ apply پر اس کے لیے GINTI batch بن سکتا ہے۔
@@ -479,6 +485,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 <a id="lesson-22"></a>
 
 ## سبق 22 — Expenses اور مالک کی ذاتی نکاسی
+
+⏳ حصہ38: خرچ/cash/goods drawing میں SAVED کے بعد field/editor/refresh failure نیا Save نہیں۔ Explicit no-commit پر ہی local retry؛unknown میں پہلے history check۔ Stock-category expense سے stock receive نہیں ہوتا،goods drawing سے cash دوبارہ کم نہیں ہوتا؛expense auto-draft نہیں بنا۔
 
 1. Expenses میں Money the shop spent کے لیے Category، What was it، Amount اور Note لکھیں؛ Save the expense۔ cash/shift permission درکار ہے۔ **اس سے stock نہیں آتا، supplier account نہیں بدلتا۔**
 2. Manage categories… سے مالک کی ترتیب کے مطابق running/stock labels سنبھالیں۔ نام میں stock لکھا ہونے سے یہ purchase نہیں بنتا۔ کرایہ، بجلی، چائے جیسے اصل اخراجات الگ عنوان سے رکھیں۔
@@ -766,7 +774,7 @@ Recoveryکیfailedslipپرپرنٹرکوخالیdocumentنہیںدیاجاتا۔
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.115.0 کا متوقع test count 2685 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.116.0 کا متوقع test count 2744 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 

@@ -324,9 +324,10 @@ WHERE id = @id;", new { id = lineId });
     /// </summary>
     public ServiceResult<StockTakeResult> Apply(User? user, int sessionId, string? note = null)
     {
+        var outcome = new TransactionOutcome();
         if (user is null || !user.IsOwner)
         {
-            return ServiceResult<StockTakeResult>.Fail("Only the owner can apply a stock-take.");
+            return new ServiceResult<StockTakeResult> { Error = "Only the owner can apply a stock-take.", NoCommitConfirmed = true };
         }
 
         try
@@ -342,16 +343,19 @@ WHERE id = @id;", new { id = lineId });
                     if (!canSeeCost) { value.ShortPaisa = 0; value.ExtraPaisa = 0; }
                 }
                 return result;
-            });
+            }, outcome);
         }
         catch (ValidationException exception)
         {
-            return ServiceResult<StockTakeResult>.Fail(exception.Message);
+            return new ServiceResult<StockTakeResult> { Error = outcome.NoCommitConfirmed ? exception.Message
+                : "The posting outcome could not be confirmed. Check history before retrying.", NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
         catch (Exception exception)
         {
             _log.Error("Stock-take " + sessionId + " could not be applied.", exception);
-            return ServiceResult<StockTakeResult>.Fail("The stock-take could not be applied. Nothing was changed.");
+            return new ServiceResult<StockTakeResult> { Error = outcome.NoCommitConfirmed
+                ? "The stock entry was not applied; no commit was made."
+                : "The stock posting outcome could not be confirmed. Check its history before retrying.", NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
     }
 

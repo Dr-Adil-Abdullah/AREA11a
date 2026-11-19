@@ -26,6 +26,8 @@ public sealed class WriteOffViewModel : ObservableObject, IEmptyPage
 
     private readonly AppServices _services;
     private readonly User _user;
+    private readonly PostingAttemptGuard _posting = new();
+    private bool _postingInProgress;
 
     private string _searchText = string.Empty;
     private string _qtyText = string.Empty;
@@ -281,7 +283,9 @@ public sealed class WriteOffViewModel : ObservableObject, IEmptyPage
         WillGoMinus = !isExtra && stockAfter < 0;
     }
 
-    private void Save()
+    private void Save() => RunPosting(SaveOnce);
+
+    private void SaveOnce()
     {
         if (SelectedProduct is null)
         {
@@ -305,16 +309,19 @@ public sealed class WriteOffViewModel : ObservableObject, IEmptyPage
             Note = Note
         };
 
+        var name = SelectedProduct.Name;
         var result = _services.Stock.WriteOff(input, _user);
 
         if (!result.Ok)
         {
+            _posting.ObserveFailure(result);
             SetStatus(result.Error ?? "The write-off could not be saved.", true);
             return;
         }
 
-        var saved = result.Value!;
-        var name = SelectedProduct.Name;
+        _posting.AcknowledgeCommit();
+        if (result.Value is null) throw new InvalidOperationException("Acknowledged write-off has no result.");
+        var saved = result.Value;
 
         QtyText = string.Empty;
         Note = string.Empty;
@@ -323,7 +330,8 @@ public sealed class WriteOffViewModel : ObservableObject, IEmptyPage
         Load();
         LoadBatches();
 
-        var message = name + ": " + Qty.Format(Math.Abs(saved.QtyBase)) + " written off, loss "
+        _posting.CompleteReset();
+        var message = "SAVED. " + name + ": " + Qty.Format(Math.Abs(saved.QtyBase)) + " written off, loss "
                       + saved.LossLabel + " at cost.";
 
         if (saved.Warnings.Count > 0)
@@ -333,6 +341,34 @@ public sealed class WriteOffViewModel : ObservableObject, IEmptyPage
         else
         {
             SetStatus(message, false);
+        }
+    }
+
+    private void RunPosting(Action action)
+    {
+        if (_postingInProgress) return;
+        if (!_posting.TryBegin())
+        {
+            SetStatus(_posting.WasAcknowledged
+                ? "SAVED. The earlier entry could not finish resetting. Do not post it again; verify history, then reopen the page."
+                : "The earlier posting outcome is unconfirmed. Verify history before retrying; reopen the page only after verification.", true);
+            return;
+        }
+        _postingInProgress = true;
+        try { action(); }
+        catch (Exception exception)
+        {
+            _posting.ObserveException();
+            _services.Log.Error("Posting or its result cleanup failed; verify history before reuse.", exception);
+            SetStatus(_posting.WasAcknowledged
+                ? "SAVED. The entry was stored, but its page could not finish. Do not post it again; verify history, then reopen the page."
+                : "The posting outcome could not be confirmed. Check history before retrying; do not create another copy.", true);
+        }
+        finally
+        {
+            // A normal validation return before any service call is safe, not an unknown commit.
+            if (_posting.InFlight) _posting.CancelBeforeWrite();
+            _postingInProgress = false;
         }
     }
 

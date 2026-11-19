@@ -26,6 +26,7 @@ claim a feature is done while the board says otherwise.
 from __future__ import annotations
 
 import datetime
+import argparse
 import pathlib
 import re
 
@@ -431,7 +432,11 @@ def html(features: list[dict], counts: dict[str, int], today: str,
 def main() -> int:
     features, counts = read_board()
     version, code_name, brand = build_info()
-    today = datetime.date.today().isoformat()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--date", type=datetime.date.fromisoformat,
+                        help="Explicit ISO as-of date for reproducible release documentation")
+    args = parser.parse_args()
+    today = (args.date or datetime.date.today()).isoformat()
 
     OUT_MD.write_text(markdown(features, counts, today, version, code_name, brand), encoding="utf-8")
     OUT_HTML.write_text(html(features, counts, today, version, code_name, brand), encoding="utf-8")

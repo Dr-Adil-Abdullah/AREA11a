@@ -158,9 +158,10 @@ ORDER BY id LIMIT 1;", new { productId, batchId });
     /// <summary>Writes the goods off (or corrects the count). Owner or manager only (19.1).</summary>
     public ServiceResult<WriteOffResult> WriteOff(WriteOffInput input, User user)
     {
+        var outcome = new TransactionOutcome();
         if (!_permissions.Can(user, Modules.Stock))
         {
-            return ServiceResult<WriteOffResult>.Fail("You do not have permission to change stock.");
+            return new ServiceResult<WriteOffResult> { Error = "You do not have permission to change stock.", NoCommitConfirmed = true };
         }
 
         try
@@ -176,16 +177,19 @@ ORDER BY id LIMIT 1;", new { productId, batchId });
                     if (!canSeeCost) value.LossPaisa = 0;
                 }
                 return result;
-            });
+            }, outcome);
         }
         catch (ValidationException exception)
         {
-            return ServiceResult<WriteOffResult>.Fail(exception.Message);
+            return new ServiceResult<WriteOffResult> { Error = outcome.NoCommitConfirmed ? exception.Message
+                : "The posting outcome could not be confirmed. Check history before retrying.", NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
         catch (Exception exception)
         {
             _log.Error("The write-off could not be saved.", exception);
-            return ServiceResult<WriteOffResult>.Fail("The write-off could not be saved. Nothing was changed.");
+            return new ServiceResult<WriteOffResult> { Error = outcome.NoCommitConfirmed
+                ? "The stock entry was not applied; no commit was made."
+                : "The stock posting outcome could not be confirmed. Check its history before retrying.", NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
     }
 

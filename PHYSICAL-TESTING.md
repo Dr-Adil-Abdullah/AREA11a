@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## ⏳ PT-58 — expense/drawing/write-off/Apply outcomes and cleanup (v0.116.0 Tarn)
+
+[⏳ Urdu steps](docs/POS-PHASE4-PART38-URDU.md),[⏳ trace](docs/POS-PHASE4-EXPENSE-STOCK-FAULT-REVIEW.md). ⏳59newC#cases/2744suite UNRUN;build/TRX/service faults/drawer-stock reconciliation,callback failures,reentry,unknown-vs-safe retry,once-only Apply/frozen cost/uncounted/found/multi-line rollback require real runner. ⏳ActualWPF/providerCOMMIT/rollbackfailure/parallel/powercut/restart not proved by34SQL faults or33lexicalmutations. ⏳Verifiedencryptedbackup AND trulyseparateDB/photos/config first;no shop fault injection. ❌Installerbinary NOT BUILT;⏳FullPhase4OPEN.
+
 ## ⏳ PT-57 — ordinary Save through shared drafts;all draft-Hold refused (v0.115.0)
 
 [⏳ Urdu isolated steps](docs/POS-PHASE4-PART37-URDU.md),[⏳ trace/limits](docs/POS-PHASE4-AUTOMATIC-DRAFT-REVIEW.md). ⏳41newC#sourcecases/2685suite UNRUN. Test initial draft save faults/no creator,save-link-restart-sameID-post,validation retry,unknown posting marker,no draft-Hold copy,unknown Hold and acknowledgedcleanup guard,Purchase commit-reset/partialreconstruction. ❌Windows/WPF/providerCOMMIT/powercut/parallel/hardware not executed. ⏳Verifiedbackup AND trulyseparateDB/photos/config before isolated practice;no shop fault injection. ❌Installerbinary NOT BUILT;⏳FullPhase4OPEN.

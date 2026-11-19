@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## ⏳ v0.116.0 حصہ38 — منظورشدہ Next کا bounded fault/retry review؛نئی policy نہیں
+
+⏳20/23–25expense/drawing/write-off/Applyمیںhonestoutcomeاورlocalcleanup/retryحفاظت؛59C#cases/2744suiteUNRUN۔ ✅مالیSQL/privatehelpers/once-onlyApplyبرقرار؛expenseauto-draftنہیںبنایا،Blackbox/BookCheck/permissionsحسابنہیںبدلے۔ ⏳Localflagrestart/globalidentityنہیں؛provider/WPF/fullPhase4باقی۔ [⏳ PT-58](POS-PHASE4-PART38-URDU.md)،[⏳ trace](POS-PHASE4-EXPENSE-STOCK-FAULT-REVIEW.md)۔ ❌Installerbinaryنہیںبنی۔
+
 ## ✅ v0.115.0 حصہ37 — عامSaveکیsharedDraftrecovery اورعامDraftParkپرمنتخبانکار
 
 ✅ مالک نےپہلاoptionمنتخبکیا:عامCounterbill/PurchaseSaveخودکارsharedDraftمیں،پھراسیسےPost؛unknownpostingپرverificationmarker،ہلکیappاورمجازstaffکےلیےایکجگہ۔ ✅ دوسرےسوالمیںrefuse_hold:کھلےعامdraftسےParkcopyنہیں،اسیdraftکوSave/Complete۔ ✅ ہرجواب/reportمیںعلامتیںلازم:✅صرف100%مکمل،⏳جاری/کچھباقی،❌بالکلشروعنہیں۔ ⏳نیاsource/41cases/2685suiteUNRUN؛[⏳ PT-57](POS-PHASE4-PART37-URDU.md)،[⏳ trace](POS-PHASE4-AUTOMATIC-DRAFT-REVIEW.md)۔ ⏳حساب/permissions/refundsunchanged،FullPhase4OPEN؛❌installerbinaryنہیںبنی۔

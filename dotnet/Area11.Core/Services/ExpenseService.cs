@@ -55,25 +55,26 @@ public sealed class ExpenseService
     /// <summary>Records money the shop spent. Cash / shifts permission: it is the drawer's money.</summary>
     public ServiceResult<ExpenseResult> AddExpense(User? user, ExpenseInput input)
     {
+        var outcome = new TransactionOutcome();
         if (!_permissions.Can(user, Modules.Cash))
         {
-            return ServiceResult<ExpenseResult>.Fail("You do not have permission to record an expense.");
+            return new ServiceResult<ExpenseResult> { Error = "You do not have permission to record an expense.", NoCommitConfirmed = true };
         }
 
         if (input is null)
         {
-            return ServiceResult<ExpenseResult>.Fail("Nothing to save.");
+            return new ServiceResult<ExpenseResult> { Error = "Nothing to save.", NoCommitConfirmed = true };
         }
 
         var title = (input.Title ?? string.Empty).Trim();
         if (title.Length < 3)
         {
-            return ServiceResult<ExpenseResult>.Fail("Write what the money was spent on (at least three letters).");
+            return new ServiceResult<ExpenseResult> { Error = "Write what the money was spent on (at least three letters).", NoCommitConfirmed = true };
         }
 
         if (input.AmountPaisa <= 0)
         {
-            return ServiceResult<ExpenseResult>.Fail("The amount must be more than zero.");
+            return new ServiceResult<ExpenseResult> { Error = "The amount must be more than zero.", NoCommitConfirmed = true };
         }
 
         // Owner's word (Nov 2026): the word must be on the shop's own list - silently filing a
@@ -83,8 +84,8 @@ public sealed class ExpenseService
 
         if (category is null)
         {
-            return ServiceResult<ExpenseResult>.Fail(
-                "Unknown expense category '" + wanted + "'. Add it in Expenses, Manage categories.");
+            return new ServiceResult<ExpenseResult> { Error =
+                "Unknown expense category '" + wanted + "'. Add it in Expenses, Manage categories.", NoCommitConfirmed = true };
         }
 
         try
@@ -133,18 +134,21 @@ VALUES(@at, @category, @title, @amount, @note, @userId, @at);",
                 }
 
                 return saved;
-            });
+            }, outcome);
 
             return ServiceResult<ExpenseResult>.Success(result);
         }
         catch (ValidationException exception)
         {
-            return ServiceResult<ExpenseResult>.Fail(exception.Message);
+            return new ServiceResult<ExpenseResult> { Error = outcome.NoCommitConfirmed ? exception.Message
+                : "The posting outcome could not be confirmed. Check history before retrying.", NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
         catch (Exception exception)
         {
             _log.Error("An expense could not be saved.", exception);
-            return ServiceResult<ExpenseResult>.Fail("The expense could not be saved. Nothing was written.");
+            return new ServiceResult<ExpenseResult> { Error = outcome.NoCommitConfirmed
+                ? "The entry was not saved; no commit was made."
+                : "The posting outcome could not be confirmed. Check expense/drawing history before retrying.", NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
     }
 
@@ -158,12 +162,12 @@ VALUES(@at, @category, @title, @amount, @note, @userId, @at);",
     {
         if (user is null || !user.IsOwner)
         {
-            return ServiceResult<DrawingResult>.Fail("Only the owner can take money or goods out of the shop.");
+            return new ServiceResult<DrawingResult> { Error = "Only the owner can take money or goods out of the shop.", NoCommitConfirmed = true };
         }
 
         if (input is null)
         {
-            return ServiceResult<DrawingResult>.Fail("Nothing to save.");
+            return new ServiceResult<DrawingResult> { Error = "Nothing to save.", NoCommitConfirmed = true };
         }
 
         var type = (input.Type ?? "cash").Trim().ToLowerInvariant();
@@ -175,9 +179,10 @@ VALUES(@at, @category, @title, @amount, @note, @userId, @at);",
 
     private ServiceResult<DrawingResult> AddCashDrawing(User user, DrawingInput input)
     {
+        var outcome = new TransactionOutcome();
         if (input.AmountPaisa <= 0)
         {
-            return ServiceResult<DrawingResult>.Fail("The amount must be more than zero.");
+            return new ServiceResult<DrawingResult> { Error = "The amount must be more than zero.", NoCommitConfirmed = true };
         }
 
         try
@@ -217,18 +222,21 @@ VALUES(@at, 'cash', @amount, @note, @userId, @at);",
                 }
 
                 return saved;
-            });
+            }, outcome);
 
             return ServiceResult<DrawingResult>.Success(result);
         }
         catch (ValidationException exception)
         {
-            return ServiceResult<DrawingResult>.Fail(exception.Message);
+            return new ServiceResult<DrawingResult> { Error = outcome.NoCommitConfirmed ? exception.Message
+                : "The posting outcome could not be confirmed. Check history before retrying.", NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
         catch (Exception exception)
         {
             _log.Error("An owner drawing could not be saved.", exception);
-            return ServiceResult<DrawingResult>.Fail("The drawing could not be saved. Nothing was written.");
+            return new ServiceResult<DrawingResult> { Error = outcome.NoCommitConfirmed
+                ? "The entry was not saved; no commit was made."
+                : "The posting outcome could not be confirmed. Check expense/drawing history before retrying.", NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
     }
 
@@ -238,14 +246,15 @@ VALUES(@at, 'cash', @amount, @note, @userId, @at);",
     /// </summary>
     private ServiceResult<DrawingResult> AddGoodsDrawing(User user, DrawingInput input)
     {
+        var outcome = new TransactionOutcome();
         if (input.ProductId <= 0)
         {
-            return ServiceResult<DrawingResult>.Fail("Choose the medicine the owner took.");
+            return new ServiceResult<DrawingResult> { Error = "Choose the medicine the owner took.", NoCommitConfirmed = true };
         }
 
         if (input.QtyEntered <= 0)
         {
-            return ServiceResult<DrawingResult>.Fail("The quantity must be more than zero.");
+            return new ServiceResult<DrawingResult> { Error = "The quantity must be more than zero.", NoCommitConfirmed = true };
         }
 
         try
@@ -261,7 +270,7 @@ VALUES(@at, 'cash', @amount, @note, @userId, @at);",
                     if (!canSeeCost) value.AmountPaisa = 0;
                 }
                 return saved;
-            });
+            }, outcome);
 
             if (!result.Ok || result.Value is null)
             {
@@ -272,12 +281,15 @@ VALUES(@at, 'cash', @amount, @note, @userId, @at);",
         }
         catch (ValidationException exception)
         {
-            return ServiceResult<DrawingResult>.Fail(exception.Message);
+            return new ServiceResult<DrawingResult> { Error = outcome.NoCommitConfirmed ? exception.Message
+                : "The posting outcome could not be confirmed. Check history before retrying.", NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
         catch (Exception exception)
         {
             _log.Error("A goods drawing could not be saved.", exception);
-            return ServiceResult<DrawingResult>.Fail("The drawing could not be saved. Nothing was written.");
+            return new ServiceResult<DrawingResult> { Error = outcome.NoCommitConfirmed
+                ? "The entry was not saved; no commit was made."
+                : "The posting outcome could not be confirmed. Check expense/drawing history before retrying.", NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
     }
 

@@ -26,6 +26,8 @@ public sealed class StockTakeViewModel : ObservableObject, IEmptyPage
 
     private readonly AppServices _services;
     private readonly User _user;
+    private readonly PostingAttemptGuard _posting = new();
+    private bool _postingInProgress;
 
     private string _room = string.Empty;
     private string _openNote = string.Empty;
@@ -291,6 +293,11 @@ public sealed class StockTakeViewModel : ObservableObject, IEmptyPage
 
     private void OpenSession()
     {
+        if (_postingInProgress || !_posting.Ready)
+        {
+            SetStatus("Verify the earlier Apply result in history before changing this stock-take; reopen the page after verification.", true);
+            return;
+        }
         var result = _services.StockTake.Open(_user, Room, null, OpenNote);
 
         if (!result.Ok)
@@ -308,6 +315,11 @@ public sealed class StockTakeViewModel : ObservableObject, IEmptyPage
 
     private void Count()
     {
+        if (_postingInProgress || !_posting.Ready)
+        {
+            SetStatus("Verify the earlier Apply result in history before changing this stock-take; reopen the page after verification.", true);
+            return;
+        }
         if (_selectedLine is null)
         {
             SetStatus("Pick a row on the sheet first.", true);
@@ -338,6 +350,11 @@ public sealed class StockTakeViewModel : ObservableObject, IEmptyPage
 
     private void ClearCount()
     {
+        if (_postingInProgress || !_posting.Ready)
+        {
+            SetStatus("Verify the earlier Apply result in history before changing this stock-take; reopen the page after verification.", true);
+            return;
+        }
         if (_selectedLine is null)
         {
             SetStatus("Pick a row first.", true);
@@ -357,7 +374,9 @@ public sealed class StockTakeViewModel : ObservableObject, IEmptyPage
         SetStatus("Count cleared - the row is back to 'not counted'.", false);
     }
 
-    private void Apply()
+    private void Apply() => RunPosting(ApplyOnce);
+
+    private void ApplyOnce()
     {
         if (_session is null)
         {
@@ -369,12 +388,23 @@ public sealed class StockTakeViewModel : ObservableObject, IEmptyPage
 
         if (!result.Ok)
         {
+            _posting.ObserveFailure(result);
             SetStatus(result.Error ?? "The stock-take could not be applied.", true);
             return;
         }
 
-        var applied = result.Value!;
-        var message = applied.Code + " applied: " + applied.DiffCount + " difference(s), short "
+        _posting.AcknowledgeCommit();
+        if (result.Value is null) throw new InvalidOperationException("Acknowledged stock-take has no result.");
+        var applied = result.Value;
+        _session = null;
+        _selectedLine = null;
+        QtyText = string.Empty;
+        LineNote = string.Empty;
+        OpenNote = string.Empty;
+        RaiseSession();
+        Load();
+        _posting.CompleteReset();
+        var message = "SAVED. " + applied.Code + " applied: " + applied.DiffCount + " difference(s), short "
                       + applied.ShortLabel + ", extra " + applied.ExtraLabel + ".";
 
         if (applied.Warnings.Count > 0)
@@ -386,11 +416,15 @@ public sealed class StockTakeViewModel : ObservableObject, IEmptyPage
             SetStatus(message, false);
         }
 
-        Load();
     }
 
     private void Cancel()
     {
+        if (_postingInProgress || !_posting.Ready)
+        {
+            SetStatus("Verify the earlier Apply result in history before changing this stock-take; reopen the page after verification.", true);
+            return;
+        }
         if (_session is null)
         {
             SetStatus("There is no stock-take to cancel.", true);
@@ -433,6 +467,11 @@ public sealed class StockTakeViewModel : ObservableObject, IEmptyPage
 
     private void AddFound()
     {
+        if (_postingInProgress || !_posting.Ready)
+        {
+            SetStatus("Verify the earlier Apply result in history before changing this stock-take; reopen the page after verification.", true);
+            return;
+        }
         if (_session is null || FoundProduct is null)
         {
             SetStatus("Pick a medicine from the list first.", true);
@@ -456,6 +495,34 @@ public sealed class StockTakeViewModel : ObservableObject, IEmptyPage
         // The new line is the last one added; select it so the owner can type the number at once.
         SelectedLine = Lines.LastOrDefault(line => line.ProductName == name && line.BatchId is null) ?? SelectedLine;
         SetStatus(name + " added to the sheet - it will get a GINTI batch at Apply.", false);
+    }
+
+    private void RunPosting(Action action)
+    {
+        if (_postingInProgress) return;
+        if (!_posting.TryBegin())
+        {
+            SetStatus(_posting.WasAcknowledged
+                ? "SAVED. The earlier entry could not finish resetting. Do not post it again; verify history, then reopen the page."
+                : "The earlier posting outcome is unconfirmed. Verify history before retrying; reopen the page only after verification.", true);
+            return;
+        }
+        _postingInProgress = true;
+        try { action(); }
+        catch (Exception exception)
+        {
+            _posting.ObserveException();
+            _services.Log.Error("Posting or its result cleanup failed; verify history before reuse.", exception);
+            SetStatus(_posting.WasAcknowledged
+                ? "SAVED. The entry was stored, but its page could not finish. Do not post it again; verify history, then reopen the page."
+                : "The posting outcome could not be confirmed. Check history before retrying; do not create another copy.", true);
+        }
+        finally
+        {
+            // A normal validation return before any service call is safe, not an unknown commit.
+            if (_posting.InFlight) _posting.CancelBeforeWrite();
+            _postingInProgress = false;
+        }
     }
 
     private void SetStatus(string message, bool isError)

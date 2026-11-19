@@ -28,6 +28,8 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
 
     private readonly AppServices _services;
     private readonly User _user;
+    private readonly PostingAttemptGuard _posting = new();
+    private bool _postingInProgress;
 
     private string _title = string.Empty;
     private string _amountText = string.Empty;
@@ -336,7 +338,9 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
         OnPropertyChanged(nameof(IsOwner));
     }
 
-    private void SaveExpense()
+    private void SaveExpense() => RunPosting(SaveExpenseOnce);
+
+    private void SaveExpenseOnce()
     {
         if (!Money.TryParse(AmountText, out var rupees) || rupees <= 0)
         {
@@ -355,22 +359,27 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
 
         var result = _services.CashOut.AddExpense(_user, input);
 
-        if (!result.Ok || result.Value is null)
+        if (!result.Ok)
         {
+            _posting.ObserveFailure(result);
             SetStatus(result.Error ?? "The expense could not be saved.", true);
             return;
         }
 
+        _posting.AcknowledgeCommit();
+        if (result.Value is null) throw new InvalidOperationException("Acknowledged entry has no result.");
         var saved = result.Value;
 
         Title = string.Empty;
         AmountText = string.Empty;
         ExpenseNote = string.Empty;
         DocEditor.LoadNew();
+        if (!DocEditor.LoadedSuccessfully) throw new InvalidOperationException("Saved expense editor could not reset.");
 
         Load();
 
-        var message = Category.Label + " " + Money.Format(saved.AmountPaisa) + " recorded.";
+        _posting.CompleteReset();
+        var message = "SAVED. " + Category.Label + " " + Money.Format(saved.AmountPaisa) + " recorded.";
         SetStatus(saved.HasWarning ? message + " " + saved.WarningText : message, saved.HasWarning);
     }
 
@@ -385,7 +394,9 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
         SaveGoodsDrawing();
     }
 
-    private void SaveCashDrawing()
+    private void SaveCashDrawing() => RunPosting(SaveCashDrawingOnce);
+
+    private void SaveCashDrawingOnce()
     {
         if (!Money.TryParse(DrawingAmountText, out var rupees) || rupees <= 0)
         {
@@ -400,23 +411,29 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
             Note = DrawingNote
         });
 
-        if (!result.Ok || result.Value is null)
+        if (!result.Ok)
         {
+            _posting.ObserveFailure(result);
             SetStatus(result.Error ?? "The drawing could not be saved.", true);
             return;
         }
 
+        _posting.AcknowledgeCommit();
+        if (result.Value is null) throw new InvalidOperationException("Acknowledged entry has no result.");
         var saved = result.Value;
         DrawingAmountText = string.Empty;
         DrawingNote = string.Empty;
 
         Load();
 
-        var message = "Owner took " + saved.AmountLabel + " cash.";
+        _posting.CompleteReset();
+        var message = "SAVED. Owner took " + saved.AmountLabel + " cash.";
         SetStatus(saved.HasWarning ? message + " " + saved.WarningText : message, saved.HasWarning);
     }
 
-    private void SaveGoodsDrawing()
+    private void SaveGoodsDrawing() => RunPosting(SaveGoodsDrawingOnce);
+
+    private void SaveGoodsDrawingOnce()
     {
         if (SelectedProduct is null)
         {
@@ -442,12 +459,15 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
             Note = DrawingNote
         });
 
-        if (!result.Ok || result.Value is null)
+        if (!result.Ok)
         {
+            _posting.ObserveFailure(result);
             SetStatus(result.Error ?? "The drawing could not be saved.", true);
             return;
         }
 
+        _posting.AcknowledgeCommit();
+        if (result.Value is null) throw new InvalidOperationException("Acknowledged entry has no result.");
         var saved = result.Value;
         QtyText = string.Empty;
         DrawingNote = string.Empty;
@@ -455,7 +475,8 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
         Load();
         LoadBatches();
 
-        var message = "Owner took " + Qty.Format(saved.QtyBase) + " of " + name + ", valued at cost "
+        _posting.CompleteReset();
+        var message = "SAVED. Owner took " + Qty.Format(saved.QtyBase) + " of " + name + ", valued at cost "
                       + saved.AmountLabel + ".";
 
         SetStatus(saved.HasWarning ? message + " " + saved.WarningText : message, saved.HasWarning);
@@ -546,6 +567,34 @@ public sealed class ExpensesViewModel : ObservableObject, IEmptyPage
         if (willGoMinus)
         {
             StockPreview += "  (NOT ALLOWED - reduce the quantity or count/receive stock first)";
+        }
+    }
+
+    private void RunPosting(Action action)
+    {
+        if (_postingInProgress) return;
+        if (!_posting.TryBegin())
+        {
+            SetStatus(_posting.WasAcknowledged
+                ? "SAVED. The earlier entry could not finish resetting. Do not post it again; verify history, then reopen the page."
+                : "The earlier posting outcome is unconfirmed. Verify history before retrying; reopen the page only after verification.", true);
+            return;
+        }
+        _postingInProgress = true;
+        try { action(); }
+        catch (Exception exception)
+        {
+            _posting.ObserveException();
+            _services.Log.Error("Posting or its result cleanup failed; verify history before reuse.", exception);
+            SetStatus(_posting.WasAcknowledged
+                ? "SAVED. The entry was stored, but its page could not finish. Do not post it again; verify history, then reopen the page."
+                : "The posting outcome could not be confirmed. Check history before retrying; do not create another copy.", true);
+        }
+        finally
+        {
+            // A normal validation return before any service call is safe, not an unknown commit.
+            if (_posting.InFlight) _posting.CancelBeforeWrite();
+            _postingInProgress = false;
         }
     }
 
