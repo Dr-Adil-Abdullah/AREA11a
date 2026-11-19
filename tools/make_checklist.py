@@ -36,7 +36,7 @@ OUT_MD = ROOT / "docs" / "CHECKLIST-URDU.md"
 OUT_HTML = ROOT / "docs" / "CHECKLIST-URDU.html"
 
 DONE = "✅"
-HALF = "🟡"
+HALF = "⏳"
 TODO = "❌"
 
 DONE_WORD = "مکمل"
@@ -113,9 +113,9 @@ NOTES = {
 # Not features: things that are written but have never been done on the shop PC. They are in the
 # list because the owner asked "what is really left", and a list that hides them would be a lie.
 OPEN_ITEMS = (
-    ("انسٹالر (F-47)", "`MAKE-INSTALLER.cmd` چلائیں، پھر بنی ہوئی فائل دو بار کلک کریں — پروگرام `C:\\Program Files\\Area11` میں جائے اور آپ کا ڈیٹا `C:\\ProgramData\\Area11` میں جیسے تھا ویسے رہے۔ **یہ آج تک کبھی نہیں چلا۔**"),
-    ("صفحات کا ہاتھ سے چلنا", "تازہ ترین build کھول کر کم از کم پانچ صفحے دیکھیں (Products، Counter، Bills، Customers، Reports) اور `%TEMP%\\Area11\\last-run.txt` میں اُن کے نام دیکھیں۔ ساتھ ہی کاؤنٹر پر **گلا بند** کا کارڈ اور **Settings → Shop** میں گھڑی کی سطر دیکھیں۔"),
-    ("دوسرا کاؤنٹر (F-45)", "کوئی شیئر فولڈر بنا کر `SHARE-AREA11.cmd` چلائیں — یہ صرف اُس وقت ضروری ہے جب آپ واقعی دوسرا کمپیوٹر لگائیں۔"),
+    ("❌ انسٹالر binary (F-47)", "ابھی نہیں بنی۔ پہلےتازہbuild/tests/packageاورواقعیالگtestDB/photos/configکیisolation/smokeجانچ؛اصلshopپراندھادھندinstallerمشقنہیں۔"),
+    ("⏳ صفحات کا ہاتھ سے چلنا", "تازہ Windows build،متعلقہpages/dialogs/DPI/focus/receiptsکےlogsاورحقیقیscreenshotsدرکار؛صرفstaticchecksکافی نہیں۔"),
+    ("⏳ دوسرا کاؤنٹر (F-45)", "بنیادیsourceموجود،عملیsecond-counterdeploymentمالککےانتخابسےمؤخر؛یہاسحصےکیقبولیتکیشرطنہیں۔"),
 )
 
 
@@ -172,7 +172,9 @@ def read_board() -> tuple[list[dict], dict[str, int]]:
             continue
 
         cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
-        state = DONE if cells[2] == DONE else (HALF if cells[2] == HALF else TODO)
+        # Legacy board marks describe source work, NOT current end-to-end certification.
+        # None has current full Windows/Phase4 evidence: do not print a false100% tick.
+        state = HALF if cells[2] in ("✅", "🟡") else TODO
 
         features.append({
             "id": match.group(1),
@@ -202,21 +204,21 @@ def markdown(features: list[dict], counts: dict[str, int], today: str,
         "",
         "> یہ فائل **خودکار** بنتی ہے: `python3 tools/make_checklist.py`۔ ہاتھ سے نہ بدلیں۔",
         "> اصلی فیصلہ `docs/PROGRESS.md` کے بورڈ میں ہوتا ہے، اور `tools/check_repo.py` اُس سے میل",
-        "> کھانے پر مجبور کرتا ہے — سو یہ فہرست کبھی جھوٹ نہیں بول سکتی۔",
+        "> کھانے پر مجبور کرتا ہے۔ بورڈ کے پرانے source ticks مکمل عملی تصدیق نہیں؛نئی رپورٹ میں وہ جاری ہیں۔",
         "",
         "## ایک نظر میں",
         "",
         "| حالت | گنتی | فیصد |",
         "|---|---|---|",
         f"| {DONE} مکمل | {counts[DONE]} | {percent(counts[DONE], total)} |",
-        f"| {HALF} جاری — کوڈ مکمل، دکان میں ایک عمل باقی | {counts[HALF]} | {percent(counts[HALF], total)} |",
+        f"| {HALF} جاری — source موجود، تازہ جانچ/باقی کام درکار | {counts[HALF]} | {percent(counts[HALF], total)} |",
         f"| {TODO} شروع نہیں | {counts[TODO]} | {percent(counts[TODO], total)} |",
         f"| **کل فیچر** | **{total}** | **100%** |",
         "",
         "## نشانیوں کا مطلب",
         "",
-        f"- {DONE} = **{DONE_WORD}**: کوڈ لکھا، ٹیسٹ لکھے، اور (جہاں ممکن تھا) آپ کے کمپیوٹر پر چل چکا۔",
-        f"- {HALF} = **{HALF_WORD}**: کام مکمل ہے مگر ایک عمل دکان میں ہونا باقی ہے (نیچے ہر ایک کے لیے ایک سطر ہے)۔",
+        f"- {DONE} = **{DONE_WORD}**: صرف جب دائرے کا100% کام اورلازمی تازہ عملی ثبوت مکمل ہوں۔",
+        f"- {HALF} = **{HALF_WORD}**: کام شروع ہے،مگرsource review یاC#/Windows/عملی ثبوت میں کچھ باقی ہے۔",
         f"- {TODO} = **{TODO_WORD}**: ہاتھ نہیں لگا۔",
         "- ☐ = آپ کا اپنا نشان: جب آپ خود دیکھ لیں تو قلم سے ٹک لگا دیں۔",
         "",
@@ -247,14 +249,14 @@ def markdown(features: list[dict], counts: dict[str, int], today: str,
             lines.append(f"| ☐ | {feature['id']} | {feature['title']} | {feature['state']} {word} |")
 
         lines += ["", "**دکان میں کیسے دیکھیں (5 منٹ):**", ""]
-        lines += [f"{number}. {check}" for number, check in enumerate(phase["checks"], start=1)]
+        lines += [f"{number}. {HALF} {check}" for number, check in enumerate(phase["checks"], start=1)]
         lines.append("")
 
         pending = [feature for feature in rows if feature["state"] == HALF]
         if pending:
             lines += ["**اِس حصے میں باقی:**", ""]
             for feature in pending:
-                action = HALF_ACTIONS.get(feature["id"], feature["done_when"] or "دکان میں ایک عمل باقی ہے۔")
+                action = HALF_ACTIONS.get(feature["id"], feature["done_when"] or "تازہ C#/Windows/متعلقہ عملی جانچ اورباقی review درکار۔")
                 lines.append(f"- {HALF} **{feature['id']} — {feature['title']}**: {action}")
             lines.append("")
 
@@ -262,7 +264,7 @@ def markdown(features: list[dict], counts: dict[str, int], today: str,
         if noted:
             lines += ["**نوٹ:**", ""]
             for feature in noted:
-                lines.append(f"- {feature['id']}: {NOTES[feature['id']]}")
+                lines.append(f"- {HALF} {feature['id']}: {NOTES[feature['id']]}")
             lines.append("")
 
     lines += [
@@ -278,9 +280,8 @@ def markdown(features: list[dict], counts: dict[str, int], today: str,
         "",
         "## یاد رکھنے کی ایک بات",
         "",
-        "**جتنے فیچر لکھنے تھے، سب لکھے جا چکے ہیں** — فہرست میں کوئی ❌ نہیں۔ باقی صرف **دکان میں ایک ایک عمل** ہے",
-        "اور اُس کا پیمانہ اوپر لکھا ہے۔ جب آپ کوئی عمل کر لیں اور کہیں کہ «ہو گیا»، تو اُس فیچر کا نشان اگلی دوڑ میں",
-        f"{DONE} ہو جائے گا — اِس فائل میں خود بخود۔",
+        "⏳ یہ source board سے بنا کام کا نقشہ ہے،مکمل safety/runtime منظوری نہیں۔ ہرstarted فیچر کے ضروری تازہ ثبوت باقی ہیں۔",
+        "✅ صرف مکمل دائرہ اورلازمی ثبوت کے بعد؛ایک زبانی tick یاپرانی کامیابی سےخودکار مکمل نہیں۔ ❌ صرفبالکل شروع نہ ہونے والا کام۔",
         "",
         f"*بنایا گیا: {today} · `tools/make_checklist.py`*",
         "",
@@ -349,7 +350,7 @@ def html(features: list[dict], counts: dict[str, int], today: str,
         f"<td>{percent(counts[TODO], total)}</td></tr>",
         f"<tr><th>کل</th><th>{total}</th><th>100%</th></tr>",
         "</table>",
-        '<p class="muted">جاری کا مطلب: کوڈ مکمل ہے، دکان میں ایک عمل باقی ہے (ہر ایک کے لیے نیچے ایک سطر ہے)۔</p>',
+        '<p class="muted">⏳ جاری کا مطلب: کام شروع ہے مگرsource/تازہ عملی ثبوت باقی ہیں؛پرانےsource ticks کو100% نہیںکہتے۔</p>',
         '<p class="muted">یہ فہرست خودکار بنتی ہے (<span class="en">tools/make_checklist.py</span>) اور '
         '<span class="en">docs/PROGRESS.md</span> کے بورڈ سے میل کھاتی ہے؛ چیکر اِسے جانچتا ہے۔</p>',
     ]
@@ -383,14 +384,14 @@ def html(features: list[dict], counts: dict[str, int], today: str,
             )
 
         parts += ["</table>", '<div class="checks"><b>دکان میں کیسے دیکھیں:</b><ol>']
-        parts += [f"<li>{esc(check)}</li>" for check in phase["checks"]]
+        parts += [f"<li>{HALF} {esc(check)}</li>" for check in phase["checks"]]
         parts.append("</ol></div>")
 
         pending = [feature for feature in rows if feature["state"] == HALF]
         if pending:
             parts.append("<b>اِس حصے میں باقی:</b><ul>")
             for feature in pending:
-                action = HALF_ACTIONS.get(feature["id"], feature["done_when"] or "دکان میں ایک عمل باقی ہے۔")
+                action = HALF_ACTIONS.get(feature["id"], feature["done_when"] or "تازہ C#/Windows/متعلقہ عملی جانچ اورباقی review درکار۔")
                 parts.append(f'<li>{feature["state"]} <b>{esc(feature["id"])}</b> — '
                              f'<span class="en">{esc(feature["title"])}</span>: {esc(action)}</li>')
             parts.append("</ul>")
@@ -412,8 +413,8 @@ def html(features: list[dict], counts: dict[str, int], today: str,
 
     parts += [
         "</table>",
-        '<p class="muted">جتنے فیچر لکھنے تھے، سب لکھے جا چکے ہیں — فہرست میں کوئی ❌ نہیں۔ باقی صرف دکان میں '
-        "ایک ایک عمل ہے۔ جب آپ کوئی عمل کر لیں، اگلی دوڑ میں اُس کا نشان خود بدل جائے گا۔</p>",
+        '<p class="muted">⏳ source موجود ہونے کے باوجودضروریreview اورتازہ Windows ثبوت باقی ہیں۔ '
+        "✅ صرف100%کام اورلازمی ثبوت کے بعد؛❌ صرفبالکل شروع نہ ہونے والا کام۔</p>",
         '<div class="sign">',
         '<div>میرا دستخط: ______________________________ &nbsp;&nbsp; تاریخ: ____________</div>',
         '<div class="muted">یہ صفحہ پرنٹ کرنے کے لیے ہے: Ctrl+P دبائیں، کاغذ A4 رکھیں، اور ہر سطر کے '

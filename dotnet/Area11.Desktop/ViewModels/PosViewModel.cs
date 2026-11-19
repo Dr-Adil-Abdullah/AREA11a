@@ -77,6 +77,9 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     private bool _isCompletingSale;
     private bool _committedCartNeedsReset;
     private bool _draftReconstructionFailed;
+    private bool _draftSaveNeedsVerification;
+    private bool _parkedCartNeedsReset;
+    private bool _holdOutcomeUnknown;
     private bool _lastLookupsSucceeded;
     private bool _lastBarcodeLoadSucceeded;
     private bool _shiftClosed;
@@ -1008,8 +1011,9 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
     private void ClearCart()
     {
-        if (_openDraftId > 0 && MessageBox.Show(
-                "Leave this draft on disk and clear only the counter? Unsaved edits will be lost. Open Drafts to recover the saved work or verify a posting marker.",
+        if (_isCompletingSale) return;
+        if ((_openDraftId > 0 || _draftSaveNeedsVerification || _parkedCartNeedsReset) && MessageBox.Show(
+                "Leave saved work on disk and clear only the counter? Unsaved edits will be lost. Verify shared Drafts and parked carts before starting another copy.",
                 "Keep saved draft", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
         _availabilityWarningShown = false;
         Cart.Clear();
@@ -1026,6 +1030,9 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         Recalculate();
         _committedCartNeedsReset = false;
         _draftReconstructionFailed = false;
+        _draftSaveNeedsVerification = false;
+        _parkedCartNeedsReset = false;
+        _holdOutcomeUnknown = false;
     }
 
     private void CompleteSale()
@@ -1121,9 +1128,9 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             input.RetailDiscountConfirmed = true;
         }
         var wasDraft = _openDraftId > 0;
-        var result = wasDraft
-            ? _services.Drafts.PostSale(_user, _openDraftId, input)
-            : _services.Sales.Create(input, _user);
+        // Persist and link before calling a creator. An unacknowledged save never reaches Post.
+        if (_openDraftId <= 0 && !StoreSaleDraft(input)) return;
+        var result = _services.Drafts.PostSale(_user, _openDraftId, input);
         if (!result.Ok)
         {
             SetStatus(result.Error ?? "The bill could not be saved.", true);
@@ -1181,6 +1188,18 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
     private bool RefuseCommittedCart()
     {
+        if (_draftSaveNeedsVerification)
+        {
+            SetStatus("Draft saving is unconfirmed. No posting was started. Check shared Drafts before saving or posting another copy; clear only the counter after verification.", true);
+            return true;
+        }
+        if (_parkedCartNeedsReset)
+        {
+            SetStatus(_holdOutcomeUnknown
+                ? "Parking is unconfirmed. Check parked carts before any new sale, draft or parked copy; clear only the counter after verification."
+                : "PARKED. The cart was stored but could not reset. Do not sell or park this copy again; check parked carts, then Clear cart.", true);
+            return true;
+        }
         if (_draftReconstructionFailed)
         {
             SetStatus("Draft reconstruction failed. Do not save, park or post a partial cart. Clear only the counter, then recover the saved work from Drafts.", true);
@@ -1415,6 +1434,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     {
         if (!RefreshParkedAccess()) return;
         if (RefuseCommittedCart()) return;
+        if (_isCompletingSale) return;
         if (Cart.Count == 0)
         {
             SetStatus("The cart is empty - nothing to save.", true);
@@ -1422,18 +1442,36 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         }
 
         if (!RequireAppliedExtraEntry()) return;
-        var saved = _openDraftId > 0
-            ? _services.Drafts.SaveSaleDraft(_user, BuildInput(), _openDraftId)
-            : _services.Drafts.SaveSaleDraft(_user, BuildInput());
-        if (!saved.Ok || saved.Value is null)
-        {
-            SetStatus(saved.Error ?? "The draft could not be saved.", true);
-            return;
-        }
+        if (StoreSaleDraft(BuildInput()))
+            SetStatus("Draft saved. The counter remains linked to the same shared draft.", false);
+    }
 
-        _openDraftId = saved.Value.Id;
-        OnPropertyChanged(nameof(HasOpenDraft));
-        SetStatus("Draft saved as " + saved.Value.DraftKey + ".", false);
+    /// <summary>Arm before the call: a thrown/unknown initial save cannot silently create a new copy.</summary>
+    private bool StoreSaleDraft(SaleInput input)
+    {
+        _draftSaveNeedsVerification = true;
+        try
+        {
+            var saved = _openDraftId > 0
+                ? _services.Drafts.SaveSaleDraft(_user, input, _openDraftId)
+                : _services.Drafts.SaveSaleDraft(_user, input);
+            if (!saved.Ok || saved.Value is not { Id: > 0 })
+            {
+                _draftSaveNeedsVerification = !saved.NoCommitConfirmed;
+                SetStatus(saved.Error ?? "Draft saving could not be confirmed. Check shared Drafts before retrying.", true);
+                return false;
+            }
+            _openDraftId = saved.Value.Id;
+            _draftSaveNeedsVerification = false;
+            OnPropertyChanged(nameof(HasOpenDraft));
+            return true;
+        }
+        catch (Exception exception)
+        {
+            _services.Log.Error("Draft saving/linking failed; no sale posting was started by this call.", exception);
+            SetStatus("Draft saving/linking could not finish. No posting was started. Check shared Drafts before making another copy.", true);
+            return false;
+        }
     }
 
     private void OpenDrafts() =>
@@ -1446,7 +1484,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     public void OpenSaleDraft(int draftId)
     {
         if (!RefreshParkedAccess()) return;
-        if (Cart.Count > 0 || _openDraftId > 0)
+        if (Cart.Count > 0 || _openDraftId > 0 || _draftSaveNeedsVerification || _parkedCartNeedsReset)
         {
             SetStatus("Complete or clear the current cart before opening a draft.", true);
             return;
@@ -1528,6 +1566,12 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     {
         if (!RefreshParkedAccess()) return;
         if (RefuseCommittedCart()) return;
+        if (_isCompletingSale) return;
+        if (_openDraftId > 0)
+        {
+            SetStatus("An open draft cannot be parked as another copy. Save or complete the same draft instead.", true);
+            return;
+        }
         if (Cart.Count == 0)
         {
             SetStatus("The cart is empty - there is nothing to park.", true);
@@ -1540,29 +1584,46 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         }
 
         if (!RequireAppliedExtraEntry()) return;
-        var result = _services.Holds.Hold(BuildInput(), _user, _openDraftId);
-        if (!result.Ok || string.IsNullOrEmpty(result.Value))
+        _parkedCartNeedsReset = true;
+        _holdOutcomeUnknown = true;
+        try
         {
-            SetStatus(result.Error ?? "The cart could not be parked.", true);
-            return;
-        }
+            var result = _services.Holds.Hold(BuildInput(), _user, _openDraftId);
+            if (!result.Ok || string.IsNullOrEmpty(result.Value))
+            {
+                _parkedCartNeedsReset = !result.NoCommitConfirmed;
+                _holdOutcomeUnknown = _parkedCartNeedsReset;
+                SetStatus(result.Error ?? "The cart could not be parked.", true);
+                return;
+            }
 
-        var code = result.Value;
-        _availabilityWarningShown = false;
-        Cart.Clear();
-        TenderedText = string.Empty;
-        SecondAmountText = string.Empty;
-        _appliedExtraDiscount = 0;
-        ExtraDiscountEntry = "0";
-        DiscountPercent = "0";
-        ResetBillBasis();
-        // A parked cart keeps lines, rates, customer and discount - but not the bill's own answers:
-        // those ride with drafts, the durable vehicle. Clearing here stops them leaking into the
-        // next customer's bill.
-        DocEditor.LoadNew();
-        Recalculate();
-        LoadHeldCarts();
-        SetStatus($"{code} parked. The counter is free for the next customer.", false);
+            var code = result.Value;
+            _parkedCartNeedsReset = true;
+            _holdOutcomeUnknown = false;
+            _availabilityWarningShown = false;
+            Cart.Clear();
+            TenderedText = string.Empty;
+            SecondAmountText = string.Empty;
+            _appliedExtraDiscount = 0;
+            ExtraDiscountEntry = "0";
+            DiscountPercent = "0";
+            ResetBillBasis();
+            // A parked cart keeps lines, rates, customer and discount - but not the bill's own answers:
+            // those ride with drafts, the durable vehicle. Clearing here stops them leaking into the
+            // next customer's bill.
+            DocEditor.LoadNew();
+            Recalculate();
+            LoadHeldCarts();
+            SetStatus($"{code} parked. The counter is free for the next customer.", false);
+            _parkedCartNeedsReset = false;
+        }
+        catch (Exception exception)
+        {
+            _services.Log.Error("Parking or its counter cleanup failed; verify parked work before reuse.", exception);
+            SetStatus(_holdOutcomeUnknown
+                ? "Parking could not be confirmed. Check parked carts before selling or parking another copy; clear only the counter after verification."
+                : "PARKED. The cart was stored, but the counter could not reset. Do not sell or park this copy again; check parked carts, then Clear cart.", true);
+        }
     }
 
     /// <summary>Only parked-list authority; deliberately does not erase an authored unsaved cart.</summary>
@@ -1609,7 +1670,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             SetStatus("Refresh parked carts and choose a current row.", true);
             return;
         }
-        if (Cart.Count > 0 || _openDraftId > 0)
+        if (Cart.Count > 0 || _openDraftId > 0 || _draftSaveNeedsVerification || _parkedCartNeedsReset)
         {
             SetStatus("The current cart is not empty or has a linked draft. Complete it or clear only the counter first.", true);
             return;

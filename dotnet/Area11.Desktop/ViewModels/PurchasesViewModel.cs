@@ -19,6 +19,9 @@ public sealed class PurchasesViewModel : ObservableObject
     private readonly List<Product> _catalog = new();
     private bool _entryAllowed;
     private bool _saveInProgress;
+    private bool _draftSaveNeedsVerification;
+    private bool _draftReconstructionFailed;
+    private bool _committedEntryNeedsReset;
     private bool _lastLookupsSucceeded;
     private string _entryAccessMessage = string.Empty;
 
@@ -516,6 +519,7 @@ public sealed class PurchasesViewModel : ObservableObject
         try
         {
             if (!RefreshEntryAccess()) return;
+            if (RefuseUnsafeEntry()) return;
             if (SelectedSupplier is null)
             {
                 SetStatus("Select or add a supplier first.", true);
@@ -554,9 +558,8 @@ public sealed class PurchasesViewModel : ObservableObject
             };
 
             var wasDraft = _openDraftId > 0;
-            var result = wasDraft
-                ? _services.Drafts.PostPurchase(_user, _openDraftId, input)
-                : _services.Purchases.Create(input, _user);
+            if (_openDraftId <= 0 && !StorePurchaseDraft(input)) return;
+            var result = _services.Drafts.PostPurchase(_user, _openDraftId, input);
             if (!result.Ok)
             {
                 RefreshEntryAccess();
@@ -565,6 +568,7 @@ public sealed class PurchasesViewModel : ObservableObject
             }
 
             var purchase = result.Value;
+            _committedEntryNeedsReset = true;
             // Consume the committed draft ID before any binding/receipt callback can reenter.
             _openDraftId = 0;
             _lastPurchaseId = 0;
@@ -588,6 +592,7 @@ public sealed class PurchasesViewModel : ObservableObject
                     SetStatus("SAVED. Purchase was stored, but the entry page could not refresh. Do not receive or post this delivery again; refresh and check purchase history.", true);
                     return;
                 }
+                _committedEntryNeedsReset = false;
                 var warnings = purchase.Warnings.Count > 0 ? "  ⚠ " + string.Join(" ", purchase.Warnings) : string.Empty;
                 SetStatus($"SAVED. {purchase.Code}{(wasDraft ? " - its draft is posted" : string.Empty)} — {purchase.TotalLabel}.{warnings}", purchase.Warnings.Count > 0);
                 PrintInvoice(purchase.PurchaseId, purchase.Code);
@@ -656,6 +661,7 @@ public sealed class PurchasesViewModel : ObservableObject
     private void SavePurchaseDraft()
     {
         if (!RefreshEntryAccess()) return;
+        if (_saveInProgress || RefuseUnsafeEntry()) return;
         if (Lines.Count == 0)
         {
             SetStatus("Add at least one line.", true);
@@ -687,19 +693,46 @@ public sealed class PurchasesViewModel : ObservableObject
             }).ToList()
         };
 
-        var saved = _openDraftId > 0
-            ? _services.Drafts.SavePurchaseDraft(_user, input, _openDraftId)
-            : _services.Drafts.SavePurchaseDraft(_user, input);
-        if (!saved.Ok || saved.Value is null)
-        {
-            RefreshEntryAccess();
-            SetStatus(saved.Error ?? "The draft could not be saved.", true);
-            return;
-        }
+        if (StorePurchaseDraft(input))
+            SetStatus("Draft saved. The delivery remains linked to the same shared draft.", false);
+    }
 
-        _openDraftId = saved.Value.Id;
-        OnPropertyChanged(nameof(HasOpenDraft));
-        SetStatus("Draft saved as " + saved.Value.DraftKey + ".", false);
+    private bool RefuseUnsafeEntry()
+    {
+        if (!_draftSaveNeedsVerification && !_draftReconstructionFailed && !_committedEntryNeedsReset) return false;
+        SetStatus(_committedEntryNeedsReset
+            ? "SAVED. This delivery was stored but the page could not reset. Do not save it again. Verify purchase history, then reopen the page."
+            : _draftReconstructionFailed
+                ? "Draft reconstruction failed. Do not save a partial delivery. Reopen the page and recover the saved work from Drafts."
+                : "Draft saving is unconfirmed. No posting was started. Check shared Drafts before creating another copy; reopen the page after verification.", true);
+        return true;
+    }
+
+    private bool StorePurchaseDraft(PurchaseInput input)
+    {
+        _draftSaveNeedsVerification = true;
+        try
+        {
+            var saved = _openDraftId > 0
+                ? _services.Drafts.SavePurchaseDraft(_user, input, _openDraftId)
+                : _services.Drafts.SavePurchaseDraft(_user, input);
+            if (!saved.Ok || saved.Value is not { Id: > 0 })
+            {
+                _draftSaveNeedsVerification = !saved.NoCommitConfirmed;
+                SetStatus(saved.Error ?? "Draft saving could not be confirmed. Check shared Drafts before retrying.", true);
+                return false;
+            }
+            _openDraftId = saved.Value.Id;
+            _draftSaveNeedsVerification = false;
+            OnPropertyChanged(nameof(HasOpenDraft));
+            return true;
+        }
+        catch (Exception exception)
+        {
+            _services.Log.Error("Draft saving/linking failed; no purchase posting was started by this call.", exception);
+            SetStatus("Draft saving/linking could not finish. No posting was started. Check shared Drafts before making another copy.", true);
+            return false;
+        }
     }
 
     private void OpenDrafts() =>
@@ -712,7 +745,8 @@ public sealed class PurchasesViewModel : ObservableObject
     public void OpenPurchaseDraft(int draftId)
     {
         if (!RefreshEntryAccess()) return;
-        if (Lines.Count > 0)
+        if (_saveInProgress || RefuseUnsafeEntry()) return;
+        if (Lines.Count > 0 || _openDraftId > 0)
         {
             SetStatus("Save or remove the current lines before opening a draft.", true);
             return;
@@ -727,51 +761,61 @@ public sealed class PurchasesViewModel : ObservableObject
         }
 
         var input = opened.Value;
-        SelectedSupplier = input.SupplierId > 0
-            ? Suppliers.FirstOrDefault(supplier => supplier.Id == input.SupplierId)
-            : null;
-        PaidText = input.PaidPaisa > 0 ? Money.Edit(input.PaidPaisa) : string.Empty;
-        // An old draft has no method stored; it was written when everything was cash.
-        var draftMethod = (input.PaidMethod ?? "cash").Trim().ToLowerInvariant();
-        PaidMethod = draftMethod is "cash" or "online" or "card" ? draftMethod : "cash";
-
-        var skipped = 0;
-        Lines.Clear();
-        foreach (var line in input.Lines)
-        {
-            var product = _catalog.FirstOrDefault(item => item.Id == line.ProductId);
-            var name = product?.Name ?? "Unknown product";
-            var unitsPerSelected = product is null ? 1 : product.QuantityPerSelectedUnit(line.Unit);
-            if (product is null)
-            {
-                skipped++;
-            }
-            Lines.Add(new PurchaseLineRow
-            {
-                ProductId = line.ProductId,
-                ProductName = name,
-                Unit = line.Unit,
-                Quantity = line.Quantity,
-                QtyBase = line.Quantity * unitsPerSelected,
-                BatchNo = line.BatchNo,
-                Expiry = line.Expiry,
-                CostPaisa = line.CostPaisa,
-                RetailPaisa = line.RetailPaisa,
-                IsSample = line.IsSample,
-                PhotoPath = product?.PhotoPath
-            });
-        }
-
         _openDraftId = draftId;
-        OnPropertyChanged(nameof(HasOpenDraft));
-        DocEditor.SetAnswers(input.CustomAnswers);
-        OnPropertyChanged(nameof(TotalText));
-        SetStatus(SelectedSupplier is null
-            ? "Draft opened - choose a supplier, review the lines, then save."
-            : skipped == 0
-                ? "Draft opened. Review the lines, then save."
-                : "Draft opened, but " + skipped + " line(s) carry an unknown product - check before saving.",
-            skipped > 0);
+        _draftReconstructionFailed = true;
+        try
+        {
+            SelectedSupplier = input.SupplierId > 0
+                ? Suppliers.FirstOrDefault(supplier => supplier.Id == input.SupplierId)
+                : null;
+            PaidText = input.PaidPaisa > 0 ? Money.Edit(input.PaidPaisa) : string.Empty;
+            // An old draft has no method stored; it was written when everything was cash.
+            var draftMethod = (input.PaidMethod ?? "cash").Trim().ToLowerInvariant();
+            PaidMethod = draftMethod is "cash" or "online" or "card" ? draftMethod : "cash";
+
+            var skipped = 0;
+            Lines.Clear();
+            foreach (var line in input.Lines)
+            {
+                var product = _catalog.FirstOrDefault(item => item.Id == line.ProductId);
+                var name = product?.Name ?? "Unknown product";
+                var unitsPerSelected = product is null ? 1 : product.QuantityPerSelectedUnit(line.Unit);
+                if (product is null)
+                {
+                    skipped++;
+                }
+                Lines.Add(new PurchaseLineRow
+                {
+                    ProductId = line.ProductId,
+                    ProductName = name,
+                    Unit = line.Unit,
+                    Quantity = line.Quantity,
+                    QtyBase = line.Quantity * unitsPerSelected,
+                    BatchNo = line.BatchNo,
+                    Expiry = line.Expiry,
+                    CostPaisa = line.CostPaisa,
+                    RetailPaisa = line.RetailPaisa,
+                    IsSample = line.IsSample,
+                    PhotoPath = product?.PhotoPath
+                });
+            }
+
+            OnPropertyChanged(nameof(HasOpenDraft));
+            DocEditor.SetAnswers(input.CustomAnswers);
+            OnPropertyChanged(nameof(TotalText));
+            SetStatus(SelectedSupplier is null
+                ? "Draft opened - choose a supplier, review the lines, then save."
+                : skipped == 0
+                    ? "Draft opened. Review the lines, then save."
+                    : "Draft opened, but " + skipped + " line(s) carry an unknown product - check before saving.",
+                skipped > 0);
+            _draftReconstructionFailed = skipped > 0;
+        }
+        catch (Exception exception)
+        {
+            _services.Log.Error("Purchase draft reconstruction failed; its saved payload remains on disk.", exception);
+            SetStatus("Draft reconstruction failed. Do not save a partial delivery; reopen the page and recover it from Drafts.", true);
+        }
     }
 
     private void SetStatus(string message, bool isError)

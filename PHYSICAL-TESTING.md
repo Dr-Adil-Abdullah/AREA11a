@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## ⏳ PT-57 — ordinary Save through shared drafts;all draft-Hold refused (v0.115.0)
+
+[⏳ Urdu isolated steps](docs/POS-PHASE4-PART37-URDU.md),[⏳ trace/limits](docs/POS-PHASE4-AUTOMATIC-DRAFT-REVIEW.md). ⏳41newC#sourcecases/2685suite UNRUN. Test initial draft save faults/no creator,save-link-restart-sameID-post,validation retry,unknown posting marker,no draft-Hold copy,unknown Hold and acknowledgedcleanup guard,Purchase commit-reset/partialreconstruction. ❌Windows/WPF/providerCOMMIT/powercut/parallel/hardware not executed. ⏳Verifiedbackup AND trulyseparateDB/photos/config before isolated practice;no shop fault injection. ❌Installerbinary NOT BUILT;⏳FullPhase4OPEN.
+
 ## PT-56 — stable15/23/24/25 recovery/draft faults (v0.114.0) — ALL Windows steps UNRUN
 
 [Urdu isolated steps](docs/POS-PHASE4-PART36-URDU.md),[trace/limits](docs/POS-PHASE4-RECOVERY-FAULT-REVIEW.md).29newC#sourcecases/2644suiteUNRUN. Test atomic Resume insert/consume/two-audit rollback+single retry, recovery draft after restart, linked Counter/missing-product/partial reconstruction guard, Clear leaves saved draft, no repark duplicate. Validate premark failure/no creator, known no-commit restores, unknown/throw/commit-then-throw retains marker, restore ABORT/IGNORE uncertainty, finalization audit fault SAVED warnings/no duplicate. Real provider COMMIT/powercut/parallel/WPF still UNRUN;direct non-draft durable retries remain OPEN. Verified backup AND truly separateDB/photos/config;never inject shop faults. Installer NOT BUILT,FullPhase4 OPEN.

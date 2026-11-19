@@ -74,12 +74,12 @@ public sealed class DraftService
     {
         if (!_permissions.Can(user, Modules.Pos))
         {
-            return ServiceResult<DocumentDraft>.Fail("You do not have permission to save sale drafts.");
+            return NoCommitDraftFailure("You do not have permission to save sale drafts.");
         }
 
         if (input.Lines.Count == 0)
         {
-            return ServiceResult<DocumentDraft>.Fail("There is nothing to save - the cart is empty.");
+            return NoCommitDraftFailure("There is nothing to save - the cart is empty.");
         }
 
         return Save(user, DraftType.Sale, input, draftId);
@@ -93,21 +93,22 @@ public sealed class DraftService
     {
         if (!_permissions.Can(user, Modules.Purchases))
         {
-            return ServiceResult<DocumentDraft>.Fail("You do not have permission to save purchase drafts.");
+            return NoCommitDraftFailure("You do not have permission to save purchase drafts.");
         }
 
         if (input.Lines.Count == 0)
         {
-            return ServiceResult<DocumentDraft>.Fail("There is nothing to save - add at least one line.");
+            return NoCommitDraftFailure("There is nothing to save - add at least one line.");
         }
 
         var access = _purchases.CheckEntryAccess(user);
-        if (!access.Ok) return ServiceResult<DocumentDraft>.Fail(access.Error ?? "Purchase preparation is not allowed.");
+        if (!access.Ok) return NoCommitDraftFailure(access.Error ?? "Purchase preparation is not allowed.");
         return Save(user, DraftType.Purchase, input, draftId);
     }
 
     private ServiceResult<DocumentDraft> Save<TInput>(User? user, string type, TInput input, int draftId)
     {
+        var outcome = new TransactionOutcome();
         string payload;
         try
         {
@@ -116,12 +117,12 @@ public sealed class DraftService
         catch (Exception exception)
         {
             _log.Error("A draft could not be packed.", exception);
-            return ServiceResult<DocumentDraft>.Fail("This draft could not be saved.");
+            return NoCommitDraftFailure("This draft could not be saved.");
         }
 
         if (payload.Length > MaxPayloadChars)
         {
-            return ServiceResult<DocumentDraft>.Fail("This draft is too large to save.");
+            return NoCommitDraftFailure("This draft is too large to save.");
         }
 
         try
@@ -134,11 +135,11 @@ public sealed class DraftService
                     var row = ReadRow(connection, draftId);
                     if (row is null)
                     {
-                        return ServiceResult<DocumentDraft>.Fail("That draft is not in the list any more.");
+                        return NoCommitDraftFailure("That draft is not in the list any more.");
                     }
                     if (row.Status != DraftStatus.Draft || row.DraftType != type)
                     {
-                        return ServiceResult<DocumentDraft>.Fail("Only an open draft can be updated.");
+                        return NoCommitDraftFailure("Only an open draft can be updated.");
                     }
 
                     _db.Execute(connection, @"
@@ -148,7 +149,7 @@ UPDATE document_drafts SET payload_json = @payload, updated_at = @at WHERE id = 
                         "document_drafts", draftId.ToString(), newValue: row.DraftKey);
                     row.PayloadJson = payload;
                     return ServiceResult<DocumentDraft>.Success(row);
-                });
+                }, outcome);
                 return updated;
             }
 
@@ -181,27 +182,35 @@ VALUES(@key, @type, @payload, 'draft', @byId, @by, @at, @at);",
                         _audit.Record(connection, reader, DraftType.ModuleFor(type), "draft_saved",
                             "document_drafts", id.ToString(), newValue: key);
                         return ReadRow(connection, id)!;
-                    });
+                    }, outcome);
                     return ServiceResult<DocumentDraft>.Success(created);
                 }
-                catch (Exception exception) when (IsUniqueViolation(exception) && attempt < 4)
+                catch (Exception exception) when (IsUniqueViolation(exception) && outcome.NoCommitConfirmed && attempt < 4)
                 {
                     // Same second, same random suffix: try another key.
                 }
             }
 
-            return ServiceResult<DocumentDraft>.Fail("This draft could not be saved. Please try again.");
+            return NoCommitDraftFailure("This draft could not be saved. Please try again.");
         }
         catch (ValidationException exception)
         {
-            return ServiceResult<DocumentDraft>.Fail(exception.Message);
+            return new ServiceResult<DocumentDraft> { Error = exception.Message, NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
         catch (Exception exception)
         {
             _log.Error("A draft could not be saved.", exception);
-            return ServiceResult<DocumentDraft>.Fail("The draft could not be saved.");
+            return new ServiceResult<DocumentDraft>
+            {
+                Error = outcome.NoCommitConfirmed ? "The draft was not saved; no commit was made."
+                    : "Draft saving could not be confirmed. Check shared Drafts before saving another copy; no document posting was started by this save.",
+                NoCommitConfirmed = outcome.NoCommitConfirmed
+            };
         }
     }
+
+    private static ServiceResult<DocumentDraft> NoCommitDraftFailure(string error) =>
+        new() { Error = error, NoCommitConfirmed = true };
 
     // ------------------------------------------------------------------ list & open
 

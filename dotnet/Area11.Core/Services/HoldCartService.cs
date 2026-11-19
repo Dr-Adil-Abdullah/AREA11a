@@ -45,14 +45,15 @@ public sealed class HoldCartService
     /// <summary>Parks a cart and returns its code (H-0001).</summary>
     public ServiceResult<string> Hold(SaleInput input, User? user, int sourceDraftId = 0)
     {
+        var outcome = new TransactionOutcome();
         if (!_permissions.Can(user, Modules.Pos))
         {
-            return ServiceResult<string>.Fail("You do not have permission to hold a cart.");
+            return new ServiceResult<string> { Error = "You do not have permission to hold a cart.", NoCommitConfirmed = true };
         }
 
         if (input.Lines.Count == 0)
         {
-            return ServiceResult<string>.Fail("There is nothing to hold - the cart is empty.");
+            return new ServiceResult<string> { Error = "There is nothing to hold - the cart is empty.", NoCommitConfirmed = true };
         }
 
         // The total is what the same calculation would charge right now. If the cart cannot be
@@ -61,7 +62,7 @@ public sealed class HoldCartService
         var quote = _sales.Quote(input, user!);
         if (!quote.Ok || quote.Value is null)
         {
-            return ServiceResult<string>.Fail(quote.Error ?? "This cart cannot be held.");
+            return new ServiceResult<string> { Error = quote.Error ?? "This cart cannot be held.", NoCommitConfirmed = true };
         }
 
         try
@@ -69,12 +70,8 @@ public sealed class HoldCartService
             var code = _db.Tx(connection =>
             {
                 var reader = RequireReader(connection, user);
-                if (sourceDraftId > 0 && Convert.ToInt64(_db.Scalar(connection,
-                    "SELECT COUNT(1) FROM document_drafts WHERE id = @id AND draft_type = 'sale' AND status = 'draft';", new { id = sourceDraftId }) ?? 0L) != 1)
-                    throw new ValidationException("This draft is not open. Check Drafts and its document before parking any copy.");
-                if (sourceDraftId > 0 && Convert.ToInt64(_db.Scalar(connection,
-                    "SELECT COUNT(1) FROM held_carts WHERE recovery_draft_id = @id;", new { id = sourceDraftId }) ?? 0L) > 0)
-                    throw new ValidationException("This cart already has a recovery draft. Save or complete that draft instead of parking another copy.");
+                if (sourceDraftId > 0)
+                    throw new ValidationException("An open draft cannot be parked as another copy. Save or complete the same draft instead.");
                 var number = _numbering.Take(connection, "hold");
                 var stamp = Clock.Now();
 
@@ -127,15 +124,17 @@ VALUES(@cartId, @productId, @name, @unit, @quantity, @price, @position, @mode, @
                     newValue: $"{{\"code\":\"{number}\",\"total\":{quote.Value.TotalPaisa},\"lines\":{input.Lines.Count}}}");
 
                 return number;
-            });
+            }, outcome);
 
             return ServiceResult<string>.Success(code);
         }
-        catch (ValidationException exception) { return ServiceResult<string>.Fail(exception.Message); }
+        catch (ValidationException exception) { return new ServiceResult<string> { Error = exception.Message, NoCommitConfirmed = outcome.NoCommitConfirmed }; }
         catch (Exception exception)
         {
             _log.Error("The cart could not be held.", exception);
-            return ServiceResult<string>.Fail("The cart could not be held. Please try again.");
+            return new ServiceResult<string> { Error = outcome.NoCommitConfirmed
+                ? "The cart was not parked; no commit was made."
+                : "Parking could not be confirmed. Check parked carts before making another copy.", NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
     }
 

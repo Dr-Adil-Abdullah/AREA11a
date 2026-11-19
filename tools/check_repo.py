@@ -4604,7 +4604,7 @@ def check_checklist() -> None:
     hand would be right on the day it was written and wrong from the next round on - and a wrong list
     is worse than no list, because he would stop asking and start trusting it. So the list is
     **generated** from `docs/PROGRESS.md` by `tools/make_checklist.py`, and this gate refuses a
-    commit where the two disagree: same features, same marks, same totals.
+    commit where feature membership disagrees. Legacy source-only ticks map to ongoing until current evidence exists.
     """
     board = ROOT / "docs" / "PROGRESS.md"
     markdown = ROOT / "docs" / "CHECKLIST-URDU.md"
@@ -4628,7 +4628,7 @@ def check_checklist() -> None:
 
     wanted = states(board.read_text(encoding="utf-8"), r"^\| (F-\d+) \| .+? \| (✅|🟡|⬜) \|")
     listed = states(markdown.read_text(encoding="utf-8"),
-                    r"^\| ☐ \| (F-\d+) \| .+ \| (✅|🟡|❌) ")
+                    r"^\| ☐ \| (F-\d+) \| .+ \| (✅|⏳|❌) ")
 
     if not wanted:
         fail("docs/PROGRESS.md has no feature rows - the tick-list has nothing to be built from")
@@ -4645,19 +4645,19 @@ def check_checklist() -> None:
              + ", ".join(extra[:6]))
 
     wrong = [feature for feature, mark in listed.items()
-             if feature in wanted and mark != (wanted[feature] if wanted[feature] != "⬜" else "❌")]
+             if feature in wanted and mark != ("❌" if wanted[feature] == "⬜" else "⏳")]
     if wrong:
         fail("docs/CHECKLIST-URDU.md disagrees with the board about "
              + ", ".join(sorted(wrong)[:6]) + " - run: python3 tools/make_checklist.py")
 
-    counts = {"✅": 0, "🟡": 0, "❌": 0}
+    counts = {"✅": 0, "⏳": 0, "❌": 0}
     for mark in wanted.values():
-        counts["❌" if mark == "⬜" else mark] += 1
+        counts["❌" if mark == "⬜" else "⏳"] += 1
     total = sum(counts.values())
 
     page = printable.read_text(encoding="utf-8")
 
-    for mark, word in (("✅", "مکمل"), ("🟡", "جاری"), ("❌", "شروع نہیں")):
+    for mark, word in (("✅", "مکمل"), ("⏳", "جاری"), ("❌", "شروع نہیں")):
         if f"<td>{mark} {word}</td><td>{counts[mark]}</td>" not in page:
             fail(f"docs/CHECKLIST-URDU.html does not print the {word} count ({counts[mark]}) - the "
                  "printable page must show the same totals as the board")
@@ -4676,7 +4676,7 @@ def check_checklist() -> None:
     if "pause" not in script.lower():
         fail("PRINT-CHECKLIST.cmd does not pause - a double-clicked file must leave its window open")
 
-    REPORT.append(f"Checklist: {total} features ({counts['✅']} done, {counts['🟡']} in progress, "
+    REPORT.append(f"Checklist: {total} features ({counts['✅']} done, {counts['⏳']} in progress, "
                   f"{counts['❌']} not started) match the board, the printable page and "
                   "PRINT-CHECKLIST.cmd agree")
 
@@ -8504,7 +8504,7 @@ def check_draft_recovery_fault_boundaries():
                  "WHERE id = @id AND draft_type = @type AND status = 'posted' AND posted_document_id = @marker;",
                  'return changed == 1 && row is { Status: DraftStatus.Draft, PostedDocumentId: null }',
                  'if (changed != 1) throw new ValidationException', 'Draft restoration was not confirmed'],
-        'hold':['int sourceDraftId = 0','WHERE recovery_draft_id = @id;',"AND status = 'draft';",
+        'hold':['int sourceDraftId = 0','if (sourceDraftId > 0)','An open draft cannot be parked as another copy.',
                 'var recoveryInput = new SaleInput','JsonSerializer.Serialize(recoveryInput, Json.WriterOptions)',
                 'payload.Length > DraftService.MaxPayloadChars','INSERT INTO document_drafts(',
                 'var recoveryId = (int)_db.NextId(connection);', 'Notes = row.Note,', 'recovery_draft_id = @draft',
@@ -8546,6 +8546,62 @@ def check_draft_recovery_fault_boundaries():
                   'Assert.Equal(before, f.Snapshot());','Assert.Equal(money, f.Money());'):
         if token not in tests: FAILURES.append('P36 regression missing '+token)
     REPORT.append('Phase4 portion36/stable15,23,24,25:atomiclinkedheldrecoverydraft+Counterguard;explicitpreCOMMITrollbackclassification,unknownmarker,restore/finalizewarnings;29C#sourcecases/2644suiteUNRUN;NOTdurableglobalidentity/providerCOMMIT/powercut/parallel/WPFcertification')
+
+def check_automatic_shared_draft_posting():
+    d=(DOTNET/'Area11.Core/Services/DraftService.cs').read_text()
+    save=d.split('private ServiceResult<DocumentDraft> Save<TInput>',1)[-1].split('// ------------------------------------------------------------------ list & open',1)[0]
+    for token in ('var outcome = new TransactionOutcome();','IsUniqueViolation(exception) && outcome.NoCommitConfirmed && attempt < 4',
+                  'NoCommitConfirmed = outcome.NoCommitConfirmed','NoCommitDraftFailure(', 'new() { Error = error, NoCommitConfirmed = true };'):
+        if token not in save: FAILURES.append('P37 draft save outcome missing '+token)
+    if save.count('}, outcome);')!=2: FAILURES.append('P37 draft insert AND update need outcome observation')
+    h=(DOTNET/'Area11.Core/Services/HoldCartService.cs').read_text().split('public ServiceResult<string> Hold(',1)[-1].split('/// <summary>Parked carts',1)[0]
+    for token in ('if (sourceDraftId > 0)', 'An open draft cannot be parked as another copy.', '}, outcome);','NoCommitConfirmed = outcome.NoCommitConfirmed'):
+        if token not in h: FAILURES.append('P37 Hold missing '+token)
+    order=['var reader = RequireReader','if (sourceDraftId > 0)','var number =','INSERT INTO held_carts']
+    ix=[h.find(t) for t in order]
+    if -1 in ix or ix!=sorted(ix): FAILURES.append('P37 Hold must reject draft intent before numbering/rows')
+    for page,kind,method,next_method in [('Pos','Sale','private void CompleteSaleOnce()','private bool RefuseCommittedCart()'),
+                                        ('Purchases','Purchase','private void Save()','private void SendLastOnWhatsApp()')]:
+        vm=(DOTNET/f'Area11.Desktop/ViewModels/{page}ViewModel.cs').read_text()
+        body=vm.split(method,1)[-1].split(next_method,1)[0]
+        expected=f'if (_openDraftId <= 0 && !Store{kind}Draft(input)) return;'
+        post=f'_services.Drafts.Post{kind}(_user, _openDraftId, input)'
+        if expected not in body or post not in body or body.find(expected)>body.find(post): FAILURES.append('P37 auto save-link-post order '+kind)
+        if f'_services.{"Sales" if page=="Pos" else "Purchases"}.Create(' in vm: FAILURES.append('P37 direct UI creator bypass '+kind)
+        helper=vm.split(f'private bool Store{kind}Draft(',1)[-1].split('private void OpenDrafts()',1)[0]
+        for token in ('_draftSaveNeedsVerification = true;', '_draftSaveNeedsVerification = !saved.NoCommitConfirmed;',
+                      '_openDraftId = saved.Value.Id;', '_draftSaveNeedsVerification = false;', 'OnPropertyChanged(nameof(HasOpenDraft));', 'catch (Exception exception)'):
+            if token not in helper: FAILURES.append('P37 store helper missing '+kind+':'+token)
+        if helper.find('_draftSaveNeedsVerification = true;')>helper.find(f'_services.Drafts.Save{kind}Draft') or helper.find('_openDraftId = saved.Value.Id;')>helper.find('OnPropertyChanged(nameof(HasOpenDraft));'): FAILURES.append('P37 latch/link must precede callbacks '+kind)
+        if 'private bool _draftSaveNeedsVerification;' not in vm: FAILURES.append('P37 uncertain save guard '+kind)
+    pos=(DOTNET/'Area11.Desktop/ViewModels/PosViewModel.cs').read_text()
+    for token in ('if (_draftSaveNeedsVerification)','if (_parkedCartNeedsReset)','_parkedCartNeedsReset = !result.NoCommitConfirmed;',
+                  '_holdOutcomeUnknown = _parkedCartNeedsReset;', '_parkedCartNeedsReset = true;',
+                  'PARKED. The cart was stored, but the counter could not reset.',
+                  'if (_openDraftId > 0)', 'Verify shared Drafts and parked carts before starting another copy.'):
+        if token not in pos: FAILURES.append('P37 Counter copy guard missing '+token)
+    purchase=(DOTNET/'Area11.Desktop/ViewModels/PurchasesViewModel.cs').read_text()
+    for token in ('private bool RefuseUnsafeEntry()', 'if (RefuseUnsafeEntry()) return;',
+                  'if (_saveInProgress || RefuseUnsafeEntry()) return;', '_committedEntryNeedsReset = true;',
+                  '_committedEntryNeedsReset = false;', '_draftReconstructionFailed = skipped > 0;'):
+        if token not in purchase: FAILURES.append('P37 Purchase safety missing '+token)
+    opened=purchase.split('public void OpenPurchaseDraft(int draftId)',1)[-1].split('private void SetStatus',1)[0]
+    ix=[opened.find(t) for t in ('_openDraftId = draftId;','_draftReconstructionFailed = true;','SelectedSupplier =','Lines.Add(')]
+    if -1 in ix or ix!=sorted(ix) or 'catch (Exception exception)' not in opened: FAILURES.append('P37 Purchase reconstruction must link/block before callbacks')
+    hold_ui=pos.split('private void HoldCart()',1)[-1].split('public bool RefreshParkedAccess()',1)[0]
+    order=['_parkedCartNeedsReset = true;', '_holdOutcomeUnknown = true;', '_services.Holds.Hold(']
+    ix=[hold_ui.find(t) for t in order]
+    if -1 in ix or ix!=sorted(ix): FAILURES.append('P37 Hold must arm unknown before service/callbacks')
+    maker=(ROOT/'tools/make_checklist.py').read_text()
+    if 'HALF = "⏳"' not in maker or 'state = HALF if cells[2] in ("✅", "🟡") else TODO' not in maker:
+        FAILURES.append('P37 report must not certify legacy source ticks as100%')
+    tests=(DOTNET/'Area11.Tests/AutomaticDraftPostingTests.cs').read_text()
+    if tests.count('[InlineData(')!=40 or tests.count('[Fact]')!=1: FAILURES.append('P37 requires41 source cases')
+    for token in ('DraftSaveStatementFaultIsKnownNoCommitAndRetryUsesOneDraft','HoldStatementFaultRollsBackNumberRowsAndAuditThenOneRetryParks',
+                  'AnySuppliedDraftIntentCannotBecomeAnotherParkedCopy','OrdinarySaveSequenceIsSharedRecoverableAndPostsTheSameDraftOnlyOnce',
+                  'Assert.True(failed.NoCommitConfirmed);','Assert.Equal(before, f.Snapshot());'):
+        if token not in tests: FAILURES.append('P37 regression missing '+token)
+    REPORT.append('Phase4 portion37/stable15,16,23,24,25:auto shared draft before UI post,sameID/unknownsaveguard,all draft Hold refused,Holdoutcome/reset and Purchasecleanup/reconstructionguards;41C#sourcecases/2685suiteUNRUN;NOTWPF/providerCOMMIT/parallel/globalidentityproof')
 
 def main() -> int:
     quiet = "--quiet" in sys.argv
@@ -8648,6 +8704,7 @@ def main() -> int:
     check_quarantine_current_access()
     check_draft_held_current_access()
     check_draft_recovery_fault_boundaries()
+    check_automatic_shared_draft_posting()
     check_csharp_grammar()
 
     if not quiet:

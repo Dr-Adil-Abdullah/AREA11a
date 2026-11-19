@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## ✅ v0.115.0 حصہ37 — عامSaveکیsharedDraftrecovery اورعامDraftParkپرمنتخبانکار
+
+✅ مالک نےپہلاoptionمنتخبکیا:عامCounterbill/PurchaseSaveخودکارsharedDraftمیں،پھراسیسےPost؛unknownpostingپرverificationmarker،ہلکیappاورمجازstaffکےلیےایکجگہ۔ ✅ دوسرےسوالمیںrefuse_hold:کھلےعامdraftسےParkcopyنہیں،اسیdraftکوSave/Complete۔ ✅ ہرجواب/reportمیںعلامتیںلازم:✅صرف100%مکمل،⏳جاری/کچھباقی،❌بالکلشروعنہیں۔ ⏳نیاsource/41cases/2685suiteUNRUN؛[⏳ PT-57](POS-PHASE4-PART37-URDU.md)،[⏳ trace](POS-PHASE4-AUTOMATIC-DRAFT-REVIEW.md)۔ ⏳حساب/permissions/refundsunchanged،FullPhase4OPEN؛❌installerbinaryنہیںبنی۔
+
 ## v0.114.0 حصہ36 — دو نئے recovery فیصلے واضح طور پر منظور
 
 H-0001 کی consume-before-UI مثال کے بعد مالک نے MCQ میں **linked_draft** منتخب کیا: Resume کے اسی DB transaction میں Sale recovery draft؛Counter اسی سے جڑا،restart پر Drafts،unlinked copy نہیں۔ دوسری MCQ **keep_marker**: نامعلوم posting outcome پر document verification تک marker؛عام validation/تصدیق شدہ no-commit پر draft بحال۔ Error wording سے فیصلہ نہیں۔ [PT-56](POS-PHASE4-PART36-URDU.md)،[trace](POS-PHASE4-RECOVERY-FAULT-REVIEW.md)۔29نئےC#cases/2644suiteUNRUN؛pricing/refunds/SupplierB/permissions/Blackbox/BookCheck پالیسی نہیں بدلی۔ FullPhase4/installer OPEN۔

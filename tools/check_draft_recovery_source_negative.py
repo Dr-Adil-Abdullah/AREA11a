@@ -24,7 +24,7 @@ def run():
            ('hold','INSERT INTO document_drafts(','INSERT INTO fake_drafts('),
            ('hold','RecoveryDraftId = recoveryId,','RecoveryDraftId = 0,'),
            ('hold','if (consumed != 1)','if (false)'),
-           ('hold','WHERE recovery_draft_id = @id;','WHERE recovery_draft_id = 0;'),
+           ('hold','if (sourceDraftId > 0)','if (false)'),
            ('sale','}, outcome);','});'),('purchase','}, outcome);','});'),
            ('pos','_openDraftId = cart.RecoveryDraftId;','_openDraftId = 0;'),
            ('pos','if (_draftReconstructionFailed)','if (false)'),
