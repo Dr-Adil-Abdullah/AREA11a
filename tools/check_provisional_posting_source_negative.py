@@ -9,7 +9,7 @@ def run():
     files={k:ROOT/p for k,p in {'core':'dotnet/Area11.Core/Services/ProvisionalReturnService.cs',
                                'vm':'dotnet/Area11.Desktop/ViewModels/ProvisionalViewModel.cs',
                                'tests':'dotnet/Area11.Tests/ProvisionalPostingFaultTests.cs'}.items()}
-    cases=[('core','Save(connection, input, user), outcome);','Save(connection, input, user));'),
+    cases=[('core','return Save(connection, input, user);','return ServiceResult<ProvisionalResult>.Fail("synthetic");'),
            ('core','}, outcome);','});'),('core','NoCommitConfirmed = outcome.NoCommitConfirmed','NoCommitConfirmed = true'),
            ('core','outcome.NoCommitConfirmed ? exception.Message','true ? exception.Message'),
            ('core','NoCommitConfirmed = true','NoCommitConfirmed = false'),

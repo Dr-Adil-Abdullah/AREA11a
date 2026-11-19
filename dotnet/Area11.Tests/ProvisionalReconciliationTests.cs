@@ -37,7 +37,7 @@ public sealed class ProvisionalReconciliationTests
         Assert.Equal(paymentsBefore, ScalarLong(test, "SELECT COUNT(1) FROM payments;"));
         Assert.Equal(movementsBefore, ScalarLong(test, "SELECT COUNT(1) FROM stock_movements;"));
 
-        var row = TestData.Provisionals(test).Get(rush.Value.Code)!;
+        var row = TestData.Provisionals(test).Get(rush.Value.Code, TestData.Owner)!;
         Assert.False(row.NeedsReconciliation);
         Assert.False(row.HasLinkVariance);
         Assert.Equal(30000L, row.LinkedExpectedPaisa.GetValueOrDefault());
@@ -88,7 +88,7 @@ FROM provisional_return_allocations;");
 
         Assert.False(linked.Ok);
         Assert.Contains("not on this bill", linked.Error);
-        Assert.True(TestData.Provisionals(test).Get(rush.Value.Code)!.IsPending);
+        Assert.True(TestData.Provisionals(test).Get(rush.Value.Code, TestData.Owner)!.IsPending);
         Assert.Equal(0L, ScalarLong(test, "SELECT COUNT(1) FROM provisional_return_allocations;"));
     }
 
@@ -105,7 +105,7 @@ FROM provisional_return_allocations;");
 
         Assert.False(linked.Ok);
         Assert.Contains("unreconciled", linked.Error);
-        Assert.True(TestData.Provisionals(test).Get(rush.Value.Code)!.IsPending);
+        Assert.True(TestData.Provisionals(test).Get(rush.Value.Code, TestData.Owner)!.IsPending);
         Assert.Equal(0L, ScalarLong(test, "SELECT COUNT(1) FROM provisional_return_allocations;"));
     }
 
@@ -200,7 +200,7 @@ FROM provisional_return_allocations ORDER BY sale_item_id;");
         var warning = Assert.Single(linked.Warnings);
         Assert.Contains(expectedVariance > 0 ? "over" : "under", warning);
 
-        var row = TestData.Provisionals(test).Get(rush.Value.Code)!;
+        var row = TestData.Provisionals(test).Get(rush.Value.Code, TestData.Owner)!;
         Assert.True(row.HasLinkVariance);
         Assert.Equal(30000L, row.LinkedExpectedPaisa.GetValueOrDefault());
         Assert.Equal(expectedVariance, row.LinkVariancePaisa.GetValueOrDefault());
@@ -238,7 +238,7 @@ FROM provisional_return_allocations ORDER BY sale_item_id;");
         Assert.True(linked.Ok, linked.Error);
         Assert.Equal(2, linked.Warnings.Count);
 
-        var row = TestData.Provisionals(test).Get(rush.Value!.Code)!;
+        var row = TestData.Provisionals(test).Get(rush.Value!.Code, TestData.Owner)!;
         Assert.Equal(30000L, row.LinkedExpectedPaisa.GetValueOrDefault());
         Assert.Equal(60000L, row.LinkedUnallocatedPaisa.GetValueOrDefault());
 
@@ -287,7 +287,7 @@ WHERE id = @id;", new { saleId = sale.Value!.SaleId, code = sale.Value!.Code, id
 
         var repaired = TestData.Provisionals(test).Link(rush.Value!.Id, sale.Value!.Code, TestData.Owner);
         Assert.True(repaired.Ok, repaired.Error);
-        Assert.False(TestData.Provisionals(test).Get(rush.Value!.Code)!.NeedsReconciliation);
+        Assert.False(TestData.Provisionals(test).Get(rush.Value!.Code, TestData.Owner)!.NeedsReconciliation);
 
         var lines = TestData.Returns(test).Lines(sale.Value!.SaleId, TestData.Owner);
         Assert.True(lines.Ok, lines.Error);

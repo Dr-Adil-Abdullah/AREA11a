@@ -1,5 +1,9 @@
 # باقی کام، GitHub اور test installer — v0.104.0
 
+## ⏳ تازہ حیثیت — v0.118.0 Sedge / حصہ40
+
+⏳5–7/17/21/23PRcurrentactor/read/write/receipt؛stored audit،explicitPagefailure،completeheader+lines،action/3stimerdeniedcleanup/regrantfreshRefresh،detachedrowguard۔99نئےC#cases/2888suiteUNRUN۔ ✅مالیSQL/helpers/receiptComposeبرقرار؛دوپرانےtestsمیںصرفOwnerargument۔ ✅35Pythonactordenials/actualreadSQL+27lexicalmutationsمقامیPASS،اصلC#/WPF/securityproofنہیں۔ [⏳ PT-60](POS-PHASE4-PART40-URDU.md)،[⏳ trace](POS-PHASE4-PROVISIONAL-CURRENT-REVIEW.md)،[⏳1–36](NUMBERED-WORK-STATUS-URDU.md)۔ ⏳remainingcallers/session/CAS/provider/durableidentity/parallel/recovery-files،26–29restore/cloud،2/4/30–35Windows/results/hardware/isolationباقی۔ ❌36installerbinaryنہیںبنی؛⏳FullPhase4OPEN۔ ⏳ہرportiondocs+samebranchpublication+actualremoteverification؛36categories≠36Nexts،3–6roundsمشروطتخمینہ۔
+
 ## ⏳ تازہ حیثیت — v0.117.0 Bracken / حصہ39
 
 ⏳ مستقل17/19/23–25:PRSave/Link/Cancelexplicitoutcome/localretry/ackcleanupguard؛پراناtargetاورLoadکااگلاautomaticselectionصاف،دونوںdecisionfieldsصاف۔45نئےC#cases/2789suiteUNRUN۔ ✅financialSQL/privatehelpers/Link+CancelTxbodyunchanged؛نئیrefund/draftpolicyنہیں۔ ✅36SQLfaults+retry/29lexicalnegativechecksمقامیPASS،C#/WPF/providerCOMMITنہیں۔ [⏳ PT-59](POS-PHASE4-PART39-URDU.md)،[⏳ trace](POS-PHASE4-PROVISIONAL-POSTING-REVIEW.md)،[⏳1–36](NUMBERED-WORK-STATUS-URDU.md)۔ ⏳اگلاPRcurrentactor/read/receipt/read-verdict5–7/17/21،باقیrecovery/files/provider/durableidentity/parallel؛26–29restore/cloud،2/4/30–35Windows/results/hardware/isolation۔ ❌36installerbinaryنہیںبنی؛⏳FullPhase4OPEN۔ ⏳ہرportiondocs+samebranchpublication+actualremoteverification؛36categories≠36Nexts،3–6roundsمشروطتخمینہ۔

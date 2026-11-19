@@ -59,7 +59,7 @@ public sealed class ProvisionalTests
 
         TestData.Provisionals(test).Create(TestData.RushReturn(product), TestData.Owner);
 
-        var pending = TestData.Provisionals(test).Pending();
+        var pending = TestData.Provisionals(test).Pending(TestData.Owner);
 
         Assert.Single(pending);
         Assert.True(pending[0].IsPending);
@@ -111,7 +111,7 @@ public sealed class ProvisionalTests
         Assert.True(linked.Ok, linked.Error);
         Assert.Equal(afterRush, StockOf(test, product));   // 31.6: no double addition
 
-        var row = TestData.Provisionals(test).Get(rush.Value.Code)!;
+        var row = TestData.Provisionals(test).Get(rush.Value.Code, TestData.Owner)!;
         Assert.True(row.IsLinked);
         Assert.Equal(sale.Value.Code, row.LinkedCode);
     }
@@ -147,7 +147,7 @@ public sealed class ProvisionalTests
         Assert.True(cancelled.Ok, cancelled.Error);
         Assert.Equal(10d, StockOf(test, product));
 
-        var row = TestData.Provisionals(test).Get(rush.Value.Code)!;
+        var row = TestData.Provisionals(test).Get(rush.Value.Code, TestData.Owner)!;
         Assert.True(row.IsCancelled);
         Assert.Contains("typed twice", row.CancelReason ?? string.Empty);
     }
@@ -222,7 +222,7 @@ public sealed class ProvisionalTests
         var product = TestData.AddProduct(test);
         var rush = TestData.Provisionals(test).Create(TestData.RushReturn(product), TestData.Owner);
 
-        var receipt = TestData.ProvisionalReceipts(test).Build(rush.Value!.Code);
+        var receipt = TestData.ProvisionalReceipts(test).Build(rush.Value!.Code, TestData.Owner);
 
         Assert.True(receipt.Ok, receipt.Error);
         var text = receipt.Value!.PlainText;
@@ -245,13 +245,13 @@ public sealed class ProvisionalTests
 
         var service = TestData.Provisionals(test);
 
-        Assert.Equal(sale.Value!.Code, service.SearchBills("Panadol").Value![0].Code);
-        Assert.Equal(sale.Value.Code, service.SearchBills("0300-1234567").Value![0].Code);
-        Assert.Equal(sale.Value.Code, service.SearchBills("Ali Raza").Value![0].Code);
-        Assert.Equal(sale.Value.Code, service.SearchBills(sale.Value.Code).Value![0].Code);
+        Assert.Equal(sale.Value!.Code, service.SearchBills("Panadol", user: TestData.Owner).Value![0].Code);
+        Assert.Equal(sale.Value.Code, service.SearchBills("0300-1234567", user: TestData.Owner).Value![0].Code);
+        Assert.Equal(sale.Value.Code, service.SearchBills("Ali Raza", user: TestData.Owner).Value![0].Code);
+        Assert.Equal(sale.Value.Code, service.SearchBills(sale.Value.Code, user: TestData.Owner).Value![0].Code);
 
-        Assert.False(service.SearchBills("P").Ok);      // one letter is not a search
-        Assert.Empty(service.SearchBills("Nothing-matches-this").Value!);
+        Assert.False(service.SearchBills("P", user: TestData.Owner).Ok);      // one letter is not a search
+        Assert.Empty(service.SearchBills("Nothing-matches-this", user: TestData.Owner).Value!);
     }
 
     [Fact]

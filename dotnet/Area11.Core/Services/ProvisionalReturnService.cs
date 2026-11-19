@@ -63,7 +63,11 @@ public sealed class ProvisionalReturnService
 
         try
         {
-            return _db.Tx(connection => Save(connection, input, user), outcome);
+            return _db.Tx(connection =>
+            {
+                user = RequireReader(connection, user);
+                return Save(connection, input, user);
+            }, outcome);
         }
         catch (ValidationException exception)
         {
@@ -80,38 +84,49 @@ public sealed class ProvisionalReturnService
         }
     }
 
-    /// <summary>The blinking list: every no-bill return still waiting for its bill.</summary>
-    public List<ProvisionalRow> Pending()
+    /// <summary>The blinking list and related actions require current Returns access.</summary>
+    public ServiceResult CheckAccess(User? user, bool decision = false)
     {
         try
         {
-            using var connection = _db.Open();
-            return ReadRows(connection, "WHERE p.status = 'pending'");
+            _db.Read(connection => decision ? RequireDecider(connection, user) : RequireReader(connection, user));
+            return ServiceResult.Success();
         }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
         catch (Exception exception)
         {
-            _log.Error("The pending no-bill returns could not be listed.", exception);
-            return new List<ProvisionalRow>();
+            _log.Error("PR access could not be checked.", exception);
+            return ServiceResult.Fail("Current PR access could not be checked.");
         }
     }
 
-    /// <summary>Everything ever refunded without a bill - the paper trail the owner asked for.</summary>
-    public List<ProvisionalRow> History()
+    public ServiceResult<List<ProvisionalRow>> Page(User? user)
     {
         try
         {
-            using var connection = _db.Open();
-            return ReadRows(connection, string.Empty);
+            return _db.Read(connection =>
+            {
+                RequireReader(connection, user);
+                return ServiceResult<List<ProvisionalRow>>.Success(ReadRows(connection, string.Empty));
+            });
         }
+        catch (ValidationException exception) { return ServiceResult<List<ProvisionalRow>>.Fail(exception.Message); }
         catch (Exception exception)
         {
-            _log.Error("The no-bill return history could not be listed.", exception);
-            return new List<ProvisionalRow>();
+            _log.Error("The PR page could not be loaded.", exception);
+            return ServiceResult<List<ProvisionalRow>>.Fail("PR entries could not be loaded; this is not a confirmed empty list.");
         }
     }
+
+    // Legacy list-shaped accessors are fail-closed; UI must use the explicit Page verdict.
+    public List<ProvisionalRow> Pending(User? user = null) =>
+        Page(user).Value?.Where(row => row.IsPending).ToList() ?? new List<ProvisionalRow>();
+
+    public List<ProvisionalRow> History(User? user = null) =>
+        Page(user).Value ?? new List<ProvisionalRow>();
 
     /// <summary>One entry by its permanent code (PR-0001), for the receipt.</summary>
-    public ProvisionalRow? Get(string? code)
+    public ProvisionalRow? Get(string? code, User? user = null)
     {
         var clean = (code ?? string.Empty).Trim();
         if (clean.Length == 0)
@@ -121,8 +136,11 @@ public sealed class ProvisionalReturnService
 
         try
         {
-            using var connection = _db.Open();
-            return ReadRows(connection, "WHERE upper(p.code) = upper(@code)", new { code = clean }).FirstOrDefault();
+            return _db.Read(connection =>
+            {
+                RequireReader(connection, user);
+                return ReadRows(connection, "WHERE upper(p.code) = upper(@code)", new { code = clean }).FirstOrDefault();
+            });
         }
         catch (Exception exception)
         {
@@ -131,29 +149,61 @@ public sealed class ProvisionalReturnService
         }
     }
 
-    /// <summary>The lines of one entry, oldest first (the receipt prints them in this order).</summary>
-    public List<string> Lines(int provisionalId)
+    public List<string> Lines(int provisionalId, User? user = null)
     {
         try
         {
-            using var connection = _db.Open();
+            return _db.Read(connection =>
+            {
+                RequireReader(connection, user);
+                if (LoadOne(connection, provisionalId) is null) throw new ValidationException("That PR was not found.");
+                return ReadLines(connection, provisionalId);
+            });
+        }
+        catch (Exception exception)
+        {
+            _log.Error("PR lines could not be read.", exception);
+            return new List<string>();
+        }
+    }
 
-            var rows = _db.Query<LineRow>(connection, @"
+    /// <summary>Authorized header AND lines, explicit failure; never compose a partial slip.</summary>
+    public ServiceResult<ProvisionalReceiptData> ReadReceipt(string? code, User? user)
+    {
+        try
+        {
+            return _db.Read(connection =>
+            {
+                RequireReader(connection, user);
+                var clean = (code ?? string.Empty).Trim();
+                if (clean.Length == 0) throw new ValidationException("There is no PR number to print.");
+                var row = ReadRows(connection, "WHERE upper(p.code) = upper(@code)", new { code = clean }).FirstOrDefault()
+                    ?? throw new ValidationException("That no-bill return was not found.");
+                var lines = ReadLines(connection, row.Id);
+                if (lines.Count == 0 || lines.Count != row.ItemCount)
+                    throw new ValidationException("The PR slip is incomplete. Refresh and verify the entry before printing.");
+                return ServiceResult<ProvisionalReceiptData>.Success(new ProvisionalReceiptData { Row = row, Lines = lines });
+            });
+        }
+        catch (ValidationException exception) { return ServiceResult<ProvisionalReceiptData>.Fail(exception.Message); }
+        catch (Exception exception)
+        {
+            _log.Error("The PR slip data could not be read.", exception);
+            return ServiceResult<ProvisionalReceiptData>.Fail("The complete PR slip could not be read.");
+        }
+    }
+
+    private List<string> ReadLines(SqliteConnection connection, int provisionalId)
+    {
+        var rows = _db.Query<LineRow>(connection, @"
 SELECT i.qty_entered AS qtyEntered, i.unit_entered AS unitEntered, i.qty_base AS qtyBase,
        pr.name AS productName
 FROM provisional_items i
 JOIN products pr ON pr.id = i.product_id
 WHERE i.provisional_id = @id
 ORDER BY i.id;", new { id = provisionalId });
-
-            return rows.Select(row =>
-                $"{Qty.Format(row.QtyEntered)} {Packs.Display(row.UnitEntered)} - {row.ProductName}").ToList();
-        }
-        catch (Exception exception)
-        {
-            _log.Error("The lines of no-bill return " + provisionalId + " could not be read.", exception);
-            return new List<string>();
-        }
+        return rows.Select(row =>
+            $"{Qty.Format(row.QtyEntered)} {Packs.Display(row.UnitEntered)} - {row.ProductName}").ToList();
     }
 
     /// <summary>
@@ -183,6 +233,7 @@ ORDER BY i.id;", new { id = provisionalId });
         {
             return _db.Tx(connection =>
             {
+                user = RequireDecider(connection, user);
                 var row = LoadOne(connection, provisionalId);
 
                 if (row is null)
@@ -351,6 +402,7 @@ WHERE id = @id
         {
             return _db.Tx(connection =>
             {
+                user = RequireDecider(connection, user);
                 var row = LoadOne(connection, provisionalId);
 
                 if (row is null)
@@ -432,7 +484,7 @@ WHERE id = @id;",
     /// Smart bill lookup (9.2.1): a medicine name, a customer phone or a rough date finds earlier
     /// bills. Only bills that can carry a return are listed (paid, partial or credit).
     /// </summary>
-    public ServiceResult<List<BillSearchRow>> SearchBills(string? term, int limit = 40)
+    public ServiceResult<List<BillSearchRow>> SearchBills(string? term, int limit = 40, User? user = null)
     {
         var text = (term ?? string.Empty).Trim();
 
@@ -443,9 +495,11 @@ WHERE id = @id;",
 
         try
         {
-            using var connection = _db.Open();
+            return _db.Read(connection =>
+            {
+                RequireReader(connection, user);
 
-            var rows = _db.Query<BillSearchRow>(connection, @"
+                var rows = _db.Query<BillSearchRow>(connection, @"
 SELECT s.id AS id, s.code AS code, s.date AS date, c.name AS customerName, c.phone AS phone,
        s.total_paisa AS totalPaisa,
        (SELECT COUNT(1) FROM sale_items si WHERE si.sale_id = s.id) AS itemCount,
@@ -459,9 +513,10 @@ WHERE s.status IN ('paid', 'partial', 'credit')
        OR EXISTS (SELECT 1 FROM sale_items si WHERE si.sale_id = s.id AND si.name_snapshot LIKE @like))
 ORDER BY s.id DESC
 LIMIT @limit;",
-                new { like = "%" + text + "%", limit = Math.Clamp(limit, 1, 200) });
+                    new { like = "%" + text + "%", limit = Math.Clamp(limit, 1, 200) });
 
-            return ServiceResult<List<BillSearchRow>>.Success(rows);
+                return ServiceResult<List<BillSearchRow>>.Success(rows);
+            });
         }
         catch (Exception exception)
         {
@@ -919,6 +974,16 @@ VALUES(@productId, 'OPEN', NULL, NULL, 0, @cost, @retail, 0, 1, @at);",
                 "UPDATE provisional_items SET refund_paisa = @refund WHERE id = @id;",
                 new { refund = lineRefund, id = lines[index].Id });
         }
+    }
+
+    private User RequireReader(SqliteConnection connection, User? user) =>
+        SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Returns);
+
+    private User RequireDecider(SqliteConnection connection, User? user)
+    {
+        var current = RequireReader(connection, user);
+        if (!current.CanManage) throw new ValidationException("Only the owner or a manager can attach or cancel a PR.");
+        return current;
     }
 
     private static bool CanClose(User? user) =>

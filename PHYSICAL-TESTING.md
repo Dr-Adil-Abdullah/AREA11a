@@ -1,5 +1,9 @@
 # Area11 — Real-life Physical Testing Log
 
+## ⏳ PT-60 — current PR access,explicit reads,complete receipts (v0.118.0 Sedge)
+
+[⏳ Urdu steps](docs/POS-PHASE4-PART40-URDU.md),[⏳ trace](docs/POS-PHASE4-PROVISIONAL-CURRENT-REVIEW.md). ⏳99newC#cases/2888suiteUNRUN:oldactor/ID/code denies,valid Returns readers vs Owner/Manager decisions,stored audit name,Page read failure not empty,regrant fresh read,line failure not header-only receipt,manual/auto print current actor. ⏳WPFnextaction/nominal3stimer denials/stabletyping/regrant/detachedrows/P39SAVED guards require actual execution. ⏳Session/same-role-ID/CAS/provider/parallel/prepared-output recall not certified. ⏳Verifiedencryptedbackup AND trulyseparateDB/photos/config first;no shop syntheticposts/faults. ❌Installerbinary NOT BUILT;⏳FullPhase4OPEN.
+
 ## ⏳ PT-59 — PR Save/Link/Cancel outcomes,selection,cleanup (v0.117.0 Bracken)
 
 [⏳ Urdu steps](docs/POS-PHASE4-PART39-URDU.md),[⏳ trace](docs/POS-PHASE4-PROVISIONAL-POSTING-REVIEW.md). ⏳45newC#cases/2789suiteUNRUN;real runner/build/TRX/fix/retest,36service statement faults,refund remainder/OPEN batch/later line-allocation rollback/terminal repeat/legacy same-bill/zero refund/drawer reconciliation,WPF callback/reentry/next-row auto-selection/print faults required. ⏳ProviderCOMMIT/rollbackfailure/restart/parallel/currentPRaccess remainOPEN;Python/lexical probes not equivalent. ⏳Verifiedencryptedbackup AND trulyseparateDB/photos/config first;no shop fault injection. ❌Installerbinary NOT BUILT;⏳FullPhase4OPEN.

@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.117.0 Bracken۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.118.0 Sedge۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**⏳ حصہ40 — PRکیcurrentاجازت/مکملreceipt:** پراناaccount/codeکافینہیں؛موجودہactive/sameparsedrole/Returnsچیک،Attach/CancelcurrentOwner/Manager۔ اگلےaction/nominal3stickپرdeniedrows/tray/refund/customer/phone/notes/lookupصاف؛یہunsavedtypedworkمٹاتاہے،خودpostingنہیں۔ Stableallowedticktypingبرقرار؛regrantپرexplicitRefresh،پرانامتنبھالنہیں۔ Failedlistreadکوemptyنہیںکہا،decision/reprintبند؛line-readfailمیںheader-onlysuccessfulreceiptنہیں۔ [⏳ PT-60](POS-PHASE4-PART40-URDU.md)،[⏳ حدود](POS-PHASE4-PROVISIONAL-CURRENT-REVIEW.md)۔ ⏳99نئےcases/2888suiteUNRUN؛یہsession/CAS/instantrecallنہیں؛FullPhase4OPEN؛❌installerbinaryنہیںبنی۔
 
 **⏳ حصہ39 — PRSave/Attach/Cancel:** کامیاب action کے بعد fields/selection/refresh/printخرابہوتو **SAVED**؛وہیrefund/attach/cancelدوبارہنہیں۔ Unknownمیںپہلےhistory/stock/paymentverify؛صرفexplicitno-commitپرlocalretry۔ کامیابیکےبعددونوںdecisionfields/lookupاورLoadکااگلاautomaticpendingselectionصاف،اگلاactionتازہexplicitselectionسے۔ Linkدوسراstock/paymentنہیں،Cancelcashrefundخودواپسنہیںلاتا۔ یہlocalguardہے،restart/globalidentityنہیں؛PRcurrentaccess/read/receiptجانچالگباقی۔ [⏳ PT-59](POS-PHASE4-PART39-URDU.md)،[⏳ حدود](POS-PHASE4-PROVISIONAL-POSTING-REVIEW.md)۔ ⏳45نئےcases/2789suiteUNRUN؛FullPhase4OPEN؛❌installerbinaryنہیںبنی۔
 
@@ -380,6 +382,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 <a id="lesson-14"></a>
 
 ## سبق 14 — اصل بل ہاتھ میں نہ ہو: No bill (PR)
+
+⏳ حصہ40: PRکےلیےcurrentReturnsaccountلازم؛storedinactive/rolechange/revokeپرپراناPRcode/read/write/receiptنہیں۔ Timer/actionپرpageاورunsavedtray/formصاف،accessواپسآئےتوRefreshاورنیاانتخاب۔ Pagefail→notloaded،نہconfirmedempty؛receiptlinefail→Buildfailure،نہheader-onlyslip۔ عامجائزReturnsreaderکوread/receipt،فیصلہcurrentOwner/Manager؛receiptکےپرانےprint/exportواپسآنےکادعوینہیں۔ P39unknown/unfinishedpostingguardpermissionregrantسےresetنہیں۔ اصلWindowsجانچباقی۔
 
 ⏳ حصہ39: Save/Attach/Cancel کا کامیاب جواب مل چکا ہو تو page/print error کے بعد وہی action دوبارہ نہیں۔ **SAVED** warning میںhistoryverifyکریں؛ادھوریصفائیہوتوpageدوبارہکھولنےسےپہلےنتیجہضروردیکھیں۔ Unknownمیںدوسریcopy/refundنہیں؛localflagrestartپرنہیںرہتا۔ کامیابیپرپراناtargetاورLoadکاخودکاراگلاانتخابصاف،bill/reasonدوبارہخودنہیںلگتے۔ Linkسےرقم/stockدوبارہنہیں،Cancelسےcash-inخودنہیں۔ CurrentPRreader/permission/receiptاوراصلWindowsثبوتباقی۔
 
@@ -778,7 +782,7 @@ Recoveryکیfailedslipپرپرنٹرکوخالیdocumentنہیںدیاجاتا۔
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.117.0 کا متوقع test count 2789 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.118.0 کا متوقع test count 2888 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 

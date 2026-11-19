@@ -8655,7 +8655,7 @@ def check_expense_stock_fault_boundaries():
 def check_provisional_posting_fault_boundaries():
     """Lexical regression contract, not actual service/provider/WPF execution."""
     core=(DOTNET/'Area11.Core/Services/ProvisionalReturnService.cs').read_text()
-    for start,end,tx in [('public ServiceResult<ProvisionalResult> Create(', '/// <summary>The blinking list', '_db.Tx(connection => Save(connection, input, user), outcome);'),
+    for start,end,tx in [('public ServiceResult<ProvisionalResult> Create(', '/// <summary>The blinking list', 'return Save(connection, input, user);'),
                          ('public ServiceResult Link(', 'public ServiceResult Cancel(', '}, outcome);'),
                          ('public ServiceResult Cancel(', 'public ServiceResult<List<BillSearchRow>> SearchBills(', '}, outcome);')]:
         body=core.split(start,1)[-1].split(end,1)[0]
@@ -8701,6 +8701,66 @@ def check_provisional_posting_fault_boundaries():
         if token not in tests: FAILURES.append('P39 PR regression source missing '+token)
     if len(re.findall(r'\[(?:Fact|InlineData)(?:\(|\])',tests))!=45: FAILURES.append('P39 expected45 PR source cases')
     REPORT.append('P39 PR Create/Link/Cancel observed failure + acknowledged cleanup/target/reentry lexical contracts;45 C# cases UNRUN')
+
+
+def check_provisional_current_access():
+    core=(DOTNET/'Area11.Core/Services/ProvisionalReturnService.cs').read_text()
+    for token in ('SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Returns);',
+                  'if (!current.CanManage) throw', 'user = RequireReader(connection, user);',
+                  'public ServiceResult<List<ProvisionalRow>> Page(User? user)',
+                  'Pending(User? user = null)', 'History(User? user = null)',
+                  'Get(string? code, User? user = null)', 'Lines(int provisionalId, User? user = null)',
+                  'SearchBills(string? term, int limit = 40, User? user = null)',
+                  'lines.Count == 0 || lines.Count != row.ItemCount'):
+        if token not in core: FAILURES.append('P40 current PR boundary missing '+token)
+    if core.count('user = RequireDecider(connection, user);')!=2: FAILURES.append('P40 both PR decisions need stored Tx actor')
+    for start,end,gate in [('public ServiceResult<ProvisionalResult> Create(', '/// <summary>The blinking list','user = RequireReader(connection, user);'),
+                           ('public ServiceResult Link(','public ServiceResult Cancel(','user = RequireDecider(connection, user);'),
+                           ('public ServiceResult Cancel(','public ServiceResult<List<BillSearchRow>> SearchBills(','user = RequireDecider(connection, user);')]:
+        body=core.split(start,1)[-1].split(end,1)[0]
+        if '}, outcome);' not in body or gate not in body: FAILURES.append('P40 observed current PR writer '+start)
+        after=body.split(gate,1)[-1]
+        if start.startswith('public ServiceResult<'):
+            if 'return Save(connection, input, user);' not in after: FAILURES.append('P40 current actor must reach Save')
+        elif 'var row = LoadOne(' not in after: FAILURES.append('P40 check before PR target')
+    for start,end in [('public ServiceResult<List<ProvisionalRow>> Page(','// Legacy list-shaped'),
+                      ('public ProvisionalRow? Get(','public List<string> Lines('),
+                      ('public ServiceResult<ProvisionalReceiptData> ReadReceipt(','private List<string> ReadLines('),
+                      ('public ServiceResult<List<BillSearchRow>> SearchBills(','// ------------------------------------------------------------------ saving')]:
+        body=core.split(start,1)[-1].split(end,1)[0]
+        if 'RequireReader(connection, user);' not in body or '_db.Read(connection =>' not in body: FAILURES.append('P40 PR authorized read '+start)
+    receipt=(DOTNET/'Area11.Core/Services/ProvisionalReceiptService.cs').read_text().split('private ReceiptDocument Compose(',1)[0]
+    for token in ('Build(string? code, User? user = null)','_provisional.ReadReceipt(clean, user)','if (!read.Ok || read.Value is null)','Compose(read.Value.Row, read.Value.Lines)'):
+        if token not in receipt: FAILURES.append('P40 complete authorized PR receipt '+token)
+    vm=(DOTNET/'Area11.Desktop/ViewModels/ProvisionalViewModel.cs').read_text()
+    for token in ('public bool RefreshAccess()', 'if (_checkingAccess || _postingInProgress) return _accessAllowed;',
+                  '_services.Provisional.CheckAccess(_user)', '_services.Provisional.CheckAccess(_user, decision: true)',
+                  '_services.Provisional.Page(_user)', '_listLoaded = false;', 'ClearReadState();','ClearDecisionState();',
+                  'if (wasDecider && !_decisionAllowed)', '_selectedEntry = null; _selectedLookup = null; _selectedProduct = null; _selectedLine = null;',
+                  'Results.Clear(); Lines.Clear();','CustomerName = string.Empty; Phone = string.Empty; Notes = string.Empty;',
+                  'public bool CanDecide => _accessAllowed && _decisionAllowed && _listLoaded;',
+                  'Pending.Concat(History).Contains(SelectedEntry)', '_services.Provisional.SearchBills(LookupText, user: _user)',
+                  '_services.ProvisionalReceipts.Build(code, _user)', 'Lookup.Contains(row)', '_lookupLoaded',
+                  'if (!_listLoaded) throw new InvalidOperationException("Saved PR could not refresh its list.");'):
+        if token not in vm: FAILURES.append('P40 PR UI boundary missing '+token)
+    for name in ('Search','AddLine','RemoveLine','SaveOnce','Reprint','PickBill'):
+        body=vm.split(f'private void {name}()',1)[-1].split('\n    private ',1)[0]
+        if 'if (!RefreshAccess()) return;' not in body: FAILURES.append('P40 PR action freshness '+name)
+    for name in ('LinkBillOnce','CancelEntryOnce'):
+        body=vm.split(f'private void {name}()',1)[-1].split('\n    private ',1)[0]
+        if '!CanDecide' not in body or 'Pending.Concat(History).Contains(SelectedEntry)' not in body: FAILURES.append('P40 PR detached/current decision '+name)
+    code=(DOTNET/'Area11.Desktop/Views/ProvisionalView.xaml.cs').read_text()
+    for token in ('TimeSpan.FromSeconds(3)','Loaded +=','Unloaded +=','_accessTimer.Stop()','model.RefreshAccess()'):
+        if token not in code: FAILURES.append('P40 PR timer lifecycle '+token)
+    if 'IsEnabled="{Binding CanWork}"' not in (DOTNET/'Area11.Desktop/Views/ProvisionalView.xaml').read_text(): FAILURES.append('P40 PR page editing gate')
+    tests=(DOTNET/'Area11.Tests/ProvisionalCurrentAccessTests.cs').read_text()
+    for token in ('DeniedReaderCannotReuseOldIdsOrCodes','DeniedWriterCannotMutateOrClaimUnknownCommit',
+                  'CurrentReturnsReadersKeepTheirExistingReadAccess','WriterAuditUsesStoredActorNotForgedDisplayName',
+                  'ReceiptLineReadFailureCannotProduceAHeaderOnlySuccessfulSlip','FailedPageIsNotSuccessfulEmptyAndRegrantRequiresFreshRead',
+                  'ActorlessCompatibilityCallsAndMissingTargetsFailClosed', 'Assert.Equal(before, f.Snapshot());'):
+        if token not in tests: FAILURES.append('P40 current PR regression source '+token)
+    if len(re.findall(r'\[(?:Fact|InlineData)(?:\(|\])',tests))!=99: FAILURES.append('P40 expected99 current PR cases')
+    REPORT.append('P40 PR current stored actor/Returns/complete receipt/explicit page verdict/stale UI contracts;99 C# cases UNRUN;not session/CAS/WPF proof')
 
 
 def main() -> int:
@@ -8807,6 +8867,7 @@ def main() -> int:
     check_automatic_shared_draft_posting()
     check_expense_stock_fault_boundaries()
     check_provisional_posting_fault_boundaries()
+    check_provisional_current_access()
     check_csharp_grammar()
 
     if not quiet:

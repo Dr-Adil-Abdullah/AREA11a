@@ -1,18 +1,18 @@
 # نمبر وار کام اور باقی جانچ — مستقل1تا36فہرست
 
-**⏳ موجودہ source: v0.117.0 Bracken / حصہ39؛مکمل عملی تصدیق نہیں۔** یہ وہی36نمبر ہیں جن کی مالک نے تفصیلی وضاحت مانگی۔ اگلے حصوں میں نمبر تبدیل نہیں کریں؛done-source،یہاں کی جانچ،Windowsثبوت اورباقی کام الگ لکھیں۔ **36نمبر،36Next نہیں؛فیچرboardکی فیصد Phase4 safety فیصد نہیں۔**
+**⏳ موجودہ source: v0.118.0 Sedge / حصہ40؛مکمل عملی تصدیق نہیں۔** یہ وہی36نمبر ہیں جن کی مالک نے تفصیلی وضاحت مانگی۔ اگلے حصوں میں نمبر تبدیل نہیں کریں؛done-source،یہاں کی جانچ،Windowsثبوت اورباقی کام الگ لکھیں۔ **36نمبر،36Next نہیں؛فیچرboardکی فیصد Phase4 safety فیصد نہیں۔**
 
-✅ منظورشدہعلامتیں:✅صرف100%مکملمتعلقہکام؛⏳جاری/کچھباقی؛❌شروعنہیں۔ ⏳تازہ17/19/23–25PRpostingoutcome/localcleanup/retryguard؛45نئےcases/2789C#suiteUNRUN۔ ✅36SQLfaults+retry/29lexicalmutationsمقامیPASS،C#/WPFنہیں۔ [⏳ PT-59](POS-PHASE4-PART39-URDU.md)،[⏳ trace](POS-PHASE4-PROVISIONAL-POSTING-REVIEW.md)۔ ⏳CurrentPRaccess/provider/runtime/FullPhase4باقی؛❌installerbinaryنہیںبنی۔
+✅ منظورشدہعلامتیں:✅صرف100%مکملمتعلقہکام؛⏳جاری/کچھباقی؛❌شروعنہیں۔ ⏳تازہ5–7/17/21/23PRcurrentactor/read/write/receipt،explicitPagefailure،deniedUIcleanup/regrantfreshLoad؛99نئےcases/2888suiteUNRUN۔ ✅35Pythonactordenials/actualreadSQL+27lexicalmutationsPASS،C#/WPFنہیں۔ [⏳ PT-60](POS-PHASE4-PART40-URDU.md)،[⏳ trace](POS-PHASE4-PROVISIONAL-CURRENT-REVIEW.md)۔ ⏳runtime/FullPhase4باقی؛❌installerbinaryنہیںبنی۔
 
 | مستقل نمبر / دائرہ | کیا ہوگیا؟ | کیا باقی ہے؟ |
 |---|---|---|
-|1۔ ⏳ ورژن/GitHub | v0.117Bracken/source/docs/icon/scriptsaligned | samebranchcommit/push/actualremoteverificationآخریرپورٹمیں |
-|2۔ ⏳ C#tests | 2789متوقعcases؛حصہ39میں45نئے(44inline+1fact) | تازہC#compile/run/fix/retestیہاںنہیںچلا |
-|3۔ ⏳ Source/syntheticchecks | 106staticcontracts؛نیا36faultSQLprobe/29lexicalmutations؛حتمینتائجtraceمیں | یہC#/WPF/provider/securitycertificationنہیں |
+|1۔ ⏳ ورژن/GitHub | v0.118Sedge/source/docs/icon/scriptsaligned | samebranchcommit/push/actualremoteverificationآخریرپورٹمیں |
+|2۔ ⏳ C#tests | 2888متوقعcases؛حصہ40میں99نئے(96inline+3fact) | تازہC#compile/run/fix/retestیہاںنہیںچلا |
+|3۔ ⏳ Source/syntheticchecks | 107staticcontracts؛نیا35Pythonactordenial/readSQLprobeاور27lexicalmutations؛حتمینتائجtraceمیں | یہC#/WPF/provider/securitycertificationنہیں |
 |4۔ ⏳ پرانےWindowsfailures | v0.80کے1333PASS/4FAILکیچاروںوجوہ/sourcefixشناخت | تازہsuiteپرretestاورنئیfailuresکیfix؛پرانانتیجہنیاPASSنہیں |
-|5۔ ⏳ Account/role/session | حصہ35draft/heldcurrentstoredactive/sameparsedrole/modulechecks؛validOwnercurrentcheck | authenticatedsessiontoken/same-roleIDimpersonation،remainingcallers؛یہfullsessionproofنہیں |
-|6۔ ⏳ Parentrecordcreate/edit/read | حصہ35draftsave/update/open/list/discard،heldList/Count/writerscurrent؛discardقبلpayloadtypeonly | remainingquickadd/parent/sessioncallers،atomicCAS؛legacy/otherworkflowreviewباقی |
-|7۔ ⏳ Revocation/staleoutputs | حصہ35draftdrawer/parkedlistaction+3stimerdeniedlists/selectionclear،failedlist!=empty،modalrecheck | fullPOScart/pickers،otherdialogs/preparedoutputs/instantrecallنہیں؛Windowsproofباقی |
+|5۔ ⏳ Account/role/session | PRابcurrentstoredactive/sameparsedrole/Returns؛validOwnerبھیcurrentrow؛storedauditactor | authenticatedsessiontoken/same-role-IDimpersonation،remainingcallers؛یہfullsessionproofنہیں |
+|6۔ ⏳ Parentrecordcreate/edit/read | PRCreate/Link/CancelTxcurrentactorقبلtarget،reads/receiptcurrent؛پچھلےdraft/heldboundariesبرقرار | remainingquickadd/parent/sessioncallers،atomicCAS؛legacy/otherworkflowreview |
+|7۔ ⏳ Revocation/staleoutputs | PRaction/nominal3stimerdenialپرفارم/rows/tray/lookupصاف؛stableinputsبرقرار،regrantfreshLoad؛detachedrowrefused | actualWPF،fullPOScart/otherpreparedoutputs/instantrecall/CASباقی |
 |8۔ ⏳ Customdefinitionmanager | **حصہ26:currentownerUI،selection/inputcleanup،selectedsnapshotcomparison،stabletick،SAVED** | WPF/runtimeثبوت؛check/use/atomicversionCASاورothereditorssyncOPEN |
 |9۔ ⏳ Customanswersservice | sharedinternalcurrentactor/storedaudit؛existingparentreads؛historicalinactiveپالیسیبرقرار | باقیcallers،اصلTxexecution،read/loadraces؛internalworkflowgatecaller-owned |
 |10۔ ⏳ Customanswereditor | stalerecordrows/stagedpathcleanup،freshoutputs،SAVED،loadedtimer | اصلbindings/focus/regrant/parentdraftconsistency؛definitionversionsyncالگ |
@@ -22,14 +22,14 @@
 |14۔ ⏳ Pricing/discount/Extra | approvedbelow-actual-costfloor،sale-onlyExtra،limits/returnBکےsource/tests | تازہruntimeاورcross-page/retryreconciliation؛settledrulesدوبارہنہیںکھولنے |
 |15۔ ⏳ Counter/bill/stock | عامCompleteسےپہلےsharedDraftsave/link؛sameIDpost؛all draftHoldrefused؛Holdknown/unknown/cleanupguards | اصلWPF/restart/powercut،fullPOS/session/scanner،ordinaryHolddurableintent |
 |16۔ ⏳ Purchase/delivery | عامSaveسےپہلےsharedDraft؛Purchasepartialcleanup/reconstructionguards؛sameIDretry | اصلC#/WPF/mixedsupplier/providerCOMMIT؛دیگرCoreCreatecallers/globalidentity |
-|17۔ ⏳ Customer/Recovery | PRCreate/Link/Canceloutcome/localguard؛ackقبلcallbacks،targets/decisioninputsصافقبلوبعدLoad؛ReturnBunchanged | PRcurrentactor/read/search/receipt/read-verdict5–7/21؛اصلC#/WPF/session/partialreturn/recoveryintegration |
+|17۔ ⏳ Customer/Recovery | PRcurrentReads/Search/Create/Link/Cancel؛OwnerManagerdecisions؛explicitPagefailure،P39guardsبرقرار؛ReturnBunchanged | actualC#/WPF،remainingrecovery/partialreturn/sessionintegration،compatibilitywrapperlimitederrorshape |
 |18۔ ⏳ Supplier/Pay/SR | exceptionBبرقرار؛حصہ30SRlocalreentry/traycleanup/reloadverdict/callbackSAVED؛26stagefaults/cash-credit/second-itemC#source | اصلC#/WPFstock/books/cash/results؛ambiguouscommit/durableidentity؛policyدوبارہنہیںپوچھنا |
 |19۔ ⏳ Cashdrawer/handover | PRfault/retry/drawerreconciliationC#source؛Link/Cancelpaymentunchanged،Cancelcash-inنہیں؛پچھلےSale/Returnchecksبرقرار | اصلprovider/race/C#/WPF/handover/closing/print/cashreconciliation |
 |20۔⏳ Expenses/stocktake/writeoff | expense/cash+goodsdrawing/write-off/Applylocalguard؛ackپہلے،cleanupبعد؛oldApplysessionconsume،financialSQL/helpersunchanged | actualC#/WPF،integratedreports/legacybatch/costfallback،Open/Count/Cancel/foundownfaultpaths |
-|21۔ ⏳ Reports/files/exports | حصہ33Historyreprint/preview/WhatsApp/bulkbuilderscurrentSales؛bulkwholejobrefusal | alreadyopenedpreview/preparedfilesnotrecalled،باقیoutputs،Excel/CSV/print/PDF/Windows |
+|21۔ ⏳ Reports/files/exports | PRcompleteauthorizedheader+linesreceipt؛linefailureپرBuildfailure؛receiptComposeunchanged؛Historycurrentbulkپہلے | alreadyprepared/printed/exportedoutputsnotrecalled؛باقیExcel/CSV/PDF/print/Windowsroutes |
 |22۔ ⏳ Blackbox/BookCheck | صرفapprovednavigationgateAudit+Cost+Profit+main؛حالیہinternalsunchanged | تازہWindowsnavigationproof؛بغیراجازتغیرمتعلقredesignنہیں |
-|23۔ ⏳ DB/permissiontransaction | PRکےتینwritersمیںobservedTransactionOutcome؛preflight/confirmedrollbackہیsafe،unknownمیںجھوٹاNothingchangedنہیں | PRcurrentwriter/session/CAS/realCOMMIT/rollbackfailure/parallel/durableidentityباقی |
-|24۔ ⏳ Fault/rollback | PR36statementfaults+6refusals+2legacy+1zerorefundکے45C#sourcecases؛نیاPython36PASS | تمام2789C#UNRUN؛باقیrecovery/files/providerCOMMIT/WPFcallbackfaults |
+|23۔ ⏳ DB/permissiontransaction | PRobservedTxمیںstoredactorقبلtarget،normalizedaudit؛localReadgateبعضPRreadunitsمیں | session/same-role-ID/CAS/externalcoherentsnapshot/realCOMMIT/parallel/durableidentityباقی |
+|24۔ ⏳ Fault/rollback | P39کے36faultcasesبرقرار؛نئے99currentPRcasesمیں70denials/21valid/8audit-role-readfaultcases | تمام2888C#UNRUN؛باقیrecovery/files/providerCOMMIT/WPFcallbackfaults |
 |25۔ ⏳ Duplicate/retry | P38guardابPRSave/Link/Cancelمشترک؛unknown/ackcleanupمیںwrites/trayeditبند؛Loadکاautomaticnexttargetبھیصاف | pageReopen/restart/globalidentity/parallel/providerCOMMITباقی؛localflagdurablekeyنہیں |
 |26۔ ⏳ Encryptedbackup | passwordA .a11bakcode،manual/auto/safety/rollbackintegration،referencechecks | اصلC#service/DPAPI/ACL/passwordrotation/large-photo/interruptionverification |
 |27۔ ⏳ Restore/newPC | stagedvalidation/safety/rollback/explicitlegacycode | نئےPCپرoriginalpassword،wrong/corrupt/interruptedrestore،پراناDB/photosبچنااورstartupثبوت |
@@ -39,7 +39,7 @@
 |31۔ ⏳ Keyboard/scanner | permanentsearch/approvednavigationcode | arrows/Shift-arrows/nativecaret/combo/grid/TabاوراصلUSBlookup/focus |
 |32۔ ⏳ Printer/PDF/camera | receipt/print/PDFcode؛پراناownerprinter-slipproofمحفوظ | تازہreceipts/width/printer/no-printer/scanner/camera/viewerاورfiguresملاپ |
 |33۔ ⏳ Startup/login/lock | approvedstartup/singleinstance/FocusGuard/recoverycode | حقیقیregistry/reboot/re-entry/escape/reset/recovery/shortcuts/taskbar/icon |
-|34۔ ⏳ Guide/actionreconciliation | اردوMD/HTML،PT-59/trace/1–36trackerاور36lessonanchorsاپڈیٹ | اصلappتمامroutes/settings/actionsسےملاپ،Windows/PTsignoffsباقی |
+|34۔ ⏳ Guide/actionreconciliation | اردوMD/HTML،PT-60/trace/1–36trackerاور36lessonanchorsاپڈیٹ | اصلappتمامroutes/settings/actionsسےملاپ،Windows/PTsignoffsباقی |
 |35۔ ⏳ Isolatedtestinstallation | verifiedbackup+separateDB/photos/configکیشرطdocumented | اصلVM/sparePC/storageproof،startup/migrationسےshopdataمحفوظ؛exefolderاکیلاکافینہیں |
 |36۔ ❌ Singleinstaller | مالککیاجازت؛build/installerconfig/scriptsموجود | کامیابWindowsbuild/tests،exeبننا،cleaninstall/upgrade/uninstall/datapreservation/shortcuts/startup،پھرsendablefile؛**ابھینہیںبنا** |
 

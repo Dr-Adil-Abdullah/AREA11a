@@ -1,5 +1,9 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## ⏳ v0.118.0 حصہ40 — Next کا PRcurrent-boundaryreview؛نئی مالی policy نہیں
+
+⏳5–7/17/21/23PRcurrentstoredReturnsactor،Owner/Managerdecisions،storedaudit،explicitPageاورcompleteReceipt،deniedUIcleanup/regrantfreshLoad؛99C#cases/2888suiteUNRUN۔ ✅مالیSQL/helpers/receiptCompose،عامجائزReturnsreaderاورrefund/stockpolicyبرقرار؛نئیSales/Cost/Profitشرطنہیں۔ ⏳Session/same-role-ID/CAS/provider/WPFباقی؛[⏳ PT-60](POS-PHASE4-PART40-URDU.md)،[⏳ trace](POS-PHASE4-PROVISIONAL-CURRENT-REVIEW.md)۔ ⏳FullPhase4OPEN؛❌installerbinaryنہیںبنی۔
+
 ## ⏳ v0.117.0 حصہ39 — Next کا bounded PR fault/retry review؛نئی مالی policy نہیں
 
 ⏳17/19/23–25PRSave/Attach/Cancelhonestoutcomeاورlocalcleanup/retryguards؛45C#cases/2789suiteUNRUN۔ ✅مالیSQL/privatehelpers/Link+CancelTxbodyبرقرار؛Linkدوبارہstock/paymentنہیں،Cancelcash-inنہیںبناتا،PRautomaticdraftنہیں۔ ⏳CurrentPRactor/reader/receipt/accessاورglobalidentityreviewالگباقی؛اسحصےکوسecuritycompletionنہکہیں۔ [⏳ PT-59](POS-PHASE4-PART39-URDU.md)،[⏳ trace](POS-PHASE4-PROVISIONAL-POSTING-REVIEW.md)۔ ⏳FullPhase4OPEN؛❌installerbinaryنہیںبنی۔

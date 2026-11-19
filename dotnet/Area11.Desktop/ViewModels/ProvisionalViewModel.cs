@@ -22,12 +22,20 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
     /// Why this page has nothing on it, in the shop's words (v0.33.0, D-89). **Null when it
     /// has rows**, so nothing in this page has to keep a second flag in step with its list.
     /// </summary>
-    public EmptyHint? EmptyHint => EmptyPage.When(History.Count == 0, "No bill (PR)");
+    public EmptyHint? EmptyHint => EmptyPage.When(_listLoaded && Pending.Count == 0 && History.Count == 0, "No bill (PR)");
 
     private readonly AppServices _services;
     private readonly User _user;
     private readonly PostingAttemptGuard _posting = new();
     private bool _postingInProgress;
+    private bool _accessAllowed;
+    private bool _decisionAllowed;
+    private bool _listLoaded;
+    private bool _lookupLoaded;
+    private bool _checkingAccess;
+
+    public bool CanWork => _accessAllowed;
+    public bool CanDecide => _accessAllowed && _decisionAllowed && _listLoaded;
 
     private string _searchText = string.Empty;
     private string _qtyText = "1";
@@ -102,9 +110,7 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
 
     public RelayCommand CancelCommand { get; }
 
-    public bool IsOwnerOrManager =>
-        string.Equals(_user.Role, "owner", StringComparison.OrdinalIgnoreCase)
-        || string.Equals(_user.Role, "manager", StringComparison.OrdinalIgnoreCase);
+    public bool IsOwnerOrManager => CanDecide;
 
     public bool IsNotOwnerOrManager => !IsOwnerOrManager;
 
@@ -239,6 +245,7 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
 
     private void Search()
     {
+        if (!RefreshAccess()) return;
         var result = _services.Products.Search(_user, SearchText, purpose: ProductReadPurpose.ProvisionalReturn);
 
         Results.Clear();
@@ -261,6 +268,7 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
 
     private void AddLine()
     {
+        if (!RefreshAccess()) return;
         if (RefusePendingPosting()) return;
         if (SelectedProduct is null)
         {
@@ -301,6 +309,7 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
 
     private void RemoveLine()
     {
+        if (!RefreshAccess()) return;
         if (RefusePendingPosting()) return;
         if (SelectedLine is null)
         {
@@ -318,6 +327,7 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
 
     private void SaveOnce()
     {
+        if (!RefreshAccess()) return;
         if (Lines.Count == 0)
         {
             SetStatus("Add at least one medicine before saving.", true);
@@ -376,6 +386,7 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
         SelectedLine = null;
         RefreshTotal();
         Load();
+        if (!_listLoaded) throw new InvalidOperationException("Saved PR could not refresh its list.");
         // Load may choose another pending row; a completed action must not auto-target it.
         ForgetPostingTarget();
 
@@ -397,6 +408,16 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
 
     private void LinkBillOnce()
     {
+        if (!RefreshAccess() || !CanDecide)
+        {
+            SetStatus("Refresh PR entries with current Owner/Manager Returns access before deciding.", true);
+            return;
+        }
+        if (SelectedEntry is null || !Pending.Concat(History).Contains(SelectedEntry))
+        {
+            SetStatus("Select a current PR row from the loaded list.", true);
+            return;
+        }
         if (SelectedEntry is null)
         {
             SetStatus("Pick a no-bill return first.", true);
@@ -421,6 +442,7 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
         LookupText = string.Empty;
         Lookup.Clear();
         Load();
+        if (!_listLoaded) throw new InvalidOperationException("Saved PR could not refresh its list.");
         // Load may choose another pending row; a completed action must not auto-target it.
         ForgetPostingTarget();
         _posting.CompleteReset();
@@ -434,6 +456,16 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
 
     private void CancelEntryOnce()
     {
+        if (!RefreshAccess() || !CanDecide)
+        {
+            SetStatus("Refresh PR entries with current Owner/Manager Returns access before deciding.", true);
+            return;
+        }
+        if (SelectedEntry is null || !Pending.Concat(History).Contains(SelectedEntry))
+        {
+            SetStatus("Select a current PR row from the loaded list.", true);
+            return;
+        }
         if (SelectedEntry is null)
         {
             SetStatus("Pick a pending entry first.", true);
@@ -458,6 +490,7 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
         LookupText = string.Empty;
         Lookup.Clear();
         Load();
+        if (!_listLoaded) throw new InvalidOperationException("Saved PR could not refresh its list.");
         // Load may choose another pending row; a completed action must not auto-target it.
         ForgetPostingTarget();
         _posting.CompleteReset();
@@ -468,38 +501,106 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
 
     public void Load()
     {
-        Pending.Clear();
-        var pending = _services.Provisional.Pending();
-        foreach (var row in pending)
+        if (!RefreshAccess()) return;
+        var result = _services.Provisional.Page(_user);
+        if (!result.Ok || result.Value is null)
         {
-            Pending.Add(row);
+            ClearReadState();
+            SetStatus(result.Error ?? "PR entries are not loaded; this is not a confirmed empty list.", true);
+            return;
         }
-
-        History.Clear();
-        foreach (var row in _services.Provisional.History().Where(row => !row.IsPending))
-        {
-            History.Add(row);
-        }
-
         var keep = SelectedEntry?.Id;
-        SelectedEntry = Pending.FirstOrDefault(row => row.Id == keep) ?? Pending.FirstOrDefault();
-
-        PendingCaption = pending.Count == 0
+        _listLoaded = false;
+        _selectedEntry = null;
+        RaiseAccess();
+        Pending.Clear();
+        History.Clear();
+        foreach (var row in result.Value)
+        {
+            if (row.IsPending) Pending.Add(row);
+            else History.Add(row);
+        }
+        SelectedEntry = Pending.Concat(History).FirstOrDefault(row => row.Id == keep);
+        _listLoaded = true;
+        RaiseAccess();
+        PendingCaption = Pending.Count == 0
             ? "Nothing is waiting for a bill."
-            : pending.Count + " entr(y/ies) waiting for a bill - "
-              + Money.Format(pending.Sum(row => row.RefundPaisa)) + " paid out with no bill.";
+            : Pending.Count + " entr(y/ies) waiting for a bill - "
+              + Money.Format(Pending.Sum(row => row.RefundPaisa)) + " paid out with no bill.";
+    }
+
+    /// <summary>Action/nominal timer check; stable granted ticks preserve typed input.</summary>
+    public bool RefreshAccess()
+    {
+        if (_checkingAccess || _postingInProgress) return _accessAllowed;
+        _checkingAccess = true;
+        try
+        {
+            var access = _services.Provisional.CheckAccess(_user);
+            var wasAllowed = _accessAllowed;
+            _accessAllowed = access.Ok;
+            var wasDecider = _decisionAllowed;
+            _decisionAllowed = access.Ok && _services.Provisional.CheckAccess(_user, decision: true).Ok;
+            if (!access.Ok)
+            {
+                // Invalidate backing selections before any callback can reuse a stale row.
+                _selectedEntry = null; _selectedLookup = null; _selectedProduct = null; _selectedLine = null;
+                ClearReadState();
+                Results.Clear(); Lines.Clear();
+                SearchText = string.Empty; QtyText = string.Empty; RefundText = string.Empty;
+                CustomerName = string.Empty; Phone = string.Empty; Notes = string.Empty;
+                Unit = "box"; Reason = ReturnService.ReasonChangedMind;
+                OnPropertyChanged(nameof(SelectedProduct)); OnPropertyChanged(nameof(SelectedLine));
+                RefreshTotal();
+                SetStatus(access.Error ?? "Current Returns access is required.", true);
+            }
+            else if (!wasAllowed)
+                SetStatus("Returns access is available. Refresh and select entries again; old inputs were cleared.", false);
+            if (wasDecider && !_decisionAllowed) ClearDecisionState();
+            RaiseAccess();
+            return access.Ok;
+        }
+        finally { _checkingAccess = false; }
+    }
+
+    private void ClearDecisionState()
+    {
+        _selectedLookup = null;
+        Lookup.Clear(); _lookupLoaded = false;
+        BillCode = string.Empty; CancelReason = string.Empty; LookupText = string.Empty;
+        OnPropertyChanged(nameof(SelectedLookup));
+    }
+
+    private void ClearReadState()
+    {
+        _listLoaded = false;
+        _selectedEntry = null;
+        Pending.Clear(); History.Clear();
+        ClearDecisionState();
+        OnPropertyChanged(nameof(SelectedEntry)); OnPropertyChanged(nameof(SelectedCaption));
+        PendingCaption = "PR entries are not loaded; an empty list has not been confirmed.";
+        RaiseAccess();
+    }
+
+    private void RaiseAccess()
+    {
+        OnPropertyChanged(nameof(CanWork)); OnPropertyChanged(nameof(CanDecide));
+        OnPropertyChanged(nameof(IsOwnerOrManager)); OnPropertyChanged(nameof(IsNotOwnerOrManager));
+        OnPropertyChanged(nameof(EmptyHint));
     }
 
     /// <summary>Prints the slip of the selected entry - the manual-print path for PR.</summary>
     private void Reprint()
     {
-        if (SelectedEntry is null)
+        if (!RefreshAccess()) return;
+        if (!_listLoaded || SelectedEntry is null || !Pending.Concat(History).Contains(SelectedEntry))
         {
-            SetStatus("Pick an entry to print.", true);
+            SetStatus("Pick a current loaded entry to print.", true);
             return;
         }
 
-        var receipt = _services.ProvisionalReceipts.Build(SelectedEntry.Code);
+        var code = SelectedEntry.Code;
+        var receipt = _services.ProvisionalReceipts.Build(code, _user);
 
         if (!receipt.Ok)
         {
@@ -510,14 +611,17 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
         var printed = _services.Printer.Print(receipt.Value!);
 
         SetStatus(printed.Ok
-            ? SelectedEntry.Code + " sent to the printer."
+            ? code + " sent to the printer."
             : "The printer did not answer: " + printed.Error, !printed.Ok);
     }
 
     /// <summary>Smart bill lookup for the selected entry (9.2.1): phone, name, medicine or date.</summary>
     public void SearchBills()
     {
-        var result = _services.Provisional.SearchBills(LookupText);
+        if (!RefreshAccess() || !CanDecide) return;
+        _lookupLoaded = false;
+        SelectedLookup = null;
+        var result = _services.Provisional.SearchBills(LookupText, user: _user);
 
         Lookup.Clear();
 
@@ -527,6 +631,7 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
             return;
         }
 
+        _lookupLoaded = true;
         foreach (var row in result.Value!)
         {
             Lookup.Add(row);
@@ -538,9 +643,10 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
     /// <summary>Fills the bill box from the lookup list (no database work, no side effects).</summary>
     private void PickBill()
     {
+        if (!RefreshAccess()) return;
         var row = SelectedLookup;
 
-        if (row is not null)
+        if (CanDecide && _lookupLoaded && row is not null && Lookup.Contains(row))
         {
             BillCode = row.Code;
             SetStatus(row.Code + " picked - press Attach this bill.", false);
@@ -558,7 +664,7 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
             return null;
         }
 
-        var receipt = _services.ProvisionalReceipts.Build(code);
+        var receipt = _services.ProvisionalReceipts.Build(code, _user);
 
         if (!receipt.Ok)
         {
@@ -597,6 +703,7 @@ public sealed class ProvisionalViewModel : ObservableObject, IEmptyPage
 
     private void RunPosting(Action action)
     {
+        if (!RefreshAccess()) return;
         if (RefusePendingPosting()) return;
         if (!_posting.TryBegin()) return;
         _postingInProgress = true;

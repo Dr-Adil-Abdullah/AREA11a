@@ -35,7 +35,7 @@ public sealed class ProvisionalReceiptService
         }
     }
 
-    public ServiceResult<ReceiptDocument> Build(string? code)
+    public ServiceResult<ReceiptDocument> Build(string? code, User? user = null)
     {
         var clean = (code ?? string.Empty).Trim();
         if (clean.Length == 0)
@@ -45,14 +45,10 @@ public sealed class ProvisionalReceiptService
 
         try
         {
-            var row = _provisional.Get(clean);
-            if (row is null)
-            {
-                return ServiceResult<ReceiptDocument>.Fail("No no-bill return found with the number " + clean + ".");
-            }
-
-            var lines = _provisional.Lines(row.Id);
-            var document = Compose(row, lines);
+            var read = _provisional.ReadReceipt(clean, user);
+            if (!read.Ok || read.Value is null)
+                return ServiceResult<ReceiptDocument>.Fail(read.Error ?? "The complete PR slip could not be prepared.");
+            var document = Compose(read.Value.Row, read.Value.Lines);
 
             return ServiceResult<ReceiptDocument>.Success(document);
         }

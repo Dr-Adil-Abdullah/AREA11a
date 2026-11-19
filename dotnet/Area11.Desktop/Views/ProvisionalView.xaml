@@ -20,7 +20,7 @@
                     Content="Refresh" Style="{StaticResource GhostButton}" Command="{Binding RefreshCommand}" />
         </DockPanel>
 
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="1" IsEnabled="{Binding CanWork}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1.25*" />
                 <ColumnDefinition Width="14" />

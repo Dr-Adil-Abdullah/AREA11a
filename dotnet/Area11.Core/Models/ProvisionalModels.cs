@@ -180,3 +180,10 @@ public sealed class BillSearchRow
 
     public string DateLabel => string.IsNullOrWhiteSpace(Date) || Date!.Length < 16 ? Date ?? string.Empty : Date![..16];
 }
+
+/// <summary>Internal read result for a complete authorized PR slip, not a cached authorization token.</summary>
+public sealed class ProvisionalReceiptData
+{
+    public ProvisionalRow Row { get; init; } = new();
+    public List<string> Lines { get; init; } = new();
+}
