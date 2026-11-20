@@ -108,6 +108,46 @@ public sealed class SettingsViewModel : ObservableObject
     private bool _isStatusError;
     private bool _suppressPermissionSave;
     private bool _confirmLabelReset;
+    private SettingsEditForm? _editForm;
+    private static readonly string[] FormKeys =
+    {
+        "appearance.productPhotoSize",
+        "store.name",
+        "brand.appName",
+        "store.address",
+        "store.phone",
+        "store.footerNote",
+        "session.idleHours",
+        "startup.mode",
+        "lockdown.focusGuard",
+        "printer.name",
+        "printer.autoPrint",
+        "printer.autoCut",
+        "printer.defaultBulk",
+        "whatsapp.preparePdf",
+        "whatsapp.exportDirectory",
+        "printer.bulkFormat",
+        "printer.copies",
+        "receipt.showDiscount",
+        "sale.successPopup",
+        "printer.width",
+        "discount.maxPercentCashier",
+        "discount.maxPercentManager",
+        "discount.blockBelowCost",
+        "discount.billBasis",
+        "credit.blockOverLimit",
+        "profit.showMargins",
+        "tax.enabled",
+        "tax.percent",
+        "expiry.levels",
+        "supplier.returnCutoffDays",
+        "supplier.returnAlertDays",
+        "loyalty.enabled",
+        "loyalty.rupeesPerPoint",
+        "loyalty.vipThreshold",
+    };
+    private static readonly string[] CloudFormKeys = { "sync.enabled", "sync.url", "sync.table", "sync.shopId", "sync.automaticEnabled", "sync.automaticMinutes", "sync.key" };
+
     private bool _settingsAccessAllowed;
     private bool _cloudAccessAllowed;
 
@@ -701,16 +741,30 @@ public sealed class SettingsViewModel : ObservableObject
         OnPropertyChanged(nameof(ResetLabelsText));
         LabelRows.Clear();
 
-        foreach (var label in _services.AppLabels.List())
+        if (_editForm is null) return;
+        foreach (var definition in AppLabelService.Definitions)
         {
-            LabelRows.Add(new AppLabelEditRow(label.Key, label.DefaultText, label.Text));
+            var text = _editForm.GetString(definition.SettingKey).Trim();
+            if (AppLabelService.GuardSetting(definition.SettingKey, text) is not null) text = definition.DefaultText;
+            LabelRows.Add(new AppLabelEditRow(definition.Key, definition.DefaultText, text));
         }
     }
 
     private void Load()
     {
         if (!UpdateSettingsAccess()) return;
-        var settings = _services.Settings;
+        _editForm = null;
+        var keys = FormKeys.Concat(AppLabelService.Definitions.Select(d => d.SettingKey))
+            .Concat(CanChangeCloud ? CloudFormKeys : Array.Empty<string>());
+        var loaded = _services.Settings.LoadEditForm(_user, keys);
+        if (!loaded.Ok || loaded.Value is null)
+        {
+            LabelRows.Clear();
+            SetStatus(loaded.Error ?? "Settings could not be loaded. Refresh before saving.", true);
+            return;
+        }
+        var settings = loaded.Value;
+        _editForm = settings;
 
         var photoSize = settings.GetString("appearance.productPhotoSize");
         ProductPhotoSize = photoSize is "large" ? "large" : "medium";
@@ -728,7 +782,7 @@ public sealed class SettingsViewModel : ObservableObject
         var startupMode = settings.GetString(StartupService.ModeKey);
         SelectedStartupMode = StartupModeOptions.FirstOrDefault(option => option.Key == startupMode)
                               ?? StartupModeOptions[0];
-        FocusGuardEnabled = _services.Focus.Enabled;
+        FocusGuardEnabled = settings.GetBool(FocusGuardService.GuardKey);
 
         // The clock line (v0.35.0, D-92). It says where the time comes from and how far the two
         // clocks were apart when Area11 last looked - a shop whose PC is a day out must see it here.
@@ -779,7 +833,8 @@ public sealed class SettingsViewModel : ObservableObject
     private void LoadCloud()
     {
         if (!CanChangeCloud) { ClearCloudData(); return; }
-        var settings = _services.Settings;
+        var settings = _editForm;
+        if (settings is null) { ClearCloudData(); return; }
         // Cloud sync (F-48): the key is the one value that is shown as a masked label, never as text.
         SyncEnabled = settings.GetBool(SyncService.EnabledKey);
         SyncUrl = settings.GetString(SyncService.UrlKey);
@@ -869,6 +924,7 @@ public sealed class SettingsViewModel : ObservableObject
         if (!access.Ok)
         {
             ClearCloudData(); ClearStaffData(); LabelRows.Clear();
+            _editForm = null;
             _cloudAccessAllowed = false;
             _staffAccessAllowed = false;
             OnPropertyChanged(nameof(CanManageStaff));
@@ -886,7 +942,8 @@ public sealed class SettingsViewModel : ObservableObject
         var cloud = _services.Settings.CheckCloudAccess(_user).Ok;
         var cloudChanged = SetProperty(ref _cloudAccessAllowed, cloud, nameof(CanChangeCloud));
         if (!cloud) ClearCloudData();
-        else if (cloudChanged) LoadCloud();
+        else if (cloudChanged) { _editForm = null; LoadCloud(); }
+        if (cloudChanged) _editForm = null; // Refresh must explicitly reload the whole form after access changes.
         if (changed)
         {
             OnPropertyChanged(nameof(CanChangeAppName));
@@ -994,6 +1051,8 @@ public sealed class SettingsViewModel : ObservableObject
     private void Save()
     {
         if (!UpdateSettingsAccess()) return;
+        var form = _editForm;
+        if (form is null) { SetStatus("Refresh Settings and review the form before saving.", true); return; }
 
         var paper = SelectedPaper;
         if (paper is null)
@@ -1079,7 +1138,7 @@ public sealed class SettingsViewModel : ObservableObject
 
         // A switch that is ON with half a form behind it would fail on the Cloud sync page with a
         // sentence the owner cannot act on, so the page refuses the combination here (D-66, v0.26.0).
-        var keyWillExist = !_syncKeyCleared && (_services.Cloud.HasKey || SyncKey.Trim().Length > 0);
+        var keyWillExist = !_syncKeyCleared && (form.HasCloudKey || SyncKey.Trim().Length > 0);
 
         if (CanChangeCloud && SyncEnabled
             && (SyncUrl.Trim().Length == 0 || SyncTable.Trim().Length == 0
@@ -1126,7 +1185,7 @@ public sealed class SettingsViewModel : ObservableObject
             ["credit.blockOverLimit"] = BlockOverLimit,
             ["tax.enabled"] = TaxEnabled,
             ["tax.percent"] = taxPercent,
-            ["expiry.levels"] = _services.Settings.ExpiryBands
+            ["expiry.levels"] = form.ExpiryBands
                 .WithDays(expiry1, expiry2, expiry3)
                 .Bands
                 .ToList(),
@@ -1167,7 +1226,7 @@ public sealed class SettingsViewModel : ObservableObject
         // The app name is an owner-only key: a manager's ordinary save must not trip the whole
         // atomic dictionary on one key, so it travels only when the owner changed it.
         if (CanChangeAppName && !string.Equals(AppDisplayName.Trim(),
-                _services.Settings.GetString("brand.appName"), StringComparison.Ordinal))
+                form.GetString("brand.appName"), StringComparison.Ordinal))
         {
             values["brand.appName"] = AppDisplayName.Trim();
         }
@@ -1175,7 +1234,7 @@ public sealed class SettingsViewModel : ObservableObject
         // A manager saving ordinary settings must not submit this owner-only switch.
         if (_user.IsOwner) values[MasterFoundationSettings.ProfitShowMargins] = ShowMargins;
         if (_user.IsOwner) values["discount.billBasis"] = BillDiscountBasis;
-        var result = _services.Settings.SetMany(values, _user);
+        var result = _services.Settings.SaveEditForm(values, _user, form);
 
         if (!result.Ok)
         {
@@ -1183,9 +1242,12 @@ public sealed class SettingsViewModel : ObservableObject
             return;
         }
 
+        form = result.SettingsEdit;
+        _editForm = form;
+        if (form is null) { SetStatus("SAVED. Reopen Settings before making another change.", true); return; }
         // The summary line is rebuilt from what was just stored, so the owner sees the meaning of
         // the three numbers he typed without leaving the page.
-        ExpirySummary = _services.Settings.ExpiryBands.Summary;
+        ExpirySummary = form.ExpiryBands.Summary;
         RaiseLoyaltySummary();
 
         // The key box is emptied at once: a key left on the screen is one a person walking past can read.
@@ -1212,10 +1274,10 @@ public sealed class SettingsViewModel : ObservableObject
         var startupNote = string.Empty;
 
         if (CanChangeStartup && SelectedStartupMode is not null
-            && SelectedStartupMode.Key != _services.Startup.Mode)
+            && SelectedStartupMode.Key != form.GetString(StartupService.ModeKey))
         {
             var startup = _services.Startup.SetMode(
-                _user, SelectedStartupMode.Key, Environment.ProcessPath ?? string.Empty);
+                _user, SelectedStartupMode.Key, Environment.ProcessPath ?? string.Empty, form);
 
             if (!startup.Ok)
             {
@@ -1223,6 +1285,8 @@ public sealed class SettingsViewModel : ObservableObject
                 return;
             }
 
+            form = startup.SettingsEdit ?? form;
+            _editForm = form;
             startupNote = " Startup: " + _services.Startup.ModeLabel + " " + _services.Startup.ScopeText;
         }
 
@@ -1230,9 +1294,9 @@ public sealed class SettingsViewModel : ObservableObject
         // guard. Unchanged means untouched, like the startup mode above.
         var focusNote = string.Empty;
 
-        if (CanChangeStartup && FocusGuardEnabled != _services.Focus.Enabled)
+        if (CanChangeStartup && FocusGuardEnabled != form.GetBool(FocusGuardService.GuardKey))
         {
-            var focus = _services.Settings.Set(FocusGuardService.GuardKey, FocusGuardEnabled, _user);
+            var focus = _services.Settings.SaveEditForm(new Dictionary<string, object?> { [FocusGuardService.GuardKey] = FocusGuardEnabled }, _user, form);
 
             if (!focus.Ok)
             {
@@ -1240,6 +1304,8 @@ public sealed class SettingsViewModel : ObservableObject
                 return;
             }
 
+            form = focus.SettingsEdit ?? form;
+            _editForm = form;
             focusNote = " Screen lock: " + (FocusGuardEnabled ? "on." : "off.");
         }
 
@@ -1350,7 +1416,7 @@ public sealed class SettingsViewModel : ObservableObject
     private void RaiseSyncLabels()
     {
         if (!CanChangeCloud) { SyncKeyLabel = "Cloud settings access is required."; return; }
-        SyncKeyLabel = _services.Cloud.HasKey
+        SyncKeyLabel = _editForm?.HasCloudKey == true
             ? "A key is saved. Leave the box empty to keep it."
             : "No key is saved yet.";
 
@@ -1515,7 +1581,8 @@ public sealed class SettingsViewModel : ObservableObject
             return;
         }
 
-        var result = _services.AppLabels.Reset(_user);
+        if (_editForm is null) { SetStatus("Refresh Settings before restoring application words.", true); return; }
+        var result = _services.AppLabels.Reset(_user, _editForm);
 
         if (!result.Ok)
         {
@@ -1525,6 +1592,7 @@ public sealed class SettingsViewModel : ObservableObject
             return;
         }
 
+        _editForm = result.SettingsEdit;
         LoadLabels();
         _onSaved?.Invoke();
         SetStatus("Original application words restored. The shell and open pages have been updated.", false);

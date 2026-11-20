@@ -1411,7 +1411,7 @@ def check_app_labels() -> None:
 
     vm_text = settings_vm.read_text(encoding="utf-8-sig")
     for needle in ("_services.AppLabels.Validate", "AppLabelService.SettingKey",
-                   "_services.AppLabels.Reset(_user)", "_onSaved?.Invoke()"):
+                   "_services.AppLabels.Reset(_user, _editForm)", "_onSaved?.Invoke()"):
         if needle not in vm_text:
             fail(f"SettingsViewModel is missing the label save/reset route: {needle}")
 
@@ -6260,6 +6260,58 @@ def check_windows_v1201_regressions() -> None:
     REPORT.append('v0.120.1 owner Windows22-failure fixture guards:checked Settings/current identities/explicit denials/stored names/pre-fault services/schema-valid marker;new C# rerun required')
 
 
+def check_settings_edit_boundaries() -> None:
+    """Part5.1 bounded Settings form lexical contracts,not Roslyn/provider/WPF execution."""
+    def read(path): return (DOTNET / path).read_text()
+    def need(text, *tokens):
+        for token in tokens:
+            if token not in text: FAILURES.append('Settings edit contract missing: ' + token)
+    def order(text, *tokens):
+        positions = [text.find(t) for t in tokens]
+        if -1 in positions or positions != sorted(positions): FAILURES.append('Settings edit ordering: ' + ' -> '.join(tokens))
+    service = read('Area11.Core/Services/SettingsService.cs')
+    load = service.split('public ServiceResult<SettingsEditForm> LoadEditForm(',1)[-1].split('private string SettingFingerprint',1)[0]
+    need(load, 'k == AuthService.RecoveryWordKey', 'return _db.Snapshot(connection =>',
+         'baselines[key] = SettingFingerprint(connection, key);', 'if (key == SyncService.KeyKey)',
+         'else values[key] = raw ?? Defaults[key];', 'hasCloudKey = false;')
+    order(load, 'RequireWriter(connection, actor, selected);', 'SELECT value FROM settings WHERE key=@key;', 'baselines[key] =')
+    gate = service.split('private void RequireEdit(',1)[-1].split('internal ServiceResult CheckStartupEdit(',1)[0]
+    need(gate, '_db.RequireWriteTransaction(connection);', '!ReferenceEquals(expected.Database, _db)',
+         '!expected.Baselines.TryGetValue(key, out var old) || old != SettingFingerprint(connection, key)')
+    need(service, 'SELECT key,value FROM settings WHERE key=@entity;', 'System.Security.Cryptography.SHA256.HashData',
+         'expected is null ? ServiceResult.Fail("Load Settings again before saving this form.") : SetMany(values, actor, expected);')
+    write = service.split('public ServiceResult SetMany(',1)[-1].split('internal ServiceResult SaveRecoveryHash',1)[0]
+    order(write, '_db.Tx(connection =>', 'var writer = RequireWriter(connection, actor, values.Keys);',
+          'if (ownerOnly) OwnerAccess.Require(_db, connection, actor);',
+          'if (expected is not null) RequireEdit(connection, expected, checkedKeys);', 'foreach (var pair in values)',
+          'savedForm = expected.WithSaved(visible, baselines, hasKey);', '}, outcome);', 'committed = true;', 'lock (_gate)')
+    need(write, 'values.Keys.Concat(values.Keys.Any(IsCloudConfiguration)', '? new[] { SyncService.KeyKey } : Array.Empty<string>()',
+         'values.Keys.ToDictionary(k => k, k => SettingFingerprint(connection, k)', 'prepared.Where(p => p.Key != SyncService.KeyKey)',
+         'return new ServiceResult { Ok = true, SettingsEdit = savedForm };', 'NoCommitConfirmed = !committed && outcome.NoCommitConfirmed')
+    model = read('Area11.Core/Models/SettingsEditForm.cs')
+    need(model, 'internal Database Database { get; }', 'internal IReadOnlyDictionary<string, string> Baselines { get; }',
+         'var nextBaselines = Baselines.ToDictionary', 'foreach (var pair in baselines) nextBaselines[pair.Key] = pair.Value;',
+         'private readonly Dictionary<string, string> _values;', 'public string GetRaw(string key)')
+    need(read('Area11.Core/Utils/ServiceResult.cs'), '[System.Text.Json.Serialization.JsonIgnore]\n    public Area11.Core.Models.SettingsEditForm? SettingsEdit { get; init; }')
+    vm = read('Area11.Desktop/ViewModels/SettingsViewModel.cs')
+    need(vm, '_services.Settings.LoadEditForm(_user, keys)', 'var settings = loaded.Value;', '_editForm = settings;',
+         'settings.GetBool(FocusGuardService.GuardKey)', 'if (form is null)', '_services.Settings.SaveEditForm(values, _user, form)',
+         'form.ExpiryBands', 'form.HasCloudKey', 'form = result.SettingsEdit;', '_services.AppLabels.Reset(_user, _editForm)',
+         'private static readonly string[] FormKeys', 'private static readonly string[] CloudFormKeys', 'if (cloudChanged) _editForm = null;')
+    load_ui = vm.split('private void Load()',1)[-1].split('private void LoadCloud()',1)[0]
+    if 'var settings = _services.Settings;' in load_ui: FAILURES.append('Settings form must not load shared cached values')
+    save_ui = vm.split('private void Save()',1)[-1].split('// ---------------------------- Cloud sync',1)[0]
+    if 'LoadEditForm(' in save_ui: FAILURES.append('Settings Save must not silently reload/rebase stale fields')
+    startup = read('Area11.Core/Services/StartupService.cs').split('public ServiceResult SetMode(',1)[-1].split('public ServiceResult SetMachineAutoStart',1)[0]
+    order(startup, '_settings.CheckStartupEdit(actor, expected)', 'var machineWas', '_settings.Set(ModeKey, clean, actor, expected)')
+    tests = read('Area11.Tests/SettingsEditConcurrencyTests.cs')
+    if tests.count('[Fact]') != 25: FAILURES.append('Settings edit requires25 additive written facts')
+    need(tests, 'HandoffDoesNotRebaseAnUntouchedKeyChangedBySomeoneElse', 'BulkConflictDoesNotPartiallyWriteEarlierKeysOrAudit',
+         'CloudConfigurationCannotUseAStaleMaskedKeyDependency', 'AuditFaultRollsBackValuesAndCacheAndKeepsTheOriginalBaselineRetryable',
+         'StaleStartupFormIsRefusedBeforeTouchingFakeWindowsEntries', '.Take(c, "sale")')
+    REPORT.append('Part5.1 Settings main form:coherent detached reads/per-key checked atomic writes/exact partial handoff/masked key dependency;25 written cases NOT runtime/full Settings completion')
+
+
 def check_shared_draft_edit_boundaries() -> None:
     """First shared-draft CAS checkpoint. Lexical checks,not C#/provider/runtime proof."""
     def read(path): return (DOTNET / path).read_text()
@@ -9381,6 +9433,7 @@ def main() -> int:
     check_authenticated_session_boundaries()
     check_edit_concurrency_boundaries()
     check_shared_draft_edit_boundaries()
+    check_settings_edit_boundaries()
     check_csharp_grammar()
 
     if not quiet:

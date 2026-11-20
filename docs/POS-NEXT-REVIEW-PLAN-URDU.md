@@ -1,8 +1,8 @@
 # POS، رعایت اور مکمل جائزہ — مالک کی جانچ کے لیے یکجا منصوبہ
 
-## ⏳ موجودہ حصہ5/14 — مشترکہ Draft checkpoint — v0.124.0 Sorrel
+## ⏳ موجودہ 5.1 — Settings مرکزی فارم — v0.125.0 Celandine
 
-تازہnextسےاسیحصہ5کیپیشرفت؛**حصہ5ابھیجاری،Settings/StockTakeاورباقیsourceجائزہبھیباقی**۔ SharedDraftSave/premark/discardپرwriteTxexpected-state،coherentOpen/List،exactSave/confirmedRestore/HeldResumebaselineاورDesktophandoff؛D-100shared/financialcreators/پرانےunknown-SAVEDguardsبرقرار۔ ⏳36نئےC#cases/3118suiteUNRUN؛115static/41نئیlexicalnegative/40Python-ownedWAL+DELETEplansاصل.NET/provider/WPFثبوتنہیں۔ [⏳ جائزہ/PT-66/باقیحصہ5](DRAFT-EDIT-CONCURRENCY-REVIEW-URDU.md)؛[⏳14حصے](REMAINING-14-PORTIONS-URDU.md)۔ **اگلاکاماسیحصہ5کےSettingsmulti-keyforms،StockTakeاورremainingtoggle/update/snapshotroutesپر؛حصہ6شروعنہیںکرنا۔** حصوں2/3/4اورپہلےcheckpointکانیاWindowsrunبھیباقی؛FullPhase4OPEN؛❌installerنہیںبنا۔
+مالککیتازہترتیب:نامکمل5کیپیشرفت5.1/5.2؛**1تا5کےباقیکاماورضروریتصدیقمکملکیےبغیر6شروعنہیںکرنا۔** 5.1ابھیجاری:Settingsmainformcoherentdetachedread/per-keyatomiccompare،exactwritten-keyhandoff،maskedcloudkeydependency،labelReset/focusاورfinalstartupDBchecks۔ ⏳25نئےC#facts/3143suiteUNRUN؛116static/29نئیlexicalnegative/24Python-ownedWAL+DELETEplansاصل.NET/provider/WPFثبوتنہیں۔ [⏳ جائزہ/PT-67/باقی5.1](SETTINGS-EDIT-CONCURRENCY-REVIEW-URDU.md)؛[⏳14حصے](REMAINING-14-PORTIONS-URDU.md)۔ **اگلاکامابھی5.1کےBackup-schedule/Pricing/Hardware/icon/workbookSettingswritersاورstartupregistryrace/Windowsپر؛StockTakeاسکےبعدحصہ5میں۔** حصوں2/3/4اورپہلے5checkpointsکانیاWindowsrunبھیباقی؛FullPhase4OPEN؛❌6/installerشروعنہیں۔
 
 
 ## ⏳ موجودہ حصہ2/14 — v0.120.2 Willow

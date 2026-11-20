@@ -1,5 +1,8 @@
 # ⏳ حصہ5/14 — مشترکہ Draft کی پرانی ترمیم کی روک — v0.124.0 Sorrel
 
+> ⏳ تازہ **5.1Settings** کا محدود checkpoint: [PT-67/باقیراستے](SETTINGS-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3143suiteUNRUN۔ نیچےاسوقتکیحیثیتتاریخی؛5.1ابھیجاری،1تا5مکمل+تصدیقسےپہلے6نہیں۔
+
+
 ## ⏳ اجازت اور حد
 
 تازہ `next` سے **اسی جاری حصہ5** کو آگے بڑھایا؛حصہ6 یا installer کی اجازت نہیں سمجھی۔ یہ دوسرا محدود checkpoint ہے۔ [پہلا Product/Customer/catalog checkpoint](EDIT-CONCURRENCY-REVIEW-URDU.md) برقرار۔ **Settings،StockTake اور باقی update/toggle/read→write راستوں کا source جائزہ ابھی باقی**؛صرف Windows کی جانچ باقی نہیں۔

@@ -1,5 +1,10 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## ⏳ v0.125.0 — ترتیب کی تازہ ہدایت،5.1 Settings
+
+مالکنےواضحکیا:پہلےموجودہحصہمکمل،نامکمل5کیذیلیپیشرفت5.1/5.2کہیں؛**1تا5کےباقیکاماورضروریتصدیقمکملکیےبغیر6شروعنہیںکرنا۔** تازہNextسے5.1Settingsmainformکیcheckedread/saveپیشرفت؛[PT-67/باقی5.1](SETTINGS-EDIT-CONCURRENCY-REVIEW-URDU.md)۔25نئےfacts/3143suiteUNRUN؛5.1ابھیمکملنہیں۔ نئیمالییاbusinessپالیسی،durableidentityیاinstallerکیمنظورینہیں۔
+
+
 ## ⏳ v0.124.0 — حصہ5 میں مشترکہ Draft کا stale-edit check؛D-100 تبدیل نہیں
 
 تازہnextسےاسیحصہ5میںsharedDraftSave/premark/discardپرexpected-statecheck،exactSave/confirmedRestore/HeldResumehandoff؛پرانیYesکےبعدبدلاDraftخاموشیسےpost/discardنہیں۔ Sharedپالیسیبرقرار،creator-onlylockنہیں؛مجازدوسراشخصfreshbaselineسےکامکرسکے۔ PurchasepayloadپرالگCost/main،list/discardپرpagepermissionبرقرار؛مالیحساب/discount/stock/Numberingنہیںبدلے۔ [⏳ PT-66/حدود](DRAFT-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3118suiteUNRUN۔ Settings/StockTakeاورremainingroutesاسیحصہ5میںباقی؛حصہ6کینئیdurableidentityپالیسیخودسےشروعنہیںکی؛installerنہیںبنا۔

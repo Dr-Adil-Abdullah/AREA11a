@@ -1,5 +1,10 @@
 # Area11 — Real-life Physical Testing Log
 
+## ⏳ PT-67 — 5.1 Settings مرکزی فارم (v0.125.0)
+
+[⏳ مکملsteps/باقی5.1](docs/SETTINGS-EDIT-CONCURRENCY-REVIEW-URDU.md)؛verifiedencryptedbackup **اورالگDB/photos/config**پہلے۔3143/0fail/0skipاورDesktopRelease،دوforms/CounterAutoPrintکیباہمترمیم،atomicnoauditconflict،heartbeat/counterchurn،missingrow،maskedkeyrotation،exactwritten-keyhandoff/untouchedkey،labelRestoreاورpartialmain-SAVED/startup/focusجانچیں۔ ⏳25نئےfactsUNRUN؛116static/29lexical/24PythonplansWindows/registry/providerثبوتنہیں۔ Backup/Pricing/Hardware/workbook/registryraceبھیابھی5.1میںباقی؛1تا5مکمل+تصدیقسےپہلے6نہیں؛installerنہیںبنا۔
+
+
 ## ⏳ PT-66 — حصہ5/14 shared Draft کے دوکھلےفارم/confirmation (v0.124.0)
 
 [⏳ مکملsteps/حدود/باقیحصہ5](docs/DRAFT-EDIT-CONCURRENCY-REVIEW-URDU.md)۔ verifiedencryptedbackup **اورواقعیالگDB/photos/config**پہلے؛اصلshopپرtestpostsنہیں۔3118suite/0fail/0skipاورDesktopRelease؛دوauthorizededitorsکےSave/Post،drawerPost/DiscardYesکےدورانتبدیلی،same-timestampchange،freshsharedSave،Costبغیرpurchase-summarydiscard،knownfailureexactrestore/correction/laterwriter،heldresumehandoffاورunknown/SAVEDguardsجانچیں۔ ⏳36نئےC#casesUNRUN؛115static/41lexical/40PythonWAL+DELETEplansWindows/LAN/providerثبوتنہیں۔ **Settings/StockTake/remainingroutesکاسورسجائزہبھیباقی**؛حصہ5جاری،حصہ6/installerشروعنہیں۔ نیچےپرانےcheckpointsتاریخیہیں۔

@@ -130,7 +130,7 @@ public sealed class AppLabelService
     }
 
     /// <summary>Restore every shipped section name, and only those names, with the same audit trail.</summary>
-    public ServiceResult Reset(User? actor)
+    public ServiceResult Reset(User? actor, SettingsEditForm? expected = null)
     {
         if (!_permissions.Can(actor, Modules.Settings))
         {
@@ -140,7 +140,7 @@ public sealed class AppLabelService
         return _settings.SetMany(Catalog.ToDictionary(
             definition => definition.SettingKey,
             definition => (object?)definition.DefaultText,
-            StringComparer.Ordinal), actor);
+            StringComparer.Ordinal), actor, expected);
     }
 
     /// <summary>SettingsService calls this too, so a direct setting write cannot bypass the guard.</summary>

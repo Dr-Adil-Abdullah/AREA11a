@@ -1,5 +1,8 @@
 # ⏳ حصہ5/14 — بیک وقت ترمیم: پہلا checkpoint — v0.123.0 Verbena
 
+> ⏳ تازہ **5.1Settings** کا محدود checkpoint: [PT-67/باقیراستے](SETTINGS-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3143suiteUNRUN۔ نیچےاسوقتکیحیثیتتاریخی؛5.1ابھیجاری،1تا5مکمل+تصدیقسےپہلے6نہیں۔
+
+
 > ⏳ تازہv0.124.0میںsharedDraftکااگلامحدودcheckpointآگیا: [جائزہ/PT-66](DRAFT-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3118suiteUNRUN۔ نیچےv0.123.0کیپہلیحیثیتتاریخیہے؛اسکےsharedDraftباقیکےحوالےاباسنئےcheckpointسےمحدودطورپربدلے۔ Settings/StockTake/remainingroutesاورWindowsاببھیباقی،حصہ5جاری۔
 
 

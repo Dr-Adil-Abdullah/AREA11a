@@ -356,16 +356,92 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         "sync.enabled" or "sync.url" or "sync.key" or "sync.table" or "sync.shopId" or "sync.automaticEnabled" or "sync.automaticMinutes";
     private static bool IsBackupSchedule(string key) => key is "backup.autoEnabled" or "backup.everyHours" or "backup.keep";
 
+    /// <summary>Read only the requested edit keys through one authorized snapshot,not the cache.
+    /// Key presence and exact persisted JSON are fingerprinted;runtime counters are not included unless requested.</summary>
+    public ServiceResult<SettingsEditForm> LoadEditForm(User? actor, IEnumerable<string> keys)
+    {
+        var selected = keys.Distinct(StringComparer.Ordinal).OrderBy(k => k, StringComparer.Ordinal).ToArray();
+        if (selected.Length == 0 || selected.Any(k => !Defaults.ContainsKey(k) || k == AuthService.RecoveryWordKey))
+            return ServiceResult<SettingsEditForm>.Fail("Choose known, non-recovery settings to edit.");
+        try
+        {
+            return _db.Snapshot(connection =>
+            {
+                RequireWriter(connection, actor, selected);
+                var values = new Dictionary<string, string>(StringComparer.Ordinal);
+                var baselines = new Dictionary<string, string>(StringComparer.Ordinal);
+                var hasCloudKey = false;
+                foreach (var key in selected)
+                {
+                    var raw = _db.QuerySingle<string>(connection, "SELECT value FROM settings WHERE key=@key;", new { key });
+                    baselines[key] = SettingFingerprint(connection, key);
+                    if (key == SyncService.KeyKey)
+                    {
+                        try { hasCloudKey = !string.IsNullOrWhiteSpace(JsonSerializer.Deserialize<string>(raw ?? Defaults[key])); }
+                        catch (JsonException) { hasCloudKey = false; }
+                    }
+                    else values[key] = raw ?? Defaults[key];
+                }
+                return ServiceResult<SettingsEditForm>.Success(new SettingsEditForm(_db, values, baselines, hasCloudKey));
+            });
+        }
+        catch (ValidationException exception) { return ServiceResult<SettingsEditForm>.Fail(exception.Message); }
+        catch (Exception exception)
+        {
+            _log.Error("Settings edit form could not be read.", exception);
+            return ServiceResult<SettingsEditForm>.Fail("Settings could not be loaded. Refresh before editing.");
+        }
+    }
+
+    private string SettingFingerprint(SqliteConnection connection, string key) =>
+        Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(
+            _db.Fingerprint(connection, "SELECT key,value FROM settings WHERE key=@entity;", 0, key))));
+
+    private void RequireEdit(SqliteConnection connection, SettingsEditForm expected, IEnumerable<string> keys)
+    {
+        _db.RequireWriteTransaction(connection);
+        if (!ReferenceEquals(expected.Database, _db))
+            throw new ValidationException("Settings changed or belong to another editor. Nothing from this save was stored. Refresh and review.");
+        foreach (var key in keys.Distinct(StringComparer.Ordinal))
+            if (!expected.Baselines.TryGetValue(key, out var old) || old != SettingFingerprint(connection, key))
+                throw new ValidationException("Settings changed after this form was loaded. Nothing from this save was stored. Refresh and review.");
+    }
+
+    internal ServiceResult CheckStartupEdit(User actor, SettingsEditForm expected)
+    {
+        try
+        {
+            _db.Tx(connection =>
+            {
+                OwnerAccess.Require(_db, connection, actor);
+                RequireWriter(connection, actor, new[] { StartupService.ModeKey });
+                RequireEdit(connection, expected, new[] { StartupService.ModeKey });
+                return true;
+            });
+            return ServiceResult.Success();
+        }
+        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
+        catch (Exception exception)
+        {
+            _log.Error("Startup edit state could not be checked.", exception);
+            return ServiceResult.Fail("Startup settings could not be checked. Refresh first.");
+        }
+    }
+
+    /// <summary>Checked form path. Imperative Set/SetMany callers remain distinct from loaded edits.</summary>
+    public ServiceResult SaveEditForm(IReadOnlyDictionary<string, object?> values, User? actor, SettingsEditForm? expected) =>
+        expected is null ? ServiceResult.Fail("Load Settings again before saving this form.") : SetMany(values, actor, expected);
+
     /// <summary>Owner-visible change: old → new is written into the black box.</summary>
-    public ServiceResult Set(string key, object? value, User? actor) =>
-        SetMany(new Dictionary<string, object?> { [key] = value }, actor);
+    public ServiceResult Set(string key, object? value, User? actor, SettingsEditForm? expected = null) =>
+        SetMany(new Dictionary<string, object?> { [key] = value }, actor, expected);
 
     /// <summary>
     /// Saves several settings as ONE transaction: either every value is stored or none is.
     /// The Settings screen edits a dozen fields at once, and half a page of saved values would be
     /// worse than a refusal (the paper width could change while the copy count does not).
     /// </summary>
-    public ServiceResult SetMany(IReadOnlyDictionary<string, object?> values, User? actor)
+    public ServiceResult SetMany(IReadOnlyDictionary<string, object?> values, User? actor, SettingsEditForm? expected = null)
     {
         if (values.ContainsKey(AuthService.RecoveryWordKey))
             return ServiceResult.Fail("The recovery word must use the owner-only secret settings path.");
@@ -430,6 +506,9 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         }
 
         var prepared = preparation.Value;
+        var outcome = new TransactionOutcome();
+        var committed = false;
+        SettingsEditForm? savedForm = null;
 
         try
         {
@@ -437,6 +516,10 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
             {
                 var writer = RequireWriter(connection, actor, values.Keys);
                 if (ownerOnly) OwnerAccess.Require(_db, connection, actor);
+                // Cloud enable/configuration depends on the masked credential too,even if not replaced.
+                var checkedKeys = values.Keys.Concat(values.Keys.Any(IsCloudConfiguration)
+                    ? new[] { SyncService.KeyKey } : Array.Empty<string>());
+                if (expected is not null) RequireEdit(connection, expected, checkedKeys);
                 foreach (var pair in values)
                 {
                     var json = prepared[pair.Key];
@@ -456,7 +539,18 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
                         secret ? "{\"secret\":\"not disclosed\"}" : old,
                         secret ? "{\"secret\":\"changed\"}" : json);
                 }
-            });
+                if (expected is not null)
+                {
+                    var baselines = values.Keys.ToDictionary(k => k, k => SettingFingerprint(connection, k), StringComparer.Ordinal);
+                    var visible = prepared.Where(p => p.Key != SyncService.KeyKey).ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal);
+                    bool? hasKey = values.ContainsKey(SyncService.KeyKey)
+                        ? !string.IsNullOrWhiteSpace(values[SyncService.KeyKey]?.ToString()) : null;
+                    // Rebase ONLY written keys. Never bless a concurrent change in untouched form fields.
+                    savedForm = expected.WithSaved(visible, baselines, hasKey);
+                }
+                return true;
+            }, outcome);
+            committed = true;
 
             lock (_gate)
             {
@@ -466,12 +560,19 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
                 }
             }
 
-            return ServiceResult.Success();
+            return new ServiceResult { Ok = true, SettingsEdit = savedForm };
+        }
+        catch (ValidationException exception)
+        {
+            return new ServiceResult { Error = outcome.NoCommitConfirmed ? exception.Message
+                : "Settings save is unconfirmed. Refresh and verify before retrying.", NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
         catch (Exception exception)
         {
             _log.Error($"Settings could not be saved ({string.Join(", ", values.Keys)}).", exception);
-            return ServiceResult.Fail("The settings could not be saved.");
+            return new ServiceResult { Error = committed ? "SAVED. Settings were stored but local refresh failed. Reopen Settings."
+                : outcome.NoCommitConfirmed ? "Settings were not saved; no commit was made."
+                : "Settings save is unconfirmed. Refresh and verify before retrying.", NoCommitConfirmed = !committed && outcome.NoCommitConfirmed };
         }
     }
 

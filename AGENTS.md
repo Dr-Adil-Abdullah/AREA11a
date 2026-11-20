@@ -2,12 +2,12 @@
 
 ## ✅ گفتگو اور حصوں کی تازہ ہدایت
 
-ہر جواب/وضاحت/خلاصہ سادہ پاکستانی اردو۔ ایک وقت میں صرف ایک منظورشدہ حصہ؛ہر اگلے حصے سے پہلے نئی اجازت۔ ہر ٹاسک/حصے پر صرف3–4 لائنوں کا خلاصہ؛تفصیلی رپورٹ ہر3 مکمل حصوں کے بعد یا مالک کے مطالبے پر۔ [⏳ نیا14حصوں کا منصوبہ](docs/REMAINING-14-PORTIONS-URDU.md) پر عمل کریں؛پرانے3–6roundsاندازے اس منصوبے کی جگہ نہیں لیتے۔ ✅حصہ1کیCore/TestsDebugcompileتصدیقمالککےv0.120.1runسےملی۔ ⏳حصہ2کے22failurefixesکاWindowsrerunباقی؛بعدکےnextسےصرفحصہ3کیاجازتملی،اسکیsourceپیشرفتذیل،اصلجانچباقی؛⏳تازہnextسےاسیحصہ5کادوسراDraftcheckpoint؛Settings/StockTakeباقی،حصہ5ابھیجاری۔ ✅صحت مندsourcecheckکوکامیاب.NETbuildنہکہیں۔
+ہر جواب/وضاحت/خلاصہ سادہ پاکستانی اردو۔ ایک وقت میں صرف ایک منظورشدہ حصہ؛ہر اگلے حصے سے پہلے نئی اجازت۔ ہر ٹاسک/حصے پر صرف3–4 لائنوں کا خلاصہ؛تفصیلی رپورٹ ہر3 مکمل حصوں کے بعد یا مالک کے مطالبے پر۔ [⏳ نیا14حصوں کا منصوبہ](docs/REMAINING-14-PORTIONS-URDU.md) پر عمل کریں؛پرانے3–6roundsاندازے اس منصوبے کی جگہ نہیں لیتے۔ ✅حصہ1کیCore/TestsDebugcompileتصدیقمالککےv0.120.1runسےملی۔ ⏳حصہ2کے22failurefixesکاWindowsrerunباقی؛بعدکےnextسےصرفحصہ3کیاجازتملی،اسکیsourceپیشرفتذیل،اصلجانچباقی؛⏳تازہNextسے5.1Settings؛نامکملحصےکیذیلیگنتی،1تا5کےباقیکام+تصدیقسےپہلے6نہیں۔ ✅صحت مندsourcecheckکوکامیاب.NETbuildنہکہیں۔
 
 
-## ⏳ موجودہ حصہ5/14 — مشترکہ Draft checkpoint — v0.124.0 Sorrel
+## ⏳ موجودہ 5.1 — Settings مرکزی فارم — v0.125.0 Celandine
 
-تازہnextسےاسیحصہ5کیپیشرفت؛**حصہ5ابھیجاری،Settings/StockTakeاورباقیsourceجائزہبھیباقی**۔ SharedDraftSave/premark/discardپرwriteTxexpected-state،coherentOpen/List،exactSave/confirmedRestore/HeldResumebaselineاورDesktophandoff؛D-100shared/financialcreators/پرانےunknown-SAVEDguardsبرقرار۔ ⏳36نئےC#cases/3118suiteUNRUN؛115static/41نئیlexicalnegative/40Python-ownedWAL+DELETEplansاصل.NET/provider/WPFثبوتنہیں۔ [⏳ جائزہ/PT-66/باقیحصہ5](docs/DRAFT-EDIT-CONCURRENCY-REVIEW-URDU.md)؛[⏳14حصے](docs/REMAINING-14-PORTIONS-URDU.md)۔ **اگلاکاماسیحصہ5کےSettingsmulti-keyforms،StockTakeاورremainingtoggle/update/snapshotroutesپر؛حصہ6شروعنہیںکرنا۔** حصوں2/3/4اورپہلےcheckpointکانیاWindowsrunبھیباقی؛FullPhase4OPEN؛❌installerنہیںبنا۔
+مالککیتازہترتیب:نامکمل5کیپیشرفت5.1/5.2؛**1تا5کےباقیکاماورضروریتصدیقمکملکیےبغیر6شروعنہیںکرنا۔** 5.1ابھیجاری:Settingsmainformcoherentdetachedread/per-keyatomiccompare،exactwritten-keyhandoff،maskedcloudkeydependency،labelReset/focusاورfinalstartupDBchecks۔ ⏳25نئےC#facts/3143suiteUNRUN؛116static/29نئیlexicalnegative/24Python-ownedWAL+DELETEplansاصل.NET/provider/WPFثبوتنہیں۔ [⏳ جائزہ/PT-67/باقی5.1](docs/SETTINGS-EDIT-CONCURRENCY-REVIEW-URDU.md)؛[⏳14حصے](docs/REMAINING-14-PORTIONS-URDU.md)۔ **اگلاکامابھی5.1کےBackup-schedule/Pricing/Hardware/icon/workbookSettingswritersاورstartupregistryrace/Windowsپر؛StockTakeاسکےبعدحصہ5میں۔** حصوں2/3/4اورپہلے5checkpointsکانیاWindowsrunبھیباقی؛FullPhase4OPEN؛❌6/installerشروعنہیں۔
 
 ## ⏳ تاریخی حصہ4/14 — v0.122.0 Larkspur
 

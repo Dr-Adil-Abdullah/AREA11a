@@ -108,7 +108,9 @@ public sealed class StartupService
 
     /// <summary>
     /// The owner picks a mode. The Windows entry is written FIRST and the setting only after it
-    /// sticks, so the two can never disagree with the setting claiming what Windows never got.
+    /// sticks. Windows and SQLite are separate resources: restoration after a refusal is best-effort,
+    /// not crash atomicity. Loaded forms check before registry work and again in the setting Tx;
+    /// an intervening writer can still require verification of the Windows entries.
     /// All accounts first; when no administrator is available the current account still gets its
     /// own entry (owner's word, Nov 2026) and the scope sentence says so - a refused save is now
     /// only for a Windows that refuses even that. One entry only: two Run values would open
@@ -120,7 +122,7 @@ public sealed class StartupService
     /// itself cannot be written. Catching only the second one let the first skip the fallback and
     /// fail the whole save (owner's screenshot, 11 Nov 2026) - that is the bug this catches.
     /// </summary>
-    public ServiceResult SetMode(User actor, string mode, string exePath)
+    public ServiceResult SetMode(User actor, string mode, string exePath, SettingsEditForm? expected = null)
     {
         if (actor is null || !actor.IsOwner)
         {
@@ -137,6 +139,11 @@ public sealed class StartupService
             return ServiceResult.Fail("The startup mode must be manual, auto or protected.");
         }
 
+        if (expected is not null)
+        {
+            var baseline = _settings.CheckStartupEdit(actor, expected);
+            if (!baseline.Ok) return baseline;
+        }
         var machineWas = EnabledOf(_machine);
         var userWas = EnabledOf(_userStore);
         var scope = "machine";
@@ -176,7 +183,7 @@ public sealed class StartupService
                 "The Windows start-up entry could not be written (" + exception.Message + "). Nothing was changed.");
         }
 
-        var saved = _settings.Set(ModeKey, clean, actor);
+        var saved = _settings.Set(ModeKey, clean, actor, expected);
 
         if (!saved.Ok)
         {
@@ -190,12 +197,11 @@ public sealed class StartupService
 
         if (scope == "user")
         {
-            return ServiceResult.Success(
-                "No administrator was available, so this applies to this Windows account only. " +
-                "Save again as administrator for every account on this PC.");
+            return new ServiceResult { Ok = true, SettingsEdit = saved.SettingsEdit, Warnings = new[] {
+                "No administrator was available, so this applies to this Windows account only. Save again as administrator for every account on this PC." } };
         }
 
-        return ServiceResult.Success();
+        return new ServiceResult { Ok = true, SettingsEdit = saved.SettingsEdit };
     }
 
     /// <summary>

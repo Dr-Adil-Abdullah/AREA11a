@@ -8,6 +8,10 @@
 - ✅ نشان:✅صرف متعلقہ کام مکمل؛⏳کچھ باقی؛❌متعلقہ کام شروع نہیں ہوا۔ حقیقی کمپائل/عملی جانچ کو static checks نہیں کہا جائے گا۔
 - ⏳ ہر حصے کی ضروری دستاویزات،اسی موجودہ برانچ پرcommit/push اور الگ actual remote تصدیق برقرار۔ نئی بڑی رکاوٹ یا پالیسی سامنے آئے تو پہلے منظوری؛خود سے اضافی حصہ نہیں۔
 
+## ⏳ مالک کی تازہ ترتیب — پہلے1تا5 بند،پھر6
+
+نامکملحصہ5کےاگلےکام5.1،5.2کیذیلیگنتیسے؛**1تا5کاباقیکاماورضروریتصدیقمکملکیےبغیر6شروعنہیںکرنا۔** اسوقتصرف1کیخاصcompileخرابیverified؛2rerun،3Save-WPF،4session-WPF،5source+runtimeباقی۔ تازہ5.1Settingsجاری؛[PT-67](SETTINGS-EDIT-CONCURRENCY-REVIEW-URDU.md)،3143suiteUNRUN۔
+
 ## ⏳ مکمل تقسیم
 
 یہ نئے منصوبے کے حصے ہیں؛پہلے کےحصہ42 تک کے شواہد تاریخی ہیں۔ مستقل1–36 کاموں کے نمبر نہیں بدلیں گے۔ نیچے ❌ کا مطلب اس **نئے منصوبے کے حصے** پر عمل ابھی شروع نہیں ہوا؛متعلقہ پرانا کوڈ یا پہلے کے ٹیسٹ موجود ہوسکتے ہیں۔14 حصے،14 جوابات یا لازمی کامیابی کی ضمانت نہیں۔
@@ -18,7 +22,7 @@
 |2۔ ⏳ پوری ٹیسٹ سوئٹ | اجازت مل گئی؛اصل v0.120.1 run میں2941PASS/22FAIL/2963۔22 ناکامیوں سے متعلق fixture اصلاحات؛v0.120.2 کا اصل rerun باقی |
 |3۔ ⏳ ریکارڈ بنانے والے فارم | نئےnextسےاجازت؛v0.121.0میںparent/quick-create/Catalog/Unit Saveکےlocaloutcome/ackguards،72نئےcases؛اصلWindows/WPF3035suiteاورPT-63باقی |
 |4۔ ⏳ لاگ اِن اور اجازتیں | اجازتملی؛v0.122.0/D-116sessionproof،resetپرnext-actionfreshlogin،currentreaders/inputguards،Counterfull-outputdeny/freshrestore؛22نئےcases/3057suiteUNRUN،[PT-64](AUTHENTICATED-SESSION-REVIEW-URDU.md)/Windowsباقی |
-|5۔ ⏳ بیک وقت کام — جاری | v0.123.0parent/extra/catalogکےبعدv0.124.0sharedDraftSave/premark/discardاورexactrestore/heldhandoff؛36نئےcases/3118suiteUNRUN۔ **Settingsmulti-keyforms/StockTake/remainingroutesکاسورسجائزہبھیباقی**؛[PT-66](DRAFT-EDIT-CONCURRENCY-REVIEW-URDU.md)،اگلاکامیہیحصہ5 |
+|5۔ ⏳ بیک وقت کام — 5.1Settingsجاری | پہلےProduct/Customer/catalogاورDraftcheckpoints؛ابv0.125.0mainSettingscheckedform۔25نئےfacts/3143suiteUNRUN؛Backup/Pricing/Hardware/workbook/registryاورWindowsابھی5.1میںباقی؛StockTake/remainingroutesبعدمیںاسی5میں؛[PT-67](SETTINGS-EDIT-CONCURRENCY-REVIEW-URDU.md) |
 |6۔ ❌ دوبارہ کوشش اور ری اسٹارٹ | جواب کھونا،بندش،دوسرے صفحے/کمپیوٹر کی retry؛دیرپا شناخت کی تجویز،ضروری منظوری،نفاذ |
 |7۔ ❌ مالی اور اسٹاک ملاپ | فروخت/خرید/واپسی/وصولی/ادائیگی/خرچ/گنتی/گلا؛منظورشدہ رعایت اور اصل لاگت کی حد |
 |8۔ ❌ رپورٹس اور رازداری | Excel/CSV/PDF/رسید/پرنٹ؛Cost/Profit اجازتیں؛Blackbox/BookCheck میں صرف منظورشدہ رسائی |
