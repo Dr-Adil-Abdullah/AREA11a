@@ -1,5 +1,10 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## ⏳ v0.120.0 حصہ42 — Next کا bounded collection/payment outcome review؛نئی مالی policy نہیں
+
+⏳ CustomerCollect/SupplierPayunknownپرNothingchangedنہیں؛observedTxاور3UIlocalguards۔ ✅پرانےTxcallbackbodies/SQL/settlementاورSupplierBبرقرار؛دوواقعیالگpartialpaymentsردنہیں،نئیamount-baseddedup/draft/receiptpolicyنہیں۔ ⏳Restart/cross-page/cross-PC/globalidentityاورparentformsباقی۔ [⏳ PT-62](POS-PHASE4-PART42-URDU.md)،[⏳ trace](POS-PHASE4-LEDGER-OUTCOME-REVIEW.md)؛2963C#suiteUNRUN/FullPhase4OPEN؛❌installerنہیںبنی۔
+
+
 ## ⏳ v0.119.0 حصہ41 — Next کا محدود photo/file fault review؛نئی policy نہیں
 
 ⏳ Unknown COMMIT میں referenced photo حذف کرنے کا خطرہ اور untracked partial copy کا راستہ درست؛Product/Customer/Supplier staged copies بھی observed Tx سے۔ Gallery Add window-local guard؛parent form duplicate handling/global identity کی تصدیق نہیں۔ ✅ مالی حساب،refund/discount/permissions policy اورrecovery financial service unchanged۔ [⏳ PT-61](POS-PHASE4-PART41-URDU.md)،[⏳ trace](POS-PHASE4-PHOTO-FILE-FAULT-REVIEW.md)۔ ⏳2916C#suiteUNRUN/FullPhase4OPEN؛❌installerنہیںبنی۔

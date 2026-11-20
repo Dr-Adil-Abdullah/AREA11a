@@ -228,15 +228,16 @@ FROM customers c WHERE c.id = @id;", new { id = customerId });
     /// </summary>
     public ServiceResult<CollectionResult> Collect(User? user, int customerId, long amountPaisa, string? method, string? note)
     {
+        var outcome = new TransactionOutcome();
         if (amountPaisa <= 0)
         {
-            return ServiceResult<CollectionResult>.Fail("The amount must be more than zero.");
+            return new ServiceResult<CollectionResult> { Error = "The amount must be more than zero.", NoCommitConfirmed = true };
         }
 
         var cleanMethod = (method ?? "cash").Trim().ToLowerInvariant();
         if (Array.IndexOf(CollectionMethods, cleanMethod) < 0)
         {
-            return ServiceResult<CollectionResult>.Fail("Choose cash, online or card. Credit is not a way of receiving money.");
+            return new ServiceResult<CollectionResult> { Error = "Choose cash, online or card. Credit is not a way of receiving money.", NoCommitConfirmed = true };
         }
 
         try
@@ -295,16 +296,21 @@ VALUES(@at, @method, @amount, @customerId, @userId, @note);",
                     NewBalancePaisa = newBalance,
                     Code = "PAY-" + paymentId.ToString("D4", CultureInfo.InvariantCulture)
                 });
-            });
+            }, outcome);
         }
         catch (ValidationException exception)
         {
-            return ServiceResult<CollectionResult>.Fail(exception.Message);
+            return new ServiceResult<CollectionResult> { Error = outcome.NoCommitConfirmed ? exception.Message
+                : "The collection outcome is unconfirmed. Verify payment history, account and drawer before retrying.",
+                NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
         catch (Exception exception)
         {
             _log.Error("A customer collection for " + customerId + " could not be saved.", exception);
-            return ServiceResult<CollectionResult>.Fail("The money could not be recorded. Nothing was changed.");
+            return new ServiceResult<CollectionResult> { Error = outcome.NoCommitConfirmed
+                ? "The collection was not recorded. Refresh before retrying."
+                : "The collection outcome is unconfirmed. Verify payment history, account and drawer before retrying.",
+                NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
     }
 

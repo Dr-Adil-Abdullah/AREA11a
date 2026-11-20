@@ -76,6 +76,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
     private int _editingCustomerId;
     private bool _lastCustomerLoadSucceeded;
     private bool _collectInProgress;
+    private readonly PostingAttemptGuard _collectionPosting = new();
     private string _editName = string.Empty;
     private string _editPhone = string.Empty;
     private string _editCategory = "Normal";
@@ -550,6 +551,11 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
     private void Collect()
     {
         if (_collectInProgress) return;
+        if (!_collectionPosting.Ready)
+        {
+            SetStatus("Previous collection needs verification. Do not receive again; check payment history/account/drawer before reopening the page.", true);
+            return;
+        }
         _collectInProgress = true;
         try
         {
@@ -569,19 +575,23 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
             var customerId = Selected.Id;
             var name = Selected.Name;
 
+            if (!_collectionPosting.TryBegin()) return;
             var result = _services.Ledger.Collect(_user, customerId, Money.ToPaisa(rupees), Method, Note);
 
             if (!result.Ok)
             {
+                _collectionPosting.ObserveFailure(result);
                 if (!UpdateAccess()) return;
                 SetStatus(result.Error ?? "The money could not be recorded.", true);
                 return;
             }
 
+            _collectionPosting.AcknowledgeCommit(); // Before any UI callback or cleanup.
             var collection = result.Value!;
             // Clear the authored amount immediately after commit, before callbacks/printing.
             try
             {
+                if (collection is null) throw new InvalidOperationException("Acknowledged payment has no result.");
                 AmountText = string.Empty;
                 Note = string.Empty;
                 Load();
@@ -591,6 +601,8 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
                     SetStatus("SAVED. Collection was stored, but the account could not refresh. Do not receive again; refresh and check the payment history.", true);
                     return;
                 }
+                AmountText = string.Empty;
+                Note = string.Empty;
                 _onChanged?.Invoke();
                 if (!UpdateAccess())
                 {
@@ -604,6 +616,9 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
                     : (true, "Press Receipt for the paper.");
                 SetStatus("SAVED. " + name + ": " + Money.Format(collection.AmountPaisa) + " received (" + collection.Code
                           + "). Khata now " + Money.Format(collection.NewBalancePaisa) + ". " + printed.Message, !printed.Ok);
+                AmountText = string.Empty;
+                Note = string.Empty;
+                _collectionPosting.CompleteReset();
             }
             catch (Exception exception)
             {
@@ -611,6 +626,17 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
                 ClearSensitiveData();
                 SetStatus("SAVED. Collection was stored, but the page or receipt could not finish. Do not receive again; refresh and check the payment history before reprinting.", true);
             }
+        }
+        catch (Exception exception)
+        {
+            var started = !_collectionPosting.Ready;
+            _collectionPosting.ObserveException();
+            _services.Log.Error("Collection attempt or UI callback failed.", exception);
+            SetStatus(!started
+                ? "No new payment was recorded. The input or access check could not finish; refresh before retrying."
+                : _collectionPosting.WasAcknowledged
+                ? "SAVED. Collection was stored, but the page could not finish. Do not receive again; verify history/account/drawer before reopening."
+                : "The collection outcome is unconfirmed. Do not receive again; verify history/account/drawer before reopening.", true);
         }
         finally { _collectInProgress = false; }
     }

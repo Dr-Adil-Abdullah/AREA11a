@@ -34,6 +34,7 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
     private string _method = "cash";
     private string _payNote = string.Empty;
     private bool _payInProgress;
+    private readonly PostingAttemptGuard _paymentPosting = new();
     private bool _returnInProgress;
     private bool _lastSupplierLoadSucceeded;
     private string _productSearch = string.Empty;
@@ -493,6 +494,11 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
     private void Pay()
     {
         if (_payInProgress) return;
+        if (!_paymentPosting.Ready)
+        {
+            SetStatus("Previous supplier payment needs verification. Do not pay again; check payment history/account/drawer before reopening the page.", true);
+            return;
+        }
         _payInProgress = true;
         try
         {
@@ -512,18 +518,22 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
             var supplierId = Selected.Id;
             var name = Selected.Name;
 
+            if (!_paymentPosting.TryBegin()) return;
             var result = _services.SupplierLedger.Pay(_user, supplierId, Money.ToPaisa(rupees), Method, PayNote);
 
             if (!result.Ok)
             {
+                _paymentPosting.ObserveFailure(result);
                 if (!UpdateAccess()) return;
                 SetStatus(result.Error ?? "The payment could not be recorded.", true);
                 return;
             }
 
+            _paymentPosting.AcknowledgeCommit(); // Before any UI callback or cleanup.
             var payment = result.Value!;
             try
             {
+                if (payment is null) throw new InvalidOperationException("Acknowledged payment has no result.");
                 AmountText = string.Empty;
                 PayNote = string.Empty;
                 ReloadKeeping(supplierId);
@@ -532,6 +542,8 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
                     SetStatus("SAVED. Supplier payment was stored, but the account could not refresh. Do not pay again; refresh and check the payment history.", true);
                     return;
                 }
+                AmountText = string.Empty;
+                PayNote = string.Empty;
                 _onChanged?.Invoke();
                 if (!UpdateAccess())
                 {
@@ -540,6 +552,9 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
                 }
                 SetStatus("SAVED. " + name + ": " + Money.Format(payment.AmountPaisa) + " paid (" + payment.Code + "). Payable now "
                           + Money.Format(payment.NewBalancePaisa) + ".", false);
+                AmountText = string.Empty;
+                PayNote = string.Empty;
+                _paymentPosting.CompleteReset();
             }
             catch (Exception exception)
             {
@@ -547,6 +562,17 @@ public sealed class SuppliersViewModel : ObservableObject, IEmptyPage
                 ClearSensitiveData();
                 SetStatus("SAVED. Supplier payment was stored, but the page could not finish. Do not pay again; refresh and check the payment history.", true);
             }
+        }
+        catch (Exception exception)
+        {
+            var started = !_paymentPosting.Ready;
+            _paymentPosting.ObserveException();
+            _services.Log.Error("Supplier payment attempt or UI callback failed.", exception);
+            SetStatus(!started
+                ? "No new payment was recorded. The input or access check could not finish; refresh before retrying."
+                : _paymentPosting.WasAcknowledged
+                ? "SAVED. Supplier payment was stored, but the page could not finish. Do not pay again; verify history/account/drawer before reopening."
+                : "The supplier payment outcome is unconfirmed. Do not pay again; verify history/account/drawer before reopening.", true);
         }
         finally { _payInProgress = false; }
     }

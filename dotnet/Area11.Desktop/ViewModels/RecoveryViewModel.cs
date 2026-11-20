@@ -59,6 +59,7 @@ public sealed class RecoveryViewModel : ObservableObject, IEmptyPage
 
     private RecoveryRow? _selected;
     private int _lastPaymentId;
+    private readonly PostingAttemptGuard _receivePosting = new();
 
     public RecoveryViewModel(AppServices services, User user)
     {
@@ -348,6 +349,11 @@ public sealed class RecoveryViewModel : ObservableObject, IEmptyPage
 
     private void Receive()
     {
+        if (!_receivePosting.Ready)
+        {
+            SetStatus("Previous collection needs verification. Do not receive again; check payment history/account/drawer before reopening the page.", true);
+            return;
+        }
         if (!UpdateAccess()) return;
         if (Selected is null)
         {
@@ -361,23 +367,27 @@ public sealed class RecoveryViewModel : ObservableObject, IEmptyPage
             return;
         }
 
-        IsBusy = true;
-
+        if (!_receivePosting.TryBegin()) return;
         try
         {
+            IsBusy = true;
             var name = Selected.Name;
             var customerId = Selected.CustomerId;
 
             var collected = _services.Ledger.Collect(
                 _user, customerId, Money.ToPaisa(rupees), Method, string.IsNullOrWhiteSpace(Note) ? null : Note);
 
-            if (!collected.Ok || collected.Value is null)
+            if (!collected.Ok)
             {
+                _receivePosting.ObserveFailure(collected);
                 SetStatus(collected.Error ?? "The money could not be recorded.", true);
                 return;
             }
 
-            var saved = collected.Value;
+            _receivePosting.AcknowledgeCommit();
+            var saved = collected.Value ?? throw new InvalidOperationException("Acknowledged collection has no result.");
+            AmountText = string.Empty;
+            Note = string.Empty;
 
             _lastPaymentId = saved.PaymentId;
             OnPropertyChanged(nameof(HasLastSlip));
@@ -392,7 +402,7 @@ public sealed class RecoveryViewModel : ObservableObject, IEmptyPage
             }
 
             // Load() rebuilt the list, so the row object the customer was selected with is gone;
-            // find him again by id and re-fill the amount box with what is still owed.
+            // find him again by id, then consume any auto-filled amount before enabling a new attempt.
             Selected = Rows.FirstOrDefault(row => row.CustomerId == customerId);
 
             if (Selected is null)
@@ -404,7 +414,10 @@ public sealed class RecoveryViewModel : ObservableObject, IEmptyPage
                 AmountText = string.Empty;
             }
 
-            var message = name + ": " + Money.Format(saved.AmountPaisa) + " received (" + saved.Code
+            AmountText = string.Empty;
+            Note = string.Empty;
+
+            var message = "SAVED. " + name + ": " + Money.Format(saved.AmountPaisa) + " received (" + saved.Code
                           + "). Khata now " + Money.Format(saved.NewBalancePaisa) + ".";
 
             if (_services.Settings.GetBool("printer.autoPrint", true))
@@ -417,6 +430,15 @@ public sealed class RecoveryViewModel : ObservableObject, IEmptyPage
             }
 
             SetStatus(message, false);
+            _receivePosting.CompleteReset();
+        }
+        catch (Exception exception)
+        {
+            _receivePosting.ObserveException();
+            _services.Log.Error("Recovery collection attempt or refresh/receipt failed.", exception);
+            SetStatus(_receivePosting.WasAcknowledged
+                ? "SAVED. Collection was stored, but the recovery page or receipt could not finish. Do not receive again; verify history/account/drawer before reopening."
+                : "The collection outcome is unconfirmed. Do not receive again; verify history/account/drawer before reopening.", true);
         }
         finally
         {

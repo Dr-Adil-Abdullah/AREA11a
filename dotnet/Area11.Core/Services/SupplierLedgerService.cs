@@ -259,15 +259,16 @@ FROM batches WHERE id = @id AND product_id = @productId AND active = 1;",
     public ServiceResult<SupplierPayment> Pay(
         User? user, int supplierId, long amountPaisa, string? method, string? note)
     {
+        var outcome = new TransactionOutcome();
         if (amountPaisa <= 0)
         {
-            return ServiceResult<SupplierPayment>.Fail("The amount must be more than zero.");
+            return new ServiceResult<SupplierPayment> { Error = "The amount must be more than zero.", NoCommitConfirmed = true };
         }
 
         var cleanMethod = (method ?? "cash").Trim().ToLowerInvariant();
         if (Array.IndexOf(PaymentMethods, cleanMethod) < 0)
         {
-            return ServiceResult<SupplierPayment>.Fail("Choose cash, online or card.");
+            return new ServiceResult<SupplierPayment> { Error = "Choose cash, online or card.", NoCommitConfirmed = true };
         }
 
         try
@@ -334,16 +335,21 @@ VALUES(@at, @method, @amount, @supplierId, @userId, @note);",
                     NewBalancePaisa = newBalance,
                     Code = "PAY-" + paymentId.ToString("D4", CultureInfo.InvariantCulture)
                 });
-            });
+            }, outcome);
         }
         catch (ValidationException exception)
         {
-            return ServiceResult<SupplierPayment>.Fail(exception.Message);
+            return new ServiceResult<SupplierPayment> { Error = outcome.NoCommitConfirmed ? exception.Message
+                : "The supplier payment outcome is unconfirmed. Verify payment history, account and drawer before retrying.",
+                NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
         catch (Exception exception)
         {
             _log.Error("A supplier payment for " + supplierId + " could not be saved.", exception);
-            return ServiceResult<SupplierPayment>.Fail("The payment could not be recorded. Nothing was changed.");
+            return new ServiceResult<SupplierPayment> { Error = outcome.NoCommitConfirmed
+                ? "The supplier payment was not recorded. Refresh before retrying."
+                : "The supplier payment outcome is unconfirmed. Verify payment history, account and drawer before retrying.",
+                NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
     }
 

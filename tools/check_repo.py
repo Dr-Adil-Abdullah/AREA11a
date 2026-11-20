@@ -6140,6 +6140,50 @@ def check_photo_file_fault_boundaries() -> None:
     REPORT.append('P41 photo file faults: exclusive bounded owned-copy/partial tracking, observed parent outcomes, conservative cleanup and window-local Add latch;28 source cases UNRUN')
 
 
+def check_ledger_outcome_fault_boundaries() -> None:
+    """P42 lexical evidence only; does not execute services/UI/provider outcomes."""
+    def need(text, token):
+        if token not in text: FAILURES.append('P42 missing contract: ' + token)
+    for file, start, end, kind in (
+        ('CustomerLedgerService.cs','public ServiceResult<CollectionResult> Collect(', 'public ServiceResult<ReceiptDocument> Statement(', 'CollectionResult'),
+        ('SupplierLedgerService.cs','public ServiceResult<SupplierPayment> Pay(', 'public ServiceResult<SupplierReturnResult> Return(', 'SupplierPayment')):
+        source = (DOTNET / 'Area11.Core/Services' / file).read_text().split(start,1)[-1].split(end,1)[0]
+        for token in ('var outcome = new TransactionOutcome();', '}, outcome);', 'NoCommitConfirmed = true',
+                      'Error = outcome.NoCommitConfirmed ? exception.Message', 'NoCommitConfirmed = outcome.NoCommitConfirmed',
+                      'Verify payment history, account and drawer before retrying.'):
+            need(source, token)
+        if 'Nothing was changed' in source: FAILURES.append('P42 unknown outcome must not promise no change: ' + file)
+        preflight = source.split('        try',1)[0]
+        if preflight.count('NoCommitConfirmed = true') != 2: FAILURES.append('P42 two definite ledger preflight refusals required')
+        if source.count('NoCommitConfirmed = outcome.NoCommitConfirmed') != 2: FAILURES.append('P42 both catch paths must expose observed outcome')
+    for who, method, guard, result, invoke, loaded, note in (
+        ('Customers','Collect','_collectionPosting','result','_services.Ledger.Collect(', '_lastCustomerLoadSucceeded','Note'),
+        ('Suppliers','Pay','_paymentPosting','result','_services.SupplierLedger.Pay(', '_lastSupplierLoadSucceeded','PayNote'),
+        ('Recovery','Receive','_receivePosting','collected','_services.Ledger.Collect(', '_reportLoaded','Note')):
+        vm = (DOTNET / ('Area11.Desktop/ViewModels/'+who+'ViewModel.cs')).read_text()
+        body = vm.split('private void '+method+'()',1)[-1].split('\n    private ',1)[0]
+        for token in ('private readonly PostingAttemptGuard '+guard+' = new();',): need(vm, token)
+        for token in ('if (!'+guard+'.Ready)', 'if (!'+guard+'.TryBegin()) return;',
+                      guard+'.ObserveFailure('+result+');', guard+'.AcknowledgeCommit();', guard+'.ObserveException();',
+                      guard+'.WasAcknowledged', guard+'.CompleteReset();', 'if (!'+loaded+')',
+                      'AmountText = string.Empty;', note+' = string.Empty;', 'Do not '+('pay' if who=='Suppliers' else 'receive')+' again;'):
+            need(body, token)
+        order = [body.find(token) for token in (guard+'.TryBegin()', invoke, guard+'.AcknowledgeCommit();', 'AmountText = string.Empty;', guard+'.CompleteReset();')]
+        if -1 in order or order != sorted(order): FAILURES.append('P42 guard/write/ack/reset order: ' + who)
+        if vm.count(guard+'.CompleteReset();') != 1: FAILURES.append('P42 Refresh/regrant must not reset guard: ' + who)
+        if body.count('AmountText = string.Empty;') < 2: FAILURES.append('P42 reload autofill must be consumed: ' + who)
+        reset = body.rfind(guard+'.CompleteReset();')
+        if body.rfind('SetStatus(',0,reset) < body.find(guard+'.AcknowledgeCommit();'): FAILURES.append('P42 complete reset must follow acknowledged status')
+    tests = (DOTNET / 'Area11.Tests/LedgerOutcomeFaultTests.cs').read_text()
+    for token in ('ConfirmedStageRollbackExplicitlyAllowsOneLocalRetry', 'Assert.True(result.NoCommitConfirmed);',
+                  'Assert.Equal(before, f.Snapshot());', 'DefiniteRefusalsAreNotAmbiguousAndLeaveBooksUnchanged',
+                  'DistinctLegitimatePartialPaymentsRemainAllowed', 'SyntheticGuardObservationsDoNotTreatUnknownAsNoCommit',
+                  '[InlineData("recovery", "ack-fault")]', 'drawer.ExpectedPaisa'):
+        need(tests, token)
+    if len(re.findall(r'\[(?:Fact|InlineData)(?:\(|\])',tests)) != 47: FAILURES.append('P42 requires47 source cases')
+    REPORT.append('P42 ledger observed no-commit verdicts and three local UI guards/acknowledged cleanup;47 source cases UNRUN,not provider/WPF/durable identity proof')
+
+
 def check_csharp_grammar() -> None:
     """Every C# file must parse, and every `Type.Member` must be a member that type declares.
 
@@ -8925,6 +8969,7 @@ def main() -> int:
     check_provisional_posting_fault_boundaries()
     check_provisional_current_access()
     check_photo_file_fault_boundaries()
+    check_ledger_outcome_fault_boundaries()
     check_csharp_grammar()
 
     if not quiet:

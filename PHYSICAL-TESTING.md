@@ -1,5 +1,10 @@
 # Area11 — Real-life Physical Testing Log
 
+## ⏳ PT-62 — Collect/Pay outcome and Recovery Receive retry (v0.120.0 Shale)
+
+[⏳ Urdu steps](docs/POS-PHASE4-PART42-URDU.md),[⏳ trace](docs/POS-PHASE4-LEDGER-OUTCOME-REVIEW.md). ⏳47newC#cases/2963suiteUNRUN:12 observed stage rollbacks/retry,14 definite refusals,6 distinct partial-payment/method cases,15 synthetic guard observations (not three actual WPF pages). Actual COMMIT-ack/rollback/dispose faults and Customers/Recovery/Suppliers callback/reload/receipt/regrant guards need runner proof. Unknown/SAVED-failed-cleanup blocks same-page reuse;reopen/global/cross-page identity not solved. ⏳Verified encrypted backup AND truly separate DB/photos/config first;never shop synthetic posts/faults. ❌Installer NOT BUILT;⏳FullPhase4 OPEN.
+
+
 ## ⏳ PT-61 — photo file ownership,rollback vs unknown,and gallery retry (v0.119.0 Moraine)
 
 [⏳ Urdu steps](docs/POS-PHASE4-PART41-URDU.md),[⏳ trace](docs/POS-PHASE4-PHOTO-FILE-FAULT-REVIEW.md). ⏳28newC#cases/2916suiteUNRUN. Execute exclusive collision/partial source read/zero/growth/buffer/size boundaries,confirmed rollback vs synthetic unknown outcomes,4 audit faults and4 success routes. Actual provider lost-ack/rollback failure/disk-full/flush/locked/denied cleanup and WPF Add reentry/Refresh/regrant/SAVED failure need separate runner evidence. Parent-creator UI duplicates/restart/global identity/other gallery actions/recovery financial paths remain OPEN. ⏳Verified encrypted backup AND truly separate DB/photos/config first;never shop synthetic posts/faults. ❌Installer NOT BUILT;⏳FullPhase4 OPEN.

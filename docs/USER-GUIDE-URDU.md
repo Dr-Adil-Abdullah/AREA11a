@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.119.0 Moraine۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.120.0 Shale۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**⏳ حصہ42 — Receive/Pay کے بعد دوبارہ رقم نہ لکھیں:** CustomersکیCollect،UdhaarRecoveryکیReceiveاورSuppliersکیPayمیں **unconfirmed** ہوتوپہلےpaymenthistory،کھاتہاورdrawerملائیں؛نہیہفرضکریںکہکچھنہیںبدلا،نہوہیرقمدوبارہلکھیں۔ **SAVED** کےبعدrefresh/callback/receiptخرابہوتواسیpageپرpostingبند؛Refreshیاpermissionregrantاسےنہیںکھولتے۔ جانچکےبعدpageدوبارہکھولیں؛reopenخودکارverificationنہیںاورCustomersسےRecoveryیادوسرےPCپرنیاpageالگguardہے۔ معمولکیsuccessکےبعدamount/noteخالی؛اگلیواقعیالگpartialpaymentتازہamountسےجائز،خودکارamount-baseddedupنہیں۔ Recoveryمیںنئےcustomerکیinitialselectionپرباقیرقمکیپرانیآسانیبرقرار،مگرsuccessfulReceiveکےبعدوہautofillصاف۔ [⏳ PT-62](POS-PHASE4-PART42-URDU.md)،[⏳ حدود](POS-PHASE4-LEDGER-OUTCOME-REVIEW.md)۔ ⏳47نئےcases/2963suiteUNRUN؛FullPhase4OPEN؛❌installerنہیںبنی۔
 
 **⏳ حصہ41 — تصویر کی copy اور retry:** اگر Add کا نتیجہ **unconfirmed** ہو تو copy برقرار،دوبارہ Add سے پہلے record/gallery/photo folder verify کریں؛صرف rollback ثابت ہونے پر نئی owned copy ہٹ سکتی ہے۔ Collision پر پرانی تصویر نہیں بدلی جاتی؛نقل12MB تک محدود ہے۔ Gallery میں unknown یا**SAVED**کےبعدrefresh/previewخرابہوتواسیwindowمیںدوبارہAddبند؛Refreshیااجازتواپسآنااسےنہیںکھولتا۔ جانچکےبعدgalleryدوبارہکھولیں؛reopenخودکارverificationنہیں۔ Product/Customer/Suppliercreationکیstagedcopyبھیunknownپررہتیہے؛انformsمیںduplicate retryکیجامعحفاظتکادعوینہیں۔ [⏳ PT-61](POS-PHASE4-PART41-URDU.md)،[⏳ حدود](POS-PHASE4-PHOTO-FILE-FAULT-REVIEW.md)۔ ⏳28نئےcases/2916suiteUNRUN؛FullPhase4OPEN؛❌installerنہیںبنی۔
 
@@ -400,6 +402,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 
 <a id="lesson-15"></a>
 
+⏳ **حصہ42 / رقم کی احتیاط:** Receive/Collect/Pay کا **unconfirmed** یا **SAVED مگر refresh ناکام** نتیجہ آئے تو دوبارہ رقم نہ لکھیں۔ پہلے payment history،کھاتہ اور drawer verify؛Refresh/regrant guard نہیں کھولتے۔ Page دوبارہ کھولنا خودکار verification یا global duplicate protection نہیں۔ [PT-62](POS-PHASE4-PART42-URDU.md)۔
+
 ## سبق 15 — Customers، کھاتہ اور وصولی
 
 1. CUSTOMERS & SUPPLIERS → Customers میں نام/فون تلاش؛ Only with udhaar صرف مقروض۔ + New سے الگ کسٹمر بنائیں۔ ایک فون کو دو کھاتوں میں بانٹنے سے بچیں۔
@@ -415,6 +419,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 
 <a id="lesson-16"></a>
 
+⏳ **حصہ42 / رقم کی احتیاط:** Receive/Collect/Pay کا **unconfirmed** یا **SAVED مگر refresh ناکام** نتیجہ آئے تو دوبارہ رقم نہ لکھیں۔ پہلے payment history،کھاتہ اور drawer verify؛Refresh/regrant guard نہیں کھولتے۔ Page دوبارہ کھولنا خودکار verification یا global duplicate protection نہیں۔ [PT-62](POS-PHASE4-PART42-URDU.md)۔
+
 ## سبق 16 — Udhaar recovery میں پرانا ادھار
 
 حصہ19: اس صفحے پر filter/receive/reprint fresh Customers check کرتے ہیں؛permission loss یا report fail پرپرانا account/amount/last-slip/totalsصاف۔ Note/search/methodبلاوجہresetنہیں۔ وصولیsavedمگرrefreshfailتو**دوبارہReceiveنہکریں**؛refreshکرکےaccountدیکھیں۔ Recovery slip میںاصلpaymentکےcollectorکاstoredنام،printingreaderکانام نہیں۔ [محفوظمشقPT-39](POS-PHASE4-PART19-URDU.md)۔
@@ -425,6 +431,8 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 4. Print slip again نئی وصولی نہیں۔ رقم غلط لکھ دی ہو تو اسے چپکے سے edit/delete کرنے کا راستہ نہ ڈھونڈیں؛ مالک اصل ریکارڈ دیکھ کر درست corrective entry کروائے۔
 
 <a id="lesson-17"></a>
+
+⏳ **حصہ42 / رقم کی احتیاط:** Receive/Collect/Pay کا **unconfirmed** یا **SAVED مگر refresh ناکام** نتیجہ آئے تو دوبارہ رقم نہ لکھیں۔ پہلے payment history،کھاتہ اور drawer verify؛Refresh/regrant guard نہیں کھولتے۔ Page دوبارہ کھولنا خودکار verification یا global duplicate protection نہیں۔ [PT-62](POS-PHASE4-PART42-URDU.md)۔
 
 ## سبق 17 — Suppliers، ادائیگی اور SR
 
@@ -786,7 +794,7 @@ Recoveryکیfailedslipپرپرنٹرکوخالیdocumentنہیںدیاجاتا۔
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.119.0 کا متوقع test count 2916 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.120.0 کا متوقع test count 2963 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 
