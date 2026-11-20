@@ -156,9 +156,9 @@ public sealed class CounterPostingIntegrityTests
     [InlineData(false)] [InlineData(true)]
     public void ClosedOrUnreadableDrawerCannotPostAnyRows(bool unreadable)
     {
-        using var f = new CounterPostingFixture();
+        using var f = new CounterPostingFixture(); var sales = TestData.Sales(f.T);
         f.Execute(unreadable ? "ALTER TABLE shifts RENAME TO hidden_shifts;" : "UPDATE shifts SET status='closed';");
-        var before = f.Snapshot(); Assert.False(TestData.Sales(f.T).Create(f.Bill(), TestData.Owner).Ok); Assert.Equal(before, f.Snapshot());
+        var before = f.Snapshot(); Assert.False(sales.Create(f.Bill(), TestData.Owner).Ok); Assert.Equal(before, f.Snapshot());
         if (unreadable) f.Execute("ALTER TABLE hidden_shifts RENAME TO shifts;");
         else f.Execute("UPDATE shifts SET status='open';");
         f.Post(); f.Reconcile(30000, 180, 44);

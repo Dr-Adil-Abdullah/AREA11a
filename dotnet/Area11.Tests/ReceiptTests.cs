@@ -111,7 +111,7 @@ VALUES(@saleId, @productId, NULL, @name, @qty, 'strip', @qty, @price, 0, @lineTo
     public void FiftyEightMillimetrePaper_IsThirtyTwoCharactersWide()
     {
         using var test = new TestDatabase();
-        test.Settings.Set("printer.width", 58, null);
+        Assert.True(test.Settings.Set("printer.width", 58, TestData.Owner).Ok);
 
         Assert.Equal(32, Service(test).PaperWidth);
     }
@@ -120,7 +120,7 @@ VALUES(@saleId, @productId, NULL, @name, @qty, 'strip', @qty, @price, 0, @lineTo
     public void EightyMillimetrePaper_IsFortyEightCharactersWide()
     {
         using var test = new TestDatabase();
-        test.Settings.Set("printer.width", 80, null);
+        Assert.True(test.Settings.Set("printer.width", 80, TestData.Owner).Ok);
 
         Assert.Equal(48, Service(test).PaperWidth);
     }
@@ -131,7 +131,7 @@ VALUES(@saleId, @productId, NULL, @name, @qty, 'strip', @qty, @price, 0, @lineTo
     public void NoLine_IsEverWiderThanThePaper(int millimetres)
     {
         using var test = new TestDatabase();
-        test.Settings.Set("printer.width", millimetres, null);
+        Assert.True(test.Settings.Set("printer.width", millimetres, TestData.Owner).Ok);
         var saleId = SeedSale(test);
 
         var document = Receipt(test, saleId);
@@ -144,7 +144,7 @@ VALUES(@saleId, @productId, NULL, @name, @qty, 'strip', @qty, @price, 0, @lineTo
     public void Receipt_CarriesShopNameBillNumberTotalAndChange()
     {
         using var test = new TestDatabase();
-        test.Settings.Set("store.name", "Al-Shifa Pharmacy", null);
+        Assert.True(test.Settings.Set("store.name", "Al-Shifa Pharmacy", TestData.Owner).Ok);
         var saleId = SeedSale(test);
 
         var text = Receipt(test, saleId).PlainText;
@@ -161,7 +161,7 @@ VALUES(@saleId, @productId, NULL, @name, @qty, 'strip', @qty, @price, 0, @lineTo
     public void LongProductName_IsCutInsteadOfWrapping()
     {
         using var test = new TestDatabase();
-        test.Settings.Set("printer.width", 58, null);
+        Assert.True(test.Settings.Set("printer.width", 58, TestData.Owner).Ok);
         var saleId = SeedSale(test, subtotal: 1000, total: 1000, paid: 1000, change: 0,
             itemName: new string('X', 80));
 
@@ -194,7 +194,7 @@ VALUES(@saleId, @productId, NULL, @name, @qty, 'strip', @qty, @price, 0, @lineTo
     public void DisabledDiscountSetting_HidesTheDiscountLine()
     {
         using var test = new TestDatabase();
-        test.Settings.Set("receipt.showDiscount", false, null);
+        Assert.True(test.Settings.Set("receipt.showDiscount", false, TestData.Owner).Ok);
         var saleId = SeedSale(test, discount: 5000, total: 25000, paid: 25000, change: 0);
 
         var text = Receipt(test, saleId).PlainText;
@@ -206,8 +206,8 @@ VALUES(@saleId, @productId, NULL, @name, @qty, 'strip', @qty, @price, 0, @lineTo
     public void EscPos_StartsCleanAndEndsWithACut()
     {
         using var test = new TestDatabase();
-        test.Settings.Set("printer.autoCut", true, null);
-        test.Settings.Set("printer.copies", 1, null);
+        Assert.True(test.Settings.Set("printer.autoCut", true, TestData.Owner).Ok);
+        Assert.True(test.Settings.Set("printer.copies", 1, TestData.Owner).Ok);
         var document = Receipt(test, SeedSale(test));
 
         var bytes = EscPosBuilder.Build(document);
@@ -221,8 +221,8 @@ VALUES(@saleId, @productId, NULL, @name, @qty, 'strip', @qty, @price, 0, @lineTo
     public void EscPos_PrintsEveryRequestedCopy()
     {
         using var test = new TestDatabase();
-        test.Settings.Set("printer.copies", 2, null);
-        test.Settings.Set("printer.autoCut", false, null);
+        Assert.True(test.Settings.Set("printer.copies", 2, TestData.Owner).Ok);
+        Assert.True(test.Settings.Set("printer.autoCut", false, TestData.Owner).Ok);
         var document = Receipt(test, SeedSale(test));
 
         var bytes = EscPosBuilder.Build(document);

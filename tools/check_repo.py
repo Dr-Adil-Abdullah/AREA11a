@@ -6201,6 +6201,65 @@ def check_document_field_expense_reader() -> None:
     REPORT.append('DocumentField expense list: explicit Owner reader,required API argument and existing answer assertions retained;C# build still required')
 
 
+def check_windows_v1201_regressions() -> None:
+    """Owner's real 22 failures: fixture contracts only,not C# execution."""
+    def read(name): return (DOTNET / 'Area11.Tests' / name).read_text()
+    def body(name, method): return read(name).split('public void '+method+'(',1)[-1].split('\n    [',1)[0]
+    def need(text, token):
+        if token not in text: FAILURES.append('v0.120.1 regression missing: ' + token)
+    for method in ('ProfitGrantWithoutCustomersCannotReadLifetimeProfit','ProductsOnlyCanReadAndEditRepButNotCustomerSummaries'):
+        t = body('CustomerCurrentAccessTests.cs', method)
+        need(t, 'Grant(t, u, Modules.Customers, false);')
+        need(t, 'Assert.False(reps.ListDoctors(u).Ok);' if method.startswith('Products') else 'Assert.False(Reps(t).ListCustomerProfit(u).Ok);')
+    receipts = read('ReceiptTests.cs')
+    if re.search(r'test.Settings.Set\([^;]*, null\)', receipts): FAILURES.append('Receipt setup must not silently submit actorless Settings writes')
+    for token in ('Assert.True(test.Settings.Set("printer.width", 80, TestData.Owner).Ok);',
+                  'Assert.True(test.Settings.Set("store.name", "Al-Shifa Pharmacy", TestData.Owner).Ok);',
+                  'Assert.True(test.Settings.Set("printer.copies", 2, TestData.Owner).Ok);',
+                  'Assert.True(test.Settings.Set("receipt.showDiscount", false, TestData.Owner).Ok);',
+                  'Assert.Equal(48, Service(test).PaperWidth);', 'Assert.Equal(2, restarts);',
+                  'Assert.Contains("Al-Shifa Pharmacy", text);', 'Assert.DoesNotContain("Discount", text);'):
+        need(receipts, token)
+    split = read('SplitPaymentTests.cs')
+    if split.count('Assert.True(test.Settings.Set("credit.blockOverLimit", true, TestData.Owner).Ok);') != 2:
+        FAILURES.append('Both split-credit fixtures must verify authorized blocking setting')
+    for token in ('Assert.True(test.Settings.Set("credit.managerCanOverride", false, TestData.Owner).Ok);',
+                  'Assert.True(test.Settings.Set("credit.managerCanOverride", true, TestData.Owner).Ok);',
+                  'Assert.False(sales.Create(again, manager).Ok);', 'Assert.True(byManager.Ok, byManager.Error);',
+                  'Assert.Equal(5000L, ok.Value!.DuePaisa);'):
+        need(split, token)
+    need(body('RecoveryTests.cs','TheListNeedsTheCustomersPermission_AndAStoredNoWins'), 'Report(TestData.AddUser(test, "manager"), Today)')
+    need(body('MasterFoundationTests.cs','MasterSettings_RefuseInvalidBulkFormatAndAutomaticInterval'), 'Assert.Equal(TestData.SeedOwnerName, audit.UserName);')
+    partner = body('PartnerTests.cs','ACashierCannotSendGoodsBackToAClaimingCompany')
+    for token in ('Assert.False(refused.Ok);','Assert.Contains("permission", refused.Error!, StringComparison.OrdinalIgnoreCase);','Assert.Equal(before, StockOf(test, productId));'):
+        need(partner, token)
+    supplier = body('SupplierLedgerTests.cs','ACashierCannotPayOrSendGoodsBack')
+    for token in ('var cashier = TestData.Cashier(test);','Modules.Suppliers, false).Ok);','Assert.False(paid.Ok);','Assert.False(returned.Ok);',
+                  'Assert.Equal(balance,','Assert.Equal(stock,','Assert.Equal(paymentCount,','Assert.Equal(before,'):
+        need(supplier, token)
+    counter = body('CounterPostingIntegrityTests.cs','ClosedOrUnreadableDrawerCannotPostAnyRows')
+    for token in ('var sales = TestData.Sales(f.T);','Assert.False(sales.Create(f.Bill(), TestData.Owner).Ok);','Assert.Equal(before, f.Snapshot());'):
+        need(counter, token)
+    if not 0 <= counter.find('var sales = TestData.Sales(f.T);') < counter.find('f.Execute(unreadable ?'):
+        FAILURES.append('Drawer helper must run BEFORE closing/removing the drawer')
+    need(body('AutomaticDraftPostingTests.cs','AnySuppliedDraftIntentCannotBecomeAnotherParkedCopy'), "status='posted',posted_document_id=-1,posted_at='2026-11-10 12:00:00'")
+    need(body('StockTests.cs','AManager_MayWriteOff_AButNeverEditsHistory'), 'var manager = TestData.AddUser(test, "manager");')
+    provisional = body('ProvisionalTests.cs','OnlyTheOwnerOrAManager_CanAttachOrCancel')
+    for token in ('var cashier = TestData.Cashier(test);','var manager = TestData.AddUser(test, "manager");','Assert.False(TestData.Provisionals(test).Cancel(', 'Assert.True(TestData.Provisionals(test).Link('): need(provisional, token)
+    purchase = read('PurchasePreparationTests.cs')
+    for token in ('record Fixture(PurchaseInput Input, int Draft, DraftService Drafts)', 'return new Fixture(input, saved.Value!.Id, drafts);',
+                  'var purchases = TestData.Purchases(t); var drafts = f.Drafts;', 'Assert.Equal(before, Snapshot(t));'):
+        need(purchase, token)
+    denied = purchase.split('private static void Denied(',1)[-1].split('[Fact]',1)[0]
+    if 'TestData.Drafts(t)' in denied: FAILURES.append('Owner denial helper must not construct an auto-opening drawer factory')
+    need(body('ShiftHandoverTests.cs','SomebodyWhoCannotWorkTheTill_CannotTakeTheDrawer'), 'Assert.Contains("permission", refused.Error!, StringComparison.OrdinalIgnoreCase);')
+    need(body('ShiftHandoverTests.cs','TheSlip_CarriesBothSignaturesAndFitsThirtyTwoColumns'), 'Assert.Contains("From: " + TestData.SeedOwnerName, text);')
+    pricing = body('PricingPhaseTwoTests.cs','RoleMismatchCannotBorrowStoredOwnerPricingRights')
+    for token in ('Assert.Contains("account has changed", quote.Error ?? string.Empty);','Assert.False(sales.Create(cart, actor).Ok);',
+                  'SELECT COUNT(*) FROM sales;', 'SELECT COUNT(*) FROM payments;'): need(pricing, token)
+    REPORT.append('v0.120.1 owner Windows22-failure fixture guards:checked Settings/current identities/explicit denials/stored names/pre-fault services/schema-valid marker;new C# rerun required')
+
+
 def check_csharp_grammar() -> None:
     """Every C# file must parse, and every `Type.Member` must be a member that type declares.
 
@@ -8988,6 +9047,7 @@ def main() -> int:
     check_photo_file_fault_boundaries()
     check_ledger_outcome_fault_boundaries()
     check_document_field_expense_reader()
+    check_windows_v1201_regressions()
     check_csharp_grammar()
 
     if not quiet:

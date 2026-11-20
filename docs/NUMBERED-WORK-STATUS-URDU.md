@@ -1,15 +1,15 @@
 # نمبر وار کام اور باقی جانچ — مستقل1تا36فہرست
 
-**⏳ موجودہ source: v0.120.1 Alder؛نئے14حصوںکےمنصوبےکاصرفحصہ1زیرعمل۔** [⏳ منصوبہ/گفتگوکےاصول](REMAINING-14-PORTIONS-URDU.md)۔ مستقل1–36نمبرنہیںبدلے؛نیچےموجودباقیfeaturestatusبرقرار،پرانیreviewترتیبکیجگہابنیااجازتوالامنصوبہہے۔
+**⏳ موجودہ source: v0.120.2 Willow؛نئے14حصوںکےمنصوبےکاصرفحصہ2زیرعمل۔** [⏳ منصوبہ](REMAINING-14-PORTIONS-URDU.md)؛[⏳ اصلWindowsrunاور22ناکامیاں](WINDOWS-V1201-TEST-REPORT-REVIEW.md)۔ مستقل1–36نمبرنہیںبدلے۔
 
-✅ DocumentFieldTestsکیExpenseListcallمیںلازمیOwnerargumentدرست،اصلassertions/productioncodeبرقرار؛sourceguard/5negativechecks۔ ⏳حقیقیcompileتصدیقباقی(.NETSDKنہیں)،تمام2963C#casesUNRUN؛حصہ2ابھیشروعنہیں۔ ❌installerbinaryنہیںبنی۔
+✅ حصہ1کیCore/TestsDebugcompileتصدیقملی؛v0.120.1runمیں2963total/2941PASS/22FAIL۔ ⏳حصہ2میں14testfilesکیfixtureاصلاح،111staticcontracts/22newsource-negativechecks،اصلنیاWindowsrerunباقی۔ حصہ3شروعنہیںہوا؛❌installerbinaryنہیںبنی۔
 
 | مستقل نمبر / دائرہ | کیا ہوگیا؟ | کیا باقی ہے؟ |
 |---|---|---|
-|1۔ ⏳ ورژن/GitHub | v0.120.1Alder/source/docs/icon/scriptsaligned | samebranchcommit/push/actualremoteverificationآخریرپورٹمیں |
-|2۔ ⏳ C#tests | 2963متوقعcases؛حصہ42میں47نئےinlinecases | DocumentFieldtestکالازمیreaderدرست؛اصلcompileاورپوریsuiteیہاںنہیںچلی |
-|3۔ ⏳ Source/syntheticchecks | 110staticcontracts؛تازہDocumentFieldmissing-readerguardاور5lexicalnegativechecks؛حتمینتائجtraceمیں | یہC#/WPF/provider/securitycertificationنہیں |
-|4۔ ⏳ پرانےWindowsfailures | v0.80کے1333PASS/4FAILکیچاروںوجوہ/sourcefixشناخت | تازہsuiteپرretestاورنئیfailuresکیfix؛پرانانتیجہنیاPASSنہیں |
+|1۔ ⏳ ورژن/GitHub | v0.120.2Willow/source/docs/icon/scriptsaligned | samebranchcommit/push/actualremoteverificationآخریرپورٹمیں |
+|2۔ ⏳ C#tests | 2963متوقعcases؛حصہ42میں47نئےinlinecases | اصلv0.120.1run2963/2941PASS/22FAIL؛v0.120.2کی2963suiteیہاںUNRUN |
+|3۔ ⏳ Source/syntheticchecks | 111staticcontracts؛تازہ22fixture-negativechecksاورreal-schemafixtureprobe؛حتمینتائجtraceمیں | یہC#/WPF/provider/securitycertificationنہیں |
+|4۔ ⏳ پرانےWindowsfailures | v0.120.1کے2941PASS/22FAILکیوجوہ/sourcefixtureاصلاح؛v0.80تاریخی | v0.120.2پراصلretestاورremainingfailuresکیfix؛پرانانتیجہنیاPASSنہیں |
 |5۔ ⏳ Account/role/session | PRابcurrentstoredactive/sameparsedrole/Returns؛validOwnerبھیcurrentrow؛storedauditactor | authenticatedsessiontoken/same-role-IDimpersonation،remainingcallers؛یہfullsessionproofنہیں |
 |6۔ ⏳ Parentrecordcreate/edit/read | PRCreate/Link/CancelTxcurrentactorقبلtarget،reads/receiptcurrent؛پچھلےdraft/heldboundariesبرقرار | remainingquickadd/parent/sessioncallers،atomicCAS؛legacy/otherworkflowreview |
 |7۔ ⏳ Revocation/staleoutputs | PRaction/nominal3stimerdenialپرفارم/rows/tray/lookupصاف؛stableinputsبرقرار،regrantfreshLoad؛detachedrowrefused | actualWPF،fullPOScart/otherpreparedoutputs/instantrecall/CASباقی |
@@ -51,6 +51,6 @@
 4. اسی نمبرکےاندرکیاباقیہےاورکیوں؟
 5. اگلےنمبروںکیترتیب،docs/GitHubکیاصلحیثیت،installerکےباقیدروازے۔
 
-موجودہترتیب: [⏳ نیا14حصوںکامنظورشدہمنصوبہ](REMAINING-14-PORTIONS-URDU.md)۔ صرفحصہ1کیاجازتملی؛اسکیاصلbuildتصدیقاورحصہ2کیالگاجازتباقی۔ پرانا3–6چکروںکااندازہابکامشروعکرنےکیہدایتنہیں۔
+موجودہترتیب: [⏳ نیا14حصوںکامنظورشدہمنصوبہ](REMAINING-14-PORTIONS-URDU.md)۔ حصہ1کیمتعلقہcompileتصدیقملی؛صرفحصہ2کیاجازتملی،اسکیاصلrerunتصدیقباقی؛حصہ3شروعنہیں۔ پرانا3–6چکروںکااندازہابکامشروعکرنےکیہدایتنہیں۔
 
 اصلshopپرsyntheticpostsنہیں؛secret/datachatمیںنہیں؛ہرportiondocs+sameactivebranchcommit/push+actualremoteverification۔ Static/Python/featureboardکوproduction/runtime/securityPASSنہکہیں۔

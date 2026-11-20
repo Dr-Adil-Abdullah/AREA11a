@@ -1,5 +1,10 @@
 # Area11 — Real-life Physical Testing Log
 
+## ⏳ حصہ2/14 — v0.120.2 کا نیا اصل Windows run درکار
+
+✅ پچھلےv0.120.1runمیںCore/TestsDebugcompileہوا؛2941کامیاب/22ناکام/2963کل۔ ⏳صرفحصہ2کیfixtureاصلاحاتکےبعد `tools\RUN-TESTS.cmd` سے2963/0failکانیااصلنتیجہدرکار؛نہآنےتکgreenنہیں۔ [⏳ کیسوارحدود](docs/WINDOWS-V1201-TEST-REPORT-REVIEW.md)۔ اصلshopapp/postingنہیں؛الگtestdata،verifiedbackup/الگDB/photos/configاورپراناlogمحفوظ۔ حصہ3شروعنہیںہوا۔
+
+
 ## ⏳ موجودہ حصہ1/14 — صرف build کی تصدیق
 
 ⏳ v0.120.1 میں `dotnet build dotnet/Area11.Tests/Area11.Tests.csproj --configuration Release` کا اصل Windows نتیجہ درکار؛DocumentFieldTests کیmissing-reader call درست،runtimePASSنہیں۔ [⏳ منصوبہ](docs/REMAINING-14-PORTIONS-URDU.md)؛پوریsuiteحصہ2میںصرفاجازتسے۔ اصلshopappنہچلائیں،فرضیpostingنہیں۔

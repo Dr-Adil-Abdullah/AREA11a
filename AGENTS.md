@@ -2,8 +2,12 @@
 
 ## ✅ گفتگو اور حصوں کی تازہ ہدایت
 
-ہر جواب/وضاحت/خلاصہ سادہ پاکستانی اردو۔ ایک وقت میں صرف ایک منظورشدہ حصہ؛ہر اگلے حصے سے پہلے نئی اجازت۔ ہر ٹاسک/حصے پر صرف3–4 لائنوں کا خلاصہ؛تفصیلی رپورٹ ہر3 مکمل حصوں کے بعد یا مالک کے مطالبے پر۔ [⏳ نیا14حصوں کا منصوبہ](docs/REMAINING-14-PORTIONS-URDU.md) پر عمل کریں؛پرانے3–6roundsاندازے اس منصوبے کی جگہ نہیں لیتے۔ ⏳حصہ1کیsourceاصلاحہوئی،حقیقیcompileتصدیقباقی؛❌حصہ2شروعکرنےکیاجازتنہیں۔ ✅صحت مندsourcecheckکوکامیاب.NETbuildنہکہیں۔
+ہر جواب/وضاحت/خلاصہ سادہ پاکستانی اردو۔ ایک وقت میں صرف ایک منظورشدہ حصہ؛ہر اگلے حصے سے پہلے نئی اجازت۔ ہر ٹاسک/حصے پر صرف3–4 لائنوں کا خلاصہ؛تفصیلی رپورٹ ہر3 مکمل حصوں کے بعد یا مالک کے مطالبے پر۔ [⏳ نیا14حصوں کا منصوبہ](docs/REMAINING-14-PORTIONS-URDU.md) پر عمل کریں؛پرانے3–6roundsاندازے اس منصوبے کی جگہ نہیں لیتے۔ ✅حصہ1کیCore/TestsDebugcompileتصدیقمالککےv0.120.1runسےملی۔ ⏳صرفحصہ2کیاجازتملی:22failuresکیfixtureاصلاح،نیاWindowsrerunباقی؛❌حصہ3کیاجازتنہیں۔ ✅صحت مندsourcecheckکوکامیاب.NETbuildنہکہیں۔
 
+
+## ⏳ تازہ حصہ2 — v0.120.2 Willow
+
+مالککااصلv0.120.1Windows/.NET10run:CoreاورTestsDebugکمپائل،2963total/2941PASS/22FAIL/0skip،5m20s؛Desktop/Release/installerکیسندنہیں۔ ✅22ناکامیوںکےمتعلق14testfilesمیںfixtureاصلاح؛productionservices/permissions/financialSQL/37migrationsاور2963testcaseشناختیںبرقرار۔ ⏳نیاWindowsrunیہاںنہیں(.NETSDKغائب)؛[نتائج/حدود](docs/WINDOWS-V1201-TEST-REPORT-REVIEW.md)،[14حصے](docs/REMAINING-14-PORTIONS-URDU.md)۔ اگلاحصہصرفنئیاجازتسے؛ابھیحصہ2کیrerunتصدیقکاانتظار۔
 
 ## ✅ Current reporting instruction — owner selected in portion37
 

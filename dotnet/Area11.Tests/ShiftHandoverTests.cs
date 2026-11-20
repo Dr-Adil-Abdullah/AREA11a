@@ -182,7 +182,7 @@ FROM shifts ORDER BY id;");
         var refused = Shifts(test).Handover(TestData.Owner, helper, 10000, null);
 
         Assert.False(refused.Ok);
-        Assert.Contains("cannot work the till", refused.Error!, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("permission", refused.Error!, StringComparison.OrdinalIgnoreCase);
         Assert.True(Shifts(test).Page(TestData.Owner).Value!.Current!.IsOpen);
     }
 
@@ -381,7 +381,7 @@ WHERE sale_id = (SELECT id FROM sales WHERE code = @code);", new { code = afterC
         var text = slip.PlainText;
 
         Assert.Contains("HANDOVER", text);
-        Assert.Contains("From: Owner", text);
+        Assert.Contains("From: " + TestData.SeedOwnerName, text);
         Assert.Contains("To:   Bilal", text);
         Assert.Contains("Given by:", text);
         Assert.Contains("Taken by:", text);

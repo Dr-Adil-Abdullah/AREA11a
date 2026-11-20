@@ -214,7 +214,7 @@ public sealed class StockTests
     {
         using var test = new TestDatabase();
         var product = TestData.AddProduct(test, batchQty: 20);
-        var manager = new User { Id = 3, Name = "Kamran", Role = "manager" };
+        var manager = TestData.AddUser(test, "manager");
 
         Assert.True(Stock(test).WriteOff(new WriteOffInput
         {

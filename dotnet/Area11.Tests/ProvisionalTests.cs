@@ -176,12 +176,12 @@ public sealed class ProvisionalTests
         var rush = TestData.Provisionals(test).Create(
             TestData.RushReturn(product, qty: 1, unit: "base", refundPaisa: 30000), TestData.Owner);
 
-        var cashier = new User { Id = 5, Name = "Bilal", Role = "cashier" };
+        var cashier = TestData.Cashier(test);
 
         Assert.False(TestData.Provisionals(test).Link(rush.Value!.Id, sale.Value!.Code, cashier).Ok);
         Assert.False(TestData.Provisionals(test).Cancel(rush.Value.Id, "wrong entry", cashier).Ok);
 
-        var manager = new User { Id = 3, Name = "Kamran", Role = "manager" };
+        var manager = TestData.AddUser(test, "manager");
         Assert.True(TestData.Provisionals(test).Link(rush.Value.Id, sale.Value.Code, manager).Ok);
     }
 

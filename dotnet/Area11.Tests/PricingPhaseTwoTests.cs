@@ -136,7 +136,7 @@ public sealed class PricingPhaseTwoTests
             var cart = TestData.Cart(product); cart.Lines[0].UnitPricePaisa = 30000;
             Assert.Throws<ValidationException>(() => Policy(test).ForUser(actor));
             var quote = sales.Quote(cart, actor);
-            Assert.False(quote.Ok); Assert.Contains("role has changed", quote.Error ?? string.Empty);
+            Assert.False(quote.Ok); Assert.Contains("account has changed", quote.Error ?? string.Empty);
             Assert.False(sales.Create(cart, actor).Ok);
         }
         using var c = test.Database.Open();

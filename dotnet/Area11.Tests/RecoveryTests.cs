@@ -392,7 +392,7 @@ public sealed class RecoveryTests
 
         // The owner can never lock himself out, and the manager has Customers by default.
         Assert.True(TestData.Recovery(test).Report(TestData.Owner, Today).Ok);
-        Assert.True(TestData.Recovery(test).Report(new User { Id = 9, Name = "Manager", Role = "manager" }, Today).Ok);
+        Assert.True(TestData.Recovery(test).Report(TestData.AddUser(test, "manager"), Today).Ok);
     }
 
     [Fact]

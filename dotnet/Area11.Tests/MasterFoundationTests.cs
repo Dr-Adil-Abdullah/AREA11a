@@ -272,7 +272,7 @@ ORDER BY supplier_id;");
         var audit = Assert.Single(test.Database.Query<AuditRow>(connection,
             "SELECT * FROM audit_logs WHERE action = 'settings_change' AND entity_id = @key;",
             new { key = MasterFoundationSettings.SyncAutomaticMinutes }));
-        Assert.Equal("Owner", audit.UserName);
+        Assert.Equal(TestData.SeedOwnerName, audit.UserName);
         Assert.Equal("15", audit.OldValue);
         Assert.Equal("30", audit.NewValue);
     }

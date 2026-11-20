@@ -189,7 +189,7 @@ public sealed class CustomerCurrentAccessTests
     [Fact]
     public void ProfitGrantWithoutCustomersCannotReadLifetimeProfit()
     {
-        using var t = new TestDatabase(); Prescription(t); var u = TestData.Cashier(t); Grant(t, u, Modules.Profit);
+        using var t = new TestDatabase(); Prescription(t); var u = TestData.Cashier(t); Grant(t, u, Modules.Customers, false); Grant(t, u, Modules.Profit);
         Assert.False(Reps(t).ListCustomerProfit(u).Ok); Assert.False(Reps(t).ListDoctors(u).Ok);
     }
 
@@ -215,7 +215,7 @@ public sealed class CustomerCurrentAccessTests
     [Fact]
     public void ProductsOnlyCanReadAndEditRepButNotCustomerSummaries()
     {
-        using var t = new TestDatabase(); var u = TestData.Cashier(t); Grant(t, u, Modules.Products); var company = Company(t); var reps = Reps(t);
+        using var t = new TestDatabase(); var u = TestData.Cashier(t); Grant(t, u, Modules.Customers, false); Grant(t, u, Modules.Products); var company = Company(t); var reps = Reps(t);
         Assert.True(reps.SaveRep(u, company, "Synthetic rep", "0300", 1).Ok); Assert.NotEmpty(reps.ListReps(u).Value!);
         Assert.False(reps.ListDoctors(u).Ok); Assert.False(reps.ListCustomerProfit(u).Ok);
         var access = reps.CheckAccess(u).Value!; Assert.True(access.Reps); Assert.False(access.Customers); Assert.False(access.Profit);

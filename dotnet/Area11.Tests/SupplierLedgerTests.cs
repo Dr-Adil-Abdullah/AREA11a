@@ -386,7 +386,12 @@ SELECT qty_base FROM stock_movements WHERE ref_code = 'SR-0001' ORDER BY id DESC
         Buy(test, supplier, product);
         var batch = NewestBatch(test, product);
 
-        var cashier = new User { Id = 99, Name = "Cashier", Role = "cashier" };
+        var cashier = TestData.Cashier(test);
+        Assert.True(TestData.Permissions(test).Set(TestData.Owner, cashier.Id, Modules.Suppliers, false).Ok);
+        var before = test.Database.Read(c => test.Database.QuerySingle<long>(c, "SELECT COUNT(*) FROM audit_logs;"));
+        var balance = Ledger(test).Page(TestData.Owner, supplier).Value!.StoredPaisa;
+        var stock = test.Database.Read(c => test.Database.QuerySingle<double>(c, "SELECT SUM(qty_base) FROM batches;"));
+        var paymentCount = test.Database.Read(c => test.Database.QuerySingle<long>(c, "SELECT COUNT(*) FROM payments;"));
 
         var paid = Ledger(test).Pay(cashier, supplier, 10000, "cash", null);
         Assert.False(paid.Ok);
@@ -402,7 +407,11 @@ SELECT qty_base FROM stock_movements WHERE ref_code = 'SR-0001' ORDER BY id DESC
         });
 
         Assert.False(returned.Ok);
-        Assert.Contains("owner or a manager", returned.Error);
+        Assert.Contains("permission", returned.Error!, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(before, test.Database.Read(c => test.Database.QuerySingle<long>(c, "SELECT COUNT(*) FROM audit_logs;")));
+        Assert.Equal(balance, Ledger(test).Page(TestData.Owner, supplier).Value!.StoredPaisa);
+        Assert.Equal(stock, test.Database.Read(c => test.Database.QuerySingle<double>(c, "SELECT SUM(qty_base) FROM batches;")));
+        Assert.Equal(paymentCount, test.Database.Read(c => test.Database.QuerySingle<long>(c, "SELECT COUNT(*) FROM payments;")));
         Assert.Equal(800000L, StoredPayable(test, supplier));
         Assert.Equal(40d, BatchQty(test, batch));
     }

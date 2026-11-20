@@ -249,6 +249,7 @@ public sealed class PartnerTests
         var supplierId = TestData.AddSupplier(test, openingPaisa: 500000);
         var batchId = BatchOf(test, productId);
 
+        var before = StockOf(test, productId);
         var refused = Ledger(test).Return(TestData.Cashier(test), new SupplierReturnInput
         {
             SupplierId = supplierId,
@@ -260,7 +261,8 @@ public sealed class PartnerTests
         });
 
         Assert.False(refused.Ok);
-        Assert.Contains("Only the owner", refused.Error!);
+        Assert.Contains("permission", refused.Error!, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(before, StockOf(test, productId));
     }
 
     // ============================== helpers ==============================

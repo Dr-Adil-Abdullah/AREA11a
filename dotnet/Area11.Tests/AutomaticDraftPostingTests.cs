@@ -106,7 +106,7 @@ public sealed class AutomaticDraftPostingTests
     {
         using var f = new AutoPostingFixture(); var saved = f.Save(state == "purchase"); Assert.True(saved.Ok, saved.Error); var id = saved.Value!.Id;
         if (state == "posted") Assert.True(f.Post(false, id));
-        if (state == "marker") f.Execute("UPDATE document_drafts SET status='posted',posted_document_id=-1;");
+        if (state == "marker") f.Execute("UPDATE document_drafts SET status='posted',posted_document_id=-1,posted_at='2026-11-10 12:00:00';");
         if (state == "discarded") Assert.True(f.D.Discard(TestData.Owner, id).Ok);
         if (state == "missing") id = int.MaxValue;
         var before = f.Snapshot(); var held = f.H.Hold(f.Sale, TestData.Owner, id);

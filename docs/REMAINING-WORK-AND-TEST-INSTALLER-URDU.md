@@ -1,5 +1,10 @@
 # باقی کام، GitHub اور test installer — v0.104.0
 
+## ⏳ موجودہ حصہ2/14 — v0.120.2 Willow
+
+✅ مالککےاصلv0.120.1WindowsrunسےCore/TestsDebugcompileثابت؛2963total/2941PASS/22FAIL/0skip۔ ⏳ان22ناکامیوںکی14testfilesمیںfixtureاصلاح؛productioncode/حساب/permissionsنہیںبدلے،2963casesبرقرار؛نیاWindowsrerunباقی۔ [⏳ نتیجہ/حدود](WINDOWS-V1201-TEST-REPORT-REVIEW.md)؛[⏳14حصے](REMAINING-14-PORTIONS-URDU.md)۔ حصہ3شروعنہیںکرنا؛صرفحصہ2کیاجازتملی۔ پرانے“حصہ1تصدیقباقی/حصہ2غیرمنظور”نوٹساببعدکیاسentryسےمتروک،پرانےrunhistoricalہیں۔
+
+
 ## ⏳ موجودہ کام — v0.120.1 Alder،نئے منصوبے کا حصہ1/14
 
 ✅ DocumentFieldTestsمیںExpenseListکوexplicitOwnerدیا؛اصلassertionsاورproductioncodeبرقرار۔ ⏳اصلcompileابھیغیرمصدقہ(.NETSDKغائب)،2963C#casesUNRUN۔ [⏳ مکملمنصوبہ/حدود](REMAINING-14-PORTIONS-URDU.md)؛اگلاپورشنصرفنئیاجازتسے،مختصرخلاصہ3–4لائن؛پرانیportion42تککیentriesتاریخیہیں۔

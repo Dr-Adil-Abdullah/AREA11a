@@ -152,7 +152,7 @@ public sealed class SplitPaymentTests
 
         // Two settings decide this: the block must be ON (it ships OFF) and the person must not be
         // the owner (spec 13.4.2 always allows the owner), so the limit is tested from the counter.
-        test.Settings.Set("credit.blockOverLimit", true, null);
+        Assert.True(test.Settings.Set("credit.blockOverLimit", true, TestData.Owner).Ok);
         var cashier = TestData.Cashier(test);
 
         var tooMuch = Split(product, ("cash", 20000), ("credit", 10000));
@@ -182,7 +182,7 @@ public sealed class SplitPaymentTests
         var over = Split(product, ("cash", 20000), ("credit", 10000));
         over.CustomerId = customer;
 
-        test.Settings.Set("credit.blockOverLimit", true, null);
+        Assert.True(test.Settings.Set("credit.blockOverLimit", true, TestData.Owner).Ok);
 
         // Owner: always allowed (spec 13.4.2), and it is written down in the black box by the sale.
         var byOwner = sales.Create(over, TestData.Owner);
@@ -194,6 +194,16 @@ public sealed class SplitPaymentTests
         var again = Split(product, ("cash", 20000), ("credit", 10000));
         again.CustomerId = customer;
         Assert.False(sales.Create(again, cashier).Ok);
+
+        var manager = TestData.AddUser(test, "manager");
+        Assert.True(test.Settings.Set("credit.managerCanOverride", false, TestData.Owner).Ok);
+        var before = test.Database.Read(c => test.Database.QuerySingle<long>(c, "SELECT COUNT(*) FROM sales;"));
+        Assert.False(sales.Create(again, manager).Ok);
+        Assert.Equal(before, test.Database.Read(c => test.Database.QuerySingle<long>(c, "SELECT COUNT(*) FROM sales;")));
+        Assert.True(test.Settings.Set("credit.managerCanOverride", true, TestData.Owner).Ok);
+        var byManager = sales.Create(again, manager);
+        Assert.True(byManager.Ok, byManager.Error);
+        Assert.Equal(10000L, byManager.Value!.DuePaisa);
     }
 
     [Fact]

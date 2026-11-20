@@ -14,8 +14,8 @@
 
 | حصہ / اس نئے منصوبے کی حالت | کام |
 |---|---|
-|1۔ ⏳ کمپائل کی خرابی | DocumentFieldTests.cs کی وجہ،محدود اصلاح،دوبارہ کمپائل کی تصدیق؛ذیل میں موجودہ حد |
-|2۔ ❌ پوری ٹیسٹ سوئٹ | موجودہ2963 ٹیسٹ اصل .NET ماحول میں؛ناکامیوں کی اصلاح اور دوبارہ جانچ؛توقعات کمزور نہیں |
+|1۔ ✅ متعلقہ کمپائل کی خرابی | DocumentFieldTests کی اصلاح؛مالک کے v0.120.1 Windows run میں Core اور Tests Debug کمپائل ہونے سے تصدیق؛پوری Desktop/Release سند نہیں |
+|2۔ ⏳ پوری ٹیسٹ سوئٹ | اجازت مل گئی؛اصل v0.120.1 run میں2941PASS/22FAIL/2963۔22 ناکامیوں سے متعلق fixture اصلاحات؛v0.120.2 کا اصل rerun باقی |
 |3۔ ❌ ریکارڈ بنانے والے فارم | دوا/گاہک/سپلائر/فوری اندراج؛غیر واضح Save،کامیابی کے بعد خرابی اور اضافی entries |
 |4۔ ❌ لاگ اِن اور اجازتیں | موجودہ شناخت،بدلی اجازتیں،پرانے کھلے فارم،اضافی خانے،پورے کاؤنٹر کے حساس outputs |
 |5۔ ❌ بیک وقت کام | متعدد صفحات/کنکشن؛پڑھنے اور لکھنے کے درمیان تبدیلی،پرانے ڈیٹا سے overwrite کی روک تھام |
@@ -29,12 +29,18 @@
 |13۔ ❌ رہنما اور مشترکہ آخری جانچ | اصل بٹنوں سے اردو guide ملانا؛الگ DB/photos/config؛پوری دوبارہ جانچ اور باقی رکاوٹیں |
 |14۔ ❌ قابل ارسال ٹیسٹ انسٹالر | ضروری build/tests کے بعد بنانا؛clean install/upgrade/uninstall/data preservation؛پھر فائل دینا |
 
-## ⏳ حصہ1 کی موجودہ حالت — v0.120.1 Alder
+## ✅ حصہ1 کی متعلقہ تصدیق — v0.120.1 Alder
 
 - ✅ Source میں وجہ ملی: `ExpenseService.List(User? user, int limit = 200)` میں `user` لازمی ہے؛`DocumentFieldTests.TheExpenseList_CarriesTheAnswersLine` اسے `cashOut.List()` سے بلا رہا تھا۔ `User?` کاnullableہونا اسےoptionalنہیںبناتا۔
 - ✅ محدود اصلاح: `cashOut.List(TestData.Owner)`؛اصل Single/ExtraLabel/HasExtra assertions برقرار۔ Production service،SQL،اجازتیں یا حساب نہیں بدلے۔
 - ✅ نیا محدود source guard اور5 منفی تبدیلیوں کی جانچ؛actor ہٹانا/nullدینا،ضروری assertions ہٹانا اور API میں actor optionalکرنا رد؛اصل bytes بحال۔ یہ عمومی C# type-checker نہیں۔
 - ✅ آخری مقامی جانچ:110 static checks؛434 C# فائلوں کی grammar،4810 calls/9871 references میں0 static issues؛5 منفی source تبدیلیاں رد اور اصل bytes بحال۔810 پہلے سے موجود paths برقرار؛version metadata کے سوا198 Core paths اور142 دوسری test paths نہیں بدلیں؛اس test میں صرفOwnerargumentکاایکسطریفرق،تمامassertionsبرقرار۔ یہRoslyn/Windowsbuildنہیں۔
-- ⏳ `dotnet build dotnet/Area11.Tests/Area11.Tests.csproj --configuration Release` کی کوشش نہیں چل سکی: `dotnet: command not found`،exit127۔ اس ماحول میں.NETSDKنہیں۔ Source کی اصلاح کو حقیقی کامیاب compile نہیں کہا گیا؛Windows build کا اصل نتیجہ درکار۔
-- ⏳ پوری2963 C# suite اس حصے میں نہیں چلائی؛یہ حصہ2 ہے اور اس کی اجازت نہیں ملی۔ حصہ1 کی actual build تصدیق اور اگلے حصے کی اجازت ابھی باقی۔
+- ⏳ `dotnet build dotnet/Area11.Tests/Area11.Tests.csproj --configuration Release` کی کوشش نہیں چل سکی: `dotnet: command not found`،exit127۔ اس ماحول میں.NETSDKنہیں۔ یہ اس sandbox کی حد تھی؛بعد میں مالک کے اصل Windows log سے Core/Tests Debug compile ثابت ہوگیا،Desktop/Release نہیں۔
+- ✅ بعد میں مالک کے اصل Windows/.NET10 run میں2963 ٹیسٹ چلے:2941 کامیاب،22 ناکام،0 چھوڑے گئے،5 منٹ20 سیکنڈ۔ متعلقہ compile خرابی دور؛پوری suite green نہیں۔ حصہ2 کی الگ اجازت بھی مل گئی۔
 - ⏳ FullPhase4کھلا؛❌installerbinaryنہیںبنی۔ اصلshopپرtestpostsنہیں؛verifiedbackupاورالگDB/photos/configکیشرطبرقرار۔
+
+## ⏳ حصہ2 — اجازت مل گئی،v0.120.2 کی دوبارہ جانچ باقی
+
+✅ 22 ناکامیوں سے متعلق14 test files میں تیاری کی اصلاح:Settings کے لیے checked Owner،database میں حقیقی صارف،واضح ممنوعہ اجازت،محفوظ شدہ نام،fault لگانے سے پہلے service تیار،اورschemaکےمطابقdraftmarker۔ Productionحساب/permissions/SQLمیںتبدیلینہیں؛2963testidentitiesبرقرار۔
+
+⏳ [اصل run،کیسوار وجہ،اصلاح اور حدود](WINDOWS-V1201-TEST-REPORT-REVIEW.md)۔ یہاں.NETSDKنہیں؛نئےbuildکاکامیابruntimeدعویٰنہیں۔ اباسیحصےمیںمالککاv0.120.2runدرکار؛حصہ3اورآگےکیاجازتنہیں۔

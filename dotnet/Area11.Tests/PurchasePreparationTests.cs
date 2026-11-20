@@ -8,7 +8,7 @@ namespace Area11.Tests;
 /// <summary>Cost-bearing preparation refuses rather than returning an editable zero-price draft.</summary>
 public sealed class PurchasePreparationTests
 {
-    private sealed record Fixture(PurchaseInput Input, int Draft);
+    private sealed record Fixture(PurchaseInput Input, int Draft, DraftService Drafts);
     private static void Execute(TestDatabase t, string sql) => t.Database.Tx(c => { t.Database.Execute(c, sql); });
     private static string Text(TestDatabase t, string sql)
     {
@@ -34,8 +34,9 @@ public sealed class PurchasePreparationTests
                     RetailPaisa = 30000, BatchNo = "SYN-P13", Expiry = "2099-06", IsSample = sample }
             }
         };
-        var saved = TestData.Drafts(t).SavePurchaseDraft(TestData.Owner, input);
-        Assert.True(saved.Ok, saved.Error); return new Fixture(input, saved.Value!.Id);
+        var drafts = TestData.Drafts(t);
+        var saved = drafts.SavePurchaseDraft(TestData.Owner, input);
+        Assert.True(saved.Ok, saved.Error); return new Fixture(input, saved.Value!.Id, drafts);
     }
     private static string Snapshot(TestDatabase t) => string.Join("|", new[]
     {
@@ -47,7 +48,7 @@ public sealed class PurchasePreparationTests
     }.Select(sql => Text(t, sql)));
     private static void Denied(TestDatabase t, Fixture f, User? actor)
     {
-        var before = Snapshot(t); var purchases = TestData.Purchases(t); var drafts = TestData.Drafts(t);
+        var before = Snapshot(t); var purchases = TestData.Purchases(t); var drafts = f.Drafts;
         Assert.False(purchases.CheckEntryAccess(actor).Ok);
         var create = purchases.Create(f.Input, actor); Assert.False(create.Ok); Assert.Null(create.Value);
         var open = drafts.OpenPurchase(actor, f.Draft); Assert.False(open.Ok); Assert.Null(open.Value);
