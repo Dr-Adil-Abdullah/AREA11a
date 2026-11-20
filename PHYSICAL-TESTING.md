@@ -1,5 +1,10 @@
 # Area11 — Real-life Physical Testing Log
 
+## ⏳ PT-64 — حصہ4/14،اصلlogin/next-action reset/Counter outputs (v0.122.0)
+
+[⏳ مکملاردوstepsاورحدود](docs/AUTHENTICATED-SESSION-REVIEW-URDU.md)۔ پہلےverifiedencryptedbackup **اورواقعیالگDB/photos/config**؛اصلshopپرposts/faultsنہیں۔ 3057suite/0fail/0skip،DesktopRelease،password/PINresetپراگلاkeyboard/mouse/text/scanner/Save،کھلےmodal+Closing،freshloginمیںoldcallback،same-rolecopieduser/close-onlyproof،POSrevokeپرپورےoutputs/extraanswersصاف،retainedcart+draftguards،freshregrant/reloadfailure،ownertarget/pricing/handoverاورparentpickers،idle/12hجانچیں۔ ⏳22نئےC#testsاوراصلWindows/WPF/runtimeسبباقی؛113static/52lexicalnegativesانکابدلنہیں۔ حصہ2/3rerunsبھیباقی؛❌حصہ5شروعنہیں/installerنہیںبنا۔ نیچےپرانےحصوںکےشواہداسوقتکیحیثیتہیں۔
+
+
 ## ⏳ PT-63 — حصہ3/14،parent/quick-create Save (v0.121.0)
 
 [⏳ اردوsteps/trace](docs/PARENT-RECORD-SAVE-OUTCOME-REVIEW-URDU.md)۔ ⏳72newC#cases/3035suiteUNRUN؛حصہ2کے22fixesبھیابھیWindows-rerunکےمنتظر۔ Require actual3035/0fail run،DesktopReleasebuild،parent/quickcatalog/customer/supplier/unit validation+retry،sameIDselection،post-ackreload/callbackfailureپرSAVEDاورblockedretry،unknown+Refresh/regrant،Productconfirmationreentry،brandname/linkpartialsuccess،Countercart/Purchaselinespreserved۔ ActualproviderCOMMIT/rollback/lost-ackاورWPFexecutionنہیںہوئی؛localguarddurablekeyنہیں۔ VerifiedbackupANDseparateDB/photos/configپہلے؛اصلshopپرtestpostsنہیں۔ ❌حصہ4شروعنہیں،installerنہیںبنی۔

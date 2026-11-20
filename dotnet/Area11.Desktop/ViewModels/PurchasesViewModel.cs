@@ -352,7 +352,7 @@ public sealed class PurchasesViewModel : ObservableObject
     {
         _lastLookupsSucceeded = false;
         if (!RefreshEntryAccess()) return;
-        var suppliers = _services.Partners.GetSuppliers();
+        var suppliers = _services.Partners.GetSuppliers(_user);
         Suppliers.Clear();
         if (!suppliers.Ok || suppliers.Value is null)
         {

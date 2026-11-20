@@ -41,6 +41,7 @@ public sealed class Database
     public Database(string? filePath = null, bool pooling = true, bool durable = true)
     {
         _durable = durable;
+        Sessions = new Area11.Core.Services.AuthenticatedSessionService(this);
 
         FilePath = string.IsNullOrWhiteSpace(filePath) ? AppPaths.DatabaseFile : filePath;
         // The mode is read here too: a main counter keeps the rollback journal on its OWN disk,
@@ -78,6 +79,9 @@ public sealed class Database
     }
 
     public string FilePath { get; }
+
+    /// <summary>Enabled once by Desktop composition;no configuration switch can turn it off.</summary>
+    public Area11.Core.Services.AuthenticatedSessionService Sessions { get; }
 
     /// <summary>WAL on a local disk, rollback journal over the LAN - see <see cref="StoragePlan"/>.</summary>
     public StoragePlan Plan { get; }

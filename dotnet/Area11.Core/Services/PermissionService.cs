@@ -99,6 +99,9 @@ public sealed class PermissionService
             return false;
         }
 
+        try { _db.Sessions.Require(user, closeOnlyAllowed: module == Modules.CloseApp); }
+        catch (Exception) { return false; }
+
         // Visibility is independently revocable even for the owner. Other owner module access
         // remains protected, so hiding financial numbers cannot lock the owner out of Settings.
         if (IsFinancialVisibility(module)) return CanSeeFinancial(user, module);
@@ -152,6 +155,25 @@ public sealed class PermissionService
     }
 
     public IReadOnlyDictionary<string, bool> MapFor(User user)
+    {
+        if (_db.Sessions.Enabled) return Modules.All.ToDictionary(module => module, _ => false);
+        return ReadMap(user);
+    }
+
+    public IReadOnlyDictionary<string, bool> MapFor(User actor, User target)
+    {
+        try
+        {
+            return _db.Read(connection =>
+            {
+                OwnerAccess.Require(_db, connection, actor);
+                return ReadMap(target);
+            });
+        }
+        catch (Exception) { return Modules.All.ToDictionary(module => module, _ => false); }
+    }
+
+    private IReadOnlyDictionary<string, bool> ReadMap(User user)
     {
         var map = new Dictionary<string, bool>(StringComparer.Ordinal);
         var stored = new Dictionary<string, bool>(StringComparer.Ordinal);

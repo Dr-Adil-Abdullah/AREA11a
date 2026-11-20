@@ -27,6 +27,7 @@ public sealed class PermissionInspectionService
             if (!Modules.All.Contains(module))
                 throw new ValidationException("Choose an existing permission.");
 
+            _db.Sessions.Require(actor);
             using var connection = _db.Open();
             // Local read transaction: one coherent DB snapshot without Database.Tx's write lock
             // or its shared transaction field. All queries explicitly use this transaction.

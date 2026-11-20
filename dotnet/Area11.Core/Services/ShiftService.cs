@@ -311,7 +311,7 @@ WHERE id = @id;",
             return _db.Tx(connection =>
             {
                 var reader = RequireCash(connection, user);
-                var recipient = RequireCash(connection, next);
+                var recipient = RequireCashTarget(connection, next);
                 var shift = ReadOpen(connection);
 
                 if (shift is null)
@@ -561,6 +561,14 @@ LIMIT @limit;", new { limit });
     // connection, while Database attaches its active transaction to commands. Do not turn that
     // cross-connection error into a role-default grant/refusal for a delegated Cash operator.
     private User RequireCash(Microsoft.Data.Sqlite.SqliteConnection connection, User? actor)
+    {
+        _db.Sessions.Require(actor);
+        var current = RequireCashTarget(connection, actor);
+        _db.Sessions.Carry(actor, current);
+        return current;
+    }
+
+    private User RequireCashTarget(Microsoft.Data.Sqlite.SqliteConnection connection, User? actor)
     {
         if (actor is not { Active: true } || actor.Id <= 0)
             throw new ValidationException("Sign in with an active account to work the drawer.");

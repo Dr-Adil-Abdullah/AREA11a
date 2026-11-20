@@ -4,12 +4,13 @@ using Microsoft.Data.Sqlite;
 
 namespace Area11.Core.Services;
 
-/// <summary>Bounded read/projection policy. A supplied account id is NOT session authentication.</summary>
+/// <summary>Bounded read/projection policy plus Desktop-enabled proof;a supplied ID alone is not authentication.</summary>
 internal static class ProductReadAccess
 {
     public static User Require(Database db, SqliteConnection connection, PermissionService permissions,
         User? actor, ProductReadPurpose purpose)
     {
+        db.Sessions.Require(actor);
         var module = purpose switch
         {
             ProductReadPurpose.Catalog => Modules.Products,
@@ -27,6 +28,7 @@ internal static class ProductReadAccess
             "SELECT id, name, role, active FROM users WHERE id = @id;", new { id = actor.Id });
         if (current is not { Active: true } || current.Kind != actor.Kind)
             throw new ValidationException("The account has changed. Sign in again before reading products.");
+        db.Sessions.Carry(actor, current);
         if (!permissions.Can(current, module))
             throw new ValidationException("You do not have permission for this product reading workflow.");
         return current;

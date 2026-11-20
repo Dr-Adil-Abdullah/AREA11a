@@ -6260,6 +6260,95 @@ def check_windows_v1201_regressions() -> None:
     REPORT.append('v0.120.1 owner Windows22-failure fixture guards:checked Settings/current identities/explicit denials/stored names/pre-fault services/schema-valid marker;new C# rerun required')
 
 
+def check_authenticated_session_boundaries() -> None:
+    """Lexical regressions only. Not authentication/security or WPF runtime certification."""
+    def read(path): return (DOTNET / path).read_text()
+    def need(text, *tokens):
+        for token in tokens:
+            if token not in text: FAILURES.append('Authenticated-session contract missing: ' + token)
+    def method(text, signature):
+        if signature not in text:
+            FAILURES.append('Session method missing: ' + signature); return ''
+        return re.split(r'\n    (?:public|private|internal) ', text.split(signature, 1)[1], 1)[0]
+    session = read('Area11.Core/Services/AuthenticatedSessionService.cs')
+    need(session, 'ConditionalWeakTable<User, Lease>', 'internal AuthenticatedSessionService(Database db)',
+         'public void Enable() => Interlocked.Exchange(ref _enabled, 1)',
+         '_proofs.TryGetValue(actor, out var lease)', 'actor.Id != lease.Id', 'actor.Kind != lease.Role',
+         '(lease.CloseOnly && !closeOnlyAllowed)', 'Stopwatch.GetElapsedTime(lease.Started)',
+         'TimeSpan.FromMinutes(2)', 'TimeSpan.FromHours(12)',
+         'Interlocked.Exchange(ref lease.Revoked, 1)', 'UserRoles.Parse(row.Role) != lease.Role',
+         '!string.Equals(lease.CredentialStamp, Stamp(row.PasswordHash, row.PinHash), StringComparison.Ordinal)',
+         'row is not { Active: true }', 'current.Id != lease.Id', '_proofs.Add(current, lease)')
+    need(method(session, 'internal void Issue('),
+         '!string.Equals(Stamp(row.PasswordHash, row.PinHash), Stamp(passwordHash, pinHash), StringComparison.Ordinal)',
+         '_proofs.Add(user, new Lease')
+    if re.search(r'public void (Disable|Reset|Issue|Carry)', session):
+        FAILURES.append('Session proof must not expose public mint/reset/disable')
+    auth = read('Area11.Core/Services/AuthService.cs')
+    need(auth, '_db.Sessions.Issue(user, secrets?.PasswordHash, secrets?.PinHash, closeOnly: !touchLogin);',
+         '_db.Sessions.Revoke(user);', '_db.Sessions.IssueRecoveredOwner(user);',
+         '!string.Equals(stored, ReadRecoveryHash(), StringComparison.Ordinal)')
+    need(method(auth, 'public ServiceResult CheckSession('), '_db.Sessions.Require(user);',
+         'if (!_db.Sessions.Enabled) return ServiceResult.Fail')
+    for filename in ('OwnerAccess','LedgerReadAccess','SnapshotReadAccess','ProductReadAccess'):
+        text = read('Area11.Core/Services/' + filename + '.cs')
+        need(text, 'db.Sessions.Require(actor);', 'db.Sessions.Carry(actor, current);')
+    for filename in ('CustomFieldService','PhotoService'):
+        need(read('Area11.Core/Services/' + filename + '.cs'),
+             '_db.Sessions.Require(actor);', '_db.Sessions.Carry(actor, current);')
+    permissions = read('Area11.Core/Services/PermissionService.cs')
+    need(permissions, '_db.Sessions.Require(user, closeOnlyAllowed: module == Modules.CloseApp);',
+         'public IReadOnlyDictionary<string, bool> MapFor(User actor, User target)',
+         'if (_db.Sessions.Enabled) return Modules.All.ToDictionary(module => module, _ => false);')
+    pricing = read('Area11.Core/Services/PricingAllowanceService.cs')
+    need(pricing, 'public PricingAllowance ForUser(User actor, User target)',
+         'OwnerAccess.Require(_db, connection, actor);', '_db.Sessions.Require(user);')
+    need(read('Area11.Core/Services/PartnerService.cs'),
+         'GetCustomers(string? search = null, User? actor = null)', 'GetSuppliers(User? actor = null)',
+         '_db.Sessions.Require(actor);', '!permissions.Can(actor, Modules.Pos)',
+         '!permissions.Can(actor, Modules.Purchases)', '!permissions.Can(actor, Modules.Products)')
+    need(read('Area11.Core/Services/ShiftService.cs'),
+         'var recipient = RequireCashTarget(connection, next);', '_db.Sessions.Require(actor);')
+    app = read('Area11.Desktop/AppServices.cs')
+    need(app, 'Database.Sessions.Enable();', 'CommandGuard.CaptureAuthorization = CaptureCommandAuthorization;',
+         'var origin = CurrentUser;', 'ReferenceEquals(CurrentUser, origin) && CheckInteractiveSession()',
+         'var proof = Auth.CheckSession(user);', 'if (!proof.Ok) throw',
+         'InputManager.Current.PreProcessInput', '&& !CheckInteractiveSession()) e.Cancel();',
+         'SessionWatch.LastActivityAt', '_authenticationLost = true;', 'AuthenticationLost?.Invoke();')
+    relay = read('Area11.Desktop/ViewModels/RelayCommand.cs')
+    if relay.count('if (_authorize?.Invoke() == false) return;') != 2:
+        FAILURES.append('Both RelayCommand forms must authorize the captured origin')
+    shell = read('Area11.Desktop/ViewModels/ShellViewModel.cs')
+    need(shell, 'if (_services.CheckInteractiveSession()) SessionWatch.Touch();',
+         '_services.AuthenticationLost += OnAuthenticationLost;',
+         '_services.AuthenticationLost -= OnAuthenticationLost;',
+         '!ReferenceEquals(_services.CurrentUser, _user)', '_services.Auth.Logout(_user);', '_services.SignOut();')
+    need(read('Area11.Desktop/Views/ShellWindow.xaml.cs'),
+         '!shell.Services.CheckInteractiveSession()', '!counter.CheckCounterInputAccess()', 'e.Handled = true;')
+    pos = read('Area11.Desktop/ViewModels/PosViewModel.cs')
+    need(pos, 'RefreshCommand = new RelayCommand(RefreshCounter);',
+         '_services.Partners.GetCustomers(actor: _user)', 'private void HideCounterOutputs()',
+         '(CanAddCustomer && !NewCustomerEditor.LoadedSuccessfully)',
+         'LastBill = string.Empty; _lastSaleId = 0;', 'DocEditor.Load(0); NewCustomerEditor.Load(0);',
+         '_catalog.Clear(); Products.Clear(); _codesByProduct.Clear(); Customers.Clear(); Doctors.Clear();',
+         'if (_checkingCounterAccess) return;', 'HideCounterOutputs();',
+         'var currentQuote = _services.Sales.Quote(input, _user);')
+    basis = method(pos, 'public string BillDiscountBasis')
+    if basis.count('!EnsureCounterAccess()') != 2:
+        FAILURES.append('Bill basis must revalidate before and after its modal')
+    need(read('Area11.Desktop/Views/PosView.xaml'), 'Binding CounterAccessAllowed', 'Binding CounterAccessDenied')
+    need(read('Area11.Desktop/ViewModels/SettingsViewModel.cs'),
+         '_services.Permissions.MapFor(_user, _selectedUser)', '_services.Pricing.ForUser(_user, _selectedUser)')
+    tests = read('Area11.Tests/AuthenticatedSessionTests.cs')
+    need(tests, 't.Database.Sessions.Enable();', 'ProofCannotBeUsedOnAnotherDatabaseInstanceEvenForSameFile',
+         'ProtectedCloseProofCannotBePromotedToInteractiveLogin',
+         'SelfPasswordResetRevokesEveryExistingLoginBeforeNextServiceAction',
+         'PickerListsRequireProofButPreserveCounterParentAccess',
+         'FreshReadersCarryTheVerifiedLeaseForQuoteAndCustomValues',
+         'CustomFieldsAndCounterRefuseAStaleSessionAfterPasswordReset')
+    REPORT.append('Authenticated-session/D-116 lexical boundaries retained;not runtime security proof')
+
+
 def check_parent_record_save_outcomes() -> None:
     """Bounded form guards and per-call observations;not runtime or durable deduplication."""
     def read(path): return (DOTNET / path).read_text()
@@ -6606,7 +6695,7 @@ def check_owner_boundary_review():
     auth_writes = auth.split('public ServiceResult<int> CreateStaff(', 1)[1]
     if auth_writes.count('OwnerAccess.Require(_db, connection, actor)') != 3:
         FAILURES.append('Phase4 Auth create/reset/activation must each validate owner in write transaction')
-    if permission.count('OwnerAccess.Require(_db, connection, actor)') != 2:
+    if permission.split('public ServiceResult Set(', 1)[1].count('OwnerAccess.Require(_db, connection, actor)') != 2:
         FAILURES.append('Phase4 Permission Set/Reset must validate current owner')
     need(auth, ['{otherColumn} = NULL', 'if (target is null)', 'target.IsOwner && !active',
                 '_settings.SaveRecoveryHash(actor, stored)'], 'staff credentials')
@@ -8000,7 +8089,7 @@ def check_shift_current_boundaries():
         if name == 'Open': need(part, ['userId = reader.Id', 'throw new ValidationException("The shift could not be opened.'], 'Opening rollback/actor')
         if name == 'Close': need(part, ['shift.UserId != reader.Id && !reader.CanManage', 'RecordDiscrepancy(connection'], 'Closing current senior/reason')
         if name == 'Handover':
-            recipient = 'var recipient = RequireCash(connection, next);'
+            recipient = 'var recipient = RequireCashTarget(connection, next);'
             if not 0 <= part.find(recipient) < part.find('ReadOpen(connection)'):
                 FAILURES.append('Handover needs current same-role active Cash recipient inside transaction')
             need(part, ['GivenBy = reader.Name.Trim()', 'GivenTo = recipient.Name.Trim()', 'userId = recipient.Id',
@@ -9124,6 +9213,7 @@ def main() -> int:
     check_document_field_expense_reader()
     check_windows_v1201_regressions()
     check_parent_record_save_outcomes()
+    check_authenticated_session_boundaries()
     check_csharp_grammar()
 
     if not quiet:

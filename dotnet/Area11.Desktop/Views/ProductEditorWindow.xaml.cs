@@ -34,7 +34,7 @@ public partial class ProductEditorWindow : Window
 
     private void ConfirmEditorClosing(object? sender, CancelEventArgs e)
     {
-        if (_finished) return;
+        if (_finished || !_viewModel.AuthenticationValid) return;
         e.Cancel = MessageBox.Show(this,
             "Close the editor and discard any unsaved changes? Saved products, extra fields, photos and barcodes are not undone.",
             "Close product editor", MessageBoxButton.YesNo, MessageBoxImage.Warning,

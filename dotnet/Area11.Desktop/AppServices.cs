@@ -19,6 +19,20 @@ public sealed class AppServices
         // knows where the shop's database even is (F-45).
         Config = ShopConfig.Current;
         Database = new Database();
+        Database.Sessions.Enable();
+        CommandGuard.CaptureAuthorization = CaptureCommandAuthorization;
+        // Runs before routed keyboard/mouse events and TwoWay source updates,including modals.
+        // Movement is not an action;do not issue database reads on every mouse move.
+        System.Windows.Input.InputManager.Current.PreProcessInput += (_, e) =>
+        {
+            var input = e.StagingItem.Input;
+            if (CurrentUser is not null
+                && (input is System.Windows.Input.KeyEventArgs
+                    || input is System.Windows.Input.TextCompositionEventArgs
+                    || input is System.Windows.Input.MouseButtonEventArgs
+                    || input is System.Windows.Input.MouseWheelEventArgs)
+                && !CheckInteractiveSession()) e.Cancel();
+        };
         Audit = new AuditService(Database, Log);
         Permissions = new PermissionService(Database, Log, Audit);
         PermissionInspector = new PermissionInspectionService(Database, Log);
@@ -246,9 +260,42 @@ public sealed class AppServices
 
     public void SignIn(User user)
     {
+        var proof = Auth.CheckSession(user);
+        if (!proof.Ok) throw new InvalidOperationException(proof.Error);
+        if (!ReferenceEquals(CurrentUser, user)) Database.Sessions.Revoke(CurrentUser);
         CurrentUser = user;
+        _authenticationLost = false;
         Log.Info($"Signed in: {user.Name} ({user.RoleLabel}).");
     }
 
-    public void SignOut() => CurrentUser = null;
+    public void SignOut()
+    {
+        Database.Sessions.Revoke(CurrentUser);
+        CurrentUser = null;
+        SessionWatch.Stop();
+    }
+
+    private bool _authenticationLost;
+    public event Action? AuthenticationLost;
+
+    private Func<bool> CaptureCommandAuthorization()
+    {
+        var origin = CurrentUser;
+        return () => origin is null ? CurrentUser is null
+            : ReferenceEquals(CurrentUser, origin) && CheckInteractiveSession();
+    }
+
+    /// <summary>Next-action guard plus shell timer. Failure is not treated as a valid login.</summary>
+    public bool CheckInteractiveSession()
+    {
+        if (CurrentUser is null || _authenticationLost) return false;
+        var valid = Auth.CheckSession(CurrentUser).Ok;
+        if (valid && SessionWatch.Running)
+            valid = !SessionPolicy.Check(SessionWatch.SignedInAt, SessionWatch.LastActivityAt,
+                TimeSource.Now, Settings.GetInt("session.idleHours", 2)).Expired;
+        if (valid) return true;
+        _authenticationLost = true;
+        AuthenticationLost?.Invoke();
+        return false;
+    }
 }

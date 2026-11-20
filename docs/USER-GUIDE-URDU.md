@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.121.0 Hawthorn۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.122.0 Larkspur۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**⏳ حصہ4/14 — لاگ اِن اور پرانا فارم:** مالک نےpassword/PINبدلنےپرتازہloginمنتخبکیاہے۔ اگلاعملپرانےloginسےنہکریں؛محفوظریکارڈبرقرار،غیرمحفوظفارمدوبارہبھرناپڑسکتاہے۔ Counterکیاجازتواپسہوتوپورےoutputs/lookups/آخریreceiptاورunsavedextraanswersچھپ/صافہوتےہیں؛cartاورdraft/unknown/SAVEDguardsبرقرار۔ حقواپسآنےپرRefreshaccessسےfreshlists/fields/quote،پھربلreviewکریں؛discardedextraanswersخودواپسنہیںآتے۔ idle/12گھنٹےکیحدبرقرار۔ **اصلWindows/key/mouse/modalجانچباقی**؛[⏳ PT-64/حدود](AUTHENTICATED-SESSION-REVIEW-URDU.md)،3057suiteUNRUN۔ نیچےپرانےcheckpointsتاریخیہیں۔
 
 **⏳ حصہ3/14 — ریکارڈ کے Save کے بعد خرابی:** نیاگاہک/سپلائر/دوا/کیٹلاگبنانےپر **SAVED** آئےتواسکامطلبریکارڈمحفوظہوگیا،چاہےفہرستتازہنہہوسکے۔ دوبارہوہیSave/Addنہدبائیں؛فہرست،تصاویر/auditمیںاصلریکارڈدیکھیں۔ **unconfirmed** میںبھییہفرضنہکریںکہکچھنہیںبنا؛پہلےتصدیق۔ Refresh،Cancelیااجازتواپسملنےسےاسیفارمکیretryروکنہیںکھلتی؛جانچکےبعدpage/windowدوبارہکھولیں۔ صرفproductmodalدوبارہکھولنااسیProductpageکوresetنہیںکرتا۔ CounterکیcartاورPurchaseکیlinesفوریاندراجسےصافنہیںکیجاتیں؛pageبدلنےسےپہلےانہیںمحفوظکریں۔ نئیpageیاری‌اسٹارٹخودکارverificationیاduplicateضمانتنہیں۔ [⏳ حدود/PT-63](PARENT-RECORD-SAVE-OUTCOME-REVIEW-URDU.md)؛72نئےcases/3035suiteکااصلWindowsنتیجہباقی۔
 
@@ -650,7 +652,7 @@ A560+B560=1120، Extra20، وصول1100۔ پہلے واپس آنے والی A ک
 5. Photos… شناخت کی مدد ہے، login کا بدل نہیں۔ Close the program ایک خاص اجازت ہے؛ صرف عمومی manager نام رکھنے سے ہر بندش مجاز مت سمجھیں۔
 6. App words میں اصل section کے مقابل اپنا نام لکھیں؛ Save settings سے navigation/headings بدلتے ہیں۔ Restore original words سب labels واپس کرتا ہے؛ پرانے بل/رسید کی عبارت یا تاریخی record دوبارہ نہیں لکھتا۔
 
-**فیز4 حصہ1 — راز کی تبدیلی:** اب نیا password مقرر کرنے سے سابق PIN، اور نیا PIN مقرر کرنے سے سابق password صاف ہوتا ہے۔ صرف نیا مقرر کردہ راز استعمال کریں؛ اس سے تمام پہلے کھلے sessions کے فوراً ختم ہونے کا دعویٰ نہیں۔ owner-only متعلقہ writes میں database کا موجودہ active owner چیک؛ manager کو administration نہیں۔ recovery کا مخصوص owner راستہ استعمال کریں؛ hash اور غیرخفیہ audit ایک transaction، عام settings سے recovery hash لکھنا ممنوع۔ factory recovery کی موجودہ پالیسی برقرار۔
+**فیز4 حصہ1 — راز کی تبدیلی:** اب نیا password مقرر کرنے سے سابق PIN، اور نیا PIN مقرر کرنے سے سابق password صاف ہوتا ہے۔ صرف نیا مقرر کردہ راز استعمال کریں۔ تازہحصہ4/D-116میںمتاثرہloginاگلےعملسےپہلےمسترداورfreshloginلازم؛unsavedفارمضائعہوسکتاہے۔ Sourceموجود،Windowsتصدیقباقی؛پہلےسےجاریtransactionکیatomicمنسوخیکادعوینہیں۔ owner-only متعلقہ writes میں database کا موجودہ active owner چیک؛ manager کو administration نہیں۔ recovery کا مخصوص owner راستہ استعمال کریں؛ hash اور غیرخفیہ audit ایک transaction، عام settings سے recovery hash لکھنا ممنوع۔ factory recovery کی موجودہ پالیسی برقرار۔
 
 ### حساس مالی اجازتوں کی نئی تفصیل (حصہ8)
 
@@ -800,7 +802,7 @@ Recoveryکیfailedslipپرپرنٹرکوخالیdocumentنہیںدیاجاتا۔
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.121.0 کا متوقع test count 3035 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.122.0 کا متوقع test count 3057 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 

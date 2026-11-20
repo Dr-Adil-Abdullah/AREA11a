@@ -17,7 +17,7 @@
 |1۔ ✅ متعلقہ کمپائل کی خرابی | DocumentFieldTests کی اصلاح؛مالک کے v0.120.1 Windows run میں Core اور Tests Debug کمپائل ہونے سے تصدیق؛پوری Desktop/Release سند نہیں |
 |2۔ ⏳ پوری ٹیسٹ سوئٹ | اجازت مل گئی؛اصل v0.120.1 run میں2941PASS/22FAIL/2963۔22 ناکامیوں سے متعلق fixture اصلاحات؛v0.120.2 کا اصل rerun باقی |
 |3۔ ⏳ ریکارڈ بنانے والے فارم | نئےnextسےاجازت؛v0.121.0میںparent/quick-create/Catalog/Unit Saveکےlocaloutcome/ackguards،72نئےcases؛اصلWindows/WPF3035suiteاورPT-63باقی |
-|4۔ ❌ لاگ اِن اور اجازتیں | موجودہ شناخت،بدلی اجازتیں،پرانے کھلے فارم،اضافی خانے،پورے کاؤنٹر کے حساس outputs |
+|4۔ ⏳ لاگ اِن اور اجازتیں | اجازتملی؛v0.122.0/D-116sessionproof،resetپرnext-actionfreshlogin،currentreaders/inputguards،Counterfull-outputdeny/freshrestore؛22نئےcases/3057suiteUNRUN،[PT-64](AUTHENTICATED-SESSION-REVIEW-URDU.md)/Windowsباقی |
 |5۔ ❌ بیک وقت کام | متعدد صفحات/کنکشن؛پڑھنے اور لکھنے کے درمیان تبدیلی،پرانے ڈیٹا سے overwrite کی روک تھام |
 |6۔ ❌ دوبارہ کوشش اور ری اسٹارٹ | جواب کھونا،بندش،دوسرے صفحے/کمپیوٹر کی retry؛دیرپا شناخت کی تجویز،ضروری منظوری،نفاذ |
 |7۔ ❌ مالی اور اسٹاک ملاپ | فروخت/خرید/واپسی/وصولی/ادائیگی/خرچ/گنتی/گلا؛منظورشدہ رعایت اور اصل لاگت کی حد |
@@ -50,3 +50,7 @@
 ✅ محدود source میں parent Product/Customer Create+Edit،Counter quickcustomer/Purchase quicksupplier،چارquickcatalogsاورCatalog/UnitsکےSaveپرexistinglocalguard،ackقبلcleanup،checkedselectedIDreloadاورexplicitno-commitretry؛16CoreoperationsobservedTx؛مالیSQL/permissionsپالیسیبرقرار۔
 
 ⏳ [جائزہ،حدود اورPT-63](PARENT-RECORD-SAVE-OUTCOME-REVIEW-URDU.md)۔ 72نئےC#cases/3035suiteUNRUN؛یہاںSDKنہیں۔ حصہ2کی22ناکامیوںکےبعدکانیاlogبھیباقی؛نئےsourceپر3035کینئیWindowsrunدرکار۔ Localguarddurableidentityنہیں؛حصہ6کیdesignخودسےشروعنہیںکی۔ ❌حصہ4اورآگےشروعنہیں۔
+
+## ⏳ حصہ4 کی تازہ پیشرفت
+
+صرفحصہ4منظور؛D-116منتخب،source/22نئےcasesلکھے،3057suite/Windowsباقی۔ [⏳ مکملحدود/PT-64](AUTHENTICATED-SESSION-REVIEW-URDU.md)۔ اوپرپرانےحصہ4شروعنہیںکےجملےاسوقتکیحیثیتہیں؛اسنئیمنظوریسےبدلے۔ ❌حصہ5+شروعنہیں۔

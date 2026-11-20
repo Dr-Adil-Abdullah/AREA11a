@@ -83,6 +83,11 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     private bool _holdOutcomeUnknown;
     private bool _lastLookupsSucceeded;
     private bool _lastBarcodeLoadSucceeded;
+    private bool _counterAccessAllowed = true;
+    private bool _checkingCounterAccess;
+    private bool _counterNeedsRequote;
+    private int _restoreCustomerId;
+    private int _restoreDoctorId;
     private bool _shiftClosed;
     private string _handoverNote = string.Empty;
     private string _blockedText = string.Empty;
@@ -110,7 +115,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         ClearCommand = new RelayCommand(ClearCart);
         CompleteCommand = new RelayCommand(CompleteSale);
         PrintLastCommand = new RelayCommand(PrintLast, () => _lastSaleId > 0);
-        RefreshCommand = new RelayCommand(LoadLookups);
+        RefreshCommand = new RelayCommand(RefreshCounter);
         OpenProductPhotoCommand = new RelayCommand<int>(OpenProductPhoto);
         HoldCommand = new RelayCommand(HoldCart);
         SaveDraftCommand = new RelayCommand(SaveSaleDraft);
@@ -244,7 +249,9 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     /// True while a bill is impossible: no drawer open, or a drawer that a forgotten session left
     /// uncounted (v0.35.0, D-92). One flag for the card, so the page has one thing to bind to.
     /// </summary>
-    public bool IsBlocked => ShiftClosed || _handoverNote.Length > 0;
+    public bool IsBlocked => !_counterAccessAllowed || ShiftClosed || _handoverNote.Length > 0;
+    public bool CounterAccessAllowed => _counterAccessAllowed;
+    public bool CounterAccessDenied => !_counterAccessAllowed;
 
     /// <summary>Open the small "new customer" card under the customer box (F-11).</summary>
     public RelayCommand BeginAddCustomerCommand { get; }
@@ -255,7 +262,15 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
     public string CashierName => _user.Name;
 
-    private PricingAllowance CurrentAllowance => _services.Pricing.ForUser(_user);
+    private PricingAllowance CurrentAllowance
+    {
+        get
+        {
+            if (!_counterAccessAllowed) return new PricingAllowance();
+            try { return _services.Pricing.ForUser(_user); }
+            catch (Exception) { return new PricingAllowance(); } // Unknown never becomes an Owner allowance.
+        }
+    }
     public decimal MaxDiscountPercent
     {
         get
@@ -274,6 +289,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         set
         {
             if (value is not ("profit" or "retail") || value == _billDiscountBasis) return;
+            if (!EnsureCounterAccess()) { RefreshBasisSelection(); return; }
             var configured = _services.Settings.GetString("discount.billBasis");
             if (value != configured && !CurrentAllowance.OverrideBasis)
             {
@@ -284,6 +300,9 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             if (MessageBox.Show($"Change THIS bill from {_billDiscountBasis} to {value}?\n\nprofit = percentage of gross profit; retail = percentage of selling total.\nThe next bill returns to the owner's Settings default.",
                     "One-bill discount basis", MessageBoxButton.YesNo, MessageBoxImage.Warning,
                     MessageBoxResult.No) != MessageBoxResult.Yes)
+            { RefreshBasisSelection(); return; }
+            if (!EnsureCounterAccess()
+                || (value != _services.Settings.GetString("discount.billBasis") && !CurrentAllowance.OverrideBasis))
             { RefreshBasisSelection(); return; }
             RestoreBillBasis(value);
         }
@@ -688,6 +707,12 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         }
     }
 
+    private void RefreshCounter()
+    {
+        if (!EnsureCounterAccess()) return;
+        LoadLookups();
+    }
+
     private void LoadLookups()
     {
         _lastLookupsSucceeded = false;
@@ -704,7 +729,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
         LoadBarcodeMap();
 
-        var customers = _services.Partners.GetCustomers();
+        var customers = _services.Partners.GetCustomers(actor: _user);
         Customers.Clear();
         Customers.Add(new Customer { Id = 0, Name = "Walk-in customer", Category = "normal" });
         if (customers.Ok && customers.Value is not null)
@@ -832,6 +857,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     /// </summary>
     private void ScanBarcode()
     {
+        if (!EnsureCounterAccess()) return;
         var code = SearchText.Trim();
 
         if (code.Length == 0)
@@ -961,6 +987,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
     private void AddToCart()
     {
+        if (!EnsureCounterAccess()) return;
         if (IsBlocked)
         {
             SetStatus("No bill can be made until the drawer is opened - see the card above.", true);
@@ -1120,6 +1147,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
             }
         }
 
+        if (!EnsureCounterAccess()) return; // A special-rate modal may have outlived the login.
         var input = BuildInput(useSpecialRate);
         if (BillDiscountBasis == "retail" && discount > 5)
         {
@@ -1128,6 +1156,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
                     MessageBoxResult.No) != MessageBoxResult.Yes) return;
             input.RetailDiscountConfirmed = true;
         }
+        if (!EnsureCounterAccess()) return; // Recheck after the retail-confirmation modal,too.
         var wasDraft = _openDraftId > 0;
         // Persist and link before calling a creator. An unacknowledged save never reaches Post.
         if (_openDraftId <= 0 && !StoreSaleDraft(input)) return;
@@ -1238,6 +1267,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
     private void ApplyExtraDiscount()
     {
+        if (!EnsureCounterAccess()) return;
         if (_isCompletingSale || Cart.Count == 0 || IsBlocked) return;
         if (!Money.TryParse(ExtraDiscountEntry, out var rupees) || rupees < 0
             || rupees > long.MaxValue / 100m || decimal.Round(rupees, 2) != rupees)
@@ -1256,6 +1286,9 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
                 $"Final payable: {Money.Format(quote.TotalPaisa)}\n\n" +
                 "Product prices and earlier discounts stay unchanged. Applying again replaces the amount, not adds to it. Apply?",
                 "Extra Discount", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        if (!EnsureCounterAccess()) return;
+        var currentQuote = _services.Sales.Quote(input, _user);
+        if (!currentQuote.Ok) { SetStatus(currentQuote.Error ?? "Current Extra Discount access is required.", true); return; }
         _appliedExtraDiscount = input.ExtraDiscountPaisa;
         Recalculate();
         SetStatus("Extra Discount applied to this bill only. Check final payable and cash received.", false);
@@ -1263,6 +1296,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
     private void RemoveExtraDiscount()
     {
+        if (!EnsureCounterAccess()) return;
         if (_isCompletingSale) return;
         _appliedExtraDiscount = 0;
         ExtraDiscountEntry = "0";
@@ -1330,6 +1364,8 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
     private void Recalculate()
     {
+        if (_checkingCounterAccess) return;
+        if (!EnsureCounterAccess()) { MaskCounterTotals(); return; }
         if (Cart.Count == 0)
         {
             _availabilityWarningShown = false;
@@ -1433,6 +1469,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     /// </summary>
     private void SaveSaleDraft()
     {
+        if (!EnsureCounterAccess()) return;
         if (!RefreshParkedAccess()) return;
         if (RefuseCommittedCart()) return;
         if (_isCompletingSale) return;
@@ -1565,6 +1602,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     /// <summary>Parks the cart so the next customer can be served (Spec 8.5.1). Nothing is sold.</summary>
     private void HoldCart()
     {
+        if (!EnsureCounterAccess()) return;
         if (!RefreshParkedAccess()) return;
         if (RefuseCommittedCart()) return;
         if (_isCompletingSale) return;
@@ -1627,9 +1665,107 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         }
     }
 
+    /// <summary>Loaded-view timer and next actions. Allowed ticks never overwrite authored input.
+    /// Denied outputs/extra answers are discarded;cart lines and all posting/draft guards survive.</summary>
+    public void RefreshCurrentAccess()
+    {
+        _services.CheckInteractiveSession();
+        if (!EnsureCounterAccess()) return;
+        OnPropertyChanged(nameof(CanEditRates));
+        OnPropertyChanged(nameof(MaxDiscountPercent));
+        OnPropertyChanged(nameof(CanAddCustomer));
+        if (_counterNeedsRequote)
+        {
+            _counterNeedsRequote = false;
+            Recalculate();
+        }
+    }
+
+    public bool CheckCounterInputAccess() => EnsureCounterAccess();
+
+    private bool EnsureCounterAccess()
+    {
+        if (_checkingCounterAccess) return _counterAccessAllowed;
+        _checkingCounterAccess = true;
+        try
+        {
+            var access = _services.CheckInteractiveSession()
+                ? _services.Sales.CheckPostingAccess(_user)
+                : ServiceResult.Fail("Sign in again before using Counter.");
+            if (!access.Ok)
+            {
+                if (_counterAccessAllowed)
+                {
+                    _restoreCustomerId = SelectedCustomer?.Id ?? 0;
+                    _restoreDoctorId = SelectedDoctor?.Id ?? 0;
+                }
+                _counterAccessAllowed = false;
+                OnPropertyChanged(nameof(CounterAccessAllowed)); OnPropertyChanged(nameof(CounterAccessDenied)); OnPropertyChanged(nameof(IsBlocked));
+                HideCounterOutputs();
+                SetStatus(access.Error + " Counter outputs are hidden. Cart lines were retained; unsaved extra answers were discarded. Refresh after access returns and review before saving.", true);
+                return false;
+            }
+            if (!_counterAccessAllowed)
+            {
+                _counterAccessAllowed = true;
+                LoadLookups();
+                DocEditor.LoadNew();
+                // Customer editor permission is independent of a legitimate POS-only picker.
+                if (CanAddCustomer) NewCustomerEditor.LoadNew();
+                else NewCustomerEditor.Load(0);
+                SelectedCustomer = Customers.FirstOrDefault(row => row.Id == _restoreCustomerId);
+                SelectedDoctor = Doctors.FirstOrDefault(row => row.Id == _restoreDoctorId);
+                if (!_lastLookupsSucceeded || !DocEditor.LoadedSuccessfully
+                    || (CanAddCustomer && !NewCustomerEditor.LoadedSuccessfully))
+                {
+                    _counterAccessAllowed = false;
+                    HideCounterOutputs();
+                    SetStatus("Counter access returned, but fresh data could not load. Outputs remain hidden; refresh and review before saving.", true);
+                    return false;
+                }
+                _counterNeedsRequote = true;
+                SetStatus("Counter access returned. Lists were read afresh;review retained lines,customer and extra answers before saving.", false);
+            }
+            return true;
+        }
+        catch (Exception exception)
+        {
+            _counterAccessAllowed = false;
+            HideCounterOutputs();
+            _services.Log.Error("Counter access refresh failed.", exception);
+            SetStatus("Counter data could not be verified. Outputs remain hidden;refresh before billing.", true);
+            return false;
+        }
+        finally
+        {
+            _checkingCounterAccess = false;
+            OnPropertyChanged(nameof(CounterAccessAllowed)); OnPropertyChanged(nameof(CounterAccessDenied)); OnPropertyChanged(nameof(IsBlocked));
+        }
+    }
+
+    private void HideCounterOutputs()
+    {
+        _catalog.Clear(); Products.Clear(); _codesByProduct.Clear(); Customers.Clear(); Doctors.Clear();
+        HeldCarts.Clear(); _heldLoadSucceeded = false; _lastLookupsSucceeded = false;
+        SelectedProduct = null; SelectedCustomer = null; SelectedDoctor = null;
+        SearchText = string.Empty; SearchHint = string.Empty; IsSearchResultsOpen = false;
+        IsAddingCustomer = false; NewCustomerName = NewCustomerPhone = string.Empty;
+        DocEditor.Load(0); NewCustomerEditor.Load(0);
+        LastBill = string.Empty; _lastSaleId = 0;
+        MaskCounterTotals();
+    }
+
+    private void MaskCounterTotals()
+    {
+        SubtotalText = DiscountText = TotalText = ChangeText = "—";
+        PreExtraTotalText = ExtraDiscountText = CashPartText = CreditPartText = "—";
+        PointsUsedText = string.Empty; HasPointsUsed = false;
+    }
+
     /// <summary>Only parked-list authority; deliberately does not erase an authored unsaved cart.</summary>
     public bool RefreshParkedAccess()
     {
+        if (!EnsureCounterAccess()) return false;
         var access = _services.Sales.CheckPostingAccess(_user);
         if (access.Ok) return true;
         _heldLoadSucceeded = false;
@@ -1749,6 +1885,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
     private void BeginAddCustomer()
     {
+        if (!EnsureCounterAccess()) return;
         if (!_newCustomerSave.Ready)
         {
             SetStatus("Verify the previous customer creation before reopening Counter. Do not add it again.", true);
@@ -1778,6 +1915,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
     private void SaveNewCustomer()
     {
+        if (!EnsureCounterAccess()) return;
         if (!CanAddCustomer || !IsAddingCustomer)
         {
             SetStatus("Open the new customer form with current Customer access first.", true);

@@ -2,8 +2,12 @@
 
 ## ✅ گفتگو اور حصوں کی تازہ ہدایت
 
-ہر جواب/وضاحت/خلاصہ سادہ پاکستانی اردو۔ ایک وقت میں صرف ایک منظورشدہ حصہ؛ہر اگلے حصے سے پہلے نئی اجازت۔ ہر ٹاسک/حصے پر صرف3–4 لائنوں کا خلاصہ؛تفصیلی رپورٹ ہر3 مکمل حصوں کے بعد یا مالک کے مطالبے پر۔ [⏳ نیا14حصوں کا منصوبہ](docs/REMAINING-14-PORTIONS-URDU.md) پر عمل کریں؛پرانے3–6roundsاندازے اس منصوبے کی جگہ نہیں لیتے۔ ✅حصہ1کیCore/TestsDebugcompileتصدیقمالککےv0.120.1runسےملی۔ ⏳حصہ2کے22failurefixesکاWindowsrerunباقی؛بعدکےnextسےصرفحصہ3کیاجازتملی،اسکیsourceپیشرفتذیل،اصلجانچباقی؛❌حصہ4کیاجازتنہیں۔ ✅صحت مندsourcecheckکوکامیاب.NETbuildنہکہیں۔
+ہر جواب/وضاحت/خلاصہ سادہ پاکستانی اردو۔ ایک وقت میں صرف ایک منظورشدہ حصہ؛ہر اگلے حصے سے پہلے نئی اجازت۔ ہر ٹاسک/حصے پر صرف3–4 لائنوں کا خلاصہ؛تفصیلی رپورٹ ہر3 مکمل حصوں کے بعد یا مالک کے مطالبے پر۔ [⏳ نیا14حصوں کا منصوبہ](docs/REMAINING-14-PORTIONS-URDU.md) پر عمل کریں؛پرانے3–6roundsاندازے اس منصوبے کی جگہ نہیں لیتے۔ ✅حصہ1کیCore/TestsDebugcompileتصدیقمالککےv0.120.1runسےملی۔ ⏳حصہ2کے22failurefixesکاWindowsrerunباقی؛بعدکےnextسےصرفحصہ3کیاجازتملی،اسکیsourceپیشرفتذیل،اصلجانچباقی؛⏳تازہNextنےصرفحصہ4منظورکیا؛D-116منتخب،نیچےتازہحیثیت۔ ✅صحت مندsourcecheckکوکامیاب.NETbuildنہکہیں۔
 
+
+## ⏳ موجودہ حصہ4/14 — v0.122.0 Larkspur
+
+تازہNextسےصرفحصہ4منظور؛D-116میںمالکنےpassword/PINresetپرnext-actionfreshloginمنتخبکیا،محفوظریکارڈبرقرار/ممکنہunsavedlossقبول۔ Database-boundproof،Desktoporigin/inputguards،sharedcurrentreadersاورCounterfull-outputdeny/freshrestoreکاsource؛ownertargets/parentpickersکےجائزراستےبرقرار۔ ⏳22newC#cases/3057suiteیہاںUNRUN؛113static/52newlexicalnegativesصرفمحدودثبوت۔ [⏳ جائزہ/PT-64](docs/AUTHENTICATED-SESSION-REVIEW-URDU.md)؛[⏳14حصے](docs/REMAINING-14-PORTIONS-URDU.md)۔ حصہ2کے22fixesاورحصہ3کے72testsکانیاWindowsrunبھیباقی؛پرانےحصہ4غیرمنظورکےحوالےتاریخی۔ FullPhase4OPEN؛❌حصہ5شروعنہیں،installerنہیںبنا۔
 
 ## ⏳ تازہ حصہ3 — v0.121.0 Hawthorn
 

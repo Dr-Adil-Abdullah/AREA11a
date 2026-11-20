@@ -293,7 +293,7 @@ public sealed class SettingsViewModel : ObservableObject
         if (_selectedUser is null || !UpdateStaffAccess()) return;
         try
         {
-            var allowance = _services.Pricing.ForUser(_selectedUser);
+            var allowance = _services.Pricing.ForUser(_user, _selectedUser);
             PricingEditRate = allowance.EditRate;
             PricingManualLimit = allowance.ManualReductionPercent.ToString("0.##", CultureInfo.InvariantCulture);
             PricingProfit = allowance.ProfitDiscount;
@@ -967,7 +967,7 @@ public sealed class SettingsViewModel : ObservableObject
             return;
         }
 
-        var map = _services.Permissions.MapFor(_selectedUser);
+        var map = _services.Permissions.MapFor(_user, _selectedUser);
         var editable = CanChangeSelectedUser;
 
         _suppressPermissionSave = true;

@@ -171,7 +171,7 @@ WHERE product_id = @id AND active = 1 AND qty_base > 0
         }
     }
 
-    /// <summary>Current local account/module preflight; not a login-session token.</summary>
+    /// <summary>Current account/module preflight with Desktop-enabled proof;not a transferable token.</summary>
     public ServiceResult CheckPostingAccess(User? user)
     {
         try

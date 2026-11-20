@@ -1,5 +1,10 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## ✅ D-116 — password/PIN بدلنے پر لازمی تازہ لاگ اِن (حصہ4/14)
+
+مالک نے مثال/وضاحت کے بعد **A / require_new_login** منتخب کیا:متاثرہ موجودہ login اگلے عمل سے پہلے رد؛دوبارہ sign-in لازم۔ محفوظ ریکارڈ برقرار،ممکنہ unsaved-form loss قبول۔ idle اور12گھنٹے کی حد برقرار۔ ⏳ v0.122.0 میںsource اور22نئےtests لکھے؛3057suite/Windows/PT-64باقی،security/runtimePASSنہیں۔ [⏳ دائرہ/حدود](AUTHENTICATED-SESSION-REVIEW-URDU.md)۔ صرفحصہ4منظور؛CASحصہ5اورdurableidentityحصہ6الگمنظوریسے۔ مالی/SupplierB/Blackbox/backupکےپرانےفیصلےبرقرار۔
+
+
 ## ⏳ v0.120.0 حصہ42 — Next کا bounded collection/payment outcome review؛نئی مالی policy نہیں
 
 ⏳ CustomerCollect/SupplierPayunknownپرNothingchangedنہیں؛observedTxاور3UIlocalguards۔ ✅پرانےTxcallbackbodies/SQL/settlementاورSupplierBبرقرار؛دوواقعیالگpartialpaymentsردنہیں،نئیamount-baseddedup/draft/receiptpolicyنہیں۔ ⏳Restart/cross-page/cross-PC/globalidentityاورparentformsباقی۔ [⏳ PT-62](POS-PHASE4-PART42-URDU.md)،[⏳ trace](POS-PHASE4-LEDGER-OUTCOME-REVIEW.md)؛2963C#suiteUNRUN/FullPhase4OPEN؛❌installerنہیںبنی۔

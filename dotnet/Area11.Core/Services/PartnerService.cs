@@ -24,10 +24,17 @@ public sealed class PartnerService
     private PhotoService Photos() =>
         new(_db, _audit, new PermissionService(_db, _log, _audit), _log, _photosFolder);
 
-    public ServiceResult<List<Customer>> GetCustomers(string? search = null)
+    public ServiceResult<List<Customer>> GetCustomers(string? search = null, User? actor = null)
     {
         try
         {
+            if (_db.Sessions.Enabled)
+            {
+                _db.Sessions.Require(actor);
+                var permissions = new PermissionService(_db, _log, _audit);
+                if (!permissions.Can(actor, Modules.Customers) && !permissions.Can(actor, Modules.Pos))
+                    throw new ValidationException("Current workflow access is required to read this list.");
+            }
             var term = (search ?? string.Empty).Trim();
 
             using var connection = _db.Open();
@@ -319,10 +326,17 @@ WHERE id = @id;",
         return ServiceResult<CustomerEditResult>.Success(result);
     }
 
-    public ServiceResult<List<Supplier>> GetSuppliers()
+    public ServiceResult<List<Supplier>> GetSuppliers(User? actor = null)
     {
         try
         {
+            if (_db.Sessions.Enabled)
+            {
+                _db.Sessions.Require(actor);
+                var permissions = new PermissionService(_db, _log, _audit);
+                if (!permissions.Can(actor, Modules.Suppliers) && !permissions.Can(actor, Modules.Purchases) && !permissions.Can(actor, Modules.Products))
+                    throw new ValidationException("Current workflow access is required to read this list.");
+            }
             using var connection = _db.Open();
             var rows = _db.Query<Supplier>(connection, @"
 SELECT id, name, agency, phone, balance_paisa, notes, active

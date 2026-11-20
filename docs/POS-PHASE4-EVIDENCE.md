@@ -1,8 +1,8 @@
 # Phase 4 — source evidence register, portion 1 (v0.79.0 Tern)
 
-## ⏳ موجودہ حصہ3/14 — v0.121.0 Hawthorn
+## ⏳ موجودہ حصہ4/14 — v0.122.0 Larkspur
 
-نئےnextسےصرفحصہ3کیاجازتملی۔ Parent/quick-createاورCatalog/Unit Saveپرlocaloutcome/ack/checkedreloadguards؛مالیSQL/permissionsپالیسیبرقرار۔ ⏳72نئےC#cases/3035suiteیہاںUNRUN؛112static/45newlexicalnegative/30SQLfaults+1brandpartialprobe.NET/WPFثبوتنہیں۔ [⏳ جائزہ/PT-63](PARENT-RECORD-SAVE-OUTCOME-REVIEW-URDU.md)؛[⏳14حصے](REMAINING-14-PORTIONS-URDU.md)۔ حصہ2کے22failurefixesکانیاWindowsنتیجہبھیباقی؛حصہ4شروعنہیں۔ پرانا“حصہ3غیرمنظور”حوالہتاریخی؛FullPhase4OPEN/❌installerنہیںبنی۔
+تازہNextسےصرفحصہ4منظور؛D-116میںمالکنےpassword/PINresetپرnext-actionfreshloginمنتخبکیا،محفوظریکارڈبرقرار/ممکنہunsavedlossقبول۔ Database-boundproof،Desktoporigin/inputguards،sharedcurrentreadersاورCounterfull-outputdeny/freshrestoreکاsource؛ownertargets/parentpickersکےجائزراستےبرقرار۔ ⏳22newC#cases/3057suiteیہاںUNRUN؛113static/52newlexicalnegativesصرفمحدودثبوت۔ [⏳ جائزہ/PT-64](AUTHENTICATED-SESSION-REVIEW-URDU.md)؛[⏳14حصے](REMAINING-14-PORTIONS-URDU.md)۔ حصہ2کے22fixesاورحصہ3کے72testsکانیاWindowsrunبھیباقی؛پرانےحصہ4غیرمنظورکےحوالےتاریخی۔ FullPhase4OPEN؛❌حصہ5شروعنہیں،installerنہیںبنا۔
 
 
 ## ⏳ موجودہ حصہ2/14 — v0.120.2 Willow

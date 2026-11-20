@@ -118,6 +118,7 @@ public sealed class AuthService
 
             _audit.Record(connection, user, "Auth", okAction, "users", user.Id.ToString());
 
+            _db.Sessions.Issue(user, secrets?.PasswordHash, secrets?.PinHash, closeOnly: !touchLogin);
             return ServiceResult<User>.Success(user);
         }
         catch (Exception exception)
@@ -127,14 +128,27 @@ public sealed class AuthService
         }
     }
 
+    /// <summary>Interactive authentication only;VerifySecret's close-only proof cannot sign in.</summary>
+    public ServiceResult CheckSession(User? user)
+    {
+        try
+        {
+            if (!_db.Sessions.Enabled) return ServiceResult.Fail("Authenticated sessions are not enabled.");
+            _db.Sessions.Require(user);
+            return ServiceResult.Success();
+        }
+        catch (Exception) { return ServiceResult.Fail("The authenticated session ended or could not be verified. Sign in again."); }
+    }
+
     public void Logout(User? user)
     {
+        _db.Sessions.Revoke(user); // Revoke even if opening/auditing subsequently fails.
         try
         {
             using var connection = _db.Open();
             _audit.Record(connection, user, "Auth", "logout", "users", user?.Id.ToString());
         }
-        catch (SqliteException exception)
+        catch (Exception exception)
         {
             _log.Warn($"Logout could not be audited: {exception.Message}");
         }
@@ -343,7 +357,7 @@ public sealed class AuthService
                 return ServiceResult<User>.Fail("No owner account exists.");
             }
 
-            var stored = _settings.GetString(RecoveryWordKey);
+            var stored = ReadRecoveryHash();
             var factory = stored.Trim().Length == 0;
             var valid = factory
                 ? clean == FactoryRecoveryWord
@@ -365,6 +379,9 @@ public sealed class AuthService
             _audit.Record(connection, user, "Auth", "owner_recovered", "users", user.Id.ToString(),
                 details: factory ? "factory word" : "own word");
 
+            if (!string.Equals(stored, ReadRecoveryHash(), StringComparison.Ordinal))
+                throw new ValidationException("The recovery word changed. Try again.");
+            _db.Sessions.IssueRecoveredOwner(user);
             return ServiceResult<User>.Success(user);
         }
         catch (Exception exception)
@@ -373,6 +390,13 @@ public sealed class AuthService
             return ServiceResult<User>.Fail("Sign-in is not possible right now. Please try again.");
         }
     }
+
+    private string ReadRecoveryHash() => _db.Read(connection =>
+    {
+        var raw = _db.QuerySingle<string>(connection,
+            "SELECT value FROM settings WHERE key = @key;", new { key = RecoveryWordKey });
+        return raw is null ? string.Empty : System.Text.Json.JsonSerializer.Deserialize<string>(raw) ?? string.Empty;
+    });
 
     /// <summary>
     /// The owner sets their own recovery word - or an empty word, which hands the door back to the

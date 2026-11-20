@@ -26,7 +26,23 @@ public sealed class PricingAllowanceService
         return Read(connection, user);
     }
 
+    /// <summary>The staff editor reads a target under the owner's proof,not the target's login.</summary>
+    public PricingAllowance ForUser(User actor, User target)
+    {
+        return _db.Read(connection =>
+        {
+            OwnerAccess.Require(_db, connection, actor);
+            return ReadTarget(connection, target);
+        });
+    }
+
     public PricingAllowance Read(SqliteConnection connection, User user)
+    {
+        _db.Sessions.Require(user);
+        return ReadTarget(connection, user);
+    }
+
+    private PricingAllowance ReadTarget(SqliteConnection connection, User user)
     {
         // The caller's role snapshot cannot turn an arbitrary id into the owner.
         var person = _db.QuerySingle<User>(connection,
@@ -58,6 +74,7 @@ FROM user_pricing_allowances WHERE user_id = @id;", new { id = person.Id });
         {
             _db.Tx(connection =>
             {
+                _db.Sessions.Require(actor);
                 var owner = _db.QuerySingle<User>(connection,
                     "SELECT id, name, role, active FROM users WHERE id = @id;", new { id = actor.Id });
                 if (!actor.IsOwner || owner is not { IsOwner: true, Active: true })
@@ -70,7 +87,7 @@ FROM user_pricing_allowances WHERE user_id = @id;", new { id = person.Id });
                     throw new ValidationException("Every pricing limit must be between 0 and 100 percent.");
                 if (value.ExtraLimitPaisa < 0)
                     throw new ValidationException("Extra Discount limit cannot be negative.");
-                var before = Read(connection, target);
+                var before = ReadTarget(connection, target);
                 _db.Execute(connection, @"
 INSERT INTO user_pricing_allowances(user_id, edit_rate, manual_reduction_percent,
  profit_discount, profit_percent, retail_discount, retail_percent, override_basis, extra_discount, extra_limit_paisa)

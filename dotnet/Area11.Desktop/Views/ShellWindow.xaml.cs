@@ -309,6 +309,12 @@ public partial class ShellWindow : Window
         }
     }
 
-    private void OnActivity(object sender, InputEventArgs e) =>
-        (DataContext as ShellViewModel)?.TouchSession();
+    private void OnActivity(object sender, InputEventArgs e)
+    {
+        if (DataContext is not ShellViewModel shell) return;
+        if (!shell.Services.CheckInteractiveSession()) { e.Handled = true; return; }
+        if (shell.CurrentViewModel is PosViewModel counter && !counter.CheckCounterInputAccess())
+        { e.Handled = true; return; }
+        shell.TouchSession();
+    }
 }

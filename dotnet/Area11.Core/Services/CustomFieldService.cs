@@ -721,15 +721,17 @@ ON CONFLICT(field_id, entity_id) DO UPDATE SET value = excluded.value, updated_a
     }
 
     // Deliberately not a new module gate: quick-create callers retain their existing workflow policy.
-    // This is current local account resolution, not proof of a signed-in session.
+    // Desktop-enabled proof is required first;legacy disabled hosts are not authenticated.
     private User RequireValueActor(Microsoft.Data.Sqlite.SqliteConnection connection, User? actor)
     {
+        _db.Sessions.Require(actor);
         if (actor is not { Active: true } || actor.Id <= 0)
             throw new ValidationException("Sign in with an active account to save extra answers.");
         var current = _db.QuerySingle<User>(connection,
             "SELECT id, name, role, active FROM users WHERE id = @id;", new { id = actor.Id });
         if (current is not { Active: true } || current.Kind != actor.Kind)
             throw new ValidationException("The account has changed. Sign in again before saving extra answers.");
+        _db.Sessions.Carry(actor, current);
         return current;
     }
 

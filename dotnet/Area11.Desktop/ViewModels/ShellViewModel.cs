@@ -104,6 +104,7 @@ public sealed class ShellViewModel : ObservableObject
             // from a clean exit. Never throws, never blocks the till.
             _services.Focus.Heartbeat(_user.Name);
         };
+        _services.AuthenticationLost += OnAuthenticationLost;
         _sessionTimer.Start();
     }
 
@@ -123,7 +124,11 @@ public sealed class ShellViewModel : ObservableObject
     public event Action? LockdownChromeChanged;
 
     /// <summary>Any click or key press on the frame counts as work - the idle clock starts again.</summary>
-    public void TouchSession() => SessionWatch.Touch();
+    public void TouchSession()
+    {
+        // Do not revive an already expired idle session by touching the screen first.
+        if (_services.CheckInteractiveSession()) SessionWatch.Touch();
+    }
 
     /// <summary>The warning line in the top bar, or empty when there is no hurry.</summary>
     public string SessionNotice
@@ -185,6 +190,7 @@ public sealed class ShellViewModel : ObservableObject
             return;
         }
 
+        if (!_services.CheckInteractiveSession()) { OnAuthenticationLost(); return; }
         var hours = _services.Settings.GetInt("session.idleHours", 2);
         var check = SessionPolicy.Check(
             SessionWatch.SignedInAt, SessionWatch.LastActivityAt, TimeSource.Now, hours);
@@ -202,6 +208,23 @@ public sealed class ShellViewModel : ObservableObject
                   " minutes: the 12-hour limit cannot be extended by touching the screen."
                 : "Signed out in " + SessionPolicy.MinutesLeft(check) +
                   " minutes because the counter is idle - touch the screen to stay signed in.";
+    }
+
+    private void OnAuthenticationLost()
+    {
+        // A command may be inside a modal;close through the existing ordered sign-out path on
+        // the dispatcher,not re-entrantly inside a binding/property/Closing callback.
+        Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (!SessionWatch.Running || !ReferenceEquals(_services.CurrentUser, _user)) return;
+            _sessionTimer.Stop();
+            SessionWatch.Stop();
+            SessionNotice = "Sign in again: the account/password/PIN changed, the session expired, or verification failed.";
+            SessionHandover.Mark(_services.Settings, _user.Name);
+            _services.Auth.Logout(_user);
+            _services.SignOut();
+            SessionExpired?.Invoke();
+        }));
     }
 
     /// <summary>Carries out an expired session: a note if the drawer is open, then the sign-in window.</summary>
@@ -229,6 +252,8 @@ public sealed class ShellViewModel : ObservableObject
             SessionHandover.Mark(_services.Settings, _user.Name);
         }
 
+        _services.Auth.Logout(_user);
+        _services.SignOut();
         SessionExpired?.Invoke();
     }
 
@@ -236,6 +261,7 @@ public sealed class ShellViewModel : ObservableObject
     public void Detach()
     {
         CommandGuard.Failed -= OnCommandFailed;
+        _services.AuthenticationLost -= OnAuthenticationLost;
         // Equivalent to null-conditional event removal, also readable by the static C# grammar.
         if (_settingsPage is not null)
         {

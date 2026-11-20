@@ -145,6 +145,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     public ObservableCollection<CategoryTagOption> CategoryTagOptions { get; } = new();
 
     public bool CanSaveEditor => !_editorAccessLost;
+    public bool AuthenticationValid => _services.Auth.CheckSession(_user).Ok;
 
     public RelayCommand SaveCommand { get; }
 
@@ -648,7 +649,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         UpdateBrandHint();
 
         var preferredId = _preferredSupplierId;
-        var suppliers = _services.Partners.GetSuppliers();
+        var suppliers = _services.Partners.GetSuppliers(_user);
         Suppliers.Clear();
         if (suppliers.Ok && suppliers.Value is not null)
         {

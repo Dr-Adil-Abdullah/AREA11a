@@ -630,7 +630,7 @@ FROM photos WHERE id = @id;", new { id = photoId });
         }
     }
 
-    /// <summary>Current local gallery check only, not proof of a signed-in session.</summary>
+    /// <summary>Current gallery check with Desktop-enabled proof;not a token for other hosts.</summary>
     public ServiceResult CheckAccess(User? user, string entity, int entityId)
     {
         try
@@ -648,12 +648,14 @@ FROM photos WHERE id = @id;", new { id = photoId });
 
     private User RequireActor(SqliteConnection connection, User? actor)
     {
+        _db.Sessions.Require(actor);
         if (actor is not { Active: true } || actor.Id <= 0)
             throw new ValidationException("Sign in with an active account to use photos.");
         var current = _db.QuerySingle<User>(connection,
             "SELECT id, name, role, active FROM users WHERE id = @id;", new { id = actor.Id });
         if (current is not { Active: true } || current.Kind != actor.Kind)
             throw new ValidationException("The account has changed. Sign in again to use photos.");
+        _db.Sessions.Carry(actor, current);
         return current;
     }
 

@@ -21,7 +21,7 @@ public partial class PosView : UserControl
     }
     private void CheckParkedAccess()
     {
-        if (DataContext is PosViewModel model) model.RefreshParkedAccess();
+        if (DataContext is PosViewModel model) { model.RefreshCurrentAccess(); model.RefreshParkedAccess(); }
     }
 
     private void OnCounterLoaded(object sender, RoutedEventArgs e)

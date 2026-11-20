@@ -54,6 +54,10 @@ public sealed class CommandOutcome
 /// </summary>
 public static class CommandGuard
 {
+    /// <summary>Desktop captures the originating authenticated session per command,not just the
+    /// current global user at execution. Null only in standalone Core/legacy test hosts.</summary>
+    public static Func<Func<bool>>? CaptureAuthorization { get; set; }
+
     /// <summary>
     /// Where the log line goes. Set once at startup by `App` (the desktop owns the log file); left
     /// null in a test, which is why every call below tolerates it.

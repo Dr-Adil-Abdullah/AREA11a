@@ -484,6 +484,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         if (actor is not { IsOwner: true, Active: true } || actor.Id <= 0) return false;
         try
         {
+            _db.Sessions.Require(actor);
             using var connection = _db.Open();
             return _db.QuerySingle<User>(connection,
                 "SELECT id, name, role, active FROM users WHERE id = @id;", new { id = actor.Id })
