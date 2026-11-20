@@ -10,6 +10,7 @@ namespace Area11.Desktop.ViewModels;
 /// </summary>
 public sealed class CatalogWindowViewModel : ObservableObject
 {
+    private readonly PostingAttemptGuard _recordSave = new();
     private readonly AppServices _services;
     private readonly User _user;
     private bool _loading;
@@ -501,34 +502,55 @@ public sealed class CatalogWindowViewModel : ObservableObject
         }
 
         int? parentId = SelectedParent is { Id: > 0 } ? (int?)SelectedParent.Id : null;
-        int id;
-        if (SelectedCategory is null)
+        if (!_recordSave.TryBegin())
         {
-            var added = _services.Products.AddCategory(_user, CategoryName, parentId, order);
-            if (!added.Ok)
+            SetStatus("Verify the previous catalog save before reopening this window. Do not repeat the save.", true);
+            return;
+        }
+        try
+        {
+            int id;
+            if (SelectedCategory is null)
             {
-                if (!RefreshAccess()) return;
-                SetStatus(added.Error ?? "The category could not be saved.", true);
-                return;
+                var added = _services.Products.AddCategory(_user, CategoryName, parentId, order);
+                if (!added.Ok)
+                {
+                    _recordSave.ObserveFailure(added);
+                    if (!RefreshAccess()) return;
+                    SetStatus(added.Error ?? "The category could not be saved.", true);
+                    return;
+                }
+
+                _recordSave.AcknowledgeCommit();
+                id = added.Value;
+            }
+            else
+            {
+                id = SelectedCategory.Id;
+                var updated = _services.Products.UpdateCategory(_user, id, CategoryName, parentId, order);
+                if (!updated.Ok)
+                {
+                    _recordSave.ObserveFailure(updated);
+                    if (!RefreshAccess()) return;
+                    SetStatus(updated.Error ?? "The category could not be saved.", true);
+                    return;
+                }
+                _recordSave.AcknowledgeCommit();
             }
 
-            id = added.Value;
-        }
-        else
-        {
-            id = SelectedCategory.Id;
-            var updated = _services.Products.UpdateCategory(_user, id, CategoryName, parentId, order);
-            if (!updated.Ok)
+            if (ReloadAfterWrite(id, null, null, null))
             {
-                if (!RefreshAccess()) return;
-                SetStatus(updated.Error ?? "The category could not be saved.", true);
-                return;
+                SetStatus("Category saved. Product and report reads use the current name.", false);
+                _recordSave.CompleteReset();
             }
         }
-
-        if (ReloadAfterWrite(id, null, null, null))
+        catch (Exception exception)
         {
-            SetStatus("Category saved. Product and report reads use the current name.", false);
+            _recordSave.ObserveException();
+            _services.Log.Error("Catalog save did not finish its UI flow.", exception);
+            SetStatus(_recordSave.WasAcknowledged
+                ? "SAVED. The catalog change was stored, but the form did not finish. Verify before reopening this window; do not repeat the save."
+                : "Catalog save outcome is unconfirmed. Verify before reopening this window; do not repeat the save.", true);
         }
     }
 
@@ -578,34 +600,55 @@ public sealed class CatalogWindowViewModel : ObservableObject
             return;
         }
 
-        int id;
-        if (SelectedCompany is null)
+        if (!_recordSave.TryBegin())
         {
-            var added = _services.Products.AddCompany(_user, CompanyName, order);
-            if (!added.Ok)
+            SetStatus("Verify the previous catalog save before reopening this window. Do not repeat the save.", true);
+            return;
+        }
+        try
+        {
+            int id;
+            if (SelectedCompany is null)
             {
-                if (!RefreshAccess()) return;
-                SetStatus(added.Error ?? "The company could not be saved.", true);
-                return;
+                var added = _services.Products.AddCompany(_user, CompanyName, order);
+                if (!added.Ok)
+                {
+                    _recordSave.ObserveFailure(added);
+                    if (!RefreshAccess()) return;
+                    SetStatus(added.Error ?? "The company could not be saved.", true);
+                    return;
+                }
+
+                _recordSave.AcknowledgeCommit();
+                id = added.Value;
+            }
+            else
+            {
+                id = SelectedCompany.Id;
+                var updated = _services.Products.UpdateCompany(_user, id, CompanyName, order);
+                if (!updated.Ok)
+                {
+                    _recordSave.ObserveFailure(updated);
+                    if (!RefreshAccess()) return;
+                    SetStatus(updated.Error ?? "The company could not be saved.", true);
+                    return;
+                }
+                _recordSave.AcknowledgeCommit();
             }
 
-            id = added.Value;
-        }
-        else
-        {
-            id = SelectedCompany.Id;
-            var updated = _services.Products.UpdateCompany(_user, id, CompanyName, order);
-            if (!updated.Ok)
+            if (ReloadAfterWrite(null, id, null, null))
             {
-                if (!RefreshAccess()) return;
-                SetStatus(updated.Error ?? "The company could not be saved.", true);
-                return;
+                SetStatus("Company saved. Phone, notes and medical-rep fields were not rewritten.", false);
+                _recordSave.CompleteReset();
             }
         }
-
-        if (ReloadAfterWrite(null, id, null, null))
+        catch (Exception exception)
         {
-            SetStatus("Company saved. Phone, notes and medical-rep fields were not rewritten.", false);
+            _recordSave.ObserveException();
+            _services.Log.Error("Catalog save did not finish its UI flow.", exception);
+            SetStatus(_recordSave.WasAcknowledged
+                ? "SAVED. The catalog change was stored, but the form did not finish. Verify before reopening this window; do not repeat the save."
+                : "Catalog save outcome is unconfirmed. Verify before reopening this window; do not repeat the save.", true);
         }
     }
 
@@ -655,34 +698,55 @@ public sealed class CatalogWindowViewModel : ObservableObject
             return;
         }
 
-        int id;
-        if (SelectedFormula is null)
+        if (!_recordSave.TryBegin())
         {
-            var added = _services.Products.AddFormula(_user, FormulaName, order);
-            if (!added.Ok)
+            SetStatus("Verify the previous catalog save before reopening this window. Do not repeat the save.", true);
+            return;
+        }
+        try
+        {
+            int id;
+            if (SelectedFormula is null)
             {
-                if (!RefreshAccess()) return;
-                SetStatus(added.Error ?? "The salt could not be saved.", true);
-                return;
+                var added = _services.Products.AddFormula(_user, FormulaName, order);
+                if (!added.Ok)
+                {
+                    _recordSave.ObserveFailure(added);
+                    if (!RefreshAccess()) return;
+                    SetStatus(added.Error ?? "The salt could not be saved.", true);
+                    return;
+                }
+
+                _recordSave.AcknowledgeCommit();
+                id = added.Value;
+            }
+            else
+            {
+                id = SelectedFormula.Id;
+                var updated = _services.Products.UpdateFormula(_user, id, FormulaName, order);
+                if (!updated.Ok)
+                {
+                    _recordSave.ObserveFailure(updated);
+                    if (!RefreshAccess()) return;
+                    SetStatus(updated.Error ?? "The salt could not be saved.", true);
+                    return;
+                }
+                _recordSave.AcknowledgeCommit();
             }
 
-            id = added.Value;
-        }
-        else
-        {
-            id = SelectedFormula.Id;
-            var updated = _services.Products.UpdateFormula(_user, id, FormulaName, order);
-            if (!updated.Ok)
+            if (ReloadAfterWrite(null, null, id, null))
             {
-                if (!RefreshAccess()) return;
-                SetStatus(updated.Error ?? "The salt could not be saved.", true);
-                return;
+                SetStatus("Salt saved. Linked products show the current spelling; typed text elsewhere was not rewritten.", false);
+                _recordSave.CompleteReset();
             }
         }
-
-        if (ReloadAfterWrite(null, null, id, null))
+        catch (Exception exception)
         {
-            SetStatus("Salt saved. Linked products show the current spelling; typed text elsewhere was not rewritten.", false);
+            _recordSave.ObserveException();
+            _services.Log.Error("Catalog save did not finish its UI flow.", exception);
+            SetStatus(_recordSave.WasAcknowledged
+                ? "SAVED. The catalog change was stored, but the form did not finish. Verify before reopening this window; do not repeat the save."
+                : "Catalog save outcome is unconfirmed. Verify before reopening this window; do not repeat the save.", true);
         }
     }
 
@@ -734,53 +798,76 @@ public sealed class CatalogWindowViewModel : ObservableObject
             return;
         }
 
-        int id;
-        if (SelectedBrand is null)
+        if (!_recordSave.TryBegin())
         {
-            var added = _services.Products.AddBrand(_user, BrandName, order);
-            if (!added.Ok)
-            {
-                if (!RefreshAccess()) return;
-                SetStatus(added.Error ?? "The brand could not be saved.", true);
-                return;
-            }
-
-            id = added.Value;
+            SetStatus("Verify the previous catalog save before reopening this window. Do not repeat the save.", true);
+            return;
         }
-        else
+        try
         {
-            id = SelectedBrand.Id;
-            var updated = _services.Products.UpdateBrand(_user, id, BrandName, order);
-            if (!updated.Ok)
+            int id;
+            if (SelectedBrand is null)
             {
-                if (!RefreshAccess()) return;
-                SetStatus(updated.Error ?? "The brand could not be saved.", true);
-                return;
-            }
-        }
-
-        var wantCompanyId = SelectedBrandCompany?.Id;
-        if (wantCompanyId != _brandCompanyId)
-        {
-            var linked = _services.Products.SetBrandCompany(_user, id, wantCompanyId);
-            if (!linked.Ok)
-            {
-                if (ReloadAfterWrite(null, null, null, id))
+                var added = _services.Products.AddBrand(_user, BrandName, order);
+                if (!added.Ok)
                 {
-                    SetStatus("SAVED. Brand saved, but the company link failed: " + (linked.Error ?? "unknown error"), true);
-                }
-                else
-                {
-                    SetStatus("SAVED. Brand saved, but the company link failed and the lists could not reload. Do not repeat the whole save; refresh and review the name and link separately.", true);
+                    _recordSave.ObserveFailure(added);
+                    if (!RefreshAccess()) return;
+                    SetStatus(added.Error ?? "The brand could not be saved.", true);
+                    return;
                 }
 
-                return;
+                _recordSave.AcknowledgeCommit();
+                id = added.Value;
+            }
+            else
+            {
+                id = SelectedBrand.Id;
+                var updated = _services.Products.UpdateBrand(_user, id, BrandName, order);
+                if (!updated.Ok)
+                {
+                    _recordSave.ObserveFailure(updated);
+                    if (!RefreshAccess()) return;
+                    SetStatus(updated.Error ?? "The brand could not be saved.", true);
+                    return;
+                }
+                _recordSave.AcknowledgeCommit();
+            }
+
+            var wantCompanyId = SelectedBrandCompany?.Id;
+            if (wantCompanyId != _brandCompanyId)
+            {
+                var linked = _services.Products.SetBrandCompany(_user, id, wantCompanyId);
+                if (!linked.Ok)
+                {
+                    if (ReloadAfterWrite(null, null, null, id))
+                    {
+                        SetStatus(linked.NoCommitConfirmed
+                            ? "SAVED. Brand saved, but the company link failed: " + (linked.Error ?? "unknown error")
+                            : "SAVED. Brand saved; the company link outcome is unconfirmed. Verify the name and link before reopening this window; do not repeat the whole save.", true);
+                    }
+                    else
+                    {
+                        SetStatus("SAVED. Brand saved; the company link and lists need verification. Do not repeat the whole save; close, refresh and review the name and link separately.", true);
+                    }
+
+                    return;
+                }
+            }
+
+            if (ReloadAfterWrite(null, null, null, id))
+            {
+                SetStatus("Brand saved. Linked products show the current spelling; typed text elsewhere was not rewritten.", false);
+                _recordSave.CompleteReset();
             }
         }
-
-        if (ReloadAfterWrite(null, null, null, id))
+        catch (Exception exception)
         {
-            SetStatus("Brand saved. Linked products show the current spelling; typed text elsewhere was not rewritten.", false);
+            _recordSave.ObserveException();
+            _services.Log.Error("Catalog save did not finish its UI flow.", exception);
+            SetStatus(_recordSave.WasAcknowledged
+                ? "SAVED. The catalog change was stored, but the form did not finish. Verify before reopening this window; do not repeat the save."
+                : "Catalog save outcome is unconfirmed. Verify before reopening this window; do not repeat the save.", true);
         }
     }
 
@@ -834,6 +921,11 @@ public sealed class CatalogWindowViewModel : ObservableObject
 
     private bool RequireEdit()
     {
+        if (!_recordSave.Ready)
+        {
+            SetStatus("Verify the previous catalog save before reopening this window. Do not repeat the save.", true);
+            return false;
+        }
         if (!RefreshAccess()) return false;
         if (CanEdit) return true;
         SetStatus("Current Products Owner/Manager access and an explicit successful Refresh are required before editing.", true);

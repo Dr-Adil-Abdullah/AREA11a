@@ -57,10 +57,11 @@ ORDER BY name COLLATE NOCASE;",
         IReadOnlyDictionary<int, string?>? customValues = null, string? stagedPhotoPath = null)
     {
         var outcome = new TransactionOutcome();
+        ServiceResult<int> Refuse(string error) => new() { Error = error, NoCommitConfirmed = true };
         var clean = (name ?? string.Empty).Trim();
         if (clean.Length < 2)
         {
-            return ServiceResult<int>.Fail("Enter the customer's name.");
+            return Refuse("Enter the customer's name.");
         }
 
         var type = (category ?? "normal").Trim().ToLowerInvariant();
@@ -80,7 +81,7 @@ ORDER BY name COLLATE NOCASE;",
                 var stagedError = Photos().ValidateSource(staged);
                 if (stagedError is not null)
                 {
-                    return ServiceResult<int>.Fail(stagedError);
+                    return Refuse(stagedError);
                 }
             }
 
@@ -99,7 +100,7 @@ LIMIT 1;",
 
                 if (!string.IsNullOrEmpty(owner))
                 {
-                    return ServiceResult<int>.Fail(
+                    return Refuse(
                         "That phone number already belongs to " + owner
                         + ". Open that customer to put the sale on their khata, or leave the phone empty.");
                 }
@@ -170,15 +171,22 @@ VALUES(@name, @phone, @category, 0, 0, 0, 1, 1, @at);",
     public ServiceResult<CustomerEditResult> UpdateCustomer(User actor, CustomerEditInput input,
         IReadOnlyDictionary<int, string?>? customValues = null)
     {
+        var outcome = new TransactionOutcome();
+        ServiceResult<CustomerEditResult> Refuse(string error) => new()
+        {
+            Error = outcome.NoCommitConfirmed ? error
+                : "The customer save outcome is unconfirmed. Verify the record and extra fields before retrying.",
+            NoCommitConfirmed = outcome.NoCommitConfirmed
+        };
         if (input is null)
         {
-            return ServiceResult<CustomerEditResult>.Fail("Nothing to save.");
+            return Refuse("Nothing to save.");
         }
 
         var name = (input.Name ?? string.Empty).Trim();
         if (name.Length < 2)
         {
-            return ServiceResult<CustomerEditResult>.Fail("Enter the customer's name (at least two letters).");
+            return Refuse("Enter the customer's name (at least two letters).");
         }
 
         var category = (input.Category ?? "normal").Trim().ToLowerInvariant();
@@ -191,7 +199,7 @@ VALUES(@name, @phone, @category, 0, 0, 0, 1, 1, @at);",
 
         if (input.CreditLimitPaisa is < 0)
         {
-            return ServiceResult<CustomerEditResult>.Fail("The credit limit cannot be negative. Use 0 for no limit.");
+            return Refuse("The credit limit cannot be negative. Use 0 for no limit.");
         }
 
         try
@@ -205,16 +213,16 @@ VALUES(@name, @phone, @category, 0, 0, 0, 1, 1, @at);",
                 var answers = custom.SaveValuesInTransaction(connection, actor, CustomFieldEntity.Customer, input.Id, customValues);
                 if (!answers.Ok) throw new ValidationException(answers.Error ?? "Customer extra fields could not be saved.");
                 return result;
-            });
+            }, outcome);
         }
         catch (ValidationException exception)
         {
-            return ServiceResult<CustomerEditResult>.Fail(exception.Message);
+            return Refuse(exception.Message);
         }
         catch (Exception exception)
         {
             _log.Error("The customer " + input.Id + " could not be updated.", exception);
-            return ServiceResult<CustomerEditResult>.Fail("The customer could not be saved. Nothing was changed.");
+            return Refuse("The customer could not be saved. Nothing was changed.");
         }
     }
 
@@ -226,6 +234,8 @@ VALUES(@name, @phone, @category, 0, 0, 0, 1, 1, @at);",
         string? phone,
         string category)
     {
+        // Every returned refusal below precedes the first UPDATE/audit; no parent write ran.
+        ServiceResult<CustomerEditResult> Refuse(string error) => new() { Error = error, NoCommitConfirmed = true };
         // The public Customer model is reused on purpose: Dapper is happiest with a public type, and
         // there is no second row class to keep in step with the schema.
         var row = _db.QuerySingle<Customer>(connection, @"
@@ -237,14 +247,14 @@ WHERE id = @id AND active = 1;",
 
         if (row is null)
         {
-            return ServiceResult<CustomerEditResult>.Fail("That customer no longer exists - refresh the list.");
+            return Refuse("That customer no longer exists - refresh the list.");
         }
 
         // Preserve old customers who already lack a phone on an unrelated edit, but do not allow
         // an existing phone to be removed once the owner has made the field required.
         if (phone is null && !string.IsNullOrWhiteSpace(row.Phone)
             && NativeFieldPolicyService.IsRequired(_db, connection, "customer.phone"))
-            return ServiceResult<CustomerEditResult>.Fail("Customer phone is required by the owner's field settings.");
+            return Refuse("Customer phone is required by the owner's field settings.");
 
         var result = new CustomerEditResult
         {
@@ -259,7 +269,7 @@ WHERE id = @id AND active = 1;",
         {
             if (!actor.CanManage)
             {
-                return ServiceResult<CustomerEditResult>.Fail(
+                return Refuse(
                     "Only the owner or a manager can change a credit limit. Nothing was changed.");
             }
 
@@ -336,15 +346,16 @@ FROM suppliers WHERE active = 1 ORDER BY name COLLATE NOCASE;");
         IReadOnlyDictionary<int, string?>? customValues = null, string? stagedPhotoPath = null)
     {
         var outcome = new TransactionOutcome();
+        ServiceResult<int> Refuse(string error) => new() { Error = error, NoCommitConfirmed = true };
         if (!actor.CanManage)
         {
-            return ServiceResult<int>.Fail("Only the owner or a manager can add suppliers.");
+            return Refuse("Only the owner or a manager can add suppliers.");
         }
 
         var clean = (name ?? string.Empty).Trim();
         if (clean.Length < 2)
         {
-            return ServiceResult<int>.Fail("Enter the supplier's name.");
+            return Refuse("Enter the supplier's name.");
         }
 
         var staged = string.IsNullOrWhiteSpace(stagedPhotoPath) ? null : stagedPhotoPath.Trim();
@@ -353,7 +364,7 @@ FROM suppliers WHERE active = 1 ORDER BY name COLLATE NOCASE;");
             var stagedError = Photos().ValidateSource(staged);
             if (stagedError is not null)
             {
-                return ServiceResult<int>.Fail(stagedError);
+                return Refuse(stagedError);
             }
         }
 

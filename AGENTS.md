@@ -2,8 +2,12 @@
 
 ## ✅ گفتگو اور حصوں کی تازہ ہدایت
 
-ہر جواب/وضاحت/خلاصہ سادہ پاکستانی اردو۔ ایک وقت میں صرف ایک منظورشدہ حصہ؛ہر اگلے حصے سے پہلے نئی اجازت۔ ہر ٹاسک/حصے پر صرف3–4 لائنوں کا خلاصہ؛تفصیلی رپورٹ ہر3 مکمل حصوں کے بعد یا مالک کے مطالبے پر۔ [⏳ نیا14حصوں کا منصوبہ](docs/REMAINING-14-PORTIONS-URDU.md) پر عمل کریں؛پرانے3–6roundsاندازے اس منصوبے کی جگہ نہیں لیتے۔ ✅حصہ1کیCore/TestsDebugcompileتصدیقمالککےv0.120.1runسےملی۔ ⏳صرفحصہ2کیاجازتملی:22failuresکیfixtureاصلاح،نیاWindowsrerunباقی؛❌حصہ3کیاجازتنہیں۔ ✅صحت مندsourcecheckکوکامیاب.NETbuildنہکہیں۔
+ہر جواب/وضاحت/خلاصہ سادہ پاکستانی اردو۔ ایک وقت میں صرف ایک منظورشدہ حصہ؛ہر اگلے حصے سے پہلے نئی اجازت۔ ہر ٹاسک/حصے پر صرف3–4 لائنوں کا خلاصہ؛تفصیلی رپورٹ ہر3 مکمل حصوں کے بعد یا مالک کے مطالبے پر۔ [⏳ نیا14حصوں کا منصوبہ](docs/REMAINING-14-PORTIONS-URDU.md) پر عمل کریں؛پرانے3–6roundsاندازے اس منصوبے کی جگہ نہیں لیتے۔ ✅حصہ1کیCore/TestsDebugcompileتصدیقمالککےv0.120.1runسےملی۔ ⏳حصہ2کے22failurefixesکاWindowsrerunباقی؛بعدکےnextسےصرفحصہ3کیاجازتملی،اسکیsourceپیشرفتذیل،اصلجانچباقی؛❌حصہ4کیاجازتنہیں۔ ✅صحت مندsourcecheckکوکامیاب.NETbuildنہکہیں۔
 
+
+## ⏳ تازہ حصہ3 — v0.121.0 Hawthorn
+
+نئےnextنےصرفحصہ3منظورکیا۔ Parent Product/Customer Create+Edit،Counter quickcustomer/Purchase quicksupplier،4quickcatalogsاورCatalog/Unit SaveابexistingPostingAttemptGuardسےguarded؛16CoreoperationsobservedTx،ackقبلcallbacks،successcleanup/selectedID-verdictکےبعدہیreset؛unknown/SAVED-refreshfailureRefresh/regrantسےreleaseنہیں۔ مالیSQL/policy/37migrationsاورتمامtrackedC#testsبرقرار۔ ⏳72newC#cases/3035suiteUNRUN؛112static/45lexicalnegative/15extractedSQLplansکے30faults+1brandpartialprobeصرفمحدودثبوت۔ [⏳ جائزہ/PT-63](docs/PARENT-RECORD-SAVE-OUTCOME-REVIEW-URDU.md)۔ حصہ2کے22fixesکانیاWindowslogبھیباقی؛نہاسےgreenنہحصہ3کومکملWPFجانچکہنا۔ Localguardنہdurableidentityنہverifiedreopen؛non-Savegallery/toggle/remainingcallers/provider/session/CASOPEN۔ ❌حصہ4شروعنہیں؛حصہ6کینئیdesignالگمنظوریسے؛❌installerNOTBUILT۔
 
 ## ⏳ تازہ حصہ2 — v0.120.2 Willow
 

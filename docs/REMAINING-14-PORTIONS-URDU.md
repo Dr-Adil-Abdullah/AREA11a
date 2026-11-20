@@ -16,7 +16,7 @@
 |---|---|
 |1۔ ✅ متعلقہ کمپائل کی خرابی | DocumentFieldTests کی اصلاح؛مالک کے v0.120.1 Windows run میں Core اور Tests Debug کمپائل ہونے سے تصدیق؛پوری Desktop/Release سند نہیں |
 |2۔ ⏳ پوری ٹیسٹ سوئٹ | اجازت مل گئی؛اصل v0.120.1 run میں2941PASS/22FAIL/2963۔22 ناکامیوں سے متعلق fixture اصلاحات؛v0.120.2 کا اصل rerun باقی |
-|3۔ ❌ ریکارڈ بنانے والے فارم | دوا/گاہک/سپلائر/فوری اندراج؛غیر واضح Save،کامیابی کے بعد خرابی اور اضافی entries |
+|3۔ ⏳ ریکارڈ بنانے والے فارم | نئےnextسےاجازت؛v0.121.0میںparent/quick-create/Catalog/Unit Saveکےlocaloutcome/ackguards،72نئےcases؛اصلWindows/WPF3035suiteاورPT-63باقی |
 |4۔ ❌ لاگ اِن اور اجازتیں | موجودہ شناخت،بدلی اجازتیں،پرانے کھلے فارم،اضافی خانے،پورے کاؤنٹر کے حساس outputs |
 |5۔ ❌ بیک وقت کام | متعدد صفحات/کنکشن؛پڑھنے اور لکھنے کے درمیان تبدیلی،پرانے ڈیٹا سے overwrite کی روک تھام |
 |6۔ ❌ دوبارہ کوشش اور ری اسٹارٹ | جواب کھونا،بندش،دوسرے صفحے/کمپیوٹر کی retry؛دیرپا شناخت کی تجویز،ضروری منظوری،نفاذ |
@@ -43,4 +43,10 @@
 
 ✅ 22 ناکامیوں سے متعلق14 test files میں تیاری کی اصلاح:Settings کے لیے checked Owner،database میں حقیقی صارف،واضح ممنوعہ اجازت،محفوظ شدہ نام،fault لگانے سے پہلے service تیار،اورschemaکےمطابقdraftmarker۔ Productionحساب/permissions/SQLمیںتبدیلینہیں؛2963testidentitiesبرقرار۔
 
-⏳ [اصل run،کیسوار وجہ،اصلاح اور حدود](WINDOWS-V1201-TEST-REPORT-REVIEW.md)۔ یہاں.NETSDKنہیں؛نئےbuildکاکامیابruntimeدعویٰنہیں۔ اباسیحصےمیںمالککاv0.120.2runدرکار؛حصہ3اورآگےکیاجازتنہیں۔
+⏳ [اصل run،کیسوار وجہ،اصلاح اور حدود](WINDOWS-V1201-TEST-REPORT-REVIEW.md)۔ یہاں.NETSDKنہیں؛نئےbuildکاکامیابruntimeدعویٰنہیں۔ حصہ2کیاصلrerunتصدیقباقی؛بعدکےnextسےحصہ3کیاجازتملی،اسےاسرکاوٹکےساتھالگشروعکیا؛حصہ4شروعنہیں۔
+
+## ⏳ حصہ3 — اجازت ملی،source guards تیار،اصل جانچ باقی
+
+✅ محدود source میں parent Product/Customer Create+Edit،Counter quickcustomer/Purchase quicksupplier،چارquickcatalogsاورCatalog/UnitsکےSaveپرexistinglocalguard،ackقبلcleanup،checkedselectedIDreloadاورexplicitno-commitretry؛16CoreoperationsobservedTx؛مالیSQL/permissionsپالیسیبرقرار۔
+
+⏳ [جائزہ،حدود اورPT-63](PARENT-RECORD-SAVE-OUTCOME-REVIEW-URDU.md)۔ 72نئےC#cases/3035suiteUNRUN؛یہاںSDKنہیں۔ حصہ2کی22ناکامیوںکےبعدکانیاlogبھیباقی؛نئےsourceپر3035کینئیWindowsrunدرکار۔ Localguarddurableidentityنہیں؛حصہ6کیdesignخودسےشروعنہیںکی۔ ❌حصہ4اورآگےشروعنہیں۔

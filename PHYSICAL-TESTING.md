@@ -1,5 +1,10 @@
 # Area11 — Real-life Physical Testing Log
 
+## ⏳ PT-63 — حصہ3/14،parent/quick-create Save (v0.121.0)
+
+[⏳ اردوsteps/trace](docs/PARENT-RECORD-SAVE-OUTCOME-REVIEW-URDU.md)۔ ⏳72newC#cases/3035suiteUNRUN؛حصہ2کے22fixesبھیابھیWindows-rerunکےمنتظر۔ Require actual3035/0fail run،DesktopReleasebuild،parent/quickcatalog/customer/supplier/unit validation+retry،sameIDselection،post-ackreload/callbackfailureپرSAVEDاورblockedretry،unknown+Refresh/regrant،Productconfirmationreentry،brandname/linkpartialsuccess،Countercart/Purchaselinespreserved۔ ActualproviderCOMMIT/rollback/lost-ackاورWPFexecutionنہیںہوئی؛localguarddurablekeyنہیں۔ VerifiedbackupANDseparateDB/photos/configپہلے؛اصلshopپرtestpostsنہیں۔ ❌حصہ4شروعنہیں،installerنہیںبنی۔
+
+
 ## ⏳ حصہ2/14 — v0.120.2 کا نیا اصل Windows run درکار
 
 ✅ پچھلےv0.120.1runمیںCore/TestsDebugcompileہوا؛2941کامیاب/22ناکام/2963کل۔ ⏳صرفحصہ2کیfixtureاصلاحاتکےبعد `tools\RUN-TESTS.cmd` سے2963/0failکانیااصلنتیجہدرکار؛نہآنےتکgreenنہیں۔ [⏳ کیسوارحدود](docs/WINDOWS-V1201-TEST-REPORT-REVIEW.md)۔ اصلshopapp/postingنہیں؛الگtestdata،verifiedbackup/الگDB/photos/configاورپراناlogمحفوظ۔ حصہ3شروعنہیںہوا۔

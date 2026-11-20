@@ -14,6 +14,7 @@ namespace Area11.Desktop.ViewModels;
 /// </summary>
 public sealed class PurchasesViewModel : ObservableObject
 {
+    private readonly PostingAttemptGuard _newSupplierSave = new();
     private readonly AppServices _services;
     private readonly User _user;
     private readonly List<Product> _catalog = new();
@@ -419,26 +420,50 @@ public sealed class PurchasesViewModel : ObservableObject
 
     private void AddSupplier()
     {
+        if (!RefreshEntryAccess()) return;
         if (!NewSupplierEditor.LoadedSuccessfully)
         {
             SetStatus("Supplier extra fields could not be loaded. Reopen the purchase page.", true);
             return;
         }
-        var result = _services.Partners.CreateSupplier(_user, NewSupplierName, NewSupplierPhone, NewSupplierAgency,
-            NewSupplierEditor.AnswerValues(), NewSupplierEditor.StagedPhotoForSave());
-        if (!result.Ok)
+        if (!_newSupplierSave.TryBegin())
         {
-            SetStatus(result.Error ?? "The supplier could not be saved.", true);
+            SetStatus("Verify the previous supplier creation before reopening Purchases. Do not add it again.", true);
             return;
         }
-
-        NewSupplierName = string.Empty;
-        NewSupplierPhone = string.Empty;
-        NewSupplierAgency = string.Empty;
-        NewSupplierEditor.LoadNew();
-        LoadLookups();
-        SelectedSupplier = Suppliers.FirstOrDefault(supplier => supplier.Id == result.Value);
-        SetStatus("Supplier added.", false);
+        try
+        {
+            var result = _services.Partners.CreateSupplier(_user, NewSupplierName, NewSupplierPhone, NewSupplierAgency,
+                NewSupplierEditor.AnswerValues(), NewSupplierEditor.StagedPhotoForSave());
+            if (!result.Ok)
+            {
+                _newSupplierSave.ObserveFailure(result);
+                SetStatus(result.Error ?? "The supplier save outcome is unconfirmed. Verify before retrying.", true);
+                return;
+            }
+            _newSupplierSave.AcknowledgeCommit();
+            NewSupplierName = string.Empty;
+            NewSupplierPhone = string.Empty;
+            NewSupplierAgency = string.Empty;
+            NewSupplierEditor.LoadNew();
+            LoadLookups();
+            SelectedSupplier = Suppliers.FirstOrDefault(supplier => supplier.Id == result.Value);
+            if (!_lastLookupsSucceeded || SelectedSupplier?.Id != result.Value || !NewSupplierEditor.LoadedSuccessfully)
+            {
+                SetStatus("SAVED. Supplier #" + result.Value + " was created, but could not be selected. Verify the list before reopening Purchases; do not add it again. Purchase lines were not cleared.", true);
+                return;
+            }
+            SetStatus("Supplier added.", false);
+            _newSupplierSave.CompleteReset();
+        }
+        catch (Exception exception)
+        {
+            _newSupplierSave.ObserveException();
+            _services.Log.Error("Purchase supplier creation did not finish its UI flow.", exception);
+            SetStatus(_newSupplierSave.WasAcknowledged
+                ? "SAVED. The supplier was created, but Purchases did not finish refreshing. Verify before reopening; do not add it again. Purchase lines were not cleared."
+                : "Supplier save outcome is unconfirmed. Verify records and gallery before reopening; do not add it again. Purchase lines were not cleared.", true);
+        }
     }
 
     private void AddLine()

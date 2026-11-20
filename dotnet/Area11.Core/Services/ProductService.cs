@@ -321,26 +321,27 @@ WHERE p.active = 1
         string? stagedPhotoPath = null)
     {
         var outcome = new TransactionOutcome();
+        ServiceResult<int> Refuse(string error) => new() { Error = error, NoCommitConfirmed = true };
         if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
-            return ServiceResult<int>.Fail("Only the owner or a manager can add products.");
+            return Refuse("Only the owner or a manager can add products.");
         }
 
         var name = (input.Name ?? string.Empty).Trim();
         if (name.Length < 2)
         {
-            return ServiceResult<int>.Fail("Enter the medicine name.");
+            return Refuse("Enter the medicine name.");
         }
 
         if (input.RetailPaisa is < 0 || input.CostPaisa is < 0)
         {
-            return ServiceResult<int>.Fail("Rates cannot be negative.");
+            return Refuse("Rates cannot be negative.");
         }
 
         var packSizeError = PackagingPolicy.PackSizeError(input.PackSizeLabel);
         if (packSizeError is not null)
         {
-            return ServiceResult<int>.Fail(packSizeError);
+            return Refuse(packSizeError);
         }
         var packSizeLabel = PackagingPolicy.CleanPackSize(input.PackSizeLabel);
 
@@ -350,7 +351,7 @@ WHERE p.active = 1
             var stagedError = Photos().ValidateSource(staged);
             if (stagedError is not null)
             {
-                return ServiceResult<int>.Fail(stagedError);
+                return Refuse(stagedError);
             }
         }
 
@@ -360,7 +361,7 @@ WHERE p.active = 1
         var strengthError = StrengthError(strengthValue, strengthUnit);
         if (strengthError is not null)
         {
-            return ServiceResult<int>.Fail(strengthError);
+            return Refuse(strengthError);
         }
         if (strengthValue == 0)
         {
@@ -523,9 +524,16 @@ VALUES
     /// </summary>
     public ServiceResult Update(User actor, int id, ProductPatch patch, IReadOnlyDictionary<int, string?>? customValues = null)
     {
+        var outcome = new TransactionOutcome();
+        ServiceResult Refuse(string error) => new()
+        {
+            Error = outcome.NoCommitConfirmed ? error
+                : "The product save outcome is unconfirmed. Verify the record and extra fields before retrying.",
+            NoCommitConfirmed = outcome.NoCommitConfirmed
+        };
         if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
-            return ServiceResult.Fail("Only the owner or a manager can edit products.");
+            return Refuse("Only the owner or a manager can edit products.");
         }
 
         try
@@ -815,22 +823,22 @@ VALUES
                         oldValue: $"{{\"cost\":{before.CostPaisa},\"retail\":{before.RetailPaisa}}}",
                         newValue: $"{{\"cost\":{after?.CostPaisa ?? 0},\"retail\":{after?.RetailPaisa ?? 0}}}");
                 }
-            });
+            }, outcome);
 
             return ServiceResult.Success();
         }
         catch (ValidationException exception)
         {
-            return ServiceResult.Fail(exception.Message);
+            return Refuse(exception.Message);
         }
         catch (SqliteException exception) when (exception.Message.Contains("UNIQUE", StringComparison.OrdinalIgnoreCase))
         {
-            return ServiceResult.Fail("That barcode already belongs to another product.");
+            return Refuse("That barcode already belongs to another product.");
         }
         catch (Exception exception)
         {
             _log.Error($"Product {id} could not be updated.", exception);
-            return ServiceResult.Fail("The product could not be saved.");
+            return Refuse("The product could not be saved.");
         }
     }
 
@@ -990,25 +998,32 @@ FROM companies c
         int? parentId = null,
         int? sortOrder = null)
     {
+        var outcome = new TransactionOutcome();
+        ServiceResult<int> Refuse(string error) => new()
+        {
+            Error = outcome.NoCommitConfirmed ? error
+                : "The catalog save outcome is unconfirmed. Verify the saved record before retrying.",
+            NoCommitConfirmed = outcome.NoCommitConfirmed
+        };
         if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
-            return ServiceResult<int>.Fail("Only the owner or a manager can change categories.");
+            return Refuse("Only the owner or a manager can change categories.");
         }
 
         var clean = CleanCatalogName(name);
         if (clean.Length == 0)
         {
-            return ServiceResult<int>.Fail("Enter a category name.");
+            return Refuse("Enter a category name.");
         }
 
         if (clean.Length > MaxCatalogNameLength)
         {
-            return ServiceResult<int>.Fail("Keep the category name under 120 characters.");
+            return Refuse("Keep the category name under 120 characters.");
         }
 
         if (sortOrder is not null && !IsValidSortOrder(sortOrder.Value))
         {
-            return ServiceResult<int>.Fail(SortOrderError);
+            return Refuse(SortOrderError);
         }
 
         try
@@ -1018,20 +1033,20 @@ FROM companies c
                 actor = RequireProductWriter(connection, actor);
                 if (CatalogNameTaken(connection, "categories", clean, 0))
                 {
-                    return ServiceResult<int>.Fail(
+                    throw new ValidationException(
                         "That category name is already used, including by a category put away.");
                 }
 
                 var parentError = CategoryParentError(connection, 0, parentId, null);
                 if (parentError is not null)
                 {
-                    return ServiceResult<int>.Fail(parentError);
+                    throw new ValidationException(parentError);
                 }
 
                 var order = sortOrder ?? NextSortOrder(connection, "categories");
                 if (!IsValidSortOrder(order))
                 {
-                    return ServiceResult<int>.Fail(SortOrderError);
+                    throw new ValidationException(SortOrderError);
                 }
 
                 _db.Execute(connection, @"
@@ -1045,38 +1060,45 @@ VALUES(@name, @parentId, @sortOrder, 1, @at);",
                 _audit.RecordChange(connection, actor, "Inventory", "category_create", "categories",
                     id.ToString(), null, after);
                 return ServiceResult<int>.Success(id);
-            });
+            }, outcome);
         }
-        catch (ValidationException exception) { return ServiceResult<int>.Fail(exception.Message); }
+        catch (ValidationException exception) { return Refuse(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"Category '{clean}' could not be added.", exception);
-            return ServiceResult<int>.Fail("The category could not be saved.");
+            return Refuse("The category could not be saved.");
         }
     }
 
     /// <summary>Rename, choose a top-level parent, or change order without touching product history.</summary>
     public ServiceResult UpdateCategory(User actor, int id, string? name, int? parentId, int sortOrder)
     {
+        var outcome = new TransactionOutcome();
+        ServiceResult Refuse(string error) => new()
+        {
+            Error = outcome.NoCommitConfirmed ? error
+                : "The catalog save outcome is unconfirmed. Verify the saved record before retrying.",
+            NoCommitConfirmed = outcome.NoCommitConfirmed
+        };
         if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
-            return ServiceResult.Fail("Only the owner or a manager can change categories.");
+            return Refuse("Only the owner or a manager can change categories.");
         }
 
         var clean = CleanCatalogName(name);
         if (id <= 0 || clean.Length == 0)
         {
-            return ServiceResult.Fail("Pick a category and enter its name.");
+            return Refuse("Pick a category and enter its name.");
         }
 
         if (clean.Length > MaxCatalogNameLength)
         {
-            return ServiceResult.Fail("Keep the category name under 120 characters.");
+            return Refuse("Keep the category name under 120 characters.");
         }
 
         if (!IsValidSortOrder(sortOrder))
         {
-            return ServiceResult.Fail(SortOrderError);
+            return Refuse(SortOrderError);
         }
 
         try
@@ -1087,19 +1109,19 @@ VALUES(@name, @parentId, @sortOrder, 1, @at);",
                 var before = FindCategory(connection, id);
                 if (before is null)
                 {
-                    return ServiceResult.Fail("That category no longer exists.");
+                    throw new ValidationException("That category no longer exists.");
                 }
 
                 if (CatalogNameTaken(connection, "categories", clean, id))
                 {
-                    return ServiceResult.Fail(
+                    throw new ValidationException(
                         "That category name is already used, including by a category put away.");
                 }
 
                 var parentError = CategoryParentError(connection, id, parentId, before.ParentId);
                 if (parentError is not null)
                 {
-                    return ServiceResult.Fail(parentError);
+                    throw new ValidationException(parentError);
                 }
 
                 if (before.Name == clean && before.ParentId == parentId && before.SortOrder == sortOrder)
@@ -1116,13 +1138,13 @@ WHERE id = @id;",
                 _audit.RecordChange(connection, actor, "Inventory", "category_update", "categories",
                     id.ToString(), before, after);
                 return ServiceResult.Success();
-            });
+            }, outcome);
         }
-        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
+        catch (ValidationException exception) { return Refuse(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"Category {id} could not be updated.", exception);
-            return ServiceResult.Fail("The category could not be saved.");
+            return Refuse("The category could not be saved.");
         }
     }
 
@@ -1195,25 +1217,32 @@ UPDATE products SET category_id = NULL, updated_at = @at WHERE category_id = @id
 
     public ServiceResult<int> AddCompany(User actor, string? name, int? sortOrder = null)
     {
+        var outcome = new TransactionOutcome();
+        ServiceResult<int> Refuse(string error) => new()
+        {
+            Error = outcome.NoCommitConfirmed ? error
+                : "The catalog save outcome is unconfirmed. Verify the saved record before retrying.",
+            NoCommitConfirmed = outcome.NoCommitConfirmed
+        };
         if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
-            return ServiceResult<int>.Fail("Only the owner or a manager can change companies.");
+            return Refuse("Only the owner or a manager can change companies.");
         }
 
         var clean = CleanCatalogName(name);
         if (clean.Length == 0)
         {
-            return ServiceResult<int>.Fail("Enter a company name.");
+            return Refuse("Enter a company name.");
         }
 
         if (clean.Length > MaxCatalogNameLength)
         {
-            return ServiceResult<int>.Fail("Keep the company name under 120 characters.");
+            return Refuse("Keep the company name under 120 characters.");
         }
 
         if (sortOrder is not null && !IsValidSortOrder(sortOrder.Value))
         {
-            return ServiceResult<int>.Fail(SortOrderError);
+            return Refuse(SortOrderError);
         }
 
         try
@@ -1223,14 +1252,14 @@ UPDATE products SET category_id = NULL, updated_at = @at WHERE category_id = @id
                 actor = RequireProductWriter(connection, actor);
                 if (CatalogNameTaken(connection, "companies", clean, 0))
                 {
-                    return ServiceResult<int>.Fail(
+                    throw new ValidationException(
                         "That company name is already used, including by a company put away.");
                 }
 
                 var order = sortOrder ?? NextSortOrder(connection, "companies");
                 if (!IsValidSortOrder(order))
                 {
-                    return ServiceResult<int>.Fail(SortOrderError);
+                    throw new ValidationException(SortOrderError);
                 }
 
                 _db.Execute(connection, @"
@@ -1242,38 +1271,45 @@ INSERT INTO companies(name, sort_order, active) VALUES(@name, @sortOrder, 1);",
                 _audit.RecordChange(connection, actor, "Inventory", "company_create", "companies",
                     id.ToString(), null, after);
                 return ServiceResult<int>.Success(id);
-            });
+            }, outcome);
         }
-        catch (ValidationException exception) { return ServiceResult<int>.Fail(exception.Message); }
+        catch (ValidationException exception) { return Refuse(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"Company '{clean}' could not be added.", exception);
-            return ServiceResult<int>.Fail("The company could not be saved.");
+            return Refuse("The company could not be saved.");
         }
     }
 
     /// <summary>Only name and order change; phone, notes and the medical rep stay on the row.</summary>
     public ServiceResult UpdateCompany(User actor, int id, string? name, int sortOrder)
     {
+        var outcome = new TransactionOutcome();
+        ServiceResult Refuse(string error) => new()
+        {
+            Error = outcome.NoCommitConfirmed ? error
+                : "The catalog save outcome is unconfirmed. Verify the saved record before retrying.",
+            NoCommitConfirmed = outcome.NoCommitConfirmed
+        };
         if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
-            return ServiceResult.Fail("Only the owner or a manager can change companies.");
+            return Refuse("Only the owner or a manager can change companies.");
         }
 
         var clean = CleanCatalogName(name);
         if (id <= 0 || clean.Length == 0)
         {
-            return ServiceResult.Fail("Pick a company and enter its name.");
+            return Refuse("Pick a company and enter its name.");
         }
 
         if (clean.Length > MaxCatalogNameLength)
         {
-            return ServiceResult.Fail("Keep the company name under 120 characters.");
+            return Refuse("Keep the company name under 120 characters.");
         }
 
         if (!IsValidSortOrder(sortOrder))
         {
-            return ServiceResult.Fail(SortOrderError);
+            return Refuse(SortOrderError);
         }
 
         try
@@ -1284,12 +1320,12 @@ INSERT INTO companies(name, sort_order, active) VALUES(@name, @sortOrder, 1);",
                 var before = FindCompany(connection, id);
                 if (before is null)
                 {
-                    return ServiceResult.Fail("That company no longer exists.");
+                    throw new ValidationException("That company no longer exists.");
                 }
 
                 if (CatalogNameTaken(connection, "companies", clean, id))
                 {
-                    return ServiceResult.Fail(
+                    throw new ValidationException(
                         "That company name is already used, including by a company put away.");
                 }
 
@@ -1305,13 +1341,13 @@ INSERT INTO companies(name, sort_order, active) VALUES(@name, @sortOrder, 1);",
                 _audit.RecordChange(connection, actor, "Inventory", "company_update", "companies",
                     id.ToString(), before, after);
                 return ServiceResult.Success();
-            });
+            }, outcome);
         }
-        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
+        catch (ValidationException exception) { return Refuse(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"Company {id} could not be updated.", exception);
-            return ServiceResult.Fail("The company could not be saved.");
+            return Refuse("The company could not be saved.");
         }
     }
 
@@ -1428,23 +1464,30 @@ LEFT JOIN companies co ON co.id = b.company_id
 
     public ServiceResult<int> AddFormula(User actor, string? name, int? sortOrder = null)
     {
+        var outcome = new TransactionOutcome();
+        ServiceResult<int> Refuse(string error) => new()
+        {
+            Error = outcome.NoCommitConfirmed ? error
+                : "The catalog save outcome is unconfirmed. Verify the saved record before retrying.",
+            NoCommitConfirmed = outcome.NoCommitConfirmed
+        };
         if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
-            return ServiceResult<int>.Fail("Only the owner or a manager can change salts.");
+            return Refuse("Only the owner or a manager can change salts.");
         }
 
         var clean = CleanDisplayName(name);
         if (clean.Length == 0)
         {
-            return ServiceResult<int>.Fail("Enter a salt name, for example Paracetamol.");
+            return Refuse("Enter a salt name, for example Paracetamol.");
         }
         if (clean.Length > MaxCatalogNameLength)
         {
-            return ServiceResult<int>.Fail("Keep the salt name under 120 characters.");
+            return Refuse("Keep the salt name under 120 characters.");
         }
         if (sortOrder is not null && !IsValidSortOrder(sortOrder.Value))
         {
-            return ServiceResult<int>.Fail(SortOrderError);
+            return Refuse(SortOrderError);
         }
 
         try
@@ -1455,13 +1498,13 @@ LEFT JOIN companies co ON co.id = b.company_id
                 var key = CatalogKeyOf(clean);
                 if (CatalogKeyTaken(connection, "generic_formulas", key, 0))
                 {
-                    return ServiceResult<int>.Fail("That salt is already on the list, including a salt put away.");
+                    throw new ValidationException("That salt is already on the list, including a salt put away.");
                 }
 
                 var order = sortOrder ?? NextSortOrder(connection, "generic_formulas");
                 if (!IsValidSortOrder(order))
                 {
-                    return ServiceResult<int>.Fail(SortOrderError);
+                    throw new ValidationException(SortOrderError);
                 }
 
                 _db.Execute(connection, @"
@@ -1472,35 +1515,42 @@ INSERT INTO generic_formulas(name, name_key, sort_order, active) VALUES(@name, @
                 _audit.RecordChange(connection, actor, "Inventory", "formula_create", "generic_formulas",
                     id.ToString(), null, FindFormula(connection, id));
                 return ServiceResult<int>.Success(id);
-            });
+            }, outcome);
         }
-        catch (ValidationException exception) { return ServiceResult<int>.Fail(exception.Message); }
+        catch (ValidationException exception) { return Refuse(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"Salt '{clean}' could not be added.", exception);
-            return ServiceResult<int>.Fail("The salt could not be saved.");
+            return Refuse("The salt could not be saved.");
         }
     }
 
     public ServiceResult<int> AddBrand(User actor, string? name, int? sortOrder = null)
     {
+        var outcome = new TransactionOutcome();
+        ServiceResult<int> Refuse(string error) => new()
+        {
+            Error = outcome.NoCommitConfirmed ? error
+                : "The catalog save outcome is unconfirmed. Verify the saved record before retrying.",
+            NoCommitConfirmed = outcome.NoCommitConfirmed
+        };
         if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
-            return ServiceResult<int>.Fail("Only the owner or a manager can change brands.");
+            return Refuse("Only the owner or a manager can change brands.");
         }
 
         var clean = CleanDisplayName(name);
         if (clean.Length == 0)
         {
-            return ServiceResult<int>.Fail("Enter a brand name, for example GSK.");
+            return Refuse("Enter a brand name, for example GSK.");
         }
         if (clean.Length > MaxCatalogNameLength)
         {
-            return ServiceResult<int>.Fail("Keep the brand name under 120 characters.");
+            return Refuse("Keep the brand name under 120 characters.");
         }
         if (sortOrder is not null && !IsValidSortOrder(sortOrder.Value))
         {
-            return ServiceResult<int>.Fail(SortOrderError);
+            return Refuse(SortOrderError);
         }
 
         try
@@ -1511,13 +1561,13 @@ INSERT INTO generic_formulas(name, name_key, sort_order, active) VALUES(@name, @
                 var key = CatalogKeyOf(clean);
                 if (CatalogKeyTaken(connection, "brands", key, 0))
                 {
-                    return ServiceResult<int>.Fail("That brand is already on the list, including a brand put away.");
+                    throw new ValidationException("That brand is already on the list, including a brand put away.");
                 }
 
                 var order = sortOrder ?? NextSortOrder(connection, "brands");
                 if (!IsValidSortOrder(order))
                 {
-                    return ServiceResult<int>.Fail(SortOrderError);
+                    throw new ValidationException(SortOrderError);
                 }
 
                 // company_id stays NULL: brand-to-company assignment is a later portion.
@@ -1529,36 +1579,43 @@ INSERT INTO brands(name, name_key, sort_order, active) VALUES(@name, @key, @sort
                 _audit.RecordChange(connection, actor, "Inventory", "brand_create", "brands",
                     id.ToString(), null, FindBrand(connection, id));
                 return ServiceResult<int>.Success(id);
-            });
+            }, outcome);
         }
-        catch (ValidationException exception) { return ServiceResult<int>.Fail(exception.Message); }
+        catch (ValidationException exception) { return Refuse(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"Brand '{clean}' could not be added.", exception);
-            return ServiceResult<int>.Fail("The brand could not be saved.");
+            return Refuse("The brand could not be saved.");
         }
     }
 
     /// <summary>Rename relabels explicitly linked products; legacy typed text is never touched.</summary>
     public ServiceResult UpdateFormula(User actor, int id, string? name, int sortOrder)
     {
+        var outcome = new TransactionOutcome();
+        ServiceResult Refuse(string error) => new()
+        {
+            Error = outcome.NoCommitConfirmed ? error
+                : "The catalog save outcome is unconfirmed. Verify the saved record before retrying.",
+            NoCommitConfirmed = outcome.NoCommitConfirmed
+        };
         if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
-            return ServiceResult.Fail("Only the owner or a manager can change salts.");
+            return Refuse("Only the owner or a manager can change salts.");
         }
 
         var clean = CleanDisplayName(name);
         if (id <= 0 || clean.Length == 0)
         {
-            return ServiceResult.Fail("Pick a salt and enter its name.");
+            return Refuse("Pick a salt and enter its name.");
         }
         if (clean.Length > MaxCatalogNameLength)
         {
-            return ServiceResult.Fail("Keep the salt name under 120 characters.");
+            return Refuse("Keep the salt name under 120 characters.");
         }
         if (!IsValidSortOrder(sortOrder))
         {
-            return ServiceResult.Fail(SortOrderError);
+            return Refuse(SortOrderError);
         }
 
         try
@@ -1569,13 +1626,13 @@ INSERT INTO brands(name, name_key, sort_order, active) VALUES(@name, @key, @sort
                 var before = FindFormula(connection, id);
                 if (before is null)
                 {
-                    return ServiceResult.Fail("That salt no longer exists.");
+                    throw new ValidationException("That salt no longer exists.");
                 }
 
                 var key = CatalogKeyOf(clean);
                 if (CatalogKeyTaken(connection, "generic_formulas", key, id))
                 {
-                    return ServiceResult.Fail("That salt name is already used, including by a salt put away.");
+                    throw new ValidationException("That salt name is already used, including by a salt put away.");
                 }
 
                 var relabelled = 0;
@@ -1595,36 +1652,43 @@ WHERE id = @id;", new { clean, key, order = sortOrder, at = Clock.Now(), id });
                     id.ToString(), before, FindFormula(connection, id),
                     relabelled + " linked product(s) relabelled; legacy typed text untouched.");
                 return ServiceResult.Success();
-            });
+            }, outcome);
         }
-        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
+        catch (ValidationException exception) { return Refuse(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"Salt {id} could not be updated.", exception);
-            return ServiceResult.Fail("The salt could not be saved.");
+            return Refuse("The salt could not be saved.");
         }
     }
 
     /// <summary>Rename relabels explicitly linked products; legacy typed text is never touched.</summary>
     public ServiceResult UpdateBrand(User actor, int id, string? name, int sortOrder)
     {
+        var outcome = new TransactionOutcome();
+        ServiceResult Refuse(string error) => new()
+        {
+            Error = outcome.NoCommitConfirmed ? error
+                : "The catalog save outcome is unconfirmed. Verify the saved record before retrying.",
+            NoCommitConfirmed = outcome.NoCommitConfirmed
+        };
         if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
-            return ServiceResult.Fail("Only the owner or a manager can change brands.");
+            return Refuse("Only the owner or a manager can change brands.");
         }
 
         var clean = CleanDisplayName(name);
         if (id <= 0 || clean.Length == 0)
         {
-            return ServiceResult.Fail("Pick a brand and enter its name.");
+            return Refuse("Pick a brand and enter its name.");
         }
         if (clean.Length > MaxCatalogNameLength)
         {
-            return ServiceResult.Fail("Keep the brand name under 120 characters.");
+            return Refuse("Keep the brand name under 120 characters.");
         }
         if (!IsValidSortOrder(sortOrder))
         {
-            return ServiceResult.Fail(SortOrderError);
+            return Refuse(SortOrderError);
         }
 
         try
@@ -1635,13 +1699,13 @@ WHERE id = @id;", new { clean, key, order = sortOrder, at = Clock.Now(), id });
                 var before = FindBrand(connection, id);
                 if (before is null)
                 {
-                    return ServiceResult.Fail("That brand no longer exists.");
+                    throw new ValidationException("That brand no longer exists.");
                 }
 
                 var key = CatalogKeyOf(clean);
                 if (CatalogKeyTaken(connection, "brands", key, id))
                 {
-                    return ServiceResult.Fail("That brand name is already used, including by a brand put away.");
+                    throw new ValidationException("That brand name is already used, including by a brand put away.");
                 }
 
                 var relabelled = 0;
@@ -1661,13 +1725,13 @@ WHERE id = @id;", new { clean, key, order = sortOrder, at = Clock.Now(), id });
                     id.ToString(), before, FindBrand(connection, id),
                     relabelled + " linked product(s) relabelled; legacy typed text untouched.");
                 return ServiceResult.Success();
-            });
+            }, outcome);
         }
-        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
+        catch (ValidationException exception) { return Refuse(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"Brand {id} could not be updated.", exception);
-            return ServiceResult.Fail("The brand could not be saved.");
+            return Refuse("The brand could not be saved.");
         }
     }
 
@@ -1789,14 +1853,21 @@ UPDATE products SET brand_id = NULL, updated_at = @at WHERE brand_id = @id;",
     /// </summary>
     public ServiceResult SetBrandCompany(User actor, int brandId, int? companyId)
     {
+        var outcome = new TransactionOutcome();
+        ServiceResult Refuse(string error) => new()
+        {
+            Error = outcome.NoCommitConfirmed ? error
+                : "The catalog save outcome is unconfirmed. Verify the saved record before retrying.",
+            NoCommitConfirmed = outcome.NoCommitConfirmed
+        };
         if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
-            return ServiceResult.Fail("Only the owner or a manager can change brands.");
+            return Refuse("Only the owner or a manager can change brands.");
         }
 
         if (brandId <= 0)
         {
-            return ServiceResult.Fail("Pick a brand first.");
+            return Refuse("Pick a brand first.");
         }
 
         try
@@ -1807,7 +1878,7 @@ UPDATE products SET brand_id = NULL, updated_at = @at WHERE brand_id = @id;",
                 var before = FindBrand(connection, brandId);
                 if (before is null)
                 {
-                    return ServiceResult.Fail("That brand no longer exists.");
+                    throw new ValidationException("That brand no longer exists.");
                 }
 
                 string? companyName = null;
@@ -1816,7 +1887,7 @@ UPDATE products SET brand_id = NULL, updated_at = @at WHERE brand_id = @id;",
                     var company = FindCompany(connection, companyId.Value);
                     if (company is null || !company.Active)
                     {
-                        return ServiceResult.Fail("Choose a company that is on the active list.");
+                        throw new ValidationException("Choose a company that is on the active list.");
                     }
 
                     companyName = company.Name;
@@ -1836,13 +1907,13 @@ UPDATE brands SET company_id = @companyId, updated_at = @at WHERE id = @brandId;
                         ? "Company link cleared; the brand keeps its name and products."
                         : "Company set to " + companyName + "; no product row was rewritten.");
                 return ServiceResult.Success();
-            });
+            }, outcome);
         }
-        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
+        catch (ValidationException exception) { return Refuse(exception.Message); }
         catch (Exception exception)
         {
             _log.Error($"Brand {brandId} company could not be changed.", exception);
-            return ServiceResult.Fail("The brand company could not be changed.");
+            return Refuse("The brand company could not be changed.");
         }
     }
 
@@ -1923,19 +1994,26 @@ FROM units u
 
     public ServiceResult<int> AddUnit(User actor, string? name, int? sortOrder = null, bool wholeOnly = false)
     {
+        var outcome = new TransactionOutcome();
+        ServiceResult<int> Refuse(string error) => new()
+        {
+            Error = outcome.NoCommitConfirmed ? error
+                : "The catalog save outcome is unconfirmed. Verify the saved record before retrying.",
+            NoCommitConfirmed = outcome.NoCommitConfirmed
+        };
         if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
-            return ServiceResult<int>.Fail("Only the owner or a manager can change units.");
+            return Refuse("Only the owner or a manager can change units.");
         }
 
         var clean = NormalizeUnitName(name);
         if (clean.Length == 0)
         {
-            return ServiceResult<int>.Fail("Enter a unit name, for example injection or ml.");
+            return Refuse("Enter a unit name, for example injection or ml.");
         }
         if (clean.Length > 40)
         {
-            return ServiceResult<int>.Fail("Keep the unit name under 40 characters.");
+            return Refuse("Keep the unit name under 40 characters.");
         }
 
         try
@@ -1945,13 +2023,13 @@ FROM units u
                 actor = RequireProductWriter(connection, actor);
                 if (UnitNameTaken(connection, clean, 0))
                 {
-                    return ServiceResult<int>.Fail("That unit is already on the list, including a put-away unit.");
+                    throw new ValidationException("That unit is already on the list, including a put-away unit.");
                 }
 
                 var order = sortOrder ?? NextSortOrder(connection, "units");
                 if (!IsValidSortOrder(order))
                 {
-                    return ServiceResult<int>.Fail(SortOrderError);
+                    throw new ValidationException(SortOrderError);
                 }
 
                 _db.Execute(connection,
@@ -1962,28 +2040,35 @@ FROM units u
                 _audit.RecordChange(connection, actor, "Inventory", "unit_create", "units",
                     id.ToString(), null, FindUnit(connection, id));
                 return ServiceResult<int>.Success(id);
-            });
+            }, outcome);
         }
-        catch (ValidationException exception) { return ServiceResult<int>.Fail(exception.Message); }
+        catch (ValidationException exception) { return Refuse(exception.Message); }
         catch (Exception exception)
         {
             _log.Error("A unit could not be added.", exception);
-            return ServiceResult<int>.Fail("The unit could not be saved.");
+            return Refuse("The unit could not be saved.");
         }
     }
 
     /// <summary>Renames current product labels atomically; historical quantities and documents are untouched.</summary>
     public ServiceResult UpdateUnit(User actor, int id, string? name, int sortOrder, bool? wholeOnly = null)
     {
+        var outcome = new TransactionOutcome();
+        ServiceResult Refuse(string error) => new()
+        {
+            Error = outcome.NoCommitConfirmed ? error
+                : "The catalog save outcome is unconfirmed. Verify the saved record before retrying.",
+            NoCommitConfirmed = outcome.NoCommitConfirmed
+        };
         if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
-            return ServiceResult.Fail("Only the owner or a manager can change units.");
+            return Refuse("Only the owner or a manager can change units.");
         }
 
         var clean = NormalizeUnitName(name);
         if (id <= 0 || clean.Length == 0 || clean.Length > 40 || !IsValidSortOrder(sortOrder))
         {
-            return ServiceResult.Fail("Choose a unit, enter a name under 40 characters and a valid order.");
+            return Refuse("Choose a unit, enter a name under 40 characters and a valid order.");
         }
 
         try
@@ -1994,11 +2079,11 @@ FROM units u
                 var before = FindUnit(connection, id);
                 if (before is null)
                 {
-                    return ServiceResult.Fail("That unit no longer exists.");
+                    throw new ValidationException("That unit no longer exists.");
                 }
                 if (UnitNameTaken(connection, clean, id))
                 {
-                    return ServiceResult.Fail("That unit name is already used, including by a put-away unit.");
+                    throw new ValidationException("That unit name is already used, including by a put-away unit.");
                 }
 
                 var parameters = new { clean, old = before.Name, order = sortOrder, wholeOnly, id, at = Clock.Now() };
@@ -2013,13 +2098,13 @@ WHERE strength_value > 0 AND LOWER(TRIM(strength_unit)) = @old;", parameters);
                     id.ToString(), before, FindUnit(connection, id),
                     "Current product unit labels updated together; no stock quantity or historical document was rewritten.");
                 return ServiceResult.Success();
-            });
+            }, outcome);
         }
-        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
+        catch (ValidationException exception) { return Refuse(exception.Message); }
         catch (Exception exception)
         {
             _log.Error("A unit could not be updated.", exception);
-            return ServiceResult.Fail("The unit could not be saved.");
+            return Refuse("The unit could not be saved.");
         }
     }
 

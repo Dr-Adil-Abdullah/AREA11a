@@ -1,17 +1,17 @@
 # نمبر وار کام اور باقی جانچ — مستقل1تا36فہرست
 
-**⏳ موجودہ source: v0.120.2 Willow؛نئے14حصوںکےمنصوبےکاصرفحصہ2زیرعمل۔** [⏳ منصوبہ](REMAINING-14-PORTIONS-URDU.md)؛[⏳ اصلWindowsrunاور22ناکامیاں](WINDOWS-V1201-TEST-REPORT-REVIEW.md)۔ مستقل1–36نمبرنہیںبدلے۔
+**⏳ موجودہ source: v0.121.0 Hawthorn؛نئے14حصوںکےمنصوبےکاصرفحصہ3منظورشدہپیشرفت۔** [⏳ منصوبہ](REMAINING-14-PORTIONS-URDU.md)؛[⏳ Saveجائزہ/PT-63](PARENT-RECORD-SAVE-OUTCOME-REVIEW-URDU.md)۔ مستقل1–36نمبرنہیںبدلے۔
 
-✅ حصہ1کیCore/TestsDebugcompileتصدیقملی؛v0.120.1runمیں2963total/2941PASS/22FAIL۔ ⏳حصہ2میں14testfilesکیfixtureاصلاح،111staticcontracts/22newsource-negativechecks،اصلنیاWindowsrerunباقی۔ حصہ3شروعنہیںہوا؛❌installerbinaryنہیںبنی۔
+✅ حصہ1کیCore/Testscompileتصدیقملی؛v0.120.1کے2963میں2941PASS/22FAIL۔ ⏳حصہ2کے22fixesاورحصہ3کے72newtestsکانیاruntimeباقی؛3035suiteیہاںUNRUN۔ حصہ4شروعنہیں؛❌installerنہیںبنی۔
 
 | مستقل نمبر / دائرہ | کیا ہوگیا؟ | کیا باقی ہے؟ |
 |---|---|---|
-|1۔ ⏳ ورژن/GitHub | v0.120.2Willow/source/docs/icon/scriptsaligned | samebranchcommit/push/actualremoteverificationآخریرپورٹمیں |
-|2۔ ⏳ C#tests | 2963متوقعcases؛حصہ42میں47نئےinlinecases | اصلv0.120.1run2963/2941PASS/22FAIL؛v0.120.2کی2963suiteیہاںUNRUN |
-|3۔ ⏳ Source/syntheticchecks | 111staticcontracts؛تازہ22fixture-negativechecksاورreal-schemafixtureprobe؛حتمینتائجtraceمیں | یہC#/WPF/provider/securitycertificationنہیں |
-|4۔ ⏳ پرانےWindowsfailures | v0.120.1کے2941PASS/22FAILکیوجوہ/sourcefixtureاصلاح؛v0.80تاریخی | v0.120.2پراصلretestاورremainingfailuresکیfix؛پرانانتیجہنیاPASSنہیں |
+|1۔ ⏳ ورژن/GitHub | v0.121.0Hawthorn/source/docs/icon/scriptsaligned | samebranchcommit/push/actualremoteverificationآخریرپورٹمیں |
+|2۔ ⏳ C#tests | 3035متوقعcases؛حصہ3میں72نئےinlinecases | اصلv0.120.1run2963/2941PASS/22FAIL؛v0.121.0کی3035suiteیہاںUNRUN |
+|3۔ ⏳ Source/syntheticchecks | 112staticcontracts؛تازہ45Save-negativechecksاور30SQLfaults/1brandpartialprobe؛حتمینتائجtraceمیں | یہC#/WPF/provider/securitycertificationنہیں |
+|4۔ ⏳ پرانےWindowsfailures | v0.120.1کے2941PASS/22FAILکیوجوہ/sourcefixtureاصلاح؛v0.80تاریخی | v0.121.0پراصلretestاورremainingfailuresکیfix؛پرانانتیجہنیاPASSنہیں |
 |5۔ ⏳ Account/role/session | PRابcurrentstoredactive/sameparsedrole/Returns؛validOwnerبھیcurrentrow؛storedauditactor | authenticatedsessiontoken/same-role-IDimpersonation،remainingcallers؛یہfullsessionproofنہیں |
-|6۔ ⏳ Parentrecordcreate/edit/read | PRCreate/Link/CancelTxcurrentactorقبلtarget،reads/receiptcurrent؛پچھلےdraft/heldboundariesبرقرار | remainingquickadd/parent/sessioncallers،atomicCAS؛legacy/otherworkflowreview |
+|6۔ ⏳ Parentrecordcreate/edit/read | Parent/quick-create/Catalog/Unit SaveپرobservedTx/unknownguard/ackقبلcleanup؛پرانےcurrentwrite/readchecksبرقرار | اصلparentWPF،باقیcallers/session،atomicCAS؛legacy/otherworkflowreview |
 |7۔ ⏳ Revocation/staleoutputs | PRaction/nominal3stimerdenialپرفارم/rows/tray/lookupصاف؛stableinputsبرقرار،regrantfreshLoad؛detachedrowrefused | actualWPF،fullPOScart/otherpreparedoutputs/instantrecall/CASباقی |
 |8۔ ⏳ Customdefinitionmanager | **حصہ26:currentownerUI،selection/inputcleanup،selectedsnapshotcomparison،stabletick،SAVED** | WPF/runtimeثبوت؛check/use/atomicversionCASاورothereditorssyncOPEN |
 |9۔ ⏳ Customanswersservice | sharedinternalcurrentactor/storedaudit؛existingparentreads؛historicalinactiveپالیسیبرقرار | باقیcallers،اصلTxexecution،read/loadraces؛internalworkflowgatecaller-owned |
@@ -29,8 +29,8 @@
 |21۔ ⏳ Reports/files/exports | PRcompleteauthorizedheader+linesreceipt؛linefailureپرBuildfailure؛receiptComposeunchanged؛Historycurrentbulkپہلے | alreadyprepared/printed/exportedoutputsnotrecalled؛باقیExcel/CSV/PDF/print/Windowsroutes |
 |22۔ ⏳ Blackbox/BookCheck | صرفapprovednavigationgateAudit+Cost+Profit+main؛حالیہinternalsunchanged | تازہWindowsnavigationproof؛بغیراجازتغیرمتعلقredesignنہیں |
 |23۔ ⏳ DB/permissiontransaction | Collect/PayexistingTxobservedoutcomes؛storedactor/currentaccessاورfinancialcallbackbodiesبرقرار | session/same-role-ID/CAS/externalcoherentsnapshot/realCOMMIT/parallel/durableidentityباقی |
-|24۔ ⏳ Fault/rollback | 47نئےledgerC#cases:12faults/14denials/6partialmethods/15syntheticguards؛پرانےtestsبرقرار | تمام2963C#UNRUN؛providerCOMMIT/rollback/dispose/WPFcallbacks/remainingcallers/files |
-|25۔ ⏳ Duplicate/retry | Collect/RecoveryReceive/Paylocalguard؛unknown/ackcleanupRefresh/regrantسےresetنہیں؛consumedamountصاف؛پرانےguardsبرقرار | parentcreationUIretry/othergalleryactions/cross-page/pageReopen/restart/globalidentity/parallel/providerCOMMITباقی؛localflagdurablekeyنہیں |
+|24۔ ⏳ Fault/rollback | 72نئےparentSaveC#cases؛32auditfaults/16validation/16post-ack/8guards؛پرانےtestsبرقرار | تمام3035C#UNRUN؛providerCOMMIT/rollback/dispose/WPFcallbacks/remainingcallers/files |
+|25۔ ⏳ Duplicate/retry | Parent/quick-create/Catalog/UnitSavelocalguards؛unknown/ackcleanupRefresh/regrantسےresetنہیں؛پرانےledger/draftguardsبرقرار | اصلparentWPFretry/othergalleryactions/cross-page/pageReopen/restart/globalidentity/parallel/providerCOMMITباقی؛localflagdurablekeyنہیں |
 |26۔ ⏳ Encryptedbackup | passwordA .a11bakcode،manual/auto/safety/rollbackintegration،referencechecks | اصلC#service/DPAPI/ACL/passwordrotation/large-photo/interruptionverification |
 |27۔ ⏳ Restore/newPC | stagedvalidation/safety/rollback/explicitlegacycode | نئےPCپرoriginalpassword،wrong/corrupt/interruptedrestore،پراناDB/photosبچنااورstartupثبوت |
 |28۔ ⏳ Files/bounds | photoexclusive12MBstreambound/partialoutput/confirmedcleanup؛پرانےpath/archivelimits | malformed/largeimage/archive/import،codec/replacement/collision/cleanup/powerloss |
@@ -51,6 +51,6 @@
 4. اسی نمبرکےاندرکیاباقیہےاورکیوں؟
 5. اگلےنمبروںکیترتیب،docs/GitHubکیاصلحیثیت،installerکےباقیدروازے۔
 
-موجودہترتیب: [⏳ نیا14حصوںکامنظورشدہمنصوبہ](REMAINING-14-PORTIONS-URDU.md)۔ حصہ1کیمتعلقہcompileتصدیقملی؛صرفحصہ2کیاجازتملی،اسکیاصلrerunتصدیقباقی؛حصہ3شروعنہیں۔ پرانا3–6چکروںکااندازہابکامشروعکرنےکیہدایتنہیں۔
+موجودہترتیب: [⏳ نیا14حصوںکامنظورشدہمنصوبہ](REMAINING-14-PORTIONS-URDU.md)۔ حصہ1کیمتعلقہcompileتصدیقملی؛حصہ2کیاصلrerunباقی؛نئےnextسےصرفحصہ3کیاجازتملی،اسکیاصلWPF/.NETجانچبھیباقی؛حصہ4شروعنہیں۔ پرانا3–6چکروںکااندازہابکامشروعکرنےکیہدایتنہیں۔
 
 اصلshopپرsyntheticpostsنہیں؛secret/datachatمیںنہیں؛ہرportiondocs+sameactivebranchcommit/push+actualremoteverification۔ Static/Python/featureboardکوproduction/runtime/securityPASSنہکہیں۔

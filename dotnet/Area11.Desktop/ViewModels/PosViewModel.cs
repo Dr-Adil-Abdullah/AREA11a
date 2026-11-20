@@ -23,6 +23,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         "Counter (POS)",
         searched: SearchText.Trim().Length > 0);
 
+    private readonly PostingAttemptGuard _newCustomerSave = new();
     private readonly AppServices _services;
     private readonly User _user;
     private readonly List<Product> _catalog = new();
@@ -1748,6 +1749,11 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
     private void BeginAddCustomer()
     {
+        if (!_newCustomerSave.Ready)
+        {
+            SetStatus("Verify the previous customer creation before reopening Counter. Do not add it again.", true);
+            return;
+        }
         if (!CanAddCustomer)
         {
             SetStatus("You are not allowed to add customers.", true);
@@ -1766,33 +1772,60 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     private void CancelAddCustomer()
     {
         IsAddingCustomer = false;
-        SetStatus("No customer was added - the cart was not touched.", false);
+        SetStatus(_newCustomerSave.Ready ? "No customer was added - the cart was not touched."
+            : "The previous customer save needs verification. Cancel did not undo it; the cart was not cleared.", !_newCustomerSave.Ready);
     }
 
     private void SaveNewCustomer()
     {
+        if (!CanAddCustomer || !IsAddingCustomer)
+        {
+            SetStatus("Open the new customer form with current Customer access first.", true);
+            return;
+        }
         if (!NewCustomerEditor.LoadedSuccessfully)
         {
             SetStatus("Extra fields could not be loaded. Reopen the new customer form.", true);
             return;
         }
-        var saved = _services.Partners.CreateCustomer(_user, NewCustomerName, NewCustomerPhone, "normal", NewCustomerEditor.AnswerValues(), NewCustomerEditor.StagedPhotoForSave());
-
-        if (!saved.Ok)
+        if (!_newCustomerSave.TryBegin())
         {
-            SetStatus(saved.Error ?? "The customer could not be saved.", true);
+            SetStatus("Verify the previous customer creation before reopening Counter. Do not add it again.", true);
             return;
         }
-
-        // The cart stays exactly as it is; only the name on the bill changes. Reloading the list is
-        // what puts the new person in the box - the same list the khata page reads.
-        var name = NewCustomerName.Trim();
-        IsAddingCustomer = false;
-        LoadLookups();
-
-        SelectedCustomer = Customers.FirstOrDefault(person => person.Id == saved.Value) ?? SelectedCustomer;
-
-        SetStatus("Added " + name + " - the khata starts at zero. Pick them on a credit bill.", false);
+        try
+        {
+            var name = NewCustomerName.Trim();
+            var saved = _services.Partners.CreateCustomer(_user, NewCustomerName, NewCustomerPhone, "normal", NewCustomerEditor.AnswerValues(), NewCustomerEditor.StagedPhotoForSave());
+            if (!saved.Ok)
+            {
+                _newCustomerSave.ObserveFailure(saved);
+                SetStatus(saved.Error ?? "The customer save outcome is unconfirmed. Verify before retrying.", true);
+                return;
+            }
+            _newCustomerSave.AcknowledgeCommit();
+            IsAddingCustomer = false;
+            NewCustomerName = NewCustomerPhone = string.Empty;
+            NewCustomerEditor.LoadNew();
+            // Existing lookup refresh changes pickers,not the cart or its posting identity.
+            LoadLookups();
+            SelectedCustomer = Customers.FirstOrDefault(person => person.Id == saved.Value);
+            if (!_lastLookupsSucceeded || SelectedCustomer?.Id != saved.Value || !NewCustomerEditor.LoadedSuccessfully)
+            {
+                SetStatus("SAVED. Customer #" + saved.Value + " was created, but could not be selected. Verify the list and select the correct customer; do not add it again. The cart was not cleared.", true);
+                return;
+            }
+            SetStatus("Added " + name + " - the khata starts at zero. Pick them on a credit bill.", false);
+            _newCustomerSave.CompleteReset();
+        }
+        catch (Exception exception)
+        {
+            _newCustomerSave.ObserveException();
+            _services.Log.Error("Counter customer creation did not finish its UI flow.", exception);
+            SetStatus(_newCustomerSave.WasAcknowledged
+                ? "SAVED. The customer was created, but Counter did not finish refreshing. Verify before reopening; do not add it again. The cart was not cleared."
+                : "Customer save outcome is unconfirmed. Verify records and gallery before reopening; do not add it again. The cart was not cleared.", true);
+        }
     }
 
     private void SetStatus(string message, bool isError)

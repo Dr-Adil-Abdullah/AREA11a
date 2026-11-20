@@ -30,6 +30,8 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
         "Customers",
         searched: SearchText.Trim().Length > 0);
 
+    private readonly PostingAttemptGuard _newRecordSave = new();
+    private readonly PostingAttemptGuard _editRecordSave = new();
     private readonly AppServices _services;
     private readonly User _user;
     private readonly Action? _onChanged;
@@ -856,6 +858,11 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
     /// </summary>
     private void BeginAdd()
     {
+        if (!_newRecordSave.Ready)
+        {
+            SetStatus("Verify the previous customer creation before reopening this page. Do not add it again.", true);
+            return;
+        }
         if (!UpdateAccess()) return;
         if (!CanCollect)
         {
@@ -876,7 +883,8 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
     private void CancelAdd()
     {
         IsAdding = false;
-        SetStatus("No customer was added.", false);
+        SetStatus(_newRecordSave.Ready ? "No customer was added."
+            : "The previous customer save needs verification. Cancel did not undo it; do not add it again.", !_newRecordSave.Ready);
     }
 
     /// <summary>
@@ -887,45 +895,69 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
     private void SaveNew()
     {
         if (!UpdateAccess()) return;
-        if (!CanCollect)
+        if (!CanCollect || !IsAdding)
         {
-            SetStatus("You are not allowed to add customers.", true);
+            SetStatus("Open the new customer form with current Customer access first.", true);
             return;
         }
-
         if (!NewEditor.LoadedSuccessfully)
         {
             SetStatus("Extra fields could not be loaded. Reopen the new customer form.", true);
             return;
         }
-        var result = _services.Partners.CreateCustomer(_user, NewName, NewPhone, NewCategory, NewEditor.AnswerValues(), NewEditor.StagedPhotoForSave());
-
-        if (!result.Ok)
+        if (!_newRecordSave.TryBegin())
         {
-            SetStatus(result.Error ?? "The customer could not be saved.", true);
+            SetStatus("Verify the previous customer creation before reopening this page. Do not add it again.", true);
             return;
         }
-
-        var newId = result.Value;
-
-        IsAdding = false;
-
-        // Clear the filter, or the new person could be created and then hidden by the search text.
-        SearchText = string.Empty;
-        OnlyCredit = false;
-        Load();
-
-        Selected = Customers.FirstOrDefault(row => row.Id == newId) ?? Selected;
-        ShowCustomer();
-        _onChanged?.Invoke();
-
-        SetStatus("Added: " + NameText + ". The khata starts at zero.", false);
+        try
+        {
+            var result = _services.Partners.CreateCustomer(_user, NewName, NewPhone, NewCategory, NewEditor.AnswerValues(), NewEditor.StagedPhotoForSave());
+            if (!result.Ok)
+            {
+                _newRecordSave.ObserveFailure(result);
+                SetStatus(result.Error ?? "The customer save outcome is unconfirmed. Verify before retrying.", true);
+                return;
+            }
+            _newRecordSave.AcknowledgeCommit();
+            var newId = result.Value;
+            IsAdding = false;
+            NewName = NewPhone = string.Empty;
+            NewCategory = "Normal";
+            NewEditor.LoadNew();
+            SearchText = string.Empty;
+            OnlyCredit = false;
+            Load();
+            Selected = Customers.FirstOrDefault(row => row.Id == newId);
+            if (!_lastCustomerLoadSucceeded || Selected?.Id != newId || !NewEditor.LoadedSuccessfully)
+            {
+                SetStatus("SAVED. Customer #" + newId + " was created, but the form could not refresh. Verify the list before reopening this page; do not add it again.", true);
+                return;
+            }
+            ShowCustomer();
+            _onChanged?.Invoke();
+            SetStatus("Added: " + NameText + ". The khata starts at zero.", false);
+            _newRecordSave.CompleteReset();
+        }
+        catch (Exception exception)
+        {
+            _newRecordSave.ObserveException();
+            _services.Log.Error("Customer creation did not finish its UI flow.", exception);
+            SetStatus(_newRecordSave.WasAcknowledged
+                ? "SAVED. The customer was created, but the page did not finish. Verify the list before reopening this page; do not add it again."
+                : "Customer save outcome is unconfirmed. Verify records and gallery before reopening this page; do not add it again.", true);
+        }
     }
 
     // ---------------------------- correcting a customer ----------------------------
 
     private void BeginEdit()
     {
+        if (!_editRecordSave.Ready)
+        {
+            SetStatus("Verify the previous customer change before reopening this page. Do not repeat the save.", true);
+            return;
+        }
         if (!UpdateAccess()) return;
         if (Selected is null)
         {
@@ -995,40 +1027,60 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
             SetStatus("Extra fields could not be loaded. Reopen the customer editor.", true);
             return;
         }
-        var result = _services.Partners.UpdateCustomer(_user, edit, EditEditor.AnswerValues());
-
-        if (!result.Ok || result.Value is null)
+        if (!_editRecordSave.TryBegin())
         {
-            UpdateAccess();
-            SetStatus(result.Error ?? "The customer could not be saved.", true);
+            SetStatus("Verify the previous customer change before reopening this page. Do not repeat the save.", true);
             return;
         }
-
-        var saved = result.Value;
-        ClearEditForm();
         try
         {
-            Load();
-            ShowCustomer();
-            if (!_lastCustomerLoadSucceeded)
+            var result = _services.Partners.UpdateCustomer(_user, edit, EditEditor.AnswerValues());
+
+            if (!result.Ok || result.Value is null)
             {
+                if (!result.Ok) _editRecordSave.ObserveFailure(result);
+                else _editRecordSave.ObserveException();
+                UpdateAccess();
+                SetStatus(result.Error ?? "The customer could not be saved.", true);
+                return;
+            }
+
+            _editRecordSave.AcknowledgeCommit();
+            var saved = result.Value;
+            ClearEditForm();
+            try
+            {
+                Load();
+                ShowCustomer();
+                if (!_lastCustomerLoadSucceeded)
+                {
+                    SetStatus("SAVED. The customer change was stored, but the page could not refresh. Do not repeat the save; refresh to check.", true);
+                    return;
+                }
+                _onChanged?.Invoke();
+            }
+            catch (Exception exception)
+            {
+                _services.Log.Error("Customer edit was saved but its page could not refresh.", exception);
+                ClearSensitiveData();
                 SetStatus("SAVED. The customer change was stored, but the page could not refresh. Do not repeat the save; refresh to check.", true);
                 return;
             }
-            _onChanged?.Invoke();
+
+            var message = "Saved: " + saved.Name
+                          + (saved.LimitChanged ? ", limit " + saved.LimitLabel : string.Empty) + ".";
+
+            SetStatus(saved.HasWarning ? message + " " + saved.WarningText : message, false);
+            _editRecordSave.CompleteReset();
         }
         catch (Exception exception)
         {
-            _services.Log.Error("Customer edit was saved but its page could not refresh.", exception);
-            ClearSensitiveData();
-            SetStatus("SAVED. The customer change was stored, but the page could not refresh. Do not repeat the save; refresh to check.", true);
-            return;
+            _editRecordSave.ObserveException();
+            _services.Log.Error("Customer edit did not finish its UI flow.", exception);
+            SetStatus(_editRecordSave.WasAcknowledged
+                ? "SAVED. Customer changes were stored, but the page did not finish. Verify before reopening this page; do not repeat the save."
+                : "Customer save outcome is unconfirmed. Verify the record before reopening this page; do not repeat the save.", true);
         }
-
-        var message = "Saved: " + saved.Name
-                      + (saved.LimitChanged ? ", limit " + saved.LimitLabel : string.Empty) + ".";
-
-        SetStatus(saved.HasWarning ? message + " " + saved.WarningText : message, false);
     }
 
     public void RefreshAccess()

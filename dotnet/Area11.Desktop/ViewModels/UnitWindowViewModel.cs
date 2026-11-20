@@ -7,6 +7,7 @@ namespace Area11.Desktop.ViewModels;
 /// <summary>Small managed-unit editor. Core owns uniqueness, usage and audit rules.</summary>
 public sealed class UnitWindowViewModel : ObservableObject
 {
+    private readonly PostingAttemptGuard _recordSave = new();
     private readonly AppServices _services;
     private readonly User _user;
     private Unit? _selectedUnit;
@@ -169,31 +170,52 @@ public sealed class UnitWindowViewModel : ObservableObject
             return;
         }
 
-        int id;
-        if (SelectedUnit is null)
+        if (!_recordSave.TryBegin())
         {
-            var added = _services.Products.AddUnit(_user, Name, order, WholeOnly);
-            if (!added.Ok)
-            {
-                if (!RefreshAccess()) return;
-                SetStatus(added.Error ?? "The unit could not be saved.", true);
-                return;
-            }
-            id = added.Value;
+            SetStatus("Verify the previous catalog save before reopening this window. Do not repeat the save.", true);
+            return;
         }
-        else
+        try
         {
-            id = SelectedUnit.Id;
-            var updated = _services.Products.UpdateUnit(_user, id, Name, order, WholeOnly);
-            if (!updated.Ok)
+            int id;
+            if (SelectedUnit is null)
             {
-                if (!RefreshAccess()) return;
-                SetStatus(updated.Error ?? "The unit could not be saved.", true);
-                return;
+                var added = _services.Products.AddUnit(_user, Name, order, WholeOnly);
+                if (!added.Ok)
+                {
+                    _recordSave.ObserveFailure(added);
+                    if (!RefreshAccess()) return;
+                    SetStatus(added.Error ?? "The unit could not be saved.", true);
+                    return;
+                }
+                _recordSave.AcknowledgeCommit();
+                id = added.Value;
             }
+            else
+            {
+                id = SelectedUnit.Id;
+                var updated = _services.Products.UpdateUnit(_user, id, Name, order, WholeOnly);
+                if (!updated.Ok)
+                {
+                    _recordSave.ObserveFailure(updated);
+                    if (!RefreshAccess()) return;
+                    SetStatus(updated.Error ?? "The unit could not be saved.", true);
+                    return;
+                }
+                _recordSave.AcknowledgeCommit();
+            }
+            if (!ReloadAfterWrite(id)) return;
+            SetStatus("Unit saved. Current product labels use the canonical name; stock quantities are unchanged. The whole-unit rule follows the unit, not its name.", false);
+            _recordSave.CompleteReset();
         }
-        if (!ReloadAfterWrite(id)) return;
-        SetStatus("Unit saved. Current product labels use the canonical name; stock quantities are unchanged. The whole-unit rule follows the unit, not its name.", false);
+        catch (Exception exception)
+        {
+            _recordSave.ObserveException();
+            _services.Log.Error("Catalog save did not finish its UI flow.", exception);
+            SetStatus(_recordSave.WasAcknowledged
+                ? "SAVED. The catalog change was stored, but the form did not finish. Verify before reopening this window; do not repeat the save."
+                : "Catalog save outcome is unconfirmed. Verify before reopening this window; do not repeat the save.", true);
+        }
     }
 
     private void Toggle()
@@ -232,6 +254,11 @@ public sealed class UnitWindowViewModel : ObservableObject
 
     private bool RequireEdit()
     {
+        if (!_recordSave.Ready)
+        {
+            SetStatus("Verify the previous catalog save before reopening this window. Do not repeat the save.", true);
+            return false;
+        }
         if (!RefreshAccess()) return false;
         if (CanEdit) return true;
         SetStatus("Current Products Owner/Manager access and an explicit successful Refresh are required before editing.", true);

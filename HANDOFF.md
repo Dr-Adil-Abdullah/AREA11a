@@ -1,5 +1,10 @@
 # HANDOFF - read this first
 
+## ⏳ موجودہ حصہ3/14 — v0.121.0 Hawthorn
+
+نئےnextسےصرفحصہ3کیاجازتملی۔ Parent/quick-createاورCatalog/Unit Saveپرlocaloutcome/ack/checkedreloadguards؛مالیSQL/permissionsپالیسیبرقرار۔ ⏳72نئےC#cases/3035suiteیہاںUNRUN؛112static/45newlexicalnegative/30SQLfaults+1brandpartialprobe.NET/WPFثبوتنہیں۔ [⏳ جائزہ/PT-63](docs/PARENT-RECORD-SAVE-OUTCOME-REVIEW-URDU.md)؛[⏳14حصے](docs/REMAINING-14-PORTIONS-URDU.md)۔ حصہ2کے22failurefixesکانیاWindowsنتیجہبھیباقی؛حصہ4شروعنہیں۔ پرانا“حصہ3غیرمنظور”حوالہتاریخی؛FullPhase4OPEN/❌installerنہیںبنی۔
+
+
 ## ⏳ موجودہ حصہ2/14 — v0.120.2 Willow
 
 ✅ مالککےاصلv0.120.1WindowsrunسےCore/TestsDebugcompileثابت؛2963total/2941PASS/22FAIL/0skip۔ ⏳ان22ناکامیوںکی14testfilesمیںfixtureاصلاح؛productioncode/حساب/permissionsنہیںبدلے،2963casesبرقرار؛نیاWindowsrerunباقی۔ [⏳ نتیجہ/حدود](docs/WINDOWS-V1201-TEST-REPORT-REVIEW.md)؛[⏳14حصے](docs/REMAINING-14-PORTIONS-URDU.md)۔ حصہ3شروعنہیںکرنا؛صرفحصہ2کیاجازتملی۔ پرانے“حصہ1تصدیقباقی/حصہ2غیرمنظور”نوٹساببعدکیاسentryسےمتروک،پرانےrunhistoricalہیں۔

@@ -22,6 +22,8 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         "Products",
         searched: SearchText.Trim().Length > 0 || HasFilter);
 
+    private readonly PostingAttemptGuard _recordSave = new();
+    private readonly PostingAttemptGuard _quickCatalogSave = new();
     private readonly AppServices _services;
     private readonly User _user;
 
@@ -731,6 +733,11 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
 
     private void BeginNewProduct()
     {
+        if (!_recordSave.Ready || !_quickCatalogSave.Ready)
+        {
+            SetStatus("Verify the previous product save before reopening this page. Do not repeat the save.", true);
+            return;
+        }
         if (!_user.CanManage)
         {
             SetStatus("Only the owner or a manager can edit products.", true);
@@ -746,6 +753,11 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
 
     private void BeginEditProduct()
     {
+        if (!_recordSave.Ready || !_quickCatalogSave.Ready)
+        {
+            SetStatus("Verify the previous product save before reopening this page. Do not repeat the save.", true);
+            return;
+        }
         if (!_user.CanManage)
         {
             SetStatus("Only the owner or a manager can edit products.", true);
@@ -900,137 +912,171 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
     private void Save()
     {
         if (!RefreshEditorAccess()) return;
-        if (!Money.TryParse(CostText, out var cost) || !Money.TryParse(RetailText, out var retail)
-            || !Money.TryParse(VipText, out var vip) || !Money.TryParse(DoctorText, out var doctor))
+        if (!_quickCatalogSave.Ready)
         {
-            SetStatus("Rates must be numbers in rupees (for example 245.50).", true);
+            SetStatus("Verify the previous quick catalog creation before reopening this page. Do not repeat the save.", true);
             return;
         }
-
-        if (!int.TryParse(BoxStripsText, out var boxStrips) || !int.TryParse(StripTabletsText, out var stripTablets))
+        if (!_recordSave.TryBegin())
         {
-            SetStatus("The pack formula must be whole numbers.", true);
+            SetStatus("Verify the previous product save before reopening this page. Do not repeat the save.", true);
             return;
         }
-
-        if (!double.TryParse(ReorderText, out var reorder))
-        {
-            reorder = 0;
-        }
-
-        if (!Qty.TryParse(StrengthText, out var strength) || !double.IsFinite(strength) || strength < 0)
-        {
-            SetStatus("Strength must be a number of zero or more, for example 50 with unit ml.", true);
-            return;
-        }
-        if (strength > 0 && string.IsNullOrWhiteSpace(StrengthUnit))
-        {
-            SetStatus("Choose a managed unit for the strength.", true);
-            return;
-        }
-
-        var patch = new ProductPatch
-        {
-            Name = Name,
-            Generic = Generic,
-            Brand = Brand,
-            Barcode = Barcode,
-            CategoryId = SelectedCategory?.Id,
-            CategoryTagIds = CategoryTagOptions.Where(option => option.IsSelected && option.Id != SelectedCategory?.Id)
-                .Select(option => option.Id).Distinct().ToList(),
-            CompanyId = SelectedCompany?.Id,
-            GenericFormulaId = _formulaLinkId,
-            BrandId = _brandLinkId,
-            ClearGenericFormula = _unlinkFormula,
-            ClearBrand = _unlinkBrand,
-            PreferredSupplierId = _preferredSupplierId,
-            ClearPreferredSupplier = _clearPreferredSupplier,
-            RackNo = RackNo,
-            Room = Room,
-            PackSizeLabel = PackSizeLabel,
-            BaseUnit = BaseUnit,
-            StrengthValue = strength,
-            StrengthUnit = strength > 0 ? StrengthUnit : string.Empty,
-            BoxStrips = boxStrips,
-            StripTablets = stripTablets,
-            CostPaisa = Money.ToPaisa(cost),
-            RetailPaisa = Money.ToPaisa(retail),
-            VipPaisa = Money.ToPaisa(vip),
-            DoctorPaisa = Money.ToPaisa(doctor),
-            ReorderLevel = reorder
-        };
-
-        if (!Editor.LoadedSuccessfully)
-        {
-            SetStatus("Extra fields could not be loaded. Reopen the editor before saving.", true);
-            return;
-        }
-        // Warn-once (v0.70.0, owner's word): the necessary fields are named, and saving anyway
-        // stays one press. This asks on every Save press - never more than once per press.
-        var missing = _services.Products.MissingRequiredLabels(patch);
-        if (missing.Count > 0)
-        {
-            var answer = MessageBox.Show(
-                "These are marked necessary in Settings, Fields: " + string.Join(", ", missing)
-                + ".\n\nSave anyway?",
-                AppDisplayName, MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
-            if (answer != MessageBoxResult.Yes)
-            {
-                SetStatus("Not saved - fill the necessary fields, or press Save and choose Save anyway.", false);
-                return;
-            }
-        }
-
-        if (!RefreshEditorAccess()) return;
-        var answers = Editor.AnswerValues();
-        var isNew = _editingId is null;
-        IReadOnlyList<string> saveWarnings = Array.Empty<string>();
-        if (isNew)
-        {
-            var created = _services.Products.Create(_user, patch, answers, Editor.StagedPhotoForSave());
-            saveWarnings = created.Warnings;
-            if (!created.Ok || created.Value <= 0)
-            {
-                if (!RefreshEditorAccess()) return;
-                SetStatus(created.Error ?? "The product could not be saved.", true);
-                return;
-            }
-            _editingId = created.Value;
-            // The committed ID is pinned before attempting any UI refresh.
-        }
-        else
-        {
-            var updated = _services.Products.Update(_user, _editingId!.Value, patch, answers);
-            if (!updated.Ok)
-            {
-                if (!RefreshEditorAccess()) return;
-                SetStatus(updated.Error ?? "The product could not be saved.", true);
-                return;
-            }
-        }
-
+        var writeStarted = false;
         try
         {
-            Editor.Load(_editingId!.Value);
-            OnPropertyChanged(nameof(HeaderText));
-            Load();
-            if (!RefreshEditorAccess())
+            if (!Money.TryParse(CostText, out var cost) || !Money.TryParse(RetailText, out var retail)
+                || !Money.TryParse(VipText, out var vip) || !Money.TryParse(DoctorText, out var doctor))
             {
-                SetStatus("SAVED. Product changes were stored, but current editor access changed. Close, refresh and reopen; do not repeat the save.", true);
+                SetStatus("Rates must be numbers in rupees (for example 245.50).", true);
                 return;
             }
-            var warningText = saveWarnings.Count > 0 ? " ⚠ " + string.Join(" ", saveWarnings) : string.Empty;
-            if (!Editor.LoadedSuccessfully || !_lastProductLoadSucceeded)
+
+            if (!int.TryParse(BoxStripsText, out var boxStrips) || !int.TryParse(StripTabletsText, out var stripTablets))
             {
-                InvalidateEditor("SAVED. Product and extra fields were stored, but could not refresh. Do not repeat the save; close, refresh and reopen.");
+                SetStatus("The pack formula must be whole numbers.", true);
                 return;
             }
-            SetStatus("Product and extra fields saved." + warningText, saveWarnings.Count > 0);
+
+            if (!double.TryParse(ReorderText, out var reorder))
+            {
+                reorder = 0;
+            }
+
+            if (!Qty.TryParse(StrengthText, out var strength) || !double.IsFinite(strength) || strength < 0)
+            {
+                SetStatus("Strength must be a number of zero or more, for example 50 with unit ml.", true);
+                return;
+            }
+            if (strength > 0 && string.IsNullOrWhiteSpace(StrengthUnit))
+            {
+                SetStatus("Choose a managed unit for the strength.", true);
+                return;
+            }
+
+            var patch = new ProductPatch
+            {
+                Name = Name,
+                Generic = Generic,
+                Brand = Brand,
+                Barcode = Barcode,
+                CategoryId = SelectedCategory?.Id,
+                CategoryTagIds = CategoryTagOptions.Where(option => option.IsSelected && option.Id != SelectedCategory?.Id)
+                    .Select(option => option.Id).Distinct().ToList(),
+                CompanyId = SelectedCompany?.Id,
+                GenericFormulaId = _formulaLinkId,
+                BrandId = _brandLinkId,
+                ClearGenericFormula = _unlinkFormula,
+                ClearBrand = _unlinkBrand,
+                PreferredSupplierId = _preferredSupplierId,
+                ClearPreferredSupplier = _clearPreferredSupplier,
+                RackNo = RackNo,
+                Room = Room,
+                PackSizeLabel = PackSizeLabel,
+                BaseUnit = BaseUnit,
+                StrengthValue = strength,
+                StrengthUnit = strength > 0 ? StrengthUnit : string.Empty,
+                BoxStrips = boxStrips,
+                StripTablets = stripTablets,
+                CostPaisa = Money.ToPaisa(cost),
+                RetailPaisa = Money.ToPaisa(retail),
+                VipPaisa = Money.ToPaisa(vip),
+                DoctorPaisa = Money.ToPaisa(doctor),
+                ReorderLevel = reorder
+            };
+
+            if (!Editor.LoadedSuccessfully)
+            {
+                SetStatus("Extra fields could not be loaded. Reopen the editor before saving.", true);
+                return;
+            }
+            // Warn-once (v0.70.0, owner's word): the necessary fields are named, and saving anyway
+            // stays one press. This asks on every Save press - never more than once per press.
+            var missing = _services.Products.MissingRequiredLabels(patch);
+            if (missing.Count > 0)
+            {
+                var answer = MessageBox.Show(
+                    "These are marked necessary in Settings, Fields: " + string.Join(", ", missing)
+                    + ".\n\nSave anyway?",
+                    AppDisplayName, MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
+                if (answer != MessageBoxResult.Yes)
+                {
+                    SetStatus("Not saved - fill the necessary fields, or press Save and choose Save anyway.", false);
+                    return;
+                }
+            }
+
+            if (!RefreshEditorAccess()) return;
+            var answers = Editor.AnswerValues();
+            var isNew = _editingId is null;
+            IReadOnlyList<string> saveWarnings = Array.Empty<string>();
+            if (isNew)
+            {
+                writeStarted = true;
+                var created = _services.Products.Create(_user, patch, answers, Editor.StagedPhotoForSave());
+                saveWarnings = created.Warnings;
+                if (!created.Ok || created.Value <= 0)
+                {
+                    if (!created.Ok) _recordSave.ObserveFailure(created);
+                    else _recordSave.ObserveException(); // Malformed success is not a safe retry.
+                    if (!RefreshEditorAccess()) return;
+                    SetStatus(created.Error ?? "The product could not be saved.", true);
+                    return;
+                }
+                _recordSave.AcknowledgeCommit();
+                _editingId = created.Value;
+                // The committed ID is pinned before attempting any UI refresh.
+            }
+            else
+            {
+                writeStarted = true;
+                var updated = _services.Products.Update(_user, _editingId!.Value, patch, answers);
+                if (!updated.Ok)
+                {
+                    _recordSave.ObserveFailure(updated);
+                    if (!RefreshEditorAccess()) return;
+                    SetStatus(updated.Error ?? "The product could not be saved.", true);
+                    return;
+                }
+                _recordSave.AcknowledgeCommit();
+            }
+
+            try
+            {
+                Editor.Load(_editingId!.Value);
+                OnPropertyChanged(nameof(HeaderText));
+                Load();
+                if (!RefreshEditorAccess())
+                {
+                    SetStatus("SAVED. Product changes were stored, but current editor access changed. Close, refresh and reopen; do not repeat the save.", true);
+                    return;
+                }
+                var warningText = saveWarnings.Count > 0 ? " ⚠ " + string.Join(" ", saveWarnings) : string.Empty;
+                if (!Editor.LoadedSuccessfully || !_lastProductLoadSucceeded)
+                {
+                    InvalidateEditor("SAVED. Product and extra fields were stored, but could not refresh. Do not repeat the save; close, refresh and reopen.");
+                    return;
+                }
+                SetStatus("Product and extra fields saved." + warningText, saveWarnings.Count > 0);
+                _recordSave.CompleteReset();
+            }
+            catch (Exception exception)
+            {
+                _services.Log.Error("Product was saved but its editor could not refresh.", exception);
+                InvalidateEditor("SAVED. Product changes were stored, but could not refresh. Do not repeat the save; close, refresh and reopen.");
+            }
         }
         catch (Exception exception)
         {
-            _services.Log.Error("Product was saved but its editor could not refresh.", exception);
-            InvalidateEditor("SAVED. Product changes were stored, but could not refresh. Do not repeat the save; close, refresh and reopen.");
+            _recordSave.ObserveException();
+            _services.Log.Error("Product save did not finish its UI flow.", exception);
+            SetStatus(_recordSave.WasAcknowledged
+                ? "SAVED. Product changes were stored, but the editor did not finish. Verify the record before reopening this page; do not repeat the save."
+                : "Product save outcome is unconfirmed. Verify records and gallery before reopening this page; do not repeat the save.", true);
+        }
+        finally
+        {
+            if (!writeStarted && _recordSave.InFlight) _recordSave.CancelBeforeWrite();
         }
     }
 
@@ -1226,50 +1272,35 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
 
     private void AddCategory()
     {
-        var result = _services.Products.AddCategory(_user, NewCategoryName);
-        if (!result.Ok)
+        SaveQuickCatalog(() => _services.Products.AddCategory(_user, NewCategoryName), id =>
         {
-            SetStatus(result.Error ?? "The category could not be saved.", true);
-            return;
-        }
-
-        var id = result.Value;
-        NewCategoryName = string.Empty;
-        LoadLookups();
-        SelectedCategory = Categories.FirstOrDefault(c => c.Id == id);
-        SetStatus("Category added.", false);
+            NewCategoryName = string.Empty;
+            LoadLookups();
+            SelectedCategory = Categories.FirstOrDefault(row => row.Id == id);
+            return SelectedCategory?.Id == id;
+        }, "Category");
     }
 
     private void AddFormula()
     {
-        var result = _services.Products.AddFormula(_user, NewFormulaName);
-        if (!result.Ok)
+        SaveQuickCatalog(() => _services.Products.AddFormula(_user, NewFormulaName), id =>
         {
-            SetStatus(result.Error ?? "The salt could not be saved.", true);
-            return;
-        }
-
-        var id = result.Value;
-        NewFormulaName = string.Empty;
-        LoadLookups();
-        SelectedFormula = Formulas.FirstOrDefault(c => c.Id == id);
-        SetStatus("Salt added and picked.", false);
+            NewFormulaName = string.Empty;
+            LoadLookups();
+            SelectedFormula = Formulas.FirstOrDefault(row => row.Id == id);
+            return SelectedFormula?.Id == id;
+        }, "Salt");
     }
 
     private void AddBrand()
     {
-        var result = _services.Products.AddBrand(_user, NewBrandName);
-        if (!result.Ok)
+        SaveQuickCatalog(() => _services.Products.AddBrand(_user, NewBrandName), id =>
         {
-            SetStatus(result.Error ?? "The brand could not be saved.", true);
-            return;
-        }
-
-        var id = result.Value;
-        NewBrandName = string.Empty;
-        LoadLookups();
-        SelectedBrand = Brands.FirstOrDefault(c => c.Id == id);
-        SetStatus("Brand added and picked.", false);
+            NewBrandName = string.Empty;
+            LoadLookups();
+            SelectedBrand = Brands.FirstOrDefault(row => row.Id == id);
+            return SelectedBrand?.Id == id;
+        }, "Brand");
     }
 
     private void UnlinkFormula()
@@ -1359,18 +1390,49 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
 
     private void AddCompany()
     {
-        var result = _services.Products.AddCompany(_user, NewCompanyName);
-        if (!result.Ok)
+        SaveQuickCatalog(() => _services.Products.AddCompany(_user, NewCompanyName), id =>
         {
-            SetStatus(result.Error ?? "The company could not be saved.", true);
+            NewCompanyName = string.Empty;
+            LoadLookups();
+            SelectedCompany = Companies.FirstOrDefault(row => row.Id == id);
+            return SelectedCompany?.Id == id;
+        }, "Company");
+    }
+
+    private void SaveQuickCatalog(Func<ServiceResult<int>> create, Func<int, bool> consume, string label)
+    {
+        if (!RefreshEditorAccess()) return;
+        if (!_recordSave.Ready || !_quickCatalogSave.TryBegin())
+        {
+            SetStatus("Verify the previous record save before reopening this page. Do not repeat the quick creation.", true);
             return;
         }
-
-        var id = result.Value;
-        NewCompanyName = string.Empty;
-        LoadLookups();
-        SelectedCompany = Companies.FirstOrDefault(c => c.Id == id);
-        SetStatus("Company added.", false);
+        try
+        {
+            var result = create();
+            if (!result.Ok)
+            {
+                _quickCatalogSave.ObserveFailure(result);
+                SetStatus(result.Error ?? "Catalog save outcome is unconfirmed. Verify before retrying.", true);
+                return;
+            }
+            _quickCatalogSave.AcknowledgeCommit();
+            if (!consume(result.Value))
+            {
+                SetStatus("SAVED. " + label + " #" + result.Value + " was created, but could not be selected. Verify before reopening this page; do not add it again.", true);
+                return;
+            }
+            SetStatus(label + " added and picked.", false);
+            _quickCatalogSave.CompleteReset();
+        }
+        catch (Exception exception)
+        {
+            _quickCatalogSave.ObserveException();
+            _services.Log.Error("Quick catalog creation did not finish its UI flow.", exception);
+            SetStatus(_quickCatalogSave.WasAcknowledged
+                ? "SAVED. The catalog record was created, but could not refresh. Verify before reopening this page; do not add it again."
+                : "Catalog save outcome is unconfirmed. Verify before reopening this page; do not add it again.", true);
+        }
     }
 
     private string? ResolvePhotoPath(Product product) =>

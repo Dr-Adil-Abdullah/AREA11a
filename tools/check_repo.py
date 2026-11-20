@@ -6260,6 +6260,81 @@ def check_windows_v1201_regressions() -> None:
     REPORT.append('v0.120.1 owner Windows22-failure fixture guards:checked Settings/current identities/explicit denials/stored names/pre-fault services/schema-valid marker;new C# rerun required')
 
 
+def check_parent_record_save_outcomes() -> None:
+    """Bounded form guards and per-call observations;not runtime or durable deduplication."""
+    def read(path): return (DOTNET / path).read_text()
+    def method(source, signature):
+        if signature not in source:
+            FAILURES.append('Parent save method missing: ' + signature); return ''
+        return re.split(r'\n    (?:public|private|internal) ', source.split(signature,1)[1],1)[0]
+    def need(text, token):
+        if token not in text: FAILURES.append('Parent save outcome contract missing: ' + token)
+    product = read('Area11.Core/Services/ProductService.cs'); partners = read('Area11.Core/Services/PartnerService.cs')
+    for name, source, signature in (
+        ('product',product,'public ServiceResult<int> Create('),
+        ('customer',partners,'public ServiceResult<int> CreateCustomer('),
+        ('supplier',partners,'public ServiceResult<int> CreateSupplier(')):
+        t = method(source, signature)
+        for token in ('ServiceResult<int> Refuse(string error) => new() { Error = error, NoCommitConfirmed = true };',
+                      '}, outcome);', 'NoCommitConfirmed = outcome.NoCommitConfirmed'):
+            need(t,token)
+        if t.rfind('return Refuse(') > t.find('_db.Tx('): FAILURES.append('Only prewrite creator refusals may be unconditionally retryable: ' + name)
+    observed = ['Update','AddCategory','UpdateCategory','AddCompany','UpdateCompany','AddFormula','UpdateFormula','AddBrand','UpdateBrand','AddUnit','UpdateUnit','SetBrandCompany']
+    for name in observed + ['UpdateCustomer']:
+        source = partners if name == 'UpdateCustomer' else product
+        match = re.search(r'public ServiceResult(?:<[^>]+>)? '+name+r'\(',source)
+        t = method(source,match[0]) if match else ''
+        for token in ('var outcome = new TransactionOutcome();','Error = outcome.NoCommitConfirmed ? error',
+                      'NoCommitConfirmed = outcome.NoCommitConfirmed','}, outcome);','catch (ValidationException exception)'):
+            need(t,token)
+        if re.search(r'ServiceResult(?:<[^>]+>)?\.Fail\(',t): FAILURES.append('Unobserved failure in parent/catalog save: '+name)
+        if 'NoCommitConfirmed = true' in t: FAILURES.append('Observed save must not assume no commit: '+name)
+    for name, action, guard, call, refresh in (
+        ('Products','Save','_recordSave','_services.Products.Create(','Editor.Load(_editingId!.Value);'),
+        ('Customers','SaveNew','_newRecordSave','_services.Partners.CreateCustomer(','NewEditor.LoadNew();'),
+        ('Customers','SaveEdit','_editRecordSave','_services.Partners.UpdateCustomer(','ClearEditForm();'),
+        ('Pos','SaveNewCustomer','_newCustomerSave','_services.Partners.CreateCustomer(','NewCustomerEditor.LoadNew();'),
+        ('Purchases','AddSupplier','_newSupplierSave','_services.Partners.CreateSupplier(','NewSupplierEditor.LoadNew();'),
+        ('Products','SaveQuickCatalog','_quickCatalogSave','var result = create();','if (!consume(result.Value))')):
+        vm = read('Area11.Desktop/ViewModels/'+name+'ViewModel.cs'); t = method(vm,'private void '+action+'(')
+        for token in (guard+'.TryBegin()',guard+'.ObserveFailure(',guard+'.AcknowledgeCommit();',guard+'.CompleteReset();',
+                      guard+'.ObserveException();',guard+'.WasAcknowledged', 'SAVED.', 'unconfirmed'):
+            need(t,token)
+        if not 0 <= t.find(guard+'.TryBegin()') < t.find(call) < t.find(guard+'.AcknowledgeCommit();') < t.rfind(refresh) < t.rfind(guard+'.CompleteReset();'):
+            FAILURES.append('Save observation/ack/cleanup order: '+name+'.'+action)
+        if vm.count(guard+'.CompleteReset();') != 1: FAILURES.append('Guard may reset only in its successful consumed flow: '+name+guard)
+        if vm.count(guard+' = new') != 1: FAILURES.append('Do not reconstruct a save guard on refresh: '+guard)
+    products = read('Area11.Desktop/ViewModels/ProductsViewModel.cs')
+    for token in ('if (!writeStarted && _recordSave.InFlight) _recordSave.CancelBeforeWrite();','if (!_quickCatalogSave.Ready)',
+                  '_editingId = created.Value;','else _recordSave.ObserveException();'):
+        need(products,token)
+    for name in ('Category','Company','Formula','Brand'):
+        need(method(products,'private void Add'+name+'('), 'SaveQuickCatalog(() => _services.Products.Add'+name+'(')
+    for name,actions in (('Catalog',['SaveCategory','SaveCompany','SaveFormula','SaveBrand']),('Unit',['Save'])):
+        vm = read('Area11.Desktop/ViewModels/'+name+'WindowViewModel.cs')
+        for action in actions:
+            t = method(vm,'private void '+action+'(')
+            for token in ('_recordSave.TryBegin()', '_recordSave.ObserveFailure(added);','_recordSave.ObserveFailure(updated);',
+                          '_recordSave.AcknowledgeCommit();','_recordSave.CompleteReset();','_recordSave.ObserveException();',
+                          '_recordSave.WasAcknowledged','ReloadAfterWrite('): need(t,token)
+            if t.rfind('_recordSave.CompleteReset();') < t.rfind('ReloadAfterWrite('): FAILURES.append('Catalog reset precedes checked reload: '+action)
+        need(method(vm,'private bool RequireEdit('), 'if (!_recordSave.Ready)')
+        if vm.count('_recordSave.CompleteReset();') != len(actions): FAILURES.append('Catalog guard reset outside successful Save path: '+name)
+    brand = method(read('Area11.Desktop/ViewModels/CatalogWindowViewModel.cs'),'private void SaveBrand(')
+    for token in ('SetStatus(linked.NoCommitConfirmed','the company link outcome is unconfirmed','Do not repeat the whole save;'): need(brand,token)
+    for name,action,forbidden in (('Pos','SaveNewCustomer',('Cart.Clear(', 'ClearCart(', '_draftSaveNeedsVerification =')),
+                                  ('Purchases','AddSupplier',('Lines.Clear(', 'ClearForm(', '_draftSaveNeedsVerification ='))):
+        t = method(read('Area11.Desktop/ViewModels/'+name+'ViewModel.cs'),'private void '+action+'(')
+        if any(x in t for x in forbidden): FAILURES.append('Quick parent creation must not consume its financial document: '+name)
+    tests = read('Area11.Tests/RecordSaveOutcomeTests.cs')
+    for token in ('AuditFaultRollsBackEveryParentAndAllowsOneLocalRetry','ValidationRefusalIsConfirmedAndDoesNotStrandAnOrdinaryCorrection',
+                  'AcknowledgedSaveCannotBeReenteredAfterSimulatedRefreshFailure','SyntheticFormObservationsNeverReleaseUnverifiedWork',
+                  'Assert.Equal(before, f.Snapshot());','Assert.True(failed.NoCommitConfirmed);', 'Assert.False(guard.TryBegin());'):
+        need(tests,token)
+    if tests.count('[InlineData(') != 72: FAILURES.append('Parent Save outcome regression matrix must retain72 written cases')
+    REPORT.append('Parent/quick-create Save:16 observed Core operations,11 guarded UI flows with retained outcome/ack reset gates,72 written C# cases;NOT execution/durable retry/session proof')
+
+
 def check_csharp_grammar() -> None:
     """Every C# file must parse, and every `Type.Member` must be a member that type declares.
 
@@ -8271,7 +8346,7 @@ def check_catalog_current_boundaries():
     for token in ('categoryId is null || SelectedCategory?.Id == categoryId', 'companyId is null || SelectedCompany?.Id == companyId',
                   'formulaId is null || SelectedFormula?.Id == formulaId', 'brandId is null || SelectedBrand?.Id == brandId',
                   'SAVED. Brand saved, but the company link failed:',
-                  'the company link failed and the lists could not reload. Do not repeat the whole save;'):
+                  'the company link and lists need verification. Do not repeat the whole save;'):
         if token not in catalog: FAILURES.append('Catalog postcommit target/partial verdict missing ' + token)
     if 'SelectedUnit?.Id == id && RefreshAccess() && _lastLoadSucceeded' not in unit:
         FAILURES.append('Unit postcommit target/access must match')
@@ -9048,6 +9123,7 @@ def main() -> int:
     check_ledger_outcome_fault_boundaries()
     check_document_field_expense_reader()
     check_windows_v1201_regressions()
+    check_parent_record_save_outcomes()
     check_csharp_grammar()
 
     if not quiet:
