@@ -82,7 +82,8 @@ public sealed class CustomFieldService
 
         try
         {
-            using var connection = _db.Open();
+            return _db.Snapshot(connection =>
+            {
             var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, module);
             if (manage || includeInactive) OwnerAccess.Require(_db, connection, reader);
 
@@ -95,7 +96,9 @@ WHERE entity = @entity AND (@includeInactive = 1 OR active = 1)
 ORDER BY sort, id;",
                 new { entity = key, includeInactive = includeInactive ? 1 : 0 });
 
+            if (manage || includeInactive) EditConcurrency.AttachDefinitions(_db, connection, key, rows);
             return ServiceResult<List<CustomField>>.Success(rows);
+            });
         }
         catch (ValidationException exception)
         {
@@ -224,7 +227,7 @@ VALUES(@entity, NULL, @label, @type, @optionsJson, @helpText, @required, 1, @sor
         string? type,
         string? optionsText,
         bool required,
-        string? helpText = null)
+        string? helpText = null, EditVersion? expected = null)
     {
         if (user is null || !user.IsOwner || !user.Active || user.Id <= 0)
         {
@@ -250,6 +253,7 @@ VALUES(@entity, NULL, @label, @type, @optionsJson, @helpText, @required, 1, @sor
             return _db.Tx(connection =>
             {
                 var owner = OwnerAccess.Require(_db, connection, user);
+                EditConcurrency.Require(_db, connection, EditConcurrency.CustomField, fieldId, expected);
                 var field = ReadField(connection, fieldId);
 
                 if (field is null)
@@ -323,7 +327,7 @@ WHERE id = @id;",
     }
 
     /// <summary>Switches a field off or on. The answers are never touched (D-00b).</summary>
-    public ServiceResult SetActive(User? user, int fieldId, bool active)
+    public ServiceResult SetActive(User? user, int fieldId, bool active, EditVersion? expected = null)
     {
         if (user is null || !user.IsOwner || !user.Active || user.Id <= 0)
         {
@@ -335,6 +339,7 @@ WHERE id = @id;",
             return _db.Tx(connection =>
             {
                 var owner = OwnerAccess.Require(_db, connection, user);
+                EditConcurrency.Require(_db, connection, EditConcurrency.CustomField, fieldId, expected);
                 var field = ReadField(connection, fieldId);
 
                 if (field is null)
@@ -371,7 +376,7 @@ WHERE id = @id;",
     }
 
     /// <summary>Moves a field one place up (-1) or down (+1) - the order the form asks its questions.</summary>
-    public ServiceResult Move(User? user, int fieldId, int direction)
+    public ServiceResult Move(User? user, int fieldId, int direction, EditVersion? expected = null)
     {
         if (user is null || !user.IsOwner || !user.Active || user.Id <= 0)
         {
@@ -388,6 +393,7 @@ WHERE id = @id;",
             return _db.Tx(connection =>
             {
                 var owner = OwnerAccess.Require(_db, connection, user);
+                EditConcurrency.Require(_db, connection, EditConcurrency.CustomField, fieldId, expected);
                 var field = ReadField(connection, fieldId);
 
                 if (field is null)
@@ -443,6 +449,29 @@ ORDER BY sort, id;", new { entity = field.Entity });
         }
     }
 
+    public ServiceResult<ExtraFieldsSnapshot> EditorSnapshot(User actor, string entity, int id)
+    {
+        if (!CustomFieldEntity.IsKnown(entity) || id <= 0)
+            return ServiceResult<ExtraFieldsSnapshot>.Fail("Choose a supported saved record.");
+        try
+        {
+            return _db.Snapshot(connection =>
+            {
+                var fields = List(actor, entity);
+                if (!fields.Ok || fields.Value is null) return ServiceResult<ExtraFieldsSnapshot>.Fail(fields.Error ?? "Fields could not be loaded.");
+                var answers = Values(actor, entity, id);
+                if (!answers.Ok || answers.Value is null) return ServiceResult<ExtraFieldsSnapshot>.Fail(answers.Error ?? "Answers could not be loaded.");
+                return ServiceResult<ExtraFieldsSnapshot>.Success(new ExtraFieldsSnapshot
+                { Fields = fields.Value, Answers = answers.Value, Version = EditConcurrency.Capture(_db, connection, "answers:" + CustomFieldEntity.Clean(entity), id) });
+            });
+        }
+        catch (Exception exception)
+        {
+            _log.Error("Extra-field editor snapshot failed.", exception);
+            return ServiceResult<ExtraFieldsSnapshot>.Fail("Fields and answers could not be read together. Refresh before editing.");
+        }
+    }
+
     /// <summary>The saved answers of one record, by field id. A field with no answer is simply absent.</summary>
     public ServiceResult<Dictionary<int, string>> Values(User? user, string entity, int entityId)
     {
@@ -461,7 +490,8 @@ ORDER BY sort, id;", new { entity = field.Entity });
 
         try
         {
-            using var connection = _db.Open();
+            return _db.Snapshot(connection =>
+            {
             var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, CustomFieldEntity.ModuleFor(key));
             RequireValueRecord(connection, key, entityId);
 
@@ -483,6 +513,7 @@ WHERE entity = @entity AND entity_id = @entityId;",
             }
 
             return ServiceResult<Dictionary<int, string>>.Success(answers);
+            });
         }
         catch (ValidationException exception)
         {
@@ -553,7 +584,7 @@ ORDER BY IFNULL(f.sort, 0), v.field_id;",
         User? user,
         string entity,
         int entityId,
-        IReadOnlyDictionary<int, string?> values)
+        IReadOnlyDictionary<int, string?> values, EditVersion? expected = null)
     {
         if (!CustomFieldEntity.IsKnown(entity))
         {
@@ -572,6 +603,7 @@ ORDER BY IFNULL(f.sort, 0), v.field_id;",
             return _db.Tx(connection =>
             {
                 var reader = SnapshotReadAccess.Require(_db, connection, _permissions, user, CustomFieldEntity.ModuleFor(key));
+                EditConcurrency.Require(_db, connection, "answers:" + key, entityId, expected);
                 return SaveValuesInTransaction(connection, reader, key, entityId, values);
             });
         }

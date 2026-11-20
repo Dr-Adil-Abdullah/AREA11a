@@ -115,6 +115,12 @@ LIMIT 1;",
 
             var id = _db.Tx(connection =>
             {
+                // The early lookup is only a friendly preflight. Recheck after BEGIN IMMEDIATE:
+                // two pages/connections must not both pass the preflight and create the same phone.
+                if (cleanPhone is not null && _db.QuerySingle<string>(connection,
+                    "SELECT name FROM customers WHERE active=1 AND IFNULL(phone,'')=@phone LIMIT 1;",
+                    new { phone = cleanPhone }) is { } existingPhoneOwner)
+                    throw new ValidationException("That phone number already belongs to " + existingPhoneOwner + ". Open that customer or leave the phone empty.");
                 if (cleanPhone is null && NativeFieldPolicyService.IsRequired(_db, connection, "customer.phone"))
                     throw new ValidationException("Customer phone is required by the owner's field settings.");
                 _db.Execute(connection, @"
@@ -176,7 +182,7 @@ VALUES(@name, @phone, @category, 0, 0, 0, 1, 1, @at);",
     ///     customers share, is the owner's business: it is saved and said out loud (U-30 spirit).
     /// </summary>
     public ServiceResult<CustomerEditResult> UpdateCustomer(User actor, CustomerEditInput input,
-        IReadOnlyDictionary<int, string?>? customValues = null)
+        IReadOnlyDictionary<int, string?>? customValues = null, EditVersion? expected = null)
     {
         var outcome = new TransactionOutcome();
         ServiceResult<CustomerEditResult> Refuse(string error) => new()
@@ -214,6 +220,7 @@ VALUES(@name, @phone, @category, 0, 0, 0, 1, 1, @at);",
             return _db.Tx(connection =>
             {
                 actor = SnapshotReadAccess.Require(_db, connection, new PermissionService(_db, _log, _audit), actor, Modules.Customers);
+                EditConcurrency.Require(_db, connection, EditConcurrency.Customer, input.Id, expected);
                 var result = SaveCustomer(connection, actor, input, name, phone, category);
                 if (!result.Ok || customValues is null) return result;
                 var custom = new CustomFieldService(_db, _audit, new PermissionService(_db, _log, _audit), _log);
@@ -230,6 +237,30 @@ VALUES(@name, @phone, @category, 0, 0, 0, 1, 1, @at);",
         {
             _log.Error("The customer " + input.Id + " could not be updated.", exception);
             return Refuse("The customer could not be saved. Nothing was changed.");
+        }
+    }
+
+    public ServiceResult<RecordEditForm<Customer>> LoadCustomerEditForm(User actor, int id)
+    {
+        try
+        {
+            return _db.Snapshot(connection =>
+            {
+                var permissions = new PermissionService(_db, _log, _audit);
+                SnapshotReadAccess.Require(_db, connection, permissions, actor, Modules.Customers);
+                var record = _db.QuerySingle<Customer>(connection,
+                    "SELECT id,name,phone,category,credit_limit_paisa,photo,active FROM customers WHERE id=@id AND active=1;", new { id });
+                if (record is null) return ServiceResult<RecordEditForm<Customer>>.Fail("That customer is no longer active. Refresh the list.");
+                var extra = new CustomFieldService(_db, _audit, permissions, _log).EditorSnapshot(actor, CustomFieldEntity.Customer, id);
+                if (!extra.Ok || extra.Value is null) return ServiceResult<RecordEditForm<Customer>>.Fail(extra.Error ?? "Extra fields could not be loaded.");
+                return ServiceResult<RecordEditForm<Customer>>.Success(new RecordEditForm<Customer>
+                { Record = record, Extra = extra.Value, Version = EditConcurrency.Capture(_db, connection, EditConcurrency.Customer, id) });
+            });
+        }
+        catch (Exception exception)
+        {
+            _log.Error("Customer editor snapshot failed.", exception);
+            return ServiceResult<RecordEditForm<Customer>>.Fail("The customer editor could not be loaded. Refresh before editing.");
         }
     }
 

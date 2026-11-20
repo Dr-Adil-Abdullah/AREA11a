@@ -1,5 +1,10 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## ⏳ v0.123.0 — حصہ5 کا پہلا expected-state/snapshot checkpoint؛نئی مالی پالیسی نہیں
+
+تازہNextنےصرفحصہ5منظورکیا۔ پرانیformکیstateعینwriteTxمیںملتیہے؛فرقہوتوrefuse/reopen/review،نہsilentmerge/overwrite۔ Product/Customer/extra/definition/native/catalogcheckededitsاورمحدودsnapshots؛Cashierphone،authorednewcost،SupplierB،discount/actualcostfloor،D-116resetpolicyاورBlackbox/BookCheckدائرہبرقرار۔ ⏳Settings/sharedDrafts/StockTake/remainingroutesکاجائزہابھیاسیحصہ5میںباقی؛3082suite/WindowsUNRUN۔ [⏳ PT-65/حدود](EDIT-CONCURRENCY-REVIEW-URDU.md)؛❌حصہ6شروعنہیں/installerنہیںبنا۔
+
+
 ## ✅ D-116 — password/PIN بدلنے پر لازمی تازہ لاگ اِن (حصہ4/14)
 
 مالک نے مثال/وضاحت کے بعد **A / require_new_login** منتخب کیا:متاثرہ موجودہ login اگلے عمل سے پہلے رد؛دوبارہ sign-in لازم۔ محفوظ ریکارڈ برقرار،ممکنہ unsaved-form loss قبول۔ idle اور12گھنٹے کی حد برقرار۔ ⏳ v0.122.0 میںsource اور22نئےtests لکھے؛3057suite/Windows/PT-64باقی،security/runtimePASSنہیں۔ [⏳ دائرہ/حدود](AUTHENTICATED-SESSION-REVIEW-URDU.md)۔ صرفحصہ4منظور؛CASحصہ5اورdurableidentityحصہ6الگمنظوریسے۔ مالی/SupplierB/Blackbox/backupکےپرانےفیصلےبرقرار۔

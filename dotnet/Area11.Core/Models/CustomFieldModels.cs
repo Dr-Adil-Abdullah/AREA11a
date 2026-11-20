@@ -161,6 +161,9 @@ public static class CustomFieldType
 /// <summary>One field the owner made, as the `custom_fields` row holds it.</summary>
 public sealed class CustomField
 {
+    [System.Text.Json.Serialization.JsonIgnore]
+    public EditVersion? EditVersion { get; internal set; }
+
     public int Id { get; set; }
 
     public string Entity { get; set; } = CustomFieldEntity.Product;

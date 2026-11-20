@@ -2,6 +2,9 @@ namespace Area11.Core.Models;
 
 public sealed class Category
 {
+    [System.Text.Json.Serialization.JsonIgnore]
+    public EditVersion? EditVersion { get; internal set; }
+
     public int Id { get; set; }
 
     public string Name { get; set; } = string.Empty;
@@ -30,6 +33,9 @@ public sealed class Category
 /// <summary>A managed base/strength unit. Names are canonical lower-case, case-insensitively unique.</summary>
 public sealed class Unit
 {
+    [System.Text.Json.Serialization.JsonIgnore]
+    public EditVersion? EditVersion { get; internal set; }
+
     public int Id { get; set; }
 
     public string Name { get; set; } = string.Empty;
@@ -60,6 +66,9 @@ public sealed class Unit
 
 public sealed class Company
 {
+    [System.Text.Json.Serialization.JsonIgnore]
+    public EditVersion? EditVersion { get; internal set; }
+
     public int Id { get; set; }
 
     public string Name { get; set; } = string.Empty;

@@ -6,6 +6,9 @@ namespace Area11.Core.Utils;
 /// </summary>
 public class ServiceResult
 {
+    [System.Text.Json.Serialization.JsonIgnore]
+    public Area11.Core.Models.EditVersion? EditVersion { get; init; }
+
     public bool Ok { get; init; }
 
     public string? Error { get; init; }

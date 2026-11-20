@@ -951,6 +951,8 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
 
     // ---------------------------- correcting a customer ----------------------------
 
+    private EditVersion? _editVersion;
+
     private void BeginEdit()
     {
         if (!_editRecordSave.Ready)
@@ -966,18 +968,27 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
         }
 
         IsAdding = false;
-        EditEditor.Load(Selected.Id);
+        var prepared = _services.Partners.LoadCustomerEditForm(_user, Selected.Id);
+        if (!prepared.Ok || prepared.Value is null)
+        {
+            ClearEditForm();
+            SetStatus(prepared.Error ?? "The customer editor could not be loaded.", true);
+            return;
+        }
+        var current = prepared.Value.Record;
+        _editVersion = prepared.Value.Version;
+        EditEditor.LoadPrepared(current.Id, prepared.Value.Extra);
         if (!EditEditor.LoadedSuccessfully)
         {
             ClearEditForm();
             SetStatus("Extra fields could not be loaded. Reopen the customer editor.", true);
             return;
         }
-        _editingCustomerId = Selected.Id;
-        EditName = Selected.Name;
-        EditPhone = Selected.Phone ?? string.Empty;
-        EditCategory = Selected.CategoryLabel;
-        EditLimitText = Money.Edit(Selected.CreditLimitPaisa);
+        _editingCustomerId = current.Id;
+        EditName = current.Name;
+        EditPhone = current.Phone ?? string.Empty;
+        EditCategory = current.Category?.Trim().ToLowerInvariant() switch { "vip" => "VIP", "doctor" => "Doctor", _ => "Normal" };
+        EditLimitText = Money.Edit(current.CreditLimitPaisa);
         IsEditing = true;
 
         SetStatus("Correct the name, phone, category or limit, then press Save.", false);
@@ -1034,7 +1045,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
         }
         try
         {
-            var result = _services.Partners.UpdateCustomer(_user, edit, EditEditor.AnswerValues());
+            var result = _services.Partners.UpdateCustomer(_user, edit, EditEditor.AnswerValues(), _editVersion);
 
             if (!result.Ok || result.Value is null)
             {
@@ -1141,6 +1152,7 @@ public sealed class CustomersViewModel : ObservableObject, IEmptyPage
     {
         IsEditing = false;
         _editingCustomerId = 0;
+        _editVersion = null;
         EditName = EditPhone = EditLimitText = string.Empty;
         EditCategory = "Normal";
         EditEditor.Load(0);

@@ -131,9 +131,29 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
 
     public void LoadNew() => LoadCore(0, true);
 
+    private EditVersion? _editVersion;
+
+    /// <summary>Prepared by an authorized service,not a second independent database read.</summary>
+    public void LoadPrepared(int entityId, ExtraFieldsSnapshot snapshot)
+    {
+        Load(0);
+        _entityId = entityId;
+        _editVersion = snapshot.Version;
+        foreach (var field in snapshot.Fields)
+        {
+            snapshot.Answers.TryGetValue(field.Id, out var stored);
+            Rows.Add(new CustomInputRow(field, stored));
+            if (field.IsPhoto) _hasPhotoField = true;
+        }
+        LoadedSuccessfully = entityId > 0 && snapshot.Version is not null;
+        CanEdit = LoadedSuccessfully;
+        RaiseListState(); RaiseStagedState();
+    }
+
     private void LoadCore(int entityId, bool forNewRecord)
     {
         LoadedSuccessfully = false;
+        _editVersion = null;
         CanEdit = false;
         _entityId = entityId;
         _stagedMode = forNewRecord;
@@ -151,6 +171,19 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
             return;
         }
 
+        if (entityId > 0)
+        {
+            var prepared = _services.CustomFields.EditorSnapshot(_user, _entity, entityId);
+            if (!prepared.Ok || prepared.Value is null)
+            {
+                RaiseListState(); RaiseStagedState();
+                SetStatus(prepared.Error ?? "Fields and answers could not be loaded together.", true);
+                return;
+            }
+            LoadPrepared(entityId, prepared.Value);
+            return;
+        }
+
         var fields = _services.CustomFields.List(_user, _entity);
 
         if (!fields.Ok || fields.Value is null)
@@ -162,18 +195,6 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
         }
 
         var answers = new Dictionary<int, string>();
-        if (entityId > 0)
-        {
-            var values = _services.CustomFields.Values(_user, _entity, entityId);
-            if (!values.Ok || values.Value is null)
-            {
-                CanEdit = false;
-                RaiseListState();
-                SetStatus(values.Error ?? "The answers could not be loaded.", true);
-                return;
-            }
-            answers = values.Value;
-        }
 
         foreach (var field in fields.Value)
         {
@@ -234,7 +255,7 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
 
         var values = AnswerValues();
 
-        var result = _services.CustomFields.SaveValues(_user, _entity, _entityId, values);
+        var result = _services.CustomFields.SaveValues(_user, _entity, _entityId, values, _editVersion);
 
         if (!result.Ok)
         {
@@ -328,6 +349,7 @@ public sealed class CustomFieldsEditorViewModel : ObservableObject
         if (access.Ok) return true; // Do not silently reload and overwrite unsaved edits on each tick.
         CanEdit = false;
         LoadedSuccessfully = false;
+        _editVersion = null;
         Rows.Clear();
         _hasPhotoField = false;
         ClearStagedPhoto();

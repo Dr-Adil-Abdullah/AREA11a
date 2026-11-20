@@ -43,6 +43,9 @@ public static class NativeInputMethod
 /// </summary>
 public sealed class FormFieldDefinition
 {
+    [System.Text.Json.Serialization.JsonIgnore]
+    public EditVersion? EditVersion { get; internal set; }
+
     public int Id { get; set; }
 
     public string FieldKey { get; set; } = string.Empty;
@@ -173,6 +176,9 @@ public sealed class DocumentDraft
 /// <summary>Central salt/generic formula master; NameKey is normalized by the future write service.</summary>
 public sealed class GenericFormula
 {
+    [System.Text.Json.Serialization.JsonIgnore]
+    public EditVersion? EditVersion { get; internal set; }
+
     public int Id { get; set; }
 
     public string Name { get; set; } = string.Empty;
@@ -196,6 +202,9 @@ public sealed class GenericFormula
 /// <summary>A managed brand, optionally owned by a company; the legacy products.brand text remains.</summary>
 public sealed class BrandDefinition
 {
+    [System.Text.Json.Serialization.JsonIgnore]
+    public EditVersion? EditVersion { get; internal set; }
+
     public int Id { get; set; }
 
     public int? CompanyId { get; set; }

@@ -194,7 +194,7 @@ public sealed class UnitWindowViewModel : ObservableObject
             else
             {
                 id = SelectedUnit.Id;
-                var updated = _services.Products.UpdateUnit(_user, id, Name, order, WholeOnly);
+                var updated = _services.Products.UpdateUnit(_user, id, Name, order, WholeOnly, SelectedUnit.EditVersion);
                 if (!updated.Ok)
                 {
                     _recordSave.ObserveFailure(updated);

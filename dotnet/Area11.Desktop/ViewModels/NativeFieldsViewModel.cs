@@ -96,7 +96,7 @@ public sealed class NativeFieldsViewModel : ObservableObject
             if (answer != MessageBoxResult.Yes) return;
             confirmed = true;
         }
-        var result = _services.NativeFields.SetRequired(_user, field.Id, required, confirmed);
+        var result = _services.NativeFields.SetRequired(_user, field.Id, required, confirmed, field.EditVersion);
         StatusText = result.Ok
             ? field.FieldKey is "product.generic" or "product.brand" or "product.rack" or "product.pack" or "product.retail"
                 ? "Saved. The product form pops up a warning when these are empty - saving anyway stays your choice."

@@ -1,5 +1,10 @@
 # Area11 — Real-life Physical Testing Log
 
+## ⏳ PT-65 — حصہ5/14 پہلا checkpoint،دوکھلےفارم/دوconnections (v0.123.0)
+
+[⏳ مکملsteps/حدوداورباقیحصہ5](docs/EDIT-CONCURRENCY-REVIEW-URDU.md)۔ پہلےverifiedencryptedbackup **اورالگDB/photos/config**؛اصلshopپرtestsنہیں۔3082suite/0fail/0skip+DesktopRelease،دوProduct/Customer/extra/definition/catalog/Unitedits،same-secondconflict،Nativepostmodalchange،Brandphase2conflict،balanceکےساتھphoneeditجائز،دوphonepreflight،currentDBmain اورledger/Quote snapshotجانچیں۔ ⏳25نئےC#facts/WindowsUNRUN؛114static/47lexical/18PythonSQLiteplansبدلنہیں۔ **حصہ5کےSettings/sharedDrafts/StockTake/remainingroutesکاسورسجائزہبھیباقی**؛حصہ6شروعنہیں؛installerنہیںبنا۔ نیچےپرانےcheckpointsتاریخیہیں۔
+
+
 ## ⏳ PT-64 — حصہ4/14،اصلlogin/next-action reset/Counter outputs (v0.122.0)
 
 [⏳ مکملاردوstepsاورحدود](docs/AUTHENTICATED-SESSION-REVIEW-URDU.md)۔ پہلےverifiedencryptedbackup **اورواقعیالگDB/photos/config**؛اصلshopپرposts/faultsنہیں۔ 3057suite/0fail/0skip،DesktopRelease،password/PINresetپراگلاkeyboard/mouse/text/scanner/Save،کھلےmodal+Closing،freshloginمیںoldcallback،same-rolecopieduser/close-onlyproof،POSrevokeپرپورےoutputs/extraanswersصاف،retainedcart+draftguards،freshregrant/reloadfailure،ownertarget/pricing/handoverاورparentpickers،idle/12hجانچیں۔ ⏳22نئےC#testsاوراصلWindows/WPF/runtimeسبباقی؛113static/52lexicalnegativesانکابدلنہیں۔ حصہ2/3rerunsبھیباقی؛❌حصہ5شروعنہیں/installerنہیںبنا۔ نیچےپرانےحصوںکےشواہداسوقتکیحیثیتہیں۔

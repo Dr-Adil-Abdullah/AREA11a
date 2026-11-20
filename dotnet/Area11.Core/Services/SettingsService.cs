@@ -100,6 +100,28 @@ public sealed class SettingsService
         }
     }
 
+    /// <summary>Security projection reads the CURRENT DB/main switch,not this instance's UI cache.
+    /// Within Snapshot/Tx this borrows that same connection. Missing keeps the shipped ON default;
+    /// malformed/read failure denies visibility. It does not overwrite unsaved Settings UI text.</summary>
+    public bool CurrentFinancialVisibility()
+    {
+        try
+        {
+            return _db.Read(connection =>
+            {
+                var raw = _db.QuerySingle<string>(connection,
+                    "SELECT value FROM settings WHERE key=@key;", new { key = MasterFoundationSettings.ProfitShowMargins });
+                return raw is null || (bool.TryParse(raw, out var flag) ? flag
+                    : long.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var number) && number != 0);
+            });
+        }
+        catch (Exception exception)
+        {
+            _log.Error("Financial visibility could not be verified.", exception);
+            return false;
+        }
+    }
+
     public string GetRaw(string key)
     {
         lock (_gate)

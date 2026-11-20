@@ -1,21 +1,21 @@
 # نمبر وار کام اور باقی جانچ — مستقل1تا36فہرست
 
-**⏳ موجودہ source: v0.122.0 Larkspur؛حصہ4منظور/D-116منتخب۔** [⏳ منصوبہ](REMAINING-14-PORTIONS-URDU.md)؛[⏳ sessionجائزہ/PT-64](AUTHENTICATED-SESSION-REVIEW-URDU.md)۔ مستقل1–36نمبرنہیںبدلے۔
+**⏳ موجودہ source: v0.123.0 Verbena؛حصہ5کاپہلاcheckpoint،ابھیجاری۔** [⏳ منصوبہ](REMAINING-14-PORTIONS-URDU.md)؛[⏳ CAS/snapshot/PT-65/باقیحصہ5](EDIT-CONCURRENCY-REVIEW-URDU.md)۔ مستقل1–36نمبرنہیںبدلے۔
 
-✅ حصہ1کیCore/Testscompileتصدیقملی؛اصلv0.120.1کے2963میں2941PASS/22FAIL۔ ⏳حصہ2کے22fixes،حصہ3کے72اورحصہ4کے22نئےtestsکانیاruntimeباقی؛**3057suiteUNRUN**۔ ❌حصہ5شروعنہیں/installerنہیںبنا۔
+✅ حصہ1کیCore/Testscompileتصدیقملی؛اصلv0.120.1کے2963میں2941PASS/22FAIL۔ ⏳حصوں2/3/4/5کانیاruntimeباقی؛**3082suiteUNRUN**۔ حصہ5کےSettings/sharedDrafts/StockTake/remainingroutesکاسورسجائزہبھیباقی؛❌حصہ6شروعنہیں/installerنہیںبنا۔
 
 | مستقل نمبر / دائرہ | کیا ہوگیا؟ | کیا باقی ہے؟ |
 |---|---|---|
-|1۔ ⏳ ورژن/GitHub | v0.122.0Larkspur/source/docs/icon/scriptsaligned | samebranchcommit/push/actualremoteverificationآخریرپورٹمیں |
-|2۔ ⏳ C#tests | 3057متوقعcases؛حصہ4میں22نئےsessioncases | اصلv0.120.1run2963/2941PASS/22FAIL؛v0.122.0کی3057suiteیہاںUNRUN |
-|3۔ ⏳ Source/syntheticchecks | 113staticcontracts؛تازہ52sessionnegatives/20negative-scriptPASS؛پرانےparentSQLprobesدوبارہPASS؛حتمینتائجtraceمیں | یہC#/WPF/provider/securitycertificationنہیں |
-|4۔ ⏳ پرانےWindowsfailures | v0.120.1کے2941PASS/22FAILکیوجوہ/sourcefixtureاصلاح؛v0.80تاریخی | v0.122.0پراصلretestاورremainingfailuresکیfix؛پرانانتیجہنیاPASSنہیں |
+|1۔ ⏳ ورژن/GitHub | v0.123.0Verbena/source/docs/icon/scriptsaligned | samebranchcommit/push/actualremoteverificationآخریرپورٹمیں |
+|2۔ ⏳ C#tests | 3082متوقعcases؛حصہ5میں25نئےconcurrencyfacts | اصلv0.120.1run2963/2941PASS/22FAIL؛v0.123.0کی3082suiteیہاںUNRUN |
+|3۔ ⏳ Source/syntheticchecks | 114staticcontracts؛47نئےconcurrencynegatives/21negative-scriptPASS؛18PythonSQLiteplans؛حتمینتائجtraceمیں | یہC#/WPF/provider/securitycertificationنہیں |
+|4۔ ⏳ پرانےWindowsfailures | v0.120.1کے2941PASS/22FAILکیوجوہ/sourcefixtureاصلاح؛v0.80تاریخی | v0.123.0پراصلretestاورremainingfailuresکیfix؛پرانانتیجہنیاPASSنہیں |
 |5۔ ⏳ Account/role/session | حصہ4/D-116Database-boundproof،credentialstamp/close-only/Carry،Desktopnext-actionguards | 22نئےcasesUNRUN؛Windowsinput/modalteardown،legacyhostenable/remainingcallers،atomicCASباقی |
-|6۔ ⏳ Parentrecordcreate/edit/read | Parent/quick-create/Catalog/Unit SaveپرobservedTx/unknownguard/ackقبلcleanup؛پرانےcurrentwrite/readchecksبرقرار | اصلparentWPF،باقیcallers/session،atomicCAS؛legacy/otherworkflowreview |
+|6۔ ⏳ Parentrecordcreate/edit/read | حصہ5پہلاcheckpoint:Product/Customer+extraanswersایکسnapshot،writeTxمیںexpected-statecompare | Settings/sharedDrafts/remainingwriters/toggles/bulk/sourceجائزہاورactualWindowsباقی |
 |7۔ ⏳ Revocation/staleoutputs | Counterfull-viewdeny؛lookups/extraanswers/lastreceipt/totalsصاف،cart+draftguardsبرقرار،freshrestore | اصلWPF/reloadfailure/modal/input/permissioncombinations؛instantrecall/CASنہیں |
-|8۔ ⏳ Customdefinitionmanager | **حصہ26:currentownerUI،selection/inputcleanup،selectedsnapshotcomparison،stabletick،SAVED** | WPF/runtimeثبوت؛check/use/atomicversionCASاورothereditorssyncOPEN |
-|9۔ ⏳ Customanswersservice | authenticatedproof+currentinternalactor/storedaudit؛parentworkflowپالیسیبرقرار | اصلTx/remainingcallers/read-loadraces؛legacydisabledhostsecurityسندنہیں |
-|10۔ ⏳ Customanswereditor | Counterdenialپرrows/stagedpathdiscard،regrantfreshdefinitions؛پرانےeditorcurrentchecksبرقرار | اصلbindings/focus/regrant/parentdraftconsistency؛definitionversionCASالگ |
+|8۔ ⏳ Customdefinitionmanager | selectedUIcompareکےساتھعینwriteTxمیںdefinition/entity-orderbaseline؛Nativepostmodalbaseline | اصلC#/WPF/remainingnativeupdates؛حصہ5ابھیجاری |
+|9۔ ⏳ Customanswersservice | coherentfields/valuesbaseline؛standaloneSaveاورProduct/CustomerparentSaveپرstaleanswerrefusal | باقیcallers/newforms/transactions/realprovider/runtime؛durableidentityنہیں |
+|10۔ ⏳ Customanswereditor | مجازserviceکاپreparedsnapshot،parentکےساتھالگreadmixنہیں؛denialcleanupبرقرار | اصلbindings/focus/regrant/conflict/reopen؛remainingformsباقی |
 |11۔ ⏳ Nativefields | currentOwner/suppliedactivepreflight،failedselectioncleanup،freshriskprompt،stableaccesschecks | اصلWindows/timer/confirmationاورformactionreconciliation |
 |12۔ ⏳ Photos/gallery | exclusiveGUID/boundedownedcopy؛partialtracking؛unknownretain،galleryAddlocalguard؛currentaccessبرقرار | اصلC#/WPF/codec/camera؛providerCOMMIT/diskfull/ACL/powerloss؛othergalleryactions |
 |13۔ ⏳ Cost/Profit/main | الگgrants/main/masks؛حصہ27stored-costpatchfreshDBmain+Cost؛authorednewcost/non-costCorepatchبرقرار | باقیroute/output/Windowscombinations؛free-textclassificationنہیں،preflightCASنہیں |
@@ -28,8 +28,8 @@
 |20۔⏳ Expenses/stocktake/writeoff | expense/cash+goodsdrawing/write-off/Applylocalguard؛ackپہلے،cleanupبعد؛oldApplysessionconsume،financialSQL/helpersunchanged | actualC#/WPF،integratedreports/legacybatch/costfallback،Open/Count/Cancel/foundownfaultpaths |
 |21۔ ⏳ Reports/files/exports | PRcompleteauthorizedheader+linesreceipt؛linefailureپرBuildfailure؛receiptComposeunchanged؛Historycurrentbulkپہلے | alreadyprepared/printed/exportedoutputsnotrecalled؛باقیExcel/CSV/PDF/print/Windowsroutes |
 |22۔ ⏳ Blackbox/BookCheck | صرفapprovednavigationgateAudit+Cost+Profit+main؛حالیہinternalsunchanged | تازہWindowsnavigationproof؛بغیراجازتغیرمتعلقredesignنہیں |
-|23۔ ⏳ DB/permissiontransaction | Collect/PayexistingTxobservedoutcomes؛storedactor/currentaccessاورfinancialcallbackbodiesبرقرار | session/same-role-ID/CAS/externalcoherentsnapshot/realCOMMIT/parallel/durableidentityباقی |
-|24۔ ⏳ Fault/rollback | 72نئےparentSaveC#cases؛32auditfaults/16validation/16post-ack/8guards؛پرانےtestsبرقرار | تمام3057C#UNRUN؛providerCOMMIT/rollback/dispose/WPFcallbacks/remainingcallers/files |
+|23۔ ⏳ DB/permissiontransaction | BEGINIMMEDIATEcompare-before-write؛Snapshotquery-only/borrow/cleanup؛ledgerPage/QuoteاورcurrentDBmain | صرفپہلاcheckpoint؛remainingread/write/Settings/drafts/StockTake/busy/provider/runtimeباقی |
+|24۔ ⏳ Fault/rollback | 72نئےparentSaveC#cases؛32auditfaults/16validation/16post-ack/8guards؛پرانےtestsبرقرار | تمام3082C#UNRUN؛providerCOMMIT/rollback/dispose/WPFcallbacks/remainingcallers/files |
 |25۔ ⏳ Duplicate/retry | Parent/quick-create/Catalog/UnitSavelocalguards؛unknown/ackcleanupRefresh/regrantسےresetنہیں؛پرانےledger/draftguardsبرقرار | اصلparentWPFretry/othergalleryactions/cross-page/pageReopen/restart/globalidentity/parallel/providerCOMMITباقی؛localflagdurablekeyنہیں |
 |26۔ ⏳ Encryptedbackup | passwordA .a11bakcode،manual/auto/safety/rollbackintegration،referencechecks | اصلC#service/DPAPI/ACL/passwordrotation/large-photo/interruptionverification |
 |27۔ ⏳ Restore/newPC | stagedvalidation/safety/rollback/explicitlegacycode | نئےPCپرoriginalpassword،wrong/corrupt/interruptedrestore،پراناDB/photosبچنااورstartupثبوت |

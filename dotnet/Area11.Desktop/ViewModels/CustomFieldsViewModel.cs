@@ -426,7 +426,7 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
         if (_editingId > 0)
         {
             result = _services.CustomFields.Update(
-                _user, _editingId, LabelText, type, OptionsText, Required, HelpText);
+                _user, _editingId, LabelText, type, OptionsText, Required, HelpText, _selectedField?.Field.EditVersion);
         }
         else
         {
@@ -467,7 +467,7 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
 
         _editingId = _selectedField.Field.Id;
 
-        var result = _services.CustomFields.Move(_user, _editingId, direction);
+        var result = _services.CustomFields.Move(_user, _editingId, direction, _selectedField.Field.EditVersion);
 
         if (!result.Ok)
         {
@@ -489,7 +489,7 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
         }
 
         var field = _selectedField.Field;
-        var result = _services.CustomFields.SetActive(_user, field.Id, !field.Active);
+        var result = _services.CustomFields.SetActive(_user, field.Id, !field.Active, field.EditVersion);
 
         if (!result.Ok)
         {

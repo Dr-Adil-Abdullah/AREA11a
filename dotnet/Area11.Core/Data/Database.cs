@@ -174,6 +174,70 @@ public sealed class Database
         }
     }
 
+    /// <summary>One coherent synchronous read snapshot. Nested readers borrow the caller's
+    /// transaction;no callback/connection may escape. Query-only blocks accidental writes. This
+    /// is not a reservation: a later write still needs an in-Tx expected-state comparison.</summary>
+    public T Snapshot<T>(Func<SqliteConnection, T> read)
+    {
+        lock (_transactionGate)
+        {
+            if (_transaction is not null)
+                return read(_transaction.Connection ?? throw new InvalidOperationException("The transaction connection is closed."));
+            using var connection = Open();
+            using var mode = connection.CreateCommand();
+            mode.CommandText = "PRAGMA query_only=ON;";
+            mode.ExecuteNonQuery();
+            try
+            {
+                using var transaction = connection.BeginTransaction(deferred: true);
+                _transaction = transaction;
+                _readSnapshot = true;
+                try
+                {
+                    var result = read(connection);
+                    transaction.Commit();
+                    return result;
+                }
+                finally { _transaction = null; _readSnapshot = false; }
+            }
+            finally
+            {
+                // Query-only is connection state;never return it enabled to the connection pool.
+                mode.CommandText = "PRAGMA query_only=OFF;";
+                mode.ExecuteNonQuery();
+            }
+        }
+    }
+
+    private bool _readSnapshot;
+
+    internal void RequireWriteTransaction(SqliteConnection connection)
+    {
+        if (_readSnapshot || _transaction is null || !ReferenceEquals(_transaction.Connection, connection))
+            throw new InvalidOperationException("Edit comparison must run inside its write transaction.");
+    }
+
+    // Canonical row values,not display models/masked costs/timestamps alone. Fixed SQL comes only
+    // from EditConcurrency. Length/escaping/type/null boundaries are preserved by JSON encoding.
+    internal string Fingerprint(SqliteConnection connection, string sql, int id, string? entity = null) =>
+        Command(connection, transaction =>
+        {
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = sql;
+            if (sql.Contains("@id", StringComparison.Ordinal)) command.Parameters.AddWithValue("@id", id);
+            if (sql.Contains("@entity", StringComparison.Ordinal)) command.Parameters.AddWithValue("@entity", (object?)entity ?? DBNull.Value);
+            using var reader = command.ExecuteReader();
+            var rows = new List<object?[]>();
+            while (reader.Read())
+            {
+                var row = new object?[reader.FieldCount];
+                for (var i = 0; i < row.Length; i++) row[i] = reader.IsDBNull(i) ? null : reader.GetValue(i);
+                rows.Add(row);
+            }
+            return System.Text.Json.JsonSerializer.Serialize(rows);
+        });
+
     /// <summary>All-or-nothing synchronous write. Nested calls are a programming error.
     /// Do not return tasks or wait for another thread to call this Database while this gate is held.</summary>
     public T Tx<T>(Func<SqliteConnection, T> work, TransactionOutcome? outcome = null)

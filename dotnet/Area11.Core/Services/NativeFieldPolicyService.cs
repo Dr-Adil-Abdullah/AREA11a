@@ -95,11 +95,14 @@ ON CONFLICT(field_key) DO NOTHING;", new
 
         try
         {
-            using var connection = _db.Open();
+            return _db.Snapshot(connection =>
+            {
             OwnerAccess.Require(_db, connection, user);
             var fields = _db.Query<FormFieldDefinition>(connection,
                 "SELECT * FROM form_field_definitions ORDER BY section_key, sort_order, id;");
+            foreach (var row in fields) row.EditVersion = EditConcurrency.Capture(_db, connection, EditConcurrency.NativeField, row.Id);
             return ServiceResult<List<FormFieldDefinition>>.Success(fields);
+            });
         }
         catch (Exception exception)
         {
@@ -112,7 +115,7 @@ ON CONFLICT(field_key) DO NOTHING;", new
     /// Explicit confirmation applies to this particular requested change. Actor identity comes from
     /// the signed-in owner, not from a name typed into a dialog; the audit and change are atomic.
     /// </summary>
-    public ServiceResult SetRequired(User? user, int fieldId, bool required, bool confirmedRisk)
+    public ServiceResult SetRequired(User? user, int fieldId, bool required, bool confirmedRisk, EditVersion? expected = null)
     {
         if (user is null || !user.IsOwner || !user.Active || user.Id <= 0 || string.IsNullOrWhiteSpace(user.Name))
         {
@@ -124,6 +127,7 @@ ON CONFLICT(field_key) DO NOTHING;", new
             return _db.Tx(connection =>
             {
                 var owner = OwnerAccess.Require(_db, connection, user);
+                EditConcurrency.Require(_db, connection, EditConcurrency.NativeField, fieldId, expected);
                 var field = _db.QuerySingle<FormFieldDefinition>(connection,
                     "SELECT * FROM form_field_definitions WHERE id = @id;", new { id = fieldId });
                 if (field is null)

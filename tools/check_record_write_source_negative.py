@@ -31,7 +31,7 @@ def run():
         (P, '!enabled || !_permissions.Can(writer, Modules.PurchaseCost)', '!enabled', 'cost grant omitted'),
         (P, 'RequireStoredCostEdit(connection, writer);', '', 'existing editor lacks cost preflight'),
         (P, 'if (active is null || Convert.ToInt64(active) == 0)', 'if (false)', 'inactive editor parent accepted'),
-        (U, '_editingCustomerId = Selected.Id;', '_editingCustomerId = 0;', 'customer intended target not pinned'),
+        (U, '_editingCustomerId = current.Id;', '_editingCustomerId = 0;', 'customer intended target not pinned'),
         (U, 'Id = _editingCustomerId,', 'Id = Selected!.Id,', 'customer save uses moving selection'),
         (U, 'if (!IsEditing || _editingCustomerId <= 0 || Selected?.Id != _editingCustomerId)', 'if (Selected is null)', 'customer selection drift not refused'),
         (U, 'EditName = EditPhone = EditLimitText = string.Empty;', 'EditLimitText = string.Empty;', 'customer stale authored identity retained'),

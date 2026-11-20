@@ -527,7 +527,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
             else
             {
                 id = SelectedCategory.Id;
-                var updated = _services.Products.UpdateCategory(_user, id, CategoryName, parentId, order);
+                var updated = _services.Products.UpdateCategory(_user, id, CategoryName, parentId, order, SelectedCategory.EditVersion);
                 if (!updated.Ok)
                 {
                     _recordSave.ObserveFailure(updated);
@@ -625,7 +625,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
             else
             {
                 id = SelectedCompany.Id;
-                var updated = _services.Products.UpdateCompany(_user, id, CompanyName, order);
+                var updated = _services.Products.UpdateCompany(_user, id, CompanyName, order, SelectedCompany.EditVersion);
                 if (!updated.Ok)
                 {
                     _recordSave.ObserveFailure(updated);
@@ -723,7 +723,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
             else
             {
                 id = SelectedFormula.Id;
-                var updated = _services.Products.UpdateFormula(_user, id, FormulaName, order);
+                var updated = _services.Products.UpdateFormula(_user, id, FormulaName, order, SelectedFormula.EditVersion);
                 if (!updated.Ok)
                 {
                     _recordSave.ObserveFailure(updated);
@@ -806,6 +806,7 @@ public sealed class CatalogWindowViewModel : ObservableObject
         try
         {
             int id;
+            EditVersion? brandVersion;
             if (SelectedBrand is null)
             {
                 var added = _services.Products.AddBrand(_user, BrandName, order);
@@ -819,11 +820,12 @@ public sealed class CatalogWindowViewModel : ObservableObject
 
                 _recordSave.AcknowledgeCommit();
                 id = added.Value;
+                brandVersion = added.EditVersion;
             }
             else
             {
                 id = SelectedBrand.Id;
-                var updated = _services.Products.UpdateBrand(_user, id, BrandName, order);
+                var updated = _services.Products.UpdateBrand(_user, id, BrandName, order, SelectedBrand.EditVersion);
                 if (!updated.Ok)
                 {
                     _recordSave.ObserveFailure(updated);
@@ -832,12 +834,13 @@ public sealed class CatalogWindowViewModel : ObservableObject
                     return;
                 }
                 _recordSave.AcknowledgeCommit();
+                brandVersion = updated.EditVersion;
             }
 
             var wantCompanyId = SelectedBrandCompany?.Id;
             if (wantCompanyId != _brandCompanyId)
             {
-                var linked = _services.Products.SetBrandCompany(_user, id, wantCompanyId);
+                var linked = _services.Products.SetBrandCompany(_user, id, wantCompanyId, brandVersion);
                 if (!linked.Ok)
                 {
                     if (ReloadAfterWrite(null, null, null, id))

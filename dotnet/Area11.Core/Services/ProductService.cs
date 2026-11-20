@@ -102,7 +102,8 @@ ORDER BY p.name COLLATE NOCASE;";
             var searchKey = PackagingPolicy.SearchKey(text);
             var strengthText = NormalizeStrengthFilter(strength);
 
-            using var connection = _db.Open();
+            return _db.Snapshot(connection =>
+            {
             var reader = ProductReadAccess.Require(_db, connection, _permissions, user, purpose);
             var settings = _settings ?? new SettingsService(_db, _audit, _log, _permissions);
             // D-114: SR accepts IDs/quantity only; direct cost is still projected below.
@@ -151,6 +152,7 @@ WHERE p.active = 1
                 ProductReadAccess.Project(product, purpose, canSeeCost, canSeeProfit);
 
             return ServiceResult<List<Product>>.Success(products);
+            });
         }
         catch (ValidationException exception)
         {
@@ -280,7 +282,8 @@ WHERE p.active = 1
     {
         try
         {
-            using var connection = _db.Open();
+            return _db.Snapshot(connection =>
+            {
             var reader = ProductReadAccess.Require(_db, connection, _permissions, user, purpose);
             var settings = _settings ?? new SettingsService(_db, _audit, _log, _permissions);
             // D-114: SR accepts IDs/quantity only; direct cost is still projected below.
@@ -291,6 +294,8 @@ WHERE p.active = 1
             var product = _db.QuerySingle<Product>(connection, SelectSql + "WHERE p.id = @id;", new { id });
             if (product is not null)
             {
+                if (purpose == ProductReadPurpose.Catalog && reader.CanManage && canSeeCost)
+                    product.EditVersion = EditConcurrency.Capture(_db, connection, EditConcurrency.Product, id);
                 ProductReadAccess.Project(product, purpose, canSeeCost, canSeeProfit);
                 product.CategoryTagIds = _db.Query<int>(connection,
                     "SELECT category_id FROM product_category_tags WHERE product_id = @id ORDER BY category_id;",
@@ -300,6 +305,7 @@ WHERE p.active = 1
             return product is null
                 ? ServiceResult<Product>.Fail("That product no longer exists.")
                 : ServiceResult<Product>.Success(product);
+            });
         }
         catch (ValidationException exception)
         {
@@ -309,6 +315,29 @@ WHERE p.active = 1
         {
             _log.Error($"Product {id} could not be loaded.", exception);
             return ServiceResult<Product>.Fail("The product could not be loaded.");
+        }
+    }
+
+    /// <summary>Parent and extra answers/definitions belong to the same read snapshot.</summary>
+    public ServiceResult<RecordEditForm<Product>> LoadEditForm(User actor, int id)
+    {
+        try
+        {
+            return _db.Snapshot(connection =>
+            {
+                var record = Get(actor, id);
+                if (!record.Ok || record.Value is null || record.Value.EditVersion is null)
+                    return ServiceResult<RecordEditForm<Product>>.Fail(record.Error ?? "Current product editor access and cost visibility are required.");
+                var extra = new CustomFieldService(_db, _audit, _permissions, _log).EditorSnapshot(actor, CustomFieldEntity.Product, id);
+                if (!extra.Ok || extra.Value is null) return ServiceResult<RecordEditForm<Product>>.Fail(extra.Error ?? "Extra fields could not be loaded.");
+                return ServiceResult<RecordEditForm<Product>>.Success(new RecordEditForm<Product>
+                { Record = record.Value, Extra = extra.Value, Version = record.Value.EditVersion });
+            });
+        }
+        catch (Exception exception)
+        {
+            _log.Error("Product editor snapshot failed.", exception);
+            return ServiceResult<RecordEditForm<Product>>.Fail("The product editor could not be loaded. Refresh before editing.");
         }
     }
 
@@ -522,7 +551,7 @@ VALUES
     /// Partial update (Spec 8.1.4.1): only non-null fields are written, so changing the retail
     /// rate can never wipe the cost, the pack formula, the rack or the reorder level.
     /// </summary>
-    public ServiceResult Update(User actor, int id, ProductPatch patch, IReadOnlyDictionary<int, string?>? customValues = null)
+    public ServiceResult Update(User actor, int id, ProductPatch patch, IReadOnlyDictionary<int, string?>? customValues = null, EditVersion? expected = null)
     {
         var outcome = new TransactionOutcome();
         ServiceResult Refuse(string error) => new()
@@ -541,6 +570,7 @@ VALUES
             _db.Tx(connection =>
             {
                 actor = RequireProductWriter(connection, actor);
+                EditConcurrency.Require(_db, connection, "product", id, expected);
                 if (id <= 0) throw new ValidationException("Choose an existing product to edit.");
                 if (patch.CostPaisa is not null) RequireStoredCostEdit(connection, actor);
                 var before = _db.QuerySingle<Product>(connection, SelectSql + "WHERE p.id = @id;", new { id });
@@ -950,7 +980,8 @@ VALUES
     {
         try
         {
-            using var connection = _db.Open();
+            return _db.Snapshot(connection =>
+            {
             var rows = _db.Query<Category>(connection, @"
 SELECT c.id, c.name, c.parent_id AS parentId, c.sort_order AS sortOrder, c.active,
        parent.name AS parentName,
@@ -961,7 +992,9 @@ FROM categories c
 LEFT JOIN categories parent ON parent.id = c.parent_id
 " + (activeOnly ? "WHERE c.active = 1 " : string.Empty)
                 + "ORDER BY c.sort_order, c.name COLLATE NOCASE, c.id;");
+            foreach (var row in rows) row.EditVersion = EditConcurrency.Capture(_db, connection, "category", row.Id);
             return ServiceResult<List<Category>>.Success(rows);
+            });
         }
         catch (Exception exception)
         {
@@ -974,7 +1007,8 @@ LEFT JOIN categories parent ON parent.id = c.parent_id
     {
         try
         {
-            using var connection = _db.Open();
+            return _db.Snapshot(connection =>
+            {
             var rows = _db.Query<Company>(connection, @"
 SELECT c.id, c.name, c.phone, c.notes, c.rep_name AS repName, c.rep_phone AS repPhone,
        c.visit_day AS visitDay, c.active, c.sort_order AS sortOrder,
@@ -982,7 +1016,9 @@ SELECT c.id, c.name, c.phone, c.notes, c.rep_name AS repName, c.rep_phone AS rep
 FROM companies c
 " + (activeOnly ? "WHERE c.active = 1 " : string.Empty)
                 + "ORDER BY c.sort_order, c.name COLLATE NOCASE, c.id;");
+            foreach (var row in rows) row.EditVersion = EditConcurrency.Capture(_db, connection, "company", row.Id);
             return ServiceResult<List<Company>>.Success(rows);
+            });
         }
         catch (Exception exception)
         {
@@ -1071,7 +1107,7 @@ VALUES(@name, @parentId, @sortOrder, 1, @at);",
     }
 
     /// <summary>Rename, choose a top-level parent, or change order without touching product history.</summary>
-    public ServiceResult UpdateCategory(User actor, int id, string? name, int? parentId, int sortOrder)
+    public ServiceResult UpdateCategory(User actor, int id, string? name, int? parentId, int sortOrder, EditVersion? expected = null)
     {
         var outcome = new TransactionOutcome();
         ServiceResult Refuse(string error) => new()
@@ -1106,6 +1142,7 @@ VALUES(@name, @parentId, @sortOrder, 1, @at);",
             return _db.Tx(connection =>
             {
                 actor = RequireProductWriter(connection, actor);
+                EditConcurrency.Require(_db, connection, "category", id, expected);
                 var before = FindCategory(connection, id);
                 if (before is null)
                 {
@@ -1282,7 +1319,7 @@ INSERT INTO companies(name, sort_order, active) VALUES(@name, @sortOrder, 1);",
     }
 
     /// <summary>Only name and order change; phone, notes and the medical rep stay on the row.</summary>
-    public ServiceResult UpdateCompany(User actor, int id, string? name, int sortOrder)
+    public ServiceResult UpdateCompany(User actor, int id, string? name, int sortOrder, EditVersion? expected = null)
     {
         var outcome = new TransactionOutcome();
         ServiceResult Refuse(string error) => new()
@@ -1317,6 +1354,7 @@ INSERT INTO companies(name, sort_order, active) VALUES(@name, @sortOrder, 1);",
             return _db.Tx(connection =>
             {
                 actor = RequireProductWriter(connection, actor);
+                EditConcurrency.Require(_db, connection, "company", id, expected);
                 var before = FindCompany(connection, id);
                 if (before is null)
                 {
@@ -1421,7 +1459,8 @@ UPDATE brands SET company_id = NULL, updated_at = @at WHERE company_id = @id;",
     {
         try
         {
-            using var connection = _db.Open();
+            return _db.Snapshot(connection =>
+            {
             var rows = _db.Query<GenericFormula>(connection, @"
 SELECT f.id, f.name, f.name_key AS nameKey, f.active, f.sort_order AS sortOrder,
        f.created_at AS createdAt, f.updated_at AS updatedAt,
@@ -1429,7 +1468,9 @@ SELECT f.id, f.name, f.name_key AS nameKey, f.active, f.sort_order AS sortOrder,
 FROM generic_formulas f
 " + (activeOnly ? "WHERE f.active = 1 " : string.Empty)
                 + "ORDER BY f.sort_order, f.name COLLATE NOCASE, f.id;");
+            foreach (var row in rows) row.EditVersion = EditConcurrency.Capture(_db, connection, "formula", row.Id);
             return ServiceResult<List<GenericFormula>>.Success(rows);
+            });
         }
         catch (Exception exception)
         {
@@ -1443,7 +1484,8 @@ FROM generic_formulas f
     {
         try
         {
-            using var connection = _db.Open();
+            return _db.Snapshot(connection =>
+            {
             var rows = _db.Query<BrandDefinition>(connection, @"
 SELECT b.id, b.company_id AS companyId, co.name AS companyName,
        b.name, b.name_key AS nameKey, b.active,
@@ -1453,7 +1495,9 @@ FROM brands b
 LEFT JOIN companies co ON co.id = b.company_id
 " + (activeOnly ? "WHERE b.active = 1 " : string.Empty)
                 + "ORDER BY b.sort_order, b.name COLLATE NOCASE, b.id;");
+            foreach (var row in rows) row.EditVersion = EditConcurrency.Capture(_db, connection, "brand", row.Id);
             return ServiceResult<List<BrandDefinition>>.Success(rows);
+            });
         }
         catch (Exception exception)
         {
@@ -1578,7 +1622,7 @@ INSERT INTO brands(name, name_key, sort_order, active) VALUES(@name, @key, @sort
                     "SELECT id FROM brands WHERE rowid = last_insert_rowid();") ?? 0);
                 _audit.RecordChange(connection, actor, "Inventory", "brand_create", "brands",
                     id.ToString(), null, FindBrand(connection, id));
-                return ServiceResult<int>.Success(id);
+                return new ServiceResult<int> { Ok = true, Value = id, EditVersion = EditConcurrency.Capture(_db, connection, "brand", id) };
             }, outcome);
         }
         catch (ValidationException exception) { return Refuse(exception.Message); }
@@ -1590,7 +1634,7 @@ INSERT INTO brands(name, name_key, sort_order, active) VALUES(@name, @key, @sort
     }
 
     /// <summary>Rename relabels explicitly linked products; legacy typed text is never touched.</summary>
-    public ServiceResult UpdateFormula(User actor, int id, string? name, int sortOrder)
+    public ServiceResult UpdateFormula(User actor, int id, string? name, int sortOrder, EditVersion? expected = null)
     {
         var outcome = new TransactionOutcome();
         ServiceResult Refuse(string error) => new()
@@ -1623,6 +1667,7 @@ INSERT INTO brands(name, name_key, sort_order, active) VALUES(@name, @key, @sort
             return _db.Tx(connection =>
             {
                 actor = RequireProductWriter(connection, actor);
+                EditConcurrency.Require(_db, connection, "formula", id, expected);
                 var before = FindFormula(connection, id);
                 if (before is null)
                 {
@@ -1663,7 +1708,7 @@ WHERE id = @id;", new { clean, key, order = sortOrder, at = Clock.Now(), id });
     }
 
     /// <summary>Rename relabels explicitly linked products; legacy typed text is never touched.</summary>
-    public ServiceResult UpdateBrand(User actor, int id, string? name, int sortOrder)
+    public ServiceResult UpdateBrand(User actor, int id, string? name, int sortOrder, EditVersion? expected = null)
     {
         var outcome = new TransactionOutcome();
         ServiceResult Refuse(string error) => new()
@@ -1696,6 +1741,7 @@ WHERE id = @id;", new { clean, key, order = sortOrder, at = Clock.Now(), id });
             return _db.Tx(connection =>
             {
                 actor = RequireProductWriter(connection, actor);
+                EditConcurrency.Require(_db, connection, "brand", id, expected);
                 var before = FindBrand(connection, id);
                 if (before is null)
                 {
@@ -1724,7 +1770,7 @@ WHERE id = @id;", new { clean, key, order = sortOrder, at = Clock.Now(), id });
                 _audit.RecordChange(connection, actor, "Inventory", "brand_update", "brands",
                     id.ToString(), before, FindBrand(connection, id),
                     relabelled + " linked product(s) relabelled; legacy typed text untouched.");
-                return ServiceResult.Success();
+                return new ServiceResult { Ok = true, EditVersion = EditConcurrency.Capture(_db, connection, "brand", id) };
             }, outcome);
         }
         catch (ValidationException exception) { return Refuse(exception.Message); }
@@ -1851,7 +1897,7 @@ UPDATE products SET brand_id = NULL, updated_at = @at WHERE brand_id = @id;",
     /// Portion 9 (#11): links a brand to its company, or clears the link with a null company.
     /// The company name is display metadata; no product row is rewritten.
     /// </summary>
-    public ServiceResult SetBrandCompany(User actor, int brandId, int? companyId)
+    public ServiceResult SetBrandCompany(User actor, int brandId, int? companyId, EditVersion? expected = null)
     {
         var outcome = new TransactionOutcome();
         ServiceResult Refuse(string error) => new()
@@ -1875,6 +1921,7 @@ UPDATE products SET brand_id = NULL, updated_at = @at WHERE brand_id = @id;",
             return _db.Tx(connection =>
             {
                 actor = RequireProductWriter(connection, actor);
+                EditConcurrency.Require(_db, connection, "brand", brandId, expected);
                 var before = FindBrand(connection, brandId);
                 if (before is null)
                 {
@@ -1974,7 +2021,8 @@ ORDER BY s.name COLLATE NOCASE, s.id;");
     {
         try
         {
-            using var connection = _db.Open();
+            return _db.Snapshot(connection =>
+            {
             var rows = _db.Query<Unit>(connection, @"
 SELECT u.id, u.name, u.active, u.whole_only AS wholeOnly, u.sort_order AS sortOrder,
        (SELECT COUNT(1) FROM products p WHERE LOWER(TRIM(p.base_unit)) = u.name) AS productCount,
@@ -1983,7 +2031,9 @@ SELECT u.id, u.name, u.active, u.whole_only AS wholeOnly, u.sort_order AS sortOr
 FROM units u
 " + (activeOnly ? "WHERE u.active = 1 " : string.Empty)
                 + "ORDER BY u.sort_order, u.name COLLATE NOCASE, u.id;");
+            foreach (var row in rows) row.EditVersion = EditConcurrency.Capture(_db, connection, "unit", row.Id);
             return ServiceResult<List<Unit>>.Success(rows);
+            });
         }
         catch (Exception exception)
         {
@@ -2051,7 +2101,7 @@ FROM units u
     }
 
     /// <summary>Renames current product labels atomically; historical quantities and documents are untouched.</summary>
-    public ServiceResult UpdateUnit(User actor, int id, string? name, int sortOrder, bool? wholeOnly = null)
+    public ServiceResult UpdateUnit(User actor, int id, string? name, int sortOrder, bool? wholeOnly = null, EditVersion? expected = null)
     {
         var outcome = new TransactionOutcome();
         ServiceResult Refuse(string error) => new()
@@ -2076,6 +2126,7 @@ FROM units u
             return _db.Tx(connection =>
             {
                 actor = RequireProductWriter(connection, actor);
+                EditConcurrency.Require(_db, connection, "unit", id, expected);
                 var before = FindUnit(connection, id);
                 if (before is null)
                 {

@@ -5247,7 +5247,7 @@ def check_phase_three_packaging() -> None:
 
     # The list projection carries category display text, not the edit form's tag IDs.
     # Loading an edit directly from a list row silently wipes existing tags on Save.
-    for needle in ("_services.Products.Get(_user, product.Id)", "LoadForm(full.Value)", "Editor.Load(full.Value.Id)"):
+    for needle in ("_services.Products.LoadEditForm(_user, product.Id)", "LoadForm(full.Value.Record)", "Editor.LoadPrepared(full.Value.Record.Id, full.Value.Extra)"):
         if needle not in products_vm:
             fail(f"Product editing must load the complete record and category IDs: {needle}")
     for needle in ("primaryCategoryId is null && clean.Count > 0", "Choose a primary category before adding additional category tags."):
@@ -6260,6 +6260,89 @@ def check_windows_v1201_regressions() -> None:
     REPORT.append('v0.120.1 owner Windows22-failure fixture guards:checked Settings/current identities/explicit denials/stored names/pre-fault services/schema-valid marker;new C# rerun required')
 
 
+def check_edit_concurrency_boundaries() -> None:
+    """Lexical CAS/read-snapshot invariants only;not provider execution or complete concurrency proof."""
+    def read(path): return (DOTNET / path).read_text()
+    def body(text, sig):
+        if sig not in text:
+            FAILURES.append('Concurrency method missing: ' + sig); return ''
+        return re.split(r'\n    (?:public|private|internal) ', text.split(sig, 1)[1], 1)[0]
+    def need(text, *tokens):
+        for token in tokens:
+            if token not in text: FAILURES.append('Concurrency contract missing: ' + token)
+    db = read('Area11.Core/Data/Database.cs')
+    snapshot = body(db, 'public T Snapshot<T>(')
+    need(snapshot, 'lock (_transactionGate)', 'if (_transaction is not null)', 'read(_transaction.Connection',
+         'PRAGMA query_only=ON;', 'connection.BeginTransaction(deferred: true)',
+         '_transaction = transaction;', '_readSnapshot = true;', 'transaction.Commit();',
+         'finally { _transaction = null; _readSnapshot = false; }', 'PRAGMA query_only=OFF;')
+    need(body(db, 'internal void RequireWriteTransaction('),
+         '_readSnapshot || _transaction is null || !ReferenceEquals(_transaction.Connection, connection)')
+    need(body(db, 'public T Tx<T>('), 'connection.BeginTransaction(deferred: false)', 'if (_transaction is not null)')
+    capture = read('Area11.Core/Services/EditConcurrency.cs')
+    need(capture, 'db.RequireWriteTransaction(connection);',
+         'if (expected is null && !db.Sessions.Enabled) return;', '!ReferenceEquals(expected.Database, db)',
+         'expected.Scope != scope || expected.Id != id',
+         '!string.Equals(expected.Fingerprint, Capture(db, connection, scope, id).Fingerprint, StringComparison.Ordinal)',
+         'id,name,phone,category,credit_limit_paisa,photo,active',
+         'SELECT category_id FROM product_category_tags WHERE product_id=@id ORDER BY category_id;',
+         'SELECT * FROM custom_fields WHERE entity=@entity ORDER BY id;',
+         'SELECT field_id,value,updated_at FROM custom_values WHERE entity=@entity AND entity_id=@id ORDER BY field_id;',
+         'SHA256.HashData(', 'System.Text.Json.JsonSerializer.Serialize(parts)')
+    product = read('Area11.Core/Services/ProductService.cs')
+    partner = read('Area11.Core/Services/PartnerService.cs')
+    custom = read('Area11.Core/Services/CustomFieldService.cs')
+    native = read('Area11.Core/Services/NativeFieldPolicyService.cs')
+    for name, scope in (('Update','product'), ('UpdateCategory','category'), ('UpdateCompany','company'),
+                        ('UpdateFormula','formula'), ('UpdateBrand','brand'), ('UpdateUnit','unit'), ('SetBrandCompany','brand')):
+        text = body(product, 'public ServiceResult ' + name + '(')
+        gate = f'EditConcurrency.Require(_db, connection, "{scope}", {"brandId" if name == "SetBrandCompany" else "id"}, expected);'
+        need(text, 'EditVersion? expected = null', gate, '}, outcome);')
+        if not 0 <= text.find('actor = RequireProductWriter(connection, actor);') < text.find(gate) < text.find('var before ='):
+            FAILURES.append('Compare must follow authorization and precede read/first writes: ' + name)
+    need(body(partner, 'public ServiceResult<CustomerEditResult> UpdateCustomer('),
+         'EditConcurrency.Require(_db, connection, EditConcurrency.Customer, input.Id, expected);')
+    for name in ('Update','SetActive','Move'):
+        need(body(custom, 'public ServiceResult ' + name + '('),
+             'EditConcurrency.Require(_db, connection, EditConcurrency.CustomField, fieldId, expected);')
+    need(body(custom, 'public ServiceResult SaveValues('), 'EditConcurrency.Require(_db, connection, "answers:" + key, entityId, expected);')
+    need(body(native, 'public ServiceResult SetRequired('), 'EditConcurrency.Require(_db, connection, EditConcurrency.NativeField, fieldId, expected);')
+    for text, sig in [(product,'public ServiceResult<Product> Get('), (product,'public ServiceResult<RecordEditForm<Product>> LoadEditForm('),
+                      (partner,'public ServiceResult<RecordEditForm<Customer>> LoadCustomerEditForm('),
+                      (custom,'public ServiceResult<ExtraFieldsSnapshot> EditorSnapshot('),
+                      (custom,'public ServiceResult<Dictionary<int, string>> Values('),
+                      (native,'public ServiceResult<List<FormFieldDefinition>> List(')]:
+        need(body(text, sig), 'return _db.Snapshot(connection =>')
+    for name, cls in [('GetCategories','Category'), ('GetCompanies','Company'), ('GetFormulas','GenericFormula'), ('GetBrands','BrandDefinition'), ('GetUnits','Unit')]:
+        need(body(product, 'public ServiceResult<List<' + cls + '>> ' + name + '('),
+             'return _db.Snapshot(connection =>', 'row.EditVersion = EditConcurrency.Capture(')
+    for file, sig in [('CustomerLedgerService','public ServiceResult<CustomerPage> Page('),
+                      ('SupplierLedgerService','public ServiceResult<SupplierPage> Page('), ('SaleService','public ServiceResult<SaleQuote> Quote(')]:
+        need(body(read('Area11.Core/Services/' + file + '.cs'), sig), 'return _db.Snapshot(connection =>')
+    need(partner, 'SELECT name FROM customers WHERE active=1 AND IFNULL(phone,\'\')=@phone LIMIT 1;')
+    for file in ('CostPolicy','ProfitPolicy'):
+        need(read('Area11.Core/Services/' + file + '.cs'), 'settings.CurrentFinancialVisibility()')
+    need(read('Area11.Core/Services/SettingsService.cs'), 'public bool CurrentFinancialVisibility()', 'return false;')
+    for file, tokens in [
+        ('Products', ['_services.Products.LoadEditForm(_user, product.Id)', 'Editor.LoadPrepared(full.Value.Record.Id, full.Value.Extra)', 'patch, answers, _editVersion)']),
+        ('Customers', ['_services.Partners.LoadCustomerEditForm(_user, Selected.Id)', 'EditEditor.LoadPrepared(current.Id, prepared.Value.Extra)', 'EditEditor.AnswerValues(), _editVersion)']),
+        ('CustomFieldsEditor', ['_services.CustomFields.EditorSnapshot(_user, _entity, entityId)', 'values, _editVersion)']),
+        ('CustomFields', ['HelpText, _selectedField?.Field.EditVersion)', 'direction, _selectedField.Field.EditVersion)', '!field.Active, field.EditVersion)']),
+        ('NativeFields', ['required, confirmed, field.EditVersion)']),
+        ('UnitWindow', ['WholeOnly, SelectedUnit.EditVersion)']),
+        ('CatalogWindow', ['SelectedCategory.EditVersion)', 'SelectedCompany.EditVersion)', 'SelectedFormula.EditVersion)', 'SelectedBrand.EditVersion)', 'brandVersion = added.EditVersion;', 'brandVersion = updated.EditVersion;', 'wantCompanyId, brandVersion)'])]:
+        need(read('Area11.Desktop/ViewModels/' + file + 'ViewModel.cs'), *tokens)
+    need(body(product, 'public ServiceResult<int> AddBrand('), 'EditVersion = EditConcurrency.Capture(_db, connection, "brand", id)')
+    need(body(product, 'public ServiceResult UpdateBrand('), 'EditVersion = EditConcurrency.Capture(_db, connection, "brand", id)')
+    model = read('Area11.Core/Models/EditVersion.cs')
+    need(model, 'internal EditVersion(', 'internal string Fingerprint { get; }', 'JsonIgnore]')
+    tests = read('Area11.Tests/EditConcurrencyTests.cs')
+    need(tests, 'TwoDatabaseHandlesCannotSilentlyOverwriteTheSameProduct', 'SameTimestampButDifferentPersistedValueIsAConflict',
+         'ParentAndExtraAnswersDoNotOverwriteAConcurrentAnswerSave', 'EnabledDesktopStyleHostRejectsMissingBaseline',
+         'SnapshotKeepsBothReadsConsistentAcrossAnotherConnectionCommit', 'ReadSnapshotBlocksAccidentalWriteAndLeavesTheDatabaseUsable')
+    REPORT.append('Part5 first checkpoint:edit expected-state/BEGIN IMMEDIATE/read-snapshot contracts;not full concurrency/runtime proof')
+
+
 def check_authenticated_session_boundaries() -> None:
     """Lexical regressions only. Not authentication/security or WPF runtime certification."""
     def read(path): return (DOTNET / path).read_text()
@@ -6890,7 +6973,7 @@ def check_product_read_boundaries():
             if not args.startswith('_user,') or (purpose and f'purpose: ProductReadPurpose.{purpose}' not in args):
                 FAILURES.append(f'{stem} must pass current reader and correct product workflow')
     vm = (vms / 'ProductsViewModel.cs').read_text()
-    if '!full.Value.CostKnown' not in vm:
+    if '!full.Value.Record.CostKnown' not in vm:
         FAILURES.append('Product edit must not load masked zero cost')
     tests = (DOTNET / 'Area11.Tests/ProductReadBoundaryTests.cs').read_text()
     for name in ('AnonymousCatalogAndWorkflowReadsRefuse', 'ForgedOwnerRoleCannotReadProductsThroughAnotherAccount',
@@ -7220,7 +7303,7 @@ def check_financial_visibility_grants():
     if 'return false; // never fall back' not in financial:
         FAILURES.append('Financial DB failure must refuse visibility, not role-fallback')
     cost = (core / 'Services/CostPolicy.cs').read_text()
-    for token in ('settings.GetBool(MasterFoundationSettings.ProfitShowMargins, true)',
+    for token in ('settings.CurrentFinancialVisibility()',
                   'permissions.Can(user, Modules.PurchaseCost)'):
         if token not in cost:
             FAILURES.append(f'Cost policy must use main switch and independent cost grant: {token}')
@@ -8337,7 +8420,7 @@ def check_record_write_current_boundaries():
                    '!enabled || !_permissions.Can(writer, Modules.PurchaseCost)',
                    'var writer = RequireProductWriter(connection, actor);', 'RequireStoredCostEdit(connection, writer);',
                    'if (active is null || Convert.ToInt64(active) == 0)'], 'Core parent/cost/editor')
-    need(customer, ['_editingCustomerId = Selected.Id;',
+    need(customer, ['_editingCustomerId = current.Id;',
                     'if (!IsEditing || _editingCustomerId <= 0 || Selected?.Id != _editingCustomerId)',
                     'Id = _editingCustomerId,', 'SAVED. The customer change was stored, but the page could not refresh.'], 'pinned customer form')
     cleanup = customer.split('private void ClearEditForm()', 1)[-1].split('private void ClearSensitiveData()', 1)[0]
@@ -8855,7 +8938,7 @@ def check_draft_recovery_fault_boundaries():
     for name,tokens in required.items():
         for token in tokens:
             if token not in sources[name]: FAILURES.append('P36 '+name+' missing '+token)
-    db=sources['db'];order=['outcome.WorkStarted = true;','var result = work(connection);','outcome.CommitAttempted = true;','transaction.Commit();']
+    db=sources['db'].split('public T Tx<T>(',1)[-1];order=['outcome.WorkStarted = true;','var result = work(connection);','outcome.CommitAttempted = true;','transaction.Commit();']
     if [db.find(t) for t in order]!=sorted(db.find(t) for t in order): FAILURES.append('P36 transaction outcome ordering')
     d=sources['draft'];unknown=d.split('created = create(input);',1)[-1].split('if (!created.Ok',1)[0]
     if 'RestoreAfterFailure(' in unknown: FAILURES.append('P36 throwing creator must retain marker')
@@ -9214,6 +9297,7 @@ def main() -> int:
     check_windows_v1201_regressions()
     check_parent_record_save_outcomes()
     check_authenticated_session_boundaries()
+    check_edit_concurrency_boundaries()
     check_csharp_grammar()
 
     if not quiet:

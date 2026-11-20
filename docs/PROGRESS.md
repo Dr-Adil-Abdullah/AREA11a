@@ -1,8 +1,8 @@
 # PROGRESS - the feature board (what is done, what is next)
 
-## ⏳ موجودہ حصہ4/14 — v0.122.0 Larkspur
+## ⏳ موجودہ حصہ5/14 — پہلا checkpoint — v0.123.0 Verbena
 
-تازہNextسےصرفحصہ4منظور؛D-116میںمالکنےpassword/PINresetپرnext-actionfreshloginمنتخبکیا،محفوظریکارڈبرقرار/ممکنہunsavedlossقبول۔ Database-boundproof،Desktoporigin/inputguards،sharedcurrentreadersاورCounterfull-outputdeny/freshrestoreکاsource؛ownertargets/parentpickersکےجائزراستےبرقرار۔ ⏳22newC#cases/3057suiteیہاںUNRUN؛113static/52newlexicalnegativesصرفمحدودثبوت۔ [⏳ جائزہ/PT-64](AUTHENTICATED-SESSION-REVIEW-URDU.md)؛[⏳14حصے](REMAINING-14-PORTIONS-URDU.md)۔ حصہ2کے22fixesاورحصہ3کے72testsکانیاWindowsrunبھیباقی؛پرانےحصہ4غیرمنظورکےحوالےتاریخی۔ FullPhase4OPEN؛❌حصہ5شروعنہیں،installerنہیںبنا۔
+تازہNextسےصرفحصہ5منظور؛**حصہ5ابھیجاری،باقیsourceجائزہبھیباقی**۔ Product/Customer+extraanswersکےcoherentsnapshots/expected-stateguards،definition/native/catalog/Unitcheckededits،brandphase1token،currentDBmainاورphonecreateTxrecheck۔ ⏳25newC#facts/3082suiteUNRUN؛114static/47newlexicalnegative/18PythonSQLiteplans.NET/provider/Windowsثبوتنہیں۔ [⏳ جائزہ/PT-65/باقیحصہ5](EDIT-CONCURRENCY-REVIEW-URDU.md)؛[⏳14حصے](REMAINING-14-PORTIONS-URDU.md)۔ **اگلاکاماسیحصہ5کےSettings/sharedDrafts/StockTake/remainingtoggle/updates/snapshotroutesپر؛حصہ6شروعنہیںکرنا۔** حصوں2/3/4کانیاWindowsrunبھیباقی؛FullPhase4OPEN؛❌installerنہیںبنا۔
 
 
 ## ⏳ موجودہ حصہ2/14 — v0.120.2 Willow

@@ -98,7 +98,8 @@ WHERE product_id = @id AND active = 1 AND qty_base > 0
     {
         try
         {
-            using var connection = _db.Open();
+            return _db.Snapshot(connection =>
+            {
             user = RequirePostingReader(connection, user);
             var computed = Compute(connection, input, user);
 
@@ -159,6 +160,7 @@ WHERE product_id = @id AND active = 1 AND qty_base > 0
                 Units = computed.Lines.Sum(line => line.QtyBase),
                 Warnings = warnings
             }, warnings.ToArray());
+            });
         }
         catch (ValidationException exception)
         {

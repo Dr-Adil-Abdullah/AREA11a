@@ -8,6 +8,9 @@ namespace Area11.Core.Models;
 /// </summary>
 public sealed class Product
 {
+    [System.Text.Json.Serialization.JsonIgnore]
+    public EditVersion? EditVersion { get; internal set; }
+
     public int Id { get; set; }
 
     public string Name { get; set; } = string.Empty;

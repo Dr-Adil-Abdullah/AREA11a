@@ -18,7 +18,7 @@ public static class ProfitPolicy
             return false;
         }
 
-        return settings.GetBool(MasterFoundationSettings.ProfitShowMargins, true)
+        return settings.CurrentFinancialVisibility()
             && permissions.Can(user, Modules.Profit);
     }
 }

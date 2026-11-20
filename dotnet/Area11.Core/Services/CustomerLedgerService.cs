@@ -128,7 +128,8 @@ ORDER BY c.balance_paisa DESC, c.name COLLATE NOCASE;",
     {
         try
         {
-            using var connection = _db.Open();
+            return _db.Snapshot(connection =>
+            {
             var reader = LedgerReadAccess.Require(_db, connection, _permissions, user, Modules.Customers);
 
             var summary = _db.QuerySingle<CustomerSummary>(connection, @"
@@ -204,6 +205,7 @@ FROM customers c WHERE c.id = @id;", new { id = customerId });
             page.ExpectedPaisa = running;
 
             return ServiceResult<CustomerPage>.Success(page);
+            });
         }
         catch (ValidationException exception)
         {

@@ -7,6 +7,6 @@ public static class CostPolicy
 {
     public static bool CanSee(PermissionService permissions, SettingsService settings, User? user) =>
         permissions is not null && settings is not null && user is not null
-        && settings.GetBool(MasterFoundationSettings.ProfitShowMargins, true)
+        && settings.CurrentFinancialVisibility()
         && permissions.Can(user, Modules.PurchaseCost);
 }

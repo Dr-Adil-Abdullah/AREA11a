@@ -752,6 +752,8 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         ProductEditorDoor.Show(this);
     }
 
+    private EditVersion? _editVersion;
+
     private void BeginEditProduct()
     {
         if (!_recordSave.Ready || !_quickCatalogSave.Ready)
@@ -780,20 +782,21 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
 
         // Search rows carry display text but not CategoryTagIds. Fetch the complete record before
         // editing; otherwise an ordinary save would silently replace its existing tags with none.
-        var full = _services.Products.Get(_user, product.Id);
-        if (!full.Ok || full.Value is null || !full.Value.Active)
+        var full = _services.Products.LoadEditForm(_user, product.Id);
+        if (!full.Ok || full.Value is null || !full.Value.Record.Active)
         {
             InvalidateEditor(full.Error ?? "That medicine is no longer active. Refresh and try again.");
             return;
         }
-        if (!full.Value.CostKnown)
+        if (!full.Value.Record.CostKnown)
         {
             InvalidateEditor("View Purchase Cost permission and the main financial visibility switch are required to edit stored cost. No values were changed.");
             return;
         }
 
-        LoadForm(full.Value);
-        Editor.Load(full.Value.Id);
+        LoadForm(full.Value.Record);
+        _editVersion = full.Value.Version;
+        Editor.LoadPrepared(full.Value.Record.Id, full.Value.Extra);
         if (!Editor.LoadedSuccessfully)
         {
             InvalidateEditor("Extra fields could not be loaded. Reopen the product editor.");
@@ -808,6 +811,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
         _editorAccessLost = !loadFields;
         OnPropertyChanged(nameof(CanSaveEditor));
         _editingId = null;
+        _editVersion = null;
         _selectedProduct = null;
         OnPropertyChanged(nameof(SelectedProduct));
         if (loadFields) Editor.LoadNew();
@@ -1031,7 +1035,7 @@ public sealed class ProductsViewModel : ObservableObject, IEmptyPage
             else
             {
                 writeStarted = true;
-                var updated = _services.Products.Update(_user, _editingId!.Value, patch, answers);
+                var updated = _services.Products.Update(_user, _editingId!.Value, patch, answers, _editVersion);
                 if (!updated.Ok)
                 {
                     _recordSave.ObserveFailure(updated);
