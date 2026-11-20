@@ -1,5 +1,10 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## ⏳ v0.119.0 حصہ41 — Next کا محدود photo/file fault review؛نئی policy نہیں
+
+⏳ Unknown COMMIT میں referenced photo حذف کرنے کا خطرہ اور untracked partial copy کا راستہ درست؛Product/Customer/Supplier staged copies بھی observed Tx سے۔ Gallery Add window-local guard؛parent form duplicate handling/global identity کی تصدیق نہیں۔ ✅ مالی حساب،refund/discount/permissions policy اورrecovery financial service unchanged۔ [⏳ PT-61](POS-PHASE4-PART41-URDU.md)،[⏳ trace](POS-PHASE4-PHOTO-FILE-FAULT-REVIEW.md)۔ ⏳2916C#suiteUNRUN/FullPhase4OPEN؛❌installerنہیںبنی۔
+
+
 ## ⏳ v0.118.0 حصہ40 — Next کا PRcurrent-boundaryreview؛نئی مالی policy نہیں
 
 ⏳5–7/17/21/23PRcurrentstoredReturnsactor،Owner/Managerdecisions،storedaudit،explicitPageاورcompleteReceipt،deniedUIcleanup/regrantfreshLoad؛99C#cases/2888suiteUNRUN۔ ✅مالیSQL/helpers/receiptCompose،عامجائزReturnsreaderاورrefund/stockpolicyبرقرار؛نئیSales/Cost/Profitشرطنہیں۔ ⏳Session/same-role-ID/CAS/provider/WPFباقی؛[⏳ PT-60](POS-PHASE4-PART40-URDU.md)،[⏳ trace](POS-PHASE4-PROVISIONAL-CURRENT-REVIEW.md)۔ ⏳FullPhase4OPEN؛❌installerbinaryنہیںبنی۔

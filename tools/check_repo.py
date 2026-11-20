@@ -6084,6 +6084,62 @@ def _parameters(source: bytes, node) -> tuple[int, int, bool]:
     return required, total, variadic
 
 
+def check_photo_file_fault_boundaries() -> None:
+    """P41 lexical contracts only. NOT .NET/file-provider/WPF execution."""
+    photo = (DOTNET / 'Area11.Core/Services/PhotoService.cs').read_text()
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/PhotoGalleryViewModel.cs').read_text()
+    tests = (DOTNET / 'Area11.Tests/PhotoFileFaultTests.cs').read_text()
+    def need(text, token):
+        if token not in text: FAILURES.append('P41 missing contract: ' + token)
+    copy = photo.split('internal static void CopyOwned(',1)[-1].split('internal static void DiscardCopy(',1)[0]
+    for token in ('ownedPath = null;', 'FileMode.CreateNew', 'FileShare.None', 'ownedPath = destination;',
+                  'new byte[64 * 1024]', 'source.Read(buffer, 0, buffer.Length)', 'read > limit - total',
+                  'output.Write(buffer, 0, read)', 'total == 0', 'output.Flush(flushToDisk: true)'):
+        need(copy, token)
+    if not (copy.find('FileMode.CreateNew') < copy.find('ownedPath = destination;') < copy.find('source.Read(') < copy.find('output.Write(')):
+        FAILURES.append('P41 exclusive ownership must precede reading/writing partial output')
+    cleanup = photo.split('internal static void DiscardCopy(',1)[-1].split('public ServiceResult SetProductCover(',1)[0]
+    for token in ('if (string.IsNullOrEmpty(path)) return;', 'if (!outcome.NoCommitConfirmed)',
+                  'retained for verification:', 'return;', 'File.Delete(path);', 'IOException or UnauthorizedAccessException', 'could not be removed'):
+        need(cleanup, token)
+    if not (cleanup.find('if (!outcome.NoCommitConfirmed)') < cleanup.find('retained for verification:') < cleanup.find('return;', cleanup.find('retained for verification:')) < cleanup.find('File.Delete(path);')):
+        FAILURES.append('P41 unknown copy must return before delete')
+    if 'new PhotoService' in cleanup: FAILURES.append('P41 cleanup must not instantiate photo folders')
+    add = photo.split('public ServiceResult<PhotoItem> Add(',1)[-1].split('internal string? ValidateSource(',1)[0]
+    for token in ('var outcome = new TransactionOutcome();', 'out copiedPath), outcome);',
+                  'DiscardCopy(copiedPath, outcome, _log);', 'NoCommitConfirmed = outcome.NoCommitConfirmed'):
+        need(add, token)
+    need(photo, 'Guid.NewGuid().ToString("N")')
+    if 'File.Copy(source, destination' in photo: FAILURES.append('P41 photo copy must be exclusively bounded/tracked')
+    for path, start, end, catches in (
+        ('ProductService.cs','public ServiceResult<int> Create(','public ServiceResult Update(',3),
+        ('PartnerService.cs','public ServiceResult<int> CreateCustomer(','public ServiceResult<CustomerEditResult> UpdateCustomer(',2),
+        ('PartnerService.cs','public ServiceResult<int> CreateSupplier(',None,2)):
+        source = (DOTNET / 'Area11.Core/Services' / path).read_text().split(start,1)[-1]
+        if end: source = source.split(end,1)[0]
+        for token in ('var outcome = new TransactionOutcome();', '}, outcome);', 'NoCommitConfirmed = outcome.NoCommitConfirmed'):
+            need(source, token)
+        if source.count('PhotoService.DiscardCopy(stagedCopy, outcome, _log);') != catches:
+            FAILURES.append('P41 parent cleanup must observe outcome: ' + start)
+        if 'Photos().DiscardCopy(' in source: FAILURES.append('P41 unsafe parent cleanup')
+    addvm = vm.split('public void AddFile(string path)',1)[-1].split('private void TakePhoto()',1)[0]
+    for token in ('if (!CanBeginAdd() || !RefreshAccess()) return;', '_addNeedsVerification = true;',
+                  'if (!added.Ok && added.NoCommitConfirmed) _addNeedsVerification = false;',
+                  'acknowledged = true;', 'if (!_lastLoadSucceeded)', 'if (!CanEdit || Selected?.Item.Id != added.Value.Id || !HasPreview)', 'catch (Exception exception)'):
+        need(addvm, token)
+    if not (addvm.find('_addNeedsVerification = true;') < addvm.find('_services.Photos.Add(') < addvm.find('acknowledged = true;') < addvm.find('Load();') < addvm.rfind('_addNeedsVerification = false;')):
+        FAILURES.append('P41 Add latch must surround service/ack/refresh')
+    if vm.count('_addNeedsVerification = false;') != 2: FAILURES.append('P41 Refresh/regrant must not release Add latch')
+    for token in ('CleanupRequiresPositiveNoCommitEvidence', 'CollisionNeverClaimsOrOverwritesExistingFile',
+                  'CopyFaultTracksPartialOwnedOutputForConfirmedRollbackCleanup', 'CleanupIoFailureIsLoggedNotThrown',
+                  'AuditFaultRollsBackRowsAndOnlyNewOwnedCopy', 'Assert.Equal(before, Counts(t));',
+                  '[InlineData(true, true, true, false)]', 'Assert.True(result.NoCommitConfirmed);'):
+        need(tests, token)
+    if len(re.findall(r'\[(?:Fact|InlineData)(?:\(|\])',tests)) != 28: FAILURES.append('P41 expected28 source cases')
+    need((DOTNET / 'Area11.Core/Properties/AssemblyInfo.cs').read_text(), 'InternalsVisibleTo("Area11.Tests")')
+    REPORT.append('P41 photo file faults: exclusive bounded owned-copy/partial tracking, observed parent outcomes, conservative cleanup and window-local Add latch;28 source cases UNRUN')
+
+
 def check_csharp_grammar() -> None:
     """Every C# file must parse, and every `Type.Member` must be a member that type declares.
 
@@ -6700,17 +6756,17 @@ def check_photo_current_boundaries():
         if token not in photo: FAILURES.append(f'Current photo boundary missing {token}')
     for start,end,token in (
         ('public ServiceResult<List<PhotoItem>> List(', 'public ServiceResult<PhotoItem> Add(', 'RequireGallery(connection, user, key, entityId);'),
-        ('internal ServiceResult<PhotoItem> AddInTransaction(', 'internal void DiscardCopy(', 'var writer = RequireGallery(connection, user, key, entityId);'),
+        ('internal ServiceResult<PhotoItem> AddInTransaction(', 'internal static void CopyOwned(', 'var writer = RequireGallery(connection, user, key, entityId);'),
         ('public ServiceResult SetProductCover(', 'public ServiceResult Restore(', 'var writer = RequireGallery(connection, user, selected.Entity, selected.EntityId);'),
         ('private ServiceResult ChangeActive(', 'private ServiceResult<PhotoItem> Read(', 'var writer = RequireGallery(connection, user, row.Entity, row.EntityId);'),
         ('private ServiceResult<PhotoItem> Read(', 'public ServiceResult CheckAccess(', 'RequireGallery(connection, user, row.Entity, row.EntityId);'),
         ('public ServiceResult<string> OwnAvatar(', 'public ServiceResult<string> PathOf(', 'RequireActor(connection, user);')):
         body = photo.split(start,1)[-1].split(end,1)[0]
         if token not in body: FAILURES.append(f'Current photo check missing in {start}')
-    add = photo.split('internal ServiceResult<PhotoItem> AddInTransaction(',1)[-1].split('internal void DiscardCopy(',1)[0]
-    if not (add.find('RequireGallery(') < add.find('File.Copy(') < add.find('_audit.Record(connection, writer,')):
+    add = photo.split('internal ServiceResult<PhotoItem> AddInTransaction(',1)[-1].split('internal static void CopyOwned(',1)[0]
+    if not (add.find('RequireGallery(') < add.find('CopyOwned(') < add.find('_audit.Record(connection, writer,')):
         FAILURES.append('Current photo writer must be checked before file copy and stored audit')
-    if photo.count('_audit.Record(connection, writer,') != 3 or 'DiscardCopy(copiedPath);' not in photo:
+    if photo.count('_audit.Record(connection, writer,') != 3 or 'DiscardCopy(copiedPath, outcome, _log);' not in photo:
         FAILURES.append('Photo add/cover/visibility audit needs stored current writer; failed new copy cleanup retained')
     for token in ('public bool RefreshAccess()', '_services.Photos.CheckAccess(_user, Entity, EntityId)',
                   'Selected = null;', 'Preview = null;', 'CountText = "Photos not loaded";',
@@ -6719,12 +6775,12 @@ def check_photo_current_boundaries():
                   'CanEdit = true;', '_lastLoadSucceeded = CanEdit;', 'public bool HasNoPhotos => CanEdit && Photos.Count == 0;',
                   'SAVED. The photo change was stored, but the gallery could not refresh.'):
         if token not in vm: FAILURES.append(f'Current gallery lifecycle missing {token}')
-    if vm.count('SAVED. The photo change was stored, but the gallery could not refresh.') != 4:
+    if vm.count('SAVED. The photo change was stored, but the gallery could not refresh.') != 3 or 'SAVED. The photo was stored, but the gallery could not refresh.' not in vm:
         FAILURES.append('Each of four gallery write actions needs explicit postcommit SAVED refresh failure')
     if 'Preview = Decode(row.Item.FullPath' in vm: FAILURES.append('Gallery preview must not open cached path without current service read')
     for method in ('Add()', 'AddFile(string path)', 'TakePhoto()', 'SetCover()', 'Hide()', 'Restore()', 'OpenFile()'):
         body = vm.split('void ' + method,1)[-1].split('}',1)[0]
-        if 'if (!RefreshAccess()) return;' not in body: FAILURES.append(f'Current gallery command missing check: {method}')
+        if not any(token in body for token in ('if (!RefreshAccess()) return;', 'if (!CanBeginAdd() || !RefreshAccess()) return;')): FAILURES.append(f'Current gallery command missing check: {method}')
     for token in ('TimeSpan.FromSeconds(3)', 'viewModel.RefreshAccess()', 'accessTimer.Start()', 'Closed += (_, _) => accessTimer.Stop();'):
         if token not in window: FAILURES.append(f'Current gallery window lifecycle missing {token}')
     if 'Title = "Photos - " + viewModel.Title;' in window:
@@ -8868,6 +8924,7 @@ def main() -> int:
     check_expense_stock_fault_boundaries()
     check_provisional_posting_fault_boundaries()
     check_provisional_current_access()
+    check_photo_file_fault_boundaries()
     check_csharp_grammar()
 
     if not quiet:

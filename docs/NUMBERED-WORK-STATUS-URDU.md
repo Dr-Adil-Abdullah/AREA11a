@@ -1,14 +1,14 @@
 # نمبر وار کام اور باقی جانچ — مستقل1تا36فہرست
 
-**⏳ موجودہ source: v0.118.0 Sedge / حصہ40؛مکمل عملی تصدیق نہیں۔** یہ وہی36نمبر ہیں جن کی مالک نے تفصیلی وضاحت مانگی۔ اگلے حصوں میں نمبر تبدیل نہیں کریں؛done-source،یہاں کی جانچ،Windowsثبوت اورباقی کام الگ لکھیں۔ **36نمبر،36Next نہیں؛فیچرboardکی فیصد Phase4 safety فیصد نہیں۔**
+**⏳ موجودہ source: v0.119.0 Moraine / حصہ41؛مکمل عملی تصدیق نہیں۔** یہ وہی36نمبر ہیں جن کی مالک نے تفصیلی وضاحت مانگی۔ اگلے حصوں میں نمبر تبدیل نہیں کریں؛done-source،یہاں کی جانچ،Windowsثبوت اورباقی کام الگ لکھیں۔ **36نمبر،36Next نہیں؛فیچرboardکی فیصد Phase4 safety فیصد نہیں۔**
 
-✅ منظورشدہعلامتیں:✅صرف100%مکملمتعلقہکام؛⏳جاری/کچھباقی؛❌شروعنہیں۔ ⏳تازہ5–7/17/21/23PRcurrentactor/read/write/receipt،explicitPagefailure،deniedUIcleanup/regrantfreshLoad؛99نئےcases/2888suiteUNRUN۔ ✅35Pythonactordenials/actualreadSQL+27lexicalmutationsPASS،C#/WPFنہیں۔ [⏳ PT-60](POS-PHASE4-PART40-URDU.md)،[⏳ trace](POS-PHASE4-PROVISIONAL-CURRENT-REVIEW.md)۔ ⏳runtime/FullPhase4باقی؛❌installerbinaryنہیںبنی۔
+✅ منظورشدہعلامتیں:✅صرف100%مکملمتعلقہکام؛⏳جاری/کچھباقی؛❌شروعنہیں۔ ⏳تازہ12/23–25/28photoownedcopy/observedcleanup/gallerylocalAddguard؛28نئےcases/2916suiteUNRUN۔ ✅17Pythonfilecases+3actualphotoSQLrollbackplans/1syntheticlostack+23lexicalmutationsPASS؛C#/WPFنہیں۔ [⏳ PT-61](POS-PHASE4-PART41-URDU.md)،[⏳ trace](POS-PHASE4-PHOTO-FILE-FAULT-REVIEW.md)۔ ⏳runtime/FullPhase4باقی؛❌installerbinaryنہیںبنی۔
 
 | مستقل نمبر / دائرہ | کیا ہوگیا؟ | کیا باقی ہے؟ |
 |---|---|---|
-|1۔ ⏳ ورژن/GitHub | v0.118Sedge/source/docs/icon/scriptsaligned | samebranchcommit/push/actualremoteverificationآخریرپورٹمیں |
-|2۔ ⏳ C#tests | 2888متوقعcases؛حصہ40میں99نئے(96inline+3fact) | تازہC#compile/run/fix/retestیہاںنہیںچلا |
-|3۔ ⏳ Source/syntheticchecks | 107staticcontracts؛نیا35Pythonactordenial/readSQLprobeاور27lexicalmutations؛حتمینتائجtraceمیں | یہC#/WPF/provider/securitycertificationنہیں |
+|1۔ ⏳ ورژن/GitHub | v0.119Moraine/source/docs/icon/scriptsaligned | samebranchcommit/push/actualremoteverificationآخریرپورٹمیں |
+|2۔ ⏳ C#tests | 2916متوقعcases؛حصہ41میں28نئے(25inline+3fact) | تازہC#compile/run/fix/retestیہاںنہیںچلا |
+|3۔ ⏳ Source/syntheticchecks | 108staticcontracts؛نیا17Pythonfilecases/3SQLfaultplans/1lostackreferenceاور23lexicalmutations؛حتمینتائجtraceمیں | یہC#/WPF/provider/securitycertificationنہیں |
 |4۔ ⏳ پرانےWindowsfailures | v0.80کے1333PASS/4FAILکیچاروںوجوہ/sourcefixشناخت | تازہsuiteپرretestاورنئیfailuresکیfix؛پرانانتیجہنیاPASSنہیں |
 |5۔ ⏳ Account/role/session | PRابcurrentstoredactive/sameparsedrole/Returns؛validOwnerبھیcurrentrow؛storedauditactor | authenticatedsessiontoken/same-role-IDimpersonation،remainingcallers؛یہfullsessionproofنہیں |
 |6۔ ⏳ Parentrecordcreate/edit/read | PRCreate/Link/CancelTxcurrentactorقبلtarget،reads/receiptcurrent؛پچھلےdraft/heldboundariesبرقرار | remainingquickadd/parent/sessioncallers،atomicCAS؛legacy/otherworkflowreview |
@@ -17,7 +17,7 @@
 |9۔ ⏳ Customanswersservice | sharedinternalcurrentactor/storedaudit؛existingparentreads؛historicalinactiveپالیسیبرقرار | باقیcallers،اصلTxexecution،read/loadraces؛internalworkflowgatecaller-owned |
 |10۔ ⏳ Customanswereditor | stalerecordrows/stagedpathcleanup،freshoutputs،SAVED،loadedtimer | اصلbindings/focus/regrant/parentdraftconsistency؛definitionversionsyncالگ |
 |11۔ ⏳ Nativefields | currentOwner/suppliedactivepreflight،failedselectioncleanup،freshriskprompt،stableaccesschecks | اصلWindows/timer/confirmationاورformactionreconciliation |
-|12۔ ⏳ Photos/gallery | currentreviewedreads/writes/parent/path؛stalegallerycleanup؛approvedcover/avatarexceptions | camera/codec/viewer،othercachedcovers/avatar،filefault/collision/cleanup/powerloss |
+|12۔ ⏳ Photos/gallery | exclusiveGUID/boundedownedcopy؛partialtracking؛unknownretain،galleryAddlocalguard؛currentaccessبرقرار | اصلC#/WPF/codec/camera؛providerCOMMIT/diskfull/ACL/powerloss؛othergalleryactions |
 |13۔ ⏳ Cost/Profit/main | الگgrants/main/masks؛حصہ27stored-costpatchfreshDBmain+Cost؛authorednewcost/non-costCorepatchبرقرار | باقیroute/output/Windowscombinations؛free-textclassificationنہیں،preflightCASنہیں |
 |14۔ ⏳ Pricing/discount/Extra | approvedbelow-actual-costfloor،sale-onlyExtra،limits/returnBکےsource/tests | تازہruntimeاورcross-page/retryreconciliation؛settledrulesدوبارہنہیںکھولنے |
 |15۔ ⏳ Counter/bill/stock | عامCompleteسےپہلےsharedDraftsave/link؛sameIDpost؛all draftHoldrefused؛Holdknown/unknown/cleanupguards | اصلWPF/restart/powercut،fullPOS/session/scanner،ordinaryHolddurableintent |
@@ -29,17 +29,17 @@
 |21۔ ⏳ Reports/files/exports | PRcompleteauthorizedheader+linesreceipt؛linefailureپرBuildfailure؛receiptComposeunchanged؛Historycurrentbulkپہلے | alreadyprepared/printed/exportedoutputsnotrecalled؛باقیExcel/CSV/PDF/print/Windowsroutes |
 |22۔ ⏳ Blackbox/BookCheck | صرفapprovednavigationgateAudit+Cost+Profit+main؛حالیہinternalsunchanged | تازہWindowsnavigationproof؛بغیراجازتغیرمتعلقredesignنہیں |
 |23۔ ⏳ DB/permissiontransaction | PRobservedTxمیںstoredactorقبلtarget،normalizedaudit؛localReadgateبعضPRreadunitsمیں | session/same-role-ID/CAS/externalcoherentsnapshot/realCOMMIT/parallel/durableidentityباقی |
-|24۔ ⏳ Fault/rollback | P39کے36faultcasesبرقرار؛نئے99currentPRcasesمیں70denials/21valid/8audit-role-readfaultcases | تمام2888C#UNRUN؛باقیrecovery/files/providerCOMMIT/WPFcallbackfaults |
-|25۔ ⏳ Duplicate/retry | P38guardابPRSave/Link/Cancelمشترک؛unknown/ackcleanupمیںwrites/trayeditبند؛Loadکاautomaticnexttargetبھیصاف | pageReopen/restart/globalidentity/parallel/providerCOMMITباقی؛localflagdurablekeyنہیں |
+|24۔ ⏳ Fault/rollback | 28نئےphotoC#cases:8outcomes/4copyboundaries/2creationrefusals/3copyfaults/2nullpaths/1cleanupfailure/4auditfaults/4success؛پرانےtestsبرقرار | تمام2916C#UNRUN؛باقیrecovery/files/providerCOMMIT/WPFcallbackfaults |
+|25۔ ⏳ Duplicate/retry | galleryAddunknown/ackrefreshguardRefresh/regrantسےresetنہیں؛parentcleanupobserved؛پرانےPR/stock/draftguardsبرقرار | parentcreationUIretry/othergalleryactions/pageReopen/restart/globalidentity/parallel/providerCOMMITباقی؛localflagdurablekeyنہیں |
 |26۔ ⏳ Encryptedbackup | passwordA .a11bakcode،manual/auto/safety/rollbackintegration،referencechecks | اصلC#service/DPAPI/ACL/passwordrotation/large-photo/interruptionverification |
 |27۔ ⏳ Restore/newPC | stagedvalidation/safety/rollback/explicitlegacycode | نئےPCپرoriginalpassword،wrong/corrupt/interruptedrestore،پراناDB/photosبچنااورstartupثبوت |
-|28۔ ⏳ Files/bounds | متعدددخل/path/size/extension/archivelimits | malformed/largeimage/archive/import،codec/replacement/collision/cleanup/powerloss |
+|28۔ ⏳ Files/bounds | photoexclusive12MBstreambound/partialoutput/confirmedcleanup؛پرانےpath/archivelimits | malformed/largeimage/archive/import،codec/replacement/collision/cleanup/powerloss |
 |29۔ ⏳ Cloud/credentials | بنیادیsync/settingsboundaries/newauditkeyredactionsource | الگtestremoteintegration،networkloss/retry/duplicates/isolation/credentials/restoreconfig |
 |30۔ ⏳ Desktop/WPF | UI/source/bindingchecks | تازہReleasebuild،windows/dialogs/DPI/clipping/scroll/selection/screenshots/logs |
 |31۔ ⏳ Keyboard/scanner | permanentsearch/approvednavigationcode | arrows/Shift-arrows/nativecaret/combo/grid/TabاوراصلUSBlookup/focus |
 |32۔ ⏳ Printer/PDF/camera | receipt/print/PDFcode؛پراناownerprinter-slipproofمحفوظ | تازہreceipts/width/printer/no-printer/scanner/camera/viewerاورfiguresملاپ |
 |33۔ ⏳ Startup/login/lock | approvedstartup/singleinstance/FocusGuard/recoverycode | حقیقیregistry/reboot/re-entry/escape/reset/recovery/shortcuts/taskbar/icon |
-|34۔ ⏳ Guide/actionreconciliation | اردوMD/HTML،PT-60/trace/1–36trackerاور36lessonanchorsاپڈیٹ | اصلappتمامroutes/settings/actionsسےملاپ،Windows/PTsignoffsباقی |
+|34۔ ⏳ Guide/actionreconciliation | اردوMD/HTML،PT-61/trace/1–36trackerاور36lessonanchorsاپڈیٹ | اصلappتمامroutes/settings/actionsسےملاپ،Windows/PTsignoffsباقی |
 |35۔ ⏳ Isolatedtestinstallation | verifiedbackup+separateDB/photos/configکیشرطdocumented | اصلVM/sparePC/storageproof،startup/migrationسےshopdataمحفوظ؛exefolderاکیلاکافینہیں |
 |36۔ ❌ Singleinstaller | مالککیاجازت؛build/installerconfig/scriptsموجود | کامیابWindowsbuild/tests،exeبننا،cleaninstall/upgrade/uninstall/datapreservation/shortcuts/startup،پھرsendablefile؛**ابھینہیںبنا** |
 

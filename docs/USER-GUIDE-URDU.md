@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.118.0 Sedge۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.119.0 Moraine۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**⏳ حصہ41 — تصویر کی copy اور retry:** اگر Add کا نتیجہ **unconfirmed** ہو تو copy برقرار،دوبارہ Add سے پہلے record/gallery/photo folder verify کریں؛صرف rollback ثابت ہونے پر نئی owned copy ہٹ سکتی ہے۔ Collision پر پرانی تصویر نہیں بدلی جاتی؛نقل12MB تک محدود ہے۔ Gallery میں unknown یا**SAVED**کےبعدrefresh/previewخرابہوتواسیwindowمیںدوبارہAddبند؛Refreshیااجازتواپسآنااسےنہیںکھولتا۔ جانچکےبعدgalleryدوبارہکھولیں؛reopenخودکارverificationنہیں۔ Product/Customer/Suppliercreationکیstagedcopyبھیunknownپررہتیہے؛انformsمیںduplicate retryکیجامعحفاظتکادعوینہیں۔ [⏳ PT-61](POS-PHASE4-PART41-URDU.md)،[⏳ حدود](POS-PHASE4-PHOTO-FILE-FAULT-REVIEW.md)۔ ⏳28نئےcases/2916suiteUNRUN؛FullPhase4OPEN؛❌installerنہیںبنی۔
 
 **⏳ حصہ40 — PRکیcurrentاجازت/مکملreceipt:** پراناaccount/codeکافینہیں؛موجودہactive/sameparsedrole/Returnsچیک،Attach/CancelcurrentOwner/Manager۔ اگلےaction/nominal3stickپرdeniedrows/tray/refund/customer/phone/notes/lookupصاف؛یہunsavedtypedworkمٹاتاہے،خودpostingنہیں۔ Stableallowedticktypingبرقرار؛regrantپرexplicitRefresh،پرانامتنبھالنہیں۔ Failedlistreadکوemptyنہیںکہا،decision/reprintبند؛line-readfailمیںheader-onlysuccessfulreceiptنہیں۔ [⏳ PT-60](POS-PHASE4-PART40-URDU.md)،[⏳ حدود](POS-PHASE4-PROVISIONAL-CURRENT-REVIEW.md)۔ ⏳99نئےcases/2888suiteUNRUN؛یہsession/CAS/instantrecallنہیں؛FullPhase4OPEN؛❌installerbinaryنہیںبنی۔
 
@@ -246,6 +248,8 @@ Recovery سے داخلہ پرانی فروخت یا کھاتے کو reset نہی
 ## سبق 07 — تصاویر، بارکوڈ اور چیز کی تاریخ
 
 1. Photos of this medicine…، فہرست کی تصویر، یا کسٹمر/سپلائر/staff کے Photos… سے gallery کھولیں۔ Add a photo… اصل فائل کی نقل محفوظ کرتا ہے۔ Take a photo (camera) Windows Camera کھولتا ہے؛ تصویر محفوظ کرکے واپس Add a photo سے منتخب کریں۔
+⏳ **Add میں خرابی:** “unconfirmed” یا “SAVED … refresh failed” ہو تو اسی تصویر کو پھر نہ چنیں۔ پہلے اصل record،gallery اورphotos folder ملائیں؛unknown copy خود سے delete نہ کریں۔ Refresh سے Add guard نہیں کھلتا؛جانچ کے بعد window بند کرکے دوبارہ کھولیں۔ یہ صرف موجودہ window کا guard ہے،بجلی بند/restart/دوسرےPC کی ضمانت نہیں۔
+
 2. صحیح active تصویر منتخب کرکے Set as cover؛ Open full size سے بڑی دیکھیں۔ Put away صرف چھپاتا ہے، فائل/تاریخ مٹاتا نہیں؛ Bring back سے واپس۔ Missing file کا مطلب فہرست میں ریکارڈ ہے مگر تصویر کی فائل موجود نہیں۔
 3. Barcodes of this medicine… میں code سکین کریں اور Printed on میں **صحیح pack** (box/strip/base وغیرہ) چنیں۔ Add this barcode۔ ایک box code کی beep ایک box ڈالے گی، ایک tablet نہیں۔
 4. غلط code کو Put away، درست کو فعال کریں۔ صرف مالک/مینیجر یہ تعریفیں بدلیں۔ قیمت بدلنے کے لیے barcode دوبارہ بنانے کی ضرورت نہیں۔
@@ -782,7 +786,7 @@ Recoveryکیfailedslipپرپرنٹرکوخالیdocumentنہیںدیاجاتا۔
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.118.0 کا متوقع test count 2888 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.119.0 کا متوقع test count 2916 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 

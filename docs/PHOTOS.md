@@ -1,5 +1,10 @@
 # تصاویر — Photos, covers and the app icon (Portion 17, v0.58.0)
 
+## ⏳ موجودہ حصہ41 / v0.119.0 — copy،نہ کہ database/file atomicity
+
+⏳ نئی copy exclusive اور12MB stream-bound؛collision پر پرانی فائل اپنی جگہ،partial output کا owned path معلوم۔ صرف confirmed no-commit پر اسی نئی copy کا cleanup؛unknown outcome میںretain/log،خود سے orphan سمجھ کر delete نہیں۔ Gallery Add unknown یاSAVED-refreshfailure پر اسی window میںدوبارہ Addبند؛Refresh/regrantاسےنہیںکھولتے۔ پہلے record/gallery/photos verifyپھرreopen؛یہverificationخودکارنہیں،restart/globalduplicatekeyنہیں۔ Parent creators کیfilecleanupدرست،ان کےتمامUIretrypathsکیسندنہیں۔ ⏳[PT-61](POS-PHASE4-PART41-URDU.md)/[trace](POS-PHASE4-PHOTO-FILE-FAULT-REVIEW.md)؛28نئےC#cases/2916suiteUNRUN۔ نیچےتاریخیوضاحت،موجودہprivacyکےلیےحصہ24بھیپڑھیں۔
+
+
 یہ دستاویز بتاتی ہے کہ دکان کی تصاویر کہاں رہتی ہیں، کون دیکھ سکتا ہے، اور
 بیک اپ میں ان کے ساتھ کیا ہوتا ہے۔ (Portion 17 نے پہلے سے بنی گیلریوں کا
 جائزہ لیا اور ہر چننے والی فہرست پر دوا کی تصویر لگائی۔)

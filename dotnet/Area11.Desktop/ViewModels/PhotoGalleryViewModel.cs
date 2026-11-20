@@ -34,6 +34,8 @@ public sealed class PhotoGalleryViewModel : ObservableObject
     private string _countText = "no photos";
     private string _hiddenText = string.Empty;
     private bool _lastLoadSucceeded;
+    // Window-local only: Refresh/access regrant never resolves an uncertain Add.
+    private bool _addNeedsVerification;
     private readonly string _recordTitle;
     private string _title = string.Empty;
 
@@ -365,7 +367,7 @@ public sealed class PhotoGalleryViewModel : ObservableObject
 
     private void Add()
     {
-        if (!RefreshAccess()) return;
+        if (!CanBeginAdd() || !RefreshAccess()) return;
         var dialog = new OpenFileDialog
         {
             Title = "Choose a photo",
@@ -390,31 +392,52 @@ public sealed class PhotoGalleryViewModel : ObservableObject
         AddFile(dialog.FileName);
     }
 
+    private bool CanBeginAdd()
+    {
+        if (!_addNeedsVerification) return true;
+        SetStatus("Do not add again in this window. Verify the record, gallery and photo folder first; then reopen the gallery. Refresh alone does not confirm the previous outcome.", true);
+        return false;
+    }
+
     /// <summary>Adds one file - also the door the camera button uses once the picture exists.</summary>
     public void AddFile(string path)
     {
-        if (!RefreshAccess()) return;
-        var added = _services.Photos.Add(_user, Entity, EntityId, path);
+        if (!CanBeginAdd() || !RefreshAccess()) return;
+        _addNeedsVerification = true; // Before service invocation: thrown/unknown is not permission to retry.
+        var acknowledged = false;
+        try
+        {
+            var added = _services.Photos.Add(_user, Entity, EntityId, path);
+            if (!added.Ok || added.Value is null)
+            {
+                if (!added.Ok && added.NoCommitConfirmed) _addNeedsVerification = false;
+                SetStatus(added.Error ?? "The photo outcome needs verification before another Add.", true);
+                return;
+            }
 
-        if (!added.Ok || added.Value is null)
-        {
-            SetStatus(added.Error ?? "The photo could not be added.", true);
-            return;
+            acknowledged = true;
+            Load();
+            if (!_lastLoadSucceeded)
+            {
+                SetStatus("SAVED. The photo was stored, but the gallery could not refresh. Do not add again; verify before reopening.", true);
+                return;
+            }
+            Selected = Photos.FirstOrDefault(photo => photo.Item.Id == added.Value.Id) ?? Selected;
+            if (!CanEdit || Selected?.Item.Id != added.Value.Id || !HasPreview)
+            {
+                SetStatus("SAVED. The photo was added, but its preview could not be verified. Do not add again; verify before reopening.", true);
+                return;
+            }
+            SetStatus("Photo added. The original file is still where it was - this is a copy.", false);
+            _addNeedsVerification = false; // Acknowledged Add AND completed gallery/preview cleanup.
         }
-
-        Load();
-        if (!_lastLoadSucceeded)
+        catch (Exception exception)
         {
-            SetStatus("SAVED. The photo change was stored, but the gallery could not refresh. Do not repeat the action; refresh to check.", true);
-            return;
+            _services.Log.Error("Photo Add or its gallery refresh failed.", exception);
+            SetStatus(acknowledged
+                ? "SAVED. Gallery refresh failed. Do not add again; verify before reopening."
+                : "The photo outcome is unconfirmed. Do not add again; verify the record, gallery and photo folder before reopening.", true);
         }
-        Selected = Photos.FirstOrDefault(photo => photo.Item.Id == added.Value.Id) ?? Selected;
-        if (!CanEdit)
-        {
-            SetStatus("SAVED. The photo was added, but current preview access failed. Refresh before retrying.", true);
-            return;
-        }
-        SetStatus("Photo added. The original file is still where it was - this is a copy.", false);
     }
 
     /// <summary>

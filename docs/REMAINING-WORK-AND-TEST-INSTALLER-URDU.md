@@ -1,5 +1,10 @@
 # باقی کام، GitHub اور test installer — v0.104.0
 
+## ⏳ Latest — v0.119.0 Moraine: portion41 / stable12,23–25,28 photo file faults
+
+⏳ Photo Add and staged Product/Customer/Supplier creation now track the exclusively created bounded copy before writes; GUID names never overwrite collisions. Cleanup uses each existing transaction's observed outcome: confirmed no-commit only; unknown keeps/logs copy and returns verify-before-retry. Gallery Add has window-local unknown/ack-refresh latch, not reset by Refresh/regrant.28newC#source cases/2916suite ALL UNRUN. [⏳ PT-61](POS-PHASE4-PART41-URDU.md),[⏳ trace](POS-PHASE4-PHOTO-FILE-FAULT-REVIEW.md),[⏳ stable1–36](NUMBERED-WORK-STATUS-URDU.md). ✅ New local reference:17 Python file cases+37 migrations/3 actual photo INSERT rollback plans+1 synthetic lost-ack retention;23lexical mutations rejected/restored. NOT C#/provider/WPF proof. ✅ Financial SQL/current access/other services and old tests retained. ⏳ Parent creation UI retries,other gallery actions,session/CAS/provider COMMIT/parallel/powercut/global identity,recovery financial paths,restore-cloud/Windows-build-results-hardware-isolation/FullPhase4 OPEN. ❌ Installer binary NOT BUILT. ⏳ Eachportiondocs+samebranchpublication+independentactualremoteverification;36categories≠36Nexts. Earlier checkpoints historical.
+
+
 ## ⏳ تازہ حیثیت — v0.118.0 Sedge / حصہ40
 
 ⏳5–7/17/21/23PRcurrentactor/read/write/receipt؛stored audit،explicitPagefailure،completeheader+lines،action/3stimerdeniedcleanup/regrantfreshRefresh،detachedrowguard۔99نئےC#cases/2888suiteUNRUN۔ ✅مالیSQL/helpers/receiptComposeبرقرار؛دوپرانےtestsمیںصرفOwnerargument۔ ✅35Pythonactordenials/actualreadSQL+27lexicalmutationsمقامیPASS،اصلC#/WPF/securityproofنہیں۔ [⏳ PT-60](POS-PHASE4-PART40-URDU.md)،[⏳ trace](POS-PHASE4-PROVISIONAL-CURRENT-REVIEW.md)،[⏳1–36](NUMBERED-WORK-STATUS-URDU.md)۔ ⏳remainingcallers/session/CAS/provider/durableidentity/parallel/recovery-files،26–29restore/cloud،2/4/30–35Windows/results/hardware/isolationباقی۔ ❌36installerbinaryنہیںبنی؛⏳FullPhase4OPEN۔ ⏳ہرportiondocs+samebranchpublication+actualremoteverification؛36categories≠36Nexts،3–6roundsمشروطتخمینہ۔

@@ -1,5 +1,10 @@
 # Area11 — Real-life Physical Testing Log
 
+## ⏳ PT-61 — photo file ownership,rollback vs unknown,and gallery retry (v0.119.0 Moraine)
+
+[⏳ Urdu steps](docs/POS-PHASE4-PART41-URDU.md),[⏳ trace](docs/POS-PHASE4-PHOTO-FILE-FAULT-REVIEW.md). ⏳28newC#cases/2916suiteUNRUN. Execute exclusive collision/partial source read/zero/growth/buffer/size boundaries,confirmed rollback vs synthetic unknown outcomes,4 audit faults and4 success routes. Actual provider lost-ack/rollback failure/disk-full/flush/locked/denied cleanup and WPF Add reentry/Refresh/regrant/SAVED failure need separate runner evidence. Parent-creator UI duplicates/restart/global identity/other gallery actions/recovery financial paths remain OPEN. ⏳Verified encrypted backup AND truly separate DB/photos/config first;never shop synthetic posts/faults. ❌Installer NOT BUILT;⏳FullPhase4 OPEN.
+
+
 ## ⏳ PT-60 — current PR access,explicit reads,complete receipts (v0.118.0 Sedge)
 
 [⏳ Urdu steps](docs/POS-PHASE4-PART40-URDU.md),[⏳ trace](docs/POS-PHASE4-PROVISIONAL-CURRENT-REVIEW.md). ⏳99newC#cases/2888suiteUNRUN:oldactor/ID/code denies,valid Returns readers vs Owner/Manager decisions,stored audit name,Page read failure not empty,regrant fresh read,line failure not header-only receipt,manual/auto print current actor. ⏳WPFnextaction/nominal3stimer denials/stabletyping/regrant/detachedrows/P39SAVED guards require actual execution. ⏳Session/same-role-ID/CAS/provider/parallel/prepared-output recall not certified. ⏳Verifiedencryptedbackup AND trulyseparateDB/photos/config first;no shop syntheticposts/faults. ❌Installerbinary NOT BUILT;⏳FullPhase4OPEN.

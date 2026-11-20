@@ -221,20 +221,22 @@ ORDER BY sort_order, id;",
 
     /// <summary>
     /// Copies a picture into the shop's photo folder and records its name. The original stays where
-    /// the owner had it; a failure after the copy removes the copy, so no orphan file is left behind.
+    /// the owner had it. Only a confirmed no-commit permits removal of our newly owned copy;
+    /// unknown outcomes retain it for verification. Cleanup I/O failures may leave a logged orphan.
     /// </summary>
     public ServiceResult<PhotoItem> Add(User? user, string entity, int entityId, string? sourcePath)
     {
+        var outcome = new TransactionOutcome();
         if (!PhotoEntity.IsKnown(entity))
         {
-            return ServiceResult<PhotoItem>.Fail("That kind of record has no photos.");
+            return new ServiceResult<PhotoItem> { Error = "That kind of record has no photos.", NoCommitConfirmed = true };
         }
 
         var key = PhotoEntity.Clean(entity);
 
         if (!_permissions.Can(user, PhotoEntity.ModuleFor(key)))
         {
-            return ServiceResult<PhotoItem>.Fail("You do not have permission to add a photo.");
+            return new ServiceResult<PhotoItem> { Error = "You do not have permission to add a photo.", NoCommitConfirmed = true };
         }
 
         var source = (sourcePath ?? string.Empty).Trim();
@@ -243,7 +245,7 @@ ORDER BY sort_order, id;",
 
         if (sourceError is not null)
         {
-            return ServiceResult<PhotoItem>.Fail(sourceError);
+            return new ServiceResult<PhotoItem> { Error = sourceError, NoCommitConfirmed = true };
         }
 
         string? copiedPath = null;
@@ -251,15 +253,17 @@ ORDER BY sort_order, id;",
         try
         {
             return _db.Tx(connection =>
-                AddInTransaction(connection, user, key, entityId, source, out copiedPath));
+                AddInTransaction(connection, user, key, entityId, source, out copiedPath), outcome);
         }
         catch (Exception exception)
         {
-            // The copy is already on the disk; a row that never happened must not leave it there.
-            DiscardCopy(copiedPath);
+            DiscardCopy(copiedPath, outcome, _log);
 
             _log.Error($"A photo of {key} {entityId} could not be added.", exception);
-            return ServiceResult<PhotoItem>.Fail("The photo could not be added. Refresh and try again.");
+            return new ServiceResult<PhotoItem> { Error = outcome.NoCommitConfirmed
+                ? "The photo was not saved. Any leftover copy is logged; refresh before retrying."
+                : "The photo outcome is unconfirmed. Any owned copy was retained; verify the gallery and photo folder before retrying.",
+                NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
     }
 
@@ -307,8 +311,8 @@ ORDER BY sort_order, id;",
 
     // Caller owns the transaction: the staged photo of a new record shares the creator's commit,
     // so a failed creation rolls the photo row back with the parent. The copied file is reported
-    // through copiedPath; the caller must pass it to DiscardCopy when the transaction fails,
-    // because a file is not rolled back by SQLite.
+    // through copiedPath; the caller must pass it AND the observed transaction outcome to
+    // DiscardCopy after failure. SQLite cannot roll back a file; unknown commit must retain it.
     internal ServiceResult<PhotoItem> AddInTransaction(
         Microsoft.Data.Sqlite.SqliteConnection connection,
         User? user, string key, int entityId, string source, out string? copiedPath)
@@ -321,8 +325,8 @@ ORDER BY sort_order, id;",
 
         if (!recordExists)
         {
-            return ServiceResult<PhotoItem>.Fail(
-                PhotoEntity.LabelFor(key) + " is not in the list any more, so a photo cannot be attached.");
+            return new ServiceResult<PhotoItem> { Error =
+                PhotoEntity.LabelFor(key) + " is not in the list any more, so a photo cannot be attached.", NoCommitConfirmed = true };
         }
 
         var activeCount = Convert.ToInt32(_db.Scalar(connection, @"
@@ -332,33 +336,24 @@ WHERE entity = @entity AND entity_id = @entityId AND IFNULL(active, 1) = 1;",
 
         if (activeCount >= MaxPerRecord)
         {
-            return ServiceResult<PhotoItem>.Fail(
+            return new ServiceResult<PhotoItem> { Error =
                 "This " + PhotoEntity.LabelFor(key).ToLowerInvariant() + " already has "
-                + MaxPerRecord + " photos. Put one away first.");
+                + MaxPerRecord + " photos. Put one away first.", NoCommitConfirmed = true };
         }
 
         var nextOrder = Convert.ToInt32(_db.Scalar(connection, @"
 SELECT IFNULL(MAX(sort_order), 0) + 1 FROM photos WHERE entity = @entity AND entity_id = @entityId;",
             new { entity = key, entityId }) ?? 1);
 
-        // A stamped name can never collide with an older file, even when two people add a
-        // photo in the same minute on a second counter.
+        // Readable prefix plus a random suffix; exclusive creation, never overwrite or delete a
+        // collision owned by somebody else. copiedPath is set immediately after owning the output.
         var extension = Path.GetExtension(source).ToLowerInvariant();
         var name = key + "-" + entityId + "-"
                    + TimeSource.Now.ToString("yyyyMMdd-HHmmss-fff", System.Globalization.CultureInfo.InvariantCulture)
-                   + extension;
-
+                   + "-" + Guid.NewGuid().ToString("N") + extension;
         var destination = Path.Combine(PhotosFolder, name);
-
-        if (File.Exists(destination))
-        {
-            // Same millisecond twice: one more suffix, still readable.
-            name = Path.GetFileNameWithoutExtension(name) + "-b" + extension;
-            destination = Path.Combine(PhotosFolder, name);
-        }
-
-        File.Copy(source, destination, overwrite: false);
-        copiedPath = destination;
+        using (var input = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.Read))
+            CopyOwned(input, destination, MaxBytes, out copiedPath);
 
         _db.Execute(connection, @"
 INSERT INTO photos(entity, entity_id, file_name, sort_order, active, created_at)
@@ -392,12 +387,40 @@ VALUES(@entity, @entityId, @fileName, @sortOrder, 1, @at);",
         });
     }
 
-    /// <summary>Removes a staged copy after a rolled-back transaction. Never touches the gallery.</summary>
-    internal void DiscardCopy(string? path)
+    /// <summary>Exclusive bounded copy. An out path means this invocation created that file.
+    /// Callers retain it on unknown DB outcome and clean it only after proven no-commit.</summary>
+    internal static void CopyOwned(Stream source, string destination, long limit, out string? ownedPath)
     {
-        if (!string.IsNullOrEmpty(path))
+        ownedPath = null;
+        using var output = new FileStream(destination, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+        ownedPath = destination;
+        var buffer = new byte[64 * 1024];
+        long total = 0;
+        int read;
+        while ((read = source.Read(buffer, 0, buffer.Length)) != 0)
         {
-            TryDelete(path);
+            if (read > limit - total) throw new ValidationException("The picture grew beyond the permitted size while copying.");
+            output.Write(buffer, 0, read);
+            total += read;
+        }
+        if (total == 0) throw new ValidationException("The picture became empty while copying.");
+        output.Flush(flushToDisk: true);
+    }
+
+    /// <summary>Only for the owned out path above; never for an arbitrary gallery/source file.
+    /// Does not construct PhotoService or create a folder in an error handler.</summary>
+    internal static void DiscardCopy(string? path, TransactionOutcome outcome, LogService log)
+    {
+        if (string.IsNullOrEmpty(path)) return;
+        if (!outcome.NoCommitConfirmed)
+        {
+            log.Info("Unconfirmed photo outcome; owned copy retained for verification: " + path);
+            return;
+        }
+        try { File.Delete(path); }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            log.Info("A copied photo could not be removed after confirmed no-commit; verify before cleanup: " + path);
         }
     }
 
@@ -677,26 +700,7 @@ FROM photos WHERE id = @id;", new { id = photoId });
             new { id = entityId }) ?? 0) > 0;
     }
 
-    private void TryDelete(string path)
-    {
-        if (string.IsNullOrWhiteSpace(path))
-        {
-            return;
-        }
 
-        try
-        {
-            if (File.Exists(path))
-            {
-                File.Delete(path);
-            }
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
-            // Nothing else can be done; the log line below names the file so it can be removed by hand.
-            _log.Info("A copied photo could not be removed after a failed save: " + path);
-        }
-    }
 }
 
 /// <summary>One cover answer: which record, and the stored file name (null when it has no active photo).</summary>

@@ -315,11 +315,12 @@ WHERE p.active = 1
     /// <summary>
     /// A new product with its answers and, optionally, a photo chosen on the same form. The photo
     /// is copied and recorded inside the same transaction, before the answers are validated, so a
-    /// required photo field sees it; a failed creation leaves neither a row nor a copied file.
+    /// required photo field sees it; confirmed rollback permits copy cleanup; unknown outcomes retain the copy for verification.
     /// </summary>
     public ServiceResult<int> Create(User actor, ProductPatch input, IReadOnlyDictionary<int, string?>? customValues = null,
         string? stagedPhotoPath = null)
     {
+        var outcome = new TransactionOutcome();
         if (actor is not { Active: true } || actor.Id <= 0 || !actor.CanManage)
         {
             return ServiceResult<int>.Fail("Only the owner or a manager can add products.");
@@ -449,25 +450,30 @@ VALUES
                     newValue: $"{{\"name\":\"{name}\",\"retailPaisa\":{input.RetailPaisa ?? 0}}}");
 
                 return newId;
-            });
+            }, outcome);
 
             return ServiceResult<int>.Success(id, SameNameWarnings(id, name));
         }
         catch (ValidationException exception)
         {
-            Photos().DiscardCopy(stagedCopy);
-            return ServiceResult<int>.Fail(exception.Message);
+            PhotoService.DiscardCopy(stagedCopy, outcome, _log);
+            return new ServiceResult<int> { Error = outcome.NoCommitConfirmed ? exception.Message
+                : "The record outcome is unconfirmed. Any staged photo copy was retained; verify records and gallery before retrying.",
+                NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
         catch (SqliteException exception) when (exception.Message.Contains("UNIQUE", StringComparison.OrdinalIgnoreCase))
         {
-            Photos().DiscardCopy(stagedCopy);
-            return ServiceResult<int>.Fail("That barcode already belongs to another product.");
+            PhotoService.DiscardCopy(stagedCopy, outcome, _log);
+            return new ServiceResult<int> { Error = outcome.NoCommitConfirmed ? "That barcode already belongs to another product."
+                : "The record outcome is unconfirmed. Verify records and gallery before retrying.", NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
         catch (Exception exception)
         {
-            Photos().DiscardCopy(stagedCopy);
+            PhotoService.DiscardCopy(stagedCopy, outcome, _log);
             _log.Error("A product could not be created.", exception);
-            return ServiceResult<int>.Fail("The product could not be saved.");
+            return new ServiceResult<int> { Error = outcome.NoCommitConfirmed ? "The product was not saved. Any leftover photo copy is logged."
+                : "The record outcome is unconfirmed. Any staged photo copy was retained; verify records and gallery before retrying.",
+                NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
     }
 

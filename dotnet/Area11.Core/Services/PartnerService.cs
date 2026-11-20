@@ -50,12 +50,13 @@ ORDER BY name COLLATE NOCASE;",
 
     /// <summary>
     /// A new customer with its answers and, optionally, a photo chosen on the same form. The photo
-    /// joins the gallery inside the same transaction, before the answers are validated; a failed
-    /// creation leaves neither a row nor a copied file.
+    /// joins the gallery inside the same transaction, before the answers are validated; a
+    /// confirmed rollback permits copy cleanup; unknown outcomes retain the copy for verification.
     /// </summary>
     public ServiceResult<int> CreateCustomer(User actor, string name, string? phone, string category,
         IReadOnlyDictionary<int, string?>? customValues = null, string? stagedPhotoPath = null)
     {
+        var outcome = new TransactionOutcome();
         var clean = (name ?? string.Empty).Trim();
         if (clean.Length < 2)
         {
@@ -133,20 +134,24 @@ VALUES(@name, @phone, @category, 0, 0, 0, 1, 1, @at);",
                     newValue: $"{{\"name\":\"{clean}\",\"category\":\"{type}\"}}");
 
                 return newId;
-            });
+            }, outcome);
 
             return ServiceResult<int>.Success(id);
         }
         catch (ValidationException exception)
         {
-            Photos().DiscardCopy(stagedCopy);
-            return ServiceResult<int>.Fail(exception.Message);
+            PhotoService.DiscardCopy(stagedCopy, outcome, _log);
+            return new ServiceResult<int> { Error = outcome.NoCommitConfirmed ? exception.Message
+                : "The record outcome is unconfirmed. Any staged photo copy was retained; verify records and gallery before retrying.",
+                NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
         catch (Exception exception)
         {
-            Photos().DiscardCopy(stagedCopy);
+            PhotoService.DiscardCopy(stagedCopy, outcome, _log);
             _log.Error("A customer could not be created.", exception);
-            return ServiceResult<int>.Fail("The customer could not be saved.");
+            return new ServiceResult<int> { Error = outcome.NoCommitConfirmed ? "The customer was not saved. Any leftover photo copy is logged."
+                : "The record outcome is unconfirmed. Any staged photo copy was retained; verify records and gallery before retrying.",
+                NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
     }
 
@@ -324,12 +329,13 @@ FROM suppliers WHERE active = 1 ORDER BY name COLLATE NOCASE;");
 
     /// <summary>
     /// A new supplier with its answers and, optionally, a photo chosen on the same form. The photo
-    /// joins the gallery inside the same transaction, before the answers are validated; a failed
-    /// creation leaves neither a row nor a copied file.
+    /// joins the gallery inside the same transaction, before the answers are validated; a
+    /// confirmed rollback permits copy cleanup; unknown outcomes retain the copy for verification.
     /// </summary>
     public ServiceResult<int> CreateSupplier(User actor, string name, string? phone, string? agency,
         IReadOnlyDictionary<int, string?>? customValues = null, string? stagedPhotoPath = null)
     {
+        var outcome = new TransactionOutcome();
         if (!actor.CanManage)
         {
             return ServiceResult<int>.Fail("Only the owner or a manager can add suppliers.");
@@ -385,20 +391,24 @@ VALUES(@name, @agency, @phone, 0, 1, @at);",
                     newValue: $"{{\"name\":\"{clean}\"}}");
 
                 return newId;
-            });
+            }, outcome);
 
             return ServiceResult<int>.Success(id);
         }
         catch (ValidationException exception)
         {
-            Photos().DiscardCopy(stagedCopy);
-            return ServiceResult<int>.Fail(exception.Message);
+            PhotoService.DiscardCopy(stagedCopy, outcome, _log);
+            return new ServiceResult<int> { Error = outcome.NoCommitConfirmed ? exception.Message
+                : "The record outcome is unconfirmed. Any staged photo copy was retained; verify records and gallery before retrying.",
+                NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
         catch (Exception exception)
         {
-            Photos().DiscardCopy(stagedCopy);
+            PhotoService.DiscardCopy(stagedCopy, outcome, _log);
             _log.Error("A supplier could not be created.", exception);
-            return ServiceResult<int>.Fail("The supplier could not be saved.");
+            return new ServiceResult<int> { Error = outcome.NoCommitConfirmed ? "The supplier was not saved. Any leftover photo copy is logged."
+                : "The record outcome is unconfirmed. Any staged photo copy was retained; verify records and gallery before retrying.",
+                NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
     }
 }
