@@ -6184,6 +6184,23 @@ def check_ledger_outcome_fault_boundaries() -> None:
     REPORT.append('P42 ledger observed no-commit verdicts and three local UI guards/acknowledged cleanup;47 source cases UNRUN,not provider/WPF/durable identity proof')
 
 
+def check_document_field_expense_reader() -> None:
+    """Narrow regression for the required reader argument; not a C# compilation."""
+    tests = (DOTNET / 'Area11.Tests/DocumentFieldTests.cs').read_text()
+    body = tests.split('public void TheExpenseList_CarriesTheAnswersLine()', 1)[-1].split('[Fact]', 1)[0]
+    for token in ('var cashOut = TestData.CashOut(test);', 'var rows = cashOut.List(TestData.Owner);',
+                  'Assert.Single(rows);', 'Assert.Contains("Approved by: Owner", rows[0].ExtraLabel);',
+                  'Assert.True(rows[0].HasExtra);'):
+        if token not in body: FAILURES.append('DocumentField expense-reader regression missing: ' + token)
+    service = (DOTNET / 'Area11.Core/Services/ExpenseService.cs').read_text()
+    if 'public List<CashOutRow> List(User? user, int limit = 200)' not in service:
+        FAILURES.append('Expense List must keep its explicitly required reader; do not add an actorless fallback')
+    factory = (DOTNET / 'Area11.Tests/TestData.cs').read_text()
+    if 'public static ExpenseService CashOut(TestDatabase test)' not in factory:
+        FAILURES.append('DocumentField cashOut fixture must remain an ExpenseService')
+    REPORT.append('DocumentField expense list: explicit Owner reader,required API argument and existing answer assertions retained;C# build still required')
+
+
 def check_csharp_grammar() -> None:
     """Every C# file must parse, and every `Type.Member` must be a member that type declares.
 
@@ -8970,6 +8987,7 @@ def main() -> int:
     check_provisional_current_access()
     check_photo_file_fault_boundaries()
     check_ledger_outcome_fault_boundaries()
+    check_document_field_expense_reader()
     check_csharp_grammar()
 
     if not quiet:

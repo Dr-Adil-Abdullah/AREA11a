@@ -1,5 +1,10 @@
 # باقی کام، GitHub اور test installer — v0.104.0
 
+## ⏳ موجودہ کام — v0.120.1 Alder،نئے منصوبے کا حصہ1/14
+
+✅ DocumentFieldTestsمیںExpenseListکوexplicitOwnerدیا؛اصلassertionsاورproductioncodeبرقرار۔ ⏳اصلcompileابھیغیرمصدقہ(.NETSDKغائب)،2963C#casesUNRUN۔ [⏳ مکملمنصوبہ/حدود](REMAINING-14-PORTIONS-URDU.md)؛اگلاپورشنصرفنئیاجازتسے،مختصرخلاصہ3–4لائن؛پرانیportion42تککیentriesتاریخیہیں۔
+
+
 ## ⏳ Latest — v0.120.0 Shale: portion42 / stable17–19,23–25 ledger outcomes
 
 ⏳ Customer Collect/Supplier Pay now observe existing Tx no-commit evidence;unknown COMMIT/rollback never promises Nothing changed. Customers/Recovery Receive/Suppliers Pay use existing PostingAttemptGuard:before service,ack before callbacks,only explicit no-commit retries;unknown/SAVED cleanup failure survives Refresh/regrant until verified page reopen.Consumed amount/note cleared after reload/callbacks;legitimate fresh partial payments remain allowed.47newC#source cases/2963suite ALL UNRUN. [⏳ PT-62](POS-PHASE4-PART42-URDU.md),[⏳ trace](POS-PHASE4-LEDGER-OUTCOME-REVIEW.md),[⏳ stable1–36](NUMBERED-WORK-STATUS-URDU.md). ✅ New local probe:37 migrations/12 actual ledger-SQL rollback/retry plans+6 synthetic ack/refresh/reopen-boundary cases;31 lexical mutations rejected/restored. NOT C#/provider/WPF proof. ✅ Financial SQL/Tx callback bodies,settlement/SupplierB/current-access policy,RecoveryService read/slip/accounting and old tests retained. ⏳ No durable request key or cross-page/restart/cross-PC dedup;parent creation UI/other gallery writes/remaining callers/session/CAS/provider/parallel/powercut/restore-cloud/Windows-build-results-hardware-isolation/FullPhase4 OPEN. ❌ Installer binary NOT BUILT. ⏳ Eachportiondocs+samebranchpublication+independentactualremoteverification;36categories≠36Nexts. Earlier checkpoints historical.

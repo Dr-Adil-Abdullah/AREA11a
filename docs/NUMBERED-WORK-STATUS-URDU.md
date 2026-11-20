@@ -1,14 +1,14 @@
 # نمبر وار کام اور باقی جانچ — مستقل1تا36فہرست
 
-**⏳ موجودہ source: v0.120.0 Shale / حصہ42؛مکمل عملی تصدیق نہیں۔** یہ وہی36نمبر ہیں جن کی مالک نے تفصیلی وضاحت مانگی۔ اگلے حصوں میں نمبر تبدیل نہیں کریں؛done-source،یہاں کی جانچ،Windowsثبوت اورباقی کام الگ لکھیں۔ **36نمبر،36Next نہیں؛فیچرboardکی فیصد Phase4 safety فیصد نہیں۔**
+**⏳ موجودہ source: v0.120.1 Alder؛نئے14حصوںکےمنصوبےکاصرفحصہ1زیرعمل۔** [⏳ منصوبہ/گفتگوکےاصول](REMAINING-14-PORTIONS-URDU.md)۔ مستقل1–36نمبرنہیںبدلے؛نیچےموجودباقیfeaturestatusبرقرار،پرانیreviewترتیبکیجگہابنیااجازتوالامنصوبہہے۔
 
-✅ منظورشدہعلامتیں:✅صرف100%مکملمتعلقہکام؛⏳جاری/کچھباقی؛❌شروعنہیں۔ ⏳تازہ17–19/23–25Collect/Payobservedoutcomesاور3UIlocalguards؛47نئےcases/2963suiteUNRUN۔ ✅12actualledgerSQLrollback/retry+6syntheticack/reopenboundary+31lexicalmutationsPASS؛C#/WPFنہیں۔ [⏳ PT-62](POS-PHASE4-PART42-URDU.md)،[⏳ trace](POS-PHASE4-LEDGER-OUTCOME-REVIEW.md)۔ ⏳runtime/FullPhase4باقی؛❌installerbinaryنہیںبنی۔
+✅ DocumentFieldTestsکیExpenseListcallمیںلازمیOwnerargumentدرست،اصلassertions/productioncodeبرقرار؛sourceguard/5negativechecks۔ ⏳حقیقیcompileتصدیقباقی(.NETSDKنہیں)،تمام2963C#casesUNRUN؛حصہ2ابھیشروعنہیں۔ ❌installerbinaryنہیںبنی۔
 
 | مستقل نمبر / دائرہ | کیا ہوگیا؟ | کیا باقی ہے؟ |
 |---|---|---|
-|1۔ ⏳ ورژن/GitHub | v0.120Shale/source/docs/icon/scriptsaligned | samebranchcommit/push/actualremoteverificationآخریرپورٹمیں |
-|2۔ ⏳ C#tests | 2963متوقعcases؛حصہ42میں47نئےinlinecases | تازہC#compile/run/fix/retestیہاںنہیںچلا |
-|3۔ ⏳ Source/syntheticchecks | 109staticcontracts؛نیا12SQLfault/retry/6syntheticackboundaryاور31lexicalmutations؛حتمینتائجtraceمیں | یہC#/WPF/provider/securitycertificationنہیں |
+|1۔ ⏳ ورژن/GitHub | v0.120.1Alder/source/docs/icon/scriptsaligned | samebranchcommit/push/actualremoteverificationآخریرپورٹمیں |
+|2۔ ⏳ C#tests | 2963متوقعcases؛حصہ42میں47نئےinlinecases | DocumentFieldtestکالازمیreaderدرست؛اصلcompileاورپوریsuiteیہاںنہیںچلی |
+|3۔ ⏳ Source/syntheticchecks | 110staticcontracts؛تازہDocumentFieldmissing-readerguardاور5lexicalnegativechecks؛حتمینتائجtraceمیں | یہC#/WPF/provider/securitycertificationنہیں |
 |4۔ ⏳ پرانےWindowsfailures | v0.80کے1333PASS/4FAILکیچاروںوجوہ/sourcefixشناخت | تازہsuiteپرretestاورنئیfailuresکیfix؛پرانانتیجہنیاPASSنہیں |
 |5۔ ⏳ Account/role/session | PRابcurrentstoredactive/sameparsedrole/Returns؛validOwnerبھیcurrentrow؛storedauditactor | authenticatedsessiontoken/same-role-IDimpersonation،remainingcallers؛یہfullsessionproofنہیں |
 |6۔ ⏳ Parentrecordcreate/edit/read | PRCreate/Link/CancelTxcurrentactorقبلtarget،reads/receiptcurrent؛پچھلےdraft/heldboundariesبرقرار | remainingquickadd/parent/sessioncallers،atomicCAS؛legacy/otherworkflowreview |
@@ -51,6 +51,6 @@
 4. اسی نمبرکےاندرکیاباقیہےاورکیوں؟
 5. اگلےنمبروںکیترتیب،docs/GitHubکیاصلحیثیت،installerکےباقیدروازے۔
 
-موجودہترتیب: **23–25** integratedfault/retry/concurrency؛اسکےساتھ **5/6/7** remainingcaller/sessionreconciliation،**26–29**files/restore/cloud،**2/4/30–35**Windows/results/hardware/isolation،آخر **36**۔ یہلچکدارترتیبہے؛dependencyیاحقیقیfindingسےتبدیلہوسکتیہے۔3–6مزیدمربوطreview/resultچکرمشروطاندازہ،نہdeadlineنہupperbound۔
+موجودہترتیب: [⏳ نیا14حصوںکامنظورشدہمنصوبہ](REMAINING-14-PORTIONS-URDU.md)۔ صرفحصہ1کیاجازتملی؛اسکیاصلbuildتصدیقاورحصہ2کیالگاجازتباقی۔ پرانا3–6چکروںکااندازہابکامشروعکرنےکیہدایتنہیں۔
 
 اصلshopپرsyntheticpostsنہیں؛secret/datachatمیںنہیں؛ہرportiondocs+sameactivebranchcommit/push+actualremoteverification۔ Static/Python/featureboardکوproduction/runtime/securityPASSنہکہیں۔

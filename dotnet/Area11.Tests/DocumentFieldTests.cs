@@ -285,7 +285,7 @@ public sealed class DocumentFieldTests
         fare.CustomAnswers[approved] = "Owner";
         Assert.True(cashOut.AddExpense(TestData.Owner, fare).Ok);
 
-        var rows = cashOut.List();
+        var rows = cashOut.List(TestData.Owner);
         Assert.Single(rows);
         Assert.Contains("Approved by: Owner", rows[0].ExtraLabel);
         Assert.True(rows[0].HasExtra);

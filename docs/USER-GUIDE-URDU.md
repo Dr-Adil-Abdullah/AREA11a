@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.120.0 Shale۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.120.1 Alder۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**⏳ موجودہ محدود اصلاح — حصہ1/14:** v0.120.1میںصرفایکtestکیexpense-listcallمیںلازمیصارفجوڑا؛دکانکےبٹن،مالیحسابیااجازتوںمیںتبدیلینہیں۔ اصلcompile/.NETتصدیقباقی؛[منصوبہ](REMAINING-14-PORTIONS-URDU.md)کےاگلےحصےپرنئیاجازتکےبغیرکامنہیںہوگا۔
 
 **⏳ حصہ42 — Receive/Pay کے بعد دوبارہ رقم نہ لکھیں:** CustomersکیCollect،UdhaarRecoveryکیReceiveاورSuppliersکیPayمیں **unconfirmed** ہوتوپہلےpaymenthistory،کھاتہاورdrawerملائیں؛نہیہفرضکریںکہکچھنہیںبدلا،نہوہیرقمدوبارہلکھیں۔ **SAVED** کےبعدrefresh/callback/receiptخرابہوتواسیpageپرpostingبند؛Refreshیاpermissionregrantاسےنہیںکھولتے۔ جانچکےبعدpageدوبارہکھولیں؛reopenخودکارverificationنہیںاورCustomersسےRecoveryیادوسرےPCپرنیاpageالگguardہے۔ معمولکیsuccessکےبعدamount/noteخالی؛اگلیواقعیالگpartialpaymentتازہamountسےجائز،خودکارamount-baseddedupنہیں۔ Recoveryمیںنئےcustomerکیinitialselectionپرباقیرقمکیپرانیآسانیبرقرار،مگرsuccessfulReceiveکےبعدوہautofillصاف۔ [⏳ PT-62](POS-PHASE4-PART42-URDU.md)،[⏳ حدود](POS-PHASE4-LEDGER-OUTCOME-REVIEW.md)۔ ⏳47نئےcases/2963suiteUNRUN؛FullPhase4OPEN؛❌installerنہیںبنی۔
 
@@ -794,7 +796,7 @@ Recoveryکیfailedslipپرپرنٹرکوخالیdocumentنہیںدیاجاتا۔
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.120.0 کا متوقع test count 2963 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.120.1 کا متوقع test count 2963 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 

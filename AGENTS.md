@@ -1,5 +1,10 @@
 # AGENTS.md - how to work in this repository
 
+## ✅ گفتگو اور حصوں کی تازہ ہدایت
+
+ہر جواب/وضاحت/خلاصہ سادہ پاکستانی اردو۔ ایک وقت میں صرف ایک منظورشدہ حصہ؛ہر اگلے حصے سے پہلے نئی اجازت۔ ہر ٹاسک/حصے پر صرف3–4 لائنوں کا خلاصہ؛تفصیلی رپورٹ ہر3 مکمل حصوں کے بعد یا مالک کے مطالبے پر۔ [⏳ نیا14حصوں کا منصوبہ](docs/REMAINING-14-PORTIONS-URDU.md) پر عمل کریں؛پرانے3–6roundsاندازے اس منصوبے کی جگہ نہیں لیتے۔ ⏳حصہ1کیsourceاصلاحہوئی،حقیقیcompileتصدیقباقی؛❌حصہ2شروعکرنےکیاجازتنہیں۔ ✅صحت مندsourcecheckکوکامیاب.NETbuildنہکہیں۔
+
+
 ## ✅ Current reporting instruction — owner selected in portion37
 
 Every report/answer must mark each feature/point:✅ only100%complete;⏳ ongoing/partial;❌ not started. Label source completion separately from runtime/full-scope completion. Never use✅ for a whole feature merely because source/tests are written;all required current evidence matters. Existing historical checkpoint wording is not current certification.
