@@ -22,17 +22,18 @@ public sealed class PricingAllowanceService
 
     public PricingAllowance ForUser(User user)
     {
-        using var connection = _db.Open();
-        return Read(connection, user);
+        return _db.Snapshot(connection => Read(connection, user));
     }
 
     /// <summary>The staff editor reads a target under the owner's proof,not the target's login.</summary>
     public PricingAllowance ForUser(User actor, User target)
     {
-        return _db.Read(connection =>
+        return _db.Snapshot(connection =>
         {
             OwnerAccess.Require(_db, connection, actor);
-            return ReadTarget(connection, target);
+            var allowance = ReadTarget(connection, target);
+            allowance.EditVersion = EditConcurrency.Capture(_db, connection, "pricing", target.Id);
+            return allowance;
         });
     }
 
@@ -68,16 +69,17 @@ FROM user_pricing_allowances WHERE user_id = @id;", new { id = person.Id });
         };
     }
 
-    public ServiceResult Save(User actor, PricingAllowance value)
+    public ServiceResult Save(User actor, PricingAllowance value, EditVersion? expected = null)
     {
+        var outcome = new TransactionOutcome();
         try
         {
-            _db.Tx(connection =>
+            return _db.Tx(connection =>
             {
                 _db.Sessions.Require(actor);
                 var owner = _db.QuerySingle<User>(connection,
                     "SELECT id, name, role, active FROM users WHERE id = @id;", new { id = actor.Id });
-                if (!actor.IsOwner || owner is not { IsOwner: true, Active: true })
+                if (!actor.Active || !actor.IsOwner || owner is not { IsOwner: true, Active: true })
                     throw new ValidationException("Only the owner can change pricing permissions.");
                 var target = _db.QuerySingle<User>(connection,
                     "SELECT id, name, role, active FROM users WHERE id = @id;", new { id = value.UserId });
@@ -87,6 +89,7 @@ FROM user_pricing_allowances WHERE user_id = @id;", new { id = person.Id });
                     throw new ValidationException("Every pricing limit must be between 0 and 100 percent.");
                 if (value.ExtraLimitPaisa < 0)
                     throw new ValidationException("Extra Discount limit cannot be negative.");
+                EditConcurrency.Require(_db, connection, "pricing", value.UserId, expected);
                 var before = ReadTarget(connection, target);
                 _db.Execute(connection, @"
 INSERT INTO user_pricing_allowances(user_id, edit_rate, manual_reduction_percent,
@@ -106,16 +109,22 @@ ON CONFLICT(user_id) DO UPDATE SET edit_rate=excluded.edit_rate,
                     overrideBasis = value.OverrideBasis ? 1 : 0,
                     extra = value.ExtraDiscount ? 1 : 0, extraLimit = value.ExtraLimitPaisa
                 });
-                _audit.Record(connection, actor, "Users", "pricing_permissions", "user_pricing_allowances",
+                _audit.Record(connection, owner, "Users", "pricing_permissions", "user_pricing_allowances",
                     value.UserId.ToString(), oldValue: JsonSerializer.Serialize(before), newValue: JsonSerializer.Serialize(value));
-            });
-            return ServiceResult.Success();
+                return new ServiceResult { Ok = true,
+                    EditVersion = EditConcurrency.Capture(_db, connection, "pricing", value.UserId) };
+            }, outcome);
         }
-        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
+        catch (ValidationException exception)
+        {
+            return new ServiceResult { Error = outcome.NoCommitConfirmed ? exception.Message
+                : "Pricing permission saving is unconfirmed. Refresh and verify before retrying.", NoCommitConfirmed = outcome.NoCommitConfirmed };
+        }
         catch (Exception exception)
         {
             _log.Error("Pricing permissions could not be saved.", exception);
-            return ServiceResult.Fail("Pricing permissions could not be saved.");
+            return new ServiceResult { Error = outcome.NoCommitConfirmed ? "Pricing permissions were not saved; no commit was made."
+                : "Pricing permission saving is unconfirmed. Refresh and verify before retrying.", NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
     }
 

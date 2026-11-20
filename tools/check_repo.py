@@ -6260,6 +6260,60 @@ def check_windows_v1201_regressions() -> None:
     REPORT.append('v0.120.1 owner Windows22-failure fixture guards:checked Settings/current identities/explicit denials/stored names/pre-fault services/schema-valid marker;new C# rerun required')
 
 
+def check_schedule_pricing_edit_boundaries() -> None:
+    """Part5.1 lexical coverage only;not .NET/provider/UI or real backup evidence."""
+    def read(path): return (DOTNET / path).read_text()
+    def need(text, *tokens):
+        for token in tokens:
+            if token not in text: FAILURES.append('Schedule/pricing edit contract missing: ' + token)
+    def order(text, *tokens):
+        ix = [text.find(t) for t in tokens]
+        if -1 in ix or ix != sorted(ix): FAILURES.append('Schedule/pricing ordering: ' + ' -> '.join(tokens))
+    backup = read('Area11.Desktop/ViewModels/BackupViewModel.cs')
+    need(backup, 'private SettingsEditForm? _scheduleForm;', 'private bool _savingSchedule;',
+         'private static readonly string[] ScheduleKeys = { "backup.autoEnabled", "backup.everyHours", "backup.keep" };',
+         '_services.Settings.LoadEditForm(_user, ScheduleKeys)', 'ShowSchedule(_scheduleForm);',
+         'EveryHoursText = KeepText = string.Empty;', 'if (_scheduleForm is null)',
+         'if (_savingSchedule) return;', 'finally { _savingSchedule = false; }',
+         '_services.Settings.SaveEditForm(values, _user, _scheduleForm)',
+         'if (!result.NoCommitConfirmed) _scheduleForm = null;',
+         'SAVED. The schedule was stored but the page could not refresh.')
+    body = backup.split('private void SaveScheduleOnce(',1)[-1].split('private void OpenFolder()',1)[0]
+    order(body, '_services.Settings.SaveEditForm(', 'if (!result.Ok)', 'saved = true;',
+          '_scheduleForm = result.SettingsEdit;', 'ShowSchedule(_scheduleForm);', '_services.Backup.RunAutomaticIfDue();')
+    if 'Load();' in body or 'LoadEditForm(' in body: FAILURES.append('Schedule save must not silently load/rebase another writer state')
+    for token in ('backup.AutomaticEnabled', 'backup.EveryHours', 'backup.KeepCount'):
+        if token in backup: FAILURES.append('Schedule editor must not load cached fields: ' + token)
+    capture = read('Area11.Core/Services/EditConcurrency.cs')
+    need(capture, '"pricing" => null,', 'if (scope == "pricing")',
+         'SELECT id,role,active FROM users WHERE id=@id;', 'SELECT * FROM user_pricing_allowances WHERE user_id=@id;')
+    pricing = read('Area11.Core/Services/PricingAllowanceService.cs')
+    owner_read = pricing.split('public PricingAllowance ForUser(User actor, User target)',1)[-1].split('public PricingAllowance Read(',1)[0]
+    order(owner_read, 'return _db.Snapshot(connection =>', 'OwnerAccess.Require(_db, connection, actor);',
+          'var allowance = ReadTarget(connection, target);', 'allowance.EditVersion = EditConcurrency.Capture')
+    need(pricing, 'return _db.Snapshot(connection => Read(connection, user));')
+    write = pricing.split('public ServiceResult Save(',1)[-1].split('public static string Basis',1)[0]
+    need(write, 'EditVersion? expected = null', '!actor.Active || !actor.IsOwner || owner is not { IsOwner: true, Active: true }',
+         'var outcome = new TransactionOutcome();', '}, outcome);', 'NoCommitConfirmed = outcome.NoCommitConfirmed')
+    order(write, '_db.Sessions.Require(actor);', 'Only the owner can change pricing permissions.',
+          'EditConcurrency.Require(_db, connection, "pricing", value.UserId, expected);',
+          'var before = ReadTarget(connection, target);', 'INSERT INTO user_pricing_allowances',
+          '_audit.Record(connection, owner, "Users",', 'EditVersion = EditConcurrency.Capture(_db, connection, "pricing", value.UserId)', '}, outcome);')
+    need(read('Area11.Core/Models/PricingModels.cs'), '[System.Text.Json.Serialization.JsonIgnore]\n    public EditVersion? EditVersion { get; internal set; }')
+    vm = read('Area11.Desktop/ViewModels/SettingsViewModel.cs')
+    need(vm, 'private EditVersion? _pricingVersion;', '_pricingVersion = allowance.EditVersion;',
+         'if (_pricingVersion is null)', '}, _pricingVersion);', 'if (result.Ok) _pricingVersion = result.EditVersion;',
+         'else if (!result.NoCommitConfirmed) _pricingVersion = null;')
+    need(vm.split('private void ClearPricing()',1)[-1].split('private void ClearStaffData()',1)[0], '_pricingVersion = null;')
+    tests = read('Area11.Tests/SettingsSchedulePricingConcurrencyTests.cs')
+    need(tests, 'AnotherScheduleEditRefusesTheEntireOldSchedule', 'BackupOnlyGranteeCanLoadAndSaveWithoutSettingsModule',
+         'AutomaticBackupTelemetryDoesNotInvalidateTheSchedule', 'TwoPricingEditorsCannotOverwriteTheFirstSavedGrant',
+         'TargetRoleChangeInvalidatesTheDefaultsAndAllowanceBaseline', 'PricingAuditFailureRollsBackGrantAndOriginalTokenStillRetries',
+         'StaffTargetNeedsNoOwnLoginWhenOwnerOpensItsPricingForm', 'Assert.Equal(before, Snapshot(t));')
+    if tests.count('[Fact]') != 22 or tests.count('[InlineData(') != 3: FAILURES.append('Schedule/pricing needs25 additive written cases')
+    REPORT.append('Part5.1 Backup schedule and pricing editors:loaded baselines/current writer/atomic compare/exact handoff;25 written cases NOT runtime/full Settings closure')
+
+
 def check_settings_edit_boundaries() -> None:
     """Part5.1 bounded Settings form lexical contracts,not Roslyn/provider/WPF execution."""
     def read(path): return (DOTNET / path).read_text()
@@ -9434,6 +9488,7 @@ def main() -> int:
     check_edit_concurrency_boundaries()
     check_shared_draft_edit_boundaries()
     check_settings_edit_boundaries()
+    check_schedule_pricing_edit_boundaries()
     check_csharp_grammar()
 
     if not quiet:

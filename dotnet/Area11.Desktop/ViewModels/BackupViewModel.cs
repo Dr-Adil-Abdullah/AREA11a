@@ -32,6 +32,9 @@ public sealed class BackupViewModel : ObservableObject, IEmptyPage
     private readonly User _user;
     private readonly Action? _onRestored;
 
+    private SettingsEditForm? _scheduleForm;
+    private bool _savingSchedule;
+    private static readonly string[] ScheduleKeys = { "backup.autoEnabled", "backup.everyHours", "backup.keep" };
     private BackupFile? _selected;
     private bool _includePhotos = true;
     private bool _confirming;
@@ -192,9 +195,7 @@ public sealed class BackupViewModel : ObservableObject, IEmptyPage
         // nothing is being billed yet, and the owner is standing at the computer anyway.
         backup.RunAutomaticIfDue();
 
-        AutoEnabled = backup.AutomaticEnabled;
-        EveryHoursText = backup.EveryHours.ToString(CultureInfo.InvariantCulture);
-        KeepText = backup.KeepCount.ToString(CultureInfo.InvariantCulture);
+        LoadSchedule();
         LastAutomatic = backup.LastBackupText;
         OnPropertyChanged(nameof(PasswordStatus));
         if (!string.IsNullOrWhiteSpace(backup.LastFailure)) SetStatus(backup.LastFailure, true);
@@ -213,6 +214,29 @@ public sealed class BackupViewModel : ObservableObject, IEmptyPage
         // Keep the highlighted row if it is still there; otherwise start on the newest.
         var keep = Selected?.FileName;
         Selected = Files.FirstOrDefault(file => file.FileName == keep) ?? Files.FirstOrDefault();
+    }
+
+    // A schedule is a loaded edit,not a read from BackupService's shared Settings cache.
+    private void LoadSchedule()
+    {
+        _scheduleForm = null;
+        var loaded = _services.Settings.LoadEditForm(_user, ScheduleKeys);
+        if (!loaded.Ok || loaded.Value is null)
+        {
+            AutoEnabled = false;
+            EveryHoursText = KeepText = string.Empty;
+            SetStatus(loaded.Error ?? "The schedule could not be loaded. Refresh before editing.", true);
+            return;
+        }
+        _scheduleForm = loaded.Value;
+        ShowSchedule(_scheduleForm);
+    }
+
+    private void ShowSchedule(SettingsEditForm form)
+    {
+        AutoEnabled = form.GetBool("backup.autoEnabled");
+        EveryHoursText = Math.Clamp(form.GetInt("backup.everyHours", 24), 1, 24 * 30).ToString(CultureInfo.InvariantCulture);
+        KeepText = Math.Clamp(form.GetInt("backup.keep", 7), 1, 500).ToString(CultureInfo.InvariantCulture);
     }
 
     // ------------------------------ Actions ------------------------------
@@ -348,6 +372,23 @@ public sealed class BackupViewModel : ObservableObject, IEmptyPage
 
     private void SaveSchedule()
     {
+        if (_savingSchedule) return;
+        _savingSchedule = true;
+        var saved = false;
+        try { SaveScheduleOnce(ref saved); }
+        catch (Exception exception)
+        {
+            _scheduleForm = null;
+            _services.Log.Error("Backup schedule save/refresh did not finish.", exception);
+            SetStatus(saved ? "SAVED. The schedule was stored but the page could not refresh. Reopen Backup."
+                : "Schedule saving is unconfirmed. Refresh and verify the current schedule before retrying.", true);
+        }
+        finally { _savingSchedule = false; }
+    }
+
+    private void SaveScheduleOnce(ref bool saved)
+    {
+        if (_scheduleForm is null) { SetStatus("Refresh Backup and review the schedule before saving.", true); return; }
         if (!int.TryParse(EveryHoursText.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var hours))
         {
             SetStatus("The interval must be a whole number of hours, for example 24.", true);
@@ -367,15 +408,22 @@ public sealed class BackupViewModel : ObservableObject, IEmptyPage
             ["backup.keep"] = keep
         };
 
-        var result = _services.Settings.SetMany(values, _user);
+        var result = _services.Settings.SaveEditForm(values, _user, _scheduleForm);
 
         if (!result.Ok)
         {
+            if (!result.NoCommitConfirmed) _scheduleForm = null;
             SetStatus(result.Error ?? "The schedule could not be saved.", true);
             return;
         }
 
-        Load();
+        saved = true; // Acknowledge before binding/file callbacks;never turn a committed save into retry advice.
+        _scheduleForm = result.SettingsEdit;
+        if (_scheduleForm is null) { SetStatus("SAVED. Refresh Backup before changing the schedule again.", true); return; }
+        ShowSchedule(_scheduleForm);
+        // Preserve the previous post-save automatic-backup attempt without re-reading/rebasing the form.
+        _services.Backup.RunAutomaticIfDue();
+        LastAutomatic = _services.Backup.LastBackupText;
         SetStatus(
             AutoEnabled
                 ? $"Saved. A backup is made every {hours} hour(s); the last {keep} automatic ones are kept."

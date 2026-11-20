@@ -109,6 +109,7 @@ public sealed class SettingsViewModel : ObservableObject
     private bool _suppressPermissionSave;
     private bool _confirmLabelReset;
     private SettingsEditForm? _editForm;
+    private EditVersion? _pricingVersion;
     private static readonly string[] FormKeys =
     {
         "appearance.productPhotoSize",
@@ -334,6 +335,7 @@ public sealed class SettingsViewModel : ObservableObject
         try
         {
             var allowance = _services.Pricing.ForUser(_user, _selectedUser);
+            _pricingVersion = allowance.EditVersion;
             PricingEditRate = allowance.EditRate;
             PricingManualLimit = allowance.ManualReductionPercent.ToString("0.##", CultureInfo.InvariantCulture);
             PricingProfit = allowance.ProfitDiscount;
@@ -350,6 +352,7 @@ public sealed class SettingsViewModel : ObservableObject
     private void SavePricing()
     {
         if (!UpdateStaffAccess() || _selectedUser is null) { SetStatus("Only the owner can set a person's pricing limits.", true); return; }
+        if (_pricingVersion is null) { SetStatus("Reload the selected person's pricing limits before saving.", true); return; }
         if (!decimal.TryParse(PricingManualLimit, NumberStyles.Number, CultureInfo.InvariantCulture, out var manual)
             || !decimal.TryParse(PricingProfitLimit, NumberStyles.Number, CultureInfo.InvariantCulture, out var profit)
             || !decimal.TryParse(PricingRetailLimit, NumberStyles.Number, CultureInfo.InvariantCulture, out var retail))
@@ -363,7 +366,9 @@ public sealed class SettingsViewModel : ObservableObject
             ProfitDiscount = PricingProfit, ProfitPercent = profit, RetailDiscount = PricingRetail,
             RetailPercent = retail, OverrideBasis = PricingOverride,
             ExtraDiscount = PricingExtra, ExtraLimitPaisa = Money.ToPaisa(extra)
-        });
+        }, _pricingVersion);
+        if (result.Ok) _pricingVersion = result.EditVersion;
+        else if (!result.NoCommitConfirmed) _pricingVersion = null;
         SetStatus(result.Ok ? "Pricing limits saved for " + _selectedUser.Name + "." : result.Error ?? "Could not save pricing limits.", !result.Ok);
     }
 
@@ -991,6 +996,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void ClearPricing()
     {
+        _pricingVersion = null;
         PricingEditRate = PricingProfit = PricingRetail = PricingOverride = PricingExtra = false;
         PricingManualLimit = PricingProfitLimit = PricingRetailLimit = PricingExtraLimit = string.Empty;
     }

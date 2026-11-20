@@ -1,8 +1,8 @@
 # TAKEOVER — the complete brief for a new agent
 
-## ⏳ موجودہ 5.1 — Settings مرکزی فارم — v0.125.0 Celandine
+## ⏳ موجودہ 5.1 — Backup schedule اور Pricing limits — v0.126.0 Avens
 
-مالککیتازہترتیب:نامکمل5کیپیشرفت5.1/5.2؛**1تا5کےباقیکاماورضروریتصدیقمکملکیےبغیر6شروعنہیںکرنا۔** 5.1ابھیجاری:Settingsmainformcoherentdetachedread/per-keyatomiccompare،exactwritten-keyhandoff،maskedcloudkeydependency،labelReset/focusاورfinalstartupDBchecks۔ ⏳25نئےC#facts/3143suiteUNRUN؛116static/29نئیlexicalnegative/24Python-ownedWAL+DELETEplansاصل.NET/provider/WPFثبوتنہیں۔ [⏳ جائزہ/PT-67/باقی5.1](docs/SETTINGS-EDIT-CONCURRENCY-REVIEW-URDU.md)؛[⏳14حصے](docs/REMAINING-14-PORTIONS-URDU.md)۔ **اگلاکامابھی5.1کےBackup-schedule/Pricing/Hardware/icon/workbookSettingswritersاورstartupregistryrace/Windowsپر؛StockTakeاسکےبعدحصہ5میں۔** حصوں2/3/4اورپہلے5checkpointsکانیاWindowsrunبھیباقی؛FullPhase4OPEN؛❌6/installerشروعنہیں۔
+**5.1 ابھی جاری ہے؛حصوں1تا5کےباقیکاماورضروریتصدیقمکملکیےبغیر6شروعنہیںکرنا۔** مرکزیSettingsکےبعدBackup-scheduleloadedform/atomiccheckedSave/exacthandoff/ackقبلcallbacksاورPricingowner-targetsnapshot/role+allowanceCAS/exacttokenشامل؛اصلpricing/financialpolicyبرقرار۔ ⏳25نئےC#cases/3168suiteUNRUN؛117static/32نئیlexicalnegative/26Python-ownedWAL+DELETEplansاصل.NET/provider/WPFثبوتنہیں۔ [⏳ جائزہ/PT-68/باقی5.1](docs/SCHEDULE-PRICING-CONCURRENCY-REVIEW-URDU.md)؛[⏳14حصے](docs/REMAINING-14-PORTIONS-URDU.md)۔ **اگلاکامابھی5.1کےHardware/icon/workbookSettings،باقیStaffwritesاورstartupregistryrace/Windowsپر؛StockTakeاسکےبعدحصہ5میں۔** حصوں2/3/4اورپہلے5checkpointsکانیاWindowsrunبھیباقی؛FullPhase4OPEN؛❌6/installerشروعنہیں۔
 
 
 ## ⏳ موجودہ حصہ2/14 — v0.120.2 Willow

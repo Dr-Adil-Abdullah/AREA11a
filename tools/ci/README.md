@@ -9,7 +9,7 @@ built by writing this template.
 To enable, an owner/integration with workflow-write permission must place the file
 at `.github/workflows/build.yml`. Do not share credentials in chat. The workflow
 builds the entire solution with .NET 10 on Windows and runs the current synthetic
-C# suite (3143 written cases at v0.125.0;execution still required), retaining TRX evidence on failure.
+C# suite (3168 written cases at v0.126.0;execution still required), retaining TRX evidence on failure.
 A successful test job is not a real WPF/printer/install smoke test.
 
 After enabling, a manual **Run workflow** with `make_installer=true` publishes

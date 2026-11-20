@@ -1,5 +1,10 @@
 # Area11 — Real-life Physical Testing Log
 
+## ⏳ PT-68 — 5.1 Backup schedule /Staff Pricing stale forms (v0.126.0)
+
+[⏳ مکملsteps/باقی5.1](docs/SCHEDULE-PRICING-CONCURRENCY-REVIEW-URDU.md)؛verifiedencryptedbackup **اورواقعیالگDB/photos/config**پہلے؛اصلshopپرposts/faultsنہیں۔3168/0fail/0skipاورDesktopRelease؛دوscheduleforms/تینkeys/Backup-onlygrantee/revoke/telemetry/no-partial-audit،post-ackcallbackfailureSAVED؛دوPricingeditors،targetrole/activechange،ownerproofبغیرtargetlogin،exacttoken/no-selfconflict/auditfaultاوراصلpricingregressionsجانچیں۔ ⏳25نئےcasesUNRUN؛117static/32lexical/26PythonplansWindows/realbackup/providerثبوتنہیں۔Hardware/icon/workbook/remainingStaff/startupregistryاور1تا5کےباقیgatesبرقرار؛6/installerشروعنہیں۔
+
+
 ## ⏳ PT-67 — 5.1 Settings مرکزی فارم (v0.125.0)
 
 [⏳ مکملsteps/باقی5.1](docs/SETTINGS-EDIT-CONCURRENCY-REVIEW-URDU.md)؛verifiedencryptedbackup **اورالگDB/photos/config**پہلے۔3143/0fail/0skipاورDesktopRelease،دوforms/CounterAutoPrintکیباہمترمیم،atomicnoauditconflict،heartbeat/counterchurn،missingrow،maskedkeyrotation،exactwritten-keyhandoff/untouchedkey،labelRestoreاورpartialmain-SAVED/startup/focusجانچیں۔ ⏳25نئےfactsUNRUN؛116static/29lexical/24PythonplansWindows/registry/providerثبوتنہیں۔ Backup/Pricing/Hardware/workbook/registryraceبھیابھی5.1میںباقی؛1تا5مکمل+تصدیقسےپہلے6نہیں؛installerنہیںبنا۔

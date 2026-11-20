@@ -3,6 +3,9 @@ namespace Area11.Core.Models;
 /// <summary>Owner-managed allowances, per person, not per role. Missing non-owner rows deny edits.</summary>
 public sealed class PricingAllowance
 {
+    [System.Text.Json.Serialization.JsonIgnore]
+    public EditVersion? EditVersion { get; internal set; }
+
     public int UserId { get; set; }
     public bool EditRate { get; set; }
     public decimal ManualReductionPercent { get; set; }

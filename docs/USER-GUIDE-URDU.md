@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.125.0 Celandine۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.126.0 Avens۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**⏳ 5.1 — Backup schedule اور Pricing limits:** دو جگہ کھلےفارممیںسےکوئیپہلےمحفوظکرچکاہوتودوسراپراناSaveنئیترتیبیاقیمتکیاجازتخاموشیسےنہیںپلٹےگا۔ **changed**پرRefresh/reviewکریں؛Pricingمیںمتعلقہشخصدوبارہمنتخبکرکےتازہlimitsپڑھیں۔ Scheduleکی **SAVED**خبرکےبعدصفحہrefreshناکامہوتوپہلامحفوظکامواپسنہیںہوا؛موجودہscheduleتصدیقکریں۔ [⏳ PT-68/حدود](SCHEDULE-PRICING-CONCURRENCY-REVIEW-URDU.md)؛3168suite/Windowsباقی۔5.1ابھیجاری،Hardware/icon/workbookاورباقیStaff/registryکامکومکملنہسمجھیں۔
 
 **⏳ 5.1 — Settings مرکزی فارم:** ابپرانےکھلےفارمکےSaveپراسکےمتعلقہsavedvaluesملائےجاتےہیں۔ **Settings changed**آئےتواسbatchسےکچھمحفوظنہیںہوا؛Refreshکرسےموجودہقدریںreviewکریں،پھراپنیترمیم۔ Cloudkeyاببھینہیںدکھائیجاتی؛دوسریجگہkeyبدلےتوپراناformreviewمانگےگا۔ **Settings SAVED; startup/screen lock was not saved**جزوینتیجہہے،پہلامحفوظکامواپسنہیںہوا۔ [⏳ PT-67/باقی5.1](SETTINGS-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3143suite/Windowsباقی۔ Backup/Pricing/Hardware/workbookاورregistryraceابھیاسcheckpointسےمکملنہیںہوئے۔
 
@@ -808,7 +810,7 @@ Recoveryکیfailedslipپرپرنٹرکوخالیdocumentنہیںدیاجاتا۔
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.125.0 کا متوقع test count 3143 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.126.0 کا متوقع test count 3168 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 
