@@ -1,5 +1,10 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## ⏳ v0.124.0 — حصہ5 میں مشترکہ Draft کا stale-edit check؛D-100 تبدیل نہیں
+
+تازہnextسےاسیحصہ5میںsharedDraftSave/premark/discardپرexpected-statecheck،exactSave/confirmedRestore/HeldResumehandoff؛پرانیYesکےبعدبدلاDraftخاموشیسےpost/discardنہیں۔ Sharedپالیسیبرقرار،creator-onlylockنہیں؛مجازدوسراشخصfreshbaselineسےکامکرسکے۔ PurchasepayloadپرالگCost/main،list/discardپرpagepermissionبرقرار؛مالیحساب/discount/stock/Numberingنہیںبدلے۔ [⏳ PT-66/حدود](DRAFT-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3118suiteUNRUN۔ Settings/StockTakeاورremainingroutesاسیحصہ5میںباقی؛حصہ6کینئیdurableidentityپالیسیخودسےشروعنہیںکی؛installerنہیںبنا۔
+
+
 ## ⏳ v0.123.0 — حصہ5 کا پہلا expected-state/snapshot checkpoint؛نئی مالی پالیسی نہیں
 
 تازہNextنےصرفحصہ5منظورکیا۔ پرانیformکیstateعینwriteTxمیںملتیہے؛فرقہوتوrefuse/reopen/review،نہsilentmerge/overwrite۔ Product/Customer/extra/definition/native/catalogcheckededitsاورمحدودsnapshots؛Cashierphone،authorednewcost،SupplierB،discount/actualcostfloor،D-116resetpolicyاورBlackbox/BookCheckدائرہبرقرار۔ ⏳Settings/sharedDrafts/StockTake/remainingroutesکاجائزہابھیاسیحصہ5میںباقی؛3082suite/WindowsUNRUN۔ [⏳ PT-65/حدود](EDIT-CONCURRENCY-REVIEW-URDU.md)؛❌حصہ6شروعنہیں/installerنہیںبنا۔

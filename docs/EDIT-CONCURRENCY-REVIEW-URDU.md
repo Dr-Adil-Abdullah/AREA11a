@@ -1,5 +1,8 @@
 # ⏳ حصہ5/14 — بیک وقت ترمیم: پہلا checkpoint — v0.123.0 Verbena
 
+> ⏳ تازہv0.124.0میںsharedDraftکااگلامحدودcheckpointآگیا: [جائزہ/PT-66](DRAFT-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3118suiteUNRUN۔ نیچےv0.123.0کیپہلیحیثیتتاریخیہے؛اسکےsharedDraftباقیکےحوالےاباسنئےcheckpointسےمحدودطورپربدلے۔ Settings/StockTake/remainingroutesاورWindowsاببھیباقی،حصہ5جاری۔
+
+
 ## ⏳ اجازت اور واضح حیثیت
 
 مالک کے تازہ `Next` نے صرف **حصہ5** منظور کیا۔ یہ اس حصے کی **پہلی محدود source پیشرفت** ہے،پورے concurrency کام کی تکمیل نہیں۔ اگلی پیشرفت بھی اسی حصے کے باقی راستوں پر ہوگی؛حصہ6 کی durable identity/design پالیسی خود سے شروع نہیں کی۔ حصوں2،3،4 کی نئی C#/Windows آزمائش بھی باقی ہے۔

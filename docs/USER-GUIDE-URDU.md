@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.123.0 Verbena۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.124.0 Sorrel۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**⏳ مشترکہ Draft — تازہ حصہ5 checkpoint:** ابایکDraftدوجگہکھلاہواورتازہمحنتدوسرےنےSaveکیہوتوپراناSave/Post/Discardمنعہوگا۔ **changed after the form was opened**پراندھادوبارہSaveنہکریں؛موجودہDraftدوبارہکھولیں،reviewکریں،پھراپنیترمیم۔ اسconflictسےنہنیاbillبنانہپہلےوالےکیترمیممٹی۔ KnownvalidationfailureکےبعداسیDraftمیںcorrectionممکن؛**unconfirmed/verification marker/SAVED**کیہدایاتالگہیں،دوسریcopyبناکراندھیretryنہکریں۔ [⏳ PT-66/حدود](DRAFT-EDIT-CONCURRENCY-REVIEW-URDU.md)؛36نئےcases/3118suiteاوراصلWindowsجانچباقی۔ **Settings/StockTakeاورباقیراستےابھیحصہ5میںباقی**۔ نیچےپچھلےcheckpointکیsharedDraftباقیہدایاتتاریخیہیں۔
 
 **⏳ حصہ5/14 — پرانا فارم نئی تبدیلی نہ مٹائے:** یہحصہابھیجاریہے۔ Product/Customer/extraanswers،definition/nativeاورCatalog/UnitکےمتعلقہSaveمیں **record or its fields changed** آئےتواسeditسےکچھمحفوظنہیںہوا؛موجودہrecordدوبارہکھولیں/Refresh،reviewکریں،پھرمطلوبہدرستی۔ ایکہیپراناSaveباربارنہدبائیں،خودکارmergeنہیں۔ Brandکےنامپر **SAVED** اورlinkconflictالگہوسکتاہے؛نامدوبارہبنانےکیمتکوششکریں۔ **Settings/sharedDrafts/StockTakeاورباقیراستےابھیاسیحصےمیںباقی**؛ہرSaveکومحفوظنہسمجھیں۔ [⏳ PT-65/حدود](EDIT-CONCURRENCY-REVIEW-URDU.md)؛25نئےfacts/3082suiteاوراصلWindowsجانچباقی۔
 
@@ -804,7 +806,7 @@ Recoveryکیfailedslipپرپرنٹرکوخالیdocumentنہیںدیاجاتا۔
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.123.0 کا متوقع test count 3082 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.124.0 کا متوقع test count 3118 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 

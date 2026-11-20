@@ -1,8 +1,8 @@
 # HANDOFF - read this first
 
-## ⏳ موجودہ حصہ5/14 — پہلا checkpoint — v0.123.0 Verbena
+## ⏳ موجودہ حصہ5/14 — مشترکہ Draft checkpoint — v0.124.0 Sorrel
 
-تازہNextسےصرفحصہ5منظور؛**حصہ5ابھیجاری،باقیsourceجائزہبھیباقی**۔ Product/Customer+extraanswersکےcoherentsnapshots/expected-stateguards،definition/native/catalog/Unitcheckededits،brandphase1token،currentDBmainاورphonecreateTxrecheck۔ ⏳25newC#facts/3082suiteUNRUN؛114static/47newlexicalnegative/18PythonSQLiteplans.NET/provider/Windowsثبوتنہیں۔ [⏳ جائزہ/PT-65/باقیحصہ5](docs/EDIT-CONCURRENCY-REVIEW-URDU.md)؛[⏳14حصے](docs/REMAINING-14-PORTIONS-URDU.md)۔ **اگلاکاماسیحصہ5کےSettings/sharedDrafts/StockTake/remainingtoggle/updates/snapshotroutesپر؛حصہ6شروعنہیںکرنا۔** حصوں2/3/4کانیاWindowsrunبھیباقی؛FullPhase4OPEN؛❌installerنہیںبنا۔
+تازہnextسےاسیحصہ5کیپیشرفت؛**حصہ5ابھیجاری،Settings/StockTakeاورباقیsourceجائزہبھیباقی**۔ SharedDraftSave/premark/discardپرwriteTxexpected-state،coherentOpen/List،exactSave/confirmedRestore/HeldResumebaselineاورDesktophandoff؛D-100shared/financialcreators/پرانےunknown-SAVEDguardsبرقرار۔ ⏳36نئےC#cases/3118suiteUNRUN؛115static/41نئیlexicalnegative/40Python-ownedWAL+DELETEplansاصل.NET/provider/WPFثبوتنہیں۔ [⏳ جائزہ/PT-66/باقیحصہ5](docs/DRAFT-EDIT-CONCURRENCY-REVIEW-URDU.md)؛[⏳14حصے](docs/REMAINING-14-PORTIONS-URDU.md)۔ **اگلاکاماسیحصہ5کےSettingsmulti-keyforms،StockTakeاورremainingtoggle/update/snapshotroutesپر؛حصہ6شروعنہیںکرنا۔** حصوں2/3/4اورپہلےcheckpointکانیاWindowsrunبھیباقی؛FullPhase4OPEN؛❌installerنہیںبنا۔
 
 
 ## ⏳ موجودہ حصہ2/14 — v0.120.2 Willow

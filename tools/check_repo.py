@@ -6260,6 +6260,88 @@ def check_windows_v1201_regressions() -> None:
     REPORT.append('v0.120.1 owner Windows22-failure fixture guards:checked Settings/current identities/explicit denials/stored names/pre-fault services/schema-valid marker;new C# rerun required')
 
 
+def check_shared_draft_edit_boundaries() -> None:
+    """First shared-draft CAS checkpoint. Lexical checks,not C#/provider/runtime proof."""
+    def read(path): return (DOTNET / path).read_text()
+    def body(text, start, end):
+        if start not in text: FAILURES.append('Draft CAS method missing: ' + start); return ''
+        return text.split(start, 1)[1].split(end, 1)[0]
+    def need(text, *tokens):
+        for token in tokens:
+            if token not in text: FAILURES.append('Draft CAS contract missing: ' + token)
+    def order(text, *tokens):
+        positions = [text.find(t) for t in tokens]
+        if -1 in positions or positions != sorted(positions): FAILURES.append('Draft CAS ordering: ' + ' -> '.join(tokens))
+    draft = read('Area11.Core/Services/DraftService.cs')
+    capture = read('Area11.Core/Services/EditConcurrency.cs')
+    need(capture, '"draft" => "document_drafts"', 'db.Fingerprint(connection, $"SELECT {columns} FROM {table} WHERE id=@id;", id)')
+    gate = 'EditConcurrency.Require(_db, connection, "draft", draftId, expected);'
+    save = body(draft, 'private ServiceResult<DocumentDraft> Save<TInput>(', '// ------------------------------------------------------------------ list & open')
+    need(save, 'EditVersion? expected', gate, 'row = ReadRow(connection, draftId)!;',
+         'row.EditVersion = EditConcurrency.Capture(_db, connection, "draft", draftId);',
+         'row.EditVersion = EditConcurrency.Capture(_db, connection, "draft", id);')
+    order(save, 'var reader = RequireReader(connection, user, type, includePayload: true);', gate,
+          'UPDATE document_drafts SET payload_json', 'row = ReadRow(connection, draftId)!;',
+          'row.EditVersion = EditConcurrency.Capture', 'return ServiceResult<DocumentDraft>.Success(row);', '}, outcome);')
+    listed = body(draft, 'public ServiceResult<List<DraftSummary>> List(', 'public ServiceResult<SaleInput> OpenSale')
+    need(listed, 'return _db.Snapshot(connection =>', 'EditVersion = EditConcurrency.Capture(_db, connection, "draft", row.Id),')
+    order(listed, 'RequireReader(connection, user, type, includePayload: false);', 'var rows =', 'EditVersion = EditConcurrency.Capture')
+    opened = body(draft, 'private ServiceResult<TInput> Open<TInput>(', '// ------------------------------------------------------------------ discard')
+    need(opened, 'return _db.Snapshot(connection =>', 'EditVersion = EditConcurrency.Capture(_db, connection, "draft", draftId)')
+    order(opened, 'RequireReader(connection, user, type, includePayload: true);', 'var row = ReadRow', 'JsonSerializer.Deserialize<TInput>', 'EditVersion = EditConcurrency.Capture')
+    discard = body(draft, 'public ServiceResult Discard(', '// ------------------------------------------------------------------ final post')
+    order(discard, 'var reader = RequireReader(connection, user, type, includePayload: false);', gate, "SET status = 'discarded'", '_audit.Record(')
+    for kind, reader in [('Sale', '_sales.RequirePostingReader'), ('Purchase', '_purchases.RequireEntryReader')]:
+        public_post = body(draft, 'public ServiceResult<' + kind + 'Result> Post' + kind + '(',
+                           'public ServiceResult<PurchaseResult> PostPurchase' if kind == 'Sale' else 'private ServiceResult<TResult> Post<')
+        need(public_post, 'EditVersion? expected = null', 'expected ??= stored.EditVersion;', gate)
+        closure = public_post.rsplit('connection =>', 1)[-1]
+        order(closure, reader + '(connection, user);', gate)
+    premark = body(draft, 'private ServiceResult<TResult> Post<', 'ServiceResult<TResult> created;')
+    need(premark, 'var markOutcome = new TransactionOutcome();', 'return true;', '}, markOutcome);',
+         'NoCommitConfirmed = markOutcome.NoCommitConfirmed')
+    order(premark, '_db.Tx(connection =>', 'authorizeBeforeMark?.Invoke(connection);', 'var row = ReadRow(connection, draftId);',
+          "SET payload_json = @payload, status = 'posted'", '}, markOutcome);')
+    restore_result = body(draft, 'if (!created.Ok || created.Value is null)', 'var documentId =')
+    order(restore_result, 'if (!created.NoCommitConfirmed)', 'var restored = RestoreAfterFailure(draftId, type);', 'EditVersion = restored,')
+    need(restore_result, 'NoCommitConfirmed = restored is not null')
+    restore = body(draft, 'private EditVersion? RestoreAfterFailure(', 'private ServiceResult Finalize(')
+    need(restore, 'return changed == 1 && row is { Status: DraftStatus.Draft, PostedDocumentId: null } && row.DraftType == type',
+         '? EditConcurrency.Capture(_db, connection, "draft", draftId) : null;', 'return null;',
+         "WHERE id = @id AND draft_type = @type AND status = 'posted' AND posted_document_id = @marker;")
+    for page, kind in [('Pos', 'Sale'), ('Purchases', 'Purchase')]:
+        vm = read('Area11.Desktop/ViewModels/' + page + 'ViewModel.cs')
+        need(vm, 'private EditVersion? _openDraftVersion;',
+             '_services.Drafts.Post' + kind + '(_user, _openDraftId, input, _openDraftVersion)',
+             '_services.Drafts.Save' + kind + 'Draft(_user, input, _openDraftId, _openDraftVersion)',
+             'if (result.EditVersion is not null) _openDraftVersion = result.EditVersion;',
+             '_openDraftVersion = saved.Value.EditVersion;', '_openDraftVersion = opened.EditVersion;')
+        # A clear/consumption must clear its token;grant/Refresh must never replace it with a fresh read.
+        for after_reset in vm.split('_openDraftId = 0;')[1:]:
+            if not after_reset.lstrip().startswith('_openDraftVersion = null;'): FAILURES.append('Draft ID/token consumption mismatch: ' + page)
+        need(vm, '_openDraftVersion = null;')
+    hold = read('Area11.Core/Services/HoldCartService.cs')
+    need(hold, 'EditVersion = EditConcurrency.Capture(_db, connection, "draft", recoveryId),')
+    need(read('Area11.Desktop/ViewModels/PosViewModel.cs'), '_openDraftVersion = cart.EditVersion;')
+    drawer = read('Area11.Desktop/ViewModels/DraftsViewModel.cs')
+    need(drawer, 'PostPurchase(draft) : PostSale(draft)',
+         '_services.Drafts.PostSale(_user, draft.Id, expected: draft.EditVersion)',
+         '_services.Drafts.PostPurchase(_user, draft.Id, expected: draft.EditVersion)',
+         '_services.Drafts.Discard(_user, draft.Id, expected: draft.EditVersion)')
+    for file, cls in [('MasterFoundationModels', 'DraftSummary'), ('MasterFoundationModels', 'DocumentDraft'), ('SaleModels', 'HeldCart')]:
+        need(body(read('Area11.Core/Models/' + file + '.cs'), 'public sealed class ' + cls + '\n{', '\n}'),
+             '[System.Text.Json.Serialization.JsonIgnore]', 'public EditVersion? EditVersion { get; internal set; }')
+    tests = read('Area11.Tests/DraftEditConcurrencyTests.cs')
+    need(tests, 'TwoOpenFormsCannotSaveOverAnotherPersonsWork', 'StaleEditedPostCannotRewritePayloadOrStartTheCreator',
+         'DrawerConfirmationIsBoundToTheDisplayedDraftNotAFreshReplacement',
+         'EnabledDesktopHostRequiresLoadedBaselineForEditedWriters', 'ConfirmedFailedCreatorReturnsExactRestorationTokenForCorrection',
+         'FailedRestorationCannotHandBackAFreshRetryToken', 'ResumedHeldCartCarriesItsExactRecoveryDraftBaseline',
+         'PurchaseSummaryCanStillBeDiscardedWithBaselineButWithoutCostPermission', 'Assert.Equal(before, f.Snapshot());')
+    if tests.count('[InlineData(') != 32 or tests.count('[Fact]') != 4:
+        FAILURES.append('Draft CAS requires36 additive written cases;execution still required')
+    REPORT.append('Part5 shared drafts:expected-state Save/premark/discard,snapshot Open/list,exact restore/held handoff;36 written cases NOT runtime/durable identity proof')
+
+
 def check_edit_concurrency_boundaries() -> None:
     """Lexical CAS/read-snapshot invariants only;not provider execution or complete concurrency proof."""
     def read(path): return (DOTNET / path).read_text()
@@ -7694,9 +7776,9 @@ def check_purchase_preparation():
         FAILURES.append('Shared draft reader must retain current purchase Cost/main payload gate')
     posted = drafts.split('public ServiceResult<PurchaseResult> PostPurchase(', 1)[-1].split('private ServiceResult<TResult> Post<', 1)[0]
     for token in ('_purchases.CheckEntryAccess(user)', 'payload => _purchases.Create(payload, user!)',
-                  'connection => { _purchases.RequireEntryReader(connection, user); }'):
+                  'connection =>\n            {\n                _purchases.RequireEntryReader(connection, user);'):
         if token not in posted: FAILURES.append(f'Purchase draft post must guard current payload and premark/Create: {token}')
-    post = drafts.split('private ServiceResult<TResult> Post<', 1)[-1].split('private bool RestoreAfterFailure', 1)[0]
+    post = drafts.split('private ServiceResult<TResult> Post<', 1)[-1].split('private EditVersion? RestoreAfterFailure', 1)[0]
     if 'authorizeBeforeMark?.Invoke(connection);' not in post or post.find('authorizeBeforeMark?.Invoke(connection);') > post.find('var row = ReadRow(connection, draftId);'):
         FAILURES.append('Recheck purchase preparation before terminal draft marker')
     discard = drafts.split('public ServiceResult Discard(', 1)[-1].split('// ------------------------------------------------------------------ post', 1)[0]
@@ -8714,7 +8796,7 @@ def check_counter_current_access():
         positions = [create.find(t) for t in tokens]
         if -1 in positions or positions != sorted(positions): FAILURES.append('Current counter writer/actor must resolve inside Tx before Save: '+stem)
     draft = (DOTNET / 'Area11.Core/Services/DraftService.cs').read_text().split('public ServiceResult<SaleResult> PostSale(',1)[-1].split('public ServiceResult<PurchaseResult> PostPurchase(',1)[0]
-    for token in ('_sales.CheckPostingAccess(user)', 'connection => { _sales.RequirePostingReader(connection, user); }',
+    for token in ('_sales.CheckPostingAccess(user)', 'connection =>\n            {\n                _sales.RequirePostingReader(connection, user);',
                   'Finalize(connection, _sales.RequirePostingReader(connection, user), draftId, DraftType.Sale, id)'):
         if token not in draft: FAILURES.append('Current Sale draft premark/final actor missing '+token)
     vm = (DOTNET / 'Area11.Desktop/ViewModels/ReturnsViewModel.cs').read_text()
@@ -8988,7 +9070,7 @@ def check_automatic_shared_draft_posting():
         vm=(DOTNET/f'Area11.Desktop/ViewModels/{page}ViewModel.cs').read_text()
         body=vm.split(method,1)[-1].split(next_method,1)[0]
         expected=f'if (_openDraftId <= 0 && !Store{kind}Draft(input)) return;'
-        post=f'_services.Drafts.Post{kind}(_user, _openDraftId, input)'
+        post=f'_services.Drafts.Post{kind}(_user, _openDraftId, input, _openDraftVersion)'
         if expected not in body or post not in body or body.find(expected)>body.find(post): FAILURES.append('P37 auto save-link-post order '+kind)
         if f'_services.{"Sales" if page=="Pos" else "Purchases"}.Create(' in vm: FAILURES.append('P37 direct UI creator bypass '+kind)
         helper=vm.split(f'private bool Store{kind}Draft(',1)[-1].split('private void OpenDrafts()',1)[0]
@@ -9298,6 +9380,7 @@ def main() -> int:
     check_parent_record_save_outcomes()
     check_authenticated_session_boundaries()
     check_edit_concurrency_boundaries()
+    check_shared_draft_edit_boundaries()
     check_csharp_grammar()
 
     if not quiet:

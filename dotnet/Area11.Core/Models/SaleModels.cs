@@ -245,6 +245,9 @@ public sealed class HeldCartSummary
 /// <summary>A parked bill brought back to the counter, lines included.</summary>
 public sealed class HeldCart
 {
+    [System.Text.Json.Serialization.JsonIgnore]
+    public EditVersion? EditVersion { get; internal set; }
+
     public int RecoveryDraftId { get; set; }
     public string? Notes { get; set; }
 

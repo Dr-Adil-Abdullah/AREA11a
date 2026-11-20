@@ -18,7 +18,7 @@
 |2۔ ⏳ پوری ٹیسٹ سوئٹ | اجازت مل گئی؛اصل v0.120.1 run میں2941PASS/22FAIL/2963۔22 ناکامیوں سے متعلق fixture اصلاحات؛v0.120.2 کا اصل rerun باقی |
 |3۔ ⏳ ریکارڈ بنانے والے فارم | نئےnextسےاجازت؛v0.121.0میںparent/quick-create/Catalog/Unit Saveکےlocaloutcome/ackguards،72نئےcases؛اصلWindows/WPF3035suiteاورPT-63باقی |
 |4۔ ⏳ لاگ اِن اور اجازتیں | اجازتملی؛v0.122.0/D-116sessionproof،resetپرnext-actionfreshlogin،currentreaders/inputguards،Counterfull-outputdeny/freshrestore؛22نئےcases/3057suiteUNRUN،[PT-64](AUTHENTICATED-SESSION-REVIEW-URDU.md)/Windowsباقی |
-|5۔ ⏳ بیک وقت کام — جاری | اجازتملی؛v0.123.0پہلاcheckpoint:parent/extra/definition/catalogcheckededitsاورمحدودsnapshots؛25نئےfacts/3082suiteUNRUN۔ **Settings/sharedDrafts/StockTake/remainingroutesکاجائزہبھیباقی**؛[PT-65](EDIT-CONCURRENCY-REVIEW-URDU.md)،اگلاکامیہیحصہ5 |
+|5۔ ⏳ بیک وقت کام — جاری | v0.123.0parent/extra/catalogکےبعدv0.124.0sharedDraftSave/premark/discardاورexactrestore/heldhandoff؛36نئےcases/3118suiteUNRUN۔ **Settingsmulti-keyforms/StockTake/remainingroutesکاسورسجائزہبھیباقی**؛[PT-66](DRAFT-EDIT-CONCURRENCY-REVIEW-URDU.md)،اگلاکامیہیحصہ5 |
 |6۔ ❌ دوبارہ کوشش اور ری اسٹارٹ | جواب کھونا،بندش،دوسرے صفحے/کمپیوٹر کی retry؛دیرپا شناخت کی تجویز،ضروری منظوری،نفاذ |
 |7۔ ❌ مالی اور اسٹاک ملاپ | فروخت/خرید/واپسی/وصولی/ادائیگی/خرچ/گنتی/گلا؛منظورشدہ رعایت اور اصل لاگت کی حد |
 |8۔ ❌ رپورٹس اور رازداری | Excel/CSV/PDF/رسید/پرنٹ؛Cost/Profit اجازتیں؛Blackbox/BookCheck میں صرف منظورشدہ رسائی |
@@ -58,3 +58,7 @@
 ## ⏳ حصہ5 جاری — اگلا Next بھی اسی باقی کام کے لیے
 
 v0.123.0صرفپہلاcheckpoint؛نہپوراحصہ5مکملنہصرفWindowsباقی۔ [⏳ covered/remainingroutes/PT-65](EDIT-CONCURRENCY-REVIEW-URDU.md)۔ Settings/sharedDrafts/StockTake/باقیtoggle/update/snapshotراستوںکاجائزہاسیحصےمیں؛حصہ6کیdurableidentitydesignپرنئیمنظوریابھیلازم۔ اوپرپرانےحصہ5شروعنہیںکےجملےتاریخیہیں۔
+
+## ⏳ حصہ5 کا دوسرا checkpoint — باقی کام اب Settings/StockTake
+
+v0.124.0sharedDraftکےمتعلقہstaleeditراستوںکاسورسآگےبڑھا؛[⏳ PT-66/حدود](DRAFT-EDIT-CONCURRENCY-REVIEW-URDU.md)۔ **Settingsmulti-keyforms،StockTakeاورremainingupdates/toggles/snapshotsابھیاسیحصہ5میںباقی**؛پوراحصہ5یاWindowsمکملنہیں۔36new/3118suiteUNRUN؛حصہ6ابھیشروعنہیںکرنا۔

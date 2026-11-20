@@ -24,7 +24,7 @@ def run():
                         ('return Save(connection, input, reader);','return Save(connection, input, user);'),
                         ('SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.'+module+');','SnapshotReadAccess.Require(_db, connection, _permissions, user, Modules.Reports);')]:
             cases.append((p,old,new,p.name+': '+old))
-    for p,old,new in [(D,'connection => { _sales.RequirePostingReader(connection, user); }','null'),
+    for p,old,new in [(D,'connection =>\n            {\n                _sales.RequirePostingReader(connection, user);','null'),
                        (D,'_sales.CheckPostingAccess(user)','ServiceResult.Success()'),
                        (D,'Finalize(connection, _sales.RequirePostingReader(connection, user), draftId, DraftType.Sale, id)','Finalize(connection, user, draftId, DraftType.Sale, id)'),
                        (V,'Pending.Clear();',''),(V,'History.Clear();',''),(V,'_saleId = 0;',''),

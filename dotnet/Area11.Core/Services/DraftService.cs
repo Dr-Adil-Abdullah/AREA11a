@@ -70,7 +70,7 @@ public sealed class DraftService
     /// Parks the counter's cart. Nothing is priced, nothing is posted: an incomplete sale is exactly
     /// what a draft is for. Pass <paramref name="draftId"/> to overwrite an open draft.
     /// </summary>
-    public ServiceResult<DocumentDraft> SaveSaleDraft(User? user, SaleInput input, int draftId = 0)
+    public ServiceResult<DocumentDraft> SaveSaleDraft(User? user, SaleInput input, int draftId = 0, EditVersion? expected = null)
     {
         if (!_permissions.Can(user, Modules.Pos))
         {
@@ -82,14 +82,14 @@ public sealed class DraftService
             return NoCommitDraftFailure("There is nothing to save - the cart is empty.");
         }
 
-        return Save(user, DraftType.Sale, input, draftId);
+        return Save(user, DraftType.Sale, input, draftId, expected);
     }
 
     /// <summary>
     /// Parks the purchase page. The supplier may be missing (0 = not chosen yet): choosing him is
     /// part of finishing the draft, not of saving it.
     /// </summary>
-    public ServiceResult<DocumentDraft> SavePurchaseDraft(User? user, PurchaseInput input, int draftId = 0)
+    public ServiceResult<DocumentDraft> SavePurchaseDraft(User? user, PurchaseInput input, int draftId = 0, EditVersion? expected = null)
     {
         if (!_permissions.Can(user, Modules.Purchases))
         {
@@ -103,10 +103,10 @@ public sealed class DraftService
 
         var access = _purchases.CheckEntryAccess(user);
         if (!access.Ok) return NoCommitDraftFailure(access.Error ?? "Purchase preparation is not allowed.");
-        return Save(user, DraftType.Purchase, input, draftId);
+        return Save(user, DraftType.Purchase, input, draftId, expected);
     }
 
-    private ServiceResult<DocumentDraft> Save<TInput>(User? user, string type, TInput input, int draftId)
+    private ServiceResult<DocumentDraft> Save<TInput>(User? user, string type, TInput input, int draftId, EditVersion? expected)
     {
         var outcome = new TransactionOutcome();
         string payload;
@@ -142,12 +142,15 @@ public sealed class DraftService
                         return NoCommitDraftFailure("Only an open draft can be updated.");
                     }
 
+                    EditConcurrency.Require(_db, connection, "draft", draftId, expected);
                     _db.Execute(connection, @"
 UPDATE document_drafts SET payload_json = @payload, updated_at = @at WHERE id = @id;",
                         new { payload, at = Clock.Now(), id = draftId });
                     _audit.Record(connection, reader, DraftType.ModuleFor(type), "draft_updated",
                         "document_drafts", draftId.ToString(), newValue: row.DraftKey);
-                    row.PayloadJson = payload;
+                    // Return the exact state written here;never recapture a baseline after commit.
+                    row = ReadRow(connection, draftId)!;
+                    row.EditVersion = EditConcurrency.Capture(_db, connection, "draft", draftId);
                     return ServiceResult<DocumentDraft>.Success(row);
                 }, outcome);
                 return updated;
@@ -181,7 +184,9 @@ VALUES(@key, @type, @payload, 'draft', @byId, @by, @at, @at);",
                         var id = (int)_db.NextId(connection);
                         _audit.Record(connection, reader, DraftType.ModuleFor(type), "draft_saved",
                             "document_drafts", id.ToString(), newValue: key);
-                        return ReadRow(connection, id)!;
+                        var row = ReadRow(connection, id)!;
+                        row.EditVersion = EditConcurrency.Capture(_db, connection, "draft", id);
+                        return row;
                     }, outcome);
                     return ServiceResult<DocumentDraft>.Success(created);
                 }
@@ -230,7 +235,8 @@ VALUES(@key, @type, @payload, 'draft', @byId, @by, @at, @at);",
 
         try
         {
-            using var connection = _db.Open();
+            return _db.Snapshot(connection =>
+            {
             RequireReader(connection, user, type, includePayload: false);
             var rows = _db.Query<DocumentDraft>(connection, @"
 SELECT id, draft_key AS draftKey, draft_type AS draftType, payload_json AS payloadJson,
@@ -248,6 +254,7 @@ ORDER BY updated_at DESC, id DESC;",
                 var (lines, partnerId) = DescribePayload(row.PayloadJson);
                 summaries.Add(new DraftSummary
                 {
+                    EditVersion = EditConcurrency.Capture(_db, connection, "draft", row.Id),
                     Id = row.Id,
                     DraftKey = row.DraftKey,
                     DraftType = row.DraftType,
@@ -260,6 +267,7 @@ ORDER BY updated_at DESC, id DESC;",
             }
 
             return ServiceResult<List<DraftSummary>>.Success(summaries);
+            });
         }
         catch (ValidationException exception) { return ServiceResult<List<DraftSummary>>.Fail(exception.Message); }
         catch (Exception exception)
@@ -285,7 +293,8 @@ ORDER BY updated_at DESC, id DESC;",
 
         try
         {
-            using var connection = _db.Open();
+            return _db.Snapshot(connection =>
+            {
             var reader = RequireReader(connection, user, type, includePayload: true);
             var row = ReadRow(connection, draftId);
             if (row is null || row.DraftType != type)
@@ -319,7 +328,9 @@ ORDER BY updated_at DESC, id DESC;",
                 return ServiceResult<TInput>.Fail("This draft is damaged and cannot be opened. Discard it and start again.");
             }
 
-            return ServiceResult<TInput>.Success(input);
+            return new ServiceResult<TInput> { Ok = true, Value = input,
+                EditVersion = EditConcurrency.Capture(_db, connection, "draft", draftId) };
+            });
         }
         catch (ValidationException exception) { return ServiceResult<TInput>.Fail(exception.Message); }
         catch (Exception exception)
@@ -335,7 +346,7 @@ ORDER BY updated_at DESC, id DESC;",
     /// Puts a draft away (D-00b spirit): the row stays as `discarded`, never deleted. Posted rows -
     /// including interrupted-post markers - can also be cleared this way once verified.
     /// </summary>
-    public ServiceResult Discard(User? user, int draftId, string? reason = null)
+    public ServiceResult Discard(User? user, int draftId, string? reason = null, EditVersion? expected = null)
     {
         var cleanReason = (reason ?? string.Empty).Trim();
         if (cleanReason.Length > 200)
@@ -351,6 +362,7 @@ ORDER BY updated_at DESC, id DESC;",
                 var row = ReadRow(connection, draftId);
                 if (row is null || row.DraftType != type)
                     throw new ValidationException("That draft is not in the list any more.");
+                EditConcurrency.Require(_db, connection, "draft", draftId, expected);
                 if (row.Status == DraftStatus.Discarded) return ServiceResult.Success();
                 if (row is { Status: DraftStatus.Posted, PostedDocumentId: not PostingMarkerId })
                     return ServiceResult.Fail("A posted draft is history and cannot be discarded.");
@@ -379,7 +391,7 @@ WHERE id = @id;",
     /// post time. Pass the cart's current input when the opener edited it; otherwise the stored
     /// payload posts. Only a confirmed no-commit failure restores the latest payload; unknown outcomes stay marked.
     /// </summary>
-    public ServiceResult<SaleResult> PostSale(User? user, int draftId, SaleInput? current = null)
+    public ServiceResult<SaleResult> PostSale(User? user, int draftId, SaleInput? current = null, EditVersion? expected = null)
     {
         if (!_permissions.Can(user, Modules.Pos))
         {
@@ -406,19 +418,24 @@ WHERE id = @id;",
                 return ServiceResult<SaleResult>.Fail(stored.Error ?? "The draft could not be opened.");
             }
             input = stored.Value;
+            expected ??= stored.EditVersion;
         }
 
         return Post(draftId, DraftType.Sale, input,
             payload => _sales.Create(payload, user!),
             (connection, id) => Finalize(connection, _sales.RequirePostingReader(connection, user), draftId, DraftType.Sale, id),
-            connection => { _sales.RequirePostingReader(connection, user); });
+            connection =>
+            {
+                _sales.RequirePostingReader(connection, user);
+                EditConcurrency.Require(_db, connection, "draft", draftId, expected);
+            });
     }
 
     /// <summary>
     /// Posts an open purchase draft through the purchase page's own `Create`. Same terminal rules
     /// as <see cref="PostSale"/>.
     /// </summary>
-    public ServiceResult<PurchaseResult> PostPurchase(User? user, int draftId, PurchaseInput? current = null)
+    public ServiceResult<PurchaseResult> PostPurchase(User? user, int draftId, PurchaseInput? current = null, EditVersion? expected = null)
     {
         if (!_permissions.Can(user, Modules.Purchases))
         {
@@ -445,12 +462,17 @@ WHERE id = @id;",
                 return ServiceResult<PurchaseResult>.Fail(stored.Error ?? "The draft could not be opened.");
             }
             input = stored.Value;
+            expected ??= stored.EditVersion;
         }
 
         return Post(draftId, DraftType.Purchase, input,
             payload => _purchases.Create(payload, user!),
             (connection, id) => Finalize(connection, _purchases.RequireEntryReader(connection, user), draftId, DraftType.Purchase, id),
-            connection => { _purchases.RequireEntryReader(connection, user); });
+            connection =>
+            {
+                _purchases.RequireEntryReader(connection, user);
+                EditConcurrency.Require(_db, connection, "draft", draftId, expected);
+            });
     }
 
     private ServiceResult<TResult> Post<TInput, TResult>(
@@ -460,6 +482,7 @@ WHERE id = @id;",
         Action<Microsoft.Data.Sqlite.SqliteConnection>? authorizeBeforeMark = null)
         where TResult : class
     {
+        var markOutcome = new TransactionOutcome();
         string payload;
         try
         {
@@ -499,16 +522,20 @@ SET payload_json = @payload, status = 'posted',
     posted_document_id = @marker, posted_at = @at, updated_at = @at
 WHERE id = @id;",
                     new { payload, marker = PostingMarkerId, at = Clock.Now(), id = draftId });
-            });
+                return true;
+            }, markOutcome);
         }
         catch (ValidationException exception)
         {
-            return ServiceResult<TResult>.Fail(exception.Message);
+            return new ServiceResult<TResult> { Error = markOutcome.NoCommitConfirmed ? exception.Message
+                : "Draft preparation is unconfirmed. Verify its marker before retrying.", NoCommitConfirmed = markOutcome.NoCommitConfirmed };
         }
         catch (Exception exception)
         {
             _log.Error("A draft could not be prepared for posting.", exception);
-            return ServiceResult<TResult>.Fail("The draft could not be posted.");
+            return new ServiceResult<TResult> { Error = markOutcome.NoCommitConfirmed
+                ? "The draft was not prepared; no document posting was started."
+                : "Draft preparation is unconfirmed. Verify its marker before retrying.", NoCommitConfirmed = markOutcome.NoCommitConfirmed };
         }
 
         ServiceResult<TResult> created;
@@ -527,9 +554,15 @@ WHERE id = @id;",
             if (!created.NoCommitConfirmed)
                 return ServiceResult<TResult>.Fail("The posting outcome is unknown. Its verification marker is kept; check the document before any retry.");
             var restored = RestoreAfterFailure(draftId, type);
-            return ServiceResult<TResult>.Fail((created.Error ?? "The draft could not be posted.") + (restored
-                ? " The draft was restored with the latest work."
-                : " Draft restoration was not confirmed; refresh and check its marker before retrying."));
+            return new ServiceResult<TResult>
+            {
+                Error = (created.Error ?? "The draft could not be posted.") + (restored is not null
+                    ? " The draft was restored with the latest work."
+                    : " Draft restoration was not confirmed; refresh and check its marker before retrying."),
+                // Only the exact confirmed restoration can replace the linked editor's baseline.
+                EditVersion = restored,
+                NoCommitConfirmed = restored is not null
+            };
         }
 
         try
@@ -557,7 +590,7 @@ WHERE id = @id;",
         return created;
     }
 
-    private bool RestoreAfterFailure(int draftId, string type)
+    private EditVersion? RestoreAfterFailure(int draftId, string type)
     {
         try
         {
@@ -569,13 +602,14 @@ SET status = 'draft', posted_document_id = NULL, posted_at = NULL, updated_at = 
 WHERE id = @id AND draft_type = @type AND status = 'posted' AND posted_document_id = @marker;",
                     new { at = Clock.Now(), id = draftId, type, marker = PostingMarkerId });
                 var row = ReadRow(connection, draftId);
-                return changed == 1 && row is { Status: DraftStatus.Draft, PostedDocumentId: null } && row.DraftType == type;
+                return changed == 1 && row is { Status: DraftStatus.Draft, PostedDocumentId: null } && row.DraftType == type
+                    ? EditConcurrency.Capture(_db, connection, "draft", draftId) : null;
             });
         }
         catch (Exception exception)
         {
             _log.Error("A failed draft post could not restore the draft row.", exception);
-            return false;
+            return null;
         }
     }
 

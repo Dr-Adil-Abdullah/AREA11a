@@ -192,7 +192,7 @@ public sealed class DraftsViewModel : ObservableObject
             var answer = MessageBox.Show("Post '" + draft.DraftKey + "' now as a real " + _type + "? Stock, money and reports will move.",
                 "Post draft", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
             if (answer != MessageBoxResult.Yes || !CurrentSelection(draft, includePayload: true)) return;
-            var posted = _type == DraftType.Purchase ? PostPurchase(draft.Id) : PostSale(draft.Id);
+            var posted = _type == DraftType.Purchase ? PostPurchase(draft) : PostSale(draft);
             if (!posted.Ok)
             {
                 Refresh();
@@ -216,17 +216,17 @@ public sealed class DraftsViewModel : ObservableObject
         finally { _busy = false; }
     }
 
-    private (bool Ok, string? Error, string Code, string Warning) PostSale(int draftId)
+    private (bool Ok, string? Error, string Code, string Warning) PostSale(DraftSummary draft)
     {
-        var result = _services.Drafts.PostSale(_user, draftId);
+        var result = _services.Drafts.PostSale(_user, draft.Id, expected: draft.EditVersion);
         return result.Ok && result.Value is not null
             ? (true, null, result.Value.Code, (result.Value.Warnings.Count > 0 ? " " + string.Join(" ", result.Value.Warnings) : string.Empty))
             : (false, result.Error, string.Empty, string.Empty);
     }
 
-    private (bool Ok, string? Error, string Code, string Warning) PostPurchase(int draftId)
+    private (bool Ok, string? Error, string Code, string Warning) PostPurchase(DraftSummary draft)
     {
-        var result = _services.Drafts.PostPurchase(_user, draftId);
+        var result = _services.Drafts.PostPurchase(_user, draft.Id, expected: draft.EditVersion);
         return result.Ok && result.Value is not null
             ? (true, null, result.Value.Code, (result.Value.Warnings.Count > 0 ? " " + string.Join(" ", result.Value.Warnings) : string.Empty))
             : (false, result.Error, string.Empty, string.Empty);
@@ -243,7 +243,7 @@ public sealed class DraftsViewModel : ObservableObject
             var answer = MessageBox.Show("Put away '" + draft.DraftKey + "'? The row stays in history; nothing else changes.",
                 "Discard draft", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
             if (answer != MessageBoxResult.Yes || !CurrentSelection(draft, includePayload: false)) return;
-            var result = _services.Drafts.Discard(_user, draft.Id);
+            var result = _services.Drafts.Discard(_user, draft.Id, expected: draft.EditVersion);
             if (!result.Ok)
             {
                 Refresh();

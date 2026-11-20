@@ -21,7 +21,7 @@ internal static class EditConcurrency
         {
             Product => "products", Customer => "customers", CustomField => "custom_fields",
             NativeField => "form_field_definitions", "category" => "categories", "company" => "companies",
-            "formula" => "generic_formulas", "brand" => "brands", "unit" => "units",
+            "formula" => "generic_formulas", "brand" => "brands", "unit" => "units", "draft" => "document_drafts",
             _ when scope.StartsWith("answers:", StringComparison.Ordinal)
                 && CustomFieldEntity.IsKnown(scope[8..]) => null,
             _ => throw new InvalidOperationException("Unsupported edit scope.")

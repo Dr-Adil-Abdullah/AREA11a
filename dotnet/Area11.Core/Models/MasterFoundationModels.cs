@@ -118,6 +118,9 @@ public static class DraftType
 /// <summary>One row of the drafts list: who parked it, when, how many lines, for whom.</summary>
 public sealed class DraftSummary
 {
+    [System.Text.Json.Serialization.JsonIgnore]
+    public EditVersion? EditVersion { get; internal set; }
+
     public int Id { get; set; }
 
     public string DraftKey { get; set; } = string.Empty;
@@ -148,6 +151,9 @@ public sealed class DraftSummary
 /// </summary>
 public sealed class DocumentDraft
 {
+    [System.Text.Json.Serialization.JsonIgnore]
+    public EditVersion? EditVersion { get; internal set; }
+
     public int Id { get; set; }
 
     public string DraftKey { get; set; } = string.Empty;

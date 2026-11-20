@@ -46,6 +46,7 @@ public sealed class PurchasesViewModel : ObservableObject
     private string _statusMessage = "Enter a delivery and add lines.";
     private bool _isStatusError;
     private int _openDraftId;
+    private EditVersion? _openDraftVersion;
     private int _lastPurchaseId;
     private string _lastPurchaseCode = string.Empty;
 
@@ -584,9 +585,10 @@ public sealed class PurchasesViewModel : ObservableObject
 
             var wasDraft = _openDraftId > 0;
             if (_openDraftId <= 0 && !StorePurchaseDraft(input)) return;
-            var result = _services.Drafts.PostPurchase(_user, _openDraftId, input);
+            var result = _services.Drafts.PostPurchase(_user, _openDraftId, input, _openDraftVersion);
             if (!result.Ok)
             {
+                if (result.EditVersion is not null) _openDraftVersion = result.EditVersion;
                 RefreshEntryAccess();
                 SetStatus(result.Error ?? "The purchase could not be saved.", true);
                 return;
@@ -596,6 +598,7 @@ public sealed class PurchasesViewModel : ObservableObject
             _committedEntryNeedsReset = true;
             // Consume the committed draft ID before any binding/receipt callback can reenter.
             _openDraftId = 0;
+            _openDraftVersion = null;
             _lastPurchaseId = 0;
             _lastPurchaseCode = string.Empty;
             try
@@ -739,7 +742,7 @@ public sealed class PurchasesViewModel : ObservableObject
         try
         {
             var saved = _openDraftId > 0
-                ? _services.Drafts.SavePurchaseDraft(_user, input, _openDraftId)
+                ? _services.Drafts.SavePurchaseDraft(_user, input, _openDraftId, _openDraftVersion)
                 : _services.Drafts.SavePurchaseDraft(_user, input);
             if (!saved.Ok || saved.Value is not { Id: > 0 })
             {
@@ -748,6 +751,7 @@ public sealed class PurchasesViewModel : ObservableObject
                 return false;
             }
             _openDraftId = saved.Value.Id;
+            _openDraftVersion = saved.Value.EditVersion;
             _draftSaveNeedsVerification = false;
             OnPropertyChanged(nameof(HasOpenDraft));
             return true;
@@ -787,6 +791,7 @@ public sealed class PurchasesViewModel : ObservableObject
 
         var input = opened.Value;
         _openDraftId = draftId;
+        _openDraftVersion = opened.EditVersion;
         _draftReconstructionFailed = true;
         try
         {

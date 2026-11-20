@@ -233,6 +233,7 @@ VALUES(@key, 'sale', @payload, 'draft', @byId, @by, @at, @at);",
                 {
                     Id = row.Id,
                     RecoveryDraftId = recoveryId,
+                    EditVersion = EditConcurrency.Capture(_db, connection, "draft", recoveryId),
                     Notes = row.Note,
                     Code = row.Code,
                     CustomerId = row.CustomerId,

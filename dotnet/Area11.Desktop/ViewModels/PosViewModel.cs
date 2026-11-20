@@ -73,6 +73,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     private string _lastBill = string.Empty;
     private int _lastSaleId;
     private int _openDraftId;
+    private EditVersion? _openDraftVersion;
     private string? _savedDraftNotes;
     private bool _autoPrint;
     private bool _isCompletingSale;
@@ -1051,6 +1052,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         DiscountPercent = "0";
         ResetBillBasis();
         _openDraftId = 0;
+        _openDraftVersion = null;
         _savedDraftNotes = null;
         OnPropertyChanged(nameof(HasOpenDraft));
         DocEditor.LoadNew();
@@ -1160,9 +1162,10 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         var wasDraft = _openDraftId > 0;
         // Persist and link before calling a creator. An unacknowledged save never reaches Post.
         if (_openDraftId <= 0 && !StoreSaleDraft(input)) return;
-        var result = _services.Drafts.PostSale(_user, _openDraftId, input);
+        var result = _services.Drafts.PostSale(_user, _openDraftId, input, _openDraftVersion);
         if (!result.Ok)
         {
+            if (result.EditVersion is not null) _openDraftVersion = result.EditVersion;
             SetStatus(result.Error ?? "The bill could not be saved.", true);
             return;
         }
@@ -1172,6 +1175,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         _committedCartNeedsReset = true;
         // Core acknowledged success: no posted draft/cart may survive into nested print/modal work.
         _openDraftId = 0;
+        _openDraftVersion = null;
         _savedDraftNotes = null;
         _lastSaleId = 0;
         try
@@ -1491,7 +1495,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         try
         {
             var saved = _openDraftId > 0
-                ? _services.Drafts.SaveSaleDraft(_user, input, _openDraftId)
+                ? _services.Drafts.SaveSaleDraft(_user, input, _openDraftId, _openDraftVersion)
                 : _services.Drafts.SaveSaleDraft(_user, input);
             if (!saved.Ok || saved.Value is not { Id: > 0 })
             {
@@ -1500,6 +1504,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
                 return false;
             }
             _openDraftId = saved.Value.Id;
+            _openDraftVersion = saved.Value.EditVersion;
             _draftSaveNeedsVerification = false;
             OnPropertyChanged(nameof(HasOpenDraft));
             return true;
@@ -1537,6 +1542,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
         var input = opened.Value;
         _openDraftId = draftId;
+        _openDraftVersion = opened.EditVersion;
         _savedDraftNotes = input.Notes;
         _draftReconstructionFailed = true;
         try
@@ -1823,6 +1829,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
 
         var cart = result.Value;
         _openDraftId = cart.RecoveryDraftId;
+        _openDraftVersion = cart.EditVersion;
         _savedDraftNotes = cart.Notes;
         _draftReconstructionFailed = true;
         try
