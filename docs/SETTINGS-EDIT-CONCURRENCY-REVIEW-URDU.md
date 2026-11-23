@@ -1,5 +1,8 @@
 # ⏳ 5.1 — Settings: مرکزی فارم کی پرانی حالت سے Save کی روک — v0.125.0 Celandine
 
+> ⏳ تازہ v0.127.0 میں اسی5.1 کے Hardware کی محدود source اصلاح شامل: [PT-69/باقی5.1](HARDWARE-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3188suiteUNRUN۔ نیچے پچھلے checkpoint کا ثبوت تاریخی؛Hardware کے باقی source والے حوالے نئے جائزے کی حد تک بدلے۔5.1 ابھی جاری،1تا5مکمل+تصدیق سے پہلے6نہیں۔
+
+
 > ⏳ تازہ v0.126.0 میں5.1کےBackup schedule اورPricing کی مزید محدود اصلاح: [PT-68/باقی5.1](SCHEDULE-PRICING-CONCURRENCY-REVIEW-URDU.md)؛3168suiteUNRUN۔ نیچےv0.125.0کیحیثیتتاریخی؛Backup/Pricingباقیکےحوالےاسنئےcheckpointسےمحدودطورپربدلے۔5.1ابھیجاری،1تا5مکمل+تصدیقسےپہلے6نہیں۔
 
 

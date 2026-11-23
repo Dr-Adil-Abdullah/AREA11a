@@ -1,5 +1,10 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## ⏳ v0.127.0 — اسی5.1میںHardware؛نئیphysical/مالیپالیسی نہیں
+
+مالککےcontinueپرموجودہفائلیںبرقراررکھیں؛وہپچھلےpublished70c2812سےعینملیںتوصرفمقامیGitنشان دہیاسیremoteسےملائی۔ Hardwareکےنوdependencieschecked،پانچrecordvalues+ایکauditایکtransaction؛checkedprinterchoice/exacthandoff۔ مجازSettingsgranteeکاپراناحق،manualticks/partialreason،CheckedBydisplaybehaviorاوراصلfinancialrulesبرقرار۔ [⏳ PT-69/حدود](HARDWARE-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3188suite/Windows/physicalUNRUN۔icon/workbook/remainingStaff/startupregistryباقی؛**1تا5باقیکام+تصدیقسےپہلے6نہیں**؛installerنہیںبنا۔
+
+
 ## ⏳ v0.126.0 — 5.1 میں Backup schedule اورPricing؛نئی مالی پالیسی نہیں
 
 تازہnextپرابھیاسی5.1کیپیشرفت:دوکھلےschedule/Pricingformsسےنیاکامپرانیstateسےoverwriteنہہو،exactsuccessbaselineاورموجودہاجازت۔ اصلbackup/password/restoreاورdiscount/actualcostfloor/Extra/SupplierBpoliciesنہیںبدلیں؛PricinggrantکاauditstoredOwnerسے۔ [⏳ PT-68/حدود](SCHEDULE-PRICING-CONCURRENCY-REVIEW-URDU.md)؛3168suite/WindowsUNRUN۔5.1Hardware/icon/workbook/remainingStaff/startupregistryابھیباقی؛**1تا5باقیکام+تصدیقسےپہلے6نہیں**؛installerنہیںبنا۔

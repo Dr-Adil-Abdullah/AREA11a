@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def run():
     core = ROOT / 'dotnet/Area11.Core'
     source = (core / 'Services/SettingsService.cs').read_text()
-    write = source.split('public ServiceResult SetMany(', 1)[1].split('internal ServiceResult SaveRecoveryHash', 1)[0]
+    write = source.split('public ServiceResult SetMany(', 1)[1].split('internal bool HardwareBaselineRequired', 1)[0]
     upsert = quoted(write, 'INSERT INTO settings')
     fingerprint_sql = quoted(source, 'SELECT key,value FROM settings WHERE key=@entity;')
     audit = quoted((core / 'Services/AuditService.cs').read_text(), 'INSERT INTO audit_logs')

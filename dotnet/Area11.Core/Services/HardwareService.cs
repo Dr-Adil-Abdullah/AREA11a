@@ -29,10 +29,12 @@ public sealed class HardwareService
     public const string SettingWidth = "hardware.testedWidth";
     public const string SettingPassed = "hardware.passed";
 
+    // The editable record depends on the exact loaded printer setup,not the shared UI cache.
+    internal static readonly string[] EditKeys = { SettingAt, SettingBy, SettingNote, SettingWidth, SettingPassed,
+        "printer.name", "printer.width", "printer.copies", "printer.autoCut" };
+
     private readonly SettingsService _settings;
-    private readonly AuditService _audit;
     private readonly PermissionService _permissions;
-    private readonly LogService _log;
 
     public HardwareService(
         SettingsService settings,
@@ -41,9 +43,7 @@ public sealed class HardwareService
         LogService log)
     {
         _settings = settings;
-        _audit = audit;
         _permissions = permissions;
-        _log = log;
     }
 
     /// <summary>The page, the slip and the record are for the person who may change the shop's settings.</summary>
@@ -59,27 +59,26 @@ public sealed class HardwareService
     {
         if (!_permissions.Can(user, Modules.Settings))
         {
-            return ServiceResult<HardwareReport>.Fail(
+            return Refuse<HardwareReport>(
                 "Only a person who may change the settings can test the printer.");
         }
 
-        var report = Build();
-        var at = _settings.GetString(SettingAt).Trim();
-
+        var loaded = _settings.LoadEditForm(user, EditKeys);
+        if (!loaded.Ok || loaded.Value is null)
+            return Refuse<HardwareReport>(loaded.Error ?? "Refresh Hardware before editing.");
+        var form = loaded.Value;
+        var report = Build(form);
+        report.SettingsEdit = form;
+        var at = form.GetString(SettingAt).Trim();
         if (at.Length > 0)
         {
-            var passed = _settings.GetString(SettingPassed)
+            var passed = form.GetString(SettingPassed)
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
             report.CheckedAt = at;
-            report.CheckedBy = _settings.GetString(SettingBy).Trim();
-            report.CheckedWidthMm = _settings.GetInt(SettingWidth, 0);
-            report.Note = _settings.GetString(SettingNote);
-
-            foreach (var check in report.Checks)
-            {
-                check.Passed = passed.Contains(check.Key);
-            }
+            report.CheckedBy = form.GetString(SettingBy).Trim();
+            report.CheckedWidthMm = form.GetInt(SettingWidth, 0);
+            report.Note = form.GetString(SettingNote);
+            foreach (var check in report.Checks) check.Passed = passed.Contains(check.Key);
         }
 
         return ServiceResult<HardwareReport>.Success(report);
@@ -94,11 +93,14 @@ public sealed class HardwareService
     {
         if (!_permissions.Can(user, Modules.Settings))
         {
-            return ServiceResult<ReceiptDocument>.Fail(
+            return Refuse<ReceiptDocument>(
                 "Only a person who may change the settings can print a test slip.");
         }
 
-        var report = Build();
+        var loaded = _settings.LoadEditForm(user, EditKeys.Concat(new[] { "store.name" }));
+        if (!loaded.Ok || loaded.Value is null)
+            return Refuse<ReceiptDocument>(loaded.Error ?? "Refresh Hardware before printing a test slip.");
+        var report = Build(loaded.Value);
         var width = report.Columns;
 
         var document = new ReceiptDocument
@@ -112,7 +114,7 @@ public sealed class HardwareService
         void Add(string text, ReceiptAlign align = ReceiptAlign.Left, bool bold = false, bool big = false) =>
             document.Lines.Add(new ReceiptLine(Fit(text, width), align, bold, big));
 
-        var shop = FirstNonEmpty(_settings.GetString("store.name"), "Area11");
+        var shop = FirstNonEmpty(loaded.Value.GetString("store.name"), "Area11");
 
         Add(shop, ReceiptAlign.Center, bold: true, big: true);
         Add("TEST SLIP - NOT A BILL", ReceiptAlign.Center, bold: true);
@@ -152,22 +154,32 @@ public sealed class HardwareService
     /// not an error - but it needs one line of explanation, because the next person to read the record
     /// must know what to fix.
     /// </summary>
-    public ServiceResult<HardwareReport> Save(User? user, IEnumerable<string>? passedKeys, string? note)
+    public ServiceResult<HardwareReport> Save(User? user, IEnumerable<string>? passedKeys, string? note, SettingsEditForm? expected = null)
     {
         if (!_permissions.Can(user, Modules.Settings))
         {
-            return ServiceResult<HardwareReport>.Fail(
+            return Refuse<HardwareReport>(
                 "Only a person who may change the settings can record the test.");
         }
 
+        if (expected is null)
+        {
+            if (_settings.HardwareBaselineRequired)
+                return Refuse<HardwareReport>("Refresh Hardware and review the test before saving.");
+            // Compatibility for isolated sessions-disabled hosts,not an authenticated Desktop editor.
+            var loaded = Load(user);
+            if (!loaded.Ok || loaded.Value?.SettingsEdit is null)
+                return Refuse<HardwareReport>(loaded.Error ?? "Refresh Hardware before saving.");
+            expected = loaded.Value.SettingsEdit;
+        }
         var keys = passedKeys?.ToList() ?? new List<string>();
-        var report = Build();
+        var report = Build(expected);
 
         var unknown = keys.Where(key => report.Checks.All(check => check.Key != key)).ToList();
 
         if (unknown.Count > 0)
         {
-            return ServiceResult<HardwareReport>.Fail(
+            return Refuse<HardwareReport>(
                 "That tick-box is not part of the test: " + string.Join(", ", unknown));
         }
 
@@ -180,7 +192,7 @@ public sealed class HardwareService
 
         if (!report.IsComplete && text.Length == 0)
         {
-            return ServiceResult<HardwareReport>.Fail(
+            return Refuse<HardwareReport>(
                 "Write one line about what did not pass - a missing tick needs a reason.");
         }
 
@@ -189,38 +201,11 @@ public sealed class HardwareService
         report.CheckedWidthMm = report.WidthMm;
         report.Note = text.Length == 0 ? null : text;
 
-        var ordered = keys.Distinct().OrderBy(key => key, StringComparer.Ordinal).ToList();
-
-        try
-        {
-            // The quiet door: these are tick-boxes, not shop settings, and five of them must not write
-            // five lines into the black box. The one line that matters is recorded below, in words.
-            //
-            // The date is written LAST on purpose: the page treats a non-empty date as "this PC was
-            // tested", so a write that fails halfway leaves "never checked" instead of a record that
-            // claims six ticks it does not have.
-            var written = _settings.SetUiOnly(SettingPassed, string.Join(",", ordered)).Ok
-                          && _settings.SetUiOnly(SettingNote, report.Note ?? string.Empty).Ok
-                          && _settings.SetUiOnly(SettingWidth, report.WidthMm).Ok
-                          && _settings.SetUiOnly(SettingBy, report.CheckedBy).Ok
-                          && _settings.SetUiOnly(SettingAt, report.CheckedAt).Ok;
-
-            if (!written)
-            {
-                return ServiceResult<HardwareReport>.Fail(
-                    "The test result could not be saved. Try again, or check the disk is not full.");
-            }
-
-            _audit.RecordStandalone(user, Modules.Settings, "hardware_test", details: report.SummaryText);
-
-            return ServiceResult<HardwareReport>.Success(report);
-        }
-        catch (Exception exception)
-        {
-            _log.Error("The hardware test result could not be saved.", exception);
-            return ServiceResult<HardwareReport>.Fail(
-                "The test result could not be saved. " + exception.Message);
-        }
+        var saved = _settings.SaveHardwareTest(user, report, expected);
+        if (!saved.Ok)
+            return new ServiceResult<HardwareReport> { Error = saved.Error, NoCommitConfirmed = saved.NoCommitConfirmed };
+        report.SettingsEdit = saved.SettingsEdit;
+        return new ServiceResult<HardwareReport> { Ok = true, Value = report, SettingsEdit = saved.SettingsEdit };
     }
 
     // ============================== the rules of the page ==============================
@@ -255,14 +240,16 @@ public sealed class HardwareService
     /// Why a list and not a text box: the first printer defect was code 6 - no printer chosen, no
     /// default, and a name only the owner could have guessed.
     /// </summary>
-    public ServiceResult<string> ChoosePrinter(User? user, string? name)
+    public ServiceResult<string> ChoosePrinter(User? user, string? name, SettingsEditForm? expected = null)
     {
         if (!_permissions.Can(user, Modules.Settings))
         {
-            return ServiceResult<string>.Fail(
+            return Refuse<string>(
                 "Only a person who may change the settings can choose the printer.");
         }
 
+        if (expected is null && _settings.HardwareBaselineRequired)
+            return Refuse<string>("Refresh Hardware before choosing a printer.");
         var wanted = (name ?? string.Empty).Trim();
 
         if (wanted.Length > 0)
@@ -271,16 +258,16 @@ public sealed class HardwareService
 
             if (installed.Count > 0 && !installed.Contains(wanted, StringComparer.OrdinalIgnoreCase))
             {
-                return ServiceResult<string>.Fail(
+                return Refuse<string>(
                     "Windows has no printer called \"" + wanted + "\". Choose a name from the list.");
             }
         }
 
-        var saved = _settings.Set("printer.name", wanted, user);
+        var saved = _settings.Set("printer.name", wanted, user, expected);
 
         if (!saved.Ok)
         {
-            return ServiceResult<string>.Fail(saved.Error ?? "The printer could not be saved.");
+            return new ServiceResult<string> { Error = saved.Error ?? "The printer could not be saved.", NoCommitConfirmed = saved.NoCommitConfirmed };
         }
 
         // The same words the page shows after a reload: the chosen name, or what Windows resolved.
@@ -290,21 +277,21 @@ public sealed class HardwareService
                 ? "Windows default - " + fallback
                 : "no printer chosen";
 
-        return ServiceResult<string>.Success(label);
+        return new ServiceResult<string> { Ok = true, Value = label, SettingsEdit = saved.SettingsEdit };
     }
 
-    private HardwareReport Build()
+    private HardwareReport Build(SettingsEditForm form)
     {
-        var widthMm = WidthMm;
+        var widthMm = form.GetInt("printer.width", 58) >= 80 ? 80 : 58;
 
         var report = new HardwareReport
         {
             WidthMm = widthMm,
             Columns = ReceiptService.ColumnsForMillimetres(widthMm),
-            PrinterName = _settings.GetString("printer.name"),
+            PrinterName = form.GetString("printer.name"),
             DefaultPrinter = PrinterService.DefaultPrinterName(),
-            Copies = Math.Clamp(_settings.GetInt("printer.copies", 1), 1, 3),
-            AutoCut = _settings.GetBool("printer.autoCut", true)
+            Copies = Math.Clamp(form.GetInt("printer.copies", 1), 1, 3),
+            AutoCut = form.GetBool("printer.autoCut", true)
         };
 
         report.InstalledPrinters.AddRange(PrinterService.InstalledPrinters());
@@ -312,6 +299,9 @@ public sealed class HardwareService
 
         return report;
     }
+
+    // Validation/read refusal occurs before any writer;the page may keep reviewed input.
+    private static ServiceResult<T> Refuse<T>(string error) => new() { Error = error, NoCommitConfirmed = true };
 
     /// <summary>"1234567890" repeated to the last column - the width the paper must hold.</summary>
     private static string Ruler(int columns)

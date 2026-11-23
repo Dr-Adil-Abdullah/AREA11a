@@ -1,5 +1,8 @@
 # ⏳ 5.1 جاری — Backup schedule اور Pricing limits — v0.126.0 Avens
 
+> ⏳ تازہ v0.127.0 میں اسی5.1 کے Hardware کی محدود source اصلاح شامل: [PT-69/باقی5.1](HARDWARE-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3188suiteUNRUN۔ نیچے پچھلے checkpoint کا ثبوت تاریخی؛Hardware کے باقی source والے حوالے نئے جائزے کی حد تک بدلے۔5.1 ابھی جاری،1تا5مکمل+تصدیق سے پہلے6نہیں۔
+
+
 ## ⏳ اجازت اور ترتیب
 
 تازہ `next` پر **اسی 5.1 Settings** کے دو مزید راستوں پر کام کیا۔ یہ نیا حصہ6 نہیں۔ مالک کی ہدایت برقرار: **حصوں1 تا5 کے باقی کام اور ضروری تصدیق مکمل کیے بغیر6 شروع نہیں کرنا۔** 5.1 بھی ابھی مکمل نہیں؛Hardware/icon/workbook،باقی Staff writes،startup registry اور اصل Windows جانچ نیچے درج ہیں۔

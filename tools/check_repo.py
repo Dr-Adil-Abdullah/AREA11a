@@ -6260,6 +6260,60 @@ def check_windows_v1201_regressions() -> None:
     REPORT.append('v0.120.1 owner Windows22-failure fixture guards:checked Settings/current identities/explicit denials/stored names/pre-fault services/schema-valid marker;new C# rerun required')
 
 
+def check_hardware_edit_boundaries() -> None:
+    """Hardware source structure only;not provider,auth,WPF or physical-printer proof."""
+    def read(path): return (DOTNET / path).read_text()
+    def need(text, *tokens):
+        for token in tokens:
+            if token not in text: FAILURES.append('Hardware edit contract missing: ' + token)
+    def order(text, *tokens):
+        indices = [text.find(t) for t in tokens]
+        if -1 in indices or indices != sorted(indices): FAILURES.append('Hardware edit ordering: ' + ' -> '.join(tokens))
+    hardware = read('Area11.Core/Services/HardwareService.cs')
+    need(hardware, 'internal static readonly string[] EditKeys = { SettingAt, SettingBy, SettingNote, SettingWidth, SettingPassed,',
+         '"printer.name", "printer.width", "printer.copies", "printer.autoCut"',
+         '_settings.LoadEditForm(user, EditKeys)', 'report.SettingsEdit = form;', 'var report = Build(form);',
+         '_settings.LoadEditForm(user, EditKeys.Concat(new[] { "store.name" }))', 'var report = Build(loaded.Value);',
+         'var report = Build(expected);', 'if (_settings.HardwareBaselineRequired)',
+         '_settings.SaveHardwareTest(user, report, expected)', 'NoCommitConfirmed = saved.NoCommitConfirmed',
+         'report.SettingsEdit = saved.SettingsEdit;', 'SettingsEditForm? expected = null',
+         '_settings.Set("printer.name", wanted, user, expected)', 'SettingsEdit = saved.SettingsEdit')
+    if 'SetUiOnly(' in hardware or 'RecordStandalone(' in hardware: FAILURES.append('Hardware record must not use independent writes/audit')
+    build = hardware.split('private HardwareReport Build(', 1)[-1].split('private static string Ruler(', 1)[0]
+    need(build, 'SettingsEditForm form', 'form.GetInt("printer.width", 58)', 'form.GetString("printer.name")',
+         'form.GetInt("printer.copies", 1)', 'form.GetBool("printer.autoCut", true)')
+    if '_settings.Get' in build: FAILURES.append('Hardware report must not mix the settings cache into its snapshot')
+    settings = read('Area11.Core/Services/SettingsService.cs')
+    need(settings, 'internal bool HardwareBaselineRequired => _db.Sessions.Enabled;')
+    write = settings.split('internal ServiceResult SaveHardwareTest(',1)[-1].split('internal ServiceResult SaveRecoveryHash',1)[0]
+    need(write, 'var outcome = new TransactionOutcome();', '}, outcome);', 'NoCommitConfirmed = !committed && outcome.NoCommitConfirmed',
+         'lock (_gate) foreach (var pair in prepared) _cache[pair.Key] = pair.Value;',
+         'HardwareService.SettingAt', 'HardwareService.SettingBy', 'HardwareService.SettingNote', 'HardwareService.SettingWidth', 'HardwareService.SettingPassed')
+    order(write, 'var next = _db.Tx(connection =>', 'var writer = RequireWriter(connection, actor, HardwareService.EditKeys);',
+          'RequireEdit(connection, expected, HardwareService.EditKeys);', 'INSERT INTO settings',
+          '_audit.Record(connection, writer, Modules.Settings, "hardware_test", details: report.SummaryText);',
+          'return expected.WithSaved(prepared, baselines, null);', '}, outcome);', 'committed = true;',
+          'return new ServiceResult { Ok = true, SettingsEdit = next };')
+    need(read('Area11.Core/Models/HardwareModels.cs'), '[System.Text.Json.Serialization.JsonIgnore]\n    public SettingsEditForm? SettingsEdit { get; internal set; }')
+    vm = read('Area11.Desktop/ViewModels/HardwareViewModel.cs')
+    need(vm, 'private SettingsEditForm? _edit;', 'private bool _saving;',
+         '_services.Hardware.ChoosePrinter(_user, wanted, _edit)', '_services.Hardware.Save(_user, passed, NoteText, _edit)',
+         'if (!saved.NoCommitConfirmed) _edit = null;', 'finally { _saving = false; }',
+         'SAVED. The test was stored but the page could not refresh.', 'SAVED. Printer selection stored but the page could not refresh.')
+    load = vm.split('public void Load()',1)[-1].split('private void Recount()',1)[0]
+    order(load, 'if (_saving) return;', '_edit = null;', 'Rows.Clear();', 'NoteText = string.Empty;', '_services.Hardware.Load(_user)', '_edit = report.SettingsEdit;')
+    save = vm.split('private void Save()',1)[-1].split('private void SetStatus(',1)[0]
+    order(save, 'if (_saving) return;', 'if (_edit is null)', '_saving = true;', '_services.Hardware.Save(',
+          'acknowledged = true;', '_edit = saved.Value.SettingsEdit;', 'LastRunText = report.LastRunLabel;')
+    if 'Load();' in save: FAILURES.append('Hardware Save must not silently rebase through Load')
+    tests = read('Area11.Tests/HardwareEditConcurrencyTests.cs')
+    need(tests, 'OldHardwareFormCannotOverwriteTheOtherRecordedTest', 'EveryRecordAndPrinterDependencyIsCompared',
+         'AuditFaultRollsBackAllFiveValuesAndAllowsReviewedRetry', 'CurrentDatabaseReadDoesNotUseTheOldSettingsCache',
+         'PrinterChoiceDoesNotRebaseUntouchedStaleHardwareFields', 'EnabledHostRequiresLoadedBaselineForRecordAndPrinterChoice')
+    if tests.count('[Fact]') != 11 or tests.count('[InlineData(') != 9: FAILURES.append('Hardware needs20 additive written C# cases')
+    REPORT.append('Part5.1 Hardware:coherent form/record+printer dependencies/one checked Tx+audit/exact handoff;20 written cases NOT runtime/physical test/full Settings closure')
+
+
 def check_schedule_pricing_edit_boundaries() -> None:
     """Part5.1 lexical coverage only;not .NET/provider/UI or real backup evidence."""
     def read(path): return (DOTNET / path).read_text()
@@ -9489,6 +9543,7 @@ def main() -> int:
     check_shared_draft_edit_boundaries()
     check_settings_edit_boundaries()
     check_schedule_pricing_edit_boundaries()
+    check_hardware_edit_boundaries()
     check_csharp_grammar()
 
     if not quiet:

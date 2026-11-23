@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def run():
     core = ROOT / 'dotnet/Area11.Core'
-    settings = (core / 'Services/SettingsService.cs').read_text().split('public ServiceResult SetMany(', 1)[1].split('internal ServiceResult SaveRecoveryHash', 1)[0]
+    settings = (core / 'Services/SettingsService.cs').read_text().split('public ServiceResult SetMany(', 1)[1].split('internal bool HardwareBaselineRequired', 1)[0]
     pricing = (core / 'Services/PricingAllowanceService.cs').read_text()
     capture = (core / 'Services/EditConcurrency.cs').read_text()
     setting_sql = quoted(settings, 'INSERT INTO settings')

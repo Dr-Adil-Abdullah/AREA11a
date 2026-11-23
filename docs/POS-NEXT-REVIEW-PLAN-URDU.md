@@ -1,8 +1,8 @@
 # POS، رعایت اور مکمل جائزہ — مالک کی جانچ کے لیے یکجا منصوبہ
 
-## ⏳ موجودہ 5.1 — Backup schedule اور Pricing limits — v0.126.0 Avens
+## ⏳ موجودہ 5.1 — Hardware فارم اور ریکارڈ — v0.127.0 Yarrow
 
-**5.1 ابھی جاری ہے؛حصوں1تا5کےباقیکاماورضروریتصدیقمکملکیےبغیر6شروعنہیںکرنا۔** مرکزیSettingsکےبعدBackup-scheduleloadedform/atomiccheckedSave/exacthandoff/ackقبلcallbacksاورPricingowner-targetsnapshot/role+allowanceCAS/exacttokenشامل؛اصلpricing/financialpolicyبرقرار۔ ⏳25نئےC#cases/3168suiteUNRUN؛117static/32نئیlexicalnegative/26Python-ownedWAL+DELETEplansاصل.NET/provider/WPFثبوتنہیں۔ [⏳ جائزہ/PT-68/باقی5.1](SCHEDULE-PRICING-CONCURRENCY-REVIEW-URDU.md)؛[⏳14حصے](REMAINING-14-PORTIONS-URDU.md)۔ **اگلاکامابھی5.1کےHardware/icon/workbookSettings،باقیStaffwritesاورstartupregistryrace/Windowsپر؛StockTakeاسکےبعدحصہ5میں۔** حصوں2/3/4اورپہلے5checkpointsکانیاWindowsrunبھیباقی؛FullPhase4OPEN؛❌6/installerشروعنہیں۔
+**5.1 ابھی جاری ہے؛حصوں1 تا5 کے باقی کام اور ضروری تصدیق مکمل کیے بغیر6 شروع نہیں کرنا۔** Hardware کا مربوط loaded form،نو record/printer dependencies کا write-Tx موازنہ،پانچ values+ایک audit کا atomic Save،exact handoff/ack-before-callbacks اورchecked printer choice شامل۔ ⏳20نئے C# cases/3188suiteUNRUN؛118static/31نئیlexicalnegative/38Python-ownedWAL+DELETEplans اصل .NET/provider/WPF/physical ثبوت نہیں۔ [⏳ جائزہ/PT-69/باقی5.1](HARDWARE-EDIT-CONCURRENCY-REVIEW-URDU.md)؛[⏳14حصے](REMAINING-14-PORTIONS-URDU.md)۔ **اگلا کام ابھی5.1 کے icon/file،workbookSettings،باقیStaff/imperativewriters اورstartupregistry/Windows پر؛StockTake اس کے بعد اسی5میں۔** حصوں2/3/4اورپہلے5checkpoints کا تازہWindowsrunبھیباقی؛FullPhase4OPEN؛❌6/installerشروعنہیں۔
 
 
 ## ⏳ موجودہ حصہ2/14 — v0.120.2 Willow

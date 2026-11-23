@@ -25,6 +25,9 @@ public sealed class HardwareViewModel : ObservableObject, IEmptyPage
     private readonly AppServices _services;
     private readonly User _user;
 
+    private SettingsEditForm? _edit;
+    private bool _saving;
+
     private string _printerText = "Windows default printer";
     private string _printerChoice = DefaultChoice;
     private string _printerHint = string.Empty;
@@ -96,25 +99,39 @@ public sealed class HardwareViewModel : ObservableObject, IEmptyPage
         get => _printerChoice;
         set
         {
-            if (!SetProperty(ref _printerChoice, value) || _loadingPrinters)
+            if (_saving || _loadingPrinters || value == _printerChoice) return;
+            if (_edit is null) { SetStatus("Refresh Hardware before choosing a printer.", true); return; }
+            _saving = true;
+            var acknowledged = false;
+            var previous = _printerChoice;
+            try
             {
-                return;
+                var wanted = value == DefaultChoice ? string.Empty : value;
+                var saved = _services.Hardware.ChoosePrinter(_user, wanted, _edit);
+                if (!saved.Ok)
+                {
+                    if (!saved.NoCommitConfirmed) _edit = null;
+                    OnPropertyChanged(nameof(PrinterChoice)); // Restore the actual unchanged selection.
+                    SetStatus(saved.Error ?? "The printer could not be chosen.", true);
+                    return;
+                }
+                acknowledged = true;
+                _edit = saved.SettingsEdit;
+                _printerChoice = value;
+                OnPropertyChanged(nameof(PrinterChoice));
+                PrinterText = saved.Value ?? wanted;
+                SetStatus("This counter now prints on " + (wanted.Length == 0 ? "the Windows default printer" : wanted)
+                    + ". Press Print test slip.", false);
             }
-
-            var wanted = value == DefaultChoice ? string.Empty : value;
-            var saved = _services.Hardware.ChoosePrinter(_user, wanted);
-
-            SetStatus(
-                saved.Ok
-                    ? "This counter now prints on " + (wanted.Length == 0 ? "the Windows default printer" : wanted)
-                      + ". Press Print test slip."
-                    : saved.Error ?? "The printer could not be chosen.",
-                !saved.Ok);
-
-            if (saved.Ok && saved.Value is not null)
+            catch (Exception exception)
             {
-                PrinterText = saved.Value;
+                _edit = null;
+                if (!acknowledged) _printerChoice = previous;
+                _services.Log.Error("Hardware printer selection did not finish.", exception);
+                SetStatus(acknowledged ? "SAVED. Printer selection stored but the page could not refresh. Reopen Hardware."
+                    : "Printer selection is unconfirmed. Refresh and verify before retrying.", true);
             }
+            finally { _saving = false; }
         }
     }
 
@@ -220,7 +237,10 @@ public sealed class HardwareViewModel : ObservableObject, IEmptyPage
 
     public void Load()
     {
+        if (_saving) return;
+        _edit = null;
         Rows.Clear();
+        NoteText = string.Empty;
 
         var loaded = _services.Hardware.Load(_user);
 
@@ -231,6 +251,7 @@ public sealed class HardwareViewModel : ObservableObject, IEmptyPage
         }
 
         var report = loaded.Value;
+        _edit = report.SettingsEdit;
 
         _loadingPrinters = true;
         Printers.Clear();
@@ -279,10 +300,7 @@ public sealed class HardwareViewModel : ObservableObject, IEmptyPage
               + report.WidthMm + " mm. Print the slip again and tick it again.";
         HasRecordWarning = RecordWarning.Length > 0;
 
-        if (string.IsNullOrWhiteSpace(NoteText) && !string.IsNullOrWhiteSpace(report.Note))
-        {
-            NoteText = report.Note!;
-        }
+        NoteText = report.Note ?? string.Empty;
     }
 
     private void Recount()
@@ -361,24 +379,39 @@ public sealed class HardwareViewModel : ObservableObject, IEmptyPage
 
     private void Save()
     {
-        var passed = Rows.Where(row => row.Passed).Select(row => row.Key).ToList();
-        var saved = _services.Hardware.Save(_user, passed, NoteText);
-
-        if (!saved.Ok || saved.Value is null)
+        if (_saving) return;
+        if (_edit is null) { SetStatus("Refresh Hardware and review the test before saving.", true); return; }
+        _saving = true;
+        var acknowledged = false;
+        try
         {
-            SetStatus(saved.Error ?? "The result could not be saved.", true);
-            return;
+            var passed = Rows.Where(row => row.Passed).Select(row => row.Key).ToList();
+            var saved = _services.Hardware.Save(_user, passed, NoteText, _edit);
+            if (!saved.Ok || saved.Value is null)
+            {
+                if (!saved.NoCommitConfirmed) _edit = null;
+                SetStatus(saved.Error ?? "The result could not be saved.", true);
+                return;
+            }
+            acknowledged = true;
+            _edit = saved.Value.SettingsEdit;
+            var report = saved.Value;
+            LastRunText = report.LastRunLabel;
+            RecordWarning = string.Empty;
+            HasRecordWarning = false;
+            NoteText = report.Note ?? string.Empty;
+            SetStatus("Saved: " + report.ProgressLabel + " on " + report.WidthLabel + ". " +
+                (report.IsComplete ? "This PC is checked - the owner's record is in the black box."
+                    : "Still missing: " + report.MissingLabel), !report.IsComplete);
         }
-
-        var report = saved.Value;
-        Load();
-
-        SetStatus(
-            "Saved: " + report.ProgressLabel + " on " + report.WidthLabel + ". " +
-            (report.IsComplete
-                ? "This PC is checked - the owner's record is in the black box."
-                : "Still missing: " + report.MissingLabel),
-            !report.IsComplete);
+        catch (Exception exception)
+        {
+            _edit = null;
+            _services.Log.Error("Hardware save/refresh did not finish.", exception);
+            SetStatus(acknowledged ? "SAVED. The test was stored but the page could not refresh. Reopen Hardware."
+                : "Hardware saving is unconfirmed. Refresh and verify before retrying.", true);
+        }
+        finally { _saving = false; }
     }
 
     private void SetStatus(string text, bool isError)

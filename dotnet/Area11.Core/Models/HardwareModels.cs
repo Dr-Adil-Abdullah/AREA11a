@@ -40,6 +40,9 @@ public sealed class HardwareCheck
 /// </summary>
 public sealed class HardwareReport
 {
+    [System.Text.Json.Serialization.JsonIgnore]
+    public SettingsEditForm? SettingsEdit { get; internal set; }
+
     public int WidthMm { get; set; } = 58;
 
     /// <summary>32 characters on 58 mm paper, 48 on 80 mm - the number the ruler fills.</summary>

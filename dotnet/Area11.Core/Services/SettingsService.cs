@@ -576,6 +576,57 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         }
     }
 
+    internal bool HardwareBaselineRequired => _db.Sessions.Enabled;
+
+    // Fixed hardware record only: five values and ONE audit share the checked transaction.
+    // Printer dependencies are compared too,although this operation never writes them.
+    internal ServiceResult SaveHardwareTest(User? actor, HardwareReport report, SettingsEditForm expected)
+    {
+        var outcome = new TransactionOutcome();
+        var committed = false;
+        try
+        {
+            var values = new Dictionary<string, object?>
+            {
+                [HardwareService.SettingAt] = report.CheckedAt,
+                [HardwareService.SettingBy] = report.CheckedBy,
+                [HardwareService.SettingNote] = report.Note ?? string.Empty,
+                [HardwareService.SettingWidth] = report.CheckedWidthMm,
+                [HardwareService.SettingPassed] = string.Join(",", report.Checks.Where(c => c.Passed)
+                    .Select(c => c.Key).OrderBy(k => k, StringComparer.Ordinal))
+            };
+            var prepared = values.ToDictionary(p => p.Key, p => JsonSerializer.Serialize(p.Value), StringComparer.Ordinal);
+            var next = _db.Tx(connection =>
+            {
+                var writer = RequireWriter(connection, actor, HardwareService.EditKeys);
+                RequireEdit(connection, expected, HardwareService.EditKeys);
+                foreach (var pair in prepared)
+                    _db.Execute(connection, @"
+INSERT INTO settings(key,value,updated_at) VALUES(@key,@value,@at)
+ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at;",
+                        new { key = pair.Key, value = pair.Value, at = Clock.Now() });
+                _audit.Record(connection, writer, Modules.Settings, "hardware_test", details: report.SummaryText);
+                var baselines = prepared.Keys.ToDictionary(k => k, k => SettingFingerprint(connection, k), StringComparer.Ordinal);
+                return expected.WithSaved(prepared, baselines, null);
+            }, outcome);
+            committed = true;
+            lock (_gate) foreach (var pair in prepared) _cache[pair.Key] = pair.Value;
+            return new ServiceResult { Ok = true, SettingsEdit = next };
+        }
+        catch (ValidationException exception)
+        {
+            return new ServiceResult { Error = outcome.NoCommitConfirmed ? exception.Message
+                : "Hardware result saving is unconfirmed. Refresh and verify before retrying.", NoCommitConfirmed = outcome.NoCommitConfirmed };
+        }
+        catch (Exception exception)
+        {
+            _log.Error("Hardware result saving did not finish.", exception);
+            return new ServiceResult { Error = committed ? "SAVED. Hardware result stored but local refresh failed. Reopen Hardware."
+                : outcome.NoCommitConfirmed ? "Hardware result was not saved; no commit was made."
+                : "Hardware result saving is unconfirmed. Refresh and verify before retrying.", NoCommitConfirmed = !committed && outcome.NoCommitConfirmed };
+        }
+    }
+
     internal ServiceResult SaveRecoveryHash(User actor, string hash)
     {
         try

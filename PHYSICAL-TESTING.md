@@ -1,5 +1,10 @@
 # Area11 — Real-life Physical Testing Log
 
+## ⏳ PT-69 — 5.1 Hardware stale forms /atomic record (v0.127.0)
+
+[⏳ مکملsteps/باقی5.1](docs/HARDWARE-EDIT-CONCURRENCY-REVIEW-URDU.md)؛verifiedencryptedbackup **اورواقعیالگDB/photos/config** پہلے؛اصلshopپرposts/faultsنہیں۔3188/0fail/0skipاورDesktopRelease؛دوHardwareforms،نوdependencies،پانچwrites+auditکےfaults/rollback،exacthandoff/printerpartialhandoff،permissionrevoke/readfailure/RefreshNoteاورackکےبعدSAVEDcallbacksجانچیں۔ Windowsdefault/driver/actualPrintServiceکےtarget،58/80paperاورUSBscannerکاphysicalثبوتالگباقی۔ ⏳20نئےcasesUNRUN؛118static/31lexical/38Pythonplansاصلprovider/WPF/hardwareثبوتنہیں۔icon/workbook/remainingStaff/startupregistryاور1تا5کےباقیgatesبرقرار؛6/installerشروعنہیں۔
+
+
 ## ⏳ PT-68 — 5.1 Backup schedule /Staff Pricing stale forms (v0.126.0)
 
 [⏳ مکملsteps/باقی5.1](docs/SCHEDULE-PRICING-CONCURRENCY-REVIEW-URDU.md)؛verifiedencryptedbackup **اورواقعیالگDB/photos/config**پہلے؛اصلshopپرposts/faultsنہیں۔3168/0fail/0skipاورDesktopRelease؛دوscheduleforms/تینkeys/Backup-onlygrantee/revoke/telemetry/no-partial-audit،post-ackcallbackfailureSAVED؛دوPricingeditors،targetrole/activechange،ownerproofبغیرtargetlogin،exacttoken/no-selfconflict/auditfaultاوراصلpricingregressionsجانچیں۔ ⏳25نئےcasesUNRUN؛117static/32lexical/26PythonplansWindows/realbackup/providerثبوتنہیں۔Hardware/icon/workbook/remainingStaff/startupregistryاور1تا5کےباقیgatesبرقرار؛6/installerشروعنہیں۔
