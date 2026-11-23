@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Area11.Core.Models;
+using Area11.Core.Services;
 using Area11.Core.Utils;
 
 namespace Area11.Desktop;
@@ -14,65 +15,69 @@ namespace Area11.Desktop;
 /// </summary>
 internal static class IconAssets
 {
-    private const string Key = "appearance.iconFileName";
-    private const int MaximumBytes = 2 * 1024 * 1024;
+    private const string Key = IconAssetService.Key;
+    private const int MaximumBytes = IconAssetService.MaximumBytes;
 
-    public static ServiceResult Choose(AppServices services, User? owner, string? source)
+    public static ServiceResult Choose(AppServices services, User? owner, string? source, SettingsEditForm expected)
     {
-        if (owner?.IsOwner != true) return ServiceResult.Fail("Only the owner can change the application icon.");
-        if (string.IsNullOrWhiteSpace(source) || !File.Exists(source)) return ServiceResult.Fail("Choose an icon file.");
-        string? destination = null;
-        var saved = false;
-        var created = false;
+        if (owner?.IsOwner != true) return Refuse("Only the owner can change the application icon.");
+        if (string.IsNullOrWhiteSpace(source)
+            || !string.Equals(Path.GetExtension(source), ".ico", StringComparison.OrdinalIgnoreCase))
+            return Refuse("Choose a Windows .ico file no larger than 2 MB.");
+        byte[] bytes;
         try
         {
-            var info = new FileInfo(source);
-            if (!string.Equals(info.Extension, ".ico", StringComparison.OrdinalIgnoreCase)
-                || info.Length < 6 || info.Length > MaximumBytes)
-                return ServiceResult.Fail("Choose a Windows .ico file no larger than 2 MB.");
-            var bytes = File.ReadAllBytes(source);
-            if (bytes.Length < 6 || bytes.Length > MaximumBytes || bytes[0] != 0 || bytes[1] != 0
-                || bytes[2] != 1 || bytes[3] != 0)
-                return ServiceResult.Fail("That is not a valid Windows icon.");
-            Decode(bytes); // Refuse undecodable images before changing the setting or copying a file.
-            var name = "area11-icon-" + Guid.NewGuid().ToString("N") + ".ico";
-            destination = Path.Combine(services.Photos.PhotosFolder, name);
-            using (var stream = new FileStream(destination, FileMode.CreateNew, FileAccess.Write, FileShare.None))
-            {
-                created = true;
-                stream.Write(bytes, 0, bytes.Length);
-            }
-            var result = services.Settings.Set(Key, name, owner);
-            if (!result.Ok)
-            {
-                File.Delete(destination);
-                return result;
-            }
-            saved = true;
-            Apply(services);
-            return ServiceResult.Success();
+            bytes = ReadBounded(source);
+            Decode(bytes); // WPF codec validation BEFORE any destination or Settings write.
         }
         catch (Exception exception)
         {
-            // Only a newly-created file is ours to clean up. Never delete the previous icon.
-            if (created && !saved && destination is not null)
-            {
-                try { File.Delete(destination); } catch (IOException) { } catch (UnauthorizedAccessException) { }
-            }
-            services.Log.Error("The application icon could not be changed.", exception);
-            return ServiceResult.Fail(saved
-                ? "The icon was saved but could not be displayed. Restart Area11 or restore the default icon."
-                : "The icon could not be read or saved. Choose another .ico file.");
+            services.Log.Error("The application icon could not be read.", exception);
+            return Refuse("Choose a readable Windows .ico file no larger than 2 MB.");
         }
+        var result = new IconAssetService(services.Settings, services.Log, services.Photos.PhotosFolder)
+            .Choose(owner, bytes, expected);
+        return ApplySaved(services, result);
     }
 
-    public static ServiceResult Reset(AppServices services, User? owner)
+    public static ServiceResult Reset(AppServices services, User? owner, SettingsEditForm expected)
     {
-        if (owner?.IsOwner != true) return ServiceResult.Fail("Only the owner can change the application icon.");
-        var result = services.Settings.Set(Key, string.Empty, owner);
-        if (result.Ok) Apply(services);
+        var result = new IconAssetService(services.Settings, services.Log, services.Photos.PhotosFolder)
+            .Reset(owner, expected);
+        return ApplySaved(services, result);
+    }
+
+    private static ServiceResult ApplySaved(AppServices services, ServiceResult result)
+    {
+        if (!result.Ok) return result;
+        try { Apply(services); }
+        catch (Exception exception)
+        {
+            services.Log.Error("SAVED icon could not be displayed.", exception);
+            // Commit already acknowledged;keep the exact token,never advise another write.
+            return new ServiceResult { Ok = true, SettingsEdit = result.SettingsEdit,
+                Warnings = new[] { "SAVED. The icon could not be displayed. Reopen Area11 and verify the current icon." } };
+        }
         return result;
     }
+
+    // Limit the read itself,not merely a FileInfo length checked before a growing file is read.
+    private static byte[] ReadBounded(string path)
+    {
+        using var input = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        using var buffer = new MemoryStream();
+        var chunk = new byte[64 * 1024];
+        int read;
+        while ((read = input.Read(chunk, 0, (int)Math.Min(chunk.Length, MaximumBytes + 1L - buffer.Length))) != 0)
+        {
+            buffer.Write(chunk, 0, read);
+            if (buffer.Length > MaximumBytes) throw new InvalidDataException("Icon exceeds 2 MB.");
+        }
+        if (buffer.Length < 6) throw new InvalidDataException("Icon is empty or incomplete.");
+        return buffer.ToArray();
+    }
+
+    private static ServiceResult Refuse(string error) => new() { Error = error, NoCommitConfirmed = true };
 
     public static void Apply(AppServices services)
     {
@@ -90,7 +95,7 @@ internal static class IconAssets
             var info = new FileInfo(path);
             if (!info.Exists || info.Length > MaximumBytes || info.Length < 6)
                 throw new InvalidDataException("The custom icon file is unavailable.");
-            icon = Decode(File.ReadAllBytes(path));
+            icon = Decode(ReadBounded(path));
         }
         catch (Exception)
         {

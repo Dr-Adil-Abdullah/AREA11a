@@ -1,5 +1,8 @@
 # ⏳ 5.1 جاری — Backup schedule اور Pricing limits — v0.126.0 Avens
 
+> ⏳ تازہv0.128.0میںاسی5.1کےAppicon/fileکیsourceاصلاح: [PT-70/باقی5.1](ICON-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3211suiteUNRUN۔ نیچےپچھلےcheckpointکاثبوتتاریخی؛iconباقیکےحوالےنئےجائزےکیحدتکبدلے۔ File+DBatomicity/Windowsاببھیسندنہیں؛5.1جاری،1تا5مکمل+تصدیقسےپہلے6نہیں۔
+
+
 > ⏳ تازہ v0.127.0 میں اسی5.1 کے Hardware کی محدود source اصلاح شامل: [PT-69/باقی5.1](HARDWARE-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3188suiteUNRUN۔ نیچے پچھلے checkpoint کا ثبوت تاریخی؛Hardware کے باقی source والے حوالے نئے جائزے کی حد تک بدلے۔5.1 ابھی جاری،1تا5مکمل+تصدیق سے پہلے6نہیں۔
 
 

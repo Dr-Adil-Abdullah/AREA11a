@@ -109,10 +109,12 @@ public sealed class SettingsViewModel : ObservableObject
     private bool _suppressPermissionSave;
     private bool _confirmLabelReset;
     private SettingsEditForm? _editForm;
+    private bool _changingIcon;
     private EditVersion? _pricingVersion;
     private static readonly string[] FormKeys =
     {
         "appearance.productPhotoSize",
+        IconAssetService.Key,
         "store.name",
         "brand.appName",
         "store.address",
@@ -294,21 +296,51 @@ public sealed class SettingsViewModel : ObservableObject
 
     public bool CanChangeAppIcon => CanUseSettings && _staffAccessAllowed;
 
-    private void ChooseAppIcon()
+    private void ChooseAppIcon() => ChangeAppIcon(reset: false);
+
+    private void ResetAppIcon() => ChangeAppIcon(reset: true);
+
+    private void ChangeAppIcon(bool reset)
     {
+        if (_changingIcon) return;
         if (!UpdateSettingsAccess() || !UpdateStaffAccess()) return;
         if (!CanChangeAppIcon) { SetStatus("Only the owner can change the icon.", true); return; }
-        var dialog = new OpenFileDialog { Title = "Choose application icon", Filter = "Windows icon (*.ico)|*.ico", CheckFileExists = true };
-        if (dialog.ShowDialog() != true) return;
-        var result = IconAssets.Choose(_services, _user, dialog.FileName);
-        SetStatus(result.Ok ? "Window icon changed. Existing Windows shortcuts keep their own icon." : result.Error ?? "Icon change failed.", !result.Ok);
-    }
-
-    private void ResetAppIcon()
-    {
-        if (!UpdateSettingsAccess() || !UpdateStaffAccess()) return;
-        var result = IconAssets.Reset(_services, _user);
-        SetStatus(result.Ok ? "The default window icon is restored." : result.Error ?? "Icon reset failed.", !result.Ok);
+        var form = _editForm;
+        if (form is null) { SetStatus("Refresh Settings before changing the icon.", true); return; }
+        _changingIcon = true;
+        var acknowledged = false;
+        try
+        {
+            string? source = null;
+            if (!reset)
+            {
+                var dialog = new OpenFileDialog { Title = "Choose application icon", Filter = "Windows icon (*.ico)|*.ico", CheckFileExists = true };
+                if (dialog.ShowDialog() != true) return;
+                source = dialog.FileName;
+            }
+            // Keep the PRE-dialog form. A modal must not bless an intervening icon change.
+            var result = reset ? IconAssets.Reset(_services, _user, form)
+                : IconAssets.Choose(_services, _user, source, form);
+            if (!result.Ok)
+            {
+                if (!result.NoCommitConfirmed) _editForm = null;
+                SetStatus(result.Error ?? "Icon change failed.", true);
+                return;
+            }
+            acknowledged = true;
+            _editForm = result.SettingsEdit;
+            var message = reset ? "The default window icon is restored."
+                : "Window icon changed. Existing Windows shortcuts keep their own icon.";
+            SetStatus(result.Warnings.Count > 0 ? string.Join(" ", result.Warnings) : message, result.Warnings.Count > 0);
+        }
+        catch (Exception exception)
+        {
+            _editForm = null;
+            _services.Log.Error("Icon save/display did not finish.", exception);
+            SetStatus(acknowledged ? "SAVED. The icon was stored but the page could not refresh. Reopen Settings."
+                : "Icon saving is unconfirmed. Refresh and verify before retrying.", true);
+        }
+        finally { _changingIcon = false; }
     }
 
     /// <summary>Takes the saved key off this computer (it takes effect when Save is pressed).</summary>
@@ -757,6 +789,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void Load()
     {
+        if (_changingIcon) return;
         if (!UpdateSettingsAccess()) return;
         _editForm = null;
         var keys = FormKeys.Concat(AppLabelService.Definitions.Select(d => d.SettingKey))
@@ -1056,6 +1089,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void Save()
     {
+        if (_changingIcon) return;
         if (!UpdateSettingsAccess()) return;
         var form = _editForm;
         if (form is null) { SetStatus("Refresh Settings and review the form before saving.", true); return; }

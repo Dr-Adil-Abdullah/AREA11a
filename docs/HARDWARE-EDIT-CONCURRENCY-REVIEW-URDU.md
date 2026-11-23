@@ -1,5 +1,8 @@
 # ⏳ 5.1 جاری — Hardware فارم اور محفوظ ریکارڈ — v0.127.0 Yarrow
 
+> ⏳ تازہv0.128.0میںاسی5.1کےAppicon/fileکیsourceاصلاح: [PT-70/باقی5.1](ICON-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3211suiteUNRUN۔ نیچےپچھلےcheckpointکاثبوتتاریخی؛iconباقیکےحوالےنئےجائزےکیحدتکبدلے۔ File+DBatomicity/Windowsاببھیسندنہیں؛5.1جاری،1تا5مکمل+تصدیقسےپہلے6نہیں۔
+
+
 ## ⏳ اس اجازت کا دائرہ
 
 مالک کے `next`،پھر موجودہ تبدیلیاں برقرار رکھ کر `continue` پر اسی **5.1 Settings** کے Hardware راستے پر کام کیا۔ [پچھلا Backup/Pricing checkpoint](SCHEDULE-PRICING-CONCURRENCY-REVIEW-URDU.md) اپنی حدود کے ساتھ برقرار ہے۔ **5.1 ابھی مکمل نہیں؛حصوں1 تا5 کے باقی کام اور ضروری تصدیق مکمل کیے بغیر6 شروع نہیں ہوگا۔** Installer نہیں بنایا۔

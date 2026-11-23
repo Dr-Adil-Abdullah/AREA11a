@@ -1,5 +1,10 @@
 # Area11 — Real-life Physical Testing Log
 
+## ⏳ PT-70 — 5.1 App icon loaded Choose/Reset اورfile outcomes (v0.128.0)
+
+[⏳ مکملsteps/باقی5.1](docs/ICON-EDIT-CONCURRENCY-REVIEW-URDU.md)؛verifiedencryptedbackup **اورواقعیالگDB/photos/config** پہلے؛اصلshopپرposts/faultsنہیں۔3211/0fail/0skipاورDesktopRelease؛دوiconforms/staleReset、dialogکےدرمیانconcurrentchange/Ownerrevoke、exactpartialhandoff/untouchedstalefield、boundedread/codec/write/flush/dispose/collision/cleanupfaultsجانچیں۔ COMMIT/lostackپرownedcopyretain、knownrollbackپرصرفاپنیcopycleanup、oldiconsبرقرار؛ackکےبعدApply/bindingfailureپرSAVED۔ ⏳23نئےcasesUNRUN؛119static/36lexical/24Pythoncasesاصلprovider/WPF/codec/file+DBatomicityثبوتنہیں۔workbook/remainingStaff/startupregistryاور1تا5کےباقیgatesبرقرار؛6/installerشروعنہیں۔
+
+
 ## ⏳ PT-69 — 5.1 Hardware stale forms /atomic record (v0.127.0)
 
 [⏳ مکملsteps/باقی5.1](docs/HARDWARE-EDIT-CONCURRENCY-REVIEW-URDU.md)؛verifiedencryptedbackup **اورواقعیالگDB/photos/config** پہلے؛اصلshopپرposts/faultsنہیں۔3188/0fail/0skipاورDesktopRelease؛دوHardwareforms،نوdependencies،پانچwrites+auditکےfaults/rollback،exacthandoff/printerpartialhandoff،permissionrevoke/readfailure/RefreshNoteاورackکےبعدSAVEDcallbacksجانچیں۔ Windowsdefault/driver/actualPrintServiceکےtarget،58/80paperاورUSBscannerکاphysicalثبوتالگباقی۔ ⏳20نئےcasesUNRUN؛118static/31lexical/38Pythonplansاصلprovider/WPF/hardwareثبوتنہیں۔icon/workbook/remainingStaff/startupregistryاور1تا5کےباقیgatesبرقرار؛6/installerشروعنہیں۔

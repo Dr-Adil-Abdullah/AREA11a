@@ -5,9 +5,9 @@
 ہر جواب/وضاحت/خلاصہ سادہ پاکستانی اردو۔ ایک وقت میں صرف ایک منظورشدہ حصہ؛ہر اگلے حصے سے پہلے نئی اجازت۔ ہر ٹاسک/حصے پر صرف3–4 لائنوں کا خلاصہ؛تفصیلی رپورٹ ہر3 مکمل حصوں کے بعد یا مالک کے مطالبے پر۔ [⏳ نیا14حصوں کا منصوبہ](docs/REMAINING-14-PORTIONS-URDU.md) پر عمل کریں؛پرانے3–6roundsاندازے اس منصوبے کی جگہ نہیں لیتے۔ ✅حصہ1کیCore/TestsDebugcompileتصدیقمالککےv0.120.1runسےملی۔ ⏳حصہ2کے22failurefixesکاWindowsrerunباقی؛بعدکےnextسےصرفحصہ3کیاجازتملی،اسکیsourceپیشرفتذیل،اصلجانچباقی؛⏳تازہNextسے5.1Settings؛نامکملحصےکیذیلیگنتی،1تا5کےباقیکام+تصدیقسےپہلے6نہیں۔ ✅صحت مندsourcecheckکوکامیاب.NETbuildنہکہیں۔
 
 
-## ⏳ موجودہ 5.1 — Hardware فارم اور ریکارڈ — v0.127.0 Yarrow
+## ⏳ موجودہ 5.1 — App icon فائل اور Settings اندراج — v0.128.0 Catkin
 
-**5.1 ابھی جاری ہے؛حصوں1 تا5 کے باقی کام اور ضروری تصدیق مکمل کیے بغیر6 شروع نہیں کرنا۔** Hardware کا مربوط loaded form،نو record/printer dependencies کا write-Tx موازنہ،پانچ values+ایک audit کا atomic Save،exact handoff/ack-before-callbacks اورchecked printer choice شامل۔ ⏳20نئے C# cases/3188suiteUNRUN؛118static/31نئیlexicalnegative/38Python-ownedWAL+DELETEplans اصل .NET/provider/WPF/physical ثبوت نہیں۔ [⏳ جائزہ/PT-69/باقی5.1](docs/HARDWARE-EDIT-CONCURRENCY-REVIEW-URDU.md)؛[⏳14حصے](docs/REMAINING-14-PORTIONS-URDU.md)۔ **اگلا کام ابھی5.1 کے icon/file،workbookSettings،باقیStaff/imperativewriters اورstartupregistry/Windows پر؛StockTake اس کے بعد اسی5میں۔** حصوں2/3/4اورپہلے5checkpoints کا تازہWindowsrunبھیباقی؛FullPhase4OPEN؛❌6/installerشروعنہیں۔
+**5.1 ابھی جاری ہے؛حصوں1 تا5 کے باقی کام اور ضروری تصدیق مکمل کیے بغیر6 شروع نہیں کرنا۔** Icon Choose/Reset اب loaded baseline،current Owner preflight+final checked Save،exclusive bounded copy،واضح rollback پر owned cleanup اورunknown پر retention؛exact partial handoff اورSAVED display warning۔ پرانےiconsمحفوظ؛file+DBکیجامعatomicityنہیں۔ ⏳23نئے C# cases/3211suiteUNRUN؛119static/36نئیlexicalnegative/24Python-ownedfile+SQLitecases اصل.NET/provider/WPF/codecثبوتنہیں۔ [⏳ جائزہ/PT-70/باقی5.1](docs/ICON-EDIT-CONCURRENCY-REVIEW-URDU.md)؛[⏳14حصے](docs/REMAINING-14-PORTIONS-URDU.md)۔ **اگلاکامابھی5.1کےworkbookSettings،باقیStaff/imperativewritersاورstartupregistry/Windowsپر؛StockTakeاسکےبعداسی5میں۔** حصوں2/3/4اورپہلے5checkpointsکاتازہWindowsrunبھیباقی؛FullPhase4OPEN؛❌6/installerشروعنہیں۔
 
 ## ⏳ تاریخی حصہ4/14 — v0.122.0 Larkspur
 

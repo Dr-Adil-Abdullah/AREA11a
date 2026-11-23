@@ -6260,6 +6260,63 @@ def check_windows_v1201_regressions() -> None:
     REPORT.append('v0.120.1 owner Windows22-failure fixture guards:checked Settings/current identities/explicit denials/stored names/pre-fault services/schema-valid marker;new C# rerun required')
 
 
+def check_icon_edit_boundaries() -> None:
+    """Icon lexical contracts only;not codec,provider/filesystem durability or WPF proof."""
+    def read(path): return (DOTNET / path).read_text()
+    def need(text, *tokens):
+        for token in tokens:
+            if token not in text: FAILURES.append('Icon edit contract missing: ' + token)
+    def order(text, *tokens):
+        indices = [text.find(t) for t in tokens]
+        if -1 in indices or indices != sorted(indices): FAILURES.append('Icon edit ordering: ' + ' -> '.join(tokens))
+    core = read('Area11.Core/Services/IconAssetService.cs')
+    need(core, 'public const string Key = "appearance.iconFileName";', 'public const int MaximumBytes = 2 * 1024 * 1024;',
+         'bytes.Length < 6 || bytes.Length > MaximumBytes', 'var content = (byte[])bytes.Clone();',
+         'content[0] != 0 || content[1] != 0 || content[2] != 1 || content[3] != 0', '(content[4] == 0 && content[5] == 0)',
+         'var name = "area11-icon-" + Guid.NewGuid().ToString("N") + ".ico";',
+         'if (result.NoCommitConfirmed) Discard(destination);',
+         'if (created && !writerStarted && destination is not null) Discard(destination);',
+         'else if (created) _log.Info("Unconfirmed icon save;retain copied file for verification:',
+         'NoCommitConfirmed = !writerStarted', 'FileMode.CreateNew, FileAccess.Write, FileShare.None',
+         'file.Flush(flushToDisk: true)', 'catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)')
+    choose = core.split('public ServiceResult Choose(',1)[-1].split('public ServiceResult Reset(',1)[0]
+    order(choose, '_settings.CheckIconEdit(owner, expected)', 'Directory.CreateDirectory(_folder)', '_files.CreateNew(destination)',
+          'created = true;', 'output.Write(content, 0, content.Length);', '_files.Flush(output);',
+          'writerStarted = true;', '_settings.Set(Key, name, owner, expected)', 'if (result.NoCommitConfirmed) Discard(destination);', 'return result;')
+    reset = core.split('public ServiceResult Reset(',1)[-1].split('private void Discard(',1)[0]
+    order(reset, '_settings.CheckIconEdit(owner, expected)', '_settings.Set(Key, string.Empty, owner, expected)')
+    if 'Delete(' in reset or 'Discard(' in reset: FAILURES.append('Icon reset must retain old assets')
+    settings = read('Area11.Core/Services/SettingsService.cs')
+    preflight = settings.split('internal ServiceResult CheckIconEdit(',1)[-1].split('internal bool HardwareBaselineRequired',1)[0]
+    order(preflight, '_db.Tx(connection =>', 'OwnerAccess.Require(_db, connection, actor);',
+          'RequireWriter(connection, actor, new[] { IconAssetService.Key });', 'if (expected is null)',
+          'RequireEdit(connection, expected, new[] { IconAssetService.Key });')
+    if 'INSERT INTO' in preflight or '_db.Execute(' in preflight: FAILURES.append('Icon preflight must not change shop data')
+    desktop = read('Area11.Desktop/IconAssets.cs')
+    need(desktop, 'bytes = ReadBounded(source);', 'Decode(bytes);', '.Choose(owner, bytes, expected)', '.Reset(owner, expected)',
+         'return ApplySaved(services, result);', 'if (!result.Ok) return result;', 'try { Apply(services); }',
+         'Ok = true, SettingsEdit = result.SettingsEdit', 'SAVED. The icon could not be displayed.',
+         'MaximumBytes + 1L - buffer.Length', 'if (buffer.Length > MaximumBytes)', 'icon = Decode(ReadBounded(path));')
+    if 'File.ReadAllBytes(' in desktop or 'File.Delete(' in desktop or 'Settings.Set(' in desktop:
+        FAILURES.append('Icon desktop must not bypass bounded read/checked file service')
+    vm = read('Area11.Desktop/ViewModels/SettingsViewModel.cs')
+    need(vm.split('private static readonly string[] FormKeys',1)[-1].split('private static readonly string[] CloudFormKeys',1)[0], 'IconAssetService.Key,')
+    ui = vm.split('private void ChangeAppIcon(',1)[-1].split('/// <summary>Takes the saved key',1)[0]
+    order(ui, 'if (_changingIcon) return;', 'var form = _editForm;', 'if (form is null)', '_changingIcon = true;',
+          'dialog.ShowDialog()', 'IconAssets.Reset(_services, _user, form)', 'acknowledged = true;', '_editForm = result.SettingsEdit;')
+    need(ui, 'IconAssets.Choose(_services, _user, source, form)', 'if (!result.NoCommitConfirmed) _editForm = null;',
+         'result.Warnings.Count > 0', 'SAVED. The icon was stored but the page could not refresh.', 'finally { _changingIcon = false; }')
+    for method in ('private void Load()', 'private void Save()'):
+        need(vm.split(method,1)[-1].split('\n    }',1)[0], 'if (_changingIcon) return;')
+    tests = read('Area11.Tests/IconAssetConcurrencyTests.cs')
+    need(tests, 'TwoLoadedChoicesCannotOverwriteTheFirstSavedIcon', 'OldResetCannotClearTheNewlySelectedIcon',
+         'CopyFaultRemovesOnlyItsOwnedFileBeforeAnySettingWrite', 'CollisionNeverDeletesOrOverwritesThePreexistingFile',
+         'AuditFaultRollsBackPointerAndRemovesOnlyTheNewOwnedCopy', 'DeferredCommitFailureRetainsTheOwnedFileWithoutClaimingSafeRetry',
+         'IconHandoffDoesNotBlessAStaleUntouchedMainSetting', 'ConcurrentChangeAfterCopyIsComparedAgainAndNewCopyIsDiscarded')
+    if tests.count('[Fact]') != 17 or tests.count('[InlineData(') != 6: FAILURES.append('Icon needs23 additive written C# cases')
+    REPORT.append('Part5.1 Icon:checked Choose/Reset,owned exclusive bounded copy,rollback-only cleanup/unknown retention,exact partial handoff;23 written cases NOT runtime/codec/cross-resource atomicity/Settings closure')
+
+
 def check_hardware_edit_boundaries() -> None:
     """Hardware source structure only;not provider,auth,WPF or physical-printer proof."""
     def read(path): return (DOTNET / path).read_text()
@@ -9544,6 +9601,7 @@ def main() -> int:
     check_settings_edit_boundaries()
     check_schedule_pricing_edit_boundaries()
     check_hardware_edit_boundaries()
+    check_icon_edit_boundaries()
     check_csharp_grammar()
 
     if not quiet:

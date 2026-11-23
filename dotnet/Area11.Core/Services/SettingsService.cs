@@ -576,6 +576,30 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         }
     }
 
+    // Preflight before icon file I/O;the final Set repeats auth+CAS under its own write transaction.
+    // This operation writes no shop data,so even a failed preflight COMMIT cannot save an icon.
+    internal ServiceResult CheckIconEdit(User? actor, SettingsEditForm? expected)
+    {
+        try
+        {
+            _db.Tx(connection =>
+            {
+                OwnerAccess.Require(_db, connection, actor);
+                RequireWriter(connection, actor, new[] { IconAssetService.Key });
+                if (expected is null) throw new ValidationException("Refresh Settings before changing the icon.");
+                RequireEdit(connection, expected, new[] { IconAssetService.Key });
+                return true;
+            });
+            return ServiceResult.Success();
+        }
+        catch (ValidationException exception) { return new ServiceResult { Error = exception.Message, NoCommitConfirmed = true }; }
+        catch (Exception exception)
+        {
+            _log.Error("Icon edit state could not be checked.", exception);
+            return new ServiceResult { Error = "Icon settings could not be checked. Refresh before changing the icon.", NoCommitConfirmed = true };
+        }
+    }
+
     internal bool HardwareBaselineRequired => _db.Sessions.Enabled;
 
     // Fixed hardware record only: five values and ONE audit share the checked transaction.

@@ -1,5 +1,10 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## ⏳ v0.128.0 — اسی5.1میںAppicon؛نئیfile/مالیپالیسی نہیں
+
+تازہnextپراسیSettingsکےiconChoose/Resetکواپنیloadedbaseline/currentOwnerکےساتھمحفوظکیا؛knownrollbackپراپنیcopyصاف،unknownپرretained؛oldicons/defaultfallback/shortcutbehaviorبرقرار۔ File+DBکوatomicیادurableidentityنہیںکہا،کسیrealshopfileکیصفائینہیںکی۔ [⏳ PT-70/حدود](ICON-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3211suite/Windows/codec/physicalUNRUN۔workbook/remainingStaff/startupregistryباقی؛**1تا5باقیکام+تصدیقسےپہلے6نہیں**؛installerنہیںبنا۔
+
+
 ## ⏳ v0.127.0 — اسی5.1میںHardware؛نئیphysical/مالیپالیسی نہیں
 
 مالککےcontinueپرموجودہفائلیںبرقراررکھیں؛وہپچھلےpublished70c2812سےعینملیںتوصرفمقامیGitنشان دہیاسیremoteسےملائی۔ Hardwareکےنوdependencieschecked،پانچrecordvalues+ایکauditایکtransaction؛checkedprinterchoice/exacthandoff۔ مجازSettingsgranteeکاپراناحق،manualticks/partialreason،CheckedBydisplaybehaviorاوراصلfinancialrulesبرقرار۔ [⏳ PT-69/حدود](HARDWARE-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3188suite/Windows/physicalUNRUN۔icon/workbook/remainingStaff/startupregistryباقی؛**1تا5باقیکام+تصدیقسےپہلے6نہیں**؛installerنہیںبنا۔
