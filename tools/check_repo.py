@@ -6260,6 +6260,62 @@ def check_windows_v1201_regressions() -> None:
     REPORT.append('v0.120.1 owner Windows22-failure fixture guards:checked Settings/current identities/explicit denials/stored names/pre-fault services/schema-valid marker;new C# rerun required')
 
 
+def check_workbook_settings_edit_boundaries() -> None:
+    """Lexical workbook Settings checks;NOT C#/provider/Excel/WPF/durable request identity."""
+    def read(path): return (DOTNET / path).read_text()
+    def need(text, *tokens):
+        for token in tokens:
+            if token not in text: FAILURES.append('Workbook Settings contract missing: ' + token)
+    def order(text, *tokens):
+        indices = [text.find(t) for t in tokens]
+        if -1 in indices or indices != sorted(indices): FAILURES.append('Workbook Settings ordering: ' + ' -> '.join(tokens))
+    workbook = read('Area11.Core/Services/WorkbookService.cs')
+    export = workbook.split('public ServiceResult<byte[]> ExportAll(',1)[-1].split('public ServiceResult<BulkUpdatePreview> PreviewBulk(',1)[0]
+    preview = workbook.split('public ServiceResult<BulkUpdatePreview> PreviewBulk(',1)[-1].split('public ServiceResult<BulkUpdateOutcome> ApplyBulk(',1)[0]
+    need(export, 'return _db.Snapshot(connection =>')
+    need(preview, 'return _db.Snapshot(connection =>', 'SourceDatabase = _db',
+         '_settings.LoadEditForm(user, SettingsService.WorkbookEditKeys(preview.SettingValues.Keys))', 'preview.SettingsEdit = loaded.Value;')
+    write = workbook.split('private ServiceResult<BulkUpdateOutcome> ApplyBulkOnce(',1)[-1].split('// ============================== Preview: data sheets',1)[0]
+    need(workbook, 'lock (preview) return ApplyBulkOnce(user, preview);', '_settings.PrepareBulk(values, connection);')
+    need(write, 'if (preview.ApplyBlocked)', 'if (hasSettings && !ReferenceEquals(preview.SourceDatabase, _db))',
+         'var observation = new TransactionOutcome();', '}, observation);',
+         'if (observation.NoCommitConfirmed) preview.ApplyBlocked = false;', 'NoCommitConfirmed = observation.NoCommitConfirmed',
+         'if (committed && applied is not null)', 'SAVED. The workbook was applied but local refresh failed.')
+    order(write, 'preview.ApplyBlocked = true;', 'applied = _db.Tx(connection =>',
+          '_settings.RequireBulkWriter(connection, user, preview.SettingValues.Keys)',
+          '_settings.RequireWorkbookEdit(connection, preview.SettingsEdit, preview.SettingValues.Keys)',
+          '_settings.PrepareBulk(preview.SettingValues, connection)', 'VerifyCurrentRow(connection, record);',
+          'var sql = $"UPDATE', '_db.Execute(connection, sql, parameters);', '}, observation);', 'committed = true;', '_settings.Reload();')
+    setting_preview = workbook.split('private void PreviewSettings(',1)[-1].split('private static object ParseSetting',1)[0]
+    if '_settings.Reload();' in setting_preview: FAILURES.append('Workbook preview must not validate through shared Settings cache')
+    settings = read('Area11.Core/Services/SettingsService.cs')
+    dependencies = settings.split('internal static IEnumerable<string> WorkbookEditKeys(',1)[-1].split('// Preflight before icon file I/O',1)[0]
+    need(dependencies, 'selected.UnionWith(new[] { "discount.maxPercentCashier", "discount.maxPercentManager" });',
+         'selected.UnionWith(new[] { "supplier.returnCutoffDays", "supplier.returnAlertDays" });',
+         'if (expected is null)', 'RequireEdit(connection, expected, WorkbookEditKeys(keys));')
+    prepare = settings.split('internal ServiceResult<IReadOnlyDictionary<string, string>> PrepareBulk(',1)[-1].split('private static string TextValue',1)[0]
+    need(prepare, 'SqliteConnection? connection = null', 'Guard(pair.Key, pair.Value, values, connection)')
+    guard = settings.split('private string? Guard(',1)[-1].split('private static double? ToNumber',1)[0]
+    need(guard, 'if (connection is null) return GetDouble(otherKey, fallback);',
+         '_db.QuerySingle<string>(connection, "SELECT value FROM settings WHERE key=@key;", new { key = otherKey })')
+    need(read('Area11.Core/Models/WorkbookModels.cs'), 'internal SettingsEditForm? SettingsEdit { get; set; }', 'internal bool ApplyBlocked { get; set; }')
+    vm = read('Area11.Desktop/ViewModels/ImportExportViewModel.cs')
+    need(vm, 'private readonly PostingAttemptGuard _bulkApplyAttempt = new();', 'if (!_bulkApplyAttempt.Ready)',
+         'if (!_bulkApplyAttempt.TryBegin())', '_bulkApplyAttempt.ObserveFailure(result);', '_bulkApplyAttempt.ObserveException();',
+         'SAVED. Workbook applied but the page could not refresh.')
+    ui = vm.split('private void ApplyBulk()',1)[-1].split('private void ClearBulk()',1)[0]
+    order(ui, '_services.Workbooks.ApplyBulk(_user, _bulkPreview)', '_bulkApplyAttempt.AcknowledgeCommit();',
+          'ClearBulk();', 'SetStatus(result.Value.SummaryText', '_bulkApplyAttempt.CompleteReset();')
+    if '_bulkApplyAttempt' in vm.split('private void ClearBulk()',1)[-1].split('private void RaiseBulkState()',1)[0]:
+        FAILURES.append('Workbook clearing must not release an unknown/ack-failed guard')
+    tests = read('Area11.Tests/WorkbookSettingsConcurrencyTests.cs')
+    need(tests, 'UntouchedValidationPartnerChangesInvalidateTheReviewedSettings',
+         'ConcurrentEditedSettingRefusesTheWholeMixedWorkbook', 'PreviewValidatesAgainstItsDatabaseSnapshotNotAnOldSharedCache',
+         'AuditFailureRollsBackAndAllowsTheSameReviewedPlanToRetry', 'DeferredCommitFailureDoesNotPromiseRollbackOrPermitPlanReuse')
+    if tests.count('[Fact]') != 9 or tests.count('[InlineData(') != 4: FAILURES.append('Workbook Settings needs13 additive C# cases')
+    REPORT.append('Part5.1 Workbook Settings:coherent export/preview,checked dependencies/current-Tx preparation,observed Apply/plan+UI latch;13 written cases NOT runtime/remaining bulk/Settings closure')
+
+
 def check_icon_edit_boundaries() -> None:
     """Icon lexical contracts only;not codec,provider/filesystem durability or WPF proof."""
     def read(path): return (DOTNET / path).read_text()
@@ -9602,6 +9658,7 @@ def main() -> int:
     check_schedule_pricing_edit_boundaries()
     check_hardware_edit_boundaries()
     check_icon_edit_boundaries()
+    check_workbook_settings_edit_boundaries()
     check_csharp_grammar()
 
     if not quiet:

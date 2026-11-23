@@ -1,8 +1,8 @@
 # POS، رعایت اور مکمل جائزہ — مالک کی جانچ کے لیے یکجا منصوبہ
 
-## ⏳ موجودہ 5.1 — App icon فائل اور Settings اندراج — v0.128.0 Catkin
+## ⏳ موجودہ 5.1 — Workbook Settings preview/apply — v0.129.0 Mallow
 
-**5.1 ابھی جاری ہے؛حصوں1 تا5 کے باقی کام اور ضروری تصدیق مکمل کیے بغیر6 شروع نہیں کرنا۔** Icon Choose/Reset اب loaded baseline،current Owner preflight+final checked Save،exclusive bounded copy،واضح rollback پر owned cleanup اورunknown پر retention؛exact partial handoff اورSAVED display warning۔ پرانےiconsمحفوظ؛file+DBکیجامعatomicityنہیں۔ ⏳23نئے C# cases/3211suiteUNRUN؛119static/36نئیlexicalnegative/24Python-ownedfile+SQLitecases اصل.NET/provider/WPF/codecثبوتنہیں۔ [⏳ جائزہ/PT-70/باقی5.1](ICON-EDIT-CONCURRENCY-REVIEW-URDU.md)؛[⏳14حصے](REMAINING-14-PORTIONS-URDU.md)۔ **اگلاکامابھی5.1کےworkbookSettings،باقیStaff/imperativewritersاورstartupregistry/Windowsپر؛StockTakeاسکےبعداسی5میں۔** حصوں2/3/4اورپہلے5checkpointsکاتازہWindowsrunبھیباقی؛FullPhase4OPEN؛❌6/installerشروعنہیں۔
+**5.1 ابھی جاری ہے؛حصوں1 تا5 کے باقی کام اور ضروری تصدیق مکمل کیے بغیر6 شروع نہیں کرنا۔** Workbook Export/Preview ابcoherent snapshot؛Settingsکیpaireddependenciesکیbaselineاورcurrentwrite-Txpreparation؛Applyکےobservedoutcomes،sameplan/UILocalguardاورpostcommitSAVEDwarning۔ پہلےسےموجودedited-rowCAS/lockedkeys/businessrules/UPDATEloopبرقرار۔ ⏳13نئےC#cases/3224suiteUNRUN؛120static/29نئیlexicalnegative/18Python-ownedWAL/DELETEplansاصل.NET/provider/Excel/WPFثبوتنہیں۔ [⏳ جائزہ/PT-71/باقی5.1](WORKBOOK-SETTINGS-CONCURRENCY-REVIEW-URDU.md)؛[⏳14حصے](REMAINING-14-PORTIONS-URDU.md)۔ **اگلاکامابھی5.1کےباقیStaff/imperativewritersاورstartupregistry/Windowsپر؛StockTakeاسکےبعداسی5میں۔** حصوں2/3/4اورپہلے5checkpointsکاتازہWindowsrunبھیباقی؛FullPhase4OPEN؛❌6/installerشروعنہیں۔
 
 
 ## ⏳ موجودہ حصہ2/14 — v0.120.2 Willow

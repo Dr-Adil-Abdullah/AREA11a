@@ -1,5 +1,10 @@
 # Area11 — Real-life Physical Testing Log
 
+## ⏳ PT-71 — Workbook Settings (v0.129.0)
+
+[⏳ مکملsteps/باقی5.1](docs/WORKBOOK-SETTINGS-CONCURRENCY-REVIEW-URDU.md)؛verifiedencryptedbackup **اورواقعیالگDB/photos/config** پہلے؛اصلshopپرposts/faultsنہیں۔3224/0fail/0skipاورDesktopRelease؛pairedSettings/editedrowکےstaleconflictsپرmixedbatchatomicrefusal،uncachedDBguard،coherentExport/Preview،Owner/Settings/bulkfinancialgates،audit/COMMITfaultsاورpostcommitSAVEDcallbacksجانچیں۔ UnknownguardClear/newfile/regrantسےنہکھلے؛data-only/CSV/Pricesکےمشترکہwrapperregressionsبھیباقی۔ ⏳13نئےcasesUNRUN؛120static/29lexical/18Pythonplansruntime/Excel/WPFcertificationنہیں۔6/installerشروعنہیں۔
+
+
 ## ⏳ PT-70 — 5.1 App icon loaded Choose/Reset اورfile outcomes (v0.128.0)
 
 [⏳ مکملsteps/باقی5.1](docs/ICON-EDIT-CONCURRENCY-REVIEW-URDU.md)؛verifiedencryptedbackup **اورواقعیالگDB/photos/config** پہلے؛اصلshopپرposts/faultsنہیں۔3211/0fail/0skipاورDesktopRelease؛دوiconforms/staleReset、dialogکےدرمیانconcurrentchange/Ownerrevoke、exactpartialhandoff/untouchedstalefield、boundedread/codec/write/flush/dispose/collision/cleanupfaultsجانچیں۔ COMMIT/lostackپرownedcopyretain、knownrollbackپرصرفاپنیcopycleanup、oldiconsبرقرار؛ackکےبعدApply/bindingfailureپرSAVED۔ ⏳23نئےcasesUNRUN؛119static/36lexical/24Pythoncasesاصلprovider/WPF/codec/file+DBatomicityثبوتنہیں۔workbook/remainingStaff/startupregistryاور1تا5کےباقیgatesبرقرار؛6/installerشروعنہیں۔

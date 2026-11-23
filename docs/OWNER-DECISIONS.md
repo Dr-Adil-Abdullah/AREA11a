@@ -1,5 +1,10 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## ⏳ v0.129.0 — اسی5.1میںWorkbookSettings؛نئیbusinesspolicyنہیں
+
+تازہnextپرموجودہeditedrowCASکےساتھcoherentpreview/paireddependencybaseline/in-TxpreparationاورobservedApplyلگایا؛پرانےdiscount/supplierguards،lockedkeys،mixedfinancialvisibilityاوراصلUPDATE/auditloopبرقرار۔ [⏳ PT-71/حدود](WORKBOOK-SETTINGS-CONCURRENCY-REVIEW-URDU.md)؛3224suite/Windowsباقی؛remainingStaff/imperativewriters/startupregistryباقی۔ Localplan/UIlatchنہdurableidentityنہحصہ6؛1تا5باقیکام+ضروریتصدیقسےپہلے6نہیں،installerنہیں۔
+
+
 ## ⏳ v0.128.0 — اسی5.1میںAppicon؛نئیfile/مالیپالیسی نہیں
 
 تازہnextپراسیSettingsکےiconChoose/Resetکواپنیloadedbaseline/currentOwnerکےساتھمحفوظکیا؛knownrollbackپراپنیcopyصاف،unknownپرretained؛oldicons/defaultfallback/shortcutbehaviorبرقرار۔ File+DBکوatomicیادurableidentityنہیںکہا،کسیrealshopfileکیصفائینہیںکی۔ [⏳ PT-70/حدود](ICON-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3211suite/Windows/codec/physicalUNRUN۔workbook/remainingStaff/startupregistryباقی؛**1تا5باقیکام+تصدیقسےپہلے6نہیں**؛installerنہیںبنا۔

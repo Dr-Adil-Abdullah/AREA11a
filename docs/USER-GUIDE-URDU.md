@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.128.0 Catkin۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.129.0 Mallow۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**⏳ 5.1 — Workbook Settings:** previewکےبعدeditedsettingیااسکیمتعلقہpairedsettingبدلجائےتوپوراApplyrefuseہوگا؛تازہpreviewدیکھکرمنظورکریں۔ **SAVED**خبرکےبعدrefreshخرابیپرانامحفوظbatchواپسنہیںکرتی۔ **Unconfirmed**پراندھاApplyیافائلدوبارہمنتخبنہکریں؛پہلےموجودہdataتصدیقکریں۔ [⏳ PT-71/حدود](WORKBOOK-SETTINGS-CONCURRENCY-REVIEW-URDU.md)؛3224suiteاوراصلWindows/Excelجانچباقی۔5.1ابھیجاری۔
 
 **⏳ 5.1 — App icon:** کسی دوسرےشخصنےiconبدل دیاہوتوپرانےفارمکاChoose/Resetاسےخاموشیسےنہیںبدلےگا؛Refreshکرکےموجودہiconدیکھیں۔ **SAVED**کےبعدتصویرنمایاںنہہوتوDBکااندراجواپسنہیںہوا؛پہلےموجودہحالتتصدیقکریں۔ Unknownنتیجےپرنئیcopyاحتیاطاًبرقراررہتیہے؛خودفائلیںحذفنہکریں،خاصطورپراصل/پرانےiconsنہیں۔ صرفwindowiconبدلتاہے،پرانےWindowsshortcutsنہیں۔ [⏳ PT-70/حدود](ICON-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3211suiteاوراصلWindows/codec/fileجانچباقی۔5.1ابھیجاری۔
 
@@ -814,7 +816,7 @@ Recoveryکیfailedslipپرپرنٹرکوخالیdocumentنہیںدیاجاتا۔
 | حساب میں فرق | اصل bill/payment/return اور Black box دیکھیں؛ Books check کی read-only فہرست محفوظ |
 | restore/cloud کے بعد پرانا data | مزید posting روکیں، منتخب snapshot اور pre-operation encrypted recovery package/پیغام دیکھیں؛ بار بار overwrite نہ کریں |
 
-خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.128.0 کا متوقع test count 3211 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
+خرابی کی اطلاع میں **version، صفحے کا نام، کیا قدم اٹھایا، متوقع اور اصل نتیجہ** دیں۔ PIN/password، recovery word، cloud key یا پورا حقیقی customer database عام chat میں نہ بھیجیں۔ اگر developer جانچ مانگے تو tools\RUN-TESTS.cmd اور SEND-REPORT.cmd کی مکمل رپورٹ دیں؛ v0.129.0 کا متوقع test count 3224 ہے، یہ اس کتاب سے چل جانے کا دعویٰ نہیں۔
 
 ## نگہداشت کا نوٹ — کتاب کہاں سے تصدیق ہوئی
 

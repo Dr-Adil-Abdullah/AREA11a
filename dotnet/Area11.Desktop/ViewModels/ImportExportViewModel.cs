@@ -29,6 +29,7 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
 
     private readonly AppServices _services;
     private readonly User _user;
+    private readonly PostingAttemptGuard _bulkApplyAttempt = new();
 
     private int _tab;
     private string _kind = "Products";
@@ -524,6 +525,7 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
 
     private void ChooseBulkFile()
     {
+        if (!_bulkApplyAttempt.Ready) { SetStatus("Verify the previous workbook application before reopening this page. Do not retry blindly.", true); return; }
         if (!RequireBulkAccess()) return;
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
@@ -585,15 +587,28 @@ public sealed class ImportExportViewModel : ObservableObject, IEmptyPage
             return;
         }
 
-        var result = _services.Workbooks.ApplyBulk(_user, _bulkPreview);
-        if (!result.Ok || result.Value is null)
+        if (!_bulkApplyAttempt.TryBegin()) { SetStatus("Verify the previous workbook application before reopening this page. Do not retry blindly.", true); return; }
+        try
         {
-            SetStatus(result.Error ?? "The workbook was not applied.", true);
-            return;
+            var result = _services.Workbooks.ApplyBulk(_user, _bulkPreview);
+            if (!result.Ok || result.Value is null)
+            {
+                _bulkApplyAttempt.ObserveFailure(result);
+                SetStatus(result.Error ?? "The workbook was not applied.", true);
+                return;
+            }
+            _bulkApplyAttempt.AcknowledgeCommit();
+            ClearBulk(); // Consume the old preview before any success/status callbacks.
+            SetStatus(result.Value.SummaryText + (result.Warnings.Count > 0 ? " " + string.Join(" ", result.Warnings) : string.Empty), result.Warnings.Count > 0);
+            _bulkApplyAttempt.CompleteReset();
         }
-
-        ClearBulk();
-        SetStatus(result.Value.SummaryText, false);
+        catch (Exception exception)
+        {
+            _bulkApplyAttempt.ObserveException();
+            _services.Log.Error("Workbook apply/refresh did not finish.", exception);
+            SetStatus(_bulkApplyAttempt.WasAcknowledged ? "SAVED. Workbook applied but the page could not refresh. Reopen and verify."
+                : "Workbook application is unconfirmed. Verify the current data before retrying.", true);
+        }
     }
 
     private void ClearBulk()

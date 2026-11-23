@@ -1,5 +1,8 @@
 # ⏳ 5.1 جاری — App icon فائل اور Settings اندراج — v0.128.0 Catkin
 
+> ⏳ تازہv0.129.0میںاسی5.1کےWorkbookSettingsکیboundedاصلاح: [PT-71/باقی5.1](WORKBOOK-SETTINGS-CONCURRENCY-REVIEW-URDU.md)؛3224suiteUNRUN۔ نیچےپچھلےcheckpointکاثبوتتاریخی؛workbookباقیکےحوالےنئےجائزےکیحدتکبدلے۔5.1جاری،1تا5مکمل+تصدیقسےپہلے6نہیں۔
+
+
 ## ⏳ اجازت اور حد
 
 تازہ `next` پر **اسی5.1 Settings** کا صرف App icon Choose/Reset راستہ لیا۔ [پچھلا Hardware checkpoint/PT-69](HARDWARE-EDIT-CONCURRENCY-REVIEW-URDU.md) اوراس سےپہلےSettings/Backup/Pricingکیحدودبرقرار۔ **5.1 ابھی مکمل نہیں؛حصوں1 تا5 کے باقی کام اور ضروری تصدیق کے بغیر6 شروع نہیں کرنا۔** Installer نہیں بنایا۔

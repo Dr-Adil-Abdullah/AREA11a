@@ -1,5 +1,8 @@
 # ⏳ 5.1 — Settings: مرکزی فارم کی پرانی حالت سے Save کی روک — v0.125.0 Celandine
 
+> ⏳ تازہv0.129.0میںاسی5.1کےWorkbookSettingsکیboundedاصلاح: [PT-71/باقی5.1](WORKBOOK-SETTINGS-CONCURRENCY-REVIEW-URDU.md)؛3224suiteUNRUN۔ نیچےپچھلےcheckpointکاثبوتتاریخی؛workbookباقیکےحوالےنئےجائزےکیحدتکبدلے۔5.1جاری،1تا5مکمل+تصدیقسےپہلے6نہیں۔
+
+
 > ⏳ تازہv0.128.0میںاسی5.1کےAppicon/fileکیsourceاصلاح: [PT-70/باقی5.1](ICON-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3211suiteUNRUN۔ نیچےپچھلےcheckpointکاثبوتتاریخی؛iconباقیکےحوالےنئےجائزےکیحدتکبدلے۔ File+DBatomicity/Windowsاببھیسندنہیں؛5.1جاری،1تا5مکمل+تصدیقسےپہلے6نہیں۔
 
 

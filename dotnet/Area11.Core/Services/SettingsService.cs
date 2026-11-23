@@ -576,6 +576,22 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         }
     }
 
+    internal static IEnumerable<string> WorkbookEditKeys(IEnumerable<string> keys)
+    {
+        var selected = keys.ToHashSet(StringComparer.Ordinal);
+        if (selected.Overlaps(new[] { "discount.maxPercentCashier", "discount.maxPercentManager" }))
+            selected.UnionWith(new[] { "discount.maxPercentCashier", "discount.maxPercentManager" });
+        if (selected.Overlaps(new[] { "supplier.returnCutoffDays", "supplier.returnAlertDays" }))
+            selected.UnionWith(new[] { "supplier.returnCutoffDays", "supplier.returnAlertDays" });
+        return selected;
+    }
+
+    internal void RequireWorkbookEdit(SqliteConnection connection, SettingsEditForm? expected, IEnumerable<string> keys)
+    {
+        if (expected is null) throw new ValidationException("Preview the workbook again before applying Settings.");
+        RequireEdit(connection, expected, WorkbookEditKeys(keys));
+    }
+
     // Preflight before icon file I/O;the final Set repeats auth+CAS under its own write transaction.
     // This operation writes no shop data,so even a failed preflight COMMIT cannot save an icon.
     internal ServiceResult CheckIconEdit(User? actor, SettingsEditForm? expected)
@@ -701,7 +717,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
     /// transaction. It is internal so an arbitrary UI cannot bypass the normal permission path.
     /// </summary>
     internal ServiceResult<IReadOnlyDictionary<string, string>> PrepareBulk(
-        IReadOnlyDictionary<string, object?> values)
+        IReadOnlyDictionary<string, object?> values, SqliteConnection? connection = null)
     {
         var prepared = new Dictionary<string, string>(StringComparer.Ordinal);
 
@@ -716,7 +732,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
                 return ServiceResult<IReadOnlyDictionary<string, string>>.Fail("Choose profit or retail for the bill discount basis.");
             if (pair.Key == "discount.blockBelowCost" && pair.Value is not true)
                 return ServiceResult<IReadOnlyDictionary<string, string>>.Fail("Purchase-cost protection cannot be disabled.");
-            var refusal = Guard(pair.Key, pair.Value, values);
+            var refusal = Guard(pair.Key, pair.Value, values, connection);
             if (refusal is not null)
             {
                 return ServiceResult<IReadOnlyDictionary<string, string>>.Fail(refusal);
@@ -801,7 +817,7 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
     /// The few keys where a wrong number breaks the shop. The screen is not the only doorway into
     /// this service, so the rule lives here (D-26: a printed receipt cannot be un-printed).
     /// </summary>
-    private string? Guard(string key, object? value, IReadOnlyDictionary<string, object?> incoming)
+    private string? Guard(string key, object? value, IReadOnlyDictionary<string, object?> incoming, SqliteConnection? connection = null)
     {
         double Other(string otherKey, double fallback)
         {
@@ -810,7 +826,9 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
                 return providedNumber;
             }
 
-            return GetDouble(otherKey, fallback);
+            if (connection is null) return GetDouble(otherKey, fallback);
+            var raw = _db.QuerySingle<string>(connection, "SELECT value FROM settings WHERE key=@key;", new { key = otherKey });
+            return double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var current) ? current : fallback;
         }
 
         if (key.StartsWith("labels.", StringComparison.Ordinal))

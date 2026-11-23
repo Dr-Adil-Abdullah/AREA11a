@@ -72,6 +72,10 @@ public sealed class BulkUpdateRow
 
 public sealed class BulkUpdatePreview
 {
+    internal Area11.Core.Data.Database? SourceDatabase { get; set; }
+    internal SettingsEditForm? SettingsEdit { get; set; }
+    internal bool ApplyBlocked { get; set; }
+
     public List<BulkUpdateRow> Rows { get; init; } = new();
 
     public bool IncludeSettings { get; set; }

@@ -103,17 +103,19 @@ public sealed class WorkbookService
 
         try
         {
-            using var connection = _db.Open();
-            BulkDataAccess.Require(_db, connection, _permissions, _settings, user, mixed: true);
-            var workbook = new XlsxWorkbook();
-            foreach (var schema in Schemas)
+            return _db.Snapshot(connection =>
             {
-                workbook.Sheets.Add(ExportSheet(schema, ReadRows(connection, schema)));
-            }
+                BulkDataAccess.Require(_db, connection, _permissions, _settings, user, mixed: true);
+                var workbook = new XlsxWorkbook();
+                foreach (var schema in Schemas)
+                {
+                    workbook.Sheets.Add(ExportSheet(schema, ReadRows(connection, schema)));
+                }
 
-            workbook.Sheets.Add(ExportSettings(ReadSettings(connection)));
-            workbook.Sheets.Add(InstructionsSheet(isTemplate: false));
-            return ServiceResult<byte[]>.Success(XlsxFile.Write(workbook));
+                workbook.Sheets.Add(ExportSettings(ReadSettings(connection)));
+                workbook.Sheets.Add(InstructionsSheet(isTemplate: false));
+                return ServiceResult<byte[]>.Success(XlsxFile.Write(workbook));
+            });
         }
         catch (Exception exception)
         {
@@ -135,47 +137,55 @@ public sealed class WorkbookService
             return ServiceResult<BulkUpdatePreview>.Fail("Settings changes need Settings permission as well as the separate tick.");
         }
 
-        var preview = new BulkUpdatePreview { IncludeSettings = includeSettings };
+        var preview = new BulkUpdatePreview { IncludeSettings = includeSettings, SourceDatabase = _db };
         try
         {
             var workbook = XlsxFile.Read(bytes);
-            using var connection = _db.Open();
-            BulkDataAccess.Require(_db, connection, _permissions, _settings, user, mixed: true);
-            var recognised = false;
-
-            foreach (var sheet in workbook.Sheets)
+            return _db.Snapshot(connection =>
             {
-                if (string.Equals(sheet.Name, "Instructions", StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
+                BulkDataAccess.Require(_db, connection, _permissions, _settings, user, mixed: true);
+                var recognised = false;
 
-                if (string.Equals(sheet.Name, "Settings", StringComparison.OrdinalIgnoreCase))
+                foreach (var sheet in workbook.Sheets)
                 {
+                    if (string.Equals(sheet.Name, "Instructions", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    if (string.Equals(sheet.Name, "Settings", StringComparison.OrdinalIgnoreCase))
+                    {
+                        recognised = true;
+                        PreviewSettings(connection, sheet, preview);
+                        continue;
+                    }
+
+                    var schema = Schemas.FirstOrDefault(candidate =>
+                        string.Equals(candidate.Name, sheet.Name, StringComparison.OrdinalIgnoreCase));
+                    if (schema is null)
+                    {
+                        preview.Rows.Add(ErrorRow(sheet.Name, 1, "headings", "This worksheet is not part of the Area11 all-data workbook."));
+                        continue;
+                    }
+
                     recognised = true;
-                    PreviewSettings(connection, sheet, preview);
-                    continue;
+                    PreviewSheet(connection, schema, sheet, preview);
                 }
 
-                var schema = Schemas.FirstOrDefault(candidate =>
-                    string.Equals(candidate.Name, sheet.Name, StringComparison.OrdinalIgnoreCase));
-                if (schema is null)
+                if (!recognised)
                 {
-                    preview.Rows.Add(ErrorRow(sheet.Name, 1, "headings", "This worksheet is not part of the Area11 all-data workbook."));
-                    continue;
+                    return ServiceResult<BulkUpdatePreview>.Fail("Choose the workbook made by Download your data.");
                 }
 
-                recognised = true;
-                PreviewSheet(connection, schema, sheet, preview);
-            }
-
-            if (!recognised)
-            {
-                return ServiceResult<BulkUpdatePreview>.Fail("Choose the workbook made by Download your data.");
-            }
-
-            ValidateAcrossRows(connection, preview);
-            return ServiceResult<BulkUpdatePreview>.Success(preview);
+                ValidateAcrossRows(connection, preview);
+                if (preview.SettingValues.Count > 0)
+                {
+                    var loaded = _settings.LoadEditForm(user, SettingsService.WorkbookEditKeys(preview.SettingValues.Keys));
+                    if (!loaded.Ok || loaded.Value is null) throw new ValidationException(loaded.Error ?? "Settings preview could not be loaded.");
+                    preview.SettingsEdit = loaded.Value;
+                }
+                return ServiceResult<BulkUpdatePreview>.Success(preview);
+            });
         }
         catch (Exception exception) when (exception is InvalidDataException or IOException or ArgumentException)
         {
@@ -191,14 +201,22 @@ public sealed class WorkbookService
     /// <summary>Applies exactly the approved plan, or rolls everything back including its audit rows.</summary>
     public ServiceResult<BulkUpdateOutcome> ApplyBulk(User? user, BulkUpdatePreview preview)
     {
+        lock (preview) return ApplyBulkOnce(user, preview);
+    }
+
+    private ServiceResult<BulkUpdateOutcome> ApplyBulkOnce(User? user, BulkUpdatePreview preview)
+    {
+        if (preview.ApplyBlocked)
+            return ServiceResult<BulkUpdateOutcome>.Fail("This preview was applied or its outcome is unconfirmed. Verify the current data before using a fresh preview.");
+
         if (!CanImport(user))
         {
-            return ServiceResult<BulkUpdateOutcome>.Fail("The owner or an explicitly authorized bulk-data user may apply a bulk update.");
+            return RefuseApply("The owner or an explicitly authorized bulk-data user may apply a bulk update.");
         }
 
         if (!preview.CanApply)
         {
-            return ServiceResult<BulkUpdateOutcome>.Fail(preview.ErrorCount > 0
+            return RefuseApply(preview.ErrorCount > 0
                 ? "The workbook still has errors. Nothing was changed."
                 : "There are no changes to apply.");
         }
@@ -206,28 +224,26 @@ public sealed class WorkbookService
         var hasSettings = preview.Pending.Any(record => record.Table == "settings");
         if (hasSettings && (!preview.IncludeSettings || !_settings.CheckAccess(user).Ok))
         {
-            return ServiceResult<BulkUpdateOutcome>.Fail("Settings need their own tick and Settings permission.");
+            return RefuseApply("Settings need their own tick and Settings permission.");
         }
 
+        var observation = new TransactionOutcome();
+        var committed = false;
+        BulkUpdateOutcome? applied = null;
         try
         {
-            IReadOnlyDictionary<string, string> preparedSettings = new Dictionary<string, string>();
-            if (preview.SettingValues.Count > 0)
-            {
-                _settings.Reload();
-                var preparation = _settings.PrepareBulk(preview.SettingValues);
-                if (!preparation.Ok || preparation.Value is null)
-                {
-                    return ServiceResult<BulkUpdateOutcome>.Fail(preparation.Error ?? "The settings are invalid.");
-                }
-
-                preparedSettings = preparation.Value;
-            }
-
-            var outcome = _db.Tx(connection =>
+            if (hasSettings && !ReferenceEquals(preview.SourceDatabase, _db))
+                throw new ValidationException("This Settings preview belongs to another database context. Preview again.");
+            preview.ApplyBlocked = true;
+            applied = _db.Tx(connection =>
             {
                 BulkDataAccess.Require(_db, connection, _permissions, _settings, user, mixed: true);
                 if (hasSettings) _settings.RequireBulkWriter(connection, user, preview.SettingValues.Keys);
+                if (hasSettings) _settings.RequireWorkbookEdit(connection, preview.SettingsEdit, preview.SettingValues.Keys);
+                var preparation = _settings.PrepareBulk(preview.SettingValues, connection);
+                if (!preparation.Ok || preparation.Value is null)
+                    throw new ValidationException(preparation.Error ?? "The settings are invalid.");
+                var preparedSettings = preparation.Value;
                 var result = new BulkUpdateOutcome();
 
                 // Validate EVERY record before the first UPDATE. A late stale row or a cross-record
@@ -304,27 +320,31 @@ public sealed class WorkbookService
                 }
 
                 return result;
-            });
+            }, observation);
+            committed = true;
 
             if (hasSettings)
             {
                 _settings.Reload();
             }
 
-            _log.Info($"Native workbook update: {outcome.ChangedRecords} record(s), {outcome.ChangedFields} field(s).");
-            return ServiceResult<BulkUpdateOutcome>.Success(outcome);
-        }
-        catch (ValidationException exception)
-        {
-            return ServiceResult<BulkUpdateOutcome>.Fail("The workbook was not applied; every change was rolled back. " + exception.Message);
+            _log.Info($"Native workbook update: {applied.ChangedRecords} record(s), {applied.ChangedFields} field(s).");
+            return ServiceResult<BulkUpdateOutcome>.Success(applied);
         }
         catch (Exception exception)
         {
-            _log.Error("The native workbook update was rolled back.", exception);
-            return ServiceResult<BulkUpdateOutcome>.Fail(
-                "The workbook was not applied; every change was rolled back.");
+            _log.Error("Native workbook apply/refresh did not finish.", exception);
+            if (committed && applied is not null)
+                return ServiceResult<BulkUpdateOutcome>.Success(applied, "SAVED. The workbook was applied but local refresh failed. Reopen and verify the current data.");
+            if (observation.NoCommitConfirmed) preview.ApplyBlocked = false;
+            return new ServiceResult<BulkUpdateOutcome> { Error = observation.NoCommitConfirmed
+                ? "The workbook was not applied; every change was rolled back. " + (exception is ValidationException ? exception.Message : "No commit was made.")
+                : "Workbook application is unconfirmed. Verify the current data before retrying.", NoCommitConfirmed = observation.NoCommitConfirmed };
         }
     }
+
+    private static ServiceResult<BulkUpdateOutcome> RefuseApply(string error) =>
+        new() { Error = error, NoCommitConfirmed = true };
 
     // ============================== Preview: data sheets ==============================
 
@@ -839,10 +859,9 @@ WHERE active = 1 AND product_id <> @id AND LOWER(TRIM(barcode)) = LOWER(@code);"
             return;
         }
 
-        _settings.Reload();
         var values = candidates.ToDictionary(candidate => candidate.Key,
             candidate => (object?)candidate.TypedValue, StringComparer.Ordinal);
-        var preparation = _settings.PrepareBulk(values);
+        var preparation = _settings.PrepareBulk(values, connection);
         if (!preparation.Ok || preparation.Value is null)
         {
             preview.Rows.Add(ErrorRow("Settings", 0, "settings", preparation.Error ?? "The settings are invalid."));
