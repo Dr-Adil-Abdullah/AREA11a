@@ -7253,7 +7253,7 @@ def check_phase_four_access_projections():
     if 'SettingsTabItems.Add(new SettingsTabItem(0, "App name & icon"))' not in shell:
         FAILURES.append('Phase4 portion2: identity section0 label/address missing')
     native = (core / 'NativeFieldPolicyService.cs').read_text()
-    if native.count('OwnerAccess.Require(_db, connection, user);') != 2:
+    if native.count('OwnerAccess.Require(_db, connection, user);') != 3:
         FAILURES.append('Phase4 native-field read AND write paths need current-owner validation')
     for token in ('OwnerAccess.Require(_db, connection, user);', 'by = overriding ? owner.Name.Trim() : null',
                   '_audit.Record(connection, owner, Modules.Settings, "native_field_required_changed"'):
@@ -8692,22 +8692,25 @@ def check_custom_value_current_boundaries():
         lifecycle = (DOTNET / f'Area11.Desktop/Views/{name}.xaml.cs').read_text()
         for token in ('TimeSpan.FromSeconds(3)', action, 'accessTimer.Start()', 'Unloaded += (_, _) => accessTimer.Stop();'):
             if token not in lifecycle: FAILURES.append(f'{name} loaded access timer missing {token}')
-    if native.count('!user.Active || user.Id <= 0') != 2:
+    if native.count('!user.Active || user.Id <= 0') != 3:
         FAILURES.append('Native policy supplied active-positive owner preflight required on read/write')
-    for token in ('Selected = null;', 'Fields.Clear();', 'if (!_lastLoadSucceeded) return;',
+    for token in ('_selected = null;', 'Fields.Clear();', 'if (_needsReload) return false;',
                   'SAVED. The preference was stored, but fields could not be reloaded.'):
         if token not in policy_vm: FAILURES.append(f'Native metadata stale/failure boundary missing {token}')
     for start, end in (('public void Refresh()', 'public bool RefreshAccess()'),
                        ('public bool RefreshAccess()', 'private void Change(bool required)')):
         body = policy_vm.split(start,1)[-1].split(end,1)[0]
-        for token in ('Selected = null;', 'Fields.Clear();', '_lastLoadSucceeded = false;'):
+        for token in ('ClearFields();',):
             if token not in body: FAILURES.append(f'Native metadata failed {start} must clear stale data: {token}')
+    clear = policy_vm.split('private void ClearFields()',1)[-1].split('public void Refresh()',1)[0]
+    for token in ('_selected = null;', 'Fields.Clear();', '_lastLoadSucceeded = false;'):
+        if token not in clear: FAILURES.append(f'Native shared invalidation missing: {token}')
     allowed_tick = policy_vm.split('public bool RefreshAccess()',1)[-1].split('private void Change(bool required)',1)[0]
     if 'if (result.Ok && result.Value is not null) return true;' not in allowed_tick:
         FAILURES.append('Native allowed timer check must not churn its grid/selection')
     change = policy_vm.split('private void Change(bool required)',1)[-1]
-    if not 0 <= change.find('Refresh();') < change.find('MessageBox.Show('):
-        FAILURES.append('Native change must reload current metadata before risk prompt')
+    if 'Refresh();' in change or not 0 <= change.find('PrepareRequiredEdit(_user, selected.Id, selected.EditVersion)') < change.find('MessageBox.Show('):
+        FAILURES.append('Native change must verify loaded baseline before risk prompt without refresh-rebasing')
     if tests.count('[Fact]') != 26 or native_tests.count('[Fact]') != 6:
         FAILURES.append('Portion25 requires26custom+6native isolated regression facts')
     for name in ('InternalQuickCustomerCreationDoesNotAddCustomersGrantRequirement',
@@ -9802,6 +9805,76 @@ def check_staff_create_outcomes():
     REPORT.append('P5.1 CreateStaff observed Tx/current PIN rule/exact created row;Desktop persistent local guard and ack-before-cleanup;26 new C# cases UNRUN,NOT durable identity/provider/WPF/whole Settings completion')
 
 
+
+def check_native_field_outcomes():
+    """Native field observed/loaded-state lexical contracts;not C#/WPF/provider evidence."""
+    contracts = {'Area11.Core/Services/NativeFieldPolicyService.cs': ['public ServiceResult<FormFieldDefinition> PrepareRequiredEdit(',
+                                                      'if (expected is null) throw new ValidationException(',
+                                                      'EditConcurrency.Require(_db, connection, EditConcurrency.NativeField, fieldId, '
+                                                      'expected);',
+                                                      'ServiceResult<FormFieldDefinition>.Success(CaptureEdit(connection, fieldId))',
+                                                      'public ServiceResult SetRequiredChecked(',
+                                                      'if (expected is null) return new ServiceResult',
+                                                      'return SetRequired(user, fieldId, required, confirmedRisk, expected);',
+                                                      'var outcome = new TransactionOutcome();',
+                                                      'var owner = OwnerAccess.Require(_db, connection, user);',
+                                                      'if (field.Required == required)', 'return SavedEdit(connection, fieldId);',
+                                                      'if (overriding && !confirmedRisk)', 'by = overriding ? owner.Name.Trim() : null',
+                                                      '_audit.Record(connection, owner, Modules.Settings, "native_field_required_changed",',
+                                                      '}, outcome);', 'Error = !outcome.NoCommitConfirmed',
+                                                      'NoCommitConfirmed = outcome.NoCommitConfirmed',
+                                                      'field.EditVersion = EditConcurrency.Capture(_db, connection, '
+                                                      'EditConcurrency.NativeField, fieldId);',
+                                                      'Ok = true, NativeFieldEdit = field, EditVersion = field.EditVersion'],
+ 'Area11.Desktop/ViewModels/NativeFieldsViewModel.cs': ['private bool _saving;',
+                                                        'private bool _needsReload;\n    private string? _reviewStatus;',
+                                                        'if (_saving || (value is not null && !Fields.Contains(value))) return;',
+                                                        'if (_needsReload) return false;', 'if (_saving) return;', '_selected = null;',
+                                                        '_lastLoadSucceeded = false;', 'Fields.Clear();',
+                                                        '_services.NativeFields.PrepareRequiredEdit(_user, selected.Id, '
+                                                        'selected.EditVersion)',
+                                                        'if (!prepared.Ok || prepared.Value is not { } field)',
+                                                        'if (!required && field.Required && field.Critical && field.SafeRequired)',
+                                                        'MessageBoxResult.No', 'if (answer != MessageBoxResult.Yes) return;',
+                                                        '_services.NativeFields.SetRequiredChecked(_user, field.Id, required, confirmed, '
+                                                        'field.EditVersion)',
+                                                        'if (!result.NoCommitConfirmed) RequireReview(result.Error ??',
+                                                        'acknowledged = true;', 'saved?.EditVersion is null', 'saved.Id != field.Id',
+                                                        '_selected = saved;', 'Fields[index] = saved;',
+                                                        'if (!ReferenceEquals(_selected, saved) || !Fields.Contains(saved) || '
+                                                        'saved.Required != required)',
+                                                        'RequireReview(acknowledged ?', 'finally { _saving = false; }'],
+ 'Area11.Core/Utils/ServiceResult.cs': ['[System.Text.Json.Serialization.JsonIgnore]\n'
+                                        '    public Area11.Core.Models.FormFieldDefinition? NativeFieldEdit { get; init; }'],
+ 'Area11.Desktop/Views/NativeFieldsView.xaml': ['Content="Refresh Fields" Command="{Binding RefreshCommand}"'],
+ 'Area11.Desktop/Views/NativeFieldsView.xaml.cs': ['Loaded += (_, _) => { (DataContext as NativeFieldsViewModel)?.RefreshAccess(); '
+                                                   'accessTimer.Start(); };']}
+    for name, tokens in contracts.items():
+        text = (DOTNET / name).read_text()
+        for token in tokens:
+            if token not in text: FAILURES.append('Native field: ' + name + ' missing ' + token)
+    core = (DOTNET / 'Area11.Core/Services/NativeFieldPolicyService.cs').read_text()
+    write = core.split('public ServiceResult SetRequired(',1)[1].split('private FormFieldDefinition CaptureEdit(',1)[0]
+    positions = [write.find(t) for t in ('OwnerAccess.Require(', 'EditConcurrency.Require(', 'if (field.Required == required)', 'if (overriding && !confirmedRisk)', 'UPDATE form_field_definitions', '_audit.Record(', '}, outcome);')]
+    if min(positions) < 0 or positions != sorted(positions): FAILURES.append('Native owner/CAS/no-op/risk/write/audit/outcome order')
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/NativeFieldsViewModel.cs').read_text()
+    change = vm.split('private void Change(bool required)',1)[1]
+    positions = [change.find(t) for t in ('_saving = true;', 'PrepareRequiredEdit(', 'MessageBox.Show(', 'SetRequiredChecked(', 'acknowledged = true;', 'Fields[index] = saved;', 'if (!ReferenceEquals(_selected, saved)')]
+    if min(positions) < 0 or positions != sorted(positions): FAILURES.append('Native prepare/modal/write/ack/callback/verdict order')
+    for token in ('Refresh();', '.List(', 'Fields.Clear()'):
+        if token in change: FAILURES.append('Native change must not fresh-rebase all loaded rows: ' + token)
+    clear = vm.split('private void ClearFields()',1)[1].split('public void Refresh()',1)[0]
+    if not 0 <= clear.find('_selected = null;') < clear.find('Fields.Clear();'): FAILURES.append('Native backing selection must invalidate before callback')
+    review = vm.split('private void RequireReview(string message)',1)[1].split('private void Change(',1)[0]
+    for token in ('_needsReload = true;', '_lastLoadSucceeded = false;', '_selected = null;', '_reviewStatus = _statusText = message;', 'catch (Exception exception)'):
+        if token not in review: FAILURES.append('Native persistent review boundary missing ' + token)
+    if not 0 <= review.find('_reviewStatus = _statusText = message;') < review.find('OnPropertyChanged('): FAILURES.append('Native review status must be consumed before callbacks')
+    if 'StatusText = _reviewStatus ??' not in change: FAILURES.append('Native blocked click must preserve the last observed outcome')
+    tests = (DOTNET / 'Area11.Tests/NativeFieldOutcomeTests.cs').read_text()
+    if tests.count('[Fact]') + tests.count('[InlineData(') != 21: FAILURES.append('Native field needs 21 additive C# cases')
+    REPORT.append('P5.1 native preference:checked loaded-baseline prepare before risk modal/recheck at write,observed exact row and UI invalidation;21 C# cases UNRUN;not WPF/provider/whole Settings proof')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -9924,6 +9997,7 @@ def main() -> int:
     check_staff_edit_boundaries()
     check_recovery_edit_boundaries()
     check_staff_create_outcomes()
+    check_native_field_outcomes()
     check_csharp_grammar()
 
     if not quiet:

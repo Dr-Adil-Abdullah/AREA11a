@@ -1,5 +1,10 @@
 # Area11 — Real-life Physical Testing Log
 
+## ⏳ PT-76 — Built-in fields کا پرانا baseline،risk اور Save (v0.134.0)
+
+[⏳ مکملsteps/باقی5.1](docs/NATIVE-FIELD-OUTCOME-REVIEW-URDU.md)؛verifiedencryptedbackupاورواقعیالگDB/photos/configپہلے؛اصلshopپرexperiments/faultsنہیں۔3347/0fail/0skipاورDesktopRelease؛stale metadata/preprompt/postmodalCAS،criticalNo-default،currentOwner/session،no-op،exacttarget/no-other-rebase،doubleclick/timer/selection،UPDATE/audit/COMMITاورcallbackfaultsجانچیں۔ Unknown/SAVED-callbackfailureپرautomaticregrant/timerنہکھولے؛ExplicitRefreshFieldsصرفموجودہstate دکھائے،خودreplayنہیں۔ ⏳21نئےC#casesUNRUN؛125static/45lexical/30Pythonplansاصل.NET/provider/WPFproofنہیں۔ Remainingcustom/imperativewriters/registryباقی؛6/installerشروعنہیں۔
+
+
 ## ⏳ PT-75 — نیا Staff account،outcome اور دوبارہ Add (v0.133.0)
 
 [⏳ مکملsteps/باقی5.1](docs/STAFF-CREATE-OUTCOME-REVIEW-URDU.md)؛verifiedencryptedbackup **اورواقعیالگDB/photos/config** پہلے؛اصلshopپرexperimentalaccounts/posts/faultsنہیں۔3326/0fail/0skipاورDesktopRelease؛roles/currentOwner/currentPIN/duplicate،INSERT/audit/COMMITfaults،exactID/row/nohash/proof،ackقبلinput/collection/status،unknown/SAVED-refreshfailureپرRefresh/regrant/inputchangeسےguardنہکھلے،normalcleanupکےبعدالگlegitimateAddجانچیں۔ صرفنیاrowآخرمیں،پرانےStaff/permission/recoveryformsfreshrebaseنہہوں۔ ⏳26نئےcasesUNRUN؛124static/29lexical/34Pythonplansاصل.NET/guard/provider/WPFproofنہیں۔ Remainingwriters/registryباقی؛6/installerشروعنہیں۔

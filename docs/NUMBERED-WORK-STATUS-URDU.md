@@ -1,22 +1,22 @@
 # نمبر وار کام اور باقی جانچ — مستقل1تا36فہرست
 
-**⏳ موجودہ source: v0.133.0 Scabious؛5.1CreateStaffcheckpoint،ابھیجاری۔** [⏳ منصوبہ](REMAINING-14-PORTIONS-URDU.md)؛[⏳ CreateStaff/PT-75/باقی5.1](STAFF-CREATE-OUTCOME-REVIEW-URDU.md)۔ مستقل1–36نمبرنہیںبدلے۔
+**⏳ موجودہ source: v0.134.0 Eglantine؛5.1Nativefieldcheckpoint،ابھیجاری۔** [⏳ منصوبہ](REMAINING-14-PORTIONS-URDU.md)؛[⏳ Nativefield/PT-76/باقی5.1](NATIVE-FIELD-OUTCOME-REVIEW-URDU.md)۔ مستقل1–36نمبرنہیںبدلے۔
 
-✅ حصہ1کیCore/Testscompileتصدیقملی؛اصلv0.120.1کے2963میں2941PASS/22FAIL۔ ⏳حصوں2/3/4/5کانیاruntimeباقی؛**3326suiteUNRUN**۔ حصہ5کےremainingwriters/registry/StockTakeکاسورسجائزہبھیباقی؛❌حصہ6شروعنہیں/installerنہیںبنا۔
+✅ حصہ1کیCore/Testscompileتصدیقملی؛اصلv0.120.1کے2963میں2941PASS/22FAIL۔ ⏳حصوں2/3/4/5کانیاruntimeباقی؛**3347suiteUNRUN**۔ حصہ5کےremainingwriters/registry/StockTakeکاسورسجائزہبھیباقی؛❌حصہ6شروعنہیں/installerنہیںبنا۔
 
 | مستقل نمبر / دائرہ | کیا ہوگیا؟ | کیا باقی ہے؟ |
 |---|---|---|
-|1۔ ⏳ ورژن/GitHub | v0.133.0Scabious/source/docs/icon/scriptsaligned | samebranchcommit/push/actualremoteverificationآخریرپورٹمیں |
-|2۔ ⏳ C#tests | 3326متوقعcases؛اسcheckpointمیں26نئےCreateStaffcases | اصلv0.120.1run2963/2941PASS/22FAIL؛v0.133.0کی3326suiteیہاںUNRUN |
-|3۔ ⏳ Source/syntheticchecks | 124staticcontracts؛29نئےCreateStaffnegatives/31negative-scriptPASS؛34PythonWAL/DELETEplans؛حتمینتائجtraceمیں | یہC#/WPF/provider/securitycertificationنہیں |
-|4۔ ⏳ پرانےWindowsfailures | v0.120.1کے2941PASS/22FAILکیوجوہ/sourcefixtureاصلاح؛v0.80تاریخی | v0.133.0پراصلretestاورremainingfailuresکیfix؛پرانانتیجہنیاPASSنہیں |
+|1۔ ⏳ ورژن/GitHub | v0.134.0Eglantine/source/docs/icon/scriptsaligned | samebranchcommit/push/actualremoteverificationآخریرپورٹمیں |
+|2۔ ⏳ C#tests | 3347متوقعcases؛اسcheckpointمیں21نئےNativefieldcases | اصلv0.120.1run2963/2941PASS/22FAIL؛v0.134.0کی3347suiteیہاںUNRUN |
+|3۔ ⏳ Source/syntheticchecks | 125staticcontracts؛45نئےNativefieldnegatives/32negative-scriptPASS؛30PythonWAL/DELETEplans؛حتمینتائجtraceمیں | یہC#/WPF/provider/securitycertificationنہیں |
+|4۔ ⏳ پرانےWindowsfailures | v0.120.1کے2941PASS/22FAILکیوجوہ/sourcefixtureاصلاح؛v0.80تاریخی | v0.134.0پراصلretestاورremainingfailuresکیfix؛پرانانتیجہنیاPASSنہیں |
 |5۔ ⏳ Account/role/session | حصہ4/D-116Database-boundproof،credentialstamp/close-only/Carry،Desktopnext-actionguards | 22نئےcasesUNRUN؛Windowsinput/modalteardown،legacyhostenable/remainingcallers،atomicCASباقی |
 |6۔ ⏳ Parentrecordcreate/edit/read | حصہ5پہلاcheckpoint:Product/Customer+extraanswersایکسnapshot،writeTxمیںexpected-statecompare | Settings/StockTake/remainingwriters/toggles/bulk/sourceجائزہاورactualWindowsباقی |
 |7۔ ⏳ Revocation/staleoutputs | Counterfull-viewdeny؛lookups/extraanswers/lastreceipt/totalsصاف،cart+draftguardsبرقرار،freshrestore | اصلWPF/reloadfailure/modal/input/permissioncombinations؛instantrecall/CASنہیں |
 |8۔ ⏳ Customdefinitionmanager | selectedUIcompareکےساتھعینwriteTxمیںdefinition/entity-orderbaseline؛Nativepostmodalbaseline | اصلC#/WPF/remainingnativeupdates؛حصہ5ابھیجاری |
 |9۔ ⏳ Customanswersservice | coherentfields/valuesbaseline؛standaloneSaveاورProduct/CustomerparentSaveپرstaleanswerrefusal | باقیcallers/newforms/transactions/realprovider/runtime؛durableidentityنہیں |
 |10۔ ⏳ Customanswereditor | مجازserviceکاپreparedsnapshot،parentکےساتھالگreadmixنہیں؛denialcleanupبرقرار | اصلbindings/focus/regrant/conflict/reopen؛remainingformsباقی |
-|11۔ ⏳ Nativefields | currentOwner/suppliedactivepreflight،failedselectioncleanup،freshriskprompt،stableaccesschecks | اصلWindows/timer/confirmationاورformactionreconciliation |
+|11۔ ⏳ Nativefields | loadedbaselineprepareقبلrisk،postmodalCAS،observedoutcome/exactrow،reentry/auto-timerinvalidation | 21نئےcasesUNRUN؛PT-76Windows/provider/callback/explicitreviewباقی |
 |12۔ ⏳ Photos/gallery | exclusiveGUID/boundedownedcopy؛partialtracking؛unknownretain،galleryAddlocalguard؛currentaccessبرقرار | اصلC#/WPF/codec/camera؛providerCOMMIT/diskfull/ACL/powerloss؛othergalleryactions |
 |13۔ ⏳ Cost/Profit/main | الگgrants/main/masks؛حصہ27stored-costpatchfreshDBmain+Cost؛authorednewcost/non-costCorepatchبرقرار | باقیroute/output/Windowscombinations؛free-textclassificationنہیں،preflightCASنہیں |
 |14۔ ⏳ Pricing/discount/Extra | approvedbelow-actual-costfloor،sale-onlyExtra،limits/returnBکےsource/tests | تازہruntimeاورcross-page/retryreconciliation؛settledrulesدوبارہنہیںکھولنے |
@@ -72,3 +72,5 @@
 ⏳ تازہ5.1Recoverywordcheckpoint؛[PT-74/باقی5.1](RECOVERY-EDIT-CONCURRENCY-REVIEW-URDU.md)۔ Loadedchange/factoryresetکاسورسشامل؛پچھلےrecoveryباقیکےحوالےاپنےوقتکےتاریخی،اصلWindows/provider/cache/WPF،CreateStaff/remainingwriters/registryاببھیباقی۔
 
 ⏳ تازہ5.1CreateStaffcheckpoint؛[PT-75/باقی5.1](STAFF-CREATE-OUTCOME-REVIEW-URDU.md)۔ Observedcreation/exactrow/localguardsourceشامل؛پرانےCreateStaffباقیکےحوالےاپنےوقتکےہیں،اصلWindows/provider/WPF،remainingwriters/registryاببھیباقی؛durableidentityنہیں۔
+
+⏳ تازہ5.1Nativefieldcheckpoint؛[PT-76/باقی5.1](NATIVE-FIELD-OUTCOME-REVIEW-URDU.md)۔ باقیcustom/imperativewriters/registry/Windowsابھیباقی؛پرانےcheckpointنتائجتاریخی،6/installerشروعنہیں۔

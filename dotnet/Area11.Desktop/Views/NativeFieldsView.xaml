@@ -24,6 +24,7 @@
                             <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0">
                                 <Button Content="Mark required" Command="{Binding RequireCommand}" IsEnabled="{Binding IsOwner}" />
                                 <Button Content="Mark optional…" Command="{Binding OptionalCommand}" IsEnabled="{Binding IsOwner}" Margin="8,0,0,0" />
+                                <Button Content="Refresh Fields" Command="{Binding RefreshCommand}" Margin="8,0,0,0" />
                             </StackPanel>
                             <TextBlock Grid.Row="3" Text="{Binding StatusText}" TextWrapping="Wrap" Margin="0,8,0,0" />
                         </Grid>

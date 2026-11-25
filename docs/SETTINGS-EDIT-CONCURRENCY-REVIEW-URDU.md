@@ -80,3 +80,7 @@ v0.132.0 میں الگ Recoveryword loadedform/checkedchange-reset/outcome sourc
 ## ⏳ بعد کا اسی5.1 کا CreateStaff checkpoint
 
 v0.133.0 میں CreateStaff کا observed outcome/currentPIN/exactrow اور localguard source شامل؛[PT-75/موجودہحدود](STAFF-CREATE-OUTCOME-REVIEW-URDU.md)۔ اوپرکےنتائجاپنےcheckpointکےتاریخی؛remainingwriters/registryاوراصلWindows/provider/WPFابھیباقی،5.1مکملنہیں۔
+
+## ⏳ بعد کا اسی5.1 کا Nativefield checkpoint
+
+v0.134.0 میں native Required/Optional کا loaded-baseline/observedoutcome/exactrow source شامل؛[PT-76/موجودہحدود](NATIVE-FIELD-OUTCOME-REVIEW-URDU.md)۔ اوپر کے نتائج تاریخی؛remainingcustom/imperativewriters/registryاوراصلWindows/provider/WPFابھیباقی،5.1مکملنہیں۔

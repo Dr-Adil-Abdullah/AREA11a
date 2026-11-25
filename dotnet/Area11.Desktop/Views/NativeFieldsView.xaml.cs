@@ -11,7 +11,7 @@ public partial class NativeFieldsView : UserControl
         InitializeComponent();
         var accessTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
         accessTimer.Tick += (_, _) => (DataContext as NativeFieldsViewModel)?.RefreshAccess();
-        Loaded += (_, _) => { (DataContext as NativeFieldsViewModel)?.Refresh(); accessTimer.Start(); };
+        Loaded += (_, _) => { (DataContext as NativeFieldsViewModel)?.RefreshAccess(); accessTimer.Start(); };
         Unloaded += (_, _) => accessTimer.Stop();
     }
 }

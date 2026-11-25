@@ -1,5 +1,10 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## ⏳ v0.134.0 — اسی5.1میںNativefieldwriter؛نئیpolicyنہیں
+
+تازہnextپرRequired/Optionalکاloadedbaseline،riskسےپہلےprepare،postmodalrecheck،observedoutcome/exactrowاورDesktopinvalidation؛Owner/criticalrisk/finalpostingکےاصولنہیںبدلے۔ ExplicitRefreshFieldsصرفنئیحالتکاجائزہ،نہsave replayنہdurableidentity۔ [⏳ PT-76/حدود](NATIVE-FIELD-OUTCOME-REVIEW-URDU.md)؛3347suite/WindowsUNRUN؛remainingcustom/imperativewriters/registryباقی؛1تا5کیباقیتصدیقسےپہلے6/installerنہیں۔
+
+
 ## ⏳ v0.133.0 — اسی5.1میںCreateStaffoutcome؛نئیaccountpolicyنہیں
 
 تازہnextپرCreateStaffobservedTx/currentPINlength/exactcreatedrowاورexistingPostingAttemptGuardسےDesktoplocalhandoffکیا؛Owner/name/role/duplicate/PINbusinessrulesاورپراناAPIبرقرار۔ AppcacheکیبجائےاسیwriteTxمیںموجودہPINlength؛ہمیشہ4digitsوالاUIlabelدرست۔ [⏳ PT-75/حدود](STAFF-CREATE-OUTCOME-REVIEW-URDU.md)؛3326suite/WindowsUNRUN؛remainingwriters/registryباقی۔ Unknown/ack-refreshfailurelocalguardنہdurableidentityنہحصہ6؛1تا5باقیکام+تصدیقسےپہلے6نہیں،installerنہیں۔

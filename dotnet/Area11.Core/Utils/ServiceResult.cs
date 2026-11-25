@@ -21,6 +21,9 @@ public class ServiceResult
     [System.Text.Json.Serialization.JsonIgnore]
     public Area11.Core.Models.RecoveryEditForm? RecoveryEdit { get; init; }
 
+    [System.Text.Json.Serialization.JsonIgnore]
+    public Area11.Core.Models.FormFieldDefinition? NativeFieldEdit { get; init; }
+
     public bool Ok { get; init; }
 
     public string? Error { get; init; }

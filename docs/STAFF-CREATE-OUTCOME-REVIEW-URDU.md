@@ -49,3 +49,7 @@
 ## ⏳ باقی 5.1
 
 Remaining native/custom/imperative Settings writers کی inventory،startup registry+SQLite race/partial restore اور PT-67–75 کی اصل Windows/provider/UI/file/physical gates؛پھر اسی حصہ5 میں StockTake/toggle/bulk/snapshot کے باقی راستے۔ **CreateStaff outcome source شامل ہے،پورا5.1 مکمل نہیں۔ 1تا5 کے باقی کام+ضروری تصدیق سے پہلے6 نہیں؛❌installer نہیں بنایا۔**
+
+## ⏳ بعد کا اسی5.1 کا Nativefield checkpoint
+
+v0.134.0 میں native Required/Optional کا loaded-baseline/observedoutcome/exactrow source شامل؛[PT-76/موجودہحدود](NATIVE-FIELD-OUTCOME-REVIEW-URDU.md)۔ اوپر کے نتائج تاریخی؛remainingcustom/imperativewriters/registryاوراصلWindows/provider/WPFابھیباقی،5.1مکملنہیں۔

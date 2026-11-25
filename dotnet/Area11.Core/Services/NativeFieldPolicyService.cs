@@ -111,6 +111,37 @@ ON CONFLICT(field_key) DO NOTHING;", new
         }
     }
 
+    /// <summary>Before showing a risk prompt,verify the LOADED baseline under the write lock.
+    /// No definition/audit writes. A later SetRequiredChecked must compare again after the modal.</summary>
+    public ServiceResult<FormFieldDefinition> PrepareRequiredEdit(User? user, int fieldId, EditVersion? expected)
+    {
+        if (user is null || !user.IsOwner || !user.Active || user.Id <= 0 || string.IsNullOrWhiteSpace(user.Name))
+            return ServiceResult<FormFieldDefinition>.Fail("Only a named owner can change built-in field requirements.");
+        try
+        {
+            return _db.Tx(connection =>
+            {
+                OwnerAccess.Require(_db, connection, user);
+                if (expected is null) throw new ValidationException("The built-in field editor changed or was not loaded. Refresh and review.");
+                EditConcurrency.Require(_db, connection, EditConcurrency.NativeField, fieldId, expected);
+                return ServiceResult<FormFieldDefinition>.Success(CaptureEdit(connection, fieldId));
+            });
+        }
+        catch (ValidationException exception) { return ServiceResult<FormFieldDefinition>.Fail(exception.Message); }
+        catch (Exception exception)
+        {
+            _log.Error("Built-in field change could not be prepared.", exception);
+            return ServiceResult<FormFieldDefinition>.Fail("The built-in field change could not be prepared. Refresh and review.");
+        }
+    }
+
+    /// <summary>Explicit Desktop door: null is rejected even in a sessions-disabled host.</summary>
+    public ServiceResult SetRequiredChecked(User? user, int fieldId, bool required, bool confirmedRisk, EditVersion? expected)
+    {
+        if (expected is null) return new ServiceResult { Error = "The built-in field editor changed or was not loaded. Refresh and review.", NoCommitConfirmed = true };
+        return SetRequired(user, fieldId, required, confirmedRisk, expected);
+    }
+
     /// <summary>
     /// Explicit confirmation applies to this particular requested change. Actor identity comes from
     /// the signed-in owner, not from a name typed into a dialog; the audit and change are atomic.
@@ -119,9 +150,10 @@ ON CONFLICT(field_key) DO NOTHING;", new
     {
         if (user is null || !user.IsOwner || !user.Active || user.Id <= 0 || string.IsNullOrWhiteSpace(user.Name))
         {
-            return ServiceResult.Fail("Only a named owner can change built-in field requirements.");
+            return new ServiceResult { Error = "Only a named owner can change built-in field requirements.", NoCommitConfirmed = true };
         }
 
+        var outcome = new TransactionOutcome();
         try
         {
             return _db.Tx(connection =>
@@ -132,18 +164,18 @@ ON CONFLICT(field_key) DO NOTHING;", new
                     "SELECT * FROM form_field_definitions WHERE id = @id;", new { id = fieldId });
                 if (field is null)
                 {
-                    return ServiceResult.Fail("That built-in field no longer exists.");
+                    throw new ValidationException("That built-in field no longer exists.");
                 }
 
                 if (field.Required == required)
                 {
-                    return ServiceResult.Success();
+                    return SavedEdit(connection, fieldId);
                 }
 
                 var overriding = field.Critical && field.SafeRequired && !required;
                 if (overriding && !confirmedRisk)
                 {
-                    return ServiceResult.Fail("This critical field needs explicit owner risk confirmation before it can be optional.");
+                    throw new ValidationException("This critical field needs explicit owner risk confirmation before it can be optional.");
                 }
 
                 var at = Clock.Now();
@@ -164,13 +196,33 @@ WHERE id = @id;", new
                     oldValue: field.Required ? "required" : "optional",
                     newValue: required ? "required" : "optional",
                     details: field.FieldKey + (overriding ? "; critical risk acknowledged" : string.Empty));
-                return ServiceResult.Success();
-            });
+                return SavedEdit(connection, fieldId);
+            }, outcome);
         }
         catch (Exception exception)
         {
-            _log.Error("Built-in field requirement could not be changed.", exception);
-            return ServiceResult.Fail("Built-in field requirement could not be changed.");
+            if (exception is not ValidationException) _log.Error("Built-in field requirement could not be changed.", exception);
+            return new ServiceResult
+            {
+                Error = !outcome.NoCommitConfirmed ? "Built-in field saving is unconfirmed. Refresh and verify before retrying."
+                    : exception is ValidationException ? exception.Message : "The built-in field preference was not saved; no commit was made.",
+                NoCommitConfirmed = outcome.NoCommitConfirmed
+            };
         }
+    }
+
+    private FormFieldDefinition CaptureEdit(Microsoft.Data.Sqlite.SqliteConnection connection, int fieldId)
+    {
+        var field = _db.QuerySingle<FormFieldDefinition>(connection,
+            "SELECT * FROM form_field_definitions WHERE id = @id;", new { id = fieldId })
+            ?? throw new ValidationException("That built-in field no longer exists.");
+        field.EditVersion = EditConcurrency.Capture(_db, connection, EditConcurrency.NativeField, fieldId);
+        return field;
+    }
+
+    private ServiceResult SavedEdit(Microsoft.Data.Sqlite.SqliteConnection connection, int fieldId)
+    {
+        var field = CaptureEdit(connection, fieldId);
+        return new ServiceResult { Ok = true, NativeFieldEdit = field, EditVersion = field.EditVersion };
     }
 }
