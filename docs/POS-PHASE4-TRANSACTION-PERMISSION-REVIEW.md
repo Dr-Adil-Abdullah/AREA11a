@@ -1,5 +1,7 @@
 # Phase4 portion22 — transaction-owned commands and permission reads
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **v0.100.0 Sanderling · release label 2026-11-10 · SOURCE checkpoint; Windows OPEN.**
 Baseline: `580bb52e247c01ae764131ae2b45623e1f228cd8` (portion21). [PT-42 isolated Windows steps](POS-PHASE4-PART22-URDU.md).
 

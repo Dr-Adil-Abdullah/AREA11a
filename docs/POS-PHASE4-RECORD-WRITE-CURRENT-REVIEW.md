@@ -1,5 +1,7 @@
 # Phase4 portion27 — stable5/6/7: current customer/product writers and stale editors
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **v0.105.0 Harbor · `#466B65` · 2026-11-10 · source checkpoint; Windows OPEN.**
 Baseline `596222adce9161bd6326004438c488f993949f1a` (portion26).
 [PT-47 Urdu](POS-PHASE4-PART27-URDU.md) · [Stable1–36 status](NUMBERED-WORK-STATUS-URDU.md).

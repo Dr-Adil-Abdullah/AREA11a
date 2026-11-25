@@ -1,5 +1,7 @@
 # ⏳ 5.1 — Settings: مرکزی فارم کی پرانی حالت سے Save کی روک — v0.125.0 Celandine
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 > ⏳ تازہv0.130.0میںاسی5.1کےStaffpermissioncheckbox/Resetکیboundedاصلاح: [PT-72/باقی5.1](PERMISSION-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3248suiteUNRUN۔ نیچےپچھلےcheckpointکاثبوتتاریخی؛remainingStaffpermissionsکےحوالےنئےجائزےکیحدتکبدلے،credentials/toggle/imperativeAPIsاببھیالگباقی۔5.1جاری،1تا5مکمل+تصدیقسےپہلے6نہیں۔
 
 

@@ -1,5 +1,7 @@
 # Phase4 portion30 — Purchase / Supplier Return stock-posting integrity review
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 Version **0.108.0 Headland**; stable16/18/19/23/24/25, PT-50. [Urdu steps](POS-PHASE4-PART30-URDU.md), [stable1–36](NUMBERED-WORK-STATUS-URDU.md).
 
 ## 1. Bounded source change and preservation contract

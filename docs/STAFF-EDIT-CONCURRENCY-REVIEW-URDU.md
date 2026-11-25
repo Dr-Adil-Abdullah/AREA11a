@@ -1,5 +1,7 @@
 # ⏳ 5.1 — Staff آن/آف اور password/PIN reset — v0.131.0 Celandine
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 تاریخ: **2026-11-10**۔ تازہ اجازت اسی 5.1 کے account toggle اور credential reset کے لیے؛حصہ6،نئی مالی پالیسی،recovery-word reset یا installer کے لیے نہیں۔ **حصوں1 تا5 کے باقی کام اور ضروری تصدیق سے پہلے6 نہیں۔**
 
 ## ⏳ مسئلہ اور source اصلاح

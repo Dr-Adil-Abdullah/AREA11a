@@ -1,5 +1,7 @@
 # ⏳ 5.1 جاری — Backup schedule اور Pricing limits — v0.126.0 Avens
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 > ⏳ تازہv0.128.0میںاسی5.1کےAppicon/fileکیsourceاصلاح: [PT-70/باقی5.1](ICON-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3211suiteUNRUN۔ نیچےپچھلےcheckpointکاثبوتتاریخی؛iconباقیکےحوالےنئےجائزےکیحدتکبدلے۔ File+DBatomicity/Windowsاببھیسندنہیں؛5.1جاری،1تا5مکمل+تصدیقسےپہلے6نہیں۔
 
 

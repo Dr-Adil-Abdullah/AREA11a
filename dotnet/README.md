@@ -1,5 +1,7 @@
 # `dotnet/` — the real Area11 desktop application
 
+> **⏳ D-117 — موجودہ مکمل حالت پہلے یہاں پڑھیں:** [ہوا/باقی کام،دیر اور عارضی اندازہ](../docs/COMPLETE-STATUS-AND-DECISIONS-URDU.md)؛[تمام117 فیصلے + پانچ بنیادی اصول](../docs/DECISION-REGISTER-INDEX-URDU.md)؛[اگلا CustomField Update جائزہ شروع](../docs/CUSTOM-FIELD-NEXT-SCOPE-URDU.md)۔ Code v0.134.0/3347suiteUNRUN؛اس documentation turn میں production code نہیں بدلا۔ نیچے پرانے checkpoint کے نتائج اور “شروع نہیں” والے جملے اپنے وقت کے تاریخی ہیں،موجودہ منظوری/نتیجہ نہیں؛پہلے1تا5 بند،پھر6۔
+
 This folder is the **product**: a native Windows desktop rebuild of Area11 in C#/.NET.
 It is created following the Master Specification §4.4 (`Area11.Core` / `Area11.Desktop` /
 `Area11.Tests`) and §34.2 (build in a new folder, do not touch the Next.js reference app).

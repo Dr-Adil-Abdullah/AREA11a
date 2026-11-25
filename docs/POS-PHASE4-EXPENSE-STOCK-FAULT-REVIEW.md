@@ -1,5 +1,7 @@
 # ⏳ Phase4 portion38 — expense/drawing/write-off/Apply fault and retry review
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **⏳ v0.116.0 Tarn · 2026-11-10 · stable20,23–25 · PT-58 · full feature/runtime OPEN.**
 
 ## ⏳ Scope and contracts

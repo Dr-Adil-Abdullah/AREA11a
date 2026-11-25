@@ -1,5 +1,7 @@
 # Phase4 portion6 — custom definitions and bill-time correction boundaries
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 > **Subsequent policy update D-110, v0.85.0:** The former management-only cost rule and assertions that the global profit switch leaves cost visible are superseded. View Profit / View Purchase Cost are separate grants under one main switch, plus page access. Named routes migrated in [portion7](POS-PHASE4-FINANCIAL-VISIBILITY-REVIEW.md); global invoice/ledger/batch/stock/expense/export rollout remains OPEN. The evidence/counts below are historical for this portion, not latest policy.
 
 **v0.84.0 Lapwing · #4D6072 · 2026-11-10. IN PROGRESS, not full audit/security/Windows PASS.** [Overall26-route/8-Settings/36-lesson register](POS-PHASE4-EVIDENCE.md); [previous snapshot review](POS-PHASE4-SNAPSHOT-REVIEW.md); [Urdu PT-26](POS-PHASE4-PART6-URDU.md).

@@ -1,5 +1,7 @@
 # Area11 — Real-life Physical Testing Log
 
+> **⏳ D-117 — موجودہ مکمل حالت پہلے یہاں پڑھیں:** [ہوا/باقی کام،دیر اور عارضی اندازہ](docs/COMPLETE-STATUS-AND-DECISIONS-URDU.md)؛[تمام117 فیصلے + پانچ بنیادی اصول](docs/DECISION-REGISTER-INDEX-URDU.md)؛[اگلا CustomField Update جائزہ شروع](docs/CUSTOM-FIELD-NEXT-SCOPE-URDU.md)۔ Code v0.134.0/3347suiteUNRUN؛اس documentation turn میں production code نہیں بدلا۔ نیچے پرانے checkpoint کے نتائج اور “شروع نہیں” والے جملے اپنے وقت کے تاریخی ہیں،موجودہ منظوری/نتیجہ نہیں؛پہلے1تا5 بند،پھر6۔
+
 ## ⏳ PT-76 — Built-in fields کا پرانا baseline،risk اور Save (v0.134.0)
 
 [⏳ مکملsteps/باقی5.1](docs/NATIVE-FIELD-OUTCOME-REVIEW-URDU.md)؛verifiedencryptedbackupاورواقعیالگDB/photos/configپہلے؛اصلshopپرexperiments/faultsنہیں۔3347/0fail/0skipاورDesktopRelease؛stale metadata/preprompt/postmodalCAS،criticalNo-default،currentOwner/session،no-op،exacttarget/no-other-rebase،doubleclick/timer/selection،UPDATE/audit/COMMITاورcallbackfaultsجانچیں۔ Unknown/SAVED-callbackfailureپرautomaticregrant/timerنہکھولے؛ExplicitRefreshFieldsصرفموجودہstate دکھائے،خودreplayنہیں۔ ⏳21نئےC#casesUNRUN؛125static/45lexical/30Pythonplansاصل.NET/provider/WPFproofنہیں۔ Remainingcustom/imperativewriters/registryباقی؛6/installerشروعنہیں۔

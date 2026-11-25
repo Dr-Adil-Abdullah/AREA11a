@@ -1,5 +1,7 @@
 # Phase4 portion19 — Recovery and stored monthly report outputs
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **v0.97.0 Lapwing · release label 2026-11-10 · SOURCE REVIEW, Windows OPEN.**
 Previous published checkpoint: `81154f0408026688d1eb5472f619a3cf9e387064` (v0.96.0). [PT-39](POS-PHASE4-PART19-URDU.md).
 

@@ -1,5 +1,7 @@
 # Phase4 portion24 — current photo access and stale gallery cleanup
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **v0.102.0 Whimbrel · release label 2026-11-10 · SOURCE checkpoint; C#/Windows OPEN.**
 Baseline: `da7dd61ed642f3a1dfa7bd02b953e49accfa7f13` (portion23). [PT-44 isolated Windows steps](POS-PHASE4-PART24-URDU.md).
 

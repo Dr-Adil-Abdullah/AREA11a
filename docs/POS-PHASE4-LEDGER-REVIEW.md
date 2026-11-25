@@ -1,5 +1,7 @@
 # Phase4 portion3 — coordinated ledger read boundary
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **v0.81.0 Curlew · 2026-11-10 · IN PROGRESS, not a full audit/security PASS.**
 
 Extends `POS-PHASE4-EVIDENCE.md` and `POS-PHASE4-ACCESS-REVIEW.md`. This portion addresses two specific legacy actorless read surfaces, not the whole application. No .NET SDK/WPF/runtime or real shop data used.

@@ -1,5 +1,7 @@
 # ⏳ حصہ4/14 — لاگ اِن،موجودہ اجازت اور Counter — v0.122.0 Larkspur
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 ## ✅ منظورشدہ فیصلہ D-116
 
 مالک کے `Next` نے صرف نئے منصوبے کا حصہ4 منظور کیا۔ وضاحت کے بعد مالک نے **A / require_new_login** منتخب کیا: کسی شخص کا password یا PIN بدلے تو اس کا موجودہ لاگ اِن **اگلے عمل سے پہلے** مسترد ہو؛تازہ لاگ اِن لازم۔ محفوظ ریکارڈ برقرار؛غیرمحفوظ فارم دوبارہ بھرنے کا ممکنہ نقصان مالک نے قبول کیا۔ پہلے سے طے شدہ idle اور12گھنٹے کی حد برقرار۔ یہ مالی حساب،Blackbox/BookCheck،SupplierB،backup password A یا durable posting identity کا نیا فیصلہ نہیں۔

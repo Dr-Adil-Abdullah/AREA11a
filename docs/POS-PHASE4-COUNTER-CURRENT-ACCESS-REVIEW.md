@@ -1,5 +1,7 @@
 # Phase4 portion32 — current Sale/Return account/module boundaries
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **v0.110.0 Sandbar**, stable5/6/7/15/17/23;[PT-52 Urdu](POS-PHASE4-PART32-URDU.md),[stable1–36](NUMBERED-WORK-STATUS-URDU.md).
 
 ## 1. Source scope and authority contract

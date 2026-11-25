@@ -1,5 +1,7 @@
 # ⏳ حصہ2/14 — اصل Windows کی22 ناکامیوں کا جائزہ
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 ## ✅ موصول شدہ اصل نتیجہ،نئے نتیجے سے الگ
 
 مالک کے v0.120.1 Alder Windows/.NET10 log میں Core اور Tests کمپائل ہوئے؛2963 کل،2941 کامیاب،22 ناکام،0 چھوڑے گئے؛وقت5 منٹ20 سیکنڈ۔ اس سے حصہ1 کی متعلقہ compile اصلاح ثابت ہے،Desktop/Release/installer یا نئی v0.120.2 suite کی کامیابی نہیں۔ مالک کے `next` سے صرف حصہ2 کی اجازت ملی؛حصہ3 شروع نہیں ہوا۔

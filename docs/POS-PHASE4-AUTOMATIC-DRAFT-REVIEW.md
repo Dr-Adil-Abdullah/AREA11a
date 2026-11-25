@@ -1,5 +1,7 @@
 # ⏳ P37 — automatic shared draft handoff and no draft-to-Hold copy
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 2026-11-10 · v0.115.0 Cairn · stable15/16/23/24/25 · [⏳ PT-57](POS-PHASE4-PART37-URDU.md) · [⏳ stable1–36](NUMBERED-WORK-STATUS-URDU.md)
 
 ## ✅ Owner decisions recorded

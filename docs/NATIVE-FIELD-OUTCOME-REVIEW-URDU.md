@@ -1,5 +1,7 @@
 # ⏳ حصہ5.1 — Built-in fields کی Required/Optional ترجیح — v0.134.0 Eglantine
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **یہ صرف native metadata writer کا محدود source checkpoint ہے؛5.1 یا حصے1تا5 مکمل نہیں۔** نیا کاروباری/مالی اصول،migration،durable retry identity یا installer شامل نہیں۔ پچھلے اصل Windows نتائج v0.120.1 کے2963total/2941PASS/22FAIL ہیں؛انہیں اس checkpoint کا PASS نہ سمجھیں۔
 
 ## ⏳ کیا درست کیا

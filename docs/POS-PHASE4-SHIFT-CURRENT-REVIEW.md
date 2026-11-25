@@ -1,5 +1,7 @@
 # Phase4 portion21 — current Cash reads and transactional drawer changes
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **v0.99.0 Curlew · release label 2026-11-10 · SOURCE checkpoint, Windows OPEN.**
 Baseline: `555b5d2bfcc6fdb4e508353ad33a8069b9dc3166`. [PT-41 isolated Windows steps](POS-PHASE4-PART21-URDU.md).
 

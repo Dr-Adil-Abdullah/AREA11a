@@ -1,5 +1,7 @@
 # AGENTS.md - how to work in this repository
 
+> **⏳ D-117 — موجودہ مکمل حالت پہلے یہاں پڑھیں:** [ہوا/باقی کام،دیر اور عارضی اندازہ](docs/COMPLETE-STATUS-AND-DECISIONS-URDU.md)؛[تمام117 فیصلے + پانچ بنیادی اصول](docs/DECISION-REGISTER-INDEX-URDU.md)؛[اگلا CustomField Update جائزہ شروع](docs/CUSTOM-FIELD-NEXT-SCOPE-URDU.md)۔ Code v0.134.0/3347suiteUNRUN؛اس documentation turn میں production code نہیں بدلا۔ نیچے پرانے checkpoint کے نتائج اور “شروع نہیں” والے جملے اپنے وقت کے تاریخی ہیں،موجودہ منظوری/نتیجہ نہیں؛پہلے1تا5 بند،پھر6۔
+
 ## ✅ گفتگو اور حصوں کی تازہ ہدایت
 
 ہر جواب/وضاحت/خلاصہ سادہ پاکستانی اردو۔ ایک وقت میں صرف ایک منظورشدہ حصہ؛ہر اگلے حصے سے پہلے نئی اجازت۔ ہر ٹاسک/حصے پر صرف3–4 لائنوں کا خلاصہ؛تفصیلی رپورٹ ہر3 مکمل حصوں کے بعد یا مالک کے مطالبے پر۔ [⏳ نیا14حصوں کا منصوبہ](docs/REMAINING-14-PORTIONS-URDU.md) پر عمل کریں؛پرانے3–6roundsاندازے اس منصوبے کی جگہ نہیں لیتے۔ ✅حصہ1کیCore/TestsDebugcompileتصدیقمالککےv0.120.1runسےملی۔ ⏳حصہ2کے22failurefixesکاWindowsrerunباقی؛بعدکےnextسےصرفحصہ3کیاجازتملی،اسکیsourceپیشرفتذیل،اصلجانچباقی؛⏳تازہNextسے5.1Settings؛نامکملحصےکیذیلیگنتی،1تا5کےباقیکام+تصدیقسےپہلے6نہیں۔ ✅صحت مندsourcecheckکوکامیاب.NETbuildنہکہیں۔

@@ -1,5 +1,7 @@
 # Windows build / test / optional test-installer template
 
+> **⏳ D-117 — موجودہ مکمل حالت پہلے یہاں پڑھیں:** [ہوا/باقی کام،دیر اور عارضی اندازہ](../../docs/COMPLETE-STATUS-AND-DECISIONS-URDU.md)؛[تمام117 فیصلے + پانچ بنیادی اصول](../../docs/DECISION-REGISTER-INDEX-URDU.md)؛[اگلا CustomField Update جائزہ شروع](../../docs/CUSTOM-FIELD-NEXT-SCOPE-URDU.md)۔ Code v0.134.0/3347suiteUNRUN؛اس documentation turn میں production code نہیں بدلا۔ نیچے پرانے checkpoint کے نتائج اور “شروع نہیں” والے جملے اپنے وقت کے تاریخی ہیں،موجودہ منظوری/نتیجہ نہیں؛پہلے1تا5 بند،پھر6۔
+
 `build.yml` is a **template**, not an active GitHub Actions workflow. As of the
 2026-11-10 check this checkout has no `.github/workflows` and the repository lists
 zero Actions runs. The Actions permissions-settings API returned HTTP 403 for the

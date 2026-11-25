@@ -1,5 +1,7 @@
 # ⏳ P42 ledger outcome/retry review — v0.120.0 Shale, 2026-11-10
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 ## ⏳ Bounded finding and contracts
 
 | Boundary | Source repair | Remaining proof/limits |

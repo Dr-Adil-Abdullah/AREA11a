@@ -1,5 +1,7 @@
 # Phase4 portion16 — Stock Minus read/review boundary
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **v0.94.0 Cormorant · 2026-11-10 · D-110 / D-113 continuation · SOURCE IMPLEMENTED, Windows OPEN.**
 
 This is a bounded continuation of the approved review, not full security/production approval. Supplier paid/payable/Pay/SR policy remains unanswered. No live-shop data, fabricated screenshot, installer or actual Windows test was used.

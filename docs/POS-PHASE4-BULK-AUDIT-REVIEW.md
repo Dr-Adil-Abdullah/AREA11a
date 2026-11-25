@@ -1,5 +1,7 @@
 # Phase4 portion14 — explicit bulk-file grant / audit metadata, v0.92.0 Bittern
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **2026-11-10. D-113, bounded source checkpoint, not global rollout/Phase4/security certification.** Owner chose password option A for encrypted backups, but **backup encryption is NOT implemented in this release**. [Approved pending plan](SECURE-BACKUP-PASSWORD-PLAN.md). BackupService and existing ZIP/DB format unchanged.
 
 ## Policy and compatibility

@@ -1,5 +1,7 @@
 # P36 — held Resume recovery and draft posting fault boundaries
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 2026-11-10 · v0.114.0 Lichen · stable15/23/24/25 · [PT-56](POS-PHASE4-PART36-URDU.md) · [stable1–36](NUMBERED-WORK-STATUS-URDU.md)
 
 ## Approved policy, not an inferred financial change

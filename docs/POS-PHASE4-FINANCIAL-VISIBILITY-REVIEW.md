@@ -1,5 +1,7 @@
 # Phase4 portion7 — independent financial visibility (D-110), v0.85.0 Plover
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 > **Subsequent portion14:** [Bulk/Audit boundary](POS-PHASE4-BULK-AUDIT-REVIEW.md) requires explicit owner-default Import grant at editable file/preview/Apply and all4CSV doors;productCost/main,mixedbothfinancial/main. Audit metadata excludes rawmixedfields/searchmatchesunlessbothfinancial/main. EncryptedpasswordbackupapprovedbutNOTimplemented;Supplier/otheroutputs/global/Windows OPEN. [PT-34](POS-PHASE4-PART14-URDU.md).
 
 > **Subsequent portion13:** [Purchase preparation](POS-PHASE4-PURCHASE-PREPARATION-REVIEW.md) refuses Create/draft open-save-post without current Purchases+Cost/main rather than returning editable0. Summary/discard module-only;unsaved UI masked,not erased. No ordinary Supplier policy decision. [PT-33](POS-PHASE4-PART13-URDU.md);generic export/session/Windows still OPEN.

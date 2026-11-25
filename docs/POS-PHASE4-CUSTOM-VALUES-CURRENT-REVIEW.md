@@ -1,5 +1,7 @@
 # Phase4 portion25 — current custom-value actor / parent reads and stale editors
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **v0.103.0 Turnstone · `#705D4E` · release label 2026-11-10 · SOURCE checkpoint, Windows OPEN.**
 Baseline `cd4df53acf2077e46ea177c3006f6c0455fd51df` (portion24). [PT-45 isolated Windows steps](POS-PHASE4-PART25-URDU.md).
 

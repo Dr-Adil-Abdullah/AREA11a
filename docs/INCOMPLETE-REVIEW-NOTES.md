@@ -1,5 +1,7 @@
 # Review carry-forward — not a completed audit
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 ## Phase4 portion3 (v0.81.0), still IN PROGRESS
 
 Customer/Supplier legacy read/statement APIs now require caller/current active account/respective module, UI/export preparation callers migrated, customer explicit profit list/page masked.1357 written cases, not run;69 static checks. Current baseline worktree contains prior releases as uncommitted differences from base; all preserved, no history reset/commit/push this portion. NEXT catalog safe-vs-cost projection/callers, report/reorder/product-history/Dashboard raw costs, custom-field/time-correction/session boundaries, then finance/fault/files/cloud/full guide/Windows. See `POS-PHASE4-LEDGER-REVIEW.md`; previous actorless ledger queue superseded, not entire finance workflow certified. Permission role/error policies, HasOpenDrawer, factory recovery, compatibility unchanged; no installer.

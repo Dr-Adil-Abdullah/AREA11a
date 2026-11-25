@@ -1,5 +1,7 @@
 # Phase4 portion33 — current receipt and sales-history boundaries
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **v0.111.0 Inlet · 2026-11-10 · stable5/6/7/15/17/21/23/24. Source checkpoint, not Windows certification.**
 
 [PT-53 Urdu steps](POS-PHASE4-PART33-URDU.md) · [stable1–36](NUMBERED-WORK-STATUS-URDU.md) · [guide](USER-GUIDE-URDU.md)

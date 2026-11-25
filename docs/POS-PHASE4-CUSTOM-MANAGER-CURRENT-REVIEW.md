@@ -1,5 +1,7 @@
 # Phase4 portion26 — numbered work item8: current custom-definition manager
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **v0.104.0 Knot · `#5A627E` · release label2026-11-10 · source checkpoint; Windows OPEN.**
 Baseline `a2eeb91f3cfbc6080eb90ed426f931e8a92939f8` (portion25).
 [PT-46 Urdu steps](POS-PHASE4-PART26-URDU.md) · [Stable36-item status](NUMBERED-WORK-STATUS-URDU.md).

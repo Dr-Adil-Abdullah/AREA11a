@@ -1,5 +1,7 @@
 # Phase4 portion28 — stable5/6/7: current Catalog/Unit writers and windows
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **v0.106.0 Estuary · `#586C48` · 2026-11-10 · source checkpoint; Windows OPEN.**
 Baseline `4c60952544ba462229b345cf63a0c3ef3af1c171` (portion27).
 [PT-48 Urdu](POS-PHASE4-PART28-URDU.md) · [Stable1–36 status](NUMBERED-WORK-STATUS-URDU.md).

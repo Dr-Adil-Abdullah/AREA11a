@@ -1,5 +1,7 @@
 # Phase4 portion31 — Sale / customer Return posting integrity
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **v0.109.0 Harbour**, stable15/17/19/23/24/25; [PT-51 Urdu](POS-PHASE4-PART31-URDU.md),[stable1–36](NUMBERED-WORK-STATUS-URDU.md).
 
 ## 1. Source changes

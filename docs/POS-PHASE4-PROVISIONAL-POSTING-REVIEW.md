@@ -1,5 +1,7 @@
 # ⏳ Phase4 portion39 — provisional return posting faults and local retry
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **⏳ v0.117.0 Bracken · 2026-11-10 · stable17,19,23–25 · PT-59 · runtime/full scope OPEN.**
 
 ## ⏳ Bounded source changes

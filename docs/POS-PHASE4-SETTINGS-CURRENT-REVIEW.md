@@ -1,5 +1,7 @@
 # Phase4 portion23 — current Settings writers and secret-safe settings audit
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **v0.101.0 Dunlin · release label 2026-11-10 · SOURCE checkpoint; C#/Windows OPEN.**
 Baseline: `0c27e0a9016f632093cff66c4434e8e217a96695` (portion22). [PT-43 isolated Windows steps](POS-PHASE4-PART23-URDU.md).
 

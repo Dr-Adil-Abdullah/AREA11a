@@ -1,5 +1,7 @@
 # Phase4 portion17 — Supplier accounting exception B / D-114
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **v0.95.0 Avocet · 2026-11-10 · PT-37 · SOURCE IMPLEMENTED; Windows/full Phase4 OPEN.**
 
 ## Settled owner decision

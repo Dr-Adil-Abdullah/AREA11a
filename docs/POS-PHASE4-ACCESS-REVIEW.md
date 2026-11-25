@@ -1,5 +1,7 @@
 # Phase4 portion2 — Settings / direct Core access and profit projections
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 > **v0.81.0 portion3 update:** the legacy Customer/Supplier read contracts listed OPEN below are now migrated to required user/current-account/module gates with customer profit masks. See [focused new evidence](POS-PHASE4-LEDGER-REVIEW.md). The remaining catalog/cost/session/other-service gaps are still OPEN; this portion2 snapshot is retained for history, not an up-to-date assertion that ledger methods remain actorless.
 
 **v0.80.0 Ibis, 2026-11-10. IN PROGRESS, not a comprehensive audit/security PASS.**

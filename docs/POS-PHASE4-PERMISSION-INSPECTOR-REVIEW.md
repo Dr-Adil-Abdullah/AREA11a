@@ -1,5 +1,7 @@
 # Phase4 portion8 — Staff financial permission inspector, v0.86.0 Reedling
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **Date:**2026-11-10. **Status:** requested UI/owner-read implementation checkpoint, NOT global financial rollout completion or Windows certification. The owner's new custom response requested a dedicated sensitive-permission section, hover summaries, double-click deep dive with live enabled/disabled assignment list and secure persistent backend enforcement. Earlier D-110 independent Profit/Cost decision is retained; the combined-label example is not treated as approval to merge them.
 
 ## What changed / operational trace

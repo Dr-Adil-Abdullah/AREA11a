@@ -1,5 +1,7 @@
 # Phase4 portion13 — purchase preparation/drafts/results, v0.91.0 Kingfisher
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **2026-11-10. Bounded D-110 continuation, not global financial or Phase4 completion.** Ordinary supplier paid/payable/Pay/SR policy remains unanswered. No installer or Windows runtime result.
 
 ## Chosen boundary: refuse cost-bearing preparation, not editable zero

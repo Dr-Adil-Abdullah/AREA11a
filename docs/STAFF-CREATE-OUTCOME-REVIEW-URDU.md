@@ -1,5 +1,7 @@
 # ⏳ 5.1 — نیا Staff account: محفوظ ہونے کا نتیجہ اور دوبارہ Add — v0.133.0 Scabious
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 تاریخ **2026-11-10**۔ تازہ next سے اسی5.1 میں CreateStaff کے outcome/loaded-UI راستے کا جائزہ؛نئی account/financial policy،durable identity،حصہ6 یا installer نہیں۔ **1تا5 کے باقی کام اور ضروری تصدیق سے پہلے6 نہیں۔**
 
 ## ⏳ مسئلہ اور source اصلاح

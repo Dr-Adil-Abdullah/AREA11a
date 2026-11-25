@@ -1,5 +1,7 @@
 # TAKEOVER — the complete brief for a new agent
 
+> **⏳ D-117 — موجودہ مکمل حالت پہلے یہاں پڑھیں:** [ہوا/باقی کام،دیر اور عارضی اندازہ](docs/COMPLETE-STATUS-AND-DECISIONS-URDU.md)؛[تمام117 فیصلے + پانچ بنیادی اصول](docs/DECISION-REGISTER-INDEX-URDU.md)؛[اگلا CustomField Update جائزہ شروع](docs/CUSTOM-FIELD-NEXT-SCOPE-URDU.md)۔ Code v0.134.0/3347suiteUNRUN؛اس documentation turn میں production code نہیں بدلا۔ نیچے پرانے checkpoint کے نتائج اور “شروع نہیں” والے جملے اپنے وقت کے تاریخی ہیں،موجودہ منظوری/نتیجہ نہیں؛پہلے1تا5 بند،پھر6۔
+
 ## ⏳ موجودہ 5.1 — Built-in fields: پرانی حالت،risk اور Save نتیجہ — v0.134.0 Eglantine
 
 **5.1 جاری؛1تا5 کے باقی کام اور ضروری تصدیق سے پہلے6 نہیں۔** Native Required/Optional میں loaded-baseline prepare،modal کے بعد دوبارہCAS،observed outcome اور exact saved row handoff؛Save خود پوری فہرست تازہ نہیں کرتا۔ Unknown/SAVED-callbackfailure پر invalidation،automatic timer/regrant سے نہیں کھلتا؛Explicit Refresh Fields سے موجودہ حالت دیکھ کر نیا ارادہ،نہ durable identity۔ Owner/risk/financial rules برقرار۔ ⏳21 نئے C# cases/3347 suite UNRUN؛✅125 محدود static،45 نئی lexical mutations،30 Python WAL/DELETE plans؛اصل .NET/provider/WPF ثبوت نہیں۔ [⏳ جائزہ/PT-76/باقی5.1](docs/NATIVE-FIELD-OUTCOME-REVIEW-URDU.md)؛[⏳14حصے](docs/REMAINING-14-PORTIONS-URDU.md)۔ Remaining custom/imperative writers،startup registry اور Windows تصدیق باقی؛StockTake بعد میں اسی5 میں۔ ❌6/installer شروع نہیں۔

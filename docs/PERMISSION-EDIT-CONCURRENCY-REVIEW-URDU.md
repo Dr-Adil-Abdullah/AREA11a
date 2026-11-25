@@ -1,5 +1,7 @@
 # ⏳ 5.1 جاری — Staff Permissions فارم،checkbox اورReset — v0.130.0 Hellebore
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 ## ⏳ اجازت اور حد
 
 تازہ `next` پر اسی **5.1 Settings** کا Staff permissions راستہ لیا۔ [پچھلا Workbook/PT-71](WORKBOOK-SETTINGS-CONCURRENCY-REVIEW-URDU.md) اور پہلے checkpoints اپنی حدود کے ساتھ برقرار ہیں۔ **5.1 ابھی مکمل نہیں؛حصوں1 تا5 کے باقی کام اور ضروری تصدیق کے بغیر6 شروع نہیں ہوگا۔** Installer نہیں بنایا۔

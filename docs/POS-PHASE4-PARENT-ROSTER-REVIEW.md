@@ -1,5 +1,7 @@
 # Phase4 portion20 — parent tabs and administrative vs operational roster reads
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **v0.98.0 Godwit · release label 2026-11-10 · SOURCE checkpoint, Windows OPEN.**
 Baseline: `071f5461a681e2542c05fa5d3947cb79fdb0768c` (portion19). [PT-40 isolated Windows steps](POS-PHASE4-PART20-URDU.md).
 

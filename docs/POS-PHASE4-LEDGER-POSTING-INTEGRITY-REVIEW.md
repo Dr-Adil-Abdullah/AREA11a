@@ -1,5 +1,7 @@
 # Phase4 portion29 — stable23/24/25: ledger-pair posting integrity and committed UI outcomes
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **v0.107.0 Breakwater · `#535D7C` · 2026-11-10 · source checkpoint; C#/Windows OPEN.**
 Baseline `79eeed472ce42df5e64761a0e50eb164e0821de4` (portion28).
 [PT-49 Urdu](POS-PHASE4-PART29-URDU.md) · [Stable1–36 status](NUMBERED-WORK-STATUS-URDU.md).

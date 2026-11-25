@@ -1,5 +1,7 @@
 # Phase4 portion12 — expense/drawing outputs, v0.90.0 Dipper
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **Date:**2026-11-10. **Status:** bounded D-110 continuation. Global financial rollout/Phase4/Windows OPEN. Supplier paid+payable/Pay/SR policy NOT decided. No installer built. Separate financial grants and common main switch retained.
 
 ## Accounting distinction — not a new blanket cash restriction

@@ -1,5 +1,7 @@
 # Phase4 portion11 — stock/frozen stock-take valuation outputs, v0.89.0 Redstart
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **Date:**2026-11-10. **Status:** bounded D-110 continuation; global financial rollout, authenticated sessions, finance fault matrix and Windows/fullPhase4 remain OPEN. No installer built. Supplier paid/payable/Pay/SR policy unchanged and unanswered.
 
 ## Entry → VM → Core → data / contract

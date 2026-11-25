@@ -1,5 +1,16 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+> **⏳ D-117 — موجودہ مکمل حالت پہلے یہاں پڑھیں:** [ہوا/باقی کام،دیر اور عارضی اندازہ](COMPLETE-STATUS-AND-DECISIONS-URDU.md)؛[تمام117 فیصلے + پانچ بنیادی اصول](DECISION-REGISTER-INDEX-URDU.md)؛[اگلا CustomField Update جائزہ شروع](CUSTOM-FIELD-NEXT-SCOPE-URDU.md)۔ Code v0.134.0/3347suiteUNRUN؛اس documentation turn میں production code نہیں بدلا۔ نیچے پرانے checkpoint کے نتائج اور “شروع نہیں” والے جملے اپنے وقت کے تاریخی ہیں،موجودہ منظوری/نتیجہ نہیں؛پہلے1تا5 بند،پھر6۔
+
+<a id="decision-d-117"></a>
+
+## D-117 — مکمل1.1 طرز اردو تفصیل،دستیاب فیصلوں کی یکجا فہرست اور GitHub اپڈیٹ
+
+مالک کی تازہ واضح ہدایت:ہوئے/باقی کام کی باریک point-wise تفصیل،دیر کی وجہ اور آئندہ کام کی تعداد کا صاف مگر غیرضمانتی اندازہ؛متعلقہ source/docs/فیصلے GitHub پر اپڈیٹ اوراگلا محدود کام شروع کیا جائے۔ اس دفعہ تفصیلی رپورٹ مانگی گئی،اس لیے معمول کے3–4 لائن خلاصے کی پابندی اس رپورٹ پر لاگو نہیں؛آئندہ کے لیے پرانا مختصر اصول برقرار۔ [مکمل رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md)،[تمام فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md)،[شروع شدہ CustomField Update جائزہ](CUSTOM-FIELD-NEXT-SCOPE-URDU.md)۔
+
+یہ نئی مالی/business policy،حصہ6یاinstaller کی قبل ازوقت اجازت نہیں؛1تا5 بند کرنے کی ترتیب برقرار۔ “ڈارک اسٹریم” کے نام سے الگ author/decision record دستیاب نہیں ملا؛درج شدہ فیصلے index میں ہیں،غیرموصولہ گفتگو کی نسبت نہ گھڑیں۔ نئی production fix اس documentation turn میں نہیں؛موجودہ code v0.134.0/3347suiteUNRUN۔
+
+
 ## ⏳ v0.134.0 — اسی5.1میںNativefieldwriter؛نئیpolicyنہیں
 
 تازہnextپرRequired/Optionalکاloadedbaseline،riskسےپہلےprepare،postmodalrecheck،observedoutcome/exactrowاورDesktopinvalidation؛Owner/criticalrisk/finalpostingکےاصولنہیںبدلے۔ ExplicitRefreshFieldsصرفنئیحالتکاجائزہ،نہsave replayنہdurableidentity۔ [⏳ PT-76/حدود](NATIVE-FIELD-OUTCOME-REVIEW-URDU.md)؛3347suite/WindowsUNRUN؛remainingcustom/imperativewriters/registryباقی؛1تا5کیباقیتصدیقسےپہلے6/installerنہیں۔
@@ -59,6 +70,8 @@
 
 تازہNextنےصرفحصہ5منظورکیا۔ پرانیformکیstateعینwriteTxمیںملتیہے؛فرقہوتوrefuse/reopen/review،نہsilentmerge/overwrite۔ Product/Customer/extra/definition/native/catalogcheckededitsاورمحدودsnapshots؛Cashierphone،authorednewcost،SupplierB،discount/actualcostfloor،D-116resetpolicyاورBlackbox/BookCheckدائرہبرقرار۔ ⏳Settings/sharedDrafts/StockTake/remainingroutesکاجائزہابھیاسیحصہ5میںباقی؛3082suite/WindowsUNRUN۔ [⏳ PT-65/حدود](EDIT-CONCURRENCY-REVIEW-URDU.md)؛❌حصہ6شروعنہیں/installerنہیںبنا۔
 
+
+<a id="decision-d-116"></a>
 
 ## ✅ D-116 — password/PIN بدلنے پر لازمی تازہ لاگ اِن (حصہ4/14)
 
@@ -167,9 +180,13 @@ Photosکےcurrentaccount/modulechecks،cachedpreview/selection/titleصفائی،
 
 کوئینئیbusinesspolicyنہیں:CustomercollectionکےلیےcurrentCustomers،explicitprofitکےلیےالگProfit/mainاورCustomers؛companyrepکےلیےProducts۔ اندرTxcurrentactor،freshprofile/receiptreaderاورstaleUIcleanup۔ **D-115کےمطابقBlackbox/Audit/BookCheckunchanged**؛SupplierBاورbackupAبرقرار۔ [Trace](POS-PHASE4-CUSTOMER-CURRENT-REVIEW.md)،[PT-38](POS-PHASE4-PART18-URDU.md)۔1765C#cases/Windows/installerUNRUN؛fullPhase4OPEN۔
 
+<a id="decision-d-115"></a>
+
 ## D-115 — صرف Black box کی menu visibility (2026-11-10)
 
 مالک نے BookCheck کی نئی masking تجویز کے بجائے صرف چھوٹی تبدیلی کہی: متعلقہ حساس معلومات کی مکمل اجازت نہ ہو تو Black box نظر نہ آئے؛باقیBlackboxکےساتھمزیدتبدیلیضروری نہیں۔ CurrentAudit + Cost + Profit + mainONکاexistingCheckAccessنتیجہmenuمیںلاگو،نہتمامغیرمتعلقmodulesکیgrants۔ موجودہmetadata/detailreads،BookCheck،Auditrecords/SQLunchanged۔ Menuکےلیےpermissionsتبدیلیکےبعددوبارہsign-in؛فوریlive-menu/oldfileواپسیوعدہنہیں۔ [Scope/teststeps](BLACK-BOX-MENU-VISIBILITY.md)۔ v0.95.1،1741C#cases/WindowsUNRUN؛fullPhase4/installeropen۔
+
+<a id="decision-d-114"></a>
 
 ## D-114 — Supplier accounting exception B (2026-11-10)
 
@@ -183,6 +200,8 @@ No new financial/business-policy choice: existing separate Cost/Profit/main rule
 
 Approved password A implemented in source across manual/auto/safety/rollback with current-user DPAPI and explicit Owner legacy recovery. Original password needed for older/new-PC restore; local safety password setup required first. No actual secret in chat.51new cases/1692total UNRUN;Windows/DPAPI/new-PC/fault/installer not certified. [Trace](POS-PHASE4-ENCRYPTED-BACKUP-REVIEW.md),[PT-35](POS-PHASE4-PART15-URDU.md). Supplier monetary-policy question remains unanswered; no new business-rule choice made. Earlier v0.92 status below is historical.
 
+<a id="decision-d-113"></a>
+
 ## D-113 — bulk editable files Owner-default؛Audit metadata؛encrypted backup کے لیے A password (2026-11-10)
 
 Owner requests lightweight two-tier architecture. Editable Excel/CSV export/import default Owner only;existing Staff & Permissions میں explicit **Allow Excel/CSV Bulk Export & Import** grant،صرف Owner assign کرے۔ Manager/staff rank کافی نہیں؛deny پرpartial/zero editable file نہیں۔ Separate Cost/Profit/main rule برقرار؛product editable file Cost/main،mixed shop workbook دونوںfinancial/main۔ Audit question کا انتخاب **metadata**:دونوںfinancial/main نہ ہوں توtime/person/action/module،rawold/new/details/entityنہیں؛اصلstored auditunchanged۔
@@ -191,15 +210,21 @@ Full backup کے لیےencrypted package + authenticated checksum،restore می�
 
 **v0.92.0 میںtier1 +Audit sourcewritten؛encrypted backup ابھی NOT IMPLEMENTED**۔ [Trace](POS-PHASE4-BULK-AUDIT-REVIEW.md)،[PT-34](POS-PHASE4-PART14-URDU.md)،[اگلے حصے کا password contract](SECURE-BACKUP-PASSWORD-PLAN.md)۔ Supplier2000/paid500/payable1500/PaySRعامledgerpolicyابھیunanswered؛اسفیصلےمیںاسکاaccountingexceptionخودسےمنتخبنہیںکیا۔
 
+<a id="decision-d-112"></a>
+
 ## D-112 — continuous source publication and test-installer request (2026-11-10)
 
 Owner requests every portion include both documentation and same-current-branch Git commit/push, plus a clear remaining-work/next-count estimate. Test installer is now authorized if feasible; not a production-readiness waiver. Never claim an artifact without a successful Windows publish/pack. Real isolated test data/backup restrictions remain. Current Linux toolchain cannot build WPF/Inno; no active Actions workflow. [Remaining plan / installer limitations](REMAINING-WORK-AND-TEST-INSTALLER-URDU.md). Supplier payment inference policy is still unanswered; separate financial checkboxes remain settled.
+
+<a id="decision-d-111"></a>
 
 ## D-111 — Staff permissions میں الگ حساس مالی حصہ، hover، double-click scope اور live assignment list
 
 مالک نے supplier مالی-policy سوال کے custom جواب میں نئی واضح UI درخواست دی: advanced financial/ledger section، ہر permission کی hover summary، double-click تفصیلی dialog، عملی scope اور enabled/disabled users کی موجودہ list، database persistence اور backend leak prevention۔ پہلے کا **D-110 Profit/Cost الگ checkboxes** فیصلہ برقرار؛ مثال کے combined label کو اسے ملانے کی اجازت نہیں سمجھا۔ Existing Suppliers/Customers module keys dedicated group میں، نئے blanket grants نہیں۔
 
 v0.86.0 میں grouped UI، shared help metadata، owner-only secret-free current-DB read snapshot inspector، nominal3s refresh، grant/source vs inactive/main-gate labels؛ double-click سے accidental save روکنے کے لیے deferred single-click، native Space اور Details fallback۔ Writes موجودہ audited PermissionService.Set سے، failed save پر tick واپس۔ **Global backend propagation کی درخواست ابھی مکمل نہیں**؛ invoice/ledger/batch/stock/expense/audit/export/stale paths باقی اور UI میں صاف warning۔ Supplier balances/payments کے سابق دو متبادل اس نئے UI متن سے منتخب نہیں ہوئے؛ ان کا مالی-action اثر خود سے طے نہیں کرنا۔20 نئے/1469 C# cases UNRUN،75 static checks PASS، Windows mouse/keyboard/live-modal pending۔ [شواہد](POS-PHASE4-PERMISSION-INSPECTOR-REVIEW.md)، [PT-28](POS-PHASE4-PART8-URDU.md)۔
+
+<a id="decision-d-110"></a>
 
 ## D-110 — View Profit اور View Purchase Cost الگ؛ مشترک main switch، ہر شخص کی اپنی اجازت
 
@@ -210,12 +235,16 @@ cost منع ہو تو خرید rate کے ساتھ related line total/Bought aggr
 v0.85.0 checkpoint میں catalog/History/Reorder/DeadStock/ReportTotals/item quote اور product-preparation gates منتقل؛ **global everywhere rollout ابھی OPEN**: invoice، supplier ledger/batch، stock-take/variance، expense/audit/workbook/export اور stale preparation paths باقی۔ یہ release-wide security PASS نہیں۔24 نئے/1445 written C# cases UNEXECUTED؛73 static checks PASS؛ [trace/حدود](POS-PHASE4-FINANCIAL-VISIBILITY-REVIEW.md)، [محفوظ PT-27](POS-PHASE4-PART7-URDU.md)۔ الگ checkbox سوال دوبارہ نہ پوچھیں؛ اگلا کام باقی منظورشدہ rollout ہے۔
 
 
+<a id="decision-d-109"></a>
+
 ## D-109 — تاریخی فیصلہ؛ D-110 سے superseded — History/Reorder management-only
 
 فیز4 اگلے حصے میں مثال دی: خرید200/فروخت300، quantity10/total2000 سے rate چھپانے کے باوجود cost200 نکل آتی ہے۔ تین واضح متبادل پوچھے؛ مالک نے **صرف مالک/مینیجر (management)** منتخب کیا۔ متعلقہ Products History/Reorder module اجازت بھی لازم؛ عام staff کو خرید rate، line total، Bought مالی aggregate اور Reorder raw LastCost نہیں ملے۔ خرید quantity/date/supplier اور مجاز sale معلومات برقرار، پورا feature نہیں ہٹانا۔ Purchases/Suppliers یا Profit grants عام staff کو اس تاریخی purchase-cost rule سے مستثنیٰ نہیں کرتیں۔ مجاز operational receiving/SR/Write-off/Expenses تیاری اور واضح sale-profit کی الگ سابق permission/global policy unchanged۔
 
 v0.83.0 Snipe میں raw rate+total masks، known flags، screen/print/CSV summary/cells اور current-reader snapshot gates شامل؛ public Report Days کا actorless profit bypass بند۔24 نئے/1401 written cases یہاں UNEXECUTED؛ Windows/PT-25 باقی۔ Report DeadStock valuation الگ موجود workflow ہے، اس فیصلے کو اس پر خودکار نہیں پھیلایا؛ اگلا review/واضح policy باقی۔ [شواہد/حدود](POS-PHASE4-SNAPSHOT-REVIEW.md)، [محفوظ PT-25](POS-PHASE4-PART5-URDU.md)۔ installer منظور نہیں۔
 
+
+<a id="decision-d-108"></a>
 
 ## D-108 — next سے فیز3، پھر واضح جواب b سے جزوی واپسی طریقہ B
 
@@ -224,6 +253,8 @@ v0.83.0 Snipe میں raw rate+total masks، known flags، screen/print/CSV summa
 - v0.78.0 Avocet source،30 نئے/1300 written tests،66 static checks، independent memory-only SQLite migration/BookCheck proof۔ Windows/Desktop/xUnit/PT-22 باقی؛ نہ مکمل financial/security certification، نہ full audit۔
 - مکمل مرحلہ وار نامہ: [فیز3](POS-PHASE3-TEST-URDU.md)۔ اگلا next فیز4 جامع page/settings/15-point review؛ installer صرف بنا دو پر۔
 
+
+<a id="decision-d-107"></a>
 
 ## D-107 — next سے فیز2؛ per-person limits، item editor اور اصل حساب (v0.77.0 Sandpiper)
 
@@ -234,6 +265,8 @@ Owned item editor: normal/manual/itemprofit/itemretail؛ manual اوپر یا ن
 فیز1 میں ملا ReadOnly/template مسئلہ اب dedicated guarded editor سے حل؛ پورا grid کھول کر permissions bypass نہیں۔ Settings UI-only اور workbook protected-policy write paths بھی بند۔ cost visibility محفوظ مگر profit-based percentage کا نتیجہ ریاضی سے cost کا اندازہ دے سکتا ہے؛ اسے absolute secrecy نہ سمجھیں۔ Extra Discount ابھی نہیں، فیز3 میں bill-level الگ ہوگا، product lines rewrite نہیں۔ تمام source checks Windows physical PASS نہیں۔
 
 
+<a id="decision-d-106"></a>
+
 ## D-106 — یکجا منصوبہ منظور؛ next سے صرف فیز 1 (v0.76.0 Osprey)
 
 مالک نے B کا مستقل چھوٹا سرچ پینل پسند کیا۔ اندر دہرایا POS/cashier ہٹانا، نرم گول ہلکے نمایاں actions، keyboard سے پورا Counter، سادہ تیر اندر اور Shift+تیر حصوں کے درمیان، exact barcode Enter اور selected-result Enter/double-click Add۔ مالی editor اور per-person caps فیز2 میں، فیز1 میں ان کے بننے کا دعویٰ نہیں۔
@@ -243,10 +276,14 @@ Owned item editor: normal/manual/itemprofit/itemretail؛ manual اوپر یا ن
 آخری واضح Extra Discount فیصلہ: مکمل بل کے بعد الگ روپے کی چھوٹ، تمام products پہلے adjusted ہوں تب بھی ممکن؛ ان کے rates/line discounts/bill-percent نہ بدلیں۔ 1120−20=1100، receipt پر الگ Extra Discount اور final payable؛ صرف owner کی دی ہوئی per-person rupee allowance، repeated cap bypass نہیں، cost safety برقرار۔ اسے product-line price/discount میں تقسیم کرکے لکھنا مالک نے رد کیا۔ returns/refund settlement میں نئی policy درکار ہو تو پہلے مثال/MCQ؛ خاموش مفروضہ نہیں۔ مکمل scope/15 checks: [منصوبہ](POS-NEXT-REVIEW-PLAN-URDU.md)۔ ہر next پر ایک فیز، الگ Windows/physical ثبوت، installer authorized نہیں۔
 
 
+<a id="decision-d-105"></a>
+
 ## D-105 — مالک نے Trial B کہا؛ حتمی پسند ابھی نہیں دی (v0.75.0 Kestrel)
 
 دوسرا انداز: چھوٹا مستقل سرچ پینل اور اس کے ساتھ بڑا Cart۔ خالی سرچ پر ساری مصنوعات نہیں؛ منتخب چیز ڈالنے کے بعد matches صاف، پینل کی جگہ قائم۔ نام، طاقت، pack، stock، retail اور تصویر ایک عمودی card میں تاکہ تنگ پینل میں لمبی چوڑی table نہ گھمانا پڑے۔ باقی compact buttons/checkout/F4/modal وہی۔ A = v0.74.0 Marlin؛ B = v0.75.0 Kestrel۔ مالک دونوں کے بعد final چنے گا؛ کوئی preference یا physical PASS فرض نہیں۔ D-104 والے مالی فیصلے اب بھی queued، ابھی کوئی discount/default/receipt/stock تبدیلی نہیں۔ موجودہ code میں فیصد سابق کل فروخت کی رقم پر ہی ہے، profit پر منتقل نہیں ہوا۔ Installer کی اجازت نہیں۔
 
+
+<a id="decision-d-104"></a>
 
 ## D-104 — پہلے POS کے دونوں انداز آزماؤ؛ ڈسکاؤنٹ کا نیا حکم الگ زیرِ انتظار
 
@@ -256,15 +293,21 @@ Owned item editor: normal/manual/itemprofit/itemretail؛ manual اوپر یا ن
 - profit کی پیش کردہ مثال: cost 200، sale 300، profit 100، اس کا 10% = 10 رعایت؛ total بنیاد کا 10% = 30۔ اصل فروخت ہونے والے batch کی cost استعمال ہوگی، دکان کے کرایے کے بعد والے net-profit کی نہیں۔ اس UI تجربے میں حساب، موجودہ discount.mode، permissions، cost lock یا رسید نہیں بدلے۔ ابھی رعایت پرانا full-selling-total حساب ہے؛ queued کام کو shipped سمجھنا خطرناک ہے۔
 
 
+<a id="decision-d-103"></a>
+
 ## D-103 — چھوٹی سکرین پر بل بٹن اور الگ کامیابی popup (v0.73.0 Laurel)
 
 مالک کی دو Heather تصاویر: Complete sale نیچے نظر نہیں آتا، F4 بھی کچھ نہیں کرتا؛ بائیں product list کم چوڑی، دائیں فروخت کا حصہ چوڑا مگر بٹن ہمیشہ نظر آئے۔ بل کے بعد ✓، invoice، کل، وصول نقدی اور بہت بڑا واپس دینے والا بقایا چاہیے؛ سوال پر **درمیان میں الگ پاپ اَپ** منتخب، Done سے بند۔ Auto-print آن ہو تو کوشش، آف ہو تو نہیں؛ success-popup کی موجودہ setting الگ برقرار۔ modal صرف کامیاب محفوظ bill پر، دوبارہ save/print نہیں۔ سٹرپ/باکس/base unit، pack label، strength/volume کی وضاحت چار مثالوں اور screenshot کے 1×1 injection/5 gram کے فرق سے دی؛ product data/labels بدلنے کی اجازت فرض نہیں کی۔ 6 نئے Core tests لکھے، 1240 کل؛ Desktop کے لیے نیا ساختی گیٹ، Windows/عملی ثبوت باقی۔ اصل دکان/رسید/رعایت نہیں بدلی۔
 
 
+<a id="decision-d-102"></a>
+
 ## D-102 — next پر آخری اردو ٹیوٹوریل (دستاویزی حصہ 4)
 
 مالک نے حصہ 4 کے لیے next کہا۔ پہلے دی گئی ہدایت کے مطابق مکمل خلاصہ الگ، پھر عملی تفصیل الگ لکھی گئی: [آف لائن قابل پرنٹ کتاب](USER-GUIDE-URDU.html)، [اصل متن](USER-GUIDE-URDU.md)، 36 اسباق، تمام مرکزی صفحات اور Settings کے گروپ۔ بٹنوں کے English نام ساتھ، کوئی فرضی screenshot یا Windows جانچ کا دعویٰ نہیں۔ یہ صرف دستاویز ہے؛ app ورژن/رنگ/حساب/ڈسکاؤنٹ/رسید نہیں بدلے۔ مالک کا سمجھنا/عملی قبولیت اور v0.72.0 کے 1234 tests کا Windows رن باقی۔ Installer یا Phase 6 کو اجازت نہیں سمجھنا؛ اس کے لیے الگ بنا دو ضروری ہے۔
 
+
+<a id="decision-d-101"></a>
 
 ## D-101 — Counter unavailable: آخری واضح جواب (v0.72.0 Heather)
 
@@ -404,7 +447,7 @@ Owner describes three Settings modes: manual start/normal close; automatic start
 > **یہ فائل کیا ہے؟** مالک (ڈاکٹر عادل عبداللہ) کی ہر ہدایت، فیصلہ اور ترجیح یہاں نمبر کے ساتھ محفوظ ہوتی ہے۔
 > کوئی بات زبانی نہیں رہتی۔ نئی ہدایت = نیا نمبر۔ پرانی ہدایت کوئی ایجنٹ خاموشی سے نہیں بدل سکتا۔
 >
-> **آخری اپ ڈیٹ:** 1 نومبر 2026 · **ورژن:** v0.39.0 Tourmaline `#7A1F5C` — D-99 کے مطابق صرف نئے master checklist کا **Phase 1 schema/data contracts** لکھا گیا ہے۔ Migration 030، format-3 sync parents، سات later-phase settings اور guarded isolated-test rebuild کے ساتھ **918 written cases in 71 files**، **57/57 static checks (real C# grammar/members سمیت)** اور **17/17 raw SQLite rehearsal groups** ہیں۔ یہ Windows compile/xUnit، WPF، real cloud، printer یا physical PASS نہیں؛ مطلوبہ owner run **`ALL GREEN - 918 of 918`** ہے۔ Cobalt 900/900 previous-release evidence ہے۔ Q1=A، Q2=C، Q3=A، Q4=C محفوظ ہیں؛ Phases 2–7 الگ approval کے بغیر شروع نہیں ہوئے، کوئی bulk-print/WhatsApp/profit UI یا automatic-sync scheduler نہیں بنا۔ D-77 کے fake demo bills واپس نہیں آئے، genuine books اور D-93/PR rules نہیں بدلے۔
+> **تاریخی checkpoint کی اپڈیٹ،موجودہ مجموعی حیثیت نہیں:** 1 نومبر 2026 · **ورژن:** v0.39.0 Tourmaline `#7A1F5C` — D-99 کے مطابق صرف نئے master checklist کا **Phase 1 schema/data contracts** لکھا گیا ہے۔ Migration 030، format-3 sync parents، سات later-phase settings اور guarded isolated-test rebuild کے ساتھ **918 written cases in 71 files**، **57/57 static checks (real C# grammar/members سمیت)** اور **17/17 raw SQLite rehearsal groups** ہیں۔ یہ Windows compile/xUnit، WPF، real cloud، printer یا physical PASS نہیں؛ مطلوبہ owner run **`ALL GREEN - 918 of 918`** ہے۔ Cobalt 900/900 previous-release evidence ہے۔ Q1=A، Q2=C، Q3=A، Q4=C محفوظ ہیں؛ Phases 2–7 الگ approval کے بغیر شروع نہیں ہوئے، کوئی bulk-print/WhatsApp/profit UI یا automatic-sync scheduler نہیں بنا۔ D-77 کے fake demo bills واپس نہیں آئے، genuine books اور D-93/PR rules نہیں بدلے۔
 > **سند (Authority):** `AREA11-MASTER-SPEC.md` (37 حصے + Appendix A) — اور جہاں مالک نے بعد میں کوئی نیا حکم دیا، وہی چلے گا (Spec §1.2.2)۔
 
 ---
@@ -428,6 +471,8 @@ https://github.com/Dr-Adil-Abdullah/AREA11a
 
 ---
 
+<a id="owner-foundational-principles"></a>
+
 ## 1. بنیادی اصول (مالک کے مقرر کردہ)
 
 | نمبر | اصول |
@@ -442,11 +487,15 @@ https://github.com/Dr-Adil-Abdullah/AREA11a
 
 ## 2. آج کے فیصلے (19 اکتوبر 2026)
 
+<a id="decision-d-001"></a>
+
 ### D-01 — ڈیٹابیس: اصل schema ہوبہو
 نیا ڈیٹابیس **اصل `schema.ts` کی migrations 001–013 بالکل ویسی ہی** استعمال کرے گا، تاکہ مالک کا موجودہ `area11.db` ویسا ہی کھل جائے۔
 - ✅ مکمل ہو گیا: 13 فائلیں `dotnet/Area11.Core/Data/Migrations/` میں، الفاظ بدلے بغیر۔
 - ✅ جانچ: تمام 14 مائیگریشنز (001–013 + ہماری 014) قطار میں چلائی گئیں → **31 ٹیبل** بنے، کوئی خرابی نہیں۔
 - مکمل کالم فہرست: [`docs/SCHEMA-REFERENCE.md`](SCHEMA-REFERENCE.md)
+
+<a id="decision-d-002"></a>
 
 ### D-02 — کیشیئر کی واپسی: قرنطینہ + مستقل الرٹ
 کیشیئر جب گاہک سے مال واپس لے، تو مال **فوراً شیلف پر نہیں** جائے گا بلکہ **قرنطینہ** میں جائے گا، اور:
@@ -457,6 +506,8 @@ https://github.com/Dr-Adil-Abdullah/AREA11a
 - یہ سیٹنگ سے بدلنے کے قابل ہوگا: `returns.cashierRestockToShelf` (ڈیفالٹ **OFF**)۔
 > یہ U-32 اور پرانے stage-16 قاعدے کا تصفیہ ہے (Spec §35.1) — مالک کا فیصلہ یہی ہے۔
 
+<a id="decision-d-003"></a>
+
 ### D-03 — اجازتیں: ہر شخص کے لیے علیحدہ، سیٹنگ سے
 مالک **Settings → Staff** میں ہر بندے کا نام، رول (مالک / مینیجر / کیشیئر / سیل مین) اور پھر **ٹک باکس** سے چنے گا کہ وہ کون کون سا حصہ دیکھ سکتا ہے:
 `POS · Sales · Returns · Customers · Products · Purchases · Suppliers · Stock · Stock-take · Cash · Reports · Profit · Audit · Import · Backup · Settings · Staff · Sync`
@@ -466,8 +517,12 @@ https://github.com/Dr-Adil-Abdullah/AREA11a
 - اجازت صرف مینو چھپانے سے نہیں، بلکہ **سروس کی سطح پر** چیک ہوگی (کوئی چالاکی سے صفحہ کھول بھی لے تو کام نہیں کرے گا)۔
 - ڈیٹابیس: مائیگریشن `014_user_permissions.sql` (نیا، پرانے ڈیٹا کو نقصان نہیں)۔
 
+<a id="decision-d-004"></a>
+
 ### D-04 — ادھورے فیچر: فیز 2 اور 3 میں
 جو فیچر اصل ویب ایپ میں بھی نہیں بنے (Spec §33.2) وہ **ضائع نہیں ہوں گے**؛ دستاویز میں رہیں گے اور **Phase 5** میں بنیں گے (نیچے §5 دیکھیں)۔ جس فیچر میں نقصان/خطرہ ہو، پہلے مالک سے پوچھا جائے گا۔
+
+<a id="decision-d-005"></a>
 
 ### D-05 — پرنٹنگ: فوری، بغیر ڈائیلاگ
 "بل پرنٹ" دبانے پر **فوراً** پرنٹ ہو، کوئی ونڈو یا ڈائیلاگ نہ کھلے۔
@@ -476,22 +531,32 @@ https://github.com/Dr-Adil-Abdullah/AREA11a
 - پرنٹر نہ ہو تو بھی بکری نہیں رکتی — اسکرین پر جھلک (preview) آ جائے گی۔
 - A4 دستاویزات کے لیے الگ `PrintDialog` والا راستہ۔
 
+<a id="decision-d-006"></a>
+
 ### D-06 — کیمرہ: فیز 1 میں نہیں
 کیمرہ صرف دوا/گاہک کی **تصویر** کے لیے تھا، بلنگ کے لیے نہیں۔
 - **بارکوڈ گن = کی بورڈ** — بس اسکین کریں، کوڈ خود لکھا جاتا ہے، کوئی الگ ڈرائیور نہیں۔
 - تصویر بعد میں: پہلے فائل سے (browse)، کیمرہ Phase 5 میں (اگر مالک چاہے)۔
+
+<a id="decision-d-007"></a>
 
 ### D-07 — رسید کی تحریر: سب سیٹنگ سے
 دکان کا نام، پتہ، فون، ڈیٹ ٹائم، نیچے کی سطریں ("خریدا ہوا سامان کتنے دن میں واپس ہوگا" وغیرہ)، ٹیکس کا نام — سب **سیٹنگ میں ٹائپ** ہوں گے، کوڈ میں جڑے ہوئے نہیں۔
 - جو لکھا جائے گا، وہی پرنٹ ہوگا: انگریزی لکھیں تو انگریزی، اردو لکھیں تو اردو۔
 - اردو کو تھرمل پرنٹر خراب کرتا ہے، اس لیے اردو سطر **تصویر بنا کر** چھپے گی (خود بخود پہچان)۔
 
+<a id="decision-d-008"></a>
+
 ### D-08 — لائلٹی: سب سے آخر میں
 پوائنٹس، اسٹار اور ٹائٹل (فلانٹ) **Phase 6** میں۔ سیٹنگ سے طے ہوگا: کتنے منافع پر کتنے پوائنٹ، کتنے پوائنٹ پر کتنے اسٹار، کس اسٹار پر کون سا ٹائٹل۔
+
+<a id="decision-d-009"></a>
 
 ### D-09 — پروٹوٹائپ کا مطلب
 "پروٹوٹائپ" = وہ پہلا کام جو **صرف یہ دکھانے** کے لیے تھا کہ سسٹم چل سکتا ہے (بٹن، ڈیٹابیس، لاجک)۔ وہ اصل پروڈکٹ نہیں۔
 **اصل ایپ = ریپو کے روٹ میں `Area11.sln`** (کوڈ `dotnet/` میں ہے)۔ پرانا `prototypes/Area11.WPF/` صرف مثال کے طور پر رکھا ہے۔ **ظاہری شکل وہی رہے گی** جو آپ چاہتے ہیں — صرف اندر کی تعمیر صاف ہوگی۔
+
+<a id="decision-d-010"></a>
 
 ### D-10 — ڈاٹ نیٹ 10 اور دکان کا کمپیوٹر
 دکان کے کمپیوٹر پر .NET نصب کرنے کی **ضرورت نہیں** پڑے گی اگر ہم **self-contained** (اپنے اندر سب کچھ) بنا کر دیں: ایک فولڈر، اس میں `.exe`، بس ڈبل کلک۔
@@ -499,34 +564,52 @@ https://github.com/Dr-Adil-Abdullah/AREA11a
 - اس لیے: **.NET 10 LTS + self-contained**۔ فولڈر کا حجم تقریباً 150–200 MB (عام بات ہے)۔
 - حتمی فیصلہ مالک کا (سوال نیچے)۔
 
+<a id="decision-d-011"></a>
+
 ### D-11 — انسٹالر
 - **پورٹیبل فولڈر** (ZIP): کاپی کریں، `.exe` چلائیں، کوئی ایڈمن اجازت نہیں چاہیے، بیک اپ لینا آسان۔
 - **MSI/انسٹالر**: سٹارٹ مینو + ڈیسک ٹاپ آئیکن، Programs میں اندراج، اَن انسٹال۔ ایڈمن چاہیے۔
 - **سفارش:** پہلے پورٹیبل سے چلائیں، آخر میں **Inno Setup** کا ایک سادہ انسٹالر بنا دیں (یہ MSI سے آسان اور چھوٹا ہے؛ MSI بھی ممکن ہے)۔
 - **اہم:** ڈیٹا `C:\ProgramData\Area11\` میں رکھا جائے گا (Program Files میں نہیں) تاکہ اپ ڈیٹ پر ڈیٹا محفوظ رہے۔
 
+<a id="decision-d-012"></a>
+
 ### D-12 — دوسرا کاؤنٹر
 ابھی نہیں، مگر **راستہ کھلا رکھا جائے گا**: کاروباری لاجک الگ لائبریری میں ہوگا، اس لیے بعد میں سرور + دوسرا کاؤنٹر جوڑنا آسان ہوگا اور **اسکرین کو چھیڑنا نہیں پڑے گا**۔ (Spec §34.9)
+
+<a id="decision-d-013"></a>
 
 ### D-13 — ہر فیچر پر نقصان کی اطلاع
 اگر کسی فیچر میں دکان کا نقصان، حساب کی خرابی یا بکری رکنے کا خطرہ ہو تو مالک کو **پہلے** اردو میں بتایا جائے گا: "اس فیچر میں یہ نقصان ہے…" — پھر فیصلہ مالک کا۔
 
+<a id="decision-d-014"></a>
+
 ### D-14 — ایک ہی فائل میں سب کچھ
 یہ فائل (`OWNER-DECISIONS.md`) ہر نئی ہدایت کے ساتھ بڑھتی رہے گی۔ کوئی بات صرف چیٹ میں نہیں رہے گی۔
+
+<a id="decision-d-015"></a>
 
 ### D-15 — ٹیسٹنگ ساتھ ساتھ
 ہر فیز کے آخر میں چلنے والا، ٹیسٹ شدہ بلڈ مالک کو دکھایا جائے گا — سب کچھ ایک دم بنانے کے بعد نہیں۔
 
+<a id="decision-d-016"></a>
+
 ### D-16 — ویب ایپ کو نقصان نہیں
 اصل Next.js ایپ (`Dr-Adil-Abdullah/Area11`) کو نہ چھیڑا جائے گا، نہ ڈیلیٹ کیا جائے گا۔
+
+<a id="decision-d-017"></a>
 
 ### D-17 — تین پروجیکٹ (منظور)
 مالک نے منظور کیا: `Area11.Core` (لاجک) + `Area11.Desktop` (اسکرین) + `Area11.Tests` (ٹیسٹ)۔
 اس سے دوسرا کاؤنٹر بعد میں بغیر اسکرین بدلے جڑ سکے گا۔ (`Area11.sln`)
 
+<a id="decision-d-018"></a>
+
 ### D-18 — ونڈوز 10
 دکان کا کمپیوٹر **Windows 10** ہے۔ ہدف: `net10.0-windows`، **self-contained** بنڈل تاکہ کمپیوٹر پر کچھ انسٹال نہ کرنا پڑے۔
 اگر دکان کے کمپیوٹر پر .NET 10 نہ چلے تو ایک ہی لائن بدل کر .NET 8 پر بنایا جا سکتا ہے (بتایا جائے گا)۔
+
+<a id="decision-d-019"></a>
 
 ### D-19 — انسٹالر (آخری مرحلے میں)
 ابھی (کام کے دوران) پورٹیبل فولڈر ہی رہے گا۔ **جب کام مکمل ہو جائے** تو ایسا انسٹالر بنے گا کہ:
@@ -535,8 +618,12 @@ https://github.com/Dr-Adil-Abdullah/AREA11a
 - ڈیٹا `C:\ProgramData\Area11` میں رہے گا تاکہ اپ ڈیٹ پر محفوظ رہے۔
 - نوٹ: ہماری ایپ C# ہے، **Python کی ضرورت نہیں**۔ .NET بھی اندر ہی ہوگا۔
 
+<a id="decision-d-020"></a>
+
 ### D-20 — چار فیز
 مالک کی ہدایت: کام کو **چار فیز** میں تقسیم کریں، ہر فیز کے آخر میں چلنے والا بلڈ تاکہ ساتھ ساتھ ٹیسٹ ہو سکے۔ (نیچے §5)
+
+<a id="decision-d-021"></a>
 
 ### D-21 — تصاویر (فوٹو)
 - ہر پروڈکٹ کی **2–3 تصاویر**، اور سپلائر/سیلر اور گاہک کی بھی تصویر — جہاں ضرورت ہو وہاں آپشن۔
@@ -545,15 +632,21 @@ https://github.com/Dr-Adil-Abdullah/AREA11a
 - ڈیٹابیس میں نیا ٹیبل `photos` (مائیگریشن 015) — کئی تصاویر، ترتیب کے ساتھ۔
 - پرانا `products.photo` کالم محفوظ رہے گا (پرانا ڈیٹا نہ ٹوٹے)۔
 
+<a id="decision-d-022"></a>
+
 ### D-22 — قرنطینہ کا فیصلہ مینیجر بھی کر سکتا ہے
 "کرتینہ (قرنطینہ) میں چلا جائے تو مینیجر بھی کر سکتا ہے" — یعنی واپس شدہ مال قرنطینہ میں جائے تو
 **مالک یا مینیجر** اس کا فیصلہ کر سکتے ہیں (اسٹاک میں واپس / خراب-میعاد گزری / بک گیا)۔
 الرٹ ختم کرنا پھر بھی **صرف مالک** کا کام ہے (وجہ لکھ کر)۔
 
+<a id="decision-d-023"></a>
+
 ### D-23 — پرنٹ: فوری
 بل پرنٹ پر کوئی ڈائیلاگ نہیں، سیدھا پرنٹر کو (ESC/POS)۔ 58 اور 80 ملی میٹر دونوں۔
 
 ---
+
+<a id="decision-d-024"></a>
 
 ### D-24 — ہر ورژن کا اپنا رنگ
 
@@ -561,11 +654,15 @@ https://github.com/Dr-Adil-Abdullah/AREA11a
 جان لے گا کہ کون سا ورژن چل رہا ہے۔ ہر ورژن کا نمبر، رنگ اور تبدیلی `docs/VERSIONS.md` میں لکھی جائے گی،
 اور چیکر تینوں جگہوں (کوڈ، تھیم، فائل) کا میل خود جانچے گا۔
 
+<a id="decision-d-025"></a>
+
 ### D-25 — ہر چیز دستاویز میں
 
 **فیصلہ (20 اکتوبر 2026):** ہر کام، ہر فیصلہ اور ہر اگلا قدم ریپو میں لکھا جائے گا، تاکہ اگر کسی بھی
 وقت یہ ایپ کسی اور ایجنٹ کو سونپی جائے تو وہ صرف لنک سے سب سمجھ جائے۔ فائلیں: `HANDOFF.md`،
 `AGENTS.md`، `docs/PROGRESS.md`، `docs/VERSIONS.md`، `docs/RULES-MATRIX.md`۔
+
+<a id="decision-d-026"></a>
 
 ### D-26 — پرنٹ: دونوں چوڑائیاں، اور آٹو یا مینوئل سیٹنگ سے
 
@@ -581,6 +678,8 @@ https://github.com/Dr-Adil-Abdullah/AREA11a
 (کوئی نقصان نہیں)، مگر رسید نہیں نکلتی — اسکرین پر سرخ پیغام آئے گا اور
 "Print last bill again" سے دوبارہ چھپ سکتے ہیں۔
 
+<a id="decision-d-027"></a>
+
 ### D-27 — ادھار کبھی گَلے (drawer) میں نہیں گناجائے گا
 
 **فیصلہ (20 اکتوبر 2026، v0.2.5):** جب بل کے دو حصے ہوں — کچھ نقد، کچھ اُدھار (کھاتے پر) —
@@ -592,6 +691,8 @@ https://github.com/Dr-Adil-Abdullah/AREA11a
 
 **نقصان کی اطلاع:** اُدھار الگ کالم میں نظر آتا ہے، اس لیے روز کی رپورٹ میں
 "نقد + آن لائن" اور "کھاتے پر" دونوں دکھانے ہوں گے (Phase 3 کی رپورٹ میں اسی طرح ہوگا)۔
+
+<a id="decision-d-028"></a>
 
 ### D-28 — واپسی: پہلے کھاتہ، پھر نقد؛ اور ہر واپسی کا اپنا نمبر
 
@@ -609,6 +710,8 @@ https://github.com/Dr-Adil-Abdullah/AREA11a
 **نقصان کی اطلاع:** "خراب" منتخب کرنے پر مال کی لاگت نقصان میں جاتی ہے مگر اسٹاک نہیں بڑھتا —
 اِس لیے ماہانہ رپورٹ میں یہ رقم الگ "نقصان" کے کالم میں دکھے گی (Phase 3)۔
 
+<a id="decision-d-029"></a>
+
 ### D-29 — الرٹ صرف مالک ختم کرے گا، وجہ لکھ کر؛ اور مسئلہ دوبارہ ہو تو الرٹ خود لوٹ آئے گا
 
 **فیصلہ (21 اکتوبر 2026، U-31، v0.3.1):**
@@ -622,6 +725,8 @@ https://github.com/Dr-Adil-Abdullah/AREA11a
 
 **نقصان کی اطلاع:** "Hide for this session" صرف اِس نشست کے لیے بار چھپاتا ہے؛ الرٹ اور اُس کی
 گنتی برقرار رہتی ہے، اور اگلی بار سائن اِن پر دوبارہ نظر آئے گا۔
+
+<a id="decision-d-030"></a>
 
 ### D-30 — بنا بل واپسی `PR-`: پیسے فوراً واپس، مال فوراً شیلف پر، بل بعد میں
 
@@ -640,6 +745,8 @@ https://github.com/Dr-Adil-Abdullah/AREA11a
 
 **نقصان کی اطلاع:** بنا بل واپسی میں یہ جانچ ممکن نہیں کہ گاہک نے اصل میں کتنے پیسے دیے تھے۔
 اسی لیے نمبر مستقل ہے، بیج نہیں رکتا، اور الرٹ صرف مالک ختم کرتا ہے۔
+
+<a id="decision-d-031"></a>
 
 ### D-31 — گنتی (اسٹاک ٹیک) `ST-`: کتاب جم جاتی ہے، گنتی جیتتی ہے
 
@@ -660,6 +767,8 @@ https://github.com/Dr-Adil-Abdullah/AREA11a
 **نقصان کی اطلاع:** اگر گنتی کے دوران کوئی فروخت ہو جائے تو اُس دن کا "کتاب بمقابلہ اصل" فرق
 اتنا ہی سچ ہے جتنا گنتی کے وقت تھا — Apply کے بعد نئی فروخت الگ سے چلتی رہے گی۔
 
+<a id="decision-d-032"></a>
+
 ### D-32 — بلڈ کی غلطی CS0509: `ReturnLineOption` سील نہیں رہے گا
 
 **فیصلہ (21 اکتوبر 2026، v0.3.5 Ruby):**
@@ -676,6 +785,8 @@ https://github.com/Dr-Adil-Abdullah/AREA11a
 `sealed` کلاس سے وراثت نہیں لے سکے گی۔ چیکر نے اسی بگ کو دوبارہ پکڑ کر دکھایا (ٹیسٹ کیا گیا)۔
 
 **دوبارہ نہ ہو:** Version اب **0.3.5 · Ruby `#9F1239`** ہے۔
+
+<a id="decision-d-033"></a>
 
 ### D-33 — دوسری بلڈ غلطی CS0136، اور نیا چیکر قانون
 
@@ -697,6 +808,8 @@ https://github.com/Dr-Adil-Abdullah/AREA11a
 غلطی نہیں سمجھتا (جانچ کر دیکھا گیا)۔
 
 **دوبارہ نہ ہو:** Version اب **0.3.6 · Sky `#0369A1`** ہے۔
+
+<a id="decision-d-034"></a>
 
 ### D-34 — تیسری بلڈ غلطی: `ServiceResult<int>.Value` کبھی null نہیں ہوتا
 
@@ -720,6 +833,8 @@ value type ہو تو `x.Value is null` اور `x.Value.Value` دونوں کو ب
 یہ جانچ ہر میتھڈ کے اندر الگ ہوتی ہے، کیونکہ ایک ہی فائل میں `result` ہر جگہ مختلف قسم کا ہوتا ہے۔
 
 **دوبارہ نہ ہو:** Version اب **0.3.7 · Lime `#65A30D`** ہے۔
+
+<a id="decision-d-035"></a>
 
 ### D-35 — گاہک کا کھاتہ: رقم صرف بل، وصولی اور واپسی سے بدلے گی
 
@@ -749,6 +864,8 @@ value type ہو تو `x.Value is null` اور `x.Value.Value` دونوں کو ب
 
 **دوبارہ نہ ہو:** Version اب **0.3.8 · Teal `#0F766E`** ہے۔
 
+<a id="decision-d-036"></a>
+
 ### D-36 — سپلائر کا کھاتہ اور واپسی `SR-`: payable = اوپننگ + خریداری − ادائیگی − کریڈٹ نوٹ
 
 **فیصلہ (21 اکتوبر 2026، v0.3.9 Tangerine):**
@@ -772,6 +889,8 @@ value type ہو تو `x.Value is null` اور `x.Value.Value` دونوں کو ب
 
 **دوبارہ نہ ہو:** Version اب **0.3.9 · Tangerine `#C2410C`** ہے۔
 
+<a id="decision-d-037"></a>
+
 ### D-37 — میعاد کی تین سطحیں سیٹنگز سے آتی ہیں (F-29)
 
 **فیصلہ (21 اکتوبر 2026، v0.3.10 Ink):**
@@ -792,6 +911,8 @@ value type ہو تو `x.Value is null` اور `x.Value.Value` دونوں کو ب
    تاکہ پرانا `area11.db` اور نیا سافٹ ویئر ایک ہی چیز دیکھیں۔
 
 **دوبارہ نہ ہو:** Version اب **0.3.10 · Ink `#0F172A`** ہے۔
+
+<a id="decision-d-038"></a>
 
 ### D-38 — گاہک کی درستی: نام اور فون بدل سکتے ہیں، ادھار نہیں
 
@@ -815,6 +936,8 @@ value type ہو تو `x.Value is null` اور `x.Value.Value` دونوں کو ب
 
 **دوبارہ نہ ہو:** Version اب **0.3.11 · Wine `#6B1D2F`** ہے۔
 
+<a id="decision-d-039"></a>
+
 ### D-39 — سپلائر واپسی کی آخری تاریخ: 180 سے 90 دن کے درمیان یاد دہانی
 
 **فیصلہ (21 اکتوبر 2026، v0.3.12 Cocoa):**
@@ -836,6 +959,8 @@ value type ہو تو `x.Value is null` اور `x.Value.Value` دونوں کو ب
    بدلے جا سکیں۔
 
 **دوبارہ نہ ہو:** Version اب **0.3.12 · Cocoa `#6B4423`** ہے۔
+
+<a id="decision-d-040"></a>
 
 ### D-40 — گلہ (شفٹ): متوقع نقد تاریخ سے بنتا ہے، ہاتھ سے نہیں
 
@@ -863,6 +988,8 @@ value type ہو تو `x.Value is null` اور `x.Value.Value` دونوں کو ب
 
 **دوبارہ نہ ہو:** Version اب **0.4.0 · Pink `#DB2777`** ہے۔
 
+<a id="decision-d-041"></a>
+
 ### D-41 — «GitHub نہیں پہنچ رہا» اور «لاک فائل» دو الگ بیماریاں ہیں
 
 **فیصلہ (21 اکتوبر 2026، v0.4.2 Violet):**
@@ -882,6 +1009,8 @@ value type ہو تو `x.Value is null` اور `x.Value.Value` دونوں کو ب
    نہیں آتا، اور دونوں ٹول صرف `.git` کے اندر کی فائلیں دیکھتے/ہٹاتے ہیں۔
 
 **دوبارہ نہ ہو:** Version اب **0.4.2 · Violet `#7C3AED`** ہے۔
+
+<a id="decision-d-042"></a>
 
 ### D-42 — اخراجات اور مالک کی نکاسی: ایک خریداری نہیں، اور نقد/مال دو الگ چیزیں
 
@@ -908,6 +1037,8 @@ value type ہو تو `x.Value is null` اور `x.Value.Value` دونوں کو ب
    آئے گی — سوائے اُس صورت کے جب مالک نے Settings میں منفی اسٹاک بند کر رکھا ہو۔
 
 **دوبارہ نہ ہو:** Version اب **0.4.4 · Rust `#9A3412`** ہے۔
+
+<a id="decision-d-043"></a>
 
 ### D-43 — پرانا اُدھار: قسط پہلے سب سے پرانے بل پر، اور «SR» نہیں «PAY»
 
@@ -936,6 +1067,8 @@ value type ہو تو `x.Value is null` اور `x.Value.Value` دونوں کو ب
 
 **دوبارہ نہ ہو:** Version اب **0.4.5 · Orchid `#86198F`** ہے۔
 
+<a id="decision-d-044"></a>
+
 ### D-44 — کوئی خرابی خاموش نہیں رہے گی
 
 **فیصلہ (21 اکتوبر 2026، v0.4.6 Graphite):**
@@ -958,6 +1091,8 @@ value type ہو تو `x.Value is null` اور `x.Value.Value` دونوں کو ب
 7. **D-25 بدستور:** یہ سب `HANDOFF.md`, `PROGRESS.md`, `VERSIONS.md` اور اِسی فائل میں درج ہے۔
 
 **دوبارہ نہ ہو:** Version اب **0.4.6 · Graphite `#3F3F46`** ہے۔
+
+<a id="decision-d-045"></a>
 
 ### D-45 — ٹیسٹ دکان کے مالک نہیں، حساب کتاب مالک ہے
 
@@ -1001,6 +1136,8 @@ value type ہو تو `x.Value is null` اور `x.Value.Value` دونوں کو ب
 
 **دوبارہ نہ ہو:** Version اب **0.4.7 · Aubergine `#4A1D5F`** ہے۔
 
+<a id="decision-d-046"></a>
+
 ### D-46 — ٹیسٹ تیز ہوں، مگر دکان کا ڈیٹا اُتنا ہی محفوظ رہے
 
 **فیصلہ (21 اکتوبر 2026، v0.4.8 Denim):**
@@ -1022,6 +1159,8 @@ value type ہو تو `x.Value is null` اور `x.Value.Value` دونوں کو ب
 5. **قانون:** جو ٹیسٹ وقت یا ترتیب پر منحصر ہو، وہ ٹیسٹ کمزور ہے؛ اُسے اصول پر جانچنا چاہیے۔
 
 **دوبارہ نہ ہو:** Version اب **0.4.8 · Denim `#1D4E89`** ہے۔
+
+<a id="decision-d-047"></a>
 
 ### D-47 — رپورٹ: منافع وہی ہے جو ڈاکٹر صاحب کا ہے
 
@@ -1051,6 +1190,8 @@ value type ہو تو `x.Value is null` اور `x.Value.Value` دونوں کو ب
 
 **دوبارہ نہ ہو:** Version اب **0.4.9 · Iris `#4C1D95`** ہے۔
 
+<a id="decision-d-048"></a>
+
 ### D-48 — جو کالم اپنی جگہ نہ پائے، وہ خاموشی سے صفر نہ بنے
 
 **فیصلہ (21 اکتوبر 2026، v0.4.10 Mulberry):**
@@ -1070,6 +1211,8 @@ value type ہو تو `x.Value is null` اور `x.Value.Value` دونوں کو ب
    گرتا۔ ایسی ہر چیز مشین سے جانچی جائے گی، اُسے نظر سے ڈھونڈنے کی امید نہیں چھوڑی جائے گی۔
 
 **دوبارہ نہ ہو:** Version اب **0.4.10 · Mulberry `#701A45`** ہے۔
+
+<a id="decision-d-049"></a>
 
 ### D-49 — بلیک باکس کھلتا ہے، مگر صرف پڑھنے کے لیے
 
@@ -1093,6 +1236,8 @@ value type ہو تو `x.Value is null` اور `x.Value.Value` دونوں کو ب
 7. **ہر سطر میں چار چیزیں:** کب، کس نے، کس چیز پر، اور کیا بدلا (`پرانا  →  نیا`)۔
 
 **دوبارہ نہ ہو:** Version اب **0.5.0 · Ultramarine `#2A2F8F`** ہے۔
+
+<a id="decision-d-050"></a>
 
 ### D-50 — سکرین آسان کرو: ایک گھنٹی، دو قسم کے الرٹ، اور گاہک بنانے کا فارم
 
@@ -1138,6 +1283,8 @@ value type ہو تو `x.Value is null` اور `x.Value.Value` دونوں کو ب
 **دوبارہ نہ ہو:** اُس وقت Version **0.6.2 · Magenta `#A21CAF`** تھا (0.6.0 کا پہلا بلڈ دو خرابیوں پر رُکا، 0.6.1 میں ٹھیک ہوا،
 اور 0.6.2 میں ٹیسٹ کا ایک غلط انتظار درست ہوا — تفصیل `docs/VERSIONS.md` میں)۔
 
+<a id="decision-d-051"></a>
+
 ### D-51 — سکرین کی ترتیب دارالحکومت: چھوٹا نام، دکان درمیان میں، شخص بائیں بار میں، اور کھلنے بند ہونے والے گروپ
 
 **فیصلہ (22 اکتوبر 2026، v0.7.0 Cobalt):** مالک نے کہا کہ اُس کی ترتیب وہی رہے گی — صرف سکرین بدلنی ہے۔
@@ -1170,6 +1317,8 @@ value type ہو تو `x.Value is null` اور `x.Value.Value` دونوں کو ب
 **دوبارہ نہ ہو:** Version اب **0.7.0 · Cobalt `#1D4ED8`** ہے۔
 
 
+<a id="decision-d-052"></a>
+
 ### D-52 — بیک اپ: ایک زپ، اور دکان واپس آ سکتی ہے (F-36)
 
 **فیصلہ (22 اکتوبر 2026، v0.8.0 Violet):** ترتیب وہی رہی — اگلا کام **بیک اپ** تھا۔
@@ -1201,6 +1350,8 @@ value type ہو تو `x.Value is null` اور `x.Value.Value` دونوں کو ب
 **دوبارہ نہ ہو:** Version اب **0.8.0 · Violet `#6D28D9`** ہے۔
 
 
+<a id="decision-d-053"></a>
+
 ### D-53 — ایکسل کی جگہ CSV: فائل وہی، مگر بلڈ نہیں ٹوٹے گا
 
 **فیصلہ (22 اکتوبر 2026، v0.9.0 Rosewood):** ایکسل کی فائل (`.xlsx`) پڑھنے کے لیے ایک نیا پیکج
@@ -1221,6 +1372,8 @@ value type ہو تو `x.Value is null` اور `x.Value.Value` دونوں کو ب
 دوا، گاہک اور سپلائر تین الگ فائلیں ہیں، ایک ہی "ورک بک" میں تین شیٹس نہیں۔ رنگ، بڑے حروف اور
 فارمیٹنگ محفوظ نہیں رہتے (اسی لیے نمبروں کو ہم خود جانچتے ہیں، ایکسل پر بھروسا نہیں کرتے)۔ اگر کبھی
 واقعی `.xlsx` ضروری ہو، تو وہ الگ فیصلہ ہوگا اور الگ ورژن میں — اُس وقت پیکج سمیت پوری طرح جانچا جائے گا۔
+
+<a id="decision-d-054"></a>
 
 ### D-54 — گاہک کا پرانا ادھار: کھاتے کی پہلی لائن، نوٹ نہیں
 
@@ -1249,6 +1402,8 @@ value type ہو تو `x.Value is null` اور `x.Value.Value` دونوں کو ب
 **دوبارہ نہ ہو:** Version اب **0.9.0 · Rosewood `#E11D48`** ہے۔
 
 ---
+
+<a id="decision-d-055"></a>
 
 ### D-55 — ری آرڈر پیڈ: تین درجے، ایک کم از کم، اور واٹس ایپ پر آرڈر (F-38)
 
@@ -1286,6 +1441,8 @@ value type ہو تو `x.Value is null` اور `x.Value.Value` دونوں کو ب
 
 ---
 
+<a id="decision-d-056"></a>
+
 ### D-56 — اسٹاک مائنس رجسٹر: ہر مائنس شیلف، اور مالک کا ماہانہ جائزہ (F-39)
 
 **فیصلہ (22 اکتوبر 2026، v0.11.0 Blackberry):** جو دوا شیلف پر **صفر سے نیچے** ہے، وہ ایک نئے صفحے
@@ -1316,6 +1473,8 @@ value type ہو تو `x.Value is null` اور `x.Value.Value` دونوں کو ب
 **دوبارہ نہ ہو:** Version اب **0.11.0 · Blackberry `#4A044E`** ہے۔
 
 ---
+
+<a id="decision-d-057"></a>
 
 ### D-57 — لائلٹی: روپے → پوائنٹ → اسٹار → خطاب، اور پوائنٹ کاؤنٹر پر خرچ (F-40)
 
@@ -1357,6 +1516,8 @@ rules → Loyalty points** سے خود آن کرتا ہے، اور وہیں تی
 **دوبارہ نہ ہو:** Version اب **0.12.0 · Mocha `#6B4F3A`** ہے۔
 
 
+<a id="decision-d-058"></a>
+
 ### D-58 — تصاویر اور کیمرہ: نقل، چھپانا، مٹانا کبھی نہیں (F-41)
 
 **فیصلہ (22 اکتوبر 2026، v0.13.0 Deep Sea):** دوا، گاہک اور سپلائر — تینوں کی تصویریں، اور کیمرے سے
@@ -1397,6 +1558,8 @@ rules → Loyalty points** سے خود آن کرتا ہے، اور وہیں تی
 **دوبارہ نہ ہو:** Version اب **0.13.0 · Deep Sea `#0C4A6E`** ہے (پچھلا Mocha `#6B4F3A`)۔
 
 
+<a id="decision-d-100"></a>
+
 ### D-100 — **ہر خانے کا لازمی/اختیاری مالک کا اختیار + staged تصویر + مشترکہ drafts** (10 نومبر 2026)
 
 1. **اختیار مالک کا:** تصویر ہو یا کوئی بھی خانہ، لازمی/اختیاری Settings سے مالک طے کرے گا۔ v0.43.0 کی "تصویر کبھی لازمی نہیں" پابندی مالک کی وضاحت پر واپس لی گئی۔
@@ -1405,6 +1568,8 @@ rules → Loyalty points** سے خود آن کرتا ہے، اور وہیں تی
 4. **Drafts مشترکہ:** Portion 5 کے drafts ہر مجاز شخص کھول کر مکمل کر سکے گا۔
 5. **سپلائر-edit نہیں:** سپلائر میں ترمیم کی سہولت نہیں چاہیے؛ الگ portion نہیں بنے گا۔
 6. **نیا Portion 18:** بل/خرید/اخراجات پر بھی اپنے خانے — بڑا کام، الگ portion، Portion 6 کے بعد۔
+
+<a id="decision-d-099"></a>
 
 ### D-99 — **نئے master checklist کے چار فیصلے اور صرف Phase 1 کی اجازت** (1 نومبر 2026)
 
@@ -1446,6 +1611,8 @@ grammar/members)، 30 migrations → 42 application tables + ledger + 2 views، 
 groups** ہیں۔ .NET SDK/WPF runtime یہاں نہیں، اس لیے Windows build، **`ALL GREEN - 918 of 918`**، real
 Supabase اور owner physical verification ابھی باقی ہیں؛ Cobalt 900/900 کو Tourmaline evidence نہیں لکھنا۔
 
+<a id="decision-d-098"></a>
+
 ### D-98 — **Phase 3 packaging/variants/search کی اجازت اور پہلا محدود slice** (29 اکتوبر 2026)
 
 مالک نے **“Phase 3 کر لو”** کہہ کر D-96 کی ترتیب کے تیسرے مرحلے کی اجازت دی۔ Actual-code review میں معلوم ہوا
@@ -1474,6 +1641,8 @@ files**، local static gate **55/55** اور actual ProductService search SQL ک
 **`ALL GREEN - 900 of 900`** ثابت کیا۔ یہ Cobalt کے `Area11.Core` / `Area11.Tests` کا Windows xUnit PASS ہے؛ supplied log `Area11.Desktop` / WPF build یا launch ثابت نہیں کرتا، اور PT-10 WPF/genuine physical PASS بھی نہیں۔
 Zircon 883/883 اور Aurora کے سابقہ records الگ محفوظ ہیں۔
 
+<a id="decision-d-097"></a>
+
 ### D-97 — **Zircon automated verification اور Phase 2 field governance/schema کی اجازت** (29 اکتوبر 2026)
 
 مالک نے Zircon کا Windows test output بھیجا: **Failed 0، Passed 883، Skipped 0، Total 883، مدت 1 منٹ 10 سیکنڈ**
@@ -1489,6 +1658,8 @@ Print/WhatsApp اور offline-first sync اگلے phases ہیں اور اس اج
 one-line help اور 9 نئے regressions شامل ہیں؛ inventory **892 cases in 69 files** اور local static gate **54/54** ہے۔
 یہ written/static evidence ہے، Aurora کا Windows build/xUnit یا physical PASS نہیں۔ Custom values، historical
 documents، stock quantities، prices، payment rules اور existing permissions نہیں بدلے۔
+
+<a id="decision-d-096"></a>
 
 ### D-96 — **Global shell اور navigation: صرف Phase 1 کی اجازت** (29 اکتوبر 2026)
 
@@ -1512,6 +1683,8 @@ documents، stock quantities، prices، payment rules اور existing permission
 **Evidence boundary:** Zircon source پر 53/53 static checks پاس ہیں؛ یہ compilation یا physical WPF proof نہیں۔
 مالک کے Windows پر build، **883/883** xUnit اور `PHYSICAL-TESTING.md` کا PT-08 walk-through باقی ہے۔ Spruce
 `94723e5` کا 883/883 نتیجہ تاریخی proof ہے، Zircon پر منتقل نہیں کیا گیا۔
+
+<a id="decision-d-095"></a>
 
 ### D-95 — **Physical-testing میں catalog، units، navigation، photos اور counter کے فیصلے** (27 اکتوبر 2026)
 
@@ -1539,6 +1712,8 @@ documents، stock quantities، prices، payment rules اور existing permission
 
 یہ فیصلے source میں لکھے جا چکے ہیں اور **Windows build/883-case xUnit `94723e5` پر PASS** ہے؛ **WPF اور genuine physical verification الگ باقی ہیں**۔ PT02-POS-01 کے blank/dashes مسئلے کو reproduction کے بغیر fix یا reject نہیں لکھا جائے گا۔
 Feature board کو شواہد کے بغیر نہیں بدلا گیا: **52 done / 5 partial / 0 unstarted**۔
+
+<a id="decision-d-094"></a>
 
 ### D-94 — **حقیقی Excel workbook، مگر کوئی نیا package نہیں** (T-10 / D-53 کی تکمیل)
 
@@ -1569,6 +1744,8 @@ Master Spec §24.2 کا **آٹھ شیٹ all-data workbook اور before → afte
 بعد کے Glaucous میں وہ cases شامل ہیں اور موجودہ ہدف **`ALL GREEN - 860 of 860`** ہے۔
 PR stock/payment rules اور D-94 کا workbook behavior نہیں بدلا۔ صرف چار failure names دستیاب ہیں؛ مکمل
 `test.log` اور اصل Excel walk-through ابھی لازم ہیں، اس لیے T-10 🟡 ہی رہے گا۔
+
+<a id="decision-d-093"></a>
 
 ### D-93 — **Negative stock کا خاتمہ: نیا کام صفر سے نیچے نہیں** (completion plan)
 
@@ -1607,6 +1784,8 @@ report، پھر owner-only physical stock-take ہے جس میں finite، non-neg
 ہوتا ہے۔ **814 written cases، 45 static checks، 7/7 SQLite rehearsal groups اور 500 guarded attempts**
 کامیاب ہیں۔ یہاں .NET SDK نہیں، اس لیے Windows build اور xUnit ابھی مالک چلائیں گے؛ مطلوبہ نتیجہ
 `ALL GREEN - 814 of 814` ہے۔ Cloud postponed ہے اور اگلے code stage کے لیے دوبارہ `next` لازم ہوگا۔
+
+<a id="decision-d-092"></a>
 
 ### D-92 — **ایک وقت پوری دکان کا، ایک سیشن جو خود بند ہو، اور گلا بند ہو تو بل نہیں** (v0.35.0)
 
@@ -1668,6 +1847,8 @@ UDP، تین سرور باری باری (`time.windows.com`، `pool.ntp.org`، `
 پہلے استعمال شدہ قریب ترین رنگ `#57534E` سے **30.8** دور؛ گہرا `#3C4726` **9.9:1**، نرم `#ECF1CE` جس پر برانڈ متن **5.0:1**۔
 **نام دہرایا نہیں جائے گا:** Ultramarine پہلے بھی استعمال ہو چکا تھا — آئندہ ایسا نہیں ہوگا۔
 
+<a id="decision-d-091"></a>
+
 ### D-91 — **ایک پرنٹ شدہ ٹک لسٹ، جو خود بورڈ سے بنتی ہے** (v0.34.0 کے ساتھ — پروگرام کا کوڈ نہیں بدلا)
 
 **درخواست (24 اکتوبر 2026):** مالک نے کہا: «ٹک مارک کا سسٹم بنا دو… چیٹ میں بتاتے ہو تو کسی فائل میں بھی بتا دو…
@@ -1704,6 +1885,8 @@ UDP، تین سرور باری باری (`time.windows.com`، `pool.ntp.org`، `
 
 **دوبارہ نہ ہو:** Version ابھی **0.34.0 · Smalt `#003399`** ہے (پچھلا Mauveine `#A050A0`)۔
 
+
+<a id="decision-d-090"></a>
 
 ### D-90 — **دل کی دھڑکن، اور ایک بٹن جو پورے کاؤنٹر کو نہیں گرا سکتا** (v0.34.0)
 
@@ -1760,6 +1943,8 @@ UDP، تین سرور باری باری (`time.windows.com`، `pool.ntp.org`، `
 سفید پر **10.9:1** پڑھا جاتا ہے، اور سب سے قریب پہلے استعمال شدہ رنگ سے **31.9** دور ہے۔
 
 
+<a id="decision-d-089"></a>
+
 ### D-89 — **خالی صفحہ خود بتاتا ہے کہ کیوں خالی ہے** (v0.33.0)
 
 **مسئلہ:** دکان میں سب سے زیادہ نظر آنے والی چیز خالی فہرست ہے — اور وہ کچھ نہیں بتاتی۔
@@ -1802,6 +1987,8 @@ Products پر «پہلی دوا شامل کریں یا Excel / CSV سے فہرس
 
 **دوبارہ نہ ہو:** Version اب **0.33.0 · Mauveine `#A050A0`** ہے (پچھلا Amethyst `#69359C`)۔
 
+<a id="decision-d-088"></a>
+
 ### D-88 — **ایک خراب صفحہ پورے کاؤنٹر کو نہیں گرا سکتا** (v0.32.0)
 
 **خطرہ کیا تھا:** ہر مینو کی سطر جس صفحے کو کھولتی ہے، اُس کا ویو ماڈل **اُسی لمحے** بنتا ہے جب آپ اُس سطر پر کلک کرتے ہیں،
@@ -1838,6 +2025,8 @@ Products پر «پہلی دوا شامل کریں یا Excel / CSV سے فہرس
 
 **دوبارہ نہ ہو:** Version اب **0.32.0 · Amethyst `#69359C`** ہے (پچھلا Bistre `#584204`)۔
 
+<a id="decision-d-087"></a>
+
 ### D-87 — **697 میں سے 697 پاس**، اور وہ ٹول جو ثبوت جمع کرتے ہوئے خود ٹوٹ گیا (v0.31.2)
 
 **آپ کی دوڑ (23 اکتوبر 2026):** `Failed: 0, Passed: 697, Total: 697, Duration: 51 s` → **`ALL GREEN - 697 of 697`**۔
@@ -1872,6 +2061,8 @@ Products پر «پہلی دوا شامل کریں یا Excel / CSV سے فہرس
    کوئی سطر نظر آئے تو بھیجیں؛ وہ اطلاع ہے، گھبرانے کی بات نہیں۔
 5. **اب بھی اصل سوال وہی ہے: ونڈو کھلتی ہے یا نہیں۔** 697/697 ثابت کرتا ہے کہ اصول درست ہیں، مگر آپ کے سامنے کھلنے والی ونڈو
    پہلی بار پچھلے ہفتے کی v0.31.1 تھی جو رک گئی — **v0.31.2 کی اگلی دوڑ ہی وہ جواب ہے۔**
+
+<a id="decision-d-086"></a>
 
 ### D-86 — **ونڈو پہلی بار چلی**: 171 ایسی بائنڈنگز جو صرف کراش ہو سکتی تھیں، اور وہ سکرین جو کل کا رپورٹ دکھا رہی تھی (v0.31.1)
 
@@ -1914,6 +2105,8 @@ read-only property 'QtyLabel'»*۔ ایسی **171** بائنڈنگز 24 اسکر
 5. **کمپائل ہونا اور کھلنا دو الگ چیزیں ہیں** — ڈیسک ٹاپ بنا (F-01، F-16 ✅)، مگر ونڈو کا کھلنا آپ کی اگلی دوڑ سے
    ثابت ہو گا؛ اسی لیے F-05 اور باقی پانچ ابھی 🟡 ہیں۔
 
+<a id="decision-d-085"></a>
+
 ### D-85 — **کون کم رہا**: ہر شخص کے دراز کا حساب، اور «کم» و «زیادہ» کبھی نہ ملائیں (v0.31.0)
 
 **فیصلہ (23 اکتوبر 2026، v0.31.0 Loden):** اصل spec کا آخری ایسا جملہ جو *«نہیں بنا»* کہتا تھا —
@@ -1952,6 +2145,8 @@ read-only property 'QtyLabel'»*۔ ایسی **171** بائنڈنگز 24 اسکر
 5. **یہاں .NET نہیں ہے** — 9 نئے ٹیسٹ لکھے گئے اور SQL اصل ڈیٹا بیس پر چلایا گیا (7 دراز، 5 مدت کے
    اندر: 1500 کم / 200 زیادہ)، مگر **C# یہاں کمپائل نہیں ہوا**؛ اصل ثبوت آپ کی اگلی `RUN-TESTS` ہے
    جس میں **695** کیس ہونے چاہئیں۔
+
+<a id="decision-d-084"></a>
 
 ### D-84 — **686 میں سے 686 پاس** — اور ٹول جھوٹ بول رہا تھا (v0.30.9)
 
@@ -2003,6 +2198,8 @@ read-only property 'QtyLabel'»*۔ ایسی **171** بائنڈنگز 24 اسکر
 5. **یہاں .NET نہیں ہے** — اِن دو سکرپٹس کی اصل آزمائش آپ کی اگلی دوڑ ہے؛ میں نے صرف اُن کا منطقی ڈھانچہ
    اور چیکر سے اُن کی حفاظت جانچی ہے۔
 
+<a id="decision-d-083"></a>
+
 ### D-83 — «BUILD FAILED» جس میں کوڈ کا کوئی نقص نہیں تھا — پروگرام کھلا ہوا تھا (v0.30.8)
 
 **کیا ہوا (23 اکتوبر 2026):** آپ نے `START-AREA11.bat` چلایا اور چار لال سطریں آئیں:
@@ -2043,6 +2240,8 @@ MSBuild کی نہیں دکھتیں — ایک صاف سکرین آتی ہے: **�
    میں صاف سکرین آئے گی اور دوبارہ چلانا ہوگا۔
 5. **یہ کوئی کوڈ ٹیسٹ نہیں** — اِس راؤنڈ میں ایک بھی C# سطر نہیں بدلی، اِس لیے 686 ٹیسٹ ویسے ہی ہیں؛
    لاکھوں بار چیک ہو چکی بات یہ ہے: **اصل ثبوت آپ کی اگلی بلڈ ہے۔**
+
+<a id="decision-d-082"></a>
 
 ### D-82 — آپ کے کمپیوٹر پر **پہلی اصل دوڑ**: 6 لال سطریں، اور اُن میں سے 3 پروگرام کی تھیں (v0.30.7)
 
@@ -2098,6 +2297,8 @@ v0.30.6 میں ہم نے تبادلے والا سیکنڈ **نئے** شیف کو
 5. **پرنٹر بند ہو تو رقم منتقل ہو چکی ہوگی** — سکرین صاف کہہ دے گی اور «Print the slip again» موجود ہے،
    مگر کاغذ خود بخود نہیں نکلے گا۔
 
+<a id="decision-d-081"></a>
+
 ### D-81 — دراز **ایک ہاتھ سے دوسرے ہاتھ** میں جائے، اور ایک روپیہ دو بار نہ گنے (v0.30.6)
 
 **فیصلہ (23 اکتوبر 2026، v0.30.6 Damson):** مالک نے کہا کہ جو کام رہ گیا ہو وہ سب کر دو۔ چیک کرنے پر
@@ -2143,6 +2344,8 @@ v0.30.6 میں ہم نے تبادلے والا سیکنڈ **نئے** شیف کو
 5. **یہاں ٹیسٹ نہیں چلے** — 12 ٹیسٹ لکھے گئے ہیں اور SQL اصل SQLite فائل (تمام 23 migrations) پر آزما یا
    گیا، مگر **C# یہاں کمپائل نہیں ہوا**۔ اصل ثبوت آپ کی مشین پر `tools\RUN-TESTS.cmd` ہے۔
 
+<a id="decision-d-080"></a>
+
 ### D-80 — کوڈ کو **اصل C# گرامر** سے پڑھا جائے، اور «کتابیں» کی فہرست فائل میں جائے (v0.30.5)
 
 **فیصلہ (23 اکتوبر 2026، v0.30.5 Sable):** مالک نے کہا کہ **کوئی غلطی باقی نہ رہے**۔ آج تک کوڈ کی جانچ
@@ -2179,6 +2382,8 @@ v0.30.6 میں ہم نے تبادلے والا سیکنڈ **نئے** شیف کو
    چھاپنے کے لیے «Rs» لکھنا پڑے گا۔
 5. **یہاں ٹیسٹ نہیں چلے** — 673 کیس لکھے ہیں، اِن میں 14 اِس صفحے کے؛ اصل ثبوت آپ کی مشین پر
    `tools\RUN-TESTS.cmd` ہے۔
+
+<a id="decision-d-079"></a>
 
 ### D-79 — دکان کے پیسے **خود جانچے** جائیں: «کتابیں ملتی ہیں؟» (F-54، v0.30.4)
 
@@ -2229,6 +2434,8 @@ v0.30.6 میں ہم نے تبادلے والا سیکنڈ **نئے** شیف کو
 **صرف وہی شخص کھول سکتا ہے** جسے Reports یا Black box کی اجازت ہو (مالک کو ہمیشہ) — کاؤنٹر پر کھڑا
 کیشیئر پوری دکان کا حساب نہیں پڑھ سکتا۔ اِس کی ایک ٹیسٹ موجود ہے۔
 
+<a id="decision-d-078"></a>
+
 ### D-78 — جب کچھ خراب ہو تو **ایک فائل** بھیجیں، بیس اسکرین شاٹ نہیں (v0.30.3)
 
 **فیصلہ (23 اکتوبر 2026، v0.30.3 Cocoa):** مالک نے کہا کہ *"کوئی ایرر باقی نہ رہے، کیونکہ یہ پیسے اور
@@ -2255,6 +2462,8 @@ v0.30.6 میں ہم نے تبادلے والا سیکنڈ **نئے** شیف کو
 3. **`tools\diagnose.bat` بھی موجود ہے** — وہ چھوٹی جانچ ہے اور **PowerShell کے بغیر** چلتی ہے (اگر
    آفس کمپیوٹر پر PowerShell بند ہو تو وہی استعمال کریں)۔ دو ٹول رکھنے کی وجہ صرف یہی ہے۔
 4. **اِس ورژن میں دکان کا کوئی قاعدہ نہیں بدلا** — 659 ٹیسٹ وہی ہیں۔
+
+<a id="decision-d-077"></a>
 
 ### D-77 — ڈیمو ڈیٹا **مکمل مٹا دو**، اب صرف اصل دکان (F-53 کا اختتام)
 
@@ -2292,6 +2501,8 @@ v0.30.6 میں ہم نے تبادلے والا سیکنڈ **نئے** شیف کو
 4. **کوڈ تاریخ میں محفوظ ہے** - git کی پرانی commit میں نمونہ دکان موجود ہے؛ اگر کبھی واپس چاہیں تو
    اُس commit سے نکالا جا سکتا ہے، مگر یہ ایک نیا کام ہوگا، خودبخود واپس نہیں آئے گا۔
 
+<a id="decision-d-076"></a>
+
 ### D-76 — ڈیمو دکان **الگ** رہے، اور آخر میں مالک کے کہنے پر مٹا دی جائے
 
 **فیصلہ (22 اکتوبر 2026، v0.29.2 Petrol):** مالک نے کہا: *"i have a demo data ... make a button when i click demo
@@ -2327,6 +2538,8 @@ Sample shop کے صفحے پر اوپر ایک بینر جو فولڈر کا ن�
 
 Version اب **0.29.2 · Petrol `#1F4E5A`** ہے (پچھلا Indigo `#3F3D8C`)۔
 
+<a id="decision-d-075"></a>
+
 ### D-75 — ہوم اسکرین وہی نمبر دکھائے جو باقی صفحے دکھاتے ہیں (F-12، F-11)
 
 **فیصلہ (22 اکتوبر 2026، v0.29.0 Burgundy):** گھر کی اسکرین پر لکھا نمبر اور جس صفحے پر کلک کر کے مالک
@@ -2359,6 +2572,8 @@ Version اب **0.29.2 · Petrol `#1F4E5A`** ہے (پچھلا Indigo `#3F3D8C`)۔
    Settings سے ٹک کرے۔
 
 Version اب **0.29.0 · Burgundy `#6B1F3A`** ہے (پچھلا Pine `#1E4D3B`)۔
+
+<a id="decision-d-074"></a>
 
 ### D-74 — نمونہ دکان: ایک دن کا ڈیمو نہیں، ایک چھوٹی دکان کے **ڈھائی ماہ** (F-53)
 
@@ -2411,6 +2626,8 @@ Cosmetics، General، Baby Care) اور `categories.name` پر UNIQUE پابند
 
 Version اب **0.29.1 · Indigo `#3F3D8C`** ہے (پچھلا Burgundy `#6B1F3A`)۔
 
+<a id="decision-d-073"></a>
+
 ### D-73 — بلا بل واپسی: گاہک کے پاس پرچی نہ ہو تو بل ڈھونڈا جائے، اندازہ نہ لگایا جائے (F-20)
 
 **فیصلہ (26 اکتوبر 2026، v0.27.0 Moss):** واپسی کے صفحے پر ایک نیا خانہ **"No bill number? Find it"** — گاہک کے پاس پرچی نہ ہو
@@ -2450,6 +2667,8 @@ Version اب **0.29.1 · Indigo `#3F3D8C`** ہے (پچھلا Burgundy `#6B1F3A`)
 ایک ہی جانچ سے گزرتے ہیں؛ تلاش کچھ نہیں لکھتی۔
 Version اب **0.27.0 · Moss `#4A5D23`** ہے (پچھلا Sepia `#7A5C3E`)۔
 
+<a id="decision-d-072"></a>
+
 ### D-72 — کلاؤڈ سنک: قطار ٹیبل کے کالم سے بنتی ہے، اور سیٹنگز میں اپنا صفحہ (F-48 کی مرمت)
 
 **فیصلہ (26 اکتوبر 2026، v0.26.0 Nimbus):** v0.21.0 کا کلاؤڈ سنک چلتا ہوا دکھ رہا تھا، مگر **اصل Supabase نے اُسے کبھی قبول
@@ -2486,6 +2705,8 @@ Version اب **0.27.0 · Moss `#4A5D23`** ہے (پچھلا Sepia `#7A5C3E`)۔
 **دوبارہ نہ ہو:** دستاویز کبھی ٹیبل کے کالموں کی جگہ نہیں بھیجی جاتی؛ `version` کالم `int` ہے؛ key کبھی سکرین یا لاگ پر
 واپس نہیں آتی؛ سوئچ بند ہو تو کلاؤڈ سے کوئی بات نہیں؛ اور "Bring the cloud data here" پھر بھی پہلے بیک اپ لیتا ہے۔
 Version اب **0.26.0 · Nimbus `#3D4E63`** ہے (پچھلا Verdigris `#2E7D6F`)۔
+
+<a id="decision-d-071"></a>
 
 ### D-71 — خریداری، گاہک/سپلائر اور نمبروں کی جانچ: ٹیسٹ ہی ثبوت ہے (F-18)
 
@@ -2527,6 +2748,8 @@ Version اب **0.26.0 · Nimbus `#3D4E63`** ہے (پچھلا Verdigris `#2E7D6F`
 نمبر کبھی دوبارہ جاری نہیں؛ اور ٹیسٹ پاس ہونے کا مطلب یہ نہیں کہ دکان کے پرنٹر پر بھی سب ٹھیک ہے۔
 Version اب **0.25.0 · Verdigris `#2E7D6F`** ہے (پچھلا Sage `#5F7161`)۔
 
+<a id="decision-d-070"></a>
+
 ### D-70 — غلط ہجے والی دوا بھی مل جائے، مگر اندازہ کبھی بل نہ بنے (F-50)
 
 **فیصلہ (26 اکتوبر 2026، v0.24.0 Sage):** کاؤنٹر کا سرچ باکس اور **Products** کا صفحہ اب غلط ہجے برداشت کرتے ہیں۔
@@ -2562,6 +2785,8 @@ Version اب **0.25.0 · Verdigris `#2E7D6F`** ہے (پچھلا Sage `#5F7161`)�
 **دوبارہ نہ ہو:** مل جانے والی تلاش کو کبھی اندازے سے نہیں ملایا جاتا؛ 5 سے کم حروف پر کوئی قربت نہیں؛
 ہر ٹائپ شدہ لفظ لازم؛ Enter = سکین؛ بغیر انسان کے دبائے کوئی دوا بل میں نہیں آتی۔
 Version اب **0.24.0 · Sage `#5F7161`** ہے (پچھلا Basil `#2F6B4F`)۔
+
+<a id="decision-d-069"></a>
 
 ### D-69 — نمونہ دکان: نئی دکان کی ہر سکرین پر کام نظر آئے (F-53)
 
@@ -2606,6 +2831,8 @@ Version اب **0.24.0 · Sage `#5F7161`** ہے (پچھلا Basil `#2F6B4F`)۔
 نمبر کاؤنٹر آگے۔
 Version اب **0.23.0 · Basil `#2F6B4F`** ہے (پچھلا Cinnabar `#A63A2B`)۔
 
+<a id="decision-d-068"></a>
+
 ### D-68 — پرنٹر کا انتخاب، اور "code 6" کا اصل راز (F-46 کی مرمت)
 
 **فیصلہ (26 اکتوبر 2026، v0.22.1 Cinnabar):** مالک نے دکان پر پہلی بار **Print test slip** دبایا تو پروگرام نے
@@ -2636,6 +2863,8 @@ Settings میں پرنٹر کا نام خالی ہو تو پرانا کوڈ ون
 **دوبارہ نہ ہو:** `OpenPrinter(NULL)` کبھی نہیں — ڈیفالٹ پرنٹر **نام سے** مانگا جاتا ہے؛ کوڈ 6 کی سطر
 صفحہ اور بلیک باکس دونوں میں جاتی ہے؛ پرنٹر بند ہو تو صفحہ نہیں رکتا (Z-07)۔
 Version اب **0.22.1 · Cinnabar `#A63A2B`** ہے (پچھلا Harbour `#3B5C7F`)۔
+
+<a id="decision-d-067"></a>
 
 ### D-67 — بلوں کی فہرست: کوئی بل ڈھونڈو، اور وہی پرچی دوبارہ چھاپو (F-52)
 
@@ -2687,6 +2916,8 @@ Version اب **0.22.1 · Cinnabar `#A63A2B`** ہے (پچھلا Harbour `#3B5C7F`
 "باقی" صفر ہو تو ڈیش، اور کوئی ادائیگی نہ ہو تو پیسے والا خانہ چھپتا ہی نہیں۔
 Version اب **0.22.0 · Harbour `#3B5C7F`** ہے (پچھلا Ochre `#8F6400`)۔
 
+<a id="decision-d-066"></a>
+
 ### D-66 — کلاؤڈ سنک: دکان کا ڈیٹا، گھر تک ایک نقل (F-48)
 
 **فیصلہ (26 اکتوبر 2026، v0.21.0 Ochre):** SYSTEM میں نیا صفحہ **Cloud sync**۔ اصول ایک جملے میں:
@@ -2735,6 +2966,8 @@ D-66 کا اصل فیصلہ نہیں بدلا: مقامی database اصل ہے،
 لازم ہے۔ **860 written cases، 51 static checks، 3 SQLite round-trips اور 5/5 guard injections** مقامی
 ثبوت ہیں؛ اصل Supabase یا Windows/xUnit نتیجہ نہیں۔ مطلوبہ موجودہ run **`ALL GREEN - 860 of 860`** ہے۔
 
+<a id="decision-d-065"></a>
+
 ### D-65 — پرنٹر اور سکینر کا ٹیسٹ، دکان کے اپنے کاغذ پر (F-46)
 
 **فیصلہ (26 اکتوبر 2026، v0.20.0 Pebble):** SYSTEM میں نیا صفحہ **Printer & scanner**۔ یہ صفحہ کوئی بل نہیں بناتا؛
@@ -2759,6 +2992,8 @@ D-66 کا اصل فیصلہ نہیں بدلا: مقامی database اصل ہے،
 
 **دوبارہ نہ ہو:** پرنٹر بند ہو یا کاغذ ختم ہو تو صفحہ کبھی رُکتا نہیں (Z-07)؛ کوئی بل، کوئی اسٹاک، کوئی پیسہ نہیں بدلا۔
 Version اب **0.20.0 · Pebble `#57534E`** ہے (پچھلا Sangria `#8A1C4B`)۔
+
+<a id="decision-d-064"></a>
 
 ### D-64 — انسٹالر: ایک ڈبل کلک، پروگرام Program Files میں، ڈیٹا ProgramData میں (F-47)
 
@@ -2800,6 +3035,8 @@ Version اب **0.20.0 · Pebble `#57534E`** ہے (پچھلا Sangria `#8A1C4B`)�
 
 **دوبارہ نہ ہو:** Version اب **0.19.1 · Sangria `#8A1C4B`** ہے (پچھلا Fern `#2F5D3A`)۔
 
+<a id="decision-d-063"></a>
+
 ### D-63 — ٹیکس رپورٹ، وصولی کی پرچی اور ماہانہ بیان (F-49)
 
 **فیصلہ (25 اکتوبر 2026، v0.18.0 Brass):** تین کاغذات جو دکان ہر مہینے دیتی ہے — **ٹیکس رپورٹ** (اکاؤنٹنٹ کے لیے)،
@@ -2835,6 +3072,8 @@ Version اب **0.20.0 · Pebble `#57534E`** ہے (پچھلا Sangria `#8A1C4B`)�
 5. **ٹیکس رپورٹ میں ادھوری واپسی کی کوئی زد نہیں** — پوری واپسی ہو یا آدھی، refund وہی رہتا ہے جو گاہک کو دیا گیا۔
 
 **دوبارہ نہ ہو:** Version اب **0.18.0 · Brass `#8A6A2B`** ہے (پچھلا Wisteria `#6B5B95`)۔
+
+<a id="decision-d-062"></a>
 
 ### D-62 — دوسرا کاؤنٹر: ایک ہی ڈیٹابیس، دکان کے نیٹ ورک پر (F-45)
 
@@ -2886,6 +3125,8 @@ Version اب **0.20.0 · Pebble `#57534E`** ہے (پچھلا Sangria `#8A1C4B`)�
 
 **دوبارہ نہ ہو:** Version اب **0.17.0 · Wisteria `#6B5B95`** ہے (پچھلا Juniper `#3F5E5A`)۔
 
+<a id="decision-d-061"></a>
+
 ### D-61 — میڈیکل ریپ، ڈاکٹر کا نسخہ اور گاہک کا آخری منافع (F-44)
 
 **فیصلہ (23 اکتوبر 2026، v0.16.0 Juniper):** تین باتیں ایک نئے صفحے **CUSTOMERS & SUPPLIERS → Doctors & reps**
@@ -2919,6 +3160,8 @@ Version اب **0.20.0 · Pebble `#57534E`** ہے (پچھلا Sangria `#8A1C4B`)�
 5. **ریپ سے رابطہ خودکار نہیں۔** فون نمبر محفوظ ہے، مگر کال/واٹس ایپ کا بٹن ابھی نہیں (جوڑنا نیا فیصلہ ہوگا)۔
 
 **دوبارہ نہ ہو:** Version اب **0.16.0 · Juniper `#3F5E5A`** ہے (پچھلا Nightshade `#2E1065`)۔
+
+<a id="decision-d-060"></a>
 
 ### D-60 — ایک دوا کے کئی بارکوڈ: ایک کوڈ، ایک پیک (F-43)
 
@@ -2959,6 +3202,8 @@ Version اب **0.20.0 · Pebble `#57534E`** ہے (پچھلا Sangria `#8A1C4B`)�
    اسکین = تین ڈبے" نہیں (ڈبل اسکین سے زیادہ مقدار کا خطرہ نہیں)۔
 
 **دوبارہ نہ ہو:** Version اب **0.15.0 · Nightshade `#2E1065`** ہے (پچھلا Brick `#B91C1C`)۔
+
+<a id="decision-d-059"></a>
 
 ### D-59 — اپنے خانے (کسٹم فیلڈز): مالک خود سوال بناتا ہے (F-42)
 

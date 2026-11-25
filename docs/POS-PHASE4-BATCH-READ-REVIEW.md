@@ -1,5 +1,7 @@
 # Phase4 portion10 — batch read and fresh preparation, v0.88.0 Skylark
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **Date:**2026-11-10. **Status:** bounded D-110 continuation, global rollout/Windows/Phase4 OPEN. No posting policy or supplier paid/payable decision changed. The whole Stock/Expenses/Suppliers screen is NOT yet a cost-confidential surface: histories, totals and posting results on those screens remain separately open.
 
 ## Trace / contract

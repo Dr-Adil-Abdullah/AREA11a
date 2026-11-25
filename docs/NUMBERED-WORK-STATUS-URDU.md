@@ -1,5 +1,7 @@
 # نمبر وار کام اور باقی جانچ — مستقل1تا36فہرست
 
+> **⏳ D-117 — موجودہ مکمل حالت پہلے یہاں پڑھیں:** [ہوا/باقی کام،دیر اور عارضی اندازہ](COMPLETE-STATUS-AND-DECISIONS-URDU.md)؛[تمام117 فیصلے + پانچ بنیادی اصول](DECISION-REGISTER-INDEX-URDU.md)؛[اگلا CustomField Update جائزہ شروع](CUSTOM-FIELD-NEXT-SCOPE-URDU.md)۔ Code v0.134.0/3347suiteUNRUN؛اس documentation turn میں production code نہیں بدلا۔ نیچے پرانے checkpoint کے نتائج اور “شروع نہیں” والے جملے اپنے وقت کے تاریخی ہیں،موجودہ منظوری/نتیجہ نہیں؛پہلے1تا5 بند،پھر6۔
+
 **⏳ موجودہ source: v0.134.0 Eglantine؛5.1Nativefieldcheckpoint،ابھیجاری۔** [⏳ منصوبہ](REMAINING-14-PORTIONS-URDU.md)؛[⏳ Nativefield/PT-76/باقی5.1](NATIVE-FIELD-OUTCOME-REVIEW-URDU.md)۔ مستقل1–36نمبرنہیںبدلے۔
 
 ✅ حصہ1کیCore/Testscompileتصدیقملی؛اصلv0.120.1کے2963میں2941PASS/22FAIL۔ ⏳حصوں2/3/4/5کانیاruntimeباقی؛**3347suiteUNRUN**۔ حصہ5کےremainingwriters/registry/StockTakeکاسورسجائزہبھیباقی؛❌حصہ6شروعنہیں/installerنہیںبنا۔
@@ -29,7 +31,7 @@
 |21۔ ⏳ Reports/files/exports | PRcompleteauthorizedheader+linesreceipt؛linefailureپرBuildfailure؛receiptComposeunchanged؛Historycurrentbulkپہلے | alreadyprepared/printed/exportedoutputsnotrecalled؛باقیExcel/CSV/PDF/print/Windowsroutes |
 |22۔ ⏳ Blackbox/BookCheck | صرفapprovednavigationgateAudit+Cost+Profit+main؛حالیہinternalsunchanged | تازہWindowsnavigationproof؛بغیراجازتغیرمتعلقredesignنہیں |
 |23۔ ⏳ DB/permissiontransaction | BEGINIMMEDIATEcompare-before-write؛Snapshotquery-only/borrow/cleanup؛ledgerPage/QuoteاورcurrentDBmain | صرفپہلاcheckpoint؛remainingread/write/Settings/drafts/StockTake/busy/provider/runtimeباقی |
-|24۔ ⏳ Fault/rollback | 72نئےparentSaveC#cases؛32auditfaults/16validation/16post-ack/8guards؛پرانےtestsبرقرار | تمام3326C#UNRUN؛providerCOMMIT/rollback/dispose/WPFcallbacks/remainingcallers/files |
+|24۔ ⏳ Fault/rollback | 72نئےparentSaveC#cases؛32auditfaults/16validation/16post-ack/8guards؛پرانےtestsبرقرار | تمام3347C#UNRUN؛providerCOMMIT/rollback/dispose/WPFcallbacks/remainingcallers/files |
 |25۔ ⏳ Duplicate/retry | Parent/quick-create/Catalog/UnitSavelocalguards؛unknown/ackcleanupRefresh/regrantسےresetنہیں؛پرانےledger/draftguardsبرقرار | اصلparentWPFretry/othergalleryactions/cross-page/pageReopen/restart/globalidentity/parallel/providerCOMMITباقی؛localflagdurablekeyنہیں |
 |26۔ ⏳ Encryptedbackup | passwordA .a11bakcode،manual/auto/safety/rollbackintegration،referencechecks | اصلC#service/DPAPI/ACL/passwordrotation/large-photo/interruptionverification |
 |27۔ ⏳ Restore/newPC | stagedvalidation/safety/rollback/explicitlegacycode | نئےPCپرoriginalpassword،wrong/corrupt/interruptedrestore،پراناDB/photosبچنااورstartupثبوت |
@@ -39,7 +41,7 @@
 |31۔ ⏳ Keyboard/scanner | permanentsearch/approvednavigationcode | arrows/Shift-arrows/nativecaret/combo/grid/TabاوراصلUSBlookup/focus |
 |32۔ ⏳ Printer/PDF/camera | receipt/print/PDFcode؛پراناownerprinter-slipproofمحفوظ | تازہreceipts/width/printer/no-printer/scanner/camera/viewerاورfiguresملاپ |
 |33۔ ⏳ Startup/login/lock | approvedstartup/singleinstance/FocusGuard/recoverycode | حقیقیregistry/reboot/re-entry/escape/reset/recovery/shortcuts/taskbar/icon |
-|34۔ ⏳ Guide/actionreconciliation | اردوMD/HTML،PT-62/trace/1–36trackerاور36lessonanchorsاپڈیٹ | اصلappتمامroutes/settings/actionsسےملاپ،Windows/PTsignoffsباقی |
+|34۔ ⏳ Guide/actionreconciliation | اردوMD/HTML،PT-63–76/trace/1–36tracker،جامعرپورٹ/decisionindexاور36lessonanchorsاپڈیٹ | اصلappتمامroutes/settings/actionsسےملاپ،Windows/PTsignoffsباقی |
 |35۔ ⏳ Isolatedtestinstallation | verifiedbackup+separateDB/photos/configکیشرطdocumented | اصلVM/sparePC/storageproof،startup/migrationسےshopdataمحفوظ؛exefolderاکیلاکافینہیں |
 |36۔ ❌ Singleinstaller | مالککیاجازت؛build/installerconfig/scriptsموجود | کامیابWindowsbuild/tests،exeبننا،cleaninstall/upgrade/uninstall/datapreservation/shortcuts/startup،پھرsendablefile؛**ابھینہیںبنا** |
 
@@ -51,7 +53,7 @@
 4. اسی نمبرکےاندرکیاباقیہےاورکیوں؟
 5. اگلےنمبروںکیترتیب،docs/GitHubکیاصلحیثیت،installerکےباقیدروازے۔
 
-موجودہترتیب: [⏳ نیا14حصوںکامنظورشدہمنصوبہ](REMAINING-14-PORTIONS-URDU.md)۔ حصہ1کیمتعلقہcompileتصدیقملی؛حصہ2کیاصلrerunباقی؛نئےnextسےصرفحصہ3کیاجازتملی،اسکیاصلWPF/.NETجانچبھیباقی؛حصہ4شروعنہیں۔ پرانا3–6چکروںکااندازہابکامشروعکرنےکیہدایتنہیں۔
+موجودہترتیب:حصہ1کیخاصcompileتصدیقملی؛2تا5کیباقیsource/runtimeتصدیقجاری؛5.1NativefieldکےبعدCustomFieldUpdateجائزہشروع۔ پہلے1تا5بند،پھر6؛تفصیل[مرکزیحال](COMPLETE-STATUS-AND-DECISIONS-URDU.md)میں۔ پرانا3–6چکروںکااندازہوعدہنہیں۔
 
 اصلshopپرsyntheticpostsنہیں؛secret/datachatمیںنہیں؛ہرportiondocs+sameactivebranchcommit/push+actualremoteverification۔ Static/Python/featureboardکوproduction/runtime/securityPASSنہکہیں۔
 

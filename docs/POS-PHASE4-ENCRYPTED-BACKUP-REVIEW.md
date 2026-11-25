@@ -1,5 +1,7 @@
 # Phase4 portion15 — password backup implementation review
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 **v0.93.0 Shearwater · 2026-11-10 · D-113. SOURCE IMPLEMENTED; .NET/Windows approval OPEN.**
 
 This is not a cryptographic certification, Windows test result, installer, or permission to experiment on the live shop. No real password/customer data was requested or used. Previous v0.92 plain ZIP/DB files remain unencrypted; upgrading cannot retroactively protect a previously shared file.

@@ -1,5 +1,7 @@
 # ⏳ حصہ5/14 — مشترکہ Draft کی پرانی ترمیم کی روک — v0.124.0 Sorrel
 
+> **⏳ checkpoint کی حد:** اس فائل کے نتائج/اعداد اسی درج شدہ checkpoint کے ہیں؛پرانے pending یا not-started جملوں کو موجودہ حالت نہ سمجھیں۔ [تازہ مجموعی رپورٹ](COMPLETE-STATUS-AND-DECISIONS-URDU.md) اور[فیصلوں کا index](DECISION-REGISTER-INDEX-URDU.md) پہلے دیکھیں؛نیا Windows PASS فرض نہیں۔
+
 > ⏳ تازہ **5.1Settings** کا محدود checkpoint: [PT-67/باقیراستے](SETTINGS-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3143suiteUNRUN۔ نیچےاسوقتکیحیثیتتاریخی؛5.1ابھیجاری،1تا5مکمل+تصدیقسےپہلے6نہیں۔
 
 
