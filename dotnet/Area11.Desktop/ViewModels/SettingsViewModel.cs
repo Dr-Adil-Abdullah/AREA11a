@@ -114,6 +114,8 @@ public sealed class SettingsViewModel : ObservableObject
     private PermissionEditForm? _permissionEdit;
     private bool _savingPermission;
     private bool _savingStaff;
+    private readonly PostingAttemptGuard _staffCreate = new();
+    private int _createdStaffId;
     private RecoveryEditForm? _recoveryEdit;
     private static readonly string[] FormKeys =
     {
@@ -1528,27 +1530,58 @@ public sealed class SettingsViewModel : ObservableObject
     private void AddStaff()
     {
         if (_savingStaff || _savingPermission) return;
-        if (!UpdateStaffAccess()) return;
-        if (!CanManageStaff)
+        if (!_staffCreate.TryBegin())
         {
-            SetStatus("Only the owner can add staff.", true);
+            SetStatus(_staffCreate.WasAcknowledged
+                ? "SAVED. The previous staff account was created. Verify before reopening this page; do not add it again."
+                : "Staff account creation is unconfirmed. Verify before reopening this page; do not add it again.", true);
             return;
         }
-
-        var result = _services.Auth.CreateStaff(_user, NewStaffName, UserRoles.Parse(SelectedRole), NewStaffPin);
-
-        if (!result.Ok)
+        _savingStaff = true;
+        _createdStaffId = 0;
+        var writeStarted = false;
+        try
         {
-            SetStatus(result.Error ?? "The staff account could not be saved.", true);
-            return;
+            if (!UpdateStaffAccess()) return;
+            var name = NewStaffName;
+            var role = UserRoles.Parse(SelectedRole);
+            var pin = NewStaffPin;
+            writeStarted = true;
+            var result = _services.Auth.CreateStaff(_user, name, role, pin);
+            if (!result.Ok)
+            {
+                _staffCreate.ObserveFailure(result);
+                SetStatus(result.Error ?? "Staff account creation is unconfirmed. Verify before retrying.", true);
+                return;
+            }
+            _staffCreate.AcknowledgeCommit();
+            _createdStaffId = result.Value;
+            _newStaffName = _newStaffPin = string.Empty; // Consume original inputs before observable callbacks.
+            var saved = result.StaffEdit;
+            if (_createdStaffId <= 0 || saved?.StaffForm is null || saved.Id != _createdStaffId
+                || saved.StaffForm.UserId != _createdStaffId || Users.Any(person => person.Id == _createdStaffId))
+            { SetStatus("SAVED. The account was created but could not be shown. Verify before reopening this page; do not add it again.", true); return; }
+            OnPropertyChanged(nameof(NewStaffName));
+            OnPropertyChanged(nameof(NewStaffPin));
+            Users.Add(saved); // Exact created row only;do not fresh-read/rebase existing account/permission/recovery forms.
+            SetStatus("SAVED. Staff #" + _createdStaffId + " — " + saved.Name + " was created. The role decides what they see.", false);
+            if (_newStaffName.Length != 0 || _newStaffPin.Length != 0 || !Users.Contains(saved) || saved.Id != _createdStaffId)
+            { SetStatus("SAVED. The account was created but input/list cleanup changed. Verify before reopening this page; do not add it again.", true); return; }
+            _staffCreate.CompleteReset(); // Only after callbacks and the consumed-input/retained-row verdict.
         }
-
-        var name = NewStaffName.Trim();
-        NewStaffName = string.Empty;
-        NewStaffPin = string.Empty;
-        LoadUsers();
-
-        SetStatus($"{name} can now sign in with that PIN. The role decides what they see.", false);
+        catch (Exception exception)
+        {
+            _staffCreate.ObserveException();
+            _services.Log.Error("Staff creation save/refresh did not finish.", exception);
+            SetStatus(_staffCreate.WasAcknowledged
+                ? "SAVED. Staff #" + _createdStaffId + " was created but the page could not refresh. Verify before reopening this page; do not add it again."
+                : "Staff account creation is unconfirmed. Verify before reopening this page; do not add it again.", true);
+        }
+        finally
+        {
+            if (!writeStarted && _staffCreate.InFlight) _staffCreate.CancelBeforeWrite();
+            _savingStaff = false;
+        }
     }
 
     private void ToggleActive() => SaveStaffChange(secret: false);

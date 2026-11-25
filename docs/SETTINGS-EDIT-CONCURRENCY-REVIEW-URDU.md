@@ -76,3 +76,7 @@ v0.131.0 میں Staff account toggle/password/PIN کے checked forms/outcomes ا
 ## ⏳ بعد کا اسی5.1 کا recovery checkpoint
 
 v0.132.0 میں الگ Recoveryword loadedform/checkedchange-reset/outcome source شامل؛[PT-74/موجودہحدود](RECOVERY-EDIT-CONCURRENCY-REVIEW-URDU.md)۔ اوپرکےنتائجاپنےcheckpointکےتاریخیہیں؛CreateStaff/remainingwriters/registryاوراصلWindows/provider/cache/WPFابھیباقی،5.1مکملنہیں۔
+
+## ⏳ بعد کا اسی5.1 کا CreateStaff checkpoint
+
+v0.133.0 میں CreateStaff کا observed outcome/currentPIN/exactrow اور localguard source شامل؛[PT-75/موجودہحدود](STAFF-CREATE-OUTCOME-REVIEW-URDU.md)۔ اوپرکےنتائجاپنےcheckpointکےتاریخی؛remainingwriters/registryاوراصلWindows/provider/WPFابھیباقی،5.1مکملنہیں۔

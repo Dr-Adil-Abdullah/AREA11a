@@ -52,3 +52,7 @@ Recovery word اب بھی الگ راستہ ہے: `AuthService.SetRecoveryWord` 
 ## ⏳ بعد کا اسی5.1 کا recovery checkpoint
 
 v0.132.0 میں الگ Recoveryword loadedform/checkedchange-reset/outcome source شامل؛[PT-74/موجودہحدود](RECOVERY-EDIT-CONCURRENCY-REVIEW-URDU.md)۔ اوپرکےنتائجاپنےcheckpointکےتاریخیہیں؛CreateStaff/remainingwriters/registryاوراصلWindows/provider/cache/WPFابھیباقی،5.1مکملنہیں۔
+
+## ⏳ بعد کا اسی5.1 کا CreateStaff checkpoint
+
+v0.133.0 میں CreateStaff کا observed outcome/currentPIN/exactrow اور localguard source شامل؛[PT-75/موجودہحدود](STAFF-CREATE-OUTCOME-REVIEW-URDU.md)۔ اوپرکےنتائجاپنےcheckpointکےتاریخی؛remainingwriters/registryاوراصلWindows/provider/WPFابھیباقی،5.1مکملنہیں۔

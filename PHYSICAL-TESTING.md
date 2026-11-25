@@ -1,5 +1,10 @@
 # Area11 — Real-life Physical Testing Log
 
+## ⏳ PT-75 — نیا Staff account،outcome اور دوبارہ Add (v0.133.0)
+
+[⏳ مکملsteps/باقی5.1](docs/STAFF-CREATE-OUTCOME-REVIEW-URDU.md)؛verifiedencryptedbackup **اورواقعیالگDB/photos/config** پہلے؛اصلshopپرexperimentalaccounts/posts/faultsنہیں۔3326/0fail/0skipاورDesktopRelease؛roles/currentOwner/currentPIN/duplicate،INSERT/audit/COMMITfaults،exactID/row/nohash/proof،ackقبلinput/collection/status،unknown/SAVED-refreshfailureپرRefresh/regrant/inputchangeسےguardنہکھلے،normalcleanupکےبعدالگlegitimateAddجانچیں۔ صرفنیاrowآخرمیں،پرانےStaff/permission/recoveryformsfreshrebaseنہہوں۔ ⏳26نئےcasesUNRUN؛124static/29lexical/34Pythonplansاصل.NET/guard/provider/WPFproofنہیں۔ Remainingwriters/registryباقی؛6/installerشروعنہیں۔
+
+
 ## ⏳ PT-74 — Recovery word فارم/نتیجہ (v0.132.0)
 
 [⏳ مکملsteps/باقی5.1](docs/RECOVERY-EDIT-CONCURRENCY-REVIEW-URDU.md)؛verifiedencryptedbackup **اورواقعیالگDB/photos/config** پہلے؛اصلshopپرposts/faultsنہیں۔3300/0fail/0skipاورDesktopRelease؛دوloadedchange/factoryreset،presence/exactJSON/timestamp/uncached/context/scope/null،malformedread،currentOwner/session،normalization/factorysignin،audit/write/COMMIT/cachefaults،Refresh/reentry/ackقبلbindings/unknowninvalidateاورSAVEDجانچیں۔ Factory→factorycontentایکجیسارہےتوtokenوہیرہسکتاہے،durablededupنہیں۔ ⏳26نئےcasesUNRUN؛123static/34lexical/37Pythonplansاصل.NET/cache/auth/WPFcertificationنہیں۔ Remainingwriters/registryباقی؛6/installerشروعنہیں۔

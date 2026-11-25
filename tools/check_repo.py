@@ -9743,6 +9743,65 @@ def check_recovery_edit_boundaries():
     REPORT.append('P5.1 recovery word authorized immutable form,checked presence/value CAS,observed write/cache outcome and exact UI handoff;26 additive C# cases UNRUN,imperative APIs separate,remaining Settings/Windows/provider/WPF OPEN')
 
 
+
+def check_staff_create_outcomes():
+    """Staff creation lexical/outcome contracts,not .NET/provider/WPF/durable retry proof."""
+    def need(source, tokens, label):
+        for token in tokens:
+            if token not in source: FAILURES.append(label + ': missing ' + token)
+    def order(source, *tokens):
+        last = -1
+        for token in tokens:
+            at = source.find(token, last + 1)
+            if at < 0: FAILURES.append('Staff create ordering: missing/out-of-order ' + token); return
+            last = at
+    auth = (DOTNET / 'Area11.Core/Services/AuthService.cs').read_text()
+    core = auth.split('public ServiceResult<int> CreateStaff(', 1)[1].split('/// <summary>Owner resets', 1)[0]
+    need(core, ['var outcome = new TransactionOutcome();', 'if (!actor.IsOwner)',
+                'NoCommitConfirmed = true', 'var cleanName = (name ?? string.Empty).Trim();',
+                'var cleanPin = (pin ?? string.Empty).Trim();',
+                'SELECT value FROM settings WHERE key=\'security.pinLength\';',
+                'System.Globalization.CultureInfo.InvariantCulture, out var length) ? length : 4;',
+                'cleanPin.Length != pinLength || !cleanPin.All(char.IsDigit)',
+                'SELECT COUNT(1) FROM users WHERE lower(name) = lower(@name);',
+                'role = UserRoles.ToDb(role)', 'pin = PasswordHasher.Hash(cleanPin)',
+                'CreateStaffFailure(outcome, exception.Message)', 'NoCommitConfirmed = outcome.NoCommitConfirmed',
+                'Staff account creation is unconfirmed. Verify the staff list before retrying.'], 'Staff create Core')
+    order(core, 'var saved = _db.Tx(connection =>', 'OwnerAccess.Require(_db, connection, actor);',
+          'var rawLength =', 'if (cleanPin.Length != pinLength', 'var duplicate =', 'if (duplicate > 0)',
+          'INSERT INTO users(name, role, pin_hash, active, created_at)', 'var newId = (int)_db.NextId(connection);',
+          '_audit.Record(connection, owner, "Users", "create", "users", newId.ToString(),',
+          'return CaptureStaffEdit(connection, newId);', '}, outcome);',
+          'return new ServiceResult<int> { Ok = true, Value = saved.Id, StaffEdit = saved, EditVersion = saved.StaffForm!.EditVersion };')
+    if '_settings.GetInt(' in core: FAILURES.append('Staff creation cannot validate a mutable PIN policy from the app cache')
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/SettingsViewModel.cs').read_text()
+    need(vm, ['private readonly PostingAttemptGuard _staffCreate = new();', 'private int _createdStaffId;'], 'Staff local guard identity')
+    ui = vm.split('private void AddStaff()', 1)[1].split('private void ToggleActive()', 1)[0]
+    need(ui, ['if (_savingStaff || _savingPermission) return;', 'if (!_staffCreate.TryBegin())',
+              '_staffCreate.WasAcknowledged', '_savingStaff = true;', 'var writeStarted = false;',
+              'if (!UpdateStaffAccess()) return;', 'var name = NewStaffName;', 'var role = UserRoles.Parse(SelectedRole);',
+              'var pin = NewStaffPin;', 'writeStarted = true;', '_services.Auth.CreateStaff(_user, name, role, pin)',
+              '_staffCreate.ObserveFailure(result);', '_staffCreate.AcknowledgeCommit();', '_createdStaffId = result.Value;',
+              '_newStaffName = _newStaffPin = string.Empty;', 'var saved = result.StaffEdit;',
+              'saved?.StaffForm is null', 'saved.Id != _createdStaffId', 'saved.StaffForm.UserId != _createdStaffId',
+              'Users.Any(person => person.Id == _createdStaffId)', 'Users.Add(saved);', 'if (_newStaffName.Length != 0 || _newStaffPin.Length != 0 || !Users.Contains(saved) || saved.Id != _createdStaffId)', '_staffCreate.CompleteReset();',
+              '_staffCreate.ObserveException();', 'SAVED. Staff #',
+              'if (!writeStarted && _staffCreate.InFlight) _staffCreate.CancelBeforeWrite();', '_savingStaff = false;'], 'Staff create Desktop')
+    order(ui, 'if (!_staffCreate.TryBegin())', '_savingStaff = true;', 'UpdateStaffAccess()', 'writeStarted = true;',
+          '_services.Auth.CreateStaff(', 'if (!result.Ok)', '_staffCreate.AcknowledgeCommit();',
+          '_newStaffName = _newStaffPin = string.Empty;', 'OnPropertyChanged(nameof(NewStaffName));',
+          'OnPropertyChanged(nameof(NewStaffPin));', 'Users.Add(saved);', 'SetStatus("SAVED. Staff #"', 'if (_newStaffName.Length != 0', '_staffCreate.CompleteReset();')
+    for forbidden in ('LoadUsers(', 'LoadPermissions(', 'LoadRecoveryWordEdit(', 'LoadPricing('):
+        if forbidden in ui: FAILURES.append('Staff creation must use exact returned row without fresh rebase: ' + forbidden)
+    if vm.count('_staffCreate =') != 1 or vm.count('_staffCreate.CompleteReset();') != 1 or vm.count('_staffCreate.CancelBeforeWrite();') != 1:
+        FAILURES.append('Staff create guard must survive Refresh/regrant/input cleanup;only the bounded AddStaff flow may release it')
+    xaml = (DOTNET / 'Area11.Desktop/Views/SettingsView.xaml').read_text()
+    need(xaml, ['Text="PIN (configured length)"'], 'Staff current PIN hint')
+    tests = (DOTNET / 'Area11.Tests/StaffCreateOutcomeTests.cs').read_text()
+    if tests.count('[Fact]') + tests.count('[InlineData(') != 26: FAILURES.append('Staff create needs 26 additive written C# cases')
+    REPORT.append('P5.1 CreateStaff observed Tx/current PIN rule/exact created row;Desktop persistent local guard and ack-before-cleanup;26 new C# cases UNRUN,NOT durable identity/provider/WPF/whole Settings completion')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -9864,6 +9923,7 @@ def main() -> int:
     check_permission_edit_boundaries()
     check_staff_edit_boundaries()
     check_recovery_edit_boundaries()
+    check_staff_create_outcomes()
     check_csharp_grammar()
 
     if not quiet:

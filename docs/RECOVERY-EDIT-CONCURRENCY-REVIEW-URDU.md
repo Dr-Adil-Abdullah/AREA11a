@@ -53,3 +53,7 @@ Verified encrypted backup **اور واقعی الگ DB/photos/config** پہلے
 ## ⏳ باقی 5.1
 
 CreateStaff،remaining native/custom/imperative Settings writers کی inventory؛startup registry+SQLite race/partial restore،PT-67–74 کی اصل Windows/provider/UI/file/physical gates؛پھر اسی حصہ5 میں StockTake/toggle/bulk/snapshot کے باقی راستے۔ **Recovery editor کا source شامل ہونے کو پورا5.1 مکمل نہ کہیں۔ 1تا5 کے باقی کام+ضروری تصدیق سے پہلے6 نہیں؛❌installer نہیں بنایا۔**
+
+## ⏳ بعد کا اسی5.1 کا CreateStaff checkpoint
+
+v0.133.0 میں CreateStaff کا observed outcome/currentPIN/exactrow اور localguard source شامل؛[PT-75/موجودہحدود](STAFF-CREATE-OUTCOME-REVIEW-URDU.md)۔ اوپرکےنتائجاپنےcheckpointکےتاریخی؛remainingwriters/registryاوراصلWindows/provider/WPFابھیباقی،5.1مکملنہیں۔

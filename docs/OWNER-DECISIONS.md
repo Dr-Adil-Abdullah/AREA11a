@@ -1,5 +1,10 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## ⏳ v0.133.0 — اسی5.1میںCreateStaffoutcome؛نئیaccountpolicyنہیں
+
+تازہnextپرCreateStaffobservedTx/currentPINlength/exactcreatedrowاورexistingPostingAttemptGuardسےDesktoplocalhandoffکیا؛Owner/name/role/duplicate/PINbusinessrulesاورپراناAPIبرقرار۔ AppcacheکیبجائےاسیwriteTxمیںموجودہPINlength؛ہمیشہ4digitsوالاUIlabelدرست۔ [⏳ PT-75/حدود](STAFF-CREATE-OUTCOME-REVIEW-URDU.md)؛3326suite/WindowsUNRUN؛remainingwriters/registryباقی۔ Unknown/ack-refreshfailurelocalguardنہdurableidentityنہحصہ6؛1تا5باقیکام+تصدیقسےپہلے6نہیں،installerنہیں۔
+
+
 ## ⏳ v0.132.0 — اسی5.1میںRecoveryword؛پرانےاصولبرقرار
 
 تازہnextپرمجازloadedform،checkedcompare/exacthandoff/outcomesشامل؛normalization/4–40،خالیلفظسےarea11،nonsecretaudit،currentOwner/sessionاورimperativeAPIبرقرار۔ Recoverywordchangeکوpassword/PINresetیاfreshloginکی نئیpolicyنہیںبنایا۔ [⏳ PT-74/حدود](RECOVERY-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3300suite/WindowsUNRUN؛CreateStaff/remainingwriters/registryباقی۔ EquivalentfactorycontentدوبارہSaveکوروکنادurableidentityنہیں؛1تا5باقیکام+تصدیقسےپہلے6نہیں،installerنہیں۔

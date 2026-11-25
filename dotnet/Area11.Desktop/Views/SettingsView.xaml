@@ -654,7 +654,7 @@
                                                 </StackPanel>
 
                                                 <StackPanel Grid.Column="2">
-                                                    <TextBlock Text="PIN (4 digits)" Style="{StaticResource FieldLabel}" />
+                                                    <TextBlock Text="PIN (configured length)" Style="{StaticResource FieldLabel}" />
                                                     <TextBox Text="{Binding NewStaffPin, UpdateSourceTrigger=PropertyChanged}" />
                                                 </StackPanel>
                                             </Grid>

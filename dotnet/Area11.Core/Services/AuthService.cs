@@ -221,66 +221,60 @@ public sealed class AuthService
     /// <summary>Owner creates staff (Spec 7.1.2). Staff sign in with a PIN.</summary>
     public ServiceResult<int> CreateStaff(User actor, string name, UserRole role, string pin)
     {
-        if (!actor.IsOwner)
-        {
-            return ServiceResult<int>.Fail("Only the owner can create staff accounts.");
-        }
-
-        var cleanName = (name ?? string.Empty).Trim();
-        if (cleanName.Length < 2)
-        {
-            return ServiceResult<int>.Fail("Enter the person's name.");
-        }
-
-        var pinLength = _settings.GetInt("security.pinLength", 4);
-        if (pin.Trim().Length != pinLength || !pin.Trim().All(char.IsDigit))
-        {
-            return ServiceResult<int>.Fail($"The PIN must be exactly {pinLength} digits.");
-        }
-
+        var outcome = new TransactionOutcome();
         try
         {
-            var id = _db.Tx(connection =>
+            if (!actor.IsOwner)
+                return new ServiceResult<int> { Error = "Only the owner can create staff accounts.", NoCommitConfirmed = true };
+            var cleanName = (name ?? string.Empty).Trim();
+            if (cleanName.Length < 2)
+                return new ServiceResult<int> { Error = "Enter the person's name.", NoCommitConfirmed = true };
+            var cleanPin = (pin ?? string.Empty).Trim();
+            var saved = _db.Tx(connection =>
             {
                 var owner = OwnerAccess.Require(_db, connection, actor);
+                // Same configured length/fallback rule,read under the write lock,not a stale app cache.
+                var rawLength = _db.QuerySingle<string>(connection,
+                    "SELECT value FROM settings WHERE key='security.pinLength';");
+                var pinLength = int.TryParse(rawLength, System.Globalization.NumberStyles.Integer,
+                    System.Globalization.CultureInfo.InvariantCulture, out var length) ? length : 4;
+                if (cleanPin.Length != pinLength || !cleanPin.All(char.IsDigit))
+                    throw new ValidationException($"The PIN must be exactly {pinLength} digits.");
                 var duplicate = Convert.ToInt64(_db.Scalar(connection,
                     "SELECT COUNT(1) FROM users WHERE lower(name) = lower(@name);", new { name = cleanName }) ?? 0L);
 
                 if (duplicate > 0)
-                {
                     throw new ValidationException("A person with this name already exists.");
-                }
-
                 _db.Execute(connection,
                     "INSERT INTO users(name, role, pin_hash, active, created_at) VALUES(@name, @role, @pin, 1, @at);",
                     new
                     {
                         name = cleanName,
                         role = UserRoles.ToDb(role),
-                        pin = PasswordHasher.Hash(pin.Trim()),
+                        pin = PasswordHasher.Hash(cleanPin),
                         at = Clock.Now()
                     });
-
                 var newId = (int)_db.NextId(connection);
-
                 _audit.Record(connection, owner, "Users", "create", "users", newId.ToString(),
                     newValue: $"{{\"name\":\"{cleanName}\",\"role\":\"{UserRoles.ToDb(role)}\",\"pin\":\"set\"}}");
-
-                return newId;
-            });
-
-            return ServiceResult<int>.Success(id);
+                return CaptureStaffEdit(connection, newId);
+            }, outcome);
+            return new ServiceResult<int> { Ok = true, Value = saved.Id, StaffEdit = saved, EditVersion = saved.StaffForm!.EditVersion };
         }
         catch (ValidationException exception)
         {
-            return ServiceResult<int>.Fail(exception.Message);
+            return CreateStaffFailure(outcome, exception.Message);
         }
         catch (Exception exception)
         {
             _log.Error("A staff account could not be created.", exception);
-            return ServiceResult<int>.Fail("The staff account could not be saved.");
+            return CreateStaffFailure(outcome, "The staff account was not saved; no commit was made.");
         }
     }
+
+    private static ServiceResult<int> CreateStaffFailure(TransactionOutcome outcome, string noCommitError) =>
+        new() { Error = outcome.NoCommitConfirmed ? noCommitError
+            : "Staff account creation is unconfirmed. Verify the staff list before retrying.", NoCommitConfirmed = outcome.NoCommitConfirmed };
 
     /// <summary>Owner resets a password or PIN. The black box only records that it changed.</summary>
     public ServiceResult SetSecret(User actor, int userId, string newSecret, bool isPassword) =>

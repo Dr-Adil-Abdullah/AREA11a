@@ -1,8 +1,8 @@
 # AREA11a — Unfinished work / نامکمل کام اور اگلا قدم
 
-## ⏳ موجودہ 5.1 — Recovery word کا پرانا فارم اور نتیجہ — v0.132.0 Chicory
+## ⏳ موجودہ 5.1 — نیا Staff account: نتیجہ اور دوبارہ Add — v0.133.0 Scabious
 
-**5.1 جاری؛حصوں1 تا5 کے باقی کام اور ضروری تصدیق سے پہلے6 نہیں۔** Recovery word کے لیے مجاز immutable form،exact stored key/value baseline،checked change/factory reset کا in-Tx compare،observed outcome/cache-after-ack اور exact UI handoff شامل۔ Empty→factory،normalization،Owner/session اور پرانا imperative API برقرار؛تمام writers checked ہونے کا دعویٰ نہیں۔ ⏳26 نئے C# cases/3300 suite UNRUN؛✅123 محدود static،34 نئی lexical mutations،37 Python WAL/DELETE plans پاس؛یہ اصل .NET/provider/cache/auth/WPF ثبوت نہیں۔ [⏳ جائزہ/PT-74/باقی5.1](docs/RECOVERY-EDIT-CONCURRENCY-REVIEW-URDU.md)؛[⏳14حصے](docs/REMAINING-14-PORTIONS-URDU.md)۔ CreateStaff/remaining native/custom/imperative writers،startup registry اور Windows تصدیق باقی؛StockTake بعد میں اسی5 میں۔ ❌6/installer شروع نہیں۔
+**5.1 جاری؛حصوں1 تا5 کے باقی کام اور ضروری تصدیق سے پہلے6 نہیں۔** CreateStaff کا observed Tx،موجودہ PIN length کی in-Tx read،exact created ID/row handoff اور Desktop کا persistent local attempt guard شامل۔ Unknown/ack-refreshfailure پر Refresh/regrant سے دوبارہAdd نہیں کھلتا؛ack/input-consumption پہلے،UI callbacks بعد۔ Owner/name/role/PIN/duplicate اصول برقرار؛نہ durable identity نہ تمام writers کی تکمیل۔ ⏳26 نئے C# cases/3326 suite UNRUN؛✅124 محدود static،29 نئی lexical mutations،34 Python WAL/DELETE plans پاس؛یہ اصل .NET/provider/auth/WPF ثبوت نہیں۔ [⏳ جائزہ/PT-75/باقی5.1](docs/STAFF-CREATE-OUTCOME-REVIEW-URDU.md)؛[⏳14حصے](docs/REMAINING-14-PORTIONS-URDU.md)۔ Remaining native/custom/imperative writers،startup registry اور Windows تصدیق باقی؛StockTake بعد میں اسی5 میں۔ ❌6/installer شروع نہیں۔
 
 
 ## ⏳ موجودہ حصہ2/14 — v0.120.2 Willow
