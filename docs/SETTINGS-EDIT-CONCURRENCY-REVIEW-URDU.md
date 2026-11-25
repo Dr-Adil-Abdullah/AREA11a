@@ -1,5 +1,8 @@
 # ⏳ 5.1 — Settings: مرکزی فارم کی پرانی حالت سے Save کی روک — v0.125.0 Celandine
 
+> ⏳ تازہv0.130.0میںاسی5.1کےStaffpermissioncheckbox/Resetکیboundedاصلاح: [PT-72/باقی5.1](PERMISSION-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3248suiteUNRUN۔ نیچےپچھلےcheckpointکاثبوتتاریخی؛remainingStaffpermissionsکےحوالےنئےجائزےکیحدتکبدلے،credentials/toggle/imperativeAPIsاببھیالگباقی۔5.1جاری،1تا5مکمل+تصدیقسےپہلے6نہیں۔
+
+
 > ⏳ تازہv0.129.0میںاسی5.1کےWorkbookSettingsکیboundedاصلاح: [PT-71/باقی5.1](WORKBOOK-SETTINGS-CONCURRENCY-REVIEW-URDU.md)؛3224suiteUNRUN۔ نیچےپچھلےcheckpointکاثبوتتاریخی؛workbookباقیکےحوالےنئےجائزےکیحدتکبدلے۔5.1جاری،1تا5مکمل+تصدیقسےپہلے6نہیں۔
 
 

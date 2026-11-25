@@ -1,5 +1,10 @@
 # Area11 — Real-life Physical Testing Log
 
+## ⏳ PT-72 — Staff Permissions (v0.130.0)
+
+[⏳ مکملsteps/باقی5.1](docs/PERMISSION-EDIT-CONCURRENCY-REVIEW-URDU.md)؛verifiedencryptedbackup **اورواقعیالگDB/photos/config** پہلے؛اصلshopپرposts/faultsنہیں۔3248/0fail/0skipاورDesktopRelease؛دوpermissionlists/staleSet+Reset،othermodule/role/active/presence/context/scope،explicitreadfailure،exactSet/Resettoken،currentOwner/independentProfit+Cost،queuedpointer/keyboard/selection،audit/COMMITfaultsاورpost-ackSAVEDجانچیں۔ ImperativeAPIبغیربaselineپراناintentہے،loadedDesktopہمیشہchecked؛سبwritersprotectedنہیں۔ ⏳24نئےcasesUNRUN؛121static/29lexical/30Pythonplansruntime/auth/WPFcertificationنہیں۔6/installerشروعنہیں۔
+
+
 ## ⏳ PT-71 — Workbook Settings (v0.129.0)
 
 [⏳ مکملsteps/باقی5.1](docs/WORKBOOK-SETTINGS-CONCURRENCY-REVIEW-URDU.md)؛verifiedencryptedbackup **اورواقعیالگDB/photos/config** پہلے؛اصلshopپرposts/faultsنہیں۔3224/0fail/0skipاورDesktopRelease؛pairedSettings/editedrowکےstaleconflictsپرmixedbatchatomicrefusal،uncachedDBguard،coherentExport/Preview،Owner/Settings/bulkfinancialgates،audit/COMMITfaultsاورpostcommitSAVEDcallbacksجانچیں۔ UnknownguardClear/newfile/regrantسےنہکھلے؛data-only/CSV/Pricesکےمشترکہwrapperregressionsبھیباقی۔ ⏳13نئےcasesUNRUN؛120static/29lexical/18Pythonplansruntime/Excel/WPFcertificationنہیں۔6/installerشروعنہیں۔

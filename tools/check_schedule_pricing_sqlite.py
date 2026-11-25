@@ -14,7 +14,7 @@ def run():
     core = ROOT / 'dotnet/Area11.Core'
     settings = (core / 'Services/SettingsService.cs').read_text().split('public ServiceResult SetMany(', 1)[1].split('internal bool HardwareBaselineRequired', 1)[0]
     pricing = (core / 'Services/PricingAllowanceService.cs').read_text()
-    capture = (core / 'Services/EditConcurrency.cs').read_text()
+    capture = (core / 'Services/EditConcurrency.cs').read_text().split('if (scope == "pricing")', 1)[1].split('if (scope == "permissions")', 1)[0]
     setting_sql = quoted(settings, 'INSERT INTO settings')
     pricing_sql = quoted(pricing, 'INSERT INTO user_pricing_allowances')
     person_sql = quoted(capture, 'SELECT id,role,active FROM users')

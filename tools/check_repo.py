@@ -6260,6 +6260,62 @@ def check_windows_v1201_regressions() -> None:
     REPORT.append('v0.120.1 owner Windows22-failure fixture guards:checked Settings/current identities/explicit denials/stored names/pre-fault services/schema-valid marker;new C# rerun required')
 
 
+def check_permission_edit_boundaries() -> None:
+    """Lexical checked staff permission editor;not .NET/WPF/auth/provider certification."""
+    def read(path): return (DOTNET / path).read_text()
+    def need(text, *tokens):
+        for token in tokens:
+            if token not in text: FAILURES.append('Permission edit contract missing: ' + token)
+    def order(text, *tokens):
+        indices = [text.find(t) for t in tokens]
+        if -1 in indices or indices != sorted(indices): FAILURES.append('Permission edit ordering: ' + ' -> '.join(tokens))
+    service = read('Area11.Core/Services/PermissionService.cs')
+    load = service.split('public ServiceResult<PermissionEditForm> LoadEditForm(',1)[-1].split('private IReadOnlyDictionary<string, bool> ReadMap(',1)[0]
+    order(load, 'return _db.Snapshot(connection =>', 'OwnerAccess.Require(_db, connection, actor);',
+          'SELECT id, name, role, active FROM users WHERE id = @id;', 'Success(CaptureEdit(connection, target))')
+    need(load, 'ServiceResult<PermissionEditForm>.Fail(')
+    need(service, 'new PermissionEditForm(target.Id, target.Kind, map, EditConcurrency.Capture(_db, connection, "permissions", target.Id))',
+         '(target.IsOwner && !IsFinancialVisibility(module))', 'RoleDefault(target.Kind, module)',
+         'if (expected is null) throw new ValidationException(', 'EditConcurrency.Require(_db, connection, "permissions", userId, expected);',
+         'SetCore(actor, userId, module, allowed, null, checkedEdit: false)',
+         'SetCore(actor, userId, module, allowed, expected, checkedEdit: true)',
+         'ResetCore(actor, userId, null, checkedEdit: false)', 'ResetCore(actor, userId, expected, checkedEdit: true)')
+    for name, end, sql, action in [('SetCore', 'public ServiceResult ResetToRoleDefaults', 'INSERT INTO user_permissions', 'permission_change'),
+                                    ('ResetCore', 'private void RequireEditor', 'DELETE FROM user_permissions', 'permission_reset')]:
+        body = service.split('private ServiceResult ' + name + '(',1)[-1].split(end,1)[0]
+        order(body, 'var outcome = new TransactionOutcome();', 'return _db.Tx(connection =>',
+              'var owner = OwnerAccess.Require(_db, connection, actor);', 'if (checkedEdit) RequireEditor(connection, userId, expected);',
+              sql, '"' + action + '"', 'var form = CaptureEdit(connection, target);',
+              'PermissionEdit = form', '}, outcome);')
+        need(body, 'NoCommitConfirmed = outcome.NoCommitConfirmed', 'unconfirmed. Reload')
+    capture = read('Area11.Core/Services/EditConcurrency.cs')
+    need(capture, '"permissions" => null,', 'if (scope == "permissions")',
+         'SELECT id,role,active FROM users WHERE id=@id;', 'SELECT module_key,allowed FROM user_permissions WHERE user_id=@id ORDER BY module_key;')
+    model = read('Area11.Core/Models/PermissionEditForm.cs')
+    need(model, 'new ReadOnlyDictionary<string, bool>', '[System.Text.Json.Serialization.JsonIgnore]\n    public EditVersion EditVersion { get; }')
+    need(read('Area11.Core/Utils/ServiceResult.cs'), '[System.Text.Json.Serialization.JsonIgnore]\n    public Area11.Core.Models.PermissionEditForm? PermissionEdit { get; init; }')
+    vm = read('Area11.Desktop/ViewModels/SettingsViewModel.cs')
+    need(vm, 'private PermissionEditForm? _permissionEdit;', 'private bool _savingPermission;',
+         '_services.Permissions.LoadEditForm(_user, _selectedUser.Id)', 'ShowPermissions(loaded.Value);', 'var editable = form.Role != UserRole.Owner && CanManageStaff;',
+         '_services.Permissions.ResetToRoleDefaults(_user, target.Id, form.EditVersion)',
+         '_services.Permissions.Set(_user, target.Id, toggle.Module, toggle.Allowed, form.EditVersion)',
+         'if (_savingPermission) { RestorePermissionToggle(toggle); return; }', 'try { toggle.Allowed = _permissionEdit.Values[toggle.Module]; }')
+    ui = vm.split('private void SavePermissionChange(',1)[-1].split('// ----------------------------- Helpers',1)[0]
+    order(ui, 'if (_savingPermission) return;', 'var form = _permissionEdit;', '_savingPermission = true;',
+          '_services.Permissions.ResetToRoleDefaults(', 'acknowledged = true;', '_permissionEdit = result.PermissionEdit;',
+          'ShowPermissions(_permissionEdit);')
+    need(ui, 'if (!result.NoCommitConfirmed) { _permissionEdit = null; ClearPermissionRows(); }',
+         'SAVED. Permissions were stored but the page could not refresh.', 'finally { _savingPermission = false; }')
+    if 'LoadPermissions();' in ui or 'LoadEditForm(' in ui: FAILURES.append('Permission save/reset must not rebase through a new read')
+    need(vm.split('private void ClearStaffData()',1)[-1].split('private void LoadPermissions()',1)[0], '_permissionEdit = null;')
+    tests = read('Area11.Tests/PermissionEditConcurrencyTests.cs')
+    need(tests, 'StaleResetCannotDeleteANewerPermissionGrant', 'AnotherModuleChangeAlsoInvalidatesTheWholeLoadedList',
+         'FailedReadIsNotASuccessfulDefaultPermissionEditor', 'DeferredCommitFailureCannotReturnASuccessTokenOrSafeRetryVerdict',
+         'OwnerFinancialCheckboxesRemainIndependentButOtherOwnerGrantsAndResetStayProtected')
+    if tests.count('[Fact]') != 18 or tests.count('[InlineData(') != 6: FAILURES.append('Permission editor needs24 written additive cases')
+    REPORT.append('Part5.1 Permissions:explicit coherent map/full relevant baseline/checked Set+Reset/exact handoff/unknown UI invalidation;24 written cases NOT runtime/all imperative writers/Settings closure')
+
+
 def check_workbook_settings_edit_boundaries() -> None:
     """Lexical workbook Settings checks;NOT C#/provider/Excel/WPF/durable request identity."""
     def read(path): return (DOTNET / path).read_text()
@@ -6776,7 +6832,7 @@ def check_authenticated_session_boundaries() -> None:
         FAILURES.append('Bill basis must revalidate before and after its modal')
     need(read('Area11.Desktop/Views/PosView.xaml'), 'Binding CounterAccessAllowed', 'Binding CounterAccessDenied')
     need(read('Area11.Desktop/ViewModels/SettingsViewModel.cs'),
-         '_services.Permissions.MapFor(_user, _selectedUser)', '_services.Pricing.ForUser(_user, _selectedUser)')
+         '_services.Permissions.LoadEditForm(_user, _selectedUser.Id)', '_services.Pricing.ForUser(_user, _selectedUser)')
     tests = read('Area11.Tests/AuthenticatedSessionTests.cs')
     need(tests, 't.Database.Sessions.Enable();', 'ProofCannotBeUsedOnAnotherDatabaseInstanceEvenForSameFile',
          'ProtectedCloseProofCannotBePromotedToInteractiveLogin',
@@ -7618,7 +7674,7 @@ def check_transaction_permission_boundaries():
     if 'return row is null ? RoleDefault(user.Kind, module) : row.Value != 0;' not in ordinary:
         FAILURES.append('Transaction/permission successful missing ordinary grant must retain role defaults')
     mapping = permission.split('public IReadOnlyDictionary<string, bool> MapFor', 1)[-1].split('public ServiceResult Set', 1)[0]
-    if 'var rows = _db.Read(connection => _db.Query<PermissionRow>' not in mapping:
+    if 'return _db.Snapshot(connection =>' not in mapping or 'private PermissionEditForm CaptureEdit(SqliteConnection connection, User target)' not in mapping or 'var stored = _db.Query<PermissionRow>(connection,' not in mapping:
         FAILURES.append('Transaction/permission assignment map must use current read')
     for name in (
         'ExecuteDoesNotLendTransactionToForeignConnection', 'QueryDoesNotLendTransactionToForeignConnection',
@@ -7649,7 +7705,7 @@ def check_financial_visibility_grants():
                   'if (IsFinancialVisibility(module)) return CanSeeFinancial(user, module);',
                   'current is not { Active: true } || current.Kind != actor.Kind',
                   'if (target.IsOwner && !IsFinancialVisibility(module))',
-                  'user.IsOwner && !IsFinancialVisibility(module)'):
+                  'target.IsOwner && !IsFinancialVisibility(module)'):
         if token not in permission:
             FAILURES.append(f'Central financial permission contract missing {token}')
     if not (permission.find('if (IsFinancialVisibility(module))') < permission.find('if (user.IsOwner)')):
@@ -9659,6 +9715,7 @@ def main() -> int:
     check_hardware_edit_boundaries()
     check_icon_edit_boundaries()
     check_workbook_settings_edit_boundaries()
+    check_permission_edit_boundaries()
     check_csharp_grammar()
 
     if not quiet:

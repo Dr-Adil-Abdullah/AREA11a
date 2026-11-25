@@ -1,6 +1,7 @@
 using Area11.Core.Data;
 using Area11.Core.Models;
 using Area11.Core.Utils;
+using Microsoft.Data.Sqlite;
 
 namespace Area11.Core.Services;
 
@@ -162,48 +163,69 @@ public sealed class PermissionService
 
     public IReadOnlyDictionary<string, bool> MapFor(User actor, User target)
     {
+        var result = LoadEditForm(actor, target.Id);
+        return result.Ok && result.Value is not null ? result.Value.Values : Modules.All.ToDictionary(module => module, _ => false);
+    }
+
+    public ServiceResult<PermissionEditForm> LoadEditForm(User actor, int userId)
+    {
         try
         {
-            return _db.Read(connection =>
+            return _db.Snapshot(connection =>
             {
                 OwnerAccess.Require(_db, connection, actor);
-                return ReadMap(target);
+                var target = _db.QuerySingle<User>(connection,
+                    "SELECT id, name, role, active FROM users WHERE id = @id;", new { id = userId });
+                if (target is null) throw new ValidationException("That person no longer exists.");
+                return ServiceResult<PermissionEditForm>.Success(CaptureEdit(connection, target));
             });
         }
-        catch (Exception) { return Modules.All.ToDictionary(module => module, _ => false); }
+        catch (Exception exception)
+        {
+            _log.Error("Staff permission editor could not be loaded.", exception);
+            return ServiceResult<PermissionEditForm>.Fail(exception is ValidationException ? exception.Message
+                : "Permissions could not be read. Reload the selected person before editing.");
+        }
     }
 
     private IReadOnlyDictionary<string, bool> ReadMap(User user)
     {
-        var map = new Dictionary<string, bool>(StringComparer.Ordinal);
-        var stored = new Dictionary<string, bool>(StringComparer.Ordinal);
-
         try
         {
-            var rows = _db.Read(connection => _db.Query<PermissionRow>(connection,
-                "SELECT module_key, allowed FROM user_permissions WHERE user_id = @userId;",
-                new { userId = user.Id }));
-
-            foreach (var row in rows)
+            return _db.Snapshot(connection =>
             {
-                stored[row.ModuleKey] = row.Allowed;
-            }
+                var target = _db.QuerySingle<User>(connection,
+                    "SELECT id, name, role, active FROM users WHERE id = @id;", new { id = user.Id });
+                if (target is null) throw new ValidationException("That person no longer exists.");
+                return CaptureEdit(connection, target).Values;
+            });
         }
         catch (Exception exception)
         {
             _log.Error($"Permissions for user {user.Id} could not be read.", exception);
+            return Modules.All.ToDictionary(module => module, _ => false);
         }
-
-        foreach (var module in Modules.All)
-        {
-            map[module] = (user.IsOwner && !IsFinancialVisibility(module))
-                || (stored.TryGetValue(module, out var value) ? value : RoleDefault(user.Kind, module));
-        }
-
-        return map;
     }
 
-    public ServiceResult Set(User actor, int userId, string module, bool allowed)
+    private PermissionEditForm CaptureEdit(SqliteConnection connection, User target)
+    {
+        var stored = _db.Query<PermissionRow>(connection,
+            "SELECT module_key, allowed FROM user_permissions WHERE user_id = @userId;", new { userId = target.Id })
+            .ToDictionary(row => row.ModuleKey, row => row.Allowed, StringComparer.Ordinal);
+        var map = Modules.All.ToDictionary(module => module, module =>
+            (target.IsOwner && !IsFinancialVisibility(module))
+                || (stored.TryGetValue(module, out var allowed) ? allowed : RoleDefault(target.Kind, module)), StringComparer.Ordinal);
+        return new PermissionEditForm(target.Id, target.Kind, map, EditConcurrency.Capture(_db, connection, "permissions", target.Id));
+    }
+
+    // Explicit imperative callers remain separate from a loaded editor. Desktop uses the checked overload.
+    public ServiceResult Set(User actor, int userId, string module, bool allowed) =>
+        SetCore(actor, userId, module, allowed, null, checkedEdit: false);
+
+    public ServiceResult Set(User actor, int userId, string module, bool allowed, EditVersion? expected) =>
+        SetCore(actor, userId, module, allowed, expected, checkedEdit: true);
+
+    private ServiceResult SetCore(User actor, int userId, string module, bool allowed, EditVersion? expected, bool checkedEdit)
     {
         if (!actor.IsOwner)
         {
@@ -215,9 +237,10 @@ public sealed class PermissionService
             return ServiceResult.Fail($"Unknown module '{module}'.");
         }
 
+        var outcome = new TransactionOutcome();
         try
         {
-            _db.Tx(connection =>
+            return _db.Tx(connection =>
             {
                 var owner = OwnerAccess.Require(_db, connection, actor);
                 var target = _db.QuerySingle<User>(connection,
@@ -233,6 +256,7 @@ public sealed class PermissionService
                     throw new ValidationException("The owner always has every permission.");
                 }
 
+                if (checkedEdit) RequireEditor(connection, userId, expected);
                 var old = _db.QuerySingle<int?>(connection,
                     "SELECT allowed FROM user_permissions WHERE user_id = @userId AND module_key = @module;",
                     new { userId, module });
@@ -257,53 +281,72 @@ ON CONFLICT(user_id, module_key) DO UPDATE SET
                     $"{userId}:{module}",
                     oldValue: old?.ToString(),
                     newValue: allowed ? "1" : "0");
-            });
-
-            return ServiceResult.Success();
+                var form = CaptureEdit(connection, target);
+                return new ServiceResult { Ok = true, EditVersion = form.EditVersion, PermissionEdit = form };
+            }, outcome);
         }
         catch (ValidationException exception)
         {
-            return ServiceResult.Fail(exception.Message);
+            return new ServiceResult { Error = outcome.NoCommitConfirmed ? exception.Message
+                : "Permission saving is unconfirmed. Reload and verify before retrying.", NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
         catch (Exception exception)
         {
             _log.Error($"Permission {module} for user {userId} could not be saved.", exception);
-            return ServiceResult.Fail("The permission could not be saved.");
+            return new ServiceResult { Error = outcome.NoCommitConfirmed ? "The permission was not saved; no commit was made."
+                : "Permission saving is unconfirmed. Reload and verify before retrying.", NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
     }
 
-    public ServiceResult ResetToRoleDefaults(User actor, int userId)
+    public ServiceResult ResetToRoleDefaults(User actor, int userId) =>
+        ResetCore(actor, userId, null, checkedEdit: false);
+
+    public ServiceResult ResetToRoleDefaults(User actor, int userId, EditVersion? expected) =>
+        ResetCore(actor, userId, expected, checkedEdit: true);
+
+    private ServiceResult ResetCore(User actor, int userId, EditVersion? expected, bool checkedEdit)
     {
         if (!actor.IsOwner)
         {
             return ServiceResult.Fail("Only the owner can change permissions.");
         }
 
+        var outcome = new TransactionOutcome();
         try
         {
-            _db.Tx(connection =>
+            return _db.Tx(connection =>
             {
                 var owner = OwnerAccess.Require(_db, connection, actor);
                 var target = _db.QuerySingle<User>(connection,
                     "SELECT id, name, role, active FROM users WHERE id = @id;", new { id = userId });
                 if (target is null) throw new ValidationException("That person no longer exists.");
                 if (target.IsOwner) throw new ValidationException("The owner always has every permission.");
+                if (checkedEdit) RequireEditor(connection, userId, expected);
                 _db.Execute(connection, "DELETE FROM user_permissions WHERE user_id = @userId;", new { userId });
                 _audit.Record(connection, owner, "Users", "permission_reset", "user_permissions",
                     userId.ToString(), oldValue: "custom", newValue: "role defaults");
-            });
-
-            return ServiceResult.Success();
+                var form = CaptureEdit(connection, target);
+                return new ServiceResult { Ok = true, EditVersion = form.EditVersion, PermissionEdit = form };
+            }, outcome);
         }
         catch (ValidationException exception)
         {
-            return ServiceResult.Fail(exception.Message);
+            return new ServiceResult { Error = outcome.NoCommitConfirmed ? exception.Message
+                : "Permission saving is unconfirmed. Reload and verify before retrying.", NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
         catch (Exception exception)
         {
             _log.Error($"Permissions for user {userId} could not be reset.", exception);
-            return ServiceResult.Fail("The permissions could not be reset.");
+            return new ServiceResult { Error = outcome.NoCommitConfirmed ? "The permissions were not reset; no commit was made."
+                : "Permission reset is unconfirmed. Reload and verify before retrying.", NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
+    }
+
+    private void RequireEditor(SqliteConnection connection, int userId, EditVersion? expected)
+    {
+        // Explicit checked overloads fail closed even in sessions-disabled hosts.
+        if (expected is null) throw new ValidationException("The permission editor changed or was not loaded. Reload and review before saving.");
+        EditConcurrency.Require(_db, connection, "permissions", userId, expected);
     }
 
     private sealed class PermissionRow

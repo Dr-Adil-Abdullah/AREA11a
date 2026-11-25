@@ -46,7 +46,7 @@ def run():
         'if (!EnsureCounterAccess()) { RefreshBasisSelection(); return; }',
         '_services.Partners.GetCustomers(actor: _user)')
     add('Area11.Desktop/ViewModels/SettingsViewModel.cs', '_services.Pricing.ForUser(_user, _selectedUser)',
-        '_services.Permissions.MapFor(_user, _selectedUser)')
+        '_services.Permissions.LoadEditForm(_user, _selectedUser.Id)')
     originals = {path: path.read_bytes() for path, _ in cases}
     try:
         checks.check_authenticated_session_boundaries()

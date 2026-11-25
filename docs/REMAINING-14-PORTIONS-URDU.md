@@ -10,7 +10,7 @@
 
 ## ⏳ مالک کی تازہ ترتیب — پہلے1تا5 بند،پھر6
 
-نامکملحصہ5کےاگلےکام5.1،5.2کیذیلیگنتیسے؛**1تا5کاباقیکاماورضروریتصدیقمکملکیےبغیر6شروعنہیںکرنا۔** اسوقتصرف1کیخاصcompileخرابیverified؛2rerun،3Save-WPF،4session-WPF،5source+runtimeباقی۔ تازہ5.1Settingsجاری؛[PT-71](WORKBOOK-SETTINGS-CONCURRENCY-REVIEW-URDU.md)،3224suiteUNRUN۔
+نامکملحصہ5کےاگلےکام5.1،5.2کیذیلیگنتیسے؛**1تا5کاباقیکاماورضروریتصدیقمکملکیےبغیر6شروعنہیںکرنا۔** اسوقتصرف1کیخاصcompileخرابیverified؛2rerun،3Save-WPF،4session-WPF،5source+runtimeباقی۔ تازہ5.1Settingsجاری؛[PT-72](PERMISSION-EDIT-CONCURRENCY-REVIEW-URDU.md)،3248suiteUNRUN۔
 
 ## ⏳ مکمل تقسیم
 
@@ -22,7 +22,7 @@
 |2۔ ⏳ پوری ٹیسٹ سوئٹ | اجازت مل گئی؛اصل v0.120.1 run میں2941PASS/22FAIL/2963۔22 ناکامیوں سے متعلق fixture اصلاحات؛v0.120.2 کا اصل rerun باقی |
 |3۔ ⏳ ریکارڈ بنانے والے فارم | نئےnextسےاجازت؛v0.121.0میںparent/quick-create/Catalog/Unit Saveکےlocaloutcome/ackguards،72نئےcases؛اصلWindows/WPF3035suiteاورPT-63باقی |
 |4۔ ⏳ لاگ اِن اور اجازتیں | اجازتملی؛v0.122.0/D-116sessionproof،resetپرnext-actionfreshlogin،currentreaders/inputguards،Counterfull-outputdeny/freshrestore؛22نئےcases/3057suiteUNRUN،[PT-64](AUTHENTICATED-SESSION-REVIEW-URDU.md)/Windowsباقی |
-|5۔ ⏳ بیک وقت کام — 5.1Settingsجاری | پچھلےSettings/Backup/Pricing/Hardware/Iconکےبعدv0.129.0WorkbookSettingscoherentsnapshot/pairedCAS/in-Txvalidation/observedApply+localguard؛13نئےcases/3224suiteUNRUN۔remainingStaff/imperativewriters/startupregistryاورتمامWindowsgatesابھی5.1میںباقی؛StockTake/remainingroutesبعدمیںاسی5میں؛[PT-71](WORKBOOK-SETTINGS-CONCURRENCY-REVIEW-URDU.md) |
+|5۔ ⏳ بیک وقت کام — 5.1Settingsجاری | پچھلےSettings/Backup/Pricing/Hardware/Icon/Workbookکےبعدv0.130.0Permissionscoherentfull-mapcheckedSet/Reset/exacthandoff؛24نئےcases/3248suiteUNRUN۔credentials/recovery/toggle/imperativewriters/startupregistryاورWindowsابھی5.1میںباقی؛StockTake/remainingroutesبعدمیںاسی5میں؛[PT-72](PERMISSION-EDIT-CONCURRENCY-REVIEW-URDU.md) |
 |6۔ ❌ دوبارہ کوشش اور ری اسٹارٹ | جواب کھونا،بندش،دوسرے صفحے/کمپیوٹر کی retry؛دیرپا شناخت کی تجویز،ضروری منظوری،نفاذ |
 |7۔ ❌ مالی اور اسٹاک ملاپ | فروخت/خرید/واپسی/وصولی/ادائیگی/خرچ/گنتی/گلا؛منظورشدہ رعایت اور اصل لاگت کی حد |
 |8۔ ❌ رپورٹس اور رازداری | Excel/CSV/PDF/رسید/پرنٹ؛Cost/Profit اجازتیں؛Blackbox/BookCheck میں صرف منظورشدہ رسائی |

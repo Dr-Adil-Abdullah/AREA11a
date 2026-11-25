@@ -5,9 +5,9 @@
 ہر جواب/وضاحت/خلاصہ سادہ پاکستانی اردو۔ ایک وقت میں صرف ایک منظورشدہ حصہ؛ہر اگلے حصے سے پہلے نئی اجازت۔ ہر ٹاسک/حصے پر صرف3–4 لائنوں کا خلاصہ؛تفصیلی رپورٹ ہر3 مکمل حصوں کے بعد یا مالک کے مطالبے پر۔ [⏳ نیا14حصوں کا منصوبہ](docs/REMAINING-14-PORTIONS-URDU.md) پر عمل کریں؛پرانے3–6roundsاندازے اس منصوبے کی جگہ نہیں لیتے۔ ✅حصہ1کیCore/TestsDebugcompileتصدیقمالککےv0.120.1runسےملی۔ ⏳حصہ2کے22failurefixesکاWindowsrerunباقی؛بعدکےnextسےصرفحصہ3کیاجازتملی،اسکیsourceپیشرفتذیل،اصلجانچباقی؛⏳تازہNextسے5.1Settings؛نامکملحصےکیذیلیگنتی،1تا5کےباقیکام+تصدیقسےپہلے6نہیں۔ ✅صحت مندsourcecheckکوکامیاب.NETbuildنہکہیں۔
 
 
-## ⏳ موجودہ 5.1 — Workbook Settings preview/apply — v0.129.0 Mallow
+## ⏳ موجودہ 5.1 — Staff Permissions فارم اورReset — v0.130.0 Hellebore
 
-**5.1 ابھی جاری ہے؛حصوں1 تا5 کے باقی کام اور ضروری تصدیق مکمل کیے بغیر6 شروع نہیں کرنا۔** Workbook Export/Preview ابcoherent snapshot؛Settingsکیpaireddependenciesکیbaselineاورcurrentwrite-Txpreparation؛Applyکےobservedoutcomes،sameplan/UILocalguardاورpostcommitSAVEDwarning۔ پہلےسےموجودedited-rowCAS/lockedkeys/businessrules/UPDATEloopبرقرار۔ ⏳13نئےC#cases/3224suiteUNRUN؛120static/29نئیlexicalnegative/18Python-ownedWAL/DELETEplansاصل.NET/provider/Excel/WPFثبوتنہیں۔ [⏳ جائزہ/PT-71/باقی5.1](docs/WORKBOOK-SETTINGS-CONCURRENCY-REVIEW-URDU.md)؛[⏳14حصے](docs/REMAINING-14-PORTIONS-URDU.md)۔ **اگلاکامابھی5.1کےباقیStaff/imperativewritersاورstartupregistry/Windowsپر؛StockTakeاسکےبعداسی5میں۔** حصوں2/3/4اورپہلے5checkpointsکاتازہWindowsrunبھیباقی؛FullPhase4OPEN؛❌6/installerشروعنہیں۔
+**5.1 ابھی جاری ہے؛حصوں1 تا5 کے باقی کام اور ضروری تصدیق مکمل کیے بغیر6 شروع نہیں کرنا۔** Permissionsکامجازcoherentform،targetrole/active+پوریlistکیbaseline،checkedSet/Resetکاin-Txcompare،exactimmutablehandoffاورack-before-callbacks/unknownUIinvalidateشامل۔ OwnerProfit/CostexceptionsاورپرانےimperativeAPIsالگبرقرار؛تمامwritersprotectedہونےکادعویٰنہیں۔ ⏳24نئےC#cases/3248suiteUNRUN؛121static/29نئیlexicalnegative/30PythonWAL/DELETEplansاصل.NET/provider/WPF/authثبوتنہیں۔ [⏳ جائزہ/PT-72/باقی5.1](docs/PERMISSION-EDIT-CONCURRENCY-REVIEW-URDU.md)؛[⏳14حصے](docs/REMAINING-14-PORTIONS-URDU.md)۔ **اگلاکامابھی5.1کےcredential/recoveryreset،accounttoggle/imperativewritersاورstartupregistry/Windowsپر؛StockTakeاسکےبعداسی5میں۔** حصوں2/3/4اورپہلے5checkpointsکاتازہWindowsrunبھیباقی؛FullPhase4OPEN؛❌6/installerشروعنہیں۔
 
 ## ⏳ تاریخی حصہ4/14 — v0.122.0 Larkspur
 

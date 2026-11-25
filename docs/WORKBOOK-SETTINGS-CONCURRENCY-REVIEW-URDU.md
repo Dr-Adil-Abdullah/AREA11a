@@ -1,5 +1,8 @@
 # ⏳ 5.1 جاری — Workbook Settings preview/apply — v0.129.0 Mallow
 
+> ⏳ تازہv0.130.0میںاسی5.1کےStaffpermissioncheckbox/Resetکیboundedاصلاح: [PT-72/باقی5.1](PERMISSION-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3248suiteUNRUN۔ نیچےپچھلےcheckpointکاثبوتتاریخی؛remainingStaffpermissionsکےحوالےنئےجائزےکیحدتکبدلے،credentials/toggle/imperativeAPIsاببھیالگباقی۔5.1جاری،1تا5مکمل+تصدیقسےپہلے6نہیں۔
+
+
 ## ⏳ اجازت اور دائرہ
 
 تازہ `next` پر اسی **5.1 Settings** کا Workbook راستہ دیکھا۔ [پچھلا Icon/PT-70](ICON-EDIT-CONCURRENCY-REVIEW-URDU.md) اور Settings/Backup/Pricing/Hardware کے checkpoints اپنی حدود کے ساتھ برقرار ہیں۔ **5.1 ابھی جاری ہے؛حصوں1 تا5 کے باقی کام اور ضروری تصدیق مکمل کیے بغیر6 شروع نہیں کرنا۔** Installer نہیں بنایا۔

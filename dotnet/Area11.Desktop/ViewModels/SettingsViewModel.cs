@@ -111,6 +111,8 @@ public sealed class SettingsViewModel : ObservableObject
     private SettingsEditForm? _editForm;
     private bool _changingIcon;
     private EditVersion? _pricingVersion;
+    private PermissionEditForm? _permissionEdit;
+    private bool _savingPermission;
     private static readonly string[] FormKeys =
     {
         "appearance.productPhotoSize",
@@ -712,6 +714,7 @@ public sealed class SettingsViewModel : ObservableObject
         get => _selectedUser;
         set
         {
+            if (_savingPermission) return;
             if (value is not null && (!UpdateStaffAccess() || !Users.Contains(value))) return;
             if (!SetProperty(ref _selectedUser, value))
             {
@@ -1038,6 +1041,7 @@ public sealed class SettingsViewModel : ObservableObject
     {
         // Clear selection directly: the normal setter reads pricing/permissions.
         _selectedUser = null;
+        _permissionEdit = null;
         Users.Clear();
         Permissions.Clear();
         PagePermissions.Clear();
@@ -1052,37 +1056,46 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void LoadPermissions()
     {
+        if (_savingPermission) return;
+        _permissionEdit = null;
         if (!UpdateStaffAccess()) return;
         LoadPricing();
-        Permissions.Clear();
-        PagePermissions.Clear();
-        FinancialPermissions.Clear();
-
-        if (_selectedUser is null)
+        ClearPermissionRows();
+        if (_selectedUser is null) return;
+        var loaded = _services.Permissions.LoadEditForm(_user, _selectedUser.Id);
+        if (!loaded.Ok || loaded.Value is null)
         {
+            SetStatus(loaded.Error ?? "Permissions could not be read. Reload the selected person.", true);
             return;
         }
+        _permissionEdit = loaded.Value;
+        ShowPermissions(loaded.Value);
+    }
 
-        var map = _services.Permissions.MapFor(_user, _selectedUser);
-        var editable = CanChangeSelectedUser;
+    private void ClearPermissionRows()
+    {
+        Permissions.Clear(); PagePermissions.Clear(); FinancialPermissions.Clear();
+    }
 
+    private void ShowPermissions(PermissionEditForm form)
+    {
+        ClearPermissionRows();
+        if (_selectedUser?.Id != form.UserId) { _permissionEdit = null; return; }
+        var editable = form.Role != UserRole.Owner && CanManageStaff;
         _suppressPermissionSave = true;
-
-        foreach (var module in Modules.All)
+        try
         {
-            var toggle = new PermissionToggle(module, PermissionDocumentation.For(module).Title, map[module],
-                editable || (CanManageFinancialVisibility && PermissionService.IsFinancialVisibility(module)))
+            foreach (var module in Modules.All)
             {
-                Allowed = map[module]
-            };
-
-            toggle.Changed += OnPermissionChanged;
-            Permissions.Add(toggle);
-            if (PermissionDocumentation.IsSensitive(module)) FinancialPermissions.Add(toggle);
-            else PagePermissions.Add(toggle);
+                var toggle = new PermissionToggle(module, PermissionDocumentation.For(module).Title, form.Values[module],
+                    editable || (CanManageFinancialVisibility && PermissionService.IsFinancialVisibility(module)));
+                toggle.Changed += OnPermissionChanged;
+                Permissions.Add(toggle);
+                if (PermissionDocumentation.IsSensitive(module)) FinancialPermissions.Add(toggle);
+                else PagePermissions.Add(toggle);
+            }
         }
-
-        _suppressPermissionSave = false;
+        finally { _suppressPermissionSave = false; }
     }
 
     // ----------------------------- Saving -------------------------------
@@ -1638,26 +1651,7 @@ public sealed class SettingsViewModel : ObservableObject
         SetStatus("Original application words restored. The shell and open pages have been updated.", false);
     }
 
-    private void ResetPermissions()
-    {
-        if (!UpdateStaffAccess()) return;
-        if (_selectedUser is null)
-        {
-            SetStatus("Select a person first.", true);
-            return;
-        }
-
-        var result = _services.Permissions.ResetToRoleDefaults(_user, _selectedUser.Id);
-
-        if (!result.Ok)
-        {
-            SetStatus(result.Error ?? "The permissions could not be reset.", true);
-            return;
-        }
-
-        LoadPermissions();
-        SetStatus($"{_selectedUser.Name} is back to the normal {_selectedUser.RoleLabel} permissions.", false);
-    }
+    private void ResetPermissions() => SavePermissionChange(null);
 
     // Pointer clicks are delayed by the Windows double-click interval. Keyboard Space still uses
     // the native checkbox. A selection/reload replaces objects, so a pending old row cannot save.
@@ -1683,27 +1677,58 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void OnPermissionChanged(object? sender, EventArgs e)
     {
-        if (_suppressPermissionSave || sender is not PermissionToggle toggle || _selectedUser is null)
-        {
-            return;
-        }
+        if (_suppressPermissionSave || sender is not PermissionToggle toggle) return;
+        if (_savingPermission) { RestorePermissionToggle(toggle); return; }
+        SavePermissionChange(toggle);
+    }
 
-        if (!UpdateStaffAccess() || !Permissions.Contains(toggle)) return;
-        var result = _services.Permissions.Set(_user, _selectedUser.Id, toggle.Module, toggle.Allowed);
-
-        if (result.Ok)
-        {
-            SetStatus($"{_selectedUser.Name}: '{toggle.Label}' is now " +
-                      (toggle.Allowed ? "allowed." : "not allowed."), false);
-            return;
-        }
-
-        // Put the box back where it was, otherwise the screen would tell a lie.
+    private void RestorePermissionToggle(PermissionToggle toggle)
+    {
+        if (_permissionEdit is null || !Permissions.Contains(toggle)) return;
         _suppressPermissionSave = true;
-        toggle.Allowed = !toggle.Allowed;
-        _suppressPermissionSave = false;
+        try { toggle.Allowed = _permissionEdit.Values[toggle.Module]; }
+        finally { _suppressPermissionSave = false; }
+    }
 
-        SetStatus(result.Error ?? "The permission could not be saved.", true);
+    private void SavePermissionChange(PermissionToggle? toggle)
+    {
+        if (_savingPermission) return;
+        if (!UpdateStaffAccess() || _selectedUser is not { } target) return;
+        if (toggle is not null && (!toggle.CanEdit || !Permissions.Contains(toggle))) return;
+        var form = _permissionEdit;
+        if (form is null || form.UserId != target.Id)
+        { _permissionEdit = null; ClearPermissionRows(); SetStatus("Reload the selected person's permissions before editing.", true); return; }
+        _savingPermission = true;
+        var acknowledged = false;
+        try
+        {
+            var result = toggle is null
+                ? _services.Permissions.ResetToRoleDefaults(_user, target.Id, form.EditVersion)
+                : _services.Permissions.Set(_user, target.Id, toggle.Module, toggle.Allowed, form.EditVersion);
+            if (!result.Ok)
+            {
+                if (!result.NoCommitConfirmed) { _permissionEdit = null; ClearPermissionRows(); }
+                else if (toggle is not null) RestorePermissionToggle(toggle);
+                SetStatus(result.Error ?? "Permissions could not be saved.", true);
+                return;
+            }
+            acknowledged = true;
+            _permissionEdit = result.PermissionEdit;
+            if (_permissionEdit is null || !ReferenceEquals(_selectedUser, target))
+            { _permissionEdit = null; ClearPermissionRows(); SetStatus("SAVED. Reopen Staff before changing permissions again.", true); return; }
+            if (toggle is null) ShowPermissions(_permissionEdit); // Exact reset result,never a new read/rebase.
+            SetStatus(toggle is null ? target.Name + " is back to the normal role permissions."
+                : target.Name + ": '" + toggle.Label + "' is now " + (toggle.Allowed ? "allowed." : "not allowed."), false);
+        }
+        catch (Exception exception)
+        {
+            _permissionEdit = null;
+            _services.Log.Error("Staff permission save/refresh did not finish.", exception);
+            ClearPermissionRows();
+            SetStatus(acknowledged ? "SAVED. Permissions were stored but the page could not refresh. Reopen Staff."
+                : "Permission saving is unconfirmed. Reload and verify before retrying.", true);
+        }
+        finally { _savingPermission = false; }
     }
 
     // ----------------------------- Helpers ------------------------------
