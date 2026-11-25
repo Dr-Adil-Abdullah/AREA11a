@@ -1,8 +1,8 @@
 # باقی کام، GitHub اور test installer — v0.104.0
 
-## ⏳ موجودہ 5.1 — Staff Permissions فارم اورReset — v0.130.0 Hellebore
+## ⏳ موجودہ 5.1 — Staff آن/آف اور password/PIN reset — v0.131.0 Celandine
 
-**5.1 ابھی جاری ہے؛حصوں1 تا5 کے باقی کام اور ضروری تصدیق مکمل کیے بغیر6 شروع نہیں کرنا۔** Permissionsکامجازcoherentform،targetrole/active+پوریlistکیbaseline،checkedSet/Resetکاin-Txcompare،exactimmutablehandoffاورack-before-callbacks/unknownUIinvalidateشامل۔ OwnerProfit/CostexceptionsاورپرانےimperativeAPIsالگبرقرار؛تمامwritersprotectedہونےکادعویٰنہیں۔ ⏳24نئےC#cases/3248suiteUNRUN؛121static/29نئیlexicalnegative/30PythonWAL/DELETEplansاصل.NET/provider/WPF/authثبوتنہیں۔ [⏳ جائزہ/PT-72/باقی5.1](PERMISSION-EDIT-CONCURRENCY-REVIEW-URDU.md)؛[⏳14حصے](REMAINING-14-PORTIONS-URDU.md)۔ **اگلاکامابھی5.1کےcredential/recoveryreset،accounttoggle/imperativewritersاورstartupregistry/Windowsپر؛StockTakeاسکےبعداسی5میں۔** حصوں2/3/4اورپہلے5checkpointsکاتازہWindowsrunبھیباقی؛FullPhase4OPEN؛❌6/installerشروعنہیں۔
+**5.1 جاری؛حصوں1 تا5 کے باقی کام اور ضروری تصدیق سے پہلے6 نہیں۔** مجاز roster کا immutable loaded form،account/credential baseline،checked toggle/reset کا in-Tx compare،exact handoff اور ack-before-callbacks/unknown invalidation شامل۔ Owner/business/session اصول اور پرانے imperative APIs برقرار؛تمام writers محفوظ ہونے کا دعویٰ نہیں۔ ⏳26 نئے C# cases/3274 suite UNRUN؛✅122 محدود static،35 نئی lexical mutations،33 Python WAL/DELETE plans پاس؛یہ اصل .NET/provider/WPF/auth ثبوت نہیں۔ [⏳ جائزہ/PT-73/باقی5.1](STAFF-EDIT-CONCURRENCY-REVIEW-URDU.md)؛[⏳14حصے](REMAINING-14-PORTIONS-URDU.md)۔ Recovery word،CreateStaff/remaining imperative/native/custom writers،startup registry اور Windows تصدیق باقی؛StockTake بعد میں اسی5 میں۔ ❌6/installer شروع نہیں۔
 
 
 ## ⏳ موجودہ حصہ2/14 — v0.120.2 Willow

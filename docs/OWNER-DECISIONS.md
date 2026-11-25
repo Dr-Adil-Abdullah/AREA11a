@@ -1,5 +1,10 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## ⏳ v0.131.0 — اسی5.1میںStafftoggle/password/PINreset؛نئیپالیسی نہیں
+
+تازہnextپرloadedaccountformکےcompare/exacthandoff/outcomeلگائے؛OwnerOffممنوع،freshinactiveadministration،next-actionfreshloginاورپرانےimperativeAPIsبرقرار۔ [⏳ PT-73/حدود](STAFF-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3274suite/Windowsباقی؛recoveryword/CreateStaff/remainingwriters/startupregistryباقی۔ یہdurableidentityیاحصہ6نہیں؛1تا5باقیکام+ضروریتصدیقسےپہلے6نہیں،installerنہیں۔
+
+
 ## ⏳ v0.130.0 — اسی5.1میںpermissionlist/Reset؛نئیpermissionpolicyنہیں
 
 تازہnextپرموجودہOwner-onlyrulesکےساتھloadedlistکیCAS/exacthandoffلگائی؛OwnerکےProfit/PurchaseCostexceptions،inactive-targetreview،roledefaultsاورimperativeSet/ResetAPIsبرقرار۔ [⏳ PT-72/حدود](PERMISSION-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3248suite/Windowsباقی؛credential/recoveryreset、toggle、imperativewriters/startupregistryباقی۔ UIunknowninvalidateنہdurableidentityنہحصہ6؛1تا5باقیکام+ضروریتصدیقسےپہلے6نہیں،installerنہیں۔

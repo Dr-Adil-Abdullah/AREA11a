@@ -113,6 +113,7 @@ public sealed class SettingsViewModel : ObservableObject
     private EditVersion? _pricingVersion;
     private PermissionEditForm? _permissionEdit;
     private bool _savingPermission;
+    private bool _savingStaff;
     private static readonly string[] FormKeys =
     {
         "appearance.productPhotoSize",
@@ -385,6 +386,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void SavePricing()
     {
+        if (_savingStaff || _savingPermission) return;
         if (!UpdateStaffAccess() || _selectedUser is null) { SetStatus("Only the owner can set a person's pricing limits.", true); return; }
         if (_pricingVersion is null) { SetStatus("Reload the selected person's pricing limits before saving.", true); return; }
         if (!decimal.TryParse(PricingManualLimit, NumberStyles.Number, CultureInfo.InvariantCulture, out var manual)
@@ -714,8 +716,9 @@ public sealed class SettingsViewModel : ObservableObject
         get => _selectedUser;
         set
         {
-            if (_savingPermission) return;
+            if (_savingPermission || _savingStaff) return;
             if (value is not null && (!UpdateStaffAccess() || !Users.Contains(value))) return;
+            if (!ReferenceEquals(_selectedUser, value)) ResetStaffSecret = string.Empty;
             if (!SetProperty(ref _selectedUser, value))
             {
                 return;
@@ -922,6 +925,8 @@ public sealed class SettingsViewModel : ObservableObject
 
     public void LoadUsers()
     {
+        if (_savingStaff || _savingPermission) return;
+        ResetStaffSecret = string.Empty;
         var currentId = _selectedUser?.Id;
         if (!UpdateStaffAccess()) return;
         var result = _services.Auth.ListUsers(_user);
@@ -949,6 +954,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     public void RefreshStaffAccess()
     {
+        if (_savingStaff || _savingPermission) return;
         var hadSettings = CanUseSettings;
         if (!UpdateSettingsAccess()) return;
         if (!hadSettings) Load();
@@ -1042,12 +1048,15 @@ public sealed class SettingsViewModel : ObservableObject
         // Clear selection directly: the normal setter reads pricing/permissions.
         _selectedUser = null;
         _permissionEdit = null;
+        _pricingVersion = null;
+        _resetStaffSecret = string.Empty;
         Users.Clear();
         Permissions.Clear();
         PagePermissions.Clear();
         FinancialPermissions.Clear();
         ClearPricing();
         NewStaffName = NewStaffPin = ResetStaffSecret = NewRecoveryWord = string.Empty;
+        OnPropertyChanged(nameof(ResetStaffSecret));
         OnPropertyChanged(nameof(SelectedUser));
         OnPropertyChanged(nameof(SelectedUserCaption));
         OnPropertyChanged(nameof(CanChangeSelectedUser));
@@ -1056,7 +1065,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void LoadPermissions()
     {
-        if (_savingPermission) return;
+        if (_savingPermission || _savingStaff) return;
         _permissionEdit = null;
         if (!UpdateStaffAccess()) return;
         LoadPricing();
@@ -1501,6 +1510,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void AddStaff()
     {
+        if (_savingStaff || _savingPermission) return;
         if (!UpdateStaffAccess()) return;
         if (!CanManageStaff)
         {
@@ -1524,70 +1534,59 @@ public sealed class SettingsViewModel : ObservableObject
         SetStatus($"{name} can now sign in with that PIN. The role decides what they see.", false);
     }
 
-    private void ToggleActive()
+    private void ToggleActive() => SaveStaffChange(secret: false);
+
+    private void ResetSecret() => SaveStaffChange(secret: true);
+
+    private void SaveStaffChange(bool secret)
     {
-        if (!UpdateStaffAccess()) return;
-        if (_selectedUser is null)
+        if (_savingStaff || _savingPermission) return;
+        _savingStaff = true;
+        var acknowledged = false;
+        try
         {
-            SetStatus("Select a person first.", true);
-            return;
+            if (!UpdateStaffAccess()) return;
+            if (_selectedUser is not { } person) return;
+            var form = person.StaffForm;
+            if (form is null || person.Id != form.UserId || !Users.Contains(person))
+            { SetStatus("Refresh Staff and review the selected account before saving.", true); return; }
+            var result = secret
+                ? _services.Auth.SetSecret(_user, form.UserId, ResetStaffSecret, form.Role == UserRole.Owner, form.EditVersion)
+                : _services.Auth.SetActive(_user, form.UserId, !form.Active, form.EditVersion);
+            if (!result.Ok)
+            {
+                if (!result.NoCommitConfirmed) ClearStaffData();
+                SetStatus(result.Error ?? "The account could not be changed.", true);
+                return;
+            }
+            acknowledged = true;
+            _resetStaffSecret = string.Empty; // Consume plaintext before any observable binding callback.
+            var saved = result.StaffEdit;
+            if (saved?.StaffForm is null || saved.StaffForm.UserId != form.UserId
+                || !ReferenceEquals(_selectedUser, person) || !Users.Contains(person))
+            { ClearStaffData(); SetStatus("SAVED. Reopen Staff and verify the account before another change.", true); return; }
+            var index = Users.IndexOf(person);
+            _selectedUser = saved; // Exact successful handoff;never re-read/rebase other writers here.
+            _permissionEdit = null;
+            _pricingVersion = null; // Preserve input but require explicit reload/review before its Save.
+            Users[index] = saved;
+            ClearPermissionRows();
+            OnPropertyChanged(nameof(ResetStaffSecret));
+            OnPropertyChanged(nameof(SelectedUser));
+            OnPropertyChanged(nameof(SelectedUserCaption));
+            OnPropertyChanged(nameof(CanChangeSelectedUser));
+            SetStatus(secret ? (saved.IsOwner ? "SAVED. Owner password changed. Sign in with the new one."
+                : "SAVED. " + saved.Name + " can sign in with the new PIN.")
+                : saved.Active ? saved.Name + " can sign in again." : saved.Name + " has been switched off and can no longer sign in.", false);
         }
-
-        if (!CanManageStaff)
+        catch (Exception exception)
         {
-            SetStatus("Only the owner can switch an account on or off.", true);
-            return;
+            _services.Log.Error("Staff save/refresh did not finish.", exception);
+            ClearStaffData();
+            SetStatus(acknowledged ? "SAVED. The account was changed but the page could not refresh. Reopen Staff and verify."
+                : "Staff account saving is unconfirmed. Refresh and verify before retrying.", true);
         }
-
-        var person = _selectedUser;
-        var result = _services.Auth.SetActive(_user, person.Id, !person.Active);
-
-        if (!result.Ok)
-        {
-            SetStatus(result.Error ?? "The account could not be changed.", true);
-            return;
-        }
-
-        LoadUsers();
-        SetStatus(person.Active
-            ? $"{person.Name} has been switched off and can no longer sign in."
-            : $"{person.Name} can sign in again.", false);
-    }
-
-    /// <summary>
-    /// The owner's panel for a forgotten secret (Phase 2, owner's word): the selected person gets
-    /// the typed PIN - or the password, when the selected person is the owner. The service guards
-    /// owner-only and writes the black-box line; the box is cleared so the secret never sits on
-    /// the screen.
-    /// </summary>
-    private void ResetSecret()
-    {
-        if (!UpdateStaffAccess()) return;
-        if (_selectedUser is null)
-        {
-            SetStatus("Select a person first.", true);
-            return;
-        }
-
-        if (!CanManageStaff)
-        {
-            SetStatus("Only the owner can change passwords and PINs.", true);
-            return;
-        }
-
-        var person = _selectedUser;
-        var result = _services.Auth.SetSecret(_user, person.Id, ResetStaffSecret, person.IsOwner);
-
-        if (!result.Ok)
-        {
-            SetStatus(result.Error ?? "The change could not be saved.", true);
-            return;
-        }
-
-        ResetStaffSecret = string.Empty;
-        SetStatus(person.IsOwner
-            ? "The owner password is changed. Sign in with the new one."
-            : $"{person.Name} can now sign in with the new PIN.", false);
+        finally { _savingStaff = false; }
     }
 
     /// <summary>
@@ -1596,6 +1595,7 @@ public sealed class SettingsViewModel : ObservableObject
     /// </summary>
     private void SaveRecoveryWord()
     {
+        if (_savingStaff || _savingPermission) return;
         if (!UpdateStaffAccess()) return;
         if (!CanManageStaff)
         {
@@ -1678,7 +1678,7 @@ public sealed class SettingsViewModel : ObservableObject
     private void OnPermissionChanged(object? sender, EventArgs e)
     {
         if (_suppressPermissionSave || sender is not PermissionToggle toggle) return;
-        if (_savingPermission) { RestorePermissionToggle(toggle); return; }
+        if (_savingPermission || _savingStaff) { RestorePermissionToggle(toggle); return; }
         SavePermissionChange(toggle);
     }
 
@@ -1692,7 +1692,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void SavePermissionChange(PermissionToggle? toggle)
     {
-        if (_savingPermission) return;
+        if (_savingPermission || _savingStaff) return;
         if (!UpdateStaffAccess() || _selectedUser is not { } target) return;
         if (toggle is not null && (!toggle.CanEdit || !Permissions.Contains(toggle))) return;
         var form = _permissionEdit;

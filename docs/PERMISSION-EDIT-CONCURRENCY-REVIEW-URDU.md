@@ -74,3 +74,7 @@ Verifiedencryptedbackup **اورواقعیالگDB/photos/config** پہلے؛ا�
 Staffcredential/recoveryreset、accounttoggle/remainingnative/custom/imperativeSettingswritersکیinventory؛startupregistry+SQLiteکیrace/partialrestore؛PT-67تا72کیاصلWindows/provider/UI/physical/filegates۔ اسکےبعداسیحصہ5میںStockTake/toggle/bulk/snapshotکےباقیراستے۔ **5.1/حصہ5ابھیجاری؛1تا5کےکام+ضروریتصدیقسےپہلے6نہیں۔** ❌6/installerشروعنہیں۔
 
 Contentbaselineآخریpersistedstateملاتیہے؛A→B→عینAکیintermediatehistoryنہیں۔ یہdurableidentity،globalrevisionیافوریrevocation/physicaltestcertificationنہیں۔
+
+## ⏳ بعد کا اسی5.1 کا checkpoint
+
+v0.131.0 میں Staff account toggle/password/PIN کے checked forms/outcomes الگ کیے؛[PT-73/موجودہحدود](STAFF-EDIT-CONCURRENCY-REVIEW-URDU.md)۔ اوپرکےتاریخینتائجاپنےcheckpointکےہیں؛recoveryword/remainingwriters/registryاوراصلWindowsجانچابھیباقی،5.1مکملنہیں۔

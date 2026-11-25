@@ -1,5 +1,10 @@
 # Area11 — Real-life Physical Testing Log
 
+## ⏳ PT-73 — Staff آن/آف اور password/PIN reset (v0.131.0)
+
+[⏳ مکملsteps/باقی5.1](docs/STAFF-EDIT-CONCURRENCY-REVIEW-URDU.md)؛verified encrypted backup **اورواقعیالگDB/photos/config** پہلے؛اصلshopپرposts/faultsنہیں۔3274/0fail/0skipاورDesktopRelease؛دوaccountformsکےچارtoggle/resetcombinations،name/role/active/password/PINchange،context/target/scope/null،readfailure،exacthandoff،currentOwner/next-actionfreshlogin،selection/queuedinput/secretcleanup،audit/COMMITfaultsاورpost-ackSAVEDجانچیں۔ ⏳26نئےcasesUNRUN؛122static/35lexical/33Pythonplansاصلprovider/auth/WPFcertificationنہیں۔ Recoveryword/remainingwriters/registryباقی؛6/installerشروعنہیں۔
+
+
 ## ⏳ PT-72 — Staff Permissions (v0.130.0)
 
 [⏳ مکملsteps/باقی5.1](docs/PERMISSION-EDIT-CONCURRENCY-REVIEW-URDU.md)؛verifiedencryptedbackup **اورواقعیالگDB/photos/config** پہلے؛اصلshopپرposts/faultsنہیں۔3248/0fail/0skipاورDesktopRelease؛دوpermissionlists/staleSet+Reset،othermodule/role/active/presence/context/scope،explicitreadfailure،exactSet/Resettoken،currentOwner/independentProfit+Cost،queuedpointer/keyboard/selection،audit/COMMITfaultsاورpost-ackSAVEDجانچیں۔ ImperativeAPIبغیربaselineپراناintentہے،loadedDesktopہمیشہchecked؛سبwritersprotectedنہیں۔ ⏳24نئےcasesUNRUN؛121static/29lexical/30Pythonplansruntime/auth/WPFcertificationنہیں۔6/installerشروعنہیں۔

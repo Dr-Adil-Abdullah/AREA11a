@@ -159,11 +159,15 @@ public sealed class AuthService
     {
         try
         {
-            using var connection = _db.Open();
-            RequireStaffReader(connection, actor);
-            var users = _db.Query<User>(connection,
-                "SELECT id, name, role, active FROM users ORDER BY CASE role WHEN 'owner' THEN 0 WHEN 'manager' THEN 1 ELSE 2 END, name COLLATE NOCASE;");
-            return ServiceResult<List<User>>.Success(users);
+            return _db.Snapshot(connection =>
+            {
+                RequireStaffReader(connection, actor);
+                var users = _db.Query<User>(connection,
+                    "SELECT id, name, role, active FROM users ORDER BY CASE role WHEN 'owner' THEN 0 WHEN 'manager' THEN 1 ELSE 2 END, name COLLATE NOCASE;");
+                foreach (var person in users)
+                    person.StaffForm = new StaffEditForm(person, EditConcurrency.Capture(_db, connection, "staff", person.Id));
+                return ServiceResult<List<User>>.Success(users);
+            });
         }
         catch (ValidationException exception) { return ServiceResult<List<User>>.Fail(exception.Message); }
         catch (Exception exception)
@@ -279,26 +283,39 @@ public sealed class AuthService
     }
 
     /// <summary>Owner resets a password or PIN. The black box only records that it changed.</summary>
-    public ServiceResult SetSecret(User actor, int userId, string newSecret, bool isPassword)
+    public ServiceResult SetSecret(User actor, int userId, string newSecret, bool isPassword) =>
+        SetSecretCore(actor, userId, newSecret, isPassword, null, checkedEdit: false);
+
+    public ServiceResult SetSecret(User actor, int userId, string newSecret, bool isPassword, EditVersion? expected) =>
+        SetSecretCore(actor, userId, newSecret, isPassword, expected, checkedEdit: true);
+
+    private ServiceResult SetSecretCore(User actor, int userId, string newSecret, bool isPassword, EditVersion? expected, bool checkedEdit)
     {
         if (!actor.IsOwner)
         {
-            return ServiceResult.Fail("Only the owner can change passwords and PINs.");
+            return new ServiceResult { Error = "Only the owner can change passwords and PINs.", NoCommitConfirmed = true };
         }
 
         if (newSecret.Trim().Length < (isPassword ? 4 : 3))
         {
-            return ServiceResult.Fail(isPassword ? "The password is too short." : "The PIN is too short.");
+            return new ServiceResult { Error = isPassword ? "The password is too short." : "The PIN is too short.", NoCommitConfirmed = true };
         }
 
+        var outcome = new TransactionOutcome();
         try
         {
-            _db.Tx(connection =>
+            return _db.Tx(connection =>
             {
                 var owner = OwnerAccess.Require(_db, connection, actor);
                 var target = _db.QuerySingle<User>(connection,
                     "SELECT id, name, role, active FROM users WHERE id = @id;", new { id = userId });
                 if (target is null) throw new ValidationException("That person no longer exists.");
+                if (checkedEdit)
+                {
+                    RequireStaffEdit(connection, userId, expected);
+                    if (isPassword != target.IsOwner)
+                        throw new ValidationException("The credential type changed or does not match this account. Refresh and review.");
+                }
                 var column = isPassword ? "password_hash" : "pin_hash";
                 var otherColumn = isPassword ? "pin_hash" : "password_hash";
 
@@ -307,18 +324,18 @@ public sealed class AuthService
 
                 _audit.Record(connection, owner, "Users", "secret_change", "users", userId.ToString(),
                     oldValue: "{\"secret\":\"set\"}", newValue: "{\"secret\":\"changed\"}");
-            });
-
-            return ServiceResult.Success();
+                var saved = CaptureStaffEdit(connection, userId);
+                return new ServiceResult { Ok = true, EditVersion = saved.StaffForm!.EditVersion, StaffEdit = saved };
+            }, outcome);
         }
         catch (ValidationException exception)
         {
-            return ServiceResult.Fail(exception.Message);
+            return StaffFailure(outcome, exception.Message);
         }
         catch (Exception exception)
         {
             _log.Error($"The secret of user {userId} could not be changed.", exception);
-            return ServiceResult.Fail("The change could not be saved.");
+            return StaffFailure(outcome, "The credential was not saved; no commit was made.");
         }
     }
 
@@ -436,16 +453,23 @@ public sealed class AuthService
     public static string NormalizeWord(string? word) =>
         (word ?? string.Empty).Trim().ToLowerInvariant().Replace(" ", string.Empty);
 
-    public ServiceResult SetActive(User actor, int userId, bool active)
+    public ServiceResult SetActive(User actor, int userId, bool active) =>
+        SetActiveCore(actor, userId, active, null, checkedEdit: false);
+
+    public ServiceResult SetActive(User actor, int userId, bool active, EditVersion? expected) =>
+        SetActiveCore(actor, userId, active, expected, checkedEdit: true);
+
+    private ServiceResult SetActiveCore(User actor, int userId, bool active, EditVersion? expected, bool checkedEdit)
     {
         if (!actor.IsOwner)
         {
-            return ServiceResult.Fail("Only the owner can switch an account on or off.");
+            return new ServiceResult { Error = "Only the owner can switch an account on or off.", NoCommitConfirmed = true };
         }
 
+        var outcome = new TransactionOutcome();
         try
         {
-            _db.Tx(connection =>
+            return _db.Tx(connection =>
             {
                 var owner = OwnerAccess.Require(_db, connection, actor);
                 var target = _db.QuerySingle<User>(connection,
@@ -453,25 +477,45 @@ public sealed class AuthService
                 if (target is null) throw new ValidationException("That person no longer exists.");
                 if (target.IsOwner && !active)
                     throw new ValidationException("The owner account cannot be switched off.");
+                if (checkedEdit) RequireStaffEdit(connection, userId, expected);
                 _db.Execute(connection, "UPDATE users SET active = @active WHERE id = @id;",
                     new { active = active ? 1 : 0, id = userId });
 
                 _audit.Record(connection, owner, "Users", active ? "activate" : "deactivate", "users",
                     userId.ToString());
-            });
-
-            return ServiceResult.Success();
+                var saved = CaptureStaffEdit(connection, userId);
+                return new ServiceResult { Ok = true, EditVersion = saved.StaffForm!.EditVersion, StaffEdit = saved };
+            }, outcome);
         }
         catch (ValidationException exception)
         {
-            return ServiceResult.Fail(exception.Message);
+            return StaffFailure(outcome, exception.Message);
         }
         catch (Exception exception)
         {
             _log.Error($"User {userId} could not be switched.", exception);
-            return ServiceResult.Fail("The change could not be saved.");
+            return StaffFailure(outcome, "The account status was not saved; no commit was made.");
         }
     }
+
+    private void RequireStaffEdit(SqliteConnection connection, int userId, EditVersion? expected)
+    {
+        if (expected is null) throw new ValidationException("The staff editor changed or was not loaded. Refresh and review before saving.");
+        EditConcurrency.Require(_db, connection, "staff", userId, expected);
+    }
+
+    private User CaptureStaffEdit(SqliteConnection connection, int userId)
+    {
+        var saved = _db.QuerySingle<User>(connection,
+            "SELECT id, name, role, active FROM users WHERE id = @id;", new { id = userId })
+            ?? throw new ValidationException("That person no longer exists.");
+        saved.StaffForm = new StaffEditForm(saved, EditConcurrency.Capture(_db, connection, "staff", userId));
+        return saved; // Public metadata only,no hashes and no session proof issued/carried.
+    }
+
+    private static ServiceResult StaffFailure(TransactionOutcome outcome, string noCommitError) =>
+        new() { Error = outcome.NoCommitConfirmed ? noCommitError
+            : "Staff account saving is unconfirmed. Refresh and verify before retrying.", NoCommitConfirmed = outcome.NoCommitConfirmed };
 
     private static void RegisterFailure(string key)
     {

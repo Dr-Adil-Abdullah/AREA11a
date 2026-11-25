@@ -39,6 +39,10 @@ public static class UserRoles
 /// <summary>One signed-in person. The hash columns never leave the Core layer.</summary>
 public sealed class User
 {
+    // Authorized roster snapshot only;not a login lease. Never put this in audit/export JSON.
+    [System.Text.Json.Serialization.JsonIgnore]
+    public StaffEditForm? StaffForm { get; internal set; }
+
     public int Id { get; set; }
 
     public string Name { get; set; } = string.Empty;

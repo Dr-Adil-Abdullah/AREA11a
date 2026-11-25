@@ -24,6 +24,7 @@ internal static class EditConcurrency
             "formula" => "generic_formulas", "brand" => "brands", "unit" => "units", "draft" => "document_drafts",
             "pricing" => null,
             "permissions" => null,
+            "staff" => null,
             _ when scope.StartsWith("answers:", StringComparison.Ordinal)
                 && CustomFieldEntity.IsKnown(scope[8..]) => null,
             _ => throw new InvalidOperationException("Unsupported edit scope.")
@@ -44,6 +45,9 @@ internal static class EditConcurrency
             parts.Add(db.Fingerprint(connection, "SELECT id,role,active FROM users WHERE id=@id;", id));
             parts.Add(db.Fingerprint(connection, "SELECT module_key,allowed FROM user_permissions WHERE user_id=@id ORDER BY module_key;", id));
         }
+        if (scope == "staff")
+            parts.Add(db.Fingerprint(connection,
+                "SELECT id,name,role,active,password_hash,pin_hash FROM users WHERE id=@id;", id));
         if (scope == Product)
             parts.Add(db.Fingerprint(connection,
                 "SELECT category_id FROM product_category_tags WHERE product_id=@id ORDER BY category_id;", id));

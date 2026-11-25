@@ -6299,9 +6299,9 @@ def check_permission_edit_boundaries() -> None:
          '_services.Permissions.LoadEditForm(_user, _selectedUser.Id)', 'ShowPermissions(loaded.Value);', 'var editable = form.Role != UserRole.Owner && CanManageStaff;',
          '_services.Permissions.ResetToRoleDefaults(_user, target.Id, form.EditVersion)',
          '_services.Permissions.Set(_user, target.Id, toggle.Module, toggle.Allowed, form.EditVersion)',
-         'if (_savingPermission) { RestorePermissionToggle(toggle); return; }', 'try { toggle.Allowed = _permissionEdit.Values[toggle.Module]; }')
+         'if (_savingPermission || _savingStaff) { RestorePermissionToggle(toggle); return; }', 'try { toggle.Allowed = _permissionEdit.Values[toggle.Module]; }')
     ui = vm.split('private void SavePermissionChange(',1)[-1].split('// ----------------------------- Helpers',1)[0]
-    order(ui, 'if (_savingPermission) return;', 'var form = _permissionEdit;', '_savingPermission = true;',
+    order(ui, 'if (_savingPermission || _savingStaff) return;', 'var form = _permissionEdit;', '_savingPermission = true;',
           '_services.Permissions.ResetToRoleDefaults(', 'acknowledged = true;', '_permissionEdit = result.PermissionEdit;',
           'ShowPermissions(_permissionEdit);')
     need(ui, 'if (!result.NoCommitConfirmed) { _permissionEdit = null; ClearPermissionRows(); }',
@@ -8550,8 +8550,9 @@ def check_parent_roster_boundaries():
                     '!Permissions.Contains(toggle)', '!Users.Contains(value)'], 'Owner staff UI cleanup')
     load = settings.split('public void LoadUsers()', 1)[1].split('public void RefreshStaffAccess()', 1)[0]
     need(load, ['if (!UpdateStaffAccess()) return;', 'ClearStaffData();'], 'Failed roster must clear stale data')
-    for method in ('OpenStaffPhotos', 'AddStaff', 'ToggleActive', 'ResetSecret', 'SaveRecoveryWord', 'ResetPermissions'):
-        part = settings.split('private void ' + method + '()', 1)[1].split('\n    }', 1)[0]
+    for method in ('OpenStaffPhotos', 'AddStaff', 'SaveStaffChange', 'SaveRecoveryWord', 'ResetPermissions'):
+        signature = '(bool secret)' if method == 'SaveStaffChange' else '()'
+        part = settings.split('private void ' + method + signature, 1)[1].split('\n    }', 1)[0]
         need(part, ['if (!UpdateStaffAccess()) return;'], 'Fresh owner staff command ' + method)
     shift = (DOTNET / 'Area11.Desktop/ViewModels/ShiftViewModel.cs').read_text()
     need(shift, ['public void RefreshPeople()', '_services.Auth.ListHandoverPeople(_user)', 'NextPeople.Clear();'], 'Operational picker UI')
@@ -9597,6 +9598,74 @@ def check_provisional_current_access():
     REPORT.append('P40 PR current stored actor/Returns/complete receipt/explicit page verdict/stale UI contracts;99 C# cases UNRUN;not session/CAS/WPF proof')
 
 
+
+def check_staff_edit_boundaries():
+    """Loaded staff account source contracts only,not provider/auth/WPF certification."""
+    def need(source, tokens, label):
+        for token in tokens:
+            if token not in source: FAILURES.append(label + ': missing ' + token)
+    def order(source, first, second, label):
+        if not 0 <= source.find(first) < source.find(second): FAILURES.append(label + ': wrong/missing order')
+    auth = (DOTNET / 'Area11.Core/Services/AuthService.cs').read_text()
+    roster = auth.split('public ServiceResult<List<User>> ListUsers(', 1)[1].split('public ServiceResult<List<User>> ListHandoverPeople', 1)[0]
+    need(roster, ['return _db.Snapshot(connection =>', 'RequireStaffReader(connection, actor);',
+                  'person.StaffForm = new StaffEditForm(person, EditConcurrency.Capture(_db, connection, "staff", person.Id));'], 'Staff coherent roster')
+    need(auth, ['SetSecretCore(actor, userId, newSecret, isPassword, null, checkedEdit: false)',
+                'SetSecretCore(actor, userId, newSecret, isPassword, expected, checkedEdit: true)',
+                'SetActiveCore(actor, userId, active, null, checkedEdit: false)',
+                'SetActiveCore(actor, userId, active, expected, checkedEdit: true)',
+                'if (expected is null) throw new ValidationException(',
+                'EditConcurrency.Require(_db, connection, "staff", userId, expected);',
+                'saved.StaffForm = new StaffEditForm(saved, EditConcurrency.Capture(_db, connection, "staff", userId));',
+                'NoCommitConfirmed = outcome.NoCommitConfirmed', 'outcome.NoCommitConfirmed ? noCommitError'], 'Staff API separation/outcome')
+    for name, end, update in [('SetSecretCore', 'public ServiceResult<User> RecoverOwner', 'var column = isPassword'),
+                              ('SetActiveCore', 'private void RequireStaffEdit', '_db.Execute(connection, "UPDATE users SET active')]:
+        body = auth.split('private ServiceResult ' + name, 1)[1].split(end, 1)[0]
+        need(body, ['var outcome = new TransactionOutcome();', 'return _db.Tx(connection =>',
+                    'OwnerAccess.Require(_db, connection, actor);', 'RequireStaffEdit(connection, userId, expected);',
+                    'var saved = CaptureStaffEdit(connection, userId);', 'EditVersion = saved.StaffForm!.EditVersion, StaffEdit = saved',
+                    '}, outcome);', 'StaffFailure(outcome, exception.Message)'], 'Staff ' + name)
+        order(body, 'OwnerAccess.Require', 'RequireStaffEdit(connection', name + ' owner before compare')
+        order(body, 'RequireStaffEdit(connection', update, name + ' compare before write')
+        order(body, '_audit.Record(', 'var saved = CaptureStaffEdit', name + ' handoff after audit')
+    need(auth, ['if (isPassword != target.IsOwner)', 'if (target.IsOwner && !active)'], 'Stored target rules')
+    edit = (DOTNET / 'Area11.Core/Services/EditConcurrency.cs').read_text()
+    need(edit, ['"staff" => null,', 'if (scope == "staff")',
+                'SELECT id,name,role,active,password_hash,pin_hash FROM users WHERE id=@id;'], 'Complete credential baseline')
+    form = (DOTNET / 'Area11.Core/Models/StaffEditForm.cs').read_text()
+    need(form, ['public int UserId { get; }', 'public UserRole Role { get; }', 'public bool Active { get; }',
+                'internal StaffEditForm(User person, EditVersion version)', '[System.Text.Json.Serialization.JsonIgnore]'], 'Immutable staff form')
+    if 'hash' in form.lower().split('public sealed class', 1)[1]: FAILURES.append('Staff form must not expose hash fields')
+    user = (DOTNET / 'Area11.Core/Models/User.cs').read_text()
+    need(user, ['[System.Text.Json.Serialization.JsonIgnore]\n    public StaffEditForm? StaffForm { get; internal set; }'], 'Staff baseline JSON boundary')
+    result = (DOTNET / 'Area11.Core/Utils/ServiceResult.cs').read_text()
+    need(result, ['[System.Text.Json.Serialization.JsonIgnore]\n    public Area11.Core.Models.User? StaffEdit { get; init; }'], 'Staff result JSON boundary')
+    ui = (DOTNET / 'Area11.Desktop/ViewModels/SettingsViewModel.cs').read_text()
+    need(ui, ['private bool _savingStaff;', 'if (_savingPermission || _savingStaff) return;',
+              'private void ToggleActive() => SaveStaffChange(secret: false);', 'private void ResetSecret() => SaveStaffChange(secret: true);',
+              'if (!ReferenceEquals(_selectedUser, value)) ResetStaffSecret = string.Empty;'], 'Staff editor binding boundary')
+    save = ui.split('private void SaveStaffChange(bool secret)', 1)[1].split('private void SaveRecoveryWord()', 1)[0]
+    need(save, ['if (_savingStaff || _savingPermission) return;', '_savingStaff = true;', 'if (!UpdateStaffAccess()) return;',
+                'var form = person.StaffForm;', 'person.Id != form.UserId || !Users.Contains(person)',
+                '_services.Auth.SetSecret(_user, form.UserId, ResetStaffSecret, form.Role == UserRole.Owner, form.EditVersion)',
+                '_services.Auth.SetActive(_user, form.UserId, !form.Active, form.EditVersion)',
+                'if (!result.NoCommitConfirmed) ClearStaffData();', 'acknowledged = true;', '_resetStaffSecret = string.Empty;',
+                'var saved = result.StaffEdit;', '_selectedUser = saved;', '_permissionEdit = null;', '_pricingVersion = null;',
+                'Users[index] = saved;', 'ClearPermissionRows();', 'SAVED. The account was changed but the page could not refresh.',
+                'finally { _savingStaff = false; }'], 'Staff checked handoff/UI outcome')
+    for forbidden in ('LoadUsers(', 'LoadPermissions(', 'LoadPricing(', 'person.IsOwner', '!person.Active'):
+        if forbidden in save: FAILURES.append('Staff save must not rebase or derive intent from mutable picker: ' + forbidden)
+    order(save, '_savingStaff = true;', 'UpdateStaffAccess()', 'Staff guard before callbacks')
+    order(save, 'acknowledged = true;', 'Users[index] = saved;', 'Staff ack before bindings')
+    order(save, '_resetStaffSecret = string.Empty;', 'Users[index] = saved;', 'Staff consume before bindings')
+    order(save, '_pricingVersion = null;', 'Users[index] = saved;', 'Staff invalidate related forms before callbacks')
+    clear = ui.split('private void ClearStaffData()', 1)[1].split('private void LoadPermissions()', 1)[0]
+    order(clear, '_selectedUser = null;', 'Users.Clear();', 'Staff invalidation before collection events')
+    tests = (DOTNET / 'Area11.Tests/StaffEditConcurrencyTests.cs').read_text()
+    if tests.count('[Fact]') + tests.count('[InlineData(') != 26: FAILURES.append('Staff editor requires 26 additive written cases')
+    REPORT.append('P5.1 staff roster coherent immutable baseline,checked toggle/credential CAS and exact observed handoff;26 additive C# cases UNRUN,legacy APIs separate,recovery/Windows/provider/WPF OPEN')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -9716,6 +9785,7 @@ def main() -> int:
     check_icon_edit_boundaries()
     check_workbook_settings_edit_boundaries()
     check_permission_edit_boundaries()
+    check_staff_edit_boundaries()
     check_csharp_grammar()
 
     if not quiet:

@@ -68,3 +68,7 @@ verifiedencryptedbackup **اورواقعیالگDB/photos/config**پہلے؛اص
 4. MainformکیاصلWPFcallbacks،COMMIT/dispose/cacheaftercommitfaultsاورperformanceکیجانچ۔
 
 5.1کوابھیمکملنہیںکہنا؛اسکےبعدہی5کیباقیStockTake/toggle/bulk/snapshotinventoryکیطرفترتیبسےجائیں۔ **حصوں1تا5کےباقیکاماورضروریتصدیقپہلے؛حصہ6بعدمیںاورنئیمنظوریسے۔** FullPhase4OPEN؛❌حصہ6شروعنہیں،installerنہیںبنا۔
+
+## ⏳ بعد کا اسی5.1 کا checkpoint
+
+v0.131.0 میں Staff account toggle/password/PIN کے checked forms/outcomes الگ کیے؛[PT-73/موجودہحدود](STAFF-EDIT-CONCURRENCY-REVIEW-URDU.md)۔ اوپرکےتاریخینتائجاپنےcheckpointکےہیں؛recoveryword/remainingwriters/registryاوراصلWindowsجانچابھیباقی،5.1مکملنہیں۔
