@@ -1,5 +1,8 @@
 # PROGRESS - the feature board (what is done, what is next)
 
+> **⏳ تازہ اصل ٹیسٹ نتیجہ/محدود اصلاح — v0.136.2 Campion:** مالک کاv0.136.1Windows/.NET10run:Core/TestsDebugcompile،3397total/3395PASS/2FAIL/0skip،5m59s۔ Native-requiredfixtureمیںجائزOwnerackwriterاورglobalclockبدلنےوالیTimecollectionکیnonparallelisolation؛اصل4000drawerassertion/SQL/constraint/3397casesبرقرار۔129static/13newlexical/8PythonSQLreferencecasesمحدود؛اصلنیاWindowsrerunباقی۔ [دونوںوجوہ/حدود](WINDOWS-V1361-TEST-REPORT-URDU.md)۔ پچھلاCS0619compileblockerاسrunمیںحلثابت؛نہFull5.1نہWindows/WPFمکمل،6/installerنہیں۔ نیچےپرانےنتائجتاریخیہیں۔
+
+
 > **⏳ تازہ build اصلاح — v0.136.1 Betony:** مالک کےv0.136.0WindowsrunمیںCoreاورDesktopDebugcompile؛TestsمیںCS0619،1error/30warnings،72.16s۔ RecordSaveOutcomeTestsکیthrowlambdaابexplicit synchronous Action؛72parentcases/3397suiteبرقرار۔ اصلنیاWindowsbuild/testsابھیباقی؛پرانےCS0411کیcompileرکاوٹاسrunمیںدوبارہنہیںآئی،warningsحلنہیںہوئیں۔ [وجہ/حدود](WINDOWS-V1360-BUILD-FAILURE-URDU.md)۔ اگلاکامیہیrerun؛5.1باقی،6/installerنہیں۔ نیچےپرانےcheckpointاپنےوقتکےثبوتہیں۔
 
 

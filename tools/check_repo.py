@@ -9883,6 +9883,40 @@ def check_native_field_outcomes():
     REPORT.append('P5.1 native preference:checked loaded-baseline prepare before risk modal/recheck at write,observed exact row and UI invalidation;21 C# cases UNRUN;not WPF/provider/whole Settings proof')
 
 
+def check_windows_v1361_regressions() -> None:
+    """Owner's two real failures: legal risk fixture and global-clock test isolation;not execution."""
+    tests = DOTNET / 'Area11.Tests'
+    collection = (tests / 'TimeCollection.cs').read_text()
+    if '[CollectionDefinition("Time", DisableParallelization = true)]' not in collection:
+        FAILURES.append('Clock-mutating Time collection must not overlap any other collection')
+    for path in tests.glob('*.cs'):
+        text = path.read_text()
+        if re.search(r'TimeSource\.(?:Probe\s*=|Reset\(|TrySync\(|StartBackgroundSync\()', text):
+            if '[Collection("Time")]' not in text:
+                FAILURES.append('Global-clock mutator lacks isolated Time collection: ' + path.name)
+    for name in ('TimeSourceTests', 'TimeCorrectionTests'):
+        text = (tests / (name + '.cs')).read_text()
+        if 'public void Dispose() => TimeSource.Reset();' not in text:
+            FAILURES.append('Clock tests must restore shared time: ' + name)
+    native = (tests / 'NativeFieldOutcomeTests.cs').read_text()
+    body = native.split('public void AnyPersistedMetadataChangeConflictsBeforePromptAndAtWrite(',1)[1].split('    [Fact]',1)[0]
+    for token in ('if (column == "required")', 'p.SetRequired(TestData.Owner, f.Id, false, true, f.EditVersion)',
+                  'Assert.True(changed.Ok, changed.Error);', 'Assert.False(Field(p).Required);',
+                  'Assert.Equal(TestData.SeedOwnerName, Field(p).OverrideAcknowledgedBy);',
+                  'Assert.NotNull(Field(p).OverrideAcknowledgedAt);',
+                  'Assert.False(p.PrepareRequiredEdit(TestData.Owner, f.Id, f.EditVersion).Ok);',
+                  'NoCommit(p.SetRequiredChecked(TestData.Owner, f.Id, false, true, f.EditVersion)); Assert.Equal(before, Audits(t));'):
+        if token not in body: FAILURES.append('Native stale-baseline setup/assertion missing: ' + token)
+    if not 0 <= body.find('p.SetRequired(') < body.find('var before = Audits(t);') < body.find('p.PrepareRequiredEdit('):
+        FAILURES.append('Native fixture audit baseline must follow the legitimate acknowledged writer')
+    stock = (tests / 'StockPostingIntegrityTests.cs').read_text()
+    for token in ('long outCash = 4000', 'Assert.Equal(outCash, drawer.SupplierCashOutPaisa);',
+                  'Assert.Equal(500000 - outCash + inCash, drawer.ExpectedPaisa);',
+                  'f.Reconcile(36000, 40);'):
+        if token not in stock: FAILURES.append('Do not relax stock/drawer reconciliation: ' + token)
+    REPORT.append('Owner v0.136.1:legal acknowledged required-field fixture;Time collection isolated from other collections;4000 drawer assertion retained. Source only;3397-case Windows rerun pending')
+
+
 def check_product_update_tx_build_contract() -> None:
     """Narrow source regression for actual owner CS0411,not a generic type checker."""
     source = (DOTNET / 'Area11.Core/Services/ProductService.cs').read_text()
@@ -10147,6 +10181,7 @@ def main() -> int:
     check_staff_create_outcomes()
     check_native_field_outcomes()
     check_product_update_tx_build_contract()
+    check_windows_v1361_regressions()
     check_custom_definition_update_outcomes()
     check_custom_definition_active_outcomes()
     check_csharp_grammar()

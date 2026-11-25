@@ -33,3 +33,7 @@ Launcher/full output میں ایک ہی error کی تکرار ہے،دو الگ 
 3. Build دوبارہ ناکام ہو تو نئی پہلی error اور آخری counts بھیجیں۔ نئی error کو اسی پرانے blocker کا نام نہ دیں۔
 
 ⏳5.1 کے Custom Add/Move،باقی Settings/registry/StockTake اورحصوں1تا5 کے runtime gates باقی ہیں۔ ❌اس اصلاح میں حصہ6 یا installer شروع نہیں ہوا۔ پرانے checkpoints کی گنتیاں اپنے وقت کے تاریخی ثبوت ہیں۔
+
+## بعد کا اصل نتیجہ — v0.136.1
+
+✅ مالک کے اگلے Windows/.NET10runمیںCoreاورTestsDebugcompileہوئے؛CS0619دوبارہنہیںآیا،3397testsواقعیچلے۔ نتیجہ3395PASS/2FAIL/0skip،5m59s؛نہپوراgreenنہDesktop/WPFنئیتصدیق۔ ⏳[دونوںناکامیاںاورv0.136.2کیحدود](WINDOWS-V1361-TEST-REPORT-URDU.md)۔ اوپرrerunباقیوالےجملےاساصلاحکےوقتکیحالتہیں؛نیاpendingrerunابv0.136.2کاہے۔

@@ -53,8 +53,21 @@ public sealed class NativeFieldOutcomeTests
     public void AnyPersistedMetadataChangeConflictsBeforePromptAndAtWrite(string column)
     {
         using var t = new TestDatabase(); var p = Policy(t); var f = Field(p);
-        t.Database.Tx(c => t.Database.Execute(c, $"UPDATE form_field_definitions SET {column}=" +
-            (column is "label" or "help_text" ? "'Synthetic changed'" : "0") + " WHERE id=@id;", new { id = f.Id }));
+        // A critical required field can become optional only with the real owner acknowledgement.
+        // Keep the original loaded baseline so both stale-write doors still have to refuse it.
+        if (column == "required")
+        {
+            var changed = p.SetRequired(TestData.Owner, f.Id, false, true, f.EditVersion);
+            Assert.True(changed.Ok, changed.Error);
+            Assert.False(Field(p).Required);
+            Assert.Equal(TestData.SeedOwnerName, Field(p).OverrideAcknowledgedBy);
+            Assert.NotNull(Field(p).OverrideAcknowledgedAt);
+        }
+        else
+        {
+            t.Database.Tx(c => t.Database.Execute(c, $"UPDATE form_field_definitions SET {column}=" +
+                (column is "label" or "help_text" ? "'Synthetic changed'" : "0") + " WHERE id=@id;", new { id = f.Id }));
+        }
         var before = Audits(t);
         Assert.False(p.PrepareRequiredEdit(TestData.Owner, f.Id, f.EditVersion).Ok);
         NoCommit(p.SetRequiredChecked(TestData.Owner, f.Id, false, true, f.EditVersion)); Assert.Equal(before, Audits(t));
