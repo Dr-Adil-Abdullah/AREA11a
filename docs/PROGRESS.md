@@ -1,5 +1,8 @@
 # PROGRESS - the feature board (what is done, what is next)
 
+> **⏳ تازہ build اصلاح — v0.136.1 Betony:** مالک کےv0.136.0WindowsrunمیںCoreاورDesktopDebugcompile؛TestsمیںCS0619،1error/30warnings،72.16s۔ RecordSaveOutcomeTestsکیthrowlambdaابexplicit synchronous Action؛72parentcases/3397suiteبرقرار۔ اصلنیاWindowsbuild/testsابھیباقی؛پرانےCS0411کیcompileرکاوٹاسrunمیںدوبارہنہیںآئی،warningsحلنہیںہوئیں۔ [وجہ/حدود](WINDOWS-V1360-BUILD-FAILURE-URDU.md)۔ اگلاکامیہیrerun؛5.1باقی،6/installerنہیں۔ نیچےپرانےcheckpointاپنےوقتکےثبوتہیں۔
+
+
 > **⏳ تازہ5.1 — v0.136.0 Comfrey:** CustomFieldOn/OffکاcheckedobservedTx،Owner/entityCASقبلno-op،exactdefensiveentityreceipt؛Update/OnOffکاوہیsharedpersistentguard،pinneddisplayedintent،ackقبلinputconsumption/callbacks،normalblankeditorشامل۔ [PT-78/حدود](CUSTOM-DEFINITION-ACTIVE-OUTCOME-URDU.md)؛[پچھلاUpdate/PT-77](CUSTOM-DEFINITION-UPDATE-OUTCOME-URDU.md)۔24نئےC#cases/3397suiteUNRUN؛128static/37نئیlexical/32PythonSQLplansمحدود،اصلWindows/provider/WPFنہیں۔ CustomAdd/Move،imperativeSettings/registry/StockTakeباقی؛v0.134.0اصلbuildFAIL/CS0411fixکاrerunاور3warningsابھیباقی؛1تا5بندہونےسےپہلے6/installerنہیں۔ نیچےپرانےcheckpointاعداد/pauseاپنےوقتکےتاریخیہیں۔
 
 > **⏳ تازہ اصل build blocker — v0.134.1 Borage source fix:** مالک کےv0.134.0WindowsrunمیںCorecompileFAIL،1CS0411/3warnings،36.79s؛tests/appنہیںچلے۔ Product.UpdateکےobservedTxمیںexplicitobject?اورno-op/finalreturnnullکی3محدوداصلاحات؛[اصلثبوت/وجہ/حدود](WINDOWS-V1340-BUILD-FAILURE-URDU.md)۔126static/3نئیlexicalregressionsمحدود؛3347C#suiteاوراصلWindowsrerunابھیباقی۔ CustomFieldimplementationpaused؛پہلےیہblocker،پھر1تا5باقی؛6/installerنہیں۔ نیچےv0.134.0/docs-onlyاورپرانےنتائجتاریخیہیں۔

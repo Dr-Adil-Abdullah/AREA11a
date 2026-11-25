@@ -6914,6 +6914,10 @@ def check_parent_record_save_outcomes() -> None:
                   'AcknowledgedSaveCannotBeReenteredAfterSimulatedRefreshFailure','SyntheticFormObservationsNeverReleaseUnverifiedWork',
                   'Assert.Equal(before, f.Snapshot());','Assert.True(failed.NoCommitConfirmed);', 'Assert.False(guard.TryBegin());'):
         need(tests,token)
+    # An expression-bodied throw also converts to Func<Task>;xUnit marks that overload error CS0619.
+    # Keep this fault synchronous and retain the guard assertions after the caught exception.
+    callback = method(tests, 'public void AcknowledgedSaveCannotBeReenteredAfterSimulatedRefreshFailure(')
+    need(callback, 'Assert.Throws<InvalidOperationException>((Action)(() => throw new InvalidOperationException("synthetic UI refresh")));')
     if tests.count('[InlineData(') != 72: FAILURES.append('Parent Save outcome regression matrix must retain72 written cases')
     REPORT.append('Parent/quick-create Save:16 observed Core operations,11 guarded UI flows with retained outcome/ack reset gates,72 written C# cases;NOT execution/durable retry/session proof')
 
@@ -9888,7 +9892,7 @@ def check_product_update_tx_build_contract() -> None:
                   '                return null;\n            }, outcome);'):
         if token not in body: FAILURES.append('Product.Update CS0411 regression: missing ' + token)
     if 'return;' in body: FAILURES.append('Observed generic Product.Update callback cannot use a void return')
-    REPORT.append('Owner v0.134.0 CS0411:Product.Update uses explicit object? Tx and valued no-op/final returns;source regression only,Windows build rerun required')
+    REPORT.append('Owner v0.134.0 CS0411:Product.Update uses explicit object? Tx and valued no-op/final returns;owner v0.136.0 Core Debug compiled;runtime tests still pending')
 
 
 

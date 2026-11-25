@@ -32,6 +32,12 @@ def run():
         (ui / 'UnitWindowViewModel.cs', 'if (!_recordSave.Ready)', 'if (false)'),
         (ui / 'PosViewModel.cs', '            _newCustomerSave.AcknowledgeCommit();', '            Cart.Clear();\n            _newCustomerSave.AcknowledgeCommit();'),
         (ui / 'PurchasesViewModel.cs', '            _newSupplierSave.AcknowledgeCommit();', '            Lines.Clear();\n            _newSupplierSave.AcknowledgeCommit();')])
+    test = ROOT / 'dotnet/Area11.Tests/RecordSaveOutcomeTests.cs'
+    synchronous_fault = 'Assert.Throws<InvalidOperationException>((Action)(() => throw new InvalidOperationException("synthetic UI refresh")));'
+    cases.extend([
+        (test, synchronous_fault, 'Assert.Throws<InvalidOperationException>(() => throw new InvalidOperationException("synthetic UI refresh"));'),
+        (test, synchronous_fault, ''),
+        (test, synchronous_fault, 'Assert.Throws<InvalidOperationException>(async () => { throw new InvalidOperationException("synthetic UI refresh"); });')])
     originals = {p: p.read_bytes() for p, _, _ in cases}
     try:
         checks.check_parent_record_save_outcomes(); assert not checks.FAILURES, checks.FAILURES

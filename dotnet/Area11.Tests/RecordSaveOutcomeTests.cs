@@ -166,7 +166,8 @@ public sealed class RecordSaveOutcomeTests
         using var f = new RecordSaveFixture(); var guard = new PostingAttemptGuard(); var before = f.Number("SELECT COUNT(*) FROM audit_logs;");
         Assert.True(guard.TryBegin()); var result = f.Save(operation); Assert.True(result.Ok, result.Error); guard.AcknowledgeCommit();
         // The fault below simulates a callback AFTER the real service succeeds;not a WPF test.
-        Assert.Throws<InvalidOperationException>(() => throw new InvalidOperationException("synthetic UI refresh"));
+        // Explicit Action selects xUnit's synchronous overload, not obsolete Func<Task>.
+        Assert.Throws<InvalidOperationException>((Action)(() => throw new InvalidOperationException("synthetic UI refresh")));
         guard.ObserveException(); Assert.True(guard.WasAcknowledged); Assert.False(guard.TryBegin());
         Assert.Equal(before + 1, f.Number("SELECT COUNT(*) FROM audit_logs;"));
         Assert.Equal(PostingAttemptState.CommittedNeedsReset, guard.State);
