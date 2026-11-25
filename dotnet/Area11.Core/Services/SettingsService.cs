@@ -667,30 +667,79 @@ ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_
         }
     }
 
-    internal ServiceResult SaveRecoveryHash(User actor, string hash)
+    internal ServiceResult SaveRecoveryHash(User actor, string hash) =>
+        SaveRecoveryHashCore(actor, hash, null, checkedEdit: false);
+
+    internal ServiceResult SaveRecoveryHash(User actor, string hash, EditVersion? expected) =>
+        SaveRecoveryHashCore(actor, hash, expected, checkedEdit: true);
+
+    private ServiceResult SaveRecoveryHashCore(User actor, string hash, EditVersion? expected, bool checkedEdit)
     {
+        var outcome = new TransactionOutcome();
+        RecoveryEditForm? committedForm = null;
         try
         {
             var json = JsonSerializer.Serialize(hash);
-            _db.Tx(connection =>
+            var next = _db.Tx(connection =>
             {
                 var owner = OwnerAccess.Require(_db, connection, actor);
+                if (checkedEdit)
+                {
+                    if (expected is null) throw new ValidationException("The recovery editor changed or was not loaded. Refresh and review.");
+                    EditConcurrency.Require(_db, connection, "recovery_word", 0, expected);
+                }
                 _db.Execute(connection, @"
 INSERT INTO settings(key, value, updated_at) VALUES(@key, @value, @at)
 ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at;",
                     new { key = AuthService.RecoveryWordKey, value = json, at = Clock.Now() });
                 _audit.Record(connection, owner, "Auth", "recovery_word_changed",
                     details: hash.Length == 0 ? "back to the factory word" : "changed");
-            });
+                return CaptureRecoveryEdit(connection);
+            }, outcome);
+            committedForm = next; // Only an acknowledged Tx result can reach the cache/UI.
             lock (_gate) { _cache[AuthService.RecoveryWordKey] = json; }
-            return ServiceResult.Success();
+            return RecoverySaved(next);
         }
-        catch (ValidationException exception) { return ServiceResult.Fail(exception.Message); }
         catch (Exception exception)
         {
-            _log.Error("The recovery word could not be saved.", exception);
-            return ServiceResult.Fail("The change could not be saved.");
+            if (exception is not ValidationException) _log.Error("The recovery word save did not finish.", exception);
+            if (committedForm is not null)
+                return RecoverySaved(committedForm, "SAVED. The recovery word was stored but local refresh failed. Refresh and verify.");
+            return new ServiceResult
+            {
+                Error = !outcome.NoCommitConfirmed ? "Recovery word saving is unconfirmed. Refresh and verify before retrying."
+                    : exception is ValidationException ? exception.Message : "The recovery word was not saved; no commit was made.",
+                NoCommitConfirmed = outcome.NoCommitConfirmed
+            };
         }
+    }
+
+    private static ServiceResult RecoverySaved(RecoveryEditForm next, params string[] warnings) =>
+        new() { Ok = true, RecoveryEdit = next, EditVersion = next.EditVersion, Warnings = warnings };
+
+    internal ServiceResult<RecoveryEditForm> LoadRecoveryEditForm(User? actor)
+    {
+        try
+        {
+            return _db.Snapshot(connection =>
+            {
+                OwnerAccess.Require(_db, connection, actor);
+                return ServiceResult<RecoveryEditForm>.Success(CaptureRecoveryEdit(connection));
+            });
+        }
+        catch (ValidationException exception) { return ServiceResult<RecoveryEditForm>.Fail(exception.Message); }
+        catch (Exception exception)
+        {
+            _log.Error("The recovery word editor could not be loaded.", exception);
+            return ServiceResult<RecoveryEditForm>.Fail("The recovery word editor could not be loaded. Refresh before editing.");
+        }
+    }
+
+    private RecoveryEditForm CaptureRecoveryEdit(SqliteConnection connection)
+    {
+        var raw = _db.QuerySingle<string>(connection, "SELECT value FROM settings WHERE key=@key;", new { key = AuthService.RecoveryWordKey });
+        var hash = raw is null ? string.Empty : JsonSerializer.Deserialize<string>(raw) ?? string.Empty;
+        return new RecoveryEditForm(hash.Trim().Length == 0, EditConcurrency.Capture(_db, connection, "recovery_word", 0));
     }
 
     private bool IsCurrentOwner(User? actor)

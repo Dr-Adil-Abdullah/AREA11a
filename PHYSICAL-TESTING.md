@@ -1,5 +1,10 @@
 # Area11 — Real-life Physical Testing Log
 
+## ⏳ PT-74 — Recovery word فارم/نتیجہ (v0.132.0)
+
+[⏳ مکملsteps/باقی5.1](docs/RECOVERY-EDIT-CONCURRENCY-REVIEW-URDU.md)؛verifiedencryptedbackup **اورواقعیالگDB/photos/config** پہلے؛اصلshopپرposts/faultsنہیں۔3300/0fail/0skipاورDesktopRelease؛دوloadedchange/factoryreset،presence/exactJSON/timestamp/uncached/context/scope/null،malformedread،currentOwner/session،normalization/factorysignin،audit/write/COMMIT/cachefaults،Refresh/reentry/ackقبلbindings/unknowninvalidateاورSAVEDجانچیں۔ Factory→factorycontentایکجیسارہےتوtokenوہیرہسکتاہے،durablededupنہیں۔ ⏳26نئےcasesUNRUN؛123static/34lexical/37Pythonplansاصل.NET/cache/auth/WPFcertificationنہیں۔ Remainingwriters/registryباقی؛6/installerشروعنہیں۔
+
+
 ## ⏳ PT-73 — Staff آن/آف اور password/PIN reset (v0.131.0)
 
 [⏳ مکملsteps/باقی5.1](docs/STAFF-EDIT-CONCURRENCY-REVIEW-URDU.md)؛verified encrypted backup **اورواقعیالگDB/photos/config** پہلے؛اصلshopپرposts/faultsنہیں۔3274/0fail/0skipاورDesktopRelease؛دوaccountformsکےچارtoggle/resetcombinations،name/role/active/password/PINchange،context/target/scope/null،readfailure،exacthandoff،currentOwner/next-actionfreshlogin،selection/queuedinput/secretcleanup،audit/COMMITfaultsاورpost-ackSAVEDجانچیں۔ ⏳26نئےcasesUNRUN؛122static/35lexical/33Pythonplansاصلprovider/auth/WPFcertificationنہیں۔ Recoveryword/remainingwriters/registryباقی؛6/installerشروعنہیں۔

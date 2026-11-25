@@ -48,3 +48,7 @@
 ## ⏳ باقی 5.1 اور واضح حد
 
 Recovery word اب بھی الگ راستہ ہے: `AuthService.SetRecoveryWord` → `SettingsService.SaveRecoveryHash`؛اس checkpoint میں اس کی loaded-state/outcome حفاظت **نہیں کی**۔ CreateStaff،remaining native/custom/imperative Settings writers،startup registry+SQLite race/partial restore اور PT-67–73 کی اصل Windows/provider/UI/file/physical جانچ باقی۔ اس کے بعد اسی حصہ5 میں StockTake/toggle/bulk/snapshot کی باقی inventory۔ **5.1 جاری؛1تا5 کے باقی کام اور ضروری تصدیق سے پہلے6 نہیں؛❌installer نہیں بنایا۔**
+
+## ⏳ بعد کا اسی5.1 کا recovery checkpoint
+
+v0.132.0 میں الگ Recoveryword loadedform/checkedchange-reset/outcome source شامل؛[PT-74/موجودہحدود](RECOVERY-EDIT-CONCURRENCY-REVIEW-URDU.md)۔ اوپرکےنتائجاپنےcheckpointکےتاریخیہیں؛CreateStaff/remainingwriters/registryاوراصلWindows/provider/cache/WPFابھیباقی،5.1مکملنہیں۔

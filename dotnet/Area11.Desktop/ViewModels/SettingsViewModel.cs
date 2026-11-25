@@ -114,6 +114,7 @@ public sealed class SettingsViewModel : ObservableObject
     private PermissionEditForm? _permissionEdit;
     private bool _savingPermission;
     private bool _savingStaff;
+    private RecoveryEditForm? _recoveryEdit;
     private static readonly string[] FormKeys =
     {
         "appearance.productPhotoSize",
@@ -926,6 +927,9 @@ public sealed class SettingsViewModel : ObservableObject
     public void LoadUsers()
     {
         if (_savingStaff || _savingPermission) return;
+        _recoveryEdit = null;
+        _newRecoveryWord = string.Empty;
+        OnPropertyChanged(nameof(NewRecoveryWord));
         ResetStaffSecret = string.Empty;
         var currentId = _selectedUser?.Id;
         if (!UpdateStaffAccess()) return;
@@ -950,6 +954,16 @@ public sealed class SettingsViewModel : ObservableObject
         OnPropertyChanged(nameof(CanChangeSelectedUser));
 
         LoadPermissions();
+        LoadRecoveryWordEdit();
+    }
+
+    private void LoadRecoveryWordEdit()
+    {
+        _recoveryEdit = null;
+        var loaded = _services.Auth.LoadRecoveryEditForm(_user);
+        if (!loaded.Ok || loaded.Value is null)
+        { SetStatus(loaded.Error ?? "The recovery word editor could not be loaded. Refresh before editing.", true); return; }
+        _recoveryEdit = loaded.Value;
     }
 
     public void RefreshStaffAccess()
@@ -1047,6 +1061,8 @@ public sealed class SettingsViewModel : ObservableObject
     {
         // Clear selection directly: the normal setter reads pricing/permissions.
         _selectedUser = null;
+        _recoveryEdit = null;
+        _newRecoveryWord = string.Empty;
         _permissionEdit = null;
         _pricingVersion = null;
         _resetStaffSecret = string.Empty;
@@ -1057,6 +1073,7 @@ public sealed class SettingsViewModel : ObservableObject
         ClearPricing();
         NewStaffName = NewStaffPin = ResetStaffSecret = NewRecoveryWord = string.Empty;
         OnPropertyChanged(nameof(ResetStaffSecret));
+        OnPropertyChanged(nameof(NewRecoveryWord));
         OnPropertyChanged(nameof(SelectedUser));
         OnPropertyChanged(nameof(SelectedUserCaption));
         OnPropertyChanged(nameof(CanChangeSelectedUser));
@@ -1596,26 +1613,44 @@ public sealed class SettingsViewModel : ObservableObject
     private void SaveRecoveryWord()
     {
         if (_savingStaff || _savingPermission) return;
-        if (!UpdateStaffAccess()) return;
-        if (!CanManageStaff)
+        _savingStaff = true;
+        var acknowledged = false;
+        try
         {
-            SetStatus("Only the owner can change the recovery word.", true);
-            return;
+            if (!UpdateStaffAccess()) return;
+            var form = _recoveryEdit;
+            if (form is null)
+            { SetStatus("Refresh Staff and review the recovery word editor before saving.", true); return; }
+            var result = _services.Auth.SetRecoveryWord(_user, NewRecoveryWord, form.EditVersion);
+            if (!result.Ok)
+            {
+                if (!result.NoCommitConfirmed)
+                {
+                    _recoveryEdit = null; _newRecoveryWord = string.Empty;
+                    OnPropertyChanged(nameof(NewRecoveryWord));
+                }
+                SetStatus(result.Error ?? "Recovery word saving is unconfirmed. Refresh and verify.", true);
+                return;
+            }
+            acknowledged = true;
+            _recoveryEdit = result.RecoveryEdit; // Exact handoff,not a fresh read of a later writer.
+            _newRecoveryWord = string.Empty;
+            OnPropertyChanged(nameof(NewRecoveryWord));
+            if (_recoveryEdit is null)
+            { SetStatus("SAVED. Refresh Staff and verify the recovery word before another change.", true); return; }
+            SetStatus(result.Warnings.Count > 0 ? string.Join(" ", result.Warnings)
+                : _recoveryEdit.UsesFactoryWord ? "SAVED. The recovery word is back to the factory word (area11)."
+                : "SAVED. The recovery word changed. The factory word no longer works.", result.Warnings.Count > 0);
         }
-
-        var result = _services.Auth.SetRecoveryWord(_user, NewRecoveryWord);
-
-        if (!result.Ok)
+        catch (Exception exception)
         {
-            SetStatus(result.Error ?? "The change could not be saved.", true);
-            return;
+            _recoveryEdit = null; _newRecoveryWord = string.Empty;
+            _services.Log.Error("Recovery word save/refresh did not finish.", exception);
+            OnPropertyChanged(nameof(NewRecoveryWord));
+            SetStatus(acknowledged ? "SAVED. The recovery word was stored but the page could not refresh. Reopen Staff and verify."
+                : "Recovery word saving is unconfirmed. Refresh and verify before retrying.", true);
         }
-
-        var backToFactory = NewRecoveryWord.Trim().Length == 0;
-        NewRecoveryWord = string.Empty;
-        SetStatus(backToFactory
-            ? "The recovery word is back to the factory word (area11)."
-            : "The recovery word is changed. The factory word no longer works.", false);
+        finally { _savingStaff = false; }
     }
 
     private void ResetLabels()

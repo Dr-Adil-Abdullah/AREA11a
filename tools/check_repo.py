@@ -9666,6 +9666,83 @@ def check_staff_edit_boundaries():
     REPORT.append('P5.1 staff roster coherent immutable baseline,checked toggle/credential CAS and exact observed handoff;26 additive C# cases UNRUN,legacy APIs separate,recovery/Windows/provider/WPF OPEN')
 
 
+
+def check_recovery_edit_boundaries():
+    """Recovery editor lexical contracts;not Core/provider/session/WPF execution."""
+    def need(source, tokens, label):
+        for token in tokens:
+            if token not in source: FAILURES.append(label + ': missing ' + token)
+    def order(source, first, second, label):
+        if not 0 <= source.find(first) < source.find(second): FAILURES.append(label + ': wrong/missing order')
+    auth = (DOTNET / 'Area11.Core/Services/AuthService.cs').read_text()
+    need(auth, ['public ServiceResult<RecoveryEditForm> LoadRecoveryEditForm(User? actor) => _settings.LoadRecoveryEditForm(actor);',
+                'SetRecoveryWordCore(actor, word, null, checkedEdit: false)',
+                'SetRecoveryWordCore(actor, word, expected, checkedEdit: true)',
+                'return checkedEdit ? _settings.SaveRecoveryHash(actor, stored, expected)',
+                ': _settings.SaveRecoveryHash(actor, stored);', 'var clean = NormalizeWord(word);',
+                'clean.Length < 4 || clean.Length > 40', 'PasswordHasher.Hash(clean)'], 'Recovery public compatibility/normalization')
+    settings = (DOTNET / 'Area11.Core/Services/SettingsService.cs').read_text()
+    need(settings, ['SaveRecoveryHashCore(actor, hash, null, checkedEdit: false)',
+                    'SaveRecoveryHashCore(actor, hash, expected, checkedEdit: true)'], 'Recovery checked/imperative split')
+    write = settings.split('private ServiceResult SaveRecoveryHashCore(', 1)[1].split('private static ServiceResult RecoverySaved(', 1)[0]
+    need(write, ['var outcome = new TransactionOutcome();', 'RecoveryEditForm? committedForm = null;',
+                 'var next = _db.Tx(connection =>', 'OwnerAccess.Require(_db, connection, actor);',
+                 'if (checkedEdit)', 'if (expected is null) throw new ValidationException(',
+                 'EditConcurrency.Require(_db, connection, "recovery_word", 0, expected);',
+                 '_audit.Record(connection, owner, "Auth", "recovery_word_changed",',
+                 'details: hash.Length == 0 ? "back to the factory word" : "changed"',
+                 'return CaptureRecoveryEdit(connection);', '}, outcome);', 'committedForm = next;',
+                 '_cache[AuthService.RecoveryWordKey] = json;', 'if (committedForm is not null)',
+                 'return RecoverySaved(committedForm, "SAVED.', 'NoCommitConfirmed = outcome.NoCommitConfirmed',
+                 'Recovery word saving is unconfirmed. Refresh and verify before retrying.'], 'Recovery observed write')
+    order(write, 'OwnerAccess.Require', 'EditConcurrency.Require', 'Recovery current Owner before compare')
+    order(write, 'EditConcurrency.Require', '_db.Execute(connection', 'Recovery compare before UPSERT')
+    order(write, '_audit.Record(', 'return CaptureRecoveryEdit(connection);', 'Recovery handoff after audit')
+    order(write, '}, outcome);', 'committedForm = next;', 'Recovery acknowledgement after Tx')
+    order(write, 'committedForm = next;', '_cache[AuthService.RecoveryWordKey]', 'Recovery ack before cache callback')
+    load = settings.split('internal ServiceResult<RecoveryEditForm> LoadRecoveryEditForm(', 1)[1].split('private bool IsCurrentOwner', 1)[0]
+    need(load, ['return _db.Snapshot(connection =>', 'OwnerAccess.Require(_db, connection, actor);',
+                'Success(CaptureRecoveryEdit(connection))', 'JsonSerializer.Deserialize<string>(raw)',
+                'new RecoveryEditForm(hash.Trim().Length == 0, EditConcurrency.Capture(_db, connection, "recovery_word", 0))'], 'Recovery explicit uncached read')
+    need(settings, ['new() { Ok = true, RecoveryEdit = next, EditVersion = next.EditVersion, Warnings = warnings }',
+                    'key == AuthService.RecoveryWordKey', 'values.ContainsKey(AuthService.RecoveryWordKey)'], 'Recovery result/generic writer boundary')
+    edit = (DOTNET / 'Area11.Core/Services/EditConcurrency.cs').read_text()
+    need(edit, ['"recovery_word" => null,', 'if (scope == "recovery_word")',
+                "SELECT key,value FROM settings WHERE key='security.recoveryWordHash';"], 'Recovery exact presence/value baseline')
+    form = (DOTNET / 'Area11.Core/Models/RecoveryEditForm.cs').read_text()
+    need(form, ['public bool UsesFactoryWord { get; }', 'public EditVersion EditVersion { get; }',
+                '[System.Text.Json.Serialization.JsonIgnore]', 'internal RecoveryEditForm('], 'Recovery immutable form')
+    if 'hash' in form.lower().split('public sealed class', 1)[1]: FAILURES.append('Recovery form must not expose hash fields')
+    result = (DOTNET / 'Area11.Core/Utils/ServiceResult.cs').read_text()
+    need(result, ['[System.Text.Json.Serialization.JsonIgnore]\n    public Area11.Core.Models.RecoveryEditForm? RecoveryEdit { get; init; }'], 'Recovery JSON result boundary')
+    ui = (DOTNET / 'Area11.Desktop/ViewModels/SettingsViewModel.cs').read_text()
+    need(ui, ['private RecoveryEditForm? _recoveryEdit;', 'LoadRecoveryWordEdit();',
+              'var loaded = _services.Auth.LoadRecoveryEditForm(_user);', '_recoveryEdit = loaded.Value;'], 'Recovery explicit UI loader')
+    save = ui.split('private void SaveRecoveryWord()', 1)[1].split('private void ResetLabels()', 1)[0]
+    need(save, ['if (_savingStaff || _savingPermission) return;', '_savingStaff = true;',
+                'if (!UpdateStaffAccess()) return;', 'var form = _recoveryEdit;', 'if (form is null)',
+                '_services.Auth.SetRecoveryWord(_user, NewRecoveryWord, form.EditVersion)',
+                'if (!result.NoCommitConfirmed)', '_recoveryEdit = null; _newRecoveryWord = string.Empty;',
+                'acknowledged = true;', '_recoveryEdit = result.RecoveryEdit;', '_newRecoveryWord = string.Empty;',
+                'OnPropertyChanged(nameof(NewRecoveryWord));', '_recoveryEdit.UsesFactoryWord',
+                'SAVED. The recovery word was stored but the page could not refresh.',
+                'finally { _savingStaff = false; }'], 'Recovery UI outcome/handoff')
+    order(save, '_savingStaff = true;', 'UpdateStaffAccess()', 'Recovery guard before callback')
+    success = save.split('acknowledged = true;', 1)[-1]
+    order(success, '_recoveryEdit = result.RecoveryEdit;', 'OnPropertyChanged(nameof(NewRecoveryWord));', 'Recovery exact handoff before bindings')
+    order(success, '_newRecoveryWord = string.Empty;', 'OnPropertyChanged(nameof(NewRecoveryWord));', 'Recovery consume before bindings')
+    for forbidden in ('LoadUsers(', 'LoadRecoveryWordEdit(', 'LoadRecoveryEditForm('):
+        if forbidden in save: FAILURES.append('Recovery save must not silently fresh-read/rebase: ' + forbidden)
+    clear = ui.split('private void ClearStaffData()', 1)[1].split('private void LoadPermissions()', 1)[0]
+    order(clear, '_recoveryEdit = null;', 'Users.Clear();', 'Recovery invalidate before observable clear')
+    reload = ui.split('public void LoadUsers()', 1)[1].split('private void LoadRecoveryWordEdit()', 1)[0]
+    order(reload, '_recoveryEdit = null;', 'OnPropertyChanged(nameof(NewRecoveryWord));', 'Recovery reload invalidates before binding')
+    need(reload, ['_newRecoveryWord = string.Empty;'], 'Recovery reload clears consumed input')
+    tests = (DOTNET / 'Area11.Tests/RecoveryEditConcurrencyTests.cs').read_text()
+    if tests.count('[Fact]') + tests.count('[InlineData(') != 26: FAILURES.append('Recovery editor requires 26 additive written C# cases')
+    REPORT.append('P5.1 recovery word authorized immutable form,checked presence/value CAS,observed write/cache outcome and exact UI handoff;26 additive C# cases UNRUN,imperative APIs separate,remaining Settings/Windows/provider/WPF OPEN')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -9786,6 +9863,7 @@ def main() -> int:
     check_workbook_settings_edit_boundaries()
     check_permission_edit_boundaries()
     check_staff_edit_boundaries()
+    check_recovery_edit_boundaries()
     check_csharp_grammar()
 
     if not quiet:

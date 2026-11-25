@@ -25,6 +25,7 @@ internal static class EditConcurrency
             "pricing" => null,
             "permissions" => null,
             "staff" => null,
+            "recovery_word" => null,
             _ when scope.StartsWith("answers:", StringComparison.Ordinal)
                 && CustomFieldEntity.IsKnown(scope[8..]) => null,
             _ => throw new InvalidOperationException("Unsupported edit scope.")
@@ -48,6 +49,9 @@ internal static class EditConcurrency
         if (scope == "staff")
             parts.Add(db.Fingerprint(connection,
                 "SELECT id,name,role,active,password_hash,pin_hash FROM users WHERE id=@id;", id));
+        if (scope == "recovery_word")
+            parts.Add(db.Fingerprint(connection,
+                "SELECT key,value FROM settings WHERE key='security.recoveryWordHash';", 0));
         if (scope == Product)
             parts.Add(db.Fingerprint(connection,
                 "SELECT category_id FROM product_category_tags WHERE product_id=@id ORDER BY category_id;", id));

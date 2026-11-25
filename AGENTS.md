@@ -5,9 +5,9 @@
 ہر جواب/وضاحت/خلاصہ سادہ پاکستانی اردو۔ ایک وقت میں صرف ایک منظورشدہ حصہ؛ہر اگلے حصے سے پہلے نئی اجازت۔ ہر ٹاسک/حصے پر صرف3–4 لائنوں کا خلاصہ؛تفصیلی رپورٹ ہر3 مکمل حصوں کے بعد یا مالک کے مطالبے پر۔ [⏳ نیا14حصوں کا منصوبہ](docs/REMAINING-14-PORTIONS-URDU.md) پر عمل کریں؛پرانے3–6roundsاندازے اس منصوبے کی جگہ نہیں لیتے۔ ✅حصہ1کیCore/TestsDebugcompileتصدیقمالککےv0.120.1runسےملی۔ ⏳حصہ2کے22failurefixesکاWindowsrerunباقی؛بعدکےnextسےصرفحصہ3کیاجازتملی،اسکیsourceپیشرفتذیل،اصلجانچباقی؛⏳تازہNextسے5.1Settings؛نامکملحصےکیذیلیگنتی،1تا5کےباقیکام+تصدیقسےپہلے6نہیں۔ ✅صحت مندsourcecheckکوکامیاب.NETbuildنہکہیں۔
 
 
-## ⏳ موجودہ 5.1 — Staff آن/آف اور password/PIN reset — v0.131.0 Celandine
+## ⏳ موجودہ 5.1 — Recovery word کا پرانا فارم اور نتیجہ — v0.132.0 Chicory
 
-**5.1 جاری؛حصوں1 تا5 کے باقی کام اور ضروری تصدیق سے پہلے6 نہیں۔** مجاز roster کا immutable loaded form،account/credential baseline،checked toggle/reset کا in-Tx compare،exact handoff اور ack-before-callbacks/unknown invalidation شامل۔ Owner/business/session اصول اور پرانے imperative APIs برقرار؛تمام writers محفوظ ہونے کا دعویٰ نہیں۔ ⏳26 نئے C# cases/3274 suite UNRUN؛✅122 محدود static،35 نئی lexical mutations،33 Python WAL/DELETE plans پاس؛یہ اصل .NET/provider/WPF/auth ثبوت نہیں۔ [⏳ جائزہ/PT-73/باقی5.1](docs/STAFF-EDIT-CONCURRENCY-REVIEW-URDU.md)؛[⏳14حصے](docs/REMAINING-14-PORTIONS-URDU.md)۔ Recovery word،CreateStaff/remaining imperative/native/custom writers،startup registry اور Windows تصدیق باقی؛StockTake بعد میں اسی5 میں۔ ❌6/installer شروع نہیں۔
+**5.1 جاری؛حصوں1 تا5 کے باقی کام اور ضروری تصدیق سے پہلے6 نہیں۔** Recovery word کے لیے مجاز immutable form،exact stored key/value baseline،checked change/factory reset کا in-Tx compare،observed outcome/cache-after-ack اور exact UI handoff شامل۔ Empty→factory،normalization،Owner/session اور پرانا imperative API برقرار؛تمام writers checked ہونے کا دعویٰ نہیں۔ ⏳26 نئے C# cases/3300 suite UNRUN؛✅123 محدود static،34 نئی lexical mutations،37 Python WAL/DELETE plans پاس؛یہ اصل .NET/provider/cache/auth/WPF ثبوت نہیں۔ [⏳ جائزہ/PT-74/باقی5.1](docs/RECOVERY-EDIT-CONCURRENCY-REVIEW-URDU.md)؛[⏳14حصے](docs/REMAINING-14-PORTIONS-URDU.md)۔ CreateStaff/remaining native/custom/imperative writers،startup registry اور Windows تصدیق باقی؛StockTake بعد میں اسی5 میں۔ ❌6/installer شروع نہیں۔
 
 ## ⏳ تاریخی حصہ4/14 — v0.122.0 Larkspur
 

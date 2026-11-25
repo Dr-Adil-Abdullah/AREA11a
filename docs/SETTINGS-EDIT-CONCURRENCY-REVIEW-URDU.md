@@ -72,3 +72,7 @@ verifiedencryptedbackup **اورواقعیالگDB/photos/config**پہلے؛اص
 ## ⏳ بعد کا اسی5.1 کا checkpoint
 
 v0.131.0 میں Staff account toggle/password/PIN کے checked forms/outcomes الگ کیے؛[PT-73/موجودہحدود](STAFF-EDIT-CONCURRENCY-REVIEW-URDU.md)۔ اوپرکےتاریخینتائجاپنےcheckpointکےہیں؛recoveryword/remainingwriters/registryاوراصلWindowsجانچابھیباقی،5.1مکملنہیں۔
+
+## ⏳ بعد کا اسی5.1 کا recovery checkpoint
+
+v0.132.0 میں الگ Recoveryword loadedform/checkedchange-reset/outcome source شامل؛[PT-74/موجودہحدود](RECOVERY-EDIT-CONCURRENCY-REVIEW-URDU.md)۔ اوپرکےنتائجاپنےcheckpointکےتاریخیہیں؛CreateStaff/remainingwriters/registryاوراصلWindows/provider/cache/WPFابھیباقی،5.1مکملنہیں۔

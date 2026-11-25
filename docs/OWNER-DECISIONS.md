@@ -1,5 +1,10 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+## ⏳ v0.132.0 — اسی5.1میںRecoveryword؛پرانےاصولبرقرار
+
+تازہnextپرمجازloadedform،checkedcompare/exacthandoff/outcomesشامل؛normalization/4–40،خالیلفظسےarea11،nonsecretaudit،currentOwner/sessionاورimperativeAPIبرقرار۔ Recoverywordchangeکوpassword/PINresetیاfreshloginکی نئیpolicyنہیںبنایا۔ [⏳ PT-74/حدود](RECOVERY-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3300suite/WindowsUNRUN؛CreateStaff/remainingwriters/registryباقی۔ EquivalentfactorycontentدوبارہSaveکوروکنادurableidentityنہیں؛1تا5باقیکام+تصدیقسےپہلے6نہیں،installerنہیں۔
+
+
 ## ⏳ v0.131.0 — اسی5.1میںStafftoggle/password/PINreset؛نئیپالیسی نہیں
 
 تازہnextپرloadedaccountformکےcompare/exacthandoff/outcomeلگائے؛OwnerOffممنوع،freshinactiveadministration،next-actionfreshloginاورپرانےimperativeAPIsبرقرار۔ [⏳ PT-73/حدود](STAFF-EDIT-CONCURRENCY-REVIEW-URDU.md)؛3274suite/Windowsباقی؛recoveryword/CreateStaff/remainingwriters/startupregistryباقی۔ یہdurableidentityیاحصہ6نہیں؛1تا5باقیکام+ضروریتصدیقسےپہلے6نہیں،installerنہیں۔

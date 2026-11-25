@@ -415,23 +415,32 @@ public sealed class AuthService
         return raw is null ? string.Empty : System.Text.Json.JsonSerializer.Deserialize<string>(raw) ?? string.Empty;
     });
 
+    /// <summary>Authorized local recovery baseline;neither the word nor its hash is exposed.</summary>
+    public ServiceResult<RecoveryEditForm> LoadRecoveryEditForm(User? actor) => _settings.LoadRecoveryEditForm(actor);
+
     /// <summary>
     /// The owner sets their own recovery word - or an empty word, which hands the door back to the
     /// factory word so the escape hatch can never be left without one. Only the hash is stored, and
     /// the black box records that it changed, never the word or its hash.
     /// </summary>
-    public ServiceResult SetRecoveryWord(User actor, string? word)
+    public ServiceResult SetRecoveryWord(User actor, string? word) =>
+        SetRecoveryWordCore(actor, word, null, checkedEdit: false);
+
+    public ServiceResult SetRecoveryWord(User actor, string? word, EditVersion? expected) =>
+        SetRecoveryWordCore(actor, word, expected, checkedEdit: true);
+
+    private ServiceResult SetRecoveryWordCore(User actor, string? word, EditVersion? expected, bool checkedEdit)
     {
         if (!actor.IsOwner)
         {
-            return ServiceResult.Fail("Only the owner can change the recovery word.");
+            return new ServiceResult { Error = "Only the owner can change the recovery word.", NoCommitConfirmed = true };
         }
 
         var clean = NormalizeWord(word);
 
         if (clean.Length > 0 && (clean.Length < 4 || clean.Length > 40))
         {
-            return ServiceResult.Fail("The recovery word must be 4 to 40 letters.");
+            return new ServiceResult { Error = "The recovery word must be 4 to 40 letters.", NoCommitConfirmed = true };
         }
 
         try
@@ -440,12 +449,14 @@ public sealed class AuthService
 
             // Save the hash quietly, but verify the live owner and record a non-secret event
             // in the SAME transaction. The generic settings paths refuse this key.
-            return _settings.SaveRecoveryHash(actor, stored);
+            return checkedEdit ? _settings.SaveRecoveryHash(actor, stored, expected)
+                : _settings.SaveRecoveryHash(actor, stored);
         }
         catch (Exception exception)
         {
             _log.Error("The recovery word could not be changed.", exception);
-            return ServiceResult.Fail("The change could not be saved.");
+            // A delegated call that throws has no reliable outcome receipt.
+            return new ServiceResult { Error = "Recovery word saving is unconfirmed. Refresh and verify before retrying." };
         }
     }
 

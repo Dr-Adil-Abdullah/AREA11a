@@ -1,8 +1,8 @@
 # ⏳ باقی کام — منظورشدہ 14 حصوں کا منصوبہ
 
-## ⏳ موجودہ 5.1 — Staff آن/آف اور password/PIN reset — v0.131.0 Celandine
+## ⏳ موجودہ 5.1 — Recovery word کا پرانا فارم اور نتیجہ — v0.132.0 Chicory
 
-**5.1 جاری؛حصوں1 تا5 کے باقی کام اور ضروری تصدیق سے پہلے6 نہیں۔** مجاز roster کا immutable loaded form،account/credential baseline،checked toggle/reset کا in-Tx compare،exact handoff اور ack-before-callbacks/unknown invalidation شامل۔ Owner/business/session اصول اور پرانے imperative APIs برقرار؛تمام writers محفوظ ہونے کا دعویٰ نہیں۔ ⏳26 نئے C# cases/3274 suite UNRUN؛✅122 محدود static،35 نئی lexical mutations،33 Python WAL/DELETE plans پاس؛یہ اصل .NET/provider/WPF/auth ثبوت نہیں۔ [⏳ جائزہ/PT-73/باقی5.1](STAFF-EDIT-CONCURRENCY-REVIEW-URDU.md)؛[⏳14حصے](REMAINING-14-PORTIONS-URDU.md)۔ Recovery word،CreateStaff/remaining imperative/native/custom writers،startup registry اور Windows تصدیق باقی؛StockTake بعد میں اسی5 میں۔ ❌6/installer شروع نہیں۔
+**5.1 جاری؛حصوں1 تا5 کے باقی کام اور ضروری تصدیق سے پہلے6 نہیں۔** Recovery word کے لیے مجاز immutable form،exact stored key/value baseline،checked change/factory reset کا in-Tx compare،observed outcome/cache-after-ack اور exact UI handoff شامل۔ Empty→factory،normalization،Owner/session اور پرانا imperative API برقرار؛تمام writers checked ہونے کا دعویٰ نہیں۔ ⏳26 نئے C# cases/3300 suite UNRUN؛✅123 محدود static،34 نئی lexical mutations،37 Python WAL/DELETE plans پاس؛یہ اصل .NET/provider/cache/auth/WPF ثبوت نہیں۔ [⏳ جائزہ/PT-74/باقی5.1](RECOVERY-EDIT-CONCURRENCY-REVIEW-URDU.md)؛[⏳14حصے](REMAINING-14-PORTIONS-URDU.md)۔ CreateStaff/remaining native/custom/imperative writers،startup registry اور Windows تصدیق باقی؛StockTake بعد میں اسی5 میں۔ ❌6/installer شروع نہیں۔
 
 
 ## ✅ کام اور گفتگو کے موجودہ اصول
@@ -15,7 +15,7 @@
 
 ## ⏳ مالک کی تازہ ترتیب — پہلے1تا5 بند،پھر6
 
-نامکملحصہ5کےاگلےکام5.1،5.2کیذیلیگنتیسے؛**1تا5کاباقیکاماورضروریتصدیقمکملکیےبغیر6شروعنہیںکرنا۔** اسوقتصرف1کیخاصcompileخرابیverified؛2rerun،3Save-WPF،4session-WPF،5source+runtimeباقی۔ تازہ5.1Stafftoggle/password/PINجاری؛[PT-73](STAFF-EDIT-CONCURRENCY-REVIEW-URDU.md)،3274suiteUNRUN؛recoveryword/remainingwriters/registryباقی۔
+نامکملحصہ5کےاگلےکام5.1،5.2کیذیلیگنتیسے؛**1تا5کاباقیکاماورضروریتصدیقمکملکیےبغیر6شروعنہیںکرنا۔** اسوقتصرف1کیخاصcompileخرابیverified؛2rerun،3Save-WPF،4session-WPF،5source+runtimeباقی۔ تازہ5.1Recoverywordجاری؛[PT-74](RECOVERY-EDIT-CONCURRENCY-REVIEW-URDU.md)،3300suiteUNRUN؛CreateStaff/remainingwriters/registryباقی۔
 
 ## ⏳ مکمل تقسیم
 
@@ -27,7 +27,7 @@
 |2۔ ⏳ پوری ٹیسٹ سوئٹ | اجازت مل گئی؛اصل v0.120.1 run میں2941PASS/22FAIL/2963۔22 ناکامیوں سے متعلق fixture اصلاحات؛v0.120.2 کا اصل rerun باقی |
 |3۔ ⏳ ریکارڈ بنانے والے فارم | نئےnextسےاجازت؛v0.121.0میںparent/quick-create/Catalog/Unit Saveکےlocaloutcome/ackguards،72نئےcases؛اصلWindows/WPF3035suiteاورPT-63باقی |
 |4۔ ⏳ لاگ اِن اور اجازتیں | اجازتملی؛v0.122.0/D-116sessionproof،resetپرnext-actionfreshlogin،currentreaders/inputguards،Counterfull-outputdeny/freshrestore؛22نئےcases/3057suiteUNRUN،[PT-64](AUTHENTICATED-SESSION-REVIEW-URDU.md)/Windowsباقی |
-|5۔ ⏳ Save/CAS — جاری5.1 | Settings/Draft/Backup/Pricing/Hardware/Icon/Workbook/Permissions کے بعدv0.131.0 Staff toggle/password/PIN checked forms اور exact handoff؛26 نئےcases/3274suiteUNRUN۔ Recovery word،CreateStaff/remaining imperative/native/custom writers،startup registry اور Windows ابھی5.1میںباقی؛StockTake/remainingroutesبعدمیںاسی5میں؛[PT-73](STAFF-EDIT-CONCURRENCY-REVIEW-URDU.md) |
+|5۔ ⏳ بیک وقت کام — جاری5.1 | پچھلےSettings/Draft/Backup/Pricing/Hardware/Icon/Workbook/Permissions/Stafftoggleکےبعدv0.132.0Recoverywordcheckedchange/reset،presence/valuebaseline،observedoutcome/exacthandoff؛26نئےcases/3300suiteUNRUN۔ CreateStaff/remainingnative/custom/imperativewriters/registry/Windowsباقی؛StockTakeبعدمیںاسی5میں؛[PT-74](RECOVERY-EDIT-CONCURRENCY-REVIEW-URDU.md) |
 |6۔ ❌ دوبارہ کوشش اور ری اسٹارٹ | جواب کھونا،بندش،دوسرے صفحے/کمپیوٹر کی retry؛دیرپا شناخت کی تجویز،ضروری منظوری،نفاذ |
 |7۔ ❌ مالی اور اسٹاک ملاپ | فروخت/خرید/واپسی/وصولی/ادائیگی/خرچ/گنتی/گلا؛منظورشدہ رعایت اور اصل لاگت کی حد |
 |8۔ ❌ رپورٹس اور رازداری | Excel/CSV/PDF/رسید/پرنٹ؛Cost/Profit اجازتیں؛Blackbox/BookCheck میں صرف منظورشدہ رسائی |
