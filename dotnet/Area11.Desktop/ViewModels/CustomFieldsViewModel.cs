@@ -576,27 +576,63 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
 
     private void ToggleActive()
     {
-        if (!RefreshAccess()) return;
-        if (_selectedField is null)
+        // Share the existing definition outcome latch:Update and On/Off must not bypass one
+        // another after an unknown/acknowledged-but-incomplete save. No new read/rebase here.
+        if (_savingDefinitionUpdate || !_definitionUpdate.Ready) return;
+        if (!_lastLoadSucceeded || !CanManage || _selectedField is not { } selected
+            || !Fields.Contains(selected) || selected.Field.Id != _editingId || selected.Field.Entity != SelectedTab.Entity)
+        { SetStatus("Refresh and select a field before changing its visibility.", true); return; }
+        var fieldId = selected.Field.Id;
+        var entity = selected.Field.Entity;
+        var active = !selected.Field.Active; // Pin the displayed intent BEFORE the service call.
+        if (!_definitionUpdate.TryBegin()) return;
+        _savingDefinitionUpdate = true;
+        try
         {
-            SetStatus("Pick a field first.", true);
-            return;
+            var result = _services.CustomFields.SetActiveChecked(_user, fieldId, active, selected.Field.EditVersion);
+            if (!result.Ok)
+            {
+                _definitionUpdate.ObserveFailure(result);
+                if (!_definitionUpdate.Ready) InvalidateUpdate(result.Error ?? "The field visibility change is unconfirmed. Verify before retrying.");
+                else SetStatus(result.Error ?? "The field visibility change was not saved.", true);
+                return;
+            }
+            _definitionUpdate.AcknowledgeCommit();
+            // Old On/Off used FinishWrite/Load and discarded the editor. Consume its authored
+            // state first,then hand off only the exact saved entity and leave no selected target.
+            _editingId = 0;
+            _selectedField = null;
+            _isEditing = false;
+            _labelText = _optionsText = _helpText = string.Empty;
+            _required = false;
+            _selectedType = Types[0];
+            var saved = result.CustomDefinitionEdit;
+            if (saved is null || saved.FieldId != fieldId || saved.Entity != entity || SelectedTab.Entity != entity)
+                throw new InvalidOperationException("The saved visibility handoff is missing or mismatched.");
+            var rows = saved.Fields;
+            if (rows.SingleOrDefault(field => field.Id == fieldId) is not { } target || target.Active != active
+                || rows.Any(field => field.Entity != entity || field.EditVersion is null))
+                throw new InvalidOperationException("The saved visibility/entity baseline is incomplete.");
+            ReplaceRows(rows, 0);
+            NotifyConsumedEditor();
+            SetStatus(active ? "SAVED. Field is on the form again. Select a field to continue."
+                : "SAVED. Field is put away. Its answers are still saved. Select a field to continue.", false);
+            if (_editingId != 0 || _selectedField is not null || _isEditing || _required
+                || _labelText.Length != 0 || _optionsText.Length != 0 || _helpText.Length != 0 || !ReferenceEquals(_selectedType, Types[0])
+                || Fields.Count != rows.Count || Fields.Where((row, index) =>
+                    !CustomFieldDefinitionState.Matches(row.Field, rows[index]) || !ReferenceEquals(row.Field.EditVersion, rows[index].EditVersion)).Any())
+                throw new InvalidOperationException("The saved visibility cleanup was not retained.");
+            _definitionUpdate.CompleteReset();
         }
-
-        var field = _selectedField.Field;
-        var result = _services.CustomFields.SetActive(_user, field.Id, !field.Active, field.EditVersion);
-
-        if (!result.Ok)
+        catch (Exception exception)
         {
-            RefreshAccess();
-            SetStatus(result.Error ?? "The field could not be changed.", true);
-            return;
+            _definitionUpdate.ObserveException();
+            _services.Log.Error("Custom definition visibility/handoff did not finish.", exception);
+            InvalidateUpdate(_definitionUpdate.WasAcknowledged
+                ? "SAVED. Field visibility stored, but the editor could not reset. Verify before reopening;do not repeat."
+                : "The field visibility change is unconfirmed. Verify definitions before reopening or retrying.");
         }
-
-        _editingId = field.Id;
-        FinishWrite(field.Id, field.Active
-            ? "\"" + field.Label + "\" is put away. Its answers are still saved."
-            : "\"" + field.Label + "\" is on the form again.");
+        finally { _savingDefinitionUpdate = false; }
     }
 
     private void UseSuggestion(CustomFieldSuggestion? suggestion)

@@ -1,25 +1,25 @@
 # نمبر وار کام اور باقی جانچ — مستقل1تا36فہرست
 
-> **⏳ تازہ5.1 — v0.135.0 Foxglove:** موجودہCustomFieldUpdateکاcheckedobservedTx،exactdefensiveentityreceipt،اصلloadedbaselineاورDesktoppersistentlocalguard/ackقبلinputconsumption+callbacksشامل؛normalSaveکےبعدblankeditor،دوبارہselection۔ Add/OnOff/Moveکےoutcomesابھیباقی۔ [PT-77/ثبوت/حدود](CUSTOM-DEFINITION-UPDATE-OUTCOME-URDU.md)؛26نئےC#cases/3373suiteUNRUN،127static/46نئیlexical/30PythonSQLplansمحدود۔ مالککاv0.134.0اصلbuildFAILاورv0.134.1CS0411fixکاWindowsrerunابھیباقی؛نئےNextسےیہsourceکامآگےبڑھا،compilePASSنہیں۔ RemainingSettings/registry/StockTakeاور1تا5کیاصلجانچباقی؛6/installerنہیں۔ نیچےpaused/پرانےاعداداپنےcheckpointکےتاریخیہیں۔
+> **⏳ تازہ5.1 — v0.136.0 Comfrey:** CustomFieldOn/OffکاcheckedobservedTx،Owner/entityCASقبلno-op،exactdefensiveentityreceipt؛Update/OnOffکاوہیsharedpersistentguard،pinneddisplayedintent،ackقبلinputconsumption/callbacks،normalblankeditorشامل۔ [PT-78/حدود](CUSTOM-DEFINITION-ACTIVE-OUTCOME-URDU.md)؛[پچھلاUpdate/PT-77](CUSTOM-DEFINITION-UPDATE-OUTCOME-URDU.md)۔24نئےC#cases/3397suiteUNRUN؛128static/37نئیlexical/32PythonSQLplansمحدود،اصلWindows/provider/WPFنہیں۔ CustomAdd/Move،imperativeSettings/registry/StockTakeباقی؛v0.134.0اصلbuildFAIL/CS0411fixکاrerunاور3warningsابھیباقی؛1تا5بندہونےسےپہلے6/installerنہیں۔ نیچےپرانےcheckpointاعداد/pauseاپنےوقتکےتاریخیہیں۔
 
 > **⏳ تازہ اصل build blocker — v0.134.1 Borage source fix:** مالک کےv0.134.0WindowsrunمیںCorecompileFAIL،1CS0411/3warnings،36.79s؛tests/appنہیںچلے۔ Product.UpdateکےobservedTxمیںexplicitobject?اورno-op/finalreturnnullکی3محدوداصلاحات؛[اصلثبوت/وجہ/حدود](WINDOWS-V1340-BUILD-FAILURE-URDU.md)۔126static/3نئیlexicalregressionsمحدود؛3347C#suiteاوراصلWindowsrerunابھیباقی۔ CustomFieldimplementationpaused؛پہلےیہblocker،پھر1تا5باقی؛6/installerنہیں۔ نیچےv0.134.0/docs-onlyاورپرانےنتائجتاریخیہیں۔
 
 > **⏳ D-117 — موجودہ مکمل حالت پہلے یہاں پڑھیں:** [ہوا/باقی کام،دیر اور عارضی اندازہ](COMPLETE-STATUS-AND-DECISIONS-URDU.md)؛[تمام117 فیصلے + پانچ بنیادی اصول](DECISION-REGISTER-INDEX-URDU.md)؛[اگلا CustomField Update جائزہ شروع](CUSTOM-FIELD-NEXT-SCOPE-URDU.md)۔ Code v0.134.0/3347suiteUNRUN؛اس documentation turn میں production code نہیں بدلا۔ نیچے پرانے checkpoint کے نتائج اور “شروع نہیں” والے جملے اپنے وقت کے تاریخی ہیں،موجودہ منظوری/نتیجہ نہیں؛پہلے1تا5 بند،پھر6۔
 
-**⏳ موجودہ source: v0.134.0 Eglantine؛5.1Nativefieldcheckpoint،ابھیجاری۔** [⏳ منصوبہ](REMAINING-14-PORTIONS-URDU.md)؛[⏳ Nativefield/PT-76/باقی5.1](NATIVE-FIELD-OUTCOME-REVIEW-URDU.md)۔ مستقل1–36نمبرنہیںبدلے۔
+**⏳ موجودہ source: v0.136.0 Comfrey؛5.1CustomOnOffcheckpoint،ابھیجاری۔** [⏳ منصوبہ](REMAINING-14-PORTIONS-URDU.md)؛[⏳ CustomOnOff/PT-78/باقی5.1](CUSTOM-DEFINITION-ACTIVE-OUTCOME-URDU.md)۔ مستقل1–36نمبرنہیںبدلے۔
 
-✅ حصہ1کیCore/Testscompileتصدیقملی؛اصلv0.120.1کے2963میں2941PASS/22FAIL۔ ⏳حصوں2/3/4/5کانیاruntimeباقی؛**3347suiteUNRUN**۔ حصہ5کےremainingwriters/registry/StockTakeکاسورسجائزہبھیباقی؛❌حصہ6شروعنہیں/installerنہیںبنا۔
+✅ حصہ1کیCore/Testscompileتصدیقملی؛اصلv0.120.1کے2963میں2941PASS/22FAIL۔ ⏳حصوں2/3/4/5کانیاruntimeباقی؛**3397suiteUNRUN**۔ حصہ5کےremainingwriters/registry/StockTakeکاسورسجائزہبھیباقی؛❌حصہ6شروعنہیں/installerنہیںبنا۔
 
 | مستقل نمبر / دائرہ | کیا ہوگیا؟ | کیا باقی ہے؟ |
 |---|---|---|
-|1۔ ⏳ ورژن/GitHub | v0.134.0Eglantine/source/docs/icon/scriptsaligned | samebranchcommit/push/actualremoteverificationآخریرپورٹمیں |
-|2۔ ⏳ C#tests | 3347متوقعcases؛اسcheckpointمیں21نئےNativefieldcases | اصلv0.120.1run2963/2941PASS/22FAIL؛v0.134.0کی3347suiteیہاںUNRUN |
-|3۔ ⏳ Source/syntheticchecks | 125staticcontracts؛45نئےNativefieldnegatives/32negative-scriptPASS؛30PythonWAL/DELETEplans؛حتمینتائجtraceمیں | یہC#/WPF/provider/securitycertificationنہیں |
-|4۔ ⏳ پرانےWindowsfailures | v0.120.1کے2941PASS/22FAILکیوجوہ/sourcefixtureاصلاح؛v0.80تاریخی | v0.134.0پراصلretestاورremainingfailuresکیfix؛پرانانتیجہنیاPASSنہیں |
+|1۔ ⏳ ورژن/GitHub | v0.136.0Comfrey/source/docs/icon/scriptsaligned | samebranchcommit/push/actualremoteverificationآخریرپورٹمیں |
+|2۔ ⏳ C#tests | 3397متوقعcases؛اسcheckpointمیں24نئےOnOffcases | اصلv0.120.1run2963/2941PASS/22FAIL؛v0.136.0کی3397suiteیہاںUNRUN |
+|3۔ ⏳ Source/syntheticchecks | 128staticcontracts؛37نئےOnOffnegatives/35negative-scriptPASS؛32PythonWAL/DELETEplans؛حتمینتائجtraceمیں | یہC#/WPF/provider/securitycertificationنہیں |
+|4۔ ⏳ پرانےWindowsfailures | v0.120.1کے2941PASS/22FAILکیوجوہ/sourcefixtureاصلاح؛v0.80تاریخی | v0.136.0پراصلretestاورremainingfailuresکیfix؛پرانانتیجہنیاPASSنہیں |
 |5۔ ⏳ Account/role/session | حصہ4/D-116Database-boundproof،credentialstamp/close-only/Carry،Desktopnext-actionguards | 22نئےcasesUNRUN؛Windowsinput/modalteardown،legacyhostenable/remainingcallers،atomicCASباقی |
 |6۔ ⏳ Parentrecordcreate/edit/read | حصہ5پہلاcheckpoint:Product/Customer+extraanswersایکسnapshot،writeTxمیںexpected-statecompare | Settings/StockTake/remainingwriters/toggles/bulk/sourceجائزہاورactualWindowsباقی |
 |7۔ ⏳ Revocation/staleoutputs | Counterfull-viewdeny؛lookups/extraanswers/lastreceipt/totalsصاف،cart+draftguardsبرقرار،freshrestore | اصلWPF/reloadfailure/modal/input/permissioncombinations؛instantrecall/CASنہیں |
-|8۔ ⏳ Customdefinitionmanager | existingUpdatecheckedobservedTx/exactdefensiveentityreceipt؛timer/actionسےbaselineخاموشrebaseنہیں،ack/input/callbackpersistentguard |26نئےcases/3373suiteUNRUN؛Add/OnOff/MoveoutcomesاورPT-77Windows/provider/WPFباقی |
+|8۔ ⏳ Customdefinitionmanager | existingUpdateاورOnOffcheckedobservedTx/exactdefensiveentityreceipt؛pinnedintent/no-silent-rebase،sharedack/input/callbackguard |24نئےOnOffcases/3397suiteUNRUN؛Add/MoveoutcomesاورPT-77/78Windows/provider/WPFباقی |
 |9۔ ⏳ Customanswersservice | coherentfields/valuesbaseline؛standaloneSaveاورProduct/CustomerparentSaveپرstaleanswerrefusal | باقیcallers/newforms/transactions/realprovider/runtime؛durableidentityنہیں |
 |10۔ ⏳ Customanswereditor | مجازserviceکاپreparedsnapshot،parentکےساتھالگreadmixنہیں؛denialcleanupبرقرار | اصلbindings/focus/regrant/conflict/reopen؛remainingformsباقی |
 |11۔ ⏳ Nativefields | loadedbaselineprepareقبلrisk،postmodalCAS،observedoutcome/exactrow،reentry/auto-timerinvalidation | 21نئےcasesUNRUN؛PT-76Windows/provider/callback/explicitreviewباقی |

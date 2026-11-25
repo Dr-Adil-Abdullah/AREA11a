@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.135.0 Foxglove۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.136.0 Comfrey۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**⏳ اپنے سوال کوOn/Offکرنا:** بٹنمنتخبسوالکیاسینظرآنےوالیحالتکےمطابقارادہبھیجتاہے؛دوسریجگہاسیformکاسوال/ترتیببدلےتوپراناactionخاموشنئیحالتنہیںپلٹےگا۔ No-opبھیاصلpermission/baselineکےبغیرکامیابنہیں۔ **SAVED**کےبعدeditorصاف/selectionخالی؛اگلےactionکےلیےfieldدوبارہچنیں،پرانےanswers/keyمحفوظہیں۔ **Unconfirmed**یاSAVEDکےبعدUIخرابیپراندھیretryنہیں؛UpdateاورOnOffوہیblockedguardاستعمالکرتےہیں،Refresh/tab/New/Cancel/regrantنہیںکھولتے۔ پہلےاصلdefinitions/auditتصدیق،پھرreopen؛نیاinstanceخودverificationنہیں۔ یہبٹنlabel/typeکیunsavedترمیمخودsaveنہیںکرتا۔ [PT-78/حدود](CUSTOM-DEFINITION-ACTIVE-OUTCOME-URDU.md)؛3397suite/اصلWindowsباقی؛Add/Moveابھیالگکھلےہیں۔
 
 **⏳ اپنے موجودہ سوال کی ترمیم:** دوسریجگہاسیformکاسوال/ترتیببدلےتوپراناSaveنئیstateخاموشoverwriteنہیںکرےگا؛**Refresh fields**سےموجودہlistدیکھیں،unsavedinputدوبارہلکھناپڑےگا۔ کامیابUpdateکےبعدeditorصافاورselectionخالی؛مزیدترمیمکےلیےfieldدوبارہمنتخبکریں۔ **SAVED**کےبعدUIخرابییا**unconfirmed**پراندھیretryنہیں؛Refresh/tab/New/Cancel/regrantاسیpageکابlockedguardنہیںکھولتے۔ اصلdefinitions/auditتصدیقکےبعدreopen،نہreopenخودverification۔ Kindبدلےتوپرانےanswersاورwarningبرقرار۔ Add/OnOff/Moveoutcomesابھیاسfixسےمکملنہیں۔ [PT-77/حدود](CUSTOM-DEFINITION-UPDATE-OUTCOME-URDU.md)؛3373suiteاوراصلWindowsbuildباقی،5.1جاری۔
 

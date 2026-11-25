@@ -1,10 +1,14 @@
 # Area11 — Real-life Physical Testing Log
 
+## ⏳ PT-78 — CustomField On/Off کا اصل ارادہ،no-op،outcome اورshared guard
+
+[مکملsteps/حدود](docs/CUSTOM-DEFINITION-ACTIVE-OUTCOME-URDU.md)؛verifiedencryptedbackupاورواقعیالگDB/photos/configپہلے؛اصلshopپرexperimentsنہیں۔ v0.136.0build/3397expectedtests/0fail/0skipاورDesktopRelease؛currentOwner/session/CASقبلno-op،دونوںسمتیں/oldanswers/keys،peer/target/desired-no-opconflicts،exactentitytokens/blankeditor،doubleclick/timer/callbackfault،unknown/SAVEDcleanupfailureپرUpdateاورOnOffایکدوسرےکوبھیreleaseنہکریں۔ Add/Move/registry/StockTakeاورactualWindows/provider/WPFابھیباقی؛6/installerنہیں۔
+
 ## ⏳ PT-77 — موجودہCustomFieldUpdate:baseline/outcome/exactentity/guard
 
 [مکملsteps](docs/CUSTOM-DEFINITION-UPDATE-OUTCOME-URDU.md)؛verifiedencryptedbackupاورواقعیالگDB/photos/configپہلے۔ تازہv0.135.0buildمیںپراناCS0411fixجانچیں؛3373expectedtests/0fail/0skipاورDesktopRelease،currentOwner/session/neighbor/order/otherentity،oldanswers/typewarning،exactreceipt/normalblankeditor،doubleclick/binding/collection/statusfaults،unknown/ackfailureguardRefresh/tab/regrantسےنہکھلے۔ Add/OnOff/Moveابھیالگکھلے؛اصلshopپرexperimentsنہیں،Windows/provider/WPFPASSنہیں۔
 
-> **⏳ تازہ5.1 — v0.135.0 Foxglove:** موجودہCustomFieldUpdateکاcheckedobservedTx،exactdefensiveentityreceipt،اصلloadedbaselineاورDesktoppersistentlocalguard/ackقبلinputconsumption+callbacksشامل؛normalSaveکےبعدblankeditor،دوبارہselection۔ Add/OnOff/Moveکےoutcomesابھیباقی۔ [PT-77/ثبوت/حدود](docs/CUSTOM-DEFINITION-UPDATE-OUTCOME-URDU.md)؛26نئےC#cases/3373suiteUNRUN،127static/46نئیlexical/30PythonSQLplansمحدود۔ مالککاv0.134.0اصلbuildFAILاورv0.134.1CS0411fixکاWindowsrerunابھیباقی؛نئےNextسےیہsourceکامآگےبڑھا،compilePASSنہیں۔ RemainingSettings/registry/StockTakeاور1تا5کیاصلجانچباقی؛6/installerنہیں۔ نیچےpaused/پرانےاعداداپنےcheckpointکےتاریخیہیں۔
+> **⏳ تازہ5.1 — v0.136.0 Comfrey:** CustomFieldOn/OffکاcheckedobservedTx،Owner/entityCASقبلno-op،exactdefensiveentityreceipt؛Update/OnOffکاوہیsharedpersistentguard،pinneddisplayedintent،ackقبلinputconsumption/callbacks،normalblankeditorشامل۔ [PT-78/حدود](docs/CUSTOM-DEFINITION-ACTIVE-OUTCOME-URDU.md)؛[پچھلاUpdate/PT-77](docs/CUSTOM-DEFINITION-UPDATE-OUTCOME-URDU.md)۔24نئےC#cases/3397suiteUNRUN؛128static/37نئیlexical/32PythonSQLplansمحدود،اصلWindows/provider/WPFنہیں۔ CustomAdd/Move،imperativeSettings/registry/StockTakeباقی؛v0.134.0اصلbuildFAIL/CS0411fixکاrerunاور3warningsابھیباقی؛1تا5بندہونےسےپہلے6/installerنہیں۔ نیچےپرانےcheckpointاعداد/pauseاپنےوقتکےتاریخیہیں۔
 
 > **⏳ تازہ اصل build blocker — v0.134.1 Borage source fix:** مالک کےv0.134.0WindowsrunمیںCorecompileFAIL،1CS0411/3warnings،36.79s؛tests/appنہیںچلے۔ Product.UpdateکےobservedTxمیںexplicitobject?اورno-op/finalreturnnullکی3محدوداصلاحات؛[اصلثبوت/وجہ/حدود](docs/WINDOWS-V1340-BUILD-FAILURE-URDU.md)۔126static/3نئیlexicalregressionsمحدود؛3347C#suiteاوراصلWindowsrerunابھیباقی۔ CustomFieldimplementationpaused؛پہلےیہblocker،پھر1تا5باقی؛6/installerنہیں۔ نیچےv0.134.0/docs-onlyاورپرانےنتائجتاریخیہیں۔
 

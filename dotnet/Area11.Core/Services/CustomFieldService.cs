@@ -359,14 +359,20 @@ FROM custom_fields WHERE entity = @entity ORDER BY sort, id;", new { entity });
     /// <summary>Switches a field off or on. The answers are never touched (D-00b).</summary>
     public ServiceResult SetActive(User? user, int fieldId, bool active, EditVersion? expected = null)
     {
+        var outcome = new TransactionOutcome();
+        ServiceResult Refuse(string error) => new()
+        {
+            Error = outcome.NoCommitConfirmed ? error : "The field visibility change is unconfirmed. Verify definitions before retrying.",
+            NoCommitConfirmed = outcome.NoCommitConfirmed
+        };
         if (user is null || !user.IsOwner || !user.Active || user.Id <= 0)
         {
-            return ServiceResult.Fail("Only the owner can switch a field on or off.");
+            return Refuse("Only the owner can switch a field on or off.");
         }
 
         try
         {
-            return _db.Tx(connection =>
+            return _db.Tx<ServiceResult>(connection =>
             {
                 var owner = OwnerAccess.Require(_db, connection, user);
                 EditConcurrency.Require(_db, connection, EditConcurrency.CustomField, fieldId, expected);
@@ -374,12 +380,12 @@ FROM custom_fields WHERE entity = @entity ORDER BY sort, id;", new { entity });
 
                 if (field is null)
                 {
-                    return ServiceResult.Fail("That field is not in the list any more.");
+                    throw new ValidationException("That field is not in the list any more.");
                 }
 
                 if (field.Active == active)
                 {
-                    return ServiceResult.Success();
+                    return SavedActiveEdit(connection, field.Entity, fieldId);
                 }
 
                 _db.Execute(connection, "UPDATE custom_fields SET active = @active WHERE id = @id;",
@@ -391,18 +397,32 @@ FROM custom_fields WHERE entity = @entity ORDER BY sort, id;", new { entity });
                     newValue: active ? "shown" : "put away",
                     details: field.Label);
 
-                return ServiceResult.Success();
-            });
+                return SavedActiveEdit(connection, field.Entity, fieldId);
+            }, outcome);
         }
         catch (ValidationException exception)
         {
-            return ServiceResult.Fail(exception.Message);
+            return Refuse(exception.Message);
         }
         catch (Exception exception)
         {
             _log.Error($"The custom field {fieldId} could not be switched.", exception);
-            return ServiceResult.Fail("The field could not be changed. Refresh and try again.");
+            return Refuse("The field could not be changed. Refresh and try again.");
         }
+    }
+
+    /// <summary>Checked Desktop visibility assignment,not an unbound inverse toggle/retry identity.</summary>
+    public ServiceResult SetActiveChecked(User? user, int fieldId, bool active, EditVersion? expected)
+    {
+        if (expected is null) return new ServiceResult
+        { Error = "The field visibility editor was not loaded. Refresh and review before saving.", NoCommitConfirmed = true };
+        return SetActive(user, fieldId, active, expected);
+    }
+
+    private ServiceResult SavedActiveEdit(Microsoft.Data.Sqlite.SqliteConnection connection, string entity, int fieldId)
+    {
+        var saved = CaptureDefinitionEdit(connection, entity, fieldId);
+        return new ServiceResult { Ok = true, CustomDefinitionEdit = saved, EditVersion = saved.EditVersion };
     }
 
     /// <summary>Moves a field one place up (-1) or down (+1) - the order the form asks its questions.</summary>

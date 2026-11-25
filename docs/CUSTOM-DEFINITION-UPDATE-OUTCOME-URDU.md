@@ -44,3 +44,7 @@ Encryptedbackupکی تصدیق اورواقعیالگDB/photos/config پہلے؛
 ## ⏳ اگلا باقی5.1
 
 Custom Add،OnOff،Moveکیپوریentityordering/outcomes،remainingimperativeSettingsinventory،Windowsregistry+SQLitepartialrestore،StockTake/update/toggle/bulk/snapshotاورPT-63–77کیاصلجانچ۔ [جامعحالت](COMPLETE-STATUS-AND-DECISIONS-URDU.md)؛[منصوبہ](REMAINING-14-PORTIONS-URDU.md)۔ نہپوراCustomFieldmanagerمکملنہ5.1؛❌6/installerشروعنہیں۔ Source/docspublicationکیactualremoteحالتآخریگفتگومیں۔
+
+## ⏳ بعد کا اسی5.1 کا On/Off checkpoint
+
+v0.136.0میںOn/Offاسیsharedguardاورexactentityhelperسےشامل؛[PT-78/موجودہحدود](CUSTOM-DEFINITION-ACTIVE-OUTCOME-URDU.md)۔ اوپرOnOffباقیوالےجملےv0.135.0کیsourceحیثیتتھے؛ابOnOffsourceشامل،مگرactualWindows/runtime،Add/Moveاورremaining5.1ابھیباقی۔ UpdateاورOnOffکےدوnormalverdictsitesہیguardresetکرتےہیں،Refresh/regrantنہیں۔
