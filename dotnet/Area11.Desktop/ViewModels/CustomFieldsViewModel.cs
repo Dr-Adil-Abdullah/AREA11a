@@ -46,6 +46,8 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
     private bool _canManage;
     private bool _lastLoadSucceeded;
     private bool _updatingList;
+    private readonly PostingAttemptGuard _definitionUpdate = new();
+    private bool _savingDefinitionUpdate;
     private string _statusText = "Pick a form, then add a field. It appears there the moment you save it.";
     private bool _isStatusError;
     private string _countText = "no fields";
@@ -81,6 +83,7 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
         _selectedTab = Tabs[0];
         _selectedType = Types[0];
 
+        RefreshCommand = new RelayCommand(Refresh);
         NewCommand = new RelayCommand(BeginNew);
         SaveCommand = new RelayCommand(Save);
         CancelCommand = new RelayCommand(BeginNew);
@@ -102,6 +105,8 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
         CustomFieldEntity.IsDocument(SelectedTab.Entity) ? _suggestionsDocuments : CustomFieldSuggestion.All;
 
     public ObservableCollection<CustomFieldAdminRow> Fields { get; } = new();
+
+    public RelayCommand RefreshCommand { get; }
 
     public RelayCommand NewCommand { get; }
 
@@ -135,6 +140,7 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
         get => _selectedTab;
         set
         {
+            if (_savingDefinitionUpdate || !_definitionUpdate.Ready) return;
             if (value is null || !SetProperty(ref _selectedTab, value))
             {
                 return;
@@ -154,6 +160,7 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
         get => _selectedField;
         set
         {
+            if (_savingDefinitionUpdate || !_definitionUpdate.Ready) return;
             if (_updatingList) return;
             if (value is not null)
             {
@@ -186,6 +193,7 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
         get => _selectedType;
         set
         {
+            if (_savingDefinitionUpdate || !_definitionUpdate.Ready) return;
             if (value is null || !SetProperty(ref _selectedType, value))
             {
                 return;
@@ -220,20 +228,20 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
     public string LabelText
     {
         get => _labelText;
-        set => SetProperty(ref _labelText, value);
+        set { if (!_savingDefinitionUpdate && _definitionUpdate.Ready) SetProperty(ref _labelText, value); }
     }
 
     public string OptionsText
     {
         get => _optionsText;
-        set => SetProperty(ref _optionsText, value);
+        set { if (!_savingDefinitionUpdate && _definitionUpdate.Ready) SetProperty(ref _optionsText, value); }
     }
 
     /// <summary>Optional one-line guidance; it is metadata, not a custom validation script.</summary>
     public string HelpText
     {
         get => _helpText;
-        set => SetProperty(ref _helpText, value);
+        set { if (!_savingDefinitionUpdate && _definitionUpdate.Ready) SetProperty(ref _helpText, value); }
     }
 
     public string SelectedFieldKey => _selectedField?.Field.Key ?? "Assigned when the field is saved";
@@ -241,7 +249,7 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
     public bool Required
     {
         get => _required;
-        set => SetProperty(ref _required, value);
+        set { if (!_savingDefinitionUpdate && _definitionUpdate.Ready) SetProperty(ref _required, value); }
     }
 
 
@@ -288,6 +296,7 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
 
     private void Load()
     {
+        if (_savingDefinitionUpdate || !_definitionUpdate.Ready) return;
         var keep = _editingId;
         var result = _services.CustomFields.List(_user, SelectedTab.Entity, includeInactive: true, manage: true);
         if (!result.Ok || result.Value is null)
@@ -309,6 +318,7 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
     /// </summary>
     public bool RefreshAccess()
     {
+        if (_savingDefinitionUpdate || !_definitionUpdate.Ready) return false;
         var result = _services.CustomFields.List(_user, SelectedTab.Entity, includeInactive: true, manage: true);
         if (!result.Ok || result.Value is null)
         {
@@ -334,7 +344,14 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
         }
         if (Fields.Count != result.Value.Count || Fields.Where((row, index) =>
             !CustomFieldDefinitionState.Matches(row.Field, result.Value[index])).Any())
+        {
+            if (_editingId > 0)
+            {
+                SetStatus("The form's fields or order changed. Refresh and review before saving this edit.", true);
+                return false; // Never renew an opened editor's entity baseline from a timer/action read.
+            }
             ReplaceRows(result.Value, _editingId);
+        }
         return true;
     }
 
@@ -419,26 +436,19 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
 
     private void Save()
     {
+        if (_savingDefinitionUpdate || !_definitionUpdate.Ready) return;
+        if (_editingId > 0) { SaveExisting(); return; }
         if (!RefreshAccess()) return;
         var type = SelectedType.Key;
         ServiceResult result;
+        var added = _services.CustomFields.Add(
+            _user, SelectedTab.Entity, LabelText, type, OptionsText, Required, HelpText);
 
-        if (_editingId > 0)
-        {
-            result = _services.CustomFields.Update(
-                _user, _editingId, LabelText, type, OptionsText, Required, HelpText, _selectedField?.Field.EditVersion);
-        }
-        else
-        {
-            var added = _services.CustomFields.Add(
-                _user, SelectedTab.Entity, LabelText, type, OptionsText, Required, HelpText);
+        result = added.Ok
+            ? ServiceResult.Success(added.Warnings.ToArray())
+            : ServiceResult.Fail(added.Error ?? "The field could not be saved.");
 
-            result = added.Ok
-                ? ServiceResult.Success(added.Warnings.ToArray())
-                : ServiceResult.Fail(added.Error ?? "The field could not be saved.");
-
-            _editingId = added.Value?.Id ?? 0;
-        }
+        _editingId = added.Value?.Id ?? 0;
 
         if (!result.Ok)
         {
@@ -446,10 +456,95 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
             SetStatus(result.Error ?? "The field could not be saved.", true);
             return;
         }
-
         var warnings = result.Warnings.Count > 0 ? " " + string.Join(" ", result.Warnings) : string.Empty;
-
         FinishWrite(_editingId, "Saved. The form shows it now." + warnings);
+    }
+
+    private void SaveExisting()
+    {
+        if (_savingDefinitionUpdate || !_definitionUpdate.Ready) return;
+        if (!_lastLoadSucceeded || !CanManage || _selectedField is not { } selected
+            || !Fields.Contains(selected) || selected.Field.Id != _editingId || selected.Field.Entity != SelectedTab.Entity)
+        { SetStatus("Refresh and select a field before saving an edit.", true); return; }
+        if (!_definitionUpdate.TryBegin()) return;
+        _savingDefinitionUpdate = true;
+        try
+        {
+            // Core checks current Owner/session and the ORIGINAL entity token in the write Tx.
+            // Do not RefreshAccess here:that can replace the selected wrapper/baseline before CAS.
+            var result = _services.CustomFields.UpdateChecked(_user, _editingId, LabelText,
+                SelectedType.Key, OptionsText, Required, HelpText, selected.Field.EditVersion);
+            if (!result.Ok)
+            {
+                _definitionUpdate.ObserveFailure(result);
+                if (!_definitionUpdate.Ready) InvalidateUpdate(result.Error ?? "The field change is unconfirmed. Verify before retrying.");
+                else SetStatus(result.Error ?? "The field change was not saved.", true);
+                return;
+            }
+            _definitionUpdate.AcknowledgeCommit();
+            // Consume all authored state BEFORE collection/property/status callbacks.
+            var fieldId = _editingId;
+            _editingId = 0;
+            _selectedField = null;
+            _isEditing = false;
+            _labelText = _optionsText = _helpText = string.Empty;
+            _required = false;
+            _selectedType = Types[0];
+            var saved = result.CustomDefinitionEdit;
+            if (saved is null || saved.FieldId != fieldId || saved.Entity != SelectedTab.Entity)
+                throw new InvalidOperationException("The saved definition handoff is missing or mismatched.");
+            var rows = saved.Fields;
+            if (!rows.Any(field => field.Id == fieldId) || rows.Any(field => field.Entity != saved.Entity || field.EditVersion is null))
+                throw new InvalidOperationException("The saved entity baseline is incomplete.");
+            ReplaceRows(rows, 0); // Exact transaction receipt,not a later List/Load;no selected editor.
+            NotifyConsumedEditor();
+            SetStatus("SAVED. Field change stored. Select a field to edit again. " + string.Join(" ", result.Warnings), false);
+            if (_editingId != 0 || _selectedField is not null || _isEditing || _required
+                || _labelText.Length != 0 || _optionsText.Length != 0 || _helpText.Length != 0 || !ReferenceEquals(_selectedType, Types[0])
+                || Fields.Count != rows.Count || Fields.Where((row, index) =>
+                    !CustomFieldDefinitionState.Matches(row.Field, rows[index]) || !ReferenceEquals(row.Field.EditVersion, rows[index].EditVersion)).Any())
+                throw new InvalidOperationException("The saved definition cleanup was not retained.");
+            _definitionUpdate.CompleteReset();
+        }
+        catch (Exception exception)
+        {
+            _definitionUpdate.ObserveException();
+            _services.Log.Error("Custom definition update/handoff did not finish.", exception);
+            InvalidateUpdate(_definitionUpdate.WasAcknowledged
+                ? "SAVED. Field change stored, but the editor could not reset. Verify before reopening;do not repeat."
+                : "The field change is unconfirmed. Verify definitions before reopening or retrying.");
+        }
+        finally { _savingDefinitionUpdate = false; }
+    }
+
+    private void NotifyConsumedEditor()
+    {
+        foreach (var name in new[] { nameof(IsEditing), nameof(FormTitle), nameof(SaveLabel), nameof(LabelText),
+            nameof(OptionsText), nameof(HelpText), nameof(Required), nameof(SelectedType), nameof(NeedsOptions), nameof(TypeHint) })
+            OnPropertyChanged(name);
+    }
+
+    private void InvalidateUpdate(string message)
+    {
+        // Persistent guard remains blocked across Refresh/tab/regrant. Clear backing state first.
+        _canManage = _lastLoadSucceeded = false;
+        _editingId = 0;
+        _selectedField = null;
+        _isEditing = false;
+        _labelText = _optionsText = _helpText = string.Empty;
+        _required = false;
+        _statusText = message;
+        _isStatusError = true;
+        _countText = "Fields not loaded";
+        try { Fields.Clear(); }
+        catch (Exception exception) { _services.Log.Error("Custom definition collection cleanup failed.", exception); }
+        try
+        {
+            OnPropertyChanged(nameof(StatusText)); OnPropertyChanged(nameof(IsStatusError));
+            OnPropertyChanged(nameof(CanManage)); OnPropertyChanged(nameof(IsNotAllowed)); OnPropertyChanged(nameof(CountText));
+            RaiseSelection(); RaiseListState(); NotifyConsumedEditor();
+        }
+        catch (Exception exception) { _services.Log.Error("Custom definition cleanup notification failed.", exception); }
     }
 
     private void MoveUp() => Move(-1);

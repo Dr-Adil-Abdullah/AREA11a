@@ -1,5 +1,7 @@
 # ⏳ باقی کام — منظورشدہ 14 حصوں کا منصوبہ
 
+> **⏳ تازہ5.1 — v0.135.0 Foxglove:** موجودہCustomFieldUpdateکاcheckedobservedTx،exactdefensiveentityreceipt،اصلloadedbaselineاورDesktoppersistentlocalguard/ackقبلinputconsumption+callbacksشامل؛normalSaveکےبعدblankeditor،دوبارہselection۔ Add/OnOff/Moveکےoutcomesابھیباقی۔ [PT-77/ثبوت/حدود](CUSTOM-DEFINITION-UPDATE-OUTCOME-URDU.md)؛26نئےC#cases/3373suiteUNRUN،127static/46نئیlexical/30PythonSQLplansمحدود۔ مالککاv0.134.0اصلbuildFAILاورv0.134.1CS0411fixکاWindowsrerunابھیباقی؛نئےNextسےیہsourceکامآگےبڑھا،compilePASSنہیں۔ RemainingSettings/registry/StockTakeاور1تا5کیاصلجانچباقی؛6/installerنہیں۔ نیچےpaused/پرانےاعداداپنےcheckpointکےتاریخیہیں۔
+
 > **⏳ تازہ اصل build blocker — v0.134.1 Borage source fix:** مالک کےv0.134.0WindowsrunمیںCorecompileFAIL،1CS0411/3warnings،36.79s؛tests/appنہیںچلے۔ Product.UpdateکےobservedTxمیںexplicitobject?اورno-op/finalreturnnullکی3محدوداصلاحات؛[اصلثبوت/وجہ/حدود](WINDOWS-V1340-BUILD-FAILURE-URDU.md)۔126static/3نئیlexicalregressionsمحدود؛3347C#suiteاوراصلWindowsrerunابھیباقی۔ CustomFieldimplementationpaused؛پہلےیہblocker،پھر1تا5باقی؛6/installerنہیں۔ نیچےv0.134.0/docs-onlyاورپرانےنتائجتاریخیہیں۔
 
 > **⏳ D-117 — موجودہ مکمل حالت پہلے یہاں پڑھیں:** [ہوا/باقی کام،دیر اور عارضی اندازہ](COMPLETE-STATUS-AND-DECISIONS-URDU.md)؛[تمام117 فیصلے + پانچ بنیادی اصول](DECISION-REGISTER-INDEX-URDU.md)؛[اگلا CustomField Update جائزہ شروع](CUSTOM-FIELD-NEXT-SCOPE-URDU.md)۔ Code v0.134.0/3347suiteUNRUN؛اس documentation turn میں production code نہیں بدلا۔ نیچے پرانے checkpoint کے نتائج اور “شروع نہیں” والے جملے اپنے وقت کے تاریخی ہیں،موجودہ منظوری/نتیجہ نہیں؛پہلے1تا5 بند،پھر6۔
@@ -31,7 +33,7 @@
 |2۔ ⏳ پوری ٹیسٹ سوئٹ | اجازت مل گئی؛اصل v0.120.1 run میں2941PASS/22FAIL/2963۔22 ناکامیوں سے متعلق fixture اصلاحات؛v0.120.2 کا اصل rerun باقی |
 |3۔ ⏳ ریکارڈ بنانے والے فارم | نئےnextسےاجازت؛v0.121.0میںparent/quick-create/Catalog/Unit Saveکےlocaloutcome/ackguards،72نئےcases؛اصلWindows/WPF3035suiteاورPT-63باقی |
 |4۔ ⏳ لاگ اِن اور اجازتیں | اجازتملی؛v0.122.0/D-116sessionproof،resetپرnext-actionfreshlogin،currentreaders/inputguards،Counterfull-outputdeny/freshrestore؛22نئےcases/3057suiteUNRUN،[PT-64](AUTHENTICATED-SESSION-REVIEW-URDU.md)/Windowsباقی |
-|5۔ ⏳ بیک وقت کام — جاری5.1 | پچھلےSettings/Draft/Backup/Pricing/Hardware/Icon/Workbook/Permissions/Staff/Recovery/CreateStaffکےبعدv0.134.0Nativefieldloaded-baseline/observedoutcome/exactrow؛21نئےcases/3347suiteUNRUN۔ Remainingcustom/imperativewriters/registry/Windowsباقی؛StockTakeبعدمیںاسی5میں؛[PT-76](NATIVE-FIELD-OUTCOME-REVIEW-URDU.md) |
+|5۔ ⏳ بیک وقت کام — جاری5.1 | v0.135.0میںexistingCustomFieldUpdateکاobservedcheckedTx/exactentityhandoff/localguard؛26نئےcases/3373suiteUNRUN۔ NativeاورپچھلےSettingscheckpointsبرقرار؛CustomAdd/OnOff/Move،imperativewriters/registry/StockTake/اصلWindowsباقی؛[PT-77](CUSTOM-DEFINITION-UPDATE-OUTCOME-URDU.md) |
 |6۔ ❌ دوبارہ کوشش اور ری اسٹارٹ | جواب کھونا،بندش،دوسرے صفحے/کمپیوٹر کی retry؛دیرپا شناخت کی تجویز،ضروری منظوری،نفاذ |
 |7۔ ❌ مالی اور اسٹاک ملاپ | فروخت/خرید/واپسی/وصولی/ادائیگی/خرچ/گنتی/گلا؛منظورشدہ رعایت اور اصل لاگت کی حد |
 |8۔ ❌ رپورٹس اور رازداری | Excel/CSV/PDF/رسید/پرنٹ؛Cost/Profit اجازتیں؛Blackbox/BookCheck میں صرف منظورشدہ رسائی |

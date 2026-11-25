@@ -1,5 +1,7 @@
 # نمبر وار کام اور باقی جانچ — مستقل1تا36فہرست
 
+> **⏳ تازہ5.1 — v0.135.0 Foxglove:** موجودہCustomFieldUpdateکاcheckedobservedTx،exactdefensiveentityreceipt،اصلloadedbaselineاورDesktoppersistentlocalguard/ackقبلinputconsumption+callbacksشامل؛normalSaveکےبعدblankeditor،دوبارہselection۔ Add/OnOff/Moveکےoutcomesابھیباقی۔ [PT-77/ثبوت/حدود](CUSTOM-DEFINITION-UPDATE-OUTCOME-URDU.md)؛26نئےC#cases/3373suiteUNRUN،127static/46نئیlexical/30PythonSQLplansمحدود۔ مالککاv0.134.0اصلbuildFAILاورv0.134.1CS0411fixکاWindowsrerunابھیباقی؛نئےNextسےیہsourceکامآگےبڑھا،compilePASSنہیں۔ RemainingSettings/registry/StockTakeاور1تا5کیاصلجانچباقی؛6/installerنہیں۔ نیچےpaused/پرانےاعداداپنےcheckpointکےتاریخیہیں۔
+
 > **⏳ تازہ اصل build blocker — v0.134.1 Borage source fix:** مالک کےv0.134.0WindowsrunمیںCorecompileFAIL،1CS0411/3warnings،36.79s؛tests/appنہیںچلے۔ Product.UpdateکےobservedTxمیںexplicitobject?اورno-op/finalreturnnullکی3محدوداصلاحات؛[اصلثبوت/وجہ/حدود](WINDOWS-V1340-BUILD-FAILURE-URDU.md)۔126static/3نئیlexicalregressionsمحدود؛3347C#suiteاوراصلWindowsrerunابھیباقی۔ CustomFieldimplementationpaused؛پہلےیہblocker،پھر1تا5باقی؛6/installerنہیں۔ نیچےv0.134.0/docs-onlyاورپرانےنتائجتاریخیہیں۔
 
 > **⏳ D-117 — موجودہ مکمل حالت پہلے یہاں پڑھیں:** [ہوا/باقی کام،دیر اور عارضی اندازہ](COMPLETE-STATUS-AND-DECISIONS-URDU.md)؛[تمام117 فیصلے + پانچ بنیادی اصول](DECISION-REGISTER-INDEX-URDU.md)؛[اگلا CustomField Update جائزہ شروع](CUSTOM-FIELD-NEXT-SCOPE-URDU.md)۔ Code v0.134.0/3347suiteUNRUN؛اس documentation turn میں production code نہیں بدلا۔ نیچے پرانے checkpoint کے نتائج اور “شروع نہیں” والے جملے اپنے وقت کے تاریخی ہیں،موجودہ منظوری/نتیجہ نہیں؛پہلے1تا5 بند،پھر6۔
@@ -17,7 +19,7 @@
 |5۔ ⏳ Account/role/session | حصہ4/D-116Database-boundproof،credentialstamp/close-only/Carry،Desktopnext-actionguards | 22نئےcasesUNRUN؛Windowsinput/modalteardown،legacyhostenable/remainingcallers،atomicCASباقی |
 |6۔ ⏳ Parentrecordcreate/edit/read | حصہ5پہلاcheckpoint:Product/Customer+extraanswersایکسnapshot،writeTxمیںexpected-statecompare | Settings/StockTake/remainingwriters/toggles/bulk/sourceجائزہاورactualWindowsباقی |
 |7۔ ⏳ Revocation/staleoutputs | Counterfull-viewdeny؛lookups/extraanswers/lastreceipt/totalsصاف،cart+draftguardsبرقرار،freshrestore | اصلWPF/reloadfailure/modal/input/permissioncombinations؛instantrecall/CASنہیں |
-|8۔ ⏳ Customdefinitionmanager | selectedUIcompareکےساتھعینwriteTxمیںdefinition/entity-orderbaseline؛Nativepostmodalbaseline | اصلC#/WPF/remainingnativeupdates؛حصہ5ابھیجاری |
+|8۔ ⏳ Customdefinitionmanager | existingUpdatecheckedobservedTx/exactdefensiveentityreceipt؛timer/actionسےbaselineخاموشrebaseنہیں،ack/input/callbackpersistentguard |26نئےcases/3373suiteUNRUN؛Add/OnOff/MoveoutcomesاورPT-77Windows/provider/WPFباقی |
 |9۔ ⏳ Customanswersservice | coherentfields/valuesbaseline؛standaloneSaveاورProduct/CustomerparentSaveپرstaleanswerrefusal | باقیcallers/newforms/transactions/realprovider/runtime؛durableidentityنہیں |
 |10۔ ⏳ Customanswereditor | مجازserviceکاپreparedsnapshot،parentکےساتھالگreadmixنہیں؛denialcleanupبرقرار | اصلbindings/focus/regrant/conflict/reopen؛remainingformsباقی |
 |11۔ ⏳ Nativefields | loadedbaselineprepareقبلrisk،postmodalCAS،observedoutcome/exactrow،reentry/auto-timerinvalidation | 21نئےcasesUNRUN؛PT-76Windows/provider/callback/explicitreviewباقی |

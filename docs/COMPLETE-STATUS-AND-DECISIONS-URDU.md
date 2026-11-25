@@ -1,5 +1,7 @@
 # مکمل نمبر وار حالت،فیصلے،باقی کام اور اگلا قدم
 
+> **⏳ تازہ5.1 — v0.135.0 Foxglove:** موجودہCustomFieldUpdateکاcheckedobservedTx،exactdefensiveentityreceipt،اصلloadedbaselineاورDesktoppersistentlocalguard/ackقبلinputconsumption+callbacksشامل؛normalSaveکےبعدblankeditor،دوبارہselection۔ Add/OnOff/Moveکےoutcomesابھیباقی۔ [PT-77/ثبوت/حدود](CUSTOM-DEFINITION-UPDATE-OUTCOME-URDU.md)؛26نئےC#cases/3373suiteUNRUN،127static/46نئیlexical/30PythonSQLplansمحدود۔ مالککاv0.134.0اصلbuildFAILاورv0.134.1CS0411fixکاWindowsrerunابھیباقی؛نئےNextسےیہsourceکامآگےبڑھا،compilePASSنہیں۔ RemainingSettings/registry/StockTakeاور1تا5کیاصلجانچباقی؛6/installerنہیں۔ نیچےpaused/پرانےاعداداپنےcheckpointکےتاریخیہیں۔
+
 > **⏳ تازہ اصل build blocker — v0.134.1 Borage source fix:** مالک کےv0.134.0WindowsrunمیںCorecompileFAIL،1CS0411/3warnings،36.79s؛tests/appنہیںچلے۔ Product.UpdateکےobservedTxمیںexplicitobject?اورno-op/finalreturnnullکی3محدوداصلاحات؛[اصلثبوت/وجہ/حدود](WINDOWS-V1340-BUILD-FAILURE-URDU.md)۔126static/3نئیlexicalregressionsمحدود؛3347C#suiteاوراصلWindowsrerunابھیباقی۔ CustomFieldimplementationpaused؛پہلےیہblocker،پھر1تا5باقی؛6/installerنہیں۔ نیچےv0.134.0/docs-onlyاورپرانےنتائجتاریخیہیں۔
 
 **دستاویزی جائزہ: 2026-11-10؛موجودہ application source v0.134.0 Eglantine،commit `fbe4218aa62bbeedca3fd706429a020d1d3bd6ea`۔** یہ نئی production release یا مکمل کامیاب جانچ کی سند نہیں۔ اس رپورٹ کی Git publication کی اصل تصدیق آخری گفتگو میں دی جاتی ہے؛پہلے سے کامیابی فرض نہیں۔

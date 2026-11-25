@@ -19,6 +19,8 @@
 
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right"
                         VerticalAlignment="Center">
+                <Button Content="Refresh fields" Command="{Binding RefreshCommand}" Margin="0,0,8,0"
+                        ToolTip="Reload current definitions and discard unsaved edits. An unconfirmed save must be verified before reopening." />
                 <TextBlock Text="Form:" Style="{StaticResource FieldLabel}" VerticalAlignment="Center"
                            Margin="0,0,8,0" />
                 <ComboBox Width="170" ItemsSource="{Binding Tabs}" DisplayMemberPath="Label"

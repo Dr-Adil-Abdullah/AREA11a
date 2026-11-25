@@ -229,9 +229,15 @@ VALUES(@entity, NULL, @label, @type, @optionsJson, @helpText, @required, 1, @sor
         bool required,
         string? helpText = null, EditVersion? expected = null)
     {
+        var outcome = new TransactionOutcome();
+        ServiceResult Refuse(string error) => new()
+        {
+            Error = outcome.NoCommitConfirmed ? error : "The field change is unconfirmed. Verify definitions before retrying.",
+            NoCommitConfirmed = outcome.NoCommitConfirmed
+        };
         if (user is null || !user.IsOwner || !user.Active || user.Id <= 0)
         {
-            return ServiceResult.Fail("Only the owner can change a field.");
+            return Refuse("Only the owner can change a field.");
         }
 
         var cleanType = CustomFieldType.Clean(type);
@@ -241,7 +247,7 @@ VALUES(@entity, NULL, @label, @type, @optionsJson, @helpText, @required, 1, @sor
 
         if (problem is not null)
         {
-            return ServiceResult.Fail(problem);
+            return Refuse(problem);
         }
 
         var optionsJson = CustomFieldType.NeedsOptions(cleanType)
@@ -250,7 +256,7 @@ VALUES(@entity, NULL, @label, @type, @optionsJson, @helpText, @required, 1, @sor
 
         try
         {
-            return _db.Tx(connection =>
+            return _db.Tx<ServiceResult>(connection =>
             {
                 var owner = OwnerAccess.Require(_db, connection, user);
                 EditConcurrency.Require(_db, connection, EditConcurrency.CustomField, fieldId, expected);
@@ -258,12 +264,12 @@ VALUES(@entity, NULL, @label, @type, @optionsJson, @helpText, @required, 1, @sor
 
                 if (field is null)
                 {
-                    return ServiceResult.Fail("That field is not in the list any more.");
+                    throw new ValidationException("That field is not in the list any more.");
                 }
 
                 if (LabelExists(connection, field.Entity, cleanLabel, fieldId))
                 {
-                    return ServiceResult.Fail(
+                    throw new ValidationException(
                         "There is already a field called \"" + cleanLabel + "\" on this form.");
                 }
 
@@ -272,7 +278,7 @@ VALUES(@entity, NULL, @label, @type, @optionsJson, @helpText, @required, 1, @sor
                     field.Entity, cleanLabel, cleanType, optionsText, effectiveHelp);
                 if (entityProblem is not null)
                 {
-                    return ServiceResult.Fail(entityProblem);
+                    throw new ValidationException(entityProblem);
                 }
 
                 var fieldKey = string.IsNullOrWhiteSpace(field.FieldKey)
@@ -309,21 +315,45 @@ WHERE id = @id;",
                     "SELECT COUNT(1) FROM custom_values WHERE field_id = @id;",
                     new { id = fieldId }) ?? 0) > 0;
 
-                return typeChanged && anyValues
-                    ? ServiceResult.Success(
-                        "The kind of field changed. The answers already saved keep their old text - open the records and check them.")
-                    : ServiceResult.Success();
-            });
+                var saved = CaptureDefinitionEdit(connection, field.Entity, fieldId);
+                return new ServiceResult
+                {
+                    Ok = true, CustomDefinitionEdit = saved, EditVersion = saved.EditVersion,
+                    Warnings = typeChanged && anyValues
+                        ? new[] { "The kind of field changed. The answers already saved keep their old text - open the records and check them." }
+                        : Array.Empty<string>()
+                };
+            }, outcome);
         }
         catch (ValidationException exception)
         {
-            return ServiceResult.Fail(exception.Message);
+            return Refuse(exception.Message);
         }
         catch (Exception exception)
         {
             _log.Error($"The custom field {fieldId} could not be changed.", exception);
-            return ServiceResult.Fail("The field could not be changed. Refresh and try again.");
+            return Refuse("The field could not be changed. Refresh and try again.");
         }
+    }
+
+    /// <summary>Desktop checked door. Legacy Update retains its sessions-disabled null-token API.</summary>
+    public ServiceResult UpdateChecked(User? user, int fieldId, string? label, string? type,
+        string? optionsText, bool required, string? helpText, EditVersion? expected)
+    {
+        if (expected is null) return new ServiceResult
+        { Error = "The definition editor was not loaded. Refresh and review before saving.", NoCommitConfirmed = true };
+        return Update(user, fieldId, label, type, optionsText, required, helpText, expected);
+    }
+
+    private CustomDefinitionEditForm CaptureDefinitionEdit(Microsoft.Data.Sqlite.SqliteConnection connection, string entity, int fieldId)
+    {
+        var fields = _db.Query<CustomField>(connection, @"
+SELECT id AS id, entity AS entity, field_key AS fieldKey, label AS label, type AS type,
+       options_json AS optionsJson, help_text AS helpText, required AS required, active AS active,
+       sort AS sort, created_at AS createdAt
+FROM custom_fields WHERE entity = @entity ORDER BY sort, id;", new { entity });
+        EditConcurrency.AttachDefinitions(_db, connection, entity, fields);
+        return new CustomDefinitionEditForm(entity, fieldId, fields);
     }
 
     /// <summary>Switches a field off or on. The answers are never touched (D-00b).</summary>

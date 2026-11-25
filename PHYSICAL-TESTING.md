@@ -1,5 +1,11 @@
 # Area11 — Real-life Physical Testing Log
 
+## ⏳ PT-77 — موجودہCustomFieldUpdate:baseline/outcome/exactentity/guard
+
+[مکملsteps](docs/CUSTOM-DEFINITION-UPDATE-OUTCOME-URDU.md)؛verifiedencryptedbackupاورواقعیالگDB/photos/configپہلے۔ تازہv0.135.0buildمیںپراناCS0411fixجانچیں؛3373expectedtests/0fail/0skipاورDesktopRelease،currentOwner/session/neighbor/order/otherentity،oldanswers/typewarning،exactreceipt/normalblankeditor،doubleclick/binding/collection/statusfaults،unknown/ackfailureguardRefresh/tab/regrantسےنہکھلے۔ Add/OnOff/Moveابھیالگکھلے؛اصلshopپرexperimentsنہیں،Windows/provider/WPFPASSنہیں۔
+
+> **⏳ تازہ5.1 — v0.135.0 Foxglove:** موجودہCustomFieldUpdateکاcheckedobservedTx،exactdefensiveentityreceipt،اصلloadedbaselineاورDesktoppersistentlocalguard/ackقبلinputconsumption+callbacksشامل؛normalSaveکےبعدblankeditor،دوبارہselection۔ Add/OnOff/Moveکےoutcomesابھیباقی۔ [PT-77/ثبوت/حدود](docs/CUSTOM-DEFINITION-UPDATE-OUTCOME-URDU.md)؛26نئےC#cases/3373suiteUNRUN،127static/46نئیlexical/30PythonSQLplansمحدود۔ مالککاv0.134.0اصلbuildFAILاورv0.134.1CS0411fixکاWindowsrerunابھیباقی؛نئےNextسےیہsourceکامآگےبڑھا،compilePASSنہیں۔ RemainingSettings/registry/StockTakeاور1تا5کیاصلجانچباقی؛6/installerنہیں۔ نیچےpaused/پرانےاعداداپنےcheckpointکےتاریخیہیں۔
+
 > **⏳ تازہ اصل build blocker — v0.134.1 Borage source fix:** مالک کےv0.134.0WindowsrunمیںCorecompileFAIL،1CS0411/3warnings،36.79s؛tests/appنہیںچلے۔ Product.UpdateکےobservedTxمیںexplicitobject?اورno-op/finalreturnnullکی3محدوداصلاحات؛[اصلثبوت/وجہ/حدود](docs/WINDOWS-V1340-BUILD-FAILURE-URDU.md)۔126static/3نئیlexicalregressionsمحدود؛3347C#suiteاوراصلWindowsrerunابھیباقی۔ CustomFieldimplementationpaused؛پہلےیہblocker،پھر1تا5باقی؛6/installerنہیں۔ نیچےv0.134.0/docs-onlyاورپرانےنتائجتاریخیہیں۔
 
 > **⏳ D-117 — موجودہ مکمل حالت پہلے یہاں پڑھیں:** [ہوا/باقی کام،دیر اور عارضی اندازہ](docs/COMPLETE-STATUS-AND-DECISIONS-URDU.md)؛[تمام117 فیصلے + پانچ بنیادی اصول](docs/DECISION-REGISTER-INDEX-URDU.md)؛[اگلا CustomField Update جائزہ شروع](docs/CUSTOM-FIELD-NEXT-SCOPE-URDU.md)۔ Code v0.134.0/3347suiteUNRUN؛اس documentation turn میں production code نہیں بدلا۔ نیچے پرانے checkpoint کے نتائج اور “شروع نہیں” والے جملے اپنے وقت کے تاریخی ہیں،موجودہ منظوری/نتیجہ نہیں؛پہلے1تا5 بند،پھر6۔

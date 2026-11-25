@@ -6738,7 +6738,7 @@ def check_edit_concurrency_boundaries() -> None:
         ('Products', ['_services.Products.LoadEditForm(_user, product.Id)', 'Editor.LoadPrepared(full.Value.Record.Id, full.Value.Extra)', 'patch, answers, _editVersion)']),
         ('Customers', ['_services.Partners.LoadCustomerEditForm(_user, Selected.Id)', 'EditEditor.LoadPrepared(current.Id, prepared.Value.Extra)', 'EditEditor.AnswerValues(), _editVersion)']),
         ('CustomFieldsEditor', ['_services.CustomFields.EditorSnapshot(_user, _entity, entityId)', 'values, _editVersion)']),
-        ('CustomFields', ['HelpText, _selectedField?.Field.EditVersion)', 'direction, _selectedField.Field.EditVersion)', '!field.Active, field.EditVersion)']),
+        ('CustomFields', ['HelpText, selected.Field.EditVersion)', 'direction, _selectedField.Field.EditVersion)', '!field.Active, field.EditVersion)']),
         ('NativeFields', ['required, confirmed, field.EditVersion)']),
         ('UnitWindow', ['WholeOnly, SelectedUnit.EditVersion)']),
         ('CatalogWindow', ['SelectedCategory.EditVersion)', 'SelectedCompany.EditVersion)', 'SelectedFormula.EditVersion)', 'SelectedBrand.EditVersion)', 'brandVersion = added.EditVersion;', 'brandVersion = updated.EditVersion;', 'wantCompanyId, brandVersion)'])]:
@@ -7466,7 +7466,8 @@ def check_definition_time_boundaries():
     for name in ('Add', 'Update', 'SetActive', 'Move'):
         match = re.search(r'public ServiceResult(?:<CustomField>)?\s+' + name + r'\(', fields)
         body = fields[match.end():].split('\n    public ', 1)[0] if match else ''
-        tx = body.find('return _db.Tx(connection =>')
+        tx_match = re.search(r'return _db\.Tx(?:<ServiceResult>)?\(connection =>', body)
+        tx = tx_match.start() if tx_match else -1
         gate = body.find('var owner = OwnerAccess.Require(_db, connection, user);')
         first = min((pos for pos in (body.find('LabelExists(connection'), body.find('ReadField(connection')) if pos >= 0), default=-1)
         if not (0 <= tx < gate < first):
@@ -8766,10 +8767,13 @@ def check_custom_manager_current_boundaries():
                   'Fields.Count != result.Value.Count || Fields.Where((row, index) =>',
                   'CustomFieldDefinitionState.Matches(row.Field, result.Value[index])'):
         if token not in refresh: FAILURES.append('Definition current snapshot conflict/stable-tick boundary missing ' + token)
-    for method in ('BeginNew()', 'Save()', 'Move(int direction)', 'ToggleActive()', 'UseSuggestion(CustomFieldSuggestion? suggestion)'):
+    for method in ('BeginNew()', 'Move(int direction)', 'ToggleActive()', 'UseSuggestion(CustomFieldSuggestion? suggestion)'):
         body = vm.split('void ' + method,1)[-1].split('}',1)[0]
         if 'if (!RefreshAccess()) return;' not in body:
             FAILURES.append('Definition action requires current management/snapshot check: ' + method)
+    save = vm.split('private void Save()',1)[-1].split('private void SaveExisting()',1)[0]
+    if 'if (_editingId > 0) { SaveExisting(); return; }' not in save or 'if (!RefreshAccess()) return;' not in save:
+        FAILURES.append('Definition Add requires current read;existing Update requires its checked transaction door')
     if vm.count('FinishWrite(') != 4:
         FAILURES.append('Definition Add/Update,Move,Toggle must all use shared postcommit reload verdict')
     for token in ('if (!_lastLoadSucceeded || _selectedField?.Field.Id != savedId)',
@@ -9887,6 +9891,76 @@ def check_product_update_tx_build_contract() -> None:
     REPORT.append('Owner v0.134.0 CS0411:Product.Update uses explicit object? Tx and valued no-op/final returns;source regression only,Windows build rerun required')
 
 
+
+def check_custom_definition_update_outcomes():
+    """Bounded existing definition update source,not .NET/provider/session/WPF proof."""
+    contracts = {'Area11.Core/Services/CustomFieldService.cs': ['return _db.Tx<ServiceResult>(connection =>', 'var outcome = new TransactionOutcome();',
+                                                'Error = outcome.NoCommitConfirmed ? error',
+                                                'NoCommitConfirmed = outcome.NoCommitConfirmed',
+                                                'EditConcurrency.Require(_db, connection, EditConcurrency.CustomField, fieldId, expected);',
+                                                'var owner = OwnerAccess.Require(_db, connection, user);',
+                                                'throw new ValidationException(entityProblem);',
+                                                'var saved = CaptureDefinitionEdit(connection, field.Entity, fieldId);',
+                                                'Ok = true, CustomDefinitionEdit = saved, EditVersion = saved.EditVersion',
+                                                'Warnings = typeChanged && anyValues', '}, outcome);',
+                                                'public ServiceResult UpdateChecked(', 'if (expected is null) return new ServiceResult',
+                                                'return Update(user, fieldId, label, type, optionsText, required, helpText, expected);',
+                                                'FROM custom_fields WHERE entity = @entity ORDER BY sort, id;',
+                                                'EditConcurrency.AttachDefinitions(_db, connection, entity, fields);'],
+ 'Area11.Desktop/ViewModels/CustomFieldsViewModel.cs': ['private readonly PostingAttemptGuard _definitionUpdate = new();',
+                                                        'RefreshCommand = new RelayCommand(Refresh);',
+                                                        'if (_savingDefinitionUpdate || !_definitionUpdate.Ready) return;',
+                                                        'if (_savingDefinitionUpdate || !_definitionUpdate.Ready) return false;',
+                                                        'if (_editingId > 0) { SaveExisting(); return; }',
+                                                        "The form's fields or order changed. Refresh and review before saving this edit.",
+                                                        'if (!_definitionUpdate.TryBegin()) return;',
+                                                        '_services.CustomFields.UpdateChecked(_user, _editingId, LabelText,',
+                                                        'SelectedType.Key, OptionsText, Required, HelpText, selected.Field.EditVersion)',
+                                                        '_definitionUpdate.ObserveFailure(result);',
+                                                        '_definitionUpdate.AcknowledgeCommit();',
+                                                        '_labelText = _optionsText = _helpText = string.Empty;', 'saved.FieldId != fieldId',
+                                                        'saved.Entity != SelectedTab.Entity', 'ReplaceRows(rows, 0);',
+                                                        'NotifyConsumedEditor();',
+                                                        '!CustomFieldDefinitionState.Matches(row.Field, rows[index])',
+                                                        '!ReferenceEquals(row.Field.EditVersion, rows[index].EditVersion)',
+                                                        '_definitionUpdate.CompleteReset();', '_definitionUpdate.ObserveException();',
+                                                        'InvalidateUpdate(_definitionUpdate.WasAcknowledged',
+                                                        'finally { _savingDefinitionUpdate = false; }',
+                                                        '_canManage = _lastLoadSucceeded = false;', '_statusText = message;'],
+ 'Area11.Desktop/Views/CustomFieldsView.xaml': ['Content="Refresh fields" Command="{Binding RefreshCommand}"'],
+ 'Area11.Core/Models/CustomDefinitionEditForm.cs': ['private readonly List<CustomField> _fields;',
+                                                    '_fields = fields.Select(Copy).ToList();',
+                                                    'public IReadOnlyList<CustomField> Fields => '
+                                                    '_fields.Select(Copy).ToList().AsReadOnly();',
+                                                    'CreatedAt = field.CreatedAt, EditVersion = field.EditVersion'],
+ 'Area11.Core/Utils/ServiceResult.cs': ['[System.Text.Json.Serialization.JsonIgnore]\n'
+                                        '    public Area11.Core.Models.CustomDefinitionEditForm? CustomDefinitionEdit { get; init; }']}
+    for name, tokens in contracts.items():
+        text = (DOTNET / name).read_text()
+        for token in tokens:
+            if token not in text: FAILURES.append('Custom definition Update: missing ' + token)
+    source = (DOTNET / 'Area11.Core/Services/CustomFieldService.cs').read_text()
+    core = source.split('    public ServiceResult Update(',1)[1].split('    /// <summary>Desktop checked door',1)[0]
+    positions = [core.find(t) for t in ('return _db.Tx<ServiceResult>(', 'OwnerAccess.Require(', 'EditConcurrency.Require(', 'var field = ReadField(', 'UPDATE custom_fields', '_audit.Record(', 'CaptureDefinitionEdit(', '}, outcome);')]
+    if min(positions) < 0 or positions != sorted(positions): FAILURES.append('Custom definition transactional owner/CAS/write/audit/exact handoff ordering')
+    if 'return Refuse(' in core.split('return _db.Tx<ServiceResult>(',1)[-1].split('}, outcome);',1)[0]: FAILURES.append('Definition in-Tx refusals must throw for confirmed rollback')
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/CustomFieldsViewModel.cs').read_text()
+    ui = vm.split('private void SaveExisting()',1)[1].split('private void NotifyConsumedEditor()',1)[0]
+    positions = [ui.find(t) for t in ('_definitionUpdate.TryBegin()', '_savingDefinitionUpdate = true;', 'UpdateChecked(', '_definitionUpdate.AcknowledgeCommit();', '_editingId = 0;', '_labelText = _optionsText = _helpText = string.Empty;', 'ReplaceRows(rows, 0);', 'NotifyConsumedEditor();', 'SetStatus("SAVED.', 'if (_editingId != 0', '_definitionUpdate.CompleteReset();')]
+    if min(positions) < 0 or positions != sorted(positions): FAILURES.append('Custom definition Update acknowledgement/consume/callback/verdict/reset ordering')
+    for token in ('RefreshAccess();', 'Load();', '.List(', 'FinishWrite('):
+        if token in ui: FAILURES.append('Existing definition save must not fresh-rebase: ' + token)
+    if vm.count('_definitionUpdate =') != 1 or vm.count('_definitionUpdate.CompleteReset();') != 1: FAILURES.append('Definition guard must survive Refresh/new/tab/regrant after unknown or ack callback failure')
+    refresh = vm.split('public bool RefreshAccess()',1)[1].split('private void ClearManager(',1)[0]
+    for token in ('if (_editingId > 0)', 'return false; // Never renew an opened editor'):
+        if token not in refresh: FAILURES.append('Definition neighbor-change pre-read must not silently renew baseline')
+    invalid = vm.split('private void InvalidateUpdate(',1)[1].split('private void MoveUp()',1)[0]
+    if not 0 <= invalid.find('_statusText = message;') < invalid.find('Fields.Clear();'): FAILURES.append('Definition blocked status and backing identity must invalidate before callbacks')
+    tests = (DOTNET / 'Area11.Tests/CustomDefinitionUpdateOutcomeTests.cs').read_text()
+    if tests.count('[Fact]') + tests.count('[InlineData(') != 26: FAILURES.append('Definition Update needs26 additive C# cases')
+    REPORT.append('P5.1 existing custom definition Update:observed checked Tx/exact detached entity receipt;no pre-save/timer rebase,persistent local ack/input/callback guard;26 C# cases UNRUN,not Add/Move/Toggle/whole Settings or runtime proof')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -10011,6 +10085,7 @@ def main() -> int:
     check_staff_create_outcomes()
     check_native_field_outcomes()
     check_product_update_tx_build_contract()
+    check_custom_definition_update_outcomes()
     check_csharp_grammar()
 
     if not quiet:
