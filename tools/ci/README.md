@@ -1,5 +1,7 @@
 # Windows build / test / optional test-installer template
 
+> **⏳ تازہ اصل build blocker — v0.134.1 Borage source fix:** مالک کےv0.134.0WindowsrunمیںCorecompileFAIL،1CS0411/3warnings،36.79s؛tests/appنہیںچلے۔ Product.UpdateکےobservedTxمیںexplicitobject?اورno-op/finalreturnnullکی3محدوداصلاحات؛[اصلثبوت/وجہ/حدود](../../docs/WINDOWS-V1340-BUILD-FAILURE-URDU.md)۔126static/3نئیlexicalregressionsمحدود؛3347C#suiteاوراصلWindowsrerunابھیباقی۔ CustomFieldimplementationpaused؛پہلےیہblocker،پھر1تا5باقی؛6/installerنہیں۔ نیچےv0.134.0/docs-onlyاورپرانےنتائجتاریخیہیں۔
+
 > **⏳ D-117 — موجودہ مکمل حالت پہلے یہاں پڑھیں:** [ہوا/باقی کام،دیر اور عارضی اندازہ](../../docs/COMPLETE-STATUS-AND-DECISIONS-URDU.md)؛[تمام117 فیصلے + پانچ بنیادی اصول](../../docs/DECISION-REGISTER-INDEX-URDU.md)؛[اگلا CustomField Update جائزہ شروع](../../docs/CUSTOM-FIELD-NEXT-SCOPE-URDU.md)۔ Code v0.134.0/3347suiteUNRUN؛اس documentation turn میں production code نہیں بدلا۔ نیچے پرانے checkpoint کے نتائج اور “شروع نہیں” والے جملے اپنے وقت کے تاریخی ہیں،موجودہ منظوری/نتیجہ نہیں؛پہلے1تا5 بند،پھر6۔
 
 `build.yml` is a **template**, not an active GitHub Actions workflow. As of the
@@ -11,7 +13,7 @@ built by writing this template.
 To enable, an owner/integration with workflow-write permission must place the file
 at `.github/workflows/build.yml`. Do not share credentials in chat. The workflow
 builds the entire solution with .NET 10 on Windows and runs the current synthetic
-C# suite (3347 written cases at v0.134.0;execution still required), retaining TRX evidence on failure.
+C# suite (3347 written cases at v0.134.1;execution still required), retaining TRX evidence on failure.
 A successful test job is not a real WPF/printer/install smoke test.
 
 After enabling, a manual **Run workflow** with `make_installer=true` publishes

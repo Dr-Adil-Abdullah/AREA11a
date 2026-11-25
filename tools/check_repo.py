@@ -9875,6 +9875,18 @@ def check_native_field_outcomes():
     REPORT.append('P5.1 native preference:checked loaded-baseline prepare before risk modal/recheck at write,observed exact row and UI invalidation;21 C# cases UNRUN;not WPF/provider/whole Settings proof')
 
 
+def check_product_update_tx_build_contract() -> None:
+    """Narrow source regression for actual owner CS0411,not a generic type checker."""
+    source = (DOTNET / 'Area11.Core/Services/ProductService.cs').read_text()
+    body = source.split('    public ServiceResult Update(User actor,',1)[1].split('    /// <summary>Soft delete only',1)[0]
+    for token in ('_db.Tx<object?>(connection =>',
+                  'if (sets.Count == 0 && patch.CategoryTagIds is null)\n                {\n                    return null;\n                }',
+                  '                return null;\n            }, outcome);'):
+        if token not in body: FAILURES.append('Product.Update CS0411 regression: missing ' + token)
+    if 'return;' in body: FAILURES.append('Observed generic Product.Update callback cannot use a void return')
+    REPORT.append('Owner v0.134.0 CS0411:Product.Update uses explicit object? Tx and valued no-op/final returns;source regression only,Windows build rerun required')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -9998,6 +10010,7 @@ def main() -> int:
     check_recovery_edit_boundaries()
     check_staff_create_outcomes()
     check_native_field_outcomes()
+    check_product_update_tx_build_contract()
     check_csharp_grammar()
 
     if not quiet:

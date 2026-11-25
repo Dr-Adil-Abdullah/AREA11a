@@ -1,5 +1,7 @@
 # مالک کے تمام درج شدہ فیصلے — مکمل index
 
+> **⏳ تازہ اصل build blocker — v0.134.1 Borage source fix:** مالک کےv0.134.0WindowsrunمیںCorecompileFAIL،1CS0411/3warnings،36.79s؛tests/appنہیںچلے۔ Product.UpdateکےobservedTxمیںexplicitobject?اورno-op/finalreturnnullکی3محدوداصلاحات؛[اصلثبوت/وجہ/حدود](WINDOWS-V1340-BUILD-FAILURE-URDU.md)۔126static/3نئیlexicalregressionsمحدود؛3347C#suiteاوراصلWindowsrerunابھیباقی۔ CustomFieldimplementationpaused؛پہلےیہblocker،پھر1تا5باقی؛6/installerنہیں۔ نیچےv0.134.0/docs-onlyاورپرانےنتائجتاریخیہیں۔
+
 **⏳ موجودہ code: v0.134.0 / `fbe4218`؛3347C#suiteUNRUN۔** [مجموعی موجودہ حالت](COMPLETE-STATUS-AND-DECISIONS-URDU.md)؛[اصل تفصیلی رجسٹر](OWNER-DECISIONS.md)۔
 
 ## 1.1 — فہرست کی حد اور نسبت

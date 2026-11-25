@@ -567,7 +567,7 @@ VALUES
 
         try
         {
-            _db.Tx(connection =>
+            _db.Tx<object?>(connection =>
             {
                 actor = RequireProductWriter(connection, actor);
                 EditConcurrency.Require(_db, connection, "product", id, expected);
@@ -826,7 +826,7 @@ VALUES
 
                 if (sets.Count == 0 && patch.CategoryTagIds is null)
                 {
-                    return;
+                    return null;
                 }
 
                 // Tag-only edits are still product edits: keep the change visible to audit,
@@ -853,6 +853,7 @@ VALUES
                         oldValue: $"{{\"cost\":{before.CostPaisa},\"retail\":{before.RetailPaisa}}}",
                         newValue: $"{{\"cost\":{after?.CostPaisa ?? 0},\"retail\":{after?.RetailPaisa ?? 0}}}");
                 }
+                return null;
             }, outcome);
 
             return ServiceResult.Success();

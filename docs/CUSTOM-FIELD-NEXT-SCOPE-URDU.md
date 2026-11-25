@@ -1,5 +1,7 @@
 # ⏳ اگلا محدود5.1 کام — Existing CustomField Update کا جائزہ شروع
 
+> **⏳ تازہ اصل build blocker — v0.134.1 Borage source fix:** مالک کےv0.134.0WindowsrunمیںCorecompileFAIL،1CS0411/3warnings،36.79s؛tests/appنہیںچلے۔ Product.UpdateکےobservedTxمیںexplicitobject?اورno-op/finalreturnnullکی3محدوداصلاحات؛[اصلثبوت/وجہ/حدود](WINDOWS-V1340-BUILD-FAILURE-URDU.md)۔126static/3نئیlexicalregressionsمحدود؛3347C#suiteاوراصلWindowsrerunابھیباقی۔ CustomFieldimplementationpaused؛پہلےیہblocker،پھر1تا5باقی؛6/installerنہیں۔ نیچےv0.134.0/docs-onlyاورپرانےنتائجتاریخیہیں۔
+
 **بنیاد: v0.134.0 / `fbe4218`؛یہ implementation یا runtime PASS نہیں۔** موجودہ مالک کی ہدایت D-117 پر source inventory/acceptance plan شروع؛اس turn میں production code نہیں بدلا۔ [مکمل current report](COMPLETE-STATUS-AND-DECISIONS-URDU.md)؛[14 حصے](REMAINING-14-PORTIONS-URDU.md)۔
 
 ## 1.1 — چار الگ write راستے ملے

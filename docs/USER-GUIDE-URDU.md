@@ -1,6 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
-**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.134.0 Eglantine۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+**کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.134.1 Borage۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
+
+**⏳ تازہ build اصلاح:** v0.134.0 اصلWindowsbuildمیںProduct.UpdateکیCS0411نےCorecompileروکا؛یہtestsیاappکیfailureنہیں۔ v0.134.1میںاسیcallbackکی3محدودsourceاصلاحات؛مالیقواعدنہیںبدلے۔ [اصلrun/وجہ/باقیجانچ](WINDOWS-V1340-BUILD-FAILURE-URDU.md)۔ پہلےنیاbuild،پھرالگRUN-TESTS؛3347suite/Windowsrerunابھیباقی۔ نیچےپرانےsourcecheckpointsاپنیحدمیںتاریخیہیں؛CustomFieldimplementationpaused،6/installerشروعنہیں۔
 
 **⏳ موجودہ مکمل حالت اور فیصلے:** [ہوا/باقی کام،کیوں دیر،کتنے اگلے steps](COMPLETE-STATUS-AND-DECISIONS-URDU.md)؛[تمام117 فیصلے اور پانچ بنیادی اصول](DECISION-REGISTER-INDEX-URDU.md)۔ نیچے پہلے checkpoint نوٹس اپنے وقت کی تعداد/باقی کام بتاتے ہیں؛موجودہ suite3347UNRUN،5.1جاری،اگلاCustomFieldUpdateجائزہشروع،6/installerنہیں۔ پرانی گنتی نئی Windows کامیابی نہیں۔
 
