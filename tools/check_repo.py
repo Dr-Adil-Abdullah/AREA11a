@@ -10161,6 +10161,71 @@ def check_custom_definition_move_outcomes():
     REPORT.append('P5.1 CustomField Move:observed checked whole-entity CAS before bounds/full renumber,exact defensive receipt;shared guard/pinned destination/ack before input and callbacks;39 additive cases UNRUN,not remaining Settings/provider/WPF/durable identity proof')
 
 
+def check_counter_autoprint_edit():
+    """Loaded print-choice lexical boundary only; not WPF/provider/Windows proof."""
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/PosViewModel.cs').read_text()
+    body = vm.split('    public bool AutoPrint\n', 1)[1].split('    public string TenderedText', 1)[0]
+    tokens = [
+        'set => SaveAutoPrintChoice(value);',
+        'public bool CanEditAutoPrint => _autoPrintEdit is not null && !_autoPrintNeedsReview;',
+        'public bool CanReadAutoPrint => _autoPrintAttempt.Ready || (_autoPrintEdit is not null && !_autoPrintNeedsReview);',
+        'if (_savingAutoPrint || !_autoPrintAttempt.Ready) return;',
+        '_savingAutoPrint = true;', 'var access = CheckAutoPrintAccess();',
+        '_services.Settings.LoadEditForm(_user, new[] { "printer.autoPrint" })',
+        '_autoPrintEdit = loaded.Ok ? loaded.Value : null;',
+        '_autoPrint = _autoPrintEdit?.GetBool("printer.autoPrint", true) ?? false;',
+        'if (!CanEditAutoPrint || _autoPrintEdit is not { } form)',
+        'if (wanted == _autoPrint) return;', 'if (!_autoPrintAttempt.TryBegin()) return;',
+        'var saved = access.Ok ? _services.Settings.SaveEditForm(',
+        'new Dictionary<string, object?> { ["printer.autoPrint"] = wanted }, _user, form)',
+        'new ServiceResult { Error = access.Error, NoCommitConfirmed = true }',
+        '_autoPrintAttempt.ObserveFailure(saved);', 'if (!_autoPrintAttempt.Ready)',
+        '_autoPrintNeedsReview = true;', '_autoPrintAttempt.AcknowledgeCommit();',
+        'var receipt = saved.SettingsEdit;',
+        'receipt is null || receipt.GetRaw("printer.autoPrint") != (wanted ? "true" : "false")',
+        '_autoPrintEdit = receipt;', '_autoPrint = wanted;', '_autoPrintNeedsReview = false;',
+        '_autoPrintHint = string.Empty;', 'NotifyAutoPrintChoice();',
+        '!ReferenceEquals(_autoPrintEdit, receipt) || _autoPrint != wanted || _autoPrintNeedsReview || _autoPrintHint.Length != 0',
+        '_autoPrintAttempt.CompleteReset();', '_autoPrintAttempt.ObserveException();',
+        'InvalidateAutoPrintChoice(_autoPrintAttempt.WasAcknowledged',
+        'finally { _savingAutoPrint = false; }',
+        'private ServiceResult CheckAutoPrintAccess() => _services.CheckInteractiveSession()',
+        '? _services.Sales.CheckPostingAccess(_user)',
+        'OnPropertyChanged(nameof(AutoPrint));', 'RefreshAutoPrintCommand.RaiseCanExecuteChanged();',
+        '_autoPrint = false;', '_autoPrintEdit = null;', '_autoPrintHint = message;'
+    ]
+    for token in tokens:
+        if token not in body: FAILURES.append('Counter print-choice missing: ' + token)
+    if body.count('if (_savingAutoPrint || !_autoPrintAttempt.Ready) return;') != 2:
+        FAILURES.append('Counter print read and save both need reentrancy/retained-outcome guards')
+    if body.count('var access = CheckAutoPrintAccess();') != 2:
+        FAILURES.append('Counter print read and save each need current session/POS access')
+    for forbidden in ('LoadLookups(', 'RefreshCounter(', 'EnsureCounterAccess(', 'Recalculate(', 'Cart.Clear('):
+        if forbidden in body: FAILURES.append('Preference-only lifecycle must not change cart/access restoration: ' + forbidden)
+    save = body.split('    private void SaveAutoPrintChoice(', 1)[1].split('    private ServiceResult CheckAutoPrintAccess()', 1)[0]
+    order = [save.find(t) for t in (
+        'if (_savingAutoPrint', 'if (!CanEditAutoPrint', 'if (!_autoPrintAttempt.TryBegin()',
+        '_savingAutoPrint = true;', 'CheckAutoPrintAccess()', 'SaveEditForm(', 'if (!saved.Ok)',
+        '_autoPrintAttempt.AcknowledgeCommit();', 'var receipt = saved.SettingsEdit;',
+        '_autoPrintEdit = receipt;', '_autoPrint = wanted;', 'SetStatus(wanted',
+        '!ReferenceEquals(_autoPrintEdit, receipt)', '_autoPrintAttempt.CompleteReset();')]
+    if min(order) < 0 or order != sorted(order): FAILURES.append('Counter print-choice loaded/guard/access/write/ack/receipt/handoff/reset order')
+    for token in ('Settings.Set(', 'SetProperty(', 'LoadAutoPrintChoice(', 'LoadLookups(', 'RefreshCounter(', 'EnsureCounterAccess(', 'Recalculate(', 'Cart.Clear(', 'Print('):
+        if token in save.replace('// Use the originally displayed baseline. Do not SetProperty or reload before the write.', ''):
+            FAILURES.append('Counter print save may not rebase or touch cart/printing: ' + token)
+    if vm.count('_autoPrintAttempt =') != 1 or vm.count('_autoPrintAttempt.CompleteReset();') != 1:
+        FAILURES.append('Counter print guard must be retained until the one complete handoff')
+    if vm.count('LoadAutoPrintChoice(') != 3: FAILURES.append('Only constructor and explicit print reader may load print baseline')
+    if '_services.Settings.GetBool("printer.autoPrint"' in vm: FAILURES.append('Counter choice must not read stale cache')
+    xaml = (DOTNET / 'Area11.Desktop/Views/PosView.xaml').read_text()
+    for token in ('IsChecked="{Binding AutoPrint, Mode=TwoWay}"', 'IsEnabled="{Binding CanEditAutoPrint}"',
+                  'Command="{Binding RefreshAutoPrintCommand}"', 'Text="{Binding AutoPrintHint}"', 'ToolTipService.ShowOnDisabled="True"'):
+        if token not in xaml: FAILURES.append('Counter print-choice UI missing: ' + token)
+    tests = (DOTNET / 'Area11.Tests/CounterAutoPrintEditTests.cs').read_text()
+    if tests.count('[Fact]') + tests.count('[InlineData(') != 24: FAILURES.append('Counter print requires24 additive written C# cases')
+    REPORT.append('P5.1 Counter autoPrint:DB-loaded single-key CAS/current POS+session,exact receipt before local display,known refusal retains choice;unknown fail-closed retained guard,preference-only read;24 C# cases UNRUN,not WPF/provider/registry/whole5.1 proof')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -10290,6 +10355,7 @@ def main() -> int:
     check_custom_definition_active_outcomes()
     check_custom_definition_add_outcomes()
     check_custom_definition_move_outcomes()
+    check_counter_autoprint_edit()
     check_csharp_grammar()
 
     if not quiet:

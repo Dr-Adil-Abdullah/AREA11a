@@ -399,8 +399,15 @@
                     <Button Content="More / split" Command="{Binding ToggleCheckoutDetailsCommand}" Style="{StaticResource CounterActionButton}" ToolTip="Extra Discount, doctor, points, split payment and extra answers. Closing this panel does not reset answers." />
                     <Button Content="New customer" Command="{Binding BeginAddCustomerCommand}" Style="{StaticResource CounterActionButton}" Visibility="{Binding CanAddCustomer, Converter={StaticResource BoolToVis}}" />
                     <Button Content="Refresh" Command="{Binding RefreshCommand}" Style="{StaticResource CounterActionButton}" />
-                    <CheckBox Content="Print automatically" IsChecked="{Binding AutoPrint, Mode=TwoWay}" Margin="6,4,0,0" />
+                    <CheckBox Content="Print automatically" IsChecked="{Binding AutoPrint, Mode=TwoWay}"
+                              IsEnabled="{Binding CanEditAutoPrint}" ToolTip="{Binding AutoPrintHint}"
+                              ToolTipService.ShowOnDisabled="True" Margin="6,4,0,0" />
+                    <Button Content="Read print choice" Command="{Binding RefreshAutoPrintCommand}" Style="{StaticResource CounterActionButton}"
+                            ToolTip="Read only the current print choice; does not refresh the cart or change the selected customer." />
                 </WrapPanel>
+                <TextBlock Text="{Binding AutoPrintHint}" FontSize="11" TextWrapping="Wrap" MaxHeight="32"
+                           ToolTip="{Binding AutoPrintHint}" Foreground="{StaticResource MutedBrush}"
+                           Visibility="{Binding HasAutoPrintHint, Converter={StaticResource BoolToVis}}" />
                 <TextBlock Text="{Binding PointsUsedText}" FontSize="11" Visibility="{Binding HasPointsUsed, Converter={StaticResource BoolToVis}}" />
                 <TextBlock Text="{Binding StatusMessage}" FontSize="11" TextWrapping="Wrap" MaxHeight="32"
                            ToolTip="{Binding StatusMessage}">

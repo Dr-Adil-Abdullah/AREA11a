@@ -76,6 +76,11 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     private EditVersion? _openDraftVersion;
     private string? _savedDraftNotes;
     private bool _autoPrint;
+    private SettingsEditForm? _autoPrintEdit;
+    private readonly PostingAttemptGuard _autoPrintAttempt = new();
+    private bool _savingAutoPrint;
+    private bool _autoPrintNeedsReview;
+    private string _autoPrintHint = string.Empty;
     private bool _isCompletingSale;
     private bool _committedCartNeedsReset;
     private bool _draftReconstructionFailed;
@@ -117,6 +122,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         CompleteCommand = new RelayCommand(CompleteSale);
         PrintLastCommand = new RelayCommand(PrintLast, () => _lastSaleId > 0);
         RefreshCommand = new RelayCommand(RefreshCounter);
+        RefreshAutoPrintCommand = new RelayCommand(() => LoadAutoPrintChoice(showStatus: true), () => CanReadAutoPrint);
         OpenProductPhotoCommand = new RelayCommand<int>(OpenProductPhoto);
         HoldCommand = new RelayCommand(HoldCart);
         SaveDraftCommand = new RelayCommand(SaveSaleDraft);
@@ -128,10 +134,10 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
         OpenShiftCommand = new RelayCommand(() => OpenShiftRequested?.Invoke());
 
         _billDiscountBasis = _services.Settings.GetString("discount.billBasis");
-        _autoPrint = _services.Settings.GetBool("printer.autoPrint", true);
 
         LoadLookups();
         LoadHeldCarts();
+        LoadAutoPrintChoice();
     }
 
     public CustomFieldsEditorViewModel NewCustomerEditor { get; }
@@ -207,6 +213,7 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     public RelayCommand PrintLastCommand { get; }
 
     public RelayCommand RefreshCommand { get; }
+    public RelayCommand RefreshAutoPrintCommand { get; }
 
     public RelayCommand<int> OpenProductPhotoCommand { get; }
 
@@ -535,18 +542,118 @@ public sealed class PosViewModel : ObservableObject, IEmptyPage
     public bool AutoPrint
     {
         get => _autoPrint;
-        set
+        set => SaveAutoPrintChoice(value);
+    }
+
+    // Enabled state describes the available choice, not a progress notification. The synchronous
+    // entry guards also block reentrant binding/property callbacks until all notifications finish.
+    public bool CanEditAutoPrint => _autoPrintEdit is not null && !_autoPrintNeedsReview;
+    public bool CanReadAutoPrint => _autoPrintAttempt.Ready || (_autoPrintEdit is not null && !_autoPrintNeedsReview);
+    public string AutoPrintHint => _autoPrintHint;
+    public bool HasAutoPrintHint => _autoPrintHint.Length > 0;
+
+    private void LoadAutoPrintChoice(bool showStatus = false)
+    {
+        if (_savingAutoPrint || !_autoPrintAttempt.Ready) return;
+        _savingAutoPrint = true;
+        try
         {
-            if (!SetProperty(ref _autoPrint, value))
+            // This reads ONLY the print preference;never refresh/reselect/requote the cart.
+            var access = CheckAutoPrintAccess();
+            var loaded = access.Ok
+                ? _services.Settings.LoadEditForm(_user, new[] { "printer.autoPrint" })
+                : ServiceResult<SettingsEditForm>.Fail(access.Error ?? "Counter access is unavailable.");
+            _autoPrintEdit = loaded.Ok ? loaded.Value : null;
+            _autoPrintNeedsReview = _autoPrintEdit is null;
+            _autoPrint = _autoPrintEdit?.GetBool("printer.autoPrint", true) ?? false;
+            _autoPrintHint = _autoPrintEdit is null
+                ? "Print choice could not be read. Automatic printing is off here; check access and read the print choice again. " + loaded.Error
+                : string.Empty;
+            NotifyAutoPrintChoice();
+            if (_autoPrintEdit is null) SetStatus(_autoPrintHint, true);
+            else if (showStatus) SetStatus("Current print choice loaded. Review it before changing it.", false);
+        }
+        catch (Exception exception)
+        {
+            _services.Log.Error("Counter print choice read/notification failed.", exception);
+            InvalidateAutoPrintChoice("Print choice could not be read. Automatic printing is off here; read the print choice again.");
+        }
+        finally { _savingAutoPrint = false; }
+    }
+
+    private void SaveAutoPrintChoice(bool wanted)
+    {
+        if (_savingAutoPrint || !_autoPrintAttempt.Ready) return;
+        if (!CanEditAutoPrint || _autoPrintEdit is not { } form)
+        { SetStatus("Read the current print choice before changing it.", true); return; }
+        if (wanted == _autoPrint) return;
+        if (!_autoPrintAttempt.TryBegin()) return;
+        _savingAutoPrint = true;
+        try
+        {
+            // Use the originally displayed baseline. Do not SetProperty or reload before the write.
+            var access = CheckAutoPrintAccess();
+            var saved = access.Ok ? _services.Settings.SaveEditForm(
+                new Dictionary<string, object?> { ["printer.autoPrint"] = wanted }, _user, form) : new ServiceResult { Error = access.Error, NoCommitConfirmed = true };
+            if (!saved.Ok)
             {
+                _autoPrintAttempt.ObserveFailure(saved);
+                if (!_autoPrintAttempt.Ready)
+                    InvalidateAutoPrintChoice("Print choice needs verification. Automatic printing is off here; do not repeat the change. " + saved.Error);
+                else
+                {
+                    _autoPrintNeedsReview = true; // Definite no-commit: keep the previous displayed/runtime choice.
+                    _autoPrintHint = "Print choice was not changed here. The previous choice remains in use; read the current print choice and review before retrying. " + saved.Error;
+                    NotifyAutoPrintChoice();
+                    SetStatus(_autoPrintHint, true);
+                }
                 return;
             }
-
-            var saved = _services.Settings.Set("printer.autoPrint", value, _user);
-            SetStatus(saved.Ok
-                ? (value ? "The receipt will print by itself after each sale." : "Printing is manual now.")
-                : (saved.Error ?? "The setting could not be saved."), !saved.Ok);
+            _autoPrintAttempt.AcknowledgeCommit();
+            var receipt = saved.SettingsEdit;
+            if (receipt is null || receipt.GetRaw("printer.autoPrint") != (wanted ? "true" : "false"))
+                throw new InvalidOperationException("The saved print choice receipt is missing or mismatched.");
+            _autoPrintEdit = receipt;
+            _autoPrint = wanted;
+            _autoPrintNeedsReview = false;
+            _autoPrintHint = string.Empty;
+            NotifyAutoPrintChoice();
+            SetStatus(wanted ? "SAVED. The receipt will print automatically after each sale." : "SAVED. Printing is manual now.", false);
+            if (!ReferenceEquals(_autoPrintEdit, receipt) || _autoPrint != wanted || _autoPrintNeedsReview || _autoPrintHint.Length != 0)
+                throw new InvalidOperationException("The saved print choice handoff was not retained.");
+            _autoPrintAttempt.CompleteReset();
         }
+        catch (Exception exception)
+        {
+            _autoPrintAttempt.ObserveException();
+            _services.Log.Error("Counter print choice save/handoff failed.", exception);
+            InvalidateAutoPrintChoice(_autoPrintAttempt.WasAcknowledged
+                ? "SAVED. Print choice stored, but this counter could not refresh it. Automatic printing is off here; verify before reopening and do not repeat the change."
+                : "Print choice is unconfirmed. Automatic printing is off here; verify before reopening or retrying.");
+        }
+        finally { _savingAutoPrint = false; }
+    }
+
+    private ServiceResult CheckAutoPrintAccess() => _services.CheckInteractiveSession()
+        ? _services.Sales.CheckPostingAccess(_user)
+        : ServiceResult.Fail("Sign in again before changing the print choice.");
+
+    private void NotifyAutoPrintChoice()
+    {
+        OnPropertyChanged(nameof(AutoPrint)); OnPropertyChanged(nameof(CanEditAutoPrint));
+        OnPropertyChanged(nameof(CanReadAutoPrint)); OnPropertyChanged(nameof(AutoPrintHint));
+        OnPropertyChanged(nameof(HasAutoPrintHint)); RefreshAutoPrintCommand.RaiseCanExecuteChanged();
+    }
+
+    private void InvalidateAutoPrintChoice(string message)
+    {
+        // Only this preference is invalidated. Cart/payment/draft/posting state and manual Reprint stay untouched.
+        _autoPrint = false;
+        _autoPrintEdit = null;
+        _autoPrintNeedsReview = true;
+        _autoPrintHint = message;
+        try { NotifyAutoPrintChoice(); SetStatus(message, true); }
+        catch (Exception exception) { _services.Log.Error("Counter print choice failure notification did not finish.", exception); }
     }
 
     public string TenderedText

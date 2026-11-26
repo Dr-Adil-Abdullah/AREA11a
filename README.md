@@ -1,5 +1,8 @@
 # Area11 — pharmacy POS + inventory for Windows
 
+> **⏳ موجودہ5.1 — v0.142.0 Vervain:** Counter کاautoPrint ابDB-loaded baseline/currentPOS+session/checkedSave اور exactreceiptکےبعدlocalchoice؛معلومno-commitپرپچھلاانتخاب،unknownپرautomaticoff/retainedguard؛صرفprintchoiceپڑھنےکاالگبٹن،کارٹ/مالیحساب/دستیReprintبرقرار۔ ✅132static/39source-negative scripts/41نئیlexicalmutations محدود؛⏳24نئےC#cases/3516suiteاوراصلWindows/provider/WPFباقی۔ مالککاv0.138.0کا3418PASSثابت ہے،pendingنہیں۔ [PT-81/ہوااورباقی](docs/COUNTER-AUTOPRINT-EDIT-URDU.md)؛startupregistryکےexactrestore/unknowncompensationمسائلصرفدرج،حلنہیں؛باقیSettings/StockTake/نئیguideUIعملیجانچکھلی،6/installerنہیں۔ نیچےپرانےcheckpointcountsتاریخیہیں۔
+
+
 > **⏳ موجودہ5.1 — v0.141.0 Fritillary:** Move کا observed checked outcome،bounds سے پہلے current Owner/entity CAS،پوری list کی اصل renumbering اور exact receipt؛Add/Update/OnOff/Move کا ایک retained guard،ack کے بعد input/callbacks اور کامیابی پر نیا انتخاب۔ ✅131static،38source-negative scripts،47نئیlexical mutations اور56PythonSQLplans؛⏳39نئےC#cases/3492suite،اصلWindows/provider/WPF باقی۔ مالک کاv0.138.0کا3418PASS ثابت ہے،pending نہیں۔ [PT-80/ہوا اور باقی](docs/CUSTOM-DEFINITION-MOVE-OUTCOME-URDU.md)؛باقیSettings writers/startup registry/StockTake اورنئیguideUIکیعملیجانچکھلی ہیں؛6/installerنہیں۔ نیچےMoveباقی/countsپرانےcheckpointہیں۔
 
 

@@ -1,5 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
+> **⏳ Counter کا پرنٹ انتخاب — v0.142.0:** **Print automatically** صرف محفوظ تبدیلی کے بعد بدلے گا۔ واضح no-commit پر پچھلا انتخاب برقرار؛**Read print choice** سے صرف یہ setting پڑھ کر موجودہ انتخاب دیکھیں،کارٹ/customer/payment نہیں بدلیں گے۔ **Unconfirmed** یاSAVEDکےبعدصفحےکیخرابی پر automaticprintیہاںبند اوردوبارہتبدیلیروکیجاتی ہے؛دستیReprintبرقرار۔ تبدیلی نہ دہرائیں،پہلےاصلSettings/auditتصدیق،پھرCounterreopen؛عامRefresh/timer/regrantاسguardکونہیںکھولتے۔ [PT-81/حدود](COUNTER-AUTOPRINT-EDIT-URDU.md)؛اصلWindows/WPFجانچباقی۔
+
+
 > **⏳ سوال کی ترتیب بدلنا — v0.141.0:** Move کی کامیابی پر **SAVED** اور پوری محفوظ ترتیب دکھتی ہے؛مزید Move/edit کیلئے سوال دوبارہ چنیں۔ Move آپ کی ادھوری label/type ترمیم Save نہیں کرتا۔ دوسری جگہ اسی form کی ترتیب/سوال بدل جائے تو پرانا Move نئی state خاموشی سے نہیں اپنائے گا؛Refresh کرکے موجودہ حالت دیکھیں اور نیا فیصلہ کریں۔ **Unconfirmed** یاSAVEDکے بعد صفحے کی خرابی پر دوبارہ arrow نہ دبائیں؛پہلے definitions/audit تصدیق کریں۔ Refresh/New/tab/regrant اسیصفحےکاuncertainguardنہیںکھولتے۔ [طریقہ/حدود](CUSTOM-DEFINITION-MOVE-OUTCOME-URDU.md)؛اصلWindows/WPFتصدیق باقی ہے۔
 
 
