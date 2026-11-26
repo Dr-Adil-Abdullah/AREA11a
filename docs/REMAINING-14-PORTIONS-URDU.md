@@ -1,3 +1,5 @@
+> **⏳ موجودہ Add checkpoint — v0.140.0:** [نیا سوال شامل کرنے کا observed outcome،exact receipt اور Desktop guard/PT-79](CUSTOM-DEFINITION-ADD-OUTCOME-URDU.md) لکھا اور محدود static/SQL جانچا گیا؛35نئےC#cases/3453suite یہاںUNRUN۔ پچھلاv0.138.0Windows3418PASS ثابت ہے۔ **Move اگلا الگ باقی کام** ہے؛remaining Settings/startup/StockTake اورنئیguideUIکی عملی جانچ نہیں بند ہوئیں۔ نیچے Add کا «شروع نہیں/باقی» متن پچھلے checkpoint کا ہے،موجودہ پیشرفت نہیں۔ 6/installer نہیں۔
+
 # ⏳ باقی کام — منظورشدہ 14 حصوں کا منصوبہ
 
 > **⏳ تازہ5.1 — v0.136.0 Comfrey:** CustomFieldOn/OffکاcheckedobservedTx،Owner/entityCASقبلno-op،exactdefensiveentityreceipt؛Update/OnOffکاوہیsharedpersistentguard،pinneddisplayedintent،ackقبلinputconsumption/callbacks،normalblankeditorشامل۔ [PT-78/حدود](CUSTOM-DEFINITION-ACTIVE-OUTCOME-URDU.md)؛[پچھلاUpdate/PT-77](CUSTOM-DEFINITION-UPDATE-OUTCOME-URDU.md)۔24نئےC#cases/3397suiteUNRUN؛128static/37نئیlexical/32PythonSQLplansمحدود،اصلWindows/provider/WPFنہیں۔ CustomAdd/Move،imperativeSettings/registry/StockTakeباقی؛v0.134.0اصلbuildFAIL/CS0411fixکاrerunاور3warningsابھیباقی؛1تا5بندہونےسےپہلے6/installerنہیں۔ نیچےپرانےcheckpointاعداد/pauseاپنےوقتکےتاریخیہیں۔

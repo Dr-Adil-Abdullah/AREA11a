@@ -7470,7 +7470,7 @@ def check_definition_time_boundaries():
     for name in ('Add', 'Update', 'SetActive', 'Move'):
         match = re.search(r'public ServiceResult(?:<CustomField>)?\s+' + name + r'\(', fields)
         body = fields[match.end():].split('\n    public ', 1)[0] if match else ''
-        tx_match = re.search(r'return _db\.Tx(?:<ServiceResult>)?\(connection =>', body)
+        tx_match = re.search(r'return _db\.Tx(?:<ServiceResult(?:<CustomField>)?>)?\(connection =>', body)
         tx = tx_match.start() if tx_match else -1
         gate = body.find('var owner = OwnerAccess.Require(_db, connection, user);')
         first = min((pos for pos in (body.find('LabelExists(connection'), body.find('ReadField(connection')) if pos >= 0), default=-1)
@@ -8776,10 +8776,10 @@ def check_custom_manager_current_boundaries():
         if 'if (!RefreshAccess()) return;' not in body:
             FAILURES.append('Definition action requires current management/snapshot check: ' + method)
     save = vm.split('private void Save()',1)[-1].split('private void SaveExisting()',1)[0]
-    if 'if (_editingId > 0) { SaveExisting(); return; }' not in save or 'if (!RefreshAccess()) return;' not in save:
-        FAILURES.append('Definition Add requires current read;existing Update requires its checked transaction door')
-    if vm.count('FinishWrite(') != 3:
-        FAILURES.append('Definition Add and Move retain shared reload;Update and On/Off use exact observed handoffs')
+    if 'if (_editingId > 0) { SaveExisting(); return; }' not in save or 'SaveNew();' not in save:
+        FAILURES.append('Definition Save must dispatch Add and existing Update into their guarded transaction paths')
+    if vm.count('FinishWrite(') != 2:
+        FAILURES.append('Only Move retains shared reload;Add/Update/OnOff use exact observed handoffs')
     for token in ('if (!_lastLoadSucceeded || _selectedField?.Field.Id != savedId)',
                   'SAVED. The field change was stored, but could not be reloaded.',
                   'suggestion is null || !Types.Any(option => option.Key == suggestion.Type)'):
@@ -9988,7 +9988,7 @@ def check_custom_definition_update_outcomes():
     if min(positions) < 0 or positions != sorted(positions): FAILURES.append('Custom definition Update acknowledgement/consume/callback/verdict/reset ordering')
     for token in ('RefreshAccess();', 'Load();', '.List(', 'FinishWrite('):
         if token in ui: FAILURES.append('Existing definition save must not fresh-rebase: ' + token)
-    if vm.count('_definitionUpdate =') != 1 or vm.count('_definitionUpdate.CompleteReset();') != 2: FAILURES.append('Definition guard must survive Refresh/new/tab/regrant after unknown or ack callback failure')
+    if vm.count('_definitionUpdate =') != 1 or vm.count('_definitionUpdate.CompleteReset();') != 3: FAILURES.append('Definition guard must survive Refresh/new/tab/regrant after unknown or ack callback failure')
     refresh = vm.split('public bool RefreshAccess()',1)[1].split('private void ClearManager(',1)[0]
     for token in ('if (_editingId > 0)', 'return false; // Never renew an opened editor'):
         if token not in refresh: FAILURES.append('Definition neighbor-change pre-read must not silently renew baseline')
@@ -10048,13 +10048,62 @@ def check_custom_definition_active_outcomes():
     calls = re.sub(r'//[^\n]*', '', ui)
     for token in ('RefreshAccess(', 'FinishWrite(', 'Load(', '.List('):
         if token in calls: FAILURES.append('On/Off cannot refresh/rebase/reload after write: ' + token)
-    if vm.count('_definitionUpdate =') != 1 or vm.count('_definitionUpdate.CompleteReset();') != 2: FAILURES.append('Update and On/Off must share retained guard,release only after their own verdicts')
+    if vm.count('_definitionUpdate =') != 1 or vm.count('_definitionUpdate.CompleteReset();') != 3: FAILURES.append('Update and On/Off must share retained guard,release only after their own verdicts')
     for signature in ('private void Load()', 'public bool RefreshAccess()'):
         body = vm.split(signature,1)[-1].split('\n    }',1)[0]
         if 'if (_savingDefinitionUpdate || !_definitionUpdate.Ready)' not in body: FAILURES.append('Refresh must not release uncertain shared definition guard')
     tests = (DOTNET / 'Area11.Tests/CustomDefinitionActiveOutcomeTests.cs').read_text()
     if tests.count('[Fact]') + tests.count('[InlineData(') != 24: FAILURES.append('On/Off requires24 additive written C# cases')
     REPORT.append('P5.1 CustomField On/Off:observed checked assignment/current owner+entityCAS before no-op,exact defensive entity receipt,shared persistent Update/OnOff guard;24 C# cases UNRUN,not Add/Move/whole Settings/provider/WPF proof')
+
+
+def check_custom_definition_add_outcomes():
+    """Bounded Add outcome/receipt/UI source contracts; not C#/provider/WPF execution."""
+    core = (DOTNET / 'Area11.Core/Services/CustomFieldService.cs').read_text().split('    public ServiceResult<CustomField> Add(', 1)[1].split('    /// <summary>\n    /// Changes the wording', 1)[0]
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/CustomFieldsViewModel.cs').read_text()
+    ui = vm.split('    private void SaveNew()', 1)[1].split('    private void SaveExisting()', 1)[0]
+    core_tokens = [
+        'var outcome = new TransactionOutcome();', 'Error = outcome.NoCommitConfirmed ? error',
+        'NoCommitConfirmed = outcome.NoCommitConfirmed', 'FieldGovernance.DefinitionError(',
+        'return _db.Tx<ServiceResult<CustomField>>(connection =>', 'var owner = OwnerAccess.Require(_db, connection, user);',
+        'throw new ValidationException(', 'LabelExists(connection, key, cleanLabel, exceptId: 0)',
+        'SELECT IFNULL(MAX(sort), 0) + 1', 'INSERT INTO custom_fields(', 'at = Clock.Now()',
+        'FieldGovernance.KeyFor(key, id)', 'UPDATE custom_fields SET field_key = @fieldKey WHERE id = @id;',
+        '_audit.Record(connection, owner, Modules.Settings, "custom_field_add"',
+        'var saved = CaptureDefinitionEdit(connection, key, id);',
+        'Ok = true, Value = saved.Fields.Single(field => field.Id == id)',
+        'CustomDefinitionEdit = saved, EditVersion = saved.EditVersion', '}, outcome);']
+    ui_tokens = [
+        'if (_savingDefinitionUpdate || !_definitionUpdate.Ready) return;',
+        'if (!_lastLoadSucceeded || !CanManage || _editingId != 0 || _selectedField is not null || IsEditing)',
+        'var entity = SelectedTab.Entity;', 'if (!_definitionUpdate.TryBegin()) return;',
+        '_savingDefinitionUpdate = true;', '_services.CustomFields.Add(_user, entity, LabelText,',
+        '_definitionUpdate.ObserveFailure(result);', '_definitionUpdate.AcknowledgeCommit();',
+        '_labelText = _optionsText = _helpText = string.Empty;', 'saved.FieldId != created.Id',
+        'saved.Entity != entity', 'SelectedTab.Entity != entity', '!CustomFieldDefinitionState.Matches(created, target)',
+        '!ReferenceEquals(created.EditVersion, target.EditVersion)', 'ReplaceRows(rows, 0);', 'NotifyConsumedEditor();',
+        '!CustomFieldDefinitionState.Matches(row.Field, rows[index])',
+        '!ReferenceEquals(row.Field.EditVersion, rows[index].EditVersion)',
+        '_definitionUpdate.CompleteReset();', '_definitionUpdate.ObserveException();',
+        'InvalidateUpdate(_definitionUpdate.WasAcknowledged', 'finally { _savingDefinitionUpdate = false; }']
+    for body, tokens, label in ((core, core_tokens, 'Core'), (ui, ui_tokens, 'UI')):
+        for token in tokens:
+            if token not in body: FAILURES.append('Custom definition Add ' + label + ' missing ' + token)
+    order = [core.find(t) for t in ('return _db.Tx<ServiceResult<CustomField>>(', 'OwnerAccess.Require(', 'LabelExists(', 'SELECT IFNULL(MAX(sort)', 'INSERT INTO custom_fields(', 'FieldGovernance.KeyFor(', 'UPDATE custom_fields', '_audit.Record(', 'CaptureDefinitionEdit(', '}, outcome);')]
+    if min(order) < 0 or order != sorted(order): FAILURES.append('Add Owner/duplicate/append/key/audit/exact receipt/outcome order')
+    work = core.split('return _db.Tx<ServiceResult<CustomField>>(',1)[-1].split('}, outcome);',1)[0]
+    if 'return Refuse(' in work or 'new CustomField' in work: FAILURES.append('Add must throw in-Tx refusal and read exact stored row, not fabricate receipt')
+    if core.count('Clock.Now()') != 1: FAILURES.append('Add must return stored timestamp, not read clock twice')
+    order = [ui.find(t) for t in ('var entity = SelectedTab.Entity;', '_definitionUpdate.TryBegin()', '_savingDefinitionUpdate = true;', '_services.CustomFields.Add(', '_definitionUpdate.AcknowledgeCommit();', '_editingId = 0;', '_labelText = _optionsText = _helpText = string.Empty;', 'ReplaceRows(rows, 0);', 'NotifyConsumedEditor();', 'SetStatus("SAVED.', 'if (_editingId != 0', '_definitionUpdate.CompleteReset();')]
+    if min(order) < 0 or order != sorted(order): FAILURES.append('Add pinned entity/write/ack/input consumption/callback/verdict/reset order')
+    calls = re.sub(r'//[^\n]*', '', ui)
+    for forbidden in ('RefreshAccess(', 'Load(', 'FinishWrite(', '.List(', 'ServiceResult.Success(', 'ServiceResult.Fail('):
+        if forbidden in calls: FAILURES.append('Add cannot reload/rebase/discard typed service outcome: ' + forbidden)
+    if vm.count('_definitionUpdate =') != 1 or vm.count('_definitionUpdate.CompleteReset();') != 3:
+        FAILURES.append('Add/Update/OnOff must share persistent guard and release only after their own complete verdict')
+    tests = (DOTNET / 'Area11.Tests/CustomDefinitionAddOutcomeTests.cs').read_text()
+    if tests.count('[Fact]') + tests.count('[InlineData(') != 35: FAILURES.append('Add needs35 additive C# cases')
+    REPORT.append('P5.1 CustomField Add:observed Tx/current owner+duplicate validation/exact stored row+entity receipt;shared UI guard/ack before consume and callbacks;35 additive C# cases UNRUN,not Move/durable identity/provider/WPF proof')
 
 
 def main() -> int:
@@ -10184,6 +10233,7 @@ def main() -> int:
     check_windows_v1361_regressions()
     check_custom_definition_update_outcomes()
     check_custom_definition_active_outcomes()
+    check_custom_definition_add_outcomes()
     check_csharp_grammar()
 
     if not quiet:

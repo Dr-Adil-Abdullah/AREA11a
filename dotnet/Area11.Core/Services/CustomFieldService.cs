@@ -122,15 +122,21 @@ ORDER BY sort, id;",
         bool required,
         string? helpText = null)
     {
+        var outcome = new TransactionOutcome();
+        ServiceResult<CustomField> Refuse(string error) => new()
+        {
+            Error = outcome.NoCommitConfirmed ? error : "The new field is unconfirmed. Verify definitions before adding it again.",
+            NoCommitConfirmed = outcome.NoCommitConfirmed
+        };
         if (user is null || !user.IsOwner || !user.Active || user.Id <= 0)
         {
-            return ServiceResult<CustomField>.Fail(
+            return Refuse(
                 "Only the owner can add a field.");
         }
 
         if (!CustomFieldEntity.IsKnown(entity))
         {
-            return ServiceResult<CustomField>.Fail("Choose the form this field belongs to.");
+            return Refuse("Choose the form this field belongs to.");
         }
 
         var key = CustomFieldEntity.Clean(entity);
@@ -142,7 +148,7 @@ ORDER BY sort, id;",
 
         if (problem is not null)
         {
-            return ServiceResult<CustomField>.Fail(problem);
+            return Refuse(problem);
         }
 
         var optionsJson = CustomFieldType.NeedsOptions(cleanType)
@@ -151,12 +157,12 @@ ORDER BY sort, id;",
 
         try
         {
-            return _db.Tx(connection =>
+            return _db.Tx<ServiceResult<CustomField>>(connection =>
             {
                 var owner = OwnerAccess.Require(_db, connection, user);
                 if (LabelExists(connection, key, cleanLabel, exceptId: 0))
                 {
-                    return ServiceResult<CustomField>.Fail(
+                    throw new ValidationException(
                         "There is already a field called \"" + cleanLabel + "\" on this form.");
                 }
 
@@ -188,30 +194,24 @@ VALUES(@entity, NULL, @label, @type, @optionsJson, @helpText, @required, 1, @sor
                     "custom_fields", id.ToString(), newValue: Describe(cleanLabel, cleanType, optionsJson, required, cleanHelp),
                     details: CustomFieldEntity.LabelFor(key));
 
-                return ServiceResult<CustomField>.Success(new CustomField
+                // Append semantics: current locked entity state, not a stale-row overwrite.
+                // Return the real stored timestamp/key and exact entity baseline from THIS transaction.
+                var saved = CaptureDefinitionEdit(connection, key, id);
+                return new ServiceResult<CustomField>
                 {
-                    Id = id,
-                    Entity = key,
-                    FieldKey = fieldKey,
-                    Label = cleanLabel,
-                    Type = cleanType,
-                    OptionsJson = optionsJson,
-                    HelpText = cleanHelp,
-                    Required = required,
-                    Active = true,
-                    Sort = sort,
-                    CreatedAt = Clock.Now()
-                });
-            });
+                    Ok = true, Value = saved.Fields.Single(field => field.Id == id),
+                    CustomDefinitionEdit = saved, EditVersion = saved.EditVersion
+                };
+            }, outcome);
         }
         catch (ValidationException exception)
         {
-            return ServiceResult<CustomField>.Fail(exception.Message);
+            return Refuse(exception.Message);
         }
         catch (Exception exception)
         {
             _log.Error($"A custom field ({cleanLabel}) could not be added.", exception);
-            return ServiceResult<CustomField>.Fail("The field could not be added. Refresh and try again.");
+            return Refuse("The field could not be added. Refresh and try again.");
         }
     }
 

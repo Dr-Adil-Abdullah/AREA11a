@@ -1,5 +1,8 @@
 # AGENTS.md - how to work in this repository
 
+> **⏳ موجودہ5.1 — v0.140.0 Agrimony:** نیاCustomFieldAdd ابobservedTx،currentOwner/duplicate،اصلstoredrow+exactentityreceipt؛Add/Update/OnOffکاایکguard،ackپہلے،پھرinput/callbacks،کامیابیپرblankeditor۔ ✅130static/40نئیlexical/40PythonSQLplansمحدود؛⏳35نئےC#cases/3453suiteاوراصلWindows/WPFیہاںUNRUN۔ مالککاپچھلاv0.138.0کا3418PASS/0FAIL/0skipثابت ہے۔ [PT-79/کیاہوا/باقی](docs/CUSTOM-DEFINITION-ADD-OUTCOME-URDU.md)؛Moveاباگلاالگکام،باقی5.1/1تا5اورنئیguideUIکیعملیجانچباقی؛6/installerنہیں۔ نیچےپرانےAddباقی/countsاپنےcheckpointکیحیثیتہیں۔
+
+
 > **⏳ موجودہ guide UI — v0.139.0 Anemone:** مالک کااصلv0.138.0Windows/.NET10Core+Tests **3418PASS/0FAIL/0skip،6m50s** ثابت ہے،pendingنہیں۔ مالک کیUIاصلاح پرپورےGuidelinesکارڈکاdouble-click،nestedcategorytree،اوپرذیلیcards،breadcrumbsاورنرمreaderstyling؛موادR3/96موضوعاتبرقرار۔ ✅129repo/3149guide/309navigation source/data checks؛⏳نئیDesktopbuild/WPFشکل،double-click/focusاورمالککیپسندکیعملیجانچباقی۔ [نتیجہ/تبدیلی/جانچ](docs/GUIDE-UI-HIERARCHY-URDU.md)۔3418suitecountبرقرار؛5.1Add/Moveاسحصےمیںنہیںبدلے،6/installerنہیں۔ نیچےUNRUNاورمحدودUIکےبیاناتپرانےcheckpointہیں۔
 
 

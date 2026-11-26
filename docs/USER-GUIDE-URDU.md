@@ -1,5 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
+> **⏳ نیا سوال شامل کرنا — v0.140.0:** Add پر **SAVED** آئے تو سوال محفوظ ہوچکا ہے؛کامیابی کے بعد editor خالی اور کوئی سوال منتخب نہیں ہوتا۔ ترمیم کیلئے سوال دوبارہ چنیں،دوسرے نئے سوال کیلئے نئی عبارت لکھیں۔ **Unconfirmed** یاSAVEDکے بعدصفحےکی خرابی پر Add دوبارہ نہ دہرائیں؛پہلے اصل فہرست/audit تصدیق کریں۔ Refresh/New/tab یااجازت واپس ملنا اسی صفحے کا uncertain guard نہیں کھولتا۔ صرف معلوم rollback/validation refusal کے بعد درست کرکے دوبارہ کوشش ممکن ہے۔ [طریقہ/حدود](CUSTOM-DEFINITION-ADD-OUTCOME-URDU.md)؛Move اوراصلWindows/WPFتصدیق الگ باقی ہیں۔ نیچےپرانےcheckpointکےAddباقی/countsتاریخی ہیں۔
+
+
 **کس کے لیے:** مالک، مینیجر اور کیشیئر۔ **جس کوڈ کے مطابق لکھا گیا:** v0.136.0 Comfrey۔ یہ استعمال کی کتاب ہے، Windows پر کامیاب جانچ یا اصل دکان میں منظوری کا سرٹیفکیٹ نہیں۔ اس ورژن کے Windows ٹیسٹ اور عملی تصدیق باقی ہیں۔
 
 **⏳ اپنے سوال کوOn/Offکرنا:** بٹنمنتخبسوالکیاسینظرآنےوالیحالتکےمطابقارادہبھیجتاہے؛دوسریجگہاسیformکاسوال/ترتیببدلےتوپراناactionخاموشنئیحالتنہیںپلٹےگا۔ No-opبھیاصلpermission/baselineکےبغیرکامیابنہیں۔ **SAVED**کےبعدeditorصاف/selectionخالی؛اگلےactionکےلیےfieldدوبارہچنیں،پرانےanswers/keyمحفوظہیں۔ **Unconfirmed**یاSAVEDکےبعدUIخرابیپراندھیretryنہیں؛UpdateاورOnOffوہیblockedguardاستعمالکرتےہیں،Refresh/tab/New/Cancel/regrantنہیںکھولتے۔ پہلےاصلdefinitions/auditتصدیق،پھرreopen؛نیاinstanceخودverificationنہیں۔ یہبٹنlabel/typeکیunsavedترمیمخودsaveنہیںکرتا۔ [PT-78/حدود](CUSTOM-DEFINITION-ACTIVE-OUTCOME-URDU.md)؛3397suite/اصلWindowsباقی؛Add/Moveابھیالگکھلےہیں۔

@@ -438,26 +438,68 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
     {
         if (_savingDefinitionUpdate || !_definitionUpdate.Ready) return;
         if (_editingId > 0) { SaveExisting(); return; }
-        if (!RefreshAccess()) return;
-        var type = SelectedType.Key;
-        ServiceResult result;
-        var added = _services.CustomFields.Add(
-            _user, SelectedTab.Entity, LabelText, type, OptionsText, Required, HelpText);
+        SaveNew();
+    }
 
-        result = added.Ok
-            ? ServiceResult.Success(added.Warnings.ToArray())
-            : ServiceResult.Fail(added.Error ?? "The field could not be saved.");
-
-        _editingId = added.Value?.Id ?? 0;
-
-        if (!result.Ok)
+    private void SaveNew()
+    {
+        if (_savingDefinitionUpdate || !_definitionUpdate.Ready) return;
+        if (!_lastLoadSucceeded || !CanManage || _editingId != 0 || _selectedField is not null || IsEditing)
+        { SetStatus("Refresh the fields before adding a new question.", true); return; }
+        var entity = SelectedTab.Entity;
+        if (!_definitionUpdate.TryBegin()) return;
+        _savingDefinitionUpdate = true;
+        try
         {
-            RefreshAccess();
-            SetStatus(result.Error ?? "The field could not be saved.", true);
-            return;
+            // No RefreshAccess/Load here: it could reset/rebase the authored blank editor.
+            // Add appends under current Owner/session + duplicate checks in the write transaction.
+            var result = _services.CustomFields.Add(_user, entity, LabelText,
+                SelectedType.Key, OptionsText, Required, HelpText);
+            if (!result.Ok)
+            {
+                _definitionUpdate.ObserveFailure(result);
+                if (!_definitionUpdate.Ready) InvalidateUpdate(result.Error ?? "The new field is unconfirmed. Verify before retrying.");
+                else SetStatus(result.Error ?? "The new field was not saved.", true);
+                return;
+            }
+            _definitionUpdate.AcknowledgeCommit();
+            // Consume input before ANY collection/property/status callbacks. Do not turn Add into an edit/replay.
+            _editingId = 0;
+            _selectedField = null;
+            _isEditing = false;
+            _labelText = _optionsText = _helpText = string.Empty;
+            _required = false;
+            _selectedType = Types[0];
+            var saved = result.CustomDefinitionEdit;
+            var created = result.Value;
+            if (created is null || created.Id <= 0 || created.Entity != entity || saved is null
+                || saved.FieldId != created.Id || saved.Entity != entity || SelectedTab.Entity != entity)
+                throw new InvalidOperationException("The new definition handoff is missing or mismatched.");
+            var rows = saved.Fields;
+            if (rows.SingleOrDefault(field => field.Id == created.Id) is not { } target
+                || !CustomFieldDefinitionState.Matches(created, target)
+                || !ReferenceEquals(created.EditVersion, target.EditVersion)
+                || rows.Any(field => field.Entity != entity || field.EditVersion is null))
+                throw new InvalidOperationException("The new definition/entity baseline is incomplete.");
+            ReplaceRows(rows, 0);
+            NotifyConsumedEditor();
+            SetStatus("SAVED. New field added. Select a field to edit, or enter a different new question. " + string.Join(" ", result.Warnings), false);
+            if (_editingId != 0 || _selectedField is not null || _isEditing || _required
+                || _labelText.Length != 0 || _optionsText.Length != 0 || _helpText.Length != 0 || !ReferenceEquals(_selectedType, Types[0])
+                || Fields.Count != rows.Count || Fields.Where((row, index) =>
+                    !CustomFieldDefinitionState.Matches(row.Field, rows[index]) || !ReferenceEquals(row.Field.EditVersion, rows[index].EditVersion)).Any())
+                throw new InvalidOperationException("The new definition cleanup was not retained.");
+            _definitionUpdate.CompleteReset();
         }
-        var warnings = result.Warnings.Count > 0 ? " " + string.Join(" ", result.Warnings) : string.Empty;
-        FinishWrite(_editingId, "Saved. The form shows it now." + warnings);
+        catch (Exception exception)
+        {
+            _definitionUpdate.ObserveException();
+            _services.Log.Error("Custom definition add/handoff did not finish.", exception);
+            InvalidateUpdate(_definitionUpdate.WasAcknowledged
+                ? "SAVED. New field stored, but the editor could not reset. Verify before reopening;do not add it again."
+                : "The new field is unconfirmed. Verify definitions before reopening or retrying.");
+        }
+        finally { _savingDefinitionUpdate = false; }
     }
 
     private void SaveExisting()
