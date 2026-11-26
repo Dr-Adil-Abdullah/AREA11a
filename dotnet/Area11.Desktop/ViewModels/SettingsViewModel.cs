@@ -75,6 +75,9 @@ public sealed class SettingsViewModel : ObservableObject
     // ---- Cloud sync (F-48): the key is typed here but never read back onto the screen ----
     private StartupModeOption? _selectedStartupMode;
     private bool _focusGuardEnabled;
+    private bool _savingSettings;
+    private readonly PostingAttemptGuard _startupAttempt = new();
+    private string _startupSaveHint = string.Empty;
 
     private bool _syncEnabled;
     private string _syncUrl = string.Empty;
@@ -799,6 +802,7 @@ public sealed class SettingsViewModel : ObservableObject
     private void Load()
     {
         if (_changingIcon) return;
+        if (_savingSettings) return;
         if (!UpdateSettingsAccess()) return;
         _editForm = null;
         var keys = FormKeys.Concat(AppLabelService.Definitions.Select(d => d.SettingKey))
@@ -1131,9 +1135,20 @@ public sealed class SettingsViewModel : ObservableObject
     private void Save()
     {
         if (_changingIcon) return;
+        if (_savingSettings) return;
+        if (!_startupAttempt.Ready) { SetStatus(_startupSaveHint, true); return; }
+        _savingSettings = true;
+        try { SaveCore(); }
+        finally { _savingSettings = false; }
+    }
+
+    private void SaveCore()
+    {
+        if (_changingIcon) return;
         if (!UpdateSettingsAccess()) return;
         var form = _editForm;
         if (form is null) { SetStatus("Refresh Settings and review the form before saving.", true); return; }
+        var startupChoice = SelectedStartupMode;
 
         var paper = SelectedPaper;
         if (paper is null)
@@ -1354,21 +1369,11 @@ public sealed class SettingsViewModel : ObservableObject
         // ordinary save must not rewrite the registry or audit a choice nobody made.
         var startupNote = string.Empty;
 
-        if (CanChangeStartup && SelectedStartupMode is not null
-            && SelectedStartupMode.Key != form.GetString(StartupService.ModeKey))
+        if (CanChangeStartup && startupChoice is not null
+            && startupChoice.Key != form.GetString(StartupService.ModeKey))
         {
-            var startup = _services.Startup.SetMode(
-                _user, SelectedStartupMode.Key, Environment.ProcessPath ?? string.Empty, form);
-
-            if (!startup.Ok)
-            {
-                SetStatus("Settings SAVED; startup mode was not saved. Refresh before retrying. " + startup.Error, true);
-                return;
-            }
-
-            form = startup.SettingsEdit ?? form;
-            _editForm = form;
-            startupNote = " Startup: " + _services.Startup.ModeLabel + " " + _services.Startup.ScopeText;
+            if (!TrySaveStartupChoice(form, startupChoice.Key, out var startupForm, out startupNote)) return;
+            form = startupForm;
         }
 
         // Screen lockdown (owner's word, Nov 2026): a plain setting, owner-only at the service
@@ -1398,6 +1403,66 @@ public sealed class SettingsViewModel : ObservableObject
         {
             LockdownChromeChanged?.Invoke();
         }
+    }
+
+    public string StartupSaveHint => _startupSaveHint;
+    public bool HasStartupSaveHint => _startupSaveHint.Length > 0;
+
+    private bool TrySaveStartupChoice(SettingsEditForm form, string wanted, out SettingsEditForm savedForm, out string note)
+    {
+        savedForm = form; note = string.Empty;
+        if (!_startupAttempt.TryBegin()) return false;
+        string? serviceFailure = null;
+        try
+        {
+            var saved = _services.CheckInteractiveSession()
+                ? _services.Startup.SetModeChecked(_user, wanted, Environment.ProcessPath ?? string.Empty, form)
+                : new ServiceResult { Error = "Sign in again before changing startup.", NoCommitConfirmed = true };
+            if (!saved.Ok)
+            {
+                serviceFailure = saved.Error;
+                _startupAttempt.ObserveFailure(saved);
+                _editForm = null;
+                SetStartupSaveHint("Settings SAVED; " + saved.Error);
+                SetStatus(_startupSaveHint, true);
+                return false;
+            }
+            _startupAttempt.AcknowledgeCommit();
+            var receipt = saved.SettingsEdit;
+            if (receipt is null || receipt.GetString(StartupService.ModeKey) != wanted)
+                throw new InvalidOperationException("The startup save receipt is missing or mismatched.");
+            _editForm = receipt;
+            SelectedStartupMode = StartupModeOptions.First(option => option.Key == wanted);
+            note = " Startup SAVED: " + _services.Startup.ModeLabel + " " + _services.Startup.ScopeText
+                + " " + string.Join(" ", saved.Warnings);
+            SetStartupSaveHint(string.Empty);
+            SetStatus("Settings SAVED." + note, false);
+            if (!ReferenceEquals(_editForm, receipt) || SelectedStartupMode?.Key != wanted)
+                throw new InvalidOperationException("The saved startup choice was not retained.");
+            savedForm = receipt;
+            _startupAttempt.CompleteReset();
+            return true;
+        }
+        catch (Exception exception)
+        {
+            _startupAttempt.ObserveException();
+            _editForm = null;
+            _services.Log.Error("Startup choice save/handoff did not finish.", exception);
+            var message = serviceFailure is not null
+                ? "Settings SAVED; " + serviceFailure + " Page notification failed; review the startup result before retrying."
+                : _startupAttempt.WasAcknowledged
+                ? "Settings SAVED; startup SAVED, but the page could not refresh. Verify Settings and both Windows entries before reopening; do not repeat the change."
+                : "Settings SAVED; startup change is unconfirmed. Verify Settings and both Windows entries before reopening or retrying.";
+            try { SetStartupSaveHint(message); SetStatus(message, true); }
+            catch (Exception notification) { _services.Log.Error("Startup failure notification did not finish.", notification); }
+            return false;
+        }
+    }
+
+    private void SetStartupSaveHint(string message)
+    {
+        _startupSaveHint = message;
+        OnPropertyChanged(nameof(StartupSaveHint)); OnPropertyChanged(nameof(HasStartupSaveHint));
     }
 
     // ---------------------------- Cloud sync ----------------------------

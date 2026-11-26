@@ -1,5 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
+> **⏳ Startup کا نتیجہ — v0.143.0:** Settings کی عام تبدیلیاں پہلے الگ محفوظ ہوتی ہیں،startupبعدمیں؛دونوںکواکٹھاrollbackنہسمجھیں۔ Windows entryپڑھی/لکھی/تصدیقنہہوتوپیغامدیکھیں۔ **Unconfirmed** یاstartup **SAVED** کےبعدخرابیپرSaveنہدہرائیں؛اصلstartupsettingاورHKLM/HKCUکیArea11entriesکیماہرانہتصدیقکےبعدreopen۔ Refresh/regrantاسیصفحےکاuncertainguardنہیںکھولتے۔ Adminکےبغیرفallbackصرفخالیmachineentryکےساتھ؛پرانیentryہوتوپہلےاسیPCپرمعاونتسےتصدیقکریں،اندھارجسٹریeditنہکریں۔ [PT-82/حدود](STARTUP-REGISTRY-OUTCOME-URDU.md)؛اصلWindowsجانچباقی،installer/recoveryراستےیہاںنہیںبدلے۔
+
+
 > **⏳ Counter کا پرنٹ انتخاب — v0.142.0:** **Print automatically** صرف محفوظ تبدیلی کے بعد بدلے گا۔ واضح no-commit پر پچھلا انتخاب برقرار؛**Read print choice** سے صرف یہ setting پڑھ کر موجودہ انتخاب دیکھیں،کارٹ/customer/payment نہیں بدلیں گے۔ **Unconfirmed** یاSAVEDکےبعدصفحےکیخرابی پر automaticprintیہاںبند اوردوبارہتبدیلیروکیجاتی ہے؛دستیReprintبرقرار۔ تبدیلی نہ دہرائیں،پہلےاصلSettings/auditتصدیق،پھرCounterreopen؛عامRefresh/timer/regrantاسguardکونہیںکھولتے۔ [PT-81/حدود](COUNTER-AUTOPRINT-EDIT-URDU.md)؛اصلWindows/WPFجانچباقی۔
 
 

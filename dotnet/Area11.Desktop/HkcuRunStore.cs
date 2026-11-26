@@ -9,11 +9,16 @@ namespace Area11.Desktop;
 /// for all accounts still starts the program for the account that saved it - and says so.
 /// Same seam, same value name, lives in Desktop for the same reason (registry is Windows-only).
 /// </summary>
-public sealed class HkcuRunStore : IAutoStartStore
+public sealed class HkcuRunStore : ICheckedAutoStartStore
 {
     private const string RunKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
 
     public const string ValueName = "Area11";
+
+    public AutoStartEntry Capture() => RegistryRunEntry.Capture(Registry.CurrentUser);
+
+    public void Replace(AutoStartEntry expected, AutoStartEntry replacement) =>
+        RegistryRunEntry.Replace(Registry.CurrentUser, expected, replacement);
 
     public void Enable(string exePath)
     {

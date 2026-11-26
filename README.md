@@ -1,5 +1,8 @@
 # Area11 — pharmacy POS + inventory for Windows
 
+> **⏳ موجودہ5.1 — v0.143.0 Tansy:** Settings startup کا الگcheckedراستہ؛rawcommand/kind/presenceکےimmutable snapshots،compare-before-write/readback،معلومDBrollbackپرconditionalrestore،unknownپرکوئیcompensationنہیں؛verifiedabsentmachineکےساتھہیfallback،Desktoppinnedintent/ack/retainedguard۔ ✅133static/40source-negative scripts/71نئیlexicalmutations محدود؛⏳41نئےC#cases/3557suiteاوراصلWindows/registry/provider/WPFباقی۔ مالککا3418PASSثابت ہے،pendingنہیں۔ [PT-82/تفصیل/گزشتہتینcheckpoints](docs/STARTUP-REGISTRY-OUTCOME-URDU.md)؛پراناSetMode/installer/recoveryراستہاورباقیSettings/StockTake/guideUIعملیجانچکھلے؛6/installerنہیں۔ نیچےپرانےcountsتاریخیہیں۔
+
+
 > **⏳ موجودہ5.1 — v0.142.0 Vervain:** Counter کاautoPrint ابDB-loaded baseline/currentPOS+session/checkedSave اور exactreceiptکےبعدlocalchoice؛معلومno-commitپرپچھلاانتخاب،unknownپرautomaticoff/retainedguard؛صرفprintchoiceپڑھنےکاالگبٹن،کارٹ/مالیحساب/دستیReprintبرقرار۔ ✅132static/39source-negative scripts/41نئیlexicalmutations محدود؛⏳24نئےC#cases/3516suiteاوراصلWindows/provider/WPFباقی۔ مالککاv0.138.0کا3418PASSثابت ہے،pendingنہیں۔ [PT-81/ہوااورباقی](docs/COUNTER-AUTOPRINT-EDIT-URDU.md)؛startupregistryکےexactrestore/unknowncompensationمسائلصرفدرج،حلنہیں؛باقیSettings/StockTake/نئیguideUIعملیجانچکھلی،6/installerنہیں۔ نیچےپرانےcheckpointcountsتاریخیہیں۔
 
 

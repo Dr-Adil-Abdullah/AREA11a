@@ -9,11 +9,16 @@ namespace Area11.Desktop;
 /// refused with a sentence, never a stack trace. Lives in Desktop because the registry API only
 /// exists on Windows and Core builds for plain .NET.
 /// </summary>
-public sealed class HklmRunStore : IAutoStartStore
+public sealed class HklmRunStore : ICheckedAutoStartStore
 {
     private const string RunKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
 
     public const string ValueName = "Area11";
+
+    public AutoStartEntry Capture() => RegistryRunEntry.Capture(Registry.LocalMachine);
+
+    public void Replace(AutoStartEntry expected, AutoStartEntry replacement) =>
+        RegistryRunEntry.Replace(Registry.LocalMachine, expected, replacement);
 
     public void Enable(string exePath)
     {

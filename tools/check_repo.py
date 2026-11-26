@@ -7627,7 +7627,7 @@ def check_settings_current_boundaries():
                   '_services.Settings.CheckCloudAccess(_user).Ok', 'ClearCloudData(); ClearStaffData(); LabelRows.Clear();',
                   'SyncKey = SyncUrl = SyncTable = SyncShopId = SyncAutomaticMinutesText = string.Empty;',
                   'public bool CanChangeCloud => CanUseSettings && _cloudAccessAllowed;',
-                  'if (CanChangeCloud && (!int.TryParse', 'Settings SAVED; startup mode was not saved.',
+                  'if (CanChangeCloud && (!int.TryParse', 'SetStartupSaveHint("Settings SAVED; " + saved.Error)',
                   'Settings SAVED; screen lock was not saved.'):
         if token not in vm: FAILURES.append(f'Current Settings UI lifecycle missing {token}')
     if '_services.Cloud.KeyLabel' in vm or 'Visibility="{Binding CanUseSettings, Converter={StaticResource BoolToVis}}"' not in view:
@@ -10226,6 +10226,97 @@ def check_counter_autoprint_edit():
     REPORT.append('P5.1 Counter autoPrint:DB-loaded single-key CAS/current POS+session,exact receipt before local display,known refusal retains choice;unknown fail-closed retained guard,preference-only read;24 C# cases UNRUN,not WPF/provider/registry/whole5.1 proof')
 
 
+def check_startup_registry_outcomes():
+    """Exact-value snapshots/conditional compensation lexical contracts, not Windows/WPF execution."""
+    def need(text, tokens, label):
+        for token in tokens:
+            if token not in text: FAILURES.append('Startup registry ' + label + ': missing ' + token)
+    def ordered(text, tokens, label):
+        points = [text.find(token) for token in tokens]
+        if min(points) < 0 or points != sorted(points): FAILURES.append('Startup registry order: ' + label)
+    service = (DOTNET / 'Area11.Core/Services/StartupService.cs').read_text()
+    checked = service.split('    public ServiceResult SetModeChecked(', 1)[1].split('    private static bool HasCommand(', 1)[0]
+    need(checked, ['if (expected is null)', '_settings.CheckStartupEdit(actor, expected)',
+         '_machine is not ICheckedAutoStartStore machine || _userStore is not ICheckedAutoStartStore user',
+         'desired = clean == Manual ? AutoStartEntry.Missing : AutoStartEntry.Command(exePath);',
+         'machineBefore = machine.Capture();', 'userBefore = user.Capture();',
+         'var machineAttempted = false;', 'var userAttempted = false;',
+         'var settingsStarted = false;', 'var settingsSaved = false;',
+         'machineAttempted = true;', 'machine.Replace(machineBefore, machineTarget);',
+         'clean != Manual && IsAccessRefusal(exception)',
+         'if (machineBefore.IsPresent || !machine.Capture().Matches(machineBefore)) throw;',
+         'machineTarget = machineBefore;', 'userTarget = desired;', 'userAttempted = true;',
+         'user.Replace(userBefore, userTarget);',
+         '!machine.Capture().Matches(machineTarget) || !user.Capture().Matches(userTarget)',
+         'settingsStarted = true;',
+         '_settings.SaveEditForm(new Dictionary<string, object?> { [ModeKey] = clean }, actor, expected)',
+         'if (!saved.NoCommitConfirmed)', 'Windows entries were not rolled back.',
+         'var restored = RestoreChecked(machine, machineBefore, machineTarget, machineAttempted)',
+         '& RestoreChecked(user, userBefore, userTarget, userAttempted);',
+         'NoCommitConfirmed = restored', 'settingsSaved = true;',
+         'saved.SettingsEdit is null || saved.SettingsEdit.GetString(ModeKey) != clean',
+         'Ok = true, SettingsEdit = saved.SettingsEdit', 'if (settingsStarted)',
+         'settingsSaved ? "SAVED. Startup mode was stored; "'], 'checked service')
+    ordered(checked, ['if (expected is null)', 'CheckStartupEdit(', 'machineBefore = machine.Capture();',
+        'userBefore = user.Capture();', 'machineAttempted = true;', 'machine.Replace(',
+        'userAttempted = true;', 'user.Replace(', 'settingsStarted = true;', 'SaveEditForm(',
+        'if (!saved.NoCommitConfirmed)', 'var restored = RestoreChecked(', 'settingsSaved = true;',
+        'saved.SettingsEdit is null', 'Ok = true, SettingsEdit'], 'preflight/capture/apply/observedDB/receipt')
+    unknown = checked.split('if (!saved.NoCommitConfirmed)', 1)[-1].split('var restored = RestoreChecked', 1)[0]
+    if '.Replace(' in unknown or 'RestoreChecked(' in unknown: FAILURES.append('Unknown DB outcome must not compensate Windows')
+    for forbidden in ('RestoreQuietly(', 'DisableQuietly(', 'EnabledOf(', '.Enable(', '.Disable(', '_settings.Set('):
+        if forbidden in checked: FAILURES.append('Checked startup may not use boolean/blind legacy route: ' + forbidden)
+    restore = service.split('    private bool RestoreChecked(', 1)[1].split('    /// <summary>', 1)[0]
+    need(restore, ['var current = store.Capture();', 'if (current.Matches(before)) return true;',
+         'if (!attempted || !current.Matches(intended)) return false;', 'store.Replace(intended, before);',
+         'return store.Capture().Matches(before);', 'return false;'], 'conditional raw restore')
+    entry = (DOTNET / 'Area11.Core/Services/CheckedAutoStartStore.cs').read_text()
+    need(entry, ['public interface ICheckedAutoStartStore : IAutoStartStore', 'public object? Value => Copy(_value);',
+         '_value = Copy(value);', 'if (!valid) throw', 'Kind == other.Kind', 'IsPresent == other.IsPresent',
+         'bytes.SequenceEqual(next)', 'words.SequenceEqual(next, StringComparer.Ordinal)',
+         'byte[] bytes => bytes.ToArray()', 'string[] words => words.ToArray()'], 'immutable typed snapshot')
+    registry = (DOTNET / 'Area11.Desktop/RegistryRunEntry.cs').read_text()
+    need(registry, ['lock (Gate)', 'GetValueNames().Contains(ValueName, StringComparer.OrdinalIgnoreCase)',
+         'GetValueKind(ValueName)', 'RegistryValueOptions.DoNotExpandEnvironmentNames',
+         'AutoStartEntry.Present((AutoStartValueKind)(int)kind, value)',
+         'if (!Capture(root).Matches(expected))', 'if (expected.Matches(replacement)) return;',
+         'key.SetValue(ValueName, replacement.Value!, (RegistryValueKind)(int)replacement.Kind)',
+         'key.DeleteValue(ValueName, throwOnMissingValue: false)',
+         'if (!Capture(root).Matches(replacement))'], 'Windows adapter')
+    if 'catch' in registry or 'CreateSubKey(' in registry: FAILURES.append('Checked registry must propagate read/write faults and not create keys')
+    for cls, root in (('HklmRunStore', 'LocalMachine'), ('HkcuRunStore', 'CurrentUser')):
+        adapter = (DOTNET / ('Area11.Desktop/' + cls + '.cs')).read_text()
+        need(adapter, [': ICheckedAutoStartStore', 'RegistryRunEntry.Capture(Registry.'+root+')',
+                      'RegistryRunEntry.Replace(Registry.'+root+', expected, replacement)'], cls)
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/SettingsViewModel.cs').read_text()
+    save = vm.split('    private void Save()\n', 1)[1].split('    private void SaveCore()', 1)[0]
+    need(save, ['if (_savingSettings) return;', 'if (!_startupAttempt.Ready)', '_savingSettings = true;',
+                'try { SaveCore(); }', 'finally { _savingSettings = false; }'], 'Save reentry/outcome guard')
+    ui = vm.split('    private bool TrySaveStartupChoice(', 1)[1].split('    private void SetStartupSaveHint(', 1)[0]
+    need(ui, ['if (!_startupAttempt.TryBegin()) return false;', '_services.CheckInteractiveSession()',
+         '_services.Startup.SetModeChecked(_user, wanted, Environment.ProcessPath ?? string.Empty, form)',
+         '_startupAttempt.ObserveFailure(saved);', 'serviceFailure = saved.Error;', '_editForm = null;',
+         'SetStartupSaveHint("Settings SAVED; " + saved.Error)', '_startupAttempt.AcknowledgeCommit();',
+         'var receipt = saved.SettingsEdit;', 'receipt is null || receipt.GetString(StartupService.ModeKey) != wanted',
+         '_editForm = receipt;', 'SelectedStartupMode = StartupModeOptions.First(option => option.Key == wanted);',
+         '!ReferenceEquals(_editForm, receipt) || SelectedStartupMode?.Key != wanted',
+         'savedForm = receipt;', '_startupAttempt.CompleteReset();', '_startupAttempt.ObserveException();',
+         '_startupAttempt.WasAcknowledged'], 'exact UI handoff')
+    ordered(ui, ['TryBegin()', 'SetModeChecked(', 'if (!saved.Ok)', '_startupAttempt.AcknowledgeCommit();',
+         'var receipt =', '_editForm = receipt;', 'SelectedStartupMode =', 'SetStatus("Settings SAVED."',
+         '!ReferenceEquals(_editForm, receipt)', '_startupAttempt.CompleteReset();'], 'ack/receipt/notification/verdict/reset')
+    need(vm, ['var startupChoice = SelectedStartupMode;', 'TrySaveStartupChoice(form, startupChoice.Key,',
+              'public string StartupSaveHint => _startupSaveHint;'], 'pinned intent/sticky hint')
+    if vm.count('_startupAttempt =') != 1 or vm.count('_startupAttempt.CompleteReset();') != 1:
+        FAILURES.append('Startup guard must survive Load/Refresh/regrant with one full handoff reset')
+    if '_services.Startup.SetMode(' in vm: FAILURES.append('Settings must use the checked startup route')
+    view = (DOTNET / 'Area11.Desktop/Views/SettingsView.xaml').read_text()
+    need(view, ['Text="{Binding StartupSaveHint}"'], 'persistent UI notice')
+    tests = (DOTNET / 'Area11.Tests/StartupRegistryOutcomeTests.cs').read_text()
+    if tests.count('[Fact]') + tests.count('[InlineData(') != 41: FAILURES.append('Startup registry needs41 additive C# cases')
+    REPORT.append('P5.1 Settings startup:raw immutable Run snapshots/compare-before-write/readback;conditional known-rollback compensation,unknown never compensates;checked UI pinned intent/ack/retained guard;41 C# cases UNRUN,not registry atomicity/Windows/WPF/installer/legacy-route closure')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -10356,6 +10447,7 @@ def main() -> int:
     check_custom_definition_add_outcomes()
     check_custom_definition_move_outcomes()
     check_counter_autoprint_edit()
+    check_startup_registry_outcomes()
     check_csharp_grammar()
 
     if not quiet:
