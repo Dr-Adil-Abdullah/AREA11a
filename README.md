@@ -1,5 +1,8 @@
 # Area11 — pharmacy POS + inventory for Windows
 
+> **⏳ موجودہ guide UI — v0.139.0 Anemone:** مالک کااصلv0.138.0Windows/.NET10Core+Tests **3418PASS/0FAIL/0skip،6m50s** ثابت ہے،pendingنہیں۔ مالک کیUIاصلاح پرپورےGuidelinesکارڈکاdouble-click،nestedcategorytree،اوپرذیلیcards،breadcrumbsاورنرمreaderstyling؛موادR3/96موضوعاتبرقرار۔ ✅129repo/3149guide/309navigation source/data checks؛⏳نئیDesktopbuild/WPFشکل،double-click/focusاورمالککیپسندکیعملیجانچباقی۔ [نتیجہ/تبدیلی/جانچ](docs/GUIDE-UI-HIERARCHY-URDU.md)۔3418suitecountبرقرار؛5.1Add/Moveاسحصےمیںنہیںبدلے،6/installerنہیں۔ نیچےUNRUNاورمحدودUIکےبیاناتپرانےcheckpointہیں۔
+
+
 > **⏳ موجودہ گائیڈ R3 — v0.138.0 Speedwell:** مالک کی منظوری سے تمام96 موضوعات کا مواد چھ اصل حصوں میں؛مشترکہ authored JSON سے native data اورخودکفیل offline کتاب۔ ✅3149 static/data اور205offline-browser assertions؛⏳اصل Windows/WPF اور3418C#suite UNRUN،یہاںSDKنہیں۔ پچھلاv0.136.2کا3397PASS الگ ثابت نتیجہ ہے۔ [موجودہ مواد/حدود/جانچ](docs/GUIDE-R3-CONTENT-URDU.md)؛گائیڈکےبعد5.1CustomAdd/Moveکاreviewواپس،باقی1تا5/Windowsابھیبند نہیں؛6/installerنہیں۔ نیچےمحدودR2کیمنظوری/counts/sourceپرانےcheckpointہیں۔
 
 

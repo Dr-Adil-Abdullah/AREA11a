@@ -134,12 +134,29 @@
                     </Button>
                 </StackPanel>
             </Border>
-            <Border Style="{StaticResource Card}" Margin="0,14,0,0">
+            <Border x:Name="GuidelinesCard" Margin="0,14,0,0" Cursor="Hand"
+                    MouseLeftButtonDown="OnGuidelinesCardMouseDown"
+                    ToolTip="Double-click anywhere on this card to open the Urdu guide">
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource Card}">
+                        <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="BorderBrush" Value="{DynamicResource BrandBrush}"/>
+                                <Setter Property="Background" Value="{DynamicResource BrandSoftBrush}"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
                 <StackPanel>
                     <TextBlock Text="Guidelines" Style="{StaticResource SectionTitle}"/>
-                    <TextBlock Text="اردو گائیڈ:چھ حصے،تین تیار نمونے،باقی موضوعات کی جگہ۔"
-                               TextWrapping="Wrap" Margin="0,6,0,10"/>
-                    <Button Content="Open Urdu guide" Click="OnGuidelines" HorizontalAlignment="Left"/>
+                    <TextBlock Text="اردو رہنمائی — چھ حصے، ہر موضوع تک ایک واضح راستہ۔"
+                               FlowDirection="RightToLeft" TextWrapping="Wrap" Margin="0,8,0,6"/>
+                    <TextBlock Text="کارڈ پر کہیں بھی ڈبل کلک کریں، یا نیچے کا بٹن دبائیں۔"
+                               FlowDirection="RightToLeft" Foreground="{DynamicResource MutedBrush}"
+                               FontSize="12" TextWrapping="Wrap" Margin="0,0,0,14"/>
+                    <Button Content="Open Urdu guide  →" Click="OnGuidelines" HorizontalAlignment="Left"
+                            Style="{StaticResource PrimaryButton}"/>
                 </StackPanel>
             </Border>
         </StackPanel>

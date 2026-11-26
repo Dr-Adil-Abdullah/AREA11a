@@ -2,43 +2,141 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              FlowDirection="RightToLeft" Background="{DynamicResource CanvasBrush}">
-    <Grid Margin="18">
+    <UserControl.Resources>
+        <!-- Local styles only: business forms and their normal controls keep their own styles. -->
+        <Style x:Key="GuideCardButton" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="Margin" Value="4"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource BrandSoftBrush}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource BrandBrush}"/>
+                </Trigger>
+                <Trigger Property="IsKeyboardFocused" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource BrandBrush}"/>
+                    <Setter Property="Background" Value="{DynamicResource BrandSoftBrush}"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource BrandSoftBrush}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource BrandDarkBrush}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="GuideTreeItem" TargetType="TreeViewItem">
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        </Style>
+    </UserControl.Resources>
+    <Grid Margin="20">
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-        <DockPanel Margin="0,0,0,14">
-            <Button DockPanel.Dock="Left" Content="×" FontSize="24" Padding="12,0" Click="OnClose"
-                    ToolTip="Close guide" AutomationProperties.Name="Close guide"/>
-            <StackPanel><TextBlock Text="AREA11 — اردو رہنمائی" FontSize="25" FontWeight="Bold"/>
-                <TextBlock x:Name="MetadataText" FontSize="13" TextWrapping="Wrap"/>
-            </StackPanel>
-        </DockPanel>
+        <Border Background="{DynamicResource BrandSoftBrush}" CornerRadius="14" Padding="18" Margin="0,0,0,16">
+            <DockPanel LastChildFill="True">
+                <Button DockPanel.Dock="Left" Content="×" FontSize="24" Padding="12,2" Click="OnClose"
+                        Style="{StaticResource GhostButton}" VerticalAlignment="Top"
+                        ToolTip="Close guide" AutomationProperties.Name="Close guide"/>
+                <StackPanel>
+                    <TextBlock Text="AREA11  /  رہنمائی" Foreground="{DynamicResource BrandDarkBrush}" FontSize="12"/>
+                    <TextBlock Text="ہر کام، قدم بہ قدم" FontSize="27" FontWeight="SemiBold" Margin="0,3,0,5"
+                               Foreground="{DynamicResource TextBrush}"/>
+                    <TextBlock Text="حصہ چنیں، ذیلی فہرست کھولیں، پھر اپنا موضوع پڑھیں۔" FontSize="14"
+                               Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="MetadataText" FontSize="11" Margin="0,7,0,0" Foreground="{DynamicResource MutedBrush}"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
         <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="240"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-            <Border Background="{DynamicResource SurfaceBrush}" Padding="12" Margin="0,0,0,0">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="270"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="12" BorderBrush="{DynamicResource LineBrush}"
+                    BorderThickness="1" Padding="14">
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Top">
-                        <Button Content="چھ حصوں کی فہرست" Click="OnHome" Margin="0,0,0,12"/>
-                        <TextBlock Text="تمام چھ حصوں میں تلاش"/>
-                        <TextBox x:Name="SearchBox" TextChanged="OnSearch" Margin="0,6,0,8"
-                                 AutomationProperties.Name="Search guide"/>
-                        <TextBlock x:Name="StatusText" TextWrapping="Wrap" FontSize="12" Margin="0,0,0,8"/>
+                        <Button Content="⌂  چھ حصوں کی فہرست" Click="OnHome" Style="{StaticResource GhostButton}"
+                                HorizontalContentAlignment="Right" Margin="0,0,0,16"/>
+                        <TextBlock Text="گائیڈ میں تلاش" FontWeight="SemiBold" FontSize="15"/>
+                        <Grid Margin="0,8,0,8">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox x:Name="SearchBox" TextChanged="OnSearch" Padding="8" MinWidth="0"
+                                     AutomationProperties.Name="Search guide" ToolTip="عنوان، متن یا بٹن کا نام لکھیں"/>
+                            <Button Grid.Column="1" Content="×" Click="OnClearSearch" Padding="8,2" Margin="4,0,0,0"
+                                    Style="{StaticResource GhostButton}" ToolTip="Clear search" AutomationProperties.Name="Clear guide search"/>
+                        </Grid>
+                        <TextBlock x:Name="StatusText" TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,12"/>
+                        <Separator Margin="0,0,0,8"/>
                     </StackPanel>
-                    <ListBox x:Name="TopicList" DisplayMemberPath="Path" SelectionChanged="OnSelection"
-                             BorderThickness="0" HorizontalContentAlignment="Stretch"/>
+                    <!-- Keep the native tree template/expander and keyboard semantics; all nodes use the shared parent graph. -->
+                    <Grid>
+                    <TreeView x:Name="TopicTree" SelectedItemChanged="OnTreeSelection" BorderThickness="0"
+                              Background="Transparent" ItemContainerStyle="{StaticResource GuideTreeItem}"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="Guide sections and subtopics"/>
+                    <ListBox x:Name="SearchResults" SelectionChanged="OnSearchSelection"
+                             Visibility="Collapsed" BorderThickness="0" Background="Transparent"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch"
+                             AutomationProperties.Name="Guide search results">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate><TextBlock Text="{Binding Path}" TextWrapping="Wrap" Padding="6" FontSize="14"/></DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    </Grid>
                 </DockPanel>
             </Border>
-            <Grid Grid.Column="1" Margin="0,0,16,0">
-                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-                <TextBlock x:Name="PathText" TextWrapping="Wrap" Margin="0,0,0,10"/>
-                <ScrollViewer x:Name="Landing" Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="520">
-                    <UniformGrid x:Name="RootGrid" Columns="2"/>
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                <WrapPanel x:Name="BreadcrumbPanel" Margin="0,0,0,10" AutomationProperties.Name="Guide topic path"/>
+                <ScrollViewer x:Name="Landing" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel>
+                        <TextBlock Text="آج کس کام میں مدد چاہیے؟" FontSize="24" FontWeight="SemiBold" Margin="4,4,4,6"/>
+                        <TextBlock Text="چھ حصے، ایک ترتیب۔ کسی حصے سے آغاز کریں۔" FontSize="15"
+                                   Foreground="{DynamicResource MutedBrush}" Margin="4,0,4,18" TextWrapping="Wrap"/>
+                        <UniformGrid x:Name="RootGrid" Columns="2"/>
+                        <TextBlock Text="یہ صرف پڑھنے کی جگہ ہے؛ آپ کا اصل کام وہیں رہتا ہے۔" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="8,18,8,8"/>
+                    </StackPanel>
                 </ScrollViewer>
-                <DockPanel x:Name="ArticlePanel" Grid.Row="2" Visibility="Collapsed">
-                    <ScrollViewer DockPanel.Dock="Bottom" MaxHeight="125" VerticalScrollBarVisibility="Auto">
-                        <WrapPanel x:Name="ChildPanel" Margin="0,10,0,0"/>
-                    </ScrollViewer>
-                    <FlowDocumentScrollViewer x:Name="Reader" IsToolBarVisible="True" MinZoom="80" MaxZoom="180"
-                                              VerticalScrollBarVisibility="Auto"/>
-                </DockPanel>
+                <Border x:Name="ArticlePanel" Grid.Row="1" Visibility="Collapsed" Background="{DynamicResource SurfaceBrush}"
+                        BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" CornerRadius="12" Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                        <StackPanel Margin="4,0,4,12">
+                            <TextBlock x:Name="ArticleTitle" FontSize="25" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                            <TextBlock x:Name="PathText" FontSize="12" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,0"/>
+                        </StackPanel>
+                        <!-- Direct children are a directory ABOVE the article, not mixed with related-topic links below it. -->
+                        <Expander x:Name="ChildrenSection" Grid.Row="1" Margin="0,0,0,12" IsExpanded="True">
+                            <Expander.Header><TextBlock x:Name="ChildrenTitle" FontSize="15" FontWeight="SemiBold" Margin="4,0,4,6"
+                                       Foreground="{DynamicResource BrandDarkBrush}"/></Expander.Header>
+                            <ScrollViewer MaxHeight="150" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <WrapPanel x:Name="ChildPanel"/>
+                            </ScrollViewer>
+                        </Expander>
+                        <FlowDocumentScrollViewer x:Name="Reader" Grid.Row="2" IsToolBarVisible="False" MinZoom="80" MaxZoom="180"
+                                                  VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                                                  AutomationProperties.Name="Guide article"/>
+                        <StackPanel x:Name="RelatedSection" Grid.Row="3" Margin="0,10,0,0">
+                            <Separator/><TextBlock Text="بھی دیکھیں" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="4,6,4,3"/>
+                            <ScrollViewer MaxHeight="72" VerticalScrollBarVisibility="Auto"><WrapPanel x:Name="RelatedPanel"/></ScrollViewer>
+                        </StackPanel>
+                    </Grid>
+                </Border>
             </Grid>
         </Grid>
     </Grid>
