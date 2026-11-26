@@ -44,7 +44,7 @@ def main():
     check([t['id'] for t in topics.values() if not t['parent']] ==
           ['sales', 'stock', 'customers', 'money', 'system', 'basics'], 'six approved sections/order')
     samples = {'sales.no-bill': 'no-bill.html', 'system.settings.printing': 'printing.html', 'basics.login': 'login.html'}
-    check({t['id'] for t in topics.values() if t['blocks']} == set(samples), 'only three complete sample articles')
+    check(len(topics) == 96 and all(t['blocks'] for t in topics.values()), 'all 96 topics populated')
     for ident, topic in topics.items():
         check(not topic['parent'] or topic['parent'] in topics, 'parent ' + ident)
         check(all(link in topics for link in topic['links']), 'related links ' + ident)
@@ -57,16 +57,21 @@ def main():
     book = (SOURCE / 'book.html').read_text()
     book_parser = MainText(); book_parser.feed(book)
     book_text = ' '.join(book_parser.fragments)
-    for ident, filename in samples.items():
-        source = (SOURCE / filename).read_text()
-        check(f"رف نمونہ {bundle['version']} · {bundle['date']}" in source, 'shared source metadata ' + filename)
-        parser = MainText(); parser.feed(source)
-        topic = topics[ident]
-        native_text = ' '.join(block['text'] + ' ' + ' '.join(cell for row in block['rows'] for cell in row) for block in topic['blocks'])
-        native_text = ' '.join(native_text.split())
-        for fragment in parser.fragments:
-            check(fragment in native_text, 'native dropped source text: ' + fragment)
-            check(fragment in book_text, 'book dropped source text: ' + fragment)
+    authored = json.loads((ROOT / 'docs/guide/guide-source.json').read_text())
+    check((bundle['version'], bundle['date']) == (authored['version'], authored['date']), 'central metadata parity')
+    for topic in authored['topics']:
+        ident = topic['id']
+        native = topics[ident]
+        check(all(native[key] == topic[key] for key in native), 'central/native article parity ' + ident)
+        check(topic['blocks'][0]['kind'] == 'paragraph', 'purpose first ' + ident)
+        check(any(b['kind'] == 'table' and len(b['rows']) >= 2 for b in topic['blocks']), 'control groups ' + ident)
+        check(any(b['kind'] == 'item' for b in topic['blocks']), 'operational steps ' + ident)
+        check(bool(topic['sources']), 'trace references ' + ident)
+        for reference in topic['sources']:
+            check((ROOT / reference.split('#')[0]).is_file(), 'existing source ' + reference)
+        for block in topic['blocks']:
+            for fragment in [block['text'], *(cell for row in block['rows'] for cell in row)]:
+                if fragment: check(' '.join(fragment.split()) in book_text, 'book dropped source text: ' + fragment)
     # Embedded font is exactly the previously published licensed font, not rewritten metadata.
     for filename in ['index.html', *samples.values(), 'book.html']:
         source = (SOURCE / filename).read_text()
@@ -77,7 +82,7 @@ def main():
         check(font == base64.b64decode(re.search(r'data:font/woff2;base64,([A-Za-z0-9+/=]+)', published)[1]), 'font bytes retained ' + filename)
         check('SIL OPEN FONT LICENSE' in source, 'offline license ' + filename)
     check('<script' not in book and 'src="http' not in book and 'href="http' not in book, 'standalone offline book')
-    check('محدود نمونہ' in book and 'placeholders' in book, 'sample book honestly labelled')
+    check('96 موضوعات' in book and 'placeholders' not in book and 'معلومات آئے گی' not in book, 'full authored edition honestly labelled')
     for ident in topics:
         check(f'id="{ident}"' in book, 'offline topic anchor ' + ident)
     for path in VIEWS.glob('*.xaml'):

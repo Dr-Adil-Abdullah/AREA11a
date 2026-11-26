@@ -20,7 +20,7 @@ public partial class GuideView : UserControl
         try
         {
             _library = GuideLibrary.Load(Path.Combine(AppContext.BaseDirectory, "Guide", "guide.json"));
-            MetadataText.Text = $"Docs {_library.Version} · {_library.Date} · تین مکمل نمونے؛باقی موضوعات placeholders";
+            MetadataText.Text = $"Docs {_library.Version} · {_library.Date} · چھ حصے؛ 96 موضوعات";
             foreach (var root in _library.Roots)
             {
                 var card = TopicButton(root, 22);
@@ -116,7 +116,7 @@ public partial class GuideView : UserControl
         ArticlePanel.Visibility = Visibility.Collapsed;
         Landing.Visibility = Visibility.Visible;
         PathText.Text = "پہلے حصہ منتخب کریں؛کوئی سبق خود نہیں کھولا گیا۔";
-        StatusText.Text = "فہرست،عنوان اورتین تیار مضامین کے متن میں تلاش۔";
+        StatusText.Text = "فہرست، عنوان اور تمام مضامین کے متن میں تلاش۔";
     }
 
     private void OnHome(object sender, RoutedEventArgs e) => ShowHome();

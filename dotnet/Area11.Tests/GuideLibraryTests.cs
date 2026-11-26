@@ -44,7 +44,8 @@ public sealed class GuideLibraryTests
         Assert.Equal(6, Read(Bundle()).Roots.Count);
         var packaged = GuideLibrary.Load(Path.Combine(AppContext.BaseDirectory, "Guide", "guide.json"));
         Assert.Equal(6, packaged.Roots.Count);
-        Assert.Equal("R2", packaged.Version);
+        Assert.Equal("R3", packaged.Version);
+        Assert.Equal("2026-11-10", packaged.Date);
         Assert.NotEmpty(packaged.Find("sales.no-bill")!.Blocks);
         Assert.NotEmpty(packaged.Find("system.settings.printing")!.Blocks);
         Assert.NotEmpty(packaged.Find("basics.login")!.Blocks);
@@ -75,5 +76,30 @@ public sealed class GuideLibraryTests
     {
         var b = Bundle(); b.Topics[^1].Title = "منفردعنوان";
         Assert.Equal("basics.login", Assert.Single(Read(b).Search("منفردعنوان")).Id);
+    }
+    [Fact] public void PackagedEditionHasContentAndControlGroupsForEveryTopic()
+    {
+        var guide = GuideLibrary.Load(Path.Combine(AppContext.BaseDirectory, "Guide", "guide.json"));
+        var queue = new Queue<GuideTopic>(guide.Roots);
+        var visited = new HashSet<string>();
+        while (queue.TryDequeue(out var topic))
+        {
+            Assert.True(visited.Add(topic.Id));
+            Assert.NotEmpty(topic.Blocks);
+            Assert.Equal("paragraph", topic.Blocks[0].Kind);
+            Assert.Contains(topic.Blocks, block => block.Kind == "table" && block.Rows.Count >= 2);
+            Assert.Contains(topic.Blocks, block => block.Kind == "item");
+            foreach (var link in topic.Links) Assert.NotNull(guide.Find(link));
+            foreach (var child in guide.Children(topic.Id)) queue.Enqueue(child);
+        }
+        Assert.Equal(96, visited.Count);
+    }
+
+    [Fact] public void PackagedSearchIncludesNewOperationalArticles()
+    {
+        var guide = GuideLibrary.Load(Path.Combine(AppContext.BaseDirectory, "Guide", "guide.json"));
+        Assert.Contains(guide.Search("Quarantine"), topic => topic.Id == "sales.returns");
+        Assert.Contains(guide.Search("Save minimum"), topic => topic.Id == "stock.reorder");
+        Assert.Contains(guide.Search("Restore now"), topic => topic.Id == "system.backup");
     }
 }

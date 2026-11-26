@@ -1,5 +1,8 @@
 # Area11 — pharmacy POS + inventory for Windows
 
+> **⏳ موجودہ گائیڈ R3 — v0.138.0 Speedwell:** مالک کی منظوری سے تمام96 موضوعات کا مواد چھ اصل حصوں میں؛مشترکہ authored JSON سے native data اورخودکفیل offline کتاب۔ ✅3149 static/data اور205offline-browser assertions؛⏳اصل Windows/WPF اور3418C#suite UNRUN،یہاںSDKنہیں۔ پچھلاv0.136.2کا3397PASS الگ ثابت نتیجہ ہے۔ [موجودہ مواد/حدود/جانچ](docs/GUIDE-R3-CONTENT-URDU.md)؛گائیڈکےبعد5.1CustomAdd/Moveکاreviewواپس،باقی1تا5/Windowsابھیبند نہیں؛6/installerنہیں۔ نیچےمحدودR2کیمنظوری/counts/sourceپرانےcheckpointہیں۔
+
+
 > **⏳ موجودہ منظورشدہ محدود گائیڈ — v0.137.0 Amaranth:** مالک نےnative WPF(A) منتخب کیا؛چھ حصے،تین موجودہ مکمل نمونے،باقی مخصوص placeholders۔ Dashboard utility سطح اورRight-click Help/الگ owned modeless Docs؛نیاtab نہیں،.NET10 برقرار۔ ✅129repo static اور919guide static/data assertions،42browser prototype+12offline-book checks؛یہ WPF ثبوت نہیں۔ ⏳19نئےC#facts/3416suite اورنئیWindows/WPF جانچ باقی؛SDK یہاں نہیں۔ مالک کاپچھلاv0.136.2Windows3397PASS/0FAIL/0skip اورDebug0errors/30warnings ثابت الگ نتیجہ ہے،pending نہیں۔ [دائرہ/طریقہ/باقی](docs/NATIVE-GUIDE-INTEGRATION-URDU.md)۔ 5.1کےباقی کام/1تا5ابھیبند نہیں؛6/installer نہیں۔ نیچےپرانیحیثیتیںتاریخی ہیں۔
 
 
