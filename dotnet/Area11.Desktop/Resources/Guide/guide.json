@@ -1,0 +1,1386 @@
+{
+  "version": "R2",
+  "date": "2026-11-10",
+  "topics": [
+    {
+      "id": "sales",
+      "title": "سیل",
+      "parent": "",
+      "path": "سیل",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "sales.pos",
+      "title": "کاؤنٹر / POS",
+      "parent": "sales",
+      "path": "سیل ← کاؤنٹر / POS",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "sales.pos.search",
+      "title": "چیز تلاش کرنا اورcart",
+      "parent": "sales.pos",
+      "path": "سیل ← کاؤنٹر / POS ← چیز تلاش کرنا اورcart",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "sales.pos.quantity",
+      "title": "مقدار،پیک اوریونٹ",
+      "parent": "sales.pos",
+      "path": "سیل ← کاؤنٹر / POS ← مقدار،پیک اوریونٹ",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "sales.pos.payment",
+      "title": "کسٹمر اورادائیگی",
+      "parent": "sales.pos",
+      "path": "سیل ← کاؤنٹر / POS ← کسٹمر اورادائیگی",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "sales.pos.pricing",
+      "title": "قیمت،رعایت اورExtra",
+      "parent": "sales.pos",
+      "path": "سیل ← کاؤنٹر / POS ← قیمت،رعایت اورExtra",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "sales.pos.availability",
+      "title": "سٹاک اوربغیرقیمت کیوارننگ",
+      "parent": "sales.pos",
+      "path": "سیل ← کاؤنٹر / POS ← سٹاک اوربغیرقیمت کیوارننگ",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "sales.pos.save",
+      "title": "بل محفوظ کرنےکانتیجہ",
+      "parent": "sales.pos",
+      "path": "سیل ← کاؤنٹر / POS ← بل محفوظ کرنےکانتیجہ",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "sales.pos.keyboard",
+      "title": "keyboard اورscanner",
+      "parent": "sales.pos",
+      "path": "سیل ← کاؤنٹر / POS ← keyboard اورscanner",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "sales.drafts",
+      "title": "Park اورفروخت کےDrafts",
+      "parent": "sales",
+      "path": "سیل ← Park اورفروخت کےDrafts",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "sales.bills",
+      "title": "بل،دوبارہرسید اورغلطوقت",
+      "parent": "sales",
+      "path": "سیل ← بل،دوبارہرسید اورغلطوقت",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "sales.returns",
+      "title": "اصل بل والیReturn اورQuarantine",
+      "parent": "sales",
+      "path": "سیل ← اصل بل والیReturn اورQuarantine",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "sales.no-bill",
+      "title": "نو بل / No Bill",
+      "parent": "sales",
+      "path": "سیل ← نو بل / No Bill",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "یہ تین تیار شدہ نمونوں میں سے ایک ہے؛پوری کتاب نہیں۔ متن کا source-review ہوا ہے،native WPF کا source شامل ہے؛اصل Windows مدد کی عملی جانچ باقی ہے۔ پرنٹ/PDF کیلئے Ctrl+P استعمال کرسکتے ہیں۔",
+          "rows": []
+        },
+        {
+          "kind": "paragraph",
+          "text": "گاہک مال واپس لایا ہے، لیکن اصل بل ابھی دستیاب نہیں۔ یہاں واپسی کا PR ریکارڈ بنایا جاتا ہے تاکہ واپس آیا مال، دی گئی رقم اور بعد میں ملنے والا بل ایک معلوم اندراج سے جڑے رہیں۔",
+          "rows": []
+        },
+        {
+          "kind": "paragraph",
+          "text": "یہ اصل بل والی عام Return کا شارٹ کٹ یا صرف پرنٹر آزمانے کا صفحہ نہیں۔ حقیقی shop میں مشق کیلئے PR نہ بنائیں۔",
+          "rows": []
+        },
+        {
+          "kind": "heading",
+          "text": "یہاں کیا کیا جاسکتا ہے؟",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "واپس آئی چیز، صحیح مقدار اور یونٹ کے ساتھ PR بنانا۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "PR کی slip دینا یا اسی slip کی نقل نکالنا۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "بل کے منتظر اندراج دیکھنا، مجاز طور پر اصل بل جوڑنا اور غلط اندراج منسوخ کرنا۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "Linked اور cancelled اندراج کی مستقل تاریخ دیکھنا۔",
+          "rows": []
+        },
+        {
+          "kind": "heading",
+          "text": "کس کو اجازت ہے؟",
+          "rows": []
+        },
+        {
+          "kind": "paragraph",
+          "text": "موجودہ فعال اکاؤنٹ اور متعلقہ Returns اجازت درکار ہے۔ اصل بل جوڑنے یا اندراج منسوخ کرنے کیلئے مالک/مینیجر کی شرط بھی ہے۔ صرف بٹن نظر آنے کو مستقل اجازت نہ سمجھیں۔",
+          "rows": []
+        },
+        {
+          "kind": "heading",
+          "text": "بٹنوں اور حصوں کا مطلب",
+          "rows": []
+        },
+        {
+          "kind": "table",
+          "text": "",
+          "rows": [
+            [
+              "نام",
+              "کام"
+            ],
+            [
+              "Add this item",
+              "منتخب چیز کو موجودہ واپسی کی tray میں شامل کرتا ہے؛ یہ خود مکمل PR محفوظ کرنا نہیں۔"
+            ],
+            [
+              "Save and give the slip",
+              "PR محفوظ کرنے کا عمل؛ stock اور refund کے حقیقی اثرات ہوتے ہیں۔"
+            ],
+            [
+              "Waiting for a bill",
+              "اصل بل سے جوڑنے کے منتظر PR۔"
+            ],
+            [
+              "Print this slip",
+              "اسی PR کی نقل، نیا refund نہیں۔"
+            ],
+            [
+              "Find bills / Use the selected bill",
+              "اصل بل تلاش کرنا اور جوڑنے کیلئے اس کا انتخاب۔"
+            ],
+            [
+              "Attach this bill",
+              "مجاز جانچ کے بعد PR کا اصل بل سے تعلق۔"
+            ],
+            [
+              "Cancel this entry and take the stock back",
+              "وجہ کے ساتھ غلط PR منسوخ کرنا اور متعلقہ stock واپس نکالنا۔"
+            ],
+            [
+              "Closed entries",
+              "Linked یا cancelled ریکارڈ؛ یہ حذف شدہ اندراج نہیں۔"
+            ]
+          ]
+        },
+        {
+          "kind": "heading",
+          "text": "نیا PR بنانے کا طریقہ",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "سیل → No Bill کھولیں اور اصل واپس آئی چیز تلاش کریں۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "صحیح Quantity اور Unit دیں، پھر Add this item کریں۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "Tray کی چیزیں اور کل مقدار اصل مال سے ملائیں۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "دستیاب customer شناخت، واقعی واپس دی گئی رقم اور وجہ/نوٹ درست لکھیں۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "دوبارہ جائزہ لے کر Save and give the slip کریں۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "کامیاب نتیجہ اور PR نمبر پڑھیں، پھر slip دیں۔",
+          "rows": []
+        },
+        {
+          "kind": "heading",
+          "text": "اصل بل مل جائے تو",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "درست PR منتخب کریں۔ مالک/مینیجر اصل INV نمبر دے، یا Find bills سے تلاش کرے۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "شناخت اور چیزیں ملائیں؛ صرف ملتے جلتے نام پر بل نہ جوڑیں۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "درست نتیجہ چن کر Use the selected bill، پھر Attach this bill کریں۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "نتیجہ اور warnings پڑھیں۔",
+          "rows": []
+        },
+        {
+          "kind": "paragraph",
+          "text": "بل جوڑنے سے وہی stock اور refund دوبارہ نہیں لگتے۔ Alert کے معاملے کی بندش الگ مجاز عمل ہوسکتی ہے۔",
+          "rows": []
+        },
+        {
+          "kind": "heading",
+          "text": "غلط اندراج منسوخ کرنا",
+          "rows": []
+        },
+        {
+          "kind": "paragraph",
+          "text": "درست PR پہچانیں، واضح Cancel reason لکھیں اور مجاز منسوخی کریں۔ مطلوبہ stock باقی نہ ہو تو عمل رک سکتا ہے۔ Cancel خود گاہک سے نقد رقم واپس وصول ہونے کا اندراج نہیں کرتا۔",
+          "rows": []
+        },
+        {
+          "kind": "heading",
+          "text": "کیا نہیں ہوسکتا؟",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "Slip نہ نکلنے پر وہی واپسی نیا PR بنا کر دوبارہ درج کرنا۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "بل جوڑ کر دوبارہ refund یا stock حاصل کرنا۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "Slip پھاڑ کر مستقل ریکارڈ مٹانا یا cancellation سے منفی stock بنانا۔",
+          "rows": []
+        },
+        {
+          "kind": "heading",
+          "text": "Save یا پرنٹ کے بعد خرابی",
+          "rows": []
+        },
+        {
+          "kind": "table",
+          "text": "",
+          "rows": [
+            [
+              "حالت",
+              "محفوظ اگلا قدم"
+            ],
+            [
+              "SAVED، مگر print/page خراب",
+              "اسی PR کی اصل حیثیت دیکھیں؛ وہی action دوبارہ نہ کریں۔"
+            ],
+            [
+              "Unconfirmed",
+              "نتیجہ تصدیق ہونے تک دوسرا PR یا refund نہ دیں۔"
+            ],
+            [
+              "محفوظ PR کی slip نہیں نکلی",
+              "اسی PR کی Print this slip، نیا اندراج نہیں۔"
+            ],
+            [
+              "فہرست load ناکام",
+              "اسے تصدیق شدہ خالی فہرست نہ سمجھیں۔"
+            ]
+          ]
+        },
+        {
+          "kind": "heading",
+          "text": "متعلقہ موضوعات",
+          "rows": []
+        },
+        {
+          "kind": "paragraph",
+          "text": "اصل بل والی Return · Bills · پرنٹ اور Preview",
+          "rows": []
+        }
+      ],
+      "links": [
+        "sales.returns",
+        "sales.bills",
+        "system.output"
+      ]
+    },
+    {
+      "id": "stock",
+      "title": "سٹاک",
+      "parent": "",
+      "path": "سٹاک",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "stock.products",
+      "title": "Products",
+      "parent": "stock",
+      "path": "سٹاک ← Products",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "stock.products.search",
+      "title": "تلاش اورکیٹیگری",
+      "parent": "stock.products",
+      "path": "سٹاک ← Products ← تلاش اورکیٹیگری",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "stock.products.edit",
+      "title": "نئی چیز اورترمیم",
+      "parent": "stock.products",
+      "path": "سٹاک ← Products ← نئی چیز اورترمیم",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "stock.products.pack",
+      "title": "پیک اورBase unit",
+      "parent": "stock.products",
+      "path": "سٹاک ← Products ← پیک اورBase unit",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "stock.products.pricing",
+      "title": "قیمتیں",
+      "parent": "stock.products",
+      "path": "سٹاک ← Products ← قیمتیں",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "stock.products.photos",
+      "title": "تصاویر اورCover",
+      "parent": "stock.products",
+      "path": "سٹاک ← Products ← تصاویر اورCover",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "stock.products.barcode",
+      "title": "بارکوڈ",
+      "parent": "stock.products",
+      "path": "سٹاک ← Products ← بارکوڈ",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "stock.products.history",
+      "title": "چیز کیتاریخ",
+      "parent": "stock.products",
+      "path": "سٹاک ← Products ← چیز کیتاریخ",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "stock.catalogs",
+      "title": "Catalogs اورManaged units",
+      "parent": "stock",
+      "path": "سٹاک ← Catalogs اورManaged units",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "stock.catalogs.category",
+      "title": "کیٹیگری",
+      "parent": "stock.catalogs",
+      "path": "سٹاک ← Catalogs اورManaged units ← کیٹیگری",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "stock.catalogs.company",
+      "title": "کمپنیاں",
+      "parent": "stock.catalogs",
+      "path": "سٹاک ← Catalogs اورManaged units ← کمپنیاں",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "stock.catalogs.formula",
+      "title": "نمک / Generic",
+      "parent": "stock.catalogs",
+      "path": "سٹاک ← Catalogs اورManaged units ← نمک / Generic",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "stock.catalogs.brand",
+      "title": "برانڈ اورکمپنی",
+      "parent": "stock.catalogs",
+      "path": "سٹاک ← Catalogs اورManaged units ← برانڈ اورکمپنی",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "stock.catalogs.units",
+      "title": "یونٹ اورترتیب",
+      "parent": "stock.catalogs",
+      "path": "سٹاک ← Catalogs اورManaged units ← یونٹ اورترتیب",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "stock.reorder",
+      "title": "Reorder اورآرڈر",
+      "parent": "stock",
+      "path": "سٹاک ← Reorder اورآرڈر",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "stock.purchases",
+      "title": "Purchases",
+      "parent": "stock",
+      "path": "سٹاک ← Purchases",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "stock.purchases.delivery",
+      "title": "اصلڈیلیوری،batch اورexpiry",
+      "parent": "stock.purchases",
+      "path": "سٹاک ← Purchases ← اصلڈیلیوری،batch اورexpiry",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "stock.purchases.payment",
+      "title": "لاگت،sample اورPaid now",
+      "parent": "stock.purchases",
+      "path": "سٹاک ← Purchases ← لاگت،sample اورPaid now",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "stock.purchases.drafts",
+      "title": "خریداری کےDrafts",
+      "parent": "stock.purchases",
+      "path": "سٹاک ← Purchases ← خریداری کےDrafts",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "stock.purchases.invoice",
+      "title": "محفوظinvoice اورنقل",
+      "parent": "stock.purchases",
+      "path": "سٹاک ← Purchases ← محفوظinvoice اورنقل",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "stock.writeoff",
+      "title": "Write-off",
+      "parent": "stock",
+      "path": "سٹاک ← Write-off",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "stock.minus",
+      "title": "Stock Minus اورReview",
+      "parent": "stock",
+      "path": "سٹاک ← Stock Minus اورReview",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "stock.count",
+      "title": "Stock-take:گنتی اورApply",
+      "parent": "stock",
+      "path": "سٹاک ← Stock-take:گنتی اورApply",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "customers",
+      "title": "کسٹمرز",
+      "parent": "",
+      "path": "کسٹمرز",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "customers.accounts",
+      "title": "Customers",
+      "parent": "customers",
+      "path": "کسٹمرز ← Customers",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "customers.accounts.identity",
+      "title": "شناخت،فون اورتصویر",
+      "parent": "customers.accounts",
+      "path": "کسٹمرز ← Customers ← شناخت،فون اورتصویر",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "customers.accounts.limit",
+      "title": "Credit limit",
+      "parent": "customers.accounts",
+      "path": "کسٹمرز ← Customers ← Credit limit",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "customers.accounts.ledger",
+      "title": "کھاتہ اورbalance",
+      "parent": "customers.accounts",
+      "path": "کسٹمرز ← Customers ← کھاتہ اورbalance",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "customers.accounts.collect",
+      "title": "رقم وصول کرنا",
+      "parent": "customers.accounts",
+      "path": "کسٹمرز ← Customers ← رقم وصول کرنا",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "customers.accounts.statement",
+      "title": "Statement اوررسید",
+      "parent": "customers.accounts",
+      "path": "کسٹمرز ← Customers ← Statement اوررسید",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "customers.recovery",
+      "title": "Udhaar Recovery",
+      "parent": "customers",
+      "path": "کسٹمرز ← Udhaar Recovery",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "customers.suppliers",
+      "title": "Suppliers",
+      "parent": "customers",
+      "path": "کسٹمرز ← Suppliers",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "customers.suppliers.account",
+      "title": "اکاؤنٹ اورواجب الادا",
+      "parent": "customers.suppliers",
+      "path": "کسٹمرز ← Suppliers ← اکاؤنٹ اورواجب الادا",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "customers.suppliers.pay",
+      "title": "ادائیگی",
+      "parent": "customers.suppliers",
+      "path": "کسٹمرز ← Suppliers ← ادائیگی",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "customers.suppliers.statement",
+      "title": "Statement",
+      "parent": "customers.suppliers",
+      "path": "کسٹمرز ← Suppliers ← Statement",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "customers.suppliers.return",
+      "title": "Supplier Return / SR",
+      "parent": "customers.suppliers",
+      "path": "کسٹمرز ← Suppliers ← Supplier Return / SR",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "customers.suppliers.expired",
+      "title": "Expired مال اورCredit note",
+      "parent": "customers.suppliers",
+      "path": "کسٹمرز ← Suppliers ← Expired مال اورCredit note",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "customers.doctors",
+      "title": "Doctors",
+      "parent": "customers",
+      "path": "کسٹمرز ← Doctors",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "customers.reps",
+      "title": "Company Reps",
+      "parent": "customers",
+      "path": "کسٹمرز ← Company Reps",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "money",
+      "title": "منی",
+      "parent": "",
+      "path": "منی",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "money.shift",
+      "title": "Shift / Cash drawer",
+      "parent": "money",
+      "path": "منی ← Shift / Cash drawer",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "money.shift.open",
+      "title": "گلا کھولنا",
+      "parent": "money.shift",
+      "path": "منی ← Shift / Cash drawer ← گلا کھولنا",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "money.shift.count",
+      "title": "اصلنقدی اورفرق",
+      "parent": "money.shift",
+      "path": "منی ← Shift / Cash drawer ← اصلنقدی اورفرق",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "money.shift.close",
+      "title": "بندش اورHandover",
+      "parent": "money.shift",
+      "path": "منی ← Shift / Cash drawer ← بندش اورHandover",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "money.shift.history",
+      "title": "تاریخ اورSlips",
+      "parent": "money.shift",
+      "path": "منی ← Shift / Cash drawer ← تاریخ اورSlips",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "money.expenses",
+      "title": "Expenses",
+      "parent": "money",
+      "path": "منی ← Expenses",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "money.drawings",
+      "title": "Owner drawings:نقداورمال",
+      "parent": "money",
+      "path": "منی ← Owner drawings:نقداورمال",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "money.reports",
+      "title": "Reports اورمالیvisibility",
+      "parent": "money",
+      "path": "منی ← Reports اورمالیvisibility",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "money.tax",
+      "title": "Tax report",
+      "parent": "money",
+      "path": "منی ← Tax report",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "system",
+      "title": "سسٹم",
+      "parent": "",
+      "path": "سسٹم",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "system.audit",
+      "title": "Black box / Audit",
+      "parent": "system",
+      "path": "سسٹم ← Black box / Audit",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "system.books",
+      "title": "Books Check",
+      "parent": "system",
+      "path": "سسٹم ← Books Check",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "system.import",
+      "title": "Import / Export اورWorkbook",
+      "parent": "system",
+      "path": "سسٹم ← Import / Export اورWorkbook",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "system.backup",
+      "title": "Backup / Restore اورشیڈول",
+      "parent": "system",
+      "path": "سسٹم ← Backup / Restore اورشیڈول",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "system.cloud",
+      "title": "Cloud:sync اورحدود",
+      "parent": "system",
+      "path": "سسٹم ← Cloud:sync اورحدود",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "system.lan",
+      "title": "LAN / دوسراکاؤنٹر:موجودہحیثیت",
+      "parent": "system",
+      "path": "سسٹم ← LAN / دوسراکاؤنٹر:موجودہحیثیت",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "system.custom",
+      "title": "اپنےسوال / Custom Fields",
+      "parent": "system",
+      "path": "سسٹم ← اپنےسوال / Custom Fields",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "system.hardware",
+      "title": "Printer & scanner کی جانچ",
+      "parent": "system",
+      "path": "سسٹم ← Printer & scanner کی جانچ",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "system.settings",
+      "title": "Settings",
+      "parent": "system",
+      "path": "سسٹم ← Settings",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "system.settings.identity",
+      "title": "App name & icon",
+      "parent": "system.settings",
+      "path": "سسٹم ← Settings ← App name & icon",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "system.settings.shop",
+      "title": "Shop",
+      "parent": "system.settings",
+      "path": "سسٹم ← Settings ← Shop",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "system.settings.printing",
+      "title": "Printing",
+      "parent": "system.settings",
+      "path": "سسٹم ← Settings ← Printing",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "یہ تین تیار شدہ نمونوں میں سے ایک ہے؛پوری کتاب نہیں۔ متن کا source-review ہوا ہے،native WPF کا source شامل ہے؛اصل Windows مدد کی عملی جانچ باقی ہے۔ پرنٹ/PDF کیلئے Ctrl+P استعمال کرسکتے ہیں۔",
+          "rows": []
+        },
+        {
+          "kind": "paragraph",
+          "text": "اس صفحے پر رسید کے کاغذ، printer، خودکار پرنٹ، منتخب ریکارڈ کی printing، PDF کی تیاری اور copies کی ترتیب رکھی جاتی ہے۔ یہ فروخت یا کھاتے کا حساب بدلنے کا صفحہ نہیں۔",
+          "rows": []
+        },
+        {
+          "kind": "heading",
+          "text": "یہاں کیا ہوسکتا ہے؟",
+          "rows": []
+        },
+        {
+          "kind": "paragraph",
+          "text": "کاغذ کی چوڑائی، printer کا نام، Auto-print، cutter، bulk format، PDF folder اور copies بدل سکتے ہیں، بشرطیکہ متعلقہ Settings تبدیلی کی اجازت ہو۔",
+          "rows": []
+        },
+        {
+          "kind": "heading",
+          "text": "چھوٹے اختیارات کے پانچ گروپ",
+          "rows": []
+        },
+        {
+          "kind": "table",
+          "text": "",
+          "rows": [
+            [
+              "گروپ",
+              "اختیارات اور کام"
+            ],
+            [
+              "کاغذ اور printer",
+              "58mm میں32 اور80mm میں48 حروف کی ترتیب؛ Printer name خالی ہو تو Windows default printer۔"
+            ],
+            [
+              "پرنٹ کب ہو؟",
+              "Auto-print سے محفوظ فروخت کے بعد رسید خود نکلے؛ Cut paper کیلئے مناسب cutter والا hardware درکار ہے۔"
+            ],
+            [
+              "ایک ساتھ پرنٹ",
+              "The Print button prints every ticked row منتخب set کا رویہ بدلتا ہے۔ Separate receipts الگ slips؛ One A4 list صرف خلاصہ۔"
+            ],
+            [
+              "WhatsApp + PDF",
+              "Prepare a PDF file سے فائل تیاری؛ خالی folder سے shop کی exports جگہ۔ PDF کو WhatsApp میں خود attach نہیں کیا جاتا۔"
+            ],
+            [
+              "Copies",
+              "ایک رسید کی1،2 یا3 copies۔"
+            ]
+          ]
+        },
+        {
+          "kind": "heading",
+          "text": "ترتیب بدلنے کا طریقہ",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "سسٹم → Settings → Printing کھولیں۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "اصل paper کے مطابق width چنیں اور Printer name/Windows default ملائیں۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "Auto-print اور cutter کی ضرورت طے کریں۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "Bulk set اور format پڑھ کر چنیں۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "PDF کی ضرورت، folder اور copies درج کریں۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "تمام تبدیلیاں دیکھ کر Save settings کریں اور کامیاب نتیجہ پڑھیں۔",
+          "rows": []
+        },
+        {
+          "kind": "paragraph",
+          "text": "Save settings مشترکہ Settings کا Save ہے۔ اگر دوسرے حصوں میں بھی ادھوری ترمیم کی ہے تو اسے نظرانداز کرکے یہ فرض نہ کریں کہ صرف Printing محفوظ ہوگی۔ صرف خانہ بدلنا کامیاب Save نہیں۔",
+          "rows": []
+        },
+        {
+          "kind": "heading",
+          "text": "کون سا بٹن کہاں کام کرتا ہے؟",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "Save settings: مجاز ترتیبات محفوظ کرنے کی درخواست۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "Print last bill again: Counter میں پہلے سے محفوظ بل کی نقل؛ نئی فروخت نہیں۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "Print selected: متعلقہ فہرست میں منتخب set کیلئے؛ موجودہ bulk setting کا مطلب پڑھیں۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "Print test slip: الگ Printer & scanner صفحے کی hardware جانچ، کاروباری bill نہیں۔",
+          "rows": []
+        },
+        {
+          "kind": "heading",
+          "text": "اہم فرق",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "Auto-print بند ہونے سے bill محفوظ ہونا بند نہیں ہوتا۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "پرنٹر fail ہو تو محفوظ sale خود cancel نہیں ہوتی۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "A4 summary ہر bill کی الگ مکمل رسید نہیں۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "PDF بننا، WhatsApp میں خود attach ہوکر چلے جانا نہیں۔",
+          "rows": []
+        },
+        {
+          "kind": "heading",
+          "text": "عام مسئلے کی ابتدائی جانچ",
+          "rows": []
+        },
+        {
+          "kind": "table",
+          "text": "",
+          "rows": [
+            [
+              "مسئلہ",
+              "کیا دیکھیں؟"
+            ],
+            [
+              "پرنٹ نہیں نکلا",
+              "پہلے اصل bill محفوظ ہونے کی تصدیق؛ پھر paper،printer اورWindows queue۔"
+            ],
+            [
+              "غلط printer",
+              "Printer name اورWindows default۔"
+            ],
+            [
+              "حروف کٹ رہے ہیں",
+              "اصل paper،منتخب width اورdriver۔"
+            ],
+            [
+              "زیادہ copies",
+              "Copies،bulk selection اورqueue۔"
+            ],
+            [
+              "PDF نہیں ملی",
+              "PDF setting اورexports folder۔"
+            ],
+            [
+              "Save رد ہوا",
+              "اصل پیغام،اجازت اوردیگرترمیم شدہSettings؛اندھیrepeat نہیں۔"
+            ]
+          ]
+        },
+        {
+          "kind": "heading",
+          "text": "یہ صفحہ کیا نہیں کرتا؟",
+          "rows": []
+        },
+        {
+          "kind": "paragraph",
+          "text": "Windows driver نصب نہیں کرتا،scanner کی صحت ثابت نہیں کرتا،محفوظ bill کی رقم/stock نہیں بدلتا اورprint fail ہونے پرنئی sale بنانے کاجواز نہیں دیتا۔",
+          "rows": []
+        },
+        {
+          "kind": "heading",
+          "text": "متعلقہ موضوعات",
+          "rows": []
+        },
+        {
+          "kind": "paragraph",
+          "text": "Printer & scanner کی اصل جانچ · Preview اورSharing · Settings کا عمومی Save",
+          "rows": []
+        }
+      ],
+      "links": [
+        "system.hardware",
+        "system.output",
+        "system.settings"
+      ]
+    },
+    {
+      "id": "system.settings.rules",
+      "title": "Sales rules",
+      "parent": "system.settings",
+      "path": "سسٹم ← Settings ← Sales rules",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "system.settings.cloud",
+      "title": "Cloud کی ترتیبات",
+      "parent": "system.settings",
+      "path": "سسٹم ← Settings ← Cloud کی ترتیبات",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "system.settings.staff",
+      "title": "Staff & permissions،PIN اورRecovery",
+      "parent": "system.settings",
+      "path": "سسٹم ← Settings ← Staff & permissions،PIN اورRecovery",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "system.settings.words",
+      "title": "App words",
+      "parent": "system.settings",
+      "path": "سسٹم ← Settings ← App words",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "system.settings.fields",
+      "title": "Fields",
+      "parent": "system.settings",
+      "path": "سسٹم ← Settings ← Fields",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "system.settings.fields.native",
+      "title": "Built-in fields",
+      "parent": "system.settings.fields",
+      "path": "سسٹم ← Settings ← Fields ← Built-in fields",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "system.settings.fields.extra",
+      "title": "Extra fields",
+      "parent": "system.settings.fields",
+      "path": "سسٹم ← Settings ← Fields ← Extra fields",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "system.settings.startup",
+      "title": "Startup،Screen lock اورProtected close",
+      "parent": "system.settings",
+      "path": "سسٹم ← Settings ← Startup،Screen lock اورProtected close",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "system.output",
+      "title": "Print،Preview اورWhatsApp کیمشترکہسمجھ",
+      "parent": "system",
+      "path": "سسٹم ← Print،Preview اورWhatsApp کیمشترکہسمجھ",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "basics",
+      "title": "شروعات اورعام باتیں",
+      "parent": "",
+      "path": "شروعات اورعام باتیں",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "basics.start",
+      "title": "پہلا آغاز اوراکاؤنٹ کیشناخت",
+      "parent": "basics",
+      "path": "شروعات اورعام باتیں ← پہلا آغاز اوراکاؤنٹ کیشناخت",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "basics.login",
+      "title": "Login اورForgot password",
+      "parent": "basics",
+      "path": "شروعات اورعام باتیں ← Login اورForgot password",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "یہ تین تیار شدہ نمونوں میں سے ایک ہے؛پوری کتاب نہیں۔ متن کا source-review ہوا ہے،native WPF کا source شامل ہے؛اصل Windows مدد کی عملی جانچ باقی ہے۔ پرنٹ/PDF کیلئے Ctrl+P استعمال کرسکتے ہیں۔",
+          "rows": []
+        },
+        {
+          "kind": "paragraph",
+          "text": "اپنی شناخت سے AREA11 میں داخل ہوں تاکہ کام آپ کے اکاؤنٹ اور اس کی اجازتوں کے مطابق چلے۔ یہ صفحہ نیا customer،supplier یاخودکارstaff اکاؤنٹ نہیں بناتا۔",
+          "rows": []
+        },
+        {
+          "kind": "heading",
+          "text": "اسکرین کے حصے اور بٹن",
+          "rows": []
+        },
+        {
+          "kind": "table",
+          "text": "",
+          "rows": [
+            [
+              "نام",
+              "کام"
+            ],
+            [
+              "User name",
+              "اپنے اکاؤنٹ کا نام۔ خالی نام admin کی مخصوص شناخت کیلئے ہے،ہرstaff کیلئےنہیں۔"
+            ],
+            [
+              "Password or PIN",
+              "اپنا موجودہ مقررکردہراز؛کسی اورشخص کی شناخت نہیں۔"
+            ],
+            [
+              "Sign in",
+              "دی گئی شناخت کی جانچ اورکامیابی پراس شخص کی نشست کا آغاز۔"
+            ],
+            [
+              "Forgot password?",
+              "مالک کیلئےالگRecovery راستہ؛عامPassword خانےکا متبادل نہیں۔"
+            ],
+            [
+              "Status message",
+              "ناکامی یااگلےقدم کاپیغام؛اس کی پوری عبارت پڑھیں۔"
+            ]
+          ]
+        },
+        {
+          "kind": "heading",
+          "text": "داخل ہونے کا طریقہ",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "AREA11 کھولیں۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "User name میںاپنے اکاؤنٹ کانام دیں۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "Password or PIN میںاپنا موجودہ راز دیں۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "Sign in دبائیں اورنتیجہ پڑھیں۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "کامیابی پراپنی اجازتوں کے مطابق ابتدائی صفحہ کھلےگا؛ہرشخص کوسبصفحات نظرآنا ضروری نہیں۔",
+          "rows": []
+        },
+        {
+          "kind": "heading",
+          "text": "داخلہ نہ ہو تو",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "پورا پیغام پڑھیں،نام اوراپنا موجودہ راز ملائیں۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "مسلسلاندازے نہ لگائیں؛غلط کوششوں پرعارضیپابندی ہوسکتی ہے۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "Inactive اکاؤنٹ یا شناخت کےمسئلے پرمالک کی مدد لیں۔",
+          "rows": []
+        },
+        {
+          "kind": "item",
+          "text": "Database مٹانا،نیاshop data بنانا یااندھیreinstall اس مسئلے کا حل نہیں۔",
+          "rows": []
+        },
+        {
+          "kind": "heading",
+          "text": "Password یا PIN بھول جائیں",
+          "rows": []
+        },
+        {
+          "kind": "paragraph",
+          "text": "عملہ: مالک سےمتعلقہاکاؤنٹ کی ترتیب درست کروائے؛اصلطریقہ Staff & permissions میںآئےگا۔",
+          "rows": []
+        },
+        {
+          "kind": "paragraph",
+          "text": "مالک: Forgot password? کا الگRecovery راستہ استعمال کرے۔ اپنا Recovery word عامPassword خانےمیںمتبادل کےطورپرنہلکھیں۔ دونوںراز بھول جائیں تو data حذف نہ کریں،محفوظمددلیں۔",
+          "rows": []
+        },
+        {
+          "kind": "paragraph",
+          "text": "اس گائیڈ میںحقیقیPassword،PIN،Recovery word یاfactory secret کی فہرست نہیں ہے۔ موجودہshop میںنامعلومرازباربارنہآزمائیں۔",
+          "rows": []
+        },
+        {
+          "kind": "heading",
+          "text": "Sign-up کے بارے میں",
+          "rows": []
+        },
+        {
+          "kind": "paragraph",
+          "text": "موجودہLogin screen میںعامSelf-sign-up بٹن نہیں ملا۔ اس نمونے میںکوئی فرضیregistration عمل نہیں بنایاگیا۔ عملےکااکاؤنٹ بنانےکی جگہSystem → Staff ہے۔",
+          "rows": []
+        },
+        {
+          "kind": "heading",
+          "text": "Sign out کیا نہیں ہے؟",
+          "rows": []
+        },
+        {
+          "kind": "paragraph",
+          "text": "Sign out صرفاس شخص کی نشست ختمکرناہے۔ یہShift کیگنتی،گلابندکرنےیاایپ مکملبندکرنےکا متبادل نہیں۔ متعلقہاصل طریقےکیطرفجائیں۔",
+          "rows": []
+        },
+        {
+          "kind": "heading",
+          "text": "مدد کھولنے کی حد",
+          "rows": []
+        },
+        {
+          "kind": "paragraph",
+          "text": "Docs خودSign in یاCredentials submit نہیں کرےگی۔ اصلapp میںاس کیfocus اورtyped values کی حفاظت کی جانچ ابھیباقیہے۔ کامیابLogin یاsecurity کیوجہسےصافہونےوالےراز کومدد بندکرکےزبردستیبحال نہیں کیاجائےگا۔",
+          "rows": []
+        },
+        {
+          "kind": "heading",
+          "text": "متعلقہ موضوعات",
+          "rows": []
+        },
+        {
+          "kind": "paragraph",
+          "text": "نشست اورSign out · Dashboard · Staff اکاؤنٹ",
+          "rows": []
+        }
+      ],
+      "links": [
+        "system.settings.staff",
+        "basics.session",
+        "basics.dashboard"
+      ]
+    },
+    {
+      "id": "basics.session",
+      "title": "نشست،Sign out اوردوبارہداخلہ",
+      "parent": "basics",
+      "path": "شروعات اورعام باتیں ← نشست،Sign out اوردوبارہداخلہ",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "basics.navigation",
+      "title": "ایپ میںراستہ،گھنٹی اورخالیفہرست",
+      "parent": "basics",
+      "path": "شروعات اورعام باتیں ← ایپ میںراستہ،گھنٹی اورخالیفہرست",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "basics.dashboard",
+      "title": "Dashboard کاتعارف",
+      "parent": "basics",
+      "path": "شروعات اورعام باتیں ← Dashboard کاتعارف",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "basics.guide",
+      "title": "گائیڈ کااستعمال اورDocs version",
+      "parent": "basics",
+      "path": "شروعات اورعام باتیں ← گائیڈ کااستعمال اورDocs version",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "basics.practice",
+      "title": "الگtest ماحول اورمحفوظمشق",
+      "parent": "basics",
+      "path": "شروعات اورعام باتیں ← الگtest ماحول اورمحفوظمشق",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "basics.about",
+      "title": "ایپ کیمعلومات اورجانچ کی حدود",
+      "parent": "basics",
+      "path": "شروعات اورعام باتیں ← ایپ کیمعلومات اورجانچ کی حدود",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "basics.shortcuts",
+      "title": "START،RUN-TESTS اوررپورٹ کےشارٹ کٹس",
+      "parent": "basics",
+      "path": "شروعات اورعام باتیں ← START،RUN-TESTS اوررپورٹ کےشارٹ کٹس",
+      "blocks": [],
+      "links": []
+    },
+    {
+      "id": "basics.routine",
+      "title": "روزانہترتیب:اصل موضوعات کےlinks",
+      "parent": "basics",
+      "path": "شروعات اورعام باتیں ← روزانہترتیب:اصل موضوعات کےlinks",
+      "blocks": [],
+      "links": []
+    }
+  ]
+}

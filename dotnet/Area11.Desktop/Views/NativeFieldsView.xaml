@@ -1,4 +1,5 @@
 <UserControl x:Class="Area11.Desktop.Views.NativeFieldsView"
+             xmlns:guide="clr-namespace:Area11.Desktop.Views" guide:GuideContext.Topic="system.settings.fields.native"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Grid Margin="8">

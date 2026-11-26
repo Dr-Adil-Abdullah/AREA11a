@@ -33,4 +33,12 @@
     </Content>
   </ItemGroup>
 
+  <!-- Generated from the reviewed offline HTML; read only when Guidelines/Docs is requested. -->
+  <ItemGroup>
+    <Content Include="Resources\Guide\guide.json">
+      <Link>Guide\guide.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
 </Project>

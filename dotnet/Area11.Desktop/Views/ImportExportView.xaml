@@ -1,4 +1,5 @@
 <UserControl x:Class="Area11.Desktop.Views.ImportExportView"
+             xmlns:guide="clr-namespace:Area11.Desktop.Views" guide:GuideContext.Topic="system.import"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:views="clr-namespace:Area11.Desktop.Views">
@@ -24,7 +25,7 @@
             </TabControl.Template>
 
             <!-- ============================== 1. IMPORT ============================== -->
-            <TabItem Header="Import">
+            <TabItem guide:GuideContext.Topic="system.import" Header="Import">
                 <Grid Margin="0,10,0,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -126,7 +127,7 @@
             </TabItem>
 
             <!-- ============================== 2. EXPORT ============================== -->
-            <TabItem Header="Export">
+            <TabItem guide:GuideContext.Topic="system.import" Header="Export">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="0,10,0,0">
 
@@ -159,7 +160,7 @@
             </TabItem>
 
             <!-- ============================== 3. BULK UPDATE ============================== -->
-            <TabItem Header="Bulk update">
+            <TabItem guide:GuideContext.Topic="system.import" Header="Bulk update">
                 <Grid Margin="0,10,0,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -254,7 +255,7 @@
             </TabItem>
 
             <!-- ============================== 4. PRICES ============================== -->
-            <TabItem Header="Prices">
+            <TabItem guide:GuideContext.Topic="system.import" Header="Prices">
                 <Grid Margin="0,10,0,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />

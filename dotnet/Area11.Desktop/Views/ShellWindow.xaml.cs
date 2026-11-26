@@ -30,6 +30,22 @@ public partial class ShellWindow : Window
         StateChanged += OnShellStateChanged;
     }
 
+    internal void ShowGuidelines()
+    {
+        if (GuideHost.Content is not null) return;
+        var originalFocus = Keyboard.FocusedElement is { } focused ? new WeakReference<IInputElement>(focused) : null;
+        var guide = new GuideView(); // First content read happens here,not at shell startup.
+        guide.CloseRequested += (_, _) =>
+        {
+            GuideHost.Content = null;
+            GuideHost.Visibility = Visibility.Collapsed;
+            GuideContext.RestoreFocus(this, originalFocus);
+        };
+        GuideHost.Content = guide;
+        GuideHost.Visibility = Visibility.Visible;
+        guide.FocusSearch();
+    }
+
     /// <summary>
     /// Portion 16: one-shot pass. The app sets it before a close it ordered itself (sign-out,
     /// session expiry) - those are not a person pressing ×, so they never see the prompt.

@@ -133,6 +133,16 @@
     </Window.Resources>
 
     <Grid>
+      <Grid x:Name="BusinessSurface">
+        <Grid.Style>
+            <Style TargetType="Grid">
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding ElementName=GuideHost, Path=Visibility}" Value="Visible">
+                        <Setter Property="IsEnabled" Value="False"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </Grid.Style>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -169,7 +179,7 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Button Style="{StaticResource ModuleButton}"
+                            <Button views:GuideContext.Route="{Binding LabelKey}" Style="{StaticResource ModuleButton}"
                                     Content="{Binding Title}"
                                     ToolTip="{Binding Tooltip}"
                                     Command="{Binding DataContext.OpenModuleCommand, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -287,7 +297,7 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Button Style="{StaticResource ContextPageButton}"
+                                <Button views:GuideContext.Route="{Binding LabelKey}" Style="{StaticResource ContextPageButton}"
                                         Content="{Binding Title}" ToolTip="{Binding Tooltip}"
                                         Command="{Binding DataContext.OpenPageCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                         CommandParameter="{Binding}" />
@@ -303,7 +313,7 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Button Content="{Binding Tab.Header}" Visibility="{Binding Tab.Visibility}"
+                                <Button views:GuideContext.Topic="{Binding Tab.(views:GuideContext.Topic)}" Content="{Binding Tab.Header}" Visibility="{Binding Tab.Visibility}"
                                         IsEnabled="{Binding Tab.IsEnabled}" Click="OnHeaderSectionClick">
                                     <Button.Style>
                                         <Style TargetType="Button" BasedOn="{StaticResource HeaderNavButton}">
@@ -335,7 +345,7 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Button Style="{StaticResource SettingsSectionButton}"
+                                <Button views:GuideContext.SettingsSection="{Binding Index}" Style="{StaticResource SettingsSectionButton}"
                                         Content="{Binding Title}" ToolTip="{Binding Title}"
                                         Command="{Binding DataContext.OpenSettingsTabCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                         CommandParameter="{Binding}" />
@@ -457,5 +467,9 @@
                 </StackPanel>
             </Border>
         </Popup>
+      </Grid>
+        <!-- Utility surface,not a NavItem/Settings tab. Original page stays attached underneath. -->
+        <ContentControl x:Name="GuideHost" Panel.ZIndex="100" KeyboardNavigation.TabNavigation="Cycle"
+                        Visibility="Collapsed" Background="{DynamicResource CanvasBrush}"/>
     </Grid>
 </Window>

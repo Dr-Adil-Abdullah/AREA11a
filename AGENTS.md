@@ -1,5 +1,8 @@
 # AGENTS.md - how to work in this repository
 
+> **⏳ موجودہ منظورشدہ محدود گائیڈ — v0.137.0 Amaranth:** مالک نےnative WPF(A) منتخب کیا؛چھ حصے،تین موجودہ مکمل نمونے،باقی مخصوص placeholders۔ Dashboard utility سطح اورRight-click Help/الگ owned modeless Docs؛نیاtab نہیں،.NET10 برقرار۔ ✅129repo static اور919guide static/data assertions،42browser prototype+12offline-book checks؛یہ WPF ثبوت نہیں۔ ⏳19نئےC#facts/3416suite اورنئیWindows/WPF جانچ باقی؛SDK یہاں نہیں۔ مالک کاپچھلاv0.136.2Windows3397PASS/0FAIL/0skip اورDebug0errors/30warnings ثابت الگ نتیجہ ہے،pending نہیں۔ [دائرہ/طریقہ/باقی](docs/NATIVE-GUIDE-INTEGRATION-URDU.md)۔ 5.1کےباقی کام/1تا5ابھیبند نہیں؛6/installer نہیں۔ نیچےپرانیحیثیتیںتاریخی ہیں۔
+
+
 > **⏳ تازہ اصل ٹیسٹ نتیجہ/محدود اصلاح — v0.136.2 Campion:** مالک کاv0.136.1Windows/.NET10run:Core/TestsDebugcompile،3397total/3395PASS/2FAIL/0skip،5m59s۔ Native-requiredfixtureمیںجائزOwnerackwriterاورglobalclockبدلنےوالیTimecollectionکیnonparallelisolation؛اصل4000drawerassertion/SQL/constraint/3397casesبرقرار۔129static/13newlexical/8PythonSQLreferencecasesمحدود؛اصلنیاWindowsrerunباقی۔ [دونوںوجوہ/حدود](docs/WINDOWS-V1361-TEST-REPORT-URDU.md)۔ پچھلاCS0619compileblockerاسrunمیںحلثابت؛نہFull5.1نہWindows/WPFمکمل،6/installerنہیں۔ نیچےپرانےنتائجتاریخیہیں۔
 
 

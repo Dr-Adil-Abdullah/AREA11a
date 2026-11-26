@@ -1,4 +1,5 @@
 <UserControl x:Class="Area11.Desktop.Views.SettingsView"
+             xmlns:guide="clr-namespace:Area11.Desktop.Views" guide:GuideContext.Topic="system.settings"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:views="clr-namespace:Area11.Desktop.Views">
@@ -34,7 +35,7 @@
             </TabControl.Template>
 
             <!-- ============================ 1. SHOP ============================ -->
-            <TabItem Header="App name &amp; icon">
+            <TabItem guide:GuideContext.Topic="system.settings.identity" Header="App name &amp; icon">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
                         <Border Style="{StaticResource SettingsGroup}">
@@ -55,7 +56,7 @@
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
-            <TabItem Header="Shop">
+            <TabItem guide:GuideContext.Topic="system.settings.shop" Header="Shop">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
 
@@ -170,7 +171,7 @@
             </TabItem>
 
             <!-- ========================== 2. PRINTING ========================== -->
-            <TabItem Header="Printing">
+            <TabItem guide:GuideContext.Topic="system.settings.printing" Header="Printing">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
 
@@ -271,7 +272,7 @@
             </TabItem>
 
             <!-- =========================== 3. SALES ============================ -->
-            <TabItem Header="Sales rules">
+            <TabItem guide:GuideContext.Topic="system.settings.rules" Header="Sales rules">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
 
@@ -428,7 +429,7 @@
             </TabItem>
 
             <!-- ========================= 4. CLOUD SYNC ========================= -->
-            <TabItem Header="{DynamicResource AppLabel.cloud}">
+            <TabItem guide:GuideContext.Topic="system.settings.cloud" Header="{DynamicResource AppLabel.cloud}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
 
@@ -496,7 +497,7 @@
             </TabItem>
 
             <!-- =========================== 5. STAFF ============================ -->
-            <TabItem Header="Staff &amp; permissions">
+            <TabItem guide:GuideContext.Topic="system.settings.staff" Header="Staff &amp; permissions">
                 <Grid>
 
                     <!-- Owner's view -->
@@ -715,7 +716,7 @@
             </TabItem>
 
             <!-- ========================== 6. APP WORDS ========================== -->
-            <TabItem Header="App words">
+            <TabItem guide:GuideContext.Topic="system.settings.words" Header="App words">
                 <Grid Margin="0,4,0,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -764,12 +765,12 @@
             </TabItem>
 
             <!-- Field controls: built-in safety preferences and the existing extra-field editor. -->
-            <TabItem Header="Fields">
+            <TabItem guide:GuideContext.Topic="system.settings.fields" Header="Fields">
                 <TabControl>
-                    <TabItem Header="Built-in fields">
+                    <TabItem guide:GuideContext.Topic="system.settings.fields.native" Header="Built-in fields">
                         <views:NativeFieldsView DataContext="{Binding NativeFields}" />
                     </TabItem>
-                    <TabItem Header="Extra fields">
+                    <TabItem guide:GuideContext.Topic="system.settings.fields.extra" Header="Extra fields">
                         <views:CustomFieldsView DataContext="{Binding ExtraFields}" />
                     </TabItem>
                 </TabControl>

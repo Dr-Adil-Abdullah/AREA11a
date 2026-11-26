@@ -1,4 +1,5 @@
 <UserControl x:Class="Area11.Desktop.Views.StockMinusView"
+             xmlns:guide="clr-namespace:Area11.Desktop.Views" guide:GuideContext.Topic="stock.minus"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
