@@ -595,25 +595,60 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
 
     private void Move(int direction)
     {
-        if (!RefreshAccess()) return;
-        if (_selectedField is null)
+        if (_savingDefinitionUpdate || !_definitionUpdate.Ready) return;
+        if (!_lastLoadSucceeded || !CanManage || _selectedField is not { } selected
+            || !Fields.Contains(selected) || selected.Field.Id != _editingId || selected.Field.Entity != SelectedTab.Entity)
+        { SetStatus("Refresh and select a field before changing its order.", true); return; }
+        var fieldId = selected.Field.Id;
+        var entity = selected.Field.Entity;
+        // Validate the receipt against the displayed destination, not a later reloaded list.
+        var expectedSort = Fields.IndexOf(selected) + direction + 1;
+        if (!_definitionUpdate.TryBegin()) return;
+        _savingDefinitionUpdate = true;
+        try
         {
-            SetStatus("Pick a field first.", true);
-            return;
+            var result = _services.CustomFields.MoveChecked(_user, fieldId, direction, selected.Field.EditVersion);
+            if (!result.Ok)
+            {
+                _definitionUpdate.ObserveFailure(result);
+                if (!_definitionUpdate.Ready) InvalidateUpdate(result.Error ?? "The field order is unconfirmed. Verify before retrying.");
+                else SetStatus(result.Error ?? "The field order was not saved.", true);
+                return;
+            }
+            _definitionUpdate.AcknowledgeCommit();
+            // Reordering does not save label/type edits. Consume the previous editor before callbacks.
+            _editingId = 0;
+            _selectedField = null;
+            _isEditing = false;
+            _labelText = _optionsText = _helpText = string.Empty;
+            _required = false;
+            _selectedType = Types[0];
+            var saved = result.CustomDefinitionEdit;
+            if (saved is null || saved.FieldId != fieldId || saved.Entity != entity || SelectedTab.Entity != entity)
+                throw new InvalidOperationException("The saved order handoff is missing or mismatched.");
+            var rows = saved.Fields;
+            if (rows.SingleOrDefault(field => field.Id == fieldId) is not { } target || target.Sort != expectedSort
+                || rows.Any(field => field.Entity != entity || field.EditVersion is null))
+                throw new InvalidOperationException("The saved order/entity baseline is incomplete.");
+            ReplaceRows(rows, 0);
+            NotifyConsumedEditor();
+            SetStatus("SAVED. Field order stored. Select a field before moving or editing again.", false);
+            if (_editingId != 0 || _selectedField is not null || _isEditing || _required
+                || _labelText.Length != 0 || _optionsText.Length != 0 || _helpText.Length != 0 || !ReferenceEquals(_selectedType, Types[0])
+                || Fields.Count != rows.Count || Fields.Where((row, index) =>
+                    !CustomFieldDefinitionState.Matches(row.Field, rows[index]) || !ReferenceEquals(row.Field.EditVersion, rows[index].EditVersion)).Any())
+                throw new InvalidOperationException("The saved order cleanup was not retained.");
+            _definitionUpdate.CompleteReset();
         }
-
-        _editingId = _selectedField.Field.Id;
-
-        var result = _services.CustomFields.Move(_user, _editingId, direction, _selectedField.Field.EditVersion);
-
-        if (!result.Ok)
+        catch (Exception exception)
         {
-            RefreshAccess();
-            SetStatus(result.Error ?? "The field could not be moved.", true);
-            return;
+            _definitionUpdate.ObserveException();
+            _services.Log.Error("Custom definition move/handoff did not finish.", exception);
+            InvalidateUpdate(_definitionUpdate.WasAcknowledged
+                ? "SAVED. Field order stored, but the editor could not reset. Verify before reopening;do not move it again."
+                : "The field order is unconfirmed. Verify definitions before reopening or retrying.");
         }
-
-        FinishWrite(_editingId, "The order is saved.");
+        finally { _savingDefinitionUpdate = false; }
     }
 
     private void ToggleActive()
@@ -690,17 +725,6 @@ public sealed class CustomFieldsViewModel : ObservableObject, IEmptyPage
         SelectedType = Types.FirstOrDefault(option => option.Key == suggestion.Type) ?? Types[0];
 
         SetStatus("Filled in from \"" + suggestion.Label + "\". Change anything you like, then save.", false);
-    }
-
-    private void FinishWrite(int savedId, string success)
-    {
-        Load();
-        if (!_lastLoadSucceeded || _selectedField?.Field.Id != savedId)
-        {
-            SetStatus("SAVED. The field change was stored, but could not be reloaded. Do not repeat the action; refresh to check.", true);
-            return;
-        }
-        SetStatus(success, false);
     }
 
     private void SetStatus(string text, bool isError)

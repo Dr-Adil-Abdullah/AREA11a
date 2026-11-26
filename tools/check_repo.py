@@ -6738,7 +6738,7 @@ def check_edit_concurrency_boundaries() -> None:
         ('Products', ['_services.Products.LoadEditForm(_user, product.Id)', 'Editor.LoadPrepared(full.Value.Record.Id, full.Value.Extra)', 'patch, answers, _editVersion)']),
         ('Customers', ['_services.Partners.LoadCustomerEditForm(_user, Selected.Id)', 'EditEditor.LoadPrepared(current.Id, prepared.Value.Extra)', 'EditEditor.AnswerValues(), _editVersion)']),
         ('CustomFieldsEditor', ['_services.CustomFields.EditorSnapshot(_user, _entity, entityId)', 'values, _editVersion)']),
-        ('CustomFields', ['HelpText, selected.Field.EditVersion)', 'direction, _selectedField.Field.EditVersion)', 'fieldId, active, selected.Field.EditVersion)']),
+        ('CustomFields', ['HelpText, selected.Field.EditVersion)', 'direction, selected.Field.EditVersion)', 'fieldId, active, selected.Field.EditVersion)']),
         ('NativeFields', ['required, confirmed, field.EditVersion)']),
         ('UnitWindow', ['WholeOnly, SelectedUnit.EditVersion)']),
         ('CatalogWindow', ['SelectedCategory.EditVersion)', 'SelectedCompany.EditVersion)', 'SelectedFormula.EditVersion)', 'SelectedBrand.EditVersion)', 'brandVersion = added.EditVersion;', 'brandVersion = updated.EditVersion;', 'wantCompanyId, brandVersion)'])]:
@@ -8771,17 +8771,16 @@ def check_custom_manager_current_boundaries():
                   'Fields.Count != result.Value.Count || Fields.Where((row, index) =>',
                   'CustomFieldDefinitionState.Matches(row.Field, result.Value[index])'):
         if token not in refresh: FAILURES.append('Definition current snapshot conflict/stable-tick boundary missing ' + token)
-    for method in ('BeginNew()', 'Move(int direction)', 'UseSuggestion(CustomFieldSuggestion? suggestion)'):
+    for method in ('BeginNew()', 'UseSuggestion(CustomFieldSuggestion? suggestion)'):
         body = vm.split('void ' + method,1)[-1].split('}',1)[0]
         if 'if (!RefreshAccess()) return;' not in body:
             FAILURES.append('Definition action requires current management/snapshot check: ' + method)
     save = vm.split('private void Save()',1)[-1].split('private void SaveExisting()',1)[0]
     if 'if (_editingId > 0) { SaveExisting(); return; }' not in save or 'SaveNew();' not in save:
         FAILURES.append('Definition Save must dispatch Add and existing Update into their guarded transaction paths')
-    if vm.count('FinishWrite(') != 2:
-        FAILURES.append('Only Move retains shared reload;Add/Update/OnOff use exact observed handoffs')
-    for token in ('if (!_lastLoadSucceeded || _selectedField?.Field.Id != savedId)',
-                  'SAVED. The field change was stored, but could not be reloaded.',
+    if 'FinishWrite(' in vm:
+        FAILURES.append('All four definition writes must use exact observed handoffs,not shared reload')
+    for token in ('_services.CustomFields.MoveChecked(',
                   'suggestion is null || !Types.Any(option => option.Key == suggestion.Type)'):
         if token not in vm: FAILURES.append('Definition postcommit/document suggestion guard missing ' + token)
     if 'Visibility="{Binding HasNoFields, Converter={StaticResource BoolToVis}}"' not in view:
@@ -9988,7 +9987,7 @@ def check_custom_definition_update_outcomes():
     if min(positions) < 0 or positions != sorted(positions): FAILURES.append('Custom definition Update acknowledgement/consume/callback/verdict/reset ordering')
     for token in ('RefreshAccess();', 'Load();', '.List(', 'FinishWrite('):
         if token in ui: FAILURES.append('Existing definition save must not fresh-rebase: ' + token)
-    if vm.count('_definitionUpdate =') != 1 or vm.count('_definitionUpdate.CompleteReset();') != 3: FAILURES.append('Definition guard must survive Refresh/new/tab/regrant after unknown or ack callback failure')
+    if vm.count('_definitionUpdate =') != 1 or vm.count('_definitionUpdate.CompleteReset();') != 4: FAILURES.append('Definition guard must survive Refresh/new/tab/regrant after unknown or ack callback failure')
     refresh = vm.split('public bool RefreshAccess()',1)[1].split('private void ClearManager(',1)[0]
     for token in ('if (_editingId > 0)', 'return false; // Never renew an opened editor'):
         if token not in refresh: FAILURES.append('Definition neighbor-change pre-read must not silently renew baseline')
@@ -10048,7 +10047,7 @@ def check_custom_definition_active_outcomes():
     calls = re.sub(r'//[^\n]*', '', ui)
     for token in ('RefreshAccess(', 'FinishWrite(', 'Load(', '.List('):
         if token in calls: FAILURES.append('On/Off cannot refresh/rebase/reload after write: ' + token)
-    if vm.count('_definitionUpdate =') != 1 or vm.count('_definitionUpdate.CompleteReset();') != 3: FAILURES.append('Update and On/Off must share retained guard,release only after their own verdicts')
+    if vm.count('_definitionUpdate =') != 1 or vm.count('_definitionUpdate.CompleteReset();') != 4: FAILURES.append('Update and On/Off must share retained guard,release only after their own verdicts')
     for signature in ('private void Load()', 'public bool RefreshAccess()'):
         body = vm.split(signature,1)[-1].split('\n    }',1)[0]
         if 'if (_savingDefinitionUpdate || !_definitionUpdate.Ready)' not in body: FAILURES.append('Refresh must not release uncertain shared definition guard')
@@ -10099,11 +10098,67 @@ def check_custom_definition_add_outcomes():
     calls = re.sub(r'//[^\n]*', '', ui)
     for forbidden in ('RefreshAccess(', 'Load(', 'FinishWrite(', '.List(', 'ServiceResult.Success(', 'ServiceResult.Fail('):
         if forbidden in calls: FAILURES.append('Add cannot reload/rebase/discard typed service outcome: ' + forbidden)
-    if vm.count('_definitionUpdate =') != 1 or vm.count('_definitionUpdate.CompleteReset();') != 3:
+    if vm.count('_definitionUpdate =') != 1 or vm.count('_definitionUpdate.CompleteReset();') != 4:
         FAILURES.append('Add/Update/OnOff must share persistent guard and release only after their own complete verdict')
     tests = (DOTNET / 'Area11.Tests/CustomDefinitionAddOutcomeTests.cs').read_text()
     if tests.count('[Fact]') + tests.count('[InlineData(') != 35: FAILURES.append('Add needs35 additive C# cases')
     REPORT.append('P5.1 CustomField Add:observed Tx/current owner+duplicate validation/exact stored row+entity receipt;shared UI guard/ack before consume and callbacks;35 additive C# cases UNRUN,not Move/durable identity/provider/WPF proof')
+
+
+def check_custom_definition_move_outcomes():
+    """Bounded whole-entity Move outcome/UI source checks, not .NET/provider/WPF proof."""
+    full = (DOTNET / 'Area11.Core/Services/CustomFieldService.cs').read_text()
+    core = full.split('    public ServiceResult Move(', 1)[1].split('    public ServiceResult<ExtraFieldsSnapshot> EditorSnapshot(', 1)[0]
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/CustomFieldsViewModel.cs').read_text()
+    ui = vm.split('    private void Move(int direction)', 1)[1].split('    private void ToggleActive()', 1)[0]
+    core_tokens = [
+        'var outcome = new TransactionOutcome();', 'Error = outcome.NoCommitConfirmed ? error',
+        'NoCommitConfirmed = outcome.NoCommitConfirmed', 'direction is not (-1 or 1)',
+        'return _db.Tx<ServiceResult>(connection =>', 'var owner = OwnerAccess.Require(_db, connection, user);',
+        'EditConcurrency.Require(_db, connection, EditConcurrency.CustomField, fieldId, expected);',
+        'throw new ValidationException("That field is not in the list any more.");',
+        'ORDER BY sort, id;', 'var target = index + direction;', 'throw new ValidationException(direction < 0',
+        '(ordered[index], ordered[target]) = (ordered[target], ordered[index]);',
+        'for (var position = 0; position < ordered.Count; position++)',
+        'UPDATE custom_fields SET sort = @sort WHERE id = @id;',
+        'sort = position + 1, id = ordered[position].Id',
+        '_audit.Record(connection, owner, Modules.Settings, "custom_field_order"',
+        'var saved = CaptureDefinitionEdit(connection, field.Entity, fieldId);',
+        'return new ServiceResult { Ok = true, CustomDefinitionEdit = saved, EditVersion = saved.EditVersion };',
+        '}, outcome);', 'public ServiceResult MoveChecked(', 'if (expected is null) return new ServiceResult',
+        'return Move(user, fieldId, direction, expected);']
+    ui_tokens = [
+        'if (_savingDefinitionUpdate || !_definitionUpdate.Ready) return;',
+        'selected.Field.Id != _editingId', 'selected.Field.Entity != SelectedTab.Entity',
+        'var fieldId = selected.Field.Id;', 'var entity = selected.Field.Entity;',
+        'var expectedSort = Fields.IndexOf(selected) + direction + 1;',
+        'if (!_definitionUpdate.TryBegin()) return;', '_savingDefinitionUpdate = true;',
+        '_services.CustomFields.MoveChecked(_user, fieldId, direction, selected.Field.EditVersion)',
+        '_definitionUpdate.ObserveFailure(result);', '_definitionUpdate.AcknowledgeCommit();',
+        '_labelText = _optionsText = _helpText = string.Empty;', 'saved.FieldId != fieldId', 'saved.Entity != entity',
+        'SelectedTab.Entity != entity', 'target.Sort != expectedSort', 'field.Entity != entity || field.EditVersion is null',
+        'ReplaceRows(rows, 0);', 'NotifyConsumedEditor();', '!CustomFieldDefinitionState.Matches(row.Field, rows[index])',
+        '!ReferenceEquals(row.Field.EditVersion, rows[index].EditVersion)', '_definitionUpdate.CompleteReset();',
+        '_definitionUpdate.ObserveException();', 'InvalidateUpdate(_definitionUpdate.WasAcknowledged',
+        'finally { _savingDefinitionUpdate = false; }']
+    for body, tokens, label in ((core, core_tokens, 'Core'), (ui, ui_tokens, 'UI')):
+        for token in tokens:
+            if token not in body: FAILURES.append('Custom definition Move ' + label + ' missing ' + token)
+    order = [core.find(t) for t in ('return _db.Tx<ServiceResult>(', 'OwnerAccess.Require(', 'EditConcurrency.Require(', 'var field = ReadField(', 'var ordered =', 'var target =', 'if (index < 0', '(ordered[index], ordered[target])', 'for (var position', 'UPDATE custom_fields', '_audit.Record(', 'CaptureDefinitionEdit(', '}, outcome);')]
+    if min(order) < 0 or order != sorted(order): FAILURES.append('Move owner/CAS/boundary/full renumber/audit/receipt/outcome order')
+    work = core.split('return _db.Tx<ServiceResult>(', 1)[-1].split('}, outcome);', 1)[0]
+    if 'return Refuse(' in work or '.Fail(' in work: FAILURES.append('Move in-Tx refusal must roll back before known retry')
+    order = [ui.find(t) for t in ('var fieldId =', 'var entity =', 'var expectedSort =', '_definitionUpdate.TryBegin()', '_savingDefinitionUpdate = true;', 'MoveChecked(', '_definitionUpdate.AcknowledgeCommit();', '_editingId = 0;', '_labelText = _optionsText = _helpText = string.Empty;', 'ReplaceRows(rows, 0);', 'NotifyConsumedEditor();', 'SetStatus("SAVED.', 'if (_editingId != 0', '_definitionUpdate.CompleteReset();')]
+    if min(order) < 0 or order != sorted(order): FAILURES.append('Move pinned intent/ack/consume/callback/verdict/reset order')
+    calls = re.sub(r'//[^\n]*', '', ui)
+    for forbidden in ('RefreshAccess(', 'Load(', '.List(', 'FinishWrite(', '.CustomFields.Move('):
+        if forbidden in calls: FAILURES.append('Move cannot rebase/reload or bypass checked door: ' + forbidden)
+    if vm.count('_definitionUpdate =') != 1 or vm.count('_definitionUpdate.CompleteReset();') != 4:
+        FAILURES.append('All four definition writes must share the retained guard with four complete verdicts')
+    if 'FinishWrite(' in vm: FAILURES.append('Obsolete definition post-write reload must not remain')
+    tests = (DOTNET / 'Area11.Tests/CustomDefinitionMoveOutcomeTests.cs').read_text()
+    if tests.count('[Fact]') + tests.count('[InlineData(') != 39: FAILURES.append('Move needs39 additive source cases')
+    REPORT.append('P5.1 CustomField Move:observed checked whole-entity CAS before bounds/full renumber,exact defensive receipt;shared guard/pinned destination/ack before input and callbacks;39 additive cases UNRUN,not remaining Settings/provider/WPF/durable identity proof')
 
 
 def main() -> int:
@@ -10234,6 +10289,7 @@ def main() -> int:
     check_custom_definition_update_outcomes()
     check_custom_definition_active_outcomes()
     check_custom_definition_add_outcomes()
+    check_custom_definition_move_outcomes()
     check_csharp_grammar()
 
     if not quiet:

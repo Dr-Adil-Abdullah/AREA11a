@@ -1,5 +1,8 @@
 # AGENTS.md - how to work in this repository
 
+> **⏳ موجودہ5.1 — v0.141.0 Fritillary:** Move کا observed checked outcome،bounds سے پہلے current Owner/entity CAS،پوری list کی اصل renumbering اور exact receipt؛Add/Update/OnOff/Move کا ایک retained guard،ack کے بعد input/callbacks اور کامیابی پر نیا انتخاب۔ ✅131static،38source-negative scripts،47نئیlexical mutations اور56PythonSQLplans؛⏳39نئےC#cases/3492suite،اصلWindows/provider/WPF باقی۔ مالک کاv0.138.0کا3418PASS ثابت ہے،pending نہیں۔ [PT-80/ہوا اور باقی](docs/CUSTOM-DEFINITION-MOVE-OUTCOME-URDU.md)؛باقیSettings writers/startup registry/StockTake اورنئیguideUIکیعملیجانچکھلی ہیں؛6/installerنہیں۔ نیچےMoveباقی/countsپرانےcheckpointہیں۔
+
+
 > **⏳ موجودہ5.1 — v0.140.0 Agrimony:** نیاCustomFieldAdd ابobservedTx،currentOwner/duplicate،اصلstoredrow+exactentityreceipt؛Add/Update/OnOffکاایکguard،ackپہلے،پھرinput/callbacks،کامیابیپرblankeditor۔ ✅130static/40نئیlexical/40PythonSQLplansمحدود؛⏳35نئےC#cases/3453suiteاوراصلWindows/WPFیہاںUNRUN۔ مالککاپچھلاv0.138.0کا3418PASS/0FAIL/0skipثابت ہے۔ [PT-79/کیاہوا/باقی](docs/CUSTOM-DEFINITION-ADD-OUTCOME-URDU.md)؛Moveاباگلاالگکام،باقی5.1/1تا5اورنئیguideUIکیعملیجانچباقی؛6/installerنہیں۔ نیچےپرانےAddباقی/countsاپنےcheckpointکیحیثیتہیں۔
 
 

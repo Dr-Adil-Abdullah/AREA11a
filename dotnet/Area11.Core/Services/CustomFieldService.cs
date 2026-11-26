@@ -428,19 +428,25 @@ FROM custom_fields WHERE entity = @entity ORDER BY sort, id;", new { entity });
     /// <summary>Moves a field one place up (-1) or down (+1) - the order the form asks its questions.</summary>
     public ServiceResult Move(User? user, int fieldId, int direction, EditVersion? expected = null)
     {
+        var outcome = new TransactionOutcome();
+        ServiceResult Refuse(string error) => new()
+        {
+            Error = outcome.NoCommitConfirmed ? error : "The field order is unconfirmed. Verify definitions before moving it again.",
+            NoCommitConfirmed = outcome.NoCommitConfirmed
+        };
         if (user is null || !user.IsOwner || !user.Active || user.Id <= 0)
         {
-            return ServiceResult.Fail("Only the owner can reorder the fields.");
+            return Refuse("Only the owner can reorder the fields.");
         }
 
         if (direction is not (-1 or 1))
         {
-            return ServiceResult.Fail("The field can only move one place.");
+            return Refuse("The field can only move one place.");
         }
 
         try
         {
-            return _db.Tx(connection =>
+            return _db.Tx<ServiceResult>(connection =>
             {
                 var owner = OwnerAccess.Require(_db, connection, user);
                 EditConcurrency.Require(_db, connection, EditConcurrency.CustomField, fieldId, expected);
@@ -448,7 +454,7 @@ FROM custom_fields WHERE entity = @entity ORDER BY sort, id;", new { entity });
 
                 if (field is null)
                 {
-                    return ServiceResult.Fail("That field is not in the list any more.");
+                    throw new ValidationException("That field is not in the list any more.");
                 }
 
                 var ordered = _db.Query<CustomField>(connection, @"
@@ -464,7 +470,7 @@ ORDER BY sort, id;", new { entity = field.Entity });
 
                 if (index < 0 || target < 0 || target >= ordered.Count)
                 {
-                    return ServiceResult.Fail(direction < 0
+                    throw new ValidationException(direction < 0
                         ? "This field is already first."
                         : "This field is already last.");
                 }
@@ -485,18 +491,27 @@ ORDER BY sort, id;", new { entity = field.Entity });
                     newValue: (target + 1).ToString(CultureInfo.InvariantCulture),
                     details: field.Label);
 
-                return ServiceResult.Success();
-            });
+                var saved = CaptureDefinitionEdit(connection, field.Entity, fieldId);
+                return new ServiceResult { Ok = true, CustomDefinitionEdit = saved, EditVersion = saved.EditVersion };
+            }, outcome);
         }
         catch (ValidationException exception)
         {
-            return ServiceResult.Fail(exception.Message);
+            return Refuse(exception.Message);
         }
         catch (Exception exception)
         {
             _log.Error($"The custom field {fieldId} could not be moved.", exception);
-            return ServiceResult.Fail("The field could not be moved. Refresh and try again.");
+            return Refuse("The field could not be moved. Refresh and try again.");
         }
+    }
+
+    /// <summary>Desktop reorder door requires the originally displayed whole-entity baseline.</summary>
+    public ServiceResult MoveChecked(User? user, int fieldId, int direction, EditVersion? expected)
+    {
+        if (expected is null) return new ServiceResult
+        { Error = "The field order editor was not loaded. Refresh and review before moving it.", NoCommitConfirmed = true };
+        return Move(user, fieldId, direction, expected);
     }
 
     public ServiceResult<ExtraFieldsSnapshot> EditorSnapshot(User actor, string entity, int id)

@@ -1,5 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
+> **⏳ سوال کی ترتیب بدلنا — v0.141.0:** Move کی کامیابی پر **SAVED** اور پوری محفوظ ترتیب دکھتی ہے؛مزید Move/edit کیلئے سوال دوبارہ چنیں۔ Move آپ کی ادھوری label/type ترمیم Save نہیں کرتا۔ دوسری جگہ اسی form کی ترتیب/سوال بدل جائے تو پرانا Move نئی state خاموشی سے نہیں اپنائے گا؛Refresh کرکے موجودہ حالت دیکھیں اور نیا فیصلہ کریں۔ **Unconfirmed** یاSAVEDکے بعد صفحے کی خرابی پر دوبارہ arrow نہ دبائیں؛پہلے definitions/audit تصدیق کریں۔ Refresh/New/tab/regrant اسیصفحےکاuncertainguardنہیںکھولتے۔ [طریقہ/حدود](CUSTOM-DEFINITION-MOVE-OUTCOME-URDU.md)؛اصلWindows/WPFتصدیق باقی ہے۔
+
+
 > **⏳ نیا سوال شامل کرنا — v0.140.0:** Add پر **SAVED** آئے تو سوال محفوظ ہوچکا ہے؛کامیابی کے بعد editor خالی اور کوئی سوال منتخب نہیں ہوتا۔ ترمیم کیلئے سوال دوبارہ چنیں،دوسرے نئے سوال کیلئے نئی عبارت لکھیں۔ **Unconfirmed** یاSAVEDکے بعدصفحےکی خرابی پر Add دوبارہ نہ دہرائیں؛پہلے اصل فہرست/audit تصدیق کریں۔ Refresh/New/tab یااجازت واپس ملنا اسی صفحے کا uncertain guard نہیں کھولتا۔ صرف معلوم rollback/validation refusal کے بعد درست کرکے دوبارہ کوشش ممکن ہے۔ [طریقہ/حدود](CUSTOM-DEFINITION-ADD-OUTCOME-URDU.md)؛Move اوراصلWindows/WPFتصدیق الگ باقی ہیں۔ نیچےپرانےcheckpointکےAddباقی/countsتاریخی ہیں۔
 
 
