@@ -1,5 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
+> **⏳ Main Settings Save — v0.145.0:** **Main settings SAVED** آئےاوربعدمیںصفحہ/startup/screen-lockرکجائےتوپہلیمحفوظتبدیلیواپسنہیںہوتی؛دوبارہSaveنہدہرائیں۔ Main/startup/screen-lockالگcommitsہیں،ایکtransactionنہیں۔ اصلSettings/auditاورمتعلقہWindows/screen-lockنتیجہتصدیقکےبعدSettingsreopenکریں؛Refresh/regrant/Restorewordsاسیصفحےکاuncertainguardنہیںکھولتے۔ صرفprimaryکاواضحno-commitہوتووجہدرستکریں،conflictپرRefresh/review۔ [PT-84/حدود](MAIN-SETTINGS-SAVE-OUTCOME-URDU.md)؛اصلWindows/WPFجانچباقی۔
+
+
 > **⏳ اصل الفاظ بحال کرنا — v0.144.0:** **Restore original words** پہلےتصدیقمانگتاہے،دوسریclickپرتمام32sectionnamesکےdefaultsمحفوظکرتاہے؛unsavedلفظوںکیترمیمبدلےگی،دوسریSettingsاسبٹنسےsaveنہیںہوتیں۔ **SAVED** کےبعدصفحےکیخرابییا **Unconfirmed** پرResetنہدہرائیں؛اصلlabels/auditکیپہلےتصدیق،پھرSettingsreopen۔ Refresh/regrantاسیصفحےکاuncertainguardنہیںکھولتے،mainSaveبھیبائیپاسنہیں۔ عامconflict/واضحrollbackپرRefreshاورنئیدو-clickتصدیقکریں۔ [PT-83/حدود](APP-LABEL-RESET-OUTCOME-URDU.md)؛اصلWindows/WPFجانچباقی۔
 
 

@@ -76,6 +76,8 @@ public sealed class SettingsViewModel : ObservableObject
     private StartupModeOption? _selectedStartupMode;
     private bool _focusGuardEnabled;
     private bool _savingSettings;
+    private readonly PostingAttemptGuard _mainSettingsAttempt = new();
+    private string _mainSettingsHint = string.Empty;
     private readonly PostingAttemptGuard _startupAttempt = new();
     private string _startupSaveHint = string.Empty;
 
@@ -315,6 +317,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void ChangeAppIcon(bool reset)
     {
+        if (_savingSettings) return;
         if (_resettingLabels) return;
         if (_changingIcon) return;
         if (!UpdateSettingsAccess() || !UpdateStaffAccess()) return;
@@ -1141,10 +1144,11 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void Save()
     {
+        if (_savingSettings) return;
+        if (!_mainSettingsAttempt.Ready) { SetStatus(_mainSettingsHint, true); return; }
         if (_resettingLabels) return;
         if (!_labelResetAttempt.Ready) { SetStatus(_labelResetHint, true); return; }
         if (_changingIcon) return;
-        if (_savingSettings) return;
         if (!_startupAttempt.Ready) { SetStatus(_startupSaveHint, true); return; }
         _savingSettings = true;
         try { SaveCore(); }
@@ -1154,10 +1158,13 @@ public sealed class SettingsViewModel : ObservableObject
     private void SaveCore()
     {
         if (_changingIcon) return;
+        if (!_services.CheckInteractiveSession()) { SetStatus("Sign in again before saving Settings.", true); return; }
         if (!UpdateSettingsAccess()) return;
         var form = _editForm;
         if (form is null) { SetStatus("Refresh Settings and review the form before saving.", true); return; }
         var startupChoice = SelectedStartupMode;
+        var focusChoice = FocusGuardEnabled;
+        var canChangeStartup = CanChangeStartup;
 
         var paper = SelectedPaper;
         if (paper is null)
@@ -1339,79 +1346,133 @@ public sealed class SettingsViewModel : ObservableObject
         // A manager saving ordinary settings must not submit this owner-only switch.
         if (_user.IsOwner) values[MasterFoundationSettings.ProfitShowMargins] = ShowMargins;
         if (_user.IsOwner) values["discount.billBasis"] = BillDiscountBasis;
-        var result = _services.Settings.SaveEditForm(values, _user, form);
-
-        if (!result.Ok)
+        if (!_mainSettingsAttempt.TryBegin()) return;
+        var loadedForm = form;
+        string? primaryFailure = null;
+        string? laterFailure = null;
+        var savedStages = string.Empty;
+        try
         {
-            SetStatus(result.Error ?? "The settings could not be saved.", true);
-            return;
-        }
-
-        form = result.SettingsEdit;
-        _editForm = form;
-        if (form is null) { SetStatus("SAVED. Reopen Settings before making another change.", true); return; }
-        // The summary line is rebuilt from what was just stored, so the owner sees the meaning of
-        // the three numbers he typed without leaving the page.
-        ExpirySummary = form.ExpiryBands.Summary;
-        RaiseLoyaltySummary();
-
-        // The key box is emptied at once: a key left on the screen is one a person walking past can read.
-        SyncKey = string.Empty;
-        _syncKeyCleared = false;
-        RaiseSyncLabels();
-        LoadLabels();
-
-        _onSaved?.Invoke();
-
-        // The cloud sentence is added only when the owner could have changed it, so a cashier's save
-        // still says exactly what it saved.
-        var cloudNote = !CanChangeCloud
-            ? string.Empty
-            : !SyncEnabled
-                ? " Cloud sync is switched off."
-                : _services.Cloud.IsConfigured
-                    ? " Cloud sync is ready."
-                    : " Cloud sync is switched on but still incomplete.";
-
-        // Startup and close (Portion 16): saved through the service, not the values above - the
-        // Windows entry must stick before the setting claims it. Unchanged means untouched: an
-        // ordinary save must not rewrite the registry or audit a choice nobody made.
-        var startupNote = string.Empty;
-
-        if (CanChangeStartup && startupChoice is not null
-            && startupChoice.Key != form.GetString(StartupService.ModeKey))
-        {
-            if (!TrySaveStartupChoice(form, startupChoice.Key, out var startupForm, out startupNote)) return;
-            form = startupForm;
-        }
-
-        // Screen lockdown (owner's word, Nov 2026): a plain setting, owner-only at the service
-        // guard. Unchanged means untouched, like the startup mode above.
-        var focusNote = string.Empty;
-
-        if (CanChangeStartup && FocusGuardEnabled != form.GetBool(FocusGuardService.GuardKey))
-        {
-            var focus = _services.Settings.SaveEditForm(new Dictionary<string, object?> { [FocusGuardService.GuardKey] = FocusGuardEnabled }, _user, form);
-
-            if (!focus.Ok)
+            var result = _services.Settings.SaveEditForm(values, _user, form);
+            if (!result.Ok)
             {
-                SetStatus("Settings SAVED; screen lock was not saved. Refresh before retrying. " + focus.Error, true);
+                primaryFailure = result.Error;
+                _mainSettingsAttempt.ObserveFailure(result);
+                if (!result.NoCommitConfirmed) _editForm = null;
+                SetMainSettingsHint((result.NoCommitConfirmed
+                    ? "Settings were not saved. Review the refusal before trying again. "
+                    : "Settings save needs verification. Verify the saved settings/audit before reopening; do not repeat Save. ") + result.Error);
+                SetStatus(_mainSettingsHint, true);
                 return;
             }
-
-            form = focus.SettingsEdit ?? form;
+            _mainSettingsAttempt.AcknowledgeCommit();
+            savedStages = "Main settings SAVED.";
+            form = result.SettingsEdit;
             _editForm = form;
-            focusNote = " Screen lock: " + (FocusGuardEnabled ? "on." : "off.");
+            if (form is null || ReferenceEquals(form, loadedForm))
+                throw new InvalidOperationException("The main Settings save receipt is missing.");
+            var primaryReceipt = form;
+            if (values.Keys.Any(key => key != SyncService.KeyKey && primaryReceipt.GetRaw(key) == "null"))
+                throw new InvalidOperationException("The main Settings save receipt is incomplete.");
+
+            // Consume the typed credential and confirmation BEFORE any property/collection callback.
+            _syncKey = string.Empty;
+            _syncKeyCleared = false;
+            _confirmLabelReset = false; _labelResetForm = null;
+            OnPropertyChanged(nameof(SyncKey));
+            ExpirySummary = form.ExpiryBands.Summary;
+            RaiseLoyaltySummary();
+            RaiseSyncLabels();
+            LoadLabels();
+            _onSaved?.Invoke();
+            RequireMainSettingsHandoff(primaryReceipt);
+
+            // These are separate commits, never part of the primary Settings transaction.
+            var cloudNote = !values.ContainsKey(SyncService.EnabledKey) ? string.Empty
+                : primaryReceipt.GetBool(SyncService.EnabledKey) ? " Cloud sync is switched on." : " Cloud sync is switched off.";
+            var startupNote = string.Empty;
+            if (canChangeStartup && startupChoice is not null
+                && startupChoice.Key != form.GetString(StartupService.ModeKey))
+            {
+                if (!TrySaveStartupChoice(form, startupChoice.Key, out var startupForm, out startupNote))
+                {
+                    _editForm = null;
+                    laterFailure = _startupSaveHint;
+                    SetMainSettingsHint(savedStages + " " + laterFailure
+                        + " The Save sequence stopped. Verify the completed and unfinished stages before reopening; do not repeat Save.");
+                    SetStatus(_mainSettingsHint, true); return;
+                }
+                savedStages += " Startup SAVED.";
+                form = startupForm;
+                RequireMainSettingsHandoff(form);
+            }
+
+            var focusNote = string.Empty;
+            if (canChangeStartup && focusChoice != form.GetBool(FocusGuardService.GuardKey))
+            {
+                var focus = _services.Settings.SaveEditForm(new Dictionary<string, object?> { [FocusGuardService.GuardKey] = focusChoice }, _user, form);
+                if (!focus.Ok)
+                {
+                    _editForm = null;
+                    laterFailure = "Screen-lock result: " + focus.Error;
+                    SetMainSettingsHint(savedStages + " " + laterFailure
+                        + " Verify the screen-lock setting before reopening; do not repeat Save.");
+                    SetStatus(_mainSettingsHint, true); return;
+                }
+                savedStages += " Screen lock SAVED.";
+                if (focus.SettingsEdit is not { } focusReceipt || focusReceipt.GetBool(FocusGuardService.GuardKey) != focusChoice)
+                    throw new InvalidOperationException("The screen-lock receipt is missing or mismatched.");
+                form = focusReceipt;
+                _editForm = form;
+                _focusGuardEnabled = focusChoice;
+                OnPropertyChanged(nameof(FocusGuardEnabled));
+                focusNote = " Screen lock: " + (focusChoice ? "on." : "off.");
+            }
+
+            SetMainSettingsHint(string.Empty);
+            SetStatus($"SAVED. Paper {primaryReceipt.GetInt("printer.width")} mm, printing " +
+                (primaryReceipt.GetBool("printer.autoPrint", true) ? "automatic." : "manual (use the button on the counter screen).")
+                + cloudNote + startupNote + focusNote, false);
+            if (focusNote.Length > 0) LockdownChromeChanged?.Invoke();
+            RequireMainSettingsHandoff(form);
+            if (focusNote.Length > 0 && FocusGuardEnabled != focusChoice)
+                throw new InvalidOperationException("The saved screen-lock choice was not retained.");
+            _mainSettingsAttempt.CompleteReset();
         }
-
-        SetStatus($"Saved. Paper {paper.Width} mm, printing " +
-                  (AutoPrint ? "automatic." : "manual (use the button on the counter screen).") +
-                  cloudNote + startupNote + focusNote, false);
-
-        if (focusNote.Length > 0)
+        catch (Exception exception)
         {
-            LockdownChromeChanged?.Invoke();
+            _mainSettingsAttempt.ObserveException();
+            _services.Log.Error("Main Settings save/handoff did not finish. Exception type: " + exception.GetType().Name);
+            if (!_mainSettingsAttempt.Ready) _editForm = null;
+            // Never echo the submitted dictionary/credential in logs or status.
+            var message = primaryFailure is not null
+                ? "Settings result: " + primaryFailure + " Page notification failed; review that result before retrying."
+                : laterFailure is not null
+                    ? savedStages + " " + laterFailure + " Page notification failed; verify all Save stages before reopening or retrying."
+                : _mainSettingsAttempt.WasAcknowledged
+                    ? savedStages + " The page or a later Save stage did not finish. Verify saved settings/audit and any startup or screen-lock result before reopening; do not repeat Save."
+                    : "Settings saving is unconfirmed. Verify saved settings/audit before reopening or retrying.";
+            try { SetMainSettingsHint(message); SetStatus(message, true); }
+            catch (Exception notification) { _services.Log.Error("Main Settings failure notification did not finish. Exception type: " + notification.GetType().Name); }
         }
+    }
+
+    public string MainSettingsHint => _mainSettingsHint;
+    public bool HasMainSettingsHint => _mainSettingsHint.Length > 0;
+
+    private void SetMainSettingsHint(string message)
+    {
+        _mainSettingsHint = message;
+        OnPropertyChanged(nameof(MainSettingsHint)); OnPropertyChanged(nameof(HasMainSettingsHint));
+    }
+
+    private void RequireMainSettingsHandoff(SettingsEditForm receipt)
+    {
+        if (!ReferenceEquals(_editForm, receipt) || _syncKey.Length != 0 || _syncKeyCleared
+            || _confirmLabelReset || _labelResetForm is not null || LabelRows.Count != AppLabelService.Definitions.Count
+            || AppLabelService.Definitions.Any(definition => LabelRows.Count(row => row.Key == definition.Key
+                && row.Text == receipt.GetString(definition.SettingKey) && row.DefaultText == definition.DefaultText) != 1))
+            throw new InvalidOperationException("The saved Settings receipt/input handoff was not retained.");
     }
 
     public string StartupSaveHint => _startupSaveHint;
@@ -1766,6 +1827,7 @@ public sealed class SettingsViewModel : ObservableObject
     private void ResetLabels()
     {
         if (_resettingLabels || _savingSettings || _changingIcon) return;
+        if (!_mainSettingsAttempt.Ready) { SetStatus(_mainSettingsHint, true); return; }
         if (!_labelResetAttempt.Ready) { SetStatus(_labelResetHint, true); return; }
         _resettingLabels = true;
         var writerStarted = false;

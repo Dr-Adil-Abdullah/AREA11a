@@ -7628,7 +7628,7 @@ def check_settings_current_boundaries():
                   'SyncKey = SyncUrl = SyncTable = SyncShopId = SyncAutomaticMinutesText = string.Empty;',
                   'public bool CanChangeCloud => CanUseSettings && _cloudAccessAllowed;',
                   'if (CanChangeCloud && (!int.TryParse', 'SetStartupSaveHint("Settings SAVED; " + saved.Error)',
-                  'Settings SAVED; screen lock was not saved.'):
+                  'Screen-lock result: '):
         if token not in vm: FAILURES.append(f'Current Settings UI lifecycle missing {token}')
     if '_services.Cloud.KeyLabel' in vm or 'Visibility="{Binding CanUseSettings, Converter={StaticResource BoolToVis}}"' not in view:
         FAILURES.append('Settings must hide denied content and avoid showing key fragments')
@@ -10381,6 +10381,73 @@ def check_label_reset_outcomes():
     REPORT.append('P5.1 original words reset:nonnull checked all-label CAS/current writer/observed Settings receipt;two-click pinned form/reentry/ack before consume+callback/retained guard and sticky notice;30 C# cases UNRUN,not main Settings/registry/provider/WPF/durable identity completion')
 
 
+def check_main_settings_outcomes():
+    """Primary Settings/aggregate button lexical contracts, not WPF/provider runtime proof."""
+    def need(text, tokens, label):
+        for token in tokens:
+            if token not in text: FAILURES.append('Main Settings ' + label + ' missing ' + token)
+    def order(text, tokens, label):
+        points = [text.find(token) for token in tokens]
+        if min(points) < 0 or points != sorted(points): FAILURES.append('Main Settings ordering: ' + label)
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/SettingsViewModel.cs').read_text()
+    outer = vm.split('    private void Save()\n', 1)[1].split('    private void SaveCore()', 1)[0]
+    need(outer, ['if (_savingSettings) return;', 'if (!_mainSettingsAttempt.Ready) { SetStatus(_mainSettingsHint, true); return; }',
+                 '_savingSettings = true;', 'finally { _savingSettings = false; }'], 'entry')
+    core = vm.split('    private void SaveCore()\n', 1)[1].split('    public string MainSettingsHint', 1)[0]
+    need(core, ['_services.CheckInteractiveSession()', 'var startupChoice = SelectedStartupMode;',
+        'var focusChoice = FocusGuardEnabled;', 'var canChangeStartup = CanChangeStartup;',
+        'if (!_mainSettingsAttempt.TryBegin()) return;', 'var loadedForm = form;',
+        'string? primaryFailure = null;', 'string? laterFailure = null;',
+        '_services.Settings.SaveEditForm(values, _user, form)', 'primaryFailure = result.Error;',
+        '_mainSettingsAttempt.ObserveFailure(result);', 'if (!result.NoCommitConfirmed) _editForm = null;',
+        '_mainSettingsAttempt.AcknowledgeCommit();', 'savedStages = "Main settings SAVED.";',
+        'form = result.SettingsEdit;', '_editForm = form;', 'form is null || ReferenceEquals(form, loadedForm)',
+        'values.Keys.Any(key => key != SyncService.KeyKey && primaryReceipt.GetRaw(key) == "null")',
+        'var primaryReceipt = form;', '_syncKey = string.Empty;', '_syncKeyCleared = false;',
+        '_confirmLabelReset = false; _labelResetForm = null;', 'OnPropertyChanged(nameof(SyncKey));',
+        'ExpirySummary = form.ExpiryBands.Summary;', 'LoadLabels();', '_onSaved?.Invoke();',
+        'RequireMainSettingsHandoff(primaryReceipt);', '!values.ContainsKey(SyncService.EnabledKey)',
+        'primaryReceipt.GetBool(SyncService.EnabledKey)',
+        'if (canChangeStartup && startupChoice is not null', 'laterFailure = _startupSaveHint;',
+        'savedStages += " Startup SAVED.";', 'if (canChangeStartup && focusChoice != form.GetBool(FocusGuardService.GuardKey))',
+        '[FocusGuardService.GuardKey] = focusChoice', 'laterFailure = "Screen-lock result: " + focus.Error;',
+        'savedStages += " Screen lock SAVED.";',
+        'focus.SettingsEdit is not { } focusReceipt || focusReceipt.GetBool(FocusGuardService.GuardKey) != focusChoice',
+        '_focusGuardEnabled = focusChoice;', 'primaryReceipt.GetInt("printer.width")',
+        'primaryReceipt.GetBool("printer.autoPrint", true)', 'LockdownChromeChanged?.Invoke();',
+        'RequireMainSettingsHandoff(form);', 'FocusGuardEnabled != focusChoice',
+        '_mainSettingsAttempt.CompleteReset();', '_mainSettingsAttempt.ObserveException();',
+        'if (!_mainSettingsAttempt.Ready) _editForm = null;', '_mainSettingsAttempt.WasAcknowledged',
+        'primaryFailure is not null', 'laterFailure is not null',
+        'Exception type: " + exception.GetType().Name)', 'Exception type: " + notification.GetType().Name)'], 'save/handoff')
+    order(core, ['var startupChoice', 'var focusChoice', 'var values =', '_mainSettingsAttempt.TryBegin()',
+        'SaveEditForm(values,', 'if (!result.Ok)', '_mainSettingsAttempt.AcknowledgeCommit();',
+        'savedStages = "Main settings SAVED.";', 'form = result.SettingsEdit;', 'var primaryReceipt',
+        '_syncKey = string.Empty;', '_syncKeyCleared = false;', '_confirmLabelReset = false;',
+        'OnPropertyChanged(nameof(SyncKey));', 'ExpirySummary =', 'LoadLabels();', '_onSaved?.Invoke();',
+        'RequireMainSettingsHandoff(primaryReceipt);', 'TrySaveStartupChoice(', 'var focus =',
+        'LockdownChromeChanged?.Invoke();', 'FocusGuardEnabled != focusChoice', '_mainSettingsAttempt.CompleteReset();'], 'primary ack/consume/callback/stages/final reset')
+    for forbidden in ('LoadEditForm(', 'Load();', 'form = focus.SettingsEdit ?? form', 'screen lock was not saved',
+                      'SyncKey = string.Empty;', 'FocusGuardEnabled ? "on."', '_services.Cloud.IsConfigured'):
+        if forbidden in core: FAILURES.append('Main Save cannot rebase/use optimistic outcome/live status: ' + forbidden)
+    if vm.count('_mainSettingsAttempt =') != 1 or vm.count('_mainSettingsAttempt.CompleteReset();') != 1:
+        FAILURES.append('Main Save guard must survive Refresh/regrant with one complete handoff reset')
+    handoff = vm.split('    private void RequireMainSettingsHandoff(', 1)[1].split('    public string StartupSaveHint', 1)[0]
+    need(handoff, ['!ReferenceEquals(_editForm, receipt) || _syncKey.Length != 0 || _syncKeyCleared',
+        '_confirmLabelReset || _labelResetForm is not null', 'LabelRows.Count != AppLabelService.Definitions.Count',
+        'LabelRows.Count(row => row.Key == definition.Key',
+        'row.Text == receipt.GetString(definition.SettingKey) && row.DefaultText == definition.DefaultText) != 1'], 'retained receipt/input/row verdict')
+    reset = vm.split('    private void ResetLabels()\n', 1)[1].split('    private void SetLabelResetHint(', 1)[0]
+    need(reset, ['if (!_mainSettingsAttempt.Ready) { SetStatus(_mainSettingsHint, true); return; }'], 'no Reset bypass')
+    icon = vm.split('    private void ChangeAppIcon(', 1)[1].split('    /// <summary>Takes', 1)[0]
+    need(icon, ['if (_savingSettings) return;'], 'no icon reentry')
+    view = (DOTNET / 'Area11.Desktop/Views/SettingsView.xaml').read_text()
+    need(view, ['Text="{Binding MainSettingsHint}"', 'Visibility="{Binding HasMainSettingsHint, Converter={StaticResource BoolToVis}}"'], 'sticky notice')
+    tests = (DOTNET / 'Area11.Tests/MainSettingsSaveOutcomeTests.cs').read_text()
+    if tests.count('[Fact]') + tests.count('[InlineData(') != 25: FAILURES.append('Main Settings requires25 additive public-service/guard C# cases')
+    REPORT.append('P5.1 main Settings Save:persistent observed-outcome guard,ack/receipt/secret consume before callbacks,pinned later-stage intent and aggregate partial-SAVED handling;exact retained handoff,Refresh/Reset no replay;25 C# cases UNRUN,not WPF/provider/focus-system/durable identity/whole5.1 proof')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -10513,6 +10580,7 @@ def main() -> int:
     check_counter_autoprint_edit()
     check_startup_registry_outcomes()
     check_label_reset_outcomes()
+    check_main_settings_outcomes()
     check_csharp_grammar()
 
     if not quiet:

@@ -1,5 +1,8 @@
 # HANDOFF - read this first
 
+> **⏳ موجودہ5.1 — v0.145.0 Valerian:** MainSettingsSaveکاpersistentoutcomeguard،ack/returnedreceiptکےبعدcredential+confirmationconsumeقبلcallbacks؛pinnedstartup/focusintent،الگcommitsکیpartialSAVEDحیثیت،نامعلوم/ادھوریsequenceپرRefresh/Resetسےreplayنہیںاورstickyhint۔ ✅135static/42source-negative scripts/53نئیlexicalmutations،پرانے24PythonSettingsSQLplansمحدود؛⏳25نئےC#cases/3612suiteاوراصلWindows/provider/WPFباقی۔ مالککا3418PASSثابتہے،pendingنہیں۔ [PT-84/تفصیل](docs/MAIN-SETTINGS-SAVE-OUTCOME-URDU.md)؛FocusGuardکاتفصیلیreview/legacyStartup/StockTake/guideUIعملیجانچکھلی،6/installerنہیں۔ نیچےپرانےcountsتاریخیہیں۔
+
+
 > **⏳ موجودہ5.1 — v0.144.0 Primrose:** Restoreoriginalwordsکاnonnullcheckedreset،32labelsکیloadedCAS/exactpartialreceipt؛دو-clickpinnedform،ackقبلrow/shellcallbacks،retainedguardاورstickyhint؛unknown/SAVEDhandofffailureپرmainSaveسےبھیreplayنہیں۔ ✅134static/41source-negative scripts/44نئیlexicalmutations،پرانے24PythonSettingsSQLplansمحدود؛⏳30نئےC#cases/3587suiteاوراصلWindows/provider/WPFباقی۔ مالککا3418PASSثابتہے،pendingنہیں۔ [PT-83/تفصیل](docs/APP-LABEL-RESET-OUTCOME-URDU.md)؛mainSettings/focus/legacyStartup/StockTake/guideUIعملیجانچکھلی،6/installerنہیں۔ نیچےپرانےcountsتاریخیہیں۔
 
 
