@@ -97,6 +97,8 @@ public partial class ShellWindow : Window
 
     private bool ReadFocusGuard(ShellViewModel shell)
     {
+        TelemetryNotice.Text = shell.Services.Focus.TelemetryNotice;
+        TelemetryNotice.Visibility = string.IsNullOrWhiteSpace(TelemetryNotice.Text) ? Visibility.Collapsed : Visibility.Visible;
         var status = shell.Services.Focus.ReadStatus();
         FocusGuardNotice.Text = status.Notice;
         FocusGuardNotice.Visibility = status.Verified ? Visibility.Collapsed : Visibility.Visible;
@@ -136,7 +138,7 @@ public partial class ShellWindow : Window
     /// one UI heartbeat and then asks: is ANY Area11 window active? Only a real escape - another
     /// program, the desktop, Task Manager - gets the box. The stamp is what the black-box episode
     /// is measured from when the operator comes back; a run that never comes back (Task Manager
-    /// end, power loss) is caught by the next startup instead (FocusGuardService.CheckPreviousRun).
+    /// end, power loss) may leave an unverified shared marker, not proof about this PC/user.
     /// </summary>
     private void OnShellDeactivated(object? sender, EventArgs e)
     {
@@ -242,7 +244,11 @@ public partial class ShellWindow : Window
         var leftAt = _leftAt;
         _leftAt = null;
 
-        shell.Services.Focus.RecordAway(shell.CurrentUser, leftAt, Clock.Now());
+        // Consume the episode before writing. A failure/unknown result is visible; never auto-replay.
+        var episode = shell.Services.Focus.RecordAwayChecked(shell.CurrentUser, leftAt, Clock.Now());
+        if (!episode.Ok) RunTrail.Step("away telemetry: " + episode.Error);
+        foreach (var warning in episode.Warnings) RunTrail.Step(warning);
+        ReadFocusGuard(shell);
     }
 
     /// <summary>

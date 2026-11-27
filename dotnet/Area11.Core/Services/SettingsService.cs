@@ -35,6 +35,22 @@ public sealed class SettingsService
         Reload();
     }
 
+    // Narrow composition/cache bridge for FocusGuardService's atomic shared telemetry transaction.
+    internal Database SessionTelemetryDatabase => _db;
+
+    internal void PublishSessionTelemetry(IReadOnlyDictionary<string, string> values)
+    {
+        lock (_gate)
+        {
+            foreach (var pair in values)
+            {
+                if (pair.Key is not ("session.lastUser" or "session.lastStart" or "session.lastSeen" or "session.cleanExit"))
+                    throw new InvalidOperationException("Not a session telemetry key.");
+                _cache[pair.Key] = pair.Value;
+            }
+        }
+    }
+
     public static IReadOnlyCollection<string> KnownKeys => Defaults.Keys.ToArray();
 
     /// <summary>Writes any key that is missing in the database (first start or after an update).</summary>

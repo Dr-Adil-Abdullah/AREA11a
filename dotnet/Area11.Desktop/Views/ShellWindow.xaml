@@ -380,6 +380,9 @@
             <TextBlock x:Name="FocusGuardNotice" Foreground="#FCD34D" FontSize="11.5"
                        Padding="16,0,16,8" TextWrapping="Wrap" Visibility="Collapsed"
                        AutomationProperties.Name="Screen-lock verification warning" />
+            <TextBlock x:Name="TelemetryNotice" Foreground="#FCD34D" FontSize="11.5"
+                       Padding="16,0,16,8" TextWrapping="Wrap" Visibility="Collapsed"
+                       AutomationProperties.Name="Session-history recording warning" />
         </StackPanel>
 
         <!-- ===================== The page ===================== -->

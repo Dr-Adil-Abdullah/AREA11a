@@ -98,11 +98,15 @@ public sealed class ShellViewModel : ObservableObject
         _sessionTimer.Tick += (_, _) =>
         {
             CheckSession();
+            // CheckSession may have signed out/closed this frame during the same tick.
+            if (!SessionWatch.Running || !ReferenceEquals(_services.CurrentUser, _user)) return;
             TryAutomaticSync();
+            if (!SessionWatch.Running || !ReferenceEquals(_services.CurrentUser, _user)) return;
 
-            // Still alive, still this operator: the next startup reads this stamp to tell a kill
-            // from a clean exit. Never throws, never blocks the till.
-            _services.Focus.Heartbeat(_user.Name);
+            // Synchronous best-effort shared stamps can wait for SQLite. Not kill/PC proof.
+            var heartbeat = _services.Focus.HeartbeatChecked(_user.Name);
+            if (!heartbeat.Ok) RunTrail.Step("heartbeat telemetry: " + heartbeat.Error);
+            foreach (var warning in heartbeat.Warnings) RunTrail.Step(warning);
         };
         _services.AuthenticationLost += OnAuthenticationLost;
         _sessionTimer.Start();

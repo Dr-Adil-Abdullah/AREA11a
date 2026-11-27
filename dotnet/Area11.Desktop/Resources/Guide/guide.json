@@ -7848,7 +7848,7 @@
         },
         {
           "kind": "paragraph",
-          "text": "v0.147.0میںShift-at-startuprecoverymanualmodeاوراسکاsystemauditاکٹھےمحفوظکرتیہے؛Windowscleanupبعدمیںالگbest-effortمرحلہہے۔ SAVEDکےساتھwarningہوتوentryرہسکتیہےیاmodeبعدمیںبدلچکاہو؛SettingsاورWindowsentriesتصدیقکریں،اندھیrecoveryنہدہرائیں۔ Unknownکومعلومrollbackنہسمجھیں۔ ShiftFocusGuardOffنہیںکرتی۔ Away/killrecordsاورtaskbarhideاببھیbest-effort؛Windows/native/providerجانچباقی،liveدکانپرلاککےتجربےنہیں۔",
+          "text": "v0.147.0میںShift-at-startuprecoverymanualmodeاوراسکاsystemauditاکٹھےمحفوظکرتیہے؛Windowscleanupبعدمیںالگbest-effortمرحلہہے۔ SAVEDکےساتھwarningہوتوentryرہسکتیہےیاmodeبعدمیںبدلچکاہو؛SettingsاورWindowsentriesتصدیقکریں،اندھیrecoveryنہدہرائیں۔ Unknownکومعلومrollbackنہسمجھیں۔ ShiftFocusGuardOffنہیںکرتی۔ Away/killrecordsاورtaskbarhideاببھیbest-effort؛Windows/native/providerجانچباقی،liveدکانپرلاککےتجربےنہیں۔ v0.149.0میںsessionhistoryکیwarningنامکملیاunverifiedrecordبتاتیہے؛sharedmarkerکسیخاصPC/userیاforcedcloseکاثبوتنہیں،دوسراcounterچلرہاہوسکتاہے۔ Unknowneventخودنہیںدہرایا جاتا؛مالکapp logدیکھے،بعدکیheartbeatکھویاeventمرمتنہیںکرتی۔",
           "rows": []
         }
       ],

@@ -1,5 +1,8 @@
 # HANDOFF - read this first
 
+> **⏳ موجودہ5.1 — v0.149.0 Gentian:** sessionکےcurrentsharedmarkers،startupstamps+previousauditایکtransaction،heartbeat/exitکےatomicstampsاورcheckedنتائج؛unknownپرlocalpause،login/shellمیںstickywarning۔ ✅139static/46source-negative scripts/66نئیlexicalmutations/34PythonSQLplansصرفمحدودثبوت؛⏳31نئےC#cases/3748suiteاوراصلWindows/provider/WPFباقی۔ مالککا3418PASSثابت۔ [PT-88/حدود](docs/SESSION-TELEMETRY-OUTCOME-URDU.md)؛یہkill/PC/userproofیاexactly-onceنہیں،StartupC/FocusAبرقرار؛StockTake/guideUIاور1تا5کیباقیتصدیقکھلی،6/installerنہیں۔ نیچےپرانےcountsتاریخیہیں۔
+
+
 > **⏳ موجودہ5.1 — v0.148.0 Harebell:** مالککاD-119/Cفیصلہ:startupmodeکیcurrentreadخرابہوتوعارضیmanual+warning،محفوظmode/الگFocusGuardنہیںبدلتے؛loginownedkioskواپس،currentclose/verifiedShift۔ CompatibilitySetModeمیںcheckeddispatch/exactDBreceipt/retainedguard؛legacybridgeمیںno-guessed-restore،partialWindowsنتیجہاورDB-onlyno-changewording۔ ✅138static/45source-negative scripts/65نئیlexicalmutationsمحدود؛⏳47نئےC#cases/3717suiteاوراصلWindows/provider/WPFباقی۔ مالککا3418PASSثابت،pendingنہیں۔ [PT-87/حدود](docs/STARTUP-RUNTIME-COMPATIBILITY-URDU.md)؛legacyboolexactness/installer/telemetry/StockTake/guideUIعملیجانچکھلی،6شروعنہیں۔ نیچےپرانےcountsتاریخیہیں۔
 
 
@@ -435,7 +438,7 @@ that still lists them as ⬜, it is stale: trust `docs/PROGRESS.md`.
 
 ## 4. Next tasks, in order
 
-**⏳ موجودہ اگلا کام:** v0.136.2 کی دو test-fixture/isolation اصلاحات کا اصل Windows build اورپورا3397-case test run؛v0.136.1میں3395PASS/2FAILملے،CS0619حلثابت۔ [تازہ ثبوت/حدود](docs/WINDOWS-V1361-TEST-REPORT-URDU.md)۔ نیچے Tourmaline کے اعداد تاریخی ہیں،موجودہ suite نہیں۔ اس دوران نئی5.1 implementation/حصہ6/installer نہیں۔
+**⏳ موجودہ اگلا کام:** اگلی اجازت پر5.1کےباقیSettingswritersکادائرہبندکرکےStockTakeکاboundedreview؛پہلےباقی1تا5کیاصلWindows/.NET/provider/WPFجانچبھیضروریہے۔ v0.149.0کے31نئےcasesاور3748suiteUNRUN؛مالککاv0.138.0کا3418PASSثابت،pendingنہیں۔ [PT-88/telemetryاورباقی](docs/SESSION-TELEMETRY-OUTCOME-URDU.md)۔ sharedmarkersکیPC/runidentityاسحصےکاحل نہیں؛6/durableidentity/installerشروعنہیں۔ نیچےپرانےNexttasksاپنےcheckpointکیhistoricalحیثیتہیں۔
 
 Do them one at a time; each one ends with a commit (see `AGENTS.md` §6).
 

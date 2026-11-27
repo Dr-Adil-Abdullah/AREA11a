@@ -108,15 +108,13 @@ public partial class App : Application
             CommandGuard.Sink = (message, exception) => _services!.Log.Error(message, exception);
             RunTrail.Step("database ready");
 
-            // A run that never said goodbye (Task Manager, power loss) is reported now, once, to
-            // the black box - before the sign-in window, so there is no one on the screen to blame
-            // and no way to start without the line being written.
-            var previousRun = _services.Focus.CheckPreviousRun();
-
-            if (!string.IsNullOrWhiteSpace(previousRun))
-            {
-                RunTrail.Step("previous run: " + previousRun);
-            }
+            // Best-effort shared markers: audit + startup stamps are atomic, but neither a
+            // particular PC nor a forced close can be proved. Failure must not look like success.
+            var previousRun = _services.Focus.CheckPreviousRunChecked();
+            if (!previousRun.Ok) RunTrail.Step("startup telemetry: " + previousRun.Error);
+            else if (!string.IsNullOrWhiteSpace(previousRun.Value))
+                RunTrail.Step("shared previous marker: " + previousRun.Value);
+            foreach (var warning in previousRun.Warnings) RunTrail.Step(warning);
 
             // The shop's time (v0.35.0, D-92): asked from the internet in the background, from this
             // moment and every 20 minutes after it. Nothing waits for the answer - if the line is
@@ -156,15 +154,17 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
-        // The opposite of a kill: a Task Manager end never reaches here, so the stamp below is
-        // exactly what the next startup checks for. Never throws - an exit that crashes is the one
-        // thing this override must not become.
+        // Best-effort normal-exit marker, not kill/PC attribution. No shutdown retry on failure.
         try
         {
-            _services?.Focus.MarkCleanExit();
+            var exit = _services?.Focus.MarkCleanExitChecked();
+            if (exit is { Ok: false }) RunTrail.Step("exit telemetry: " + exit.Error);
+            if (exit is not null)
+                foreach (var warning in exit.Warnings) RunTrail.Step(warning);
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            _services?.Log.Error("Exit telemetry handoff did not finish.", exception);
         }
 
         // The kiosk login restores the taskbar when it closes, but a crash-box survival or a late

@@ -29,6 +29,9 @@
                 <TextBlock x:Name="FocusGuardNotice" Foreground="{StaticResource WarningBrush}"
                            FontSize="12" TextWrapping="Wrap" Margin="0,10,0,0" Visibility="Collapsed"
                            AutomationProperties.Name="Screen-lock verification warning" />
+                <TextBlock x:Name="TelemetryNotice" Foreground="{StaticResource WarningBrush}"
+                           FontSize="12" TextWrapping="Wrap" Margin="0,10,0,0" Visibility="Collapsed"
+                           AutomationProperties.Name="Session-history recording warning" />
 
                 <TextBlock Text="Sign in to the counter" Style="{StaticResource SectionTitle}"
                            Margin="0,26,0,0" />

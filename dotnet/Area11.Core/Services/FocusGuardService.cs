@@ -1,14 +1,16 @@
 using System.Globalization;
+using System.Text.Json;
+using Area11.Core.Data;
+using Microsoft.Data.Sqlite;
 using Area11.Core.Models;
 using Area11.Core.Utils;
 
 namespace Area11.Core.Services;
 
 /// <summary>
-/// The screen lockdown's memory (owner's word, Nov 2026): who left the screen, when, and for how
-/// long - plus whether the previous run ended without closing (Task Manager, power loss). Every
-/// write here is silent telemetry: it never audits itself, never throws at the caller, and a shop
-/// that never switches the guard on still gets the kill detection for free.
+/// Best-effort shared session markers and away episodes, independent of the screen-lock policy.
+/// Atomic stamps are not PC/run identity, kill proof, or exactly-once delivery. Writes can block.
+/// Checked results distinguish confirmed save, confirmed no-commit, and uncertainty; no hidden retry.
 /// </summary>
 public sealed class FocusGuardService
 {
@@ -65,99 +67,198 @@ public sealed class FocusGuardService
         }
     }
 
-    /// <summary>
-    /// One away-episode, written when the operator comes back: who, how long, and the exact span.
-    /// Returns the black-box line (tests pin it). A failed write is logged, never thrown.
-    /// </summary>
+    private readonly object _telemetryGate = new();
+    private bool _sessionStarted;
+    private bool _telemetryUncertain;
+    private string _telemetryNotice = string.Empty;
+
+    /// <summary>Sticky warning for this service lifetime. A later heartbeat cannot repair a lost event.</summary>
+    public string TelemetryNotice { get { lock (_telemetryGate) return _telemetryNotice; } }
+
+    /// <summary>Compatibility text only, not a save receipt. New callers use RecordAwayChecked.</summary>
     public string RecordAway(User? user, string leftAt, string backAt)
     {
+        var result = RecordAwayChecked(user, leftAt, backAt);
+        return result.Value ?? AwayDetails(user, leftAt, backAt);
+    }
+
+    private static string AwayDetails(User? user, string leftAt, string backAt)
+    {
         var name = string.IsNullOrWhiteSpace(user?.Name) ? "Someone" : user!.Name.Trim();
-        var details = name + " left the screen for " + DescribeGap(leftAt, backAt) +
-                      " (" + leftAt + " to " + backAt + ").";
-
-        try
-        {
-            _audit.RecordStandalone(user, Modules.Pos, "screen_left", details);
-        }
-        catch (Exception exception)
-        {
-            _log.Error("An away-episode could not be written to the black box.", exception);
-        }
-
-        return details;
+        return name + " left the screen for " + DescribeGap(leftAt, backAt) +
+            " (" + leftAt + " to " + backAt + ").";
     }
 
-    /// <summary>
-    /// Runs once at startup, before the sign-in window. When the previous run never said goodbye,
-    /// the gap since it was last seen goes to the black box; then this run stamps itself as alive
-    /// but not yet cleanly exited. Returns the line, or null when there is nothing to report.
-    /// </summary>
-    public string? CheckPreviousRun()
+    /// <summary>One attempt per episode; unlike RecordStandalone, audit errors are observable.
+    /// Never replay an unknown result. No durable deduplication is provided.</summary>
+    public ServiceResult<string?> RecordAwayChecked(User? user, string leftAt, string backAt)
     {
-        try
+        lock (_telemetryGate)
         {
-            var lastStart = _settings.GetString(LastStartKey);
-            var lastUser = _settings.GetString(LastUserKey);
-            var lastSeen = _settings.GetString(LastSeenKey);
-            var clean = _settings.GetBool(CleanExitKey);
-
-            var now = Clock.Now();
-            _settings.SetUiOnly(LastStartKey, now);
-            _settings.SetUiOnly(LastSeenKey, now);
-            _settings.SetUiOnly(CleanExitKey, false);
-
-            // No previous run (first start, or an upgrade that just seeded the keys): nothing to mourn.
-            if (lastStart.Trim().Length == 0 || clean)
+            var details = AwayDetails(user, leftAt, backAt);
+            return WriteTelemetry("Away episode", false, (db, connection, values) =>
             {
+                RecordTelemetryAudit(db, connection, user, "screen_left", details);
+                return details;
+            });
+        }
+    }
+
+    /// <summary>Compatibility report only. Null means no report OR failure; use checked API for outcome.</summary>
+    public string? CheckPreviousRun() => CheckPreviousRunChecked().Value;
+
+    /// <summary>Current strict reads, previous-marker audit and all new stamps in ONE transaction.
+    /// Shared markers may belong to another active counter; the report explicitly says so.
+    /// Calls represent startup attempts, not a timer/retry loop.</summary>
+    public ServiceResult<string?> CheckPreviousRunChecked()
+    {
+        lock (_telemetryGate)
+        {
+            _sessionStarted = false;
+            var result = WriteTelemetry("Startup telemetry", true, (db, connection, values) =>
+            {
+                var lastStart = ReadString(db, connection, LastStartKey);
+                var lastUser = ReadString(db, connection, LastUserKey);
+                var lastSeen = ReadString(db, connection, LastSeenKey);
+                var rawClean = ReadRaw(db, connection, CleanExitKey);
+                var clean = JsonSerializer.Deserialize<bool>(rawClean);
+                var now = Clock.Now();
+                string? details = null;
+                if (lastStart.Trim().Length > 0 && !clean)
+                {
+                    var seen = lastSeen.Trim().Length > 0 ? lastSeen.Trim() : lastStart.Trim();
+                    var who = lastUser.Trim().Length > 0 ? lastUser.Trim() : "The previous run";
+                    details = "Unverified shared marker: " + who + " ended without closing - last seen " + seen +
+                        ", back now (away " + DescribeGap(seen, now) + "). " +
+                        "This is not proof of a forced close or of which PC/user ended a run; another counter may still be active.";
+                    RecordTelemetryAudit(db, connection, null, "session_killed", details);
+                }
+                Put(values, LastStartKey, now);
+                Put(values, LastSeenKey, now);
+                Put(values, LastUserKey, string.Empty); // Never inherit the preceding operator into a new start.
+                Put(values, CleanExitKey, false);
+                return details;
+            });
+            if (result.Ok) _sessionStarted = true;
+            return result;
+        }
+    }
+
+    /// <summary>Compatibility entry; failures still set the visible sticky warning.</summary>
+    public void MarkCleanExit() => MarkCleanExitChecked();
+
+    /// <summary>Normal-exit marker, not proof about any other process sharing this database.</summary>
+    public ServiceResult<string?> MarkCleanExitChecked()
+    {
+        lock (_telemetryGate)
+        {
+            var result = WriteTelemetry("Clean exit", true, (db, connection, values) =>
+            {
+                Put(values, LastSeenKey, Clock.Now());
+                Put(values, CleanExitKey, true);
                 return null;
-            }
-
-            var seen = lastSeen.Trim().Length > 0 ? lastSeen.Trim() : lastStart.Trim();
-            var who = lastUser.Trim().Length > 0 ? lastUser.Trim() : "The previous run";
-            var details = who + " ended without closing - last seen " + seen +
-                          ", back now (away " + DescribeGap(seen, now) + ").";
-
-            _audit.RecordStandalone(null, Modules.Pos, "session_killed", details);
-            _log.Warn(details);
-
-            return details;
-        }
-        catch (Exception exception)
-        {
-            _log.Error("The previous run could not be checked.", exception);
-            return null;
+            }, requireStarted: true);
+            // No late timer may mark this service alive again, even when exit stamping failed.
+            _sessionStarted = false;
+            return result;
         }
     }
 
-    /// <summary>Called when the program shuts down normally - the opposite of a kill.</summary>
-    public void MarkCleanExit()
-    {
-        try
-        {
-            _settings.SetUiOnly(CleanExitKey, true);
-        }
-        catch (Exception exception)
-        {
-            _log.Error("A clean exit could not be stamped.", exception);
-        }
-    }
+    /// <summary>Compatibility entry; synchronous DB work can wait for SQLite.</summary>
+    public void Heartbeat(string? userName) => HeartbeatChecked(userName);
 
-    /// <summary>Called every 30 seconds from the shell tick: still alive, still this user.</summary>
-    public void Heartbeat(string? userName)
+    /// <summary>Atomic seen/user pair. Empty names clear stale attribution. No startup => no stamps.</summary>
+    public ServiceResult<string?> HeartbeatChecked(string? userName)
     {
-        try
+        lock (_telemetryGate)
         {
-            _settings.SetUiOnly(LastSeenKey, Clock.Now());
-
-            if (!string.IsNullOrWhiteSpace(userName))
+            return WriteTelemetry("Heartbeat", true, (db, connection, values) =>
             {
-                _settings.SetUiOnly(LastUserKey, userName!.Trim());
-            }
+                Put(values, LastSeenKey, Clock.Now());
+                Put(values, LastUserKey, userName?.Trim() ?? string.Empty);
+                return null;
+            }, requireStarted: true);
+        }
+    }
+
+    private static void Put(Dictionary<string, string> values, string key, object value) =>
+        values[key] = JsonSerializer.Serialize(value);
+
+    private static string ReadRaw(Database db, SqliteConnection connection, string key) =>
+        db.QuerySingle<string>(connection, "SELECT value FROM settings WHERE key=@key;", new { key })
+            ?? throw new InvalidOperationException("Missing telemetry value.");
+
+    private static string ReadString(Database db, SqliteConnection connection, string key) =>
+        JsonSerializer.Deserialize<string>(ReadRaw(db, connection, key))
+            ?? throw new InvalidOperationException("Invalid telemetry string.");
+
+    private void RecordTelemetryAudit(Database db, SqliteConnection connection, User? actor, string action, string details)
+    {
+        _audit.Record(connection, actor, Modules.Pos, action, details: details);
+        if (Convert.ToInt64(db.Scalar(connection, "SELECT changes();") ?? 0L) != 1L)
+            throw new InvalidOperationException("Telemetry audit was not inserted.");
+    }
+
+    // Called under _telemetryGate. No generic caller-controlled keys or security-setting writes.
+    private ServiceResult<string?> WriteTelemetry(string operation, bool stamps,
+        Func<Database, SqliteConnection, Dictionary<string, string>, string?> work, bool requireStarted = false)
+    {
+        if (_telemetryUncertain || (requireStarted && !_sessionStarted))
+        {
+            var message = "Session telemetry is paused: a startup was not confirmed, the run ended, or an earlier write is unverified. No retry was made.";
+            WarnTelemetry(message);
+            return new ServiceResult<string?> { Error = message, NoCommitConfirmed = true };
+        }
+        var outcome = new TransactionOutcome();
+        var committed = false;
+        string? details = null;
+        try
+        {
+            var db = _settings.SessionTelemetryDatabase;
+            var values = new Dictionary<string, string>(StringComparer.Ordinal);
+            details = db.Tx(connection =>
+            {
+                var line = work(db, connection, values);
+                foreach (var pair in values)
+                {
+                    var changed = db.Execute(connection, @"
+INSERT INTO settings(key, value, updated_at) VALUES(@key, @value, @at)
+ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at;",
+                        new { key = pair.Key, value = pair.Value, at = Clock.Now() });
+                    if (changed != 1) throw new InvalidOperationException("Telemetry stamp was not written.");
+                }
+                // Verify the final set, not only the last statement (including trigger interference).
+                foreach (var pair in values)
+                    if (ReadRaw(db, connection, pair.Key) != pair.Value)
+                        throw new InvalidOperationException("Telemetry stamp readback did not match.");
+                return line;
+            }, outcome);
+            committed = true; // DB receipt is established BEFORE local cache publication.
+            _settings.PublishSessionTelemetry(values);
+            return ServiceResult<string?>.Success(details);
         }
         catch (Exception exception)
         {
-            _log.Error("The session heartbeat could not be stamped.", exception);
+            _log.Error(operation + " did not finish.", exception);
+            var message = committed ? "SAVED. " + operation + " was stored, but local cache refresh failed."
+                : outcome.NoCommitConfirmed ? operation + " was not saved; no commit was made."
+                : operation + " save is unverified. Do not retry the same event; session telemetry is paused.";
+            if (!committed && !outcome.NoCommitConfirmed) _telemetryUncertain = true;
+            // A known failed start cannot be followed by a falsely successful heartbeat/exit.
+            if (stamps && !committed) _sessionStarted = false;
+            WarnTelemetry(message);
+            return committed
+                ? ServiceResult<string?>.Success(details, message)
+                : new ServiceResult<string?> { Error = message, NoCommitConfirmed = outcome.NoCommitConfirmed };
         }
+    }
+
+    private void WarnTelemetry(string message)
+    {
+        var notice = "Session history is incomplete or unverified. " + message + " Ask the owner to check the app log. Screen lock and startup settings are unchanged.";
+        if (_telemetryNotice == notice) return;
+        _telemetryNotice = notice;
+        _log.Warn(message);
     }
 
     /// <summary>"3 sec", "2 min", "1 hr 5 min" - the owner's words for a gap. Never throws.</summary>

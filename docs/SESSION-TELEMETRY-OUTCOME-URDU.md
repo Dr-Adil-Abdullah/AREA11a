@@ -1,0 +1,54 @@
+# PT-88 — سیشن کے مشترکہ نشان اور نتیجے کی دیانت
+
+**⏳ حصہ5.1؛v0.149.0 Gentian،2026-11-10۔** مالک کے تازہ `next` سے صرفsessiontelemetryکاboundedreview/اصلاح۔ StartupکاD-119/CاورFocusGuardکاD-118/A،protected-closeauthentication،verifiedShiftاورshutdownbypassبرقرار۔ مالیحساب،37migrations،کارٹ،printing،installerاورحصہ6نہیںبدلے۔ یہپورے5.1یا1تا5کیبندش نہیں۔
+
+## ⏳ مسئلہ اور محدود source تبدیلی
+
+پرانے`CheckPreviousRun`میںcachedsettings،startupکےتینالگلین دیناوربعدمیںالگاauditتھا؛writeکے`ServiceResult`نظراندازہوتےتھے۔ Heartbeatکےseen/userالگcommit،cleanexitکاresultنظرانداز،اور`AuditService.RecordStandalone`اپنیexceptionخودکھاجاتاہے؛باہرکاtry/catchدراصلawayfailureنہیںجانسکتاتھا۔ `null`یاawayکیبنائیہوئیlineمحفوظrecordکاثبوتنہیںتھی۔
+
+1. **Current،strictاورatomicstartup:** چاروںموجودہDBrowsاسیwrite transactionمیںپڑھیجاتیہیں؛JSONstringاورboolکیصحیحtypeلازم۔ missing/null/malformedtypeپرdefault،cacheیاautomaticrepairنہیں۔ تاریخکیstringکاformatخرابہوتوپرانا`DescribeGap`unknownوقتکہتاہے؛یہنئیclockverificationنہیں۔ پچھلےincompletemarkerکاauditاورنئےstart/seen/blankuser/clean=falseاکٹھےcommitیاrollback۔ نئیشروعاتپرانےoperatorکاناموراثتمیںنہیںلیتی۔
+2. **Atomicheartbeat/exit:** heartbeatمیںseenاورtrimmeduserاکٹھے؛empty/nullنامپرانانامصافکرتاہے۔ cleanexitمیںseenاورclean=trueاکٹھے۔ startکیconfirmedcommitکےبغیرheartbeat/exitکوئیstampنہیںلکھتے۔ کسیstampwriteکیknownfailureپربھیاسserviceکےمزیدheartbeat/exitرکتےہیں؛بعدمیںجھوٹاcleanexitنہیںلکھتے۔ اسکےبعدDBصحیحہوجانےسےخودکارhealingنہیں؛ممکنہfalse-incompleteکوkillproofنہیںکہا۔
+3. **Observedنتیجہ:** `TransactionOutcome`کےساتھایکDBtransaction؛ہرstampکیaffectedrowاورپوریsetکیfinalreadbackلازم؛auditکیdirectinsertcountبھیلازم،silentIGNOREکوsuccessنہیںکہتے۔ commitواپسآنےکےبعدہیcachepublication۔ confirmedcommitکےبعدcachehandoffخرابہوتو`Ok=true`اور**SAVED warning**؛وہدوبارہeventلکھنےکیوجہنہیں۔ cachepublicationکااصلfaultیہاںinject/runنہیںہوا،اسbranchکاثبوتsourceorderingتکہے۔
+4. **Unknownپرpause:** COMMITattemptکیfailureکومعلومno-commitنہیںکہتے،چاہےبعدکیrollbackواپسآجائے۔ unknownآئےتواسیserviceمیںتماماگلےtelemetrywritesرکتےہیں؛startup،heartbeat،exitیاawayکےذریعےreplayنہیں۔ کوئیdurabletoken،manualresetbuttonیاautomaticretryنہیں۔ بعدمیںrefusedcallکا`NoCommitConfirmed=true`صرفاسنئیروکیگئیکالکاہے،پہلےunknownoperationکیrollbackسندنہیں۔
+5. **Awayکااصلنتیجہ:** checkedAPIمیں`Audit.Record`اسیobservedtransactionمیںہے،swallowing`RecordStandalone`نہیں۔ Desktopپہلےepisodeconsumeکرتا،پھرایککوششاورنتیجہ/log/warning؛unknowneventکیخودکارنقلنہیں۔ نئی،الگawayepisodeصرفجبtelemetryunknownpauseنہہوتوآسکتیہے۔ knownfailedawayکےبعدنئےeventsممکن،مگرکھویاeventخودواپسنہیںآتا۔
+6. **Visibleاورstickywarning:** login/shellمیںالگSession-historywarningتقریباً5secاورwindoweventsپرنظرآتیہے؛awayنتیجےکےبعدفوراًrefreshکیجاتیہے۔ بعدکاکامیابheartbeatکھوئےہوئےeventکومرمتنہیںکرتا،اسلیےwarningاسیserviceکیزندگیمیںصافنہیںہوتی۔ اسپیغاممیںstartup/focussettingsنہیںبدلتیں۔ Exitپرwindowختمہورہیہوگی،اسوقتlogہیbest-effortحوالہہے۔ logsخودI/Oپرناکامہوسکتےہیں۔
+7. **Desktopoutcomes:** Appcheckedstartup/exit،Shellcheckedheartbeat/awayکاجواباستعمالکرتےہیں۔ sessioncheckیاautosyncکےدورانlogoutہوجائےتووہیtickپرانےuserکاheartbeatنہیںلکھتا۔ SQLکامsynchronousہے؛SQLite/LANکیانتظارکیوجہسےUIرکسکتیہے،اسےnon-blockingنہیںکہا۔ فوریlogin-userstampنہیں؛پہلیshellheartbeatتکuserblankہوسکتاہے۔
+
+## ⏳ مشترکہ DB کی لازمی حد — کسی کو موردِ الزام نہیں ٹھہراتے
+
+چاروںkeysاببھیپورےshopDBکیمشترکہkeysہیں؛PC/runidentityنہیں۔ دوسراcounterچلرہاہوتونئیstartupاسیactivecounterکامارکرincompleteسمجھسکتیہے؛ایکprocessکاcleanexitدوسرےکےنشانکوصافکرسکتاہے۔ concurrentwritersایکدوسرےکیatomicsetsکوبدل سکتےہیں؛transactionmixedpartialwriteروکتیہے،**اسغلطattributionکونہیں**۔ timestampwallclockہے،monotonicclockنہیں؛پرانےbackward/badclockالفاظبرقرار۔
+
+Compatibilityکیلئےauditactionاببھی`session_killed`اورپرانا`ended without closing`substringموجودہیں،مگرrecordواضح`Unverified shared marker`سےشروعہوتااورکہتاہےکہیہforcedclose/PC/userکاثبوتنہیں،دوسراcounterابھیactiveہوسکتاہے۔ auditactor`system`ہے؛آخرینامصرفmarkerکاحصہہے۔ پرانےauditrecordsدوبارہنہیںلکھےگئے۔
+
+یہlocalservicepauseہے،cross-PC/restartdeduplicationنہیں۔ نئیسروس/ایپکھولناپہلےunknownrecordکیتصدیقنہیں؛وہصرفموجودہsharedmarkerسےنئیکوششکرتیہے،ممکنہduplicateیاmissinghistoryکیمکملضمانتنہیں۔ reliableper-PC/runattribution،exactly-onceاورpower-cutproofکیلئےالگمنظورشدہdesignچاہیے؛**حصہ6/durableidentityاسحصےمیںشروعنہیںہوئے۔**
+
+## ⏳ Compatibility اور محفوظ دائرہ
+
+پرانےpublic`CheckPreviousRun/Heartbeat/MarkCleanExit/RecordAway`signaturesاوراصل`FocusGuardTests`برقرار؛انکےwrappertext/nullکوساورسcommentمیںصافreceiptنہیںکہا۔ checkedمتبادل`ServiceResult<string?>`دیتےہیں؛تمامproductioncallersمنتقلہیں۔ عمومی`AuditService.RecordStandalone`کےدوسرےcallersکیپالیسییہاںنہیںبدلی۔ SettingsServiceمیںصرفinternalDBcomposition/narrowfour-keycachebridgeاضافی؛عمومیauthorizedSettings/CAS/secret/allowlistراستےنہیںبدلے۔ مالی/data/transactioninfrastructure/37migrationsاورپرانےC#testsاصلہیں۔
+
+## ✅ محدود جانچ / ⏳ اصل runtime باقی
+
+- ✅ **139repositorysource/staticchecks**؛grammarاورmemberresolutionمحدود،یہ.NETcompileنہیں۔
+- ✅ **66نئیlexicalmutations**rejectاورexactbytesبحال؛تمام **46source-negative scripts**پاس۔ sourcecheckerاپنیحدسےباہرprovideroutcomeثابتنہیںکرتا۔
+- ✅ **37migrations،34نئےsyntheticPythonSQLplans**،WALاورDELETEمیں؛extractedاصلsettingsupsert/read/auditSQLپرstartup/ہرstamp/auditfailure/heartbeatpair/exit/awayاورdeferredCOMMITfaultکےrollback۔ Pythonاپنیtransactions/controlflowچلاتاہے؛C#serviceguard/cache/`Microsoft.Data.Sqlite`COMMITclassificationکانتیجہنہیں۔
+- ✅ پرانےSettingsکے24اورShiftrecoveryکے8PythonSQLplansدوبارہWAL/DELETEپر؛nativeguide/offlinebooksourceparity/3153staticdata/309navigationجانچ۔ صرفstartupموضوعمیںhistoryکیحداضافی؛باقی95topics،R3metadataاورچھrootsبرقرار۔ یہWPFشکلکیجانچنہیں۔
+- ⏳ **31نئےpublic-serviceC#cases،3748کیمتوقعپوریsuiteUNRUN**؛یہاں.NETSDK/Windowsنہیں۔ first/currentcachedread،startupکےچارwritefaults،auditrollback،چھmalformedtypes،missingrow،heartbeatکےتینnamecases/pairrollback،cleanexit/lateheartbeat/failure،unstarteddenial،awayreceipt/failure،startup/heartbeat/awayکےdeferred-COMMITfaultsاورsilentignored/rewrittenstampsاورignoredauditکےچاراضافیcases،policyindependenceکےcasesتحریرہیں،چلائےنہیں۔
+- ✅ مالککااصلv0.138.0Windows/.NET10 **3418PASS/0FAIL/0skip،6m50s**پچھلاثابتنتیجہہے،pendingنہیں۔ بعدکے330casesاورنیاDesktopاسکاثبوتنہیں۔ پرانے30warningsحلکہےنہیں۔
+
+## ⏳ اصل Windows/provider/WPF جانچ فہرست
+
+الگsyntheticshopمیںfullDebug/Releasebuildاور3748cases؛SQLite/providerdeferredCOMMITاورconnection/rollback/cachepublicationfaults؛read-only/busy/missingDB/LANdrop؛startupfailureکےبعدno-false-clean؛successfulstartup/heartbeat/normalexit؛late-ticklogout/sync/closing؛away consume/oneattempt؛login/shellwarningwrap/scroll/DPI/5sectiming/taskbar/×؛StartupCmanualunknownاورFocusAکیآخریverifiedOn/Off/initialOn؛protectedclosepassword/verifiedShift/shutdownbypasses؛دوcountersonsharedDBمیںfalseattributionکیواضححد۔ liveدکانیااصلregistryپرکوئیexperimentنہیںکیا۔
+
+## ⏳ اگلا کام صرف نئی اجازت سے
+
+باقی5.1SettingswritersکیحدمکملدیکھکرStockTakeکاالگboundedreview؛guideUIکیاصلdouble-click/layout/focusاورمالککیپسند؛حصے1تا5کیضروریWindows/provider/WPFتصدیق۔ legacyboolstartup/installerراستوںکیlimitsحلشدہنہیںکہیں۔ **❌ حصہ6/durableidentity/installerشروعنہیں۔**
+
+## ⏳ گزشتہ تین checkpoints کی مشترکہ رپورٹ
+
+- **v0.147.0/PT-86:** ShiftrecoveryمیںmanualmodeاورsystemauditایکobservedDBtransaction؛Windowscleanupالگcheckedمرحلہ،partial/SAVEDwarningsاورlocalguard۔27نئےC#casesتحریر،اصلWindows/providerباقی۔
+- **v0.148.0/PT-87:** مالککاD-119/C:currentstartupreadخرابہوتوعارضیmanual/visiblewarning؛FocusD-118/Aالگبرقرار۔ checkedcompatibilitydispatch/receiptاورlegacybridgeمیںno-guessed-restore/partialWindowsنتیجہ۔47نئےC#casesتحریر،اصلWindows/providerباقی۔
+- **v0.149.0/PT-88:** telemetryکےignored/swallowedنتائج،non-atomicstampsاورcachedpreviousreadکیمحدودsourceاصلاح؛unknownpauseاورvisiblehistorywarning۔31نئےC#casesتحریر،اصلWindows/providerباقی۔
+
+ان105نئےcasesمیںسےکسیC#caseکویہاںچلانےکادعویٰنہیں؛انکیپہلیاصلWindowsجانچباقیہے۔ اسسےپہلےکےبھیunruncasesشاملکرکےموجودہ3748suiteہے؛پرانا3418PASSاپنیجگہثابت۔ Static/SQLreferencechecksکونئےWPFعملیrun،مکملحصہ5.1،تمام1تا5یاحصہ6کیتکمیل میںتبدیلنہیںکیا۔
+
+✅ آخریbaselineaudit:پچھلےb8f216bکےتمام952trackedpathsبرقرار؛170پرانےC#testfilesلفظبہلفظاصل۔ FocusD-118/AاورDescribeGapاصل،SettingsServiceمیںصرفinternalcomposition/cachebridge؛باقیCore/finance/data/Tx/37migrations/StartupServiceاصل۔ Guideکےباقی95topicsاورR3metadataبرقرار۔ Checklistاسیexplicit2026-11-10/versionپرregenerate،boardکے57partialstatusesنہیںبدلے؛rulematrixمیںصرفdocumentationtrace۔ نیاOwnerفیصلہایجادنہیںکیا؛D-119تکاصلregister/indexبرقرار۔

@@ -50,6 +50,8 @@ public partial class LoginWindow : Window
 
     private bool ReadFocusGuard()
     {
+        TelemetryNotice.Text = _viewModel.Services.Focus.TelemetryNotice;
+        TelemetryNotice.Visibility = string.IsNullOrWhiteSpace(TelemetryNotice.Text) ? Visibility.Collapsed : Visibility.Visible;
         var status = _viewModel.Services.Focus.ReadStatus();
         FocusGuardNotice.Text = status.Notice;
         FocusGuardNotice.Visibility = status.Verified ? Visibility.Collapsed : Visibility.Visible;

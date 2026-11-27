@@ -1,5 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
+> **⏳ Session history — v0.149.0:** login/shellمیںSession historywarningآئےتوتاریخنامکملیاunverifiedہے؛اسےکامیابrecordنہسمجھیں۔ مالکapp logدیکھے؛باربارstartup/exit/awayeventنہدہرائے۔ Sharedmarkerمیںآخریoperatorکانامآنااسیperson/PCکےزبردستیبندکرنےکاثبوتنہیں؛دوسراcounterابھیچلرہاہوسکتاہے۔ DBخرابیپرstampsرکسکتےہیں؛بعدکیheartbeatکھویاeventمرمتنہیںکرتی۔ Screenlock/Startupکےالگاصولبرقرار۔ [PT-88/حدود](SESSION-TELEMETRY-OUTCOME-URDU.md)؛اصلWindows/WPFجانچباقی۔
+
+
 > **⏳ Startup mode — v0.148.0/D-119/C:** DBسےstartupmodeتصدیقنہہوتوعارضیmanualاورlogin/shellپرwarning؛startup-modeکیprotectedcloseپابندیاسدورانOff۔ محفوظmode/Windowsentriesخودنہیںبدلتیں؛الگFocusGuardکاD-118/Aاصولاببھیلاگوہے،اسلیےاسکیوجہسے×پرpromptآسکتاہے۔ صحیحreadبحالہوتواصلموڈواپس۔ Shiftunknownmodeکواصلیmanualلکھنےکاارادہنہیںبناتا۔ partial/unknownSaveپرSettingsاورWindowsentryتصدیقکےبغیردوبارہکوششنہکریں۔ [PT-87/حدود](STARTUP-RUNTIME-COMPATIBILITY-URDU.md)؛اصلWindows/WPFباقی۔
 
 

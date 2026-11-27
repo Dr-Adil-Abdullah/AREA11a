@@ -1,5 +1,8 @@
 # Area11 — pharmacy POS + inventory for Windows
 
+> **⏳ موجودہ5.1 — v0.149.0 Gentian:** sessionکےcurrentsharedmarkers،startupstamps+previousauditایکtransaction،heartbeat/exitکےatomicstampsاورcheckedنتائج؛unknownپرlocalpause،login/shellمیںstickywarning۔ ✅139static/46source-negative scripts/66نئیlexicalmutations/34PythonSQLplansصرفمحدودثبوت؛⏳31نئےC#cases/3748suiteاوراصلWindows/provider/WPFباقی۔ مالککا3418PASSثابت۔ [PT-88/حدود](docs/SESSION-TELEMETRY-OUTCOME-URDU.md)؛یہkill/PC/userproofیاexactly-onceنہیں،StartupC/FocusAبرقرار؛StockTake/guideUIاور1تا5کیباقیتصدیقکھلی،6/installerنہیں۔ نیچےپرانےcountsتاریخیہیں۔
+
+
 > **⏳ موجودہ5.1 — v0.148.0 Harebell:** مالککاD-119/Cفیصلہ:startupmodeکیcurrentreadخرابہوتوعارضیmanual+warning،محفوظmode/الگFocusGuardنہیںبدلتے؛loginownedkioskواپس،currentclose/verifiedShift۔ CompatibilitySetModeمیںcheckeddispatch/exactDBreceipt/retainedguard؛legacybridgeمیںno-guessed-restore،partialWindowsنتیجہاورDB-onlyno-changewording۔ ✅138static/45source-negative scripts/65نئیlexicalmutationsمحدود؛⏳47نئےC#cases/3717suiteاوراصلWindows/provider/WPFباقی۔ مالککا3418PASSثابت،pendingنہیں۔ [PT-87/حدود](docs/STARTUP-RUNTIME-COMPATIBILITY-URDU.md)؛legacyboolexactness/installer/telemetry/StockTake/guideUIعملیجانچکھلی،6شروعنہیں۔ نیچےپرانےcountsتاریخیہیں۔
 
 

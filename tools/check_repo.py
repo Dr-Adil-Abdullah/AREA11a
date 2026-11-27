@@ -10683,6 +10683,75 @@ def check_startup_runtime_compatibility():
     REPORT.append('P5.1 D-119/C:current startup mode or temporary manual+warning,no cache/repair/Focus-policy change;window5s/current-close+owned kiosk reversal;compat checked dispatch/exact receipt/local outcome guard,legacy presence-only/no guessed restoration/scoped DB-only no-change wording;47 C# cases UNRUN,not Windows/provider/installer/whole5.1 proof')
 
 
+
+def check_session_telemetry_outcomes():
+    """Lexical tripwires only; not C#/provider COMMIT, WPF, PC identity, or delivery proof."""
+    def need(text, tokens, label):
+        for token in tokens:
+            if token not in text: FAILURES.append('Session telemetry ' + label + ' missing ' + token)
+    def order(text, tokens, label):
+        positions = [text.find(t) for t in tokens]
+        if min(positions) < 0 or positions != sorted(positions): FAILURES.append('Session telemetry ordering ' + label)
+    service = (DOTNET / 'Area11.Core/Services/FocusGuardService.cs').read_text()
+    telemetry = service.split('    private readonly object _telemetryGate', 1)[1].split('    /// <summary>"3 sec"', 1)[0]
+    need(telemetry, ['lock (_telemetryGate)', 'public string TelemetryNotice',
+        'public ServiceResult<string?> CheckPreviousRunChecked()', 'public ServiceResult<string?> HeartbeatChecked(',
+        'public ServiceResult<string?> MarkCleanExitChecked()', 'public ServiceResult<string?> RecordAwayChecked(',
+        'var lastStart = ReadString(db, connection, LastStartKey);', 'var lastUser = ReadString(db, connection, LastUserKey);',
+        'var lastSeen = ReadString(db, connection, LastSeenKey);', 'var rawClean = ReadRaw(db, connection, CleanExitKey);',
+        'JsonSerializer.Deserialize<bool>(rawClean)', 'JsonSerializer.Deserialize<string>(ReadRaw(db, connection, key))',
+        'SELECT value FROM settings WHERE key=@key;', 'Unverified shared marker:', 'another counter may still be active.',
+        'This is not proof of a forced close or of which PC/user ended a run;',
+        'RecordTelemetryAudit(db, connection, null, "session_killed", details);',
+        'RecordTelemetryAudit(db, connection, user, "screen_left", details);',
+        '_audit.Record(connection, actor, Modules.Pos, action, details: details);',
+        'if (Convert.ToInt64(db.Scalar(connection, "SELECT changes();") ?? 0L) != 1L)',
+        'if (changed != 1) throw', 'if (ReadRaw(db, connection, pair.Key) != pair.Value)',
+        'Put(values, LastStartKey, now);', 'Put(values, LastSeenKey, now);',
+        'Put(values, LastUserKey, string.Empty);', 'Put(values, CleanExitKey, false);',
+        'Put(values, LastSeenKey, Clock.Now());', 'Put(values, CleanExitKey, true);',
+        'Put(values, LastUserKey, userName?.Trim() ?? string.Empty);',
+        'if (result.Ok) _sessionStarted = true;', '_sessionStarted = false;', 'requireStarted: true',
+        'if (_telemetryUncertain || (requireStarted && !_sessionStarted))', 'NoCommitConfirmed = true',
+        'var outcome = new TransactionOutcome();', 'details = db.Tx(connection =>', 'foreach (var pair in values)',
+        'ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at;',
+        '}, outcome);', 'committed = true;', '_settings.PublishSessionTelemetry(values);',
+        'return ServiceResult<string?>.Success(details);',
+        'if (!committed && !outcome.NoCommitConfirmed) _telemetryUncertain = true;',
+        'if (stamps && !committed) _sessionStarted = false;',
+        'SAVED.', 'save is unverified. Do not retry the same event;',
+        '? ServiceResult<string?>.Success(details, message)', 'NoCommitConfirmed = outcome.NoCommitConfirmed',
+        'if (_telemetryNotice == notice) return;', 'Screen lock and startup settings are unchanged.'], 'atomic/current/observed contract')
+    order(telemetry, ['details = db.Tx(connection =>', 'var line = work(db, connection, values);',
+        'foreach (var pair in values)', '}, outcome);', 'committed = true;', '_settings.PublishSessionTelemetry(values);',
+        'return ServiceResult<string?>.Success(details);'], 'commit before cache/receipt')
+    for forbidden in ('RecordStandalone(', '_settings.SetUiOnly(', '_settings.GetString(', '_settings.GetBool(',
+                      'exception.Message', 'Thread.Sleep(', 'Guid.NewGuid('):
+        if forbidden in telemetry: FAILURES.append('Session telemetry forbidden cached/swallowed/retry/identity path ' + forbidden)
+    if telemetry.count('requireStarted: true') != 2: FAILURES.append('Session telemetry heartbeat and clean exit must both require confirmed startup')
+    settings = (DOTNET / 'Area11.Core/Services/SettingsService.cs').read_text()
+    need(settings, ['internal Database SessionTelemetryDatabase => _db;', 'internal void PublishSessionTelemetry(',
+        'if (pair.Key is not ("session.lastUser" or "session.lastStart" or "session.lastSeen" or "session.cleanExit"))'], 'narrow cache bridge')
+    app = (DOTNET / 'Area11.Desktop/App.xaml.cs').read_text()
+    need(app, ['_services.Focus.CheckPreviousRunChecked()', 'if (!previousRun.Ok)',
+        '_services?.Focus.MarkCleanExitChecked()', 'if (exit is { Ok: false })'], 'startup/exit outcomes')
+    shell = (DOTNET / 'Area11.Desktop/ViewModels/ShellViewModel.cs').read_text()
+    tick = shell.split('_sessionTimer.Tick +=', 1)[1].split('_services.AuthenticationLost +=', 1)[0]
+    need(tick, ['_services.Focus.HeartbeatChecked(_user.Name)', 'if (!heartbeat.Ok)'], 'heartbeat outcome')
+    if tick.count('if (!SessionWatch.Running || !ReferenceEquals(_services.CurrentUser, _user)) return;') != 2:
+        FAILURES.append('Session telemetry needs post-session and post-sync late-tick checks')
+    for name, expr in [('LoginWindow', '_viewModel.Services.Focus'), ('ShellWindow', 'shell.Services.Focus')]:
+        view = (DOTNET / ('Area11.Desktop/Views/' + name + '.xaml.cs')).read_text()
+        need(view, ['TelemetryNotice.Text = ' + expr + '.TelemetryNotice;',
+            'TelemetryNotice.Visibility = string.IsNullOrWhiteSpace(TelemetryNotice.Text) ? Visibility.Collapsed : Visibility.Visible;'], name + ' warning')
+        need((DOTNET / ('Area11.Desktop/Views/' + name + '.xaml')).read_text(), ['x:Name="TelemetryNotice"'], name + ' warning XAML')
+    view = (DOTNET / 'Area11.Desktop/Views/ShellWindow.xaml.cs').read_text()
+    episode = view.split('        var leftAt = _leftAt;', 1)[1]
+    order(episode, ['_leftAt = null;', '.RecordAwayChecked(shell.CurrentUser, leftAt, Clock.Now());',
+        'if (!episode.Ok)'], 'away consume before attempt, observe no replay')
+    REPORT.append('P5.1 session telemetry:current strict shared markers,atomic audit+startup/heartbeat/exit,observed commit before cache,unknown pause/checked Desktop/sticky warnings;31 additive C# cases UNRUN,not PC/run identity,kill proof,exactly-once,provider/WPF/full5.1 proof')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -10819,6 +10888,7 @@ def main() -> int:
     check_focus_guard_read_outcomes()
     check_startup_recovery_outcomes()
     check_startup_runtime_compatibility()
+    check_session_telemetry_outcomes()
     check_csharp_grammar()
 
     if not quiet:
