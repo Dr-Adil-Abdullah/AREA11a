@@ -7848,7 +7848,7 @@
         },
         {
           "kind": "paragraph",
-          "text": "Shift-at-startupصرفstartuprecoveryکیrequestہے،FocusGuardOffنہیںکرتی؛resultتصدیقکریں۔ Away/killrecordsاورtaskbarhidebest-effortہیں،ہرواقعےکےauditکیضمانتنہیں۔ Windows/native/providerجانچباقی؛liveدکانکولاککرکےتجربہنہکریں۔",
+          "text": "v0.147.0میںShift-at-startuprecoverymanualmodeاوراسکاsystemauditاکٹھےمحفوظکرتیہے؛Windowscleanupبعدمیںالگbest-effortمرحلہہے۔ SAVEDکےساتھwarningہوتوentryرہسکتیہےیاmodeبعدمیںبدلچکاہو؛SettingsاورWindowsentriesتصدیقکریں،اندھیrecoveryنہدہرائیں۔ Unknownکومعلومrollbackنہسمجھیں۔ ShiftFocusGuardOffنہیںکرتی۔ Away/killrecordsاورtaskbarhideاببھیbest-effort؛Windows/native/providerجانچباقی،liveدکانپرلاککےتجربےنہیں۔",
           "rows": []
         }
       ],

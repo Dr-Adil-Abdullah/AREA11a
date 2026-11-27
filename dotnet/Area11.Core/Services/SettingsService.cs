@@ -320,6 +320,56 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.upd
         }
     }
 
+    /// <summary>Fixed Shift-at-startup recovery only: manual mode AND its system audit in one
+    /// observed transaction. No actorless arbitrary key/value, no Focus Guard or installer write.</summary>
+    internal ServiceResult ResetStartupForRecovery()
+    {
+        var outcome = new TransactionOutcome();
+        var committed = false;
+        var json = JsonSerializer.Serialize(StartupService.Manual);
+        try
+        {
+            var receipt = _db.Tx(connection =>
+            {
+                var old = _db.Scalar(connection, "SELECT value FROM settings WHERE key=@key;",
+                    new { key = StartupService.ModeKey })?.ToString();
+                _db.Execute(connection, @"
+INSERT INTO settings(key,value,updated_at) VALUES(@key,@value,@at)
+ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at;",
+                    new { key = StartupService.ModeKey, value = json, at = Clock.Now() });
+                _audit.Record(connection, null, "Auth", "protection_reset", "settings", StartupService.ModeKey,
+                    old, json, "Startup mode reset to manual by Shift-at-startup recovery; Windows cleanup is a separate best-effort stage. Screen lock is unchanged.");
+                return new SettingsEditForm(_db, new Dictionary<string, string> { [StartupService.ModeKey] = json },
+                    new Dictionary<string, string> { [StartupService.ModeKey] = SettingFingerprint(connection, StartupService.ModeKey) }, false);
+            }, outcome);
+            committed = true;
+            lock (_gate) _cache[StartupService.ModeKey] = json;
+            return new ServiceResult { Ok = true, SettingsEdit = receipt };
+        }
+        catch (Exception exception)
+        {
+            _log.Error("Startup recovery save did not finish. Exception type: " + exception.GetType().Name);
+            return new ServiceResult { NoCommitConfirmed = !committed && outcome.NoCommitConfirmed,
+                Error = committed ? "SAVED. Manual startup and its audit were stored, but local refresh failed. Verify before retrying."
+                    : outcome.NoCommitConfirmed ? "Startup recovery was not saved; no commit was made."
+                    : "Startup recovery saving is unconfirmed. Verify startup settings and the black box before retrying." };
+        }
+    }
+
+    /// <summary>Verification only, never a rebase: do not clean Windows entries for a newer mode.</summary>
+    internal bool MatchesStartupRecovery(SettingsEditForm receipt)
+    {
+        try
+        {
+            return _db.Read(connection =>
+            {
+                RequireEdit(connection, receipt, new[] { StartupService.ModeKey });
+                return receipt.GetRaw(StartupService.ModeKey) == JsonSerializer.Serialize(StartupService.Manual);
+            });
+        }
+        catch (Exception) { return false; }
+    }
+
     /// <summary>Current local Settings reader; this is not proof of an authenticated session.</summary>
     public ServiceResult CheckAccess(User? actor)
     {

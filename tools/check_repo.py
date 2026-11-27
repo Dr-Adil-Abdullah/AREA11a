@@ -7613,8 +7613,8 @@ def check_settings_current_boundaries():
     write = settings.split('public ServiceResult SetMany(', 1)[-1].split('internal ServiceResult SaveRecoveryHash',1)[0]
     if not (write.find('_db.Tx(connection =>') < write.find('RequireWriter(') < write.find('foreach (var pair in values)')):
         FAILURES.append('Current Settings writer must be checked inside Tx before first write')
-    for token in ('_settings.SaveSystemStartupMode(automatic: true)', '_settings.SaveSystemStartupMode(automatic: false)',
-                  'var access = _settings.CheckAccess(actor);', 'if (!saved.Ok) return saved;'):
+    for token in ('_settings.SaveSystemStartupMode(automatic: true)', '_settings.ResetStartupForRecovery()',
+                  'var access = _settings.CheckAccess(actor);', '_recoveryAttempt.ObserveFailure(saved);'):
         if token not in startup: FAILURES.append(f'Current startup settings boundary missing {token}')
     if '_settings.SetUiOnly(ModeKey,' in startup or 'actor: null' in startup:
         FAILURES.append('Startup must not use a general actorless configuration setter')
@@ -10526,6 +10526,77 @@ def check_focus_guard_read_outcomes():
     REPORT.append('P5.1 Focus Guard D-118/A:current strict DB read,no cache/default-off evidence;last verified choice on unknown,initial ON,same-read warning;login/shell5s+event checks and disposal,chrome before Save callbacks;31 C# cases UNRUN,not Windows/native-security/timing/telemetry/full5.1 proof')
 
 
+def check_startup_recovery_outcomes():
+    """Shift recovery source contracts; not C#/Windows/provider/WPF/durable identity proof."""
+    def need(text, tokens, label):
+        for token in tokens:
+            if token not in text: FAILURES.append('Startup recovery ' + label + ' missing ' + token)
+    def order(text, tokens, label):
+        points = [text.find(token) for token in tokens]
+        if min(points) < 0 or points != sorted(points): FAILURES.append('Startup recovery ordering: ' + label)
+    settings = (DOTNET / 'Area11.Core/Services/SettingsService.cs').read_text()
+    save = settings.split('    internal ServiceResult ResetStartupForRecovery()', 1)[1].split('    /// <summary>Verification only, never a rebase:', 1)[0]
+    need(save, ['var outcome = new TransactionOutcome();', 'var committed = false;',
+        'JsonSerializer.Serialize(StartupService.Manual)', 'var receipt = _db.Tx(connection =>',
+        'var old = _db.Scalar(connection,', 'INSERT INTO settings(key,value,updated_at)',
+        '_audit.Record(connection, null, "Auth", "protection_reset", "settings", StartupService.ModeKey,',
+        'old, json, "Startup mode reset to manual by Shift-at-startup recovery;',
+        'return new SettingsEditForm(_db,', 'SettingFingerprint(connection, StartupService.ModeKey)',
+        '}, outcome);', 'committed = true;', 'lock (_gate) _cache[StartupService.ModeKey] = json;',
+        'return new ServiceResult { Ok = true, SettingsEdit = receipt };',
+        'NoCommitConfirmed = !committed && outcome.NoCommitConfirmed',
+        'Error = committed ? "SAVED.', ': outcome.NoCommitConfirmed ?',
+        'Startup recovery saving is unconfirmed.', 'Exception type: " + exception.GetType().Name'], 'atomic fixed manual/audit')
+    order(save, ['var receipt = _db.Tx(', 'var old =', 'INSERT INTO settings(', '_audit.Record(',
+        'return new SettingsEditForm(', '}, outcome);', 'committed = true;', 'lock (_gate)', 'Ok = true'], 'atomic audit/receipt/commit/cache/success')
+    for forbidden in ('RecordStandalone(', 'FocusGuardService.GuardKey', 'SaveSystemStartupMode(', 'exception.Message'):
+        if forbidden in save: FAILURES.append('Startup recovery cannot use old separate audit/other key/leak: ' + forbidden)
+    verify = settings.split('    internal bool MatchesStartupRecovery(', 1)[1].split('    /// <summary>Current local Settings reader;', 1)[0]
+    need(verify, ['return _db.Read(connection =>', 'RequireEdit(connection, receipt, new[] { StartupService.ModeKey });',
+        'receipt.GetRaw(StartupService.ModeKey) == JsonSerializer.Serialize(StartupService.Manual)',
+        'catch (Exception) { return false; }'], 'receipt verification not current-form rebase')
+    service = (DOTNET / 'Area11.Core/Services/StartupService.cs').read_text()
+    recovery = service.split('    public ServiceResult ResetToManual()', 1)[1].split('    private static AutoStartEntry? CaptureRecoveryEntry', 1)[0]
+    need(service, ['private readonly PostingAttemptGuard _recoveryAttempt = new();', 'private string _recoveryHint = string.Empty;'], 'retained guard')
+    need(recovery, ['if (!_recoveryAttempt.TryBegin()) return ServiceResult.Fail(_recoveryHint);',
+        '_recoveryHint = "Startup recovery is already running. Wait for its result; do not repeat it.";',
+        'var machineBefore = CaptureRecoveryEntry(_machine);', 'var userBefore = CaptureRecoveryEntry(_userStore);',
+        'var saved = _settings.ResetStartupForRecovery();', 'if (!saved.Ok)', '_recoveryAttempt.ObserveFailure(saved);',
+        'NoCommitConfirmed = saved.NoCommitConfirmed', '_recoveryAttempt.AcknowledgeCommit();',
+        'receipt is null || receipt.GetRaw(ModeKey) != "\\\"manual\\\""',
+        'CleanupRecoveryEntry(_machine, machineBefore, receipt, "machine-wide", warnings);',
+        'CleanupRecoveryEntry(_userStore, userBefore, receipt, "this-account", warnings);',
+        'var machineAbsent = VerifyRecoveryEntry(_machine);', 'var userAbsent = VerifyRecoveryEntry(_userStore);',
+        'if (!machineAbsent || !userAbsent)', 'if (!_settings.MatchesStartupRecovery(receipt))',
+        'if (warnings.Count == 0) _recoveryAttempt.CompleteReset();', 'else _recoveryHint = "SAVED.',
+        'Ok = true, SettingsEdit = receipt, Warnings = warnings.ToArray()',
+        '_recoveryAttempt.ObserveException();', '_recoveryAttempt.WasAcknowledged',
+        '? "SAVED. Manual startup and its audit were stored;', 'Exception type: " + exception.GetType().Name'], 'observed recovery/handoff')
+    order(recovery, ['_recoveryAttempt.TryBegin()', 'var machineBefore', 'var userBefore', 'var saved =',
+        'if (!saved.Ok)', '_recoveryAttempt.ObserveFailure(saved);', '_recoveryAttempt.AcknowledgeCommit();',
+        'var receipt = saved.SettingsEdit;', 'receipt is null', 'CleanupRecoveryEntry(_machine,', 'CleanupRecoveryEntry(_userStore,',
+        'var machineAbsent', 'var userAbsent', 'if (!_settings.MatchesStartupRecovery(receipt))',
+        'if (warnings.Count == 0) _recoveryAttempt.CompleteReset();', 'Ok = true'], 'DB first/ack/receipt/independent cleanup/verify/reset')
+    helper = service.split('    private static AutoStartEntry? CaptureRecoveryEntry', 1)[1]
+    need(helper, ['checkedStore.Capture() : null;', 'if (!_settings.MatchesStartupRecovery(receipt))',
+        'if (store is ICheckedAutoStartStore checkedStore)', 'if (before is null)',
+        'checkedStore.Replace(before, AutoStartEntry.Missing);',
+        'if (!checkedStore.Capture().Matches(AutoStartEntry.Missing))', 'store.Disable();',
+        'attempted through a legacy host and cannot be fully verified.', 'No restoration was attempted.',
+        'return store is ICheckedAutoStartStore checkedStore && checkedStore.Capture().Matches(AutoStartEntry.Missing);'], 'checked/no-compensation cleanup')
+    for forbidden in ('DisableQuietly(', 'RestoreQuietly(', 'EnabledOf(', '.Enable(', 'RecordStandalone(',
+                      'SaveSystemStartupMode(', 'Nothing was changed', '.Focus.', 'exception.Message'):
+        if forbidden in recovery + helper: FAILURES.append('Startup recovery must not restore/enable/bless bool or claim no mutation: ' + forbidden)
+    app = (DOTNET / 'Area11.Desktop/App.xaml.cs').read_text()
+    need(app, ['var recovery = _services.Startup.ResetToManual();', 'var recoveryNote = recovery.Ok',
+        'string.Join(" ", recovery.Warnings)', ': recovery.Error ??', 'recoveryNote + " " +',
+        'recovery.Ok && recovery.Warnings.Count == 0 ? MessageBoxImage.Information : MessageBoxImage.Warning',
+        'Screen lock, if enabled, is unchanged.'], 'Desktop shows actual result/warnings without automatic replay')
+    tests = (DOTNET / 'Area11.Tests/StartupRecoveryOutcomeTests.cs').read_text()
+    if tests.count('[Fact]') + tests.count('[InlineData(') != 27: FAILURES.append('Startup recovery requires27 additive public C# cases')
+    REPORT.append('P5.1 Shift recovery:manual+protection_reset atomic observed Tx/exact partial receipt;DB first,ack before separate checked cleanup,warnings for stuck/unknown/legacy/changed stores;no restore,retained guard,actual Desktop outcome;27 C# cases UNRUN,not Windows/provider/native/legacy SetMode/installer/full5.1 proof')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -10660,6 +10731,7 @@ def main() -> int:
     check_label_reset_outcomes()
     check_main_settings_outcomes()
     check_focus_guard_read_outcomes()
+    check_startup_recovery_outcomes()
     check_csharp_grammar()
 
     if not quiet:

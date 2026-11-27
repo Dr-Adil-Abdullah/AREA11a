@@ -1,5 +1,8 @@
 # HANDOFF - read this first
 
+> **⏳ موجودہ5.1 — v0.147.0 Cowslip:** Shift-recoveryمیںmanualmode+systemauditایکobservedDBtransaction؛exactpartialreceipt،ackقبلالگcheckedWindowscleanup،stuck/unknown/changed/legacyentryکیwarningsاورlocalretainedguard،Appپراصلنتیجہ۔ ✅137static/44source-negative scripts/50نئیlexicalmutations/8نئےPythonSQLplansمحدود؛⏳27نئےC#cases/3670suiteاوراصلWindows/provider/WPFباقی۔ مالککا3418PASSثابت،pendingنہیں۔ [PT-86/حدود](docs/STARTUP-RECOVERY-OUTCOME-URDU.md)؛compatibilitySetMode/runtimeStartup/telemetry/StockTake/guideUIعملیجانچکھلی،6/installerنہیں۔ نیچےپرانےcountsتاریخیہیں۔
+
+
 > **⏳ موجودہ5.1 — v0.146.0 Meadowsweet:** مالککاD-118/Aفیصلہ:FocusGuardکیcurrentDBread؛خرابیپرآخریverifiedOn/Off،ابتدائیunknownپرOnاورvisiblewarning۔ Login/shellevents+تقریباً5schecks/cleanup،savedchromeکاeventقبلproperty/statuscallbacks،Shift/telemetryکیhonestlimits۔ ✅136static/43source-negative scripts/60نئیlexicalmutationsمحدود؛⏳31نئےC#cases/3643suiteاوراصلWindows/provider/nativeWPFباقی۔ مالککا3418PASSثابت،pendingنہیں۔ [PT-85/حدوداورگزشتہتینحصوںکیرپورٹ](docs/FOCUS-GUARD-READ-OUTCOME-URDU.md)؛legacyStartup/telemetry/StockTake/guideUIعملیجانچکھلی،6/installerنہیں۔ نیچےپرانےcountsتاریخیہیں۔
 
 

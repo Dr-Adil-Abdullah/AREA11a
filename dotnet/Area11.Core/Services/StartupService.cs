@@ -467,29 +467,104 @@ public sealed class StartupService
         return ServiceResult<User>.Success(user);
     }
 
-    /// <summary>
-    /// The Shift-at-startup recovery (owner's word): protection off, back to manual. The setting is
-    /// the part that matters; removing the Windows entry is best-effort (without elevation it stays,
-    /// and a manual mode with a leftover entry simply opens the program at sign-in - harmless).
-    /// </summary>
+    private readonly PostingAttemptGuard _recoveryAttempt = new();
+    private string _recoveryHint = string.Empty;
+
+    /// <summary>Shift recovery prioritizes manual mode even when Windows entries are stuck.
+    /// Manual + protection_reset audit commit FIRST; registry cleanup is separate best-effort.
+    /// Checked stores compare captured values, never restore or overwrite a changed entry.
+    /// Unknown/partial/SAVED-handoff state blocks this service instance, not a durable identity.</summary>
     public ServiceResult ResetToManual()
     {
+        if (!_recoveryAttempt.TryBegin()) return ServiceResult.Fail(_recoveryHint);
+        _recoveryHint = "Startup recovery is already running. Wait for its result; do not repeat it.";
         try
         {
-            DisableQuietly(_machine);
-            DisableQuietly(_userStore);
+            var machineBefore = CaptureRecoveryEntry(_machine);
+            var userBefore = CaptureRecoveryEntry(_userStore);
+            var saved = _settings.ResetStartupForRecovery();
+            if (!saved.Ok)
+            {
+                _recoveryAttempt.ObserveFailure(saved);
+                _recoveryHint = saved.Error ?? "Startup recovery is unconfirmed. Verify before retrying.";
+                // No Windows mutation happened, even if the DB result is unknown.
+                return new ServiceResult { Error = _recoveryHint, NoCommitConfirmed = saved.NoCommitConfirmed };
+            }
+            _recoveryAttempt.AcknowledgeCommit();
+            var receipt = saved.SettingsEdit;
+            if (receipt is null || receipt.GetRaw(ModeKey) != "\"manual\"")
+                throw new InvalidOperationException("The recovery receipt is missing or mismatched.");
 
-            var saved = _settings.SaveSystemStartupMode(automatic: false);
-            if (!saved.Ok) return saved;
-            _audit.RecordStandalone(null, "Auth", "protection_reset",
-                details: "Startup mode reset to manual by Shift-at-startup recovery.");
-
-            return ServiceResult.Success();
+            var warnings = new List<string>();
+            CleanupRecoveryEntry(_machine, machineBefore, receipt, "machine-wide", warnings);
+            CleanupRecoveryEntry(_userStore, userBefore, receipt, "this-account", warnings);
+            var machineAbsent = VerifyRecoveryEntry(_machine);
+            var userAbsent = VerifyRecoveryEntry(_userStore);
+            if (!machineAbsent || !userAbsent)
+                warnings.Add("One or both Windows entries remain or cannot be verified. Area11 may still start at Windows sign-in.");
+            if (!_settings.MatchesStartupRecovery(receipt))
+                warnings.Add("Startup settings changed after the reset or cannot be verified. The saved receipt is not the current state; review Settings before retrying.");
+            if (warnings.Count > 0)
+                warnings.Add("Verify settings and both Windows entries before reopening; do not repeat recovery blindly.");
+            if (warnings.Count == 0) _recoveryAttempt.CompleteReset();
+            else _recoveryHint = "SAVED. Manual startup and its audit were stored. " + string.Join(" ", warnings);
+            return new ServiceResult { Ok = true, SettingsEdit = receipt, Warnings = warnings.ToArray() };
         }
         catch (Exception exception)
         {
-            _log.Error("The startup mode could not be reset.", exception);
-            return ServiceResult.Fail("The startup mode could not be reset.");
+            _recoveryAttempt.ObserveException();
+            _log.Error("Startup recovery/handoff did not finish. Exception type: " + exception.GetType().Name);
+            _recoveryHint = _recoveryAttempt.WasAcknowledged
+                ? "SAVED. Manual startup and its audit were stored; Windows cleanup or handoff did not finish. Verify settings and both Windows entries before reopening; do not repeat recovery."
+                : "Startup recovery is unconfirmed. Verify settings, the black box and both Windows entries before reopening or retrying.";
+            return ServiceResult.Fail(_recoveryHint);
         }
+    }
+
+    private static AutoStartEntry? CaptureRecoveryEntry(IAutoStartStore store)
+    {
+        try { return store is ICheckedAutoStartStore checkedStore ? checkedStore.Capture() : null; }
+        catch (Exception) { return null; }
+    }
+
+    private void CleanupRecoveryEntry(IAutoStartStore store, AutoStartEntry? before,
+        SettingsEditForm receipt, string scope, List<string> warnings)
+    {
+        if (!_settings.MatchesStartupRecovery(receipt))
+        {
+            warnings.Add("The " + scope + " Windows cleanup was skipped: startup settings changed or could not be verified.");
+            return;
+        }
+        try
+        {
+            if (store is ICheckedAutoStartStore checkedStore)
+            {
+                if (before is null)
+                {
+                    warnings.Add("The " + scope + " Windows entry could not be captured; it was not changed.");
+                    return;
+                }
+                checkedStore.Replace(before, AutoStartEntry.Missing);
+                if (!checkedStore.Capture().Matches(AutoStartEntry.Missing))
+                    throw new InvalidOperationException("Windows cleanup readback did not match.");
+            }
+            else
+            {
+                // Compatibility only. A boolean-only store cannot prove exact presence/readback.
+                store.Disable();
+                warnings.Add("The " + scope + " Windows cleanup was attempted through a legacy host and cannot be fully verified.");
+            }
+        }
+        catch (Exception exception)
+        {
+            _log.Error("Startup recovery Windows cleanup did not finish. Exception type: " + exception.GetType().Name);
+            warnings.Add("The " + scope + " Windows entry was not verified as removed; it may remain or have changed. No restoration was attempted.");
+        }
+    }
+
+    private static bool VerifyRecoveryEntry(IAutoStartStore store)
+    {
+        try { return store is ICheckedAutoStartStore checkedStore && checkedStore.Capture().Matches(AutoStartEntry.Missing); }
+        catch (Exception) { return false; }
     }
 }

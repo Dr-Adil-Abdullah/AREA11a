@@ -1,5 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
+> **⏳ Shift startup recovery — v0.147.0:** manualstartupاوراسکاsystemauditاباکٹھےمحفوظہوتےہیں؛Windowsentriesکیcleanupبعدمیںالگکوششہے۔ **SAVED**کےساتھwarningآئےتوmanualکیپہلیcommitہوئی،مگرentryرہسکتیہےیاmodeبعدمیںبدلچکاہو؛پیغامپڑھیںاورSettings/Windowsنتیجہتصدیقکریں،اندھیrecoveryنہدہرائیں۔ Unknownہوتوبھیپہلےتصدیق؛صرفواضحno-commitکوretry-safeسمجھیں۔ ShiftFocusGuardOffنہیںکرتااورpasswordrecoveryنہیں۔ [PT-86/حدود](STARTUP-RECOVERY-OUTCOME-URDU.md)؛اصلWindows/provider/WPFباقی۔
+
+
 > **⏳ Screen lock — v0.146.0/D-118/A:** موجودہsavedswitchکیreadخرابہوتوایپآخریverifiedOn/Offرکھتیہے؛ابھیکوئیverificationنہہوتوعارضیOn۔ Loginاورshellمیںواضحwarningآئےگی؛صحیحreadبحالہوتےہیاصلترتیب/صافwarning۔ یہsavedsettingنہیںبدلتااورWindowssecuritylockنہیں۔ Shiftصرفstartuprecoveryہے،FocusGuardOffنہیں۔ Main/startup/screen-lockالگcommitsہیں؛SAVEDکےبعدخرابیپرSaveنہدہرائیں۔ [PT-85/حدود](FOCUS-GUARD-READ-OUTCOME-URDU.md)؛اصلWindows/WPFجانچباقی۔
 
 

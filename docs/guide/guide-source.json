@@ -8173,7 +8173,7 @@
         },
         {
           "kind": "paragraph",
-          "text": "Shift-at-startupصرفstartuprecoveryکیrequestہے،FocusGuardOffنہیںکرتی؛resultتصدیقکریں۔ Away/killrecordsاورtaskbarhidebest-effortہیں،ہرواقعےکےauditکیضمانتنہیں۔ Windows/native/providerجانچباقی؛liveدکانکولاککرکےتجربہنہکریں۔",
+          "text": "v0.147.0میںShift-at-startuprecoverymanualmodeاوراسکاsystemauditاکٹھےمحفوظکرتیہے؛Windowscleanupبعدمیںالگbest-effortمرحلہہے۔ SAVEDکےساتھwarningہوتوentryرہسکتیہےیاmodeبعدمیںبدلچکاہو؛SettingsاورWindowsentriesتصدیقکریں،اندھیrecoveryنہدہرائیں۔ Unknownکومعلومrollbackنہسمجھیں۔ ShiftFocusGuardOffنہیںکرتی۔ Away/killrecordsاورtaskbarhideاببھیbest-effort؛Windows/native/providerجانچباقی،liveدکانپرلاککےتجربےنہیں۔",
           "rows": []
         }
       ],
@@ -8184,7 +8184,8 @@
       "sources": [
         "dotnet/Area11.Desktop/Views/SettingsView.xaml",
         "docs/USER-GUIDE-URDU.md#lesson-33",
-        "docs/FOCUS-GUARD-READ-OUTCOME-URDU.md"
+        "docs/FOCUS-GUARD-READ-OUTCOME-URDU.md",
+        "docs/STARTUP-RECOVERY-OUTCOME-URDU.md"
       ]
     },
     {

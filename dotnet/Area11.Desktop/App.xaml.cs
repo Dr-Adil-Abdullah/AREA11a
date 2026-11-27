@@ -88,13 +88,18 @@ public partial class App : Application
             if ((Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift))
                 && _services.Startup.IsProtected)
             {
-                _services.Startup.ResetToManual();
-                RunTrail.Step("startup recovery requested by Shift-at-startup; verify the result");
+                var recovery = _services.Startup.ResetToManual();
+                var recoveryNote = recovery.Ok
+                    ? "SAVED. Manual startup and its audit were stored. " + string.Join(" ", recovery.Warnings)
+                    : recovery.Error ?? "Startup recovery is unconfirmed. Verify before retrying.";
+                RunTrail.Step(recovery.Ok ? "startup recovery SAVED; review Windows cleanup warnings"
+                    : "startup recovery did not finish; review the saved or unknown outcome before retrying");
                 MessageBox.Show(
-                    "A reset to manual startup was requested for " + ShopAppName() + ". " +
+                    "A reset to manual startup was requested for " + ShopAppName() + ". " + recoveryNote + " " +
                     "Screen lock, if enabled, is unchanged. Verify the startup mode and Windows entries in Settings; " +
                     "a failed reset must not be treated as completed.",
-                    ShopAppName(), MessageBoxButton.OK, MessageBoxImage.Information);
+                    ShopAppName(), MessageBoxButton.OK,
+                    recovery.Ok && recovery.Warnings.Count == 0 ? MessageBoxImage.Information : MessageBoxImage.Warning);
             }
 
             // Every button that fails writes one line to the same log the rest of the program uses
