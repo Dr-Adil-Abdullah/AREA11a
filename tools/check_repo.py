@@ -6580,7 +6580,9 @@ def check_settings_edit_boundaries() -> None:
     save_ui = vm.split('private void Save()',1)[-1].split('// ---------------------------- Cloud sync',1)[0]
     if 'LoadEditForm(' in save_ui: FAILURES.append('Settings Save must not silently reload/rebase stale fields')
     startup = read('Area11.Core/Services/StartupService.cs').split('public ServiceResult SetMode(',1)[-1].split('public ServiceResult SetMachineAutoStart',1)[0]
-    order(startup, '_settings.CheckStartupEdit(actor, expected)', 'var machineWas', '_settings.Set(ModeKey, clean, actor, expected)')
+    order(startup, '_settings.CheckStartupEdit(actor, form)', '_compatibilityAttempt.TryBegin()', '? SetModeChecked(actor, clean, exePath, form)', ': SetLegacyMode(actor, clean, exePath, form)')
+    legacy = startup.split('private ServiceResult SetLegacyMode(',1)[-1].split('public ServiceResult SetModeChecked(',1)[0]
+    order(legacy, 'var machineBefore = _machine.IsEnabled()', 'attempted = true;', '_settings.SaveEditForm(new Dictionary<string, object?> { [ModeKey] = clean }, actor, form)')
     tests = read('Area11.Tests/SettingsEditConcurrencyTests.cs')
     if tests.count('[Fact]') != 25: FAILURES.append('Settings edit requires25 additive written facts')
     need(tests, 'HandoffDoesNotRebaseAnUntouchedKeyChangedBySomeoneElse', 'BulkConflictDoesNotPartiallyWriteEarlierKeysOrAudit',
@@ -10493,7 +10495,7 @@ def check_focus_guard_read_outcomes():
         if 'Services.Focus.Enabled' in text or '.Focus.ReadStatus().Enabled' in text:
             FAILURES.append('Focus Guard ' + label + ' must show same-read warning,not naked cached/optimistic bool')
     need(shell, ['var status = shell.Services.Focus.ReadStatus();',
-        '(!shell.Services.Startup.IsProtected && !ReadFocusGuard(shell))',
+        '(!ReadStartupStatus(shell).IsProtected && !ReadFocusGuard(shell))',
         'DataContext is not ShellViewModel shell || !ReadFocusGuard(shell)',
         'App.IsSystemShutdown || AllowClose || !ReadFocusGuard(shell)',
         'if (ReadFocusGuard(shell))',
@@ -10503,7 +10505,7 @@ def check_focus_guard_read_outcomes():
         'shell.LockdownChromeChanged += ApplyLockdownChrome;', 'shell.LockdownChromeChanged -= ApplyLockdownChrome;',
         'Area11 will try to record the away episode when you return.'], 'all shell consumers')
     need(login, ['var status = _viewModel.Services.Focus.ReadStatus();',
-        'if (!_viewModel.Services.Startup.IsProtected && !ReadFocusGuard())',
+        'if (!ReadStartupStatus().IsProtected && !ReadFocusGuard())',
         'if (!App.IsSystemShutdown && !AllowClose) ReadFocusGuard();', 'Loaded += RefreshFocusGuard;'], 'login current close/initial read')
     for name in ('ShellWindow', 'LoginWindow'):
         view = (DOTNET / ('Area11.Desktop/Views/' + name + '.xaml')).read_text()
@@ -10595,6 +10597,90 @@ def check_startup_recovery_outcomes():
     tests = (DOTNET / 'Area11.Tests/StartupRecoveryOutcomeTests.cs').read_text()
     if tests.count('[Fact]') + tests.count('[InlineData(') != 27: FAILURES.append('Startup recovery requires27 additive public C# cases')
     REPORT.append('P5.1 Shift recovery:manual+protection_reset atomic observed Tx/exact partial receipt;DB first,ack before separate checked cleanup,warnings for stuck/unknown/legacy/changed stores;no restore,retained guard,actual Desktop outcome;27 C# cases UNRUN,not Windows/provider/native/legacy SetMode/installer/full5.1 proof')
+
+
+def check_startup_runtime_compatibility():
+    """D-119/C + compatibility source contracts; NOT .NET/provider/native/WPF proof."""
+    def need(text, tokens, label):
+        for token in tokens:
+            if token not in text: FAILURES.append('Startup runtime/compat ' + label + ' missing ' + token)
+    def order(text, tokens, label):
+        points = [text.find(token) for token in tokens]
+        if min(points) < 0 or points != sorted(points): FAILURES.append('Startup runtime/compat ordering: ' + label)
+    settings = (DOTNET / 'Area11.Core/Services/SettingsService.cs').read_text()
+    read = settings.split('    public ServiceResult<string> ReadCurrentStartupMode()', 1)[1].split('    public string GetRaw(', 1)[0]
+    need(read, ['return _db.Read(connection =>', 'new { key = StartupService.ModeKey }',
+        'JsonSerializer.Deserialize<string>(raw ?? "null")', 'mode is StartupService.Manual or StartupService.Auto or StartupService.Protected',
+        '? ServiceResult<string>.Success(mode)', ': ServiceResult<string>.Fail(', 'catch (Exception)',
+        'return ServiceResult<string>.Fail("The startup mode could not be read.");'], 'fresh strict read')
+    for forbidden in ('_cache', 'Reload(', 'INSERT ', 'UPDATE ', 'GetString(', 'exception.Message'):
+        if forbidden in read: FAILURES.append('Startup current read cannot cache/bless/repair/leak: ' + forbidden)
+    service = (DOTNET / 'Area11.Core/Services/StartupService.cs').read_text()
+    runtime = service.split('    private readonly object _modeGate', 1)[1].split('    /// <summary>Where the entry actually lives', 1)[0]
+    need(runtime, ['var current = _settings.ReadCurrentStartupMode();', 'lock (_modeGate)', 'if (current.Ok)',
+        'return new StartupModeStatus(current.Value!, true, string.Empty);', 'if (!_modeWarning)',
+        '_modeWarning = false;', '_modeWarning = true;', 'return new StartupModeStatus(Manual, false,',
+        'protected close is OFF.', 'saved mode was not changed;', 'Separate screen lock still applies.',
+        'public string Mode => ReadStatus().Mode;', 'public bool IsProtected => ReadStatus().IsProtected;',
+        'public bool WantsAutoStart => ReadStatus().WantsAutoStart;'], 'owner C policy')
+    for forbidden in ('_settings.GetString(', '_lastVerified', '_settings.Set'):
+        if forbidden in runtime: FAILURES.append('Startup C is current-or-manual,not retain/protect/repair: ' + forbidden)
+    need(service, ['public sealed record StartupModeStatus(string Mode, bool Verified, string Notice)',
+        'public bool IsProtected => Mode == StartupService.Protected;',
+        'public bool WantsAutoStart => Mode is StartupService.Auto or StartupService.Protected;',
+        'if (!status.Verified) return "Startup mode is unverified; using manual temporarily.'], 'coherent status/label')
+    wrapper = service.split('    public ServiceResult SetMode(', 1)[1].split('    private ServiceResult SetLegacyMode(', 1)[0]
+    need(wrapper, ['if (!_compatibilityAttempt.Ready) return ServiceResult.Fail(_compatibilityHint);',
+        'actor is null || !actor.IsOwner', 'var access = _settings.CheckAccess(actor);', 'AutoStartEntry.Command(exePath)',
+        'var form = expected;', 'if (form is null)', '_settings.LoadEditForm(actor, new[] { ModeKey })',
+        '_settings.CheckStartupEdit(actor, form)', 'if (!_compatibilityAttempt.TryBegin())',
+        '_machine is ICheckedAutoStartStore && _userStore is ICheckedAutoStartStore',
+        '? SetModeChecked(actor, clean, exePath, form)', ': SetLegacyMode(actor, clean, exePath, form)',
+        '_compatibilityAttempt.ObserveFailure(saved);', '_compatibilityAttempt.AcknowledgeCommit();',
+        'saved.SettingsEdit is not { } receipt || ReferenceEquals(receipt, form) || receipt.GetString(ModeKey) != clean',
+        '_compatibilityAttempt.CompleteReset();', '_compatibilityAttempt.ObserveException();',
+        '_compatibilityAttempt.WasAcknowledged', '? "SAVED. Startup mode was stored, but handoff'], 'checked dispatch/persistent outcome')
+    order(wrapper, ['var form = expected;', 'if (form is null)', '_settings.CheckStartupEdit(actor, form)',
+        '_compatibilityAttempt.TryBegin()', '? SetModeChecked(', ': SetLegacyMode(', 'if (!saved.Ok)',
+        '_compatibilityAttempt.ObserveFailure(saved);', '_compatibilityAttempt.AcknowledgeCommit();',
+        'saved.SettingsEdit is not', '_compatibilityAttempt.CompleteReset();'], 'baseline/begin/dispatch/ack/exact receipt/reset')
+    legacy = service.split('    private ServiceResult SetLegacyMode(', 1)[1].split('    /// <summary>Settings-only checked path.', 1)[0]
+    need(legacy, ['var attempted = false;', 'var settingsStarted = false;', 'var settingsSaved = false;',
+        'var machineBefore = _machine.IsEnabled();', '_ = _userStore.IsEnabled();', 'attempted = true;',
+        '_machine.Disable();', '_userStore.Disable();', '_machine.Enable(exePath);',
+        'if (machineBefore || _machine.IsEnabled()) throw;', '_userStore.Enable(exePath);',
+        'if (!userScope) _userStore.Disable();', 'bool PresenceMatches()', 'if (!PresenceMatches()) throw',
+        'settingsStarted = true;', '_settings.SaveEditForm(new Dictionary<string, object?> { [ModeKey] = clean }, actor, form)',
+        'Windows entries were not restored: this legacy host cannot restore exact old values.',
+        'settingsSaved = true;', 'Ok = true, SettingsEdit = saved.SettingsEdit',
+        'NoCommitConfirmed = !attempted', 'settingsSaved ? "SAVED. Startup mode was stored;',
+        'Nothing was changed in startup settings. Windows entries may have changed;',
+        'Legacy host verifies presence only, not the exact command or kind.'], 'legacy precise bounded evidence')
+    if legacy.count('if (!PresenceMatches()) throw') != 2: FAILURES.append('Legacy compatibility needs presence checks before AND after DB save')
+    for forbidden in ('DisableQuietly(', 'RestoreQuietly(', 'EnabledOf(', 'exception.Message', 'NoCommitConfirmed = saved.NoCommitConfirmed', 'Nothing was changed.")'):
+        if forbidden in legacy + wrapper: FAILURES.append('Compatibility must not guess rollback or conceal partial Windows changes: ' + forbidden)
+    login = (DOTNET / 'Area11.Desktop/Views/LoginWindow.xaml.cs').read_text()
+    shell = (DOTNET / 'Area11.Desktop/Views/ShellWindow.xaml.cs').read_text()
+    for text, label in ((login, 'login'), (shell, 'shell')):
+        need(text, ['.Startup.ReadStatus();', 'StartupModeNotice.Text = status.Notice;',
+            'StartupModeNotice.Visibility = status.Verified ? Visibility.Collapsed : Visibility.Visible;', 'return status;'], label + ' same-read notice')
+        if '.Startup.IsProtected' in text or '.Startup.WantsAutoStart' in text:
+            FAILURES.append('Startup ' + label + ' must consume coherent current status + warning')
+    need(login, ['if (!App.IsSystemShutdown && !AllowClose) ApplyKioskIfAutoMode();',
+        'var status = ReadStartupStatus();', 'if (!status.WantsAutoStart)', 'if (_startupKioskHidden)',
+        '_startupKioskHidden = false;', 'TaskbarHider.Show();', 'Topmost = false;',
+        'WindowStyle = WindowStyle.SingleBorderWindow;', 'WindowState = WindowState.Normal;',
+        'if (!_startupKioskHidden)', '_startupKioskHidden = true;', 'if (!ReadStartupStatus().IsProtected && !ReadFocusGuard())'], 'C reverses owned login kiosk,not Focus policy')
+    need(shell, ['(!ReadStartupStatus(shell).IsProtected && !ReadFocusGuard(shell))', 'ReadStartupStatus(shell); // Same window timer/load/activation'], 'current close/refresh')
+    app = (DOTNET / 'Area11.Desktop/App.xaml.cs').read_text()
+    need(app, ['var startupStatus = _services.Startup.ReadStatus();', '&& startupStatus.Verified && startupStatus.IsProtected)'], 'Shift cannot write fallback manual as recovery')
+    for name in ('LoginWindow', 'ShellWindow'):
+        view = (DOTNET / ('Area11.Desktop/Views/' + name + '.xaml')).read_text()
+        need(view, ['x:Name="StartupModeNotice"', 'AutomationProperties.Name="Startup-mode verification warning"'], name + ' visible warning')
+    for name, count in (('StartupModeReadOutcomeTests', 23), ('StartupCompatibilityOutcomeTests', 24)):
+        tests = (DOTNET / ('Area11.Tests/' + name + '.cs')).read_text()
+        if tests.count('[Fact]') + tests.count('[InlineData(') != count: FAILURES.append('Startup requires ' + str(count) + ' additive C# cases in ' + name)
+    REPORT.append('P5.1 D-119/C:current startup mode or temporary manual+warning,no cache/repair/Focus-policy change;window5s/current-close+owned kiosk reversal;compat checked dispatch/exact receipt/local outcome guard,legacy presence-only/no guessed restoration/scoped DB-only no-change wording;47 C# cases UNRUN,not Windows/provider/installer/whole5.1 proof')
 
 
 def main() -> int:
@@ -10732,6 +10818,7 @@ def main() -> int:
     check_main_settings_outcomes()
     check_focus_guard_read_outcomes()
     check_startup_recovery_outcomes()
+    check_startup_runtime_compatibility()
     check_csharp_grammar()
 
     if not quiet:

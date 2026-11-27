@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
+using Area11.Core.Services;
 using Area11.Desktop.ViewModels;
 
 namespace Area11.Desktop.Views;
@@ -30,12 +31,22 @@ public partial class LoginWindow : Window
         {
             _focusGuardTimer.Stop();
             _focusGuardTimer.Tick -= RefreshFocusGuard;
-            TaskbarHider.Show();
+            if (_startupKioskHidden) { _startupKioskHidden = false; TaskbarHider.Show(); }
         };
         ApplyKioskIfAutoMode();
     }
 
     private readonly DispatcherTimer _focusGuardTimer = new() { Interval = TimeSpan.FromSeconds(5) };
+
+    private bool _startupKioskHidden;
+
+    private StartupModeStatus ReadStartupStatus()
+    {
+        var status = _viewModel.Services.Startup.ReadStatus();
+        StartupModeNotice.Text = status.Notice;
+        StartupModeNotice.Visibility = status.Verified ? Visibility.Collapsed : Visibility.Visible;
+        return status;
+    }
 
     private bool ReadFocusGuard()
     {
@@ -47,6 +58,7 @@ public partial class LoginWindow : Window
 
     private void RefreshFocusGuard(object? sender, EventArgs e)
     {
+        if (!App.IsSystemShutdown && !AllowClose) ApplyKioskIfAutoMode();
         if (!App.IsSystemShutdown && !AllowClose) ReadFocusGuard();
     }
 
@@ -59,16 +71,28 @@ public partial class LoginWindow : Window
     /// </summary>
     private void ApplyKioskIfAutoMode()
     {
-        if (!_viewModel.Services.Startup.WantsAutoStart)
+        var status = ReadStartupStatus();
+        if (!status.WantsAutoStart)
         {
+            if (_startupKioskHidden)
+            {
+                _startupKioskHidden = false;
+                TaskbarHider.Show();
+                Topmost = false;
+                WindowStyle = WindowStyle.SingleBorderWindow;
+                WindowState = WindowState.Normal;
+            }
             return;
         }
-
         WindowStyle = WindowStyle.None;
         WindowState = WindowState.Maximized;
         ResizeMode = ResizeMode.NoResize;
         Topmost = true;
-        TaskbarHider.Hide();
+        if (!_startupKioskHidden)
+        {
+            _startupKioskHidden = true;
+            TaskbarHider.Hide();
+        }
     }
 
     private void ConfirmLoginClosing(object? sender, System.ComponentModel.CancelEventArgs e)
@@ -80,7 +104,7 @@ public partial class LoginWindow : Window
 
         // The screen lock implies a protected close (owner's word, Nov 2026): with the lock on,
         // × asks for the password even when the startup mode itself is not protected.
-        if (!_viewModel.Services.Startup.IsProtected && !ReadFocusGuard())
+        if (!ReadStartupStatus().IsProtected && !ReadFocusGuard())
         {
             return;
         }

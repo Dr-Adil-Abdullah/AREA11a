@@ -85,8 +85,9 @@ public partial class App : Application
             // The Shift-at-startup recovery (Portion 16, owner's word): protection off, back to
             // manual. Said out loud in a box, because a silent reset would read as a bug the next
             // time × closes without asking.
+            var startupStatus = _services.Startup.ReadStatus();
             if ((Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift))
-                && _services.Startup.IsProtected)
+                && startupStatus.Verified && startupStatus.IsProtected)
             {
                 var recovery = _services.Startup.ResetToManual();
                 var recoveryNote = recovery.Ok

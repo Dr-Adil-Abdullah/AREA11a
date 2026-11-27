@@ -24,7 +24,7 @@ def run():
         'var settings = loaded.Value;', '_services.Settings.SaveEditForm(values, _user, form)',
         'form.HasCloudKey', 'form = result.SettingsEdit;', '_services.AppLabels.ResetChecked(_user, form)',
         'if (cloudChanged) _editForm = null;')
-    add('Area11.Core/Services/StartupService.cs', '_settings.CheckStartupEdit(actor, expected)', '_settings.Set(ModeKey, clean, actor, expected)')
+    add('Area11.Core/Services/StartupService.cs', '_settings.CheckStartupEdit(actor, form)', '_settings.SaveEditForm(new Dictionary<string, object?> { [ModeKey] = clean }, actor, form)')
     add('Area11.Core/Utils/ServiceResult.cs', '[System.Text.Json.Serialization.JsonIgnore]')
     add('Area11.Tests/SettingsEditConcurrencyTests.cs', '.Take(c, "sale")')
     originals = {p: p.read_bytes() for p, _ in cases}

@@ -158,6 +158,9 @@
                                 <TextBlock Text="{Binding StartupSaveHint}" Style="{StaticResource FieldHint}" TextWrapping="Wrap"
                                            Visibility="{Binding HasStartupSaveHint, Converter={StaticResource BoolToVis}}" />
 
+                                <TextBlock Text="If the saved startup mode cannot be verified, Area11 uses manual temporarily and shows a warning on the sign-in and shop windows. Startup-mode protected close is then OFF; separate screen lock still applies. Windows entries may still start the app. No saved mode is changed by this fallback."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,4,0,0" />
+
                                 <TextBlock Text="Who may close it in protected mode: the owner with the password or PIN, or a staff member you tick for Close the program on the Staff &amp; permissions tab. Hold Shift while starting to reset startup protection only; screen lock is unchanged."
                                            Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,6,0,0" />
                                 <TextBlock Text="Honest limit: this stops casual closing, not a Windows administrator, Task Manager, shutdown or power loss. The shop's data survives all of those."

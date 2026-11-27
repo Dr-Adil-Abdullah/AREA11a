@@ -7776,7 +7776,7 @@
       "blocks": [
         {
           "kind": "paragraph",
-          "text": "خودکار آغاز، screen lock اور protected close الگ حساس desktop ترتیبات ہیں؛v0.146.0میںFocusGuardکیreadخرابیپرموافقD-118/Aرویہموجودہے،مکملWindowslockکیضمانتنہیں۔",
+          "text": "خودکارآغاز،screenlockاورprotectedcloseالگترتیباتہیں۔ v0.148.0میںstartupmodeکیunknownreadپرمالککاD-119/Cاصولعارضیmanual+warningہے؛startup-modeکیprotectedcloseپابندیOff،محفوظmodeخودنہیںبدلتا۔ الگFocusGuardکاD-118/Aاصولبرقرارہے۔ یہWindowssecuritylockنہیں۔",
           "rows": []
         },
         {
@@ -7786,7 +7786,7 @@
         },
         {
           "kind": "paragraph",
-          "text": "Shop کے حصے میں startup/focus کے مجاز اختیارات اور جزوی Save کا واضح مطلب پڑھیں؛ یہ نیا Settings tab نہیں۔",
+          "text": "Shopکےstartup/focusاختیاراتاورالگcommitsکےpartialSaveپیغاماتپڑھیں۔ currentstartupreadدرستہوتواصلموڈاورloginشکلواپس؛unknownپرloginاپنیkioskحالتچھوڑتا،warningدکھاتاہے۔ Windowsentriesاببھیایپخودکھولسکتیہیں۔ CompatibilitySaveمیںWindowsentryنامعلوم/جزویہوتو\"startupsettingsنہیںبدلیں\"کاWindowsکےلیےمطلبنہنکالیں؛نتائجverifyکرکےنیاارادہکریں۔",
           "rows": []
         },
         {

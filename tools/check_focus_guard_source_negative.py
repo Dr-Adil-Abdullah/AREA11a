@@ -33,14 +33,14 @@ def run():
         missing('Area11.Desktop/Views/' + name + '.xaml', [
             'x:Name="FocusGuardNotice"', 'AutomationProperties.Name="Screen-lock verification warning"'])
     missing('Area11.Desktop/Views/ShellWindow.xaml.cs', [
-        '(!shell.Services.Startup.IsProtected && !ReadFocusGuard(shell))',
+        '(!ReadStartupStatus(shell).IsProtected && !ReadFocusGuard(shell))',
         'DataContext is not ShellViewModel shell || !ReadFocusGuard(shell)',
         'App.IsSystemShutdown || AllowClose || !ReadFocusGuard(shell)', 'if (ReadFocusGuard(shell))',
         'if (!App.IsSystemShutdown && !AllowClose && WindowState == WindowState.Minimized',
         '&& DataContext is ShellViewModel shell && ReadFocusGuard(shell)',
         'Area11 will try to record the away episode when you return.'])
     missing('Area11.Desktop/Views/LoginWindow.xaml.cs', [
-        'if (!_viewModel.Services.Startup.IsProtected && !ReadFocusGuard())', 'Loaded += RefreshFocusGuard;'])
+        'if (!ReadStartupStatus().IsProtected && !ReadFocusGuard())', 'Loaded += RefreshFocusGuard;'])
     missing('Area11.Desktop/Views/SettingsView.xaml', [
         'reset startup protection only; screen lock is unchanged.',
         'best-effort black-box records, not guaranteed evidence.', 'keeps the last verified choice;', 'before the first verification it uses ON.'])

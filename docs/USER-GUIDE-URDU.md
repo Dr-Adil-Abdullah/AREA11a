@@ -1,5 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
+> **⏳ Startup mode — v0.148.0/D-119/C:** DBسےstartupmodeتصدیقنہہوتوعارضیmanualاورlogin/shellپرwarning؛startup-modeکیprotectedcloseپابندیاسدورانOff۔ محفوظmode/Windowsentriesخودنہیںبدلتیں؛الگFocusGuardکاD-118/Aاصولاببھیلاگوہے،اسلیےاسکیوجہسے×پرpromptآسکتاہے۔ صحیحreadبحالہوتواصلموڈواپس۔ Shiftunknownmodeکواصلیmanualلکھنےکاارادہنہیںبناتا۔ partial/unknownSaveپرSettingsاورWindowsentryتصدیقکےبغیردوبارہکوششنہکریں۔ [PT-87/حدود](STARTUP-RUNTIME-COMPATIBILITY-URDU.md)؛اصلWindows/WPFباقی۔
+
+
 > **⏳ Shift startup recovery — v0.147.0:** manualstartupاوراسکاsystemauditاباکٹھےمحفوظہوتےہیں؛Windowsentriesکیcleanupبعدمیںالگکوششہے۔ **SAVED**کےساتھwarningآئےتوmanualکیپہلیcommitہوئی،مگرentryرہسکتیہےیاmodeبعدمیںبدلچکاہو؛پیغامپڑھیںاورSettings/Windowsنتیجہتصدیقکریں،اندھیrecoveryنہدہرائیں۔ Unknownہوتوبھیپہلےتصدیق؛صرفواضحno-commitکوretry-safeسمجھیں۔ ShiftFocusGuardOffنہیںکرتااورpasswordrecoveryنہیں۔ [PT-86/حدود](STARTUP-RECOVERY-OUTCOME-URDU.md)؛اصلWindows/provider/WPFباقی۔
 
 

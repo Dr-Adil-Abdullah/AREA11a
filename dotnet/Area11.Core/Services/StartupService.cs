@@ -51,33 +51,34 @@ public sealed class StartupService
         _userStore = userStore;
     }
 
-    /// <summary>The saved mode, or manual when the word is missing or unreadable. Never throws.</summary>
-    public string Mode
+    private readonly object _modeGate = new();
+    private bool _modeWarning;
+
+    /// <summary>D-119/C: current verified mode, otherwise TEMPORARY manual with a warning.
+    /// Never uses a stale cache, retains an old protected mode, or repairs the saved switch.</summary>
+    public StartupModeStatus ReadStatus()
     {
-        get
+        var current = _settings.ReadCurrentStartupMode();
+        lock (_modeGate)
         {
-            try
+            if (current.Ok)
             {
-                return _settings.GetString(ModeKey).Trim().ToLowerInvariant() switch
-                {
-                    Auto => Auto,
-                    Protected => Protected,
-                    _ => Manual
-                };
+                _modeWarning = false;
+                return new StartupModeStatus(current.Value!, true, string.Empty);
             }
-            catch (Exception exception)
+            if (!_modeWarning)
             {
-                _log.Error("The startup mode could not be read; manual is assumed.", exception);
-                return Manual;
+                _log.Warn("Startup mode is unverified; using manual temporarily under owner decision D-119/C.");
+                _modeWarning = true;
             }
+            return new StartupModeStatus(Manual, false,
+                "Startup mode could not be verified. Using manual temporarily: startup-mode protected close is OFF. The saved mode was not changed; Windows entries may still start Area11. Separate screen lock still applies. Ask the owner to review Settings and the database connection.");
         }
     }
 
-    /// <summary>True in protected mode: every × must prove a secret.</summary>
-    public bool IsProtected => Mode == Protected;
-
-    /// <summary>True in auto and protected: Windows should start Area11 at sign-in.</summary>
-    public bool WantsAutoStart => Mode is Auto or Protected;
+    public string Mode => ReadStatus().Mode;
+    public bool IsProtected => ReadStatus().IsProtected;
+    public bool WantsAutoStart => ReadStatus().WantsAutoStart;
 
     /// <summary>Where the entry actually lives, read live from Windows (never a stored claim).</summary>
     public string ScopeText
@@ -98,124 +99,148 @@ public sealed class StartupService
                 }
                 catch (Exception) { return "Windows start-up entries could not be read. Verify access and both entries."; }
             }
-            if (EnabledOf(_machine))
+            try
             {
-                return "Applies to every Windows account on this PC.";
+                var machinePresent = _machine.IsEnabled();
+                var userPresent = _userStore.IsEnabled();
+                if (machinePresent && userPresent) return "Legacy host reports both Windows start-up entries. Verify both before changing startup.";
+                if (machinePresent) return "Applies to every Windows account on this PC. Legacy host reports presence only; command and kind are not verified.";
+                if (userPresent) return "Applies to this Windows account only. Legacy host reports presence only; command and kind are not verified.";
+                return "Legacy host reports no start-up entry; exact Windows values are not verified.";
             }
-
-            if (EnabledOf(_userStore))
-            {
-                return "Applies to this Windows account only - save again as administrator for every account.";
-            }
-
-            return "No start-up entry is set.";
+            catch (Exception) { return "Windows start-up entries could not be read. Verify access and both entries."; }
         }
     }
 
-    /// <summary>One line for Settings and the sign-in screen.</summary>
-    public string ModeLabel => Mode switch
+    /// <summary>Current runtime mode is not a saved receipt or verified Windows command.</summary>
+    public string ModeLabel
     {
-        Auto => "Starts with Windows; closes normally.",
-        Protected => "Starts with Windows; closing needs the password.",
-        _ => "Starts and closes by hand."
-    };
+        get
+        {
+            var status = ReadStatus();
+            if (!status.Verified) return "Startup mode is unverified; using manual temporarily. Separate screen lock still applies.";
+            return status.Mode switch
+            {
+                Auto => "Starts with Windows; closes normally.",
+                Protected => "Starts with Windows; closing needs the password.",
+                _ => "Starts and closes by hand."
+            };
+        }
+    }
 
-    /// <summary>
-    /// The owner picks a mode. The Windows entry is written FIRST and the setting only after it
-    /// sticks. Windows and SQLite are separate resources: restoration after a refusal is best-effort,
-    /// not crash atomicity. Loaded forms check before registry work and again in the setting Tx;
-    /// an intervening writer can still require verification of the Windows entries.
-    /// All accounts first; when no administrator is available the current account still gets its
-    /// own entry (owner's word, Nov 2026) and the scope sentence says so - a refused save is now
-    /// only for a Windows that refuses even that. One entry only: two Run values would open
-    /// Area11 twice, and nothing here guards a second copy.
-    ///
-    /// Both refusal shapes are caught: Windows answers a locked HKLM Run list with
-    /// <see cref="SecurityException"/> ("Requested registry access is not allowed.") when the key
-    /// is opened for writing, and with <see cref="UnauthorizedAccessException"/> when the value
-    /// itself cannot be written. Catching only the second one let the first skip the fallback and
-    /// fail the whole save (owner's screenshot, 11 Nov 2026) - that is the bug this catches.
-    /// </summary>
+    private readonly PostingAttemptGuard _compatibilityAttempt = new();
+    private string _compatibilityHint = string.Empty;
+
+    /// <summary>Compatibility entry point: checked hosts use the exact-value checked service.
+    /// Boolean-only hosts retain their presence-only contract, NEVER attempt guessed restoration,
+    /// and block replay on any partial/unknown outcome. No durable identity or installer change.</summary>
     public ServiceResult SetMode(User actor, string mode, string exePath, SettingsEditForm? expected = null)
     {
-        if (actor is null || !actor.IsOwner)
-        {
-            return ServiceResult.Fail("Only the owner can change how Area11 starts and closes.");
-        }
-
+        static ServiceResult Refuse(string message) => new() { Error = message, NoCommitConfirmed = true };
+        if (!_compatibilityAttempt.Ready) return ServiceResult.Fail(_compatibilityHint);
+        if (actor is null || !actor.IsOwner) return Refuse("Only the owner can change how Area11 starts and closes.");
         var access = _settings.CheckAccess(actor);
-        if (!access.Ok) return ServiceResult.Fail(access.Error ?? "Current Owner access is required.");
-
+        if (!access.Ok) return Refuse(access.Error ?? "Current Owner access is required.");
         var clean = (mode ?? string.Empty).Trim().ToLowerInvariant();
-
-        if (clean is not (Manual or Auto or Protected))
+        if (clean is not (Manual or Auto or Protected)) return Refuse("The startup mode must be manual, auto or protected.");
+        try { if (clean != Manual) _ = AutoStartEntry.Command(exePath); }
+        catch (Exception) { return Refuse("The program's own unquoted path is needed for the start-up entry."); }
+        var form = expected;
+        if (form is null)
         {
-            return ServiceResult.Fail("The startup mode must be manual, auto or protected.");
+            var loaded = _settings.LoadEditForm(actor, new[] { ModeKey });
+            if (!loaded.Ok || loaded.Value is null) return Refuse(loaded.Error ?? "Current Owner and startup mode are required.");
+            form = loaded.Value;
         }
-
-        if (expected is not null)
-        {
-            var baseline = _settings.CheckStartupEdit(actor, expected);
-            if (!baseline.Ok) return baseline;
-        }
-        var machineWas = EnabledOf(_machine);
-        var userWas = EnabledOf(_userStore);
-        var scope = "machine";
-
+        var baseline = _settings.CheckStartupEdit(actor, form);
+        if (!baseline.Ok) return Refuse(baseline.Error ?? "Review the startup mode before changing it.");
+        if (!_compatibilityAttempt.TryBegin()) return ServiceResult.Fail(_compatibilityHint);
+        _compatibilityHint = "Startup change is already running. Wait for its result; do not repeat it.";
         try
         {
+            var saved = _machine is ICheckedAutoStartStore && _userStore is ICheckedAutoStartStore
+                ? SetModeChecked(actor, clean, exePath, form)
+                : SetLegacyMode(actor, clean, exePath, form);
+            if (!saved.Ok)
+            {
+                _compatibilityAttempt.ObserveFailure(saved);
+                _compatibilityHint = saved.Error ?? "Startup change is unconfirmed. Verify before retrying.";
+                return saved;
+            }
+            _compatibilityAttempt.AcknowledgeCommit();
+            if (saved.SettingsEdit is not { } receipt || ReferenceEquals(receipt, form) || receipt.GetString(ModeKey) != clean)
+                throw new InvalidOperationException("The compatibility startup receipt is missing or mismatched.");
+            _compatibilityAttempt.CompleteReset();
+            return saved;
+        }
+        catch (Exception exception)
+        {
+            _compatibilityAttempt.ObserveException();
+            _log.Error("Compatibility startup change did not finish. Exception type: " + exception.GetType().Name);
+            _compatibilityHint = _compatibilityAttempt.WasAcknowledged
+                ? "SAVED. Startup mode was stored, but handoff did not finish. Verify Settings and both Windows entries before reopening; do not repeat the change."
+                : "Startup change is unconfirmed. Verify Settings and both Windows entries before reopening or retrying.";
+            return ServiceResult.Fail(_compatibilityHint);
+        }
+    }
+
+    private ServiceResult SetLegacyMode(User actor, string clean, string exePath, SettingsEditForm form)
+    {
+        var attempted = false;
+        var settingsStarted = false;
+        var settingsSaved = false;
+        try
+        {
+            // Reads may throw. Never reinterpret an unreadable legacy host as an absent entry.
+            var machineBefore = _machine.IsEnabled();
+            _ = _userStore.IsEnabled();
+            var userScope = false;
             if (clean == Manual)
             {
-                DisableQuietly(_machine);
-                DisableQuietly(_userStore);
+                attempted = true;
+                _machine.Disable();
+                _userStore.Disable();
             }
             else
             {
                 try
                 {
+                    attempted = true;
                     _machine.Enable(exePath);
-                    DisableQuietly(_userStore);
                 }
-                catch (Exception refused) when (IsAccessRefusal(refused))
+                catch (Exception exception) when (IsAccessRefusal(exception))
                 {
+                    if (machineBefore || _machine.IsEnabled()) throw;
                     _userStore.Enable(exePath);
-                    scope = "user";
+                    userScope = true;
                 }
+                // Keep cleanup outside the enable-refusal catch: its refusal is NOT fallback.
+                if (!userScope) _userStore.Disable();
             }
-        }
-        catch (Exception refused) when (IsAccessRefusal(refused))
-        {
-            return ServiceResult.Fail(
-                "Windows refused even this account's own start-up entry. Right-click START-AREA11, " +
-                "choose Run as administrator, then save again. Nothing was changed.");
+            bool PresenceMatches() => clean == Manual ? !_machine.IsEnabled() && !_userStore.IsEnabled()
+                : userScope ? !_machine.IsEnabled() && _userStore.IsEnabled()
+                : _machine.IsEnabled() && !_userStore.IsEnabled();
+            if (!PresenceMatches()) throw new InvalidOperationException("Legacy startup presence did not match.");
+            settingsStarted = true;
+            var saved = _settings.SaveEditForm(new Dictionary<string, object?> { [ModeKey] = clean }, actor, form);
+            if (!saved.Ok)
+                return new ServiceResult { Error = (saved.Error ?? "Startup setting saving is unconfirmed.")
+                    + " Windows entries were not restored: this legacy host cannot restore exact old values. Verify both entries before reopening; do not repeat the change." };
+            settingsSaved = true;
+            if (!PresenceMatches()) throw new InvalidOperationException("Legacy startup presence changed after saving.");
+            return new ServiceResult { Ok = true, SettingsEdit = saved.SettingsEdit, Warnings = userScope
+                ? new[] { "No administrator was available, so this applies to this Windows account only. Legacy host verifies presence only, not the exact command or kind." }
+                : Array.Empty<string>() };
         }
         catch (Exception exception)
         {
-            _log.Error("The Windows start-up entry could not be written.", exception);
-
-            return ServiceResult.Fail(
-                "The Windows start-up entry could not be written (" + exception.Message + "). Nothing was changed.");
+            _log.Error("Legacy startup change did not finish. Exception type: " + exception.GetType().Name);
+            return new ServiceResult { NoCommitConfirmed = !attempted,
+                Error = settingsStarted
+                    ? (settingsSaved ? "SAVED. Startup mode was stored; " : "Startup setting saving is unconfirmed; ")
+                        + "Windows entries were not restored. Verify Settings and both entries before reopening or retrying."
+                    : "Nothing was changed in startup settings. Windows entries may have changed; verify both before reopening or retrying. Check Windows administrator access." };
         }
-
-        var saved = _settings.Set(ModeKey, clean, actor, expected);
-
-        if (!saved.Ok)
-        {
-            // The setting refused after Windows accepted: put back exactly what was there before
-            // this call, so the next reader never finds an entry the setting does not know about.
-            RestoreQuietly(_machine, machineWas, exePath);
-            RestoreQuietly(_userStore, userWas, exePath);
-
-            return ServiceResult.Fail(saved.Error ?? "The startup mode could not be saved.");
-        }
-
-        if (scope == "user")
-        {
-            return new ServiceResult { Ok = true, SettingsEdit = saved.SettingsEdit, Warnings = new[] {
-                "No administrator was available, so this applies to this Windows account only. Save again as administrator for every account on this PC." } };
-        }
-
-        return new ServiceResult { Ok = true, SettingsEdit = saved.SettingsEdit };
     }
 
     /// <summary>Settings-only checked path. Value snapshots preserve old raw command/kind/presence.
@@ -567,4 +592,11 @@ public sealed class StartupService
         try { return store is ICheckedAutoStartStore checkedStore && checkedStore.Capture().Matches(AutoStartEntry.Missing); }
         catch (Exception) { return false; }
     }
+}
+
+/// <summary>One current read and D-119/C effective policy; not a saved-settings or Windows receipt.</summary>
+public sealed record StartupModeStatus(string Mode, bool Verified, string Notice)
+{
+    public bool IsProtected => Mode == StartupService.Protected;
+    public bool WantsAutoStart => Mode is StartupService.Auto or StartupService.Protected;
 }

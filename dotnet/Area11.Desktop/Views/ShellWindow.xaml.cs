@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
 using Area11.Core.Utils;
+using Area11.Core.Services;
 using Area11.Desktop.ViewModels;
 
 namespace Area11.Desktop.Views;
@@ -64,7 +65,7 @@ public partial class ShellWindow : Window
         // The screen lock implies a protected close (owner's word, Nov 2026): with the lock on,
         // × asks for the password even when the startup mode itself is not protected.
         if (DataContext is not ShellViewModel shell
-            || (!shell.Services.Startup.IsProtected && !ReadFocusGuard(shell)))
+            || (!ReadStartupStatus(shell).IsProtected && !ReadFocusGuard(shell)))
         {
             return;
         }
@@ -85,6 +86,14 @@ public partial class ShellWindow : Window
     }
 
     private readonly DispatcherTimer _focusGuardTimer = new() { Interval = TimeSpan.FromSeconds(5) };
+
+    private StartupModeStatus ReadStartupStatus(ShellViewModel shell)
+    {
+        var status = shell.Services.Startup.ReadStatus();
+        StartupModeNotice.Text = status.Notice;
+        StartupModeNotice.Visibility = status.Verified ? Visibility.Collapsed : Visibility.Visible;
+        return status;
+    }
 
     private bool ReadFocusGuard(ShellViewModel shell)
     {
@@ -249,6 +258,7 @@ public partial class ShellWindow : Window
             return;
         }
 
+        ReadStartupStatus(shell); // Same window timer/load/activation refreshes the C-policy warning.
         if (ReadFocusGuard(shell))
         {
             ResizeMode = ResizeMode.NoResize;

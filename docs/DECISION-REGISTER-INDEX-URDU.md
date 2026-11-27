@@ -1,5 +1,8 @@
 # مالک کے تمام درج شدہ فیصلے — مکمل index
 
+> **⏳ موجودہ5.1 — v0.148.0 Harebell:** مالککاD-119/Cفیصلہ:startupmodeکیcurrentreadخرابہوتوعارضیmanual+warning،محفوظmode/الگFocusGuardنہیںبدلتے؛loginownedkioskواپس،currentclose/verifiedShift۔ CompatibilitySetModeمیںcheckeddispatch/exactDBreceipt/retainedguard؛legacybridgeمیںno-guessed-restore،partialWindowsنتیجہاورDB-onlyno-changewording۔ ✅138static/45source-negative scripts/65نئیlexicalmutationsمحدود؛⏳47نئےC#cases/3717suiteاوراصلWindows/provider/WPFباقی۔ مالککا3418PASSثابت،pendingنہیں۔ [PT-87/حدود](STARTUP-RUNTIME-COMPATIBILITY-URDU.md)؛legacyboolexactness/installer/telemetry/StockTake/guideUIعملیجانچکھلی،6شروعنہیں۔ نیچےپرانےcountsتاریخیہیں۔
+
+
 > **⏳ موجودہ5.1 — v0.146.0 Meadowsweet:** مالککاD-118/Aفیصلہ:FocusGuardکیcurrentDBread؛خرابیپرآخریverifiedOn/Off،ابتدائیunknownپرOnاورvisiblewarning۔ Login/shellevents+تقریباً5schecks/cleanup،savedchromeکاeventقبلproperty/statuscallbacks،Shift/telemetryکیhonestlimits۔ ✅136static/43source-negative scripts/60نئیlexicalmutationsمحدود؛⏳31نئےC#cases/3643suiteاوراصلWindows/provider/nativeWPFباقی۔ مالککا3418PASSثابت،pendingنہیں۔ [PT-85/حدوداورگزشتہتینحصوںکیرپورٹ](FOCUS-GUARD-READ-OUTCOME-URDU.md)؛legacyStartup/telemetry/StockTake/guideUIعملیجانچکھلی،6/installerنہیں۔ نیچےپرانےcountsتاریخیہیں۔
 
 
@@ -11,12 +14,13 @@
 
 ## 1.1 — فہرست کی حد اور نسبت
 
-✅ اصل رجسٹر کے D-01 تاD-116 کے116 canonical headings پورے ملے؛آج کی صریح reporting ہدایت D-117اورD-118 کے بعد118 numbered decisions ہیں،اورذیل میں پانچ بنیادی D-00 اصول بھی۔ ہر link اصل محفوظ entry پر کھلتا ہے۔ کوئی ID دوبارہ نہیں،کوئی درمیانی ID غائب نہیں۔ اس میں موجود ہونا code/test/Windows completion کا دعویٰ نہیں۔
+✅ اصل رجسٹر کے D-01 تاD-116 کے116 canonical headings پورے ملے؛آج کی صریح reporting ہدایت D-117،D-118اورD-119 کے بعد119 numbered decisions ہیں،اورذیل میں پانچ بنیادی D-00 اصول بھی۔ ہر link اصل محفوظ entry پر کھلتا ہے۔ کوئی ID دوبارہ نہیں،کوئی درمیانی ID غائب نہیں۔ اس میں موجود ہونا code/test/Windows completion کا دعویٰ نہیں۔
 
 ⏳ “ڈارک اسٹریم” کے نام سے الگ مستند author mapping یا الگ فراہم کردہ گفتگو دستیاب نہیں؛کسی شخص/ایجنٹ کی نسبت ایجاد نہیں کی۔ یہ تمام **دستیاب درج شدہ** فیصلوں کی فہرست ہے،کسی غیرموصولہ بیرونی chat کا دعویٰ نہیں۔ Unnumbered checkpoint notes اصل فائل میں تاریخی ترتیب سے محفوظ ہیں؛انہیں حذف نہیں کیا۔
 
 ## 1.2 — تازہ فیصلہ اور supersession پہلے
 
+- D-119 Startupmodeکیunknownreadپرmanual+warning(C)؛D-118/AصرفالگFocusGuardکےلیےبرقرار۔
 - D-118 FocusGuardکیreadغیرمصدقہہوتوآخریverifiedOn/Off،ابتدائیunknownپرOnاورwarning؛runtimefallback،نہWindowslockسند۔
 - D-110 نے D-109 کی management-only پسند بدلی:Profit/Cost الگ ticks اور مشترک main switch۔
 - D-114 Supplier accounting exception B کو عمومی Cost rule کے ساتھ پڑھیں؛پرانا unanswered متن تاریخی ہے۔
@@ -160,3 +164,4 @@
 |D-116|password/PIN بدلنے پر لازمی تازہ لاگ اِن (حصہ4/14)|[محفوظ entry](OWNER-DECISIONS.md#decision-d-116)|
 |D-117|مکمل1.1 طرز اردو تفصیل،دستیاب فیصلوں کی یکجا فہرست اور GitHub اپڈیٹ|[محفوظ entry](OWNER-DECISIONS.md#decision-d-117)|
 |D-118|Focus Guard کی غیر مصدقہ read پر آخری تصدیق شدہ حالت (A)،ابتدائیunknownپرعارضیOnاورwarning|[محفوظ entry](OWNER-DECISIONS.md#decision-d-118)|
+|D-119|Startup mode کی غیر مصدقہ read پر عارضی manual اور warning (C)،الگFocusGuardبرقرار|[محفوظ entry](OWNER-DECISIONS.md#decision-d-119)|

@@ -1,5 +1,8 @@
 # PROGRESS - the feature board (what is done, what is next)
 
+> **⏳ موجودہ5.1 — v0.148.0 Harebell:** مالککاD-119/Cفیصلہ:startupmodeکیcurrentreadخرابہوتوعارضیmanual+warning،محفوظmode/الگFocusGuardنہیںبدلتے؛loginownedkioskواپس،currentclose/verifiedShift۔ CompatibilitySetModeمیںcheckeddispatch/exactDBreceipt/retainedguard؛legacybridgeمیںno-guessed-restore،partialWindowsنتیجہاورDB-onlyno-changewording۔ ✅138static/45source-negative scripts/65نئیlexicalmutationsمحدود؛⏳47نئےC#cases/3717suiteاوراصلWindows/provider/WPFباقی۔ مالککا3418PASSثابت،pendingنہیں۔ [PT-87/حدود](STARTUP-RUNTIME-COMPATIBILITY-URDU.md)؛legacyboolexactness/installer/telemetry/StockTake/guideUIعملیجانچکھلی،6شروعنہیں۔ نیچےپرانےcountsتاریخیہیں۔
+
+
 > **⏳ موجودہ5.1 — v0.147.0 Cowslip:** Shift-recoveryمیںmanualmode+systemauditایکobservedDBtransaction؛exactpartialreceipt،ackقبلالگcheckedWindowscleanup،stuck/unknown/changed/legacyentryکیwarningsاورlocalretainedguard،Appپراصلنتیجہ۔ ✅137static/44source-negative scripts/50نئیlexicalmutations/8نئےPythonSQLplansمحدود؛⏳27نئےC#cases/3670suiteاوراصلWindows/provider/WPFباقی۔ مالککا3418PASSثابت،pendingنہیں۔ [PT-86/حدود](STARTUP-RECOVERY-OUTCOME-URDU.md)؛compatibilitySetMode/runtimeStartup/telemetry/StockTake/guideUIعملیجانچکھلی،6/installerنہیں۔ نیچےپرانےcountsتاریخیہیں۔
 
 

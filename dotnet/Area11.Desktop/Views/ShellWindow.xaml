@@ -374,6 +374,9 @@
             <TextBlock Text="{Binding SessionNotice}" Foreground="#FCD34D" FontSize="11.5"
                        Padding="16,0,16,8" TextWrapping="Wrap"
                        Visibility="{Binding HasSessionNotice, Converter={StaticResource BoolToVis}}" />
+            <TextBlock x:Name="StartupModeNotice" Foreground="#FCD34D" FontSize="11.5"
+                       Padding="16,0,16,8" TextWrapping="Wrap" Visibility="Collapsed"
+                       AutomationProperties.Name="Startup-mode verification warning" />
             <TextBlock x:Name="FocusGuardNotice" Foreground="#FCD34D" FontSize="11.5"
                        Padding="16,0,16,8" TextWrapping="Wrap" Visibility="Collapsed"
                        AutomationProperties.Name="Screen-lock verification warning" />

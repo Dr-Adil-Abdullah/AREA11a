@@ -148,6 +148,28 @@ public sealed class SettingsService
         }
     }
 
+    /// <summary>Current persisted startup mode, not the UI cache. Missing/malformed/unreadable
+    /// is unknown. D-119/C runtime fallback belongs to StartupService, never a database repair.</summary>
+    public ServiceResult<string> ReadCurrentStartupMode()
+    {
+        try
+        {
+            return _db.Read(connection =>
+            {
+                var raw = _db.QuerySingle<string>(connection,
+                    "SELECT value FROM settings WHERE key=@key;", new { key = StartupService.ModeKey });
+                var mode = JsonSerializer.Deserialize<string>(raw ?? "null");
+                return mode is StartupService.Manual or StartupService.Auto or StartupService.Protected
+                    ? ServiceResult<string>.Success(mode)
+                    : ServiceResult<string>.Fail("The startup mode is missing or invalid.");
+            });
+        }
+        catch (Exception)
+        {
+            return ServiceResult<string>.Fail("The startup mode could not be read.");
+        }
+    }
+
     public string GetRaw(string key)
     {
         lock (_gate)

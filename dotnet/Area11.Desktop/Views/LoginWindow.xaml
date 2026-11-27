@@ -22,6 +22,10 @@
                            Foreground="{StaticResource TextBrush}" Margin="0,16,0,0" />
                 <TextBlock Text="{Binding StoreName}" Style="{StaticResource PageSubtitle}" />
 
+                <TextBlock x:Name="StartupModeNotice" Foreground="{StaticResource WarningBrush}"
+                           FontSize="12" TextWrapping="Wrap" Margin="0,10,0,0" Visibility="Collapsed"
+                           AutomationProperties.Name="Startup-mode verification warning" />
+
                 <TextBlock x:Name="FocusGuardNotice" Foreground="{StaticResource WarningBrush}"
                            FontSize="12" TextWrapping="Wrap" Margin="0,10,0,0" Visibility="Collapsed"
                            AutomationProperties.Name="Screen-lock verification warning" />
