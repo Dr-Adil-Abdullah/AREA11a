@@ -1,5 +1,8 @@
 # HANDOFF - read this first
 
+> **⏳ PT-89 — StockTake جائزہ، اصلاح ابھی نہیں:** موجودہbuildv0.149.0/3748suiteبرقرار؛productioncode/tests/versionنہیںبدلے۔ StaleCount/ClearاوربعدکیstockchangeکےساتھApplyکےfrozenmovementفرقکی8syntheticSQLreproductionsملیں،یہfixیاC#PASSنہیں۔ [خطرہ،SettingsکیباقیحداورA/Bسوال](docs/STOCKTAKE-CONCURRENCY-SCOPE-URDU.md)؛مالککاجوابباقی،کوئیD-120فرضنہیں۔ 3418PASSپچھلاثابتنتیجہ؛Windows/guideUI/باقی1تا5کھلے،6/installerنہیں۔
+
+
 > **⏳ موجودہ5.1 — v0.149.0 Gentian:** sessionکےcurrentsharedmarkers،startupstamps+previousauditایکtransaction،heartbeat/exitکےatomicstampsاورcheckedنتائج؛unknownپرlocalpause،login/shellمیںstickywarning۔ ✅139static/46source-negative scripts/66نئیlexicalmutations/34PythonSQLplansصرفمحدودثبوت؛⏳31نئےC#cases/3748suiteاوراصلWindows/provider/WPFباقی۔ مالککا3418PASSثابت۔ [PT-88/حدود](docs/SESSION-TELEMETRY-OUTCOME-URDU.md)؛یہkill/PC/userproofیاexactly-onceنہیں،StartupC/FocusAبرقرار؛StockTake/guideUIاور1تا5کیباقیتصدیقکھلی،6/installerنہیں۔ نیچےپرانےcountsتاریخیہیں۔
 
 
@@ -438,7 +441,7 @@ that still lists them as ⬜, it is stale: trust `docs/PROGRESS.md`.
 
 ## 4. Next tasks, in order
 
-**⏳ موجودہ اگلا کام:** اگلی اجازت پر5.1کےباقیSettingswritersکادائرہبندکرکےStockTakeکاboundedreview؛پہلےباقی1تا5کیاصلWindows/.NET/provider/WPFجانچبھیضروریہے۔ v0.149.0کے31نئےcasesاور3748suiteUNRUN؛مالککاv0.138.0کا3418PASSثابت،pendingنہیں۔ [PT-88/telemetryاورباقی](docs/SESSION-TELEMETRY-OUTCOME-URDU.md)۔ sharedmarkersکیPC/runidentityاسحصےکاحل نہیں؛6/durableidentity/installerشروعنہیں۔ نیچےپرانےNexttasksاپنےcheckpointکیhistoricalحیثیتہیں۔
+**⏳ موجودہ اگلا کام:** [PT-89کےA/Bسوال](docs/STOCKTAKE-CONCURRENCY-SCOPE-URDU.md)پرمالککاجوابدرکارہے:گنتیکےبعدstockبدلےتوApplyروککرنئیگنتی(A)،یاواضحتازہOwnerconfirmationکےساتھabsolutephysicalcountاورcurrentcorrection/frozenvarianceکیالگدرستنمائش(B)۔ خودسےstock/valuationpolicyنہبدلیں؛ابھیکوئیD-120جوابنہیں۔ اسdocumentationcheckpointمیںproductioncodeاصلv0.149.0/3748suiteہے؛3418PASSثابت،تازہWindows/باقی1تا5کھلے۔ SettingsکےBackup/Syncbookkeeping/legacy/systemراستوںکوبندنہیںکہا؛6/durableidentity/installerشروعنہیں۔
 
 Do them one at a time; each one ends with a commit (see `AGENTS.md` §6).
 

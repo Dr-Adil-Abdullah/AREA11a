@@ -1,5 +1,8 @@
 > **⏳ موجودہ5.1 — v0.145.0 Valerian:** MainSettingsSaveکاpersistentoutcomeguard،ack/returnedreceiptکےبعدcredential+confirmationconsumeقبلcallbacks؛pinnedstartup/focusintent،الگcommitsکیpartialSAVEDحیثیت،نامعلوم/ادھوریsequenceپرRefresh/Resetسےreplayنہیںاورstickyhint۔ ✅135static/42source-negative scripts/53نئیlexicalmutations،پرانے24PythonSettingsSQLplansمحدود؛⏳25نئےC#cases/3612suiteاوراصلWindows/provider/WPFباقی۔ مالککا3418PASSثابتہے،pendingنہیں۔ [PT-84/تفصیل](MAIN-SETTINGS-SAVE-OUTCOME-URDU.md)؛FocusGuardکاتفصیلیreview/legacyStartup/StockTake/guideUIعملیجانچکھلی،6/installerنہیں۔ نیچےپرانےcountsتاریخیہیں۔
 
+> **⏳ PT-89 — StockTake جائزہ، اصلاح ابھی نہیں:** موجودہbuildv0.149.0/3748suiteبرقرار؛productioncode/tests/versionنہیںبدلے۔ StaleCount/ClearاوربعدکیstockchangeکےساتھApplyکےfrozenmovementفرقکی8syntheticSQLreproductionsملیں،یہfixیاC#PASSنہیں۔ [خطرہ،SettingsکیباقیحداورA/Bسوال](STOCKTAKE-CONCURRENCY-SCOPE-URDU.md)؛مالککاجوابباقی،کوئیD-120فرضنہیں۔ 3418PASSپچھلاثابتنتیجہ؛Windows/guideUI/باقی1تا5کھلے،6/installerنہیں۔
+
+
 > **⏳ موجودہ5.1 — v0.149.0 Gentian:** sessionکےcurrentsharedmarkers،startupstamps+previousauditایکtransaction،heartbeat/exitکےatomicstampsاورcheckedنتائج؛unknownپرlocalpause،login/shellمیںstickywarning۔ ✅139static/46source-negative scripts/66نئیlexicalmutations/34PythonSQLplansصرفمحدودثبوت؛⏳31نئےC#cases/3748suiteاوراصلWindows/provider/WPFباقی۔ مالککا3418PASSثابت۔ [PT-88/حدود](SESSION-TELEMETRY-OUTCOME-URDU.md)؛یہkill/PC/userproofیاexactly-onceنہیں،StartupC/FocusAبرقرار؛StockTake/guideUIاور1تا5کیباقیتصدیقکھلی،6/installerنہیں۔ نیچےپرانےcountsتاریخیہیں۔
 
 

@@ -1,5 +1,8 @@
 # TAKEOVER — the complete brief for a new agent
 
+> **⏳ PT-89 — StockTake جائزہ، اصلاح ابھی نہیں:** موجودہbuildv0.149.0/3748suiteبرقرار؛productioncode/tests/versionنہیںبدلے۔ StaleCount/ClearاوربعدکیstockchangeکےساتھApplyکےfrozenmovementفرقکی8syntheticSQLreproductionsملیں،یہfixیاC#PASSنہیں۔ [خطرہ،SettingsکیباقیحداورA/Bسوال](docs/STOCKTAKE-CONCURRENCY-SCOPE-URDU.md)؛مالککاجوابباقی،کوئیD-120فرضنہیں۔ 3418PASSپچھلاثابتنتیجہ؛Windows/guideUI/باقی1تا5کھلے،6/installerنہیں۔
+
+
 > **⏳ موجودہ5.1 — v0.149.0 Gentian:** sessionکےcurrentsharedmarkers،startupstamps+previousauditایکtransaction،heartbeat/exitکےatomicstampsاورcheckedنتائج؛unknownپرlocalpause،login/shellمیںstickywarning۔ ✅139static/46source-negative scripts/66نئیlexicalmutations/34PythonSQLplansصرفمحدودثبوت؛⏳31نئےC#cases/3748suiteاوراصلWindows/provider/WPFباقی۔ مالککا3418PASSثابت۔ [PT-88/حدود](docs/SESSION-TELEMETRY-OUTCOME-URDU.md)؛یہkill/PC/userproofیاexactly-onceنہیں،StartupC/FocusAبرقرار؛StockTake/guideUIاور1تا5کیباقیتصدیقکھلی،6/installerنہیں۔ نیچےپرانےcountsتاریخیہیں۔
 
 
