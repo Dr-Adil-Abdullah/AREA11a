@@ -1,5 +1,8 @@
 # Area11 — pharmacy POS + inventory for Windows
 
+> **⏳ موجودہ5.1 — v0.144.0 Primrose:** Restoreoriginalwordsکاnonnullcheckedreset،32labelsکیloadedCAS/exactpartialreceipt؛دو-clickpinnedform،ackقبلrow/shellcallbacks،retainedguardاورstickyhint؛unknown/SAVEDhandofffailureپرmainSaveسےبھیreplayنہیں۔ ✅134static/41source-negative scripts/44نئیlexicalmutations،پرانے24PythonSettingsSQLplansمحدود؛⏳30نئےC#cases/3587suiteاوراصلWindows/provider/WPFباقی۔ مالککا3418PASSثابتہے،pendingنہیں۔ [PT-83/تفصیل](docs/APP-LABEL-RESET-OUTCOME-URDU.md)؛mainSettings/focus/legacyStartup/StockTake/guideUIعملیجانچکھلی،6/installerنہیں۔ نیچےپرانےcountsتاریخیہیں۔
+
+
 > **⏳ موجودہ5.1 — v0.143.0 Tansy:** Settings startup کا الگcheckedراستہ؛rawcommand/kind/presenceکےimmutable snapshots،compare-before-write/readback،معلومDBrollbackپرconditionalrestore،unknownپرکوئیcompensationنہیں؛verifiedabsentmachineکےساتھہیfallback،Desktoppinnedintent/ack/retainedguard۔ ✅133static/40source-negative scripts/71نئیlexicalmutations محدود؛⏳41نئےC#cases/3557suiteاوراصلWindows/registry/provider/WPFباقی۔ مالککا3418PASSثابت ہے،pendingنہیں۔ [PT-82/تفصیل/گزشتہتینcheckpoints](docs/STARTUP-REGISTRY-OUTCOME-URDU.md)؛پراناSetMode/installer/recoveryراستہاورباقیSettings/StockTake/guideUIعملیجانچکھلے؛6/installerنہیں۔ نیچےپرانےcountsتاریخیہیں۔
 
 

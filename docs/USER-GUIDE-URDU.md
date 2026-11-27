@@ -1,5 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
+> **⏳ اصل الفاظ بحال کرنا — v0.144.0:** **Restore original words** پہلےتصدیقمانگتاہے،دوسریclickپرتمام32sectionnamesکےdefaultsمحفوظکرتاہے؛unsavedلفظوںکیترمیمبدلےگی،دوسریSettingsاسبٹنسےsaveنہیںہوتیں۔ **SAVED** کےبعدصفحےکیخرابییا **Unconfirmed** پرResetنہدہرائیں؛اصلlabels/auditکیپہلےتصدیق،پھرSettingsreopen۔ Refresh/regrantاسیصفحےکاuncertainguardنہیںکھولتے،mainSaveبھیبائیپاسنہیں۔ عامconflict/واضحrollbackپرRefreshاورنئیدو-clickتصدیقکریں۔ [PT-83/حدود](APP-LABEL-RESET-OUTCOME-URDU.md)؛اصلWindows/WPFجانچباقی۔
+
+
 > **⏳ Startup کا نتیجہ — v0.143.0:** Settings کی عام تبدیلیاں پہلے الگ محفوظ ہوتی ہیں،startupبعدمیں؛دونوںکواکٹھاrollbackنہسمجھیں۔ Windows entryپڑھی/لکھی/تصدیقنہہوتوپیغامدیکھیں۔ **Unconfirmed** یاstartup **SAVED** کےبعدخرابیپرSaveنہدہرائیں؛اصلstartupsettingاورHKLM/HKCUکیArea11entriesکیماہرانہتصدیقکےبعدreopen۔ Refresh/regrantاسیصفحےکاuncertainguardنہیںکھولتے۔ Adminکےبغیرفallbackصرفخالیmachineentryکےساتھ؛پرانیentryہوتوپہلےاسیPCپرمعاونتسےتصدیقکریں،اندھارجسٹریeditنہکریں۔ [PT-82/حدود](STARTUP-REGISTRY-OUTCOME-URDU.md)؛اصلWindowsجانچباقی،installer/recoveryراستےیہاںنہیںبدلے۔
 
 

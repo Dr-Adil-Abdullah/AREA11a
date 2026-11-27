@@ -111,6 +111,10 @@ public sealed class SettingsViewModel : ObservableObject
     private bool _isStatusError;
     private bool _suppressPermissionSave;
     private bool _confirmLabelReset;
+    private SettingsEditForm? _labelResetForm;
+    private bool _resettingLabels;
+    private readonly PostingAttemptGuard _labelResetAttempt = new();
+    private string _labelResetHint = string.Empty;
     private SettingsEditForm? _editForm;
     private bool _changingIcon;
     private EditVersion? _pricingVersion;
@@ -311,6 +315,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void ChangeAppIcon(bool reset)
     {
+        if (_resettingLabels) return;
         if (_changingIcon) return;
         if (!UpdateSettingsAccess() || !UpdateStaffAccess()) return;
         if (!CanChangeAppIcon) { SetStatus("Only the owner can change the icon.", true); return; }
@@ -786,6 +791,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void LoadLabels()
     {
+        _labelResetForm = null;
         _confirmLabelReset = false;
         OnPropertyChanged(nameof(ResetLabelsText));
         LabelRows.Clear();
@@ -801,6 +807,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void Load()
     {
+        if (_resettingLabels) return;
         if (_changingIcon) return;
         if (_savingSettings) return;
         if (!UpdateSettingsAccess()) return;
@@ -1134,6 +1141,8 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void Save()
     {
+        if (_resettingLabels) return;
+        if (!_labelResetAttempt.Ready) { SetStatus(_labelResetHint, true); return; }
         if (_changingIcon) return;
         if (_savingSettings) return;
         if (!_startupAttempt.Ready) { SetStatus(_startupSaveHint, true); return; }
@@ -1751,37 +1760,99 @@ public sealed class SettingsViewModel : ObservableObject
         finally { _savingStaff = false; }
     }
 
+    public string LabelResetHint => _labelResetHint;
+    public bool HasLabelResetHint => _labelResetHint.Length > 0;
+
     private void ResetLabels()
     {
-        if (!_services.Permissions.Can(_user, Modules.Settings))
+        if (_resettingLabels || _savingSettings || _changingIcon) return;
+        if (!_labelResetAttempt.Ready) { SetStatus(_labelResetHint, true); return; }
+        _resettingLabels = true;
+        var writerStarted = false;
+        string? serviceFailure = null;
+        try
         {
-            SetStatus("Only a person who may change settings can restore the original application words.", true);
-            return;
+            var access = _services.CheckInteractiveSession()
+                ? _services.Settings.CheckAccess(_user)
+                : ServiceResult.Fail("Sign in again before restoring application words.");
+            if (!access.Ok)
+            {
+                _confirmLabelReset = false; _labelResetForm = null;
+                SetLabelResetHint(access.Error ?? "Settings access is required.");
+                SetStatus(_labelResetHint, true); return;
+            }
+            var form = _editForm;
+            if (form is null)
+            {
+                _confirmLabelReset = false; _labelResetForm = null;
+                SetLabelResetHint("Refresh Settings before restoring application words.");
+                SetStatus(_labelResetHint, true); return;
+            }
+            if (!_confirmLabelReset || !ReferenceEquals(_labelResetForm, form))
+            {
+                _labelResetForm = form;
+                _confirmLabelReset = true;
+                SetLabelResetHint(string.Empty);
+                SetStatus("Press the restore button once more to restore all original words. Unsaved word edits will be replaced; other settings are not saved by this button. Nothing has changed yet.", false);
+                return;
+            }
+            if (!_labelResetAttempt.TryBegin()) return;
+            writerStarted = true;
+            var result = _services.AppLabels.ResetChecked(_user, form);
+            if (!result.Ok)
+            {
+                serviceFailure = result.Error;
+                _labelResetAttempt.ObserveFailure(result);
+                _editForm = null;
+                _confirmLabelReset = false; _labelResetForm = null;
+                SetLabelResetHint((result.NoCommitConfirmed
+                    ? "Original words were not restored. Refresh Settings and review before trying again. "
+                    : "Word restoration needs verification; do not repeat it. Verify the saved labels/audit before reopening. ") + result.Error);
+                SetStatus(_labelResetHint, true);
+                return;
+            }
+            _labelResetAttempt.AcknowledgeCommit();
+            var receipt = result.SettingsEdit;
+            if (receipt is null || AppLabelService.Definitions.Any(definition =>
+                receipt.GetString(definition.SettingKey) != definition.DefaultText))
+                throw new InvalidOperationException("The restored words receipt is missing or mismatched.");
+            _editForm = receipt;
+            _confirmLabelReset = false; _labelResetForm = null;
+            LoadLabels(); // Only the exact receipt; never rebase the rest of the open Settings form.
+            _onSaved?.Invoke();
+            SetLabelResetHint(string.Empty);
+            SetStatus("SAVED. Original application words restored. The shell and open pages have been updated.", false);
+            if (!ReferenceEquals(_editForm, receipt) || _confirmLabelReset || _labelResetForm is not null
+                || LabelRows.Count != AppLabelService.Definitions.Count
+                || AppLabelService.Definitions.Any(definition => LabelRows.Count(row => row.Key == definition.Key
+                    && row.Text == definition.DefaultText && row.DefaultText == definition.DefaultText) != 1))
+                throw new InvalidOperationException("The restored words handoff was not retained.");
+            _labelResetAttempt.CompleteReset();
         }
-
-        if (!_confirmLabelReset)
+        catch (Exception exception)
         {
-            _confirmLabelReset = true;
-            OnPropertyChanged(nameof(ResetLabelsText));
-            SetStatus("Press the restore button once more to put every application word back to its original. Nothing has changed yet.", false);
-            return;
+            _labelResetAttempt.ObserveException();
+            _services.Log.Error("Original words restore/handoff did not finish.", exception);
+            _confirmLabelReset = false; _labelResetForm = null;
+            if (writerStarted) _editForm = null;
+            var message = serviceFailure is not null
+                ? "Restore result: " + serviceFailure + " Page notification failed; review that result before retrying."
+                : _labelResetAttempt.WasAcknowledged
+                    ? "SAVED. Original words were restored, but the page could not refresh. Verify the saved labels/audit before reopening; do not restore again."
+                    : writerStarted
+                        ? "Word restoration is unconfirmed. Verify the saved labels/audit before reopening or retrying."
+                        : "Word restoration did not start. Check access and refresh Settings before trying again.";
+            try { SetLabelResetHint(message); SetStatus(message, true); }
+            catch (Exception notification) { _services.Log.Error("Original words failure notification did not finish.", notification); }
         }
+        finally { _resettingLabels = false; }
+    }
 
-        if (_editForm is null) { SetStatus("Refresh Settings before restoring application words.", true); return; }
-        var result = _services.AppLabels.Reset(_user, _editForm);
-
-        if (!result.Ok)
-        {
-            _confirmLabelReset = false;
-            OnPropertyChanged(nameof(ResetLabelsText));
-            SetStatus(result.Error ?? "The original application words could not be restored.", true);
-            return;
-        }
-
-        _editForm = result.SettingsEdit;
-        LoadLabels();
-        _onSaved?.Invoke();
-        SetStatus("Original application words restored. The shell and open pages have been updated.", false);
+    private void SetLabelResetHint(string message)
+    {
+        _labelResetHint = message;
+        OnPropertyChanged(nameof(LabelResetHint)); OnPropertyChanged(nameof(HasLabelResetHint));
+        OnPropertyChanged(nameof(ResetLabelsText));
     }
 
     private void ResetPermissions() => SavePermissionChange(null);

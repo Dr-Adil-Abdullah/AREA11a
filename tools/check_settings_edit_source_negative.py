@@ -22,7 +22,7 @@ def run():
         'foreach (var pair in baselines) nextBaselines[pair.Key] = pair.Value;')
     add('Area11.Desktop/ViewModels/SettingsViewModel.cs', '_services.Settings.LoadEditForm(_user, keys)',
         'var settings = loaded.Value;', '_services.Settings.SaveEditForm(values, _user, form)',
-        'form.HasCloudKey', 'form = result.SettingsEdit;', '_services.AppLabels.Reset(_user, _editForm)',
+        'form.HasCloudKey', 'form = result.SettingsEdit;', '_services.AppLabels.ResetChecked(_user, form)',
         'if (cloudChanged) _editForm = null;')
     add('Area11.Core/Services/StartupService.cs', '_settings.CheckStartupEdit(actor, expected)', '_settings.Set(ModeKey, clean, actor, expected)')
     add('Area11.Core/Utils/ServiceResult.cs', '[System.Text.Json.Serialization.JsonIgnore]')

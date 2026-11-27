@@ -143,6 +143,15 @@ public sealed class AppLabelService
             StringComparer.Ordinal), actor, expected);
     }
 
+    /// <summary>Loaded Settings reset only; null must never degrade to the imperative compatibility API.
+    /// SettingsService rechecks current authorization and every label baseline inside its observed transaction.</summary>
+    public ServiceResult ResetChecked(User? actor, SettingsEditForm? expected) => expected is null
+        ? new ServiceResult { Error = "Load Settings before restoring the original words.", NoCommitConfirmed = true }
+        : _settings.SaveEditForm(Catalog.ToDictionary(
+            definition => definition.SettingKey,
+            definition => (object?)definition.DefaultText,
+            StringComparer.Ordinal), actor, expected);
+
     /// <summary>SettingsService calls this too, so a direct setting write cannot bypass the guard.</summary>
     public static string? GuardSetting(string key, object? value)
     {

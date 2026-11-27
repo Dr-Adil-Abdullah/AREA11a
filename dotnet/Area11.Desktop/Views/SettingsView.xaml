@@ -734,6 +734,8 @@
                             <TextBlock Text="Names used inside Area11" Style="{StaticResource SectionTitle}" />
                             <TextBlock Style="{StaticResource FieldHint}" TextWrapping="Wrap"
                                        Text="Type the words your shop uses. Save settings updates the top navigation and open page headings at once. This does not rewrite receipts, old records or other sentences." />
+                            <TextBlock Text="{Binding LabelResetHint}" Style="{StaticResource FieldHint}" TextWrapping="Wrap"
+                                       Visibility="{Binding HasLabelResetHint, Converter={StaticResource BoolToVis}}" />
                         </StackPanel>
                         <Button Grid.Column="1" VerticalAlignment="Top" Style="{StaticResource GhostButton}"
                                 Content="{Binding ResetLabelsText}" Command="{Binding ResetLabelsCommand}" />

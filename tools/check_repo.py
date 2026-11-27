@@ -1411,7 +1411,7 @@ def check_app_labels() -> None:
 
     vm_text = settings_vm.read_text(encoding="utf-8-sig")
     for needle in ("_services.AppLabels.Validate", "AppLabelService.SettingKey",
-                   "_services.AppLabels.Reset(_user, _editForm)", "_onSaved?.Invoke()"):
+                   "_services.AppLabels.ResetChecked(_user, form)", "_onSaved?.Invoke()"):
         if needle not in vm_text:
             fail(f"SettingsViewModel is missing the label save/reset route: {needle}")
 
@@ -6573,7 +6573,7 @@ def check_settings_edit_boundaries() -> None:
     vm = read('Area11.Desktop/ViewModels/SettingsViewModel.cs')
     need(vm, '_services.Settings.LoadEditForm(_user, keys)', 'var settings = loaded.Value;', '_editForm = settings;',
          'settings.GetBool(FocusGuardService.GuardKey)', 'if (form is null)', '_services.Settings.SaveEditForm(values, _user, form)',
-         'form.ExpiryBands', 'form.HasCloudKey', 'form = result.SettingsEdit;', '_services.AppLabels.Reset(_user, _editForm)',
+         'form.ExpiryBands', 'form.HasCloudKey', 'form = result.SettingsEdit;', '_services.AppLabels.ResetChecked(_user, form)',
          'private static readonly string[] FormKeys', 'private static readonly string[] CloudFormKeys', 'if (cloudChanged) _editForm = null;')
     load_ui = vm.split('private void Load()',1)[-1].split('private void LoadCloud()',1)[0]
     if 'var settings = _services.Settings;' in load_ui: FAILURES.append('Settings form must not load shared cached values')
@@ -10317,6 +10317,70 @@ def check_startup_registry_outcomes():
     REPORT.append('P5.1 Settings startup:raw immutable Run snapshots/compare-before-write/readback;conditional known-rollback compensation,unknown never compensates;checked UI pinned intent/ack/retained guard;41 C# cases UNRUN,not registry atomicity/Windows/WPF/installer/legacy-route closure')
 
 
+def check_label_reset_outcomes():
+    """Checked original-words reset lexical contracts, NOT C#/provider/WPF execution."""
+    def need(text, tokens, label):
+        for token in tokens:
+            if token not in text: FAILURES.append('Label reset ' + label + ' missing ' + token)
+    def order(text, tokens, label):
+        points = [text.find(token) for token in tokens]
+        if min(points) < 0 or points != sorted(points): FAILURES.append('Label reset ordering: ' + label)
+    core = (DOTNET / 'Area11.Core/Services/AppLabelService.cs').read_text()
+    checked = core.split('    public ServiceResult ResetChecked(', 1)[1].split('    /// <summary>SettingsService', 1)[0]
+    need(checked, ['expected is null', 'NoCommitConfirmed = true', '_settings.SaveEditForm(Catalog.ToDictionary(',
+        'definition => definition.SettingKey', 'definition => (object?)definition.DefaultText',
+        'StringComparer.Ordinal), actor, expected)'], 'checked Core')
+    for token in ('SetMany(', '.Reset(', '_permissions.Can('):
+        if token in checked: FAILURES.append('Checked reset must use current observed Settings door, not ' + token)
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/SettingsViewModel.cs').read_text()
+    ui = vm.split('    private void ResetLabels()\n', 1)[1].split('    private void SetLabelResetHint(', 1)[0]
+    need(ui, ['if (_resettingLabels || _savingSettings || _changingIcon) return;',
+        'if (!_labelResetAttempt.Ready)', '_resettingLabels = true;', 'var writerStarted = false;',
+        '_services.CheckInteractiveSession()', '_services.Settings.CheckAccess(_user)',
+        'var form = _editForm;', 'if (form is null)',
+        'if (!_confirmLabelReset || !ReferenceEquals(_labelResetForm, form))',
+        '_labelResetForm = form;', '_confirmLabelReset = true;',
+        'Unsaved word edits will be replaced; other settings are not saved by this button.',
+        'if (!_labelResetAttempt.TryBegin()) return;', 'writerStarted = true;',
+        '_services.AppLabels.ResetChecked(_user, form)', '_labelResetAttempt.ObserveFailure(result);',
+        'serviceFailure = result.Error;', 'result.NoCommitConfirmed', '_editForm = null;',
+        '_labelResetAttempt.AcknowledgeCommit();', 'var receipt = result.SettingsEdit;',
+        'receipt is null || AppLabelService.Definitions.Any(definition =>',
+        'receipt.GetString(definition.SettingKey) != definition.DefaultText', '_editForm = receipt;',
+        '_confirmLabelReset = false; _labelResetForm = null;', 'LoadLabels();', '_onSaved?.Invoke();',
+        'SetStatus("SAVED. Original application words restored.',
+        '!ReferenceEquals(_editForm, receipt) || _confirmLabelReset || _labelResetForm is not null',
+        'LabelRows.Count != AppLabelService.Definitions.Count',
+        'AppLabelService.Definitions.Any(definition => LabelRows.Count(row => row.Key == definition.Key',
+        'row.Text == definition.DefaultText && row.DefaultText == definition.DefaultText) != 1',
+        '_labelResetAttempt.CompleteReset();', '_labelResetAttempt.ObserveException();',
+        'if (writerStarted) _editForm = null;', '_labelResetAttempt.WasAcknowledged',
+        'finally { _resettingLabels = false; }'], 'Desktop')
+    order(ui, ['if (_resettingLabels', '_resettingLabels = true;', 'CheckInteractiveSession()',
+        'var form = _editForm;', 'if (form is null)', 'if (!_confirmLabelReset', '_labelResetForm = form;',
+        '_confirmLabelReset = true;', '_labelResetAttempt.TryBegin()', 'writerStarted = true;',
+        'ResetChecked(', 'if (!result.Ok)', '_labelResetAttempt.AcknowledgeCommit();', 'var receipt =',
+        '_editForm = receipt;', 'LoadLabels();', '_onSaved?.Invoke();', 'SetStatus("SAVED.',
+        '!ReferenceEquals(_editForm, receipt)', '_labelResetAttempt.CompleteReset();'], 'preflight/confirm/pin/ack/receipt/callback/verdict/reset')
+    for token in ('LoadEditForm(', '_services.AppLabels.Reset(', '_services.AppLabels.List(', 'Load();', '.Settings.Set(', 'Save();'):
+        if token in ui: FAILURES.append('Reset may not rebase/save unrelated fields: ' + token)
+    for method in ('private void Save()', 'private void Load()', 'private void ChangeAppIcon(bool reset)'):
+        body = vm.split(method, 1)[1].split('\n    }', 1)[0]
+        need(body, ['if (_resettingLabels) return;'], 'cross-action reentry ' + method)
+    save = vm.split('    private void Save()\n', 1)[1].split('    private void SaveCore()', 1)[0]
+    need(save, ['if (!_labelResetAttempt.Ready) { SetStatus(_labelResetHint, true); return; }'], 'main Save no bypass')
+    load_labels = vm.split('    private void LoadLabels()\n', 1)[1].split('    private void Load()', 1)[0]
+    need(load_labels, ['_labelResetForm = null;', '_confirmLabelReset = false;'], 'refresh cancels confirmation only')
+    if vm.count('_labelResetAttempt =') != 1 or vm.count('_labelResetAttempt.CompleteReset();') != 1:
+        FAILURES.append('Label reset needs one retained guard and only the complete handoff reset')
+    need(vm, ['public string LabelResetHint => _labelResetHint;', 'OnPropertyChanged(nameof(HasLabelResetHint));'], 'sticky notice')
+    view = (DOTNET / 'Area11.Desktop/Views/SettingsView.xaml').read_text()
+    need(view, ['Text="{Binding LabelResetHint}"', 'Visibility="{Binding HasLabelResetHint, Converter={StaticResource BoolToVis}}"'], 'view')
+    tests = (DOTNET / 'Area11.Tests/AppLabelResetOutcomeTests.cs').read_text()
+    if tests.count('[Fact]') + tests.count('[InlineData(') != 30: FAILURES.append('Label reset requires30 additive C# cases')
+    REPORT.append('P5.1 original words reset:nonnull checked all-label CAS/current writer/observed Settings receipt;two-click pinned form/reentry/ack before consume+callback/retained guard and sticky notice;30 C# cases UNRUN,not main Settings/registry/provider/WPF/durable identity completion')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -10448,6 +10512,7 @@ def main() -> int:
     check_custom_definition_move_outcomes()
     check_counter_autoprint_edit()
     check_startup_registry_outcomes()
+    check_label_reset_outcomes()
     check_csharp_grammar()
 
     if not quiet:
