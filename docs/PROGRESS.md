@@ -1,5 +1,8 @@
 # PROGRESS - the feature board (what is done, what is next)
 
+> **⏳ موجودہ5.1 — v0.146.0 Meadowsweet:** مالککاD-118/Aفیصلہ:FocusGuardکیcurrentDBread؛خرابیپرآخریverifiedOn/Off،ابتدائیunknownپرOnاورvisiblewarning۔ Login/shellevents+تقریباً5schecks/cleanup،savedchromeکاeventقبلproperty/statuscallbacks،Shift/telemetryکیhonestlimits۔ ✅136static/43source-negative scripts/60نئیlexicalmutationsمحدود؛⏳31نئےC#cases/3643suiteاوراصلWindows/provider/nativeWPFباقی۔ مالککا3418PASSثابت،pendingنہیں۔ [PT-85/حدوداورگزشتہتینحصوںکیرپورٹ](FOCUS-GUARD-READ-OUTCOME-URDU.md)؛legacyStartup/telemetry/StockTake/guideUIعملیجانچکھلی،6/installerنہیں۔ نیچےپرانےcountsتاریخیہیں۔
+
+
 > **⏳ تازہ اصل ٹیسٹ نتیجہ/محدود اصلاح — v0.136.2 Campion:** مالک کاv0.136.1Windows/.NET10run:Core/TestsDebugcompile،3397total/3395PASS/2FAIL/0skip،5m59s۔ Native-requiredfixtureمیںجائزOwnerackwriterاورglobalclockبدلنےوالیTimecollectionکیnonparallelisolation؛اصل4000drawerassertion/SQL/constraint/3397casesبرقرار۔129static/13newlexical/8PythonSQLreferencecasesمحدود؛اصلنیاWindowsrerunباقی۔ [دونوںوجوہ/حدود](WINDOWS-V1361-TEST-REPORT-URDU.md)۔ پچھلاCS0619compileblockerاسrunمیںحلثابت؛نہFull5.1نہWindows/WPFمکمل،6/installerنہیں۔ نیچےپرانےنتائجتاریخیہیں۔
 
 

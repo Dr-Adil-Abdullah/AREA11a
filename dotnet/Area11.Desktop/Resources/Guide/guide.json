@@ -7776,7 +7776,7 @@
       "blocks": [
         {
           "kind": "paragraph",
-          "text": "خودکار آغاز، screen lock اور protected close حساس desktop ترتیبات ہیں۔",
+          "text": "خودکار آغاز، screen lock اور protected close الگ حساس desktop ترتیبات ہیں؛v0.146.0میںFocusGuardکیreadخرابیپرموافقD-118/Aرویہموجودہے،مکملWindowslockکیضمانتنہیں۔",
           "rows": []
         },
         {
@@ -7828,7 +7828,7 @@
         },
         {
           "kind": "item",
-          "text": "2. عام Settings SAVED اور startup/focus failure کے پیغام کو الگ سمجھے۔",
+          "text": "2. عامSettings،startupاورscreen-lockالگcommitsہیں۔ Main settings SAVEDکےبعداگلاstageیاصفحہخرابہوتودوبارہSaveنہدہرائیں؛Settings/auditاورمتعلقہWindowsنتیجہتصدیقکےبعدreopenکریں۔",
           "rows": []
         },
         {
@@ -7843,12 +7843,12 @@
         },
         {
           "kind": "paragraph",
-          "text": "گائیڈ کھولنا security bypass نہیں۔",
+          "text": "گائیڈsecuritybypassنہیں۔ Screen-lockکیcurrentreadخرابہوتواسیچلتیایپکیآخریverifiedOn/Offرہتیہے؛ابھیکوئیverificationنہہوتوعارضیOn۔ Login/shellکیwarningدیکھیں؛درستreadبحالہوتوwarningصافاوراصلترتیبلگتیہے۔ تقریباً5secondsکےtimerاورwindoweventsپرreadہے،فورییاnon-blockingکیضمانتنہیں؛آپکاکھلاunsavedSettingsformنہیںبدلتا۔",
           "rows": []
         },
         {
           "kind": "paragraph",
-          "text": "Windows registry/باقی startup کام کی عملی تصدیق باقی؛ live دکان کو لاک کرکے راز آزما نہیں۔",
+          "text": "Shift-at-startupصرفstartuprecoveryکیrequestہے،FocusGuardOffنہیںکرتی؛resultتصدیقکریں۔ Away/killrecordsاورtaskbarhidebest-effortہیں،ہرواقعےکےauditکیضمانتنہیں۔ Windows/native/providerجانچباقی؛liveدکانکولاککرکےتجربہنہکریں۔",
           "rows": []
         }
       ],

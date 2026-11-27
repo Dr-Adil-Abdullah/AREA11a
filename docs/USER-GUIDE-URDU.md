@@ -1,5 +1,8 @@
 # Area11 — مکمل اردو استعمال نامہ
 
+> **⏳ Screen lock — v0.146.0/D-118/A:** موجودہsavedswitchکیreadخرابہوتوایپآخریverifiedOn/Offرکھتیہے؛ابھیکوئیverificationنہہوتوعارضیOn۔ Loginاورshellمیںواضحwarningآئےگی؛صحیحreadبحالہوتےہیاصلترتیب/صافwarning۔ یہsavedsettingنہیںبدلتااورWindowssecuritylockنہیں۔ Shiftصرفstartuprecoveryہے،FocusGuardOffنہیں۔ Main/startup/screen-lockالگcommitsہیں؛SAVEDکےبعدخرابیپرSaveنہدہرائیں۔ [PT-85/حدود](FOCUS-GUARD-READ-OUTCOME-URDU.md)؛اصلWindows/WPFجانچباقی۔
+
+
 > **⏳ Main Settings Save — v0.145.0:** **Main settings SAVED** آئےاوربعدمیںصفحہ/startup/screen-lockرکجائےتوپہلیمحفوظتبدیلیواپسنہیںہوتی؛دوبارہSaveنہدہرائیں۔ Main/startup/screen-lockالگcommitsہیں،ایکtransactionنہیں۔ اصلSettings/auditاورمتعلقہWindows/screen-lockنتیجہتصدیقکےبعدSettingsreopenکریں؛Refresh/regrant/Restorewordsاسیصفحےکاuncertainguardنہیںکھولتے۔ صرفprimaryکاواضحno-commitہوتووجہدرستکریں،conflictپرRefresh/review۔ [PT-84/حدود](MAIN-SETTINGS-SAVE-OUTCOME-URDU.md)؛اصلWindows/WPFجانچباقی۔
 
 

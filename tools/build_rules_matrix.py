@@ -53,7 +53,7 @@ STATUS: dict[str, tuple[str, str, str]] = {
     "U-10": ("DONE", "`Services/SettingsService.cs` + editable shop/catalog data; the fixed Area11 product title is the D-96 exception", "-"),
     "U-11": ("DONE", "services write straight to SQLite, no second copy", "-"),
     "U-12": ("DONE", "this matrix", "-"),
-    "U-13": ("DONE", "HANDOFF.md + AGENTS.md + docs/PROGRESS.md + this file", "`tools/check_repo.py`"),
+    "U-13": ("DONE", "HANDOFF.md + AGENTS.md + docs/PROGRESS.md + this file; D-118 Focus Guard scope/evidence in docs/FOCUS-GUARD-READ-OUTCOME-URDU.md", "`tools/check_repo.py`"),
     "U-14": ("DUTY", "AGENTS.md section 6 (definition of done)", "-"),
     "U-15": ("DUTY", "Phase 1 includes credit sales because the shop needs them", "-"),
     "U-16": ("DONE", "AGENTS.md is the single entry point", "-"),

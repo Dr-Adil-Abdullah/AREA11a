@@ -26,6 +26,7 @@ public partial class ShellWindow : Window
         Deactivated += OnShellDeactivated;
         Activated += OnShellReactivated;
         Loaded += OnShellLoaded;
+        _focusGuardTimer.Tick += RefreshFocusGuard;
         Closed += OnShellClosed;
         StateChanged += OnShellStateChanged;
     }
@@ -63,7 +64,7 @@ public partial class ShellWindow : Window
         // The screen lock implies a protected close (owner's word, Nov 2026): with the lock on,
         // × asks for the password even when the startup mode itself is not protected.
         if (DataContext is not ShellViewModel shell
-            || (!shell.Services.Startup.IsProtected && !shell.Services.Focus.Enabled))
+            || (!shell.Services.Startup.IsProtected && !ReadFocusGuard(shell)))
         {
             return;
         }
@@ -81,6 +82,21 @@ public partial class ShellWindow : Window
             AllowClose = true;
             Dispatcher.BeginInvoke(new Action(Close));
         }
+    }
+
+    private readonly DispatcherTimer _focusGuardTimer = new() { Interval = TimeSpan.FromSeconds(5) };
+
+    private bool ReadFocusGuard(ShellViewModel shell)
+    {
+        var status = shell.Services.Focus.ReadStatus();
+        FocusGuardNotice.Text = status.Notice;
+        FocusGuardNotice.Visibility = status.Verified ? Visibility.Collapsed : Visibility.Visible;
+        return status.Enabled;
+    }
+
+    private void RefreshFocusGuard(object? sender, EventArgs e)
+    {
+        if (!App.IsSystemShutdown && !AllowClose) ApplyLockdownChrome();
     }
 
     private string? _leftAt;
@@ -122,7 +138,7 @@ public partial class ShellWindow : Window
             return;
         }
 
-        if (DataContext is not ShellViewModel shell || !shell.Services.Focus.Enabled)
+        if (DataContext is not ShellViewModel shell || !ReadFocusGuard(shell))
         {
             return;
         }
@@ -137,7 +153,7 @@ public partial class ShellWindow : Window
         {
             try
             {
-                if (App.IsSystemShutdown || AllowClose || !shell.Services.Focus.Enabled)
+                if (App.IsSystemShutdown || AllowClose || !ReadFocusGuard(shell))
                 {
                     _leftAt = null;
                     return;
@@ -174,7 +190,7 @@ public partial class ShellWindow : Window
                 try
                 {
                     MessageBox.Show(this,
-                        "Going back is not allowed on this screen. This escape was written to the black box.",
+                        "Going back is not allowed on this screen. Area11 will try to record the away episode when you return.",
                         (DataContext as ShellViewModel)?.AppDisplayName ?? "Area11",
                         MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
@@ -198,6 +214,8 @@ public partial class ShellWindow : Window
     /// </summary>
     private void OnShellReactivated(object? sender, EventArgs e)
     {
+        if (!App.IsSystemShutdown && !AllowClose) ApplyLockdownChrome();
+
         // An instantly blocked minimize (see OnShellStateChanged) never left the screen, so it
         // must not become a black-box episode either - the attempt simply did not happen.
         if (_skipInstantEpisode)
@@ -231,7 +249,7 @@ public partial class ShellWindow : Window
             return;
         }
 
-        if (shell.Services.Focus.Enabled)
+        if (ReadFocusGuard(shell))
         {
             ResizeMode = ResizeMode.NoResize;
             WindowState = WindowState.Maximized;
@@ -257,6 +275,7 @@ public partial class ShellWindow : Window
     private void OnShellLoaded(object sender, RoutedEventArgs e)
     {
         ApplyLockdownChrome();
+        _focusGuardTimer.Start();
 
         if (DataContext is ShellViewModel shell)
         {
@@ -266,6 +285,8 @@ public partial class ShellWindow : Window
 
     private void OnShellClosed(object? sender, EventArgs e)
     {
+        _focusGuardTimer.Stop();
+        _focusGuardTimer.Tick -= RefreshFocusGuard;
         if (DataContext is ShellViewModel shell)
         {
             shell.LockdownChromeChanged -= ApplyLockdownChrome;
@@ -285,8 +306,8 @@ public partial class ShellWindow : Window
     /// </summary>
     private void OnShellStateChanged(object? sender, EventArgs e)
     {
-        if (WindowState == WindowState.Minimized
-            && DataContext is ShellViewModel shell && shell.Services.Focus.Enabled)
+        if (!App.IsSystemShutdown && !AllowClose && WindowState == WindowState.Minimized
+            && DataContext is ShellViewModel shell && ReadFocusGuard(shell))
         {
             _skipInstantEpisode = true;
             WindowState = WindowState.Maximized;

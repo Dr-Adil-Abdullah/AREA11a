@@ -1,5 +1,8 @@
 # Area11 — pharmacy POS + inventory for Windows
 
+> **⏳ موجودہ5.1 — v0.146.0 Meadowsweet:** مالککاD-118/Aفیصلہ:FocusGuardکیcurrentDBread؛خرابیپرآخریverifiedOn/Off،ابتدائیunknownپرOnاورvisiblewarning۔ Login/shellevents+تقریباً5schecks/cleanup،savedchromeکاeventقبلproperty/statuscallbacks،Shift/telemetryکیhonestlimits۔ ✅136static/43source-negative scripts/60نئیlexicalmutationsمحدود؛⏳31نئےC#cases/3643suiteاوراصلWindows/provider/nativeWPFباقی۔ مالککا3418PASSثابت،pendingنہیں۔ [PT-85/حدوداورگزشتہتینحصوںکیرپورٹ](docs/FOCUS-GUARD-READ-OUTCOME-URDU.md)؛legacyStartup/telemetry/StockTake/guideUIعملیجانچکھلی،6/installerنہیں۔ نیچےپرانےcountsتاریخیہیں۔
+
+
 > **⏳ موجودہ5.1 — v0.145.0 Valerian:** MainSettingsSaveکاpersistentoutcomeguard،ack/returnedreceiptکےبعدcredential+confirmationconsumeقبلcallbacks؛pinnedstartup/focusintent،الگcommitsکیpartialSAVEDحیثیت،نامعلوم/ادھوریsequenceپرRefresh/Resetسےreplayنہیںاورstickyhint۔ ✅135static/42source-negative scripts/53نئیlexicalmutations،پرانے24PythonSettingsSQLplansمحدود؛⏳25نئےC#cases/3612suiteاوراصلWindows/provider/WPFباقی۔ مالککا3418PASSثابتہے،pendingنہیں۔ [PT-84/تفصیل](docs/MAIN-SETTINGS-SAVE-OUTCOME-URDU.md)؛FocusGuardکاتفصیلیreview/legacyStartup/StockTake/guideUIعملیجانچکھلی،6/installerنہیں۔ نیچےپرانےcountsتاریخیہیں۔
 
 

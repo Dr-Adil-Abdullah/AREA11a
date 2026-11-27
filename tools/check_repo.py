@@ -10448,6 +10448,84 @@ def check_main_settings_outcomes():
     REPORT.append('P5.1 main Settings Save:persistent observed-outcome guard,ack/receipt/secret consume before callbacks,pinned later-stage intent and aggregate partial-SAVED handling;exact retained handoff,Refresh/Reset no replay;25 C# cases UNRUN,not WPF/provider/focus-system/durable identity/whole5.1 proof')
 
 
+def check_focus_guard_read_outcomes():
+    """D-118/A source contracts only; never Windows security, timing, native chrome or C# proof."""
+    def need(text, tokens, label):
+        for token in tokens:
+            if token not in text: FAILURES.append('Focus Guard ' + label + ' missing ' + token)
+    def order(text, tokens, label):
+        points = [text.find(token) for token in tokens]
+        if min(points) < 0 or points != sorted(points): FAILURES.append('Focus Guard ordering: ' + label)
+    settings = (DOTNET / 'Area11.Core/Services/SettingsService.cs').read_text()
+    read = settings.split('    public ServiceResult<bool> ReadCurrentFocusGuard()', 1)[1].split('    public string GetRaw(', 1)[0]
+    need(read, ['return _db.Read(connection =>', '"SELECT value FROM settings WHERE key=@key;"',
+        'new { key = FocusGuardService.GuardKey }', 'return raw?.Trim() switch',
+        '"true" or "1" => ServiceResult<bool>.Success(true)', '"false" or "0" => ServiceResult<bool>.Success(false)',
+        '_ => ServiceResult<bool>.Fail(', 'catch (Exception)',
+        'return ServiceResult<bool>.Fail("The screen-lock setting could not be read.");'], 'current read')
+    for token in ('_cache', 'Reload(', 'Set(', 'SetUiOnly(', 'UPDATE ', 'INSERT ', '_log.', 'exception.Message'):
+        if token in read: FAILURES.append('Focus Guard read must not bless cache/repair/write/leak: ' + token)
+    guard = (DOTNET / 'Area11.Core/Services/FocusGuardService.cs').read_text()
+    runtime = guard.split('    private readonly object _stateGate', 1)[1].split('    /// <summary>\n    /// One away', 1)[0]
+    need(runtime, ['private bool? _lastVerifiedEnabled;', 'private bool _readWarning;',
+        'public bool Enabled => ReadStatus().Enabled;', 'public FocusGuardStatus ReadStatus()',
+        'var current = _settings.ReadCurrentFocusGuard();', 'lock (_stateGate)', 'if (current.Ok)',
+        '_lastVerifiedEnabled = current.Value;', '_readWarning = false;',
+        'return new FocusGuardStatus(current.Value, true, string.Empty);', 'if (!_readWarning)',
+        '_readWarning = true;', 'var enabled = _lastVerifiedEnabled ?? true;',
+        'Keeping the last verified setting ', 'No verified setting yet; using ON temporarily.',
+        'return new FocusGuardStatus(enabled, false,', 'This is not a Windows security lock.'], 'owner A fallback')
+    order(runtime, ['var current = _settings.ReadCurrentFocusGuard();', 'lock (_stateGate)', 'if (current.Ok)',
+        '_lastVerifiedEnabled = current.Value;', 'return new FocusGuardStatus(current.Value, true, string.Empty);',
+        'if (!_readWarning)', 'var enabled = _lastVerifiedEnabled ?? true;', 'return new FocusGuardStatus(enabled, false,'], 'verification/fallback')
+    if runtime.count('_lastVerifiedEnabled =') != 1: FAILURES.append('Focus Guard only a successful current read may update last verified evidence')
+    if '_settings.GetBool(' in runtime or '_settings.Set' in runtime: FAILURES.append('Focus Guard no cached/silent switch override')
+    need(guard, ['public sealed record FocusGuardStatus(bool Enabled, bool Verified, string Notice);'], 'coherent immutable status')
+    shell = (DOTNET / 'Area11.Desktop/Views/ShellWindow.xaml.cs').read_text()
+    login = (DOTNET / 'Area11.Desktop/Views/LoginWindow.xaml.cs').read_text()
+    for text, label in ((shell, 'shell'), (login, 'login')):
+        need(text, ['Interval = TimeSpan.FromSeconds(5)', '_focusGuardTimer.Tick += RefreshFocusGuard;',
+            '_focusGuardTimer.Start();', '_focusGuardTimer.Stop();', '_focusGuardTimer.Tick -= RefreshFocusGuard;',
+            'FocusGuardNotice.Text = status.Notice;',
+            'FocusGuardNotice.Visibility = status.Verified ? Visibility.Collapsed : Visibility.Visible;',
+            'return status.Enabled;', 'if (!App.IsSystemShutdown && !AllowClose)',
+            'if (App.IsSystemShutdown || AllowClose)', 'Dispatcher.BeginInvoke(new Action(Close));'], label + ' freshness/notice/lifecycle')
+        if 'Services.Focus.Enabled' in text or '.Focus.ReadStatus().Enabled' in text:
+            FAILURES.append('Focus Guard ' + label + ' must show same-read warning,not naked cached/optimistic bool')
+    need(shell, ['var status = shell.Services.Focus.ReadStatus();',
+        '(!shell.Services.Startup.IsProtected && !ReadFocusGuard(shell))',
+        'DataContext is not ShellViewModel shell || !ReadFocusGuard(shell)',
+        'App.IsSystemShutdown || AllowClose || !ReadFocusGuard(shell)',
+        'if (ReadFocusGuard(shell))',
+        'if (!App.IsSystemShutdown && !AllowClose && WindowState == WindowState.Minimized',
+        '&& DataContext is ShellViewModel shell && ReadFocusGuard(shell)',
+        'if (!App.IsSystemShutdown && !AllowClose) ApplyLockdownChrome();',
+        'shell.LockdownChromeChanged += ApplyLockdownChrome;', 'shell.LockdownChromeChanged -= ApplyLockdownChrome;',
+        'Area11 will try to record the away episode when you return.'], 'all shell consumers')
+    need(login, ['var status = _viewModel.Services.Focus.ReadStatus();',
+        'if (!_viewModel.Services.Startup.IsProtected && !ReadFocusGuard())',
+        'if (!App.IsSystemShutdown && !AllowClose) ReadFocusGuard();', 'Loaded += RefreshFocusGuard;'], 'login current close/initial read')
+    for name in ('ShellWindow', 'LoginWindow'):
+        view = (DOTNET / ('Area11.Desktop/Views/' + name + '.xaml')).read_text()
+        need(view, ['x:Name="FocusGuardNotice"', 'AutomationProperties.Name="Screen-lock verification warning"'], name + ' sticky visible warning')
+    view = (DOTNET / 'Area11.Desktop/Views/SettingsView.xaml').read_text()
+    need(view, ['reset startup protection only; screen lock is unchanged.',
+        'best-effort black-box records, not guaranteed evidence.', 'keeps the last verified choice;', 'before the first verification it uses ON.'], 'honest UI limits')
+    app = (DOTNET / 'Area11.Desktop/App.xaml.cs').read_text()
+    need(app, ['A reset to manual startup was requested', 'Screen lock, if enabled, is unchanged.',
+        'a failed reset must not be treated as completed.'], 'recovery wording')
+    vm = (DOTNET / 'Area11.Desktop/ViewModels/SettingsViewModel.cs').read_text()
+    core = vm.split('    private void SaveCore()\n', 1)[1].split('    public string MainSettingsHint', 1)[0]
+    focus = core.split('            var focusNote = string.Empty;', 1)[1]
+    order(focus, ['var focus =', 'if (!focus.Ok)', 'savedStages += " Screen lock SAVED.";',
+        'focus.SettingsEdit is not { } focusReceipt', '_editForm = form;', '_focusGuardEnabled = focusChoice;',
+        'LockdownChromeChanged?.Invoke();', 'OnPropertyChanged(nameof(FocusGuardEnabled));',
+        'SetMainSettingsHint(string.Empty);', 'SetStatus($"SAVED. Paper', '_mainSettingsAttempt.CompleteReset();'], 'commit/receipt/chrome BEFORE notifications/status/reset')
+    tests = (DOTNET / 'Area11.Tests/FocusGuardReadOutcomeTests.cs').read_text()
+    if tests.count('[Fact]') + tests.count('[InlineData(') != 31: FAILURES.append('Focus Guard requires31 additive current-read/policy C# cases')
+    REPORT.append('P5.1 Focus Guard D-118/A:current strict DB read,no cache/default-off evidence;last verified choice on unknown,initial ON,same-read warning;login/shell5s+event checks and disposal,chrome before Save callbacks;31 C# cases UNRUN,not Windows/native-security/timing/telemetry/full5.1 proof')
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
 
@@ -10581,6 +10659,7 @@ def main() -> int:
     check_startup_registry_outcomes()
     check_label_reset_outcomes()
     check_main_settings_outcomes()
+    check_focus_guard_read_outcomes()
     check_csharp_grammar()
 
     if not quiet:

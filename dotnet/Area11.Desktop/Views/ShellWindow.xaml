@@ -370,11 +370,14 @@
         </Border>
 
         <!-- Session warnings stay visible without displacing Alerts from the top-right. -->
-        <Border Grid.Row="2" Background="{StaticResource SidebarBrush}" Padding="16,0,16,8"
-                Visibility="{Binding HasSessionNotice, Converter={StaticResource BoolToVis}}">
+        <StackPanel Grid.Row="2" Background="{StaticResource SidebarBrush}">
             <TextBlock Text="{Binding SessionNotice}" Foreground="#FCD34D" FontSize="11.5"
-                       TextWrapping="Wrap" />
-        </Border>
+                       Padding="16,0,16,8" TextWrapping="Wrap"
+                       Visibility="{Binding HasSessionNotice, Converter={StaticResource BoolToVis}}" />
+            <TextBlock x:Name="FocusGuardNotice" Foreground="#FCD34D" FontSize="11.5"
+                       Padding="16,0,16,8" TextWrapping="Wrap" Visibility="Collapsed"
+                       AutomationProperties.Name="Screen-lock verification warning" />
+        </StackPanel>
 
         <!-- ===================== The page ===================== -->
         <Grid Grid.Row="3" Margin="14,12,14,14">

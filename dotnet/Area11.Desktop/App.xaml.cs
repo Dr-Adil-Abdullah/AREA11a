@@ -89,11 +89,11 @@ public partial class App : Application
                 && _services.Startup.IsProtected)
             {
                 _services.Startup.ResetToManual();
-                RunTrail.Step("startup protection reset by Shift-at-startup");
+                RunTrail.Step("startup recovery requested by Shift-at-startup; verify the result");
                 MessageBox.Show(
-                    "Closing protection was switched off and " + ShopAppName() + " is back to manual start. " +
-                    "This was written to the black box. Pick a mode again in Settings, Shop " +
-                    "when you are ready.",
+                    "A reset to manual startup was requested for " + ShopAppName() + ". " +
+                    "Screen lock, if enabled, is unchanged. Verify the startup mode and Windows entries in Settings; " +
+                    "a failed reset must not be treated as completed.",
                     ShopAppName(), MessageBoxButton.OK, MessageBoxImage.Information);
             }
 

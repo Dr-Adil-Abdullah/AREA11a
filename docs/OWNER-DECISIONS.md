@@ -1,10 +1,21 @@
 # AREA11 — مالک کے فیصلے (ایک ہی فائل میں تمام معلومات)
 
+> **⏳ موجودہ5.1 — v0.146.0 Meadowsweet:** مالککاD-118/Aفیصلہ:FocusGuardکیcurrentDBread؛خرابیپرآخریverifiedOn/Off،ابتدائیunknownپرOnاورvisiblewarning۔ Login/shellevents+تقریباً5schecks/cleanup،savedchromeکاeventقبلproperty/statuscallbacks،Shift/telemetryکیhonestlimits۔ ✅136static/43source-negative scripts/60نئیlexicalmutationsمحدود؛⏳31نئےC#cases/3643suiteاوراصلWindows/provider/nativeWPFباقی۔ مالککا3418PASSثابت،pendingنہیں۔ [PT-85/حدوداورگزشتہتینحصوںکیرپورٹ](FOCUS-GUARD-READ-OUTCOME-URDU.md)؛legacyStartup/telemetry/StockTake/guideUIعملیجانچکھلی،6/installerنہیں۔ نیچےپرانےcountsتاریخیہیں۔
+
+
 > **⏳ تازہ5.1 — v0.136.0 Comfrey:** CustomFieldOn/OffکاcheckedobservedTx،Owner/entityCASقبلno-op،exactdefensiveentityreceipt؛Update/OnOffکاوہیsharedpersistentguard،pinneddisplayedintent،ackقبلinputconsumption/callbacks،normalblankeditorشامل۔ [PT-78/حدود](CUSTOM-DEFINITION-ACTIVE-OUTCOME-URDU.md)؛[پچھلاUpdate/PT-77](CUSTOM-DEFINITION-UPDATE-OUTCOME-URDU.md)۔24نئےC#cases/3397suiteUNRUN؛128static/37نئیlexical/32PythonSQLplansمحدود،اصلWindows/provider/WPFنہیں۔ CustomAdd/Move،imperativeSettings/registry/StockTakeباقی؛v0.134.0اصلbuildFAIL/CS0411fixکاrerunاور3warningsابھیباقی؛1تا5بندہونےسےپہلے6/installerنہیں۔ نیچےپرانےcheckpointاعداد/pauseاپنےوقتکےتاریخیہیں۔
 
 > **⏳ تازہ اصل build blocker — v0.134.1 Borage source fix:** مالک کےv0.134.0WindowsrunمیںCorecompileFAIL،1CS0411/3warnings،36.79s؛tests/appنہیںچلے۔ Product.UpdateکےobservedTxمیںexplicitobject?اورno-op/finalreturnnullکی3محدوداصلاحات؛[اصلثبوت/وجہ/حدود](WINDOWS-V1340-BUILD-FAILURE-URDU.md)۔126static/3نئیlexicalregressionsمحدود؛3347C#suiteاوراصلWindowsrerunابھیباقی۔ CustomFieldimplementationpaused؛پہلےیہblocker،پھر1تا5باقی؛6/installerنہیں۔ نیچےv0.134.0/docs-onlyاورپرانےنتائجتاریخیہیں۔
 
 > **⏳ D-117 — موجودہ مکمل حالت پہلے یہاں پڑھیں:** [ہوا/باقی کام،دیر اور عارضی اندازہ](COMPLETE-STATUS-AND-DECISIONS-URDU.md)؛[تمام117 فیصلے + پانچ بنیادی اصول](DECISION-REGISTER-INDEX-URDU.md)؛[اگلا CustomField Update جائزہ شروع](CUSTOM-FIELD-NEXT-SCOPE-URDU.md)۔ Code v0.134.0/3347suiteUNRUN؛اس documentation turn میں production code نہیں بدلا۔ نیچے پرانے checkpoint کے نتائج اور “شروع نہیں” والے جملے اپنے وقت کے تاریخی ہیں،موجودہ منظوری/نتیجہ نہیں؛پہلے1تا5 بند،پھر6۔
+
+<a id="decision-d-118"></a>
+
+## D-118 — Focus Guard کی غیر مصدقہ read پر آخری تصدیق شدہ حالت (A)
+
+2026-11-10؛محدودFocusGuardجائزےکےدورانمالکنےMCQمیں **A — آخری تصدیق شدہ حالت** منتخبکی۔ موجودہمحفوظswitchکیreadخراب،غائبیاmalformedہوتواسیچلتیایپکیآخریتصدیقشدہOn/Offبرقرار؛اگرابھیکوئیحالتتصدیقنہیںہوئیتوعارضیOnاورواضحتنبیہ۔ بعدکیصحیحreadسےاصلOn/Offاپنائیںاورwarningصافکریں۔ تصدیقشدہOffکےبعدreadfailureکوبلااجازتOnنہیںبنایا؛وہردکردہBتھا۔ خرابیپربلاشرطOffبھیمنتخبنہیںہوا۔
+
+یہruntimefallbackہے،محفوظswitchکوخودمرمت/تبدیلنہیںکرتا؛Owner-onlycheckedSave/CASبرقرار۔ Cached/defaultOffتصدیقنہیں،restartپرپچھلیprocessکیmemoryثبوتنہیں۔ Windowssecuritylock،تمامnative/taskbarعملیاتکیسند،startuprecoveryسےFocusOffکرنے،مالیپالیسی،حصہ6یاinstallerکیاجازتنہیں۔ [PT-85/نفاذاورباقیحدود](FOCUS-GUARD-READ-OUTCOME-URDU.md)۔
 
 <a id="decision-d-117"></a>
 

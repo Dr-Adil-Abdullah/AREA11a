@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 using Area11.Desktop.ViewModels;
 
 namespace Area11.Desktop.Views;
@@ -22,8 +23,31 @@ public partial class LoginWindow : Window
         DataContext = viewModel;
         Loaded += (_, _) => NameBox.Focus();
         Closing += ConfirmLoginClosing;
-        Closed += (_, _) => TaskbarHider.Show();
+        Loaded += RefreshFocusGuard;
+        _focusGuardTimer.Tick += RefreshFocusGuard;
+        Loaded += (_, _) => _focusGuardTimer.Start();
+        Closed += (_, _) =>
+        {
+            _focusGuardTimer.Stop();
+            _focusGuardTimer.Tick -= RefreshFocusGuard;
+            TaskbarHider.Show();
+        };
         ApplyKioskIfAutoMode();
+    }
+
+    private readonly DispatcherTimer _focusGuardTimer = new() { Interval = TimeSpan.FromSeconds(5) };
+
+    private bool ReadFocusGuard()
+    {
+        var status = _viewModel.Services.Focus.ReadStatus();
+        FocusGuardNotice.Text = status.Notice;
+        FocusGuardNotice.Visibility = status.Verified ? Visibility.Collapsed : Visibility.Visible;
+        return status.Enabled;
+    }
+
+    private void RefreshFocusGuard(object? sender, EventArgs e)
+    {
+        if (!App.IsSystemShutdown && !AllowClose) ReadFocusGuard();
     }
 
     /// <summary>
@@ -56,7 +80,7 @@ public partial class LoginWindow : Window
 
         // The screen lock implies a protected close (owner's word, Nov 2026): with the lock on,
         // × asks for the password even when the startup mode itself is not protected.
-        if (!_viewModel.Services.Startup.IsProtected && !_viewModel.Services.Focus.Enabled)
+        if (!_viewModel.Services.Startup.IsProtected && !ReadFocusGuard())
         {
             return;
         }

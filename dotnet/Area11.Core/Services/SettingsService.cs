@@ -122,6 +122,32 @@ public sealed class SettingsService
         }
     }
 
+    /// <summary>Current persisted screen-lock switch, not the UI cache. Only JSON booleans and
+    /// legacy 0/1 are evidence. Missing/malformed/unreadable is unknown, never a fabricated OFF.
+    /// Read-only: does not refresh an open edit baseline, repair data, or change financial policy.</summary>
+    public ServiceResult<bool> ReadCurrentFocusGuard()
+    {
+        try
+        {
+            return _db.Read(connection =>
+            {
+                var raw = _db.QuerySingle<string>(connection,
+                    "SELECT value FROM settings WHERE key=@key;", new { key = FocusGuardService.GuardKey });
+                return raw?.Trim() switch
+                {
+                    "true" or "1" => ServiceResult<bool>.Success(true),
+                    "false" or "0" => ServiceResult<bool>.Success(false),
+                    _ => ServiceResult<bool>.Fail("The screen-lock setting is missing or invalid.")
+                };
+            });
+        }
+        catch (Exception)
+        {
+            // The runtime guard logs a transition once, never a credential-bearing raw exception.
+            return ServiceResult<bool>.Fail("The screen-lock setting could not be read.");
+        }
+    }
+
     public string GetRaw(string key)
     {
         lock (_gate)

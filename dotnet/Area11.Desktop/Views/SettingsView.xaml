@@ -158,7 +158,7 @@
                                 <TextBlock Text="{Binding StartupSaveHint}" Style="{StaticResource FieldHint}" TextWrapping="Wrap"
                                            Visibility="{Binding HasStartupSaveHint, Converter={StaticResource BoolToVis}}" />
 
-                                <TextBlock Text="Who may close it in protected mode: the owner with the password or PIN, or a staff member you tick for Close the program on the Staff &amp; permissions tab. Hold Shift while starting to switch protection off again."
+                                <TextBlock Text="Who may close it in protected mode: the owner with the password or PIN, or a staff member you tick for Close the program on the Staff &amp; permissions tab. Hold Shift while starting to reset startup protection only; screen lock is unchanged."
                                            Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,6,0,0" />
                                 <TextBlock Text="Honest limit: this stops casual closing, not a Windows administrator, Task Manager, shutdown or power loss. The shop's data survives all of those."
                                            Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,4,0,0" />
@@ -166,7 +166,9 @@
                                 <CheckBox Content="Lock the screen while signed in"
                                           IsChecked="{Binding FocusGuardEnabled, Mode=TwoWay}"
                                           Margin="0,10,0,0" />
-                                <TextBlock Text="When ticked, leaving Area11 for another program first shows a small 'not allowed' box and pulls the screen back, and × asks for the password on every window. While ticked, the shop screen also keeps no minimize box, stays maximized, and the taskbar is hidden. Every escape is still written to the black box with who left, at what time, and for how long - and a run ended from Task Manager is caught at the next start."
+                                <TextBlock Text="When ticked, Area11 tries to bring the signed-in screen back after you switch programs; × asks for an authorized password or PIN on the shop and sign-in windows. The shop screen stays maximized without a minimize box and asks Windows to hide the taskbar. Away episodes and unclean exits are best-effort black-box records, not guaranteed evidence. This is not a Windows security lock."
+                                           Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                                <TextBlock Text="Area11 checks the saved screen-lock switch at window events and about every 5 seconds while idle. A read problem shows a warning and keeps the last verified choice; before the first verification it uses ON. It does not change the saved switch or your unsaved Settings form."
                                            Style="{StaticResource FieldHint}" TextWrapping="Wrap" Margin="0,4,0,0" />
                             </StackPanel>
                         </Border>

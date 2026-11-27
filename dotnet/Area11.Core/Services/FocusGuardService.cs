@@ -30,19 +30,38 @@ public sealed class FocusGuardService
         _log = log;
     }
 
-    /// <summary>True when the owner switched the guard on. Never throws: off on any doubt.</summary>
-    public bool Enabled
+    private readonly object _stateGate = new();
+    private bool? _lastVerifiedEnabled;
+    private bool _readWarning;
+
+    /// <summary>Owner decision D-118/A: retain last VERIFIED persisted choice on read failure;
+    /// before the first verification use ON. Never mistakes a cached/default OFF for evidence.</summary>
+    public bool Enabled => ReadStatus().Enabled;
+
+    /// <summary>One current read and one coherent status. No writes, repair, audit, or durable state.
+    /// A valid later read (including OFF) recovers normally. State belongs to this app service only.</summary>
+    public FocusGuardStatus ReadStatus()
     {
-        get
+        var current = _settings.ReadCurrentFocusGuard();
+        lock (_stateGate)
         {
-            try
+            if (current.Ok)
             {
-                return _settings.GetBool(GuardKey);
+                _lastVerifiedEnabled = current.Value;
+                _readWarning = false;
+                return new FocusGuardStatus(current.Value, true, string.Empty);
             }
-            catch (Exception)
+            if (!_readWarning)
             {
-                return false;
+                _log.Warn("Screen-lock setting is unverified; keeping the last verified choice, or ON before the first verification.");
+                _readWarning = true;
             }
+            var enabled = _lastVerifiedEnabled ?? true;
+            var choice = _lastVerifiedEnabled.HasValue
+                ? "Keeping the last verified setting " + (enabled ? "ON." : "OFF.")
+                : "No verified setting yet; using ON temporarily.";
+            return new FocusGuardStatus(enabled, false,
+                "Screen-lock setting could not be verified. " + choice + " Ask the owner to review Settings and the database connection. This is not a Windows security lock.");
         }
     }
 
@@ -182,3 +201,6 @@ public sealed class FocusGuardService
         }
     }
 }
+
+/// <summary>Runtime decision and its warning from the same read; not a saved-settings receipt.</summary>
+public sealed record FocusGuardStatus(bool Enabled, bool Verified, string Notice);

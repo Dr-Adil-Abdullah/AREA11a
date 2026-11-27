@@ -1425,6 +1425,8 @@ public sealed class SettingsViewModel : ObservableObject
                 form = focusReceipt;
                 _editForm = form;
                 _focusGuardEnabled = focusChoice;
+                // Apply the committed switch before a property/status subscriber can throw.
+                LockdownChromeChanged?.Invoke();
                 OnPropertyChanged(nameof(FocusGuardEnabled));
                 focusNote = " Screen lock: " + (focusChoice ? "on." : "off.");
             }
@@ -1433,7 +1435,6 @@ public sealed class SettingsViewModel : ObservableObject
             SetStatus($"SAVED. Paper {primaryReceipt.GetInt("printer.width")} mm, printing " +
                 (primaryReceipt.GetBool("printer.autoPrint", true) ? "automatic." : "manual (use the button on the counter screen).")
                 + cloudNote + startupNote + focusNote, false);
-            if (focusNote.Length > 0) LockdownChromeChanged?.Invoke();
             RequireMainSettingsHandoff(form);
             if (focusNote.Length > 0 && FocusGuardEnabled != focusChoice)
                 throw new InvalidOperationException("The saved screen-lock choice was not retained.");
